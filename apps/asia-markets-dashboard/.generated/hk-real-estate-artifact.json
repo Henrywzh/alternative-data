@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "Hong Kong Real Estate Monitor",
     "description": "A source-backed snapshot of residential price, rent, market confidence, supply, financing, and first-hand developer sales signals.",
-    "generatedAt": "2026-08-09T13:36:08.172583Z",
+    "generatedAt": "2026-08-11T07:38:11.741985Z",
     "cards": [
       {
         "id": "ccl_card",
@@ -589,6 +589,34 @@
         "maxRows": 1000
       },
       {
+        "id": "hkma_mortgage_rate_mix_chart",
+        "title": "HKMA Mortgage Rate Plan Mix (%)",
+        "subtitle": "Percentage share of new mortgage approvals by HIBOR, Best Lending Rate, fixed-rate, and other pricing plans.",
+        "type": "line",
+        "intent": "trend",
+        "dataset": "hkma_mortgage_rate_mix",
+        "sourceId": "hkma_mortgage",
+        "encodings": {
+          "x": {
+            "field": "date",
+            "type": "temporal",
+            "label": "Month"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "% Share"
+          },
+          "color": {
+            "field": "series",
+            "type": "nominal",
+            "label": "Rate Plan"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
+      },
+      {
         "id": "cnsd_construction_value_chart",
         "title": "C&SD Gross Value of Construction Works (HK$ million)",
         "subtitle": "Quarterly value of construction works performed by main contractors (supply-side pipeline).",
@@ -634,6 +662,108 @@
             "field": "series",
             "type": "nominal",
             "label": "Method"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
+      },
+      {
+        "id": "hkma_ltv_chart",
+        "title": "HKMA Average LTV Ratio (%)",
+        "subtitle": "Average loan-to-value ratio for new mortgage approvals.",
+        "type": "line",
+        "intent": "trend",
+        "dataset": "hkma_ltv_history",
+        "sourceId": "hkma_mortgage",
+        "encodings": {
+          "x": {
+            "field": "date",
+            "type": "temporal",
+            "label": "Month"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "LTV (%)"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "half"
+      },
+      {
+        "id": "hkma_credit_quality_chart",
+        "title": "HKMA Mortgage Credit Quality (%)",
+        "subtitle": "Delinquency and rescheduled loan ratios -- a genuine credit-cycle risk indicator.",
+        "type": "line",
+        "intent": "comparison",
+        "dataset": "hkma_credit_quality_history",
+        "sourceId": "hkma_mortgage",
+        "encodings": {
+          "x": {
+            "field": "date",
+            "type": "temporal",
+            "label": "Month"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "%"
+          },
+          "color": {
+            "field": "series",
+            "type": "nominal",
+            "label": "Metric"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "half"
+      },
+      {
+        "id": "hkma_applications_chart",
+        "title": "HKMA New Mortgage Applications",
+        "subtitle": "Monthly count of new residential mortgage loan applications.",
+        "type": "line",
+        "intent": "trend",
+        "dataset": "hkma_applications_history",
+        "sourceId": "hkma_mortgage",
+        "encodings": {
+          "x": {
+            "field": "date",
+            "type": "temporal",
+            "label": "Month"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "Applications"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "half"
+      },
+      {
+        "id": "hkma_loan_amount_chart",
+        "title": "HKMA Mortgage Loan Amounts (HK$m)",
+        "subtitle": "Total approved loans, the secondary-market share, and drawn-down amount, monthly. Primary/presales and refinancing breakdowns are in the table below.",
+        "type": "line",
+        "intent": "comparison",
+        "dataset": "hkma_loan_amount_history",
+        "sourceId": "hkma_mortgage",
+        "encodings": {
+          "x": {
+            "field": "date",
+            "type": "temporal",
+            "label": "Month"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "HK$m"
+          },
+          "color": {
+            "field": "series",
+            "type": "nominal",
+            "label": "Category"
           }
         },
         "valueFormat": "number",
@@ -752,6 +882,62 @@
         "layout": "full"
       },
       {
+        "id": "bd_supply_history_units_chart",
+        "title": "Buildings Department — Historical Housing Supply Pipeline",
+        "subtitle": "Monthly domestic units at consent-to-commence, commencement notice and occupation-permit stages, from the official PDF archive.",
+        "type": "line",
+        "intent": "trend",
+        "dataset": "bd_supply_pipeline_history_units",
+        "sourceId": "bd_supply_history",
+        "encodings": {
+          "x": {
+            "field": "date",
+            "type": "temporal",
+            "label": "Month"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "Domestic units"
+          },
+          "color": {
+            "field": "series",
+            "type": "nominal",
+            "label": "Permit stage"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
+      },
+      {
+        "id": "bd_supply_history_counts_chart",
+        "title": "Buildings Department — Historical Permit / Consent Counts",
+        "subtitle": "Monthly demolition, plans-approved and consent-to-commence counts; Md55 has no corresponding count field and occupation-permit counts are covered by the units chart above.",
+        "type": "line",
+        "intent": "trend",
+        "dataset": "bd_supply_pipeline_history_counts",
+        "sourceId": "bd_supply_history",
+        "encodings": {
+          "x": {
+            "field": "date",
+            "type": "temporal",
+            "label": "Month"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "Project / consent count"
+          },
+          "color": {
+            "field": "series",
+            "type": "nominal",
+            "label": "Permit stage"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
+      },
+      {
         "id": "srpe_developer_sales_chart",
         "title": "SRPE — Top Developers by Attributable First-hand Contract Sales",
         "subtitle": "Monthly contract sales attributable to the listed-company ownership share; chart shows the three largest developers by cumulative pilot-window sales, in HK$ million.",
@@ -808,192 +994,6 @@
         "valueFormat": "number",
         "layout": "full",
         "maxRows": 500
-      },
-      {
-        "id": "bd_supply_history_units_chart",
-        "title": "Buildings Department — Historical Housing Supply Pipeline",
-        "subtitle": "Monthly domestic units at consent-to-commence, commencement notice and occupation-permit stages, from the official PDF archive.",
-        "type": "line",
-        "intent": "trend",
-        "dataset": "bd_supply_pipeline_history_units",
-        "sourceId": "bd_supply_history",
-        "encodings": {
-          "x": {
-            "field": "date",
-            "type": "temporal",
-            "label": "Month"
-          },
-          "y": {
-            "field": "value",
-            "type": "quantitative",
-            "label": "Domestic units"
-          },
-          "color": {
-            "field": "series",
-            "type": "nominal",
-            "label": "Permit stage"
-          }
-        },
-        "valueFormat": "number",
-        "layout": "full"
-      },
-      {
-        "id": "hkma_mortgage_rate_mix_chart",
-        "title": "HKMA Mortgage Rate Plan Mix (%)",
-        "subtitle": "Percentage share of new mortgage approvals by HIBOR, Best Lending Rate, fixed-rate, and other pricing plans.",
-        "type": "line",
-        "intent": "trend",
-        "dataset": "hkma_mortgage_rate_mix",
-        "sourceId": "hkma_mortgage",
-        "encodings": {
-          "x": {
-            "field": "date",
-            "type": "temporal",
-            "label": "Month"
-          },
-          "y": {
-            "field": "value",
-            "type": "quantitative",
-            "label": "% Share"
-          },
-          "color": {
-            "field": "series",
-            "type": "nominal",
-            "label": "Rate Plan"
-          }
-        },
-        "valueFormat": "number",
-        "layout": "full"
-      },
-      {
-        "id": "hkma_ltv_chart",
-        "title": "HKMA Average LTV Ratio (%)",
-        "subtitle": "Average loan-to-value ratio for new mortgage approvals.",
-        "type": "line",
-        "intent": "trend",
-        "dataset": "hkma_ltv_history",
-        "sourceId": "hkma_mortgage",
-        "encodings": {
-          "x": {
-            "field": "date",
-            "type": "temporal",
-            "label": "Month"
-          },
-          "y": {
-            "field": "value",
-            "type": "quantitative",
-            "label": "LTV (%)"
-          }
-        },
-        "valueFormat": "number",
-        "layout": "half"
-      },
-      {
-        "id": "hkma_loan_amount_chart",
-        "title": "HKMA Mortgage Loan Amounts (HK$m)",
-        "subtitle": "Total approved loans, the secondary-market share, and drawn-down amount, monthly. Primary/presales and refinancing breakdowns are in the table below.",
-        "type": "line",
-        "intent": "comparison",
-        "dataset": "hkma_loan_amount_history",
-        "sourceId": "hkma_mortgage",
-        "encodings": {
-          "x": {
-            "field": "date",
-            "type": "temporal",
-            "label": "Month"
-          },
-          "y": {
-            "field": "value",
-            "type": "quantitative",
-            "label": "HK$m"
-          },
-          "color": {
-            "field": "series",
-            "type": "nominal",
-            "label": "Category"
-          }
-        },
-        "valueFormat": "number",
-        "layout": "full"
-      },
-      {
-        "id": "hkma_credit_quality_chart",
-        "title": "HKMA Mortgage Credit Quality (%)",
-        "subtitle": "Delinquency and rescheduled loan ratios -- a genuine credit-cycle risk indicator.",
-        "type": "line",
-        "intent": "comparison",
-        "dataset": "hkma_credit_quality_history",
-        "sourceId": "hkma_mortgage",
-        "encodings": {
-          "x": {
-            "field": "date",
-            "type": "temporal",
-            "label": "Month"
-          },
-          "y": {
-            "field": "value",
-            "type": "quantitative",
-            "label": "%"
-          },
-          "color": {
-            "field": "series",
-            "type": "nominal",
-            "label": "Metric"
-          }
-        },
-        "valueFormat": "number",
-        "layout": "half"
-      },
-      {
-        "id": "hkma_applications_chart",
-        "title": "HKMA New Mortgage Applications",
-        "subtitle": "Monthly count of new residential mortgage loan applications.",
-        "type": "line",
-        "intent": "trend",
-        "dataset": "hkma_applications_history",
-        "sourceId": "hkma_mortgage",
-        "encodings": {
-          "x": {
-            "field": "date",
-            "type": "temporal",
-            "label": "Month"
-          },
-          "y": {
-            "field": "value",
-            "type": "quantitative",
-            "label": "Applications"
-          }
-        },
-        "valueFormat": "number",
-        "layout": "half"
-      },
-      {
-        "id": "bd_supply_history_counts_chart",
-        "title": "Buildings Department — Historical Permit / Consent Counts",
-        "subtitle": "Monthly demolition, plans-approved and consent-to-commence counts; Md55 has no corresponding count field and occupation-permit counts are covered by the units chart above.",
-        "type": "line",
-        "intent": "trend",
-        "dataset": "bd_supply_pipeline_history_counts",
-        "sourceId": "bd_supply_history",
-        "encodings": {
-          "x": {
-            "field": "date",
-            "type": "temporal",
-            "label": "Month"
-          },
-          "y": {
-            "field": "value",
-            "type": "quantitative",
-            "label": "Project / consent count"
-          },
-          "color": {
-            "field": "series",
-            "type": "nominal",
-            "label": "Permit stage"
-          }
-        },
-        "valueFormat": "number",
-        "layout": "full"
       }
     ],
     "tables": [
@@ -1084,6 +1084,56 @@
             "field": "notes",
             "label": "Scope / caveat",
             "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "hkma_mortgage_activity_table",
+        "title": "HKMA Mortgage Market Activity",
+        "subtitle": "Monthly new applications, approved loans, and drawn-down amount (2026-06 shown latest).",
+        "dataset": "hkma_mortgage_activity",
+        "sourceId": "hkma_mortgage",
+        "defaultSort": {
+          "field": "date",
+          "direction": "desc"
+        },
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "date",
+            "label": "Month",
+            "type": "date"
+          },
+          {
+            "field": "new_applications_count",
+            "label": "New Applications",
+            "format": "number"
+          },
+          {
+            "field": "approved_loans_amount_mhkd",
+            "label": "Approved Loans (HK$m)",
+            "format": "number"
+          },
+          {
+            "field": "approved_primary_presales_amount_mhkd",
+            "label": "Primary/Presales (HK$m)",
+            "format": "number"
+          },
+          {
+            "field": "approved_secondary_amount_mhkd",
+            "label": "Secondary (HK$m)",
+            "format": "number"
+          },
+          {
+            "field": "approved_refinancing_amount_mhkd",
+            "label": "Refinancing (HK$m)",
+            "format": "number"
+          },
+          {
+            "field": "drawn_down_amount_mhkd",
+            "label": "Drawn Down (HK$m)",
+            "format": "number"
           }
         ]
       },
@@ -1303,56 +1353,6 @@
             "format": "number"
           }
         ]
-      },
-      {
-        "id": "hkma_mortgage_activity_table",
-        "title": "HKMA Mortgage Market Activity",
-        "subtitle": "Monthly new applications, approved loans, and drawn-down amount (2026-05 shown latest).",
-        "dataset": "hkma_mortgage_activity",
-        "sourceId": "hkma_mortgage",
-        "defaultSort": {
-          "field": "date",
-          "direction": "desc"
-        },
-        "density": "dense",
-        "layout": "full",
-        "columns": [
-          {
-            "field": "date",
-            "label": "Month",
-            "type": "date"
-          },
-          {
-            "field": "new_applications_count",
-            "label": "New Applications",
-            "format": "number"
-          },
-          {
-            "field": "approved_loans_amount_mhkd",
-            "label": "Approved Loans (HK$m)",
-            "format": "number"
-          },
-          {
-            "field": "approved_primary_presales_amount_mhkd",
-            "label": "Primary/Presales (HK$m)",
-            "format": "number"
-          },
-          {
-            "field": "approved_secondary_amount_mhkd",
-            "label": "Secondary (HK$m)",
-            "format": "number"
-          },
-          {
-            "field": "approved_refinancing_amount_mhkd",
-            "label": "Refinancing (HK$m)",
-            "format": "number"
-          },
-          {
-            "field": "drawn_down_amount_mhkd",
-            "label": "Drawn Down (HK$m)",
-            "format": "number"
-          }
-        ]
       }
     ],
     "sources": [
@@ -1496,7 +1496,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `b23b23301326b34f` · generated 2026-08-09T07:17:08.947914Z.  This is a published snapshot, not a live connection. RVD observations marked provisional may be revised."
+        "body": "**Data snapshot:** `37bf17017f3f4789` · generated 2026-08-11T07:38:11.741985Z.  This is a published snapshot, not a live connection. RVD observations marked provisional may be revised."
       },
       {
         "id": "market_regime_intro",
@@ -1591,6 +1591,11 @@
         "body": "## Activity & financing\n\nTransactions, mortgage applications, loan amounts and credit quality are shown as separate compatible time series."
       },
       {
+        "id": "hkma_mortgage_chart_block",
+        "type": "chart",
+        "chartId": "hkma_mortgage_rate_mix_chart"
+      },
+      {
         "id": "cnsd_construction_chart_block",
         "type": "chart",
         "chartId": "cnsd_construction_value_chart"
@@ -1599,6 +1604,34 @@
         "id": "censtatd_land_disposals_chart_block",
         "type": "chart",
         "chartId": "censtatd_land_disposals_chart"
+      },
+      {
+        "id": "hkma_ltv_chart_block",
+        "type": "chart",
+        "chartId": "hkma_ltv_chart",
+        "layout": "half"
+      },
+      {
+        "id": "hkma_credit_quality_chart_block",
+        "type": "chart",
+        "chartId": "hkma_credit_quality_chart",
+        "layout": "half"
+      },
+      {
+        "id": "hkma_applications_chart_block",
+        "type": "chart",
+        "chartId": "hkma_applications_chart",
+        "layout": "half"
+      },
+      {
+        "id": "hkma_loan_amount_chart_block",
+        "type": "chart",
+        "chartId": "hkma_loan_amount_chart"
+      },
+      {
+        "id": "hkma_mortgage_activity_table_block",
+        "type": "table",
+        "tableId": "hkma_mortgage_activity_table"
       },
       {
         "id": "supply_commercial_section",
@@ -1642,6 +1675,16 @@
         "chartId": "bd_supply_floor_area_chart"
       },
       {
+        "id": "bd_supply_history_units_chart_block",
+        "type": "chart",
+        "chartId": "bd_supply_history_units_chart"
+      },
+      {
+        "id": "bd_supply_history_counts_chart_block",
+        "type": "chart",
+        "chartId": "bd_supply_history_counts_chart"
+      },
+      {
         "id": "bd_supply_detail_block",
         "type": "table",
         "tableId": "bd_supply_detail_table"
@@ -1675,55 +1718,12 @@
         "id": "coverage_table",
         "type": "table",
         "tableId": "coverage_table"
-      },
-      {
-        "id": "hkma_mortgage_activity_table_block",
-        "type": "table",
-        "tableId": "hkma_mortgage_activity_table"
-      },
-      {
-        "id": "hkma_applications_chart_block",
-        "type": "chart",
-        "chartId": "hkma_applications_chart",
-        "layout": "half"
-      },
-      {
-        "id": "bd_supply_history_units_chart_block",
-        "type": "chart",
-        "chartId": "bd_supply_history_units_chart"
-      },
-      {
-        "id": "bd_supply_history_counts_chart_block",
-        "type": "chart",
-        "chartId": "bd_supply_history_counts_chart"
-      },
-      {
-        "id": "hkma_ltv_chart_block",
-        "type": "chart",
-        "chartId": "hkma_ltv_chart",
-        "layout": "half"
-      },
-      {
-        "id": "hkma_loan_amount_chart_block",
-        "type": "chart",
-        "chartId": "hkma_loan_amount_chart"
-      },
-      {
-        "id": "hkma_credit_quality_chart_block",
-        "type": "chart",
-        "chartId": "hkma_credit_quality_chart",
-        "layout": "half"
-      },
-      {
-        "id": "hkma_mortgage_chart_block",
-        "type": "chart",
-        "chartId": "hkma_mortgage_rate_mix_chart"
       }
     ]
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-09T13:36:08.172583Z",
+    "generatedAt": "2026-08-11T07:38:11.741985Z",
     "status": "ready",
     "datasets": {
       "kpi_ccl": [
@@ -16270,6 +16270,11 @@
           "date": "2026-06",
           "series": "Overall",
           "value": 134.61
+        },
+        {
+          "date": "2026-07",
+          "series": "Overall",
+          "value": 136.34
         }
       ],
       "cri_yield_history": [
@@ -43317,6 +43322,11 @@
           "date": "2026-06",
           "series": "CRI",
           "value": 116.2235
+        },
+        {
+          "date": "2026-07",
+          "series": "CRI",
+          "value": 117.7171
         }
       ],
       "hkma_mortgage_rate_mix": [
@@ -45599,6 +45609,26 @@
           "date": "2026-05",
           "series": "Other",
           "value": 4.3
+        },
+        {
+          "date": "2026-06",
+          "series": "HIBOR",
+          "value": 70.0
+        },
+        {
+          "date": "2026-06",
+          "series": "BLR (Prime)",
+          "value": 1.3
+        },
+        {
+          "date": "2026-06",
+          "series": "Fixed",
+          "value": 25.1
+        },
+        {
+          "date": "2026-06",
+          "series": "Other",
+          "value": 3.7
         }
       ],
       "hkma_ltv_history": [
@@ -46171,6 +46201,11 @@
           "date": "2026-05",
           "series": "Average LTV (%)",
           "value": 60.3
+        },
+        {
+          "date": "2026-06",
+          "series": "Average LTV (%)",
+          "value": 61.1
         }
       ],
       "hkma_credit_quality_history": [
@@ -46745,6 +46780,11 @@
           "value": 0.11
         },
         {
+          "date": "2026-06",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.11
+        },
+        {
           "date": "2016-12",
           "series": "Rescheduled Loan Ratio (%)",
           "value": 0.0
@@ -47311,6 +47351,11 @@
         },
         {
           "date": "2026-05",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0.0
+        },
+        {
+          "date": "2026-06",
           "series": "Rescheduled Loan Ratio (%)",
           "value": 0.0
         }
@@ -48341,6 +48386,15 @@
           "approved_secondary_amount_mhkd": 23804.0,
           "approved_refinancing_amount_mhkd": 4726.0,
           "drawn_down_amount_mhkd": 23573.0
+        },
+        {
+          "date": "2026-06",
+          "new_applications_count": 12117.0,
+          "approved_loans_amount_mhkd": 50592.0,
+          "approved_primary_presales_amount_mhkd": 15481.0,
+          "approved_secondary_amount_mhkd": 28941.0,
+          "approved_refinancing_amount_mhkd": 6170.0,
+          "drawn_down_amount_mhkd": 27720.0
         }
       ],
       "hkma_applications_history": [
@@ -48913,6 +48967,11 @@
           "date": "2026-05",
           "series": "New Applications",
           "value": 10767.0
+        },
+        {
+          "date": "2026-06",
+          "series": "New Applications",
+          "value": 12117.0
         }
       ],
       "hkma_loan_amount_history": [
@@ -49487,6 +49546,11 @@
           "value": 40231.0
         },
         {
+          "date": "2026-06",
+          "series": "Approved Loans (Total)",
+          "value": 50592.0
+        },
+        {
           "date": "2016-12",
           "series": "Drawn Down",
           "value": 29556.0
@@ -50057,6 +50121,11 @@
           "value": 23573.0
         },
         {
+          "date": "2026-06",
+          "series": "Drawn Down",
+          "value": 27720.0
+        },
+        {
           "date": "2016-12",
           "series": "Secondary",
           "value": 15099.0
@@ -50625,6 +50694,11 @@
           "date": "2026-05",
           "series": "Secondary",
           "value": 23804.0
+        },
+        {
+          "date": "2026-06",
+          "series": "Secondary",
+          "value": 28941.0
         }
       ],
       "cnsd_construction_value": [
@@ -67299,21 +67373,750 @@
       ],
       "agency_transactions_pulse": [
         {
-          "transaction_date": "2026-08-08",
-          "estate_name": "嘉寶大廈",
-          "saleable_area_sqft": 335.0,
-          "price_hkd": 3800000.0,
-          "unit_price_hkd_sqft": 11343.0,
+          "transaction_date": "2026-08-11",
+          "estate_name": "利文樓",
+          "saleable_area_sqft": 485.0,
+          "price_hkd": 6630000.0,
+          "unit_price_hkd_sqft": 13670.0,
           "primary_source_agency": "Centaline Property Agency",
           "matched_agency_count": 1
         },
         {
-          "transaction_date": "2026-08-08",
-          "estate_name": "荃灣中心",
-          "saleable_area_sqft": 329.0,
-          "price_hkd": 3450000.0,
-          "unit_price_hkd_sqft": 10486.0,
+          "transaction_date": "2026-08-11",
+          "estate_name": "華貴邨",
+          "saleable_area_sqft": 385.0,
+          "price_hkd": 2630000.0,
+          "unit_price_hkd_sqft": 6831.0,
           "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-11",
+          "estate_name": "君傲灣",
+          "saleable_area_sqft": 671.0,
+          "price_hkd": 9550000.0,
+          "unit_price_hkd_sqft": 14232.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-11",
+          "estate_name": "1期",
+          "saleable_area_sqft": 590.0,
+          "price_hkd": 5555000.0,
+          "unit_price_hkd_sqft": 9415.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-11",
+          "estate_name": "龍蟠苑",
+          "saleable_area_sqft": 426.0,
+          "price_hkd": 5280000.0,
+          "unit_price_hkd_sqft": 12394.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-11",
+          "estate_name": "御皇臺",
+          "saleable_area_sqft": 379.0,
+          "price_hkd": 6200000.0,
+          "unit_price_hkd_sqft": 16359.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-11",
+          "estate_name": "6期 Lp6",
+          "saleable_area_sqft": 701.0,
+          "price_hkd": 10950000.0,
+          "unit_price_hkd_sqft": 15621.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-11",
+          "estate_name": "3期",
+          "saleable_area_sqft": 450.0,
+          "price_hkd": 5780000.0,
+          "unit_price_hkd_sqft": 12844.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-11",
+          "estate_name": "仁愛苑",
+          "saleable_area_sqft": 393.0,
+          "price_hkd": 4280000.0,
+          "unit_price_hkd_sqft": 10891.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-11",
+          "estate_name": "2期 Yoho Midtown",
+          "saleable_area_sqft": 507.0,
+          "price_hkd": 8000000.0,
+          "unit_price_hkd_sqft": 15779.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-11",
+          "estate_name": "海天花園",
+          "saleable_area_sqft": 760.0,
+          "price_hkd": 16900000.0,
+          "unit_price_hkd_sqft": 22237.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-11",
+          "estate_name": "匯璽",
+          "saleable_area_sqft": 352.0,
+          "price_hkd": 8580000.0,
+          "unit_price_hkd_sqft": 24375.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-11",
+          "estate_name": "The Holborn",
+          "saleable_area_sqft": 268.0,
+          "price_hkd": 6500000.0,
+          "unit_price_hkd_sqft": 24254.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-11",
+          "estate_name": "1期",
+          "saleable_area_sqft": 365.0,
+          "price_hkd": 3728000.0,
+          "unit_price_hkd_sqft": 10214.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-11",
+          "estate_name": "3期",
+          "saleable_area_sqft": 728.0,
+          "price_hkd": 8000000.0,
+          "unit_price_hkd_sqft": 10989.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-11",
+          "estate_name": "東頭(二)邨",
+          "saleable_area_sqft": 436.0,
+          "price_hkd": 2900000.0,
+          "unit_price_hkd_sqft": 6651.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-11",
+          "estate_name": "1期 樂湖居",
+          "saleable_area_sqft": 551.0,
+          "price_hkd": 4350000.0,
+          "unit_price_hkd_sqft": 7895.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-11",
+          "estate_name": "1期",
+          "saleable_area_sqft": 466.0,
+          "price_hkd": 10180000.0,
+          "unit_price_hkd_sqft": 21845.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-11",
+          "estate_name": "3期",
+          "saleable_area_sqft": 592.0,
+          "price_hkd": 9200000.0,
+          "unit_price_hkd_sqft": 15541.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-11",
+          "estate_name": "Capri",
+          "saleable_area_sqft": 544.0,
+          "price_hkd": 9350000.0,
+          "unit_price_hkd_sqft": 17188.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-11",
+          "estate_name": "3期 匯璽ll",
+          "saleable_area_sqft": 352.0,
+          "price_hkd": 8580000.0,
+          "unit_price_hkd_sqft": 24375.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-11",
+          "estate_name": "5期 匯璽III",
+          "saleable_area_sqft": 366.0,
+          "price_hkd": 9030000.0,
+          "unit_price_hkd_sqft": 24672.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-11",
+          "estate_name": "匯璽",
+          "saleable_area_sqft": 366.0,
+          "price_hkd": 9030000.0,
+          "unit_price_hkd_sqft": 24672.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-11",
+          "estate_name": "名城",
+          "saleable_area_sqft": 784.0,
+          "price_hkd": 13980000.0,
+          "unit_price_hkd_sqft": 17832.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-11",
+          "estate_name": "雍盛苑",
+          "saleable_area_sqft": 206.0,
+          "price_hkd": 2360000.0,
+          "unit_price_hkd_sqft": 11456.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-11",
+          "estate_name": "置富花園",
+          "saleable_area_sqft": 439.0,
+          "price_hkd": 5680000.0,
+          "unit_price_hkd_sqft": 12938.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-11",
+          "estate_name": "2期 盛薈",
+          "saleable_area_sqft": 784.0,
+          "price_hkd": 13980000.0,
+          "unit_price_hkd_sqft": 17832.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "3B期",
+          "saleable_area_sqft": 460.0,
+          "price_hkd": 5950000.0,
+          "unit_price_hkd_sqft": 12935.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "好運中心",
+          "saleable_area_sqft": 443.0,
+          "price_hkd": 6650000.0,
+          "unit_price_hkd_sqft": 15011.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "匯景花園",
+          "saleable_area_sqft": 537.0,
+          "price_hkd": 7000000.0,
+          "unit_price_hkd_sqft": 13035.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "天宇海",
+          "saleable_area_sqft": 763.0,
+          "price_hkd": 10880000.0,
+          "unit_price_hkd_sqft": 14260.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "御龍山",
+          "saleable_area_sqft": 1426.0,
+          "price_hkd": 26980000.0,
+          "unit_price_hkd_sqft": 18920.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "嘉湖山莊",
+          "saleable_area_sqft": 446.0,
+          "price_hkd": 4200000.0,
+          "unit_price_hkd_sqft": 9417.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "愛海頌",
+          "saleable_area_sqft": 507.0,
+          "price_hkd": 8760000.0,
+          "unit_price_hkd_sqft": 17278.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "藝里坊．2號",
+          "saleable_area_sqft": 381.0,
+          "price_hkd": 11000000.0,
+          "unit_price_hkd_sqft": 28871.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "匯景花園",
+          "saleable_area_sqft": 614.0,
+          "price_hkd": 7568000.0,
+          "unit_price_hkd_sqft": 12326.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "1期",
+          "saleable_area_sqft": 692.0,
+          "price_hkd": 21180000.0,
+          "unit_price_hkd_sqft": 30607.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "文安樓",
+          "saleable_area_sqft": 457.0,
+          "price_hkd": 5970000.0,
+          "unit_price_hkd_sqft": 13063.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "李鄭屋邨",
+          "saleable_area_sqft": 491.0,
+          "price_hkd": 3668000.0,
+          "unit_price_hkd_sqft": 7470.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "海光苑",
+          "saleable_area_sqft": 510.0,
+          "price_hkd": 6190000.0,
+          "unit_price_hkd_sqft": 12137.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "映日灣",
+          "saleable_area_sqft": 219.0,
+          "price_hkd": 4610000.0,
+          "unit_price_hkd_sqft": 21050.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "海怡花園",
+          "saleable_area_sqft": 378.0,
+          "price_hkd": 6600000.0,
+          "unit_price_hkd_sqft": 17460.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "凱譽",
+          "saleable_area_sqft": 681.0,
+          "price_hkd": 15030000.0,
+          "unit_price_hkd_sqft": 22070.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "雨後",
+          "saleable_area_sqft": 268.0,
+          "price_hkd": 3750000.0,
+          "unit_price_hkd_sqft": 13993.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "1期",
+          "saleable_area_sqft": 687.0,
+          "price_hkd": 10790000.0,
+          "unit_price_hkd_sqft": 15706.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "東港城",
+          "saleable_area_sqft": 623.0,
+          "price_hkd": 8700000.0,
+          "unit_price_hkd_sqft": 13965.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "黃埔花園",
+          "saleable_area_sqft": 505.0,
+          "price_hkd": 7000000.0,
+          "unit_price_hkd_sqft": 13861.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "黃埔花園",
+          "saleable_area_sqft": 681.0,
+          "price_hkd": 2700000.0,
+          "unit_price_hkd_sqft": 3965.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "溱柏",
+          "saleable_area_sqft": 633.0,
+          "price_hkd": 6330000.0,
+          "unit_price_hkd_sqft": 10000.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "海堤灣畔",
+          "saleable_area_sqft": 582.0,
+          "price_hkd": 7600000.0,
+          "unit_price_hkd_sqft": 13058.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "黃埔花園",
+          "saleable_area_sqft": 389.0,
+          "price_hkd": 5738000.0,
+          "unit_price_hkd_sqft": 14751.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "3期 盛世",
+          "saleable_area_sqft": 786.0,
+          "price_hkd": 14838000.0,
+          "unit_price_hkd_sqft": 18878.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "7期 景湖居",
+          "saleable_area_sqft": 635.0,
+          "price_hkd": 5500000.0,
+          "unit_price_hkd_sqft": 8661.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "新光中心",
+          "saleable_area_sqft": 412.0,
+          "price_hkd": 5418000.0,
+          "unit_price_hkd_sqft": 13150.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "匯璽",
+          "saleable_area_sqft": 379.0,
+          "price_hkd": 8530000.0,
+          "unit_price_hkd_sqft": 22507.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "沙田第一城",
+          "saleable_area_sqft": 304.0,
+          "price_hkd": 4580000.0,
+          "unit_price_hkd_sqft": 15066.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "會展中心會景閣",
+          "saleable_area_sqft": 618.0,
+          "price_hkd": 10500000.0,
+          "unit_price_hkd_sqft": 16990.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "帝峰．皇殿",
+          "saleable_area_sqft": 899.0,
+          "price_hkd": 27000000.0,
+          "unit_price_hkd_sqft": 30033.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "昇悅居",
+          "saleable_area_sqft": null,
+          "price_hkd": 8860000.0,
+          "unit_price_hkd_sqft": null,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "康威花園",
+          "saleable_area_sqft": 425.0,
+          "price_hkd": 6150000.0,
+          "unit_price_hkd_sqft": 14471.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "A段",
+          "saleable_area_sqft": 536.0,
+          "price_hkd": 8480000.0,
+          "unit_price_hkd_sqft": 15821.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "城．點",
+          "saleable_area_sqft": 220.0,
+          "price_hkd": 3520000.0,
+          "unit_price_hkd_sqft": 16000.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "海濱花園",
+          "saleable_area_sqft": 496.0,
+          "price_hkd": 5100000.0,
+          "unit_price_hkd_sqft": 10282.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "御．豪門",
+          "saleable_area_sqft": 887.0,
+          "price_hkd": 12300000.0,
+          "unit_price_hkd_sqft": 13867.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "維景灣畔",
+          "saleable_area_sqft": 499.0,
+          "price_hkd": 8150000.0,
+          "unit_price_hkd_sqft": 16333.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "5期 麗湖居",
+          "saleable_area_sqft": 446.0,
+          "price_hkd": 4200000.0,
+          "unit_price_hkd_sqft": 9417.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "1期",
+          "saleable_area_sqft": 738.0,
+          "price_hkd": 7900000.0,
+          "unit_price_hkd_sqft": 10705.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "朗屏邨",
+          "saleable_area_sqft": 423.0,
+          "price_hkd": 1930000.0,
+          "unit_price_hkd_sqft": 4563.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "1期",
+          "saleable_area_sqft": 851.0,
+          "price_hkd": 14880000.0,
+          "unit_price_hkd_sqft": 17485.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "瑞興閣",
+          "saleable_area_sqft": 212.0,
+          "price_hkd": 2150000.0,
+          "unit_price_hkd_sqft": 10142.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "嘉湖山莊",
+          "saleable_area_sqft": 635.0,
+          "price_hkd": 5500000.0,
+          "unit_price_hkd_sqft": 8661.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "將軍澳中心",
+          "saleable_area_sqft": 687.0,
+          "price_hkd": 10790000.0,
+          "unit_price_hkd_sqft": 15706.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "6期愉景廣場",
+          "saleable_area_sqft": 439.0,
+          "price_hkd": 4200000.0,
+          "unit_price_hkd_sqft": 9567.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "名城",
+          "saleable_area_sqft": 786.0,
+          "price_hkd": 14838000.0,
+          "unit_price_hkd_sqft": 18878.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "I",
+          "saleable_area_sqft": 913.0,
+          "price_hkd": 11550000.0,
+          "unit_price_hkd_sqft": 12651.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "德福花園",
+          "saleable_area_sqft": 517.0,
+          "price_hkd": 5380000.0,
+          "unit_price_hkd_sqft": 10406.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "光明臺",
+          "saleable_area_sqft": 568.0,
+          "price_hkd": 9850000.0,
+          "unit_price_hkd_sqft": 17342.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "6期 Lp6",
+          "saleable_area_sqft": 306.0,
+          "price_hkd": 4650000.0,
+          "unit_price_hkd_sqft": 15196.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "景峰豪庭",
+          "saleable_area_sqft": 535.0,
+          "price_hkd": 5000000.0,
+          "unit_price_hkd_sqft": 9346.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "天晉",
+          "saleable_area_sqft": 606.0,
+          "price_hkd": 10800000.0,
+          "unit_price_hkd_sqft": 17822.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "美孚新邨",
+          "saleable_area_sqft": 717.0,
+          "price_hkd": 8330000.0,
+          "unit_price_hkd_sqft": 11618.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "維景灣畔",
+          "saleable_area_sqft": 787.0,
+          "price_hkd": 8000000.0,
+          "unit_price_hkd_sqft": 10165.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "estate_name": "柏傲莊",
+          "saleable_area_sqft": 534.0,
+          "price_hkd": 13000000.0,
+          "unit_price_hkd_sqft": 24345.0,
+          "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
         {
@@ -67322,6 +68125,24 @@
           "saleable_area_sqft": 583.0,
           "price_hkd": 9638000.0,
           "unit_price_hkd_sqft": 16532.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-07",
+          "estate_name": "柏傲莊",
+          "saleable_area_sqft": 452.0,
+          "price_hkd": 10550000.0,
+          "unit_price_hkd_sqft": 23341.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-07",
+          "estate_name": "嘉湖山莊",
+          "saleable_area_sqft": 547.0,
+          "price_hkd": 4980000.0,
+          "unit_price_hkd_sqft": 9104.0,
           "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
@@ -67336,10 +68157,91 @@
         },
         {
           "transaction_date": "2026-08-07",
+          "estate_name": "柏傲莊",
+          "saleable_area_sqft": 472.0,
+          "price_hkd": 10880000.0,
+          "unit_price_hkd_sqft": 23051.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-07",
+          "estate_name": "黃埔花園",
+          "saleable_area_sqft": 487.0,
+          "price_hkd": 6300000.0,
+          "unit_price_hkd_sqft": 12936.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-07",
+          "estate_name": "美孚新邨",
+          "saleable_area_sqft": 926.0,
+          "price_hkd": 3000000.0,
+          "unit_price_hkd_sqft": 3240.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-07",
+          "estate_name": "黃埔花園",
+          "saleable_area_sqft": 364.0,
+          "price_hkd": 5680000.0,
+          "unit_price_hkd_sqft": 15604.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-07",
+          "estate_name": "嘉湖山莊",
+          "saleable_area_sqft": 636.0,
+          "price_hkd": 5250000.0,
+          "unit_price_hkd_sqft": 8255.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-07",
+          "estate_name": "維景灣畔",
+          "saleable_area_sqft": 527.0,
+          "price_hkd": 9600000.0,
+          "unit_price_hkd_sqft": 18216.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-07",
+          "estate_name": "美孚新邨",
+          "saleable_area_sqft": 701.0,
+          "price_hkd": 8000000.0,
+          "unit_price_hkd_sqft": 11412.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-07",
+          "estate_name": "映灣園",
+          "saleable_area_sqft": 736.0,
+          "price_hkd": 7770000.0,
+          "unit_price_hkd_sqft": 10557.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-07",
           "estate_name": "嘉湖山莊",
           "saleable_area_sqft": 449.0,
           "price_hkd": 4100000.0,
           "unit_price_hkd_sqft": 9131.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-07",
+          "estate_name": "黃埔花園",
+          "saleable_area_sqft": 505.0,
+          "price_hkd": 7525000.0,
+          "unit_price_hkd_sqft": 14901.0,
           "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
@@ -67768,15 +68670,6 @@
         },
         {
           "transaction_date": "2026-07-31",
-          "estate_name": "美孚新邨",
-          "saleable_area_sqft": 853.0,
-          "price_hkd": 10236000.0,
-          "unit_price_hkd_sqft": 12000.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
           "estate_name": "維景灣畔",
           "saleable_area_sqft": 603.0,
           "price_hkd": 10100000.0,
@@ -67804,24 +68697,6 @@
         },
         {
           "transaction_date": "2026-07-31",
-          "estate_name": "美孚新邨",
-          "saleable_area_sqft": 982.0,
-          "price_hkd": 10400000.0,
-          "unit_price_hkd_sqft": 10591.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "柏傲莊",
-          "saleable_area_sqft": 998.0,
-          "price_hkd": 27000000.0,
-          "unit_price_hkd_sqft": 27054.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
           "estate_name": "名城",
           "saleable_area_sqft": 679.0,
           "price_hkd": 12280000.0,
@@ -67840,28 +68715,10 @@
         },
         {
           "transaction_date": "2026-07-31",
-          "estate_name": "嘉湖山莊",
-          "saleable_area_sqft": 442.0,
-          "price_hkd": 4400000.0,
-          "unit_price_hkd_sqft": 9955.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
           "estate_name": "美孚新邨",
           "saleable_area_sqft": 918.0,
           "price_hkd": 10280000.0,
           "unit_price_hkd_sqft": 11198.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "美孚新邨",
-          "saleable_area_sqft": 717.0,
-          "price_hkd": 8330000.0,
-          "unit_price_hkd_sqft": 11618.0,
           "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
@@ -67939,15 +68796,6 @@
         },
         {
           "transaction_date": "2026-07-30",
-          "estate_name": "嘉湖山莊",
-          "saleable_area_sqft": 633.0,
-          "price_hkd": 5200000.0,
-          "unit_price_hkd_sqft": 8215.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-30",
           "estate_name": "維景灣畔",
           "saleable_area_sqft": 603.0,
           "price_hkd": 9880000.0,
@@ -67975,28 +68823,10 @@
         },
         {
           "transaction_date": "2026-07-30",
-          "estate_name": "嘉湖山莊",
-          "saleable_area_sqft": 636.0,
-          "price_hkd": 5250000.0,
-          "unit_price_hkd_sqft": 8255.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-30",
           "estate_name": "沙田第一城",
           "saleable_area_sqft": 478.0,
           "price_hkd": 3000000.0,
           "unit_price_hkd_sqft": 6276.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-30",
-          "estate_name": "嘉湖山莊",
-          "saleable_area_sqft": 448.0,
-          "price_hkd": 4000000.0,
-          "unit_price_hkd_sqft": 8929.0,
           "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
@@ -68015,15 +68845,6 @@
           "saleable_area_sqft": 791.0,
           "price_hkd": 16000000.0,
           "unit_price_hkd_sqft": 20228.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-29",
-          "estate_name": "匯璽",
-          "saleable_area_sqft": 1327.0,
-          "price_hkd": 32800000.0,
-          "unit_price_hkd_sqft": 24717.0,
           "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
@@ -68074,24 +68895,6 @@
         },
         {
           "transaction_date": "2026-07-28",
-          "estate_name": "名城",
-          "saleable_area_sqft": 678.0,
-          "price_hkd": 2400000.0,
-          "unit_price_hkd_sqft": 3540.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-28",
-          "estate_name": "柏傲莊",
-          "saleable_area_sqft": 826.0,
-          "price_hkd": 22299000.0,
-          "unit_price_hkd_sqft": 26996.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-28",
           "estate_name": "映灣園",
           "saleable_area_sqft": 518.0,
           "price_hkd": 5320000.0,
@@ -68119,15 +68922,6 @@
         },
         {
           "transaction_date": "2026-07-28",
-          "estate_name": "匯璽",
-          "saleable_area_sqft": 379.0,
-          "price_hkd": 8400000.0,
-          "unit_price_hkd_sqft": 22164.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-28",
           "estate_name": "映灣園",
           "saleable_area_sqft": 520.0,
           "price_hkd": 5298000.0,
@@ -68146,28 +68940,10 @@
         },
         {
           "transaction_date": "2026-07-28",
-          "estate_name": "柏傲莊",
-          "saleable_area_sqft": 393.0,
-          "price_hkd": 9680000.0,
-          "unit_price_hkd_sqft": 24631.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-28",
           "estate_name": "港島南岸",
           "saleable_area_sqft": 941.0,
           "price_hkd": 43598000.0,
           "unit_price_hkd_sqft": 46332.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-27",
-          "estate_name": "黃埔花園",
-          "saleable_area_sqft": 814.0,
-          "price_hkd": 11100000.0,
-          "unit_price_hkd_sqft": 13636.0,
           "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
@@ -68204,33 +68980,6 @@
           "saleable_area_sqft": 384.0,
           "price_hkd": 5650000.0,
           "unit_price_hkd_sqft": 14714.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-24",
-          "estate_name": "名城",
-          "saleable_area_sqft": 1264.0,
-          "price_hkd": 17600000.0,
-          "unit_price_hkd_sqft": 13924.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-24",
-          "estate_name": "維景灣畔",
-          "saleable_area_sqft": 513.0,
-          "price_hkd": 8830000.0,
-          "unit_price_hkd_sqft": 17212.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-24",
-          "estate_name": "匯璽",
-          "saleable_area_sqft": 354.0,
-          "price_hkd": 8500000.0,
-          "unit_price_hkd_sqft": 24011.0,
           "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
@@ -68290,37 +69039,10 @@
         },
         {
           "transaction_date": "2026-07-23",
-          "estate_name": "黃埔花園",
-          "saleable_area_sqft": 389.0,
-          "price_hkd": 6100000.0,
-          "unit_price_hkd_sqft": 15681.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-23",
-          "estate_name": "黃埔花園",
-          "saleable_area_sqft": 761.0,
-          "price_hkd": 10660000.0,
-          "unit_price_hkd_sqft": 14008.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-23",
           "estate_name": "天晉",
           "saleable_area_sqft": 862.0,
           "price_hkd": 20200000.0,
           "unit_price_hkd_sqft": 23434.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-23",
-          "estate_name": "黃埔花園",
-          "saleable_area_sqft": 466.0,
-          "price_hkd": 7150000.0,
-          "unit_price_hkd_sqft": 15343.0,
           "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
@@ -68353,24 +69075,6 @@
         },
         {
           "transaction_date": "2026-07-22",
-          "estate_name": "黃埔花園",
-          "saleable_area_sqft": 505.0,
-          "price_hkd": 7525000.0,
-          "unit_price_hkd_sqft": 14901.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-22",
-          "estate_name": "沙田第一城",
-          "saleable_area_sqft": 304.0,
-          "price_hkd": 4550000.0,
-          "unit_price_hkd_sqft": 14967.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-22",
           "estate_name": "天晉",
           "saleable_area_sqft": 617.0,
           "price_hkd": 12300000.0,
@@ -68389,46 +69093,10 @@
         },
         {
           "transaction_date": "2026-07-21",
-          "estate_name": "維景灣畔",
-          "saleable_area_sqft": 639.0,
-          "price_hkd": 11000000.0,
-          "unit_price_hkd_sqft": 17214.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-21",
           "estate_name": "港島南岸",
           "saleable_area_sqft": 386.0,
           "price_hkd": 9000000.0,
           "unit_price_hkd_sqft": 23316.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-21",
-          "estate_name": "黃埔花園",
-          "saleable_area_sqft": 389.0,
-          "price_hkd": 5820000.0,
-          "unit_price_hkd_sqft": 14961.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-20",
-          "estate_name": "映灣園",
-          "saleable_area_sqft": 1013.0,
-          "price_hkd": 7680000.0,
-          "unit_price_hkd_sqft": 7581.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-20",
-          "estate_name": "天晉",
-          "saleable_area_sqft": 617.0,
-          "price_hkd": 12300000.0,
-          "unit_price_hkd_sqft": 19935.0,
           "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
@@ -68465,15 +69133,6 @@
           "saleable_area_sqft": 425.0,
           "price_hkd": 7100000.0,
           "unit_price_hkd_sqft": 16706.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-17",
-          "estate_name": "維景灣畔",
-          "saleable_area_sqft": 499.0,
-          "price_hkd": 8150000.0,
-          "unit_price_hkd_sqft": 16333.0,
           "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
@@ -68519,15 +69178,6 @@
           "saleable_area_sqft": 497.0,
           "price_hkd": 3500000.0,
           "unit_price_hkd_sqft": 7042.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-14",
-          "estate_name": "將軍澳中心",
-          "saleable_area_sqft": 638.0,
-          "price_hkd": 10800000.0,
-          "unit_price_hkd_sqft": 16928.0,
           "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
@@ -70154,7 +70804,7 @@
           "status": "Healthy",
           "latest_observation": "2026-08-02",
           "records": 1701,
-          "freshness": "7d old",
+          "freshness": "9d old",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
@@ -70164,7 +70814,7 @@
           "status": "Healthy",
           "latest_observation": "2026-08-03",
           "records": 543,
-          "freshness": "6d old",
+          "freshness": "8d old",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
@@ -70174,7 +70824,7 @@
           "status": "Healthy",
           "latest_observation": "2026-08-03",
           "records": 445,
-          "freshness": "6d old",
+          "freshness": "8d old",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
@@ -70184,7 +70834,7 @@
           "status": "Healthy",
           "latest_observation": "2026-06-01",
           "records": 402,
-          "freshness": "69d old",
+          "freshness": "71d old",
           "notes": "Latest observation is provisional."
         },
         {
@@ -70194,8 +70844,18 @@
           "status": "Healthy",
           "latest_observation": "2026-06-01",
           "records": 402,
-          "freshness": "69d old",
+          "freshness": "71d old",
           "notes": "Latest observation is provisional."
+        },
+        {
+          "source": "HKMA Residential Mortgage Survey",
+          "dataset": "HKMA residential mortgage survey",
+          "type": "Measure",
+          "status": "Healthy",
+          "latest_observation": "2026-06-01",
+          "records": 115,
+          "freshness": "71d old",
+          "notes": "Official monthly residential mortgage survey; the source may revise the latest month."
         },
         {
           "source": "Centaline CCI — Residential Price Index",
@@ -70204,7 +70864,7 @@
           "status": "Healthy",
           "latest_observation": "2026-05-01",
           "records": 389,
-          "freshness": "100d old",
+          "freshness": "102d old",
           "notes": "Normalized residential price index; CCI is not a sentiment measure."
         },
         {
@@ -70212,9 +70872,9 @@
           "dataset": "Centaline CRI monthly",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-06-01",
-          "records": 707,
-          "freshness": "69d old",
+          "latest_observation": "2026-07-01",
+          "records": 708,
+          "freshness": "41d old",
           "notes": "Normalized residential rental index; rental-yield history is a companion dataset."
         },
         {
@@ -70224,7 +70884,7 @@
           "status": "Healthy",
           "latest_observation": "2026-08-03",
           "records": 1118,
-          "freshness": "6d old",
+          "freshness": "8d old",
           "notes": "Normalized sentiment history; not a transaction or price series."
         },
         {
@@ -70234,7 +70894,7 @@
           "status": "Healthy",
           "latest_observation": "2026-06-01",
           "records": 1608,
-          "freshness": "69d old",
+          "freshness": "71d old",
           "notes": "Official grade-level rental index; provisional flags are retained."
         },
         {
@@ -70244,7 +70904,7 @@
           "status": "Healthy",
           "latest_observation": "2026-06-01",
           "records": 804,
-          "freshness": "69d old",
+          "freshness": "71d old",
           "notes": "Official retail rental/price indices; provisional flags are retained."
         },
         {
@@ -70256,16 +70916,6 @@
           "records": 41,
           "freshness": "Published snapshot",
           "notes": "Six explicitly registered phases; attributable sales use the ownership registry and sell-through uses unique active units."
-        },
-        {
-          "source": "HKMA Residential Mortgage Survey",
-          "dataset": "HKMA residential mortgage survey",
-          "type": "Measure",
-          "status": "Healthy",
-          "latest_observation": "2026-05-01",
-          "records": 114,
-          "freshness": "69d old",
-          "notes": "Official monthly residential mortgage survey; the source may revise the latest month."
         }
       ],
       "source_coverage": [
@@ -70276,7 +70926,7 @@
           "status": "Healthy",
           "latest_observation": "2026-08-02",
           "records": 1701,
-          "freshness": "7d old",
+          "freshness": "9d old",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
@@ -70286,7 +70936,7 @@
           "status": "Healthy",
           "latest_observation": "2026-08-03",
           "records": 543,
-          "freshness": "6d old",
+          "freshness": "8d old",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
@@ -70296,7 +70946,7 @@
           "status": "Healthy",
           "latest_observation": "2026-08-03",
           "records": 445,
-          "freshness": "6d old",
+          "freshness": "8d old",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
@@ -70306,7 +70956,7 @@
           "status": "Healthy",
           "latest_observation": "2026-06-01",
           "records": 402,
-          "freshness": "69d old",
+          "freshness": "71d old",
           "notes": "Latest observation is provisional."
         },
         {
@@ -70316,8 +70966,18 @@
           "status": "Healthy",
           "latest_observation": "2026-06-01",
           "records": 402,
-          "freshness": "69d old",
+          "freshness": "71d old",
           "notes": "Latest observation is provisional."
+        },
+        {
+          "source": "HKMA Residential Mortgage Survey",
+          "dataset": "HKMA residential mortgage survey",
+          "type": "Measure",
+          "status": "Healthy",
+          "latest_observation": "2026-06-01",
+          "records": 115,
+          "freshness": "71d old",
+          "notes": "Official monthly residential mortgage survey; the source may revise the latest month."
         },
         {
           "source": "Centaline CCI — Residential Price Index",
@@ -70326,7 +70986,7 @@
           "status": "Healthy",
           "latest_observation": "2026-05-01",
           "records": 389,
-          "freshness": "100d old",
+          "freshness": "102d old",
           "notes": "Normalized residential price index; CCI is not a sentiment measure."
         },
         {
@@ -70334,9 +70994,9 @@
           "dataset": "Centaline CRI monthly",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-06-01",
-          "records": 707,
-          "freshness": "69d old",
+          "latest_observation": "2026-07-01",
+          "records": 708,
+          "freshness": "41d old",
           "notes": "Normalized residential rental index; rental-yield history is a companion dataset."
         },
         {
@@ -70346,7 +71006,7 @@
           "status": "Healthy",
           "latest_observation": "2026-08-03",
           "records": 1118,
-          "freshness": "6d old",
+          "freshness": "8d old",
           "notes": "Normalized sentiment history; not a transaction or price series."
         },
         {
@@ -70356,7 +71016,7 @@
           "status": "Healthy",
           "latest_observation": "2026-06-01",
           "records": 1608,
-          "freshness": "69d old",
+          "freshness": "71d old",
           "notes": "Official grade-level rental index; provisional flags are retained."
         },
         {
@@ -70366,7 +71026,7 @@
           "status": "Healthy",
           "latest_observation": "2026-06-01",
           "records": 804,
-          "freshness": "69d old",
+          "freshness": "71d old",
           "notes": "Official retail rental/price indices; provisional flags are retained."
         },
         {
@@ -70395,7 +71055,7 @@
           "type": "Measure",
           "status": "Healthy",
           "latest_observation": "—",
-          "records": 151,
+          "records": 215,
           "freshness": "Live at build time",
           "notes": "Deduplicated agency transaction feeds; see the chart/table above."
         },
@@ -70420,6 +71080,16 @@
           "notes": "Buildings Department Monthly Digest / Project Lifecycle; see the chart/table above."
         },
         {
+          "source": "Buildings Department history",
+          "dataset": "Md52-Md56 stage aggregates",
+          "type": "Measure",
+          "status": "Stale",
+          "latest_observation": "—",
+          "records": 726,
+          "freshness": "Previous artifact snapshot",
+          "notes": "Buildings Department Monthly Digest PDF archive (Section 1 aggregate tables); live cache/fetch was unavailable, so the last committed artifact was retained."
+        },
+        {
           "source": "SRPE pilot",
           "dataset": "Phase-level first-hand sales signals",
           "type": "Measure",
@@ -70438,26 +71108,6 @@
           "records": 0,
           "freshness": "Content parser pending",
           "notes": "The dashboard currently covers six explicit pilot phases; broader developer and phase coverage still requires registry expansion and backfill."
-        },
-        {
-          "source": "Buildings Department history",
-          "dataset": "Md52-Md56 stage aggregates",
-          "type": "Measure",
-          "status": "Healthy",
-          "latest_observation": "—",
-          "records": 1210,
-          "freshness": "Live at build time",
-          "notes": "Buildings Department Monthly Digest PDF archive (Section 1 aggregate tables); see the chart/table above."
-        },
-        {
-          "source": "HKMA Residential Mortgage Survey",
-          "dataset": "HKMA residential mortgage survey",
-          "type": "Measure",
-          "status": "Healthy",
-          "latest_observation": "2026-05-01",
-          "records": 114,
-          "freshness": "69d old",
-          "notes": "Official monthly residential mortgage survey; the source may revise the latest month."
         }
       ]
     }
@@ -70472,7 +71122,7 @@
         "url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/banking/residential-mortgage-survey",
         "language": "JSON",
         "description": "Monthly mortgage loan approvals, LTV ratio, interest rate plan mix (HIBOR vs BLR), and delinquency rates.",
-        "executed_at": "2026-08-09T07:17:08.947914Z"
+        "executed_at": "2026-08-11T07:38:11.741985Z"
       }
     },
     {
@@ -70484,7 +71134,7 @@
         "url": "https://www.censtatd.gov.hk/api/get.php?id=615-66001&lang=en&full_series=1",
         "language": "JSON",
         "description": "Quarterly gross value of construction works performed by main contractors.",
-        "executed_at": "2026-08-09T07:17:08.947914Z"
+        "executed_at": "2026-08-11T07:38:11.741985Z"
       }
     },
     {
@@ -70496,7 +71146,7 @@
         "url": "https://www.censtatd.gov.hk/en/data/stat_report/product/D7000004/att/D7000004.xlsx",
         "language": "XLSX",
         "description": "Quarterly area (sq. m.) and realised premium (HK$ million) of government land disposed via public auction/tender vs. private treaty grant, sourced from Lands Department.",
-        "executed_at": "2026-08-09T07:17:08.947914Z"
+        "executed_at": "2026-08-11T07:38:11.741985Z"
       }
     },
     {
@@ -70512,7 +71162,7 @@
           "CCL latest is the most recent published weekly Centaline City Leading Index observation.",
           "Weekly and yearly movements are latest divided by the prior observation or latest observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-08-09T07:17:08.947914Z"
+        "executed_at": "2026-08-11T07:38:11.741985Z"
       }
     },
     {
@@ -70524,7 +71174,7 @@
         "url": "https://hk.centanet.com/CCI/api/Index/CCI",
         "language": "JSON",
         "description": "Monthly CCI history from the normalized Centaline index contract.",
-        "executed_at": "2026-08-09T07:17:08.947914Z"
+        "executed_at": "2026-08-11T07:38:11.741985Z"
       }
     },
     {
@@ -70536,7 +71186,7 @@
         "url": "https://hk.centanet.com/CCI/api/Index/CRI",
         "language": "JSON",
         "description": "Monthly residential rental index and rental-yield history from the normalized Centaline contract.",
-        "executed_at": "2026-08-09T07:17:08.947914Z"
+        "executed_at": "2026-08-11T07:38:11.741985Z"
       }
     },
     {
@@ -70548,7 +71198,7 @@
         "url": "https://hk.centanet.com/CCI/api/Index/CSI",
         "language": "JSON",
         "description": "Weekly Centaline sentiment observations; not a transaction or price index.",
-        "executed_at": "2026-08-09T07:17:08.947914Z"
+        "executed_at": "2026-08-11T07:38:11.741985Z"
       }
     },
     {
@@ -70564,7 +71214,7 @@
           "MHPI latest is the most recent published overall weekly Midland Hong Kong Property Price Index observation.",
           "Weekly and yearly movements are latest divided by the prior observation or latest observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-08-09T07:17:08.947914Z"
+        "executed_at": "2026-08-11T07:38:11.741985Z"
       }
     },
     {
@@ -70579,7 +71229,7 @@
         "metric_definitions": [
           "The confidence series is a supporting market-sentiment measure published by Midland Realty."
         ],
-        "executed_at": "2026-08-09T07:17:08.947914Z"
+        "executed_at": "2026-08-11T07:38:11.741985Z"
       }
     },
     {
@@ -70595,7 +71245,7 @@
           "RVD price latest is the All Classes monthly private domestic price index.",
           "Monthly and yearly movements are latest divided by the prior month or observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-08-09T07:17:08.947914Z"
+        "executed_at": "2026-08-11T07:38:11.741985Z"
       }
     },
     {
@@ -70611,7 +71261,7 @@
           "RVD rent latest is the All Classes monthly private domestic rental index.",
           "Monthly and yearly movements are latest divided by the prior month or observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-08-09T07:17:08.947914Z"
+        "executed_at": "2026-08-11T07:38:11.741985Z"
       }
     },
     {
@@ -70623,7 +71273,7 @@
         "url": "https://www.rvd.gov.hk/datagovhk/2.3M.csv",
         "language": "CSV",
         "description": "Monthly private office rental indices by grade, including official provisional flags.",
-        "executed_at": "2026-08-09T07:17:08.947914Z"
+        "executed_at": "2026-08-11T07:38:11.741985Z"
       }
     },
     {
@@ -70635,7 +71285,7 @@
         "url": "https://www.rvd.gov.hk/datagovhk/3.2M.csv",
         "language": "CSV",
         "description": "Monthly private retail rental and price indices with official provisional flags.",
-        "executed_at": "2026-08-09T07:17:08.947914Z"
+        "executed_at": "2026-08-11T07:38:11.741985Z"
       }
     },
     {
@@ -70654,7 +71304,7 @@
           "RVD 1.4M.csv",
           "RVD 1.3M.csv"
         ],
-        "executed_at": "2026-08-09T07:17:08.947914Z"
+        "executed_at": "2026-08-11T07:38:11.741985Z"
       }
     },
     {
@@ -70666,7 +71316,7 @@
         "url": "https://www.28hse.com/epi/historical_data/doaction",
         "language": "HTML (embedded in a JSON envelope)",
         "description": "Weekly all-HK Estate Price Index (EPI) and Estate Rental Index (ERI) history, 2016-present.",
-        "executed_at": "2026-08-09T07:17:08.947914Z"
+        "executed_at": "2026-08-11T07:38:11.741985Z"
       }
     },
     {
@@ -70678,7 +71328,7 @@
         "url": "https://www.28hse.com/new-properties",
         "language": "HTML",
         "description": "Catalogue of newly launched residential projects with district and estimated unit count.",
-        "executed_at": "2026-08-09T07:17:08.947914Z"
+        "executed_at": "2026-08-11T07:38:11.741985Z"
       }
     },
     {
@@ -70693,7 +71343,7 @@
           "Midland data.midland.com.hk/info/v1/transactions/buildings",
           "Centaline hk.centanet.com/findproperty/api/Transaction/Search"
         ],
-        "executed_at": "2026-08-09T07:17:08.947914Z"
+        "executed_at": "2026-08-11T07:38:11.741985Z"
       }
     },
     {
@@ -70705,7 +71355,7 @@
         "url": "https://www.landreg.gov.hk/json/monthly_stat/monthly/t1.json",
         "language": "JSON",
         "description": "Monthly deeds-received-for-registration counts (Agreements for Sale & Purchase, Assignments, Mortgages) and the Agreements-for-Sale-and-Purchase (ASP) series.",
-        "executed_at": "2026-08-09T07:17:08.947914Z"
+        "executed_at": "2026-08-11T07:38:11.741985Z"
       }
     },
     {
@@ -70717,7 +71367,7 @@
         "url": "https://www.bd.gov.hk/doc/en/whats-new/monthly-digests/Md11.xls",
         "language": "XLS",
         "description": "Scratch extraction of Buildings Department's monthly digest section-1 statistical tables (Md11-Md17).",
-        "executed_at": "2026-08-09T07:17:08.947914Z"
+        "executed_at": "2026-08-11T07:38:11.741985Z"
       }
     },
     {
@@ -70736,7 +71386,7 @@
           "Md55.xls",
           "Md56.xls"
         ],
-        "executed_at": "2026-08-09T07:17:08.947914Z"
+        "executed_at": "2026-08-11T07:38:11.741985Z"
       }
     },
     {
@@ -70756,7 +71406,7 @@
           "Table 1.6",
           "Table 1.7"
         ],
-        "executed_at": "2026-08-09T07:17:08.947914Z"
+        "executed_at": "2026-08-11T07:38:11.741985Z"
       }
     },
     {
@@ -70772,7 +71422,7 @@
           "Monthly attributable contract sales are gross transaction price multiplied by the listed-company ownership percentage in the phase registry.",
           "Sell-through uses unique active units from the transaction-register history divided by the phase's published total residential properties."
         ],
-        "executed_at": "2026-08-09T07:17:08.947914Z"
+        "executed_at": "2026-08-11T07:38:11.741985Z"
       }
     },
     {
@@ -70786,13 +71436,13 @@
           "Validated core measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-08-09T07:17:08.947914Z"
+        "executed_at": "2026-08-11T07:38:11.741985Z"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-real-estate/",
-    "snapshotId": "a77540ad836d605f",
+    "snapshotId": "37bf17017f3f4789",
     "dataAsOf": "2026-08-03"
   }
 }
