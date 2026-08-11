@@ -362,7 +362,7 @@ def test_provider_activity_source_parses_newline_delimited_next_f_chunks() -> No
     ]
     encoded = json.dumps(
         "1:I[123,[\"chunk.js\"],\"ProviderPage\"]\n"
-        f"44:{json.dumps(payload, separators=(',', ':'))}"
+        f"44: {json.dumps(payload, separators=(',', ':'))}"
     )
     html = f"<html><body><script>self.__next_f.push([1,{encoded}])</script></body></html>"
     source = ProviderActivitySource()
