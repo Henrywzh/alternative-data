@@ -32,6 +32,8 @@ def iter_next_f_chunks(html: str) -> Iterable[tuple[str, Any]]:
             if match is None:
                 break
             payload_start = match.end()
+            while payload_start < len(decoded) and decoded[payload_start].isspace():
+                payload_start += 1
             try:
                 payload, payload_end = decoder.raw_decode(decoded, payload_start)
             except json.JSONDecodeError:
