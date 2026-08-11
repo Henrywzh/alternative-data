@@ -56,12 +56,27 @@ jobs:
         run: |
           python -m research_data.cli --base-dir . build-mart daily_provider_revenue_estimates --refresh
 
+      - name: Refresh overview signals from provider activity
+        run: |
+          python - <<'PY'
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          from market_pulse_data import build_overview_signal_series
+
+          now = datetime.now(timezone.utc)
+          scraped_at = now.isoformat().replace("+00:00", "Z")
+          run_id = now.strftime("%Y%m%dT%H%M%SZ") + "-provider-activity"
+          build_overview_signal_series(Path("."), run_id=run_id, scraped_at=scraped_at)
+          PY
+
       - name: Commit normalized datasets
         run: |
           if git diff --quiet -- \
             data/normalized/openrouter/provider_daily_activity.parquet \
             data/normalized/marts/daily_provider_economics.parquet \
-            data/normalized/marts/daily_provider_revenue_estimates.parquet; then
+            data/normalized/marts/daily_provider_revenue_estimates.parquet \
+            data/normalized/overview/overview_signal_series.parquet; then
             echo "No provider activity or economics changes to commit"
             exit 0
           fi
@@ -71,6 +86,7 @@ jobs:
           git add data/normalized/openrouter/provider_daily_activity.parquet
           git add data/normalized/marts/daily_provider_economics.parquet
           git add data/normalized/marts/daily_provider_revenue_estimates.parquet
+          git add data/normalized/overview/overview_signal_series.parquet
           git commit -m "chore: update provider activity and economics data [$(date -u +%Y-%m-%d)]"
 
           for attempt in 1 2 3; do
@@ -91,4 +107,5 @@ jobs:
             data/normalized/openrouter/provider_daily_activity.parquet
             data/normalized/marts/daily_provider_economics.parquet
             data/normalized/marts/daily_provider_revenue_estimates.parquet
+            data/normalized/overview/overview_signal_series.parquet
           if-no-files-found: warn
