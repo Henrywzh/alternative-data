@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-08-11T07:38:11.741985Z",
-  "snapshot_id": "37bf17017f3f4789",
+  "generated_at": "2026-08-12T07:53:31.408833Z",
+  "snapshot_id": "e4c433c62df3ca51",
   "data_as_of": "2026-08-03",
   "overall_status": "Degraded",
   "live_sources": 12,
@@ -14,7 +14,7 @@
       "status": "Healthy",
       "latest_observation": "2026-08-02",
       "records": 1701,
-      "freshness": "9d old",
+      "freshness": "10d old",
       "notes": "Latest observation is published without a provisional flag."
     },
     {
@@ -24,7 +24,7 @@
       "status": "Healthy",
       "latest_observation": "2026-08-03",
       "records": 543,
-      "freshness": "8d old",
+      "freshness": "9d old",
       "notes": "Latest observation is published without a provisional flag."
     },
     {
@@ -34,7 +34,7 @@
       "status": "Healthy",
       "latest_observation": "2026-08-03",
       "records": 445,
-      "freshness": "8d old",
+      "freshness": "9d old",
       "notes": "Latest observation is published without a provisional flag."
     },
     {
@@ -44,7 +44,7 @@
       "status": "Healthy",
       "latest_observation": "2026-06-01",
       "records": 402,
-      "freshness": "71d old",
+      "freshness": "72d old",
       "notes": "Latest observation is provisional."
     },
     {
@@ -54,7 +54,7 @@
       "status": "Healthy",
       "latest_observation": "2026-06-01",
       "records": 402,
-      "freshness": "71d old",
+      "freshness": "72d old",
       "notes": "Latest observation is provisional."
     },
     {
@@ -64,7 +64,7 @@
       "status": "Healthy",
       "latest_observation": "2026-06-01",
       "records": 115,
-      "freshness": "71d old",
+      "freshness": "72d old",
       "notes": "Official monthly residential mortgage survey; the source may revise the latest month."
     },
     {
@@ -74,7 +74,7 @@
       "status": "Healthy",
       "latest_observation": "2026-05-01",
       "records": 389,
-      "freshness": "102d old",
+      "freshness": "103d old",
       "notes": "Normalized residential price index; CCI is not a sentiment measure."
     },
     {
@@ -84,7 +84,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-01",
       "records": 708,
-      "freshness": "41d old",
+      "freshness": "42d old",
       "notes": "Normalized residential rental index; rental-yield history is a companion dataset."
     },
     {
@@ -94,7 +94,7 @@
       "status": "Healthy",
       "latest_observation": "2026-08-03",
       "records": 1118,
-      "freshness": "8d old",
+      "freshness": "9d old",
       "notes": "Normalized sentiment history; not a transaction or price series."
     },
     {
@@ -104,7 +104,7 @@
       "status": "Healthy",
       "latest_observation": "2026-06-01",
       "records": 1608,
-      "freshness": "71d old",
+      "freshness": "72d old",
       "notes": "Official grade-level rental index; provisional flags are retained."
     },
     {
@@ -114,7 +114,7 @@
       "status": "Healthy",
       "latest_observation": "2026-06-01",
       "records": 804,
-      "freshness": "71d old",
+      "freshness": "72d old",
       "notes": "Official retail rental/price indices; provisional flags are retained."
     },
     {
@@ -143,7 +143,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "—",
-      "records": 215,
+      "records": 235,
       "freshness": "Live at build time",
       "notes": "Deduplicated agency transaction feeds; see the chart/table above."
     },
@@ -198,5 +198,5 @@
       "notes": "The dashboard currently covers six explicit pilot phases; broader developer and phase coverage still requires registry expansion and backfill."
     }
   ],
-  "attachment_filename": "hk-real-estate-dashboard-2026-08-11.html"
+  "attachment_filename": "hk-real-estate-dashboard-2026-08-12.html"
 }
