@@ -141,6 +141,9 @@ data/processed/airline_traffic/*
 # builder that reads them.
 !data/processed/transport/
 data/processed/transport/*
+!data/processed/transport/mtr_farebox_revenue_monthly.csv
+!data/processed/transport/mtr_farebox_revenue_annual_backtest.csv
+!data/processed/transport/mtr_farebox_revenue_h1_backtest.csv
 !data/processed/transport/*.parquet
 
 # artificial_analysis: commit normalized CSVs/parquet + raw run manifests only
@@ -263,10 +266,43 @@ data/raw/minerals_signal_data/images/
 !data/registries/
 data/registries/*
 !data/registries/hk_developer_project_registry.csv
+!data/registries/asia_backtest_target_registry.csv
+!data/registries/asia_backtest_row_status.csv
+!data/registries/asia_backtest_document_registry.csv
+!data/registries/asia_backtest_registry_manifest.json
+!data/registries/asia_backtest_long_form.parquet
+!data/registries/asia_backtest_metrics.parquet
+!data/registries/asia_backtest_metric_intervals.parquet
+!data/registries/asia_backtest_metrics_manifest.json
+!data/registries/asia_backtest_input_bundle.json
+!data/registries/asia_backtest_reconciliation.json
+!data/registries/asia_backtest_latest.json
+!data/registries/runs/
+data/registries/runs/*
+!data/registries/runs/*/
+!data/registries/runs/*/*.parquet
+!data/registries/runs/*/*.json
+# Chart PNGs written by scripts/build_asia_backtest_charts.py under each run
+# directory's charts/ subfolder are regenerable from the run's own parquet
+# artifacts and are not covered by the parquet/json re-includes above (they
+# are two levels deep, e.g. runs/<run_id>/charts/<view>/<slug>.png). Keep
+# them out of git history for the same reason the .csv twins are excluded --
+# see the run-directory retention note in
+# docs/asia-markets/unified-kpi-backtest-v1.md.
+data/registries/runs/*/charts/
 
 # Repo-size control: never commit normalized CSVs — the dashboard loader reads the
 # parquet twin first (dashboard/data.py load_dataset), so committing the CSV too just
-# bloats git history (these are regenerated daily). Keep parquet only.
+# bloats git history (these are regenerated daily). Keep parquet only. This also
+# applies to the top-level asia_backtest_long_form/metrics/metric_intervals CSVs
+# above: each has a smaller parquet twin that the engine's own build scripts
+# already prefer (see scripts/build_asia_backtest_metrics.py), so only the
+# .parquet is committed; the .csv is still written to disk for local inspection,
+# just not tracked. asia_backtest_row_status.csv/target_registry.csv/
+# document_registry.csv have no parquet twin and stay committed as CSV. Run
+# snapshots under data/registries/runs/ follow the same rule: only the .parquet
+# twin and the .json manifests/reconciliation are tracked, never the .csv (see
+# scripts/prune_backtest_runs.py for how old run directories are retired).
 data/normalized/**/*.csv
 
 # Commercial aerospace append-only history used to turn CelesTrak snapshots
