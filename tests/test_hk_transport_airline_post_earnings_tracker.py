@@ -7,6 +7,7 @@ import pytest
 
 from hk_transport.sources.airline_post_earnings_tracker import (
     OUTPUT_PATH,
+    YFINANCE_BARS_PATH,
     build_airline_post_earnings_tracker,
 )
 
@@ -40,6 +41,8 @@ def test_mainland_rows_awaiting(tracker: pd.DataFrame) -> None:
 
 
 def test_cathay_row_filled_with_market_reaction(tracker: pd.DataFrame) -> None:
+    if not YFINANCE_BARS_PATH.exists():
+        pytest.skip("ignored yfinance daily bars are not present in this checkout")
     cathay = tracker[tracker.company.eq("Cathay Pacific")].iloc[0]
     assert cathay.validation_status == "filled"
     assert cathay.announcement_date == "2026-08-05"

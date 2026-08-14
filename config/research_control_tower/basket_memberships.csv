@@ -1,0 +1,92 @@
+entity_id,basket_id,membership_tier,primary_layer,secondary_layers,active_from,active_to,membership_reason,source_or_research_note,registry_version
+JPMORGAN_CHASE,US_VALUE,core,financials,,2026-01-01,,US bank and value anchor,Approved V1 primary basket,v1
+BERKSHIRE_HATHAWAY,US_VALUE,core,financials,insurance,2026-01-01,,Diversified financial and defensive value anchor,Approved V1 primary basket,v1
+EXXON_MOBIL,US_VALUE,core,energy,,2026-01-01,,US energy value anchor,Approved V1 primary basket,v1
+PROCTER_GAMBLE,US_VALUE,core,defensive_value,consumer_staples,2026-01-01,,US defensive value anchor,Approved V1 primary basket,v1
+EATON,US_VALUE,read_through,industrials,power_grid,2026-01-01,,US industrial and power-management read-through,Approved V1 primary basket,v1
+GE_VERNOVA,US_VALUE,read_through,industrials,power_grid,2026-01-01,,US grid and power-generation read-through,Approved V1 primary basket,v1
+CONSTELLATION_ENERGY,US_VALUE,read_through,utilities,power_grid,2026-01-01,,US electricity-demand and generation read-through,Approved V1 primary basket,v1
+VISTRA,US_VALUE,read_through,utilities,power_grid,2026-01-01,,US electricity-demand and generation read-through,Approved V1 primary basket,v1
+MICROSOFT,US_GROWTH,core,hyperscaler_demand,software,2026-01-01,,Hyperscaler and AI-demand anchor,Approved V1 primary basket,v1
+AMAZON,US_GROWTH,core,hyperscaler_demand,cloud,2026-01-01,,Hyperscaler and cloud-demand anchor,Approved V1 primary basket,v1
+ALPHABET,US_GROWTH,core,hyperscaler_demand,cloud,2026-01-01,,Hyperscaler and AI-demand anchor,Approved V1 primary basket,v1
+META,US_GROWTH,core,hyperscaler_demand,cloud,2026-01-01,,Hyperscaler and AI-demand anchor,Approved V1 primary basket,v1
+ORACLE,US_GROWTH,core,hyperscaler_demand,software,2026-01-01,,Cloud and enterprise software demand anchor,Approved V1 primary basket,v1
+NVIDIA,US_GROWTH,core,accelerators_custom_silicon,hyperscaler_demand,2026-01-01,,Direct AI accelerator and demand-chain anchor,Approved V1 primary basket,v1
+AMD,US_GROWTH,core,accelerators_custom_silicon,server_systems,2026-01-01,,AI accelerator and CPU/GPU anchor,Approved V1 primary basket,v1
+BROADCOM,US_GROWTH,core,accelerators_custom_silicon,optical_networking,2026-01-01,,Custom silicon and networking anchor,Approved V1 primary basket,v1
+MARVELL,US_GROWTH,read_through,accelerators_custom_silicon,optical_networking,2026-01-01,,Custom silicon and data-infrastructure read-through,Approved V1 primary basket,v1
+TSMC,HK_AI_THEMATIC,core,foundry,advanced_packaging_test,2026-01-01,,Foundry and advanced-node anchor,Approved V1 primary basket,v1
+CAMBRICON,HK_AI_THEMATIC,core,accelerators_custom_silicon,foundry,2026-01-01,,Mainland AI accelerator anchor with official SSE listing,Approved V1 primary basket,v1
+SMIC,HK_AI_THEMATIC,core,foundry,advanced_packaging_test,2026-01-01,,Mainland/HK foundry anchor,Approved V1 primary basket,v1
+HUA_HONG_SEMICONDUCTOR,HK_AI_THEMATIC,read_through,foundry,advanced_packaging_test,2026-01-01,,Mainland/HK mature-node foundry read-through,Approved V1 primary basket,v1
+NAURA,HK_AI_THEMATIC,read_through,semiconductor_equipment_materials,foundry,2026-01-01,,Mainland semiconductor-equipment read-through with official SZSE listing,Approved V1 primary basket,v1
+ZTE,HK_AI_THEMATIC,watch_only,optical_networking,server_systems,2026-01-01,,Mainland/HK networking and communications read-through,Approved V1 primary basket,v1
+BAIDU,HK_AI_THEMATIC,core,hyperscaler_demand,accelerators_custom_silicon,2026-01-01,,China AI and cloud-demand anchor,Approved V1 primary basket,v1
+AIA_GROUP,HK_VALUE,core,insurance,,2026-01-01,,Hong Kong insurer and local-leader anchor,Approved V1 primary basket,v1
+HSBC_HOLDINGS,HK_VALUE,core,banks,,2026-01-01,,Hong Kong bank and global-value anchor,Approved V1 primary basket,v1
+MTR_CORPORATION,HK_VALUE,core,transport,,2026-01-01,,Hong Kong transport and property anchor,Approved V1 primary basket,v1
+CLP_HOLDINGS,HK_VALUE,core,utilities,,2026-01-01,,Hong Kong utility anchor,Approved V1 primary basket,v1
+HENDERSON_LAND,HK_VALUE,core,developers,,2026-01-01,,Hong Kong developer anchor,Approved V1 primary basket,v1
+TENCENT,HK_INTERNET,core,platforms,hyperscaler_demand,2026-01-01,,Hong Kong platform and cloud-demand anchor,Approved V1 primary basket,v1
+ALIBABA,HK_INTERNET,core,platforms,hyperscaler_demand,2026-01-01,,Hong Kong platform and cloud-demand anchor,Approved V1 primary basket,v1
+MEITUAN,HK_INTERNET,core,platforms,,2026-01-01,,Hong Kong platform company,Approved V1 primary basket,v1
+JD_COM,HK_INTERNET,core,platforms,,2026-01-01,,Hong Kong platform and commerce company,Approved V1 primary basket,v1
+KUAISHOU,HK_INTERNET,read_through,platforms,,2026-01-01,,Hong Kong platform read-through,Approved V1 primary basket,v1
+BAIDU,HK_INTERNET,core,platforms,accelerators_custom_silicon,2026-01-01,,China AI and cloud platform anchor,Approved V1 primary basket,v1
+NVIDIA,AI_BOTTLENECKS_GLOBAL,core,accelerators_custom_silicon,hyperscaler_demand,2026-01-01,,Direct accelerator bottleneck owner,Approved V1 AI basket layer,v1
+AMD,AI_BOTTLENECKS_GLOBAL,core,accelerators_custom_silicon,server_systems,2026-01-01,,Direct accelerator and CPU/GPU bottleneck owner,Approved V1 AI basket layer,v1
+BROADCOM,AI_BOTTLENECKS_GLOBAL,core,accelerators_custom_silicon,optical_networking,2026-01-01,,Custom silicon and networking bottleneck owner,Approved V1 AI basket layer,v1
+MARVELL,AI_BOTTLENECKS_GLOBAL,read_through,accelerators_custom_silicon,optical_networking,2026-01-01,,Custom silicon read-through,Approved V1 AI basket layer,v1
+CAMBRICON,AI_BOTTLENECKS_GLOBAL,core,accelerators_custom_silicon,foundry,2026-01-01,,Mainland AI accelerator anchor,Official SSE listing mapping retained,v1
+SK_HYNIX,AI_BOTTLENECKS_GLOBAL,core,hbm_memory,advanced_packaging_test,2026-01-01,,HBM bottleneck owner and Tier-1 anchor,Official KRX listing mapping retained,v1
+MICRON,AI_BOTTLENECKS_GLOBAL,core,hbm_memory,advanced_packaging_test,2026-01-01,,HBM and memory bottleneck owner,Approved V1 AI basket layer,v1
+SAMSUNG_ELECTRONICS,AI_BOTTLENECKS_GLOBAL,core,hbm_memory,foundry;advanced_packaging_test,2026-01-01,,HBM and foundry cross-layer anchor,Official KRX listing mapping retained,v1
+NANYA_TECHNOLOGY,AI_BOTTLENECKS_GLOBAL,read_through,hbm_memory,,2026-01-01,,Taiwan memory read-through,Official TWSE listing mapping retained,v1
+WINBOND,AI_BOTTLENECKS_GLOBAL,read_through,hbm_memory,,2026-01-01,,Taiwan specialty-memory read-through,Official TWSE listing mapping retained,v1
+TSMC,AI_BOTTLENECKS_GLOBAL,core,foundry,advanced_packaging_test;hyperscaler_demand,2026-01-01,,Foundry bottleneck owner and cross-layer anchor,Official TWSE and NYSE listing mappings retained,v1
+SMIC,AI_BOTTLENECKS_GLOBAL,core,foundry,advanced_packaging_test,2026-01-01,,Mainland/HK foundry bottleneck owner,Official SSE/HKEX listing mappings retained,v1
+HUA_HONG_SEMICONDUCTOR,AI_BOTTLENECKS_GLOBAL,read_through,foundry,advanced_packaging_test,2026-01-01,,Mature-node foundry read-through,Official SSE/HKEX listing mappings retained,v1
+UMC,AI_BOTTLENECKS_GLOBAL,read_through,foundry,,2026-01-01,,Taiwan foundry read-through,Official TWSE and NYSE listing mappings retained,v1
+GLOBALFOUNDRIES,AI_BOTTLENECKS_GLOBAL,read_through,foundry,,2026-01-01,,Specialty foundry read-through,Approved V1 AI basket layer,v1
+ASE_TECHNOLOGY,AI_BOTTLENECKS_GLOBAL,core,advanced_packaging_test,foundry;substrates_pcbs,2026-01-01,,Advanced packaging and test anchor,Official TWSE and NYSE listing mappings retained,v1
+AMKOR,AI_BOTTLENECKS_GLOBAL,core,advanced_packaging_test,,2026-01-01,,Advanced packaging and test anchor,Approved V1 AI basket layer,v1
+BESI,AI_BOTTLENECKS_GLOBAL,core,advanced_packaging_test,semiconductor_equipment_materials,2026-01-01,,Advanced packaging equipment anchor,Official Euronext mapping retained,v1
+HANMI_SEMICONDUCTOR,AI_BOTTLENECKS_GLOBAL,watch_only,advanced_packaging_test,,2026-01-01,,Advanced packaging equipment read-through,Official KRX listing mapping retained,v1
+JCET,AI_BOTTLENECKS_GLOBAL,read_through,advanced_packaging_test,,2026-01-01,,Mainland packaging and test read-through,Official SSE listing mapping retained,v1
+ASML,AI_BOTTLENECKS_GLOBAL,core,semiconductor_equipment_materials,foundry,2026-01-01,,Lithography and semiconductor-equipment anchor,Official Euronext and Nasdaq listing mappings retained,v1
+APPLIED_MATERIALS,AI_BOTTLENECKS_GLOBAL,core,semiconductor_equipment_materials,foundry,2026-01-01,,Semiconductor-equipment anchor,Approved V1 AI basket layer,v1
+LAM_RESEARCH,AI_BOTTLENECKS_GLOBAL,core,semiconductor_equipment_materials,advanced_packaging_test,2026-01-01,,Semiconductor-equipment anchor,Approved V1 AI basket layer,v1
+KLA,AI_BOTTLENECKS_GLOBAL,core,semiconductor_equipment_materials,,2026-01-01,,Process-control equipment anchor,Approved V1 AI basket layer,v1
+ASM_INTERNATIONAL,AI_BOTTLENECKS_GLOBAL,core,semiconductor_equipment_materials,advanced_packaging_test,2026-01-01,,Wafer-processing equipment anchor,Official Euronext mapping retained,v1
+NAURA,AI_BOTTLENECKS_GLOBAL,read_through,semiconductor_equipment_materials,foundry,2026-01-01,,Mainland equipment read-through,Official SZSE listing mapping retained,v1
+UNIMICRON,AI_BOTTLENECKS_GLOBAL,core,substrates_pcbs,advanced_packaging_test,2026-01-01,,IC substrate and PCB bottleneck owner,Official TWSE listing mapping retained,v1
+NAN_YA_PCB,AI_BOTTLENECKS_GLOBAL,read_through,substrates_pcbs,advanced_packaging_test,2026-01-01,,IC substrate and PCB read-through,Official TWSE listing mapping retained,v1
+IBIDEN,AI_BOTTLENECKS_GLOBAL,core,substrates_pcbs,advanced_packaging_test,2026-01-01,,IC substrate bottleneck owner,Official JPX listing mapping retained,v1
+AJINOMOTO,AI_BOTTLENECKS_GLOBAL,read_through,substrates_pcbs,,2026-01-01,,ABF substrate-material read-through,Official JPX listing mapping retained,v1
+ARISTA_NETWORKS,AI_BOTTLENECKS_GLOBAL,core,optical_networking,server_systems,2026-01-01,,Data-center networking bottleneck owner,Approved V1 AI basket layer,v1
+LUMENTUM,AI_BOTTLENECKS_GLOBAL,read_through,optical_networking,,2026-01-01,,Optical component read-through,Approved V1 AI basket layer,v1
+COHERENT,AI_BOTTLENECKS_GLOBAL,read_through,optical_networking,,2026-01-01,,Optical and photonics read-through,Approved V1 AI basket layer,v1
+ACCTON,AI_BOTTLENECKS_GLOBAL,core,optical_networking,server_systems,2026-01-01,,Data-center networking equipment anchor,Official TWSE listing mapping retained,v1
+ZTE,AI_BOTTLENECKS_GLOBAL,watch_only,optical_networking,server_systems,2026-01-01,,Mainland/HK networking read-through,Official SZSE/HKEX listing mappings retained,v1
+QUANTA,AI_BOTTLENECKS_GLOBAL,core,server_systems,hyperscaler_demand,2026-01-01,,Server ODM anchor,Official TWSE listing mapping retained,v1
+WISTRON,AI_BOTTLENECKS_GLOBAL,read_through,server_systems,,2026-01-01,,Server ODM read-through,Official TWSE listing mapping retained,v1
+WIWYNN,AI_BOTTLENECKS_GLOBAL,core,server_systems,hyperscaler_demand,2026-01-01,,Cloud infrastructure ODM anchor,Official TWSE listing mapping retained,v1
+DELL,AI_BOTTLENECKS_GLOBAL,core,server_systems,hyperscaler_demand,2026-01-01,,Server and systems demand anchor,Approved V1 AI basket layer,v1
+HPE,AI_BOTTLENECKS_GLOBAL,read_through,server_systems,hyperscaler_demand,2026-01-01,,Enterprise systems read-through,Approved V1 AI basket layer,v1
+VERTIV,AI_BOTTLENECKS_GLOBAL,core,rack_power_cooling,grid_energy,2026-01-01,,Data-center power and cooling bottleneck owner,Approved V1 AI basket layer,v1
+EATON,AI_BOTTLENECKS_GLOBAL,core,rack_power_cooling,grid_energy,2026-01-01,,Power-management bottleneck owner,Approved V1 AI basket layer,v1
+MONOLITHIC_POWER_SYSTEMS,AI_BOTTLENECKS_GLOBAL,read_through,rack_power_cooling,,2026-01-01,,Power-management semiconductor read-through,Approved V1 AI basket layer,v1
+DELTA_ELECTRONICS,AI_BOTTLENECKS_GLOBAL,core,rack_power_cooling,server_systems,2026-01-01,,Power electronics and thermal-management anchor,Official TWSE listing mapping retained,v1
+SCHNEIDER_ELECTRIC,AI_BOTTLENECKS_GLOBAL,core,rack_power_cooling,grid_energy,2026-01-01,,Power-management and automation anchor,Official Euronext mapping retained,v1
+GE_VERNOVA,AI_BOTTLENECKS_GLOBAL,core,grid_energy,rack_power_cooling,2026-01-01,,Grid and power-generation anchor,Approved V1 AI basket layer,v1
+CONSTELLATION_ENERGY,AI_BOTTLENECKS_GLOBAL,core,grid_energy,hyperscaler_demand,2026-01-01,,Electricity-generation and AI-demand anchor,Approved V1 AI basket layer,v1
+VISTRA,AI_BOTTLENECKS_GLOBAL,read_through,grid_energy,hyperscaler_demand,2026-01-01,,Electricity-generation read-through,Approved V1 AI basket layer,v1
+SIEMENS_ENERGY,AI_BOTTLENECKS_GLOBAL,watch_only,grid_energy,rack_power_cooling,2026-01-01,,Grid and energy-equipment anchor,Official Xetra mapping retained,v1
+MICROSOFT,AI_BOTTLENECKS_GLOBAL,core,hyperscaler_demand,server_systems;grid_energy,2026-01-01,,Hyperscaler demand anchor,Approved V1 AI basket layer,v1
+AMAZON,AI_BOTTLENECKS_GLOBAL,core,hyperscaler_demand,server_systems;grid_energy,2026-01-01,,Hyperscaler and cloud demand anchor,Approved V1 AI basket layer,v1
+ALPHABET,AI_BOTTLENECKS_GLOBAL,core,hyperscaler_demand,server_systems;grid_energy,2026-01-01,,Hyperscaler demand anchor,Approved V1 AI basket layer,v1
+META,AI_BOTTLENECKS_GLOBAL,core,hyperscaler_demand,server_systems;grid_energy,2026-01-01,,Hyperscaler demand anchor,Approved V1 AI basket layer,v1
+ORACLE,AI_BOTTLENECKS_GLOBAL,core,hyperscaler_demand,server_systems,2026-01-01,,Cloud and enterprise software demand anchor,Approved V1 AI basket layer,v1
+TENCENT,AI_BOTTLENECKS_GLOBAL,core,hyperscaler_demand,platforms,2026-01-01,,China platform and cloud demand anchor,Official HKEX listing mapping retained,v1
+ALIBABA,AI_BOTTLENECKS_GLOBAL,core,hyperscaler_demand,platforms,2026-01-01,,China platform and cloud demand anchor,Official HKEX and NYSE listing mappings retained,v1
