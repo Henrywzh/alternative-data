@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 import pandas as pd
 import pytest
 
@@ -51,6 +53,10 @@ def test_fetch_cathay_traffic():
     assert df["month"].min() < "2015-01"
 
 
+@pytest.mark.skipif(
+    os.getenv("GITHUB_ACTIONS", "").lower() == "true",
+    reason="live HK Transport stage-1 integration test is not deterministic on GitHub runners",
+)
 def test_hk_transport_stage_1_execution():
     results = run_stage_1_pipeline()
     assert results is not None
