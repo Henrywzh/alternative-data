@@ -1,7 +1,7 @@
 # Research Control Tower Streamlit Design
 
 **Date:** 2026-08-13  
-**Status:** Approved direction; design awaiting final user review  
+**Status:** Approved direction; Stage 1 UX scope approved 2026-08-14
 **Primary repository:** `alternative-data`  
 **Related repository:** `financial-data`
 

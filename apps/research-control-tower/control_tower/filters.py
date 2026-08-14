@@ -70,6 +70,31 @@ def _catalyst_mask(frame: pd.DataFrame) -> pd.Series:
     return event_type.ne("coverage_gap") & ~status.isin({"unavailable", "cancelled"})
 
 
+def superseded_event_ids(events: pd.DataFrame) -> set[str]:
+    """Return event ids that another row in the same frame supersedes.
+
+    Only ids that resolve to a row inside the frame are returned, so a
+    dangling ``supersedes_event_id`` never hides a live event.
+    """
+
+    if events.empty or "supersedes_event_id" not in events.columns:
+        return set()
+    known = set(events["event_id"].astype("string"))
+    superseded: set[str] = set()
+    for value in events["supersedes_event_id"]:
+        if value is None:
+            continue
+        try:
+            if pd.isna(value):
+                continue
+        except (TypeError, ValueError):
+            pass
+        text = str(value).strip()
+        if text and text in known:
+            superseded.add(text)
+    return superseded
+
+
 def _horizon_mask(frame: pd.DataFrame, filters: EventFilters) -> pd.Series:
     starts = frame["starts_at"].map(_as_utc) if "starts_at" in frame.columns else pd.Series(pd.NaT, index=frame.index)
     ends = frame["ends_at"].map(_as_utc) if "ends_at" in frame.columns else pd.Series(pd.NaT, index=frame.index)
@@ -131,6 +156,13 @@ def apply_event_filters(events: pd.DataFrame, filters: EventFilters) -> pd.DataF
         _normalise_relation_column(frame, column, upper=upper)
 
     eligible = _catalyst_mask(frame)
+    # Superseded ledger rows are excluded from every catalyst presentation
+    # (timeline, next catalyst, flight deck). The explicit False audit view
+    # keeps the original eligible semantics for excluded rows.
+    if filters.catalyst_eligible is not False:
+        superseded = superseded_event_ids(frame)
+        if superseded:
+            eligible &= ~frame["event_id"].astype("string").isin(superseded)
     # The normal timeline is catalyst-eligible. Explicit False is an audit
     # view for excluded ledger rows, including coverage gaps.
     mask = eligible if filters.catalyst_eligible is not False else pd.Series(True, index=frame.index)
@@ -163,4 +195,4 @@ def apply_event_filters(events: pd.DataFrame, filters: EventFilters) -> pd.DataF
     return result.drop(columns=["__starts_at_utc", "__importance_rank", "__input_position"]).reset_index(drop=True)
 
 
-__all__ = ["apply_event_filters"]
+__all__ = ["apply_event_filters", "superseded_event_ids"]

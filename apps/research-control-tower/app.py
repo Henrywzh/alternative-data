@@ -108,8 +108,14 @@ def _sidebar_navigation() -> None:
         st.sidebar.markdown(f"**{group}**")
         for page in pages:
             selected = st.session_state["ct_page"] == page
-            if st.sidebar.button(page, key=f"ct_nav_{page}", type="primary" if selected else "secondary", use_container_width=True):
-                _set_page(page)
+            st.sidebar.button(
+                page,
+                key=f"ct_nav_{page}",
+                type="primary" if selected else "secondary",
+                width="stretch",
+                on_click=_set_page,
+                args=(page,),
+            )
 
 
 def _active_filter_summary() -> str:
@@ -129,6 +135,17 @@ def _active_filter_summary() -> str:
     if confidence:
         parts.append(f"confidence≥{confidence:.2f}")
     return " · ".join(parts) if parts else "All filters at default"
+
+
+def _degraded_label(name: object) -> str:
+    labels = {
+        "consensus_revisions": "Consensus revisions",
+        "consensus_snapshots": "Consensus snapshots",
+        "news_filings": "News and filings",
+        "source_health": "Source health",
+    }
+    text = str(name).strip()
+    return labels.get(text, text.replace("_", " ").title())
 
 
 def _filter_controls(snapshot: ControlTowerSnapshot) -> EventFilters:
@@ -151,7 +168,7 @@ def _filter_controls(snapshot: ControlTowerSnapshot) -> EventFilters:
         importance = st.multiselect("Importance", importance_options, key="ct_importance")
         confidence_min = st.slider("Minimum confidence", 0.0, 1.0, key="ct_confidence_min", step=0.05)
         st.selectbox("Viewer timezone", TIMEZONE_OPTIONS, key="ct_viewer_timezone")
-        st.button("Clear filters", key="ct_clear_filters", on_click=_reset_filters, use_container_width=True)
+        st.button("Clear filters", key="ct_clear_filters", on_click=_reset_filters, width="stretch")
         st.caption(
             "Filter applicability · basket, country and membership tier apply "
             "to company events, consensus and filings. Scope hides company "
@@ -184,10 +201,14 @@ def _header(snapshot: ControlTowerSnapshot, timezone: str) -> None:
         as_of = snapshot.as_of_utc.strftime("%d %b %Y %H:%M UTC")
     st.markdown('<div class="ct-shell">', unsafe_allow_html=True)
     st.markdown('<p class="ct-eyebrow">Private research terminal</p>', unsafe_allow_html=True)
-    st.title(f"Research Control Tower · {st.session_state['ct_page']}")
+    page_slug = "research-control-tower-" + "-".join(
+        part for part in st.session_state["ct_page"].casefold().replace("&", "and").split()
+        if part
+    )
+    st.title(f"Research Control Tower · {st.session_state['ct_page']}", anchor=page_slug)
     st.caption(f"As of {as_of} · build {snapshot.build_id} · {snapshot.status}")
     if snapshot.status == "degraded":
-        details = "; ".join(f"{name}: {reason}" for name, reason in snapshot.degraded_reasons.items())
+        details = "; ".join(f"{_degraded_label(name)}: {reason.replace('_', ' ')}" for name, reason in snapshot.degraded_reasons.items())
         st.warning(f"Degraded data coverage · {details or 'optional source unavailable'}")
 
 
@@ -196,7 +217,7 @@ def _render_placeholder(page: str) -> None:
 
 
 def main() -> None:
-    st.set_page_config(page_title="Research Control Tower", page_icon="⌁", layout="wide", initial_sidebar_state="auto")
+    st.set_page_config(page_title="Research Control Tower", page_icon="⌁", layout="wide", initial_sidebar_state="collapsed")
     _ensure_session_state()
     inject_styles()
     _sidebar_navigation()
@@ -217,7 +238,7 @@ def main() -> None:
     elif st.session_state["ct_page"] == "AI Bottlenecks":
         render_ai_bottlenecks_page(snapshot, filters=filters, viewer_timezone=viewer_timezone)
     elif st.session_state["ct_page"] == "Company":
-        render_company_page(snapshot, viewer_timezone=viewer_timezone)
+        render_company_page(snapshot, filters=filters, viewer_timezone=viewer_timezone)
     elif st.session_state["ct_page"] == "Source Health":
         render_source_health_page(snapshot, viewer_timezone=viewer_timezone)
     else:
