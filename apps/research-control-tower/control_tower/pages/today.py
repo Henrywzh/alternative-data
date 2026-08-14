@@ -4,15 +4,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from html import escape
-from typing import Any
 
 import pandas as pd
 import streamlit as st
 
 from ..components.flight_deck import FlightDeckViewModel, build_flight_deck, render_flight_deck
-from ..components.timeline import catalyst_view_for_event, render_catalyst, select_next_catalyst
-from ..filters import apply_event_filters
+from ..coverage import DataCoverageSummary, build_data_coverage_summary
+from ..filters import apply_event_filters, superseded_event_ids
 from ..models import ControlTowerSnapshot, EventFilters
+from .source_health import sanitise_source_detail
 
 
 TODAY_CHANGE_COLUMNS = (
@@ -28,12 +28,92 @@ TODAY_CHANGE_COLUMNS = (
 class TodayViewModel:
     flight_deck: FlightDeckViewModel
     changes: pd.DataFrame
-    next_catalyst: Any | None
     consensus_revisions: pd.DataFrame
     official_filings: pd.DataFrame
     guidance_changes: pd.DataFrame
     source_alerts: pd.DataFrame
     initial_snapshot: bool
+    bundle_stale: bool
+    latest_data_at: pd.Timestamp | None
+    recent_events: pd.DataFrame
+    coverage_summary: DataCoverageSummary
+
+
+def bundle_latest_data_at(snapshot: ControlTowerSnapshot) -> pd.Timestamp | None:
+    """Return the newest observation timestamp anywhere in the snapshot."""
+
+    series: list[pd.Series] = []
+    for frame, columns in (
+        (snapshot.events, ("source_published_at", "first_observed_at")),
+        (snapshot.news_filings, ("first_observed_at", "published_at")),
+        (
+            snapshot.consensus_snapshots,
+            ("snapshot_at", "provider_asof"),
+        ),
+        (
+            snapshot.consensus_revisions,
+            ("current_snapshot_at", "provider_asof"),
+        ),
+        (
+            snapshot.macro_observations,
+            ("release_at", "observation_date"),
+        ),
+        (
+            snapshot.source_health,
+            ("latest_observation_at", "source_latest_at"),
+        ),
+    ):
+        if frame.empty:
+            continue
+        for column in columns:
+            if column not in frame.columns:
+                continue
+            parsed = pd.to_datetime(frame[column], utc=True, errors="coerce").dropna()
+            if not parsed.empty:
+                series.append(parsed)
+    if not series:
+        return None
+    return pd.concat(series).max()
+
+
+def select_recent_events(
+    snapshot: ControlTowerSnapshot,
+    *,
+    events: pd.DataFrame | None = None,
+    limit: int = 5,
+) -> pd.DataFrame:
+    """Return the newest catalyst-eligible events on record, newest first."""
+
+    source = snapshot.events if events is None else events
+    if source.empty:
+        return source.iloc[0:0].copy()
+    frame = source.copy()
+    event_type = frame.get(
+        "event_type", pd.Series("", index=frame.index)
+    ).astype("string").str.strip().str.lower()
+    status = frame.get("status", pd.Series("", index=frame.index)).astype(
+        "string"
+    ).str.strip().str.lower()
+    eligible = event_type.ne("coverage_gap") & ~status.isin(
+        {"unavailable", "cancelled"}
+    )
+    superseded = superseded_event_ids(frame)
+    if superseded:
+        eligible &= ~frame["event_id"].astype("string").isin(superseded)
+    if "first_observed_at" in frame.columns:
+        observed = pd.to_datetime(
+            frame["first_observed_at"], utc=True, errors="coerce"
+        )
+    else:
+        observed = pd.Series(
+            pd.NaT, index=frame.index, dtype="datetime64[ns, UTC]"
+        )
+    frame = frame.loc[eligible].copy()
+    frame["__observed"] = observed.loc[frame.index]
+    frame = frame.sort_values(
+        "__observed", ascending=False, na_position="last", kind="mergesort"
+    )
+    return frame.head(limit).drop(columns=["__observed"]).reset_index(drop=True)
 
 
 def _empty_changes() -> pd.DataFrame:
@@ -203,7 +283,6 @@ def enrich_consensus_revisions(
         if column in snapshots.columns
     ]
     lookup = snapshots.loc[:, join_keys + enrichment_columns].copy()
-    # Ambiguous provider/snapshot identities are not safe to enrich.
     lookup = lookup.loc[~lookup.duplicated(join_keys, keep=False)].copy()
     lookup = lookup.rename(
         columns={
@@ -341,7 +420,7 @@ def select_today_changes(
             rows.append(_normalise_change(
                 change_id=f"health:{_text(row.get('source_id'))}", changed_at=changed_at,
                 change_kind="source_conflict" if _text(row.get("status")).lower() in {"conflicted", "review_required"} else "source_stale",
-                title=f"Global source health · {_text(row.get('source_id'))}", description=row.get("detail"),
+                title=f"Global source health · {_source_display_label(row.get('source_id'))}", description=sanitise_source_detail(row.get("detail")),
                 status=row.get("status"), source_id=row.get("source_id"), source_url=row.get("source_url"),
                 retrieved_at_utc=row.get("retrieved_at_utc"), pit_class=row.get("pit_class"),
             ))
@@ -505,13 +584,20 @@ def build_today_view(
         | filings.get("event_class", pd.Series("", index=filings.index)).astype("string").str.contains("guidance", case=False, na=False)
     ].copy() if not filings.empty else filings.copy()
     deck = build_flight_deck(snapshot, filters=filters, viewer_timezone=viewer_timezone)
-    next_row = select_next_catalyst(filtered_events, snapshot.now_utc)
-    next_view = catalyst_view_for_event(snapshot, next_row, now_utc=snapshot.now_utc, viewer_timezone=viewer_timezone) if next_row is not None else None
+    latest_data = bundle_latest_data_at(snapshot)
+    bundle_stale = (
+        snapshot.previous_build_at is not None
+        and (latest_data is None or latest_data < snapshot.previous_build_at)
+    )
     return TodayViewModel(
-        flight_deck=deck, changes=changes, next_catalyst=next_view,
+        flight_deck=deck, changes=changes,
         consensus_revisions=revisions, official_filings=filings.loc[~filings.index.isin(guidance.index)].copy() if not filings.empty else filings,
         guidance_changes=guidance, source_alerts=_source_alerts(snapshot),
         initial_snapshot=snapshot.previous_build_at is None,
+        bundle_stale=bundle_stale,
+        latest_data_at=latest_data,
+        recent_events=select_recent_events(snapshot, events=filtered_events),
+        coverage_summary=build_data_coverage_summary(snapshot),
     )
 
 
@@ -568,23 +654,108 @@ def _change_ticker_label(snapshot: ControlTowerSnapshot, row: pd.Series) -> str:
     return "ticker unavailable · registry unresolved"
 
 
+def _source_display_label(value: object) -> str:
+    """Translate internal source ids into short reader-facing labels."""
+
+    text = _text(value).casefold()
+    known = {
+        "ecb_fx_rates": "ECB FX reference rates",
+        "ofr_mnemonics": "OFR market-data mnemonics",
+        "ofr_timeseries": "OFR market time series",
+        "tw_monthly_revenue": "Taiwan monthly revenue",
+        "consensus_revisions": "Consensus revisions",
+        "consensus_snapshots": "Consensus snapshots",
+    }
+    if text in known:
+        return known[text]
+    if text.startswith("provider:"):
+        return text.removeprefix("provider:").replace("_", " ").title() + " provider"
+    if text.startswith("source:"):
+        return "Research source"
+    return _text(value).replace("_", " ").title() or "Data source"
+
+
 def _render_changes(snapshot: ControlTowerSnapshot, changes: pd.DataFrame, *, timezone: str) -> None:
     if changes.empty:
         st.markdown('<div class="ct-empty">No changes in the selected snapshot window.</div>', unsafe_allow_html=True)
         return
     blocks: list[str] = []
     for _, row in changes.iterrows():
-        title = _text(row.get("title")) or _text(row.get("change_id"))
+        title = _text(row.get("title")) or "Update recorded"
         kind = _text(row.get("change_kind")).replace("_", " ").title()
         detail = _text(row.get("description"))
         changed = _display_time(row.get("changed_at"), timezone)
-        source = _text(row.get("source_id")) or "source unavailable"
         source_link = _text(row.get("source_url"))
-        source_text = f'<a class="ct-inline-link" href="{escape(source_link, quote=True)}" target="_blank" rel="noopener">{escape(source)}</a>' if source_link.startswith(("http://", "https://")) else f"{escape(source)} · source link unavailable"
+        source_text = (
+            f'<a class="ct-inline-link" href="{escape(source_link, quote=True)}" target="_blank" rel="noopener">source link</a>'
+            if source_link.startswith(("http://", "https://"))
+            else "source link unavailable"
+        )
         ticker = _change_ticker_label(snapshot, row)
-        pit = _text(row.get("pit_class")) or "PIT unavailable"
-        blocks.append(f'<div class="ct-change"><div class="ct-change-title">{escape(title)}</div><div class="ct-change-detail">{escape(kind)} · {escape(changed)} · {escape(detail)}</div><div class="ct-source-line">{escape(ticker)} · {source_text} · PIT · {escape(pit)}</div></div>')
+        blocks.append(f'<div class="ct-change"><div class="ct-change-title">{escape(title)}</div><div class="ct-change-detail">{escape(kind)} · {escape(changed)} · {escape(detail)}</div><div class="ct-source-line">{escape(ticker)} · {source_text}</div></div>')
     st.markdown('<div class="ct-change-list">' + "".join(blocks) + "</div>", unsafe_allow_html=True)
+
+
+def _render_recent_events(
+    snapshot: ControlTowerSnapshot,
+    events: pd.DataFrame,
+    *,
+    timezone: str,
+) -> None:
+    """Render the latest events on record without inventing delta semantics."""
+
+    if events.empty:
+        st.markdown(
+            '<div class="ct-empty">No recent events on record.</div>',
+            unsafe_allow_html=True,
+        )
+        return
+    blocks: list[str] = []
+    for _, row in events.iterrows():
+        title = _text(row.get("title")) or "Recent event"
+        detail = _text(row.get("description"))
+        changed = _display_time(row.get("first_observed_at"), timezone)
+        source_link = _text(row.get("source_url"))
+        source_text = (
+            f'<a class="ct-inline-link" href="{escape(source_link, quote=True)}" target="_blank" rel="noopener">source link</a>'
+            if source_link.startswith(("http://", "https://"))
+            else "source link unavailable"
+        )
+        ticker = _change_ticker_label(snapshot, row)
+        blocks.append(
+            f'<div class="ct-change"><div class="ct-change-title">{escape(title)}</div>'
+            f'<div class="ct-change-detail">Recent event · {escape(changed)} · {escape(detail)}</div>'
+            f'<div class="ct-source-line">{escape(ticker)} · {source_text}</div></div>'
+        )
+    st.markdown(
+        '<div class="ct-change-list">' + "".join(blocks) + "</div>",
+        unsafe_allow_html=True,
+    )
+
+
+def _render_coverage_matrix(summary: DataCoverageSummary) -> None:
+    if not summary.rows:
+        return
+    rows_html: list[str] = []
+    for row in summary.rows:
+        if row.status_code == "available":
+            badge_class = "ct-badge--observed"
+        elif row.status_code == "partial":
+            badge_class = "ct-badge--warning"
+        else:
+            badge_class = ""
+        badge = f'<span class="ct-badge {badge_class}">{escape(row.status)}</span>'
+        rows_html.append(
+            f'<tr>'
+            f'<td style="font-weight: 600; padding: 0.4rem 0.5rem 0.4rem 0; overflow-wrap: anywhere;">{escape(row.category)}</td>'
+            f'<td style="padding: 0.4rem 0.5rem; overflow-wrap: anywhere;">{badge}</td>'
+            f'<td style="color: var(--ct-muted); font-size: 0.84rem; padding: 0.4rem 0 0.4rem 0.5rem; overflow-wrap: anywhere;">{escape(row.details)}</td>'
+            f'</tr>'
+        )
+    body = "".join(rows_html)
+    heads = '<tr><th style="text-align: left; padding-bottom: 0.4rem;">Category</th><th style="text-align: left; padding-bottom: 0.4rem;">Status</th><th style="text-align: left; padding-bottom: 0.4rem;">Coverage & Evidence Details</th></tr>'
+    table_html = f'<table style="width: 100%; table-layout: fixed; border-collapse: collapse; margin-top: 0.25rem;"><thead>{heads}</thead><tbody>{body}</tbody></table>'
+    st.markdown(table_html, unsafe_allow_html=True)
 
 
 def render_today_page(
@@ -597,36 +768,61 @@ def render_today_page(
     render_flight_deck(model.flight_deck)
     if model.initial_snapshot:
         st.info("Initial snapshot · upcoming items are shown for review; none are labelled as changed.")
+    elif model.bundle_stale:
+        previous_label = snapshot.previous_build_at.tz_convert(
+            viewer_timezone
+        ).strftime("%d %b %Y %H:%M %Z")
+        latest_label = (
+            model.latest_data_at.tz_convert(viewer_timezone).strftime(
+                "%d %b %Y %H:%M %Z"
+            )
+            if model.latest_data_at is not None
+            else "unavailable"
+        )
+        st.warning(
+            f"Data bundle is stale · latest source data ({latest_label}) predates "
+            f"the previous build ({previous_label}); the delta window contains no "
+            "new source data. Recent events on record are summarised below."
+        )
     else:
         st.caption(f"Changes since {snapshot.previous_build_at.tz_convert(viewer_timezone).strftime('%d %b %Y %H:%M %Z')}")
 
-    left, right = st.columns([1.9, .9])
-    with left:
-        with st.container(border=True):
-            st.markdown('<div class="ct-panel-heading"><h3>What changed</h3><span class="ct-count">prioritized delta</span></div>', unsafe_allow_html=True)
+    with st.container(border=True):
+        st.markdown(
+            '<div class="ct-panel-heading"><h3>What changed</h3>'
+            '<span class="ct-count">prioritized delta</span></div>',
+            unsafe_allow_html=True,
+        )
+        if model.bundle_stale:
+            _render_recent_events(
+                snapshot, model.recent_events, timezone=viewer_timezone
+            )
+        else:
             _render_changes(snapshot, model.changes, timezone=viewer_timezone)
-        if not model.consensus_revisions.empty:
-            st.markdown("### Consensus revisions")
-            with st.container(border=True):
-                _render_table(model.consensus_revisions, ("provider", "listing_id", "metric", "fiscal_period", "lookback_days", "prior_value", "current_value", "currency", "unit", "current_analyst_count", "provider_contributor_count", "pit_class", "alignment_status", "source_url"), timezone=viewer_timezone)
-        if not model.official_filings.empty:
-            st.markdown("### Official filings")
-            with st.container(border=True):
-                _render_table(model.official_filings, ("headline", "publisher", "first_observed_at", "source_id", "source_url"), timezone=viewer_timezone)
-        if not model.guidance_changes.empty:
-            st.markdown("### Guidance changes")
-            with st.container(border=True):
-                _render_table(model.guidance_changes, ("headline", "publisher", "first_observed_at", "source_id", "source_url"), timezone=viewer_timezone)
-    with right:
+
+    with st.container(border=True):
+        st.markdown(
+            '<div class="ct-panel-heading"><h3>Data coverage</h3>'
+            '<span class="ct-count">snapshot capabilities</span></div>',
+            unsafe_allow_html=True,
+        )
+        _render_coverage_matrix(model.coverage_summary)
+
+    if not model.consensus_revisions.empty:
+        st.markdown("### Consensus revisions")
         with st.container(border=True):
-            st.markdown('<h3>Upcoming from initial snapshot</h3>' if model.initial_snapshot else '<h3>Next catalyst</h3>', unsafe_allow_html=True)
-            if model.next_catalyst is None:
-                st.markdown('<div class="ct-empty">No eligible catalyst in the selected horizon.</div>', unsafe_allow_html=True)
-            else:
-                render_catalyst(model.next_catalyst, viewer_timezone=viewer_timezone)
+            _render_table(model.consensus_revisions, ("provider", "canonical_ticker", "metric", "fiscal_period", "lookback_days", "prior_value", "current_value", "currency", "unit", "current_analyst_count", "provider_contributor_count", "alignment_status", "source_url"), timezone=viewer_timezone)
+    if not model.official_filings.empty:
+        st.markdown("### Official filings")
+        with st.container(border=True):
+            _render_table(model.official_filings, ("headline", "publisher", "first_observed_at", "source_url"), timezone=viewer_timezone)
+    if not model.guidance_changes.empty:
+        st.markdown("### Guidance changes")
+        with st.container(border=True):
+            _render_table(model.guidance_changes, ("headline", "publisher", "first_observed_at", "source_url"), timezone=viewer_timezone)
 
     if not model.source_alerts.empty:
-        alerts = "; ".join(f"{_text(row.get('source_id'))}: {_text(row.get('status'))}" for _, row in model.source_alerts.head(8).iterrows())
+        alerts = "; ".join(f"{_source_display_label(row.get('source_id'))}: {_text(row.get('status')).replace('_', ' ')}" for _, row in model.source_alerts.head(8).iterrows())
         st.markdown(f'<div class="ct-alert-strip"><strong>Global source alerts</strong> · These alerts are not universe-filtered. · {escape(alerts)}</div>', unsafe_allow_html=True)
     return model
 
@@ -636,6 +832,5 @@ __all__ = [
     "TodayViewModel",
     "build_today_view",
     "render_today_page",
-    "select_next_catalyst",
     "select_today_changes",
 ]

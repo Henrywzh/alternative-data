@@ -89,6 +89,13 @@ def _columns() -> dict[str, list[str]]:
             "prior_snapshot_at", "prior_value", "prior_provider_asof", "provider_asof", "retrieved_at_utc", "source_url", "pit_class", "source_run_id", "prior_analyst_count", "revision_value", "revision_pct",
             "analyst_count_change", "dispersion", "alignment_status",
         ],
+        "quote_snapshots.parquet": [
+            "quote_id", "listing_id", "canonical_ticker", "provider_symbol",
+            "quote_timestamp", "retrieved_at_utc", "last_price", "bid", "ask",
+            "day_change_pct", "volume", "currency", "market_status", "latency_class",
+            "source_id", "source_url", "pit_class", "source_license_class",
+            "registry_version",
+        ],
         "news_filings.parquet": [
             "document_id", "document_type", "source_id", "headline", "publisher", "published_at",
             "first_observed_at", "source_url", "language", "related_entity_ids", "related_listing_ids",
@@ -119,7 +126,7 @@ _TIMESTAMP_COLUMNS = {
     "starts_at", "ends_at", "source_published_at", "first_observed_at", "last_verified_at", "release_at",
     "retrieved_at_utc", "snapshot_at", "provider_asof", "current_snapshot_at",
     "cutoff_at", "prior_snapshot_at", "prior_provider_asof", "provider_asof", "published_at", "first_observation_at", "latest_observation_at",
-    "source_latest_at",
+    "source_latest_at", "quote_timestamp",
 }
 _BOOLEAN_COLUMNS = {"collection_eligible", "primary_listing", "automated", "is_provisional", "required"}
 _INTEGER_COLUMNS = {
@@ -128,7 +135,8 @@ _INTEGER_COLUMNS = {
 }
 _FLOAT_COLUMNS = {
     "confidence", "value", "low_value", "high_value", "current_value", "current_dispersion", "prior_value",
-    "revision_value", "revision_pct", "dispersion",
+    "revision_value", "revision_pct", "dispersion", "last_price", "bid", "ask",
+    "day_change_pct", "volume",
 }
 
 
@@ -273,6 +281,7 @@ def _write_bundle(root: Path, *, previous_build_at: str | None = "2026-08-13T10:
         "macro_observations.parquet": _frame("macro_observations.parquet", [{"observation_id": "M1", "event_id": "EV_HARD", "source_id": "source:official", "series_id": "fixture", "scope": "macro", "event_type": "observation", "metric_name": "fixture metric", "observation_date": "2026-08-12", "release_at": "2026-08-13T11:00:00Z", "actual_value": "1", "unit": "index", "frequency": "monthly", "first_observed_at": "2026-08-13T11:00:00Z", "retrieved_at_utc": "2026-08-13T11:00:00Z", "source_url": "https://example.test/macro", "pit_class": "true_pit", "source_license_class": "public", "is_provisional": False, "registry_version": "v1"}]),
         "consensus_snapshots.parquet": _frame("consensus_snapshots.parquet", [{"snapshot_id": "S1", "provider": "fixture", "entity_id": "E1", "listing_id": "L1", "canonical_ticker": "EONE", "metric": "eps", "fiscal_period": "FY2026", "fiscal_year": 2026, "horizon": "FY", "snapshot_at": "2026-08-13T11:00:00Z", "value": 1.2, "statistic": "mean", "analyst_count": 4, "provider_contributor_count": 6, "currency": "USD", "unit": "per_share", "pit_class": "snapshot_from_live_source", "source_run_id": "run-1", "source_url": "https://example.test/consensus"}]),
         "consensus_revisions.parquet": _frame("consensus_revisions.parquet", [{"revision_id": "R1", "snapshot_id": "S1", "provider": "fixture", "entity_id": "E1", "listing_id": "L1", "canonical_ticker": "EONE", "metric": "eps", "fiscal_period": "FY2026", "fiscal_year": 2026, "horizon": "FY", "statistic": "mean", "current_snapshot_at": "2026-08-13T11:00:00Z", "current_value": 1.2, "current_analyst_count": 4, "prior_snapshot_at": "2026-08-01T11:00:00Z", "prior_value": 1.0, "prior_analyst_count": 3, "revision_value": .2, "revision_pct": .2, "currency": "USD", "unit": "per_share", "pit_class": "true_pit", "source_run_id": "run-1", "retrieved_at_utc": "2026-08-13T11:30:00Z", "alignment_status": "comparable"}]),
+        "quote_snapshots.parquet": _frame("quote_snapshots.parquet", []),
         "news_filings.parquet": _frame("news_filings.parquet", [{"document_id": "D1", "document_type": "official_filing", "source_id": "source:official", "headline": "Fixture official filing", "publisher": "Fixture IR", "published_at": "2026-08-13T11:00:00Z", "first_observed_at": "2026-08-13T11:00:00Z", "source_url": "https://example.test/filing", "language": "en", "related_entity_ids": "E1", "event_class": "filing", "importance": "high", "source_quality": "official", "pit_class": "true_pit", "source_license_class": "public"}]),
         "source_health.parquet": _frame("source_health.parquet", [
             {"source_id": "source:official", "input_path": "fixture", "source_kind": "official", "status": "available", "required": True, "row_count": 5, "latest_observation_at": "2026-08-13T11:00:00Z", "source_latest_at": "2026-08-13T11:00:00Z", "retrieved_at_utc": "2026-08-13T11:30:00Z", "pit_class": "true_pit", "source_license_class": "public", "schema_version": "v1", "detail": "fixture source"},
@@ -855,6 +864,70 @@ def test_app_shell_today_timeline_and_filters_are_reachable(generated_root: Path
     assert not app.exception
     assert app.session_state["ct_page"] == "Unified Timeline"
     assert "Unified timeline" in _app_text(app)
+
+    app.session_state["ct_page"] = "Company"
+    app = app.run()
+    assert not app.exception
+    company_text = _app_text(app)
+    assert "Selected listing · EONE · NASDAQ · USD · primary listing default" in company_text
+    assert "Selected listing · L1" not in company_text
+
+
+def test_task10_data_coverage_reports_presence_without_fabricating_linkage(
+    generated_root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from control_tower.coverage import (
+        _is_non_empty_relation,
+        build_data_coverage_summary,
+    )
+    from streamlit.testing.v1 import AppTest
+
+    assert not _is_non_empty_relation("[]")
+    assert not _is_non_empty_relation(" [ ] ")
+    assert not _is_non_empty_relation([])
+    assert _is_non_empty_relation('["E1"]')
+    assert _is_non_empty_relation(("E1",))
+
+    snapshot = _snapshot(generated_root)
+    summary = build_data_coverage_summary(snapshot)
+    rows = {row.category: row for row in summary.rows}
+    assert rows["Price / Market Bars"].status_code == "unavailable"
+    assert rows["Earnings Actuals"].status_code == "unavailable"
+    assert rows["Consensus Data"].record_count == 2
+    assert rows["Consensus Data"].linked_count == 2
+    assert rows["News & Filings"].linked_count == 1
+    assert rows["Alternative Evidence / Events"].linked_count == 2
+
+    unlinked_news = snapshot.news_filings.copy()
+    for column in (
+        "related_entity_ids",
+        "related_listing_ids",
+        "related_basket_ids",
+    ):
+        unlinked_news[column] = "[]"
+    unlinked_summary = build_data_coverage_summary(
+        replace(snapshot, news_filings=unlinked_news)
+    )
+    news_row = next(
+        row for row in unlinked_summary.rows if row.category == "News & Filings"
+    )
+    assert news_row.status_code == "partial"
+    assert news_row.linked_count == 0
+    assert "0 carry" in news_row.details
+
+    before = {
+        path.name: (path.read_bytes(), path.stat().st_mtime_ns)
+        for path in generated_root.iterdir()
+    }
+    monkeypatch.setenv("CONTROL_TOWER_ARTIFACT_ROOT", str(generated_root))
+    app = AppTest.from_file(str(APP_PATH), default_timeout=30).run()
+    assert not app.exception
+    rendered = _app_text(app)
+    assert "Data coverage" in rendered
+    assert "Price / Market Bars" in rendered
+    assert "No price or market-bars artifact" in rendered
+    assert "This is evidence coverage, not a trading signal" in rendered
     after = {path.name: (path.read_bytes(), path.stat().st_mtime_ns) for path in generated_root.iterdir()}
     assert before == after
 
@@ -914,6 +987,70 @@ def test_task7_company_view_fails_closed_for_unknown_company(generated_root: Pat
     assert view.invalidation_evidence.empty
     with pytest.raises(ValueError, match="unknown entity_id"):
         build_company_view(snapshot, entity_id="MISSING")
+
+
+def test_company_view_consumes_quote_snapshot_and_classifies_freshness(generated_root: Path) -> None:
+    from control_tower.models import EventFilters
+    from control_tower.pages.company import COMPANY_QUOTE_COLUMNS, build_company_view
+
+    snapshot = _snapshot(generated_root)
+    quote = _typed(_frame("quote_snapshots.parquet", [{
+        "quote_id": "Q1",
+        "listing_id": "L1",
+        "canonical_ticker": "EONE",
+        "provider_symbol": "EONE",
+        "quote_timestamp": "2026-08-13T11:59:30Z",
+        "retrieved_at_utc": "2026-08-13T12:00:00Z",
+        "last_price": 123.45,
+        "bid": 123.40,
+        "ask": 123.50,
+        "day_change_pct": 1.2,
+        "volume": 1000.0,
+        "currency": "USD",
+        "market_status": "open",
+        "latency_class": "realtime",
+        "source_id": "fixture_quotes",
+        "source_url": "https://example.test/quotes",
+        "pit_class": "snapshot_from_live_source",
+        "source_license_class": "public_metadata",
+        "registry_version": "v1",
+    }]))
+    snapshot = replace(snapshot, quote_snapshots=quote)
+
+    view = build_company_view(snapshot, entity_id="E1")
+    assert tuple(view.quote_snapshots.columns) == COMPANY_QUOTE_COLUMNS
+    assert view.quote_status == "available"
+    assert view.quote_snapshots.iloc[0]["last_price"] == 123.45
+    assert view.quote_snapshots.iloc[0]["freshness"] == "live"
+
+    macro_only = build_company_view(
+        snapshot,
+        entity_id="E1",
+        filters=EventFilters(
+            scope=("macro",),
+            now_utc=snapshot.now_utc,
+        ),
+    )
+    assert macro_only.quote_snapshots.empty
+
+
+def test_task9_company_view_respects_global_scope_and_country_filters(generated_root: Path) -> None:
+    from control_tower.models import EventFilters
+    from control_tower.pages.company import _filtered_entity_ids, build_company_view
+
+    snapshot = _snapshot(generated_root)
+    country_filter = EventFilters(country=("US",), now_utc=snapshot.now_utc)
+    assert _filtered_entity_ids(snapshot, country_filter) == {"E1"}
+
+    macro_only = build_company_view(
+        snapshot,
+        entity_id="E1",
+        filters=EventFilters(scope=("macro",), now_utc=snapshot.now_utc),
+    )
+    assert macro_only.events.empty
+    assert macro_only.consensus.empty
+    assert macro_only.consensus_revisions.empty
+    assert macro_only.official_documents.empty
 
 
 def test_task7_source_health_marks_stale_and_retrieval_only_not_healthy() -> None:
@@ -999,6 +1136,9 @@ def _production_task7_generation_or_skip() -> Path:
     ).resolve(strict=True)
 
     for name in DATA_ARTIFACT_NAMES:
+        if not (resolution.artifact_root / name).exists():
+            assert name == "quote_snapshots.parquet"
+            continue
         actual_columns = tuple(pq.read_schema(resolution.artifact_root / name).names)
         assert actual_columns == ARTIFACT_COLUMNS[name], (
             f"CURRENT publication {resolution.current_target} has non-final "
@@ -1324,6 +1464,7 @@ def test_task7_source_health_precedence_matrix() -> None:
     labels = result.set_index("source_id")["display_label"].to_dict()
     assert labels["entitlement_required"] == "Entitlement required"
     assert labels["entitlement_denied"] == "Entitlement denied"
+    assert labels["retrieval_only"].startswith("Available · Freshness not classified")
     assert result.loc[result["source_id"].eq("missing_pit"), "pit_display"].item() == "PIT unavailable"
     assert result.loc[result["source_id"].eq("discovery"), "license_display"].item() == "Discovery/context only"
     assert result.loc[result["source_id"].eq("restricted"), "license_display"].item() == "Restricted body · metadata only"
@@ -1512,11 +1653,11 @@ def test_task8_source_health_metric_counts_reconcile_status_rows() -> None:
     assert counts == {
         "sources": 21,
         "available": 14,
-        "unavailable": 4,
-        "degraded": 3,
         "healthy": 0,
+        "freshness_unclassified": 14,
         "stale": 0,
-        "errors_gaps": 7,
+        "unavailable_degraded": 7,
+        "errors_gaps": 0,
     }
 
     explicit = pd.DataFrame(
@@ -1579,12 +1720,247 @@ def test_task8_source_health_app_uses_issue_metric_not_row_count(
     metrics = {item.label: item.value for item in app.metric}
     assert metrics == {
         "Sources": "21",
+        "Available": "14",
         "Healthy": "0",
+        "Freshness unclassified": "14",
         "Stale": "0",
-        "Errors / gaps": "7",
+        "Unavailable / degraded": "7",
+        "Explicit errors / gaps": "0",
     }
 
 
 def test_task8_sidebar_uses_responsive_auto_initial_state() -> None:
     source = APP_PATH.read_text(encoding="utf-8")
-    assert 'initial_sidebar_state="auto"' in source
+    assert 'initial_sidebar_state="collapsed"' in source
+
+
+def test_task9_superseded_events_are_filtered_from_timeline_and_next_catalyst(
+    tmp_path: Path,
+) -> None:
+    from control_tower.components.timeline import select_next_catalyst
+    from control_tower.filters import apply_event_filters, superseded_event_ids
+    from control_tower.models import EventFilters
+    from control_tower.pages.unified_timeline import build_timeline_view
+
+    root = tmp_path / "task9-hbm-supersession"
+    _write_task8_region_filter_bundle(root)
+    snapshot = _snapshot(root)
+    events = snapshot.events
+    old_id = "AI_HBM4_QUALIFICATION_WINDOW"
+    new_id = "AI_HBM4_QUALIFICATION_WINDOW_V2"
+    assert old_id in set(events["event_id"])
+    assert new_id in set(events["event_id"])
+    assert superseded_event_ids(events) == {old_id}
+
+    filtered = apply_event_filters(
+        events, EventFilters(horizon="all", now_utc=snapshot.now_utc)
+    )
+    assert old_id not in set(filtered["event_id"])
+    assert new_id in set(filtered["event_id"])
+
+    # The old HBM4 window is high-importance and would win the catalyst rank
+    # without supersession filtering; it must never be presented.
+    next_row = select_next_catalyst(events, snapshot.now_utc)
+    assert next_row is not None
+    assert next_row["event_id"] != old_id
+
+    view = build_timeline_view(
+        snapshot,
+        filters=EventFilters(horizon="all", now_utc=snapshot.now_utc),
+        viewer_timezone="Europe/London",
+    )
+    visible = {event.event_id for group in view.month_groups for event in group.events}
+    assert old_id not in visible
+    assert new_id in visible
+
+
+def test_task9_stale_bundle_today_shows_stale_state_and_recent_events(
+    generated_root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from streamlit.testing.v1 import AppTest
+    import streamlit as st
+
+    from control_tower.models import EventFilters
+    from control_tower.pages.today import (
+        bundle_latest_data_at,
+        build_today_view,
+    )
+
+    fresh = _snapshot(generated_root)
+    fresh_model = build_today_view(
+        fresh,
+        filters=EventFilters(now_utc=fresh.now_utc),
+        viewer_timezone="Europe/London",
+    )
+    assert fresh_model.bundle_stale is False
+
+    # Latest source observation is 2026-08-13T11:00:00Z; move the previous
+    # build after it so the delta window contains no new source data.
+    _rewrite_manifest(
+        generated_root,
+        lambda manifest: manifest.update(
+            {"previous_build_at": "2026-08-13T11:45:00Z"}
+        ),
+    )
+    snapshot = _snapshot(generated_root)
+    assert bundle_latest_data_at(snapshot) == pd.Timestamp("2026-08-13T11:00:00Z")
+    model = build_today_view(
+        snapshot,
+        filters=EventFilters(now_utc=snapshot.now_utc),
+        viewer_timezone="Europe/London",
+    )
+    assert model.bundle_stale is True
+    assert model.changes.empty
+    assert not model.recent_events.empty
+    assert "EV_GAP" not in set(model.recent_events["event_id"])
+
+    monkeypatch.setenv("CONTROL_TOWER_ARTIFACT_ROOT", str(generated_root))
+    st.cache_data.clear()
+    app = AppTest.from_file(str(APP_PATH), default_timeout=30).run()
+    assert not app.exception
+    assert "bundle is stale" in _app_text(app).lower()
+    assert "No changes in the selected snapshot window" not in _app_text(app)
+    assert "Provisional date" in _app_text(app)
+
+
+def test_task9_source_health_buckets_and_privacy_sanitisation() -> None:
+    from control_tower.pages.source_health import (
+        classify_source_health,
+        display_input_path,
+        sanitise_source_detail,
+        source_health_counts,
+    )
+
+    rows = [
+        {
+            "source_id": "avail-fresh",
+            "status": "available",
+            "cadence": "daily",
+            "source_latest_at": "2026-08-12T00:00:00Z",
+        },
+        {
+            "source_id": "avail-no-cadence",
+            "status": "available",
+            "input_path": "/private/tmp/leaky/news.csv",
+            "detail": "missing_input:/private/tmp/leaky/news.csv; missing_input:/private/tmp/leaky/news.csv",
+        },
+        {"source_id": "stale-src", "status": "stale"},
+        {"source_id": "unavail", "status": "unavailable"},
+        {"source_id": "degraded-src", "status": "degraded"},
+    ]
+    classified = classify_source_health(
+        pd.DataFrame(rows), now_utc=pd.Timestamp("2026-08-13T00:00:00Z")
+    )
+    counts = source_health_counts(classified)
+    assert counts == {
+        "sources": 5,
+        "available": 2,
+        "healthy": 1,
+        "freshness_unclassified": 1,
+        "stale": 1,
+        "unavailable_degraded": 2,
+        "errors_gaps": 0,
+    }
+
+    leaky = classified.loc[classified["source_id"].eq("avail-no-cadence")].iloc[0]
+    assert leaky["input_path"] == "news.csv"
+    assert "/private/tmp" not in str(leaky["detail"])
+    assert str(leaky["detail"]).count("missing_input:") == 1
+
+    assert display_input_path("C:\\tmp\\win.csv") == "win.csv"
+    assert display_input_path("input/news.csv") == "input/news.csv"
+    assert display_input_path("") == ""
+    assert (
+        sanitise_source_detail(
+            "missing_input:/a/b/c.csv; missing_input:/a/b/c.csv"
+        )
+        == "missing_input:c.csv"
+    )
+    assert sanitise_source_detail("missing_input:/Users/john doe/cache/file.csv") == "missing_input:file.csv"
+
+
+def test_task9_sidebar_active_state_is_immediate(
+    generated_root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from streamlit.testing.v1 import AppTest
+    import streamlit as st
+
+    monkeypatch.setenv("CONTROL_TOWER_ARTIFACT_ROOT", str(generated_root))
+    st.cache_data.clear()
+    app = AppTest.from_file(str(APP_PATH), default_timeout=30).run()
+    assert not app.exception
+
+    def button(label: str):
+        return next(item for item in app.sidebar.button if item.label == label)
+
+    assert button("Today").proto.type == "primary"
+    assert button("Unified Timeline").proto.type == "secondary"
+
+    button("Unified Timeline").click().run()
+    assert not app.exception
+    assert app.session_state["ct_page"] == "Unified Timeline"
+    # Active styling must be correct on the same interaction, not one beat later.
+    assert button("Unified Timeline").proto.type == "primary"
+    assert button("Today").proto.type == "secondary"
+
+
+def test_task9_mobile_sidebar_is_compressed() -> None:
+    css_source = (
+        APP_ROOT / "control_tower" / "components" / "__init__.py"
+    ).read_text(encoding="utf-8")
+    assert "@media (max-width: 759px)" in css_source
+    narrow = css_source.split("@media (max-width: 759px)")[1].split("@media")[0]
+    assert 'data-testid="stSidebar"' in narrow
+    assert "width" in narrow and "min-width" in narrow
+
+
+def test_task9_next_catalyst_is_presented_only_by_flight_deck(
+    generated_root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from streamlit.testing.v1 import AppTest
+    import streamlit as st
+
+    monkeypatch.setenv("CONTROL_TOWER_ARTIFACT_ROOT", str(generated_root))
+    st.cache_data.clear()
+    app = AppTest.from_file(str(APP_PATH), default_timeout=30).run()
+    assert not app.exception
+    assert _app_text(app).count("Next catalyst") == 1
+
+    app.session_state["ct_page"] = "Unified Timeline"
+    app = app.run()
+    assert not app.exception
+    assert _app_text(app).count("Next catalyst") == 1
+
+    app.session_state["ct_page"] = "AI Bottlenecks"
+    app = app.run()
+    assert not app.exception
+    assert "Prices" not in _app_text(app)
+
+
+def test_task9_workbench_dedup_keeps_distinct_same_source_events() -> None:
+    from control_tower.pages.ai_bottlenecks import _compact_catalyst_frame
+
+    frame = pd.DataFrame([
+        {
+            "event_id": "E1",
+            "event_type": "observation",
+            "title": "Revenue observation",
+            "starts_at": "2026-08-01T00:00:00Z",
+            "source_id": "official_source",
+            "related_entity_ids": ("TSMC",),
+            "related_basket_ids": ("AI_BOTTLENECKS_GLOBAL",),
+        },
+        {
+            "event_id": "E2",
+            "event_type": "observation",
+            "title": "Capacity observation",
+            "starts_at": "2026-08-01T00:00:00Z",
+            "source_id": "official_source",
+            "related_entity_ids": ("TSMC",),
+            "related_basket_ids": ("AI_BOTTLENECKS_GLOBAL",),
+        },
+    ])
+    assert len(_compact_catalyst_frame(frame)) == 2

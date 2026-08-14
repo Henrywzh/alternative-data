@@ -63,6 +63,7 @@ class ControlTowerSnapshot:
     macro_observations: pd.DataFrame
     consensus_snapshots: pd.DataFrame
     consensus_revisions: pd.DataFrame
+    quote_snapshots: pd.DataFrame
     news_filings: pd.DataFrame
     source_health: pd.DataFrame
     manifest: Mapping[str, Any]

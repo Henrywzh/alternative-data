@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from html import escape
+import re
 from typing import Mapping
 
 import pandas as pd
@@ -87,8 +88,20 @@ _UTC_COLUMNS = {
     "age_at_utc",
 }
 
-_NON_ISSUE_DISPLAY_STATUSES = frozenset({"healthy", "unclassified"})
-_EXPLICIT_ERROR_GAP_STATUSES = frozenset({"gap", "unresolved", "conflict"})
+_EXPLICIT_ERROR_GAP_STATUSES = frozenset({
+    "gap",
+    "unresolved",
+    "conflict",
+    "failed",
+    "error",
+    "schema_error",
+    "review_required",
+    "entitlement_required",
+    "entitlement_denied",
+})
+_WINDOWS_ABS_PATH = re.compile(r"(?<![\w:])[A-Za-z]:[\\/][^;\n]+")
+_COLON_ABS_PATH = re.compile(r":(?!//)(?:[\\/][^;\n]+)")
+_PLAIN_ABS_PATH = re.compile(r"(?<![:/])/(?:[\w.+-]+/)+[\w.+-]+")
 
 
 def _text(value: object) -> str:
@@ -100,6 +113,43 @@ def _text(value: object) -> str:
     except (TypeError, ValueError):
         pass
     return str(value).strip()
+
+
+def display_input_path(value: object) -> str:
+    """Return a display-safe input path, basename-only when absolute."""
+
+    text = _text(value)
+    if not text:
+        return ""
+    if text.startswith("/") or _WINDOWS_ABS_PATH.match(text):
+        return text.replace("\\", "/").rstrip("/").split("/")[-1]
+    return text
+
+
+def sanitise_source_detail(value: object) -> str:
+    """Strip absolute path fragments and deduplicate raw error tokens."""
+
+    text = _text(value)
+    if not text:
+        return ""
+    text = _WINDOWS_ABS_PATH.sub(
+        lambda match: match.group(0).replace("\\", "/").rstrip("/").split("/")[-1],
+        text,
+    )
+    text = _COLON_ABS_PATH.sub(
+        lambda match: ":" + match.group(0).replace("\\", "/").rstrip("/").split("/")[-1],
+        text,
+    )
+    text = _PLAIN_ABS_PATH.sub(
+        lambda match: match.group(0).replace("\\", "/").rstrip("/").split("/")[-1],
+        text,
+    )
+    tokens = [token.strip() for token in text.split(";") if token.strip()]
+    seen: list[str] = []
+    for token in tokens:
+        if token not in seen:
+            seen.append(token)
+    return "; ".join(seen)
 
 
 def _timestamp(value: object) -> pd.Timestamp | None:
@@ -140,16 +190,20 @@ def _status_class(status: str, *, age_days: float | None, threshold: int | None,
     return "unclassified"
 
 
-def _display_label(display_status: str, entitlement_status: str) -> str:
+def _display_label(display_status: str, entitlement_status: str, raw_status: str = "") -> str:
     if display_status == "entitlement_error":
         if entitlement_status == "denied":
             return "Entitlement denied"
         return "Entitlement required"
+    if display_status == "unclassified" and raw_status in {"available", "success", "ok"}:
+        label = "Available · Freshness not classified"
+    else:
+        label = display_status.replace("_", " ").title()
     if entitlement_status == "unknown" and display_status not in {"failed", "unavailable"}:
         # Keep this explicit in the table; it prevents a license class from
         # being mistaken for an active entitlement.
-        return display_status.replace("_", " ").title() + " · Entitlement not evidenced"
-    return display_status.replace("_", " ").title()
+        return label + " · Entitlement not evidenced"
+    return label
 
 
 def _pit_display(value: object) -> str:
@@ -242,11 +296,11 @@ def classify_source_health(
         output.update(
             {
                 "source_id": _text(row.get("source_id")),
-                "input_path": _text(row.get("input_path")),
+                "input_path": display_input_path(row.get("input_path")),
                 "source_kind": _text(row.get("source_kind")),
                 "status": _text(row.get("status")),
                 "display_status": display_status,
-                "display_label": _display_label(display_status, entitlement),
+                "display_label": _display_label(display_status, entitlement, status),
                 "age_basis": age_basis,
                 "age_at_utc": age_at if age_at is not None else pd.NaT,
                 "age_days": age_days,
@@ -260,7 +314,7 @@ def classify_source_health(
                 "entitlement_evidence": _text(row.get("entitlement_evidence")),
                 "entitlement_ref": _text(row.get("entitlement_ref")),
                 "source_url": _text(row.get("source_url")),
-                "detail": _text(row.get("detail")),
+                "detail": sanitise_source_detail(row.get("detail")),
             }
         )
         rows.append(output)
@@ -282,7 +336,13 @@ def classify_source_health(
 
 
 def source_health_counts(classified: pd.DataFrame) -> dict[str, int]:
-    """Return headline counts without treating unclassified rows as errors."""
+    """Return headline counts without treating unclassified rows as errors.
+
+    Buckets are: available (status-level), healthy / freshness-unclassified /
+    stale (freshness-level), unavailable-degraded (status-level) and
+    errors_gaps (explicit issues only; cadence-unconfigured rows are never
+    counted here).
+    """
 
     display_status = classified.get(
         "display_status", pd.Series("", index=classified.index, dtype="string")
@@ -290,17 +350,18 @@ def source_health_counts(classified: pd.DataFrame) -> dict[str, int]:
     raw_status = classified.get(
         "status", pd.Series("", index=classified.index, dtype="string")
     ).map(_text).str.lower()
-    issue_rows = (
-        display_status.ne("")
-        & ~display_status.isin(_NON_ISSUE_DISPLAY_STATUSES)
-    ) | raw_status.isin(_EXPLICIT_ERROR_GAP_STATUSES)
+    issue_rows = raw_status.isin(_EXPLICIT_ERROR_GAP_STATUSES) | display_status.isin(
+        {"conflicted", "review_required", "entitlement_error", "clock_skew"}
+    )
     return {
         "sources": int(len(classified)),
         "available": int(raw_status.eq("available").sum()),
-        "unavailable": int(raw_status.eq("unavailable").sum()),
-        "degraded": int(raw_status.eq("degraded").sum()),
         "healthy": int(display_status.eq("healthy").sum()),
+        "freshness_unclassified": int(display_status.eq("unclassified").sum()),
         "stale": int(display_status.eq("stale").sum()),
+        "unavailable_degraded": int(
+            raw_status.isin({"unavailable", "degraded"}).sum()
+        ),
         "errors_gaps": int(issue_rows.sum()),
     }
 
@@ -322,6 +383,34 @@ def _safe_link(value: object, label: str) -> str:
     return f'<a class="ct-inline-link" href="{escape(url, quote=True)}" target="_blank" rel="noopener">{escape(label)}</a>'
 
 
+def _source_display_name(value: object) -> str:
+    """Translate registry/source ids into a compact lineage label."""
+
+    text = _text(value)
+    labels = {
+        "consensus_export": "Consensus export",
+        "sec_edgar": "SEC EDGAR",
+        "filings_sec_edgar": "SEC EDGAR coverage",
+        "official_ai_rss": "Official AI RSS",
+        "news_official_ai_rss": "Official AI RSS coverage",
+        "fred_observations": "FRED observations",
+        "fred_series_meta": "FRED series metadata",
+        "ecb_fx_rates": "ECB FX reference rates",
+        "ofr_mnemonics": "OFR market-data mnemonics",
+        "ofr_timeseries": "OFR market time series",
+        "tw_monthly_revenue": "Taiwan monthly revenue",
+    }
+    if text in labels:
+        return labels[text]
+    if text.startswith("artifact:"):
+        return "Artifact · " + text.removeprefix("artifact:").replace("_", " ").title()
+    if text.startswith("events:"):
+        return "Event registry · " + text.removeprefix("events:").replace("_", " ").title()
+    if text.startswith("registry:"):
+        return "Registry · " + text.removeprefix("registry:").replace("_", " ").title()
+    return text.replace("_", " ").replace(":", " · ").title() or "Source unavailable"
+
+
 def render_source_health_page(
     snapshot: ControlTowerSnapshot,
     *,
@@ -337,62 +426,48 @@ def render_source_health_page(
         return classified
 
     counts = source_health_counts(classified)
-    cols = st.columns(4)
-    cols[0].metric("Sources", counts["sources"])
-    cols[1].metric("Healthy", counts["healthy"])
-    cols[2].metric("Stale", counts["stale"])
-    cols[3].metric("Errors / gaps", counts["errors_gaps"])
+    status_cols = st.columns(4)
+    status_cols[0].metric("Sources", counts["sources"])
+    status_cols[1].metric("Available", counts["available"])
+    status_cols[2].metric("Healthy", counts["healthy"])
+    status_cols[3].metric("Freshness unclassified", counts["freshness_unclassified"])
+    issue_cols = st.columns(3)
+    issue_cols[0].metric("Stale", counts["stale"])
+    issue_cols[1].metric("Unavailable / degraded", counts["unavailable_degraded"])
+    issue_cols[2].metric("Explicit errors / gaps", counts["errors_gaps"])
 
     display_columns = (
-        "source_id",
-        "input_path",
-        "source_kind",
-        "status",
-        "display_status",
-        "display_label",
-        "latest_observation_at",
-        "source_latest_at",
-        "retrieved_at_utc",
-        "age_days",
-        "cadence",
-        "stale_after_days",
-        "row_count",
-        "schema_version",
-        "pit_display",
-        "license_display",
-        "entitlement_status",
-        "entitlement_evidence",
-        "entitlement_ref",
-        "missing_geographies",
-        "detail",
+        "source_id", "display_label", "latest_observation_at", "age_days",
+        "cadence", "row_count",
     )
     table = classified.loc[:, display_columns].copy()
-    table["mapping_indicator"] = table["detail"].map(
-        lambda value: "unresolved mapping" if any(token in _text(value).lower() for token in ("unresolved_mapping", "mapping_unresolved", "unresolved mapping")) else "not reported"
-    )
-    table["conflict_indicator"] = table["display_status"].map(
-        lambda value: "conflict" if value == "conflicted" else "review required" if value == "review_required" else "none"
-    )
-    st.dataframe(table, use_container_width=True, hide_index=True)
-    for _, row in classified.iterrows():
-        source_id = _text(row.get("source_id")) or "source unavailable"
-        status = _text(row.get("display_label")) or _text(row.get("display_status"))
-        detail = _text(row.get("detail")) or "No schema/error detail supplied."
-        age = "age unavailable" if pd.isna(row.get("age_days")) else f"age {float(row['age_days']):.2f}d"
-        source = _safe_link(row.get("source_url"), source_id)
-        mapping_indicator = "unresolved mapping" if any(token in detail.lower() for token in ("unresolved_mapping", "mapping_unresolved", "unresolved mapping")) else "mapping not reported"
-        conflict_indicator = "conflicted" if _text(row.get("display_status")) == "conflicted" else "review required" if _text(row.get("display_status")) == "review_required" else "no conflict flagged"
-        st.markdown(
-            f'<div class="ct-change"><div class="ct-change-title">{escape(source_id)} · {escape(status)}</div>'
-            f'<div class="ct-change-detail">{escape(detail)} · {escape(age)} · cadence {escape(_text(row.get("cadence")) or "unclassified")} · '
-            f'stale after {escape(_text(row.get("stale_after_days")) or "unclassified")} · input {escape(_text(row.get("input_path")) or "unavailable")} · '
-            f'schema {escape(_text(row.get("schema_version")) or "unavailable")} · {escape(mapping_indicator)} · {escape(conflict_indicator)}</div>'
-            f'<div class="ct-source-line">{source} · latest observation {_format_time(row.get("latest_observation_at"), viewer_timezone)} · '
-            f'source latest {_format_time(row.get("source_latest_at"), viewer_timezone)} · retrieved {_format_time(row.get("retrieved_at_utc"), viewer_timezone)} · '
-            f'PIT {escape(_text(row.get("pit_display")))} · license {escape(_text(row.get("license_display")))} · '
-            f'entitlement {escape(_text(row.get("entitlement_status")))} · evidence {escape(_text(row.get("entitlement_ref")) or "unavailable")}</div></div>',
-            unsafe_allow_html=True,
-        )
+    table["source_id"] = table["source_id"].map(_source_display_name)
+    table = table.rename(columns={
+        "source_id": "Source",
+        "display_label": "Status",
+        "latest_observation_at": "Latest observation",
+        "age_days": "Age (days)",
+        "cadence": "Cadence",
+        "row_count": "Rows",
+    })
+    st.dataframe(table, width="stretch", hide_index=True)
+    with st.expander("Source details", expanded=False):
+        for _, row in classified.iterrows():
+            source_id = _text(row.get("source_id")) or "source unavailable"
+            status = _text(row.get("display_label")) or _text(row.get("display_status"))
+            detail = _text(row.get("detail")) or "No schema/error detail supplied."
+            age = "age unavailable" if pd.isna(row.get("age_days")) else f"age {float(row['age_days']):.2f}d"
+            source = _safe_link(row.get("source_url"), "source link")
+            st.markdown(
+                f'<div class="ct-change"><div class="ct-change-title">{escape(_source_display_name(source_id))} · {escape(status)}</div>'
+                f'<div class="ct-change-detail">{escape(detail)} · {escape(age)} · cadence {escape(_text(row.get("cadence")) or "unclassified")} · '
+                f'stale after {escape(_text(row.get("stale_after_days")) or "unclassified")} · schema {escape(_text(row.get("schema_version")) or "unavailable")}</div>'
+                f'<div class="ct-source-line">internal id {escape(source_id)} · {source} · latest observation {_format_time(row.get("latest_observation_at"), viewer_timezone)} · '
+                f'source latest {_format_time(row.get("source_latest_at"), viewer_timezone)} · retrieved {_format_time(row.get("retrieved_at_utc"), viewer_timezone)} · '
+                f'PIT {escape(_text(row.get("pit_display")))} · license {escape(_text(row.get("license_display")))} · '
+                f'entitlement {escape(_text(row.get("entitlement_status")))} · evidence {escape(_text(row.get("entitlement_ref")) or "unavailable")}</div></div>',
+                unsafe_allow_html=True,
+            )
     return classified
 
 
@@ -400,6 +475,8 @@ __all__ = [
     "DEFAULT_STALE_AFTER_DAYS",
     "SOURCE_HEALTH_COLUMNS",
     "classify_source_health",
+    "display_input_path",
+    "sanitise_source_detail",
     "source_health_counts",
     "render_source_health_page",
 ]

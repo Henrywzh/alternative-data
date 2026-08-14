@@ -667,6 +667,130 @@ def _theme_filter_summary(tiers: list[str], countries: list[str]) -> str:
     return " · ".join(parts) if parts else "All theme filters at default"
 
 
+def _member_watchlist_frame(
+    snapshot: ControlTowerSnapshot,
+    members: pd.DataFrame,
+    *,
+    viewer_timezone: str,
+) -> pd.DataFrame:
+    """Build the compact investor-facing member matrix.
+
+    The underlying theme contract intentionally keeps stable ids and listing
+    arrays.  Those are useful for joins, but they are not the right default
+    presentation for a research workbench.
+    """
+
+    if members.empty:
+        return pd.DataFrame(
+            columns=[
+                "Ticker", "Company", "Region", "Tier", "Layer", "Role",
+                "Evidence", "Last evidence", "Consensus",
+            ]
+        )
+    listing_labels: dict[str, str] = {}
+    for _, listing in snapshot.listings.iterrows():
+        listing_id = _text(listing.get("listing_id"))
+        if not listing_id:
+            continue
+        ticker = _text(listing.get("canonical_ticker")) or _text(listing.get("native_ticker"))
+        exchange = _text(listing.get("exchange"))
+        label = " · ".join(value for value in (ticker, exchange) if value)
+        if label:
+            listing_labels[listing_id] = label
+
+    rows: list[dict[str, object]] = []
+    for _, member in members.iterrows():
+        listing_ids = _tokens(member.get("verified_listing_ids")) or _tokens(member.get("listing_ids"))
+        ticker = ", ".join(listing_labels.get(listing_id, listing_id) for listing_id in listing_ids) or "unresolved"
+        evidence_status = _text(member.get("evidence_status")).replace("_", " ") or "unavailable"
+        rows.append(
+            {
+                "Ticker": ticker,
+                "Company": _text(member.get("display_name")) or "unavailable",
+                "Region": _text(member.get("country")) or "unavailable",
+                "Tier": _text(member.get("membership_tier")).replace("_", "-") or "unclassified",
+                "Layer": _text(member.get("primary_layer")).replace("_", " ") or "unclassified",
+                "Role": _text(member.get("member_role")).replace("_", " ") or "unclassified",
+                "Evidence": evidence_status,
+                "Last evidence": _time_text(member.get("latest_evidence_at"), viewer_timezone),
+                "Consensus": _text(member.get("consensus_status")).replace("_", " ") or "unavailable",
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def _source_coverage_frame(source_coverage: pd.DataFrame) -> pd.DataFrame:
+    """Keep source-health details compact and free of internal ids/paths."""
+
+    if source_coverage.empty:
+        return pd.DataFrame(columns=["Source kind", "Status", "Latest observation", "Age", "Cadence"])
+    columns = {
+        "source_kind": "Source kind",
+        "display_status": "Status",
+        "latest_observation_at": "Latest observation",
+        "age_days": "Age (days)",
+        "cadence": "Cadence",
+    }
+    available = [column for column in columns if column in source_coverage.columns]
+    return source_coverage.loc[:, available].rename(columns={column: columns[column] for column in available})
+
+
+def _compact_catalyst_frame(catalysts: pd.DataFrame) -> pd.DataFrame:
+    """Collapse duplicate representations of one source observation."""
+
+    if catalysts.empty:
+        return catalysts
+    frame = catalysts.copy()
+    if not {"starts_at", "source_id"}.issubset(frame.columns):
+        return frame
+    relation_columns = ("related_entity_ids", "related_basket_ids")
+
+    def normalise(value: object) -> tuple[str, ...]:
+        return tuple(sorted(_tokens(value)))
+
+    keys = [
+        (
+            _text(row.get("starts_at")),
+            _text(row.get("source_id")),
+            *(normalise(row.get(column)) for column in relation_columns),
+            (
+                "tw_monthly_revenue"
+                if _text(row.get("source_id")) == "tw_monthly_revenue"
+                else _text(row.get("event_type"))
+            ),
+            (
+                ""
+                if _text(row.get("source_id")) == "tw_monthly_revenue"
+                else _text(row.get("title"))
+            ),
+        )
+        for _, row in frame.iterrows()
+    ]
+    return frame.loc[~pd.Series(keys, index=frame.index).duplicated(keep="first")].reset_index(drop=True)
+
+
+def _compact_evidence_frame(evidence: pd.DataFrame) -> pd.DataFrame:
+    """Show one basket-level evidence item instead of one row per member."""
+
+    if evidence.empty:
+        return evidence
+    frame = evidence.copy()
+    groups: list[tuple[object, ...]] = []
+    for _, row in frame.iterrows():
+        source_id = _text(row.get("source_id"))
+        if source_id == "tw_monthly_revenue":
+            groups.append((source_id, _text(row.get("changed_at"))))
+        else:
+            groups.append(
+                (
+                    _text(row.get("event_id")),
+                    _text(row.get("change_kind")),
+                    _text(row.get("title")),
+                )
+            )
+    return frame.loc[~pd.Series(groups, index=frame.index).duplicated(keep="first")].reset_index(drop=True)
+
+
 def render_ai_bottlenecks_page(
     snapshot: ControlTowerSnapshot,
     *,
@@ -693,52 +817,93 @@ def render_ai_bottlenecks_page(
     st.caption(f"{summary.member_count} registry member(s) · tier counts {summary.tier_counts or 'unavailable'} · evidence change is the ranking primitive")
     if summary.unavailable_reasons:
         st.warning("Data unavailable or degraded · " + "; ".join(summary.unavailable_reasons))
+    st.info("Market data and earnings actuals are not in this bundle yet; no placeholder values are shown.")
 
     left, right = st.columns([1.35, 1])
     with left:
-        st.markdown("#### Members")
+        st.markdown("#### Basket workbench")
         if summary.members.empty:
             st.info("No registry members match these layer, tier and region filters.")
         else:
-            st.dataframe(summary.members, use_container_width=True, hide_index=True)
-            for _, row in summary.members.iterrows():
-                st.markdown(
-                    f"**{escape(_text(row.get('display_name')))}** · {escape(_text(row.get('country')))} · "
-                    f"{escape(_text(row.get('membership_tier')).replace('_', '-'))} · {escape(_text(row.get('member_role')).replace('_', ' '))} · "
-                    f"evidence {_time_text(row.get('latest_evidence_at'), viewer_timezone)} · {escape(_text(row.get('evidence_status')))}"
-                )
+            st.dataframe(
+                _member_watchlist_frame(snapshot, summary.members, viewer_timezone=viewer_timezone),
+                width="stretch",
+                hide_index=True,
+            )
     with right:
         st.markdown("#### Explicit read-through context")
         if summary.relationships.empty:
             st.info("No explicit secondary-layer relationship is registered.")
         else:
-            st.dataframe(summary.relationships, use_container_width=True, hide_index=True)
+            relationship_view = summary.relationships.loc[:, [
+                "entity_display_name", "primary_layer", "secondary_layer",
+                "membership_tier", "relationship_type",
+            ]].rename(columns={
+                "entity_display_name": "Company",
+                "primary_layer": "Primary layer",
+                "secondary_layer": "Read-through layer",
+                "membership_tier": "Tier",
+                "relationship_type": "Relationship",
+            })
+            st.dataframe(relationship_view, width="stretch", hide_index=True)
             st.caption("Shared-layer cohort only; no supplier, customer, competitor or causal edge is inferred.")
 
-    st.markdown("#### Upcoming catalysts and evidence changes")
-    if summary.catalysts.empty:
+    st.markdown("#### Upcoming catalysts")
+    visible_catalysts = _compact_catalyst_frame(summary.catalysts)
+    visible_evidence = _compact_evidence_frame(summary.evidence_changes)
+    if "display_status" in visible_evidence.columns:
+        visible_evidence = visible_evidence.loc[
+            visible_evidence["display_status"].astype("string").str.casefold().ne("superseded")
+        ].reset_index(drop=True)
+    if visible_catalysts.empty:
         st.info("No upcoming catalyst is available from the selected registry-linked evidence.")
     else:
-        for _, row in summary.catalysts.iterrows():
+        for _, row in visible_catalysts.iterrows():
             source_link = "Source link unavailable" if _text(row.get("source_link_status")) != "available" or not _text(row.get("source_url")) else "Source link available"
             st.markdown(
                 f"**{escape(_text(row.get('title')))}** · {escape(_text(row.get('certainty_class')).replace('_', ' '))} · "
-                f"{_time_text(row.get('starts_at'), viewer_timezone)} · source {escape(_text(row.get('source_id')) or 'unavailable')} · "
-                f"PIT {escape(_text(row.get('pit_class')) or 'PIT unavailable')} · {escape(source_link)} · "
-                f"license {escape(_text(row.get('source_license_class')) or 'license unavailable')} · "
+                f"{_time_text(row.get('starts_at'), viewer_timezone)} · {escape(source_link)} · "
                 f"health {escape(_text(row.get('source_health_status')) or 'unavailable')}"
             )
-    if not summary.evidence_changes.empty:
-        st.dataframe(summary.evidence_changes, use_container_width=True, hide_index=True)
+    if not visible_evidence.empty:
+        st.markdown("#### Recent evidence changes")
+        for _, row in visible_evidence.head(10).iterrows():
+            st.markdown(
+                f"**{escape(_text(row.get('title')) or 'Evidence change')}** · "
+                f"{escape(_text(row.get('change_kind')).replace('_', ' '))} · "
+                f"{_time_text(row.get('changed_at'), viewer_timezone)} · "
+                f"{escape(_text(row.get('display_status')) or 'unavailable')}"
+            )
     else:
         st.info("Latest evidence change is unavailable for this selection.")
 
-    with st.expander("Source coverage and caveats", expanded=True):
+    with st.expander("Lineage details", expanded=False):
+        pit_values = {
+            _text(value)
+            for value in summary.catalysts.get("pit_class", pd.Series(dtype="string"))
+            if _text(value)
+        }
+        link_unavailable = (
+            not summary.catalysts.empty
+            and summary.catalysts.get("source_link_status", pd.Series(dtype="string")).astype("string").ne("available").any()
+        )
+        if pit_values or link_unavailable:
+            lineage_labels = []
+            if pit_values:
+                lineage_labels.append("PIT " + ", ".join(sorted(pit_values)))
+            if link_unavailable:
+                lineage_labels.append("source link unavailable")
+            st.caption("Lineage status · " + " · ".join(lineage_labels))
+        if not summary.evidence_changes.empty:
+            st.dataframe(summary.evidence_changes, width="stretch", hide_index=True)
+        if not summary.catalysts.empty:
+            st.dataframe(summary.catalysts, width="stretch", hide_index=True)
+    with st.expander("Source coverage and caveats", expanded=False):
         if summary.source_coverage.empty:
             st.info("Source coverage unavailable for this registry selection.")
         else:
-            st.dataframe(summary.source_coverage, use_container_width=True, hide_index=True)
-        st.caption("Prices may be contextual only; they do not replace evidence change, revision breadth or source coverage.")
+            st.dataframe(_source_coverage_frame(summary.source_coverage), width="stretch", hide_index=True)
+        st.caption("Registry relationships, evidence change and source coverage only.")
     return summary
 
 

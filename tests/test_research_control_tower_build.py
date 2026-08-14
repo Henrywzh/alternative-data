@@ -28,6 +28,8 @@ from src.research_control_tower.build import (
     OFR_META_SCHEMA_ID,
     OFR_OBSERVATIONS_SCHEMA_ID,
     REGISTRY_OUTPUT_COLUMNS,
+    QUOTE_SNAPSHOT_COLUMNS,
+    QUOTE_SNAPSHOT_SCHEMA_ID,
     TAIWAN_REVENUE_SCHEMA_ID,
     TASK3_REVISION_COLUMNS,
     TASK3_SNAPSHOT_COLUMNS,
@@ -401,6 +403,7 @@ def test_build_writes_stable_artifact_set(tmp_path, minimal_inputs):
         "macro_observations.parquet",
         "consensus_snapshots.parquet",
         "consensus_revisions.parquet",
+        "quote_snapshots.parquet",
         "news_filings.parquet",
         "source_health.parquet",
         "build_manifest.json",
@@ -910,17 +913,68 @@ def test_optional_missing_inputs_are_typed_and_unavailable(minimal_inputs):
     output = minimal_inputs.output_dir
     consensus = pd.read_parquet(_published(minimal_inputs, "consensus_snapshots.parquet"))
     revisions = pd.read_parquet(_published(minimal_inputs, "consensus_revisions.parquet"))
+    quotes = pd.read_parquet(_published(minimal_inputs, "quote_snapshots.parquet"))
     news = pd.read_parquet(_published(minimal_inputs, "news_filings.parquet"))
     health = pd.read_parquet(_published(minimal_inputs, "source_health.parquet"))
 
     assert consensus.empty and list(consensus.columns) == TASK3_SNAPSHOT_COLUMNS
     assert revisions.empty and list(revisions.columns) == TASK3_REVISION_COLUMNS
+    assert quotes.empty and list(quotes.columns) == QUOTE_SNAPSHOT_COLUMNS
     assert news.empty
     unavailable = health[health["status"] == "unavailable"]
-    assert {"consensus_export", "news_official_ai_rss", "filings_sec_edgar"} <= set(
+    assert {"consensus_export", "quote_snapshots", "news_official_ai_rss", "filings_sec_edgar"} <= set(
         unavailable["source_id"]
     )
     assert manifest.degraded_inputs
+
+
+def test_quote_snapshot_input_is_normalized_into_optional_artifact(tmp_path, minimal_inputs):
+    listings = pd.read_csv(minimal_inputs.registry_root / "listings.csv")
+    listing = listings.iloc[0]
+    row = {column: None for column in QUOTE_SNAPSHOT_COLUMNS}
+    row.update({
+        "quote_id": "quote-fixture-1",
+        "listing_id": listing["listing_id"],
+        "canonical_ticker": listing["canonical_ticker"],
+        "provider_symbol": listing["native_ticker"],
+        "quote_timestamp": "2026-08-13T11:59:00Z",
+        "retrieved_at_utc": "2026-08-13T12:00:00Z",
+        "last_price": 123.45,
+        "bid": 123.40,
+        "ask": 123.50,
+        "day_change_pct": 1.2,
+        "volume": 1000.0,
+        "currency": listing["currency"],
+        "market_status": "open",
+        "latency_class": "realtime",
+        "source_id": "fixture_quotes",
+        "source_url": "https://example.test/quotes",
+        "pit_class": "snapshot_from_live_source",
+        "source_license_class": "public_metadata",
+        "registry_version": "v1",
+    })
+    quote_path = tmp_path / "quotes.parquet"
+    pd.DataFrame([row], columns=QUOTE_SNAPSHOT_COLUMNS).to_parquet(quote_path, index=False)
+    config = replace(
+        minimal_inputs,
+        quote_inputs=(
+            _input(
+                "fixture_quotes",
+                quote_path,
+                QUOTE_SNAPSHOT_SCHEMA_ID,
+                license_class="public_metadata",
+            ),
+        ),
+    )
+
+    manifest = build_control_tower_marts(config)
+    quotes = pd.read_parquet(_published(config, "quote_snapshots.parquet"))
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    assert manifest.artifacts["quote_snapshots.parquet"]["status"] == "available"
+    assert list(quotes.columns) == QUOTE_SNAPSHOT_COLUMNS
+    assert len(quotes) == 1
+    assert quotes.iloc[0]["last_price"] == 123.45
+    assert health.loc[health["source_id"].eq("fixture_quotes"), "status"].item() == "available"
 
 
 def test_task3_contract_is_current_29_35_and_physical_empty_schema_is_stable(

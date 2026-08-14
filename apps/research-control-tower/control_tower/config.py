@@ -31,6 +31,7 @@ ARTIFACT_NAMES: Final[tuple[str, ...]] = (
     "macro_observations.parquet",
     "consensus_snapshots.parquet",
     "consensus_revisions.parquet",
+    "quote_snapshots.parquet",
     "news_filings.parquet",
     "source_health.parquet",
     "build_manifest.json",
@@ -40,10 +41,14 @@ MANIFEST_FILENAMES: Final[tuple[str, ...]] = ("build_manifest.json", "manifest.j
 DATA_ARTIFACT_NAMES: Final[tuple[str, ...]] = tuple(
     name for name in ARTIFACT_NAMES if name != "build_manifest.json"
 )
+LEGACY_DATA_ARTIFACT_NAMES: Final[tuple[str, ...]] = tuple(
+    name for name in DATA_ARTIFACT_NAMES if name != "quote_snapshots.parquet"
+)
 
 OPTIONAL_ARTIFACT_NAMES: Final[tuple[str, ...]] = (
     "consensus_snapshots.parquet",
     "consensus_revisions.parquet",
+    "quote_snapshots.parquet",
     "news_filings.parquet",
 )
 
@@ -134,6 +139,13 @@ ARTIFACT_COLUMNS: Final[dict[str, tuple[str, ...]]] = {
         "prior_provider_asof", "provider_asof", "retrieved_at_utc", "source_url",
         "pit_class", "source_run_id", "prior_analyst_count", "revision_value",
         "revision_pct", "analyst_count_change", "dispersion", "alignment_status",
+    ),
+    "quote_snapshots.parquet": (
+        "quote_id", "listing_id", "canonical_ticker", "provider_symbol",
+        "quote_timestamp", "retrieved_at_utc", "last_price", "bid", "ask",
+        "day_change_pct", "volume", "currency", "market_status", "latency_class",
+        "source_id", "source_url", "pit_class", "source_license_class",
+        "registry_version",
     ),
     "news_filings.parquet": (
         "document_id", "document_type", "source_id", "headline", "publisher",
@@ -226,8 +238,9 @@ def _manifest_in_directory(directory: Path, publication_root: Path) -> tuple[str
 
 def _validate_generation_contents(directory: Path, manifest_name: str, publication_root: Path) -> None:
     expected = set(DATA_ARTIFACT_NAMES) | {manifest_name}
+    legacy_expected = set(LEGACY_DATA_ARTIFACT_NAMES) | {manifest_name}
     actual = {entry.name for entry in directory.iterdir()}
-    if actual != expected:
+    if actual != expected and actual != legacy_expected:
         missing = sorted(expected - actual)
         extra = sorted(actual - expected)
         detail = f"missing {missing[0]}" if missing else f"unexpected {extra[0]}"
@@ -235,7 +248,7 @@ def _validate_generation_contents(directory: Path, manifest_name: str, publicati
     for entry in directory.iterdir():
         if entry.is_symlink():
             raise ArtifactResolutionError(f"generation entry '{entry.name}' must not be a symlink")
-    for filename in DATA_ARTIFACT_NAMES:
+    for filename in sorted(actual - {manifest_name}):
         _safe_file(directory / filename, publication_root, filename)
 
 
@@ -409,6 +422,7 @@ __all__ = [
     "ArtifactResolution",
     "ArtifactResolutionError",
     "DATA_ARTIFACT_NAMES",
+    "LEGACY_DATA_ARTIFACT_NAMES",
     "EVENT_OPTIONAL_COLUMNS",
     "MANIFEST_FILENAMES",
     "NETWORK_POLICY",

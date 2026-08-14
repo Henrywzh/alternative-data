@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from email.utils import parsedate_to_datetime
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 from pathlib import PurePosixPath
@@ -376,6 +377,51 @@ TASK3_HEALTH_ARROW_SCHEMA = pa.schema(
     ]
 )
 
+QUOTE_SNAPSHOT_COLUMNS = [
+    "quote_id",
+    "listing_id",
+    "canonical_ticker",
+    "provider_symbol",
+    "quote_timestamp",
+    "retrieved_at_utc",
+    "last_price",
+    "bid",
+    "ask",
+    "day_change_pct",
+    "volume",
+    "currency",
+    "market_status",
+    "latency_class",
+    "source_id",
+    "source_url",
+    "pit_class",
+    "source_license_class",
+    "registry_version",
+]
+QUOTE_SNAPSHOT_ARROW_SCHEMA = pa.schema(
+    [
+        ("quote_id", pa.string()),
+        ("listing_id", pa.string()),
+        ("canonical_ticker", pa.string()),
+        ("provider_symbol", pa.string()),
+        ("quote_timestamp", _TASK3_UTC_TIMESTAMP),
+        ("retrieved_at_utc", _TASK3_UTC_TIMESTAMP),
+        ("last_price", pa.float64()),
+        ("bid", pa.float64()),
+        ("ask", pa.float64()),
+        ("day_change_pct", pa.float64()),
+        ("volume", pa.float64()),
+        ("currency", pa.string()),
+        ("market_status", pa.string()),
+        ("latency_class", pa.string()),
+        ("source_id", pa.string()),
+        ("source_url", pa.string()),
+        ("pit_class", pa.string()),
+        ("source_license_class", pa.string()),
+        ("registry_version", pa.string()),
+    ]
+)
+
 NEWS_FILINGS_COLUMNS = [
     "document_id",
     "document_type",
@@ -435,10 +481,18 @@ ARTIFACT_NAMES = (
     "macro_observations.parquet",
     "consensus_snapshots.parquet",
     "consensus_revisions.parquet",
+    "quote_snapshots.parquet",
     "news_filings.parquet",
     "source_health.parquet",
     "build_manifest.json",
 )
+
+OPTIONAL_ARTIFACT_NAMES = frozenset({
+    "consensus_snapshots.parquet",
+    "consensus_revisions.parquet",
+    "quote_snapshots.parquet",
+    "news_filings.parquet",
+})
 
 FRED_OBSERVATIONS_SCHEMA_ID = "fred_observations_v1"
 FRED_META_SCHEMA_ID = "fred_series_meta_v1"
@@ -448,6 +502,7 @@ TAIWAN_REVENUE_SCHEMA_ID = "tw_monthly_revenue_v1"
 ECB_FX_SCHEMA_ID = "ecb_fx_rates_v1"
 NEWS_SCHEMA_ID = "ai_news_blog_posts_v1"
 FILING_SCHEMA_ID = "sec_edgar_filings_v1"
+QUOTE_SNAPSHOT_SCHEMA_ID = "quote_snapshots_v1"
 
 _SCHEMA_ALIASES = {
     FRED_OBSERVATIONS_SCHEMA_ID: FRED_OBSERVATIONS_SCHEMA_ID,
@@ -468,6 +523,8 @@ _SCHEMA_ALIASES = {
     FILING_SCHEMA_ID: FILING_SCHEMA_ID,
     "sec_filings_v1": FILING_SCHEMA_ID,
     "edgar_filings": FILING_SCHEMA_ID,
+    QUOTE_SNAPSHOT_SCHEMA_ID: QUOTE_SNAPSHOT_SCHEMA_ID,
+    "quote_snapshots": QUOTE_SNAPSHOT_SCHEMA_ID,
 }
 
 _EXPECTED_OPTIONAL_SOURCES = (
@@ -478,6 +535,7 @@ _EXPECTED_OPTIONAL_SOURCES = (
     ("tw_monthly_revenue", "macro", TAIWAN_REVENUE_SCHEMA_ID, "TW"),
     ("ecb_fx_rates", "macro", ECB_FX_SCHEMA_ID, "Europe"),
     ("consensus_export", "consensus", "task3_consensus_export_v1", ""),
+    ("quote_snapshots", "market", QUOTE_SNAPSHOT_SCHEMA_ID, ""),
     ("news_official_ai_rss", "news", NEWS_SCHEMA_ID, ""),
     ("filings_sec_edgar", "filing", FILING_SCHEMA_ID, "US"),
 )
@@ -497,6 +555,7 @@ SOURCE_FRESHNESS_THRESHOLDS = {
     FILING_SCHEMA_ID: pd.Timedelta(days=14),
     "task3_consensus_export_v1": pd.Timedelta(days=14),
     "task3_consensus_source_health_v1": pd.Timedelta(days=14),
+    QUOTE_SNAPSHOT_SCHEMA_ID: pd.Timedelta(minutes=5),
 }
 
 SOURCE_TIME_COLUMNS = {
@@ -568,6 +627,12 @@ SOURCE_TIME_COLUMNS = {
         "retrieved": ("as_of",),
         "future": ("latest_snapshot_at", "as_of"),
     },
+    QUOTE_SNAPSHOT_SCHEMA_ID: {
+        "observed": ("quote_timestamp",),
+        "freshness": ("quote_timestamp", "retrieved_at_utc"),
+        "retrieved": ("retrieved_at_utc",),
+        "future": ("quote_timestamp", "retrieved_at_utc"),
+    },
 }
 
 QUALITY_CLASSES = frozenset({"official", "official_metadata", "discovery", "entitled", "unknown"})
@@ -613,6 +678,7 @@ class BuildConfig:
     macro_inputs: tuple[LocalInput, ...] = ()
     news_inputs: tuple[LocalInput, ...] = ()
     filing_inputs: tuple[LocalInput, ...] = ()
+    quote_inputs: tuple[LocalInput, ...] = ()
     consensus_export_dir: Path | None = None
     schema_version: str = SCHEMA_VERSION
     allow_degraded_optional: bool = True
@@ -633,7 +699,7 @@ class BuildConfig:
             raise ValueError("build_id must not be blank")
         if self.network_policy != NETWORK_POLICY:
             raise ValueError("network_policy must be 'forbidden'")
-        descriptors = (*self.macro_inputs, *self.news_inputs, *self.filing_inputs)
+        descriptors = (*self.macro_inputs, *self.news_inputs, *self.filing_inputs, *self.quote_inputs)
         source_ids = [descriptor.source_id for descriptor in descriptors]
         if len(source_ids) != len(set(source_ids)):
             raise ValueError("optional LocalInput source_id values must be unique")
@@ -804,6 +870,7 @@ _OPTIONAL_COLUMNS = {
         "filing_content",
         "body_text",
     },
+    QUOTE_SNAPSHOT_SCHEMA_ID: set(QUOTE_SNAPSHOT_COLUMNS),
     FRED_OBSERVATIONS_SCHEMA_ID: {"date", "series_id", "value", "fetched_at"},
     FRED_META_SCHEMA_ID: {
         "series_id",
@@ -1187,6 +1254,7 @@ def _validate_required_optional_inputs(config: BuildConfig) -> None:
         ("macro", config.macro_inputs),
         ("news", config.news_inputs),
         ("filing", config.filing_inputs),
+        ("market", config.quote_inputs),
     ):
         for descriptor in descriptors:
             if not descriptor.required:
@@ -2234,12 +2302,126 @@ def _build_consensus(
     )
 
 
+def _empty_quote_snapshots() -> pd.DataFrame:
+    return pd.DataFrame({column: pd.Series(dtype="object") for column in QUOTE_SNAPSHOT_COLUMNS})
+
+
+def _build_quote_snapshots(
+    registries: Any,
+    inputs: Sequence[LocalInput],
+    *,
+    as_of_utc: pd.Timestamp,
+) -> tuple[pd.DataFrame, list[_SourceState], list[str]]:
+    """Load already-normalized quote snapshots without contacting providers."""
+
+    listing_rows = registries.listings.set_index("listing_id", drop=False).to_dict("index")
+    rows: list[dict[str, Any]] = []
+    states: list[_SourceState] = []
+    degraded: list[str] = []
+
+    for descriptor in inputs:
+        state, frame, schema_id = _load_optional(
+            descriptor, "market", as_of_utc=as_of_utc
+        )
+        states.append(state)
+        if frame is None:
+            degraded.append(descriptor.source_id)
+            continue
+
+        parsed_quote = pd.to_datetime(frame["quote_timestamp"], errors="coerce", utc=True)
+        parsed_retrieved = pd.to_datetime(frame["retrieved_at_utc"], errors="coerce", utc=True)
+        parsed_price = pd.to_numeric(frame["last_price"], errors="coerce")
+        invalid_reasons: list[str] = []
+        for index, item in frame.iterrows():
+            listing_id = str(item.get("listing_id") or "").strip()
+            listing = listing_rows.get(listing_id)
+            quote_timestamp = parsed_quote.loc[index]
+            retrieved_at = parsed_retrieved.loc[index]
+            price = parsed_price.loc[index]
+            if listing is None:
+                invalid_reasons.append(f"row {index}: unknown listing_id={listing_id}")
+                continue
+            if pd.isna(quote_timestamp):
+                invalid_reasons.append(f"row {index}: invalid quote_timestamp")
+                continue
+            if not pd.isna(retrieved_at) and retrieved_at > as_of_utc:
+                invalid_reasons.append(f"row {index}: retrieved_at_utc beyond as_of_utc")
+                continue
+            if not pd.isna(quote_timestamp) and quote_timestamp > as_of_utc:
+                invalid_reasons.append(f"row {index}: quote_timestamp beyond as_of_utc")
+                continue
+            if pd.isna(price) or not math.isfinite(float(price)):
+                invalid_reasons.append(f"row {index}: invalid last_price")
+                continue
+
+            canonical_ticker = str(listing.get("canonical_ticker") or "").strip()
+            supplied_ticker = str(item.get("canonical_ticker") or "").strip()
+            if supplied_ticker and canonical_ticker and supplied_ticker != canonical_ticker:
+                invalid_reasons.append(
+                    f"row {index}: canonical_ticker does not match listing registry"
+                )
+                continue
+            quote_id = str(item.get("quote_id") or "").strip() or (
+                f"quote_{listing_id}_{quote_timestamp.strftime('%Y%m%dT%H%M%S')}_"
+                f"{descriptor.source_id}"
+            )
+            row = item.to_dict()
+            row.update({
+                "quote_id": quote_id,
+                "listing_id": listing_id,
+                "canonical_ticker": canonical_ticker or supplied_ticker,
+                "provider_symbol": str(item.get("provider_symbol") or "").strip() or canonical_ticker,
+                "quote_timestamp": quote_timestamp,
+                "retrieved_at_utc": retrieved_at,
+                "last_price": float(price),
+                "currency": str(item.get("currency") or listing.get("currency") or "").strip(),
+                "market_status": str(item.get("market_status") or "unknown").strip(),
+                "latency_class": str(item.get("latency_class") or "unknown").strip(),
+                "source_id": str(item.get("source_id") or descriptor.source_id).strip(),
+                "source_url": str(item.get("source_url") or descriptor.source_url or "").strip(),
+                "pit_class": str(item.get("pit_class") or descriptor.pit_class).strip(),
+                "source_license_class": str(item.get("source_license_class") or descriptor.license_class).strip(),
+                "registry_version": str(item.get("registry_version") or listing.get("registry_version") or "v1").strip(),
+            })
+            rows.append({column: row.get(column, pd.NA) for column in QUOTE_SNAPSHOT_COLUMNS})
+
+        if invalid_reasons:
+            state.status = "degraded"
+            _append_state_error(
+                state,
+                code="quote_rows_rejected",
+                message=";".join(invalid_reasons[:3]),
+            )
+            degraded.append(descriptor.source_id)
+
+    if not rows:
+        return _empty_quote_snapshots(), states, sorted(set(degraded))
+
+    frame = pd.DataFrame(rows, columns=QUOTE_SNAPSHOT_COLUMNS)
+    before_dedupe = len(frame)
+    frame = frame.sort_values(
+        ["listing_id", "quote_timestamp", "retrieved_at_utc", "source_id", "quote_id"],
+        ascending=True,
+        na_position="first",
+        kind="mergesort",
+    ).drop_duplicates(subset=["listing_id"], keep="last")
+    if len(frame) < before_dedupe:
+        for state in states:
+            if state.status == "available":
+                state.detail = (
+                    f"{state.detail}; duplicate_latest_quote_rows_dropped="
+                    f"{before_dedupe - len(frame)}"
+                ).strip("; ")
+    return _sort_frame(frame, ["listing_id"]), states, sorted(set(degraded))
+
+
 def _expected_health_states(config: BuildConfig, existing: Sequence[_SourceState]) -> list[_SourceState]:
     present = {state.source_id for state in existing}
     all_inputs: list[tuple[LocalInput, str]] = [
         *((descriptor, "macro") for descriptor in config.macro_inputs),
         *((descriptor, "news") for descriptor in config.news_inputs),
         *((descriptor, "filing") for descriptor in config.filing_inputs),
+        *((descriptor, "market") for descriptor in config.quote_inputs),
     ]
     states = list(existing)
     existing_by_source = {state.source_id: state for state in existing}
@@ -2314,11 +2496,12 @@ def _expected_health_states(config: BuildConfig, existing: Sequence[_SourceState
 
 
 def _unconfigured_optional_ids(config: BuildConfig) -> list[str]:
-    configured_by_kind: dict[str, set[str]] = {"macro": set(), "news": set(), "filing": set()}
+    configured_by_kind: dict[str, set[str]] = {"macro": set(), "news": set(), "filing": set(), "market": set()}
     for source_kind, descriptors in (
         ("macro", config.macro_inputs),
         ("news", config.news_inputs),
         ("filing", config.filing_inputs),
+        ("market", config.quote_inputs),
     ):
         for descriptor in descriptors:
             try:
@@ -2457,6 +2640,7 @@ def _arrow_schema() -> dict[str, pa.Schema]:
         "macro_observations.parquet": macro_schema,
         "consensus_snapshots.parquet": TASK3_SNAPSHOT_ARROW_SCHEMA,
         "consensus_revisions.parquet": TASK3_REVISION_ARROW_SCHEMA,
+        "quote_snapshots.parquet": QUOTE_SNAPSHOT_ARROW_SCHEMA,
         "news_filings.parquet": news_schema,
         "source_health.parquet": health_schema,
     }
@@ -2546,7 +2730,7 @@ def _validate_written_generation(
         raise BuildError("generation must be a regular directory")
     entries = list(generation.iterdir())
     if set(path.name for path in entries) != set(ARTIFACT_NAMES):
-        raise BuildError("generation does not contain exactly the 15 Control Tower artifacts")
+        raise BuildError("generation does not contain exactly the 16 Control Tower artifacts")
     if any(path.is_symlink() or not path.is_file() for path in entries):
         raise BuildError("generation artifacts must be regular non-symlink files")
     if expected_generation_id is not None:
@@ -2613,7 +2797,7 @@ def _validate_current_pointer(output_dir: Path, pointer_value: str) -> Path:
         raise BuildError(f"CURRENT generation does not exist: {value}")
     entries = list(generation.iterdir())
     if set(path.name for path in entries) != set(ARTIFACT_NAMES):
-        raise BuildError("CURRENT target must contain exactly the 15 artifacts")
+        raise BuildError("CURRENT target must contain exactly the 16 artifacts")
     if any(path.is_symlink() or not path.is_file() for path in entries):
         raise BuildError("CURRENT target artifacts must be regular non-symlink files")
     return generation
@@ -2703,7 +2887,7 @@ def _validated_current_lineage(
             continue
         if record.get("status") not in {"available", "degraded", "unavailable"}:
             raise BuildError(f"CURRENT selected manifest artifact status is invalid: {name}")
-        if name not in {"consensus_snapshots.parquet", "consensus_revisions.parquet", "news_filings.parquet"} and record.get("status") != "available":
+        if name not in OPTIONAL_ARTIFACT_NAMES and record.get("status") != "available":
             raise BuildError(f"CURRENT selected manifest required artifact is not available: {name}")
         if record.get("sha256") != _file_hash(path):
             raise BuildError(f"CURRENT selected manifest sha256 mismatch: {name}")
@@ -2847,7 +3031,7 @@ def _commit_generation(
 
 
 def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
-    """Build and atomically publish the 15 named Control Tower artifacts."""
+    """Build and atomically publish the 16 named Control Tower artifacts."""
 
     if config.network_policy != NETWORK_POLICY:
         raise BuildError("network access is forbidden for the Control Tower builder")
@@ -2878,6 +3062,11 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
         events, registries, config.macro_inputs, as_of_utc=config.as_of_utc
     )
     consensus_snapshots, consensus_revisions, consensus_states, consensus_degraded, consensus_fingerprints = _build_consensus(config)
+    quote_frame, quote_states, quote_degraded = _build_quote_snapshots(
+        registries,
+        config.quote_inputs,
+        as_of_utc=config.as_of_utc,
+    )
     news_frame, news_states, news_degraded = _build_news_filings(
         registries,
         config.news_inputs,
@@ -2888,6 +3077,7 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
     frames["macro_observations.parquet"] = macro_frame
     frames["consensus_snapshots.parquet"] = consensus_snapshots
     frames["consensus_revisions.parquet"] = consensus_revisions
+    frames["quote_snapshots.parquet"] = quote_frame
     frames["news_filings.parquet"] = news_frame
 
     required_row_counts = {
@@ -2903,7 +3093,10 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
     for state in required_states:
         state.row_count = required_row_counts[state.source_id]
 
-    optional_states = _expected_health_states(config, [*macro_states, *consensus_states, *news_states])
+    optional_states = _expected_health_states(
+        config,
+        [*macro_states, *consensus_states, *quote_states, *news_states],
+    )
     for state in optional_states:
         if state.status != "available" and not state.errors:
             _append_state_error(
@@ -2914,6 +3107,7 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
     optional_degraded = [
         *macro_degraded,
         *consensus_degraded,
+        *quote_degraded,
         *news_degraded,
         *_unconfigured_optional_ids(config),
     ]
@@ -2944,6 +3138,7 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
         "macro_observations.parquet": ["events:events", *[state.source_id for state in macro_states]],
         "consensus_snapshots.parquet": [state.source_id for state in consensus_states],
         "consensus_revisions.parquet": [state.source_id for state in consensus_states],
+        "quote_snapshots.parquet": [state.source_id for state in quote_states],
         "news_filings.parquet": [state.source_id for state in news_states],
         "source_health.parquet": [state.source_id for state in [*required_states, *optional_states]],
     }
@@ -3017,6 +3212,10 @@ __all__ = [
     "MACRO_OUTPUT_COLUMNS",
     "NEWS_FILINGS_COLUMNS",
     "NEWS_SCHEMA_ID",
+    "OPTIONAL_ARTIFACT_NAMES",
+    "QUOTE_SNAPSHOT_COLUMNS",
+    "QUOTE_SNAPSHOT_SCHEMA_ID",
+    "QUOTE_SNAPSHOT_ARROW_SCHEMA",
     "OFR_META_SCHEMA_ID",
     "OFR_OBSERVATIONS_SCHEMA_ID",
     "REGISTRY_OUTPUT_COLUMNS",

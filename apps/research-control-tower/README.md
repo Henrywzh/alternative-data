@@ -36,7 +36,7 @@ The output is a publication, not a loose directory of interchangeable files:
 apps/research-control-tower/.generated/
 ├── CURRENT                         # one relative target, newline terminated
 └── generations/
-    └── <generation-id>/             # 14 Parquet marts + build_manifest.json
+    └── <generation-id>/             # 15 Parquet marts + build_manifest.json
 ```
 
 `CURRENT` must point to `generations/<generation-id>`. The generation manifest
@@ -60,6 +60,30 @@ Open `http://127.0.0.1:8511`. Navigation reads only the selected local
 bundle. It does not fetch source links, run collectors, refresh providers, or
 write the bundle/canonical inputs. Source links are metadata for a researcher
 to inspect separately; the app does not open them during navigation.
+
+## Optional quote refresh
+
+The external collector is separate from Streamlit. It uses the free yfinance
+minute-bar endpoint and labels the result `delayed`; it does not claim exchange
+real-time entitlement or bid/ask coverage:
+
+```bash
+python scripts/research_control_tower_quote_collector.py \
+  --listings config/research_control_tower/listings.csv \
+  --output /tmp/control-tower-quotes.parquet
+
+python -m src.research_control_tower.cli build \
+  --registry-root config/research_control_tower \
+  --event-root config/research_control_tower \
+  --output-dir apps/research-control-tower/.generated \
+  --as-of-utc 2026-08-13T12:00:00Z \
+  --build-id quote-refresh-20260813T1200Z \
+  --quote-input 'market:yfinance|/tmp/control-tower-quotes.parquet|parquet|quote_snapshots_v1'
+```
+
+The collector can be scheduled every 30–60 seconds, but displayed freshness
+remains `delayed` unless a provider adapter with explicit real-time entitlement
+is used. The Streamlit app itself never calls the provider.
 
 ## Privacy and licensing boundary
 

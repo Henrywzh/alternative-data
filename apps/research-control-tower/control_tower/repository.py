@@ -44,7 +44,7 @@ def _empty_frame(name: str) -> pd.DataFrame:
     floats = {
         "confidence", "value", "low_value", "high_value", "current_value",
         "current_dispersion", "prior_value", "revision_value", "revision_pct",
-        "dispersion",
+        "dispersion", "last_price", "bid", "ask", "day_change_pct", "volume",
     }
     booleans = {"collection_eligible", "primary_listing", "automated", "is_provisional", "required"}
     dates = {
@@ -57,6 +57,7 @@ def _empty_frame(name: str) -> pd.DataFrame:
         "provider_asof", "prior_provider_asof", "current_snapshot_at", "cutoff_at",
         "prior_snapshot_at", "published_at", "first_observed_at",
         "first_observation_at", "latest_observation_at", "source_latest_at",
+        "quote_timestamp",
     }
     data: dict[str, pd.Series] = {}
     for column in columns:
@@ -171,6 +172,16 @@ def _expected_types(name: str) -> dict[str, str]:
             "related_listing_ids": "list_or_string",
             "related_basket_ids": "list_or_string",
         })
+    if name == "quote_snapshots.parquet":
+        result.update({
+            "quote_timestamp": "timestamp",
+            "retrieved_at_utc": "timestamp",
+            "last_price": "float",
+            "bid": "float",
+            "ask": "float",
+            "day_change_pct": "float",
+            "volume": "float",
+        })
     if name == "source_health.parquet":
         result.update({
             "required": "boolean", "row_count": "integer",
@@ -266,7 +277,33 @@ def _validate_manifest(root: Path, manifest: Any) -> dict[str, Any]:
         raise _manifest_error("source_health_summary must be an object")
     if not isinstance(manifest.get("artifacts"), dict):
         raise _manifest_error("missing artifacts")
-    if set(manifest["artifacts"]) != set(ARTIFACT_NAMES):
+    artifact_names = set(manifest["artifacts"])
+    missing_optional = set(ARTIFACT_NAMES) - artifact_names
+    if (
+        missing_optional
+        and missing_optional <= set(OPTIONAL_ARTIFACT_NAMES)
+        and all(not (root / name).exists() for name in missing_optional)
+    ):
+        normalized = deepcopy(manifest)
+        normalized_artifacts = normalized["artifacts"]
+        for name in sorted(missing_optional):
+            normalized_artifacts[name] = {
+                "name": name,
+                "relative_path": name,
+                "sha256": None,
+                "row_count": 0,
+                "byte_size": 0,
+                "schema_version": SCHEMA_VERSION,
+                "source_ids": [],
+                "status": "unavailable",
+            }
+        degraded_inputs = list(normalized.get("degraded_inputs", []))
+        degraded_inputs.extend(Path(name).stem for name in missing_optional)
+        normalized["degraded_inputs"] = sorted(set(degraded_inputs))
+        normalized["status"] = "degraded"
+        manifest = normalized
+        artifact_names = set(manifest["artifacts"])
+    if artifact_names != set(ARTIFACT_NAMES):
         unexpected = sorted(set(manifest["artifacts"]) - set(ARTIFACT_NAMES))
         missing = sorted(set(ARTIFACT_NAMES) - set(manifest["artifacts"]))
         detail = f"unexpected artifact {unexpected[0]}" if unexpected else f"missing artifact record for {missing[0]}"
@@ -658,6 +695,7 @@ class ControlTowerRepository:
             macro_observations=loaded["macro_observations.parquet"],
             consensus_snapshots=loaded["consensus_snapshots.parquet"],
             consensus_revisions=loaded["consensus_revisions.parquet"],
+            quote_snapshots=loaded["quote_snapshots.parquet"],
             news_filings=loaded["news_filings.parquet"],
             source_health=source_health,
             manifest=manifest,
