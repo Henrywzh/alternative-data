@@ -67,6 +67,51 @@ def test_hk_transport_stage_1_execution():
     assert "td_parking_vacancy_current" in results
 
 
+def test_hk_transport_stage_1_orchestration(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Exercise the composed stage-1 key contract without live network calls."""
+    import src.hk_transport.pipeline as pipeline
+
+    fetcher_names = (
+        "fetch_mtr_patronage",
+        "fetch_cathay_traffic",
+        "fetch_eia_airline_energy_prices",
+        "fetch_ecb_airline_fx_rates",
+        "fetch_fuel_surcharge_snapshots",
+        "fetch_cathay_fleet_history",
+        "fetch_td_private_car_first_reg",
+        "fetch_td_first_registered_vehicle_details",
+        "fetch_td_parking_vacancy",
+        "fetch_td_carpark_occupancy",
+        "fetch_mttd_passenger_journeys",
+        "fetch_censtatd_boundary_movements",
+        "fetch_td_vehicle_fleet_stock",
+        "fetch_td_private_car_net_registration",
+    )
+    expected_keys = {
+        "mtr_patronage_monthly",
+        "cathay_hkia_traffic_monthly",
+        "airline_energy_prices",
+        "airline_fx_rates",
+        "airline_fuel_surcharges",
+        "cathay_fleet_profile_history",
+        "td_private_car_first_reg_monthly",
+        "td_first_registered_vehicle_details_monthly",
+        "td_parking_vacancy_current",
+        "td_carpark_occupancy",
+        "mttd_passenger_journeys_monthly",
+        "censtatd_boundary_movements_monthly",
+        "td_vehicle_fleet_stock_monthly",
+        "td_private_car_net_registration_monthly",
+    }
+    for name in fetcher_names:
+        monkeypatch.setattr(pipeline, name, lambda: {"stub": True})
+
+    results = pipeline.run_stage_1_pipeline()
+
+    assert set(results) == expected_keys
+    assert all(value == {"stub": True} for value in results.values())
+
+
 def test_cathay_discover_traffic_pdfs_real_archive():
     """The archive-crawl discovery step should find real per-month PDF links
     (not guessed URLs), including months well before the old pipeline's

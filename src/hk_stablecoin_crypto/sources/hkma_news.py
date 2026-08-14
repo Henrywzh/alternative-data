@@ -151,6 +151,6 @@ def fetch_hkma_news(months_back: int = 13) -> pd.DataFrame:
 
         return result[SCHEMA_COLUMNS]
 
-    except Exception:
-        logger.exception("Failed to fetch HKMA news.")
+    except (requests.ConnectionError, requests.Timeout) as exc:
+        logger.warning("HKMA news unavailable: %s", exc)
         return pd.DataFrame(columns=SCHEMA_COLUMNS)

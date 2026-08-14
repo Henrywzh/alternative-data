@@ -20,6 +20,12 @@ outputs/
 *.sqlite
 *.db
 !tests/fixtures/*.csv
+
+# Research Control Tower deploy bundle is versioned; keep regenerated parquet
+# marts visible to git so CURRENT cannot point at untracked artifacts.
+!apps/research-control-tower/.generated/
+!apps/research-control-tower/.generated/**
+
 !data/normalized/
 data/normalized/*
 !data/normalized/openrouter/

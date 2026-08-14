@@ -40,7 +40,7 @@ def test_fetch_towngas_proxy():
 def test_fetch_hko_temperature():
     try:
         df = fetch_hko_temperature()
-    except requests.RequestException as exc:
+    except (requests.ConnectionError, requests.Timeout) as exc:
         pytest.skip(f"HKO temperature API unavailable in this environment: {exc}")
     assert not df.empty
     assert "mean_temp_c" in df.columns
