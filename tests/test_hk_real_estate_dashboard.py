@@ -344,8 +344,10 @@ def test_core_histories_fallback_to_last_committed_artifact(monkeypatch):
     monkeypatch.setattr(dashboard_export, "_safe_fetch", lambda *_args, **_kwargs: pd.DataFrame())
 
     hkma = dashboard_export._load_hkma_with_fallback()
-    assert len(hkma) == 114
-    assert hkma["observation_date"].max() == "2026-05-01"
+    committed_activity = dashboard_export._load_dataset_from_committed_artifact("hkma_mortgage_activity")
+    assert not committed_activity.empty
+    assert len(hkma) == len(committed_activity)
+    assert hkma["observation_date"].max() == pd.to_datetime(committed_activity["date"]).max().strftime("%Y-%m-01")
     assert hkma.attrs["dashboard_fallback_reason"] == "last committed artifact"
 
     bd_history = dashboard_export._load_bd_supply_history_from_committed_artifact()
@@ -375,7 +377,8 @@ def test_build_marks_hkma_artifact_fallback_as_stale(monkeypatch):
     )
     assert hkma_health["status"] == "Stale"
     assert status["overall_status"] == "Degraded"
-    assert len(artifact["snapshot"]["datasets"]["hkma_mortgage_activity"]) == 114
+    committed_activity = dashboard_export._load_dataset_from_committed_artifact("hkma_mortgage_activity")
+    assert len(artifact["snapshot"]["datasets"]["hkma_mortgage_activity"]) == len(committed_activity)
 
 
 def test_published_real_estate_artifacts_keep_core_history_contracts():
