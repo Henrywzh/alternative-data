@@ -105,6 +105,13 @@ def _columns() -> dict[str, list[str]]:
             "pit_class", "source_run_id", "prior_analyst_count", "revision_value",
             "revision_pct", "analyst_count_change", "dispersion", "alignment_status",
         ],
+        "quote_snapshots.parquet": [
+            "quote_id", "listing_id", "canonical_ticker", "provider_symbol",
+            "quote_timestamp", "retrieved_at_utc", "last_price", "bid", "ask",
+            "day_change_pct", "volume", "currency", "market_status", "latency_class",
+            "source_id", "source_url", "pit_class", "source_license_class",
+            "registry_version",
+        ],
         "news_filings.parquet": [
             "document_id", "document_type", "source_id", "headline", "publisher",
             "published_at", "first_observed_at", "source_url", "language",
@@ -145,7 +152,7 @@ def _typed_frame(name: str, frame: pd.DataFrame) -> pd.DataFrame:
         "provider_asof", "current_snapshot_at",
         "prior_provider_asof", "cutoff_at", "prior_snapshot_at", "published_at",
         "first_observation_at",
-        "latest_observation_at", "source_latest_at",
+        "latest_observation_at", "source_latest_at", "quote_timestamp",
     }
     boolean_columns = {"collection_eligible", "primary_listing", "automated", "is_provisional", "required"}
     integer_columns = {
@@ -156,7 +163,7 @@ def _typed_frame(name: str, frame: pd.DataFrame) -> pd.DataFrame:
     float_columns = {
         "confidence", "value", "low_value", "high_value", "current_value",
         "current_dispersion", "prior_value", "revision_value", "revision_pct",
-        "dispersion",
+        "dispersion", "last_price", "bid", "ask", "day_change_pct", "volume",
     }
     for column in date_columns & set(frame.columns):
         frame[column] = pd.to_datetime(frame[column], errors="coerce").dt.date
@@ -186,7 +193,7 @@ def _fixture_schema(name: str) -> pa.Schema:
         "provider_asof", "current_snapshot_at",
         "prior_provider_asof", "cutoff_at", "prior_snapshot_at", "published_at",
         "first_observation_at",
-        "latest_observation_at", "source_latest_at",
+        "latest_observation_at", "source_latest_at", "quote_timestamp",
     }
     boolean_columns = {"collection_eligible", "primary_listing", "automated", "is_provisional", "required"}
     integer_columns = {
@@ -197,7 +204,7 @@ def _fixture_schema(name: str) -> pa.Schema:
     float_columns = {
         "confidence", "value", "low_value", "high_value", "current_value",
         "current_dispersion", "prior_value", "revision_value", "revision_pct",
-        "dispersion",
+        "dispersion", "last_price", "bid", "ask", "day_change_pct", "volume",
     }
     fields = []
     for column in columns:
@@ -338,6 +345,7 @@ def _write_bundle(root: Path) -> None:
     frames["consensus_revisions.parquet"] = _frame("consensus_revisions.parquet", [
         {"revision_id": "R1", "snapshot_id": "S1", "provider": "fixture", "prior_provider": "fixture", "entity_id": "E1", "listing_id": "L1", "financial_data_security_id": "SEC1", "canonical_ticker": "ONE", "metric": "eps", "fiscal_period": "FY2026", "fiscal_year": 2026, "estimate_period_end": "2026-12-31", "horizon": "FY", "statistic": "mean", "current_snapshot_at": "2026-08-13T00:00:00Z", "current_value": 1.0, "current_analyst_count": 4, "current_dispersion": 0.1, "lookback_days": 7, "cutoff_at": "2026-08-06T00:00:00Z", "prior_snapshot_id": "S0", "prior_snapshot_at": "2026-08-06T00:00:00Z", "prior_value": 0.9, "prior_provider_asof": "2026-08-05T00:00:00Z", "provider_asof": "2026-08-12T00:00:00Z", "retrieved_at_utc": "2026-08-13T00:00:00Z", "source_url": "https://example.test/consensus", "pit_class": "snapshot", "source_run_id": "run-001", "prior_analyst_count": 3, "revision_value": 0.1, "revision_pct": 0.111111, "analyst_count_change": 1, "dispersion": 0.1, "alignment_status": "aligned"},
     ])
+    frames["quote_snapshots.parquet"] = _frame("quote_snapshots.parquet", [])
     frames["news_filings.parquet"] = _frame("news_filings.parquet", [])
     frames["source_health.parquet"] = _frame("source_health.parquet", [
         {"source_id": "fixture", "input_path": "fixture", "source_kind": "fixture", "status": "available", "required": True, "row_count": 1, "schema_version": "fixture_v1", "detail": "fixture"},
@@ -654,6 +662,27 @@ def test_optional_artifact_missing_enters_degraded_mode(generated_root: Path) ->
     assert "consensus_revisions" in snapshot.missing_optional
     assert snapshot.consensus_revisions.empty
     assert snapshot.degraded_reasons["consensus_revisions"] == "missing"
+
+
+def test_legacy_generation_without_quote_artifact_loads_as_degraded(tmp_path: Path) -> None:
+    from control_tower.repository import ControlTowerRepository
+
+    root = tmp_path / "legacy-bundle"
+    _write_bundle(root)
+    (root / "quote_snapshots.parquet").unlink()
+    manifest_path = root / "build_manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["artifacts"].pop("quote_snapshots.parquet")
+    manifest["status"] = "degraded"
+    manifest["degraded_inputs"] = ["quote_snapshots"]
+    _write_manifest(root, manifest)
+
+    snapshot = ControlTowerRepository(root).load_snapshot()
+
+    assert snapshot.status == "degraded"
+    assert "quote_snapshots" in snapshot.missing_optional
+    assert snapshot.quote_snapshots.empty
+    assert snapshot.degraded_reasons["quote_snapshots"] == "missing"
 
 
 @pytest.mark.parametrize(

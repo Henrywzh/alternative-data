@@ -30,6 +30,16 @@ CONTROL_TOWER_CSS = r"""
   --ct-danger: #b91c1c;
   --ct-radius: 14px;
 }
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ct-bg: #0e1117;
+    --ct-surface: #161b22;
+    --ct-surface-muted: #252b36;
+    --ct-ink: #f0f2f6;
+    --ct-muted: #b8c1cc;
+    --ct-border: #3b4452;
+  }
+}
 .ct-shell { max-width: 1480px; margin: 0 auto; padding-bottom: 3rem; }
 .ct-eyebrow { color: var(--ct-muted); font-size: .72rem; letter-spacing: .12em;
   text-transform: uppercase; font-weight: 700; margin: 0 0 .35rem; }
@@ -124,6 +134,12 @@ CONTROL_TOWER_CSS = r"""
   .ct-event-meta { grid-column: auto; }
   .ct-panel { padding: .82rem .78rem; }
   .ct-shell { padding-bottom: 2rem; }
+  section[data-testid="stSidebar"] {
+    width: min(78vw, 300px) !important;
+    min-width: 0 !important;
+    max-width: 78vw;
+  }
+  [data-testid="stSidebarContent"] { padding: .9rem .6rem; }
 }
 </style>
 """

@@ -28,7 +28,7 @@ def _local_input(value: str) -> LocalInput:
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="research-control-tower")
     subparsers = parser.add_subparsers(dest="command")
-    build = subparsers.add_parser("build", help="build the 15 local Control Tower marts")
+    build = subparsers.add_parser("build", help="build the 16 local Control Tower marts")
     build.add_argument("--registry-root", type=Path, required=True)
     build.add_argument("--event-root", type=Path, required=True)
     build.add_argument("--output-dir", type=Path, required=True)
@@ -56,6 +56,13 @@ def _parser() -> argparse.ArgumentParser:
         metavar="SOURCE_ID|PATH|FORMAT|SCHEMA_ID",
         help="explicit optional filing input descriptor; may be repeated",
     )
+    build.add_argument(
+        "--quote-input",
+        action="append",
+        default=[],
+        metavar="SOURCE_ID|PATH|FORMAT|SCHEMA_ID",
+        help="explicit optional standardized quote input descriptor; may be repeated",
+    )
     return parser
 
 
@@ -75,6 +82,7 @@ def main(argv: list[str] | None = None) -> int:
         macro_inputs=tuple(_local_input(item) for item in args.macro_input),
         news_inputs=tuple(_local_input(item) for item in args.news_input),
         filing_inputs=tuple(_local_input(item) for item in args.filing_input),
+        quote_inputs=tuple(_local_input(item) for item in args.quote_input),
     )
     manifest = build_control_tower_marts(config)
     print(f"{manifest.status}: {config.output_dir}")

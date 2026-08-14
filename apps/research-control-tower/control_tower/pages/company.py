@@ -12,7 +12,9 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import pandas as pd
 import streamlit as st
 
-from ..models import ControlTowerSnapshot
+from ..filters import apply_event_filters
+from ..market_data import QUOTE_SNAPSHOT_COLUMNS, classify_quote_freshness
+from ..models import ControlTowerSnapshot, EventFilters
 from .source_health import classify_source_health
 
 
@@ -56,6 +58,7 @@ COMPANY_REVISION_COLUMNS = (
     "source_url", "pit_class", "source_run_id", "prior_analyst_count", "revision_value", "revision_pct",
     "analyst_count_change", "dispersion", "alignment_status",
 )
+COMPANY_QUOTE_COLUMNS = (*QUOTE_SNAPSHOT_COLUMNS, "freshness")
 COMPANY_QUESTION_COLUMNS = ("event_id", "question_id", "question", "question_type", "priority", "registry_version")
 COMPANY_INVALIDATION_COLUMNS = (
     "evidence_id", "event_id", "entity_id", "question_id", "question_type", "source_id", "observed_at",
@@ -76,6 +79,8 @@ class CompanyView:
     selection_mode: str
     listings: pd.DataFrame
     memberships: pd.DataFrame
+    quote_snapshots: pd.DataFrame
+    quote_status: str
     events: pd.DataFrame
     official_documents: pd.DataFrame
     consensus: pd.DataFrame
@@ -206,6 +211,7 @@ def _empty(columns: tuple[str, ...]) -> pd.DataFrame:
         "source_published_at", "last_verified_at", "review_by", "starts_at", "ends_at", "snapshot_at",
         "provider_asof", "retrieved_at_utc", "estimate_period_end", "current_snapshot_at", "cutoff_at",
         "prior_snapshot_at", "prior_provider_asof",
+        "quote_timestamp",
     }
     return pd.DataFrame(
         {
@@ -386,6 +392,7 @@ def build_company_view(
     *,
     entity_id: str,
     listing_id: str | None = None,
+    filters: EventFilters | None = None,
 ) -> CompanyView:
     """Build one company view using only explicit registry and mart relations."""
 
@@ -440,9 +447,45 @@ def build_company_view(
     memberships = memberships.loc[:, COMPANY_MEMBERSHIP_COLUMNS]
     basket_ids = set(memberships["basket_id"].astype("string")) if not memberships.empty else set()
 
+    quote_source = snapshot.quote_snapshots
+    quote_listing_ids = {selected_listing_id} if selected_listing_id else listing_ids
+    if quote_source.empty or not quote_listing_ids:
+        quote_snapshots = _empty(COMPANY_QUOTE_COLUMNS)
+    else:
+        quote_snapshots = quote_source.loc[
+            quote_source["listing_id"].astype("string").isin(quote_listing_ids)
+        ].copy()
+        if filters is not None and filters.scope and "company" not in filters.scope:
+            quote_snapshots = quote_snapshots.iloc[0:0].copy()
+        if quote_snapshots.empty:
+            quote_snapshots = _empty(COMPANY_QUOTE_COLUMNS)
+        else:
+            quote_snapshots["freshness"] = quote_snapshots.apply(
+                lambda row: classify_quote_freshness(
+                    row.get("quote_timestamp"),
+                    snapshot.now_utc,
+                    row.get("latency_class"),
+                ),
+                axis=1,
+            )
+            quote_snapshots = quote_snapshots.loc[
+                :, [column for column in COMPANY_QUOTE_COLUMNS if column in quote_snapshots.columns]
+            ].copy()
+            for column in COMPANY_QUOTE_COLUMNS:
+                if column not in quote_snapshots.columns:
+                    quote_snapshots[column] = pd.NA
+            quote_snapshots = quote_snapshots.loc[:, COMPANY_QUOTE_COLUMNS].sort_values(
+                ["listing_id", "quote_timestamp"],
+                ascending=[True, False],
+                na_position="last",
+                kind="mergesort",
+            ).reset_index(drop=True)
+    quote_status = "available" if not quote_snapshots.empty else "unavailable"
+
     event_rows: list[dict[str, object]] = []
     question_counts = snapshot.event_watch_questions["event_id"].astype("string").value_counts().to_dict() if not snapshot.event_watch_questions.empty else {}
-    for _, event in snapshot.events.iterrows():
+    event_frame = apply_event_filters(snapshot.events, filters) if filters is not None else snapshot.events
+    for _, event in event_frame.iterrows():
         relation = _event_relation(snapshot, event, requested_entity, listing_ids)
         if relation is None:
             continue
@@ -480,6 +523,11 @@ def build_company_view(
             revisions[column] = pd.NA
     revisions = revisions.loc[:, COMPANY_REVISION_COLUMNS]
 
+    if filters is not None and filters.scope and "company" not in filters.scope:
+        official_documents = _empty(COMPANY_DOCUMENT_COLUMNS)
+        consensus = _empty(COMPANY_CONSENSUS_COLUMNS)
+        revisions = _empty(COMPANY_REVISION_COLUMNS)
+
     event_ids_for_questions = {
         _text(row.get("event_id"))
         for row in event_rows
@@ -495,6 +543,7 @@ def build_company_view(
     invalidation_evidence = _empty(COMPANY_INVALIDATION_COLUMNS)
 
     source_ids = _source_relevance(events) | _source_relevance(official_documents)
+    source_ids |= _source_relevance(quote_snapshots)
     if not consensus.empty:
         source_ids |= {f"provider:{value}" for value in consensus["provider"].map(_text) if value}
     classified = classify_source_health(snapshot.source_health, now_utc=snapshot.now_utc)
@@ -545,6 +594,8 @@ def build_company_view(
     if consensus.empty:
         caveats.append("Consensus unavailable — no local provider rows for the selected listing; no provider was queried")
         caveats.extend(("FnGuide consensus unavailable — no local export", "Futu consensus unavailable — no local export"))
+    if quote_snapshots.empty:
+        caveats.append("Latest quote unavailable — no local quote snapshot was loaded; no provider was queried")
     if requested_entity.casefold() == "sk_hynix":
         caveats.extend(("FnGuide consensus unavailable — no local export", "Futu consensus unavailable — no local export"))
     if invalidation_evidence.empty:
@@ -594,6 +645,8 @@ def build_company_view(
         selection_mode=selection_mode,
         listings=listings,
         memberships=memberships,
+        quote_snapshots=quote_snapshots,
+        quote_status=quote_status,
         events=events,
         official_documents=official_documents,
         consensus=consensus,
@@ -616,13 +669,219 @@ def _format_time(value: object, timezone: str) -> str:
         return timestamp.strftime("%d %b %H:%M UTC")
 
 
-def render_company_page(snapshot: ControlTowerSnapshot, *, viewer_timezone: str) -> CompanyView:
+def _filtered_entity_ids(snapshot: ControlTowerSnapshot, filters: EventFilters | None) -> set[str]:
+    """Resolve global basket/country/tier filters before rendering the selector."""
+
+    if filters is None:
+        return set(snapshot.entities.get("entity_id", pd.Series(dtype="string")).astype("string"))
+    entity_ids = set(snapshot.entities.get("entity_id", pd.Series(dtype="string")).astype("string"))
+    memberships = snapshot.basket_memberships
+    if filters.basket_id or filters.membership_tier:
+        if memberships.empty:
+            return set()
+        rows = memberships.copy()
+        if filters.basket_id:
+            rows = rows.loc[rows["basket_id"].astype("string").isin(filters.basket_id)]
+        if filters.membership_tier:
+            rows = rows.loc[rows["membership_tier"].astype("string").str.lower().isin(filters.membership_tier)]
+        entity_ids &= set(rows["entity_id"].astype("string"))
+    if filters.country and not snapshot.entities.empty:
+        entity_ids &= set(
+            snapshot.entities.loc[
+                snapshot.entities["country"].astype("string").str.upper().isin(filters.country),
+                "entity_id",
+            ].astype("string")
+        )
+    return entity_ids
+
+
+def _friendly_listing_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    columns = {
+        "exchange": "Exchange",
+        "native_ticker": "Ticker",
+        "canonical_ticker": "Canonical ticker",
+        "currency": "Currency",
+        "primary_listing": "Primary",
+        "listing_role": "Role",
+        "mapping_status": "Mapping",
+        "collection_eligible": "Collection eligible",
+        "listing_status": "Status",
+    }
+    available = [column for column in columns if column in frame.columns]
+    return frame.loc[:, available].rename(columns={column: columns[column] for column in available})
+
+
+def _friendly_document_frame(frame: pd.DataFrame, viewer_timezone: str) -> pd.DataFrame:
+    columns = {
+        "headline": "Headline",
+        "publisher": "Publisher",
+        "document_type": "Type",
+        "published_at": "Published",
+        "importance": "Importance",
+        "source_quality": "Source quality",
+        "source_url": "Source link",
+    }
+    available = [column for column in columns if column in frame.columns]
+    result = frame.loc[:, available].rename(columns={column: columns[column] for column in available}).copy()
+    if "Published" in result.columns:
+        result["Published"] = result["Published"].map(lambda value: _format_time(value, viewer_timezone))
+    return result
+
+
+def _friendly_consensus_frame(frame: pd.DataFrame, viewer_timezone: str) -> pd.DataFrame:
+    columns = {
+        "provider": "Provider",
+        "canonical_ticker": "Ticker",
+        "metric": "Metric",
+        "fiscal_period": "Fiscal period",
+        "value": "Estimate",
+        "statistic": "Statistic",
+        "analyst_count": "Analysts",
+        "currency": "Currency",
+        "unit": "Unit",
+        "snapshot_at": "Snapshot",
+        "pit_class": "PIT class",
+        "source_url": "Source link",
+    }
+    available = [column for column in columns if column in frame.columns]
+    result = frame.loc[:, available].rename(columns={column: columns[column] for column in available}).copy()
+    for column in ("Snapshot",):
+        if column in result.columns:
+            result[column] = result[column].map(lambda value: _format_time(value, viewer_timezone))
+    return result
+
+
+def _friendly_revision_frame(frame: pd.DataFrame, viewer_timezone: str) -> pd.DataFrame:
+    columns = {
+        "provider": "Provider",
+        "canonical_ticker": "Ticker",
+        "metric": "Metric",
+        "fiscal_period": "Fiscal period",
+        "prior_value": "Prior",
+        "current_value": "Current",
+        "revision_value": "Revision",
+        "revision_pct": "Revision %",
+        "current_analyst_count": "Analysts",
+        "current_snapshot_at": "Snapshot",
+        "alignment_status": "Alignment",
+        "pit_class": "PIT class",
+        "source_url": "Source link",
+    }
+    available = [column for column in columns if column in frame.columns]
+    result = frame.loc[:, available].rename(columns={column: columns[column] for column in available}).copy()
+    if "Snapshot" in result.columns:
+        result["Snapshot"] = result["Snapshot"].map(lambda value: _format_time(value, viewer_timezone))
+    return result
+
+
+def _friendly_quote_frame(frame: pd.DataFrame, viewer_timezone: str) -> pd.DataFrame:
+    columns = {
+        "canonical_ticker": "Ticker",
+        "provider_symbol": "Provider symbol",
+        "last_price": "Last",
+        "bid": "Bid",
+        "ask": "Ask",
+        "day_change_pct": "Day change %",
+        "volume": "Volume",
+        "currency": "Currency",
+        "quote_timestamp": "Quote time",
+        "retrieved_at_utc": "Retrieved",
+        "freshness": "Freshness",
+        "market_status": "Market status",
+        "source_id": "Source",
+        "source_url": "Source link",
+    }
+    available = [column for column in columns if column in frame.columns]
+    result = frame.loc[:, available].rename(
+        columns={column: columns[column] for column in available}
+    ).copy()
+    for column in ("Quote time", "Retrieved"):
+        if column in result.columns:
+            result[column] = result[column].map(
+                lambda value: _format_time(value, viewer_timezone)
+            )
+    return result
+
+
+def _friendly_question_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    columns = {
+        "question": "Question",
+        "question_type": "Type",
+        "priority": "Priority",
+    }
+    available = [column for column in columns if column in frame.columns]
+    return frame.loc[:, available].rename(columns={column: columns[column] for column in available})
+
+
+def _friendly_invalidation_frame(frame: pd.DataFrame, viewer_timezone: str) -> pd.DataFrame:
+    columns = {
+        "title": "Evidence",
+        "detail": "Detail",
+        "observed_at": "Observed",
+        "status": "Status",
+        "evidence_class": "Evidence class",
+        "source_url": "Source link",
+    }
+    available = [column for column in columns if column in frame.columns]
+    result = frame.loc[:, available].rename(columns={column: columns[column] for column in available}).copy()
+    if "Observed" in result.columns:
+        result["Observed"] = result["Observed"].map(lambda value: _format_time(value, viewer_timezone))
+    return result
+
+
+def _friendly_caveat(value: object) -> str:
+    text = _text(value)
+    exact = {
+        "no_verified_primary_listing": "No verified primary listing is registered for this entity.",
+        "invalidation_evidence_unavailable": "No invalidation evidence is available in the current bundle.",
+        "Internal research evidence is not PIT": "Internal research evidence is not point-in-time.",
+        "Source link unavailable for internal research rows": "Some internal research rows do not have a source link.",
+        "not_pit source evidence remains visibly labelled": "Some evidence is explicitly marked as non-point-in-time.",
+        "PIT unavailable; no PIT class is inferred": "Point-in-time classification is unavailable for one or more sources.",
+    }
+    if text in exact:
+        return exact[text]
+    if text.startswith("Official documents unavailable"):
+        return "Official filing metadata is unavailable for this entity in the current bundle."
+    if text.startswith("Consensus unavailable"):
+        return "Consensus data is unavailable for this listing; no provider estimates were blended."
+    if text.startswith("Latest quote unavailable"):
+        return "Latest quote data is unavailable; no provider was queried by the dashboard."
+    if text.startswith("Superseded event lineage retained:"):
+        return "Superseded event lineage is retained in the detail view for audit."
+    return text.replace("_", " ").strip().capitalize()
+
+
+def _format_listing_option(snapshot: ControlTowerSnapshot, listing_id: str | None) -> str:
+    if listing_id is None:
+        return "All active listings"
+    row = snapshot.listings.loc[
+        snapshot.listings["listing_id"].astype("string").eq(listing_id)
+    ] if not snapshot.listings.empty else snapshot.listings
+    if row.empty:
+        return "Listing unavailable"
+    listing = row.iloc[0]
+    ticker = _text(listing.get("canonical_ticker")) or _text(listing.get("native_ticker"))
+    exchange = _text(listing.get("exchange"))
+    currency = _text(listing.get("currency"))
+    return " · ".join(value for value in (ticker, exchange, currency) if value) or "Listing unavailable"
+
+
+def render_company_page(
+    snapshot: ControlTowerSnapshot,
+    *,
+    viewer_timezone: str,
+    filters: EventFilters | None = None,
+) -> CompanyView:
     """Render company identity and metadata, never document/article bodies."""
 
-    entity_options = sorted(snapshot.entities["entity_id"].astype("string")) if not snapshot.entities.empty else []
+    entity_ids = _filtered_entity_ids(snapshot, filters)
+    entity_options = sorted(entity_ids)
     if not entity_options:
-        st.info("No company registry rows are available.")
+        st.info("No company matches the active basket, country or membership filters.")
         raise ValueError("company registry is empty")
+    if st.session_state.get("ct_company_entity") not in entity_options:
+        st.session_state["ct_company_entity"] = entity_options[0]
     selected_entity = st.selectbox(
         "Company",
         entity_options,
@@ -631,64 +890,86 @@ def render_company_page(snapshot: ControlTowerSnapshot, *, viewer_timezone: str)
     )
     entity_listings = snapshot.listings.loc[snapshot.listings["entity_id"].astype("string").eq(selected_entity)] if not snapshot.listings.empty else snapshot.listings
     listing_options = [None] + sorted(entity_listings["listing_id"].astype("string")) if not entity_listings.empty else [None]
+    if st.session_state.get("ct_company_listing") not in listing_options:
+        st.session_state["ct_company_listing"] = None
     selected_listing = st.selectbox(
         "Listing",
         listing_options,
         key="ct_company_listing",
-        format_func=lambda value: "All active listings" if value is None else value,
+        format_func=lambda value: _format_listing_option(snapshot, value),
     )
-    view = build_company_view(snapshot, entity_id=selected_entity, listing_id=selected_listing)
+    view = build_company_view(snapshot, entity_id=selected_entity, listing_id=selected_listing, filters=filters)
     st.markdown(f"### {escape(view.display_name)}")
     st.caption(f"{escape(view.legal_name)} · {escape(view.country)} · {escape(view.sector or 'sector unavailable')} · {escape(view.industry or 'industry unavailable')} · {escape(view.active_status or 'status unavailable')}")
     if view.selected_listing_id:
-        st.caption(f"Selected listing · {view.selected_listing_id} · selection mode {view.selection_mode}")
+        selection_mode = {
+            "primary_default": "primary listing default",
+            "explicit": "selected listing",
+        }.get(view.selection_mode, _text(view.selection_mode).replace("_", " ") or "selected listing")
+        st.caption(
+            f"Selected listing · {_format_listing_option(snapshot, view.selected_listing_id)} · {selection_mode}"
+        )
     else:
         st.warning("No verified primary listing is available; listing-specific data is unavailable.")
     st.markdown("#### Listings")
-    st.dataframe(view.listings, use_container_width=True, hide_index=True)
+    st.dataframe(_friendly_listing_frame(view.listings), width="stretch", hide_index=True)
     st.markdown("#### Basket and layer memberships")
-    st.dataframe(view.memberships, use_container_width=True, hide_index=True)
+    st.dataframe(view.memberships, width="stretch", hide_index=True)
+    st.markdown("#### Latest market quote")
+    if view.quote_snapshots.empty:
+        st.warning(
+            "Latest quote unavailable · no quote snapshot artifact or selected-listing row; "
+            "the app did not query a provider."
+        )
+    else:
+        st.dataframe(
+            _friendly_quote_frame(view.quote_snapshots, viewer_timezone),
+            width="stretch",
+            hide_index=True,
+        )
     st.markdown("#### Events and evidence lineage")
     if view.events.empty:
         st.info("No explicitly linked events are available for this company.")
     else:
         for _, row in view.events.iterrows():
+            source_link = "source link available" if _text(row.get("source_url")).startswith(("http://", "https://")) else "source link unavailable"
             st.markdown(
                 f"**{escape(_text(row.get('title')))}** · {escape(_text(row.get('relation_role')))} · "
                 f"{escape(_text(row.get('certainty_class')).replace('_', ' '))} · {_format_time(row.get('starts_at'), viewer_timezone)} · "
-                f"source {escape(_text(row.get('source_id')) or 'unavailable')} · PIT {escape(_text(row.get('pit_class')) or 'PIT unavailable')}"
+                f"{escape(source_link)}"
             )
-        st.dataframe(view.events, use_container_width=True, hide_index=True)
+        with st.expander("Event lineage details", expanded=False):
+            st.dataframe(view.events, width="stretch", hide_index=True)
     st.markdown("#### Provider-specific consensus")
     if view.consensus.empty:
         st.warning(f"Consensus unavailable · {view.consensus_status} · provider rows are not blended.")
     else:
-        st.dataframe(view.consensus, use_container_width=True, hide_index=True)
+        st.dataframe(_friendly_consensus_frame(view.consensus, viewer_timezone), width="stretch", hide_index=True)
     st.markdown("#### Consensus revisions")
     if view.consensus_revisions.empty:
         st.info("Consensus revision history unavailable; no 0/0 breadth is shown.")
     else:
-        st.dataframe(view.consensus_revisions, use_container_width=True, hide_index=True)
+        st.dataframe(_friendly_revision_frame(view.consensus_revisions, viewer_timezone), width="stretch", hide_index=True)
     st.markdown("#### Official filings and news metadata")
     if view.official_documents.empty:
         st.warning("Official documents unavailable — no local metadata export; no document body displayed.")
     else:
-        st.dataframe(view.official_documents, use_container_width=True, hide_index=True)
+        st.dataframe(_friendly_document_frame(view.official_documents, viewer_timezone), width="stretch", hide_index=True)
     st.markdown("#### Watch questions")
     if view.watch_questions.empty:
         st.info("No watch questions are registered.")
     else:
-        st.dataframe(view.watch_questions, use_container_width=True, hide_index=True)
+        st.dataframe(_friendly_question_frame(view.watch_questions), width="stretch", hide_index=True)
     st.markdown("#### Invalidation evidence")
     if view.invalidation_evidence.empty:
         st.info("Invalidation evidence unavailable; support questions are not relabelled as falsification evidence.")
     else:
-        st.dataframe(view.invalidation_evidence, use_container_width=True, hide_index=True)
-    with st.expander("Source and PIT caveats", expanded=True):
+        st.dataframe(_friendly_invalidation_frame(view.invalidation_evidence, viewer_timezone), width="stretch", hide_index=True)
+    with st.expander("Source and PIT caveats", expanded=False):
         for caveat in view.caveats:
-            st.markdown(f"- {escape(caveat)}")
+            st.markdown(f"- {escape(_friendly_caveat(caveat))}")
         if not view.source_health.empty:
-            st.dataframe(view.source_health, use_container_width=True, hide_index=True)
+            st.dataframe(view.source_health, width="stretch", hide_index=True)
         else:
             st.info("No company-relevant source-health rows are available.")
     return view
@@ -704,6 +985,7 @@ __all__ = [
     "COMPANY_DOCUMENT_COLUMNS",
     "COMPANY_CONSENSUS_COLUMNS",
     "COMPANY_REVISION_COLUMNS",
+    "COMPANY_QUOTE_COLUMNS",
     "COMPANY_QUESTION_COLUMNS",
     "COMPANY_INVALIDATION_COLUMNS",
 ]
