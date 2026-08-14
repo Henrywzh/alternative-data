@@ -1,0 +1,11 @@
+event_id,question_id,question,question_type,priority,registry_version
+AI_HBM4_QUALIFICATION_WINDOW,HBM4_Q1,Has customer qualification moved from sampling to production approval?,support,1,v1
+AI_HBM4_QUALIFICATION_WINDOW,HBM4_Q2,Are yield and packaging constraints improving without a loss of HBM mix or ASP?,support,1,v1
+AI_HBM4_QUALIFICATION_WINDOW_V2,HBM4_V2_Q1,Has customer qualification moved from sampling to production approval?,support,1,v1
+AI_HBM4_QUALIFICATION_WINDOW_V2,HBM4_V2_Q2,Is HBM capacity sold through for the next planning period?,support,1,v1
+AI_ADVANCED_PACKAGING_WINDOW,PACKAGING_Q1,Are advanced-packaging lead times and capacity additions consistent with sustained AI demand?,support,1,v1
+AI_ADVANCED_PACKAGING_WINDOW,PACKAGING_Q2,Do supplier disclosures show customer qualification rather than only announced capacity?,falsification,1,v1
+AI_CPO_RAMP_WINDOW,CPO_Q1,Do optical vendors disclose repeat production volume or only design wins?,support,1,v1
+AI_CPO_RAMP_WINDOW,CPO_Q2,Is network capex translating into co-packaged-optics adoption?,support,2,v1
+AI_POWER_GRID_WINDOW,POWER_Q1,Are grid-connection queues and transformer lead times constraining data-center delivery?,support,1,v1
+AI_POWER_GRID_WINDOW,POWER_Q2,Does power and grid capex grow ahead of confirmed AI load demand?,falsification,1,v1
