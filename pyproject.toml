@@ -16,6 +16,7 @@ dependencies = [
   "playwright>=1.52",
   "pyarrow>=16.0.0",
   "pdfplumber>=0.11",
+  "pypdf>=5.0",
   "requests>=2.32",
   "streamlit>=1.56.0",
   "plotly>=5.24",
