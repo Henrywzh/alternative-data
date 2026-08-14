@@ -1,0 +1,7 @@
+basket_id,display_name,purpose,active_from,active_to,registry_version,source_or_research_note
+US_VALUE,US Value,"US banks, insurance, energy, industrials, utilities and defensive value",2026-01-01,,v1,"Primary V1 research basket from the approved Control Tower design."
+US_GROWTH,US Growth,"US mega-cap platforms, software, semiconductors and long-duration growth",2026-01-01,,v1,"Primary V1 research basket from the approved Control Tower design."
+HK_VALUE,HK Value,"Hong Kong developers, banks, insurers, utilities, transport and local leaders",2026-01-01,,v1,"Primary V1 research basket from the approved Control Tower design."
+HK_INTERNET,HK Internet,"Hong Kong-listed internet and platform companies",2026-01-01,,v1,"Primary V1 research basket from the approved Control Tower design."
+HK_AI_THEMATIC,HK AI Thematic,"Hong Kong-listed AI, semiconductor, robotics and related thematic names",2026-01-01,,v1,"Primary V1 research basket from the approved Control Tower design."
+AI_BOTTLENECKS_GLOBAL,Global AI Bottlenecks,"Cross-market AI infrastructure bottlenecks and demand chain",2026-01-01,,v1,"Primary V1 basket organized by supply-chain constraint rather than country."

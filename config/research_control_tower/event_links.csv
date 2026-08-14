@@ -1,0 +1,34 @@
+event_id,target_type,target_id,link_role,automated,active_from,active_to,link_note,registry_version
+MTR_H1_2025_INTERIM_RESULTS,entity,MTR_CORPORATION,primary,false,2026-01-01,,Historical event linked from the first date covered by the V1 target registry.,v1
+MTR_H1_2025_INTERIM_RESULTS,listing,0066_HK,automated,true,2026-01-01,,Eligible HKEX primary listing selected by the Task 1 mapping gate.,v1
+TSMC_JUNE_2026_REVENUE_OBSERVATION,entity,TSMC,primary,false,2026-06-01,,Monthly revenue observation attaches to the company entity.,v1
+TSMC_JUNE_2026_REVENUE_OBSERVATION,listing,2330_TW,automated,true,2026-06-01,,Eligible TWSE primary listing selected by the Task 1 mapping gate.,v1
+TSMC_JUNE_2026_REVENUE_OBSERVATION,basket,AI_BOTTLENECKS_GLOBAL,affected,false,2026-06-01,,Foundry and AI supply-chain read-through.,v1
+TAIWAN_COMPANY_EARNINGS_COVERAGE_GAP,entity,TSMC,context,false,2026-08-13,,Coverage-health record for the represented Taiwan company.,v1
+TAIWAN_COMPANY_EARNINGS_COVERAGE_GAP,listing,2330_TW,context,false,2026-08-13,,Non-automated source-health link; not a catalyst selection.,v1
+AI_HBM4_QUALIFICATION_WINDOW,entity,SK_HYNIX,primary,false,2026-07-01,,SK Hynix is a core AI-bottleneck entity.,v1
+AI_HBM4_QUALIFICATION_WINDOW,listing,000660_KR,automated,true,2026-07-01,,Eligible KRX primary listing selected by the Task 1 mapping gate.,v1
+AI_HBM4_QUALIFICATION_WINDOW,basket,AI_BOTTLENECKS_GLOBAL,primary,false,2026-07-01,,Required AI basket link.,v1
+AI_HBM4_QUALIFICATION_WINDOW_V2,entity,SK_HYNIX,primary,false,2026-08-01,,Revised observation retains the same entity link.,v1
+AI_HBM4_QUALIFICATION_WINDOW_V2,listing,000660_KR,automated,true,2026-08-01,,Eligible KRX primary listing selected by the Task 1 mapping gate.,v1
+AI_HBM4_QUALIFICATION_WINDOW_V2,basket,AI_BOTTLENECKS_GLOBAL,primary,false,2026-08-01,,Required AI basket link.,v1
+AI_ADVANCED_PACKAGING_WINDOW,entity,TSMC,affected,false,2026-07-01,,Foundry read-through for advanced packaging capacity.,v1
+AI_ADVANCED_PACKAGING_WINDOW,entity,ASE_TECHNOLOGY,affected,false,2026-07-01,,OSAT read-through for advanced packaging capacity.,v1
+AI_ADVANCED_PACKAGING_WINDOW,basket,AI_BOTTLENECKS_GLOBAL,primary,false,2026-07-01,,Required AI basket link.,v1
+AI_CPO_RAMP_WINDOW,entity,LUMENTUM,affected,false,2026-10-01,,Optical-networking read-through for CPO adoption.,v1
+AI_CPO_RAMP_WINDOW,basket,AI_BOTTLENECKS_GLOBAL,primary,false,2026-10-01,,Required AI basket link.,v1
+AI_POWER_GRID_WINDOW,entity,EATON,affected,false,2026-08-01,,Power-management read-through for AI data-center demand.,v1
+AI_POWER_GRID_WINDOW,entity,GE_VERNOVA,affected,false,2026-08-01,,Power-generation and grid read-through.,v1
+AI_POWER_GRID_WINDOW,basket,AI_BOTTLENECKS_GLOBAL,primary,false,2026-08-01,,Required AI basket link.,v1
+US_NFCI_20260731_OBSERVATION,basket,US_VALUE,affected,false,2026-07-31,,US financial-conditions context for value exposures.,v1
+US_NFCI_20260731_OBSERVATION,basket,US_GROWTH,affected,false,2026-07-31,,US financial-conditions context for growth exposures.,v1
+HK_CPI_202606_OBSERVATION,basket,HK_VALUE,affected,false,2026-06-01,,Hong Kong inflation context for value exposures.,v1
+HK_CPI_202606_OBSERVATION,basket,HK_INTERNET,affected,false,2026-06-01,,Hong Kong inflation context for internet exposures.,v1
+TW_TSMC_REVENUE_202606_OBSERVATION,entity,TSMC,affected,false,2026-06-01,,Scalar Taiwan TSMC observation linked to the matching entity.,v1
+TW_TSMC_REVENUE_202606_OBSERVATION,basket,AI_BOTTLENECKS_GLOBAL,affected,false,2026-06-01,,Taiwan supply-chain read-through.,v1
+EUROPE_ECB_REFERENCE_RATE_USD_CNY_20260807,index,STOXX_EUROPE_600,context,false,2026-08-07,,European FX context for the benchmark universe.,v1
+HKMA_STABLECOIN_LICENCE_EFFECTIVE_20260410,entity,HSBC_HOLDINGS,primary,false,2026-04-10,,Legal-effective-date entity link.,v1
+HKMA_STABLECOIN_LICENCE_EFFECTIVE_20260410,listing,0005_HK,automated,true,2026-04-10,,Eligible HKEX primary listing selected by the Task 1 mapping gate.,v1
+HKMA_STABLECOIN_LICENCE_EFFECTIVE_20260410,basket,HK_VALUE,affected,false,2026-04-10,,Hong Kong value-basket policy read-through.,v1
+CSI500_REVIEW_COVERAGE_GAP,index,CSI500,context,false,2026-08-13,,Source-health coverage gap; not an automated review-date link.,v1
+STOXX_EUROPE_600_REVIEW_COVERAGE_GAP,index,STOXX_EUROPE_600,context,false,2026-08-13,,Source-health coverage gap; not an automated review-date link.,v1
