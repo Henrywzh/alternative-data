@@ -1,70 +1,72 @@
-entity_id,legal_name,display_name,country,sector,industry,active_status,active_from,active_to,registry_version,source_or_research_note
-NVIDIA,NVIDIA Corporation,NVIDIA,US,Information Technology,Semiconductors,active,2026-01-01,,v1,"Issuer and Nasdaq-listed company; direct AI accelerator anchor."
-AMD,Advanced Micro Devices Inc.,AMD,US,Information Technology,Semiconductors,active,2026-01-01,,v1,"Issuer and Nasdaq-listed company; direct accelerator and CPU/GPU anchor."
-BROADCOM,Broadcom Inc.,Broadcom,US,Information Technology,Semiconductors,active,2026-01-01,,v1,"Issuer and Nasdaq-listed company; custom silicon and networking anchor."
-MARVELL,Marvell Technology Inc.,Marvell,US,Information Technology,Semiconductors,active,2026-01-01,,v1,"Issuer and Nasdaq-listed company; data infrastructure and custom silicon read-through."
-CAMBRICON,Cambricon Technologies Corporation Limited,Cambricon,CN,Information Technology,Semiconductors,active,2026-01-01,,v1,"Shanghai STAR-listed AI semiconductor company; mainland listing retained only with official exchange mapping."
-SK_HYNIX,SK hynix Inc.,SK Hynix,KR,Information Technology,Semiconductors,active,2026-01-01,,v1,"Korea Exchange-listed HBM and memory anchor."
-MICRON,Micron Technology Inc.,Micron,US,Information Technology,Semiconductors,active,2026-01-01,,v1,"Issuer and Nasdaq-listed memory anchor."
-SAMSUNG_ELECTRONICS,Samsung Electronics Co. Ltd.,Samsung Electronics,KR,Information Technology,Semiconductors,active,2026-01-01,,v1,"Korea Exchange-listed memory and foundry anchor."
-NANYA_TECHNOLOGY,Nanya Technology Corporation,Nanya Technology,TW,Information Technology,Semiconductors,active,2026-01-01,,v1,"TWSE-listed DRAM and specialty-memory company."
-WINBOND,Winbond Electronics Corporation,Winbond,TW,Information Technology,Semiconductors,active,2026-01-01,,v1,"TWSE-listed specialty-memory company."
-TSMC,Taiwan Semiconductor Manufacturing Company Limited,TSMC,TW,Information Technology,Semiconductors,active,2026-01-01,,v1,"TWSE ordinary share and NYSE ADR represent one company-level entity."
-SMIC,Semiconductor Manufacturing International Corporation,SMIC,CN,Information Technology,Semiconductors,active,2026-01-01,,v1,"Shanghai and Hong Kong listed foundry; both listing mappings are retained."
-HUA_HONG_SEMICONDUCTOR,Hua Hong Semiconductor Limited,Hua Hong Semiconductor,CN,Information Technology,Semiconductors,active,2026-01-01,,v1,"Shanghai and Hong Kong listed foundry; both listing mappings are retained."
-UMC,United Microelectronics Corporation,UMC,TW,Information Technology,Semiconductors,active,2026-01-01,,v1,"TWSE ordinary share and NYSE ADR represent one company-level entity."
-GLOBALFOUNDRIES,GLOBALFOUNDRIES Inc.,GlobalFoundries,US,Information Technology,Semiconductors,active,2026-01-01,,v1,"Issuer and Nasdaq-listed specialty foundry."
-ASE_TECHNOLOGY,ASE Technology Holding Company Limited,ASE Technology,TW,Information Technology,Semiconductor Equipment,active,2026-01-01,,v1,"TWSE ordinary share and NYSE ADR represent one company-level entity."
-AMKOR,Amkor Technology Inc.,Amkor,US,Information Technology,Semiconductor Equipment,active,2026-01-01,,v1,"Issuer and Nasdaq-listed outsourced semiconductor assembly and test company."
-BESI,BE Semiconductor Industries N.V.,BESI,NL,Information Technology,Semiconductor Equipment,active,2026-01-01,,v1,"Euronext Amsterdam-listed advanced packaging equipment company."
-HANMI_SEMICONDUCTOR,Hanmi Semiconductor Co. Ltd.,Hanmi Semiconductor,KR,Information Technology,Semiconductor Equipment,active,2026-01-01,,v1,"Korea Exchange-listed advanced packaging equipment company."
-JCET,Jiangsu Changjiang Electronics Technology Co. Ltd.,JCET,CN,Information Technology,Semiconductor Equipment,active,2026-01-01,,v1,"Shanghai-listed outsourced semiconductor assembly and test company."
-ASML,ASML Holding N.V.,ASML,NL,Information Technology,Semiconductor Equipment,active,2026-01-01,,v1,"Euronext Amsterdam ordinary share and Nasdaq ADR represent one company-level entity."
-APPLIED_MATERIALS,Applied Materials Inc.,Applied Materials,US,Information Technology,Semiconductor Equipment,active,2026-01-01,,v1,"Issuer and Nasdaq-listed semiconductor equipment company."
-LAM_RESEARCH,Lam Research Corporation,Lam Research,US,Information Technology,Semiconductor Equipment,active,2026-01-01,,v1,"Issuer and Nasdaq-listed semiconductor equipment company."
-KLA,KLA Corporation,KLA,US,Information Technology,Semiconductor Equipment,active,2026-01-01,,v1,"Issuer and Nasdaq-listed process-control equipment company."
-ASM_INTERNATIONAL,ASM International N.V.,ASM International,NL,Information Technology,Semiconductor Equipment,active,2026-01-01,,v1,"Euronext Amsterdam-listed wafer-processing equipment company."
-NAURA,NAURA Technology Group Co. Ltd.,NAURA,CN,Information Technology,Semiconductor Equipment,active,2026-01-01,,v1,"Shenzhen-listed semiconductor equipment company; mainland mapping retained only with official exchange code."
-UNIMICRON,Unimicron Technology Corporation,Unimicron,TW,Information Technology,Electronic Components,active,2026-01-01,,v1,"TWSE-listed IC substrate and PCB company."
-NAN_YA_PCB,Nan Ya Printed Circuit Board Corporation,Nan Ya PCB,TW,Information Technology,Electronic Components,active,2026-01-01,,v1,"TWSE-listed IC substrate and PCB company."
-IBIDEN,Ibiden Co. Ltd.,Ibiden,JP,Information Technology,Electronic Components,active,2026-01-01,,v1,"Tokyo-listed IC substrate company."
-AJINOMOTO,Ajinomoto Co. Inc.,Ajinomoto,JP,Consumer Staples,Food Ingredients,active,2026-01-01,,v1,"Tokyo-listed ABF substrate-material supplier through Ajinomoto Build-up Film."
-ARISTA_NETWORKS,Arista Networks Inc.,Arista Networks,US,Information Technology,Communications Equipment,active,2026-01-01,,v1,"Issuer and NYSE-listed data-center networking company."
-LUMENTUM,Lumentum Holdings Inc.,Lumentum,US,Information Technology,Communications Equipment,active,2026-01-01,,v1,"Issuer and Nasdaq-listed optical components company."
-COHERENT,Coherent Corp.,Coherent,US,Information Technology,Communications Equipment,active,2026-01-01,,v1,"Issuer and NYSE-listed optical and photonics company."
-ACCTON,Accton Technology Corporation,Accton,TW,Information Technology,Communications Equipment,active,2026-01-01,,v1,"TWSE-listed data-center networking equipment company."
-ZTE,ZTE Corporation,ZTE,CN,Information Technology,Communications Equipment,active,2026-01-01,,v1,"Shenzhen and Hong Kong listed communications equipment company."
-QUANTA,Quanta Computer Incorporated,Quanta,TW,Information Technology,Technology Hardware,active,2026-01-01,,v1,"TWSE-listed server and notebook ODM."
-WISTRON,Wistron Corporation,Wistron,TW,Information Technology,Technology Hardware,active,2026-01-01,,v1,"TWSE-listed server and electronics ODM."
-WIWYNN,Wiwynn Corporation,Wiwynn,TW,Information Technology,Technology Hardware,active,2026-01-01,,v1,"TWSE-listed cloud IT infrastructure ODM."
-DELL,Dell Technologies Inc.,Dell,US,Information Technology,Technology Hardware,active,2026-01-01,,v1,"Issuer and NYSE-listed server and systems company."
-HPE,Hewlett Packard Enterprise Company,HPE,US,Information Technology,Technology Hardware,active,2026-01-01,,v1,"Issuer and NYSE-listed enterprise systems company."
-VERTIV,Vertiv Holdings Co.,Vertiv,US,Industrials,Electrical Equipment,active,2026-01-01,,v1,"Issuer and NYSE-listed data-center power and cooling company."
-EATON,Eaton Corporation plc,Eaton,IE,Industrials,Electrical Equipment,active,2026-01-01,,v1,"Issuer and NYSE-listed power-management company."
-MONOLITHIC_POWER_SYSTEMS,Monolithic Power Systems Inc.,Monolithic Power Systems,US,Information Technology,Semiconductors,active,2026-01-01,,v1,"Issuer and Nasdaq-listed power-management semiconductor company."
-DELTA_ELECTRONICS,Delta Electronics Inc.,Delta Electronics,TW,Information Technology,Electrical Components,active,2026-01-01,,v1,"TWSE-listed power electronics and thermal-management company."
-SCHNEIDER_ELECTRIC,Schneider Electric SE,Schneider Electric,FR,Industrials,Electrical Equipment,active,2026-01-01,,v1,"Euronext Paris-listed power-management and automation company."
-GE_VERNOVA,GE Vernova Inc.,GE Vernova,US,Industrials,Electrical Equipment,active,2026-01-01,,v1,"Issuer and NYSE-listed grid and power-generation company."
-CONSTELLATION_ENERGY,Constellation Energy Corporation,Constellation Energy,US,Utilities,Electric Utilities,active,2026-01-01,,v1,"Issuer and Nasdaq-listed power-generation company."
-VISTRA,Vistra Corp.,Vistra,US,Utilities,Electric Utilities,active,2026-01-01,,v1,"Issuer and NYSE-listed power-generation and retail-electricity company."
-SIEMENS_ENERGY,Siemens Energy AG,Siemens Energy,DE,Industrials,Electrical Equipment,active,2026-01-01,,v1,"Xetra-listed grid and energy-equipment company."
-MICROSOFT,Microsoft Corporation,Microsoft,US,Information Technology,Software,active,2026-01-01,,v1,"Issuer and Nasdaq-listed hyperscaler demand anchor."
-AMAZON,Amazon.com Inc.,Amazon,US,Consumer Discretionary,Internet Retail,active,2026-01-01,,v1,"Issuer and Nasdaq-listed hyperscaler and cloud demand anchor."
-ALPHABET,Alphabet Inc.,Alphabet,US,Communication Services,Interactive Media,active,2026-01-01,,v1,"Issuer and Nasdaq-listed hyperscaler demand anchor."
-META,Meta Platforms Inc.,Meta,US,Communication Services,Interactive Media,active,2026-01-01,,v1,"Issuer and Nasdaq-listed hyperscaler demand anchor."
-ORACLE,Oracle Corporation,Oracle,US,Information Technology,Software,active,2026-01-01,,v1,"Issuer and NYSE-listed cloud and enterprise software demand anchor."
-TENCENT,Tencent Holdings Limited,Tencent,HK,Communication Services,Interactive Media,active,2026-01-01,,v1,"Hong Kong-listed platform and cloud demand anchor."
-ALIBABA,Alibaba Group Holding Limited,Alibaba,CN,Consumer Discretionary,Internet Retail,active,2026-01-01,,v1,"Hong Kong ordinary share and NYSE ADR represent one company-level entity."
-JPMORGAN_CHASE,JPMorgan Chase & Co.,JPMorgan Chase,US,Financials,Banks,active,2026-01-01,,v1,"NYSE-listed US value-basket anchor."
-BERKSHIRE_HATHAWAY,Berkshire Hathaway Inc.,Berkshire Hathaway,US,Financials,Diversified Financials,active,2026-01-01,,v1,"NYSE-listed US value-basket anchor."
-EXXON_MOBIL,Exxon Mobil Corporation,Exxon Mobil,US,Energy,Integrated Oil and Gas,active,2026-01-01,,v1,"NYSE-listed US value-basket anchor."
-PROCTER_GAMBLE,The Procter and Gamble Company,Procter and Gamble,US,Consumer Staples,Household Products,active,2026-01-01,,v1,"NYSE-listed US defensive-value anchor."
-AIA_GROUP,AIA Group Limited,AIA,HK,Financials,Insurance,active,2026-01-01,,v1,"Hong Kong-listed insurer and HK value-basket anchor."
-HSBC_HOLDINGS,HSBC Holdings plc,HSBC,GB,Financials,Banks,active,2026-01-01,,v1,"Hong Kong-listed primary share and global banking value anchor."
-MTR_CORPORATION,MTR Corporation Limited,MTR Corporation,HK,Industrials,Transportation Infrastructure,active,2026-01-01,,v1,"Hong Kong-listed transport and property value-basket anchor."
-CLP_HOLDINGS,CLP Holdings Limited,CLP Holdings,HK,Utilities,Electric Utilities,active,2026-01-01,,v1,"Hong Kong-listed utility and value-basket anchor."
-HENDERSON_LAND,Henderson Land Development Company Limited,Henderson Land,HK,Real Estate,Real Estate Development,active,2026-01-01,,v1,"Hong Kong-listed developer and value-basket anchor."
-MEITUAN,Meituan,Meituan,CN,Consumer Discretionary,Internet Services,active,2026-01-01,,v1,"Hong Kong-listed platform company in the HK internet basket."
-JD_COM,JD.com Inc.,JD.com,CN,Consumer Discretionary,Internet Retail,active,2026-01-01,,v1,"Hong Kong ordinary share in the HK internet basket."
-KUAISHOU,Kuaishou Technology,Kuaishou,CN,Communication Services,Interactive Media,active,2026-01-01,,v1,"Hong Kong-listed platform company in the HK internet basket."
-BAIDU,Baidu Inc.,Baidu,CN,Communication Services,Interactive Media,active,2026-01-01,,v1,"Hong Kong ordinary share in the HK internet and AI thematic baskets."
+entity_id,legal_name,display_name,country,sector,industry,active_status,active_from,active_to,registry_version,source_or_research_note,entity_type
+NVIDIA,NVIDIA Corporation,NVIDIA,US,Information Technology,Semiconductors,archived,2026-01-01,,v1,Issuer and Nasdaq-listed company; direct AI accelerator anchor.,public
+AMD,Advanced Micro Devices Inc.,AMD,US,Information Technology,Semiconductors,archived,2026-01-01,,v1,Issuer and Nasdaq-listed company; direct accelerator and CPU/GPU anchor.,public
+BROADCOM,Broadcom Inc.,Broadcom,US,Information Technology,Semiconductors,archived,2026-01-01,,v1,Issuer and Nasdaq-listed company; custom silicon and networking anchor.,public
+MARVELL,Marvell Technology Inc.,Marvell,US,Information Technology,Semiconductors,archived,2026-01-01,,v1,Issuer and Nasdaq-listed company; data infrastructure and custom silicon read-through.,public
+CAMBRICON,Cambricon Technologies Corporation Limited,Cambricon,CN,Information Technology,Semiconductors,archived,2026-01-01,,v1,Shanghai STAR-listed AI semiconductor company; mainland listing retained only with official exchange mapping.,public
+SK_HYNIX,SK hynix Inc.,SK Hynix,KR,Information Technology,Semiconductors,archived,2026-01-01,,v1,Korea Exchange-listed HBM and memory anchor.,public
+MICRON,Micron Technology Inc.,Micron,US,Information Technology,Semiconductors,archived,2026-01-01,,v1,Issuer and Nasdaq-listed memory anchor.,public
+SAMSUNG_ELECTRONICS,Samsung Electronics Co. Ltd.,Samsung Electronics,KR,Information Technology,Semiconductors,archived,2026-01-01,,v1,Korea Exchange-listed memory and foundry anchor.,public
+NANYA_TECHNOLOGY,Nanya Technology Corporation,Nanya Technology,TW,Information Technology,Semiconductors,archived,2026-01-01,,v1,TWSE-listed DRAM and specialty-memory company.,public
+WINBOND,Winbond Electronics Corporation,Winbond,TW,Information Technology,Semiconductors,archived,2026-01-01,,v1,TWSE-listed specialty-memory company.,public
+TSMC,Taiwan Semiconductor Manufacturing Company Limited,TSMC,TW,Information Technology,Semiconductors,archived,2026-01-01,,v1,TWSE ordinary share and NYSE ADR represent one company-level entity.,public
+SMIC,Semiconductor Manufacturing International Corporation,SMIC,CN,Information Technology,Semiconductors,archived,2026-01-01,,v1,Shanghai and Hong Kong listed foundry; both listing mappings are retained.,public
+HUA_HONG_SEMICONDUCTOR,Hua Hong Semiconductor Limited,Hua Hong Semiconductor,CN,Information Technology,Semiconductors,archived,2026-01-01,,v1,Shanghai and Hong Kong listed foundry; both listing mappings are retained.,public
+UMC,United Microelectronics Corporation,UMC,TW,Information Technology,Semiconductors,archived,2026-01-01,,v1,TWSE ordinary share and NYSE ADR represent one company-level entity.,public
+GLOBALFOUNDRIES,GLOBALFOUNDRIES Inc.,GlobalFoundries,US,Information Technology,Semiconductors,archived,2026-01-01,,v1,Issuer and Nasdaq-listed specialty foundry.,public
+ASE_TECHNOLOGY,ASE Technology Holding Company Limited,ASE Technology,TW,Information Technology,Semiconductor Equipment,archived,2026-01-01,,v1,TWSE ordinary share and NYSE ADR represent one company-level entity.,public
+AMKOR,Amkor Technology Inc.,Amkor,US,Information Technology,Semiconductor Equipment,archived,2026-01-01,,v1,Issuer and Nasdaq-listed outsourced semiconductor assembly and test company.,public
+BESI,BE Semiconductor Industries N.V.,BESI,NL,Information Technology,Semiconductor Equipment,archived,2026-01-01,,v1,Euronext Amsterdam-listed advanced packaging equipment company.,public
+HANMI_SEMICONDUCTOR,Hanmi Semiconductor Co. Ltd.,Hanmi Semiconductor,KR,Information Technology,Semiconductor Equipment,archived,2026-01-01,,v1,Korea Exchange-listed advanced packaging equipment company.,public
+JCET,Jiangsu Changjiang Electronics Technology Co. Ltd.,JCET,CN,Information Technology,Semiconductor Equipment,archived,2026-01-01,,v1,Shanghai-listed outsourced semiconductor assembly and test company.,public
+ASML,ASML Holding N.V.,ASML,NL,Information Technology,Semiconductor Equipment,archived,2026-01-01,,v1,Euronext Amsterdam ordinary share and Nasdaq ADR represent one company-level entity.,public
+APPLIED_MATERIALS,Applied Materials Inc.,Applied Materials,US,Information Technology,Semiconductor Equipment,archived,2026-01-01,,v1,Issuer and Nasdaq-listed semiconductor equipment company.,public
+LAM_RESEARCH,Lam Research Corporation,Lam Research,US,Information Technology,Semiconductor Equipment,archived,2026-01-01,,v1,Issuer and Nasdaq-listed semiconductor equipment company.,public
+KLA,KLA Corporation,KLA,US,Information Technology,Semiconductor Equipment,archived,2026-01-01,,v1,Issuer and Nasdaq-listed process-control equipment company.,public
+ASM_INTERNATIONAL,ASM International N.V.,ASM International,NL,Information Technology,Semiconductor Equipment,archived,2026-01-01,,v1,Euronext Amsterdam-listed wafer-processing equipment company.,public
+NAURA,NAURA Technology Group Co. Ltd.,NAURA,CN,Information Technology,Semiconductor Equipment,archived,2026-01-01,,v1,Shenzhen-listed semiconductor equipment company; mainland mapping retained only with official exchange code.,public
+UNIMICRON,Unimicron Technology Corporation,Unimicron,TW,Information Technology,Electronic Components,archived,2026-01-01,,v1,TWSE-listed IC substrate and PCB company.,public
+NAN_YA_PCB,Nan Ya Printed Circuit Board Corporation,Nan Ya PCB,TW,Information Technology,Electronic Components,archived,2026-01-01,,v1,TWSE-listed IC substrate and PCB company.,public
+IBIDEN,Ibiden Co. Ltd.,Ibiden,JP,Information Technology,Electronic Components,archived,2026-01-01,,v1,Tokyo-listed IC substrate company.,public
+AJINOMOTO,Ajinomoto Co. Inc.,Ajinomoto,JP,Consumer Staples,Food Ingredients,archived,2026-01-01,,v1,Tokyo-listed ABF substrate-material supplier through Ajinomoto Build-up Film.,public
+ARISTA_NETWORKS,Arista Networks Inc.,Arista Networks,US,Information Technology,Communications Equipment,archived,2026-01-01,,v1,Issuer and NYSE-listed data-center networking company.,public
+LUMENTUM,Lumentum Holdings Inc.,Lumentum,US,Information Technology,Communications Equipment,archived,2026-01-01,,v1,Issuer and Nasdaq-listed optical components company.,public
+COHERENT,Coherent Corp.,Coherent,US,Information Technology,Communications Equipment,archived,2026-01-01,,v1,Issuer and NYSE-listed optical and photonics company.,public
+ACCTON,Accton Technology Corporation,Accton,TW,Information Technology,Communications Equipment,archived,2026-01-01,,v1,TWSE-listed data-center networking equipment company.,public
+ZTE,ZTE Corporation,ZTE,CN,Information Technology,Communications Equipment,archived,2026-01-01,,v1,Shenzhen and Hong Kong listed communications equipment company.,public
+QUANTA,Quanta Computer Incorporated,Quanta,TW,Information Technology,Technology Hardware,archived,2026-01-01,,v1,TWSE-listed server and notebook ODM.,public
+WISTRON,Wistron Corporation,Wistron,TW,Information Technology,Technology Hardware,archived,2026-01-01,,v1,TWSE-listed server and electronics ODM.,public
+WIWYNN,Wiwynn Corporation,Wiwynn,TW,Information Technology,Technology Hardware,archived,2026-01-01,,v1,TWSE-listed cloud IT infrastructure ODM.,public
+DELL,Dell Technologies Inc.,Dell,US,Information Technology,Technology Hardware,archived,2026-01-01,,v1,Issuer and NYSE-listed server and systems company.,public
+HPE,Hewlett Packard Enterprise Company,HPE,US,Information Technology,Technology Hardware,archived,2026-01-01,,v1,Issuer and NYSE-listed enterprise systems company.,public
+VERTIV,Vertiv Holdings Co.,Vertiv,US,Industrials,Electrical Equipment,archived,2026-01-01,,v1,Issuer and NYSE-listed data-center power and cooling company.,public
+EATON,Eaton Corporation plc,Eaton,IE,Industrials,Electrical Equipment,archived,2026-01-01,,v1,Issuer and NYSE-listed power-management company.,public
+MONOLITHIC_POWER_SYSTEMS,Monolithic Power Systems Inc.,Monolithic Power Systems,US,Information Technology,Semiconductors,archived,2026-01-01,,v1,Issuer and Nasdaq-listed power-management semiconductor company.,public
+DELTA_ELECTRONICS,Delta Electronics Inc.,Delta Electronics,TW,Information Technology,Electrical Components,archived,2026-01-01,,v1,TWSE-listed power electronics and thermal-management company.,public
+SCHNEIDER_ELECTRIC,Schneider Electric SE,Schneider Electric,FR,Industrials,Electrical Equipment,archived,2026-01-01,,v1,Euronext Paris-listed power-management and automation company.,public
+GE_VERNOVA,GE Vernova Inc.,GE Vernova,US,Industrials,Electrical Equipment,archived,2026-01-01,,v1,Issuer and NYSE-listed grid and power-generation company.,public
+CONSTELLATION_ENERGY,Constellation Energy Corporation,Constellation Energy,US,Utilities,Electric Utilities,archived,2026-01-01,,v1,Issuer and Nasdaq-listed power-generation company.,public
+VISTRA,Vistra Corp.,Vistra,US,Utilities,Electric Utilities,archived,2026-01-01,,v1,Issuer and NYSE-listed power-generation and retail-electricity company.,public
+SIEMENS_ENERGY,Siemens Energy AG,Siemens Energy,DE,Industrials,Electrical Equipment,archived,2026-01-01,,v1,Xetra-listed grid and energy-equipment company.,public
+MICROSOFT,Microsoft Corporation,Microsoft,US,Information Technology,Software,archived,2026-01-01,,v1,Issuer and Nasdaq-listed hyperscaler demand anchor.,public
+AMAZON,Amazon.com Inc.,Amazon,US,Consumer Discretionary,Internet Retail,archived,2026-01-01,,v1,Issuer and Nasdaq-listed hyperscaler and cloud demand anchor.,public
+ALPHABET,Alphabet Inc.,Alphabet,US,Communication Services,Interactive Media,archived,2026-01-01,,v1,Issuer and Nasdaq-listed hyperscaler demand anchor.,public
+META,Meta Platforms Inc.,Meta,US,Communication Services,Interactive Media,archived,2026-01-01,,v1,Issuer and Nasdaq-listed hyperscaler demand anchor.,public
+ORACLE,Oracle Corporation,Oracle,US,Information Technology,Software,archived,2026-01-01,,v1,Issuer and NYSE-listed cloud and enterprise software demand anchor.,public
+TENCENT,Tencent Holdings Limited,Tencent,HK,Communication Services,Interactive Media,active,2026-01-01,,v1,Hong Kong-listed platform and cloud demand anchor.,public
+ALIBABA,Alibaba Group Holding Limited,Alibaba,CN,Consumer Discretionary,Internet Retail,active,2026-01-01,,v1,Hong Kong ordinary share and NYSE ADR represent one company-level entity.,public
+JPMORGAN_CHASE,JPMorgan Chase & Co.,JPMorgan Chase,US,Financials,Banks,archived,2026-01-01,,v1,NYSE-listed US value-basket anchor.,public
+BERKSHIRE_HATHAWAY,Berkshire Hathaway Inc.,Berkshire Hathaway,US,Financials,Diversified Financials,archived,2026-01-01,,v1,NYSE-listed US value-basket anchor.,public
+EXXON_MOBIL,Exxon Mobil Corporation,Exxon Mobil,US,Energy,Integrated Oil and Gas,archived,2026-01-01,,v1,NYSE-listed US value-basket anchor.,public
+PROCTER_GAMBLE,The Procter and Gamble Company,Procter and Gamble,US,Consumer Staples,Household Products,archived,2026-01-01,,v1,NYSE-listed US defensive-value anchor.,public
+AIA_GROUP,AIA Group Limited,AIA,HK,Financials,Insurance,archived,2026-01-01,,v1,Hong Kong-listed insurer and HK value-basket anchor.,public
+HSBC_HOLDINGS,HSBC Holdings plc,HSBC,GB,Financials,Banks,archived,2026-01-01,,v1,Hong Kong-listed primary share and global banking value anchor.,public
+MTR_CORPORATION,MTR Corporation Limited,MTR Corporation,HK,Industrials,Transportation Infrastructure,archived,2026-01-01,,v1,Hong Kong-listed transport and property value-basket anchor.,public
+CLP_HOLDINGS,CLP Holdings Limited,CLP Holdings,HK,Utilities,Electric Utilities,archived,2026-01-01,,v1,Hong Kong-listed utility and value-basket anchor.,public
+HENDERSON_LAND,Henderson Land Development Company Limited,Henderson Land,HK,Real Estate,Real Estate Development,archived,2026-01-01,,v1,Hong Kong-listed developer and value-basket anchor.,public
+MEITUAN,Meituan,Meituan,CN,Consumer Discretionary,Internet Services,archived,2026-01-01,,v1,Hong Kong-listed platform company in the HK internet basket.,public
+JD_COM,JD.com Inc.,JD.com,CN,Consumer Discretionary,Internet Retail,archived,2026-01-01,,v1,Hong Kong ordinary share in the HK internet basket.,public
+KUAISHOU,Kuaishou Technology,Kuaishou,CN,Communication Services,Interactive Media,active,2026-01-01,,v1,Hong Kong-listed platform company in the HK internet basket.,public
+BAIDU,Baidu Inc.,Baidu,CN,Communication Services,Interactive Media,active,2026-01-01,,v1,Hong Kong ordinary share in the HK internet and AI thematic baskets.,public
+BILIBILI,Bilibili Inc.,Bilibili,CN,Communication Services,Interactive Media,active,2026-01-01,,v1,Hong Kong-listed platform company; verified ordinary-share identity for Stage 1 research.,public
+BYTEDANCE,ByteDance Ltd.,ByteDance,CN,Communication Services,Interactive Media,active,2026-01-01,,v1,"Private company; competitor, product, AI and advertising research only; no listing or collection.",private
