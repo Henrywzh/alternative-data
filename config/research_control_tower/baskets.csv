@@ -5,3 +5,4 @@ HK_VALUE,HK Value,"Hong Kong developers, banks, insurers, utilities, transport a
 HK_INTERNET,HK Internet,"Hong Kong-listed internet and platform companies",2026-01-01,,v1,"Primary V1 research basket from the approved Control Tower design."
 HK_AI_THEMATIC,HK AI Thematic,"Hong Kong-listed AI, semiconductor, robotics and related thematic names",2026-01-01,,v1,"Primary V1 research basket from the approved Control Tower design."
 AI_BOTTLENECKS_GLOBAL,Global AI Bottlenecks,"Cross-market AI infrastructure bottlenecks and demand chain",2026-01-01,,v1,"Primary V1 basket organized by supply-chain constraint rather than country."
+RESEARCH_STAGE_1_CHINA_INTERNET,Stage 1 · China Internet,"Focused China Internet and Big Tech research universe",2026-01-01,,v1,"Default Research Control Tower focus; archived and legacy universes remain recoverable outside the default view."

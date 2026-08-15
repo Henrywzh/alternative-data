@@ -424,11 +424,11 @@ def test_build_writes_stable_artifact_set(tmp_path, minimal_inputs):
         "events:event_links": 33,
         "events:event_watch_questions": 10,
         "events:events": 15,
-        "registry:basket_memberships": 91,
-        "registry:baskets": 6,
-        "registry:entities": 69,
+        "registry:basket_memberships": 97,
+        "registry:baskets": 7,
+        "registry:entities": 71,
         "registry:indices": 12,
-        "registry:listings": 79,
+        "registry:listings": 80,
     }
     manifest_json = json.loads(_published(minimal_inputs, "build_manifest.json").read_text())
     assert manifest_json["network_policy"] == "forbidden"

@@ -98,6 +98,7 @@ def test_required_control_tower_registries_load(registry_root):
         "HK_INTERNET",
         "HK_AI_THEMATIC",
         "AI_BOTTLENECKS_GLOBAL",
+        "RESEARCH_STAGE_1_CHINA_INTERNET",
     } <= set(bundle.baskets["basket_id"])
     assert {"CSI500", "STOXX_EUROPE_600"} <= set(bundle.indices["index_id"])
     assert (
@@ -124,6 +125,30 @@ def test_required_ai_anchor_coverage_and_sk_hynix_core(registry_root):
     for _, row in ai.iterrows():
         if row["membership_tier"] != "watch_only":
             assert bool(eligible_by_entity[row["entity_id"]])
+
+
+def test_stage1_focus_contains_six_entities_and_private_bytedance(registry_root):
+    bundle = load_registry_bundle(registry_root)
+    focus = bundle.basket_memberships.loc[
+        bundle.basket_memberships["basket_id"].eq("RESEARCH_STAGE_1_CHINA_INTERNET")
+    ]
+
+    assert set(focus["entity_id"]) == {
+        "ALIBABA", "TENCENT", "BAIDU", "KUAISHOU", "BILIBILI", "BYTEDANCE",
+    }
+    by_id = bundle.entities.set_index("entity_id")
+    assert set(bundle.entities.loc[bundle.entities["active_status"].eq("active"), "entity_id"]) == set(focus["entity_id"])
+    assert (bundle.entities.loc[
+        ~bundle.entities["entity_id"].isin(set(focus["entity_id"])), "active_status"
+    ] == "archived").all()
+    assert by_id.loc["BYTEDANCE", "entity_type"] == "private"
+    assert by_id.loc["BILIBILI", "entity_type"] == "public"
+    assert bundle.listings.loc[
+        bundle.listings["entity_id"].eq("BYTEDANCE")
+    ].empty
+    assert set(bundle.listings.loc[
+        bundle.listings["entity_id"].eq("BILIBILI"), "listing_id"
+    ]) == {"9626_HK"}
 
 
 def test_financial_data_security_id_crosswalk_is_exact(registry_root):
@@ -233,6 +258,8 @@ def test_listing_roles_and_primary_flags_are_consistent(registry_root):
     for entity_id in bundle.entities.loc[
         bundle.entities["active_status"] == "active", "entity_id"
     ]:
+        if bundle.entities.set_index("entity_id").loc[entity_id, "entity_type"] == "private":
+            continue
         entity_listings = listings[listings["entity_id"] == entity_id]
         assert entity_listings["primary_listing"].any()
         true_roles = entity_listings.loc[

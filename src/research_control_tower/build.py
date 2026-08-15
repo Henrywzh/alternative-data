@@ -55,6 +55,7 @@ REGISTRY_OUTPUT_COLUMNS: dict[str, list[str]] = {
         "active_to",
         "registry_version",
         "source_or_research_note",
+        "entity_type",
     ],
     "listings": [
         "listing_id",

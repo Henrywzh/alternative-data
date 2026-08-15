@@ -1,7 +1,8 @@
 # Research Control Tower Focus Universe and Theme Plan
 
 **Date:** 2026-08-15
-**Status:** Plan written for review; implementation not started
+**Status:** Stage 1 focus/archive and explicit theme implemented; Stage 1.5
+focus and an archived-universe selector remain pending.
 **Repository:** `alternative-data`
 **Parent scope:** Research Control Tower + investment-thesis workflow
 
