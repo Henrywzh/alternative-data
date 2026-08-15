@@ -10,17 +10,14 @@ from __future__ import annotations
 import streamlit as st
 
 
-# Keep all responsive rules in this module.  The CSS namespace is intentionally
-# private to the app and uses Streamlit theme variables as fallbacks.
-CONTROL_TOWER_CSS = r"""
-<style>
+LIGHT_TOKENS = r"""
 :root {
-  --ct-bg: var(--background-color, #f6f8fb);
-  --ct-surface: var(--secondary-background-color, #ffffff);
-  --ct-surface-muted: color-mix(in srgb, var(--ct-surface) 86%, #64748b 14%);
-  --ct-ink: var(--text-color, #172033);
-  --ct-muted: color-mix(in srgb, var(--ct-ink) 58%, transparent);
-  --ct-border: color-mix(in srgb, var(--ct-ink) 16%, transparent);
+  --ct-bg: #f8fafc;
+  --ct-surface: #ffffff;
+  --ct-surface-muted: #f1f5f9;
+  --ct-ink: #0f172a;
+  --ct-muted: #64748b;
+  --ct-border: #e2e8f0;
   --ct-accent: #2563eb;
   --ct-hard: #0f766e;
   --ct-provisional: #b45309;
@@ -30,24 +27,118 @@ CONTROL_TOWER_CSS = r"""
   --ct-danger: #b91c1c;
   --ct-radius: 14px;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ct-bg: #0e1117;
-    --ct-surface: #161b22;
-    --ct-surface-muted: #252b36;
-    --ct-ink: #f0f2f6;
-    --ct-muted: #b8c1cc;
-    --ct-border: #3b4452;
-  }
+.stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
 }
-.ct-shell { max-width: 1480px; margin: 0 auto; padding-bottom: 3rem; }
+section[data-testid="stSidebar"] {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+"""
+
+DARK_TOKENS = r"""
+:root {
+  --ct-bg: #0e1117;
+  --ct-surface: #161b22;
+  --ct-surface-muted: #252b36;
+  --ct-ink: #f0f2f6;
+  --ct-muted: #94a3b8;
+  --ct-border: #334155;
+  --ct-accent: #3b82f6;
+  --ct-hard: #14b8a6;
+  --ct-provisional: #f59e0b;
+  --ct-thesis: #a855f7;
+  --ct-observed: #3b82f6;
+  --ct-warning: #f59e0b;
+  --ct-danger: #ef4444;
+  --ct-radius: 14px;
+}
+.stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
+  background-color: #0e1117 !important;
+  color: #f0f2f6 !important;
+}
+section[data-testid="stSidebar"] {
+  background-color: #161b22 !important;
+  color: #f0f2f6 !important;
+}
+section[data-testid="stSidebar"] label,
+section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
+  color: #f0f2f6 !important;
+}
+section[data-testid="stSidebar"] button[kind="secondary"],
+.stApp button[kind="secondary"] {
+  background-color: #1f2937 !important;
+  border-color: #334155 !important;
+  color: #f0f2f6 !important;
+}
+section[data-testid="stSidebar"] button[kind="secondary"] [data-testid="stMarkdownContainer"] p,
+.stApp button[kind="secondary"] [data-testid="stMarkdownContainer"] p {
+  color: #f0f2f6 !important;
+}
+section[data-testid="stSidebar"] button[kind="headerNoPadding"] [data-testid="stIconMaterial"],
+section[data-testid="stSidebar"] button[kind="headerNoPadding"] span {
+  color: #f0f2f6 !important;
+}
+section[data-testid="stSidebar"] label[data-baseweb="radio"] p {
+  color: #f0f2f6 !important;
+}
+[data-testid="stExpander"] label,
+[data-testid="stExpander"] [data-testid="stWidgetLabel"] p {
+  color: #f0f2f6 !important;
+}
+[data-testid="stExpander"] summary {
+  background-color: #1c2430 !important;
+  border-color: #334155 !important;
+  color: #f0f2f6 !important;
+}
+[data-testid="stExpander"] summary [data-testid="stMarkdownContainer"] p,
+[data-testid="stExpander"] summary [data-testid="stIconMaterial"] {
+  color: #f0f2f6 !important;
+}
+[data-testid="stExpander"] [data-baseweb="select"] > div {
+  background-color: #1f2937 !important;
+  border-color: #334155 !important;
+  color: #f0f2f6 !important;
+}
+[data-testid="stExpander"] [data-baseweb="select"] > div * {
+  color: #f0f2f6 !important;
+}
+[data-testid="stExpander"] [data-testid="stSlider"] p {
+  color: #94a3b8 !important;
+}
+[data-baseweb="popover"],
+[data-testid="stSelectboxVirtualDropdown"],
+[role="option"] {
+  background-color: #161b22 !important;
+  color: #f0f2f6 !important;
+}
+[data-baseweb="popover"] [role="option"]:hover,
+[data-baseweb="popover"] [role="option"][aria-selected="true"] {
+  background-color: #253247 !important;
+}
+[data-baseweb="popover"] [role="option"] * {
+  color: #f0f2f6 !important;
+}
+[data-testid="stAlertContainer"] {
+  background-color: rgba(245, 158, 11, .12) !important;
+  color: #f6c453 !important;
+}
+[data-testid="stAlertContainer"] [data-testid="stMarkdownContainer"] p {
+  color: #f6c453 !important;
+}
+"""
+
+BASE_CSS = r"""
+.ct-shell { max-width: 1480px; margin: 0 auto; padding-bottom: 2rem; }
+.ct-header-block { margin-bottom: 0.5rem; }
 .ct-eyebrow { color: var(--ct-muted); font-size: .72rem; letter-spacing: .12em;
-  text-transform: uppercase; font-weight: 700; margin: 0 0 .35rem; }
+  text-transform: uppercase; font-weight: 700; margin: 0 0 .25rem; }
 .ct-subtle { color: var(--ct-muted); font-size: .82rem; }
 .ct-flight-deck { display: grid; grid-template-columns: 1.25fr .75fr .9fr .9fr 1.8fr;
   gap: 1px; border: 1px solid var(--ct-border); border-radius: var(--ct-radius);
-  overflow: hidden; background: var(--ct-border); margin: .75rem 0 1.25rem; }
-.ct-flight-slot { background: var(--ct-surface); padding: .9rem 1rem; min-width: 0; }
+  overflow: hidden; background: var(--ct-border); margin: .6rem 0 1rem; }
+.ct-flight-slot { background: var(--ct-surface); padding: .85rem 1rem; min-width: 0; }
 .ct-flight-slot--catalyst { background: color-mix(in srgb, var(--ct-accent) 7%, var(--ct-surface)); }
 .ct-metric-label { color: var(--ct-muted); font-size: .72rem; text-transform: uppercase;
   letter-spacing: .08em; font-weight: 700; }
@@ -60,7 +151,7 @@ CONTROL_TOWER_CSS = r"""
 .ct-timeline-layout { grid-template-columns: minmax(260px, .8fr) minmax(0, 1.8fr); }
 .ct-panel { background: var(--ct-surface); border: 1px solid var(--ct-border);
   border-radius: var(--ct-radius); padding: 1rem 1.05rem; min-width: 0; }
-.ct-panel h3 { margin: 0 0 .75rem; font-size: 1rem; }
+.ct-panel h3 { margin: 0 0 .75rem; font-size: 1rem; color: var(--ct-ink); }
 .ct-panel-heading { display: flex; align-items: baseline; justify-content: space-between;
   gap: .7rem; margin-bottom: .7rem; }
 .ct-panel-heading h3 { margin: 0; }
@@ -106,7 +197,7 @@ CONTROL_TOWER_CSS = r"""
 .ct-alert-strip { border: 1px solid color-mix(in srgb, var(--ct-warning) 45%, var(--ct-border));
   background: color-mix(in srgb, var(--ct-warning) 8%, var(--ct-surface));
   color: var(--ct-ink); border-radius: 10px; padding: .65rem .75rem; font-size: .78rem;
-  line-height: 1.4; margin-top: .75rem; overflow-wrap: anywhere; }
+  line-height: 1.4; margin-top: .5rem; margin-bottom: .5rem; overflow-wrap: anywhere; }
 .ct-empty { border: 1px dashed var(--ct-border); border-radius: 10px; color: var(--ct-muted);
   padding: .8rem; font-size: .82rem; }
 .ct-timeline-month { color: var(--ct-ink); font-size: 1rem; font-weight: 760; margin: .25rem 0 .55rem; }
@@ -119,6 +210,7 @@ CONTROL_TOWER_CSS = r"""
 .ct-section-spacer { height: .9rem; }
 .ct-inline-link { color: var(--ct-accent); text-decoration: none; }
 .ct-inline-link:hover, .ct-inline-link:focus { text-decoration: underline; }
+.ct-filter-summary { color: var(--ct-muted); font-size: 0.78rem; margin-top: 0.2rem; margin-bottom: 0.6rem; }
 @media (max-width: 1199px) {
   .ct-flight-deck { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ct-flight-slot--catalyst { grid-column: 1 / -1; }
@@ -133,7 +225,7 @@ CONTROL_TOWER_CSS = r"""
   .ct-event-row { grid-template-columns: 1fr; gap: .42rem; }
   .ct-event-meta { grid-column: auto; }
   .ct-panel { padding: .82rem .78rem; }
-  .ct-shell { padding-bottom: 2rem; }
+  .ct-shell { padding-bottom: 1.5rem; }
   section[data-testid="stSidebar"] {
     width: min(78vw, 300px) !important;
     min-width: 0 !important;
@@ -141,14 +233,23 @@ CONTROL_TOWER_CSS = r"""
   }
   [data-testid="stSidebarContent"] { padding: .9rem .6rem; }
 }
-</style>
 """
 
 
-def inject_styles() -> None:
+def get_control_tower_css(theme: str = "Light") -> str:
+    tokens = DARK_TOKENS if theme == "Dark" else LIGHT_TOKENS
+    return f"<style>\n{tokens}\n{BASE_CSS}\n</style>"
+
+
+CONTROL_TOWER_CSS = get_control_tower_css("Light")
+
+
+def inject_styles(theme: str | None = None) -> None:
     """Inject the static stylesheet into the current Streamlit run."""
 
-    st.markdown(CONTROL_TOWER_CSS, unsafe_allow_html=True)
+    if theme is None:
+        theme = st.session_state.get("ct_theme", "Light")
+    st.markdown(get_control_tower_css(theme), unsafe_allow_html=True)
 
 
-__all__ = ["CONTROL_TOWER_CSS", "inject_styles"]
+__all__ = ["CONTROL_TOWER_CSS", "get_control_tower_css", "inject_styles"]
