@@ -24,7 +24,7 @@ def _columns() -> dict[str, list[str]]:
     return {
         "entities.parquet": [
             "entity_id", "legal_name", "display_name", "country", "sector", "industry",
-            "active_status", "active_from", "active_to", "registry_version", "source_or_research_note",
+            "active_status", "active_from", "active_to", "registry_version", "source_or_research_note", "entity_type",
         ],
         "listings.parquet": [
             "listing_id", "entity_id", "exchange", "native_ticker", "canonical_ticker",
@@ -888,6 +888,19 @@ def test_control_tower_theme_css_is_explicit_and_native_controls_are_covered() -
     assert "#f6c453" in dark_css
 
 
+def test_app_defaults_to_stage1_focus_for_the_published_bundle(monkeypatch: pytest.MonkeyPatch) -> None:
+    from streamlit.testing.v1 import AppTest
+
+    monkeypatch.setenv("CONTROL_TOWER_ARTIFACT_ROOT", str(PRODUCTION_TASK7_PUBLICATION))
+    import streamlit as st
+
+    st.cache_data.clear()
+    app = AppTest.from_file(str(APP_PATH), default_timeout=30).run()
+    assert not app.exception
+    assert app.session_state["ct_basket_ids"] == ("RESEARCH_STAGE_1_CHINA_INTERNET",)
+    assert "Stage 1 · China Internet" in _app_text(app)
+
+
 def test_task10_data_coverage_reports_presence_without_fabricating_linkage(
     generated_root: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1176,6 +1189,13 @@ def _production_task7_generation_or_skip() -> Path:
         "000660_KR listing"
     )
     assert sk_hynix_listing["entity_id"].astype("string").item() == "SK_HYNIX"
+    stage1_members = memberships.loc[
+        memberships["basket_id"].astype("string").eq("RESEARCH_STAGE_1_CHINA_INTERNET")
+    ]
+    assert set(stage1_members["entity_id"].astype("string")) == {
+        "ALIBABA", "TENCENT", "BAIDU", "KUAISHOU", "BILIBILI", "BYTEDANCE",
+    }
+    assert entities.set_index("entity_id").loc["BYTEDANCE", "entity_type"] == "private"
     actual_hbm = memberships.loc[
         memberships["basket_id"].astype("string").eq("AI_BOTTLENECKS_GLOBAL")
         & memberships["primary_layer"].astype("string").eq("hbm_memory")

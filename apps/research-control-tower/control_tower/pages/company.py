@@ -74,6 +74,7 @@ class CompanyView:
     country: str
     sector: str
     industry: str
+    entity_type: str
     active_status: str
     selected_listing_id: str | None
     selection_mode: str
@@ -640,6 +641,7 @@ def build_company_view(
         country=_text(entity.get("country")),
         sector=_text(entity.get("sector")),
         industry=_text(entity.get("industry")),
+        entity_type=_text(entity.get("entity_type")) or "public",
         active_status=_text(entity.get("active_status")),
         selected_listing_id=selected_listing_id,
         selection_mode=selection_mode,
@@ -900,7 +902,8 @@ def render_company_page(
     )
     view = build_company_view(snapshot, entity_id=selected_entity, listing_id=selected_listing, filters=filters)
     st.markdown(f"### {escape(view.display_name)}")
-    st.caption(f"{escape(view.legal_name)} · {escape(view.country)} · {escape(view.sector or 'sector unavailable')} · {escape(view.industry or 'industry unavailable')} · {escape(view.active_status or 'status unavailable')}")
+    entity_type_label = "private / no listing" if view.entity_type == "private" else "public"
+    st.caption(f"{escape(view.legal_name)} · {escape(view.country)} · {escape(view.sector or 'sector unavailable')} · {escape(view.industry or 'industry unavailable')} · {escape(entity_type_label)} · {escape(view.active_status or 'status unavailable')}")
     if view.selected_listing_id:
         selection_mode = {
             "primary_default": "primary listing default",
