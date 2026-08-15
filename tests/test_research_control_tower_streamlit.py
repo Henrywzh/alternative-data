@@ -873,6 +873,21 @@ def test_app_shell_today_timeline_and_filters_are_reachable(generated_root: Path
     assert "Selected listing · L1" not in company_text
 
 
+def test_control_tower_theme_css_is_explicit_and_native_controls_are_covered() -> None:
+    from control_tower.components import get_control_tower_css
+
+    light_css = get_control_tower_css("Light")
+    dark_css = get_control_tower_css("Dark")
+
+    assert "prefers-color-scheme" not in light_css
+    assert "prefers-color-scheme" not in dark_css
+    assert "background-color: #ffffff" in light_css
+    assert "background-color: #0e1117" in dark_css
+    assert '[data-baseweb="popover"]' in dark_css
+    assert '[data-testid="stExpander"] summary' in dark_css
+    assert "#f6c453" in dark_css
+
+
 def test_task10_data_coverage_reports_presence_without_fabricating_linkage(
     generated_root: Path,
     monkeypatch: pytest.MonkeyPatch,

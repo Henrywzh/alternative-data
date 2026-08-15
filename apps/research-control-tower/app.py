@@ -54,6 +54,7 @@ def _ensure_session_state() -> None:
     defaults = {
         "ct_page": "Today",
         "page_labels": PAGE_LABELS,
+        "ct_theme": "Light",
         "ct_horizon": "30d",
         "ct_basket_ids": (),
         "ct_countries": (),
@@ -116,6 +117,14 @@ def _sidebar_navigation() -> None:
                 on_click=_set_page,
                 args=(page,),
             )
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("**Settings**")
+    st.sidebar.radio(
+        "Theme",
+        options=["Light", "Dark"],
+        key="ct_theme",
+        horizontal=True,
+    )
 
 
 def _active_filter_summary() -> str:
@@ -179,7 +188,8 @@ def _filter_controls(snapshot: ControlTowerSnapshot) -> EventFilters:
     # A null confidence bound is useful to the pure API.  Streamlit's slider
     # has no nullable state, so the zero default remains an explicit lower
     # bound and does not change the event universe in V1.
-    st.caption(f"Active filters · {_active_filter_summary()}")
+    summary = _active_filter_summary()
+    st.markdown(f'<div class="ct-filter-summary">Active filters · {summary}</div>', unsafe_allow_html=True)
     return EventFilters(
         horizon=horizon,
         basket_id=tuple(baskets),
@@ -200,7 +210,7 @@ def _header(snapshot: ControlTowerSnapshot, timezone: str) -> None:
     except Exception:
         as_of = snapshot.as_of_utc.strftime("%d %b %Y %H:%M UTC")
     st.markdown('<div class="ct-shell">', unsafe_allow_html=True)
-    st.markdown('<p class="ct-eyebrow">Private research terminal</p>', unsafe_allow_html=True)
+    st.markdown('<div class="ct-header-block"><p class="ct-eyebrow">Private research terminal</p></div>', unsafe_allow_html=True)
     page_slug = "research-control-tower-" + "-".join(
         part for part in st.session_state["ct_page"].casefold().replace("&", "and").split()
         if part
@@ -228,9 +238,10 @@ def main() -> None:
         st.error(str(exc))
         st.stop()
 
-    filters = _filter_controls(snapshot)
     viewer_timezone = st.session_state["ct_viewer_timezone"]
     _header(snapshot, viewer_timezone)
+    filters = _filter_controls(snapshot)
+
     if st.session_state["ct_page"] == "Today":
         render_today_page(snapshot, filters=filters, viewer_timezone=viewer_timezone)
     elif st.session_state["ct_page"] == "Unified Timeline":
