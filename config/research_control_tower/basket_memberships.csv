@@ -90,3 +90,9 @@ META,AI_BOTTLENECKS_GLOBAL,core,hyperscaler_demand,server_systems;grid_energy,20
 ORACLE,AI_BOTTLENECKS_GLOBAL,core,hyperscaler_demand,server_systems,2026-01-01,,Cloud and enterprise software demand anchor,Approved V1 AI basket layer,v1
 TENCENT,AI_BOTTLENECKS_GLOBAL,core,hyperscaler_demand,platforms,2026-01-01,,China platform and cloud demand anchor,Official HKEX listing mapping retained,v1
 ALIBABA,AI_BOTTLENECKS_GLOBAL,core,hyperscaler_demand,platforms,2026-01-01,,China platform and cloud demand anchor,Official HKEX and NYSE listing mappings retained,v1
+ALIBABA,RESEARCH_STAGE_1_CHINA_INTERNET,core,platforms,cloud;commerce,2026-01-01,,Core listed China Internet platform for Stage 1,Default Research Control Tower focus,v1
+TENCENT,RESEARCH_STAGE_1_CHINA_INTERNET,core,platforms,gaming;cloud,2026-01-01,,Core listed China Internet platform for Stage 1,Default Research Control Tower focus,v1
+BAIDU,RESEARCH_STAGE_1_CHINA_INTERNET,core,platforms,ai;cloud,2026-01-01,,Core listed China Internet and AI platform for Stage 1,Default Research Control Tower focus,v1
+KUAISHOU,RESEARCH_STAGE_1_CHINA_INTERNET,core,platforms,short_video;advertising,2026-01-01,,Core listed China Internet platform for Stage 1,Default Research Control Tower focus,v1
+BILIBILI,RESEARCH_STAGE_1_CHINA_INTERNET,core,platforms,content;advertising,2026-01-01,,Core listed China Internet platform for Stage 1,Default Research Control Tower focus,v1
+BYTEDANCE,RESEARCH_STAGE_1_CHINA_INTERNET,watch_only,platforms,ai;advertising;short_video,2026-01-01,,Private competitor and product research only; no market-data collection,Default Research Control Tower focus,v1

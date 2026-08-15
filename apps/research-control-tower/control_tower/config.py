@@ -61,7 +61,7 @@ ARTIFACT_COLUMNS: Final[dict[str, tuple[str, ...]]] = {
     "entities.parquet": (
         "entity_id", "legal_name", "display_name", "country", "sector",
         "industry", "active_status", "active_from", "active_to",
-        "registry_version", "source_or_research_note",
+        "registry_version", "source_or_research_note", "entity_type",
     ),
     "listings.parquet": (
         "listing_id", "entity_id", "exchange", "native_ticker",

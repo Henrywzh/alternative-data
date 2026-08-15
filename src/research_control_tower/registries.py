@@ -34,6 +34,7 @@ REQUIRED_COLUMNS = {
         "country",
         "sector",
         "industry",
+        "entity_type",
         "active_status",
         "active_from",
         "active_to",
@@ -99,9 +100,11 @@ REQUIRED_COLUMNS = {
 DATE_COLUMNS = {"active_from", "active_to", "mapping_verified_at"}
 BOOLEAN_COLUMNS = {"primary_listing", "collection_eligible"}
 MEMBERSHIP_TIERS = {"core", "read_through", "watch_only"}
+ENTITY_TYPES = {"public", "private"}
 MAPPING_STATUSES = {"verified", "unresolved"}
 LISTING_ROLES = {"primary", "dual_primary", "secondary", "depositary_receipt"}
 AI_BASKET_ID = "AI_BOTTLENECKS_GLOBAL"
+FOCUS_STAGE_1_BASKET_ID = "RESEARCH_STAGE_1_CHINA_INTERNET"
 REQUIRED_BASKETS = {
     "US_VALUE",
     "US_GROWTH",
@@ -109,6 +112,7 @@ REQUIRED_BASKETS = {
     "HK_INTERNET",
     "HK_AI_THEMATIC",
     AI_BASKET_ID,
+    FOCUS_STAGE_1_BASKET_ID,
 }
 REQUIRED_INDICES = {"CSI500", "STOXX_EUROPE_600"}
 REQUIRED_AI_ANCHORS = {
@@ -526,7 +530,17 @@ def _listing_role_issues(
             )
 
     for entity_index, entity in bundle.entities.iterrows():
+        entity_type = str(entity.get("entity_type", "public")).strip().lower()
+        if entity_type not in ENTITY_TYPES:
+            yield _issue(
+                "invalid_entity_type",
+                f"entity row {entity_index} has invalid entity_type={entity_type!r}",
+                "entities",
+                int(entity_index),
+            )
         if str(entity["active_status"]) != "active":
+            continue
+        if entity_type == "private":
             continue
         entity_listings = listings[listings["entity_id"] == entity["entity_id"]]
         active_listings = entity_listings[

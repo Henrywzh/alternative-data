@@ -28,6 +28,8 @@ DEFAULT_ARTIFACT_ROOT = APP_ROOT / ".generated"
 PAGE_LABELS = ("Today", "Unified Timeline", "AI Bottlenecks", "Company", "Source Health")
 HORIZON_OPTIONS = ("7d", "30d", "90d", "long_range", "all")
 TIMEZONE_OPTIONS = ("Europe/London", "Asia/Hong_Kong", "Asia/Seoul", "America/New_York", "UTC")
+DEFAULT_FOCUS_BASKET_ID = "RESEARCH_STAGE_1_CHINA_INTERNET"
+DEFAULT_FOCUS_LABEL = "Stage 1 · China Internet"
 
 
 def configured_artifact_root() -> Path:
@@ -55,6 +57,7 @@ def _ensure_session_state() -> None:
         "ct_page": "Today",
         "page_labels": PAGE_LABELS,
         "ct_theme": "Light",
+        "ct_focus_bootstrapped": False,
         "ct_horizon": "30d",
         "ct_basket_ids": (),
         "ct_countries": (),
@@ -98,9 +101,21 @@ def _values(frame: pd.DataFrame, column: str, *, upper: bool = False) -> list[st
     return [value.upper() for value in result] if upper else result
 
 
+def _bootstrap_default_focus(snapshot: ControlTowerSnapshot) -> None:
+    """Select Stage 1 once when the published bundle contains the focus basket."""
+
+    if st.session_state["ct_focus_bootstrapped"]:
+        return
+    basket_ids = set(snapshot.baskets.get("basket_id", pd.Series(dtype="string")).astype("string"))
+    if DEFAULT_FOCUS_BASKET_ID in basket_ids and not st.session_state["ct_basket_ids"]:
+        st.session_state["ct_basket_ids"] = (DEFAULT_FOCUS_BASKET_ID,)
+    st.session_state["ct_focus_bootstrapped"] = True
+
+
 def _sidebar_navigation() -> None:
     st.sidebar.markdown("### Research Control Tower")
     st.sidebar.caption("Evidence-first review surface")
+    st.sidebar.caption(f"Default focus · {DEFAULT_FOCUS_LABEL}")
     for group, pages in (
         ("Review", PAGE_LABELS[:2]),
         ("Research", PAGE_LABELS[2:4]),
@@ -139,7 +154,11 @@ def _active_filter_summary() -> str:
     ):
         values = st.session_state[key]
         if values:
-            parts.append(f"{label}={','.join(map(str, values))}")
+            display_values = [
+                DEFAULT_FOCUS_LABEL if value == DEFAULT_FOCUS_BASKET_ID else str(value)
+                for value in values
+            ]
+            parts.append(f"{label}={','.join(display_values)}")
     confidence = st.session_state["ct_confidence_min"]
     if confidence:
         parts.append(f"confidence≥{confidence:.2f}")
@@ -238,6 +257,7 @@ def main() -> None:
         st.error(str(exc))
         st.stop()
 
+    _bootstrap_default_focus(snapshot)
     viewer_timezone = st.session_state["ct_viewer_timezone"]
     _header(snapshot, viewer_timezone)
     filters = _filter_controls(snapshot)
