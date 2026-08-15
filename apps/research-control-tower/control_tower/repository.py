@@ -630,7 +630,7 @@ class ControlTowerRepository:
                     if reason == "manifest_mismatch" and "row_count mismatch" in detail:
                         raise _artifact_error(name, "row count mismatch") from exc
                     if reason == "schema_mismatch":
-                        raise _artifact_error(name, "has invalid schema") from exc
+                        raise _artifact_error(name, f"has invalid schema ({detail})") from exc
                     raise _artifact_error(name, "is corrupt") from exc
                 stem = Path(name).stem
                 missing_optional.add(stem)
