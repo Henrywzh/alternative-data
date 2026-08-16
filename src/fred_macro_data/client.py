@@ -96,8 +96,11 @@ class FredMacroClient:
             except (TypeError, ValueError):
                 skipped += 1
                 continue
-            rt_start = obs.get("realtime_start") or realtime_start
-            rt_end = obs.get("realtime_end") or realtime_end
+            # Per-observation vintage bounds only: never fabricate a vintage
+            # from the request window.  When the API omits realtime_start/end
+            # for an observation, the vintage is unknown and stays NULL.
+            rt_start = obs.get("realtime_start")
+            rt_end = obs.get("realtime_end")
             points.append(FredObservation(
                 date=str(obs.get("date", "")),
                 series_id=series_id,
