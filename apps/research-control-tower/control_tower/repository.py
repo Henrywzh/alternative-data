@@ -238,11 +238,20 @@ def _validate_parquet_schema(name: str, table: pa.Table) -> None:
             f"expected columns {expected!r} with optional trailing execution "
             f"columns {list(SOURCE_HEALTH_EXECUTION_COLUMNS)!r}, got {actual!r}"
         )
+    elif name == "macro_observations.parquet":
+        without_vintage = [column for column in actual if column not in ("realtime_start", "realtime_end")]
+        expected_base = [column for column in expected if column not in ("realtime_start", "realtime_end")]
+        if without_vintage != expected_base:
+            raise ValueError(f"expected columns {expected!r}, got {actual!r}")
     elif name != "source_health.parquet" and actual != expected:
         raise ValueError(f"expected columns {expected!r}, got {actual!r}")
     types = _expected_types(name)
     if "importance" in actual:
         types["importance"] = "string"
+    if "realtime_start" in actual:
+        types["realtime_start"] = "string"
+    if "realtime_end" in actual:
+        types["realtime_end"] = "string"
     for field in table.schema:
         if not _is_compatible(field, types[field.name]):
             raise ValueError(f"column {field.name!r} has incompatible dtype {field.type}")
@@ -259,6 +268,8 @@ def _read_frame(name: str, path: Path) -> pd.DataFrame:
         SOURCE_HEALTH_EXECUTION_COLUMNS
     ) <= set(frame.columns):
         expected = [*expected, *SOURCE_HEALTH_EXECUTION_COLUMNS]
+    elif name == "macro_observations.parquet":
+        expected = [column for column in expected if column in frame.columns]
     return frame.loc[:, expected].copy()
 
 

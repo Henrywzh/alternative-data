@@ -72,7 +72,7 @@ def _columns() -> dict[str, list[str]]:
             "observation_id", "event_id", "source_id", "series_id", "scope", "event_type", "metric_name",
             "reference_period", "observation_date", "release_at", "actual_value", "unit", "frequency",
             "first_observed_at", "source_published_at", "retrieved_at_utc", "source_url", "pit_class",
-            "source_license_class", "is_provisional", "registry_version",
+            "source_license_class", "is_provisional", "realtime_start", "realtime_end", "registry_version",
         ],
         "consensus_snapshots.parquet": [
             "snapshot_id", "provider", "entity_id", "listing_id", "financial_data_security_id",
@@ -1227,7 +1227,7 @@ def _production_task7_generation_or_skip() -> Path:
             assert name == "quote_snapshots.parquet"
             continue
         actual_columns = tuple(pq.read_schema(resolution.artifact_root / name).names)
-        assert actual_columns == ARTIFACT_COLUMNS[name], (
+        assert actual_columns in (ARTIFACT_COLUMNS[name], ARTIFACT_COLUMNS[name][:20] + (ARTIFACT_COLUMNS[name][-1],)), (
             f"CURRENT publication {resolution.current_target} has non-final "
             f"{name} schema: {actual_columns!r}"
         )

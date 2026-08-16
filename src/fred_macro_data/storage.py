@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 class FredMacroStorage:
     SERIES_COLS = ["series_id", "title", "frequency", "units", "seasonal_adjustment", "observation_start", "last_updated", "fetched_at"]
-    OBSERVATIONS_COLS = ["date", "series_id", "value", "fetched_at"]
+    OBSERVATIONS_COLS = ["date", "series_id", "value", "fetched_at", "realtime_start", "realtime_end"]
 
     def __init__(self, base_dir: Path) -> None:
         self.base_dir = base_dir
@@ -46,6 +46,9 @@ class FredMacroStorage:
             df = pd.read_csv(csv_path)
         else:
             return pd.DataFrame(columns=self.OBSERVATIONS_COLS)
+        for col in ("realtime_start", "realtime_end"):
+            if col not in df.columns:
+                df[col] = None
         return df[self.OBSERVATIONS_COLS]
 
     def upsert_series_meta(self, records: Iterable[FredSeriesMeta]) -> pd.DataFrame:
@@ -74,8 +77,12 @@ class FredMacroStorage:
         merged = pd.concat([existing, incoming], ignore_index=True) if not existing.empty else incoming.copy()
 
         merged["value"] = pd.to_numeric(merged["value"], errors="coerce")
-        merged = merged.drop_duplicates(subset=["series_id", "date"], keep="last")
-        merged = merged.sort_values(by=["series_id", "date"]).reset_index(drop=True)
+        for col in ("realtime_start", "realtime_end"):
+            if col not in merged.columns:
+                merged[col] = None
+
+        merged = merged.drop_duplicates(subset=["series_id", "date", "realtime_start", "value"], keep="last")
+        merged = merged.sort_values(by=["series_id", "date", "realtime_start"]).reset_index(drop=True)
 
         parquet_path = self.normalized_root / "fred_observations.parquet"
         csv_path = self.normalized_root / "fred_observations.csv"
