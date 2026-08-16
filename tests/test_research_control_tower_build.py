@@ -940,7 +940,7 @@ def test_optional_missing_inputs_are_typed_and_unavailable(minimal_inputs):
 
 def test_quote_snapshot_input_is_normalized_into_optional_artifact(tmp_path, minimal_inputs):
     listings = pd.read_csv(minimal_inputs.registry_root / "listings.csv")
-    listing = listings.iloc[0]
+    listing = listings.loc[listings["listing_status"].astype("string").str.lower().eq("active")].iloc[0]
     row = {column: None for column in QUOTE_SNAPSHOT_COLUMNS}
     row.update({
         "quote_id": "quote-fixture-1",
@@ -984,7 +984,212 @@ def test_quote_snapshot_input_is_normalized_into_optional_artifact(tmp_path, min
     assert list(quotes.columns) == QUOTE_SNAPSHOT_COLUMNS
     assert len(quotes) == 1
     assert quotes.iloc[0]["last_price"] == 123.45
+    assert quotes.iloc[0]["latency_class"] == "delayed"
+    assert quotes.iloc[0]["pit_class"] == "snapshot_from_delayed_source"
+    assert quotes.iloc[0]["source_license_class"] == "personal_use_terms_unverified"
     assert health.loc[health["source_id"].eq("fixture_quotes"), "status"].item() == "available"
+
+
+def test_quote_local_input_defaults_are_delayed_and_personal_use(tmp_path):
+    descriptor = LocalInput(
+        source_id="quote_defaults",
+        path=tmp_path / "quotes.parquet",
+        format="parquet",
+        expected_schema=QUOTE_SNAPSHOT_SCHEMA_ID,
+    )
+    assert descriptor.pit_class == "snapshot_from_delayed_source"
+    assert descriptor.license_class == "personal_use_terms_unverified"
+
+
+@pytest.mark.parametrize(
+    ("rejection", "listing_id"),
+    [("archived", "NVDA_US"), ("future", "BABA_US"), ("private", "BABA_US")],
+)
+def test_builder_rejects_ineligible_quote_registry_rows(
+    tmp_path, minimal_inputs, rejection, listing_id
+):
+    listings_path = minimal_inputs.registry_root / "listings.csv"
+    listings = pd.read_csv(listings_path, keep_default_na=False)
+    if rejection == "future":
+        listings.loc[listings["listing_id"].eq(listing_id), "active_from"] = "2030-01-01"
+        listings.to_csv(listings_path, index=False)
+    listing = listings.loc[listings["listing_id"].eq(listing_id)].iloc[0]
+    if rejection == "private":
+        entities_path = minimal_inputs.registry_root / "entities.csv"
+        entities = pd.read_csv(entities_path, keep_default_na=False)
+        entities.loc[entities["entity_id"].eq(listing["entity_id"]), "entity_type"] = "private"
+        entities.to_csv(entities_path, index=False)
+
+    quote_path = tmp_path / f"{rejection}.parquet"
+    pd.DataFrame([_active_quote_row(listing)], columns=QUOTE_SNAPSHOT_COLUMNS).to_parquet(
+        quote_path, index=False
+    )
+    config = replace(
+        minimal_inputs,
+        quote_inputs=(_input(f"bad_{rejection}", quote_path, QUOTE_SNAPSHOT_SCHEMA_ID),),
+    )
+    build_control_tower_marts(config)
+    quotes = pd.read_parquet(_published(config, "quote_snapshots.parquet"))
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    assert quotes.empty
+    assert health.loc[health["source_id"].eq(f"bad_{rejection}"), "status"].item() == "degraded"
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("canonical_ticker", "WRONG.TICKER"),
+        ("currency", "EUR"),
+        ("provider_symbol", "WRONG_SYMBOL"),
+    ],
+)
+def test_builder_rejects_quote_identity_mismatches(tmp_path, minimal_inputs, field, value):
+    listings = pd.read_csv(minimal_inputs.registry_root / "listings.csv")
+    listing = listings.loc[listings["listing_status"].astype("string").str.lower().eq("active")].iloc[0]
+    row = _active_quote_row(listing)
+    row[field] = value
+    quote_path = tmp_path / f"mismatch-{field}.parquet"
+    pd.DataFrame([row], columns=QUOTE_SNAPSHOT_COLUMNS).to_parquet(quote_path, index=False)
+    config = replace(
+        minimal_inputs,
+        quote_inputs=(_input(f"mismatch_{field}", quote_path, QUOTE_SNAPSHOT_SCHEMA_ID),),
+    )
+
+    build_control_tower_marts(config)
+    quotes = pd.read_parquet(_published(config, "quote_snapshots.parquet"))
+    assert quotes.empty
+
+
+def _active_quote_row(listing: pd.Series, *, source_id: str = "market:yfinance", price: float = 123.45) -> dict:
+    row = {column: None for column in QUOTE_SNAPSHOT_COLUMNS}
+    row.update(
+        {
+            "quote_id": f"quote-{listing['listing_id']}-{price}",
+            "listing_id": listing["listing_id"],
+            "canonical_ticker": listing["canonical_ticker"],
+            "provider_symbol": str(listing["vendor_tickers"]).split(";")[0].split(":", 1)[-1],
+            "quote_timestamp": "2026-08-13T11:59:00Z",
+            "retrieved_at_utc": "2026-08-13T12:00:00Z",
+            "last_price": price,
+            "currency": listing["currency"],
+            "market_status": "unknown",
+            "latency_class": "delayed",
+            "source_id": source_id,
+            "source_url": "https://example.test/quotes",
+            "pit_class": "snapshot_from_delayed_source",
+            "source_license_class": "personal_use_terms_unverified",
+            "registry_version": "v1",
+        }
+    )
+    return row
+
+
+def test_quote_status_sidecar_propagates_partial_diagnostics_and_quote_age(
+    tmp_path, minimal_inputs
+):
+    listings = pd.read_csv(minimal_inputs.registry_root / "listings.csv")
+    listing = listings.loc[listings["listing_status"].astype("string").str.lower().eq("active")].iloc[0]
+    quote_path = tmp_path / "quotes.parquet"
+    pd.DataFrame([_active_quote_row(listing)], columns=QUOTE_SNAPSHOT_COLUMNS).to_parquet(
+        quote_path, index=False
+    )
+    sidecar_path = tmp_path / "quotes.status.json"
+    sidecar_path.write_text(
+        json.dumps(
+            {
+                "schema": "quote_collection_status_v1",
+                "aggregate_status": "partial",
+                "row_count": 1,
+                "expected_listing_count": 2,
+                "diagnostic_count": 1,
+                "diagnostics": [
+                    {
+                        "symbol": "MISSING",
+                        "listing_id": "MISSING_LISTING",
+                        "entity_id": "MISSING_ENTITY",
+                        "status": "no_records",
+                        "reason": "missing provider row",
+                    }
+                ],
+                "issues": ["one listing returned no record"],
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    config = replace(
+        minimal_inputs,
+        quote_inputs=(
+            LocalInput(
+                source_id="market:yfinance",
+                path=quote_path,
+                format="parquet",
+                expected_schema=QUOTE_SNAPSHOT_SCHEMA_ID,
+                status_path=sidecar_path,
+                source_priority=10,
+            ),
+        ),
+    )
+
+    manifest = build_control_tower_marts(config)
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    quote_health = health.loc[health["source_id"].eq("market:yfinance")].iloc[0]
+
+    assert manifest.status == "degraded"
+    assert manifest.artifacts["quote_snapshots.parquet"]["status"] == "degraded"
+    assert "market:yfinance" in manifest.degraded_inputs
+    assert str(sidecar_path) in manifest.input_fingerprints
+    assert quote_health["status"] == "partial"
+    assert quote_health["source_latest_at"] == pd.Timestamp("2026-08-13T11:59:00Z")
+    assert quote_health["retrieved_at_utc"] == pd.Timestamp("2026-08-13T12:00:00Z")
+    assert "collector_status=partial" in str(quote_health["detail"])
+    assert "diagnostic_statuses=no_records:1" in str(quote_health["detail"])
+
+
+def test_empty_quote_output_is_not_available(tmp_path, minimal_inputs):
+    quote_path = tmp_path / "empty_quotes.parquet"
+    pd.DataFrame(columns=QUOTE_SNAPSHOT_COLUMNS).to_parquet(quote_path, index=False)
+    config = replace(
+        minimal_inputs,
+        quote_inputs=(
+            LocalInput(
+                source_id="empty_quotes",
+                path=quote_path,
+                format="parquet",
+                expected_schema=QUOTE_SNAPSHOT_SCHEMA_ID,
+            ),
+        ),
+    )
+
+    manifest = build_control_tower_marts(config)
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+
+    assert manifest.artifacts["quote_snapshots.parquet"]["status"] == "degraded"
+    assert health.loc[health["source_id"].eq("empty_quotes"), "status"].item() == "no_records"
+
+
+def test_quote_source_priority_is_explicit_not_lexicographic(tmp_path, minimal_inputs):
+    listings = pd.read_csv(minimal_inputs.registry_root / "listings.csv")
+    listing = listings.loc[listings["listing_status"].astype("string").str.lower().eq("active")].iloc[0]
+    preferred_path = tmp_path / "preferred.parquet"
+    fallback_path = tmp_path / "fallback.parquet"
+    pd.DataFrame([_active_quote_row(listing, source_id="z_preferred", price=200.0)], columns=QUOTE_SNAPSHOT_COLUMNS).to_parquet(preferred_path, index=False)
+    pd.DataFrame([_active_quote_row(listing, source_id="a_fallback", price=100.0)], columns=QUOTE_SNAPSHOT_COLUMNS).to_parquet(fallback_path, index=False)
+    config = replace(
+        minimal_inputs,
+        quote_inputs=(
+            LocalInput(source_id="z_preferred", path=preferred_path, format="parquet", expected_schema=QUOTE_SNAPSHOT_SCHEMA_ID, source_priority=1),
+            LocalInput(source_id="a_fallback", path=fallback_path, format="parquet", expected_schema=QUOTE_SNAPSHOT_SCHEMA_ID, source_priority=20),
+        ),
+    )
+
+    build_control_tower_marts(config)
+    quotes = pd.read_parquet(_published(config, "quote_snapshots.parquet"))
+
+    assert len(quotes) == 1
+    assert quotes.iloc[0]["source_id"] == "z_preferred"
+    assert quotes.iloc[0]["last_price"] == 200.0
 
 
 def test_task3_contract_is_current_29_35_and_physical_empty_schema_is_stable(

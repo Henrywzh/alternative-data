@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from html import escape
 import re
 from typing import Mapping
@@ -10,6 +9,7 @@ from typing import Mapping
 import pandas as pd
 import streamlit as st
 
+from ..components.coverage_matrix import coverage_legend_html
 from ..models import ControlTowerSnapshot
 
 
@@ -34,6 +34,9 @@ SOURCE_HEALTH_COLUMNS = (
     "display_label",
     "required",
     "row_count",
+    "query_attempted",
+    "execution_status",
+    "completed_at",
     "first_observation_at",
     "latest_observation_at",
     "source_latest_at",
@@ -63,6 +66,7 @@ _PIT_CLASSES = {
     "dated_public_broker_report",
     "reconstructed_sparse",
     "current_vintage",
+    "snapshot_from_delayed_source",
     "not_pit",
 }
 
@@ -78,6 +82,7 @@ _LICENSE_LABELS = {
     "private_research": "Private research only",
     "restricted_body": "Restricted body · metadata only",
     "public": "Public metadata",
+    "personal_use_terms_unverified": "Personal-use terms unverified",
 }
 
 _UTC_COLUMNS = {
@@ -85,6 +90,7 @@ _UTC_COLUMNS = {
     "latest_observation_at",
     "source_latest_at",
     "retrieved_at_utc",
+    "completed_at",
     "age_at_utc",
 }
 
@@ -178,8 +184,18 @@ def _status_class(status: str, *, age_days: float | None, threshold: int | None,
         return "unavailable"
     if explicit == "degraded":
         return "degraded"
+    if explicit == "partial":
+        return "partial"
+    if explicit == "no_records":
+        return "no_records"
     if explicit == "stale":
         return "stale"
+    if explicit == "not_applicable":
+        return "not_applicable"
+    if explicit == "no_records":
+        # ``no_records`` is evidence-derived below. A raw label alone is not
+        # proof that a query was attempted and completed.
+        return "unclassified"
     if explicit not in {"available", "success", "ok"}:
         return "unclassified"
     if age_days is not None and age_basis != "none":
@@ -192,14 +208,23 @@ def _status_class(status: str, *, age_days: float | None, threshold: int | None,
 
 def _display_label(display_status: str, entitlement_status: str, raw_status: str = "") -> str:
     if display_status == "entitlement_error":
-        if entitlement_status == "denied":
+        if entitlement_status in {"denied", "adverse"}:
             return "Entitlement denied"
         return "Entitlement required"
+    if display_status == "no_records":
+        label = "No records"
+    elif display_status == "not_applicable":
+        label = "Not applicable"
     if display_status == "unclassified" and raw_status in {"available", "success", "ok"}:
         label = "Available · Freshness not classified"
-    else:
+    elif display_status not in {"no_records", "not_applicable"}:
         label = display_status.replace("_", " ").title()
-    if entitlement_status == "unknown" and display_status not in {"failed", "unavailable"}:
+    if entitlement_status == "unknown" and display_status not in {
+        "failed",
+        "unavailable",
+        "no_records",
+        "not_applicable",
+    }:
         # Keep this explicit in the table; it prevents a license class from
         # being mistaken for an active entitlement.
         return label + " · Entitlement not evidenced"
@@ -221,6 +246,7 @@ def _entitlement_status(row: Mapping[str, object], status: str) -> str:
     if explicit in {
         "active", "missing", "denied", "unknown", "not_applicable",
         "terms_unverified", "permitted_local_private", "entitlement_required",
+        "adverse",
     }:
         return explicit
     if status == "entitlement_denied":
@@ -228,6 +254,39 @@ def _entitlement_status(row: Mapping[str, object], status: str) -> str:
     if status == "entitlement_required":
         return "missing"
     return "unknown"
+
+
+def _query_attempted(value: object) -> bool:
+    if value is True:
+        return True
+    if isinstance(value, str):
+        return value.strip().lower() in {"true", "1", "yes"}
+    if isinstance(value, (int, float)) and not pd.isna(value):
+        return int(value) == 1
+    return False
+
+
+def _has_completed_execution(
+    row: Mapping[str, object],
+    *,
+    reference: pd.Timestamp,
+) -> tuple[bool, pd.Timestamp | None]:
+    """Return explicit successful completion proof for a source query.
+
+    The minimal compatible contract is:
+    ``query_attempted=true``, ``execution_status=completed`` and a
+    timezone-aware ``completed_at`` no later than the bundle reference time.
+    Legacy bundles without these optional fields remain unclassified.
+    """
+
+    completed_at = _timestamp(row.get("completed_at"))
+    completed = (
+        _query_attempted(row.get("query_attempted"))
+        and _text(row.get("execution_status")).lower() == "completed"
+        and completed_at is not None
+        and completed_at <= reference
+    )
+    return completed, completed_at
 
 
 def classify_source_health(
@@ -255,10 +314,23 @@ def classify_source_health(
         if "stale_after_days" not in row or threshold_value is None or (isinstance(threshold_value, str) and not threshold_value.strip()):
             threshold = cadence_thresholds.get(cadence)
 
+        quote_timestamp = _timestamp(row.get("quote_timestamp"))
         source_latest = _timestamp(row.get("source_latest_at"))
         latest_observation = _timestamp(row.get("latest_observation_at"))
         retrieved = _timestamp(row.get("retrieved_at_utc"))
-        if source_latest is not None:
+        if _text(row.get("source_kind")).lower() == "market":
+            if quote_timestamp is not None:
+                age_at = quote_timestamp
+            elif source_latest is not None:
+                # The builder stores the quote timestamp in source_latest_at
+                # because the published source-health schema is shared by all
+                # optional inputs.  Preserve that market-specific meaning in
+                # the display contract; retrieval remains a separate field.
+                age_at = source_latest
+            else:
+                age_at = None
+            age_basis = "quote_timestamp" if age_at is not None else "none"
+        elif source_latest is not None:
             age_at = source_latest
             age_basis = "source_latest_at"
         elif latest_observation is not None:
@@ -279,19 +351,62 @@ def classify_source_health(
         else:
             age_days = max(0.0, float((reference - age_at).total_seconds() / 86400.0))
 
-        if future and status not in {
-            "failed", "error", "schema_error", "conflicted", "review_required",
-            "entitlement_required", "entitlement_denied", "unavailable", "degraded", "stale",
-        }:
-            display_status = "clock_skew"
-        else:
-            display_status = _status_class(
-                status,
-                age_days=age_days,
-                threshold=threshold,
-                age_basis=age_basis,
-            )
+        raw_row_count = row.get("row_count")
+        row_count_value = None if raw_row_count is None or pd.isna(raw_row_count) else raw_row_count
+        try:
+            reported_rows = None if row_count_value is None else int(row_count_value)
+        except (TypeError, ValueError):
+            reported_rows = None
+
+        execution_completed, completed_at = _has_completed_execution(
+            row, reference=reference
+        )
         entitlement = _entitlement_status(row, status)
+        base_status = _status_class(
+            status,
+            age_days=age_days,
+            threshold=threshold,
+            age_basis=age_basis,
+        )
+        adverse_entitlement = entitlement in {
+            "denied",
+            "missing",
+            "entitlement_required",
+            "terms_unverified",
+            "adverse",
+        }
+        explicit_adverse_statuses = {
+            "failed",
+            "conflicted",
+            "review_required",
+            "entitlement_error",
+            "unavailable",
+            "degraded",
+            "stale",
+            "not_applicable",
+        }
+        if adverse_entitlement and base_status not in explicit_adverse_statuses:
+            display_status = "entitlement_error"
+        elif base_status in explicit_adverse_statuses:
+            display_status = base_status
+        elif future or (
+            completed_at is not None and completed_at > reference
+        ):
+            display_status = "clock_skew"
+        elif (
+            reported_rows == 0
+            and status in {"available", "success", "ok", "no_records"}
+            and not execution_completed
+        ):
+            display_status = "review_required"
+        elif (
+            reported_rows == 0
+            and status in {"available", "success", "ok", "no_records"}
+            and execution_completed
+        ):
+            display_status = "no_records"
+        else:
+            display_status = base_status
         output = {column: row.get(column, pd.NA) for column in SOURCE_HEALTH_COLUMNS}
         output.update(
             {
@@ -301,6 +416,11 @@ def classify_source_health(
                 "status": _text(row.get("status")),
                 "display_status": display_status,
                 "display_label": _display_label(display_status, entitlement, status),
+                "query_attempted": _query_attempted(row.get("query_attempted")),
+                "execution_status": _text(row.get("execution_status")).lower(),
+                "completed_at": (
+                    completed_at if completed_at is not None else pd.NaT
+                ),
                 "age_basis": age_basis,
                 "age_at_utc": age_at if age_at is not None else pd.NaT,
                 "age_days": age_days,
@@ -322,16 +442,22 @@ def classify_source_health(
     if not rows:
         data: dict[str, pd.Series] = {}
         for column in SOURCE_HEALTH_COLUMNS:
-            data[column] = pd.Series(
-                [],
-                dtype="datetime64[ns, UTC]" if column in _UTC_COLUMNS else "Float64" if column == "age_days" else "object",
-            )
+            if column in _UTC_COLUMNS:
+                dtype = "datetime64[ns, UTC]"
+            elif column == "age_days":
+                dtype = "Float64"
+            elif column == "query_attempted":
+                dtype = "boolean"
+            else:
+                dtype = "object"
+            data[column] = pd.Series([], dtype=dtype)
         return pd.DataFrame(data)
     result = pd.DataFrame(rows, columns=SOURCE_HEALTH_COLUMNS)
     for column in _UTC_COLUMNS:
         result[column] = pd.to_datetime(result[column], utc=True, errors="coerce")
     result["age_days"] = pd.to_numeric(result["age_days"], errors="coerce").astype("Float64")
     result["stale_after_days"] = pd.to_numeric(result["stale_after_days"], errors="coerce").astype("Int64")
+    result["query_attempted"] = result["query_attempted"].astype("boolean")
     return result
 
 
@@ -359,8 +485,10 @@ def source_health_counts(classified: pd.DataFrame) -> dict[str, int]:
         "healthy": int(display_status.eq("healthy").sum()),
         "freshness_unclassified": int(display_status.eq("unclassified").sum()),
         "stale": int(display_status.eq("stale").sum()),
+        "no_records": int(display_status.eq("no_records").sum()),
+        "not_applicable": int(display_status.eq("not_applicable").sum()),
         "unavailable_degraded": int(
-            raw_status.isin({"unavailable", "degraded"}).sum()
+            raw_status.isin({"unavailable", "degraded", "partial", "no_records"}).sum()
         ),
         "errors_gaps": int(issue_rows.sum()),
     }
@@ -411,6 +539,25 @@ def _source_display_name(value: object) -> str:
     return text.replace("_", " ").replace(":", " · ").title() or "Source unavailable"
 
 
+def _render_stage1_coverage_matrix(snapshot: ControlTowerSnapshot) -> None:
+    """Render the deterministic Stage 1 entity/listing coverage matrix."""
+
+    from ..components.coverage_matrix import (
+        render_stage1_coverage_matrix as render_matrix,
+    )
+    from ..coverage import build_stage1_coverage_matrix
+
+    matrix = build_stage1_coverage_matrix(snapshot)
+    st.markdown("### Stage 1 coverage matrix")
+    st.caption(
+        "Per-entity and per-listing status across the focus universe · derived "
+        "from artifact presence, row counts, linkage, freshness and source "
+        "health · read-only, no provider queries"
+    )
+    st.markdown(coverage_legend_html(), unsafe_allow_html=True)
+    render_matrix(matrix)
+
+
 def render_source_health_page(
     snapshot: ControlTowerSnapshot,
     *,
@@ -420,12 +567,17 @@ def render_source_health_page(
 
     classified = classify_source_health(snapshot.source_health, now_utc=snapshot.now_utc)
     st.markdown("### Source Health")
-    st.caption("Collector/provider state · freshness · schema and entitlement caveats · metadata only")
+    st.caption(
+        "Collector/provider state · freshness · schema and entitlement "
+        "caveats · metadata only"
+    )
     if classified.empty:
         st.info("No source-health rows are available in this snapshot.")
+        _render_stage1_coverage_matrix(snapshot)
         return classified
 
     counts = source_health_counts(classified)
+    st.markdown(coverage_legend_html(), unsafe_allow_html=True)
     status_cols = st.columns(4)
     status_cols[0].metric("Sources", counts["sources"])
     status_cols[1].metric("Available", counts["available"])
@@ -460,14 +612,16 @@ def render_source_health_page(
             source = _safe_link(row.get("source_url"), "source link")
             st.markdown(
                 f'<div class="ct-change"><div class="ct-change-title">{escape(_source_display_name(source_id))} · {escape(status)}</div>'
-                f'<div class="ct-change-detail">{escape(detail)} · {escape(age)} · cadence {escape(_text(row.get("cadence")) or "unclassified")} · '
+                f'<div class="ct-change-detail">{escape(detail)} · {escape(age)} · age basis {escape(_text(row.get("age_basis")) or "unclassified")} · cadence {escape(_text(row.get("cadence")) or "unclassified")} · '
                 f'stale after {escape(_text(row.get("stale_after_days")) or "unclassified")} · schema {escape(_text(row.get("schema_version")) or "unavailable")}</div>'
                 f'<div class="ct-source-line">internal id {escape(source_id)} · {source} · latest observation {_format_time(row.get("latest_observation_at"), viewer_timezone)} · '
                 f'source latest {_format_time(row.get("source_latest_at"), viewer_timezone)} · retrieved {_format_time(row.get("retrieved_at_utc"), viewer_timezone)} · '
+                f'execution {escape(_text(row.get("execution_status")) or "unavailable")} · completed {_format_time(row.get("completed_at"), viewer_timezone)} · '
                 f'PIT {escape(_text(row.get("pit_display")))} · license {escape(_text(row.get("license_display")))} · '
                 f'entitlement {escape(_text(row.get("entitlement_status")))} · evidence {escape(_text(row.get("entitlement_ref")) or "unavailable")}</div></div>',
                 unsafe_allow_html=True,
             )
+    _render_stage1_coverage_matrix(snapshot)
     return classified
 
 
