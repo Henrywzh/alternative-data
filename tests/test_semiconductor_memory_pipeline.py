@@ -76,13 +76,50 @@ def test_run_derive_builds_weighted_ai_ppi_and_rebased_components(tmp_path: Path
     # using renormalized weights over the four available components.
     # raw = 0.4210526*60 + 0.2631579*120 + 0.2105263*220 + 0.1052632*96 = 113.263158
     assert round(mar["fred_ppi_value"], 6) == round((113.263158 / 95.0) * 100.0, 6)
-    assert mar["component_coverage"] == "4/5"
-    assert mar["missing_components"] == "PCU3341123341121"
     assert feb["ppi_component_pcu33443344_rebased"] == 110.0
     assert feb["ppi_component_pcu33423342_rebased"] == 110.0
     assert feb["ppi_component_pcu335313335313_rebased"] == 105.0
     assert pd.isna(mar["ppi_component_pcu3341123341121_rebased"])
     assert round(feb["fred_ppi_mom_pct"], 6) == round((((102.5 / 95.0) * 100.0) / 100.0 - 1.0) * 100.0, 6)
+    # component_coverage lives on the dedicated PPI table (the dashboard's source),
+    # not on the ADATA × FRED regime table.
+    ppi = storage.load_dataset("fred_semiconductor_ppi_monthly")
+    ppi_mar = ppi.loc[ppi["month"] == "2026-03"].iloc[0]
+    assert ppi_mar["component_coverage"] == "4/5"
+    assert ppi_mar["missing_components"] == "PCU3341123341121"
+
+
+def test_run_derive_emits_and_flags_partial_month_when_component_lags(tmp_path: Path) -> None:
+    """A month missing one basket component must still produce a PPI value,
+    explicitly flagged, so the dashboard can show July without a silent gap."""
+    storage = StorageManager(tmp_path)
+    storage.upsert_dataset("adata_marketwatch_monthly", [_adata_record("2026-02")])
+    storage.upsert_dataset(
+        "fred_semiconductor_ppi",
+        _full_fred_month("2026-01", 50.0)
+        + _full_fred_month("2026-02", 55.0)
+        # March is complete except storage devices (the 5th basket component).
+        + [
+            _fred_record("PCU33443344", "2026-03-01", 60.0),
+            _fred_record("PCU33423342", "2026-03-01", 120.0),
+            _fred_record("PCU335313335313", "2026-03-01", 220.0),
+            _fred_record("PCU334111334111", "2026-03-01", 96.0),
+        ],
+    )
+
+    SemiconductorMemoryPipeline(tmp_path).run_derive()
+
+    ppi = storage.load_dataset("fred_semiconductor_ppi_monthly")
+    assert sorted(ppi["month"].tolist()) == ["2026-01", "2026-02", "2026-03"]
+    mar = ppi.loc[ppi["month"] == "2026-03"].iloc[0]
+    assert mar["component_coverage"] == "4/5"
+    assert mar["missing_components"] == "PCU3341123341121"
+    assert pd.notna(mar["fred_ppi_value"])
+    # Full months carry the complete-basket label and no missing components.
+    jan = ppi.loc[ppi["month"] == "2026-01"].iloc[0]
+    assert jan["component_coverage"] == "5/5"
+    missing_jan = jan["missing_components"]
+    assert missing_jan is None or pd.isna(missing_jan) or missing_jan in ("", "nan")
 
 
 def test_run_derive_emits_and_flags_partial_month_when_component_lags(tmp_path: Path) -> None:
