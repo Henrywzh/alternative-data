@@ -111,6 +111,9 @@ def _health(**overrides: dict[str, object]) -> pd.DataFrame:
             "source_kind": "market",
             "status": "unavailable",
             "row_count": 0,
+            "query_attempted": False,
+            "execution_status": None,
+            "completed_at": None,
         },
         {
             "source_id": "consensus_export",
@@ -118,6 +121,9 @@ def _health(**overrides: dict[str, object]) -> pd.DataFrame:
             "status": "unavailable",
             "row_count": 0,
             "entitlement_status": "terms_unverified",
+            "query_attempted": False,
+            "execution_status": None,
+            "completed_at": None,
         },
         {
             "source_id": "filings_sec_edgar",
@@ -125,30 +131,45 @@ def _health(**overrides: dict[str, object]) -> pd.DataFrame:
             "status": "unavailable",
             "row_count": 0,
             "missing_geographies": "CN,HK",
+            "query_attempted": False,
+            "execution_status": None,
+            "completed_at": None,
         },
         {
             "source_id": "news_official_ai_rss",
             "source_kind": "news",
             "status": "unavailable",
             "row_count": 0,
+            "query_attempted": False,
+            "execution_status": None,
+            "completed_at": None,
         },
         {
             "source_id": "events:events",
             "source_kind": "events",
             "status": "available",
             "row_count": 0,
+            "query_attempted": True,
+            "execution_status": "completed",
+            "completed_at": FRESH,
         },
         {
             "source_id": "registry:entities",
             "source_kind": "registry",
             "status": "available",
             "row_count": 6,
+            "query_attempted": True,
+            "execution_status": "completed",
+            "completed_at": FRESH,
         },
         {
             "source_id": "fred_observations",
             "source_kind": "macro",
             "status": "unavailable",
             "row_count": 0,
+            "query_attempted": False,
+            "execution_status": None,
+            "completed_at": None,
         },
     ]
     for source_id, values in overrides.items():
@@ -241,12 +262,16 @@ def _quote(
     quote_id: str,
     listing_id: str,
     timestamp: str = FRESH,
+    *,
+    source_id: str = "quote_snapshots",
+    retrieved_at_utc: str | None = None,
 ) -> dict[str, object]:
     return {
         "quote_id": quote_id,
         "listing_id": listing_id,
         "quote_timestamp": timestamp,
-        "retrieved_at_utc": timestamp,
+        "retrieved_at_utc": retrieved_at_utc or timestamp,
+        "source_id": source_id,
     }
 
 
@@ -367,6 +392,9 @@ def test_partial_quote_status_when_rows_cover_only_some_listings() -> None:
             "row_count": 1,
             "source_latest_at": FRESH,
             "cadence": "daily",
+            "query_attempted": True,
+            "execution_status": "completed",
+            "completed_at": FRESH,
         }
     )
     matrix = _matrix(_snapshot(quotes=quotes, health=health))
@@ -400,7 +428,7 @@ def test_stale_quote_status_from_freshness_window() -> None:
 
     cell = matrix.entity_cell("ALIBABA", "price_quotes")
     assert cell.status_code == "stale"
-    assert "freshness window" in cell.details
+    assert "freshness SLA" in cell.details
 
     from control_tower.coverage import build_data_coverage_summary
 
@@ -418,6 +446,9 @@ def test_no_records_when_source_connected_but_zero_matching_rows() -> None:
             "row_count": 0,
             "source_latest_at": FRESH,
             "cadence": "daily",
+            "query_attempted": True,
+            "execution_status": "completed",
+            "completed_at": FRESH,
         }
     )
     snapshot = _snapshot(health=health)
@@ -471,6 +502,10 @@ def test_consensus_status_transitions() -> None:
             "row_count": 2,
             "source_latest_at": FRESH,
             "cadence": "weekly",
+            "entitlement_status": "active",
+            "query_attempted": True,
+            "execution_status": "completed",
+            "completed_at": FRESH,
         }
     )
     available = _snapshot(
@@ -511,6 +546,10 @@ def test_consensus_status_transitions() -> None:
                 "row_count": 0,
                 "source_latest_at": FRESH,
                 "cadence": "weekly",
+                "entitlement_status": "active",
+                "query_attempted": True,
+                "execution_status": "completed",
+                "completed_at": FRESH,
             }
         )
     )
@@ -534,18 +573,25 @@ def test_filings_news_status_transitions() -> None:
                 "source_latest_at": FRESH,
                 "cadence": "event_driven",
                 "missing_geographies": None,
+                "query_attempted": True,
+                "execution_status": "completed",
+                "completed_at": FRESH,
             },
             news_official_ai_rss={
                 "status": "available",
                 "row_count": 0,
                 "source_latest_at": FRESH,
                 "cadence": "event_driven",
+                "query_attempted": True,
+                "execution_status": "completed",
+                "completed_at": FRESH,
             },
         )
 
     def filing(document_id: str, entity: str) -> dict[str, object]:
         return {
             "document_id": document_id,
+            "source_id": "filings_sec_edgar",
             "related_entity_ids": entity,
             "related_listing_ids": None,
             "related_basket_ids": None,
@@ -610,12 +656,18 @@ def test_filings_news_status_transitions() -> None:
                 "source_latest_at": FRESH,
                 "cadence": "event_driven",
                 "missing_geographies": None,
+                "query_attempted": True,
+                "execution_status": "completed",
+                "completed_at": FRESH,
             },
             news_official_ai_rss={
                 "status": "available",
                 "row_count": 0,
                 "source_latest_at": FRESH,
                 "cadence": "event_driven",
+                "query_attempted": True,
+                "execution_status": "completed",
+                "completed_at": FRESH,
             },
         )
     )
@@ -647,7 +699,18 @@ def test_events_are_no_records_when_registry_read_but_nothing_linked() -> None:
             },
         ]
     )
-    linked = _matrix(_snapshot(events=events))
+    event_health = _health(
+        **{
+            "events:events": {
+                "status": "available",
+                "row_count": 2,
+                "query_attempted": True,
+                "execution_status": "completed",
+                "completed_at": FRESH,
+            }
+        }
+    )
+    linked = _matrix(_snapshot(events=events, health=event_health))
     assert linked.status_of("ALIBABA", "events") == "available"
     assert linked.status_of("BYTEDANCE", "events") == "available"
     assert linked.status_of("TENCENT", "events") == "no_records"
@@ -659,9 +722,12 @@ def test_macro_cell_transitions() -> None:
     connected = _health(
         fred_observations={
             "status": "available",
-            "row_count": 1,
+            "row_count": 0,
             "source_latest_at": FRESH,
             "cadence": "monthly",
+            "query_attempted": True,
+            "execution_status": "completed",
+            "completed_at": FRESH,
         }
     )
     empty = _snapshot(health=connected)
@@ -694,6 +760,9 @@ def test_source_health_classifier_distinguishes_no_records_from_unavailable() ->
                 "row_count": 0,
                 "source_latest_at": FRESH,
                 "cadence": "daily",
+                "query_attempted": True,
+                "execution_status": "completed",
+                "completed_at": FRESH,
             },
             {
                 "source_id": "connected-populated",
@@ -835,3 +904,456 @@ def test_matrix_falls_back_to_active_entities_without_stage1_basket() -> None:
     )
     matrix = _matrix(fallback)
     assert {row.entity_id for row in matrix.entity_rows} == STAGE1_ENTITY_IDS
+
+
+def test_zero_rows_require_explicit_completed_execution_evidence() -> None:
+    from control_tower.pages.source_health import classify_source_health
+
+    unexecuted = _health(
+        quote_snapshots={
+            "status": "available",
+            "row_count": 0,
+            "source_latest_at": FRESH,
+            "cadence": "daily",
+            "query_attempted": False,
+            "execution_status": None,
+            "completed_at": None,
+        }
+    )
+    classified = classify_source_health(unexecuted, now_utc=AS_OF)
+    quote = classified.loc[classified["source_id"].eq("quote_snapshots")].iloc[0]
+    assert quote["display_status"] != "no_records"
+    assert _matrix(_snapshot(health=unexecuted)).status_of(
+        "ALIBABA", "price_quotes"
+    ) != "no_records"
+
+    incomplete = _health(
+        quote_snapshots={
+            "status": "available",
+            "row_count": 0,
+            "source_latest_at": FRESH,
+            "cadence": "daily",
+            "query_attempted": True,
+            "execution_status": "running",
+            "completed_at": None,
+        }
+    )
+    classified = classify_source_health(incomplete, now_utc=AS_OF)
+    quote = classified.loc[classified["source_id"].eq("quote_snapshots")].iloc[0]
+    assert quote["display_status"] != "no_records"
+
+
+@pytest.mark.parametrize(
+    ("raw_status", "expected"),
+    [
+        ("stale", "stale"),
+        ("not_applicable", "not_applicable"),
+        ("failed", "failed"),
+        ("entitlement_required", "entitlement_error"),
+        ("mystery", "unclassified"),
+    ],
+)
+def test_zero_rows_preserve_explicit_source_semantics(
+    raw_status: str,
+    expected: str,
+) -> None:
+    from control_tower.pages.source_health import classify_source_health
+
+    health = _health(
+        quote_snapshots={
+            "status": raw_status,
+            "row_count": 0,
+            "query_attempted": True,
+            "execution_status": "completed",
+            "completed_at": FRESH,
+        }
+    )
+    classified = classify_source_health(health, now_utc=AS_OF)
+    quote = classified.loc[classified["source_id"].eq("quote_snapshots")].iloc[0]
+    assert quote["display_status"] == expected
+
+
+def test_zero_rows_preserve_clock_skew_instead_of_no_records() -> None:
+    from control_tower.pages.source_health import classify_source_health
+
+    future = (AS_OF + pd.Timedelta(hours=1)).isoformat()
+    health = _health(
+        quote_snapshots={
+            "status": "available",
+            "row_count": 0,
+            "source_latest_at": future,
+            "query_attempted": True,
+            "execution_status": "completed",
+            "completed_at": FRESH,
+            "cadence": "daily",
+        }
+    )
+    classified = classify_source_health(health, now_utc=AS_OF)
+    quote = classified.loc[classified["source_id"].eq("quote_snapshots")].iloc[0]
+    assert quote["display_status"] == "clock_skew"
+    assert _matrix(_snapshot(health=health)).status_of(
+        "ALIBABA", "price_quotes"
+    ) == "partial"
+
+
+def test_completed_zero_rows_preserve_derived_stale_status() -> None:
+    from control_tower.pages.source_health import classify_source_health
+
+    health = _health(
+        quote_snapshots={
+            "status": "available",
+            "row_count": 0,
+            "source_latest_at": OLD,
+            "retrieved_at_utc": FRESH,
+            "stale_after_days": 3,
+            "query_attempted": True,
+            "execution_status": "completed",
+            "completed_at": FRESH,
+            "cadence": "daily",
+        }
+    )
+    classified = classify_source_health(health, now_utc=AS_OF)
+    quote = classified.loc[classified["source_id"].eq("quote_snapshots")].iloc[0]
+    assert quote["display_status"] == "stale"
+
+
+@pytest.mark.parametrize(
+    ("raw_status", "expected"),
+    [
+        ("failed", "failed"),
+        ("stale", "stale"),
+        ("not_applicable", "not_applicable"),
+    ],
+)
+def test_explicit_states_take_precedence_over_future_completion_metadata(
+    raw_status: str,
+    expected: str,
+) -> None:
+    from control_tower.pages.source_health import classify_source_health
+
+    future = (AS_OF + pd.Timedelta(hours=1)).isoformat()
+    health = _health(
+        quote_snapshots={
+            "status": raw_status,
+            "row_count": 0,
+            "query_attempted": True,
+            "execution_status": "completed",
+            "completed_at": future,
+        }
+    )
+    classified = classify_source_health(health, now_utc=AS_OF)
+    quote = classified.loc[classified["source_id"].eq("quote_snapshots")].iloc[0]
+    assert quote["display_status"] == expected
+
+
+def test_retrieval_time_cannot_mask_stale_source_observation() -> None:
+    quotes = pd.DataFrame(
+        [
+            _quote(
+                "Q1",
+                "9988_HK",
+                OLD,
+                retrieved_at_utc=FRESH,
+            ),
+            _quote(
+                "Q2",
+                "BABA_US",
+                OLD,
+                retrieved_at_utc=FRESH,
+            ),
+        ]
+    )
+    health = _health(
+        quote_snapshots={
+            "status": "available",
+            "row_count": 2,
+            "source_latest_at": OLD,
+            "retrieved_at_utc": FRESH,
+            "stale_after_days": 3,
+            "cadence": "daily",
+        }
+    )
+    matrix = _matrix(_snapshot(quotes=quotes, health=health))
+    assert matrix.status_of("ALIBABA", "price_quotes") == "stale"
+
+
+def test_time_sensitive_available_requires_source_timestamp_and_matched_sla() -> None:
+    missing_source_time = pd.DataFrame(
+        [
+            _quote("Q1", "9988_HK"),
+            _quote("Q2", "BABA_US"),
+        ]
+    )
+    missing_source_time["quote_timestamp"] = None
+    health = _health(
+        quote_snapshots={
+            "status": "available",
+            "row_count": 2,
+            "source_latest_at": (AS_OF - pd.Timedelta(days=2)).isoformat(),
+            "retrieved_at_utc": FRESH,
+            "cadence": "daily",
+            "stale_after_days": 1,
+        }
+    )
+    assert _matrix(
+        _snapshot(quotes=missing_source_time, health=health)
+    ).status_of("ALIBABA", "price_quotes") == "partial"
+
+    two_days_old = (AS_OF - pd.Timedelta(days=2)).isoformat()
+    quotes = pd.DataFrame(
+        [
+            _quote("Q1", "9988_HK", two_days_old),
+            _quote("Q2", "BABA_US", two_days_old),
+        ]
+    )
+    assert _matrix(_snapshot(quotes=quotes, health=health)).status_of(
+        "ALIBABA", "price_quotes"
+    ) == "stale"
+
+
+@pytest.mark.parametrize("bad_status", ["failed", "entitlement_required"])
+def test_failed_or_entitlement_source_with_rows_is_partial(
+    bad_status: str,
+) -> None:
+    quotes = pd.DataFrame(
+        [
+            _quote("Q1", "9988_HK"),
+            _quote("Q2", "BABA_US"),
+        ]
+    )
+    health = _health(
+        quote_snapshots={
+            "status": bad_status,
+            "row_count": 2,
+            "source_latest_at": FRESH,
+            "cadence": "daily",
+        }
+    )
+    cell = _matrix(_snapshot(quotes=quotes, health=health)).entity_cell(
+        "ALIBABA", "price_quotes"
+    )
+    assert cell.status_code == "partial"
+    assert bad_status.replace("_", " ") in cell.details.lower()
+
+
+def test_denied_entitlement_with_rows_is_partial() -> None:
+    quotes = pd.DataFrame(
+        [
+            _quote("Q1", "9988_HK"),
+            _quote("Q2", "BABA_US"),
+        ]
+    )
+    health = _health(
+        quote_snapshots={
+            "status": "available",
+            "entitlement_status": "denied",
+            "row_count": 2,
+            "source_latest_at": FRESH,
+            "cadence": "daily",
+        }
+    )
+    cell = _matrix(_snapshot(quotes=quotes, health=health)).entity_cell(
+        "ALIBABA", "price_quotes"
+    )
+    assert cell.status_code == "partial"
+    assert "entitlement error" in cell.details.lower()
+
+
+def test_mismatched_consensus_entity_and_listing_ownership_is_rejected() -> None:
+    health = _health(
+        consensus_export={
+            "status": "available",
+            "row_count": 1,
+            "source_latest_at": FRESH,
+            "cadence": "weekly",
+            "entitlement_status": "active",
+            "query_attempted": True,
+            "execution_status": "completed",
+            "completed_at": FRESH,
+        }
+    )
+    mismatched = pd.DataFrame(
+        [_consensus("S1", "ALIBABA", "0700_HK")]
+    )
+    matrix = _matrix(
+        _snapshot(consensus_snapshots=mismatched, health=health)
+    )
+    assert matrix.status_of("ALIBABA", "consensus") == "no_records"
+    assert matrix.status_of("TENCENT", "consensus") == "no_records"
+
+
+def test_stage1_matrix_honours_entity_membership_and_listing_intervals() -> None:
+    from dataclasses import replace
+
+    snapshot = _snapshot()
+    entities = snapshot.entities.copy()
+    entities["active_from"] = pd.NaT
+    entities["active_to"] = pd.NaT
+    entities.loc[entities["entity_id"].eq("BILIBILI"), "active_to"] = "2026-08-13"
+
+    memberships = snapshot.basket_memberships.copy()
+    memberships["active_from"] = pd.NaT
+    memberships["active_to"] = pd.NaT
+    memberships.loc[
+        memberships["entity_id"].eq("KUAISHOU"), "active_from"
+    ] = "2026-08-14"
+
+    listings = snapshot.listings.copy()
+    listings["active_from"] = pd.NaT
+    listings["active_to"] = pd.NaT
+    listings.loc[listings["listing_id"].eq("BABA_US"), "active_to"] = "2026-08-13"
+    listings = pd.concat(
+        [
+            listings,
+            pd.DataFrame(
+                [
+                    {
+                        "listing_id": "ARCHIVED_OTHER",
+                        "entity_id": "OUTSIDE_STAGE1",
+                        "canonical_ticker": "OUT.US",
+                        "listing_status": "active",
+                    }
+                ]
+            ),
+        ],
+        ignore_index=True,
+    )
+    matrix = _matrix(
+        replace(
+            snapshot,
+            entities=entities,
+            basket_memberships=memberships,
+            listings=listings,
+        )
+    )
+    entity_ids = {row.entity_id for row in matrix.entity_rows}
+    listing_ids = {row.listing_id for row in matrix.listing_rows}
+    assert "BILIBILI" not in entity_ids
+    assert "KUAISHOU" not in entity_ids
+    assert "9626_HK" not in listing_ids
+    assert "1024_HK" not in listing_ids
+    assert "BABA_US" not in listing_ids
+    assert "ARCHIVED_OTHER" not in listing_ids
+    assert listing_ids <= ACTIVE_LISTING_IDS
+
+
+def test_mixed_source_states_with_records_are_partial() -> None:
+    quotes = pd.DataFrame(
+        [
+            _quote("Q1", "9988_HK", source_id="quote_snapshots"),
+            _quote("Q2", "BABA_US", source_id="quote_snapshots"),
+        ]
+    )
+    health = pd.concat(
+        [
+            _health(
+                quote_snapshots={
+                    "status": "available",
+                    "row_count": 2,
+                    "source_latest_at": FRESH,
+                    "cadence": "daily",
+                }
+            ),
+            pd.DataFrame(
+                [
+                    {
+                        "source_id": "provider:backup_quotes",
+                        "source_kind": "market",
+                        "status": "unavailable",
+                        "row_count": 0,
+                    }
+                ]
+            ),
+        ],
+        ignore_index=True,
+    )
+    cell = _matrix(_snapshot(quotes=quotes, health=health)).entity_cell(
+        "ALIBABA", "price_quotes"
+    )
+    assert cell.status_code == "partial"
+    assert "backup quotes" in cell.details.lower()
+
+
+def test_macro_rows_do_not_green_unavailable_providers() -> None:
+    macro = pd.DataFrame(
+        [
+            {
+                "observation_id": "M1",
+                "source_id": "fred_observations",
+                "release_at": FRESH,
+                "source_published_at": FRESH,
+            }
+        ]
+    )
+    cell = _matrix(_snapshot(macro_observations=macro)).global_macro
+    assert cell.status_code == "partial"
+    assert "unavailable" in cell.details.lower()
+
+
+def test_event_link_registries_resolve_listing_basket_and_intervals() -> None:
+    from dataclasses import replace
+
+    snapshot = _snapshot(
+        events=pd.DataFrame(
+            [
+                {"event_id": "EV_LISTING"},
+                {"event_id": "EV_BASKET"},
+                {
+                    "event_id": "EV_EXPIRED",
+                    # Mirrors repository enrichment from the registry. The
+                    # expired authoritative link below must still win.
+                    "related_entity_ids": ("TENCENT",),
+                },
+            ]
+        ),
+        health=_health(
+            **{
+                "events:events": {
+                    "status": "available",
+                    "row_count": 3,
+                    "query_attempted": True,
+                    "execution_status": "completed",
+                    "completed_at": FRESH,
+                }
+            }
+        ),
+    )
+    entity_links = pd.DataFrame(
+        [
+            {
+                "event_id": "EV_LISTING",
+                "target_type": "listing",
+                "target_id": "BABA_US",
+                "active_from": "2026-01-01",
+                "active_to": None,
+            },
+            {
+                "event_id": "EV_EXPIRED",
+                "target_type": "entity",
+                "target_id": "TENCENT",
+                "active_from": "2026-01-01",
+                "active_to": "2026-08-13",
+            },
+        ]
+    )
+    basket_links = pd.DataFrame(
+        [
+            {
+                "event_id": "EV_BASKET",
+                "target_type": "basket",
+                "target_id": "RESEARCH_STAGE_1_CHINA_INTERNET",
+                "active_from": "2026-01-01",
+                "active_to": None,
+            }
+        ]
+    )
+    matrix = _matrix(
+        replace(
+            snapshot,
+            event_entity_links=entity_links,
+            event_basket_links=basket_links,
+        )
+    )
+    assert matrix.entity_cell("ALIBABA", "events").record_count == 2
+    assert matrix.entity_cell("BYTEDANCE", "events").record_count == 1
+    assert matrix.entity_cell("TENCENT", "events").record_count == 1

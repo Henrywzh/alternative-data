@@ -70,16 +70,12 @@ COVERAGE_CATEGORY_LABELS: Mapping[str, str] = {
     "events": "Events / evidence",
 }
 
-# Categories that do not apply to private entities: a private company has no
-# public-market quote, analyst consensus or public earnings-actuals concept.
-_PRIVATE_NOT_APPLICABLE_CATEGORIES = frozenset(
-    {"price_quotes", "consensus", "earnings_actuals"}
-)
-
 _CATEGORY_SOURCE_KINDS: Mapping[str, frozenset[str]] = {
-    "price_quotes": frozenset({"market"}),
-    "consensus": frozenset({"consensus"}),
-    "filings_news": frozenset({"filing", "news"}),
+    "price_quotes": frozenset({"market", "quote", "market_data"}),
+    "consensus": frozenset({"consensus", "consensus_provider"}),
+    "filings_news": frozenset(
+        {"filing", "news", "official_document_metadata"}
+    ),
     "events": frozenset({"events", "registry"}),
     "macro": frozenset({"macro"}),
 }
@@ -113,21 +109,14 @@ _CATEGORY_SOURCE_IDS: Mapping[str, frozenset[str]] = {
     ),
 }
 
-# Fallback freshness windows used when the source-health row does not supply
-# a cadence or stale_after_days value. Mirrors the source-health cadence map.
-_CATEGORY_DEFAULT_STALE_DAYS: Mapping[str, int | None] = {
-    "price_quotes": 3,
-    "consensus": 14,
-    "filings_news": 14,
-    "events": None,
-    "earnings_actuals": None,
-    "macro": 45,
-}
-
-_QUOTE_TS_COLUMNS = ("quote_timestamp", "retrieved_at_utc")
-_CONSENSUS_TS_COLUMNS = ("provider_asof", "snapshot_at", "retrieved_at_utc")
-_FILINGS_TS_COLUMNS = ("published_at", "first_observed_at")
-_MACRO_TS_COLUMNS = ("release_at", "source_published_at", "retrieved_at_utc")
+_QUOTE_TS_COLUMNS = ("quote_timestamp",)
+_CONSENSUS_TS_COLUMNS = (
+    "provider_asof",
+    "snapshot_at",
+    "current_snapshot_at",
+)
+_FILINGS_TS_COLUMNS = ("published_at",)
+_MACRO_TS_COLUMNS = ("release_at", "source_published_at")
 
 # Source-health display states that mean the provider is effectively absent:
 # failure, entitlement, schema or integrity issues are never "no records".
@@ -143,15 +132,8 @@ _UNAVAILABLE_SOURCE_STATES = frozenset(
         "conflicted",
     }
 )
-_CONNECTED_SOURCE_STATES = frozenset(
-    {
-        "healthy",
-        "unclassified",
-        "clock_skew",
-        "stale",
-        "no_records",
-        "not_applicable",
-    }
+_UNCERTAIN_SOURCE_STATES = frozenset(
+    {"unclassified", "clock_skew"}
 )
 
 
@@ -229,6 +211,94 @@ class Stage1CoverageMatrix:
         return self.entity_cell(entity_id, category).status_code
 
 
+@dataclass(frozen=True, slots=True)
+class _SourceState:
+    source_id: str
+    source_kind: str
+    raw_status: str
+    display_status: str
+    stale_after_days: int | None
+    row_count: int | None
+    execution_completed: bool
+
+    @property
+    def label(self) -> str:
+        return (
+            self.source_id.replace("_", " ").replace(":", " · ")
+            or "unknown source"
+        )
+
+    @property
+    def state_label(self) -> str:
+        state = self.raw_status
+        if state in {"", "available", "success", "ok", "no_records"}:
+            state = self.display_status
+        state = state or "unclassified"
+        return state.replace("_", " ")
+
+
+@dataclass(frozen=True, slots=True)
+class _CategorySources:
+    category: str
+    sources: tuple[_SourceState, ...]
+
+    @property
+    def adverse(self) -> tuple[_SourceState, ...]:
+        return tuple(
+            source
+            for source in self.sources
+            if source.display_status in _UNAVAILABLE_SOURCE_STATES
+        )
+
+    @property
+    def uncertain(self) -> tuple[_SourceState, ...]:
+        return tuple(
+            source
+            for source in self.sources
+            if source.display_status in _UNCERTAIN_SOURCE_STATES
+        )
+
+    @property
+    def stale(self) -> tuple[_SourceState, ...]:
+        return tuple(
+            source
+            for source in self.sources
+            if source.display_status == "stale"
+        )
+
+    @property
+    def incomplete_empty(self) -> tuple[_SourceState, ...]:
+        return tuple(
+            source
+            for source in self.sources
+            if source.row_count == 0
+            and not source.execution_completed
+            and source.display_status in {"healthy", "unclassified"}
+        )
+
+    def resolve(self, source_id: str) -> _SourceState | None:
+        text = source_id.strip()
+        if text:
+            for source in self.sources:
+                if source.source_id == text:
+                    return source
+                if source.source_id == f"provider:{text}":
+                    return source
+                if source.source_id.removeprefix("provider:") == text:
+                    return source
+            return None
+        populated = tuple(
+            source
+            for source in self.sources
+            if source.row_count is not None and source.row_count > 0
+        )
+        if len(populated) == 1:
+            return populated[0]
+        if len(self.sources) == 1:
+            return self.sources[0]
+        return None
+
+
 def _text(value: object) -> str:
     if value is None or value is pd.NA or value is pd.NaT:
         return ""
@@ -268,18 +338,6 @@ def _as_utc_timestamp(value: object) -> pd.Timestamp | None:
     return parsed.tz_convert("UTC")
 
 
-def _newest_timestamp(rows: pd.DataFrame, columns: tuple[str, ...]) -> pd.Timestamp | None:
-    newest: pd.Timestamp | None = None
-    for column in columns:
-        if column not in rows.columns:
-            continue
-        for value in rows[column]:
-            parsed = _as_utc_timestamp(value)
-            if parsed is not None and (newest is None or parsed > newest):
-                newest = parsed
-    return newest
-
-
 def _is_stale(
     newest: pd.Timestamp | None,
     threshold_days: int | None,
@@ -293,45 +351,39 @@ def _is_stale(
     return (reference - newest).total_seconds() > threshold_days * 86400.0
 
 
-def _resolve_threshold(
-    thresholds: Mapping[str, int | None],
-    source_ids: tuple[str, ...],
-    default: int | None,
-) -> int | None:
-    """First non-null stale threshold for the governing sources, else default."""
-
-    for source_id in source_ids:
-        value = thresholds.get(source_id)
-        if value is not None:
-            return value
-    return default
-
-
 def _source_health_states(
     snapshot: ControlTowerSnapshot,
-) -> tuple[dict[str, str], dict[str, int | None]]:
-    """Classify source-health rows into display states and stale thresholds.
-
-    The classification lives in the source-health page module; it is imported
-    lazily so coverage stays importable without the page package.
-    """
+) -> tuple[_SourceState, ...]:
+    """Return every classified source state without category aggregation."""
 
     from .pages.source_health import classify_source_health
 
     classified = classify_source_health(
         snapshot.source_health, now_utc=snapshot.now_utc
     )
-    states: dict[str, str] = {}
-    thresholds: dict[str, int | None] = {}
-    if classified.empty:
-        return states, thresholds
+    states: list[_SourceState] = []
     for _, row in classified.iterrows():
         source_id = _text(row.get("source_id"))
         if not source_id:
             continue
-        states[source_id] = _text(row.get("display_status")).lower()
-        thresholds[source_id] = _coerce_int(row.get("stale_after_days"))
-    return states, thresholds
+        states.append(
+            _SourceState(
+                source_id=source_id,
+                source_kind=_text(row.get("source_kind")).lower(),
+                raw_status=_text(row.get("status")).lower(),
+                display_status=_text(row.get("display_status")).lower(),
+                stale_after_days=_coerce_int(row.get("stale_after_days")),
+                row_count=_coerce_int(row.get("row_count")),
+                execution_completed=(
+                    bool(row.get("query_attempted"))
+                    and _text(row.get("execution_status")).lower() == "completed"
+                    and _as_utc_timestamp(row.get("completed_at")) is not None
+                    and _as_utc_timestamp(row.get("completed_at"))
+                    <= snapshot.now_utc
+                ),
+            )
+        )
+    return tuple(states)
 
 
 def _matches_category_source(
@@ -356,94 +408,187 @@ def _matches_category_source(
     return source_kind in _CATEGORY_SOURCE_KINDS.get(category, frozenset())
 
 
-def _category_source_status(
-    states: Mapping[str, str],
-    kinds: Mapping[str, str],
+def _category_sources(
+    states: tuple[_SourceState, ...],
     category: str,
-) -> str | None:
-    """Aggregate governing source states for one category.
+) -> _CategorySources:
+    return _CategorySources(
+        category=category,
+        sources=tuple(
+            source
+            for source in states
+            if _matches_category_source(
+                source.source_id,
+                source.source_kind,
+                category,
+            )
+        ),
+    )
 
-    Any failing/entitlement state wins (provider failure is preserved and is
-    never converted into "no records"); otherwise a connected source with no
-    rows yields no_records; a healthy source yields healthy.
-    """
 
-    matched = [
-        state
-        for source_id, state in states.items()
-        if _matches_category_source(
-            source_id, kinds.get(source_id, ""), category
+def _source_state_details(sources: tuple[_SourceState, ...]) -> str:
+    return "; ".join(
+        f"{source.label} is {source.state_label}"
+        for source in sources
+    )
+
+
+def _empty_status(
+    sources: _CategorySources,
+) -> tuple[CoverageStatusCode, str]:
+    """Coverage state when no matching artifact rows exist."""
+
+    if not sources.sources:
+        return (
+            "unavailable",
+            "No governing source-health records are available.",
         )
-    ]
-    if not matched:
+    if sources.adverse:
+        return "unavailable", _source_state_details(sources.adverse)
+    if sources.stale:
+        return "stale", _source_state_details(sources.stale)
+    if all(
+        source.execution_completed
+        and source.raw_status in {"available", "success", "ok", "no_records"}
+        and source.display_status != "clock_skew"
+        for source in sources.sources
+    ):
+        return (
+            "no_records",
+            "All governing sources record an explicitly completed execution "
+            "with no matching rows.",
+        )
+    if sources.uncertain:
+        return "partial", _source_state_details(sources.uncertain)
+    if all(
+        source.display_status == "not_applicable"
+        for source in sources.sources
+    ):
+        return (
+            "not_applicable",
+            _source_state_details(sources.sources),
+        )
+    return (
+        "partial",
+        "No matching rows and source execution completion is not fully evidenced.",
+    )
+
+
+def _as_date(value: object) -> pd.Timestamp | None:
+    if value is None or value is pd.NaT:
         return None
-    if any(state in _UNAVAILABLE_SOURCE_STATES for state in matched):
-        return "unavailable"
-    if any(state == "no_records" for state in matched):
-        return "no_records"
-    if any(state in _CONNECTED_SOURCE_STATES for state in matched):
-        return "healthy"
-    return None
+    try:
+        parsed = pd.Timestamp(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    if pd.isna(parsed):
+        return None
+    if parsed.tzinfo is not None:
+        parsed = parsed.tz_localize(None)
+    return parsed.normalize()
 
 
-def _active_listing_map(
+def _active_at_snapshot(
+    row: Mapping[str, object],
     snapshot: ControlTowerSnapshot,
-) -> tuple[dict[str, tuple[str, ...]], dict[str, str]]:
-    """Return (entity_id -> active listing ids, listing_id -> entity_id)."""
+) -> bool:
+    """Half-open ``active_from <= as_of < active_to`` interval check."""
 
-    listings = snapshot.listings
-    by_entity: dict[str, list[str]] = {}
-    owner: dict[str, str] = {}
-    if listings.empty:
-        return {key: tuple() for key in by_entity}, owner
-    for _, row in listings.iterrows():
-        if _text(row.get("listing_status")).lower() != "active":
-            continue
-        listing_id = _text(row.get("listing_id"))
-        entity_id = _text(row.get("entity_id"))
-        if not listing_id or not entity_id:
-            continue
-        by_entity.setdefault(entity_id, []).append(listing_id)
-        owner[listing_id] = entity_id
-    return {key: tuple(sorted(value)) for key, value in by_entity.items()}, owner
+    as_of = snapshot.now_utc.tz_localize(None).normalize()
+    active_from = _as_date(row.get("active_from"))
+    active_to = _as_date(row.get("active_to"))
+    return (
+        (active_from is None or active_from <= as_of)
+        and (active_to is None or as_of < active_to)
+    )
+
+
+def _active_entity_rows(
+    snapshot: ControlTowerSnapshot,
+) -> dict[str, dict[str, object]]:
+    rows: dict[str, dict[str, object]] = {}
+    for _, row in snapshot.entities.iterrows():
+        payload = row.to_dict()
+        entity_id = _text(payload.get("entity_id"))
+        if (
+            entity_id
+            and _text(payload.get("active_status")).lower() == "active"
+            and _active_at_snapshot(payload, snapshot)
+        ):
+            rows[entity_id] = payload
+    return rows
 
 
 def _stage1_entity_ids(snapshot: ControlTowerSnapshot) -> set[str]:
-    """Stage 1 entities = active basket members, falling back to active entities."""
+    """Active Stage 1 members at the snapshot reference time."""
 
+    active_entities = _active_entity_rows(snapshot)
     memberships = snapshot.basket_memberships
     if not memberships.empty and {"entity_id", "basket_id"} <= set(
         memberships.columns
     ):
-        stage1 = {
-            _text(value)
-            for value in memberships.loc[
-                memberships["basket_id"].astype("string").eq(STAGE1_BASKET_ID),
-                "entity_id",
-            ]
-            if _text(value)
-        }
-        if stage1:
-            return stage1
-    entities = snapshot.entities
-    if entities.empty:
-        return set()
-    return {
-        _text(row.get("entity_id"))
-        for _, row in entities.iterrows()
-        if _text(row.get("entity_id"))
-        and _text(row.get("active_status")).lower() == "active"
+        stage1_rows = memberships.loc[
+            memberships["basket_id"].astype("string").eq(STAGE1_BASKET_ID)
+        ]
+        if not stage1_rows.empty:
+            return {
+                _text(row.get("entity_id"))
+                for _, row in stage1_rows.iterrows()
+                if _text(row.get("entity_id")) in active_entities
+                and _active_at_snapshot(row.to_dict(), snapshot)
+            }
+    # Compatibility fallback for old focused bundles without the Stage 1
+    # basket. A present-but-inactive basket never falls back to all entities.
+    return set(active_entities)
+
+
+def _active_listing_map(
+    snapshot: ControlTowerSnapshot,
+    stage1_entity_ids: set[str],
+) -> tuple[dict[str, tuple[str, ...]], dict[str, str]]:
+    """Return Stage 1 listing ownership at the snapshot reference time."""
+
+    candidates: dict[str, set[str]] = {}
+    for _, row in snapshot.listings.iterrows():
+        payload = row.to_dict()
+        if (
+            _text(payload.get("listing_status")).lower() != "active"
+            or not _active_at_snapshot(payload, snapshot)
+        ):
+            continue
+        listing_id = _text(payload.get("listing_id"))
+        entity_id = _text(payload.get("entity_id"))
+        if not listing_id or entity_id not in stage1_entity_ids:
+            continue
+        candidates.setdefault(listing_id, set()).add(entity_id)
+
+    # Duplicate owners are ambiguous and therefore excluded rather than
+    # assigned arbitrarily.
+    owner = {
+        listing_id: next(iter(owners))
+        for listing_id, owners in candidates.items()
+        if len(owners) == 1
     }
+    by_entity: dict[str, list[str]] = {}
+    for listing_id, entity_id in owner.items():
+        by_entity.setdefault(entity_id, []).append(listing_id)
+    return (
+        {
+            entity_id: tuple(sorted(listing_ids))
+            for entity_id, listing_ids in by_entity.items()
+        },
+        owner,
+    )
 
 
 def _entity_rows(snapshot: ControlTowerSnapshot) -> tuple[dict[str, object], ...]:
-    ids = _stage1_entity_ids(snapshot)
-    rows = [
-        row.to_dict()
-        for _, row in snapshot.entities.iterrows()
-        if _text(row.get("entity_id")) in ids
-    ]
-    return tuple(rows)
+    stage1_ids = _stage1_entity_ids(snapshot)
+    active_entities = _active_entity_rows(snapshot)
+    return tuple(
+        active_entities[entity_id]
+        for entity_id in sorted(stage1_ids)
+        if entity_id in active_entities
+    )
 
 
 def _quote_rows_for_listing(
@@ -473,53 +618,157 @@ def _quote_rows_for_entity(
 def _consensus_rows_for_entity(
     snapshot: ControlTowerSnapshot,
     entity_id: str,
-    listing_ids: tuple[str, ...],
+    listing_owner: Mapping[str, str],
 ) -> pd.DataFrame:
     parts: list[pd.DataFrame] = []
     for name in ("consensus_snapshots", "consensus_revisions"):
         frame = getattr(snapshot, name)
         if frame.empty:
             continue
-        if "entity_id" in frame.columns:
-            by_entity = frame["entity_id"].astype("string").eq(entity_id)
-            if "listing_id" in frame.columns:
-                by_listing = frame["listing_id"].astype("string").isin(listing_ids)
-                parts.append(frame.loc[by_entity | by_listing])
+        matched: list[bool] = []
+        for _, row in frame.iterrows():
+            row_entity = _text(row.get("entity_id"))
+            row_listing = _text(row.get("listing_id"))
+            if row_listing:
+                owner = listing_owner.get(row_listing)
+                matched.append(
+                    owner == entity_id
+                    and (not row_entity or row_entity == owner)
+                )
             else:
-                parts.append(frame.loc[by_entity])
+                matched.append(row_entity == entity_id)
+        parts.append(frame.loc[matched])
     if not parts:
         return snapshot.consensus_snapshots.iloc[0:0]
     return pd.concat(parts, ignore_index=True).drop_duplicates()
 
 
+def _active_members_by_basket(
+    snapshot: ControlTowerSnapshot,
+    stage1_entity_ids: set[str],
+) -> dict[str, set[str]]:
+    result: dict[str, set[str]] = {}
+    for _, row in snapshot.basket_memberships.iterrows():
+        payload = row.to_dict()
+        entity_id = _text(payload.get("entity_id"))
+        basket_id = _text(payload.get("basket_id"))
+        if (
+            entity_id in stage1_entity_ids
+            and basket_id
+            and _active_at_snapshot(payload, snapshot)
+        ):
+            result.setdefault(basket_id, set()).add(entity_id)
+    return result
+
+
+def _resolve_relation_entities(
+    row: Mapping[str, object],
+    *,
+    stage1_entity_ids: set[str],
+    listing_owner: Mapping[str, str],
+    members_by_basket: Mapping[str, set[str]],
+) -> set[str]:
+    related = {
+        entity_id
+        for entity_id in _relation_values(row.get("related_entity_ids"))
+        if entity_id in stage1_entity_ids
+    }
+    for listing_id in _relation_values(row.get("related_listing_ids")):
+        owner = listing_owner.get(listing_id)
+        if owner is not None:
+            related.add(owner)
+    for basket_id in _relation_values(row.get("related_basket_ids")):
+        related.update(members_by_basket.get(basket_id, set()))
+    return related
+
+
 def _filings_rows_for_entity(
     snapshot: ControlTowerSnapshot,
     entity_id: str,
-    listing_ids: tuple[str, ...],
+    *,
+    stage1_entity_ids: set[str],
+    listing_owner: Mapping[str, str],
+    members_by_basket: Mapping[str, set[str]],
 ) -> pd.DataFrame:
     filings = snapshot.news_filings
     if filings.empty:
         return filings.iloc[0:0]
-    matched: list[bool] = []
-    for _, row in filings.iterrows():
-        related_entities = _relation_values(row.get("related_entity_ids"))
-        related_listings = _relation_values(row.get("related_listing_ids"))
-        matched.append(
-            entity_id in related_entities
-            or bool(set(related_listings) & set(listing_ids))
+    matched = [
+        entity_id
+        in _resolve_relation_entities(
+            row,
+            stage1_entity_ids=stage1_entity_ids,
+            listing_owner=listing_owner,
+            members_by_basket=members_by_basket,
         )
+        for _, row in filings.iterrows()
+    ]
     return filings.loc[matched].copy()
+
+
+def _event_relation_map(
+    snapshot: ControlTowerSnapshot,
+    *,
+    stage1_entity_ids: set[str],
+    listing_owner: Mapping[str, str],
+    members_by_basket: Mapping[str, set[str]],
+) -> dict[str, set[str]]:
+    related: dict[str, set[str]] = {}
+    registries_are_authoritative = (
+        not snapshot.event_entity_links.empty
+        or not snapshot.event_basket_links.empty
+    )
+    for _, row in snapshot.events.iterrows():
+        event_id = _text(row.get("event_id"))
+        if event_id:
+            related[event_id] = (
+                set()
+                if registries_are_authoritative
+                else _resolve_relation_entities(
+                    row,
+                    stage1_entity_ids=stage1_entity_ids,
+                    listing_owner=listing_owner,
+                    members_by_basket=members_by_basket,
+                )
+            )
+
+    for frame in (
+        snapshot.event_entity_links,
+        snapshot.event_basket_links,
+    ):
+        for _, row in frame.iterrows():
+            payload = row.to_dict()
+            if not _active_at_snapshot(payload, snapshot):
+                continue
+            event_id = _text(payload.get("event_id"))
+            target_type = _text(payload.get("target_type")).lower()
+            target_id = _text(payload.get("target_id"))
+            if not event_id or event_id not in related:
+                continue
+            if target_type == "entity" and target_id in stage1_entity_ids:
+                related[event_id].add(target_id)
+            elif target_type == "listing":
+                owner = listing_owner.get(target_id)
+                if owner is not None:
+                    related[event_id].add(owner)
+            elif target_type == "basket":
+                related[event_id].update(
+                    members_by_basket.get(target_id, set())
+                )
+    return related
 
 
 def _event_rows_for_entity(
     snapshot: ControlTowerSnapshot,
     entity_id: str,
+    *,
+    relation_map: Mapping[str, set[str]],
 ) -> pd.DataFrame:
     events = snapshot.events
     if events.empty:
         return events.iloc[0:0]
     matched = [
-        entity_id in _relation_values(row.get("related_entity_ids"))
+        entity_id in relation_map.get(_text(row.get("event_id")), set())
         for _, row in events.iterrows()
     ]
     return events.loc[matched].copy()
@@ -558,38 +807,154 @@ def _missing_geographies(snapshot: ControlTowerSnapshot, category: str) -> bool:
     return False
 
 
+def _row_source_id(
+    row: Mapping[str, object],
+    columns: tuple[str, ...],
+) -> str:
+    for column in columns:
+        value = _text(row.get(column))
+        if value:
+            return value
+    return ""
+
+
+def _row_source_timestamp(
+    row: Mapping[str, object],
+    columns: tuple[str, ...],
+) -> pd.Timestamp | None:
+    for column in columns:
+        parsed = _as_utc_timestamp(row.get(column))
+        if parsed is not None:
+            return parsed
+    return None
+
+
+def _assess_time_sensitive_rows(
+    rows: pd.DataFrame,
+    *,
+    sources: _CategorySources,
+    timestamp_columns: tuple[str, ...],
+    source_id_columns: tuple[str, ...],
+    now_utc: pd.Timestamp,
+) -> tuple[CoverageStatusCode, str]:
+    """Apply source-state precedence and matched-source freshness SLA."""
+
+    if sources.adverse:
+        return (
+            "partial",
+            "Rows exist, but provider coverage is impaired: "
+            + _source_state_details(sources.adverse),
+        )
+    if sources.uncertain:
+        return (
+            "partial",
+            "Rows exist, but provider state is not classified: "
+            + _source_state_details(sources.uncertain),
+        )
+    if sources.incomplete_empty:
+        return (
+            "partial",
+            "Rows exist, but another source has zero rows without explicit "
+            "execution-completion evidence: "
+            + _source_state_details(sources.incomplete_empty),
+        )
+    if not sources.sources:
+        return (
+            "partial",
+            "Rows exist, but no governing source-health/SLA record is available.",
+        )
+    if any(
+        source.display_status == "not_applicable"
+        for source in sources.sources
+    ):
+        conflicting = tuple(
+            source
+            for source in sources.sources
+            if source.display_status == "not_applicable"
+        )
+        return (
+            "partial",
+            "Rows conflict with provider state: "
+            + _source_state_details(conflicting),
+        )
+
+    stale_rows = 0
+    for _, row in rows.iterrows():
+        source_id = _row_source_id(row, source_id_columns)
+        source = sources.resolve(source_id)
+        if source is None:
+            return (
+                "partial",
+                f"Row source {source_id or 'unavailable'} cannot be matched "
+                "to one governing source-health record.",
+            )
+        timestamp = _row_source_timestamp(row, timestamp_columns)
+        if timestamp is None:
+            return (
+                "partial",
+                "At least one row lacks a valid source-native timestamp; "
+                "retrieval time is not a freshness substitute.",
+            )
+        if timestamp > now_utc:
+            return (
+                "partial",
+                f"{source.label} has a future source-native timestamp.",
+            )
+        if source.stale_after_days is None:
+            return (
+                "partial",
+                f"{source.label} has no matched freshness SLA.",
+            )
+        if (
+            source.display_status == "stale"
+            or _is_stale(timestamp, source.stale_after_days, now_utc)
+        ):
+            stale_rows += 1
+
+    if stale_rows == len(rows):
+        return (
+            "stale",
+            "All matching rows are outside their matched source freshness SLA.",
+        )
+    if stale_rows:
+        return (
+            "partial",
+            f"{stale_rows} of {len(rows)} matching rows are stale.",
+        )
+    if sources.stale:
+        return (
+            "partial",
+            "Rows are fresh, but another governing source is stale: "
+            + _source_state_details(sources.stale),
+        )
+    return "available", "Source state and source-native freshness checks passed."
+
+
 def _listing_cell(
     snapshot: ControlTowerSnapshot,
     listing_id: str,
     entity_id: str,
     canonical_ticker: str,
     *,
-    source_state: str | None,
-    threshold_days: int | None,
+    sources: _CategorySources,
     now_utc: pd.Timestamp,
 ) -> Stage1ListingCoverage:
     rows = _quote_rows_for_listing(snapshot, listing_id)
     if not rows.empty:
-        newest = _newest_timestamp(rows, _QUOTE_TS_COLUMNS)
-        if _is_stale(newest, threshold_days, now_utc):
-            status: CoverageStatusCode = "stale"
-            details = (
-                f"Quote rows exist but the newest observation "
-                f"({newest.strftime('%d %b %Y %H:%M UTC') if newest is not None else 'unknown'}) "
-                f"is outside the freshness window."
-            )
-        else:
-            status = "available"
-            details = f"{len(rows)} quote snapshot(s) present for this listing."
-    elif source_state in {"no_records", "healthy"}:
-        status = "no_records"
-        details = "No quote rows for this listing; the source health record reports a successful run."
-    elif source_state == "unavailable":
-        status = "unavailable"
-        details = "No quote rows for this listing; the quote source is disconnected or failed."
+        status, source_detail = _assess_time_sensitive_rows(
+            rows,
+            sources=sources,
+            timestamp_columns=_QUOTE_TS_COLUMNS,
+            source_id_columns=("source_id",),
+            now_utc=now_utc,
+        )
+        details = (
+            f"{len(rows)} quote snapshot(s) present for this listing. "
+            f"{source_detail}"
+        )
     else:
-        status = "unavailable"
-        details = "No quote rows for this listing and no connected quote source on record."
+        status, source_detail = _empty_status(sources)
+        details = f"No quote rows for this listing. {source_detail}"
     return Stage1ListingCoverage(
         listing_id=listing_id,
         entity_id=entity_id,
@@ -605,8 +970,7 @@ def _price_quotes_cell(
     listing_ids: tuple[str, ...],
     *,
     entity_type: str,
-    source_state: str | None,
-    threshold_days: int | None,
+    sources: _CategorySources,
     now_utc: pd.Timestamp,
 ) -> CoverageCell:
     if entity_type == "private":
@@ -623,13 +987,18 @@ def _price_quotes_cell(
         )
     rows = _quote_rows_for_entity(snapshot, listing_ids)
     if not rows.empty:
-        newest = _newest_timestamp(rows, _QUOTE_TS_COLUMNS)
-        if _is_stale(newest, threshold_days, now_utc):
+        source_status, source_detail = _assess_time_sensitive_rows(
+            rows,
+            sources=sources,
+            timestamp_columns=_QUOTE_TS_COLUMNS,
+            source_id_columns=("source_id",),
+            now_utc=now_utc,
+        )
+        if source_status != "available":
             return CoverageCell(
                 "price_quotes",
-                "stale",
-                f"Quote rows exist but the newest observation is outside the "
-                f"{threshold_days}-day freshness window.",
+                source_status,
+                source_detail,
                 record_count=len(rows),
             )
         covered = _covered_listing_count(rows, listing_ids)
@@ -644,20 +1013,14 @@ def _price_quotes_cell(
             "price_quotes",
             "available",
             f"{len(rows)} quote snapshot(s) present for all {len(listing_ids)} "
-            f"active listing(s); rows carry listing identifiers.",
+            f"active listing(s); rows carry listing identifiers. {source_detail}",
             record_count=len(rows),
         )
-    if source_state in {"no_records", "healthy"}:
-        return CoverageCell(
-            "price_quotes",
-            "no_records",
-            "No quote rows for this entity; the source health record reports a successful run.",
-        )
+    empty_status, empty_detail = _empty_status(sources)
     return CoverageCell(
         "price_quotes",
-        "unavailable",
-        "No quote rows for this entity; the quote source is disconnected, "
-        "failed or not configured.",
+        empty_status,
+        f"No quote rows for this entity. {empty_detail}",
     )
 
 
@@ -667,8 +1030,8 @@ def _consensus_cell(
     listing_ids: tuple[str, ...],
     *,
     entity_type: str,
-    source_state: str | None,
-    threshold_days: int | None,
+    listing_owner: Mapping[str, str],
+    sources: _CategorySources,
     now_utc: pd.Timestamp,
 ) -> CoverageCell:
     if entity_type == "private":
@@ -677,15 +1040,24 @@ def _consensus_cell(
             "not_applicable",
             "Private entity; analyst consensus does not apply without public disclosures.",
         )
-    rows = _consensus_rows_for_entity(snapshot, entity_id, listing_ids)
+    rows = _consensus_rows_for_entity(
+        snapshot,
+        entity_id,
+        listing_owner,
+    )
     if not rows.empty:
-        newest = _newest_timestamp(rows, _CONSENSUS_TS_COLUMNS)
-        if _is_stale(newest, threshold_days, now_utc):
+        source_status, source_detail = _assess_time_sensitive_rows(
+            rows,
+            sources=sources,
+            timestamp_columns=_CONSENSUS_TS_COLUMNS,
+            source_id_columns=("source_id", "provider"),
+            now_utc=now_utc,
+        )
+        if source_status != "available":
             return CoverageCell(
                 "consensus",
-                "stale",
-                f"Consensus rows exist but the newest observation is outside the "
-                f"{threshold_days}-day freshness window.",
+                source_status,
+                source_detail,
                 record_count=len(rows),
             )
         covered = _covered_listing_count(rows, listing_ids)
@@ -699,20 +1071,15 @@ def _consensus_cell(
         return CoverageCell(
             "consensus",
             "available",
-            f"{len(rows)} consensus snapshot/revision row(s) linked to this entity.",
+            f"{len(rows)} consensus snapshot/revision row(s) linked to this "
+            f"entity. {source_detail}",
             record_count=len(rows),
         )
-    if source_state in {"no_records", "healthy"}:
-        return CoverageCell(
-            "consensus",
-            "no_records",
-            "No consensus rows for this entity; the source health record reports a successful run.",
-        )
+    empty_status, empty_detail = _empty_status(sources)
     return CoverageCell(
         "consensus",
-        "unavailable",
-        "No consensus rows for this entity; the consensus source is "
-        "disconnected, entitlement-unverified or failed.",
+        empty_status,
+        f"No consensus rows for this entity. {empty_detail}",
     )
 
 
@@ -733,22 +1100,33 @@ def _earnings_actuals_cell(entity_type: str) -> CoverageCell:
 def _filings_news_cell(
     snapshot: ControlTowerSnapshot,
     entity_id: str,
-    listing_ids: tuple[str, ...],
     *,
-    entity_type: str,
-    source_state: str | None,
-    threshold_days: int | None,
+    stage1_entity_ids: set[str],
+    listing_owner: Mapping[str, str],
+    members_by_basket: Mapping[str, set[str]],
+    sources: _CategorySources,
     now_utc: pd.Timestamp,
 ) -> CoverageCell:
-    rows = _filings_rows_for_entity(snapshot, entity_id, listing_ids)
+    rows = _filings_rows_for_entity(
+        snapshot,
+        entity_id,
+        stage1_entity_ids=stage1_entity_ids,
+        listing_owner=listing_owner,
+        members_by_basket=members_by_basket,
+    )
     if not rows.empty:
-        newest = _newest_timestamp(rows, _FILINGS_TS_COLUMNS)
-        if _is_stale(newest, threshold_days, now_utc):
+        source_status, source_detail = _assess_time_sensitive_rows(
+            rows,
+            sources=sources,
+            timestamp_columns=_FILINGS_TS_COLUMNS,
+            source_id_columns=("source_id",),
+            now_utc=now_utc,
+        )
+        if source_status != "available":
             return CoverageCell(
                 "filings_news",
-                "stale",
-                f"Filing/news rows exist but the newest item is outside the "
-                f"{threshold_days}-day freshness window.",
+                source_status,
+                source_detail,
                 record_count=len(rows),
             )
         if _missing_geographies(snapshot, "filings_news"):
@@ -762,79 +1140,100 @@ def _filings_news_cell(
         return CoverageCell(
             "filings_news",
             "available",
-            f"{len(rows)} filing/news item(s) linked to this entity.",
+            f"{len(rows)} filing/news item(s) linked to this entity. "
+            f"{source_detail}",
             record_count=len(rows),
         )
-    if source_state in {"no_records", "healthy"}:
-        return CoverageCell(
-            "filings_news",
-            "no_records",
-            "No filing/news rows for this entity; the source health record reports a successful run.",
-        )
+    empty_status, empty_detail = _empty_status(sources)
     return CoverageCell(
         "filings_news",
-        "unavailable",
-        "No filing/news rows for this entity; the filings/news source is "
-        "disconnected, failed or not configured.",
+        empty_status,
+        f"No filing/news rows for this entity. {empty_detail}",
     )
 
 
 def _events_cell(
     snapshot: ControlTowerSnapshot,
     entity_id: str,
+    *,
+    relation_map: Mapping[str, set[str]],
+    sources: _CategorySources,
 ) -> CoverageCell:
-    rows = _event_rows_for_entity(snapshot, entity_id)
+    rows = _event_rows_for_entity(
+        snapshot,
+        entity_id,
+        relation_map=relation_map,
+    )
     if not rows.empty:
+        if sources.adverse:
+            return CoverageCell(
+                "events",
+                "partial",
+                "Event rows exist, but source coverage is impaired: "
+                + _source_state_details(sources.adverse),
+                record_count=len(rows),
+            )
+        event_uncertain = tuple(
+            source
+            for source in sources.uncertain
+            if not (
+                source.execution_completed
+                and source.raw_status in {"available", "success", "ok"}
+            )
+        )
+        if event_uncertain or not sources.sources:
+            detail = (
+                _source_state_details(event_uncertain)
+                if event_uncertain
+                else "no governing source-health records"
+            )
+            return CoverageCell(
+                "events",
+                "partial",
+                f"{len(rows)} event row(s) resolve to this entity, but {detail}.",
+                record_count=len(rows),
+            )
         return CoverageCell(
             "events",
             "available",
             f"{len(rows)} event record(s) linked to this entity in the local registry.",
             record_count=len(rows),
         )
+    empty_status, empty_detail = _empty_status(sources)
     return CoverageCell(
         "events",
-        "no_records",
-        "No event records linked to this entity; the local registry was read successfully.",
+        empty_status,
+        f"No event records linked to this entity. {empty_detail}",
     )
 
 
 def _macro_cell(
     snapshot: ControlTowerSnapshot,
     *,
-    source_state: str | None,
-    threshold_days: int | None,
+    sources: _CategorySources,
     now_utc: pd.Timestamp,
 ) -> CoverageCell:
     rows = snapshot.macro_observations
     count = len(rows) if not rows.empty else 0
     if count:
-        newest = _newest_timestamp(rows, _MACRO_TS_COLUMNS)
-        if _is_stale(newest, threshold_days, now_utc):
-            return CoverageCell(
-                "macro",
-                "stale",
-                f"{count} macro observation(s) on record but the newest release "
-                f"is outside the {threshold_days}-day freshness window.",
-                record_count=count,
-            )
+        source_status, source_detail = _assess_time_sensitive_rows(
+            rows,
+            sources=sources,
+            timestamp_columns=_MACRO_TS_COLUMNS,
+            source_id_columns=("source_id",),
+            now_utc=now_utc,
+        )
         return CoverageCell(
             "macro",
-            "available",
-            f"{count} macro observation(s) on record; governing provider "
-            f"{'state' if source_state == 'unavailable' else 'connectivity'} "
-            f"is shown in Source Health.",
+            source_status,
+            f"{count} macro observation(s) on record. {source_detail}",
             record_count=count,
         )
-    if source_state in {"no_records", "healthy"}:
-        return CoverageCell(
-            "macro",
-            "no_records",
-            "No macro observations on record; the source health record reports a successful run.",
-        )
+    empty_status, empty_detail = _empty_status(sources)
     return CoverageCell(
         "macro",
-        "unavailable",
-        "No macro observations on record; no macro source is connected or configured.",
+        empty_status,
+        f"No macro observations on record. {empty_detail}",
     )
 
 
@@ -848,13 +1247,26 @@ def build_stage1_coverage_matrix(
     """
 
     now_utc = snapshot.now_utc
-    states, thresholds = _source_health_states(snapshot)
-    kinds = {
-        _text(row.get("source_id")): _text(row.get("source_kind"))
-        for _, row in snapshot.source_health.iterrows()
-        if _text(row.get("source_id"))
+    states = _source_health_states(snapshot)
+    sources = {
+        category: _category_sources(states, category)
+        for category in (*COVERAGE_CATEGORIES, "macro")
     }
-    listing_by_entity, listing_owner = _active_listing_map(snapshot)
+    stage1_entity_ids = _stage1_entity_ids(snapshot)
+    listing_by_entity, listing_owner = _active_listing_map(
+        snapshot,
+        stage1_entity_ids,
+    )
+    members_by_basket = _active_members_by_basket(
+        snapshot,
+        stage1_entity_ids,
+    )
+    event_relations = _event_relation_map(
+        snapshot,
+        stage1_entity_ids=stage1_entity_ids,
+        listing_owner=listing_owner,
+        members_by_basket=members_by_basket,
+    )
 
     entity_rows: list[Stage1EntityCoverage] = []
     for raw in _entity_rows(snapshot):
@@ -863,33 +1275,13 @@ def build_stage1_coverage_matrix(
             continue
         entity_type = _text(raw.get("entity_type")).lower() or "public"
         listing_ids = listing_by_entity.get(entity_id, ())
-        source_state = {
-            category: _category_source_status(states, kinds, category)
-            for category in COVERAGE_CATEGORIES
-        }
-        quote_threshold = _resolve_threshold(
-            thresholds,
-            ("quote_snapshots",),
-            _CATEGORY_DEFAULT_STALE_DAYS["price_quotes"],
-        )
-        consensus_threshold = _resolve_threshold(
-            thresholds,
-            ("consensus_export",),
-            _CATEGORY_DEFAULT_STALE_DAYS["consensus"],
-        )
-        filings_threshold = _resolve_threshold(
-            thresholds,
-            ("filings_sec_edgar", "news_official_ai_rss"),
-            _CATEGORY_DEFAULT_STALE_DAYS["filings_news"],
-        )
         cells: list[CoverageCell] = [
             _price_quotes_cell(
                 snapshot,
                 entity_id,
                 listing_ids,
                 entity_type=entity_type,
-                source_state=source_state["price_quotes"],
-                threshold_days=quote_threshold,
+                sources=sources["price_quotes"],
                 now_utc=now_utc,
             ),
             _consensus_cell(
@@ -897,21 +1289,26 @@ def build_stage1_coverage_matrix(
                 entity_id,
                 listing_ids,
                 entity_type=entity_type,
-                source_state=source_state["consensus"],
-                threshold_days=consensus_threshold,
+                listing_owner=listing_owner,
+                sources=sources["consensus"],
                 now_utc=now_utc,
             ),
             _earnings_actuals_cell(entity_type),
             _filings_news_cell(
                 snapshot,
                 entity_id,
-                listing_ids,
-                entity_type=entity_type,
-                source_state=source_state["filings_news"],
-                threshold_days=filings_threshold,
+                stage1_entity_ids=stage1_entity_ids,
+                listing_owner=listing_owner,
+                members_by_basket=members_by_basket,
+                sources=sources["filings_news"],
                 now_utc=now_utc,
             ),
-            _events_cell(snapshot, entity_id),
+            _events_cell(
+                snapshot,
+                entity_id,
+                relation_map=event_relations,
+                sources=sources["events"],
+            ),
         ]
         entity_rows.append(
             Stage1EntityCoverage(
@@ -924,39 +1321,36 @@ def build_stage1_coverage_matrix(
             )
         )
 
-    quote_source_state = _category_source_status(states, kinds, "price_quotes")
-    quote_threshold = _resolve_threshold(
-        thresholds,
-        ("quote_snapshots",),
-        _CATEGORY_DEFAULT_STALE_DAYS["price_quotes"],
-    )
     listing_rows: list[Stage1ListingCoverage] = []
     if not snapshot.listings.empty:
-        for _, row in snapshot.listings.iterrows():
-            listing_id = _text(row.get("listing_id"))
-            if not listing_id or _text(row.get("listing_status")).lower() != "active":
+        for listing_id, entity_id in sorted(listing_owner.items()):
+            matches = snapshot.listings.loc[
+                snapshot.listings["listing_id"].astype("string").eq(listing_id)
+            ]
+            active_matches = [
+                candidate
+                for _, candidate in matches.iterrows()
+                if _text(candidate.get("entity_id")) == entity_id
+                and _text(candidate.get("listing_status")).lower() == "active"
+                and _active_at_snapshot(candidate.to_dict(), snapshot)
+            ]
+            if not active_matches:
                 continue
+            row = active_matches[0]
             listing_rows.append(
                 _listing_cell(
                     snapshot,
                     listing_id,
-                    _text(row.get("entity_id")),
+                    entity_id,
                     _text(row.get("canonical_ticker")) or listing_id,
-                    source_state=quote_source_state,
-                    threshold_days=quote_threshold,
+                    sources=sources["price_quotes"],
                     now_utc=now_utc,
                 )
             )
 
-    macro_source_state = _category_source_status(states, kinds, "macro")
     macro_cell = _macro_cell(
         snapshot,
-        source_state=macro_source_state,
-        threshold_days=_resolve_threshold(
-            thresholds,
-            ("fred_observations", "ecb_fx_rates"),
-            _CATEGORY_DEFAULT_STALE_DAYS["macro"],
-        ),
+        sources=sources["macro"],
         now_utc=now_utc,
     )
 
@@ -1048,6 +1442,34 @@ def _linked_row_count(
     if frame.empty:
         return 0
     entity_ids, listing_ids, basket_ids = _registry_id_sets(snapshot)
+    if {"entity_id", "listing_id"} <= set(columns):
+        owner_candidates: dict[str, set[str]] = {}
+        for _, listing in snapshot.listings.iterrows():
+            listing_id = _text(listing.get("listing_id"))
+            entity_id = _text(listing.get("entity_id"))
+            if listing_id and entity_id:
+                owner_candidates.setdefault(listing_id, set()).add(entity_id)
+        listing_owner = {
+            listing_id: next(iter(owners))
+            for listing_id, owners in owner_candidates.items()
+            if len(owners) == 1
+        }
+        return sum(
+            (
+                bool(_text(row.get("listing_id")))
+                and listing_owner.get(_text(row.get("listing_id"))) is not None
+                and (
+                    not _text(row.get("entity_id"))
+                    or _text(row.get("entity_id"))
+                    == listing_owner[_text(row.get("listing_id"))]
+                )
+            )
+            or (
+                not _text(row.get("listing_id"))
+                and _text(row.get("entity_id")) in entity_ids
+            )
+            for _, row in frame.iterrows()
+        )
     return sum(
         any(
             set(_relation_values(row.get(column))) & entity_ids
@@ -1107,15 +1529,11 @@ def build_data_coverage_summary(snapshot: ControlTowerSnapshot) -> DataCoverageS
     disconnected or failed source stays "unavailable".
     """
 
-    states, thresholds = _source_health_states(snapshot)
-    kinds = {
-        _text(row.get("source_id")): _text(row.get("source_kind"))
-        for _, row in snapshot.source_health.iterrows()
-        if _text(row.get("source_id"))
+    states = _source_health_states(snapshot)
+    source_groups = {
+        category: _category_sources(states, category)
+        for category in ("price_quotes", "consensus", "filings_news", "events", "macro")
     }
-    quote_source_state = _category_source_status(states, kinds, "price_quotes")
-    consensus_source_state = _category_source_status(states, kinds, "consensus")
-    filings_source_state = _category_source_status(states, kinds, "filings_news")
 
     quote_snapshots = snapshot.quote_snapshots
     quote_count = len(quote_snapshots) if not quote_snapshots.empty else 0
@@ -1123,31 +1541,22 @@ def build_data_coverage_summary(snapshot: ControlTowerSnapshot) -> DataCoverageS
         linked_quotes = _linked_row_count(
             snapshot, quote_snapshots, ("listing_id",)
         )
-        newest = _newest_timestamp(
-            quote_snapshots, _QUOTE_TS_COLUMNS
+        quote_status, source_detail = _assess_time_sensitive_rows(
+            quote_snapshots,
+            sources=source_groups["price_quotes"],
+            timestamp_columns=_QUOTE_TS_COLUMNS,
+            source_id_columns=("source_id",),
+            now_utc=snapshot.now_utc,
         )
-        quote_threshold = _resolve_threshold(
-            thresholds,
-            ("quote_snapshots",),
-            _CATEGORY_DEFAULT_STALE_DAYS["price_quotes"],
+        if quote_status == "available" and linked_quotes != quote_count:
+            quote_status = "partial"
+        quote_status_text = COVERAGE_STATUS_LABELS[quote_status]
+        quote_details = (
+            f"{quote_count} latest quote snapshot{'s' if quote_count != 1 else ''} "
+            f"present; {linked_quotes} carry listing identifiers that resolve "
+            f"in the registry. {source_detail} Intraday bars are not yet in "
+            "the V1 mart."
         )
-        if _is_stale(newest, quote_threshold, snapshot.now_utc):
-            quote_status: CoverageStatusCode = "stale"
-            quote_status_text = "Stale"
-            quote_details = (
-                f"{quote_count} latest quote snapshot{'s' if quote_count != 1 else ''} "
-                f"present but outside the {quote_threshold}-day freshness window."
-            )
-        else:
-            quote_status = "available" if linked_quotes == quote_count else "partial"
-            quote_status_text = (
-                "Available" if quote_status == "available" else "Partial linkage"
-            )
-            quote_details = (
-                f"{quote_count} latest quote snapshot{'s' if quote_count != 1 else ''} present; "
-                f"{linked_quotes} carry listing identifiers that resolve in the registry. "
-                "Intraday bars are not yet in the V1 mart."
-            )
         rows: list[CoverageRow] = [
             CoverageRow(
                 category="Price / Market Quotes",
@@ -1158,25 +1567,16 @@ def build_data_coverage_summary(snapshot: ControlTowerSnapshot) -> DataCoverageS
                 linked_count=linked_quotes,
             )
         ]
-    elif quote_source_state in {"no_records", "healthy"}:
-        rows = [
-            CoverageRow(
-                category="Price / Market Bars",
-                status="No records",
-                status_code="no_records",
-                details=(
-                    "The quote source health record reports a successful run "
-                    "with no matching quote rows."
-                ),
-            )
-        ]
     else:
+        quote_status, quote_detail = _empty_status(
+            source_groups["price_quotes"]
+        )
         rows = [
             CoverageRow(
                 category="Price / Market Bars",
-                status="Unavailable",
-                status_code="unavailable",
-                details="No price or market-bars artifact is part of the current V1 data contract.",
+                status=COVERAGE_STATUS_LABELS[quote_status],
+                status_code=quote_status,
+                details=f"No price or market-bars artifact rows. {quote_detail}",
             )
         ]
     rows.extend([
@@ -1200,44 +1600,27 @@ def build_data_coverage_summary(snapshot: ControlTowerSnapshot) -> DataCoverageS
         linked_count += _linked_row_count(
             snapshot, revisions, ("entity_id", "listing_id")
         )
-        newest = _newest_timestamp(
-            pd.concat(
-                [snapshots, revisions], ignore_index=True
-            )
+        consensus_rows = (
+            pd.concat([snapshots, revisions], ignore_index=True)
             if not snapshots.empty and not revisions.empty
-            else (snapshots if not snapshots.empty else revisions),
-            _CONSENSUS_TS_COLUMNS,
+            else (snapshots if not snapshots.empty else revisions)
         )
-        consensus_threshold = _resolve_threshold(
-            thresholds,
-            ("consensus_export",),
-            _CATEGORY_DEFAULT_STALE_DAYS["consensus"],
+        status_code, source_detail = _assess_time_sensitive_rows(
+            consensus_rows,
+            sources=source_groups["consensus"],
+            timestamp_columns=_CONSENSUS_TS_COLUMNS,
+            source_id_columns=("source_id", "provider"),
+            now_utc=snapshot.now_utc,
         )
-        if _is_stale(newest, consensus_threshold, snapshot.now_utc):
-            status_code: CoverageStatusCode = "stale"
-            status_text = "Stale"
-        else:
-            status_code = (
-                "available" if linked_count == consensus_count else "partial"
-            )
-            status_text = (
-                "Available" if status_code == "available" else "Partial linkage"
-            )
+        if status_code == "available" and linked_count != consensus_count:
+            status_code = "partial"
+        status_text = COVERAGE_STATUS_LABELS[status_code]
         details = (
             f"{snapshot_count} consensus snapshot{'s' if snapshot_count != 1 else ''} and "
             f"{revision_count} revision record{'s' if revision_count != 1 else ''} present; "
             f"{linked_count} of {consensus_count} rows carry entity/listing identifiers "
-            "that resolve in the registry. "
-            "Source quality and entitlement are not assessed here."
+            f"that resolve in the registry. {source_detail}"
         )
-        if status_code == "stale":
-            details = (
-                f"{snapshot_count} consensus snapshot{'s' if snapshot_count != 1 else ''} and "
-                f"{revision_count} revision record{'s' if revision_count != 1 else ''} present "
-                f"but outside the {consensus_threshold}-day freshness window; "
-                f"{linked_count} of {consensus_count} rows carry entity/listing identifiers "
-                "that resolve in the registry."
-            )
         rows.append(
             CoverageRow(
                 category="Consensus Data",
@@ -1248,25 +1631,16 @@ def build_data_coverage_summary(snapshot: ControlTowerSnapshot) -> DataCoverageS
                 linked_count=linked_count,
             )
         )
-    elif consensus_source_state in {"no_records", "healthy"}:
-        rows.append(
-            CoverageRow(
-                category="Consensus Data",
-                status="No records",
-                status_code="no_records",
-                details=(
-                    "The consensus source health record reports a successful "
-                    "run with no matching snapshots or revisions."
-                ),
-            )
-        )
     else:
+        status_code, source_detail = _empty_status(
+            source_groups["consensus"]
+        )
         rows.append(
             CoverageRow(
                 category="Consensus Data",
-                status="Unavailable",
-                status_code="unavailable",
-                details="No consensus snapshots or revisions on record.",
+                status=COVERAGE_STATUS_LABELS[status_code],
+                status_code=status_code,
+                details=f"No consensus snapshots or revisions. {source_detail}",
             )
         )
 
@@ -1278,34 +1652,22 @@ def build_data_coverage_summary(snapshot: ControlTowerSnapshot) -> DataCoverageS
             filings,
             ("related_entity_ids", "related_listing_ids", "related_basket_ids"),
         )
-        newest = _newest_timestamp(filings, _FILINGS_TS_COLUMNS)
-        filings_threshold = _resolve_threshold(
-            thresholds,
-            ("filings_sec_edgar", "news_official_ai_rss"),
-            _CATEGORY_DEFAULT_STALE_DAYS["filings_news"],
+        status_code, source_detail = _assess_time_sensitive_rows(
+            filings,
+            sources=source_groups["filings_news"],
+            timestamp_columns=_FILINGS_TS_COLUMNS,
+            source_id_columns=("source_id",),
+            now_utc=snapshot.now_utc,
         )
-        if _is_stale(newest, filings_threshold, snapshot.now_utc):
-            status_code = "stale"
-            status_text = "Stale"
-        else:
-            status_code = "available" if linked_count else "partial"
-            status_text = (
-                "Available" if linked_count else "Linkage unavailable"
-            )
-        if status_code == "stale":
-            details = (
-                f"{filing_count} news/filing item{'s' if filing_count != 1 else ''} found "
-                f"but outside the {filings_threshold}-day freshness window; "
-                f"{linked_count} carry entity, listing, or basket identifiers "
-                "that resolve in the registry."
-            )
-        else:
-            details = (
-                f"{filing_count} news/filing item{'s' if filing_count != 1 else ''} found; "
-                f"{linked_count} carry entity, listing, or basket identifiers "
-                "that resolve in the registry. "
-                "Evidence without a relation is not assigned to a company."
-            )
+        if status_code == "available" and not linked_count:
+            status_code = "partial"
+        status_text = COVERAGE_STATUS_LABELS[status_code]
+        details = (
+            f"{filing_count} news/filing item{'s' if filing_count != 1 else ''} "
+            f"found; {linked_count} carry entity, listing, or basket identifiers "
+            f"that resolve in the registry. {source_detail} Evidence without "
+            "a relation is not assigned to a company."
+        )
         rows.append(
             CoverageRow(
                 category="News & Filings",
@@ -1316,25 +1678,16 @@ def build_data_coverage_summary(snapshot: ControlTowerSnapshot) -> DataCoverageS
                 linked_count=linked_count,
             )
         )
-    elif filings_source_state in {"no_records", "healthy"}:
-        rows.append(
-            CoverageRow(
-                category="News & Filings",
-                status="No records",
-                status_code="no_records",
-                details=(
-                    "The filings/news source health record reports a successful "
-                    "run with no matching items."
-                ),
-            )
-        )
     else:
+        status_code, source_detail = _empty_status(
+            source_groups["filings_news"]
+        )
         rows.append(
             CoverageRow(
                 category="News & Filings",
-                status="Unavailable",
-                status_code="unavailable",
-                details="No news or filing records available in the current snapshot.",
+                status=COVERAGE_STATUS_LABELS[status_code],
+                status_code=status_code,
+                details=f"No news or filing records. {source_detail}",
             )
         )
 
@@ -1347,43 +1700,60 @@ def build_data_coverage_summary(snapshot: ControlTowerSnapshot) -> DataCoverageS
     evidence_count = event_count + macro_count
     if evidence_count:
         linked_events = _linked_event_count(snapshot)
+        evidence_status: CoverageStatusCode = "available"
+        evidence_details: list[str] = []
+        if source_groups["events"].adverse:
+            evidence_status = "partial"
+            evidence_details.append(
+                _source_state_details(source_groups["events"].adverse)
+            )
+        if macro_count:
+            macro_cell = _macro_cell(
+                snapshot,
+                sources=source_groups["macro"],
+                now_utc=snapshot.now_utc,
+            )
+            if macro_cell.status_code != "available":
+                evidence_status = (
+                    "stale"
+                    if not event_count and macro_cell.status_code == "stale"
+                    else "partial"
+                )
+                evidence_details.append(macro_cell.details)
         rows.append(
             CoverageRow(
                 category="Alternative Evidence / Events",
-                status="Available",
-                status_code="available",
+                status=COVERAGE_STATUS_LABELS[evidence_status],
+                status_code=evidence_status,
                 details=(
                     f"{event_count} event record{'s' if event_count != 1 else ''} and "
                     f"{macro_count} macro observation{'s' if macro_count != 1 else ''} present; "
                     f"event link registry covers {linked_events} event record{'s' if linked_events != 1 else ''}. "
-                    "This is evidence coverage, not a trading signal."
+                    + (" ".join(evidence_details) + " " if evidence_details else "")
+                    + "This is evidence coverage, not a trading signal."
                 ),
                 record_count=evidence_count,
                 linked_count=linked_events,
             )
         )
-    elif (
-        _category_source_status(states, kinds, "events") is not None
-        or _category_source_status(states, kinds, "macro") is not None
-    ):
-        rows.append(
-            CoverageRow(
-                category="Alternative Evidence / Events",
-                status="No records",
-                status_code="no_records",
-                details=(
-                    "The local event registry was read successfully but no "
-                    "event or macro rows are on record for the current universe."
-                ),
-            )
-        )
     else:
+        event_status, event_detail = _empty_status(source_groups["events"])
+        macro_status, macro_detail = _empty_status(source_groups["macro"])
+        if event_status == macro_status == "no_records":
+            status_code = "no_records"
+        elif "unavailable" in {event_status, macro_status}:
+            status_code = "unavailable"
+        else:
+            status_code = "partial"
         rows.append(
             CoverageRow(
                 category="Alternative Evidence / Events",
-                status="Unavailable",
-                status_code="unavailable",
-                details="No evidence or event records on record.",
+                status=COVERAGE_STATUS_LABELS[status_code],
+                status_code=status_code,
+                details=(
+                    f"No evidence or event records. Events: {event_detail} "
+                    f"Macro: {macro_detail}"
+                ),
             )
         )
 
