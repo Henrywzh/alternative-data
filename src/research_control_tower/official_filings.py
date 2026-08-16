@@ -684,18 +684,29 @@ def collect_official_filings(
                 )
             )
     else:
+        # Issuer-IR HTML scraping is a deliberate non-goal, not an unfilled
+        # query: official exchange metadata (SEC/HKEX) is the intended
+        # source for this concept, so there is nothing this source could
+        # ever return. ``not_applicable`` is the honest label for a source
+        # nobody intends to build (mirrors "filings:bytedance" below, a
+        # private issuer with no public filings) -- ``no_records`` would
+        # claim a query executed and came back empty, which never happens
+        # here and previously aged this row into a permanent
+        # ``review_required`` (see classify_source_health's zero-row +
+        # not-execution-completed branch), wrongly capping every entity's
+        # filings_news cell at "partial" regardless of real SEC/HKEX data.
         states.append(
             _state_row(
                 source_id="filings:issuer_ir",
                 source_kind="official_filing",
-                status="no_records",
+                status="not_applicable",
                 detail=(
                     "no machine-readable issuer IR calendar snapshot configured; "
                     "official exchange metadata (SEC/HKEX) is used instead; HTML IR pages are not scraped"
                 ),
                 row_count=0,
                 as_of_utc=fetched_at,
-                cadence="monthly",
+                cadence="",
             )
         )
 

@@ -92,7 +92,7 @@ def test_companyfacts_extraction_preserves_reported_values_and_restatement_linea
     assert first["source_url"].startswith("https://www.sec.gov/Archives/edgar/data/1577552/")
 
 
-def test_hkex_only_issuers_report_no_records_and_bytedance_is_not_applicable(tmp_path):
+def test_hkex_only_issuers_report_not_applicable_and_bytedance_is_not_applicable(tmp_path):
     identity = pd.DataFrame(
         [
             {
@@ -128,7 +128,17 @@ def test_hkex_only_issuers_report_no_records_and_bytedance_is_not_applicable(tmp
     assert frame.empty
     assert list(frame.columns) == EARNINGS_ACTUALS_COLUMNS
     by_source = state.set_index("source_id")["status"].to_dict()
-    assert by_source["earnings:hkex_issuer_ir"] == "no_records"
+    # Issuer-IR HTML scraping is a deliberate non-goal (SEC XBRL
+    # companyfacts is the intended source for this concept; HKEX issuers
+    # without a CIK simply have no XBRL to consume), not an unfilled query
+    # -- "not_applicable" is the honest label, matching the
+    # already-established "earnings:bytedance" convention below.
+    # "no_records" previously aged this row into a permanent
+    # ``review_required`` and wrongly capped every entity's
+    # earnings_actuals cell at "partial"/"unavailable" forever, regardless
+    # of real SEC XBRL coverage (see test_stage1_matrix regression tests
+    # in test_research_control_tower_coverage_states.py).
+    assert by_source["earnings:hkex_issuer_ir"] == "not_applicable"
     assert "TENCENT" in state.loc[state["source_id"].eq("earnings:hkex_issuer_ir"), "detail"].iloc[0]
     assert by_source["earnings:bytedance"] == "not_applicable"
     assert (output / "earnings_actuals_v1.parquet").is_file()

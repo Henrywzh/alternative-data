@@ -823,6 +823,72 @@ SOURCE_FRESHNESS_THRESHOLDS: dict[str, "pd.Timedelta | SessionFreshnessThreshold
     SOURCE_STATE_SCHEMA_ID: pd.Timedelta(days=45),
 }
 
+# Display/health cadence for optional-input artifacts, keyed by schema id.
+# This is distinct from ``SOURCE_FRESHNESS_THRESHOLDS`` above: that dict is
+# the build's own stale-input *gate* (how old an input file may be before
+# the build treats it as degraded and falls back to a typed empty
+# adapter), sized to tolerate an infrequently-run collector. This table is
+# display/health metadata -- "how does this source's underlying data
+# actually update" -- consumed by ``classify_source_health``
+# (control_tower/pages/source_health.py) via ``DEFAULT_STALE_AFTER_DAYS``
+# to decide whether an artifact is fresh, stale, or unclassified on the
+# Source Health page and the Stage 1 coverage matrix.
+#
+# It exists because ``src/research_control_tower/cli.py`` parses every
+# optional input from a 4-field ``SOURCE_ID|PATH|FORMAT|SCHEMA_ID``
+# descriptor with no cadence slot, so ``LocalInput.cadence`` is ``None``
+# for every CLI-declared source unless an operator hand-edits the CLI
+# invocation. Cadence is a property of the source *type* (what the data
+# is and how it is produced), not of one build invocation, so a
+# schema-id-keyed fallback table belongs next to the schema ids
+# themselves rather than in the CLI descriptor format. The alternative
+# (a `cadence` column in config/research_control_tower/build_inputs.toml,
+# threaded through scripts/research_control_tower_pipeline.py) was
+# considered and rejected: it would require every operator manually
+# invoking cli.py directly (bypassing the pipeline script) to also supply
+# cadence correctly, whereas this table backfills safely regardless of
+# invocation path and needs to be defined exactly once per schema.
+#
+# Values are chosen from how each source concept actually produces new
+# data, not to make a coverage cell read "available":
+#   - quote_snapshots: one bar per completed trading session -> "daily"
+#     (matches the "daily"/stale_after_days=3 convention already used for
+#     the individual quote-adjacent provider rows).
+#   - official_filings: SEC/HKEX filings and announcements are
+#     event-driven, not published on a schedule -> "event_driven"
+#     (matches the cadence already hardcoded for the individual provider
+#     rows this artifact aggregates -- filings:hkexnews,
+#     filings:sec_edgar_submissions -- in official_filings.py).
+#   - earnings_actuals: XBRL company-facts actuals are filed on a
+#     quarterly reporting cycle -> "quarterly", whose
+#     DEFAULT_STALE_AFTER_DAYS bound (120 days) exactly matches this
+#     table's own SOURCE_FRESHNESS_THRESHOLDS[EARNINGS_ACTUALS_SCHEMA_ID].
+SOURCE_CADENCE_BY_SCHEMA: dict[str, str] = {
+    QUOTE_SNAPSHOT_SCHEMA_ID: "daily",
+    OFFICIAL_FILINGS_SCHEMA_ID: "event_driven",
+    EARNINGS_ACTUALS_SCHEMA_ID: "quarterly",
+}
+
+# source_state_v1 is a shared sidecar schema emitted by both the
+# official-filings and earnings collectors (see SOURCE_STATE_COLUMNS), so
+# its cadence depends on which collector kind produced the row, not the
+# schema id alone -- unlike the table above. Each sidecar reports on the
+# same underlying data as its parent artifact, so it takes that artifact's
+# cadence rather than an invented "sidecar" cadence.
+SOURCE_STATE_CADENCE_BY_KIND: dict[str, str] = {
+    "official_filing": "event_driven",
+    "earnings": "quarterly",
+}
+
+
+def _fallback_cadence(schema_id: str, source_kind: str) -> str | None:
+    """Backfill a missing ``LocalInput.cadence`` from source type, never fabricated."""
+
+    if schema_id == SOURCE_STATE_SCHEMA_ID:
+        return SOURCE_STATE_CADENCE_BY_KIND.get(source_kind)
+    return SOURCE_CADENCE_BY_SCHEMA.get(schema_id)
+
+
 SOURCE_TIME_COLUMNS = {
     FRED_OBSERVATIONS_SCHEMA_ID: {
         "observed": ("date",),
@@ -2041,7 +2107,7 @@ def _optional_state(descriptor: LocalInput, source_kind: str, schema_id: str) ->
         required=descriptor.required,
         pit_class=descriptor.pit_class,
         license_class=descriptor.license_class,
-        cadence=descriptor.cadence,
+        cadence=descriptor.cadence or _fallback_cadence(schema_id, source_kind),
         source_url=descriptor.source_url,
     )
 
@@ -3813,7 +3879,7 @@ def _expected_health_states(config: BuildConfig, existing: Sequence[_SourceState
                 required=descriptor.required,
                 pit_class=descriptor.pit_class,
                 license_class=descriptor.license_class,
-                cadence=descriptor.cadence,
+                cadence=descriptor.cadence or _fallback_cadence(schema_id, kind),
                 source_url=descriptor.source_url,
                 detail=f"configured_as_{descriptor.source_id}",
             )

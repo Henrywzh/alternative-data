@@ -39,6 +39,8 @@ from src.research_control_tower.build import (
     REGISTRY_OUTPUT_COLUMNS,
     QUOTE_SNAPSHOT_COLUMNS,
     QUOTE_SNAPSHOT_SCHEMA_ID,
+    SOURCE_CADENCE_BY_SCHEMA,
+    SOURCE_STATE_CADENCE_BY_KIND,
     SOURCE_STATE_COLUMNS,
     SOURCE_STATE_SCHEMA_ID,
     TAIWAN_REVENUE_SCHEMA_ID,
@@ -1477,6 +1479,99 @@ def test_quote_snapshot_input_is_normalized_into_optional_artifact(tmp_path, min
     assert quotes.iloc[0]["pit_class"] == "snapshot_from_delayed_source"
     assert quotes.iloc[0]["source_license_class"] == "personal_use_terms_unverified"
     assert health.loc[health["source_id"].eq("fixture_quotes"), "status"].item() == "available"
+
+
+def test_optional_input_without_cadence_backfills_from_schema_type(tmp_path, minimal_inputs):
+    """Regression: cli.py's 4-field descriptor has no cadence slot, so every
+    optional source used to publish with ``cadence=None`` and render
+    "Available · Freshness not classified" on the Source Health page
+    forever (``classify_source_health`` never had a threshold to compare
+    against). ``_optional_state`` now backfills a schema-type cadence
+    (``SOURCE_CADENCE_BY_SCHEMA`` / ``SOURCE_STATE_CADENCE_BY_KIND``) when
+    the descriptor omits one, without requiring every CLI invocation to be
+    hand-edited.
+    """
+
+    listings = pd.read_csv(minimal_inputs.registry_root / "listings.csv")
+    listing = listings.loc[listings["listing_status"].astype("string").str.lower().eq("active")].iloc[0]
+    row = {column: None for column in QUOTE_SNAPSHOT_COLUMNS}
+    row.update({
+        "quote_id": "quote-fixture-cadence",
+        "listing_id": listing["listing_id"],
+        "canonical_ticker": listing["canonical_ticker"],
+        "provider_symbol": listing["native_ticker"],
+        "quote_timestamp": "2026-08-13T11:59:00Z",
+        "retrieved_at_utc": "2026-08-13T12:00:00Z",
+        "last_price": 100.0,
+        "currency": listing["currency"],
+        "market_status": "open",
+        "latency_class": "realtime",
+        "source_id": "fixture_quotes_no_cadence",
+        "source_url": "https://example.test/quotes",
+        "pit_class": "snapshot_from_live_source",
+        "source_license_class": "public_metadata",
+        "registry_version": "v1",
+    })
+    quote_path = tmp_path / "quotes_no_cadence.parquet"
+    pd.DataFrame([row], columns=QUOTE_SNAPSHOT_COLUMNS).to_parquet(quote_path, index=False)
+    # ``_input`` (like the CLI's 4-field descriptor) never sets cadence.
+    descriptor = _input("fixture_quotes_no_cadence", quote_path, QUOTE_SNAPSHOT_SCHEMA_ID)
+    assert descriptor.cadence is None
+    config = replace(minimal_inputs, quote_inputs=(descriptor,))
+
+    build_control_tower_marts(config)
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    quote_cadence = health.loc[health["source_id"].eq("fixture_quotes_no_cadence"), "cadence"].item()
+    assert quote_cadence == "daily" == SOURCE_CADENCE_BY_SCHEMA[QUOTE_SNAPSHOT_SCHEMA_ID]
+
+
+def test_optional_input_explicit_cadence_is_never_overridden(tmp_path, minimal_inputs):
+    """An operator-supplied cadence always wins over the schema-type fallback."""
+
+    listings = pd.read_csv(minimal_inputs.registry_root / "listings.csv")
+    listing = listings.loc[listings["listing_status"].astype("string").str.lower().eq("active")].iloc[0]
+    row = {column: None for column in QUOTE_SNAPSHOT_COLUMNS}
+    row.update({
+        "quote_id": "quote-fixture-explicit-cadence",
+        "listing_id": listing["listing_id"],
+        "canonical_ticker": listing["canonical_ticker"],
+        "provider_symbol": listing["native_ticker"],
+        "quote_timestamp": "2026-08-13T11:59:00Z",
+        "retrieved_at_utc": "2026-08-13T12:00:00Z",
+        "last_price": 100.0,
+        "currency": listing["currency"],
+        "market_status": "open",
+        "latency_class": "realtime",
+        "source_id": "fixture_quotes_explicit_cadence",
+        "source_url": "https://example.test/quotes",
+        "pit_class": "snapshot_from_live_source",
+        "source_license_class": "public_metadata",
+        "registry_version": "v1",
+    })
+    quote_path = tmp_path / "quotes_explicit_cadence.parquet"
+    pd.DataFrame([row], columns=QUOTE_SNAPSHOT_COLUMNS).to_parquet(quote_path, index=False)
+    descriptor = replace(
+        _input("fixture_quotes_explicit_cadence", quote_path, QUOTE_SNAPSHOT_SCHEMA_ID),
+        cadence="weekly",
+    )
+    config = replace(minimal_inputs, quote_inputs=(descriptor,))
+
+    build_control_tower_marts(config)
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    quote_cadence = health.loc[health["source_id"].eq("fixture_quotes_explicit_cadence"), "cadence"].item()
+    assert quote_cadence == "weekly"
+
+
+def test_source_state_cadence_table_disambiguates_by_collector_kind():
+    """``source_state_v1`` is a shared sidecar schema for both the official
+    filings and earnings collectors, so its cadence must be resolved by
+    which collector kind produced it, not the schema id alone.
+    """
+
+    assert SOURCE_STATE_CADENCE_BY_KIND["official_filing"] == "event_driven"
+    assert SOURCE_STATE_CADENCE_BY_KIND["earnings"] == "quarterly"
+    assert SOURCE_CADENCE_BY_SCHEMA[OFFICIAL_FILINGS_SCHEMA_ID] == "event_driven"
+    assert SOURCE_CADENCE_BY_SCHEMA[EARNINGS_ACTUALS_SCHEMA_ID] == "quarterly"
 
 
 def test_quote_local_input_defaults_are_delayed_and_personal_use(tmp_path):

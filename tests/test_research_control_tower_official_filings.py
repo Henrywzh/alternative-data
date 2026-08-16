@@ -252,7 +252,15 @@ def test_collector_writes_honest_issuer_ir_and_bytedance_states(tmp_path):
     by_source = state.set_index("source_id")["status"].to_dict()
     assert by_source["filings:sec_edgar_submissions"] == "available"
     assert by_source["filings:hkexnews"] == "available"
-    assert by_source["filings:issuer_ir"] == "no_records"
+    # Issuer-IR HTML scraping is a deliberate non-goal (official SEC/HKEX
+    # exchange metadata is the intended source for this concept), not an
+    # unfilled query -- "not_applicable" is the honest label, matching the
+    # already-established "filings:bytedance" convention below. See
+    # official_filings.py's module docstring / the branch this asserts for
+    # why "no_records" was wrong: it aged this row into a permanent
+    # ``review_required`` and wrongly capped every entity's filings_news
+    # cell at "partial" forever, regardless of real SEC/HKEX coverage.
+    assert by_source["filings:issuer_ir"] == "not_applicable"
     assert by_source["filings:bytedance"] == "not_applicable"
     assert (output / "official_filings_v1.parquet").is_file()
     assert (output / "official_filings_state.parquet").is_file()

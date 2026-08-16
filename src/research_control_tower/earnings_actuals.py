@@ -492,18 +492,32 @@ def collect_earnings_actuals(
                 )
             )
     elif hkex_only_entities:
+        # Issuer-IR HTML scraping is a deliberate non-goal, not an unfilled
+        # query: SEC XBRL companyfacts is the intended source for this
+        # concept and HKEX issuers without a CIK simply have no XBRL to
+        # consume. ``not_applicable`` is the honest label for a source
+        # nobody intends to build (mirrors "earnings:bytedance" below) --
+        # ``no_records`` would claim a query executed and came back empty,
+        # which never happens here and previously aged this row into a
+        # permanent ``review_required`` (see classify_source_health's
+        # zero-row + not-execution-completed branch), wrongly capping every
+        # entity's earnings_actuals cell at "partial" regardless of real SEC
+        # XBRL data. This does NOT manufacture earnings data for the
+        # HK-only issuers named below: their entity-level earnings_actuals
+        # gap is still visible because no rows exist for them in
+        # earnings_actuals_v1.parquet; see _empty_status in coverage.py.
         states.append(
             _state_row(
                 source_id="earnings:hkex_issuer_ir",
                 source_kind="earnings",
-                status="no_records",
+                status="not_applicable",
                 detail=(
                     f"HKEX-only issuers without SEC XBRL actuals: {', '.join(sorted(set(hkex_only_entities)))}; "
                     "no machine-readable issuer IR actuals snapshot configured; no values fabricated"
                 ),
                 row_count=0,
                 as_of_utc=fetched_at,
-                cadence="monthly",
+                cadence="",
             )
         )
 

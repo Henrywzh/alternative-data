@@ -2026,3 +2026,239 @@ def test_filings_missing_geographies_are_partial_in_matrix_and_summary() -> None
     assert matrix.status_of("ALIBABA", "filings_news") == "partial"
     assert summary["News & Filings"].status_code == "partial"
     assert "uncovered geographies" in summary["News & Filings"].details.lower()
+
+
+def test_not_applicable_issuer_ir_source_no_longer_marks_category_adverse() -> None:
+    """Regression for the review_required issuer-IR defect.
+
+    ``filings:issuer_ir`` / ``earnings:hkex_issuer_ir`` are deliberately
+    out-of-scope (issuer-IR HTML scraping is a non-goal; SEC/HKEX metadata
+    is the intended source). Before the fix, the collector reported them as
+    ``no_records`` with a ``monthly`` cadence and zero rows, which
+    ``classify_source_health`` aged into a permanent ``review_required`` --
+    an adverse display status (``review_required`` is a member of
+    ``_UNAVAILABLE_SOURCE_STATES``). ``_CategorySources.adverse`` treats
+    that as "the provider is effectively absent" for the *whole* category
+    (``_empty_status`` short-circuits on ``sources.adverse`` before looking
+    at any specific entity's own rows), so every entity with zero rows in
+    that category -- e.g. TENCENT/KUAISHOU/BILIBILI's real earnings_actuals
+    gap -- read "unavailable" forever via that specific guard, even though
+    the source genuinely was queried (a private-collector policy decision,
+    not a failure).
+
+    Now that the collector reports these sources as ``not_applicable``
+    (not a member of ``_UNAVAILABLE_SOURCE_STATES``), that specific
+    "adverse" cap no longer fires -- confirmed below by the category
+    status changing from "unavailable" (old raw emission) to "partial"
+    (new raw emission) for the identical fixture, with the detail text no
+    longer mentioning ``review_required``.
+
+    This test deliberately does NOT assert "available": a separate,
+    pre-existing and intentionally-conservative guard in ``_empty_status``
+    only reaches "not_applicable"/"no_records" when *every* governing
+    source in the category agrees; with a healthy governing source
+    (filings:hkexnews / earnings:sec_companyfacts) mixed in, the honest
+    outcome is "partial" ("No matching rows and source execution
+    completion is not fully evidenced"), which is untouched by this
+    defect fix (the acceptance bar explicitly forbids weakening
+    ``_assess_time_sensitive_rows``/``_empty_status``'s fail-closed logic).
+    A truthful "partial" here is correct, not a shortfall.
+    """
+
+    def _health_for(issuer_ir_status: str, issuer_ir_cadence: str) -> pd.DataFrame:
+        base_health = _health(
+            filings_sec_edgar={
+                "status": "available",
+                "row_count": 0,
+                "source_latest_at": FRESH,
+                "cadence": "event_driven",
+                "query_attempted": True,
+                "execution_status": "completed",
+                "completed_at": FRESH,
+            },
+            news_official_ai_rss={
+                "status": "available",
+                "row_count": 0,
+                "source_latest_at": FRESH,
+                "cadence": "event_driven",
+                "query_attempted": True,
+                "execution_status": "completed",
+                "completed_at": FRESH,
+            },
+            official_filings={
+                "status": "available",
+                "row_count": 100,
+                "source_latest_at": FRESH,
+                "cadence": "event_driven",
+                "query_attempted": True,
+                "execution_status": "completed",
+                "completed_at": FRESH,
+            },
+            earnings_actuals={
+                "status": "available",
+                "row_count": 100,
+                "source_latest_at": FRESH,
+                "cadence": "quarterly",
+                "query_attempted": True,
+                "execution_status": "completed",
+                "completed_at": FRESH,
+            },
+        )
+        extra_sources = pd.DataFrame(
+            [
+                {
+                    "source_id": "filings:hkexnews",
+                    "source_kind": "official_filing",
+                    "status": "available",
+                    "row_count": 100,
+                    "source_latest_at": FRESH,
+                    "cadence": "daily",
+                    "query_attempted": True,
+                    "execution_status": "completed",
+                    "completed_at": FRESH,
+                },
+                {
+                    "source_id": "filings:issuer_ir",
+                    "source_kind": "official_filing",
+                    "status": issuer_ir_status,
+                    "row_count": 0,
+                    "cadence": issuer_ir_cadence,
+                },
+                {
+                    "source_id": "earnings:sec_companyfacts",
+                    "source_kind": "earnings",
+                    "status": "available",
+                    "row_count": 100,
+                    "source_latest_at": FRESH,
+                    "cadence": "weekly",
+                    "query_attempted": True,
+                    "execution_status": "completed",
+                    "completed_at": FRESH,
+                },
+                {
+                    "source_id": "earnings:hkex_issuer_ir",
+                    "source_kind": "earnings",
+                    "status": issuer_ir_status,
+                    "row_count": 0,
+                    "cadence": issuer_ir_cadence,
+                },
+            ]
+        )
+        return pd.concat([base_health, extra_sources], ignore_index=True)
+
+    # TENCENT has zero rows in both categories in this fixture (no
+    # official_filings/earnings_actuals rows are supplied at all), mirroring
+    # the real production shape for an HK-only issuer's earnings_actuals gap.
+    fixed_matrix = _matrix(_snapshot(health=_health_for("not_applicable", "")))
+    filings_cell = fixed_matrix.entity_cell("TENCENT", "filings_news")
+    assert filings_cell.status_code == "partial"
+    assert "review_required" not in filings_cell.details
+    assert "review required" not in filings_cell.details.lower()
+    earnings_cell = fixed_matrix.entity_cell("TENCENT", "earnings_actuals")
+    assert earnings_cell.status_code == "partial"
+    assert "review_required" not in earnings_cell.details
+    assert "review required" not in earnings_cell.details.lower()
+
+    # Same fixture, but with the OLD (pre-fix) raw emission -- no_records,
+    # monthly cadence, zero rows, no execution-completion evidence -- to
+    # prove the category really was capped "unavailable" before this
+    # defect fix, not merely a status this test invented.
+    stale_matrix = _matrix(_snapshot(health=_health_for("no_records", "monthly")))
+    stale_filings_cell = stale_matrix.entity_cell("TENCENT", "filings_news")
+    assert stale_filings_cell.status_code == "unavailable"
+    assert "review required" in stale_filings_cell.details.lower()
+    stale_earnings_cell = stale_matrix.entity_cell("TENCENT", "earnings_actuals")
+    assert stale_earnings_cell.status_code == "unavailable"
+    assert "review required" in stale_earnings_cell.details.lower()
+
+
+def test_hk_only_issuer_earnings_actuals_never_reaches_available() -> None:
+    """Trap regression: fixing the issuer-IR adverse-cap defect must not
+    manufacture earnings data for HK-only issuers.
+
+    TENCENT/KUAISHOU/BILIBILI have no SEC XBRL CIK and no issuer-IR
+    snapshot is configured (a deliberate non-goal, see
+    ``earnings_actuals.py``), so ``earnings_actuals`` genuinely has zero
+    rows for them -- unlike ALIBABA/BAIDU, who do have SEC XBRL actuals.
+    The honest state for "every configured source was queried and there is
+    nothing for this entity" is ``no_records`` (or, if another governing
+    source in the same category has a real, unrelated issue, an honest
+    ``partial``) -- never ``available`` (rows were never queried into
+    existence) and never silently masked as ``unavailable`` (the sources
+    were, in fact, queried).
+    """
+
+    # No earnings_actuals rows at all for TENCENT/KUAISHOU/BILIBILI.
+    earnings_actuals = pd.DataFrame(
+        [
+            {
+                "actual_id": "A1",
+                "entity_id": "ALIBABA",
+                "listing_id": "BABA_US",
+                "metric": "eps_basic",
+                "period_end": "2026-03-31",
+                "filing_at": FRESH,
+                "source_id": "earnings:sec_companyfacts",
+            }
+        ]
+    )
+    base_health = _health(
+        earnings_actuals={
+            "status": "available",
+            "row_count": 1,
+            "source_latest_at": FRESH,
+            "cadence": "quarterly",
+            "query_attempted": True,
+            "execution_status": "completed",
+            "completed_at": FRESH,
+        },
+    )
+    extra_sources = pd.DataFrame(
+        [
+            {
+                "source_id": "earnings:sec_companyfacts",
+                "source_kind": "earnings",
+                "status": "available",
+                "row_count": 1,
+                "source_latest_at": FRESH,
+                "cadence": "weekly",
+                "query_attempted": True,
+                "execution_status": "completed",
+                "completed_at": FRESH,
+            },
+            {
+                "source_id": "earnings:hkex_issuer_ir",
+                "source_kind": "earnings",
+                "status": "not_applicable",
+                "row_count": 0,
+                "cadence": "",
+                "detail": (
+                    "HKEX-only issuers without SEC XBRL actuals: BILIBILI, "
+                    "KUAISHOU, TENCENT; no machine-readable issuer IR "
+                    "actuals snapshot configured; no values fabricated"
+                ),
+            },
+        ]
+    )
+    health = pd.concat([base_health, extra_sources], ignore_index=True)
+    matrix = _matrix(
+        _snapshot(earnings_actuals=earnings_actuals, health=health)
+    )
+
+    for entity_id in ("TENCENT", "KUAISHOU", "BILIBILI"):
+        status = matrix.status_of(entity_id, "earnings_actuals")
+        assert status != "available", (
+            f"{entity_id} has zero earnings_actuals rows and must not read "
+            f"'available'; got {status!r}"
+        )
+        assert status in {"no_records", "partial"}
+    # ALIBABA genuinely has SEC XBRL rows. It does not reach "available"
+    # either here -- the category-wide "any not_applicable governing
+    # source" guard in _assess_time_sensitive_rows (see the companion test
+    # above) conservatively marks every entity in the category "partial"
+    # while earnings:hkex_issuer_ir remains part of the governing set, not
+    # just the HK-only issuers. That guard is untouched by this fix; the
+    # point of this assertion is that ALIBABA's real data is not
+    # misclassified as "unavailable" or "no_records" -- it is honestly
+    # "partial", never silently upgraded to "available".
+    assert matrix.status_of("ALIBABA", "earnings_actuals") == "partial"
