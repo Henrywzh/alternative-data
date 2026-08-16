@@ -161,6 +161,98 @@ def _active(row: Any, as_of: pd.Timestamp) -> bool:
     return (start is None or point >= start) and (end is None or point < end)
 
 
+def _market_entity_eligible(row: Any, as_of: pd.Timestamp) -> bool:
+    entity_type = _text(row.get("entity_type")).lower() or "public"
+    active_status = _text(row.get("active_status")).lower()
+    return entity_type != "private" and active_status in {"", "active"} and _active(row, as_of)
+
+
+def _market_listing_eligible(row: Any, as_of: pd.Timestamp) -> bool:
+    return (
+        _text(row.get("listing_status")).lower() == "active"
+        and _text(row.get("mapping_status")).lower() == "verified"
+        and _text(row.get("collection_eligible")).lower() in {"true", "1", "yes"}
+        and _active(row, as_of)
+    )
+
+
+def _vendor_symbols(row: Any) -> tuple[str, ...]:
+    raw = row.get("vendor_tickers", "")
+    if not _text(raw):
+        return ()
+    return tuple(
+        symbol.strip()
+        for token in str(raw).split(";")
+        for name, separator, symbol in [token.partition(":")]
+        if separator and symbol.strip()
+    )
+
+
+def _derived_provider_symbol(listing: Any, source_id: object) -> str:
+    raw = _text(listing.get("vendor_tickers"))
+    if not raw:
+        return ""
+    providers: dict[str, list[str]] = {}
+    for token in raw.split(";"):
+        name, separator, symbol = token.partition(":")
+        if separator and symbol.strip():
+            providers.setdefault(name.strip().casefold(), []).append(symbol.strip())
+    provider_key = _text(source_id).rsplit(":", 1)[-1].casefold()
+    candidates = providers.get(provider_key, [])
+    if len(candidates) == 1:
+        return candidates[0]
+    all_symbols = [symbol for symbols in providers.values() for symbol in symbols]
+    return all_symbols[0] if len(all_symbols) == 1 else ""
+
+
+def _quote_matches_listing(quote: Any, listing: Any) -> bool:
+    canonical = _text(quote.get("canonical_ticker"))
+    registry_canonical = _text(listing.get("canonical_ticker"))
+    if canonical and registry_canonical and canonical != registry_canonical:
+        return False
+    currency = _text(quote.get("currency")).upper()
+    registry_currency = _text(listing.get("currency")).upper()
+    if currency and registry_currency and currency != registry_currency:
+        return False
+    provider_symbol = _text(quote.get("provider_symbol"))
+    registry_symbols = _vendor_symbols(listing)
+    return not provider_symbol or not registry_symbols or provider_symbol in registry_symbols
+
+
+def _derive_quote_registry_truth(frame: pd.DataFrame, listing_by_id: dict[str, dict[str, object]]) -> pd.DataFrame:
+    output = frame.copy()
+    for index, row in output.iterrows():
+        listing = listing_by_id.get(_text(row.get("listing_id")), {})
+        output.at[index, "canonical_ticker"] = _text(listing.get("canonical_ticker"))
+        output.at[index, "currency"] = _text(listing.get("currency"))
+        if not _text(row.get("provider_symbol")):
+            output.at[index, "provider_symbol"] = _derived_provider_symbol(
+                listing, row.get("source_id")
+            )
+    return output
+
+
+def _safe_quote_descriptors(frame: pd.DataFrame) -> pd.DataFrame:
+    """Enforce the delayed, personal-use quote contract at the view boundary."""
+
+    output = frame.copy()
+    if "latency_class" in output.columns:
+        output["latency_class"] = "delayed"
+    if "pit_class" in output.columns:
+        output["pit_class"] = output["pit_class"].map(
+            lambda value: "snapshot_from_delayed_source"
+            if _text(value).lower() in {"", "live", "snapshot_from_live_source"}
+            else _text(value)
+        )
+    if "source_license_class" in output.columns:
+        output["source_license_class"] = output["source_license_class"].map(
+            lambda value: "personal_use_terms_unverified"
+            if _text(value).lower() in {"", "public", "public_metadata"}
+            else _text(value)
+        )
+    return output
+
+
 def _active_for_event(row: Any, event: Any, fallback: pd.Timestamp) -> bool:
     event_start = _timestamp(event.get("starts_at")) or fallback
     event_end = _timestamp(event.get("ends_at"))
@@ -404,25 +496,43 @@ def build_company_view(
     entity = entity_rows.iloc[0]
     as_of = snapshot.as_of_utc
     all_entity_listings = snapshot.listings.loc[snapshot.listings["entity_id"].astype("string").eq(requested_entity)] if not snapshot.listings.empty else snapshot.listings
-    active_listings = all_entity_listings.loc[all_entity_listings.apply(lambda row: _active(row, as_of), axis=1)].copy() if not all_entity_listings.empty else all_entity_listings.copy()
+    if _market_entity_eligible(entity, as_of) and not all_entity_listings.empty:
+        active_listings = all_entity_listings.loc[
+            all_entity_listings.apply(lambda row: _market_listing_eligible(row, as_of), axis=1)
+        ].copy()
+    else:
+        active_listings = all_entity_listings.iloc[0:0].copy()
     listing_ids = set(active_listings["listing_id"].astype("string")) if not active_listings.empty else set()
     if listing_id is not None:
         requested_listing = _text(listing_id)
-        if requested_listing not in set(all_entity_listings.get("listing_id", pd.Series(dtype="string"))):
-            raise ValueError(f"listing_id {listing_id!r} does not belong to entity {requested_entity!r}")
+        if requested_listing not in listing_ids:
+            raise ValueError(
+                f"listing_id {listing_id!r} is not an active, verified public listing for entity {requested_entity!r}"
+            )
         selected_listing_id = requested_listing
         selection_mode = "explicit"
     else:
         verified = active_listings.loc[
             active_listings["mapping_status"].astype("string").str.lower().eq("verified")
-            & active_listings["primary_listing"].fillna(False).astype(bool)
+            & active_listings["primary_listing"].map(
+                lambda value: _text(value).lower() in {"true", "1", "yes"}
+            )
             & active_listings["listing_status"].astype("string").str.lower().eq("active")
         ] if not active_listings.empty else active_listings
         if verified.empty:
             selected_listing_id = None
             selection_mode = "none"
         else:
-            selected_listing_id = sorted(verified["listing_id"].astype("string"))[0]
+            role_rank = {"primary": 0, "dual_primary": 1, "secondary": 2, "depositary_receipt": 3}
+            exchange_rank = {"HKEX": 0, "NASDAQ": 1, "NYSE": 2, "LSE": 3}
+            ranked = verified.copy()
+            ranked["__role_rank"] = ranked["listing_role"].map(role_rank).fillna(99)
+            ranked["__exchange_rank"] = ranked["exchange"].astype("string").str.upper().map(exchange_rank).fillna(99)
+            ranked = ranked.sort_values(
+                ["__role_rank", "__exchange_rank", "listing_id"],
+                kind="mergesort",
+            )
+            selected_listing_id = _text(ranked.iloc[0]["listing_id"])
             selection_mode = "primary_default"
 
     listings = active_listings.loc[:, [column for column in COMPANY_LISTING_COLUMNS if column in active_listings.columns]].copy() if not active_listings.empty else _empty(COMPANY_LISTING_COLUMNS)
@@ -456,16 +566,32 @@ def build_company_view(
         quote_snapshots = quote_source.loc[
             quote_source["listing_id"].astype("string").isin(quote_listing_ids)
         ].copy()
+        if not quote_snapshots.empty:
+            listing_by_id = active_listings.set_index("listing_id", drop=False).to_dict("index")
+            quote_snapshots = quote_snapshots.loc[
+                quote_snapshots.apply(
+                    lambda row: _quote_matches_listing(
+                        row,
+                        listing_by_id.get(_text(row.get("listing_id")), {}),
+                    ),
+                    axis=1,
+                )
+            ].copy()
+            if not quote_snapshots.empty:
+                quote_snapshots = _derive_quote_registry_truth(
+                    quote_snapshots, listing_by_id
+                )
         if filters is not None and filters.scope and "company" not in filters.scope:
             quote_snapshots = quote_snapshots.iloc[0:0].copy()
         if quote_snapshots.empty:
             quote_snapshots = _empty(COMPANY_QUOTE_COLUMNS)
         else:
+            quote_snapshots = _safe_quote_descriptors(quote_snapshots)
             quote_snapshots["freshness"] = quote_snapshots.apply(
                 lambda row: classify_quote_freshness(
                     row.get("quote_timestamp"),
                     snapshot.now_utc,
-                    row.get("latency_class"),
+                    "delayed",
                 ),
                 axis=1,
             )
@@ -481,7 +607,9 @@ def build_company_view(
                 na_position="last",
                 kind="mergesort",
             ).reset_index(drop=True)
-    if quote_snapshots.empty:
+    if _text(entity.get("entity_type")).lower() == "private":
+        quote_status = "not_applicable"
+    elif quote_snapshots.empty:
         quote_status = "unavailable"
     elif "freshness" in quote_snapshots.columns and quote_snapshots["freshness"].eq("stale").all():
         quote_status = "stale"
@@ -622,7 +750,10 @@ def build_company_view(
         if "PIT unavailable" in pit_values:
             caveats.append("PIT unavailable; no PIT class is inferred")
     caveats = tuple(dict.fromkeys(caveats))
-    bad_source_statuses = {"failed", "conflicted", "review_required", "entitlement_error", "unavailable", "degraded", "stale", "clock_skew"}
+    bad_source_statuses = {
+        "failed", "conflicted", "review_required", "entitlement_error",
+        "unavailable", "degraded", "partial", "no_records", "stale", "clock_skew",
+    }
     relevant_health_ids = set(source_ids)
     if not consensus.empty:
         relevant_health_ids |= {
@@ -898,11 +1029,16 @@ def render_company_page(
         format_func=lambda value: _text(snapshot.entities.loc[snapshot.entities["entity_id"].astype("string").eq(value), "display_name"].iloc[0]) if not snapshot.entities.loc[snapshot.entities["entity_id"].astype("string").eq(value)].empty else value,
     )
     as_of_point = snapshot.as_of_utc
-    entity_listings = snapshot.listings.loc[
-        snapshot.listings["entity_id"].astype("string").eq(selected_entity)
-        & snapshot.listings["listing_status"].astype("string").str.lower().eq("active")
-        & snapshot.listings.apply(lambda r: _active(r, as_of_point), axis=1)
-    ] if not snapshot.listings.empty else snapshot.listings
+    entity_row = snapshot.entities.loc[
+        snapshot.entities["entity_id"].astype("string").eq(selected_entity)
+    ].iloc[0] if not snapshot.entities.empty and snapshot.entities["entity_id"].astype("string").eq(selected_entity).any() else None
+    if entity_row is not None and _market_entity_eligible(entity_row, as_of_point) and not snapshot.listings.empty:
+        entity_listings = snapshot.listings.loc[
+            snapshot.listings["entity_id"].astype("string").eq(selected_entity)
+            & snapshot.listings.apply(lambda row: _market_listing_eligible(row, as_of_point), axis=1)
+        ]
+    else:
+        entity_listings = snapshot.listings.iloc[0:0].copy()
     listing_options = [None] + sorted(entity_listings["listing_id"].astype("string")) if not entity_listings.empty else [None]
     if st.session_state.get("ct_company_listing") not in listing_options:
         st.session_state["ct_company_listing"] = None

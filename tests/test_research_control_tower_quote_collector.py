@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
 import sys
 
 _APP_ROOT = Path(__file__).resolve().parent.parent / "apps" / "research-control-tower"
@@ -14,6 +15,7 @@ from src.research_control_tower.quote_collector import (
     QuoteCollectionResult,
     QuoteDiagnostic,
     collect_yfinance_quotes,
+    quote_status_path,
     write_quote_snapshot,
 )
 from control_tower.market_data import (
@@ -23,7 +25,7 @@ from control_tower.market_data import (
 
 
 def _sample_listings() -> pd.DataFrame:
-    return pd.DataFrame([
+    frame = pd.DataFrame([
         {
             "listing_id": "9988_HK",
             "entity_id": "ALIBABA",
@@ -109,22 +111,64 @@ def _sample_listings() -> pd.DataFrame:
             "registry_version": "v1",
         },
     ])
+    frame["exchange"] = frame["canonical_ticker"].map(
+        lambda value: "HKEX" if str(value).endswith(".HK") else "NYSE"
+    )
+    frame["financial_data_security_id"] = [f"security-{index}" for index in range(len(frame))]
+    frame["financial_data_issuer_group_id"] = ""
+    frame["mapping_verified_at"] = "2026-01-01"
+    frame["mapping_source_url"] = "https://example.test/registry/listing"
+    frame["listing_role"] = "primary"
+    frame["primary_listing"] = True
+    frame["source_url"] = "https://example.test/registry/listing"
+    frame["source_or_research_note"] = "fixture"
+    return frame
 
 
 def _sample_entities() -> pd.DataFrame:
-    return pd.DataFrame([
+    frame = pd.DataFrame([
         {"entity_id": "ALIBABA", "entity_type": "public", "active_status": "active", "display_name": "Alibaba", "active_from": "2026-01-01", "active_to": None},
         {"entity_id": "TENCENT", "entity_type": "public", "active_status": "active", "display_name": "Tencent", "active_from": "2026-01-01", "active_to": None},
         {"entity_id": "BYTEDANCE", "entity_type": "private", "active_status": "active", "display_name": "ByteDance", "active_from": "2026-01-01", "active_to": None},
+        {"entity_id": "COMPANY_A", "entity_type": "public", "active_status": "active", "display_name": "Company A", "active_from": "2026-01-01", "active_to": None},
+        {"entity_id": "COMPANY_B", "entity_type": "public", "active_status": "active", "display_name": "Company B", "active_from": "2026-01-01", "active_to": None},
+        {"entity_id": "NO_SYM", "entity_type": "public", "active_status": "active", "display_name": "No symbol", "active_from": "2026-01-01", "active_to": None},
+    ])
+    frame["legal_name"] = frame["display_name"]
+    frame["country"] = "CN"
+    frame["sector"] = "Technology"
+    frame["industry"] = "Internet"
+    frame["registry_version"] = "v1"
+    frame["source_or_research_note"] = "fixture"
+    return frame
+
+
+def _sample_baskets() -> pd.DataFrame:
+    return pd.DataFrame([
+        {
+            "basket_id": "RESEARCH_STAGE_1_CHINA_INTERNET",
+            "display_name": "Stage 1",
+            "purpose": "fixture",
+            "active_from": "2026-01-01",
+            "active_to": None,
+            "registry_version": "v1",
+            "source_or_research_note": "fixture",
+        }
     ])
 
 
 def _sample_memberships() -> pd.DataFrame:
-    return pd.DataFrame([
+    frame = pd.DataFrame([
         {"basket_id": "RESEARCH_STAGE_1_CHINA_INTERNET", "entity_id": "ALIBABA", "membership_tier": "core", "active_from": "2026-01-01", "active_to": None},
         {"basket_id": "RESEARCH_STAGE_1_CHINA_INTERNET", "entity_id": "TENCENT", "membership_tier": "core", "active_from": "2026-01-01", "active_to": None},
         {"basket_id": "RESEARCH_STAGE_1_CHINA_INTERNET", "entity_id": "BYTEDANCE", "membership_tier": "watch_only", "active_from": "2026-01-01", "active_to": None},
     ])
+    frame["primary_layer"] = "platforms"
+    frame["secondary_layers"] = ""
+    frame["membership_reason"] = "fixture"
+    frame["source_or_research_note"] = "fixture"
+    frame["registry_version"] = "v1"
+    return frame
 
 
 def _fake_dual_download(symbols, **kwargs):
@@ -151,6 +195,7 @@ def test_collect_yfinance_quotes_hk_us_dual_listings_and_diagnostics() -> None:
     res = collect_yfinance_quotes(
         _sample_listings(),
         entities=_sample_entities(),
+        baskets=_sample_baskets(),
         basket_memberships=_sample_memberships(),
         as_of_utc="2026-08-13T12:00:00Z",
         download_fn=_fake_dual_download,
@@ -168,6 +213,9 @@ def test_collect_yfinance_quotes_hk_us_dual_listings_and_diagnostics() -> None:
 
     # Licensing assertion
     assert frame["source_license_class"].eq("personal_use_terms_unverified").all()
+    assert frame["pit_class"].eq("snapshot_from_delayed_source").all()
+    assert frame["latency_class"].eq("delayed").all()
+    assert frame["market_status"].eq("unknown").all()
 
     # Defensible day change calculation
     baba_hk = frame.loc[frame["listing_id"] == "9988_HK"].iloc[0]
@@ -204,6 +252,15 @@ def test_private_entity_bytedance_is_excluded_from_query() -> None:
         "active_from": "2026-01-01",
         "active_to": None,
         "registry_version": "v1",
+        "exchange": "PRIVATE",
+        "financial_data_security_id": "security-bytedance",
+        "financial_data_issuer_group_id": "",
+        "mapping_verified_at": "2026-01-01",
+        "mapping_source_url": "https://example.test/registry/bytedance",
+        "listing_role": "primary",
+        "primary_listing": True,
+        "source_url": "https://example.test/registry/bytedance",
+        "source_or_research_note": "fixture private listing used to test exclusion",
     }])
     combined_listings = pd.concat([listings, bytedance_listing], ignore_index=True)
 
@@ -215,6 +272,7 @@ def test_private_entity_bytedance_is_excluded_from_query() -> None:
     res = collect_yfinance_quotes(
         combined_listings,
         entities=entities,
+        baskets=_sample_baskets(),
         basket_memberships=memberships,
         as_of_utc="2026-08-13T12:00:00Z",
         download_fn=spy_download,
@@ -230,6 +288,173 @@ def test_private_entity_bytedance_is_excluded_from_query() -> None:
 def test_realtime_latency_claim_is_rejected() -> None:
     with pytest.raises(ValueError, match="latency_class cannot be 'realtime'"):
         collect_yfinance_quotes(_sample_listings(), latency_class="realtime")
+
+
+def test_stage1_missing_registry_fails_closed_before_provider_call() -> None:
+    calls: list[tuple[object, dict]] = []
+
+    def spy_download(symbols, **kwargs):
+        calls.append((symbols, kwargs))
+        return pd.DataFrame()
+
+    result = collect_yfinance_quotes(
+        _sample_listings(),
+        entities=None,
+        baskets=None,
+        basket_memberships=None,
+        as_of_utc="2026-08-13T12:00:00Z",
+        download_fn=spy_download,
+        stage1_only=True,
+    )
+
+    assert result.aggregate_status == "unavailable"
+    assert result.frame.empty
+    assert not calls
+    assert any("entities registry is missing" in issue for issue in result.issues)
+
+
+def test_stage1_malformed_entity_interval_fails_closed_before_provider_call() -> None:
+    entities = _sample_entities()
+    entities.loc[entities["entity_id"].eq("ALIBABA"), ["entity_type", "active_from"]] = ["unknown", None]
+    calls: list[object] = []
+
+    def spy_download(symbols, **kwargs):
+        calls.append(symbols)
+        return pd.DataFrame()
+
+    result = collect_yfinance_quotes(
+        _sample_listings(),
+        entities=entities,
+        baskets=_sample_baskets(),
+        basket_memberships=_sample_memberships(),
+        as_of_utc="2026-08-13T12:00:00Z",
+        download_fn=spy_download,
+        stage1_only=True,
+    )
+
+    assert result.aggregate_status == "unavailable"
+    assert not calls
+    assert any(d.status == "invalid_listing" for d in result.symbol_diagnostics)
+
+
+def test_stage1_missing_listing_status_fails_closed_before_provider_call() -> None:
+    calls: list[object] = []
+
+    def spy_download(symbols, **kwargs):
+        calls.append(symbols)
+        return pd.DataFrame()
+
+    listings = _sample_listings().drop(columns=["listing_status"])
+    result = collect_yfinance_quotes(
+        listings,
+        entities=_sample_entities(),
+        baskets=_sample_baskets(),
+        basket_memberships=_sample_memberships(),
+        as_of_utc="2026-08-13T12:00:00Z",
+        download_fn=spy_download,
+        stage1_only=True,
+    )
+
+    assert result.aggregate_status == "unavailable"
+    assert not calls
+    assert any("listings registry missing required columns" in issue for issue in result.issues)
+
+
+def test_historical_as_of_is_rejected_without_provider_call() -> None:
+    calls: list[object] = []
+
+    def spy_download(symbols, **kwargs):
+        calls.append(symbols)
+        return pd.DataFrame()
+
+    as_of = pd.Timestamp.now(tz="UTC") - pd.Timedelta(days=4)
+    result = collect_yfinance_quotes(
+        _sample_listings(),
+        as_of_utc=as_of,
+        download_fn=spy_download,
+        stage1_only=False,
+    )
+
+    assert result.aggregate_status == "unavailable"
+    assert not calls
+    assert any("Historical as_of_utc" in issue for issue in result.issues)
+
+
+def test_unsorted_hk_and_us_frames_use_prior_completed_local_session_close() -> None:
+    as_of = pd.Timestamp.now(tz="UTC").floor("min")
+    listings = _sample_listings().loc[
+        lambda frame: frame["listing_id"].isin(["9988_HK", "BABA_US"])
+    ].copy()
+    hk_session_date = as_of.tz_convert("Asia/Hong_Kong").date()
+    us_session_date = as_of.tz_convert("America/New_York").date()
+    quote_index = pd.DatetimeIndex([as_of - pd.Timedelta(minutes=1), as_of - pd.Timedelta(minutes=3)])
+    quote_columns = pd.MultiIndex.from_tuples([
+        ("9988.HK", "Close"), ("9988.HK", "Volume"),
+        ("BABA", "Close"), ("BABA", "Volume"),
+    ])
+    intraday = pd.DataFrame(
+        [[120.0, 2.0, 125.0, 3.0], [119.0, 1.0, 124.0, 2.0]],
+        index=quote_index,
+        columns=quote_columns,
+    )
+    daily_columns = quote_columns
+    daily = pd.DataFrame(
+        [[95.0, 10.0, 110.0, 10.0], [99.0, 11.0, 120.0, 11.0], [90.0, 12.0, 120.0, 12.0]],
+        index=pd.DatetimeIndex([
+            pd.Timestamp(hk_session_date) - pd.Timedelta(days=1),
+            pd.Timestamp(hk_session_date),
+            pd.Timestamp(hk_session_date) - pd.Timedelta(days=2),
+        ]),
+        columns=daily_columns,
+    )
+    calls: list[str] = []
+
+    def download(symbols, **kwargs):
+        calls.append(kwargs["interval"])
+        return intraday
+
+    def daily_download(symbols, **kwargs):
+        calls.append(kwargs["interval"])
+        return daily
+
+    result = collect_yfinance_quotes(
+        listings,
+        as_of_utc=as_of,
+        download_fn=download,
+        daily_download_fn=daily_download,
+        stage1_only=False,
+    )
+
+    assert result.aggregate_status == "available"
+    assert calls == ["1m", "1d"]
+    hk = result.frame.loc[result.frame["listing_id"].eq("9988_HK")].iloc[0]
+    us = result.frame.loc[result.frame["listing_id"].eq("BABA_US")].iloc[0]
+    assert hk["day_change_pct"] == 26.3158
+    assert us["day_change_pct"] == 4.1667
+    assert result.frame["quote_timestamp"].is_monotonic_increasing
+
+
+def test_success_plus_missing_and_ambiguous_listings_is_partial() -> None:
+    listings = _sample_listings()
+    as_of = pd.Timestamp.now(tz="UTC").floor("min")
+    index = pd.DatetimeIndex([as_of - pd.Timedelta(minutes=1)])
+    downloaded = pd.DataFrame(
+        [[120.0, 100.0]],
+        index=index,
+        columns=pd.MultiIndex.from_tuples([("9988.HK", "Close"), ("9988.HK", "Volume")]),
+    )
+
+    result = collect_yfinance_quotes(
+        listings,
+        as_of_utc=as_of,
+        download_fn=lambda symbols, **kwargs: downloaded,
+        stage1_only=False,
+    )
+
+    assert result.aggregate_status == "partial"
+    assert len(result.frame) == 1
+    assert any(d.listing_id == "UNMAPPED" and d.status == "no_records" for d in result.symbol_diagnostics)
+    assert any(d.status == "ambiguous_symbol" for d in result.symbol_diagnostics)
 
 
 def test_quote_freshness_classification_stale_quotes_and_age_label() -> None:
@@ -272,5 +497,10 @@ def test_write_quote_snapshot_atomic_and_contract(tmp_path: Path) -> None:
     out_file = tmp_path / "quote_snapshots.parquet"
     written = write_quote_snapshot(res.frame, out_file)
     assert written.exists()
+    sidecar = quote_status_path(written)
+    assert sidecar.exists()
+    payload = json.loads(sidecar.read_text(encoding="utf-8"))
+    assert payload["schema"] == "quote_collection_status_v1"
+    assert payload["row_count"] == len(res.frame)
     loaded = pd.read_parquet(written)
     assert len(loaded) == len(res.frame)
