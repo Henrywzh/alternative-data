@@ -447,6 +447,58 @@ def test_repository_is_read_only(generated_root: Path) -> None:
     assert before == after
 
 
+def test_repository_accepts_optional_source_execution_evidence(
+    generated_root: Path,
+) -> None:
+    from control_tower.config import SOURCE_HEALTH_EXECUTION_COLUMNS
+    from control_tower.pages.source_health import classify_source_health
+    from control_tower.repository import ControlTowerRepository
+
+    path = generated_root / "source_health.parquet"
+    original = pq.read_table(path)
+    health = original.to_pandas()
+    health.loc[health["source_id"].eq("consensus"), "status"] = "available"
+    health["query_attempted"] = pd.Series([True, True], dtype="boolean")
+    health["execution_status"] = pd.Series(
+        ["completed", "completed"], dtype="string"
+    )
+    health["completed_at"] = pd.to_datetime(
+        ["2026-08-13T11:00:00Z", "2026-08-13T11:00:00Z"],
+        utc=True,
+    )
+    schema = pa.schema(
+        [
+            *original.schema,
+            pa.field("query_attempted", pa.bool_()),
+            pa.field("execution_status", pa.string()),
+            pa.field("completed_at", pa.timestamp("us", tz="UTC")),
+        ]
+    )
+    pq.write_table(
+        pa.Table.from_pandas(
+            health,
+            schema=schema,
+            preserve_index=False,
+            safe=False,
+        ),
+        path,
+    )
+    _write_manifest(generated_root, _manifest_for(generated_root))
+
+    snapshot = ControlTowerRepository(generated_root).load_snapshot()
+    assert tuple(snapshot.source_health.columns[-3:]) == (
+        SOURCE_HEALTH_EXECUTION_COLUMNS
+    )
+    classified = classify_source_health(
+        snapshot.source_health,
+        now_utc=snapshot.now_utc,
+    )
+    consensus = classified.loc[
+        classified["source_id"].eq("consensus")
+    ].iloc[0]
+    assert consensus["display_status"] == "no_records"
+
+
 def test_consensus_contract_is_populated_and_typed_empty(generated_root: Path) -> None:
     from control_tower.config import ARTIFACT_COLUMNS
     from control_tower.repository import ControlTowerRepository

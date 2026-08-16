@@ -503,6 +503,16 @@ def _rewrite_manifest(root: Path, mutate) -> None:
     _write_manifest(root, manifest)
 
 
+def _write_typed_artifact(root: Path, name: str, frame: pd.DataFrame) -> None:
+    table = pa.Table.from_pandas(
+        _typed(frame),
+        schema=_schema(name),
+        preserve_index=False,
+        safe=False,
+    )
+    pq.write_table(table, root / name)
+
+
 @pytest.fixture(autouse=True)
 def _imports(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.syspath_prepend(str(APP_ROOT))
@@ -1079,13 +1089,28 @@ def test_company_view_consumes_quote_snapshot_and_classifies_freshness(generated
         "source_license_class": "public_metadata",
         "registry_version": "v1",
     }]))
-    snapshot = replace(snapshot, quote_snapshots=quote)
+    listings = snapshot.listings.copy()
+    listings.loc[listings["listing_id"].eq("L1"), "vendor_tickers"] = "yfinance:EONE"
+    snapshot = replace(snapshot, listings=listings, quote_snapshots=quote)
 
     view = build_company_view(snapshot, entity_id="E1")
     assert tuple(view.quote_snapshots.columns) == COMPANY_QUOTE_COLUMNS
     assert view.quote_status == "available"
     assert view.quote_snapshots.iloc[0]["last_price"] == 123.45
-    assert view.quote_snapshots.iloc[0]["freshness"] == "live"
+    assert view.quote_snapshots.iloc[0]["freshness"] == "delayed"
+    assert view.quote_snapshots.iloc[0]["latency_class"] == "delayed"
+    assert view.quote_snapshots.iloc[0]["pit_class"] == "snapshot_from_delayed_source"
+    assert view.quote_snapshots.iloc[0]["source_license_class"] == "personal_use_terms_unverified"
+
+    missing_registry_fields = quote.copy()
+    missing_registry_fields.loc[:, ["canonical_ticker", "provider_symbol", "currency"]] = ""
+    derived_view = build_company_view(
+        replace(snapshot, quote_snapshots=missing_registry_fields), entity_id="E1"
+    )
+    derived_row = derived_view.quote_snapshots.iloc[0]
+    assert derived_row["canonical_ticker"] == "EONE"
+    assert derived_row["provider_symbol"] == "EONE"
+    assert derived_row["currency"] == "USD"
 
     macro_only = build_company_view(
         snapshot,
@@ -1096,7 +1121,6 @@ def test_company_view_consumes_quote_snapshot_and_classifies_freshness(generated
         ),
     )
     assert macro_only.quote_snapshots.empty
-
 
 def test_task9_company_view_respects_global_scope_and_country_filters(generated_root: Path) -> None:
     from control_tower.models import EventFilters
@@ -1152,7 +1176,6 @@ def test_task7_source_health_marks_stale_and_retrieval_only_not_healthy() -> Non
     assert result.loc[result["source_id"].eq("retrieval"), "age_basis"].item() == "retrieval_only"
     assert result.loc[result["source_id"].eq("stale"), "pit_display"].item() == "not_pit"
     assert result.loc[result["source_id"].eq("retrieval"), "license_display"].item() == "Restricted body · metadata only"
-
 
 def test_task7_app_reaches_research_and_data_pages_without_writes(generated_root: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     from streamlit.testing.v1 import AppTest
@@ -1274,7 +1297,10 @@ def test_task7_real_generation_acceptance_covers_registry_company_and_source_mat
     assert not packaging.members.loc[packaging.members["membership_tier"].eq("watch_only"), "consensus_status"].isin(["available"]).any()
 
     company = build_company_view(snapshot, entity_id="SK_HYNIX")
-    assert set(company.listings["listing_id"]) == {"000660_KR"}
+    # The production fixture is an archived focus predecessor; Company must
+    # reject it from the active public listing surface.
+    assert company.listings.empty
+    assert company.selected_listing_id is None
     assert company.memberships.loc[
         company.memberships["primary_layer"].eq("hbm_memory"), "membership_tier"
     ].eq("core").any()
@@ -1293,7 +1319,6 @@ def test_task7_real_generation_acceptance_covers_registry_company_and_source_mat
     assert set(provider_statuses["status"]) <= {"available", "degraded", "unavailable", "stale", "failed", "conflicted", "review_required"}
     if company.official_documents.empty:
         assert "official_documents" in set(company.source_health["source_id"].astype("string"))
-
 
 def test_task7_synthetic_populated_acceptance_uses_stable_sk_hynix_ids(tmp_path: Path) -> None:
     """Synthetic populated contract fixture; not a claim of production coverage."""
@@ -1727,6 +1752,8 @@ def test_task8_source_health_metric_counts_reconcile_status_rows() -> None:
         "healthy": 0,
         "freshness_unclassified": 14,
         "stale": 0,
+        "no_records": 0,
+        "not_applicable": 0,
         "unavailable_degraded": 7,
         "errors_gaps": 0,
     }
@@ -1930,6 +1957,8 @@ def test_task9_source_health_buckets_and_privacy_sanitisation() -> None:
         "healthy": 1,
         "freshness_unclassified": 1,
         "stale": 1,
+        "no_records": 0,
+        "not_applicable": 0,
         "unavailable_degraded": 2,
         "errors_gaps": 0,
     }
@@ -2035,3 +2064,200 @@ def test_task9_workbench_dedup_keeps_distinct_same_source_events() -> None:
         },
     ])
     assert len(_compact_catalyst_frame(frame)) == 2
+
+
+def test_batch0_stage1_matrix_renders_on_today_and_empty_source_health(
+    generated_root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from streamlit.testing.v1 import AppTest
+    import streamlit as st
+
+    empty_health = _frame("source_health.parquet", [])
+    table = pa.Table.from_pandas(
+        _typed(empty_health),
+        schema=_schema("source_health.parquet"),
+        preserve_index=False,
+        safe=False,
+    )
+    pq.write_table(table, generated_root / "source_health.parquet")
+    _write_manifest(
+        generated_root,
+        _manifest(generated_root, previous_build_at="2026-08-13T10:00:00Z"),
+    )
+
+    monkeypatch.setenv("CONTROL_TOWER_ARTIFACT_ROOT", str(generated_root))
+    st.cache_data.clear()
+    app = AppTest.from_file(str(APP_PATH), default_timeout=30).run()
+    assert not app.exception
+    today_text = _app_text(app)
+    assert "Stage 1 coverage matrix" in today_text
+    assert any(
+        "Price / market quotes" in dataframe.value.columns
+        for dataframe in app.dataframe
+    )
+
+    app.session_state["ct_page"] = "Source Health"
+    app = app.run()
+    assert not app.exception
+    source_text = _app_text(app)
+    assert "No source-health rows are available" in source_text
+    assert "Stage 1 coverage matrix" in source_text
+    assert any(
+        "Price / market quotes" in dataframe.value.columns
+        for dataframe in app.dataframe
+    )
+
+
+def test_today_page_renders_quote_snapshots_and_filters_by_universe(
+    generated_root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    from streamlit.testing.v1 import AppTest
+    import streamlit as st
+
+    root = tmp_path / "populated-quotes"
+    shutil.copytree(generated_root, root)
+    quote = _frame("quote_snapshots.parquet", [{
+        "quote_id": "today-quote",
+        "listing_id": "L1",
+        "canonical_ticker": "EONE",
+        "provider_symbol": "EONE",
+        "quote_timestamp": "2026-08-13T11:59:30Z",
+        "retrieved_at_utc": "2026-08-13T12:00:00Z",
+        "last_price": 123.45,
+        "currency": "USD",
+        "market_status": "closed",
+        "latency_class": "delayed",
+        "source_id": "fixture_quotes",
+        "source_url": "https://example.test/quotes",
+        "pit_class": "snapshot_from_delayed_source",
+        "source_license_class": "personal_use_terms_unverified",
+        "registry_version": "v1",
+    }])
+    health = _frame("source_health.parquet", [{
+        "source_id": "fixture_quotes",
+        "input_path": "fixture_quotes.parquet",
+        "source_kind": "market",
+        "status": "available",
+        "required": False,
+        "row_count": 1,
+        "latest_observation_at": "2026-08-13T11:59:30Z",
+        "source_latest_at": "2026-08-13T11:59:30Z",
+        "retrieved_at_utc": "2026-08-13T12:00:00Z",
+        "cadence": "daily",
+        "source_url": "https://example.test/quotes",
+        "pit_class": "snapshot_from_delayed_source",
+        "source_license_class": "personal_use_terms_unverified",
+        "schema_version": "v1",
+        "detail": "populated delayed quote fixture",
+    }])
+    empty_basket = _frame("baskets.parquet", [{
+        "basket_id": "EMPTY_BASKET",
+        "display_name": "Empty basket",
+        "purpose": "empty-universe probe",
+        "active_from": "2026-01-01",
+        "registry_version": "v1",
+    }])
+    _write_typed_artifact(root, "quote_snapshots.parquet", quote)
+    _write_typed_artifact(root, "source_health.parquet", health)
+    _write_typed_artifact(
+        root,
+        "baskets.parquet",
+        pd.concat([pd.read_parquet(root / "baskets.parquet"), empty_basket], ignore_index=True),
+    )
+    _write_manifest(root, _manifest(root, previous_build_at="2026-08-13T10:00:00Z"))
+
+    monkeypatch.setenv("CONTROL_TOWER_ARTIFACT_ROOT", str(root))
+    st.cache_data.clear()
+    app = AppTest.from_file(str(APP_PATH), default_timeout=30).run()
+    assert not app.exception
+    rendered = _app_text(app)
+    assert "Stage 1 market quotes (delayed)" in rendered
+    assert "USD 123.45" in rendered
+    assert "Freshness: delayed" in rendered
+    assert "Market status: closed" in rendered
+    assert "Source health:" in rendered
+
+    # A selected universe with no eligible listings must not fall back to the
+    # unfiltered quote artifact.
+    app.session_state["ct_basket_ids"] = ("EMPTY_BASKET",)
+    app = app.run()
+    assert not app.exception
+    assert "USD 123.45" not in _app_text(app)
+    assert "Latest market quotes unavailable" in _app_text(app)
+
+    # Non-company scope suppresses the quote panel entirely.
+    app.session_state["ct_scopes"] = ("macro",)
+    app = app.run()
+    assert not app.exception
+    assert "Stage 1 market quotes (delayed)" not in _app_text(app)
+
+
+def test_today_page_marks_bytedance_only_universe_not_applicable(
+    generated_root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    from streamlit.testing.v1 import AppTest
+    import streamlit as st
+
+    root = tmp_path / "private-only"
+    shutil.copytree(generated_root, root)
+    private_entity = _frame("entities.parquet", [{
+        "entity_id": "BYTEDANCE",
+        "legal_name": "ByteDance Ltd.",
+        "display_name": "ByteDance",
+        "country": "CN",
+        "sector": "Internet",
+        "industry": "Platforms",
+        "active_status": "active",
+        "active_from": "2026-01-01",
+        "registry_version": "v1",
+        "entity_type": "private",
+    }])
+    private_basket = _frame("baskets.parquet", [{
+        "basket_id": "BYTEDANCE_ONLY",
+        "display_name": "ByteDance only",
+        "purpose": "private-company probe",
+        "active_from": "2026-01-01",
+        "registry_version": "v1",
+    }])
+    private_membership = _frame("basket_memberships.parquet", [{
+        "entity_id": "BYTEDANCE",
+        "basket_id": "BYTEDANCE_ONLY",
+        "membership_tier": "watch_only",
+        "primary_layer": "platforms",
+        "active_from": "2026-01-01",
+        "registry_version": "v1",
+    }])
+    _write_typed_artifact(
+        root,
+        "entities.parquet",
+        pd.concat([pd.read_parquet(root / "entities.parquet"), private_entity], ignore_index=True),
+    )
+    _write_typed_artifact(
+        root,
+        "baskets.parquet",
+        pd.concat([pd.read_parquet(root / "baskets.parquet"), private_basket], ignore_index=True),
+    )
+    _write_typed_artifact(
+        root,
+        "basket_memberships.parquet",
+        pd.concat([pd.read_parquet(root / "basket_memberships.parquet"), private_membership], ignore_index=True),
+    )
+    _write_manifest(root, _manifest(root, previous_build_at="2026-08-13T10:00:00Z"))
+
+    monkeypatch.setenv("CONTROL_TOWER_ARTIFACT_ROOT", str(root))
+    st.cache_data.clear()
+    app = AppTest.from_file(str(APP_PATH), default_timeout=30).run()
+    assert not app.exception
+    app.session_state["ct_basket_ids"] = ("BYTEDANCE_ONLY",)
+    app = app.run()
+    assert not app.exception
+    rendered = _app_text(app)
+    assert "ByteDance" in rendered
+    assert "Market quotes not applicable" in rendered
+    assert "Not applicable" in rendered
+    assert "USD 123.45" not in rendered

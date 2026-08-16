@@ -19,6 +19,7 @@ from .config import (
     OPTIONAL_ARTIFACT_NAMES,
     REQUIRED_ARTIFACT_NAMES,
     SCHEMA_VERSION,
+    SOURCE_HEALTH_EXECUTION_COLUMNS,
     _sha256,
     resolve_artifact_root,
 )
@@ -35,7 +36,11 @@ _MISSING = object()
 
 
 def _empty_frame(name: str) -> pd.DataFrame:
-    columns = ARTIFACT_COLUMNS[name]
+    columns = (
+        (*ARTIFACT_COLUMNS[name], *SOURCE_HEALTH_EXECUTION_COLUMNS)
+        if name == "source_health.parquet"
+        else ARTIFACT_COLUMNS[name]
+    )
     numeric = {
         "observation_version", "fiscal_year", "analyst_count",
         "provider_contributor_count", "lookback_days", "current_analyst_count",
@@ -49,7 +54,7 @@ def _empty_frame(name: str) -> pd.DataFrame:
     }
     booleans = {
         "collection_eligible", "primary_listing", "automated", "is_provisional",
-        "required", "is_restatement",
+        "required", "is_restatement", "query_attempted",
     }
     dates = {
         "active_from", "active_to", "mapping_verified_at", "review_by",
@@ -63,7 +68,7 @@ def _empty_frame(name: str) -> pd.DataFrame:
         "provider_asof", "prior_provider_asof", "current_snapshot_at", "cutoff_at",
         "prior_snapshot_at", "published_at", "first_observed_at",
         "first_observation_at", "latest_observation_at", "source_latest_at",
-        "quote_timestamp", "accepted_at", "filing_at",
+        "quote_timestamp", "accepted_at", "filing_at", "completed_at",
     }
     data: dict[str, pd.Series] = {}
     for column in columns:
@@ -211,6 +216,8 @@ def _expected_types(name: str) -> dict[str, str]:
             "required": "boolean", "row_count": "integer",
             "first_observation_at": "timestamp", "latest_observation_at": "timestamp",
             "source_latest_at": "timestamp", "retrieved_at_utc": "timestamp",
+            "query_attempted": "boolean", "execution_status": "string",
+            "completed_at": "timestamp",
         })
     return result
 
@@ -223,7 +230,15 @@ def _validate_parquet_schema(name: str, table: pa.Table) -> None:
         if without_optional != expected or actual.count("importance") > 1:
             raise ValueError(f"expected columns {expected!r}, got {actual!r}")
         expected = actual
-    elif actual != expected:
+    elif name == "source_health.parquet" and tuple(actual) not in {
+        tuple(expected),
+        tuple([*expected, *SOURCE_HEALTH_EXECUTION_COLUMNS]),
+    }:
+        raise ValueError(
+            f"expected columns {expected!r} with optional trailing execution "
+            f"columns {list(SOURCE_HEALTH_EXECUTION_COLUMNS)!r}, got {actual!r}"
+        )
+    elif name != "source_health.parquet" and actual != expected:
         raise ValueError(f"expected columns {expected!r}, got {actual!r}")
     types = _expected_types(name)
     if "importance" in actual:
@@ -240,6 +255,10 @@ def _read_frame(name: str, path: Path) -> pd.DataFrame:
     expected = list(ARTIFACT_COLUMNS[name])
     if name == "events.parquet" and "importance" in frame.columns:
         expected = list(frame.columns)
+    elif name == "source_health.parquet" and set(
+        SOURCE_HEALTH_EXECUTION_COLUMNS
+    ) <= set(frame.columns):
+        expected = [*expected, *SOURCE_HEALTH_EXECUTION_COLUMNS]
     return frame.loc[:, expected].copy()
 
 
@@ -533,6 +552,9 @@ def _health_reason_row(name: str, reason: str) -> dict[str, Any]:
         "status": "unavailable" if reason in {"missing", "corrupt", "schema_mismatch"} else "degraded",
         "required": False,
         "row_count": 0,
+        "query_attempted": False,
+        "execution_status": "",
+        "completed_at": pd.NaT,
         "first_observation_at": pd.NaT,
         "latest_observation_at": pd.NaT,
         "source_latest_at": pd.NaT,
@@ -654,7 +676,7 @@ class ControlTowerRepository:
                     if reason == "manifest_mismatch" and "row_count mismatch" in detail:
                         raise _artifact_error(name, "row count mismatch") from exc
                     if reason == "schema_mismatch":
-                        raise _artifact_error(name, "has invalid schema") from exc
+                        raise _artifact_error(name, f"has invalid schema ({detail})") from exc
                     raise _artifact_error(name, "is corrupt") from exc
                 stem = Path(name).stem
                 missing_optional.add(stem)
@@ -700,7 +722,6 @@ class ControlTowerRepository:
         source_health = loaded["source_health.parquet"].copy(deep=True)
         if synthetic_health:
             source_health = pd.concat([source_health, pd.DataFrame(synthetic_health)], ignore_index=True)
-            source_health = source_health.loc[:, list(ARTIFACT_COLUMNS["source_health.parquet"])]
 
         built_at = _timestamp(manifest["built_at_utc"], "built_at_utc")
         as_of = _timestamp(manifest["as_of_utc"], "as_of_utc")

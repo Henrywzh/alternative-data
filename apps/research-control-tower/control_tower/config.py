@@ -199,6 +199,16 @@ ARTIFACT_COLUMNS: Final[dict[str, tuple[str, ...]]] = {
 
 EVENT_OPTIONAL_COLUMNS: Final[tuple[str, ...]] = ("importance",)
 
+# Backward-compatible source-health execution evidence. Legacy V1 bundles may
+# omit these trailing columns; readers accept and preserve the complete trio
+# when a collector publishes it. Derivation requires all three for
+# ``no_records``.
+SOURCE_HEALTH_EXECUTION_COLUMNS: Final[tuple[str, ...]] = (
+    "query_attempted",
+    "execution_status",
+    "completed_at",
+)
+
 
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
@@ -461,6 +471,7 @@ __all__ = [
     "OPTIONAL_ARTIFACT_NAMES",
     "REQUIRED_ARTIFACT_NAMES",
     "SCHEMA_VERSION",
+    "SOURCE_HEALTH_EXECUTION_COLUMNS",
     "artifact_fingerprint",
     "resolve_artifact_root",
 ]
