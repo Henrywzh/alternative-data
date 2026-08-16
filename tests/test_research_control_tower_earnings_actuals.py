@@ -88,7 +88,7 @@ def test_companyfacts_extraction_preserves_reported_values_and_restatement_linea
     assert first["period_end"] == date(2026, 3, 31)
     assert first["form"] == "20-F"
     assert first["xbrl_frame"] == "CY2025"
-    assert first["source_id"] == "sec_companyfacts"
+    assert first["source_id"] == "earnings:sec_companyfacts"
     assert first["source_url"].startswith("https://www.sec.gov/Archives/edgar/data/1577552/")
 
 
@@ -165,7 +165,7 @@ def test_sec_companyfacts_rows_flow_through_collector(tmp_path):
         timeout=5,
     )
     assert len(frame) == 3
-    assert set(frame["source_id"]) == {"sec_companyfacts"}
+    assert set(frame["source_id"]) == {"earnings:sec_companyfacts"}
     assert state.loc[state["source_id"].eq("earnings:sec_companyfacts"), "status"].iloc[0] == "available"
     assert state.loc[state["source_id"].eq("earnings:bytedance"), "status"].iloc[0] == "not_applicable"
 

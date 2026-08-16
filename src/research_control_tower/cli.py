@@ -77,6 +77,25 @@ def _parser() -> argparse.ArgumentParser:
         metavar="SOURCE_ID|PATH|FORMAT|SCHEMA_ID",
         help="explicit optional standardized quote input descriptor; may be repeated",
     )
+    build.add_argument(
+        "--allow-degraded-optional",
+        dest="allow_degraded_optional",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help=(
+            "allow the build to publish when optional inputs are degraded or "
+            "unconfigured (default: true, matches BuildConfig.allow_degraded_optional). "
+            "Pass --no-allow-degraded-optional (or --strict) to fail the build instead "
+            "of publishing a degraded bundle."
+        ),
+    )
+    build.add_argument(
+        "--strict",
+        dest="allow_degraded_optional",
+        action="store_false",
+        default=argparse.SUPPRESS,
+        help="shorthand for --no-allow-degraded-optional",
+    )
     return parser
 
 
@@ -99,6 +118,7 @@ def main(argv: list[str] | None = None) -> int:
         official_filing_inputs=tuple(_local_input(item) for item in args.official_filing_input),
         earnings_inputs=tuple(_local_input(item) for item in args.earnings_input),
         quote_inputs=tuple(_local_input(item) for item in args.quote_input),
+        allow_degraded_optional=args.allow_degraded_optional,
     )
     manifest = build_control_tower_marts(config)
     print(f"{manifest.status}: {config.output_dir}")

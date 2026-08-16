@@ -115,7 +115,7 @@ def test_sec_submissions_mapping_preserves_accepted_report_and_period_fields():
     rows = _sec_rows()
     assert len(rows) == 3
     assert {row["document_type"] for row in rows} == {"filing"}
-    assert {row["source_id"] for row in rows} == {"sec_edgar_submissions"}
+    assert {row["source_id"] for row in rows} == {"filings:sec_edgar_submissions"}
     assert rows[0]["document_id"] == "sec:0001104659-26-096226"
     assert rows[0]["accepted_at"] == pd.Timestamp("2026-08-14T14:02:25Z")
     assert rows[0]["published_at"] == rows[0]["accepted_at"]
@@ -245,7 +245,10 @@ def test_collector_writes_honest_issuer_ir_and_bytedance_states(tmp_path):
     )
     assert list(frame.columns) == OFFICIAL_FILINGS_COLUMNS
     assert list(state.columns) == SOURCE_STATE_COLUMNS
-    assert {"sec_edgar_submissions", "hkexnews"} <= set(frame["source_id"])
+    # Mart rows carry the identical namespaced source_id as their governing
+    # source_health record (see the module docstring for why); the offline
+    # builder and Control Tower coverage matrix require an exact match.
+    assert {"filings:sec_edgar_submissions", "filings:hkexnews"} <= set(frame["source_id"])
     by_source = state.set_index("source_id")["status"].to_dict()
     assert by_source["filings:sec_edgar_submissions"] == "available"
     assert by_source["filings:hkexnews"] == "available"

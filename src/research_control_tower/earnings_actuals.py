@@ -44,6 +44,16 @@ COMPANYFACTS_INTERVAL_SECONDS = 0.2
 PIT_CLASS = "snapshot_from_live_source"
 LICENSE_CLASS = "official_public_metadata"
 
+# Every mart-facing ``source_id`` this collector emits is namespaced with an
+# "earnings:" prefix so it is byte-for-byte identical to the governing
+# ``source_health``/source-state record for the same provider
+# ("earnings:sec_companyfacts", "earnings:hkex_issuer_ir", below). The two
+# standardized outputs (``earnings_actuals_v1.parquet`` and
+# ``earnings_actuals_state.parquet``) are written together by this module, so
+# keeping their ``source_id`` spelling identical at the point of collection
+# means the offline builder and the Control Tower coverage matrix never have
+# to guess which health record governs an actuals row.
+
 # Canonical metric tags in the SEC XBRL taxonomy.  The first tag present in a
 # filer's companyfacts payload wins; all tags are US-GAAP/IFRS taxonomy names.
 METRIC_TAGS: dict[str, tuple[str, ...]] = {
@@ -298,7 +308,7 @@ def _lineage(
                         else "initial_filing"
                     ),
                     "is_restatement": restated,
-                    "source_id": "sec_companyfacts",
+                    "source_id": "earnings:sec_companyfacts",
                     "source_quality": "official_metadata",
                     "pit_class": PIT_CLASS,
                     "source_license_class": LICENSE_CLASS,
@@ -415,7 +425,7 @@ def collect_earnings_actuals(
                 sec_errors.append(f"{entity_id}: {exc}")
         elif source_kind == "hkex_code":
             hkex_only_entities.append(entity_id)
-    sec_rows = sum(1 for row in rows if row["source_id"] == "sec_companyfacts")
+    sec_rows = sum(1 for row in rows if row["source_id"] == "earnings:sec_companyfacts")
 
     states: list[dict[str, Any]] = []
     if identity["source_kind"].eq("sec_cik").any():
@@ -455,7 +465,7 @@ def collect_earnings_actuals(
         )
         if set(EARNINGS_ACTUALS_COLUMNS).issubset(set(snapshot.columns)):
             ir_rows = [
-                {**row, "source_id": "issuer_ir", "retrieved_at_utc": fetched_at}
+                {**row, "source_id": "earnings:hkex_issuer_ir", "retrieved_at_utc": fetched_at}
                 for row in snapshot.to_dict("records")
             ]
             states.append(

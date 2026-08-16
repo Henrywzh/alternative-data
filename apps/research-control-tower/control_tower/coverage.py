@@ -298,18 +298,17 @@ class _CategorySources:
                 if source.source_id.removeprefix("provider:") == text:
                     return source
             # Per-provider governing sources are namespaced ("filings:hkexnews",
-            # "earnings:sec_companyfacts") while artifact rows carry the bare
-            # provider id ("hkexnews", "sec_companyfacts"). Match on the
-            # namespace suffix only when it resolves to exactly one source;
-            # an ambiguous suffix match is treated as unmatched.
-            suffix_matches = [
-                source
-                for source in self.sources
-                if ":" in source.source_id
-                and source.source_id.rsplit(":", 1)[-1] == text
-            ]
-            if len(suffix_matches) == 1:
-                return suffix_matches[0]
+            # "earnings:sec_companyfacts") and the producing collector
+            # (official_filings.py / earnings_actuals.py) writes the identical
+            # namespaced value onto the mart row's own source_id, so an exact
+            # match (or the "provider:" handling above) is expected to
+            # succeed. There is deliberately no namespace-suffix fallback
+            # here: a bare provider id that reaches this point means the mart
+            # row was produced by a pre-namespace-migration collector (or the
+            # producer and its source_health record disagree), and that is
+            # exactly the "cannot be matched to one governing source" case
+            # the caller should surface as ``partial``, not something this
+            # reader should guess at.
             return None
         populated = tuple(
             source

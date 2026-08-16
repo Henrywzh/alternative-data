@@ -2167,7 +2167,7 @@ def _write_official_filings_inputs(tmp_path: Path) -> tuple[Path, Path]:
                 "document_id": "hkexnews:2026081201234",
                 "document_type": "announcement",
                 "event_class": "earnings_results",
-                "source_id": "hkexnews",
+                "source_id": "filings:hkexnews",
                 "headline": "ANNOUNCEMENT OF THE RESULTS FOR THE THREE AND SIX MONTHS ENDED 30 JUNE 2026",
                 "publisher": "HKEXnews",
                 "published_at": "2026-08-12T08:31:00Z",
@@ -2196,7 +2196,7 @@ def _write_official_filings_inputs(tmp_path: Path) -> tuple[Path, Path]:
                 "document_id": "sec:0001104659-26-096226",
                 "document_type": "filing",
                 "event_class": "general",
-                "source_id": "sec_edgar_submissions",
+                "source_id": "filings:sec_edgar_submissions",
                 "headline": "Alibaba Group Holding Ltd — Form 6-K — FORM 6-K",
                 "publisher": "SEC EDGAR",
                 "published_at": "2026-08-10T14:02:25Z",
@@ -2311,7 +2311,7 @@ def _write_earnings_inputs(tmp_path: Path) -> tuple[Path, Path]:
                 "xbrl_frame": "CY2025",
                 "revision_reason": "initial_filing",
                 "is_restatement": False,
-                "source_id": "sec_companyfacts",
+                "source_id": "earnings:sec_companyfacts",
                 "source_quality": "official_metadata",
                 "pit_class": "snapshot_from_live_source",
                 "source_license_class": "official_public_metadata",
@@ -2344,7 +2344,7 @@ def _write_earnings_inputs(tmp_path: Path) -> tuple[Path, Path]:
                 "xbrl_frame": "CY2025",
                 "revision_reason": "restatement_or_amended_filing",
                 "is_restatement": True,
-                "source_id": "sec_companyfacts",
+                "source_id": "earnings:sec_companyfacts",
                 "source_quality": "official_metadata",
                 "pit_class": "snapshot_from_live_source",
                 "source_license_class": "official_public_metadata",
@@ -2423,7 +2423,7 @@ def test_official_filings_and_earnings_inputs_populate_optional_artifacts(tmp_pa
 
     assert len(filings) == 2
     assert list(filings.columns) == OFFICIAL_FILINGS_COLUMNS
-    assert set(filings["source_id"]) == {"hkexnews", "sec_edgar_submissions"}
+    assert set(filings["source_id"]) == {"filings:hkexnews", "filings:sec_edgar_submissions"}
     assert not any(column in filings.columns for column in ("body_text", "filing_content", "summary"))
     assert filings["content_hash_if_permitted"].isna().all()
 
@@ -2460,6 +2460,68 @@ def test_official_filings_and_earnings_inputs_populate_optional_artifacts(tmp_pa
     assert by_source["earnings:sec_companyfacts"] == "available"
     assert by_source["earnings:hkex_issuer_ir"] == "no_records"
     assert by_source["earnings:bytedance"] == "not_applicable"
+
+    # T2: every source_id a mart row is attributed to must appear, spelled
+    # identically, among the source_health source_id values -- otherwise the
+    # Control Tower coverage matrix cannot match the row to its governing
+    # source (see coverage.py::_CategorySources.resolve, which now requires
+    # an exact match; the namespace-suffix fallback has been removed).
+    health_source_ids = set(health["source_id"])
+    assert set(filings["source_id"]) <= health_source_ids
+    assert set(actuals["source_id"]) <= health_source_ids
+
+
+def test_official_filings_and_earnings_actuals_reject_pre_namespace_source_id(tmp_path, minimal_inputs):
+    """T2: a bare, pre-migration provider id must fail explicit, not mis-ingest.
+
+    Before this fix, ``official_filings.py``/``earnings_actuals.py`` wrote
+    mart rows with a bare provider id ("hkexnews") while their source_health
+    sidecar already used the namespaced id ("filings:hkexnews"). A collector
+    output produced before the namespacing fix still has that old shape; the
+    offline builder must refuse to ingest it silently -- degrading that
+    specific optional source with a clear reason -- rather than publishing a
+    mart whose source_id can never resolve to its governing source_health
+    record.
+    """
+
+    filings_path, filings_state = _write_official_filings_inputs(tmp_path)
+    frame = pd.read_parquet(filings_path)
+    frame["source_id"] = frame["source_id"].str.replace("filings:", "", regex=False)
+    frame.to_parquet(filings_path, index=False)
+
+    actuals_path, actuals_state = _write_earnings_inputs(tmp_path)
+    actuals_frame = pd.read_parquet(actuals_path)
+    actuals_frame["source_id"] = actuals_frame["source_id"].str.replace("earnings:", "", regex=False)
+    actuals_frame.to_parquet(actuals_path, index=False)
+
+    config = replace(
+        minimal_inputs,
+        official_filing_inputs=(
+            _input("official_filings", filings_path, OFFICIAL_FILINGS_SCHEMA_ID),
+            _input("official_filings_state", filings_state, SOURCE_STATE_SCHEMA_ID),
+        ),
+        earnings_inputs=(
+            _input("earnings_actuals", actuals_path, EARNINGS_ACTUALS_SCHEMA_ID),
+            _input("earnings_actuals_state", actuals_state, SOURCE_STATE_SCHEMA_ID),
+        ),
+    )
+
+    manifest = build_control_tower_marts(config)
+    filings = pd.read_parquet(_published(config, "official_filings.parquet"))
+    actuals = pd.read_parquet(_published(config, "earnings_actuals.parquet"))
+
+    # The un-namespaced input is rejected outright: the mart publishes empty
+    # rather than silently ingesting mismatched ids, and the build reports
+    # this honestly as a degraded optional input with a clear reason instead
+    # of succeeding quietly.
+    assert filings.empty
+    assert actuals.empty
+    assert "official_filings" in manifest.degraded_inputs
+    assert "earnings_actuals" in manifest.degraded_inputs
+    assert any(
+        "un-namespaced source_id" in error["message"]
+        for error in manifest.validation_errors
+    )
 
 
 def test_official_filings_unresolved_relations_are_dropped_and_flagged(tmp_path, minimal_inputs):

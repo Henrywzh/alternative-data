@@ -62,6 +62,16 @@ SEC_REQUEST_INTERVAL_SECONDS = 0.2
 PIT_CLASS = "snapshot_from_live_source"
 LICENSE_CLASS = "official_public_metadata"
 
+# Every mart-facing ``source_id`` this collector emits (SEC submissions,
+# HKEXnews, issuer-IR) is namespaced with a "filings:" prefix so it is
+# byte-for-byte identical to the governing ``source_health``/source-state
+# record for the same provider ("filings:hkexnews", "filings:issuer_ir", ...
+# below). The two standardized outputs (``official_filings_v1.parquet`` and
+# ``official_filings_state.parquet``) are written together by this module, so
+# keeping their ``source_id`` spelling identical at the point of collection
+# means the offline builder and the Control Tower coverage matrix never have
+# to guess which health record governs a filing row.
+
 
 def _now_utc() -> pd.Timestamp:
     return pd.Timestamp.now(tz="UTC")
@@ -200,7 +210,7 @@ def _sec_metadata_rows(
                 "document_id": f"sec:{accession}",
                 "document_type": "filing",
                 "event_class": "earnings_results" if (is_annual or is_quarterly) else "general",
-                "source_id": "sec_edgar_submissions",
+                "source_id": "filings:sec_edgar_submissions",
                 "headline": f"{company_name} — Form {form} — {description}",
                 "publisher": "SEC EDGAR",
                 "published_at": accepted,
@@ -410,7 +420,7 @@ def _hkex_announcement_rows(
                     "document_id": f"hkexnews:{_text(row.get('NEWS_ID'))}",
                     "document_type": "announcement",
                     "event_class": classification["event_class"],
-                    "source_id": "hkexnews",
+                    "source_id": "filings:hkexnews",
                     "headline": title,
                     "publisher": "HKEXnews",
                     "published_at": published,
@@ -574,8 +584,8 @@ def collect_official_filings(
             except Exception as exc:
                 hkex_errors.append(f"{entity_id}: {exc}")
 
-    sec_rows = sum(1 for row in rows if row["source_id"] == "sec_edgar_submissions")
-    hkex_rows = sum(1 for row in rows if row["source_id"] == "hkexnews")
+    sec_rows = sum(1 for row in rows if row["source_id"] == "filings:sec_edgar_submissions")
+    hkex_rows = sum(1 for row in rows if row["source_id"] == "filings:hkexnews")
 
     if identity["source_kind"].eq("sec_cik").any():
         if sec_errors:
@@ -642,7 +652,7 @@ def collect_official_filings(
         snapshot = pd.read_parquet(ir_snapshot_path) if str(ir_snapshot_path).endswith(".parquet") else pd.read_csv(Path(ir_snapshot_path), keep_default_na=False)
         if set(OFFICIAL_FILINGS_COLUMNS).issubset(set(snapshot.columns)):
             ir_rows = [
-                {**row, "source_id": "issuer_ir", "retrieved_at_utc": fetched_at}
+                {**row, "source_id": "filings:issuer_ir", "retrieved_at_utc": fetched_at}
                 for row in snapshot.to_dict("records")
             ]
             states.append(

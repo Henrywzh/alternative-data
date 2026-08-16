@@ -198,6 +198,7 @@ def test_collect_yfinance_quotes_hk_us_dual_listings_and_diagnostics() -> None:
         baskets=_sample_baskets(),
         basket_memberships=_sample_memberships(),
         as_of_utc="2026-08-13T12:00:00Z",
+        now_utc="2026-08-13T12:00:00Z",
         download_fn=_fake_dual_download,
         stage1_only=True,
     )
@@ -275,6 +276,7 @@ def test_private_entity_bytedance_is_excluded_from_query() -> None:
         baskets=_sample_baskets(),
         basket_memberships=memberships,
         as_of_utc="2026-08-13T12:00:00Z",
+        now_utc="2026-08-13T12:00:00Z",
         download_fn=spy_download,
         stage1_only=True,
     )
@@ -303,6 +305,7 @@ def test_stage1_missing_registry_fails_closed_before_provider_call() -> None:
         baskets=None,
         basket_memberships=None,
         as_of_utc="2026-08-13T12:00:00Z",
+        now_utc="2026-08-13T12:00:00Z",
         download_fn=spy_download,
         stage1_only=True,
     )
@@ -328,6 +331,7 @@ def test_stage1_malformed_entity_interval_fails_closed_before_provider_call() ->
         baskets=_sample_baskets(),
         basket_memberships=_sample_memberships(),
         as_of_utc="2026-08-13T12:00:00Z",
+        now_utc="2026-08-13T12:00:00Z",
         download_fn=spy_download,
         stage1_only=True,
     )
@@ -351,6 +355,7 @@ def test_stage1_missing_listing_status_fails_closed_before_provider_call() -> No
         baskets=_sample_baskets(),
         basket_memberships=_sample_memberships(),
         as_of_utc="2026-08-13T12:00:00Z",
+        now_utc="2026-08-13T12:00:00Z",
         download_fn=spy_download,
         stage1_only=True,
     )
@@ -420,6 +425,7 @@ def test_unsorted_hk_and_us_frames_use_prior_completed_local_session_close() -> 
     result = collect_yfinance_quotes(
         listings,
         as_of_utc=as_of,
+        now_utc=as_of,
         download_fn=download,
         daily_download_fn=daily_download,
         stage1_only=False,
@@ -447,6 +453,7 @@ def test_success_plus_missing_and_ambiguous_listings_is_partial() -> None:
     result = collect_yfinance_quotes(
         listings,
         as_of_utc=as_of,
+        now_utc=as_of,
         download_fn=lambda symbols, **kwargs: downloaded,
         stage1_only=False,
     )
@@ -480,6 +487,7 @@ def test_no_data_failures_and_partial_diagnostics() -> None:
     res = collect_yfinance_quotes(
         _sample_listings(),
         as_of_utc="2026-08-13T12:00:00Z",
+        now_utc="2026-08-13T12:00:00Z",
         download_fn=empty_download,
         stage1_only=False,
     )
@@ -487,10 +495,65 @@ def test_no_data_failures_and_partial_diagnostics() -> None:
     assert res.aggregate_status in ("no_records", "partial")
 
 
+def test_collect_yfinance_quotes_result_depends_only_on_injected_now_utc() -> None:
+    """Regression guard for the 2026-08-16 wall-clock time bomb.
+
+    ``collect_yfinance_quotes`` must derive its notion of "now" exclusively
+    from the injected ``now_utc`` parameter. If a future change reintroduces
+    a bare ``pd.Timestamp.now(tz="UTC")`` call in place of (or in addition
+    to) ``now_utc``, this test fails no matter what the real wall clock
+    reads: it exercises ``now_utc``/``as_of_utc`` pairs both far in the past
+    and far in the future relative to real time, and both must report
+    ``aggregate_status == "available"`` because ``as_of`` sits inside the
+    72h ``CURRENT_RUN_TOLERANCE`` window of the *injected* now in both
+    cases. Using the real wall clock instead would push one or both of
+    these pairs outside tolerance and flip the result to "unavailable".
+    """
+
+    def _download_with_bar_before(as_of: pd.Timestamp) -> object:
+        def _download(symbols, **kwargs):
+            assert "SHARED_SYM" not in symbols, "Duplicate vendor symbol should be excluded"
+            index = pd.DatetimeIndex([as_of - pd.Timedelta(minutes=1)], tz="UTC")
+            columns = pd.MultiIndex.from_tuples([
+                ("9988.HK", "Close"),
+                ("9988.HK", "Volume"),
+                ("BABA", "Close"),
+                ("BABA", "Volume"),
+                ("0700.HK", "Close"),
+                ("0700.HK", "Volume"),
+            ])
+            return pd.DataFrame(
+                [[120.0, 50000.0, 125.0, 10000.0, 440.0, 30000.0]],
+                index=index,
+                columns=columns,
+            )
+
+        return _download
+
+    for now_str in ("2026-01-15T12:00:00Z", "2099-06-15T12:00:00Z"):
+        now_utc = pd.Timestamp(now_str)
+        res = collect_yfinance_quotes(
+            _sample_listings(),
+            entities=_sample_entities(),
+            baskets=_sample_baskets(),
+            basket_memberships=_sample_memberships(),
+            as_of_utc=now_utc,
+            now_utc=now_utc,
+            download_fn=_download_with_bar_before(now_utc),
+            stage1_only=True,
+        )
+        assert res.aggregate_status == "available", (
+            f"now_utc={now_str} produced {res.aggregate_status!r} "
+            f"(issues={res.issues!r}); aggregate_status must be a pure "
+            "function of the injected now_utc, never of the real wall clock"
+        )
+
+
 def test_write_quote_snapshot_atomic_and_contract(tmp_path: Path) -> None:
     res = collect_yfinance_quotes(
         _sample_listings(),
         as_of_utc="2026-08-13T12:00:00Z",
+        now_utc="2026-08-13T12:00:00Z",
         download_fn=_fake_dual_download,
         stage1_only=False,
     )

@@ -811,9 +811,12 @@ def test_official_filings_available_from_populated_frame_and_healthy_source() ->
 
     Before the fix, ``_filings_rows_for_entity`` only read ``news_filings``
     (relation-linked, empty in production) and ignored ``official_filings``
-    (519 rows, direct entity_id/listing_id columns). This also exercises the
-    bare-provider-id-to-namespaced-source-health resolution (row source_id
-    "hkexnews" vs. governing source_id "filings:hkexnews").
+    (519 rows, direct entity_id/listing_id columns). This also exercises exact
+    source_id resolution against the namespaced governing source: the
+    official_filings collector writes the mart row's source_id already
+    namespaced ("filings:hkexnews"), identical to the source_health record
+    for the same provider, so ``resolve()`` matches it exactly with no
+    suffix-guessing fallback.
     """
 
     official_filings = pd.DataFrame(
@@ -822,7 +825,7 @@ def test_official_filings_available_from_populated_frame_and_healthy_source() ->
                 "document_id": "OF1",
                 "entity_id": "TENCENT",
                 "listing_id": "0700_HK",
-                "source_id": "hkexnews",
+                "source_id": "filings:hkexnews",
                 "published_at": FRESH,
                 "accepted_at": FRESH,
             }
@@ -889,6 +892,92 @@ def test_official_filings_available_from_populated_frame_and_healthy_source() ->
     assert cell.status_code != "unavailable"
     assert cell.status_code == "available"
     assert cell.record_count == 1
+
+
+def test_official_filings_bare_source_id_is_partial_not_a_suffix_guess() -> None:
+    """T2: the namespace-suffix fallback in ``_CategorySources.resolve`` is gone.
+
+    A mart row carrying the old bare provider id ("hkexnews") no longer
+    resolves to the namespaced governing source ("filings:hkexnews") by
+    matching the trailing suffix. This is deliberate: that fallback rotted
+    (it silently returns None once a second source shares the same suffix)
+    and is the wrong layer to encode producer identity. A row whose source_id
+    does not exactly match its governing source_health record is an honest
+    ``partial``, with a reason that points at the row's own source_id — never
+    a fabricated ``available``.
+    """
+
+    official_filings = pd.DataFrame(
+        [
+            {
+                "document_id": "OF1",
+                "entity_id": "TENCENT",
+                "listing_id": "0700_HK",
+                "source_id": "hkexnews",
+                "published_at": FRESH,
+                "accepted_at": FRESH,
+            }
+        ]
+    )
+    base_health = _health(
+        filings_sec_edgar={
+            "status": "available",
+            "row_count": 0,
+            "source_latest_at": FRESH,
+            "cadence": "event_driven",
+            "missing_geographies": None,
+            "query_attempted": True,
+            "execution_status": "completed",
+            "completed_at": FRESH,
+        },
+        news_official_ai_rss={
+            "status": "available",
+            "row_count": 0,
+            "source_latest_at": FRESH,
+            "cadence": "event_driven",
+            "query_attempted": True,
+            "execution_status": "completed",
+            "completed_at": FRESH,
+        },
+        official_filings={
+            "status": "available",
+            "row_count": 1,
+            "source_latest_at": FRESH,
+            "cadence": "event_driven",
+            "query_attempted": True,
+            "execution_status": "completed",
+            "completed_at": FRESH,
+        },
+    )
+    health = pd.concat(
+        [
+            base_health,
+            pd.DataFrame(
+                [
+                    {
+                        "source_id": "filings:hkexnews",
+                        "source_kind": "official_filing",
+                        "status": "available",
+                        "row_count": 1,
+                        "source_latest_at": FRESH,
+                        "cadence": "event_driven",
+                        "query_attempted": True,
+                        "execution_status": "completed",
+                        "completed_at": FRESH,
+                    }
+                ]
+            ),
+        ],
+        ignore_index=True,
+    )
+    matrix = _matrix(
+        _snapshot(official_filings=official_filings, health=health)
+    )
+
+    cell = matrix.entity_cell("TENCENT", "filings_news")
+    assert cell.status_code == "partial"
+    assert "hkexnews" in cell.details
+    assert "cannot be matched" in cell.details
 
 
 def test_events_are_no_records_when_registry_read_but_nothing_linked() -> None:

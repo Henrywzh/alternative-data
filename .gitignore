@@ -210,6 +210,21 @@ data/normalized/fred_macro/*
 data/normalized/sec_edgar/*
 !data/normalized/sec_edgar/*.parquet
 
+# research_control_tower: commit the four collectors' standardized local
+# inputs (quote_snapshots, official_filings_v1/_state, earnings_actuals_v1/
+# _state, and the optional macro_collector observations/events/health
+# sidecar) so `config/research_control_tower/build_inputs.toml` always
+# resolves against files that actually exist in a fresh checkout. This repo
+# already lost history once to a data directory that was not explicitly
+# allowlisted here (see the incident note in
+# docs/asia-markets memory: normalized-csv-gitignored-erodes-history) --
+# these rules exist so a missing quote/filing/earnings layer is a visible
+# git diff instead of a silently-ignored file.
+!data/normalized/research_control_tower/
+data/normalized/research_control_tower/*
+!data/normalized/research_control_tower/*.parquet
+!data/normalized/research_control_tower/*.json
+
 # marts: derived analytics parquet files (e.g. daily_provider_economics)
 !data/normalized/marts/
 data/normalized/marts/*

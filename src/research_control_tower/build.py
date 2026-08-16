@@ -1424,6 +1424,47 @@ def _validate_optional_columns(frame: pd.DataFrame, schema_id: str, label: str) 
         raise BuildError(f"{label} schema drift: {'; '.join(detail)}")
 
 
+# official_filings.py / earnings_actuals.py namespace every mart-facing
+# source_id with the same "filings:"/"earnings:" prefix their source_state
+# sidecar already carries (e.g. "filings:hkexnews", "earnings:sec_companyfacts")
+# so the two standardized outputs agree with each other at the point of
+# collection; the coverage matrix then matches a mart row to its governing
+# source_health record by an exact source_id match only (see
+# apps.research_control_tower.control_tower.coverage._CategorySources.resolve).
+# A local input written by a pre-migration collector still carries the old
+# bare provider id ("hkexnews" instead of "filings:hkexnews"). Silently
+# ingesting that would publish a mart whose rows can never resolve to their
+# governing source, so this is rejected as invalid input instead: the
+# generic optional-input failure handling in ``_load_optional`` turns this
+# into an honest ``degraded``/``unavailable`` source state (or a hard
+# BuildError for a ``required`` descriptor), never a silent mis-ingestion.
+_SOURCE_ID_NAMESPACE_PREFIX: dict[str, str] = {
+    OFFICIAL_FILINGS_SCHEMA_ID: "filings:",
+    EARNINGS_ACTUALS_SCHEMA_ID: "earnings:",
+}
+
+
+def _validate_namespaced_source_id(frame: pd.DataFrame, schema_id: str, label: str) -> None:
+    prefix = _SOURCE_ID_NAMESPACE_PREFIX.get(schema_id)
+    if prefix is None or frame.empty or "source_id" not in frame.columns:
+        return
+    unnamespaced = sorted(
+        {
+            value
+            for value in frame["source_id"].astype(str)
+            if value.strip() and not value.startswith(prefix)
+        }
+    )
+    if unnamespaced:
+        raise BuildError(
+            f"{label} carries un-namespaced source_id value(s) {unnamespaced}: "
+            f"expected every row to be prefixed {prefix!r} to match its "
+            "source_health record; this looks like a pre-namespace-migration "
+            "collector output and must be regenerated with the current "
+            "collector, not silently ingested"
+        )
+
+
 def _sort_frame(frame: pd.DataFrame, keys: Sequence[str]) -> pd.DataFrame:
     if frame.empty:
         return frame.reset_index(drop=True)
@@ -1519,6 +1560,7 @@ def _validate_required_optional_inputs(config: BuildConfig) -> None:
             try:
                 frame = _read_local_input(descriptor)
                 _validate_optional_columns(frame, schema_id, descriptor.source_id)
+                _validate_namespaced_source_id(frame, schema_id, descriptor.source_id)
                 state = _optional_state(descriptor, source_kind, schema_id)
                 _apply_source_policy(
                     state,
@@ -1912,6 +1954,7 @@ def _load_optional(
     try:
         frame = _read_local_input(descriptor)
         _validate_optional_columns(frame, schema_id, descriptor.source_id)
+        _validate_namespaced_source_id(frame, schema_id, descriptor.source_id)
     except (OSError, ValueError, TypeError, KeyError, BuildError, pa.ArrowException) as exc:
         state.status = "degraded"
         state.detail = f"optional_input_invalid:{exc}"

@@ -1,0 +1,130 @@
+# Declarative manifest of every optional data-layer input the Research
+# Control Tower build should receive.
+#
+# WHY THIS FILE EXISTS
+# `src/research_control_tower/cli.py` takes every optional input as a
+# repeated `--<kind>-input "source_id|path|format|schema_id"` flag with no
+# discovery and no defaults -- whatever the operator typed by hand is what
+# got built. That is how bundle `b23-live-20260816T0420Z` shipped with
+# `--quote-input` silently omitted: `quote_snapshots.parquet` came out with
+# 0 rows and all 7 Stage 1 listings rendered `unavailable` in production,
+# and the build still reported `degraded` and published anyway.
+#
+# This file makes "which data layers this build should contain" a versioned,
+# reviewable artifact. `scripts/research_control_tower_pipeline.py` reads it
+# and expands each `[[input]]` row into the matching `--<kind>-input` CLI
+# descriptor. In `--strict` mode the pipeline verifies (a) every row with
+# `required = true` exists and is non-empty, and (b) every kind listed in
+# `required_kinds` below has at least one such row at all -- all BEFORE
+# invoking the builder, so a forgotten flag, an empty file, or a deleted
+# `[[input]]` block is a build failure instead of a silent `degraded`
+# publish. Deleting the `quote` block below and running `--strict`
+# demonstrates exactly the regression this file exists to prevent.
+#
+# `kind` must match one of the builder's optional-input flags: quote,
+# official_filing, earnings, macro, news, filing.
+#
+# `schema_id` values are copied verbatim from the *_SCHEMA_ID constants in
+# `src/research_control_tower/build.py` -- they are not guessed.
+#
+# `required_kinds` is a manifest-level declaration, separate from any single
+# row's `required` flag: it says "at least one healthy input of this kind
+# must be declared here at all". A per-row `required = true` only protects
+# against that *specific* row's file going missing/empty while the row
+# itself is left in place (e.g. the official_filings state sidecar); it does
+# nothing if someone deletes the row outright. `required_kinds` is what
+# makes deleting the entire `[[input]]` block for a kind (e.g. dropping
+# `quote` from this file the way `--quote-input` was dropped from the
+# b23-live-20260816T0420Z build command) a `--strict` failure too.
+
+schema_version = 1
+required_kinds = ["quote", "official_filing", "earnings"]
+
+# --- Batch 1: delayed public quote snapshots (scripts/research_control_tower_quote_collector.py) ---
+# This is the layer that went missing in b23-live-20260816T0420Z. Marking it
+# required=true is the whole point of this file: a build that cannot see
+# real quote data must fail --strict instead of publishing silently.
+[[input]]
+kind = "quote"
+source_id = "quote_snapshots"
+path = "data/normalized/research_control_tower/quote_snapshots.parquet"
+format = "parquet"
+schema_id = "quote_snapshots_v1"
+required = true
+description = "Latest delayed public quote snapshot (yfinance) per active Stage 1 listing."
+
+# --- Batch 2: official filing/announcement metadata (scripts/research_control_tower_official_filings.py) ---
+[[input]]
+kind = "official_filing"
+source_id = "official_filings"
+path = "data/normalized/research_control_tower/official_filings_v1.parquet"
+format = "parquet"
+schema_id = "official_filings_v1"
+required = true
+description = "Official filing/announcement metadata (SEC EDGAR submissions + HKEXnews announcement titles)."
+
+[[input]]
+kind = "official_filing"
+source_id = "official_filings_state"
+path = "data/normalized/research_control_tower/official_filings_state.parquet"
+format = "parquet"
+schema_id = "source_state_v1"
+required = true
+description = "Collector source-state sidecar accompanying official_filings_v1 (per-source status/coverage)."
+
+# --- Batch 3: versioned earnings actuals (scripts/research_control_tower_earnings_actuals.py) ---
+[[input]]
+kind = "earnings"
+source_id = "earnings_actuals"
+path = "data/normalized/research_control_tower/earnings_actuals_v1.parquet"
+format = "parquet"
+schema_id = "earnings_actuals_v1"
+required = true
+description = "Versioned earnings actuals (SEC XBRL companyfacts; HKEX-only issuers stay no_records without an approved issuer-IR snapshot)."
+
+[[input]]
+kind = "earnings"
+source_id = "earnings_actuals_state"
+path = "data/normalized/research_control_tower/earnings_actuals_state.parquet"
+format = "parquet"
+schema_id = "source_state_v1"
+required = true
+description = "Collector source-state sidecar accompanying earnings_actuals_v1 (per-source status/coverage)."
+
+# --- Official macro calendar (scripts/research_control_tower_macro_collector.py) ---
+# Distinct from, and unrelated to, the fred_observations_v1 / ofr_timeseries_v1
+# / tw_monthly_revenue_v1 / ecb_fx_rates_v1 macro-input schemas -- those are
+# sourced from OTHER pipelines in this repo (data/normalized/fred_macro,
+# data/normalized/ofr_macro, data/normalized/taiwan_semiconductor_revenue,
+# data/normalized/hk_transport/airline_fx_rates.parquet) and are out of scope
+# for this file, which only declares layers produced by the Control Tower's
+# own four collectors. Left required=false: the collector needs live
+# FRED/BLS/BEA/Fed/ECB/NBS/HK-C&SD access (API keys in `.config`) that is not
+# guaranteed available at build time, and its absence does not blank out a
+# product surface the way the quote layer did.
+[[input]]
+kind = "macro"
+source_id = "macro_collector_observations"
+path = "data/normalized/research_control_tower/macro_observations.parquet"
+format = "parquet"
+schema_id = "macro_collector_v1"
+required = false
+description = "Official macro calendar observations (FRED/ALFRED, BLS, BEA, Fed, ECB, NBS China, HK C&SD)."
+
+[[input]]
+kind = "macro"
+source_id = "macro_collector_events"
+path = "data/normalized/research_control_tower/macro_events.parquet"
+format = "parquet"
+schema_id = "macro_events_v1"
+required = false
+description = "Official macro calendar events accompanying macro_collector_observations."
+
+[[input]]
+kind = "macro"
+source_id = "macro_collector_health"
+path = "data/normalized/research_control_tower/macro_source_health.json"
+format = "json"
+schema_id = "macro_source_health_v1"
+required = false
+description = "Per-source health/status sidecar written by the macro collector run."
