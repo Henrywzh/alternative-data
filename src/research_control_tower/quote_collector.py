@@ -1,7 +1,7 @@
 """Provider adapters for writing local quote snapshot inputs.
 
 The Streamlit app never imports this module.  A scheduled process may call
-``collect_yfinance_quotes`` and write the resulting standardized parquet; the
+collect_yfinance_quotes and write the resulting standardized parquet; the
 normal Control Tower builder then consumes that local file with networking
 disabled.
 """
@@ -17,6 +17,14 @@ from .build import QUOTE_SNAPSHOT_COLUMNS
 
 
 DownloadFunction = Callable[..., pd.DataFrame]
+
+STAGE1_PUBLIC_ENTITY_IDS = {
+    "ALIBABA",
+    "TENCENT",
+    "BAIDU",
+    "KUAISHOU",
+    "BILIBILI",
+}
 
 
 def _empty_quote_frame() -> pd.DataFrame:
@@ -75,6 +83,8 @@ def collect_yfinance_quotes(
     download_fn: DownloadFunction | None = None,
     source_id: str = "market:yfinance",
     latency_class: str = "delayed",
+    entities: pd.DataFrame | None = None,
+    stage1_only: bool = True,
 ) -> pd.DataFrame:
     """Collect one latest minute-bar quote per eligible registry listing.
 
@@ -104,16 +114,42 @@ def collect_yfinance_quotes(
     if eligible.empty:
         return _empty_quote_frame()
 
+    # Exclude private entities (e.g. ByteDance) if entity information is provided
+    if entities is not None and not entities.empty and "entity_id" in entities.columns:
+        private_entity_ids = set(
+            entities.loc[
+                entities.get("entity_type", pd.Series(dtype="string")).astype("string").str.casefold().eq("private"),
+                "entity_id",
+            ].astype("string")
+        )
+        if private_entity_ids:
+            eligible = eligible.loc[~eligible["entity_id"].astype("string").isin(private_entity_ids)]
+
+    if stage1_only and "entity_id" in eligible.columns:
+        eligible = eligible.loc[eligible["entity_id"].astype("string").isin(STAGE1_PUBLIC_ENTITY_IDS)]
+
+    if eligible.empty:
+        return _empty_quote_frame()
+
     symbol_to_listings: dict[str, list[dict[str, Any]]] = {}
     for _, row in eligible.iterrows():
         symbol = _vendor_symbol(row, "yfinance")
         if not symbol:
             continue
+        entity_type = str(row.get("entity_type") or "").strip().lower()
+        if entity_type == "private":
+            continue
+        entity_id = str(row.get("entity_id") or "").strip()
+        if entity_id == "BYTEDANCE":
+            continue
         symbol_to_listings.setdefault(symbol, []).append(row.to_dict())
+
+    # Exclude duplicate vendor symbols mapping to multiple listings
     symbols = sorted(symbol for symbol, rows in symbol_to_listings.items() if len(rows) == 1)
     if not symbols:
         return _empty_quote_frame()
 
+    download_fn_was_none = download_fn is None
     if download_fn is None:
         try:
             import yfinance as yf
@@ -148,6 +184,45 @@ def collect_yfinance_quotes(
             candidate = pd.to_numeric(frame.loc[last_index, "Volume"], errors="coerce")
             if pd.notna(candidate):
                 volume = float(candidate)
+
+        # Produce defensible day change (do not use first intraday bar as previous close without explicit label)
+        day_change_pct: float | object = pd.NA
+        prev_close_val: float | None = None
+
+        # Check for explicit Previous Close column in frame
+        for col in ("Previous Close", "Prev Close", "Previous_Close"):
+            if col in frame.columns:
+                parsed_prev = pd.to_numeric(frame[col], errors="coerce").dropna()
+                if not parsed_prev.empty and float(parsed_prev.iloc[-1]) > 0:
+                    prev_close_val = float(parsed_prev.iloc[-1])
+                    break
+
+        # If live yfinance (download_fn was None), attempt ticker fast_info lookup for previousClose
+        if prev_close_val is None and download_fn_was_none:
+            try:
+                import yfinance as yf
+                t = yf.Ticker(symbol)
+                fast_prev = getattr(t.fast_info, "previous_close", None)
+                if fast_prev is not None and pd.notna(fast_prev) and float(fast_prev) > 0:
+                    prev_close_val = float(fast_prev)
+            except Exception:
+                pass
+
+        if prev_close_val is not None and prev_close_val > 0:
+            day_change_pct = float(round((last_price - prev_close_val) / prev_close_val * 100.0, 4))
+
+        # Determine market status
+        market_status = "unknown"
+        if download_fn_was_none:
+            try:
+                import yfinance as yf
+                t = yf.Ticker(symbol)
+                state = str(t.info.get("marketState") or "").upper()
+                state_map = {"REGULAR": "open", "CLOSED": "closed", "PRE": "pre_market", "POST": "post_market"}
+                market_status = state_map.get(state, "closed")
+            except Exception:
+                market_status = "closed"
+
         listing = symbol_to_listings[symbol][0]
         listing_id = str(listing.get("listing_id") or "").strip()
         canonical_ticker = str(listing.get("canonical_ticker") or "").strip()
@@ -161,10 +236,10 @@ def collect_yfinance_quotes(
             "last_price": last_price,
             "bid": pd.NA,
             "ask": pd.NA,
-            "day_change_pct": pd.NA,
+            "day_change_pct": day_change_pct,
             "volume": volume,
             "currency": str(listing.get("currency") or "").strip(),
-            "market_status": "unknown",
+            "market_status": market_status,
             "latency_class": latency_class,
             "source_id": source_id,
             "source_url": f"https://finance.yahoo.com/quote/{symbol}",

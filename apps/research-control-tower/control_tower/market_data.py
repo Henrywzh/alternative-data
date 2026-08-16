@@ -549,6 +549,31 @@ def normalize_quote_snapshots(
         dropped_duplicate_count=dropped_duplicate_count,
     )
 
+
+
+def format_quote_age(quote_timestamp: object, as_of_utc: object) -> str:
+    """Return a human-readable relative age string for a quote timestamp."""
+    quote_ts = _to_utc_timestamp(quote_timestamp)
+    as_of_ts = _to_utc_timestamp(as_of_utc)
+    if quote_ts is None or as_of_ts is None:
+        return "age unavailable"
+    if quote_ts > as_of_ts:
+        return "future timestamp"
+    diff = as_of_ts - quote_ts
+    total_seconds = int(diff.total_seconds())
+    if total_seconds < 60:
+        return "<1m ago"
+    minutes = total_seconds // 60
+    if minutes < 60:
+        return f"{minutes}m ago"
+    hours = minutes // 60
+    rem_minutes = minutes % 60
+    if hours < 24:
+        return f"{hours}h {rem_minutes}m ago" if rem_minutes else f"{hours}h ago"
+    days = hours // 24
+    rem_hours = hours % 24
+    return f"{days}d {rem_hours}h ago" if rem_hours else f"{days}d ago"
+
 __all__ = [
     "MARKET_BARS_COLUMNS",
     "NormalizationResult",
@@ -558,4 +583,5 @@ __all__ = [
     "normalize_market_bars",
     "normalize_quote_snapshots",
     "resolve_listing_identity",
+    "format_quote_age",
 ]

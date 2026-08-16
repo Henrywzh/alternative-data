@@ -13,7 +13,7 @@ import pandas as pd
 import streamlit as st
 
 from ..filters import apply_event_filters
-from ..market_data import QUOTE_SNAPSHOT_COLUMNS, classify_quote_freshness
+from ..market_data import QUOTE_SNAPSHOT_COLUMNS, classify_quote_freshness, format_quote_age
 from ..models import ControlTowerSnapshot, EventFilters
 from .source_health import classify_source_health
 
@@ -919,12 +919,50 @@ def render_company_page(
     st.markdown("#### Basket and layer memberships")
     st.dataframe(view.memberships, width="stretch", hide_index=True)
     st.markdown("#### Latest market quote")
-    if view.quote_snapshots.empty:
+    if view.entity_type == "private":
+        st.info(
+            f"Not applicable · {_text(view.display_name)} is a private company with no public market listing; "
+            "price, quote, and market data collection are excluded."
+        )
+    elif view.quote_snapshots.empty:
         st.warning(
             "Latest quote unavailable · no quote snapshot artifact or selected-listing row; "
-            "the app did not query a provider."
+            "the app remains no-network/read-only and did not query a provider."
         )
     else:
+        for _, qrow in view.quote_snapshots.iterrows():
+            last_price = qrow.get("last_price")
+            currency = _text(qrow.get("currency")) or ""
+            price_str = f"{currency} {last_price:,.2f}".strip() if pd.notna(last_price) else "Unavailable"
+
+            day_change = qrow.get("day_change_pct")
+            if pd.notna(day_change) and isinstance(day_change, (int, float)):
+                change_str = f"{day_change:+.2f}%"
+            else:
+                change_str = "Day change unavailable"
+
+            qtime = qrow.get("quote_timestamp")
+            age_str = format_quote_age(qtime, snapshot.now_utc)
+            freshness = _text(qrow.get("freshness")) or "delayed"
+            latency = _text(qrow.get("latency_class")) or "delayed"
+            source_id = _text(qrow.get("source_id")) or "market:yfinance"
+            source_url = _text(qrow.get("source_url"))
+
+            source_label = f"{source_id} ({latency})"
+            if source_url.startswith(("http://", "https://")):
+                source_link_html = f'<a class="ct-inline-link" href="{escape(source_url)}" target="_blank" rel="noopener">{escape(source_label)}</a>'
+            else:
+                source_link_html = escape(source_label)
+
+            summary_html = (
+                f'<div class="ct-change" style="margin-bottom: 0.75rem;">'
+                f'<div class="ct-change-title"><strong>{escape(price_str)}</strong> · {escape(change_str)}</div>'
+                f'<div class="ct-change-detail">Quote age: {escape(age_str)} · Freshness: {escape(freshness)}</div>'
+                f'<div class="ct-source-line">Source: {source_link_html} · Delayed market data (no real-time claim)</div>'
+                f'</div>'
+            )
+            st.markdown(summary_html, unsafe_allow_html=True)
+
         st.dataframe(
             _friendly_quote_frame(view.quote_snapshots, viewer_timezone),
             width="stretch",
