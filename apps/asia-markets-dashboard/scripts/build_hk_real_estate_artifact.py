@@ -2717,13 +2717,52 @@ def _load_bd_supply_history_from_committed_artifact() -> pd.DataFrame:
     return _mark_artifact_fallback(pd.DataFrame(sorted(merged.values(), key=lambda row: (row["date"], row["permit_stage"]))), "last committed artifact")
 
 
+FRESHNESS_MAX_DAYS = 45
+
+
+def _extract_latest_date(frame: pd.DataFrame) -> pd.Timestamp | None:
+    if frame.empty:
+        return None
+    date_cols = [
+        col for col in ("date", "observation_date", "observation_month", "period", "as_of_date", "event_date", "quarter_end")
+        if col in frame.columns
+    ]
+    if not date_cols:
+        date_cols = [col for col in frame.columns if any(kw in str(col).lower() for kw in ("date", "period", "month"))]
+
+    max_dates = []
+    for col in date_cols:
+        parsed = pd.to_datetime(frame[col], errors="coerce").dropna()
+        if not parsed.empty:
+            max_dates.append(parsed.max())
+    if not max_dates:
+        return None
+    latest = max(max_dates)
+    if pd.isna(latest):
+        return None
+    return pd.Timestamp(latest)
+
+
 def _load_normalized_or_fetch(dataset_name: str, label: str, fetch_fn) -> pd.DataFrame:
-    """Prefer durable normalized output, with a bounded live-fetch fallback."""
+    """Prefer durable normalized output, with a bounded live-fetch fallback and freshness check."""
     normalized = load_latest_normalized(dataset_name)
     if not normalized.empty:
-        return normalized
-    return _safe_fetch(label, fetch_fn)
+        latest_date = _extract_latest_date(normalized)
+        if latest_date is not None:
+            latest_naive = latest_date.tz_localize(None) if latest_date.tzinfo else latest_date
+            now = pd.Timestamp.now().normalize()
+            if (now - latest_naive.normalize()).days <= FRESHNESS_MAX_DAYS:
+                normalized.attrs["is_cached"] = True
+                return normalized
 
+    fetched = _safe_fetch(label, fetch_fn)
+    if not fetched.empty:
+        fetched.attrs["is_cached"] = False
+        return fetched
+    if not normalized.empty:
+        normalized.attrs["is_cached"] = True
+        return normalized
+    return pd.DataFrame()
 
 def _fetch_centaline_history(index_code: str) -> pd.DataFrame:
     try:
