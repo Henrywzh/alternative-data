@@ -10,6 +10,7 @@ import streamlit as st
 
 from ..components.flight_deck import FlightDeckViewModel, build_flight_deck, render_flight_deck
 from ..coverage import DataCoverageSummary, build_data_coverage_summary
+from ..market_data import format_quote_age
 from ..filters import apply_event_filters, superseded_event_ids
 from ..models import ControlTowerSnapshot, EventFilters
 from .source_health import sanitise_source_detail
@@ -758,6 +759,65 @@ def _render_coverage_matrix(summary: DataCoverageSummary) -> None:
     st.markdown(table_html, unsafe_allow_html=True)
 
 
+
+def _render_stage1_quote_snapshot(
+    snapshot: ControlTowerSnapshot,
+    filters: EventFilters,
+    viewer_timezone: str,
+) -> None:
+    st.markdown("### Stage 1 market quotes (delayed)")
+    quotes = snapshot.quote_snapshots
+    if not quotes.empty and "listing_id" in quotes.columns:
+        selected_entities, selected_listings, _ = _selected_universe(snapshot, filters)
+        if selected_listings:
+            quotes = quotes.loc[quotes["listing_id"].astype("string").isin(selected_listings)].copy()
+    with st.container(border=True):
+        if quotes.empty:
+            st.info("Latest market quotes unavailable · no quote snapshot artifact loaded in data bundle for selected universe; app operates in no-network/read-only mode.")
+            st.markdown(
+                '<div class="ct-change" style="margin-top: 0.5rem; opacity: 0.85;">'
+                '<div class="ct-change-title"><strong>ByteDance</strong> · Private entity</div>'
+                '<div class="ct-change-detail">Not applicable · Private competitor with no public listing or market quote collection</div>'
+                '</div>',
+                unsafe_allow_html=True
+            )
+            return
+        rows_html: list[str] = []
+        for _, qrow in quotes.iterrows():
+            ticker = _text(qrow.get("canonical_ticker")) or _text(qrow.get("provider_symbol"))
+            last_price = qrow.get("last_price")
+            currency = _text(qrow.get("currency"))
+            price_str = f"{currency} {last_price:,.2f}".strip() if pd.notna(last_price) else "—"
+            day_change = qrow.get("day_change_pct")
+            if pd.notna(day_change) and isinstance(day_change, (int, float)):
+                change_str = f"{day_change:+.2f}%"
+            else:
+                change_str = "Unavailable"
+            qtime = qrow.get("quote_timestamp")
+            age_str = format_quote_age(qtime, snapshot.now_utc)
+            source_id = _text(qrow.get("source_id")) or "market:yfinance"
+            latency = _text(qrow.get("latency_class")) or "delayed"
+            source_url = _text(qrow.get("source_url"))
+            link_text = f"{source_id} ({latency})"
+            if source_url.startswith(("http://", "https://")):
+                source_html = f'<a class="ct-inline-link" href="{escape(source_url)}" target="_blank" rel="noopener">{escape(link_text)}</a>'
+            else:
+                source_html = escape(link_text)
+            rows_html.append(
+                f'<div class="ct-change" style="margin-bottom: 0.5rem;">'
+                f'<div class="ct-change-title"><strong>{escape(ticker)}</strong> · {escape(price_str)} · Day change: {escape(change_str)}</div>'
+                f'<div class="ct-change-detail">Quote age: {escape(age_str)} · Source: {source_html}</div>'
+                f'</div>'
+            )
+        rows_html.append(
+            '<div class="ct-change" style="margin-bottom: 0.5rem; opacity: 0.85;">'
+            '<div class="ct-change-title"><strong>ByteDance</strong> · Private entity</div>'
+            '<div class="ct-change-detail">Not applicable · Private competitor with no public listing or market quote collection</div>'
+            '</div>'
+        )
+        st.markdown('<div class="ct-change-list">' + "".join(rows_html) + '</div>', unsafe_allow_html=True)
+
+
 def render_today_page(
     snapshot: ControlTowerSnapshot,
     *,
@@ -807,6 +867,7 @@ def render_today_page(
             unsafe_allow_html=True,
         )
         _render_coverage_matrix(model.coverage_summary)
+    _render_stage1_quote_snapshot(snapshot, filters=filters, viewer_timezone=viewer_timezone)
 
     if not model.consensus_revisions.empty:
         st.markdown("### Consensus revisions")
