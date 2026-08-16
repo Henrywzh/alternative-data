@@ -8,8 +8,16 @@ from html import escape
 import pandas as pd
 import streamlit as st
 
+from ..components.coverage_matrix import (
+    coverage_legend_html,
+    render_stage1_coverage_matrix,
+)
 from ..components.flight_deck import FlightDeckViewModel, build_flight_deck, render_flight_deck
-from ..coverage import DataCoverageSummary, build_data_coverage_summary
+from ..coverage import (
+    DataCoverageSummary,
+    build_data_coverage_summary,
+    build_stage1_coverage_matrix,
+)
 from ..filters import apply_event_filters, superseded_event_ids
 from ..models import ControlTowerSnapshot, EventFilters
 from .source_health import sanitise_source_detail
@@ -807,6 +815,15 @@ def render_today_page(
             unsafe_allow_html=True,
         )
         _render_coverage_matrix(model.coverage_summary)
+        st.markdown("#### Stage 1 coverage matrix")
+        st.caption(
+            "Per-entity and per-listing status derived from the current "
+            "artifact bundle · read-only, no provider queries"
+        )
+        st.markdown(coverage_legend_html(), unsafe_allow_html=True)
+        render_stage1_coverage_matrix(
+            build_stage1_coverage_matrix(snapshot)
+        )
 
     if not model.consensus_revisions.empty:
         st.markdown("### Consensus revisions")

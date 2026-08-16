@@ -1113,7 +1113,7 @@ def test_task7_source_health_marks_stale_and_retrieval_only_not_healthy() -> Non
     assert set(result["source_id"]) == {"fresh", "stale", "retrieval"}
     assert result.loc[result["source_id"].eq("stale"), "display_status"].item() == "stale"
     assert result.loc[result["source_id"].eq("retrieval"), "display_status"].item() != "healthy"
-    assert result.loc[result["source_id"].eq("retrieval"), "age_basis"].item() == "retrieval_only"
+    assert result.loc[result["source_id"].eq("retrieval"), "age_basis"].item() == "none"
     assert result.loc[result["source_id"].eq("stale"), "pit_display"].item() == "not_pit"
     assert result.loc[result["source_id"].eq("retrieval"), "license_display"].item() == "Restricted body · metadata only"
 
@@ -2003,3 +2003,46 @@ def test_task9_workbench_dedup_keeps_distinct_same_source_events() -> None:
         },
     ])
     assert len(_compact_catalyst_frame(frame)) == 2
+
+
+def test_batch0_stage1_matrix_renders_on_today_and_empty_source_health(
+    generated_root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from streamlit.testing.v1 import AppTest
+    import streamlit as st
+
+    empty_health = _frame("source_health.parquet", [])
+    table = pa.Table.from_pandas(
+        _typed(empty_health),
+        schema=_schema("source_health.parquet"),
+        preserve_index=False,
+        safe=False,
+    )
+    pq.write_table(table, generated_root / "source_health.parquet")
+    _write_manifest(
+        generated_root,
+        _manifest(generated_root, previous_build_at="2026-08-13T10:00:00Z"),
+    )
+
+    monkeypatch.setenv("CONTROL_TOWER_ARTIFACT_ROOT", str(generated_root))
+    st.cache_data.clear()
+    app = AppTest.from_file(str(APP_PATH), default_timeout=30).run()
+    assert not app.exception
+    today_text = _app_text(app)
+    assert "Stage 1 coverage matrix" in today_text
+    assert any(
+        "Price / market quotes" in dataframe.value.columns
+        for dataframe in app.dataframe
+    )
+
+    app.session_state["ct_page"] = "Source Health"
+    app = app.run()
+    assert not app.exception
+    source_text = _app_text(app)
+    assert "No source-health rows are available" in source_text
+    assert "Stage 1 coverage matrix" in source_text
+    assert any(
+        "Price / market quotes" in dataframe.value.columns
+        for dataframe in app.dataframe
+    )
