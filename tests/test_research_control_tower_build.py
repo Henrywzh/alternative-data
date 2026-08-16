@@ -17,6 +17,9 @@ import pytest
 
 from src.research_control_tower.build import (
     ARTIFACT_NAMES,
+    EARNINGS_ACTUALS_COLUMNS,
+    EARNINGS_ACTUALS_SCHEMA_ID,
+    EARNINGS_CALENDAR_COLUMNS,
     EVENT_LINK_COLUMNS,
     EVENT_OUTPUT_COLUMNS,
     EVENT_WATCH_QUESTION_COLUMNS,
@@ -25,11 +28,15 @@ from src.research_control_tower.build import (
     FRED_META_SCHEMA_ID,
     FRED_OBSERVATIONS_SCHEMA_ID,
     NEWS_SCHEMA_ID,
+    OFFICIAL_FILINGS_COLUMNS,
+    OFFICIAL_FILINGS_SCHEMA_ID,
     OFR_META_SCHEMA_ID,
     OFR_OBSERVATIONS_SCHEMA_ID,
     REGISTRY_OUTPUT_COLUMNS,
     QUOTE_SNAPSHOT_COLUMNS,
     QUOTE_SNAPSHOT_SCHEMA_ID,
+    SOURCE_STATE_COLUMNS,
+    SOURCE_STATE_SCHEMA_ID,
     TAIWAN_REVENUE_SCHEMA_ID,
     TASK3_REVISION_COLUMNS,
     TASK3_SNAPSHOT_COLUMNS,
@@ -405,6 +412,9 @@ def test_build_writes_stable_artifact_set(tmp_path, minimal_inputs):
         "consensus_revisions.parquet",
         "quote_snapshots.parquet",
         "news_filings.parquet",
+        "official_filings.parquet",
+        "earnings_calendar.parquet",
+        "earnings_actuals.parquet",
         "source_health.parquet",
         "build_manifest.json",
     }
@@ -1657,3 +1667,367 @@ def test_cli_help_exposes_build_command():
     )
     assert result.returncode == 0
     assert "build" in result.stdout
+
+
+def _write_official_filings_inputs(tmp_path: Path) -> tuple[Path, Path]:
+    filings = pd.DataFrame(
+        [
+            {
+                "document_id": "hkexnews:2026081201234",
+                "document_type": "announcement",
+                "event_class": "earnings_results",
+                "source_id": "hkexnews",
+                "headline": "ANNOUNCEMENT OF THE RESULTS FOR THE THREE AND SIX MONTHS ENDED 30 JUNE 2026",
+                "publisher": "HKEXnews",
+                "published_at": "2026-08-12T08:31:00Z",
+                "accepted_at": "2026-08-12T08:31:00Z",
+                "scheduled_date": None,
+                "retrieved_at_utc": "2026-08-13T12:00:00Z",
+                "source_url": "https://www1.hkexnews.hk/listedco/listconews/sehk/2026/0812/2026081201234.htm",
+                "language": "en",
+                "entity_id": "TENCENT",
+                "listing_id": "0700_HK",
+                "canonical_ticker": "0700.HK",
+                "reporting_period_label": "1H2026",
+                "reporting_period_start": "2025-12-30",
+                "reporting_period_end": "2026-06-30",
+                "date_precision": "minute",
+                "source_timezone": "Asia/Hong_Kong",
+                "event_status": "observed",
+                "source_quality": "official_metadata",
+                "pit_class": "snapshot_from_live_source",
+                "source_license_class": "official_public_metadata",
+                "content_hash_if_permitted": "",
+                "source_note": "fixture HKEX announcement metadata",
+                "registry_version": "v1",
+            },
+            {
+                "document_id": "sec:0001104659-26-096226",
+                "document_type": "filing",
+                "event_class": "general",
+                "source_id": "sec_edgar_submissions",
+                "headline": "Alibaba Group Holding Ltd — Form 6-K — FORM 6-K",
+                "publisher": "SEC EDGAR",
+                "published_at": "2026-08-10T14:02:25Z",
+                "accepted_at": "2026-08-10T14:02:25Z",
+                "scheduled_date": None,
+                "retrieved_at_utc": "2026-08-13T12:00:00Z",
+                "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/000110465926096226/tm2623260d1_6k.htm",
+                "language": "en",
+                "entity_id": "ALIBABA",
+                "listing_id": "BABA_US",
+                "canonical_ticker": "BABA.US",
+                "reporting_period_label": "",
+                "reporting_period_start": None,
+                "reporting_period_end": None,
+                "date_precision": "minute",
+                "source_timezone": "UTC",
+                "event_status": "observed",
+                "source_quality": "official_metadata",
+                "pit_class": "snapshot_from_live_source",
+                "source_license_class": "official_public_metadata",
+                "content_hash_if_permitted": "",
+                "source_note": "fixture SEC submissions metadata",
+                "registry_version": "v1",
+            },
+        ],
+        columns=OFFICIAL_FILINGS_COLUMNS,
+    )
+    state = pd.DataFrame(
+        [
+            {
+                "source_id": "filings:sec_edgar_submissions",
+                "source_kind": "official_filing",
+                "status": "available",
+                "detail": "sec_submissions_metadata rows=1",
+                "row_count": 1,
+                "retrieved_at_utc": "2026-08-13T12:00:00Z",
+                "source_url": "https://data.sec.gov/submissions/",
+                "pit_class": "snapshot_from_live_source",
+                "source_license_class": "official_public_metadata",
+                "cadence": "daily",
+            },
+            {
+                "source_id": "filings:hkexnews",
+                "source_kind": "official_filing",
+                "status": "available",
+                "detail": "hkexnews_title_search rows=1",
+                "row_count": 1,
+                "retrieved_at_utc": "2026-08-13T12:00:00Z",
+                "source_url": "https://www1.hkexnews.hk/",
+                "pit_class": "snapshot_from_live_source",
+                "source_license_class": "official_public_metadata",
+                "cadence": "daily",
+            },
+            {
+                "source_id": "filings:issuer_ir",
+                "source_kind": "official_filing",
+                "status": "no_records",
+                "detail": "no machine-readable issuer IR snapshot configured",
+                "row_count": 0,
+                "retrieved_at_utc": "2026-08-13T12:00:00Z",
+                "pit_class": "snapshot_from_live_source",
+                "source_license_class": "official_public_metadata",
+                "cadence": "monthly",
+            },
+            {
+                "source_id": "filings:bytedance",
+                "source_kind": "official_filing",
+                "status": "not_applicable",
+                "detail": "private company; no public filings",
+                "row_count": 0,
+                "retrieved_at_utc": "2026-08-13T12:00:00Z",
+                "pit_class": "snapshot_from_live_source",
+                "source_license_class": "official_public_metadata",
+                "cadence": "",
+            },
+        ],
+        columns=SOURCE_STATE_COLUMNS,
+    )
+    filings_path = tmp_path / "official_filings_v1.parquet"
+    state_path = tmp_path / "official_filings_state.parquet"
+    filings.to_parquet(filings_path, index=False)
+    state.to_parquet(state_path, index=False)
+    return filings_path, state_path
+
+
+def _write_earnings_inputs(tmp_path: Path) -> tuple[Path, Path]:
+    actuals = pd.DataFrame(
+        [
+            {
+                "actual_id": "actual:revenue:2025-04-01:2026-03-31:A1:1",
+                "version": 1,
+                "supersedes_actual_id": "",
+                "entity_id": "ALIBABA",
+                "listing_id": "BABA_US",
+                "canonical_ticker": "BABA.US",
+                "metric": "revenue",
+                "period_label": "FY2026",
+                "period_start": "2025-04-01",
+                "period_end": "2026-03-31",
+                "reported_value": 52504000000.0,
+                "normalized_value": 52504000000.0,
+                "normalization_note": "as_reported; no normalization applied",
+                "currency": "CNY",
+                "unit": "CNY",
+                "accounting_basis": "us-gaap as reported",
+                "filing_at": "2026-06-25T00:00:00Z",
+                "published_at": "2026-06-25T00:00:00Z",
+                "retrieved_at_utc": "2026-08-13T12:00:00Z",
+                "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/",
+                "accession_no": "A1",
+                "form": "20-F",
+                "xbrl_frame": "CY2025",
+                "revision_reason": "initial_filing",
+                "is_restatement": False,
+                "source_id": "sec_companyfacts",
+                "source_quality": "official_metadata",
+                "pit_class": "snapshot_from_live_source",
+                "source_license_class": "official_public_metadata",
+                "source_note": "fixture companyfacts",
+                "registry_version": "v1",
+            },
+            {
+                "actual_id": "actual:revenue:2025-04-01:2026-03-31:A2:2",
+                "version": 2,
+                "supersedes_actual_id": "actual:revenue:2025-04-01:2026-03-31:A1:1",
+                "entity_id": "ALIBABA",
+                "listing_id": "BABA_US",
+                "canonical_ticker": "BABA.US",
+                "metric": "revenue",
+                "period_label": "FY2026",
+                "period_start": "2025-04-01",
+                "period_end": "2026-03-31",
+                "reported_value": 53120000000.0,
+                "normalized_value": 53120000000.0,
+                "normalization_note": "as_reported; no normalization applied",
+                "currency": "CNY",
+                "unit": "CNY",
+                "accounting_basis": "us-gaap as reported",
+                "filing_at": "2026-07-30T00:00:00Z",
+                "published_at": "2026-07-30T00:00:00Z",
+                "retrieved_at_utc": "2026-08-13T12:00:00Z",
+                "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/",
+                "accession_no": "A2",
+                "form": "20-F/A",
+                "xbrl_frame": "CY2025",
+                "revision_reason": "restatement_or_amended_filing",
+                "is_restatement": True,
+                "source_id": "sec_companyfacts",
+                "source_quality": "official_metadata",
+                "pit_class": "snapshot_from_live_source",
+                "source_license_class": "official_public_metadata",
+                "source_note": "fixture companyfacts",
+                "registry_version": "v1",
+            },
+        ],
+        columns=EARNINGS_ACTUALS_COLUMNS,
+    )
+    state = pd.DataFrame(
+        [
+            {
+                "source_id": "earnings:sec_companyfacts",
+                "source_kind": "earnings",
+                "status": "available",
+                "detail": "sec_companyfacts rows=2",
+                "row_count": 2,
+                "retrieved_at_utc": "2026-08-13T12:00:00Z",
+                "source_url": "https://data.sec.gov/api/xbrl/companyfacts/",
+                "pit_class": "snapshot_from_live_source",
+                "source_license_class": "official_public_metadata",
+                "cadence": "weekly",
+            },
+            {
+                "source_id": "earnings:hkex_issuer_ir",
+                "source_kind": "earnings",
+                "status": "no_records",
+                "detail": "HKEX-only issuers without SEC XBRL actuals",
+                "row_count": 0,
+                "retrieved_at_utc": "2026-08-13T12:00:00Z",
+                "pit_class": "snapshot_from_live_source",
+                "source_license_class": "official_public_metadata",
+                "cadence": "monthly",
+            },
+            {
+                "source_id": "earnings:bytedance",
+                "source_kind": "earnings",
+                "status": "not_applicable",
+                "detail": "private company with no public earnings disclosure",
+                "row_count": 0,
+                "retrieved_at_utc": "2026-08-13T12:00:00Z",
+                "pit_class": "snapshot_from_live_source",
+                "source_license_class": "official_public_metadata",
+                "cadence": "",
+            },
+        ],
+        columns=SOURCE_STATE_COLUMNS,
+    )
+    actuals_path = tmp_path / "earnings_actuals_v1.parquet"
+    state_path = tmp_path / "earnings_actuals_state.parquet"
+    actuals.to_parquet(actuals_path, index=False)
+    state.to_parquet(state_path, index=False)
+    return actuals_path, state_path
+
+
+def test_official_filings_and_earnings_inputs_populate_optional_artifacts(tmp_path, minimal_inputs):
+    filings_path, filings_state = _write_official_filings_inputs(tmp_path)
+    actuals_path, actuals_state = _write_earnings_inputs(tmp_path)
+    config = replace(
+        minimal_inputs,
+        official_filing_inputs=(
+            _input("official_filings", filings_path, OFFICIAL_FILINGS_SCHEMA_ID),
+            _input("official_filings_state", filings_state, SOURCE_STATE_SCHEMA_ID),
+        ),
+        earnings_inputs=(
+            _input("earnings_actuals", actuals_path, EARNINGS_ACTUALS_SCHEMA_ID),
+            _input("earnings_actuals_state", actuals_state, SOURCE_STATE_SCHEMA_ID),
+        ),
+    )
+
+    manifest = build_control_tower_marts(config)
+    filings = pd.read_parquet(_published(config, "official_filings.parquet"))
+    calendar = pd.read_parquet(_published(config, "earnings_calendar.parquet"))
+    actuals = pd.read_parquet(_published(config, "earnings_actuals.parquet"))
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+
+    assert len(filings) == 2
+    assert list(filings.columns) == OFFICIAL_FILINGS_COLUMNS
+    assert set(filings["source_id"]) == {"hkexnews", "sec_edgar_submissions"}
+    assert not any(column in filings.columns for column in ("body_text", "filing_content", "summary"))
+    assert filings["content_hash_if_permitted"].isna().all()
+
+    assert len(calendar) == 1
+    row = calendar.iloc[0]
+    assert row["entity_id"] == "TENCENT"
+    assert row["listing_id"] == "0700_HK"
+    assert row["event_type"] == "interim_results"
+    assert row["date_basis"] == "announcement_date"
+    assert row["date_precision"] == "day"
+    assert row["status"] == "observed"
+    assert row["event_date"] == pd.Timestamp("2026-08-12").date()
+    assert row["source_timezone"] == "Asia/Hong_Kong"
+
+    assert len(actuals) == 2
+    revenue = actuals[actuals["metric"].eq("revenue")].sort_values("version")
+    assert list(revenue["version"]) == [1, 2]
+    assert list(revenue["reported_value"]) == [52504000000.0, 53120000000.0]
+    assert revenue.iloc[1]["supersedes_actual_id"] == revenue.iloc[0]["actual_id"]
+    assert revenue.iloc[1]["is_restatement"].item() is True
+    assert revenue.iloc[0]["currency"] == "CNY"
+    assert revenue.iloc[0]["normalized_value"] == revenue.iloc[0]["reported_value"]
+
+    assert manifest.artifacts["official_filings.parquet"]["status"] == "available"
+    assert manifest.artifacts["earnings_calendar.parquet"]["status"] == "available"
+    assert manifest.artifacts["earnings_actuals.parquet"]["status"] == "available"
+    assert "official_filings" not in manifest.degraded_inputs
+    assert "earnings_actuals" not in manifest.degraded_inputs
+
+    by_source = health.set_index("source_id")["status"].to_dict()
+    assert by_source["filings:hkexnews"] == "available"
+    assert by_source["filings:issuer_ir"] == "no_records"
+    assert by_source["filings:bytedance"] == "not_applicable"
+    assert by_source["earnings:sec_companyfacts"] == "available"
+    assert by_source["earnings:hkex_issuer_ir"] == "no_records"
+    assert by_source["earnings:bytedance"] == "not_applicable"
+
+
+def test_official_filings_unresolved_relations_are_dropped_and_flagged(tmp_path, minimal_inputs):
+    filings_path, filings_state = _write_official_filings_inputs(tmp_path)
+    frame = pd.read_parquet(filings_path)
+    frame.loc[0, "entity_id"] = "NOT_A_REGISTRY_ENTITY"
+    frame.loc[0, "listing_id"] = "NOT_A_LISTING"
+    frame.to_parquet(filings_path, index=False)
+    config = replace(
+        minimal_inputs,
+        official_filing_inputs=(
+            _input("official_filings", filings_path, OFFICIAL_FILINGS_SCHEMA_ID),
+            _input("official_filings_state", filings_state, SOURCE_STATE_SCHEMA_ID),
+        ),
+    )
+
+    manifest = build_control_tower_marts(config)
+    filings = pd.read_parquet(_published(config, "official_filings.parquet"))
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    assert len(filings) == 1
+    assert set(filings["entity_id"]) == {"ALIBABA"}
+    state = health.loc[health["source_id"].eq("official_filings")].iloc[0]
+    assert "dropped_unresolved_relations=1" in state["detail"]
+    assert any(
+        error["code"] == "unresolved_relations"
+        for error in manifest.validation_errors
+    )
+
+
+def test_batch23_missing_inputs_are_typed_empty_and_degraded(minimal_inputs):
+    manifest = build_control_tower_marts(minimal_inputs)
+    filings = pd.read_parquet(_published(minimal_inputs, "official_filings.parquet"))
+    calendar = pd.read_parquet(_published(minimal_inputs, "earnings_calendar.parquet"))
+    actuals = pd.read_parquet(_published(minimal_inputs, "earnings_actuals.parquet"))
+    assert filings.empty and list(filings.columns) == OFFICIAL_FILINGS_COLUMNS
+    assert calendar.empty and list(calendar.columns) == EARNINGS_CALENDAR_COLUMNS
+    assert actuals.empty and list(actuals.columns) == EARNINGS_ACTUALS_COLUMNS
+    assert "official_filings" in manifest.degraded_inputs
+    assert "earnings_actuals" in manifest.degraded_inputs
+
+
+def test_batch23_future_rows_fail_closed(tmp_path, minimal_inputs):
+    filings_path, filings_state = _write_official_filings_inputs(tmp_path)
+    frame = pd.read_parquet(filings_path)
+    frame.loc[0, "published_at"] = "2026-08-14T08:31:00Z"  # after as_of_utc
+    frame.to_parquet(filings_path, index=False)
+    config = replace(
+        minimal_inputs,
+        official_filing_inputs=(
+            _input("official_filings", filings_path, OFFICIAL_FILINGS_SCHEMA_ID),
+            _input("official_filings_state", filings_state, SOURCE_STATE_SCHEMA_ID),
+        ),
+    )
+
+    manifest = build_control_tower_marts(config)
+    filings = pd.read_parquet(_published(config, "official_filings.parquet"))
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    assert filings.empty
+    state = health.loc[health["source_id"].eq("official_filings")].iloc[0]
+    assert state["status"] == "degraded"
+    assert "future_row_beyond_as_of" in state["detail"]
+    assert "official_filings" in manifest.degraded_inputs

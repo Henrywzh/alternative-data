@@ -82,7 +82,8 @@ def _columns() -> dict[str, list[str]]:
             "event_type", "metric_name", "reference_period", "observation_date",
             "release_at", "actual_value", "unit", "frequency", "first_observed_at",
             "source_published_at", "retrieved_at_utc", "source_url", "pit_class",
-            "source_license_class", "is_provisional", "registry_version",
+            "source_license_class", "is_provisional", "realtime_start", "realtime_end",
+            "registry_version",
         ],
         "consensus_snapshots.parquet": [
             "snapshot_id", "provider", "entity_id", "listing_id",
@@ -120,6 +121,32 @@ def _columns() -> dict[str, list[str]]:
             "source_license_class", "content_hash_if_permitted",
             "derived_summary_if_permitted",
         ],
+        "official_filings.parquet": [
+            "document_id", "document_type", "event_class", "source_id", "headline",
+            "publisher", "published_at", "accepted_at", "scheduled_date",
+            "retrieved_at_utc", "source_url", "language", "entity_id", "listing_id",
+            "canonical_ticker", "reporting_period_label", "reporting_period_start",
+            "reporting_period_end", "date_precision", "source_timezone",
+            "event_status", "source_quality", "pit_class", "source_license_class",
+            "content_hash_if_permitted", "source_note", "registry_version",
+        ],
+        "earnings_calendar.parquet": [
+            "calendar_id", "entity_id", "listing_id", "canonical_ticker",
+            "period_label", "period_start", "period_end", "event_type", "event_date",
+            "date_precision", "date_basis", "source_timezone", "status", "source_id",
+            "source_url", "headline", "published_at", "retrieved_at_utc",
+            "source_quality", "pit_class", "source_license_class", "source_note",
+            "registry_version",
+        ],
+        "earnings_actuals.parquet": [
+            "actual_id", "version", "supersedes_actual_id", "entity_id", "listing_id",
+            "canonical_ticker", "metric", "period_label", "period_start", "period_end",
+            "reported_value", "normalized_value", "normalization_note", "currency",
+            "unit", "accounting_basis", "filing_at", "published_at",
+            "retrieved_at_utc", "source_url", "accession_no", "form", "xbrl_frame",
+            "revision_reason", "is_restatement", "source_id", "source_quality",
+            "pit_class", "source_license_class", "source_note", "registry_version",
+        ],
         "source_health.parquet": [
             "source_id", "input_path", "source_kind", "status", "required",
             "row_count", "first_observation_at", "latest_observation_at",
@@ -144,7 +171,9 @@ def _typed_frame(name: str, frame: pd.DataFrame) -> pd.DataFrame:
     frame = frame.copy()
     date_columns = {
         "active_from", "active_to", "mapping_verified_at", "review_by",
-        "observation_date", "estimate_period_end",
+        "observation_date", "estimate_period_end", "scheduled_date",
+        "reporting_period_start", "reporting_period_end", "period_start",
+        "period_end", "event_date",
     }
     timestamp_columns = {
         "starts_at", "ends_at", "source_published_at", "first_observed_at",
@@ -153,17 +182,22 @@ def _typed_frame(name: str, frame: pd.DataFrame) -> pd.DataFrame:
         "prior_provider_asof", "cutoff_at", "prior_snapshot_at", "published_at",
         "first_observation_at",
         "latest_observation_at", "source_latest_at", "quote_timestamp",
+        "accepted_at", "filing_at",
     }
-    boolean_columns = {"collection_eligible", "primary_listing", "automated", "is_provisional", "required"}
+    boolean_columns = {
+        "collection_eligible", "primary_listing", "automated", "is_provisional",
+        "required", "is_restatement",
+    }
     integer_columns = {
         "observation_version", "fiscal_year", "analyst_count", "provider_contributor_count",
         "lookback_days", "current_analyst_count", "prior_analyst_count",
-        "analyst_count_change", "row_count",
+        "analyst_count_change", "row_count", "version",
     }
     float_columns = {
         "confidence", "value", "low_value", "high_value", "current_value",
         "current_dispersion", "prior_value", "revision_value", "revision_pct",
         "dispersion", "last_price", "bid", "ask", "day_change_pct", "volume",
+        "reported_value", "normalized_value",
     }
     for column in date_columns & set(frame.columns):
         frame[column] = pd.to_datetime(frame[column], errors="coerce").dt.date
@@ -185,7 +219,9 @@ def _fixture_schema(name: str) -> pa.Schema:
         columns.insert(9, "importance")
     date_columns = {
         "active_from", "active_to", "mapping_verified_at", "review_by",
-        "observation_date", "estimate_period_end",
+        "observation_date", "estimate_period_end", "scheduled_date",
+        "reporting_period_start", "reporting_period_end", "period_start",
+        "period_end", "event_date",
     }
     timestamp_columns = {
         "starts_at", "ends_at", "source_published_at", "first_observed_at",
@@ -194,17 +230,22 @@ def _fixture_schema(name: str) -> pa.Schema:
         "prior_provider_asof", "cutoff_at", "prior_snapshot_at", "published_at",
         "first_observation_at",
         "latest_observation_at", "source_latest_at", "quote_timestamp",
+        "accepted_at", "filing_at",
     }
-    boolean_columns = {"collection_eligible", "primary_listing", "automated", "is_provisional", "required"}
+    boolean_columns = {
+        "collection_eligible", "primary_listing", "automated", "is_provisional",
+        "required", "is_restatement",
+    }
     integer_columns = {
         "observation_version", "fiscal_year", "analyst_count", "provider_contributor_count",
         "lookback_days", "current_analyst_count", "prior_analyst_count",
-        "analyst_count_change", "row_count",
+        "analyst_count_change", "row_count", "version",
     }
     float_columns = {
         "confidence", "value", "low_value", "high_value", "current_value",
         "current_dispersion", "prior_value", "revision_value", "revision_pct",
         "dispersion", "last_price", "bid", "ask", "day_change_pct", "volume",
+        "reported_value", "normalized_value",
     }
     fields = []
     for column in columns:
@@ -347,6 +388,9 @@ def _write_bundle(root: Path) -> None:
     ])
     frames["quote_snapshots.parquet"] = _frame("quote_snapshots.parquet", [])
     frames["news_filings.parquet"] = _frame("news_filings.parquet", [])
+    frames["official_filings.parquet"] = _frame("official_filings.parquet", [])
+    frames["earnings_calendar.parquet"] = _frame("earnings_calendar.parquet", [])
+    frames["earnings_actuals.parquet"] = _frame("earnings_actuals.parquet", [])
     frames["source_health.parquet"] = _frame("source_health.parquet", [
         {"source_id": "fixture", "input_path": "fixture", "source_kind": "fixture", "status": "available", "required": True, "row_count": 1, "schema_version": "fixture_v1", "detail": "fixture"},
         {"source_id": "consensus", "input_path": "", "source_kind": "consensus", "status": "unavailable", "required": False, "row_count": 0, "schema_version": "fixture_v1", "detail": "optional fixture"},

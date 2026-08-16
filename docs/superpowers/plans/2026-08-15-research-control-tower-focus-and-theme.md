@@ -99,17 +99,23 @@ contract before introducing a larger market-bars mart.
 Filings are the authoritative company-event layer and should precede both
 earnings actuals and broad news ingestion.
 
-- [ ] Build metadata-only adapters for SEC, HKEX and issuer IR/exchange sources
-  relevant to the Stage 1 public listings.
-- [ ] Capture headline/document type, issuer/listing, publication and accepted
+- [x] Build metadata-only adapters for SEC, HKEX and issuer IR/exchange sources
+  relevant to the Stage 1 public listings. SEC submissions and HKEXnews title
+  search adapters collected 519 live rows on 2026-08-16; the issuer-IR adapter
+  consumes only an explicit standardized snapshot and honestly reports
+  `no_records` when none is configured.
+- [x] Capture headline/document type, issuer/listing, publication and accepted
   times when available, reporting period, source URL, source quality, content
   hash if permitted and retrieval time. Do not store document bodies in the
   portable Control Tower bundle.
-- [ ] Derive next/previous earnings event metadata from official calendars or
+- [x] Derive next/previous earnings event metadata from official calendars or
   filings, with an explicit `date_precision` and source-native timezone.
-- [ ] Add official company/competitor update metadata for ByteDance only where
+  The earnings-calendar mart keeps `date_basis` (announcement vs filing date).
+- [x] Add official company/competitor update metadata for ByteDance only where
   the source is public and legally reusable; do not treat it as a listed issuer.
-- [ ] Make `Official filings and news metadata` distinguish no records from an
+  ByteDance stays an explicit `not_applicable` state: no public reusable
+  disclosure layer is configured.
+- [x] Make `Official filings and news metadata` distinguish no records from an
   unconnected provider.
 
 ### Batch 3 — earnings actuals
@@ -117,14 +123,18 @@ earnings actuals and broad news ingestion.
 This batch reuses the official filing layer rather than treating an aggregator
 as the accounting source of truth.
 
-- [ ] Add an `earnings_actuals` artifact or an explicitly versioned extension
+- [x] Add an `earnings_actuals` artifact or an explicitly versioned extension
   to the financial mart with revenue, EPS, operating income, net income,
   period, currency, accounting basis, filing/publication time and source link.
-- [ ] Preserve reported values separately from normalized values and flag
+  48 live SEC XBRL companyfacts rows published for Alibaba and Baidu on
+  2026-08-16; Bilibili's delisted CIK 404s and stays an honest `partial` gap.
+- [x] Preserve reported values separately from normalized values and flag
   restatements/revisions rather than overwriting the original observation.
-- [ ] Start with the five public Stage 1 companies; ByteDance is `partial` or
+- [x] Start with the five public Stage 1 companies; ByteDance is `partial` or
   `not_applicable` unless a public company disclosure supplies the value.
-- [ ] Show earnings history and latest reporting period on the Company page,
+  Alibaba/Baidu `available`; Tencent/Kuaishou/Bilibili remain honest
+  `no_records` (no issuer-IR snapshot); ByteDance `not_applicable`.
+- [x] Show earnings history and latest reporting period on the Company page,
   including the source and coverage caveat.
 
 ### Batch 4 — macro calendar and observations
