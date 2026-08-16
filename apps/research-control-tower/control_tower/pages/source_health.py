@@ -10,6 +10,7 @@ from typing import Mapping
 import pandas as pd
 import streamlit as st
 
+from ..components.coverage_matrix import coverage_legend_html
 from ..models import ControlTowerSnapshot
 
 
@@ -180,6 +181,10 @@ def _status_class(status: str, *, age_days: float | None, threshold: int | None,
         return "degraded"
     if explicit == "stale":
         return "stale"
+    if explicit == "not_applicable":
+        return "not_applicable"
+    if explicit == "no_records":
+        return "no_records"
     if explicit not in {"available", "success", "ok"}:
         return "unclassified"
     if age_days is not None and age_basis != "none":
@@ -195,11 +200,20 @@ def _display_label(display_status: str, entitlement_status: str, raw_status: str
         if entitlement_status == "denied":
             return "Entitlement denied"
         return "Entitlement required"
+    if display_status == "no_records":
+        label = "No records"
+    elif display_status == "not_applicable":
+        label = "Not applicable"
     if display_status == "unclassified" and raw_status in {"available", "success", "ok"}:
         label = "Available · Freshness not classified"
-    else:
+    elif display_status not in {"no_records", "not_applicable"}:
         label = display_status.replace("_", " ").title()
-    if entitlement_status == "unknown" and display_status not in {"failed", "unavailable"}:
+    if entitlement_status == "unknown" and display_status not in {
+        "failed",
+        "unavailable",
+        "no_records",
+        "not_applicable",
+    }:
         # Keep this explicit in the table; it prevents a license class from
         # being mistaken for an active entitlement.
         return label + " · Entitlement not evidenced"
@@ -279,7 +293,21 @@ def classify_source_health(
         else:
             age_days = max(0.0, float((reference - age_at).total_seconds() / 86400.0))
 
-        if future and status not in {
+        raw_row_count = row.get("row_count")
+        row_count_value = None if raw_row_count is None or pd.isna(raw_row_count) else raw_row_count
+        try:
+            reported_rows = None if row_count_value is None else int(row_count_value)
+        except (TypeError, ValueError):
+            reported_rows = None
+
+        if (
+            reported_rows == 0
+            and status in {"available", "success", "ok"}
+        ):
+            # A successful query with zero matching rows is "no records", not
+            # healthy coverage; an unconnected/failed source stays unavailable.
+            display_status = "no_records"
+        elif future and status not in {
             "failed", "error", "schema_error", "conflicted", "review_required",
             "entitlement_required", "entitlement_denied", "unavailable", "degraded", "stale",
         }:
@@ -359,6 +387,8 @@ def source_health_counts(classified: pd.DataFrame) -> dict[str, int]:
         "healthy": int(display_status.eq("healthy").sum()),
         "freshness_unclassified": int(display_status.eq("unclassified").sum()),
         "stale": int(display_status.eq("stale").sum()),
+        "no_records": int(display_status.eq("no_records").sum()),
+        "not_applicable": int(display_status.eq("not_applicable").sum()),
         "unavailable_degraded": int(
             raw_status.isin({"unavailable", "degraded"}).sum()
         ),
@@ -411,6 +441,25 @@ def _source_display_name(value: object) -> str:
     return text.replace("_", " ").replace(":", " · ").title() or "Source unavailable"
 
 
+def _render_stage1_coverage_matrix(snapshot: ControlTowerSnapshot) -> None:
+    """Render the deterministic Stage 1 entity/listing coverage matrix."""
+
+    from ..components.coverage_matrix import (
+        render_stage1_coverage_matrix as render_matrix,
+    )
+    from ..coverage import build_stage1_coverage_matrix
+
+    matrix = build_stage1_coverage_matrix(snapshot)
+    st.markdown("### Stage 1 coverage matrix")
+    st.caption(
+        "Per-entity and per-listing status across the focus universe · derived "
+        "from artifact presence, row counts, linkage, freshness and source "
+        "health · read-only, no provider queries"
+    )
+    st.markdown(coverage_legend_html(), unsafe_allow_html=True)
+    render_matrix(matrix)
+
+
 def render_source_health_page(
     snapshot: ControlTowerSnapshot,
     *,
@@ -420,12 +469,16 @@ def render_source_health_page(
 
     classified = classify_source_health(snapshot.source_health, now_utc=snapshot.now_utc)
     st.markdown("### Source Health")
-    st.caption("Collector/provider state · freshness · schema and entitlement caveats · metadata only")
+    st.caption(
+        "Collector/provider state · freshness · schema and entitlement "
+        "caveats · metadata only"
+    )
     if classified.empty:
         st.info("No source-health rows are available in this snapshot.")
         return classified
 
     counts = source_health_counts(classified)
+    st.markdown(coverage_legend_html(), unsafe_allow_html=True)
     status_cols = st.columns(4)
     status_cols[0].metric("Sources", counts["sources"])
     status_cols[1].metric("Available", counts["available"])
@@ -468,6 +521,7 @@ def render_source_health_page(
                 f'entitlement {escape(_text(row.get("entitlement_status")))} · evidence {escape(_text(row.get("entitlement_ref")) or "unavailable")}</div></div>',
                 unsafe_allow_html=True,
             )
+    _render_stage1_coverage_matrix(snapshot)
     return classified
 
 

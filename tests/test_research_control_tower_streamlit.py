@@ -1691,6 +1691,8 @@ def test_task8_source_health_metric_counts_reconcile_status_rows() -> None:
         "healthy": 0,
         "freshness_unclassified": 14,
         "stale": 0,
+        "no_records": 0,
+        "not_applicable": 0,
         "unavailable_degraded": 7,
         "errors_gaps": 0,
     }
@@ -1894,6 +1896,8 @@ def test_task9_source_health_buckets_and_privacy_sanitisation() -> None:
         "healthy": 1,
         "freshness_unclassified": 1,
         "stale": 1,
+        "no_records": 0,
+        "not_applicable": 0,
         "unavailable_degraded": 2,
         "errors_gaps": 0,
     }
