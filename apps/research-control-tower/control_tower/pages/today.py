@@ -8,11 +8,17 @@ from html import escape
 import pandas as pd
 import streamlit as st
 
+from ..components.coverage_matrix import (
+    coverage_legend_html,
+    render_stage1_coverage_matrix,
+)
 from ..components.flight_deck import FlightDeckViewModel, build_flight_deck, render_flight_deck
 from ..coverage import DataCoverageSummary, build_data_coverage_summary
+from ..coverage import build_stage1_coverage_matrix
+from ..market_data import classify_quote_freshness, format_quote_age
 from ..filters import apply_event_filters, superseded_event_ids
 from ..models import ControlTowerSnapshot, EventFilters
-from .source_health import sanitise_source_detail
+from .source_health import classify_source_health, sanitise_source_detail
 
 
 TODAY_CHANGE_COLUMNS = (
@@ -53,6 +59,10 @@ def bundle_latest_data_at(snapshot: ControlTowerSnapshot) -> pd.Timestamp | None
         (
             snapshot.consensus_revisions,
             ("current_snapshot_at", "provider_asof"),
+        ),
+        (
+            snapshot.quote_snapshots,
+            ("quote_timestamp",),
         ),
         (
             snapshot.macro_observations,
@@ -486,7 +496,10 @@ def _windowed_frame(frame: pd.DataFrame, timestamp_columns: tuple[str, ...], sna
 def _source_alerts(snapshot: ControlTowerSnapshot) -> pd.DataFrame:
     if snapshot.source_health.empty:
         return snapshot.source_health.iloc[0:0].copy()
-    bad = {"stale", "failed", "conflicted", "unavailable", "review_required"}
+    bad = {
+        "stale", "failed", "conflicted", "unavailable", "review_required",
+        "degraded", "partial", "no_records",
+    }
     return snapshot.source_health.loc[snapshot.source_health["status"].astype("string").str.lower().isin(bad)].copy().reset_index(drop=True)
 
 
@@ -518,7 +531,47 @@ def _selected_universe(snapshot: ControlTowerSnapshot, filters: EventFilters) ->
             entities = set()
         else:
             entities &= set(memberships.loc[memberships["membership_tier"].astype("string").str.lower().isin(filters.membership_tier), "entity_id"].astype("string"))
-    listings = set(snapshot.listings.loc[snapshot.listings["entity_id"].astype("string").isin(entities), "listing_id"].astype("string")) if not snapshot.listings.empty else set()
+    if snapshot.listings.empty:
+        listings = set()
+    else:
+        point = snapshot.as_of_utc.tz_convert("UTC").tz_localize(None).normalize()
+        def active_interval(row: pd.Series) -> bool:
+            try:
+                start = pd.Timestamp(row.get("active_from"))
+                end = pd.Timestamp(row.get("active_to")) if _text(row.get("active_to")) else None
+            except (TypeError, ValueError, OverflowError):
+                return False
+            if start.tzinfo is not None:
+                start = start.tz_localize(None)
+            if end is not None and end.tzinfo is not None:
+                end = end.tz_localize(None)
+            return (pd.isna(start) or point >= start.normalize()) and (end is None or point < end.normalize())
+
+        entity_frame = snapshot.entities.set_index("entity_id", drop=False) if not snapshot.entities.empty else pd.DataFrame()
+        collection_eligible = snapshot.listings["collection_eligible"].map(
+            lambda value: _text(value).lower() in {"true", "1", "yes"}
+        )
+        listing_mask = (
+            snapshot.listings["entity_id"].astype("string").isin(entities)
+            & snapshot.listings["listing_status"].astype("string").str.lower().eq("active")
+            & snapshot.listings["mapping_status"].astype("string").str.lower().eq("verified")
+            & collection_eligible
+            & snapshot.listings.apply(active_interval, axis=1)
+        )
+        if not entity_frame.empty and "active_status" in entity_frame.columns:
+            entity_type = entity_frame.get(
+                "entity_type", pd.Series("", index=entity_frame.index, dtype="string")
+            ).astype("string").fillna("").str.lower()
+            public_active_ids = set(
+                entity_frame.loc[
+                    entity_frame["active_status"].astype("string").str.lower().eq("active")
+                    & entity_type.ne("private")
+                    & entity_frame.apply(active_interval, axis=1),
+                    "entity_id",
+                ].astype("string")
+            )
+            listing_mask &= snapshot.listings["entity_id"].astype("string").isin(public_active_ids)
+        listings = set(snapshot.listings.loc[listing_mask, "listing_id"].astype("string"))
     return entities, listings, selected_baskets
 
 
@@ -758,6 +811,144 @@ def _render_coverage_matrix(summary: DataCoverageSummary) -> None:
     st.markdown(table_html, unsafe_allow_html=True)
 
 
+
+
+def _render_stage1_quote_snapshot(
+    snapshot: ControlTowerSnapshot,
+    filters: EventFilters,
+    viewer_timezone: str,
+) -> None:
+    st.markdown("### Stage 1 market quotes (delayed)")
+    quotes = snapshot.quote_snapshots
+
+    # Resolve selected universe
+    selected_entities, selected_listings, _ = _selected_universe(snapshot, filters)
+
+    # Always filter quotes by the selected universe, including the empty-set
+    # case. An empty selected listing set must never fall back to all quotes.
+    if quotes.empty or "listing_id" not in quotes.columns:
+        quotes = quotes.iloc[0:0].copy()
+    else:
+        quotes = quotes.loc[quotes["listing_id"].astype("string").isin(selected_listings)].copy()
+
+    # Resolve private entities in selected universe
+    private_entities: list[dict[str, str]] = []
+    if selected_entities:
+        seen_private: set[str] = set()
+        for eid in selected_entities:
+            if eid in seen_private:
+                continue
+            if not snapshot.entities.empty and "entity_id" in snapshot.entities.columns:
+                row = snapshot.entities.loc[snapshot.entities["entity_id"].astype("string").eq(eid)]
+                if not row.empty:
+                    e_row = row.iloc[0]
+                    e_type = _text(e_row.get("entity_type")).lower()
+                    if e_type == "private" or eid == "BYTEDANCE":
+                        private_entities.append({
+                            "entity_id": eid,
+                            "display_name": _text(e_row.get("display_name")) or eid,
+                        })
+                        seen_private.add(eid)
+                        continue
+            if eid == "BYTEDANCE":
+                private_entities.append({
+                    "entity_id": "BYTEDANCE",
+                    "display_name": "ByteDance",
+                })
+                seen_private.add(eid)
+
+    public_entity_count = 0
+    if selected_entities and not snapshot.entities.empty:
+        selected_entity_rows = snapshot.entities.loc[
+            snapshot.entities["entity_id"].astype("string").isin(selected_entities)
+        ]
+        public_entity_count = int(
+            (
+                selected_entity_rows["active_status"].astype("string").str.lower().eq("active")
+                & selected_entity_rows.get(
+                    "entity_type", pd.Series("", index=selected_entity_rows.index, dtype="string")
+                ).astype("string").fillna("").str.lower().ne("private")
+            ).sum()
+        )
+
+    with st.container(border=True):
+        if public_entity_count == 0 and private_entities:
+            st.info(
+                "Market quotes not applicable · the selected universe contains no public-market listing."
+            )
+            for p_ent in private_entities:
+                st.markdown(
+                    f'<div class="ct-change" style="margin-top: 0.5rem; opacity: 0.85;">'
+                    f'<div class="ct-change-title"><strong>{escape(p_ent["display_name"])}</strong> · Private entity</div>'
+                    f'<div class="ct-change-detail">Not applicable · no public listing or market quote collection</div>'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
+            return
+        if quotes.empty:
+            st.info("Latest market quotes unavailable · no quote snapshot artifact loaded in data bundle for selected universe; app operates in no-network/read-only mode.")
+            for p_ent in private_entities:
+                st.markdown(
+                    f'<div class="ct-change" style="margin-top: 0.5rem; opacity: 0.85;">'
+                    f'<div class="ct-change-title"><strong>{escape(p_ent["display_name"])}</strong> · Private entity</div>'
+                    f'<div class="ct-change-detail">Not applicable · Private competitor with no public listing or market quote collection</div>'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
+            return
+        rows_html: list[str] = []
+        for _, qrow in quotes.iterrows():
+            ticker = _text(qrow.get("canonical_ticker")) or _text(qrow.get("provider_symbol"))
+            last_price = qrow.get("last_price")
+            currency = _text(qrow.get("currency"))
+            price_str = f"{currency} {last_price:,.2f}".strip() if pd.notna(last_price) else "—"
+            day_change = qrow.get("day_change_pct")
+            if pd.notna(day_change) and isinstance(day_change, (int, float)):
+                change_str = f"{day_change:+.2f}%"
+            else:
+                change_str = "Unavailable"
+            qtime = qrow.get("quote_timestamp")
+            age_str = format_quote_age(qtime, snapshot.now_utc)
+            # Quotes in this surface are always delayed snapshots.  A raw
+            # provider row must not be able to reintroduce a live claim.
+            freshness = classify_quote_freshness(qtime, snapshot.now_utc, "delayed")
+            market_status = _text(qrow.get("market_status")) or "unknown"
+            source_id = _text(qrow.get("source_id")) or "market:yfinance"
+            latency = "delayed"
+            source_url = _text(qrow.get("source_url"))
+            link_text = f"{source_id} ({latency})"
+            if source_url.startswith(("http://", "https://")):
+                source_html = f'<a class="ct-inline-link" href="{escape(source_url)}" target="_blank" rel="noopener">{escape(link_text)}</a>'
+            else:
+                source_html = escape(link_text)
+            source_status = "Unavailable"
+            if not snapshot.source_health.empty:
+                classified = classify_source_health(
+                    snapshot.source_health,
+                    now_utc=snapshot.now_utc,
+                )
+                matched = classified.loc[
+                    classified["source_id"].astype("string").eq(source_id)
+                ]
+                if not matched.empty:
+                    source_status = _text(matched.iloc[0].get("display_label")) or _text(matched.iloc[0].get("status")) or source_status
+            rows_html.append(
+                f'<div class="ct-change" style="margin-bottom: 0.5rem;">'
+                f'<div class="ct-change-title"><strong>{escape(ticker)}</strong> · {escape(price_str)} · Day change: {escape(change_str)}</div>'
+                f'<div class="ct-change-detail">Quote age: {escape(age_str)} · Freshness: {escape(freshness)} · Market status: {escape(market_status)}</div>'
+                f'<div class="ct-source-line">Source: {source_html} · Source health: {escape(source_status)}</div>'
+                f'</div>'
+            )
+        for p_ent in private_entities:
+            rows_html.append(
+                f'<div class="ct-change" style="margin-bottom: 0.5rem; opacity: 0.85;">'
+                f'<div class="ct-change-title"><strong>{escape(p_ent["display_name"])}</strong> · Private entity</div>'
+                f'<div class="ct-change-detail">Not applicable · Private competitor with no public listing or market quote collection</div>'
+                f'</div>'
+            )
+        st.markdown('<div class="ct-change-list">' + "".join(rows_html) + '</div>', unsafe_allow_html=True)
+
+
 def render_today_page(
     snapshot: ControlTowerSnapshot,
     *,
@@ -807,6 +998,18 @@ def render_today_page(
             unsafe_allow_html=True,
         )
         _render_coverage_matrix(model.coverage_summary)
+        st.markdown("#### Stage 1 coverage matrix")
+        st.caption(
+            "Per-entity and per-listing status derived from the current "
+            "artifact bundle · read-only, no provider queries"
+        )
+        st.markdown(coverage_legend_html(), unsafe_allow_html=True)
+        render_stage1_coverage_matrix(
+            build_stage1_coverage_matrix(snapshot)
+        )
+
+    if not filters.scope or "company" in filters.scope:
+        _render_stage1_quote_snapshot(snapshot, filters=filters, viewer_timezone=viewer_timezone)
 
     if not model.consensus_revisions.empty:
         st.markdown("### Consensus revisions")
