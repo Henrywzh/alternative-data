@@ -1542,3 +1542,187 @@ def test_summary_linked_event_count_uses_active_authoritative_links() -> None:
 
     assert summary["Alternative Evidence / Events"].linked_count == 1
     assert _matrix(snapshot).status_of("TENCENT", "events") == "no_records"
+
+
+def test_empty_evidence_mixes_completed_events_and_unavailable_macro_as_partial() -> None:
+    from control_tower.coverage import build_data_coverage_summary
+
+    summary = {
+        row.category: row
+        for row in build_data_coverage_summary(_snapshot()).rows
+    }
+    evidence = summary["Alternative Evidence / Events"]
+
+    assert evidence.record_count == 0
+    assert evidence.status_code == "partial"
+    assert "completed execution" in evidence.details.lower()
+    assert "fred observations is unavailable" in evidence.details.lower()
+
+
+def test_empty_stage1_matrix_renderer_keeps_schema_and_does_not_raise(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from dataclasses import replace
+
+    from control_tower.components import coverage_matrix as component
+
+    snapshot = _snapshot()
+    matrix = _matrix(
+        replace(
+            snapshot,
+            basket_memberships=snapshot.basket_memberships.iloc[0:0].copy(),
+        )
+    )
+    entity_frame = component.stage1_matrix_to_dataframe(matrix)
+    listing_frame = component.stage1_listings_to_dataframe(matrix)
+
+    assert list(entity_frame.columns) == [
+        "entity_id",
+        "display_name",
+        "entity_type",
+        "listing_count",
+        "listing_ids",
+        *[
+            column
+            for category in matrix.categories
+            for column in (
+                f"{category}_status",
+                f"{category}_details",
+            )
+        ],
+    ]
+    assert list(listing_frame.columns) == [
+        "listing_id",
+        "entity_id",
+        "canonical_ticker",
+        "quote_status",
+        "details",
+    ]
+
+    class _NoopContext:
+        def __enter__(self) -> "_NoopContext":
+            return self
+
+        def __exit__(self, *args: object) -> bool:
+            return False
+
+    monkeypatch.setattr(component.st, "dataframe", lambda *args, **kwargs: None)
+    monkeypatch.setattr(component.st, "caption", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        component.st,
+        "expander",
+        lambda *args, **kwargs: _NoopContext(),
+    )
+    component.render_stage1_coverage_matrix(matrix)
+
+
+def test_ambiguous_listing_is_unlinked_and_cannot_make_global_quotes_available() -> None:
+    from dataclasses import replace
+
+    from control_tower.coverage import build_data_coverage_summary
+
+    snapshot = _snapshot()
+    listings = pd.concat(
+        [
+            snapshot.listings,
+            pd.DataFrame(
+                [
+                    {
+                        "listing_id": "9988_HK",
+                        "entity_id": "TENCENT",
+                        "canonical_ticker": "9988.HK",
+                        "listing_status": "active",
+                    }
+                ]
+            ),
+        ],
+        ignore_index=True,
+    )
+    health = _health(
+        quote_snapshots={
+            "status": "available",
+            "row_count": 1,
+            "source_latest_at": FRESH,
+            "cadence": "daily",
+            "query_attempted": True,
+            "execution_status": "completed",
+            "completed_at": FRESH,
+        }
+    )
+    ambiguous = replace(
+        _snapshot(
+            quotes=pd.DataFrame([_quote("Q_AMBIG", "9988_HK")]),
+            health=health,
+        ),
+        listings=listings,
+    )
+    quote = next(
+        row
+        for row in build_data_coverage_summary(ambiguous).rows
+        if row.category == "Price / Market Quotes"
+    )
+
+    assert quote.linked_count == 0
+    assert quote.status_code == "partial"
+    assert all(row.listing_id != "9988_HK" for row in _matrix(ambiguous).listing_rows)
+
+
+def test_expired_stage1_basket_has_no_members_and_never_falls_back() -> None:
+    from dataclasses import replace
+
+    snapshot = _snapshot()
+    baskets = snapshot.baskets.copy()
+    baskets["active_from"] = "2020-01-01"
+    baskets["active_to"] = "2026-08-13"
+    matrix = _matrix(replace(snapshot, baskets=baskets))
+
+    assert matrix.entity_rows == ()
+    assert matrix.listing_rows == ()
+
+
+def test_filings_missing_geographies_are_partial_in_matrix_and_summary() -> None:
+    from control_tower.coverage import build_data_coverage_summary
+
+    filings = pd.DataFrame(
+        [
+            {
+                "document_id": "F_MISSING_GEO",
+                "source_id": "filings_sec_edgar",
+                "related_entity_ids": ("ALIBABA",),
+                "related_listing_ids": (),
+                "related_basket_ids": (),
+                "published_at": FRESH,
+            }
+        ]
+    )
+    health = _health(
+        filings_sec_edgar={
+            "status": "available",
+            "row_count": 1,
+            "source_latest_at": FRESH,
+            "cadence": "event_driven",
+            "missing_geographies": "CN,HK",
+            "query_attempted": True,
+            "execution_status": "completed",
+            "completed_at": FRESH,
+        },
+        news_official_ai_rss={
+            "status": "available",
+            "row_count": 0,
+            "source_latest_at": FRESH,
+            "cadence": "event_driven",
+            "query_attempted": True,
+            "execution_status": "completed",
+            "completed_at": FRESH,
+        },
+    )
+    snapshot = _snapshot(news_filings=filings, health=health)
+    matrix = _matrix(snapshot)
+    summary = {
+        row.category: row
+        for row in build_data_coverage_summary(snapshot).rows
+    }
+
+    assert matrix.status_of("ALIBABA", "filings_news") == "partial"
+    assert summary["News & Filings"].status_code == "partial"
+    assert "uncovered geographies" in summary["News & Filings"].details.lower()
