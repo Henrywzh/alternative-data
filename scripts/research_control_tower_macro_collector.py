@@ -53,21 +53,42 @@ def write_atomic_artifact(data: pd.DataFrame | dict[str, Any], output_path: Path
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Collect official macro events and observations.")
-    parser.add_argument("--output-dir", type=Path, default=Path("data/normalized/macro_collector"))
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=None,
+        help="Output directory (default: <repo>/data/normalized/macro_collector)",
+    )
     parser.add_argument("--output-events", type=Path, default=None)
     parser.add_argument("--output-observations", type=Path, default=None)
     parser.add_argument("--output-health", type=Path, default=None)
+    parser.add_argument(
+        "--fixtures",
+        type=Path,
+        default=None,
+        help="JSON file with offline collector fixtures; no live FRED calls are made",
+    )
     parser.add_argument("--as-of-utc", default=None, help="Optional snapshot timestamp for PIT filtering")
     parser.add_argument("--indicators", nargs="*", default=None, help="Optional list of specific indicators to collect")
 
     args = parser.parse_args()
 
-    out_dir = args.output_dir
+    out_dir = args.output_dir or (REPO_ROOT / "data" / "normalized" / "macro_collector")
     out_events = args.output_events or (out_dir / "macro_events.parquet")
     out_obs = args.output_observations or (out_dir / "macro_observations.parquet")
     out_health = args.output_health or (out_dir / "macro_source_health.json")
 
-    collector = MacroDataCollector(base_dir=REPO_ROOT)
+    fixtures: dict[str, Any] | None = None
+    if args.fixtures is not None:
+        try:
+            raw_fixtures = json.loads(args.fixtures.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            parser.error(f"--fixtures is not readable JSON: {exc}")
+        if not isinstance(raw_fixtures, dict):
+            parser.error("--fixtures must contain a JSON object")
+        fixtures = raw_fixtures
+
+    collector = MacroDataCollector(base_dir=REPO_ROOT, offline_fixtures=fixtures)
     events_df, obs_df, health_map = collector.collect_all(
         indicators=args.indicators,
         as_of_utc=args.as_of_utc,
