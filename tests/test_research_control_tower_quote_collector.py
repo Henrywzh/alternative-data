@@ -381,7 +381,7 @@ def test_historical_as_of_is_rejected_without_provider_call() -> None:
 
 
 def test_unsorted_hk_and_us_frames_use_prior_completed_local_session_close() -> None:
-    as_of = pd.Timestamp.now(tz="UTC").floor("min")
+    as_of = pd.Timestamp("2026-08-14T20:00:00Z")
     listings = _sample_listings().loc[
         lambda frame: frame["listing_id"].isin(["9988_HK", "BABA_US"])
     ].copy()
@@ -436,7 +436,7 @@ def test_unsorted_hk_and_us_frames_use_prior_completed_local_session_close() -> 
 
 def test_success_plus_missing_and_ambiguous_listings_is_partial() -> None:
     listings = _sample_listings()
-    as_of = pd.Timestamp.now(tz="UTC").floor("min")
+    as_of = pd.Timestamp("2026-08-14T20:00:00Z")
     index = pd.DatetimeIndex([as_of - pd.Timedelta(minutes=1)])
     downloaded = pd.DataFrame(
         [[120.0, 100.0]],

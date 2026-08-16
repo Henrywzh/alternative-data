@@ -33,6 +33,9 @@ ARTIFACT_NAMES: Final[tuple[str, ...]] = (
     "consensus_revisions.parquet",
     "quote_snapshots.parquet",
     "news_filings.parquet",
+    "official_filings.parquet",
+    "earnings_calendar.parquet",
+    "earnings_actuals.parquet",
     "source_health.parquet",
     "build_manifest.json",
 )
@@ -50,6 +53,9 @@ OPTIONAL_ARTIFACT_NAMES: Final[tuple[str, ...]] = (
     "consensus_revisions.parquet",
     "quote_snapshots.parquet",
     "news_filings.parquet",
+    "official_filings.parquet",
+    "earnings_calendar.parquet",
+    "earnings_actuals.parquet",
 )
 
 REQUIRED_ARTIFACT_NAMES: Final[tuple[str, ...]] = tuple(
@@ -117,7 +123,8 @@ ARTIFACT_COLUMNS: Final[dict[str, tuple[str, ...]]] = {
         "event_type", "metric_name", "reference_period", "observation_date",
         "release_at", "actual_value", "unit", "frequency", "first_observed_at",
         "source_published_at", "retrieved_at_utc", "source_url", "pit_class",
-        "source_license_class", "is_provisional", "registry_version",
+        "source_license_class", "is_provisional", "realtime_start", "realtime_end",
+        "registry_version",
     ),
     "consensus_snapshots.parquet": (
         "snapshot_id", "provider", "entity_id", "listing_id",
@@ -154,6 +161,32 @@ ARTIFACT_COLUMNS: Final[dict[str, tuple[str, ...]]] = {
         "event_class", "importance", "source_quality", "pit_class",
         "source_license_class", "content_hash_if_permitted",
         "derived_summary_if_permitted",
+    ),
+    "official_filings.parquet": (
+        "document_id", "document_type", "event_class", "source_id", "headline",
+        "publisher", "published_at", "accepted_at", "scheduled_date",
+        "retrieved_at_utc", "source_url", "language", "entity_id", "listing_id",
+        "canonical_ticker", "reporting_period_label", "reporting_period_start",
+        "reporting_period_end", "date_precision", "source_timezone",
+        "event_status", "source_quality", "pit_class", "source_license_class",
+        "content_hash_if_permitted", "source_note", "registry_version",
+    ),
+    "earnings_calendar.parquet": (
+        "calendar_id", "entity_id", "listing_id", "canonical_ticker",
+        "period_label", "period_start", "period_end", "event_type", "event_date",
+        "date_precision", "date_basis", "source_timezone", "status", "source_id",
+        "source_url", "headline", "published_at", "retrieved_at_utc",
+        "source_quality", "pit_class", "source_license_class", "source_note",
+        "registry_version",
+    ),
+    "earnings_actuals.parquet": (
+        "actual_id", "version", "supersedes_actual_id", "entity_id", "listing_id",
+        "canonical_ticker", "metric", "period_label", "period_start", "period_end",
+        "reported_value", "normalized_value", "normalization_note", "currency",
+        "unit", "accounting_basis", "filing_at", "published_at",
+        "retrieved_at_utc", "source_url", "accession_no", "form", "xbrl_frame",
+        "revision_reason", "is_restatement", "source_id", "source_quality",
+        "pit_class", "source_license_class", "source_note", "registry_version",
     ),
     "source_health.parquet": (
         "source_id", "input_path", "source_kind", "status", "required",
