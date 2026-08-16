@@ -111,6 +111,22 @@ _CATEGORY_SOURCE_IDS: Mapping[str, frozenset[str]] = {
     ),
 }
 
+# Note: the source_state_v1 sidecar *files'* own load-state rows
+# ("official_filings_state" / "earnings_actuals_state" -- collector
+# execution metadata about reading the sidecar file, not an observation
+# stream) are deliberately kept out of category matching, but not by an id
+# list here. build.py gives that specific row a distinct source_kind
+# ("official_filing_collector_state" / "earnings_collector_state", see
+# OFFICIAL_FILINGS_STATE_SOURCE_KIND/EARNINGS_ACTUALS_STATE_SOURCE_KIND)
+# that never appears in _CATEGORY_SOURCE_KINDS, so it naturally never
+# matches any category through the kind-based fallback in
+# _matches_category_source below -- no consumer-side id list to keep in
+# sync as new sidecar-producing collectors are added. The real per-provider
+# rows the builder unpacks out of the same sidecar file (e.g.
+# "earnings:sec_companyfacts", "filings:hkexnews") keep their real kind
+# ("earnings" / "official_filing") and continue to govern freshness/
+# no-records as before.
+
 _QUOTE_TS_COLUMNS = ("quote_timestamp",)
 _CONSENSUS_TS_COLUMNS = (
     "provider_asof",
@@ -470,16 +486,47 @@ def _empty_status(
         return "unavailable", _source_state_details(sources.adverse)
     if sources.stale:
         return "stale", _source_state_details(sources.stale)
-    if all(
+    # A ``not_applicable`` source has no opinion about this category -- it is
+    # an explicit, hardcoded terminal state for a concept deliberately out of
+    # scope (a private entity, an intentionally-unconfigured feed), never an
+    # inferred default -- so it cannot satisfy *or* block "every source
+    # agrees the data is genuinely absent". Requiring it to also report
+    # available/no_records would conflate "does this source apply" with "did
+    # this source's query complete", which would make ``no_records``
+    # permanently unreachable for any category that has a not_applicable
+    # placeholder at all, even when every source that actually applies
+    # completed cleanly with nothing to report. This mirrors the existing
+    # precedent of keeping ``not_applicable`` out of ``_UNAVAILABLE_SOURCE_STATES``
+    # (see test_not_applicable_issuer_ir_source_no_longer_marks_category_adverse):
+    # a source declining to have an opinion is not disagreement.
+    applicable_sources = tuple(
+        source
+        for source in sources.sources
+        if source.display_status != "not_applicable"
+    )
+    if applicable_sources and all(
         source.execution_completed
         and source.raw_status in {"available", "success", "ok", "no_records"}
         and source.display_status != "clock_skew"
-        for source in sources.sources
+        for source in applicable_sources
     ):
         return (
             "no_records",
-            "All governing sources record an explicitly completed execution "
-            "with no matching rows.",
+            "All applicable governing sources record an explicitly "
+            "completed execution with no matching rows"
+            + (
+                " (not_applicable sources excluded from this agreement: "
+                + _source_state_details(
+                    tuple(
+                        source
+                        for source in sources.sources
+                        if source.display_status == "not_applicable"
+                    )
+                )
+                + ")"
+                if len(applicable_sources) != len(sources.sources)
+                else "."
+            ),
         )
     if sources.uncertain:
         return "partial", _source_state_details(sources.uncertain)

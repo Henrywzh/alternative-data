@@ -662,7 +662,7 @@ def _walk_arrow_field(
 
 
 def _schema_is_allowlisted(name: str, columns: list[str]) -> bool:
-    from control_tower.config import ARTIFACT_COLUMNS
+    from control_tower.config import ARTIFACT_COLUMNS, SOURCE_HEALTH_EXECUTION_COLUMNS
 
     expected = list(ARTIFACT_COLUMNS[name])
     if name == "events.parquet":
@@ -670,6 +670,15 @@ def _schema_is_allowlisted(name: str, columns: list[str]) -> bool:
         return (
             without_optional == expected
             and columns.count("importance") <= 1
+        )
+    if name == "source_health.parquet":
+        # Backward-compatible trailing execution-evidence columns (see
+        # control_tower.config.SOURCE_HEALTH_EXECUTION_COLUMNS /
+        # control_tower.repository._validate_parquet_schema): legacy bundles
+        # omit them, current builder output carries them.
+        return columns in (
+            expected,
+            [*expected, *SOURCE_HEALTH_EXECUTION_COLUMNS],
         )
     return columns == expected
 

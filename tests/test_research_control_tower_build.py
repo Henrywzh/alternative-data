@@ -1574,6 +1574,101 @@ def test_source_state_cadence_table_disambiguates_by_collector_kind():
     assert SOURCE_CADENCE_BY_SCHEMA[EARNINGS_ACTUALS_SCHEMA_ID] == "quarterly"
 
 
+def test_source_state_columns_carry_execution_evidence_end_to_end(tmp_path):
+    """T6: per-provider ``source_state_v1`` rows carry genuine collector
+    execution evidence (``query_attempted``/``execution_status``/
+    ``completed_at``) all the way through to the published
+    ``source_health.parquet``, not just to the in-memory sidecar frame.
+
+    Before this fix these three columns were never populated by any
+    producer in the codebase (collector ``_state_row()``, the offline
+    builder's own ``_SourceState``, and the app's
+    ``SOURCE_HEALTH_EXECUTION_COLUMNS`` reader contract already existed,
+    but nothing ever wrote real values into them), so
+    ``_empty_status``'s "every governing source completed with no
+    matching rows" -> ``no_records`` branch in
+    ``control_tower.coverage`` was permanently unreachable everywhere in
+    the system. This pins that a genuinely-queried provider
+    (``earnings:sec_companyfacts``) now reaches the published health
+    table with real evidence, while a deliberately-unconfigured provider
+    (``earnings:hkex_issuer_ir`` when no issuer-IR snapshot is supplied)
+    correctly carries none -- it was never queried at all.
+    """
+
+    state = pd.DataFrame(
+        [
+            {
+                "source_id": "earnings:sec_companyfacts",
+                "source_kind": "earnings",
+                "status": "available",
+                "detail": "sec_companyfacts rows=2",
+                "row_count": 2,
+                "retrieved_at_utc": "2026-08-17T12:00:00Z",
+                "source_url": "https://data.sec.gov/api/xbrl/companyfacts/",
+                "pit_class": "snapshot_from_live_source",
+                "source_license_class": "official_public_metadata",
+                "cadence": "weekly",
+                "query_attempted": True,
+                "execution_status": "completed",
+                "completed_at": "2026-08-17T12:00:00Z",
+            },
+            {
+                "source_id": "earnings:hkex_issuer_ir",
+                "source_kind": "earnings",
+                "status": "not_applicable",
+                "detail": "no machine-readable issuer IR actuals snapshot configured",
+                "row_count": 0,
+                "retrieved_at_utc": "2026-08-17T12:00:00Z",
+                "pit_class": "snapshot_from_live_source",
+                "source_license_class": "official_public_metadata",
+                "cadence": "",
+                "query_attempted": False,
+                "execution_status": "",
+                "completed_at": pd.NaT,
+            },
+        ],
+        columns=SOURCE_STATE_COLUMNS,
+    )
+    actuals = pd.DataFrame(columns=EARNINGS_ACTUALS_COLUMNS)
+    actuals_path = tmp_path / "earnings_actuals_v1.parquet"
+    state_path = tmp_path / "earnings_actuals_state.parquet"
+    actuals.to_parquet(actuals_path, index=False)
+    state.to_parquet(state_path, index=False)
+
+    input_root = _copy_control_tower_inputs(tmp_path / "input" / "config")
+    config = BuildConfig(
+        registry_root=input_root,
+        event_root=input_root,
+        output_dir=tmp_path / "output",
+        as_of_utc=pd.Timestamp("2026-08-17T12:00:00Z"),
+        build_id="fixture-execution-evidence",
+        earnings_inputs=(
+            _input("earnings_actuals", actuals_path, EARNINGS_ACTUALS_SCHEMA_ID),
+            _input("earnings_actuals_state", state_path, SOURCE_STATE_SCHEMA_ID),
+        ),
+    )
+    build_control_tower_marts(config)
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    assert "query_attempted" in health.columns
+    assert "execution_status" in health.columns
+    assert "completed_at" in health.columns
+
+    sec = health.loc[health["source_id"].eq("earnings:sec_companyfacts")].iloc[0]
+    assert bool(sec["query_attempted"]) is True
+    assert sec["execution_status"] == "completed"
+    assert pd.notna(sec["completed_at"])
+
+    issuer_ir = health.loc[health["source_id"].eq("earnings:hkex_issuer_ir")].iloc[0]
+    assert bool(issuer_ir["query_attempted"]) is False
+    assert pd.isna(issuer_ir["completed_at"])
+
+    # The sidecar file's own load-state row never carries execution
+    # evidence of its own (it isn't a provider) and, per the sidecar
+    # exclusion fix, never governs coverage either way.
+    wrapper = health.loc[health["source_id"].eq("earnings_actuals_state")].iloc[0]
+    assert bool(wrapper["query_attempted"]) is False
+
+
 def test_quote_local_input_defaults_are_delayed_and_personal_use(tmp_path):
     descriptor = LocalInput(
         source_id="quote_defaults",

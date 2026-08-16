@@ -334,7 +334,22 @@ def _state_row(
     as_of_utc: pd.Timestamp,
     source_url: str = "",
     cadence: str = "",
+    query_attempted: bool = False,
+    execution_status: str = "",
+    completed_at: pd.Timestamp | None = None,
 ) -> dict[str, Any]:
+    """Build one ``source_state_v1`` sidecar row for a single provider.
+
+    ``query_attempted``/``execution_status``/``completed_at`` are genuine
+    collector execution evidence -- proof a query into this specific
+    provider was actually made and finished -- never a stand-in for
+    freshness. Callers pass ``query_attempted=True`` only when this
+    provider was actually queried this run (never for a deliberately
+    unconfigured/not_applicable concept), and ``completed_at`` is the
+    collector's own run timestamp (``as_of_utc``/``fetched_at``), not a
+    source-native observation time.
+    """
+
     return {
         "source_id": source_id,
         "source_kind": source_kind,
@@ -349,6 +364,9 @@ def _state_row(
         "pit_class": PIT_CLASS,
         "source_license_class": LICENSE_CLASS,
         "cadence": cadence,
+        "query_attempted": query_attempted,
+        "execution_status": execution_status,
+        "completed_at": completed_at if completed_at is not None else pd.NaT,
     }
 
 
@@ -440,6 +458,9 @@ def collect_earnings_actuals(
                     as_of_utc=fetched_at,
                     source_url="https://data.sec.gov/api/xbrl/companyfacts/",
                     cadence="weekly",
+                    query_attempted=True,
+                    execution_status="completed",
+                    completed_at=fetched_at,
                 )
             )
         else:
@@ -453,6 +474,9 @@ def collect_earnings_actuals(
                     as_of_utc=fetched_at,
                     source_url="https://data.sec.gov/api/xbrl/companyfacts/",
                     cadence="weekly",
+                    query_attempted=True,
+                    execution_status="completed",
+                    completed_at=fetched_at,
                 )
             )
 
@@ -477,6 +501,9 @@ def collect_earnings_actuals(
                     row_count=len(ir_rows),
                     as_of_utc=fetched_at,
                     cadence="monthly",
+                    query_attempted=True,
+                    execution_status="completed",
+                    completed_at=fetched_at,
                 )
             )
         else:
@@ -489,6 +516,9 @@ def collect_earnings_actuals(
                     row_count=0,
                     as_of_utc=fetched_at,
                     cadence="monthly",
+                    query_attempted=True,
+                    execution_status="completed",
+                    completed_at=fetched_at,
                 )
             )
     elif hkex_only_entities:

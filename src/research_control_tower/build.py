@@ -615,6 +615,13 @@ SOURCE_STATE_COLUMNS = [
     "pit_class",
     "source_license_class",
     "cadence",
+    # Genuine collector execution evidence for this specific provider (proof
+    # a query was actually made and finished this run) -- never a freshness
+    # substitute. See control_tower.config.SOURCE_HEALTH_EXECUTION_COLUMNS
+    # for the matching trailing columns on the published source_health.parquet.
+    "query_attempted",
+    "execution_status",
+    "completed_at",
 ]
 
 SOURCE_HEALTH_COLUMNS = [
@@ -639,6 +646,16 @@ SOURCE_HEALTH_COLUMNS = [
     "schema_version",
     "missing_geographies",
     "detail",
+    # Trailing, backward-compatible execution-evidence columns (see
+    # control_tower.config.SOURCE_HEALTH_EXECUTION_COLUMNS): legacy readers
+    # tolerate their absence, but every row published by this builder now
+    # carries them explicitly (defaulting to "no evidence" rather than
+    # omitted) so ``_empty_status``'s no_records determination has real
+    # collector-supplied signal to work with instead of always failing
+    # closed to "partial".
+    "query_attempted",
+    "execution_status",
+    "completed_at",
 ]
 
 ARTIFACT_NAMES = (
@@ -690,6 +707,25 @@ OFFICIAL_FILINGS_SCHEMA_ID = "official_filings_v1"
 EARNINGS_ACTUALS_SCHEMA_ID = "earnings_actuals_v1"
 SOURCE_STATE_SCHEMA_ID = "source_state_v1"
 
+# The source_state_v1 sidecar *file's own load state* (the row _load_optional
+# builds for the state_descriptor itself, distinct from the per-provider rows
+# _sidecar_states() unpacks out of the file's contents) is collector
+# execution metadata about reading that file -- proof the builder could parse
+# it -- not an observation stream with its own freshness. It deliberately
+# does NOT share source_kind with the real category kinds ("official_filing",
+# "earnings") its parent artifact and per-provider rows use: those kinds are
+# what control_tower.coverage._CATEGORY_SOURCE_KINDS matches on to decide
+# which source-health rows govern a coverage category's freshness/no-records
+# determination, and this wrapper row carries no source-native timestamp of
+# its own (see _state_row, which always leaves latest_observation_at /
+# source_latest_at null). Giving it a distinct kind here, at the producer,
+# means it naturally never matches any category -- no id list to keep in
+# sync in the consumer. It still keeps its own cadence for display (same
+# cadence as the artifact it reports on) via SOURCE_STATE_CADENCE_BY_KIND
+# below.
+OFFICIAL_FILINGS_STATE_SOURCE_KIND = "official_filing_collector_state"
+EARNINGS_ACTUALS_STATE_SOURCE_KIND = "earnings_collector_state"
+
 _SCHEMA_ALIASES = {
     FRED_OBSERVATIONS_SCHEMA_ID: FRED_OBSERVATIONS_SCHEMA_ID,
     "fred_observations": FRED_OBSERVATIONS_SCHEMA_ID,
@@ -738,10 +774,27 @@ _EXPECTED_OPTIONAL_SOURCES = (
     ("news_official_ai_rss", "news", NEWS_SCHEMA_ID, ""),
     ("filings_sec_edgar", "filing", FILING_SCHEMA_ID, "US"),
     ("official_filings", "official_filing", OFFICIAL_FILINGS_SCHEMA_ID, "CN,HK,US"),
+    # kind is "official_filing" here (config-field grouping, matched against
+    # _unconfigured_optional_ids' configured_by_kind table -- see that
+    # function); the placeholder _SourceState this table feeds is built with
+    # the real governance kind (OFFICIAL_FILINGS_STATE_SOURCE_KIND) by
+    # _expected_health_states below, same as the live _load_optional path.
     ("official_filings_state", "official_filing", SOURCE_STATE_SCHEMA_ID, ""),
     ("earnings_actuals", "earnings", EARNINGS_ACTUALS_SCHEMA_ID, "CN,HK,US"),
     ("earnings_actuals_state", "earnings", SOURCE_STATE_SCHEMA_ID, ""),
 )
+
+# source_id -> the real (non-category-colliding) source_kind these two
+# sidecar *file load-state* wrapper rows are always constructed with,
+# overriding _EXPECTED_OPTIONAL_SOURCES' config-field-grouping kind above.
+# Kept as a single small table at the producer (not duplicated in
+# coverage.py) so both the live _load_optional path (_build_official_filings/
+# _build_earnings_actuals) and this module's own "optional source not
+# configured/not used" placeholder path (_expected_health_states) agree.
+_STATE_WRAPPER_SOURCE_KIND: dict[str, str] = {
+    "official_filings_state": OFFICIAL_FILINGS_STATE_SOURCE_KIND,
+    "earnings_actuals_state": EARNINGS_ACTUALS_STATE_SOURCE_KIND,
+}
 
 
 @dataclass(frozen=True)
@@ -875,9 +928,20 @@ SOURCE_CADENCE_BY_SCHEMA: dict[str, str] = {
 # schema id alone -- unlike the table above. Each sidecar reports on the
 # same underlying data as its parent artifact, so it takes that artifact's
 # cadence rather than an invented "sidecar" cadence.
+#
+# "official_filing"/"earnings" cover per-provider rows the builder unpacks
+# out of a sidecar file (though those already carry an explicit cadence set
+# by the collector itself and don't actually reach this fallback).
+# OFFICIAL_FILINGS_STATE_SOURCE_KIND/EARNINGS_ACTUALS_STATE_SOURCE_KIND cover
+# the sidecar *file's own load-state row*, which deliberately uses a
+# distinct source_kind so it never matches a coverage category (see the
+# comment on those constants) -- it still gets the same cadence as its
+# parent artifact for display purposes.
 SOURCE_STATE_CADENCE_BY_KIND: dict[str, str] = {
     "official_filing": "event_driven",
     "earnings": "quarterly",
+    OFFICIAL_FILINGS_STATE_SOURCE_KIND: "event_driven",
+    EARNINGS_ACTUALS_STATE_SOURCE_KIND: "quarterly",
 }
 
 
@@ -1182,6 +1246,13 @@ class _SourceState:
     missing_geographies: str = ""
     detail: str = ""
     errors: list[dict[str, Any]] = field(default_factory=list)
+    # Genuine collector execution evidence (see SOURCE_STATE_COLUMNS): proof
+    # a query into this specific provider was actually made and finished.
+    # Defaults mean "no evidence available" -- never inferred from artifact
+    # load success or retrieval time.
+    query_attempted: bool = False
+    execution_status: str = ""
+    completed_at: Any = pd.NaT
 
     def health_row(self) -> dict[str, Any]:
         return {
@@ -1206,6 +1277,9 @@ class _SourceState:
             "schema_version": self.schema_version,
             "missing_geographies": self.missing_geographies,
             "detail": self.detail,
+            "query_attempted": self.query_attempted,
+            "execution_status": self.execution_status,
+            "completed_at": self.completed_at,
         }
 
 
@@ -2856,6 +2930,14 @@ def _sidecar_int(value: Any) -> int:
         return 0
 
 
+def _sidecar_bool(value: Any) -> bool:
+    if value is None or (not isinstance(value, (list, tuple, dict)) and pd.isna(value)):
+        return False
+    if isinstance(value, str):
+        return value.strip().lower() in {"true", "1", "yes"}
+    return bool(value)
+
+
 def _sidecar_states(frame: pd.DataFrame) -> list[_SourceState]:
     """Convert collector state-sidecar rows into explicit source-health rows.
 
@@ -2890,6 +2972,9 @@ def _sidecar_states(frame: pd.DataFrame) -> list[_SourceState]:
                 source_latest_at=_timestamp(item.get("source_latest_at")),
                 retrieved_at_utc=_timestamp(item.get("retrieved_at_utc")),
                 detail=detail or f"{status}; collector state sidecar",
+                query_attempted=_sidecar_bool(item.get("query_attempted")),
+                execution_status=_text(item.get("execution_status")).lower(),
+                completed_at=_timestamp(item.get("completed_at")),
             )
         )
     return states
@@ -3069,8 +3154,12 @@ def _build_official_filings(
         degraded.append("official_filings")
 
     if state_descriptor is not None:
+        # OFFICIAL_FILINGS_STATE_SOURCE_KIND (not "official_filing"): this is
+        # the sidecar *file's* own load state, not a provider -- see the
+        # constant's module-level comment for why it must not share a kind
+        # with the real filings_news governing sources.
         state, state_frame, _schema_id = _load_optional(
-            state_descriptor, "official_filing", as_of_utc=as_of_utc
+            state_descriptor, OFFICIAL_FILINGS_STATE_SOURCE_KIND, as_of_utc=as_of_utc
         )
         states.append(state)
         if state_frame is None:
@@ -3125,8 +3214,12 @@ def _build_earnings_actuals(
         degraded.append("earnings_actuals")
 
     if state_descriptor is not None:
+        # EARNINGS_ACTUALS_STATE_SOURCE_KIND (not "earnings"): this is the
+        # sidecar *file's* own load state, not a provider -- see the
+        # constant's module-level comment for why it must not share a kind
+        # with the real earnings_actuals governing sources.
         state, state_frame, _schema_id = _load_optional(
-            state_descriptor, "earnings", as_of_utc=as_of_utc
+            state_descriptor, EARNINGS_ACTUALS_STATE_SOURCE_KIND, as_of_utc=as_of_utc
         )
         states.append(state)
         if state_frame is None:
@@ -3836,6 +3929,12 @@ def _expected_health_states(config: BuildConfig, existing: Sequence[_SourceState
     for descriptor, source_kind in all_inputs:
         if descriptor.source_id in existing_by_source:
             continue
+        # The sidecar file's own load-state wrapper never governs a coverage
+        # category (see OFFICIAL_FILINGS_STATE_SOURCE_KIND/
+        # EARNINGS_ACTUALS_STATE_SOURCE_KIND) even on this rarely-hit
+        # fallback path, where source_kind above is only the config-field
+        # grouping ("official_filing"/"earnings"), not the row's real kind.
+        source_kind = _STATE_WRAPPER_SOURCE_KIND.get(descriptor.source_id, source_kind)
         try:
             schema_id = _normalise_schema_id(descriptor.expected_schema)
         except BuildError:
@@ -3861,6 +3960,11 @@ def _expected_health_states(config: BuildConfig, existing: Sequence[_SourceState
     for source_id, kind, schema_id, geography in _EXPECTED_OPTIONAL_SOURCES:
         if source_id in present:
             continue
+        # kind here is the config-field grouping ("official_filing"/
+        # "earnings"); the sidecar wrapper's real (non-category-colliding)
+        # governance kind lives in _STATE_WRAPPER_SOURCE_KIND -- see the
+        # comment on that table.
+        kind = _STATE_WRAPPER_SOURCE_KIND.get(source_id, kind)
         matching_descriptors: list[LocalInput] = []
         for descriptor, source_kind in all_inputs:
             try:
@@ -4077,6 +4181,8 @@ def _arrow_schema() -> dict[str, pa.Schema]:
             "latest_observation_at": timestamp,
             "source_latest_at": timestamp,
             "retrieved_at_utc": timestamp,
+            "query_attempted": pa.bool_(),
+            "completed_at": timestamp,
         },
     )
     return {

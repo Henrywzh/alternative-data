@@ -2049,20 +2049,35 @@ def test_not_applicable_issuer_ir_source_no_longer_marks_category_adverse() -> N
     Now that the collector reports these sources as ``not_applicable``
     (not a member of ``_UNAVAILABLE_SOURCE_STATES``), that specific
     "adverse" cap no longer fires -- confirmed below by the category
-    status changing from "unavailable" (old raw emission) to "partial"
+    status changing from "unavailable" (old raw emission) to "no_records"
     (new raw emission) for the identical fixture, with the detail text no
     longer mentioning ``review_required``.
 
-    This test deliberately does NOT assert "available": a separate,
-    pre-existing and intentionally-conservative guard in ``_empty_status``
-    only reaches "not_applicable"/"no_records" when *every* governing
-    source in the category agrees; with a healthy governing source
-    (filings:hkexnews / earnings:sec_companyfacts) mixed in, the honest
-    outcome is "partial" ("No matching rows and source execution
-    completion is not fully evidenced"), which is untouched by this
-    defect fix (the acceptance bar explicitly forbids weakening
-    ``_assess_time_sensitive_rows``/``_empty_status``'s fail-closed logic).
-    A truthful "partial" here is correct, not a shortfall.
+    This test deliberately does NOT assert "available".
+
+    T6 update: ``_empty_status``'s "every governing source agrees" check
+    for ``no_records`` used to require *every* source in the category --
+    including permanently ``not_applicable`` placeholders like
+    ``filings:issuer_ir``/``earnings:hkex_issuer_ir`` -- to itself report
+    ``available``/``no_records`` with completed-execution evidence. A
+    ``not_applicable`` source has no opinion about this category: it is an
+    explicit, hardcoded terminal state re-derived fresh every build from
+    the source-identity registry (private entity, deliberately-unconfigured
+    feed), never an inferred or stale default, and it was never queried on
+    purpose -- so it can neither confirm nor deny "no matching rows".
+    Requiring it to affirmatively agree conflated "does this source apply"
+    with "did this source's query complete", which made ``no_records``
+    permanently unreachable for any category carrying such a placeholder,
+    even when every source that actually applies (filings:hkexnews /
+    earnings:sec_companyfacts here) completed cleanly with nothing to
+    report for this entity. ``_empty_status`` now excludes
+    ``not_applicable`` sources from that agreement check -- this is a
+    correction of a category error, not a weakening of the fail-closed
+    guard: real, applicable sources (unavailable/degraded/unclassified/
+    stale) are still required to agree exactly as before via
+    ``sources.adverse``/``sources.uncertain``, which this change does not
+    touch. The identical fixture now honestly reaches "no_records" for
+    both cells.
     """
 
     def _health_for(issuer_ir_status: str, issuer_ir_cadence: str) -> pd.DataFrame:
@@ -2151,11 +2166,13 @@ def test_not_applicable_issuer_ir_source_no_longer_marks_category_adverse() -> N
     # the real production shape for an HK-only issuer's earnings_actuals gap.
     fixed_matrix = _matrix(_snapshot(health=_health_for("not_applicable", "")))
     filings_cell = fixed_matrix.entity_cell("TENCENT", "filings_news")
-    assert filings_cell.status_code == "partial"
+    assert filings_cell.status_code == "no_records"
+    assert filings_cell.status_code not in {"available", "unavailable"}
     assert "review_required" not in filings_cell.details
     assert "review required" not in filings_cell.details.lower()
     earnings_cell = fixed_matrix.entity_cell("TENCENT", "earnings_actuals")
-    assert earnings_cell.status_code == "partial"
+    assert earnings_cell.status_code == "no_records"
+    assert earnings_cell.status_code not in {"available", "unavailable"}
     assert "review_required" not in earnings_cell.details
     assert "review required" not in earnings_cell.details.lower()
 
@@ -2180,12 +2197,16 @@ def test_hk_only_issuer_earnings_actuals_never_reaches_available() -> None:
     snapshot is configured (a deliberate non-goal, see
     ``earnings_actuals.py``), so ``earnings_actuals`` genuinely has zero
     rows for them -- unlike ALIBABA/BAIDU, who do have SEC XBRL actuals.
-    The honest state for "every configured source was queried and there is
-    nothing for this entity" is ``no_records`` (or, if another governing
-    source in the same category has a real, unrelated issue, an honest
-    ``partial``) -- never ``available`` (rows were never queried into
-    existence) and never silently masked as ``unavailable`` (the sources
-    were, in fact, queried).
+    The honest state for "every applicable configured source was queried
+    and there is nothing for this entity" is ``no_records`` -- never
+    ``available`` (rows were never queried into existence) and never
+    silently masked as ``unavailable`` (the applicable sources were, in
+    fact, queried and completed). ``earnings:hkex_issuer_ir`` -- a
+    permanently ``not_applicable`` placeholder, not a real provider -- no
+    longer prevents this outcome; see
+    ``test_not_applicable_issuer_ir_source_no_longer_marks_category_adverse``
+    for why excluding ``not_applicable`` sources from the "every source
+    agrees" check is a correction, not a weakening.
     """
 
     # No earnings_actuals rows at all for TENCENT/KUAISHOU/BILIBILI.
@@ -2251,7 +2272,16 @@ def test_hk_only_issuer_earnings_actuals_never_reaches_available() -> None:
             f"{entity_id} has zero earnings_actuals rows and must not read "
             f"'available'; got {status!r}"
         )
-        assert status in {"no_records", "partial"}
+        assert status != "unavailable", (
+            f"{entity_id}'s applicable sources were queried and completed; "
+            f"must not read 'unavailable'; got {status!r}"
+        )
+        assert status == "no_records", (
+            f"{entity_id}: every applicable governing source (earnings_actuals, "
+            f"earnings:sec_companyfacts) completed with nothing to report, and "
+            f"earnings:hkex_issuer_ir is not_applicable, not a real provider; "
+            f"expected 'no_records', got {status!r}"
+        )
     # ALIBABA genuinely has SEC XBRL rows. It does not reach "available"
     # either here -- the category-wide "any not_applicable governing
     # source" guard in _assess_time_sensitive_rows (see the companion test
@@ -2262,3 +2292,247 @@ def test_hk_only_issuer_earnings_actuals_never_reaches_available() -> None:
     # misclassified as "unavailable" or "no_records" -- it is honestly
     # "partial", never silently upgraded to "available".
     assert matrix.status_of("ALIBABA", "earnings_actuals") == "partial"
+
+
+def test_source_state_sidecar_wrapper_row_does_not_govern_category() -> None:
+    """T6: the ``source_state_v1`` sidecar *file's own load state*
+    (source_id ``official_filings_state`` / ``earnings_actuals_state``,
+    written by ``_load_optional`` for the ``state_descriptor`` in
+    ``_build_official_filings``/``_build_earnings_actuals``) is collector
+    execution metadata about the sidecar file -- proof the builder could
+    read it -- not an observation stream with its own freshness. It
+    carries no source-native timestamp (``_state_row`` always leaves
+    ``latest_observation_at``/``source_latest_at`` null for every row it
+    emits, by design -- retrieval time is never a freshness substitute), so
+    ``classify_source_health`` reports it ``unclassified`` (age_basis
+    "none"), and ``_CategorySources.uncertain`` treats "unclassified" as
+    adverse enough to cap the *whole* category at "partial" for every
+    entity regardless of that entity's own real, fresh rows.
+
+    The fix is at the *producer*, not a consumer-side id list: build.py
+    gives this specific wrapper row a distinct ``source_kind``
+    (``OFFICIAL_FILINGS_STATE_SOURCE_KIND`` /
+    ``EARNINGS_ACTUALS_STATE_SOURCE_KIND``, e.g.
+    "earnings_collector_state") instead of reusing "earnings" /
+    "official_filing" -- the real category kinds
+    ``_CATEGORY_SOURCE_KINDS`` matches on. This test proves the row no
+    longer governs coverage *because of that distinct kind*, and that the
+    exclusion is not id-based: a source carrying the same id but the real
+    provider kind would still (correctly) govern, and the real
+    per-provider rows the builder unpacks out of the same sidecar file
+    (``earnings:sec_companyfacts``, ``filings:hkexnews``, ...) are
+    untouched and continue to govern freshness/no-records as before.
+    """
+
+    earnings_actuals = pd.DataFrame(
+        [
+            {
+                "actual_id": "A1",
+                "entity_id": "BILIBILI",
+                "listing_id": "9626_HK",
+                "metric": "eps_basic",
+                "period_end": "2026-03-31",
+                "filing_at": FRESH,
+                "published_at": FRESH,
+                "source_id": "earnings_actuals",
+            }
+        ]
+    )
+    base_health = _health(
+        earnings_actuals={
+            "status": "available",
+            "row_count": 1,
+            "source_latest_at": FRESH,
+            "cadence": "quarterly",
+            "query_attempted": True,
+            "execution_status": "completed",
+            "completed_at": FRESH,
+        }
+    )
+    # Exactly what build.py's _load_optional now emits for the sidecar
+    # file's own load state: available (the file parsed fine), no
+    # source-native timestamp, no execution evidence of its own, and a
+    # source_kind distinct from the real "earnings" governing sources.
+    wrapper_row = pd.DataFrame(
+        [
+            {
+                "source_id": "earnings_actuals_state",
+                "source_kind": "earnings_collector_state",
+                "status": "available",
+                "row_count": 3,
+                "cadence": "quarterly",
+                "query_attempted": False,
+                "execution_status": None,
+                "completed_at": None,
+            }
+        ]
+    )
+    health = pd.concat([base_health, wrapper_row], ignore_index=True)
+    matrix = _matrix(
+        _snapshot(earnings_actuals=earnings_actuals, health=health)
+    )
+
+    cell = matrix.entity_cell("BILIBILI", "earnings_actuals")
+    assert cell.status_code == "available", cell.details
+    assert "unclassified" not in cell.details.lower()
+
+    # Direct unit check against the real build.py constants: the wrapper's
+    # distinct kind never matches a category, while the same id under the
+    # real provider kind (proving this isn't an id-based exclusion) and
+    # the real per-provider rows both still do.
+    import sys as _sys
+    from pathlib import Path as _Path
+
+    repo_root = _Path(__file__).resolve().parents[1]
+    if str(repo_root) not in _sys.path:
+        _sys.path.insert(0, str(repo_root))
+    from src.research_control_tower.build import (
+        EARNINGS_ACTUALS_STATE_SOURCE_KIND,
+        OFFICIAL_FILINGS_STATE_SOURCE_KIND,
+    )
+    from control_tower.coverage import _matches_category_source
+
+    assert EARNINGS_ACTUALS_STATE_SOURCE_KIND != "earnings"
+    assert OFFICIAL_FILINGS_STATE_SOURCE_KIND != "official_filing"
+
+    assert _matches_category_source(
+        "earnings_actuals_state", EARNINGS_ACTUALS_STATE_SOURCE_KIND, "earnings_actuals"
+    ) is False
+    assert _matches_category_source(
+        "official_filings_state", OFFICIAL_FILINGS_STATE_SOURCE_KIND, "filings_news"
+    ) is False
+    # Not an id-based exclusion: the same source_id under the real
+    # provider kind would (correctly) still govern.
+    assert _matches_category_source(
+        "earnings_actuals_state", "earnings", "earnings_actuals"
+    ) is True
+    assert _matches_category_source(
+        "earnings:sec_companyfacts", "earnings", "earnings_actuals"
+    ) is True
+    assert _matches_category_source(
+        "filings:hkexnews", "official_filing", "filings_news"
+    ) is True
+
+
+def test_real_committed_inputs_pin_hk_only_issuer_and_sidecar_outcome(
+    tmp_path: Path,
+) -> None:
+    """T6 end-to-end regression over the real committed collector inputs.
+
+    Builds ``config/research_control_tower`` (registry) +
+    ``data/normalized/research_control_tower/{official_filings,earnings_actuals}_{v1,state}.parquet``
+    (real SEC/HKEX collector output, most recently regenerated by re-running
+    ``scripts/research_control_tower_earnings_actuals.py`` and
+    ``scripts/research_control_tower_official_filings.py`` against live
+    SEC/HKEX) through the actual builder and Stage 1 coverage matrix. This
+    pins today's real-data outcome for both halves of T6, complementing the
+    synthetic-fixture tests above with the real production shape.
+
+    Unlike the clean synthetic fixtures in
+    ``test_not_applicable_issuer_ir_source_no_longer_marks_category_adverse``/
+    ``test_hk_only_issuer_earnings_actuals_never_reaches_available`` (which
+    now reach ``no_records`` once ``not_applicable`` sources are excluded
+    from ``_empty_status``'s agreement check), the real data still lands on
+    ``partial`` for TENCENT/KUAISHOU/BILIBILI here, for two reasons that are
+    genuinely unrelated to the sidecar/not_applicable fixes and out of this
+    task's scope to alter:
+
+    1. BILIBILI carries both an active HKEX code *and* a stale/delisted SEC
+       CIK in ``config/research_control_tower/official_source_identity.csv``
+       (its US ADR delisted in 2025), so ``earnings:sec_companyfacts``
+       genuinely 404s for BILIBILI and reports raw status ``partial`` --
+       not one of the agreement-eligible statuses
+       (available/success/ok/no_records) -- alongside real ALIBABA/BAIDU
+       rows. This is an honest partial-execution outcome, not a category
+       error to correct.
+    2. The ``earnings_actuals`` mart file's own load-state (source_id
+       "earnings_actuals", matched by explicit id in
+       ``_CATEGORY_SOURCE_IDS``, distinct from the "earnings_actuals_state"
+       sidecar wrapper this task fixed) has never itself carried
+       query_attempted/execution_status/completed_at -- only the
+       per-provider sidecar rows do. Whether that gap should also be closed
+       is a separate, unaddressed question this test intentionally does not
+       decide.
+
+    Both are reported here rather than engineered around.
+    """
+
+    import sys as _sys
+
+    repo_root = Path(__file__).resolve().parents[1]
+    if str(repo_root) not in _sys.path:
+        _sys.path.insert(0, str(repo_root))
+    from src.research_control_tower.build import (
+        BuildConfig,
+        LocalInput,
+        build_control_tower_marts,
+        current_generation,
+    )
+
+    registry_root = repo_root / "config" / "research_control_tower"
+    data_root = repo_root / "data" / "normalized" / "research_control_tower"
+
+    def local_input(source_id: str, filename: str, schema: str) -> LocalInput:
+        return LocalInput(
+            source_id=source_id,
+            path=data_root / filename,
+            format="parquet",
+            expected_schema=schema,
+            license_class="public_metadata",
+        )
+
+    config = BuildConfig(
+        registry_root=registry_root,
+        event_root=registry_root,
+        output_dir=tmp_path / "output",
+        as_of_utc=pd.Timestamp("2026-08-17T12:00:00Z"),
+        build_id="t6-regression",
+        official_filing_inputs=(
+            local_input(
+                "official_filings", "official_filings_v1.parquet", "official_filings_v1"
+            ),
+            local_input(
+                "official_filings_state",
+                "official_filings_state.parquet",
+                "source_state_v1",
+            ),
+        ),
+        earnings_inputs=(
+            local_input(
+                "earnings_actuals", "earnings_actuals_v1.parquet", "earnings_actuals_v1"
+            ),
+            local_input(
+                "earnings_actuals_state",
+                "earnings_actuals_state.parquet",
+                "source_state_v1",
+            ),
+        ),
+    )
+    build_control_tower_marts(config)
+
+    from control_tower.repository import ControlTowerRepository
+    from control_tower.coverage import build_stage1_coverage_matrix
+
+    repository = ControlTowerRepository(current_generation(config.output_dir))
+    snapshot = repository.load_snapshot()
+    matrix = build_stage1_coverage_matrix(snapshot)
+
+    for entity_id in ("ALIBABA", "BAIDU", "TENCENT", "KUAISHOU", "BILIBILI"):
+        cell = matrix.entity_cell(entity_id, "earnings_actuals")
+        # The sidecar wrapper's own "unclassified" freshness state must
+        # never appear in a coverage detail again.
+        assert "earnings actuals state is unclassified" not in cell.details.lower()
+        # ALIBABA/BAIDU do have real SEC XBRL rows, but
+        # _assess_time_sensitive_rows' separate "any not_applicable
+        # governing source -> conflict" check (the with-rows path, distinct
+        # from _empty_status's no-rows path this task corrected) still
+        # caps them at "partial" while earnings:bytedance/hkex_issuer_ir
+        # remain category-wide not_applicable placeholders. That guard is
+        # intentionally untouched by T6 -- see the companion tests above.
+        assert cell.status_code != "available", (entity_id, cell.details)
+        assert cell.status_code != "unavailable", (entity_id, cell.details)
+
+    for entity_id in ("TENCENT", "KUAISHOU", "BILIBILI"):
+        cell = matrix.entity_cell(entity_id, "earnings_actuals")
+        assert cell.record_count == 0
+        assert cell.status_code in {"no_records", "partial"}, (entity_id, cell.details)
