@@ -701,6 +701,17 @@ def collect_official_filings(
     rows.extend(ir_rows)
     frame = pd.DataFrame(rows, columns=OFFICIAL_FILINGS_COLUMNS)
     state_frame = pd.DataFrame(states, columns=SOURCE_STATE_COLUMNS)
+    # Normalize temporal columns so a mixed ``datetime.date``/``NaT``/tz-aware
+    # object column is written as a consistent UTC parquet column instead of
+    # failing pyarrow conversion on live data.  The offline builder applies
+    # the same coercion when it publishes the date32 mart columns.
+    for column in (
+        "published_at", "accepted_at", "scheduled_date", "retrieved_at_utc",
+        "reporting_period_start", "reporting_period_end",
+    ):
+        frame[column] = pd.to_datetime(frame[column], errors="coerce", utc=True)
+    for column in ("first_observation_at", "latest_observation_at", "source_latest_at", "retrieved_at_utc"):
+        state_frame[column] = pd.to_datetime(state_frame[column], errors="coerce", utc=True)
     if output_dir is not None:
         output_dir.mkdir(parents=True, exist_ok=True)
         frame.to_parquet(output_dir / "official_filings_v1.parquet", index=False)
