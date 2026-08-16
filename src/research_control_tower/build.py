@@ -34,6 +34,7 @@ from .events import (
     load_event_bundle,
     validate_event_bundle,
 )
+from .macro import MACRO_OBSERVATION_COLUMNS
 from .registries import REGISTRY_FILES, load_registry_bundle, validate_registry_bundle
 
 
@@ -181,29 +182,7 @@ EVENT_WATCH_QUESTION_COLUMNS = [
     "registry_version",
 ]
 
-MACRO_OUTPUT_COLUMNS = [
-    "observation_id",
-    "event_id",
-    "source_id",
-    "series_id",
-    "scope",
-    "event_type",
-    "metric_name",
-    "reference_period",
-    "observation_date",
-    "release_at",
-    "actual_value",
-    "unit",
-    "frequency",
-    "first_observed_at",
-    "source_published_at",
-    "retrieved_at_utc",
-    "source_url",
-    "pit_class",
-    "source_license_class",
-    "is_provisional",
-    "registry_version",
-]
+MACRO_OUTPUT_COLUMNS = list(MACRO_OBSERVATION_COLUMNS)
 
 TASK3_SNAPSHOT_COLUMNS = [
     "snapshot_id",
@@ -526,6 +505,9 @@ _SCHEMA_ALIASES = {
     "edgar_filings": FILING_SCHEMA_ID,
     QUOTE_SNAPSHOT_SCHEMA_ID: QUOTE_SNAPSHOT_SCHEMA_ID,
     "quote_snapshots": QUOTE_SNAPSHOT_SCHEMA_ID,
+    "macro_observations_v1": "macro_observations_v1",
+    "macro_collector_v1": "macro_collector_v1",
+    "macro_observations": "macro_observations_v1",
 }
 
 _EXPECTED_OPTIONAL_SOURCES = (
@@ -1735,6 +1717,19 @@ def _build_macro(
     rows = _base_macro_frame(events).to_dict("records")
     states: list[_SourceState] = []
     degraded: list[str] = []
+    collector_descriptor = (
+        _find_descriptor(inputs, "macro_observations_v1")
+        or _find_descriptor(inputs, "macro_collector_v1")
+        or _find_descriptor(inputs, "macro_observations")
+    )
+    if collector_descriptor is not None:
+        c_state, c_frame, _ = _load_optional(collector_descriptor, "macro", as_of_utc=as_of_utc)
+        states.append(c_state)
+        if c_frame is not None and not c_frame.empty:
+            rows.extend(c_frame.to_dict("records"))
+            _set_state_from_frame(c_state, c_frame, observed_column="observation_date", retrieved_column="retrieved_at_utc")
+        else:
+            degraded.append("macro_collector")
     for adapter in (_fred_macro, _ofr_macro):
         adapter_rows, adapter_states, adapter_degraded = adapter(inputs, as_of_utc=as_of_utc)
         rows.extend(adapter_rows)

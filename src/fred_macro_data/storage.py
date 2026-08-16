@@ -81,7 +81,7 @@ class FredMacroStorage:
             if col not in merged.columns:
                 merged[col] = None
 
-        merged = merged.drop_duplicates(subset=["series_id", "date", "realtime_start"], keep="last")
+        merged = merged.drop_duplicates(subset=["series_id", "date", "realtime_start", "value"], keep="last")
         merged = merged.sort_values(by=["series_id", "date", "realtime_start"]).reset_index(drop=True)
 
         parquet_path = self.normalized_root / "fred_observations.parquet"
