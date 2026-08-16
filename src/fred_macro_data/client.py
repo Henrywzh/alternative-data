@@ -53,7 +53,14 @@ class FredMacroClient:
             fetched_at=datetime.now(timezone.utc).isoformat(),
         )
 
-    def get_observations(self, series_id: str, observation_start: str = "2015-01-01") -> list[FredObservation]:
+    def get_observations(
+        self,
+        series_id: str,
+        observation_start: str = "2015-01-01",
+        realtime_start: str | None = None,
+        realtime_end: str | None = None,
+        vintage_dates: str | list[str] | None = None,
+    ) -> list[FredObservation]:
         url = f"{self.BASE_URL}/series/observations"
         params = {
             "series_id": series_id,
@@ -61,6 +68,16 @@ class FredMacroClient:
             "file_type": "json",
             "observation_start": observation_start,
         }
+        if realtime_start:
+            params["realtime_start"] = realtime_start
+        if realtime_end:
+            params["realtime_end"] = realtime_end
+        if vintage_dates:
+            if isinstance(vintage_dates, (list, tuple)):
+                params["vintage_dates"] = ",".join(vintage_dates)
+            else:
+                params["vintage_dates"] = vintage_dates
+
         r = self.session.get(url, params=params, timeout=self.timeout)
         r.raise_for_status()
         data = r.json()
@@ -78,11 +95,15 @@ class FredMacroClient:
             except (TypeError, ValueError):
                 skipped += 1
                 continue
+            rt_start = str(obs.get("realtime_start", realtime_start or "1776-07-04"))
+            rt_end = str(obs.get("realtime_end", realtime_end or "9999-12-31"))
             points.append(FredObservation(
                 date=str(obs.get("date", "")),
                 series_id=series_id,
                 value=value,
                 fetched_at=fetched_at,
+                realtime_start=rt_start,
+                realtime_end=rt_end,
             ))
         if skipped:
             logger.warning(f"Skipped {skipped} missing/malformed observations for {series_id}.")

@@ -266,3 +266,74 @@ def materialize_macro_calendar(
     if not rows:
         return pd.DataFrame(columns=MACRO_EVENT_COLUMNS)
     return pd.DataFrame(rows, columns=MACRO_EVENT_COLUMNS)
+
+
+MACRO_OBSERVATION_COLUMNS = [
+    "observation_id",
+    "event_id",
+    "source_id",
+    "series_id",
+    "scope",
+    "event_type",
+    "metric_name",
+    "reference_period",
+    "observation_date",
+    "release_at",
+    "actual_value",
+    "unit",
+    "frequency",
+    "first_observed_at",
+    "source_published_at",
+    "retrieved_at_utc",
+    "source_url",
+    "pit_class",
+    "source_license_class",
+    "is_provisional",
+    "registry_version",
+]
+
+
+def materialize_macro_observations(
+    source_rows: Sequence[Mapping[str, Any]] | pd.DataFrame,
+) -> pd.DataFrame:
+    """Normalize raw macro observation records into the unified macro observation shape.
+
+    Pure function: no network, no file I/O.
+    """
+    if isinstance(source_rows, pd.DataFrame):
+        records = source_rows.to_dict("records")
+    else:
+        records = list(source_rows)
+
+    if not records:
+        return pd.DataFrame(columns=MACRO_OBSERVATION_COLUMNS)
+
+    rows: list[dict[str, Any]] = []
+    for row in records:
+        rows.append(
+            {
+                "observation_id": str(row.get("observation_id", "")).strip(),
+                "event_id": str(row.get("event_id", "")).strip(),
+                "source_id": str(row.get("source_id", "")).strip(),
+                "series_id": str(row.get("series_id", "")).strip(),
+                "scope": str(row.get("scope", "macro")).strip(),
+                "event_type": str(row.get("event_type", "")).strip(),
+                "metric_name": str(row.get("metric_name", "")).strip(),
+                "reference_period": str(row.get("reference_period", "")).strip(),
+                "observation_date": str(row.get("observation_date", "")).strip(),
+                "release_at": row.get("release_at", pd.NaT),
+                "actual_value": row.get("actual_value", pd.NA),
+                "unit": str(row.get("unit", "")).strip(),
+                "frequency": str(row.get("frequency", "")).strip(),
+                "first_observed_at": row.get("first_observed_at", pd.NaT),
+                "source_published_at": row.get("source_published_at", pd.NaT),
+                "retrieved_at_utc": row.get("retrieved_at_utc", pd.NaT),
+                "source_url": str(row.get("source_url", "")).strip(),
+                "pit_class": str(row.get("pit_class", "official_as_reported")).strip(),
+                "source_license_class": str(row.get("source_license_class", "public_domain")).strip(),
+                "is_provisional": bool(row.get("is_provisional", False)),
+                "registry_version": str(row.get("registry_version", "v1")).strip(),
+            }
+        )
+
+    return pd.DataFrame(rows, columns=MACRO_OBSERVATION_COLUMNS)
