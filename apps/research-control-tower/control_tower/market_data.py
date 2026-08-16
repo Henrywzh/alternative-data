@@ -128,6 +128,18 @@ def _first_present(row: Mapping[str, Any], *keys: str) -> object:
     return None
 
 
+def _vendor_symbols(row: Mapping[str, Any]) -> tuple[str, ...]:
+    raw = _text(row.get("vendor_tickers"))
+    if not raw:
+        return ()
+    return tuple(
+        symbol.strip()
+        for token in raw.split(";")
+        for _, separator, symbol in [token.partition(":")]
+        if separator and symbol.strip()
+    )
+
+
 def _empty_frame(columns: Sequence[str]) -> pd.DataFrame:
     timestamp_columns = {
         "timestamp_utc", "retrieved_at_utc", "quote_timestamp",
@@ -266,7 +278,7 @@ def normalize_market_bars(
     source_id: str = "market_bars",
     source_url: str = "",
     pit_class: str = "snapshot_from_live_source",
-    license_class: str = "public_metadata",
+    license_class: str = "personal_use_terms_unverified",
     registry_version: str = "v1",
 ) -> NormalizationResult:
     """Normalize input price bars against the listing registry and as_of_utc gate."""
@@ -415,8 +427,8 @@ def normalize_quote_snapshots(
     as_of_utc: object,
     source_id: str = "quote_snapshots",
     source_url: str = "",
-    pit_class: str = "snapshot_from_live_source",
-    license_class: str = "public_metadata",
+    pit_class: str = "snapshot_from_delayed_source",
+    license_class: str = "personal_use_terms_unverified",
     registry_version: str = "v1",
 ) -> NormalizationResult:
     """Normalize latest quote snapshots against the listing registry and as_of_utc gate."""
@@ -430,6 +442,7 @@ def normalize_quote_snapshots(
         rows = list(input_data)
 
     crosswalk, conflicted_keys = _build_listing_crosswalk_with_conflicts(listings)
+    listing_by_id = listings.set_index("listing_id", drop=False).to_dict("index") if not listings.empty else {}
     valid_rows: list[dict[str, Any]] = []
     unmapped_count = 0
     future_count = 0
@@ -441,6 +454,31 @@ def normalize_quote_snapshots(
         lid, ctick = resolve_listing_identity(row, crosswalk)
         if not lid:
             unmapped_count += 1
+            continue
+        listing = listing_by_id.get(lid, {})
+        listing_start = _to_utc_timestamp(listing.get("active_from"))
+        listing_end = _to_utc_timestamp(listing.get("active_to"))
+        if (
+            _text(listing.get("listing_status")).lower() not in {"", "active"}
+            or (listing_start is not None and listing_start > as_of_ts)
+            or (listing_end is not None and listing_end <= as_of_ts)
+        ):
+            invalid_count += 1
+            continue
+        supplied_ticker = _text(row.get("canonical_ticker"))
+        registry_ticker = _text(listing.get("canonical_ticker"))
+        if supplied_ticker and registry_ticker and supplied_ticker != registry_ticker:
+            invalid_count += 1
+            continue
+        supplied_currency = _text(row.get("currency")).upper()
+        registry_currency = _text(listing.get("currency")).upper()
+        if supplied_currency and registry_currency and supplied_currency != registry_currency:
+            invalid_count += 1
+            continue
+        supplied_provider = _text(row.get("provider_symbol")) or _text(row.get("ticker"))
+        registry_symbols = _vendor_symbols(listing)
+        if supplied_provider and registry_symbols and supplied_provider not in registry_symbols:
+            invalid_count += 1
             continue
 
         ts_raw = _first_present(row, "quote_timestamp", "timestamp_utc", "timestamp")
@@ -476,7 +514,7 @@ def normalize_quote_snapshots(
         )
         vol_val = _float_or_none(row.get("volume"))
 
-        provider_sym = _text(row.get("provider_symbol")) or _text(row.get("ticker")) or ctick
+        provider_sym = supplied_provider or (registry_symbols[0] if len(registry_symbols) == 1 else ctick)
         quote_id = _text(row.get("quote_id")) or f"quote_{lid}_{ts.strftime('%Y%m%d%H%M%S')}"
 
         valid_rows.append({
@@ -491,13 +529,23 @@ def normalize_quote_snapshots(
             "ask": ask_val,
             "day_change_pct": day_change,
             "volume": vol_val,
-            "currency": _text(row.get("currency")) or "",
+            "currency": registry_currency or supplied_currency,
             "market_status": _text(row.get("market_status")) or "unknown",
-            "latency_class": _text(row.get("latency_class")) or "unknown",
+            "latency_class": "delayed",
             "source_id": _text(row.get("source_id")) or source_id,
             "source_url": _text(row.get("source_url")) or source_url,
-            "pit_class": _text(row.get("pit_class")) or pit_class,
-            "source_license_class": _text(row.get("source_license_class")) or license_class,
+            "pit_class": (
+                "snapshot_from_delayed_source"
+                if (_text(row.get("pit_class")) or pit_class).lower()
+                in {"live", "snapshot_from_live_source"}
+                else (_text(row.get("pit_class")) or pit_class)
+            ),
+            "source_license_class": (
+                "personal_use_terms_unverified"
+                if (_text(row.get("source_license_class")) or license_class).lower()
+                in {"public", "public_metadata"}
+                else (_text(row.get("source_license_class")) or license_class)
+            ),
             "registry_version": _text(row.get("registry_version")) or registry_version,
         })
 
@@ -549,6 +597,31 @@ def normalize_quote_snapshots(
         dropped_duplicate_count=dropped_duplicate_count,
     )
 
+
+
+def format_quote_age(quote_timestamp: object, as_of_utc: object) -> str:
+    """Return a human-readable relative age string for a quote timestamp."""
+    quote_ts = _to_utc_timestamp(quote_timestamp)
+    as_of_ts = _to_utc_timestamp(as_of_utc)
+    if quote_ts is None or as_of_ts is None:
+        return "age unavailable"
+    if quote_ts > as_of_ts:
+        return "future timestamp"
+    diff = as_of_ts - quote_ts
+    total_seconds = int(diff.total_seconds())
+    if total_seconds < 60:
+        return "<1m ago"
+    minutes = total_seconds // 60
+    if minutes < 60:
+        return f"{minutes}m ago"
+    hours = minutes // 60
+    rem_minutes = minutes % 60
+    if hours < 24:
+        return f"{hours}h {rem_minutes}m ago" if rem_minutes else f"{hours}h ago"
+    days = hours // 24
+    rem_hours = hours % 24
+    return f"{days}d {rem_hours}h ago" if rem_hours else f"{days}d ago"
+
 __all__ = [
     "MARKET_BARS_COLUMNS",
     "NormalizationResult",
@@ -558,4 +631,5 @@ __all__ = [
     "normalize_market_bars",
     "normalize_quote_snapshots",
     "resolve_listing_identity",
+    "format_quote_age",
 ]
