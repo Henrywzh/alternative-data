@@ -102,29 +102,3 @@ description = "Collector source-state sidecar accompanying earnings_actuals_v1 (
 # FRED/BLS/BEA/Fed/ECB/NBS/HK-C&SD access (API keys in `.config`) that is not
 # guaranteed available at build time, and its absence does not blank out a
 # product surface the way the quote layer did.
-[[input]]
-kind = "macro"
-source_id = "macro_collector_observations"
-path = "data/normalized/research_control_tower/macro_observations.parquet"
-format = "parquet"
-schema_id = "macro_collector_v1"
-required = false
-description = "Official macro calendar observations (FRED/ALFRED, BLS, BEA, Fed, ECB, NBS China, HK C&SD)."
-
-[[input]]
-kind = "macro"
-source_id = "macro_collector_events"
-path = "data/normalized/research_control_tower/macro_events.parquet"
-format = "parquet"
-schema_id = "macro_events_v1"
-required = false
-description = "Official macro calendar events accompanying macro_collector_observations."
-
-[[input]]
-kind = "macro"
-source_id = "macro_collector_health"
-path = "data/normalized/research_control_tower/macro_source_health.json"
-format = "json"
-schema_id = "macro_source_health_v1"
-required = false
-description = "Per-source health/status sidecar written by the macro collector run."

@@ -1683,6 +1683,116 @@ def test_quote_source_priority_is_explicit_not_lexicographic(tmp_path, minimal_i
     assert quotes.iloc[0]["last_price"] == 200.0
 
 
+def _quote_row_at(
+    listing: pd.Series,
+    *,
+    quote_timestamp: str,
+    retrieved_at_utc: str = "2026-08-13T12:00:00Z",
+    source_id: str = "market:yfinance",
+) -> dict:
+    row = _active_quote_row(listing, source_id=source_id)
+    row["quote_timestamp"] = quote_timestamp
+    row["retrieved_at_utc"] = retrieved_at_utc
+    return row
+
+
+def test_quote_freshness_survives_a_weekend_session_based(tmp_path, minimal_inputs):
+    # T4-A: quote_timestamp is the close of the most recently completed
+    # session on a delayed feed, so a Friday close read on the following
+    # Monday must stay "available" -- the gap is one trading session, not
+    # ~64 hours of wall-clock time. 2026-08-07 is a Friday; 2026-08-10 is
+    # the following Monday.
+    listings = pd.read_csv(minimal_inputs.registry_root / "listings.csv")
+    listing = listings.loc[listings["listing_status"].astype("string").str.lower().eq("active")].iloc[0]
+    quote_path = tmp_path / "friday_close.parquet"
+    row = _quote_row_at(
+        listing,
+        quote_timestamp="2026-08-07T08:00:00Z",
+        retrieved_at_utc="2026-08-10T08:05:00Z",
+    )
+    pd.DataFrame([row], columns=QUOTE_SNAPSHOT_COLUMNS).to_parquet(quote_path, index=False)
+    config = replace(
+        minimal_inputs,
+        as_of_utc=pd.Timestamp("2026-08-10T08:10:00Z"),
+        quote_inputs=(_input("market:yfinance", quote_path, QUOTE_SNAPSHOT_SCHEMA_ID),),
+    )
+
+    manifest = build_control_tower_marts(config)
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    quote_health = health.loc[health["source_id"].eq("market:yfinance")].iloc[0]
+
+    assert manifest.artifacts["quote_snapshots.parquet"]["status"] == "available"
+    assert quote_health["status"] == "available"
+    assert "stale_source" not in str(quote_health["detail"])
+    quotes = pd.read_parquet(_published(config, "quote_snapshots.parquet"))
+    assert len(quotes) == 1
+
+
+def test_quote_freshness_fails_closed_on_genuinely_stale_bar(tmp_path, minimal_inputs):
+    # T4-A: a bar from three weeks before as_of_utc must never read as
+    # fresh, regardless of the session-based instrument used.
+    listings = pd.read_csv(minimal_inputs.registry_root / "listings.csv")
+    listing = listings.loc[listings["listing_status"].astype("string").str.lower().eq("active")].iloc[0]
+    quote_path = tmp_path / "three_weeks_stale.parquet"
+    row = _quote_row_at(
+        listing,
+        quote_timestamp="2026-07-24T08:00:00Z",
+        retrieved_at_utc="2026-08-13T12:00:00Z",
+    )
+    pd.DataFrame([row], columns=QUOTE_SNAPSHOT_COLUMNS).to_parquet(quote_path, index=False)
+    config = replace(
+        minimal_inputs,
+        quote_inputs=(_input("market:yfinance", quote_path, QUOTE_SNAPSHOT_SCHEMA_ID),),
+    )
+
+    manifest = build_control_tower_marts(config)
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    quote_health = health.loc[health["source_id"].eq("market:yfinance")].iloc[0]
+
+    assert manifest.artifacts["quote_snapshots.parquet"]["status"] == "degraded"
+    assert quote_health["status"] == "degraded"
+    assert "stale_source" in str(quote_health["detail"])
+    assert any(
+        error["source_id"] == "market:yfinance" and error["code"] == "stale_source"
+        for error in manifest.validation_errors
+    )
+
+
+@pytest.mark.parametrize(
+    ("quote_timestamp", "expected_status"),
+    [
+        # 2026-08-04 is a Tuesday, 2026-08-07 is the Friday of the same week:
+        # numpy.busday_count(Tue, Fri) == 3 sessions elapsed -> at the
+        # max_sessions=3 boundary, still fresh.
+        ("2026-08-04T08:00:00Z", "available"),
+        # 2026-08-03 is the Monday of that week: busday_count(Mon, Fri) == 4
+        # sessions elapsed -> one past the boundary, degraded.
+        ("2026-08-03T08:00:00Z", "degraded"),
+    ],
+)
+def test_quote_freshness_business_session_boundary(
+    tmp_path, minimal_inputs, quote_timestamp, expected_status
+):
+    listings = pd.read_csv(minimal_inputs.registry_root / "listings.csv")
+    listing = listings.loc[listings["listing_status"].astype("string").str.lower().eq("active")].iloc[0]
+    quote_path = tmp_path / "boundary.parquet"
+    row = _quote_row_at(
+        listing,
+        quote_timestamp=quote_timestamp,
+        retrieved_at_utc="2026-08-07T08:05:00Z",
+    )
+    pd.DataFrame([row], columns=QUOTE_SNAPSHOT_COLUMNS).to_parquet(quote_path, index=False)
+    config = replace(
+        minimal_inputs,
+        as_of_utc=pd.Timestamp("2026-08-07T08:10:00Z"),
+        quote_inputs=(_input("market:yfinance", quote_path, QUOTE_SNAPSHOT_SCHEMA_ID),),
+    )
+
+    manifest = build_control_tower_marts(config)
+
+    assert manifest.artifacts["quote_snapshots.parquet"]["status"] == expected_status
+
+
 def test_task3_contract_is_current_29_35_and_physical_empty_schema_is_stable(
     tmp_path, minimal_inputs
 ):
@@ -2469,6 +2579,99 @@ def test_official_filings_and_earnings_inputs_populate_optional_artifacts(tmp_pa
     health_source_ids = set(health["source_id"])
     assert set(filings["source_id"]) <= health_source_ids
     assert set(actuals["source_id"]) <= health_source_ids
+
+
+def test_input_fingerprints_include_successfully_loaded_optional_sources(tmp_path, minimal_inputs):
+    # T4-B1: a source whose file loaded successfully already has
+    # state.input_sha256 set by the time the manifest-assembly loop over
+    # optional_states runs, so gating that loop on "input_sha256 is None"
+    # skipped every successfully-loaded source and only ever recorded the
+    # still-unhashed inputs (the registry CSVs). official_filings and
+    # earnings_actuals -- the two data layers that dominate a real bundle --
+    # must be fingerprinted like everything else.
+    filings_path, filings_state = _write_official_filings_inputs(tmp_path)
+    actuals_path, actuals_state = _write_earnings_inputs(tmp_path)
+    config = replace(
+        minimal_inputs,
+        official_filing_inputs=(
+            _input("official_filings", filings_path, OFFICIAL_FILINGS_SCHEMA_ID),
+            _input("official_filings_state", filings_state, SOURCE_STATE_SCHEMA_ID),
+        ),
+        earnings_inputs=(
+            _input("earnings_actuals", actuals_path, EARNINGS_ACTUALS_SCHEMA_ID),
+            _input("earnings_actuals_state", actuals_state, SOURCE_STATE_SCHEMA_ID),
+        ),
+    )
+
+    manifest = build_control_tower_marts(config)
+
+    for path in (filings_path, filings_state, actuals_path, actuals_state):
+        assert str(path) in manifest.input_fingerprints, f"missing fingerprint for {path}"
+        assert manifest.input_fingerprints[str(path)] == _sha256(path)
+
+
+def test_source_health_input_path_is_repo_relative_inside_repo(tmp_path, minimal_inputs, monkeypatch):
+    # T4-B2: an input path that lives inside the repository checkout must be
+    # published as a repo-relative path, never the operator's absolute
+    # filesystem path (e.g. "/tmp/rtc-b23-collector-out/...").
+    import src.research_control_tower.build as build_module
+
+    fake_repo_root = tmp_path / "fake-repo"
+    inside_dir = fake_repo_root / "data" / "normalized" / "research_control_tower"
+    inside_dir.mkdir(parents=True)
+    outside_dir = tmp_path / "outside-repo"
+    outside_dir.mkdir()
+    monkeypatch.setattr(build_module, "_REPO_ROOT", fake_repo_root)
+
+    listings = pd.read_csv(minimal_inputs.registry_root / "listings.csv")
+    listing = listings.loc[listings["listing_status"].astype("string").str.lower().eq("active")].iloc[0]
+    inside_quote_path = inside_dir / "quote_snapshots.parquet"
+    outside_quote_path = outside_dir / "quote_snapshots.parquet"
+    pd.DataFrame(
+        [_active_quote_row(listing, source_id="inside_repo_source")],
+        columns=QUOTE_SNAPSHOT_COLUMNS,
+    ).to_parquet(inside_quote_path, index=False)
+    pd.DataFrame(
+        [_active_quote_row(listing, source_id="outside_repo_source")],
+        columns=QUOTE_SNAPSHOT_COLUMNS,
+    ).to_parquet(outside_quote_path, index=False)
+
+    config = replace(
+        minimal_inputs,
+        quote_inputs=(
+            LocalInput(source_id="inside_repo_source", path=inside_quote_path, format="parquet", expected_schema=QUOTE_SNAPSHOT_SCHEMA_ID, source_priority=1),
+            LocalInput(source_id="outside_repo_source", path=outside_quote_path, format="parquet", expected_schema=QUOTE_SNAPSHOT_SCHEMA_ID, source_priority=2),
+        ),
+    )
+
+    build_control_tower_marts(config)
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    by_source = health.set_index("source_id")["input_path"].to_dict()
+
+    assert by_source["inside_repo_source"] == "data/normalized/research_control_tower/quote_snapshots.parquet"
+    assert by_source["outside_repo_source"] == str(outside_quote_path)
+
+
+def test_builder_revision_is_recorded_and_reflects_dirty_tree(tmp_path, minimal_inputs, monkeypatch):
+    # T4-B3: build_manifest.json must name the code that produced it. A
+    # dirty tree must never be reported as if it were exactly a clean
+    # commit; an unavailable git repository must report an explicit
+    # "unknown:..." marker rather than a fabricated or empty value.
+    import src.research_control_tower.build as build_module
+
+    monkeypatch.setattr(build_module, "_builder_revision", lambda repo_root=None: "abc123+dirty")
+    manifest = build_control_tower_marts(minimal_inputs)
+    assert manifest.builder_revision == "abc123+dirty"
+    manifest_json = json.loads(_published(minimal_inputs, "build_manifest.json").read_text())
+    assert manifest_json["builder_revision"] == "abc123+dirty"
+
+
+def test_builder_revision_reports_unknown_without_git_dir(tmp_path):
+    import src.research_control_tower.build as build_module
+
+    no_git_root = tmp_path / "no-git-checkout"
+    no_git_root.mkdir()
+    assert build_module._builder_revision(no_git_root) == "unknown:no_git_dir"
 
 
 def test_official_filings_and_earnings_actuals_reject_pre_namespace_source_id(tmp_path, minimal_inputs):

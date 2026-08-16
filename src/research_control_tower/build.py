@@ -19,10 +19,12 @@ from pathlib import Path
 from pathlib import PurePosixPath
 import re
 import shutil
+import subprocess
 import tempfile
 from typing import Any, Iterable, Literal, Mapping, Sequence
 from zoneinfo import ZoneInfo
 
+import numpy as np
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -42,6 +44,83 @@ SCHEMA_VERSION = "control_tower_marts_v1"
 NETWORK_POLICY = "forbidden"
 CURRENT_POINTER_NAME = "CURRENT"
 GENERATIONS_DIR_NAME = "generations"
+
+# src/research_control_tower/build.py -> src/research_control_tower -> src -> repo root.
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _display_input_path(path: "Path | str | None") -> str:
+    """Render an input path for publication: repo-relative when the path is
+    inside this repository checkout, absolute only when it genuinely is not.
+
+    Operator-supplied ``LocalInput.path`` values are frequently absolute
+    (e.g. a collector run against ``/tmp/rtc-b23-collector-out/...``), and
+    publishing that raw absolute path leaks a machine-local filesystem
+    layout into a published artifact.  Most configured inputs live inside
+    the repository checkout, so the common case can be made relative
+    losslessly; genuinely external paths (an operator's scratch directory,
+    a path on another filesystem) are left absolute rather than fabricated
+    into something misleadingly relative.
+    """
+
+    if path is None or path == "":
+        return ""
+    candidate = Path(path)
+    try:
+        resolved = candidate.resolve()
+    except OSError:
+        resolved = candidate
+    try:
+        return resolved.relative_to(_REPO_ROOT).as_posix()
+    except ValueError:
+        return str(candidate)
+
+
+def _builder_revision(repo_root: Path = _REPO_ROOT) -> str:
+    """Identify the code that produced this bundle: the working tree's git
+    commit, so a published bundle can be pinned to the source that built it
+    without hand-diffing parquet schemas against ``main`` after the fact
+    (the discovery process that motivated this field).
+
+    Deliberately never fabricates a plausible-looking value: a dirty
+    working tree is recorded as ``<commit>+dirty`` (the running code is
+    provably *not* exactly that commit), and the absence of git or a
+    repository is recorded as an explicit ``unknown:<reason>`` marker
+    rather than an empty string or a guessed hash. This uses local ``git``
+    subprocess calls only -- no network access, consistent with this
+    module's ``network_policy: forbidden`` contract.
+    """
+
+    git_dir = repo_root / ".git"
+    if not git_dir.exists():
+        return "unknown:no_git_dir"
+    try:
+        head = subprocess.run(
+            ["git", "-C", str(repo_root), "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return "unknown:git_unavailable"
+    commit = head.stdout.strip()
+    if head.returncode != 0 or not commit:
+        return "unknown:git_rev_parse_failed"
+    try:
+        status = subprocess.run(
+            ["git", "-C", str(repo_root), "status", "--porcelain"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return f"{commit}+dirty_unknown"
+    if status.returncode != 0:
+        return f"{commit}+dirty_unknown"
+    return f"{commit}+dirty" if status.stdout.strip() else commit
+
 
 REGISTRY_OUTPUT_COLUMNS: dict[str, list[str]] = {
     "entities": [
@@ -664,11 +743,48 @@ _EXPECTED_OPTIONAL_SOURCES = (
     ("earnings_actuals_state", "earnings", SOURCE_STATE_SCHEMA_ID, ""),
 )
 
+
+@dataclass(frozen=True)
+class SessionFreshnessThreshold:
+    """A freshness bound expressed in completed exchange *sessions*, not
+    wall-clock duration.
+
+    ``SOURCE_FRESHNESS_THRESHOLDS`` values are normally a ``pd.Timedelta``
+    compared against ``as_of_utc - latest``.  That instrument assumes the
+    underlying data is produced continuously (a duration since the last
+    update is a meaningful "how stale" measure).  Some artifacts are not
+    continuous: a quote snapshot's ``quote_timestamp`` is the most recently
+    *completed* trading-session bar from a delayed feed
+    (``src/research_control_tower/quote_collector.py`` -- see
+    ``_session_date``/``__local_session_date``), and a single global bar is
+    the correct answer for the entire weekend, however many wall-clock hours
+    that spans.  A calendar-day ``Timedelta`` sized to survive a weekend
+    (e.g. ``days=4``) is not a fix: it silently starts reading genuinely
+    stale multi-week-old data as fresh once the window is widened past what
+    the actual gap requires, and it still breaks on any holiday longer than
+    whatever margin was picked.
+
+    ``max_sessions`` instead counts Mon-Fri business days between the
+    source's latest timestamp and ``as_of_utc`` via ``numpy.busday_count``
+    (half-open interval, so same trading day -> 0, previous trading day ->
+    1, and any run of Saturdays/Sundays in between contributes 0 -- the
+    count is weekend-invariant by construction, not by a hand-tuned
+    duration). This requires no exchange holiday calendar. A multi-day
+    weekday holiday cluster (Lunar New Year, Golden Week, a holiday
+    adjacent to a weekend) can still push the count past the threshold with
+    no calendar to explain why; that is an honest, fail-closed limitation
+    -- the row is marked ``stale_source`` rather than silently assumed
+    fresh -- not a silently wrong one.
+    """
+
+    max_sessions: int
+
+
 # These are explicit source-specific freshness windows for current-vintage
 # snapshots.  They are health policy, not release-calendar claims.  A source
 # row beyond as_of_utc fails closed; an older source is retained only as a
 # degraded health record and contributes a typed empty adapter output.
-SOURCE_FRESHNESS_THRESHOLDS = {
+SOURCE_FRESHNESS_THRESHOLDS: dict[str, "pd.Timedelta | SessionFreshnessThreshold"] = {
     FRED_OBSERVATIONS_SCHEMA_ID: pd.Timedelta(days=14),
     FRED_META_SCHEMA_ID: pd.Timedelta(days=90),
     OFR_OBSERVATIONS_SCHEMA_ID: pd.Timedelta(days=30),
@@ -682,7 +798,22 @@ SOURCE_FRESHNESS_THRESHOLDS = {
     MACRO_EVENTS_SCHEMA_ID: pd.Timedelta(days=30),
     "task3_consensus_export_v1": pd.Timedelta(days=14),
     "task3_consensus_source_health_v1": pd.Timedelta(days=14),
-    QUOTE_SNAPSHOT_SCHEMA_ID: pd.Timedelta(minutes=5),
+    # quote_timestamp is the close of the most recently completed session on
+    # a DELAYED feed (yfinance; see quote_collector.py), never a live tick --
+    # ``minutes=5`` demanded same-session real-time currency this artifact
+    # can never honestly provide (every listing read ``unavailable`` on
+    # every bundle, weekday or not).  ``max_sessions=3`` accepts the latest
+    # completed session (0), the prior session across an ordinary weekend
+    # (1, weekend-invariant -- see SessionFreshnessThreshold), and up to two
+    # additional weekday closures stacked against that weekend (2-3), which
+    # covers a single-day exchange holiday plus a normal weekend without a
+    # holiday calendar.  It still fails closed well inside "three weeks
+    # old": that many elapsed business days (~15) is far past 3, and a
+    # holiday run longer than 3 trading sessions (e.g. Lunar New Year, or
+    # the ~1 week of Golden Week closures for the CN/HK listings this
+    # artifact covers) will legitimately -- and safely -- read as stale
+    # rather than pretend a holiday calendar this build does not have.
+    QUOTE_SNAPSHOT_SCHEMA_ID: SessionFreshnessThreshold(max_sessions=3),
     # The Batch 2/3 collectors are designed for weekly-to-monthly runs; the
     # windows below are health policy for the collected snapshot, not
     # publication claims.  A stale snapshot fails closed into a typed empty
@@ -939,6 +1070,7 @@ class BuildManifest:
     source_health_summary: dict[str, int] = field(default_factory=dict)
     generation_id: str = ""
     current_pointer: str = CURRENT_POINTER_NAME
+    builder_revision: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -956,6 +1088,7 @@ class BuildManifest:
             "source_health_summary": dict(sorted(self.source_health_summary.items())),
             "generation_id": self.generation_id,
             "current_pointer": self.current_pointer,
+            "builder_revision": self.builder_revision,
         }
 
 
@@ -987,7 +1120,7 @@ class _SourceState:
     def health_row(self) -> dict[str, Any]:
         return {
             "source_id": self.source_id,
-            "input_path": str(self.path) if self.path is not None else "",
+            "input_path": _display_input_path(self.path),
             "source_kind": self.source_kind,
             "status": self.status,
             "required": self.required,
@@ -1362,17 +1495,51 @@ def _apply_source_policy(
         return
     threshold = SOURCE_FRESHNESS_THRESHOLDS.get(schema_id)
     if threshold is not None and not freshness.empty:
-        cutoff = as_of_utc - threshold
-        if freshness.max() < cutoff:
-            state.status = "degraded"
-            _append_state_error(
-                state,
-                code="stale_source",
-                message=(
-                    f"latest={_iso(freshness.max())};cutoff={_iso(cutoff)};"
-                    f"threshold={threshold}"
-                ),
-            )
+        if isinstance(threshold, SessionFreshnessThreshold):
+            sessions_elapsed = _business_sessions_elapsed(freshness.max(), as_of_utc)
+            if sessions_elapsed > threshold.max_sessions:
+                state.status = "degraded"
+                _append_state_error(
+                    state,
+                    code="stale_source",
+                    message=(
+                        f"latest={_iso(freshness.max())};as_of={_iso(as_of_utc)};"
+                        f"sessions_elapsed={sessions_elapsed};"
+                        f"max_sessions={threshold.max_sessions}"
+                    ),
+                )
+        else:
+            cutoff = as_of_utc - threshold
+            if freshness.max() < cutoff:
+                state.status = "degraded"
+                _append_state_error(
+                    state,
+                    code="stale_source",
+                    message=(
+                        f"latest={_iso(freshness.max())};cutoff={_iso(cutoff)};"
+                        f"threshold={threshold}"
+                    ),
+                )
+
+
+def _business_sessions_elapsed(latest: pd.Timestamp, as_of_utc: pd.Timestamp) -> int:
+    """Count Mon-Fri business days between ``latest`` and ``as_of_utc``.
+
+    Weekend-invariant by construction (``numpy.busday_count`` never counts a
+    Saturday or Sunday), so a Friday-close bar reads as "1 session old" on
+    the following Saturday, Sunday, *and* Monday morning alike -- it does
+    not creep upward purely because wall-clock time passed over a weekend.
+    Uses calendar dates only; no exchange holiday calendar is consulted (see
+    ``SessionFreshnessThreshold``).
+    """
+
+    if pd.isna(latest) or pd.isna(as_of_utc):
+        return 0
+    start = latest.tz_convert("UTC").normalize().to_numpy().astype("datetime64[D]")
+    end = as_of_utc.tz_convert("UTC").normalize().to_numpy().astype("datetime64[D]")
+    if end <= start:
+        return 0
+    return int(np.busday_count(start, end))
 
 
 def _read_local_input(descriptor: LocalInput) -> pd.DataFrame:
@@ -4210,6 +4377,7 @@ def _make_manifest(
         source_health_summary={str(key): int(value) for key, value in counts.items()},
         generation_id=generation_id,
         current_pointer=f"{GENERATIONS_DIR_NAME}/{generation_id}",
+        builder_revision=_builder_revision(),
     )
 
 
@@ -4373,8 +4541,19 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
             + ",".join(sorted(set(optional_degraded)))
         )
     for state in optional_states:
-        if state.path is not None and state.path.is_file() and state.input_sha256 is None:
-            state.input_sha256 = _file_hash(state.path)
+        # Every configured optional input that actually contributed a file
+        # belongs in the published manifest's input_fingerprints, whether
+        # its hash was computed earlier in the pipeline (a successfully
+        # loaded source -- official_filings, earnings_actuals, etc. -- sets
+        # state.input_sha256 as soon as it reads the file) or is computed
+        # here for the first time.  Gating this on ``state.input_sha256 is
+        # None`` skipped every already-hashed source, so the manifest
+        # recorded only the handful of inputs that happened to still be
+        # unhashed at this point (the registry CSVs) and silently omitted
+        # everything else the build actually consumed.
+        if state.path is not None and state.path.is_file():
+            if state.input_sha256 is None:
+                state.input_sha256 = _file_hash(state.path)
             input_fingerprints[str(state.path)] = state.input_sha256
     health_frame = _health_frame(optional_states, required_states)
     frames["source_health.parquet"] = health_frame
