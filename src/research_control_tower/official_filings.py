@@ -56,7 +56,7 @@ HKEXNEWS_HEADERS = {
 }
 
 SEC_SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik:010d}.json"
-SEC_FORMS_OF_INTEREST = frozenset({"6-K", "6-K/A", "20-F", "20-F/A", "10-K", "10-Q", "8-K"})
+SEC_FORMS_OF_INTEREST = frozenset({"6-K", "6-K/A", "20-F", "20-F/A", "10-K", "10-K/A", "10-Q", "10-Q/A", "8-K", "8-K/A"})
 SEC_REQUEST_INTERVAL_SECONDS = 0.2
 
 PIT_CLASS = "snapshot_from_live_source"
@@ -184,17 +184,22 @@ def _sec_metadata_rows(
         else:
             filing_url = f"https://www.sec.gov/Archives/edgar/data/{cik}/{accn_nodash}/"
         description = description or primary_document or "filing"
-        is_annual = form in {"20-F", "20-F/A", "10-K"}
+        is_annual = form in {"20-F", "20-F/A", "10-K", "10-K/A"}
+        is_quarterly = form in {"10-Q", "10-Q/A"}
         period_label = ""
         period_end: object = pd.NaT
         if is_annual and not pd.isna(report_date):
             period_end = report_date
             period_label = f"FY{report_date.year}"
+        elif is_quarterly and not pd.isna(report_date):
+            period_end = report_date
+            quarter = (report_date.month - 1) // 3 + 1
+            period_label = f"Q{quarter}{report_date.year}"
         rows.append(
             {
                 "document_id": f"sec:{accession}",
                 "document_type": "filing",
-                "event_class": "earnings_results" if is_annual else "general",
+                "event_class": "earnings_results" if (is_annual or is_quarterly) else "general",
                 "source_id": "sec_edgar_submissions",
                 "headline": f"{company_name} — Form {form} — {description}",
                 "publisher": "SEC EDGAR",
@@ -299,7 +304,7 @@ def _hkex_period_metadata(period_end: date, granularity: str | None) -> dict[str
         start = date(period_end.year, 1, 1)
         label = f"FY{period_end.year}"
     elif granularity == "interim":
-        start = period_end - timedelta(days=182)
+        start = date(period_end.year, 1, 1)
         label = f"1H{period_end.year}"
     elif granularity == "quarterly":
         quarter = min((period_end.month - 1) // 3 + 1, 4)
@@ -434,8 +439,6 @@ def _hkex_announcement_rows(
                     "registry_version": "v1",
                 }
             )
-        if not raw_rows:
-            break
         cursor = window_start - timedelta(days=1)
         time.sleep(0.4)
     state = "available" if rows else ("no_records" if queried else "unavailable")

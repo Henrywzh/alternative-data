@@ -188,7 +188,7 @@ def materialize_macro_calendar(
             )
             provided_key = _first(source_row, ("event_key", "event_id"), default="")
             if provided_key:
-                event_key = str(provided_key).strip()
+                event_key = _safe_identifier(str(provided_key).strip())
             else:
                 release_id = _first(source_row, ("release_id",), default="")
                 ref_period = _first(source_row, ("reference_period", "period"), default="")

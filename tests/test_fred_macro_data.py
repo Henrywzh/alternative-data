@@ -25,8 +25,22 @@ def _meta(series_id: str, title: str, fetched_at: str) -> FredSeriesMeta:
     )
 
 
-def _obs(series_id: str, date: str, value: float, fetched_at: str) -> FredObservation:
-    return FredObservation(date=date, series_id=series_id, value=value, fetched_at=fetched_at)
+def _obs(
+    series_id: str,
+    date: str,
+    value: float,
+    fetched_at: str,
+    realtime_start: str | None = None,
+    realtime_end: str | None = None,
+) -> FredObservation:
+    return FredObservation(
+        date=date,
+        series_id=series_id,
+        value=value,
+        fetched_at=fetched_at,
+        realtime_start=realtime_start,
+        realtime_end=realtime_end,
+    )
 
 
 def test_upsert_series_meta_keeps_latest_and_dedupes(tmp_path: Path) -> None:
@@ -39,7 +53,10 @@ def test_upsert_series_meta_keeps_latest_and_dedupes(tmp_path: Path) -> None:
     assert merged.iloc[0]["title"] == "SOFR v2"
 
 
-def test_upsert_observations_dedupes_by_series_and_date(tmp_path: Path) -> None:
+def test_upsert_observations_dedupes_by_series_date_realtime_and_value(tmp_path: Path) -> None:
+    # The upsert key is (series_id, date, realtime_start, value): the legacy
+    # (series_id, date) key collapsed same-day values; the new key preserves
+    # distinct values and vintage bounds for the same observation date.
     storage = FredMacroStorage(tmp_path)
 
     storage.upsert_observations([_obs("SOFR", "2026-07-01", 3.5, "t1")])
@@ -50,10 +67,36 @@ def test_upsert_observations_dedupes_by_series_and_date(tmp_path: Path) -> None:
         ]
     )
 
-    assert len(merged) == 2
-    row = merged[merged["date"] == "2026-07-01"].iloc[0]
-    assert row["value"] == 3.6
+    # 3.5 and 3.6 are distinct (series, date, realtime_start, value) keys and
+    # both survive; 2026-07-02 adds a third row.
+    assert len(merged) == 3
+    july_first = merged[merged["date"] == "2026-07-01"]
+    assert set(july_first["value"]) == {3.5, 3.6}
     assert pd.api.types.is_numeric_dtype(merged["value"])
+
+
+def test_upsert_observations_preserves_same_vintage_value_change(tmp_path: Path) -> None:
+    # A value change within the same vintage (same series/date/realtime_start)
+    # must not silently overwrite the previously stored value: it is a new
+    # (…, value) key, while re-inserting the identical record dedupes.
+    storage = FredMacroStorage(tmp_path)
+
+    storage.upsert_observations(
+        [_obs("SOFR", "2026-07-01", 3.5, "t1", realtime_start="2026-07-02", realtime_end="9999-12-31")]
+    )
+    merged = storage.upsert_observations(
+        [_obs("SOFR", "2026-07-01", 3.6, "t2", realtime_start="2026-07-02", realtime_end="9999-12-31")]
+    )
+
+    assert len(merged) == 2
+    assert set(merged["value"]) == {3.5, 3.6}
+    assert merged["realtime_start"].dropna().eq("2026-07-02").all()
+
+    # Identical record re-inserted -> deduped, still two rows.
+    merged_again = storage.upsert_observations(
+        [_obs("SOFR", "2026-07-01", 3.6, "t3", realtime_start="2026-07-02", realtime_end="9999-12-31")]
+    )
+    assert len(merged_again) == 2
 
 
 def test_resolve_api_key_prefers_env_over_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -113,6 +156,32 @@ def test_get_observations_skips_missing_and_malformed_values() -> None:
     points = client.get_observations("SOFR")
 
     assert [p.date for p in points] == ["2026-07-01", "2026-07-05"]
+
+
+def test_get_observations_does_not_fabricate_vintages_from_request_window() -> None:
+    # P2-12: per-observation realtime bounds are authoritative; when the API
+    # omits them the vintage is unknown (NULL) rather than the request window.
+    client = FredMacroClient(api_key="key")
+    client.session = FakeSession(
+        {
+            "observations": [
+                {"date": "2026-07-01", "value": "3.5"},
+                {
+                    "date": "2026-07-02",
+                    "value": "3.6",
+                    "realtime_start": "2026-07-03",
+                    "realtime_end": "9999-12-31",
+                },
+            ]
+        }
+    )
+
+    points = client.get_observations("SOFR", realtime_start="2015-01-01")
+
+    assert points[0].realtime_start is None
+    assert points[0].realtime_end is None
+    assert points[1].realtime_start == "2026-07-03"
+    assert points[1].realtime_end == "9999-12-31"
 
 
 def test_get_series_meta_raises_when_series_not_found() -> None:

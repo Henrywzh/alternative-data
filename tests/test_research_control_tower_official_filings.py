@@ -141,7 +141,7 @@ def test_hkex_title_classification_covers_annual_interim_quarterly_and_general()
     assert _classify_hkex_title("ANNOUNCEMENT OF THE RESULTS FOR THE THREE AND SIX MONTHS ENDED 30 JUNE 2026") == {
         "event_class": "earnings_results",
         "reporting_period_label": "1H2026",
-        "reporting_period_start": date(2025, 12, 30),
+        "reporting_period_start": date(2026, 1, 1),
         "reporting_period_end": date(2026, 6, 30),
     }
     annual = _classify_hkex_title("ANNOUNCEMENT OF ANNUAL RESULTS FOR THE YEAR ENDED DECEMBER 31, 2025")
@@ -254,3 +254,76 @@ def test_collector_writes_honest_issuer_ir_and_bytedance_states(tmp_path):
     assert (output / "official_filings_v1.parquet").is_file()
     assert (output / "official_filings_state.parquet").is_file()
     assert not any("body" in column for column in frame.columns)
+
+
+def test_sec_mapping_populates_10q_period_and_earnings_class():
+    payload = {
+        "cik": 320193,
+        "name": "Apple Inc.",
+        "filings": {
+            "recent": {
+                "form": ["10-Q", "10-Q/A"],
+                "accessionNumber": ["0000320193-26-000010", "0000320193-26-000011"],
+                "filingDate": ["2026-05-01", "2026-05-15"],
+                "acceptanceDateTime": ["2026-05-01T16:30:00-04:00", "2026-05-15T16:30:00-04:00"],
+                "reportDate": ["2026-03-28", "2026-03-28"],
+                "primaryDocument": ["a10-q.htm", "a10-qa.htm"],
+                "primaryDocDescription": ["FORM 10-Q", "FORM 10-Q/A"],
+            }
+        },
+    }
+    rows = _sec_metadata_rows(
+        payload,
+        cik=320193,
+        entity_id="APPLE",
+        listing_id="AAPL_US",
+        canonical_ticker="AAPL.US",
+        as_of_utc=pd.Timestamp("2026-08-16T12:00:00Z"),
+        lookback_days=365,
+        fetched_at=pd.Timestamp("2026-08-16T12:00:00Z"),
+        max_rows=10,
+    )
+    assert len(rows) == 2
+    for row in rows:
+        assert row["event_class"] == "earnings_results"
+        assert row["reporting_period_label"] == "Q12026"
+        assert row["reporting_period_end"] == pd.Timestamp("2026-03-28T00:00:00Z")
+
+
+class _FakeHkexSessionWithMiddleEmpty:
+    def __init__(self, stock_id="7609"):
+        self.stock_id = stock_id
+        self._title_searches = 0
+
+    def get(self, url, *, params=None, headers=None, timeout=None):
+        if url.endswith("prefix.do"):
+            return _FakeResponse(
+                {"more": "1", "stockInfo": [{"stockId": self.stock_id, "code": "00700", "name": "TENCENT"}]},
+                jsonp=True,
+            )
+        self._title_searches += 1
+        if self._title_searches == 1:
+            return _FakeResponse({"result": json.dumps([_hkex_row(NEWS_ID="2026081200001", DATE_TIME="12/08/2026 16:31")])})
+        elif self._title_searches == 2:
+            return _FakeResponse({"result": "[]"})
+        elif self._title_searches == 3:
+            return _FakeResponse({"result": json.dumps([_hkex_row(NEWS_ID="2026061000002", DATE_TIME="10/06/2026 16:31")])})
+        return _FakeResponse({"result": "[]"})
+
+
+def test_hkex_title_search_pagination_continues_past_empty_middle_window():
+    session = _FakeHkexSessionWithMiddleEmpty()
+    mapped, state = _hkex_announcement_rows(
+        session,
+        ticker="700",
+        entity_id="TENCENT",
+        listing_id="0700_HK",
+        canonical_ticker="0700.HK",
+        as_of_utc=pd.Timestamp("2026-08-16T12:00:00Z"),
+        lookback_days=90,
+        fetched_at=pd.Timestamp("2026-08-16T12:00:00Z"),
+        timeout=5,
+        max_rows=100,
+    )
+    assert state == "available"
+    assert [row["document_id"] for row in mapped] == ["hkexnews:2026081200001", "hkexnews:2026061000002"]
