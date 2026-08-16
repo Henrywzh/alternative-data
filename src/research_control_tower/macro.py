@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -186,7 +186,18 @@ def materialize_macro_calendar(
                 if not pd.isna(starts_at)
                 else "TIMING_UNAVAILABLE"
             )
-            event_key = f"MACRO_{source_namespace}_{timing_token}_{row_number:04d}"
+            provided_key = _first(source_row, ("event_key", "event_id"), default="")
+            if provided_key:
+                event_key = str(provided_key).strip()
+            else:
+                release_id = _first(source_row, ("release_id",), default="")
+                ref_period = _first(source_row, ("reference_period", "period"), default="")
+                if release_id:
+                    event_key = f"MACRO_{source_namespace}_R{release_id}_{timing_token}"
+                elif ref_period:
+                    event_key = f"MACRO_{source_namespace}_{_safe_identifier(ref_period)}_{timing_token}"
+                else:
+                    event_key = f"MACRO_{source_namespace}_{timing_token}"
             title = str(
                 _first(
                     source_row,
@@ -240,7 +251,7 @@ def materialize_macro_calendar(
                     "first_observed_at": observed_at,
                     "last_verified_at": observed_at,
                     "review_by": _first(source_row, ("review_by",), default=""),
-                    "supersedes_event_id": "",
+                    "supersedes_event_id": str(_first(source_row, ("supersedes_event_id", "supersedes"), default="")).strip(),
                     "evidence_class": "source_observation",
                     "evidence_ref": source_url or f"source:{source_id}",
                     "reference_period": _value(source_row, ("reference_period", "period")),
@@ -266,3 +277,80 @@ def materialize_macro_calendar(
     if not rows:
         return pd.DataFrame(columns=MACRO_EVENT_COLUMNS)
     return pd.DataFrame(rows, columns=MACRO_EVENT_COLUMNS)
+
+
+MACRO_OBSERVATION_COLUMNS = [
+    "observation_id",
+    "event_id",
+    "source_id",
+    "series_id",
+    "scope",
+    "event_type",
+    "metric_name",
+    "reference_period",
+    "observation_date",
+    "release_at",
+    "actual_value",
+    "unit",
+    "frequency",
+    "first_observed_at",
+    "source_published_at",
+    "retrieved_at_utc",
+    "source_url",
+    "pit_class",
+    "source_license_class",
+    "is_provisional",
+    "realtime_start",
+    "realtime_end",
+    "registry_version",
+]
+
+
+def materialize_macro_observations(
+    source_rows: Sequence[Mapping[str, Any]] | pd.DataFrame,
+) -> pd.DataFrame:
+    """Normalize raw macro observation records into the unified macro observation shape.
+
+    Pure function: no network, no file I/O. Retains realtime_start and realtime_end vintage fields.
+    """
+    if isinstance(source_rows, pd.DataFrame):
+        records = source_rows.to_dict("records")
+    else:
+        records = list(source_rows)
+
+    if not records:
+        return pd.DataFrame(columns=MACRO_OBSERVATION_COLUMNS)
+
+    rows: list[dict[str, Any]] = []
+    for row in records:
+        rt_start = row.get("realtime_start")
+        rt_end = row.get("realtime_end")
+        rows.append(
+            {
+                "observation_id": str(row.get("observation_id", "")).strip(),
+                "event_id": str(row.get("event_id", "")).strip(),
+                "source_id": str(row.get("source_id", "")).strip(),
+                "series_id": str(row.get("series_id", "")).strip(),
+                "scope": str(row.get("scope", "macro")).strip(),
+                "event_type": str(row.get("event_type", "")).strip(),
+                "metric_name": str(row.get("metric_name", "")).strip(),
+                "reference_period": str(row.get("reference_period", "")).strip(),
+                "observation_date": str(row.get("observation_date", "")).strip(),
+                "release_at": row.get("release_at", pd.NaT),
+                "actual_value": row.get("actual_value", pd.NA),
+                "unit": str(row.get("unit", "")).strip(),
+                "frequency": str(row.get("frequency", "")).strip(),
+                "first_observed_at": row.get("first_observed_at", pd.NaT),
+                "source_published_at": row.get("source_published_at", pd.NaT),
+                "retrieved_at_utc": row.get("retrieved_at_utc", pd.NaT),
+                "source_url": str(row.get("source_url", "")).strip(),
+                "pit_class": str(row.get("pit_class", "official_as_reported")).strip(),
+                "source_license_class": str(row.get("source_license_class", "public_domain")).strip(),
+                "is_provisional": bool(row.get("is_provisional", False)),
+                "realtime_start": str(rt_start) if (rt_start is not None and not pd.isna(rt_start)) else None,
+                "realtime_end": str(rt_end) if (rt_end is not None and not pd.isna(rt_end)) else None,
+                "registry_version": str(row.get("registry_version", "v1")).strip(),
+            }
+        )
+
+    return pd.DataFrame(rows, columns=MACRO_OBSERVATION_COLUMNS)
