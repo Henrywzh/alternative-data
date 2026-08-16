@@ -245,6 +245,33 @@ def _snapshot(
                 )
             )
         ),
+        official_filings=frame(
+            (
+                "document_id",
+                "entity_id",
+                "listing_id",
+                "published_at",
+                "accepted_at",
+            )
+        ),
+        earnings_calendar=frame(
+            (
+                "calendar_id",
+                "entity_id",
+                "listing_id",
+                "event_date",
+                "period_end",
+            )
+        ),
+        earnings_actuals=frame(
+            (
+                "actual_id",
+                "entity_id",
+                "listing_id",
+                "metric",
+                "period_end",
+            )
+        ),
         source_health=health if health is not None else _health(),
         manifest={"build_id": "coverage-states-fixture"},
         status="success",

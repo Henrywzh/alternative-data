@@ -803,6 +803,20 @@ QUALITY_CLASSES = frozenset({"official", "official_metadata", "discovery", "enti
 # None of these mark a build degraded; ``unavailable``/``degraded`` do.
 CONTRIBUTING_STATUSES = frozenset({"available", "partial", "no_records"})
 
+# Artifact-level availability policy.  Strict by default (Batch 0-1): only an
+# all-``available`` contributing set publishes an ``available`` artifact, so a
+# quote source with no usable rows stays degraded.  The Batch 2/3 official-
+# source marts relax this: an honest ``partial``/``no_records``/
+# ``not_applicable`` source state from the collector sidecar is a successful
+# query result per the plan's coverage semantics, not a degraded build.
+STRICT_USABLE_STATUSES = frozenset({"available"})
+B23_USABLE_STATUSES = CONTRIBUTING_STATUSES | {"not_applicable"}
+_ARTIFACT_USABLE_STATUSES = {
+    "official_filings.parquet": B23_USABLE_STATUSES,
+    "earnings_calendar.parquet": B23_USABLE_STATUSES,
+    "earnings_actuals.parquet": B23_USABLE_STATUSES,
+}
+
 
 class BuildError(ValueError):
     """Raised when a required build contract cannot be satisfied."""
@@ -3443,12 +3457,13 @@ def _artifact_record(
 def _artifact_status(
     source_ids: Sequence[str],
     states_by_id: Mapping[str, _SourceState],
+    *,
+    usable_statuses: frozenset[str] = STRICT_USABLE_STATUSES,
 ) -> str:
     contributing = [states_by_id[source_id] for source_id in source_ids if source_id in states_by_id]
-    usable = CONTRIBUTING_STATUSES | {"not_applicable"}
     if not contributing:
         return "unavailable"
-    if all(state.status in usable for state in contributing):
+    if all(state.status in usable_statuses for state in contributing):
         return "available"
     if all(state.status == "unavailable" for state in contributing):
         return "unavailable"
@@ -3694,7 +3709,11 @@ def _make_manifest(
         status = (
             "available"
             if name == "source_health.parquet"
-            else _artifact_status(source_ids, states_by_id)
+            else _artifact_status(
+                source_ids,
+                states_by_id,
+                usable_statuses=_ARTIFACT_USABLE_STATUSES.get(name, STRICT_USABLE_STATUSES),
+            )
         )
         artifacts[name] = _artifact_record(
             staging / name,
