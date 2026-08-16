@@ -23,6 +23,8 @@ class FredObservation:
     series_id: str
     value: float
     fetched_at: str
+    realtime_start: str = "1776-07-04"
+    realtime_end: str = "9999-12-31"
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
