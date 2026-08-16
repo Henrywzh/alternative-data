@@ -6,8 +6,8 @@
     "title": "Hong Kong Population, Migration & Cross-Border Data Monitor",
     "description": "High-frequency passenger net flow, population estimates, MPF departure claims, Mainland student enrolment & GBA transport signals.",
     "sector": "hk-population-migration",
-    "generatedAt": "2026-08-15T06:57:53.234634Z",
-    "dataAsOf": "2026-08-14",
+    "generatedAt": "2026-08-16T06:59:39.981346Z",
+    "dataAsOf": "2026-08-15",
     "liveSourcesCount": 6,
     "totalSourcesCount": 6,
     "cards": [
@@ -344,7 +344,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `df635ba82f3857f8` · generated 2026-08-15T06:57:53.234634Z.  This is a published snapshot, not a live connection. Official ImmD, C&SD, MPFA, UGC and TD open data."
+        "body": "**Data snapshot:** `53f59d4a28e849c8` · generated 2026-08-16T06:59:39.981346Z.  This is a published snapshot, not a live connection. Official ImmD, C&SD, MPFA, UGC and TD open data."
       },
       {
         "id": "kpi_grid",
@@ -404,17 +404,10 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-15T06:57:53.234634Z",
+    "generatedAt": "2026-08-16T06:59:39.981346Z",
     "status": "ready",
     "datasets": {
       "immd_daily_traffic": [
-        {
-          "date": "2025-08-15",
-          "hk_resident_net_flow": -65715.0,
-          "mainland_visitor_net_retention": 6581.0,
-          "hk_resident_departures_7d_ma": 330692.6,
-          "mainland_visitor_arrivals_7d_ma": 142854.0
-        },
         {
           "date": "2025-08-16",
           "hk_resident_net_flow": -131394.0,
@@ -2962,19 +2955,16 @@
           "mainland_visitor_net_retention": -3187.0,
           "hk_resident_departures_7d_ma": 348311.0,
           "mainland_visitor_arrivals_7d_ma": 156809.1
+        },
+        {
+          "date": "2026-08-15",
+          "hk_resident_net_flow": -135547.0,
+          "mainland_visitor_net_retention": 4727.0,
+          "hk_resident_departures_7d_ma": 348526.7,
+          "mainland_visitor_arrivals_7d_ma": 153410.0
         }
       ],
       "immd_net_flow_history": [
-        {
-          "date": "2025-08-15",
-          "series": "HK Resident Net Flow",
-          "value": -65715.0
-        },
-        {
-          "date": "2025-08-15",
-          "series": "Mainland Visitor Net Retention",
-          "value": 6581.0
-        },
         {
           "date": "2025-08-16",
           "series": "HK Resident Net Flow",
@@ -6614,6 +6604,16 @@
           "date": "2026-08-14",
           "series": "Mainland Visitor Net Retention",
           "value": -3187.0
+        },
+        {
+          "date": "2026-08-15",
+          "series": "HK Resident Net Flow",
+          "value": -135547.0
+        },
+        {
+          "date": "2026-08-15",
+          "series": "Mainland Visitor Net Retention",
+          "value": 4727.0
         }
       ],
       "csd_population": [
@@ -18198,7 +18198,7 @@
       "label": "Immigration Department Daily Passenger Traffic",
       "status": "success",
       "records": 365,
-      "latest_observation": "2026-08-14",
+      "latest_observation": "2026-08-15",
       "freshness": "dated",
       "notes": "Daily passenger clearance by control point, direction and residency, used to derive HK-resident net flow and Mainland-visitor net retention."
     },
@@ -18252,8 +18252,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-population-migration/",
     "sector_id": "hk-population-migration",
     "sector_name": "Hong Kong Population, Migration & Cross-Border Data Monitor",
-    "snapshotId": "df635ba82f3857f8",
-    "generatedAt": "2026-08-15T06:57:53.234634Z",
-    "dataAsOf": "2026-08-14"
+    "snapshotId": "53f59d4a28e849c8",
+    "generatedAt": "2026-08-16T06:59:39.981346Z",
+    "dataAsOf": "2026-08-15"
   }
 }
