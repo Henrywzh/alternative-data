@@ -168,3 +168,98 @@ def test_sec_companyfacts_rows_flow_through_collector(tmp_path):
     assert set(frame["source_id"]) == {"sec_companyfacts"}
     assert state.loc[state["source_id"].eq("earnings:sec_companyfacts"), "status"].iloc[0] == "available"
     assert state.loc[state["source_id"].eq("earnings:bytedance"), "status"].iloc[0] == "not_applicable"
+
+
+def test_fact_rows_combines_legacy_and_modern_taxonomy_tags_for_non_overlapping_periods():
+    legacy_rows = [
+        {
+            "start": "2016-01-01", "end": "2016-12-31", "val": 100000000,
+            "accn": "0000000000-17-000001", "fy": 2016, "fp": "FY",
+            "form": "10-K", "filed": "2017-02-15",
+        },
+        {
+            "start": "2017-01-01", "end": "2017-12-31", "val": 120000000,
+            "accn": "0000000000-18-000001", "fy": 2017, "fp": "FY",
+            "form": "10-K", "filed": "2018-02-15",
+        },
+    ]
+    modern_rows = [
+        {
+            "start": "2018-01-01", "end": "2018-12-31", "val": 150000000,
+            "accn": "0000000000-19-000001", "fy": 2018, "fp": "FY",
+            "form": "10-K", "filed": "2019-02-15",
+        },
+    ]
+    payload = {
+        "cik": 100000,
+        "entityName": "Legacy Filer Inc",
+        "facts": {
+            "us-gaap": {
+                "RevenueFromContractWithCustomerExcludingAssessedTax": {"units": {"USD": modern_rows}},
+                "SalesRevenueNet": {"units": {"USD": legacy_rows}},
+            }
+        },
+    }
+    rows = _fact_rows(
+        payload,
+        cik=100000,
+        entity_id="LEGACY",
+        listing_id="LEG_US",
+        canonical_ticker="LEG.US",
+        as_of_utc=pd.Timestamp("2026-08-16T12:00:00Z"),
+        filed_cutoff=pd.Timestamp("2015-01-01T00:00:00Z"),
+        fetched_at=pd.Timestamp("2026-08-16T12:00:00Z"),
+        max_rows=100,
+    )
+    assert len(rows) == 3
+    period_ends = {r["period_end"] for r in rows}
+    assert period_ends == {date(2016, 12, 31), date(2017, 12, 31), date(2018, 12, 31)}
+    by_tag = {r["period_end"]: r["tag"] for r in rows}
+    assert by_tag[date(2016, 12, 31)] == "SalesRevenueNet"
+    assert by_tag[date(2017, 12, 31)] == "SalesRevenueNet"
+    assert by_tag[date(2018, 12, 31)] == "RevenueFromContractWithCustomerExcludingAssessedTax"
+
+
+def test_fact_rows_supports_ifrs_full_taxonomy_tags():
+    ifrs_revenue_rows = [
+        {
+            "start": "2025-01-01", "end": "2025-12-31", "val": 250000000,
+            "accn": "0000000000-26-000001", "fy": 2025, "fp": "FY",
+            "form": "20-F", "filed": "2026-03-30",
+        }
+    ]
+    ifrs_profit_rows = [
+        {
+            "start": "2025-01-01", "end": "2025-12-31", "val": 45000000,
+            "accn": "0000000000-26-000001", "fy": 2025, "fp": "FY",
+            "form": "20-F", "filed": "2026-03-30",
+        }
+    ]
+    payload = {
+        "cik": 200000,
+        "entityName": "IFRS Filer Corp",
+        "facts": {
+            "ifrs-full": {
+                "Revenue": {"units": {"EUR": ifrs_revenue_rows}},
+                "ProfitLoss": {"units": {"EUR": ifrs_profit_rows}},
+            }
+        },
+    }
+    extracted = _fact_rows(
+        payload,
+        cik=200000,
+        entity_id="IFRS_CO",
+        listing_id="IFRS_US",
+        canonical_ticker="IFRS.US",
+        as_of_utc=pd.Timestamp("2026-08-16T12:00:00Z"),
+        filed_cutoff=pd.Timestamp("2025-01-01T00:00:00Z"),
+        fetched_at=pd.Timestamp("2026-08-16T12:00:00Z"),
+        max_rows=100,
+    )
+    rows = _lineage(extracted)
+    assert len(rows) == 2
+    metrics = {r["metric"]: r for r in rows}
+    assert "revenue" in metrics
+    assert "net_income" in metrics
+    assert metrics["revenue"]["accounting_basis"] == "ifrs-full as reported"
+    assert metrics["net_income"]["accounting_basis"] == "ifrs-full as reported"

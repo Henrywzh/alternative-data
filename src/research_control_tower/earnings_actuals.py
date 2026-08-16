@@ -52,11 +52,24 @@ METRIC_TAGS: dict[str, tuple[str, ...]] = {
         "RevenueFromContractWithCustomerIncludingAssessedTax",
         "Revenues",
         "SalesRevenueNet",
+        "Revenue",
     ),
-    "operating_income": ("OperatingIncomeLoss",),
-    "net_income": ("NetIncomeLoss",),
-    "eps_basic": ("EarningsPerShareBasic",),
-    "eps_diluted": ("EarningsPerShareDiluted",),
+    "operating_income": (
+        "OperatingIncomeLoss",
+        "ProfitLossFromOperatingActivities",
+    ),
+    "net_income": (
+        "NetIncomeLoss",
+        "ProfitLoss",
+    ),
+    "eps_basic": (
+        "EarningsPerShareBasic",
+        "BasicEarningsLossPerShare",
+    ),
+    "eps_diluted": (
+        "EarningsPerShareDiluted",
+        "DilutedEarningsLossPerShare",
+    ),
 }
 INTERESTING_FORMS = frozenset({"20-F", "20-F/A", "10-K", "10-Q", "6-K"})
 
@@ -143,6 +156,8 @@ def _fact_rows(
     facts = payload.get("facts", {})
     rows: list[dict[str, Any]] = []
     for metric, tags in METRIC_TAGS.items():
+        covered_periods: set[tuple[date, date]] = set()
+        metric_rows: list[dict[str, Any]] = []
         for tag in tags:
             taxonomy = ""
             tag_data: Mapping[str, Any] = {}
@@ -158,7 +173,8 @@ def _fact_rows(
             if not units:
                 continue
             unit, observations = next(iter(units.items()))
-            seen: set[tuple[str, str, str]] = set()
+            seen_keys: set[tuple[str, date, date]] = set()
+            tag_periods: set[tuple[date, date]] = set()
             for observation in observations:
                 start = _utc(observation.get("start")).normalize()
                 end = _utc(observation.get("end")).normalize()
@@ -172,17 +188,23 @@ def _fact_rows(
                 form = _text(observation.get("form")).upper()
                 if form not in INTERESTING_FORMS:
                     continue
-                key = (accession, start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d"))
-                if key in seen:
+                period_start = start.date()
+                period_end = end.date()
+                period_key = (period_start, period_end)
+                if period_key in covered_periods:
                     continue
-                seen.add(key)
-                rows.append(
+                key = (accession, period_start, period_end)
+                if key in seen_keys:
+                    continue
+                seen_keys.add(key)
+                tag_periods.add(period_key)
+                metric_rows.append(
                     {
                         "metric": metric,
                         "tag": tag,
                         "taxonomy": taxonomy,
-                        "period_start": start.date(),
-                        "period_end": end.date(),
+                        "period_start": period_start,
+                        "period_end": period_end,
                         "period_fp": _text(observation.get("fp")),
                         "reported_value": float(value),
                         "unit": unit,
@@ -198,7 +220,8 @@ def _fact_rows(
                         "retrieved_at_utc": fetched_at,
                     }
                 )
-            break  # first tag with data wins for the metric
+            covered_periods.update(tag_periods)
+        rows.extend(metric_rows)
         if len(rows) >= max_rows:
             break
     return rows[:max_rows]

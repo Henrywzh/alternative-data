@@ -34,7 +34,7 @@ from .events import (
     load_event_bundle,
     validate_event_bundle,
 )
-from .macro import MACRO_OBSERVATION_COLUMNS
+from .macro import MACRO_EVENT_COLUMNS, MACRO_OBSERVATION_COLUMNS
 from .registries import REGISTRY_FILES, load_registry_bundle, validate_registry_bundle
 
 
@@ -600,6 +600,10 @@ OFR_OBSERVATIONS_SCHEMA_ID = "ofr_timeseries_v1"
 OFR_META_SCHEMA_ID = "ofr_mnemonics_v1"
 TAIWAN_REVENUE_SCHEMA_ID = "tw_monthly_revenue_v1"
 ECB_FX_SCHEMA_ID = "ecb_fx_rates_v1"
+MACRO_OBSERVATIONS_SCHEMA_ID = "macro_observations_v1"
+MACRO_COLLECTOR_SCHEMA_ID = "macro_collector_v1"
+MACRO_EVENTS_SCHEMA_ID = "macro_events_v1"
+MACRO_SOURCE_HEALTH_SCHEMA_ID = "macro_source_health_v1"
 NEWS_SCHEMA_ID = "ai_news_blog_posts_v1"
 FILING_SCHEMA_ID = "sec_edgar_filings_v1"
 QUOTE_SNAPSHOT_SCHEMA_ID = "quote_snapshots_v1"
@@ -634,9 +638,13 @@ _SCHEMA_ALIASES = {
     "earnings_actuals": EARNINGS_ACTUALS_SCHEMA_ID,
     SOURCE_STATE_SCHEMA_ID: SOURCE_STATE_SCHEMA_ID,
     "source_state": SOURCE_STATE_SCHEMA_ID,
-    "macro_observations_v1": "macro_observations_v1",
-    "macro_collector_v1": "macro_collector_v1",
-    "macro_observations": "macro_observations_v1",
+    MACRO_OBSERVATIONS_SCHEMA_ID: MACRO_OBSERVATIONS_SCHEMA_ID,
+    MACRO_COLLECTOR_SCHEMA_ID: MACRO_COLLECTOR_SCHEMA_ID,
+    "macro_observations": MACRO_OBSERVATIONS_SCHEMA_ID,
+    MACRO_EVENTS_SCHEMA_ID: MACRO_EVENTS_SCHEMA_ID,
+    "macro_events": MACRO_EVENTS_SCHEMA_ID,
+    MACRO_SOURCE_HEALTH_SCHEMA_ID: MACRO_SOURCE_HEALTH_SCHEMA_ID,
+    "macro_source_health": MACRO_SOURCE_HEALTH_SCHEMA_ID,
 }
 
 _EXPECTED_OPTIONAL_SOURCES = (
@@ -669,6 +677,9 @@ SOURCE_FRESHNESS_THRESHOLDS = {
     ECB_FX_SCHEMA_ID: pd.Timedelta(days=7),
     NEWS_SCHEMA_ID: pd.Timedelta(days=45),
     FILING_SCHEMA_ID: pd.Timedelta(days=14),
+    MACRO_OBSERVATIONS_SCHEMA_ID: pd.Timedelta(days=30),
+    MACRO_COLLECTOR_SCHEMA_ID: pd.Timedelta(days=30),
+    MACRO_EVENTS_SCHEMA_ID: pd.Timedelta(days=30),
     "task3_consensus_export_v1": pd.Timedelta(days=14),
     "task3_consensus_source_health_v1": pd.Timedelta(days=14),
     QUOTE_SNAPSHOT_SCHEMA_ID: pd.Timedelta(minutes=5),
@@ -767,6 +778,29 @@ SOURCE_TIME_COLUMNS = {
         "freshness": ("as_of",),
         "retrieved": ("as_of",),
         "future": ("latest_snapshot_at", "as_of"),
+    },
+    # Macro collector artifacts are current-vintage snapshots; freshness is the
+    # collector run time (retrieved_at_utc / first_observed_at), so a stale
+    # artifact file fails closed instead of silently feeding an old snapshot.
+    MACRO_OBSERVATIONS_SCHEMA_ID: {
+        "observed": ("observation_date",),
+        "freshness": ("retrieved_at_utc",),
+        "retrieved": ("retrieved_at_utc",),
+        "future": ("observation_date", "retrieved_at_utc"),
+    },
+    MACRO_COLLECTOR_SCHEMA_ID: {
+        "observed": ("observation_date",),
+        "freshness": ("retrieved_at_utc",),
+        "retrieved": ("retrieved_at_utc",),
+        "future": ("observation_date", "retrieved_at_utc"),
+    },
+    MACRO_EVENTS_SCHEMA_ID: {
+        "observed": ("starts_at",),
+        "freshness": ("first_observed_at",),
+        "retrieved": ("first_observed_at",),
+        # starts_at is intentionally excluded from ``future``: scheduled
+        # (upcoming) macro releases legitimately have future start times.
+        "future": ("first_observed_at",),
     },
     QUOTE_SNAPSHOT_SCHEMA_ID: {
         "observed": ("quote_timestamp",),
@@ -1056,7 +1090,17 @@ _OPTIONAL_COLUMNS = {
     EARNINGS_ACTUALS_SCHEMA_ID: set(EARNINGS_ACTUALS_COLUMNS),
     SOURCE_STATE_SCHEMA_ID: set(SOURCE_STATE_COLUMNS),
     QUOTE_SNAPSHOT_SCHEMA_ID: set(QUOTE_SNAPSHOT_COLUMNS),
-    FRED_OBSERVATIONS_SCHEMA_ID: {"date", "series_id", "value", "fetched_at"},
+    # realtime_start/realtime_end are optional trailing vintage columns: a
+    # legacy non-vintaged FRED export must keep building, while vintaged
+    # exports (FredMacroStorage) validate cleanly.
+    FRED_OBSERVATIONS_SCHEMA_ID: {
+        "date",
+        "series_id",
+        "value",
+        "fetched_at",
+        "realtime_start",
+        "realtime_end",
+    },
     FRED_META_SCHEMA_ID: {
         "series_id",
         "title",
@@ -1117,6 +1161,9 @@ _OPTIONAL_COLUMNS = {
         "source_url",
         "source_reference_currency",
     },
+    MACRO_OBSERVATIONS_SCHEMA_ID: set(MACRO_OBSERVATION_COLUMNS),
+    MACRO_COLLECTOR_SCHEMA_ID: set(MACRO_OBSERVATION_COLUMNS),
+    MACRO_EVENTS_SCHEMA_ID: set(MACRO_EVENT_COLUMNS),
 }
 
 _REQUIRED_OPTIONAL_COLUMNS = {
@@ -1124,6 +1171,7 @@ _REQUIRED_OPTIONAL_COLUMNS = {
 }
 _REQUIRED_OPTIONAL_COLUMNS[NEWS_SCHEMA_ID] -= {"description", "body_text"}
 _REQUIRED_OPTIONAL_COLUMNS[FILING_SCHEMA_ID] -= {"filing_content", "body_text"}
+_REQUIRED_OPTIONAL_COLUMNS[FRED_OBSERVATIONS_SCHEMA_ID] -= {"realtime_start", "realtime_end"}
 
 
 def _iso(value: Any) -> str:
@@ -1271,6 +1319,7 @@ def _apply_source_policy(
     observed_column: str | None = None,
     retrieved_column: str | None = None,
     latest_column: str | None = None,
+    execution_evidence: bool = False,
 ) -> None:
     """Populate health and fail closed on future or stale source snapshots."""
 
@@ -1284,6 +1333,7 @@ def _apply_source_policy(
         observed_column=observed_column,
         retrieved_column=retrieved_column,
         latest_column=latest_column,
+        execution_evidence=execution_evidence,
     )
     freshness_columns = tuple(policy.get("freshness", ()))
     future_columns = tuple(policy.get("future", ()))
@@ -1459,6 +1509,13 @@ def _validate_required_optional_inputs(config: BuildConfig) -> None:
             path = Path(descriptor.path)
             if not path.is_file():
                 raise BuildError(f"required optional input missing: {path}")
+            if schema_id == MACRO_SOURCE_HEALTH_SCHEMA_ID:
+                payload, health_error = _read_macro_source_health(path)
+                if health_error:
+                    raise BuildError(f"required optional input invalid: {path}: {health_error}")
+                if not payload:
+                    raise BuildError(f"required optional input invalid: {path}: health sidecar has no source entries")
+                continue
             try:
                 frame = _read_local_input(descriptor)
                 _validate_optional_columns(frame, schema_id, descriptor.source_id)
@@ -1473,13 +1530,13 @@ def _validate_required_optional_inputs(config: BuildConfig) -> None:
                     raise BuildError(
                         f"required optional input freshness policy failed: {state.detail}"
                     )
-            except (OSError, ValueError, TypeError, BuildError, pa.ArrowException) as exc:
+            except (OSError, ValueError, TypeError, KeyError, BuildError, pa.ArrowException) as exc:
                 raise BuildError(f"required optional input invalid: {path}: {exc}") from exc
 
 
-def _base_macro_frame(events: EventBundle) -> pd.DataFrame:
+def _macro_event_rows(events_frame: pd.DataFrame) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    for _, row in events.events[events.events["scope"].eq("macro")].iterrows():
+    for _, row in events_frame[events_frame["scope"].eq("macro")].iterrows():
         start = _timestamp(row.get("starts_at"))
         evidence = str(row.get("evidence_class", ""))
         pit_class = "not_pit" if evidence == "internal_research" else "snapshot_from_live_source"
@@ -1511,7 +1568,11 @@ def _base_macro_frame(events: EventBundle) -> pd.DataFrame:
                 "registry_version": row["registry_version"],
             }
         )
-    return _with_columns(pd.DataFrame(rows), MACRO_OUTPUT_COLUMNS)
+    return rows
+
+
+def _base_macro_frame(events: EventBundle) -> pd.DataFrame:
+    return _with_columns(pd.DataFrame(_macro_event_rows(events.events)), MACRO_OUTPUT_COLUMNS)
 
 
 def _macro_row(
@@ -1535,6 +1596,8 @@ def _macro_row(
     release_at: Any = pd.NaT,
     observation_timezone: str | None = None,
     registry_version: str = "v1",
+    realtime_start: Any = None,
+    realtime_end: Any = None,
 ) -> dict[str, Any]:
     return {
         "observation_id": _stable_hash("macro", source_id, series_id, reference_period, observation_date),
@@ -1562,6 +1625,16 @@ def _macro_row(
         "source_license_class": license_class,
         "is_provisional": is_provisional,
         "registry_version": registry_version,
+        "realtime_start": (
+            str(realtime_start)
+            if realtime_start is not None and not pd.isna(realtime_start)
+            else None
+        ),
+        "realtime_end": (
+            str(realtime_end)
+            if realtime_end is not None and not pd.isna(realtime_end)
+            else None
+        ),
     }
 
 
@@ -1600,9 +1673,18 @@ def _set_state_from_frame(
     observed_column: str | None = None,
     retrieved_column: str | None = None,
     latest_column: str | None = None,
+    execution_evidence: bool = False,
 ) -> None:
     if state.status != "degraded":
-        state.status = "available"
+        if len(frame) > 0:
+            state.status = "available"
+        elif execution_evidence:
+            # An honest zero-row query result with collector/execution
+            # evidence (e.g. a status sidecar) is ``no_records``; without
+            # evidence an empty file is ``unavailable``, never ``available``.
+            state.status = "no_records"
+        else:
+            state.status = "unavailable"
     state.row_count = len(frame)
     if observed_column and observed_column in frame.columns:
         parsed = pd.to_datetime(frame[observed_column], errors="coerce", utc=True)
@@ -1627,6 +1709,7 @@ def _load_optional(
     source_kind: str,
     *,
     as_of_utc: pd.Timestamp,
+    execution_evidence: bool = False,
 ) -> tuple[_SourceState, pd.DataFrame | None, str | None]:
     try:
         schema_id = _normalise_schema_id(descriptor.expected_schema)
@@ -1658,14 +1741,20 @@ def _load_optional(
     try:
         frame = _read_local_input(descriptor)
         _validate_optional_columns(frame, schema_id, descriptor.source_id)
-    except (OSError, ValueError, TypeError, BuildError, pa.ArrowException) as exc:
+    except (OSError, ValueError, TypeError, KeyError, BuildError, pa.ArrowException) as exc:
         state.status = "degraded"
         state.detail = f"optional_input_invalid:{exc}"
         _append_state_error(state, code="input_validation_failed", message=str(exc))
         if descriptor.required:
             raise BuildError(f"required optional input invalid: {descriptor.path}: {exc}") from exc
         return state, None, schema_id
-    _apply_source_policy(state, frame, schema_id=schema_id, as_of_utc=as_of_utc)
+    _apply_source_policy(
+        state,
+        frame,
+        schema_id=schema_id,
+        as_of_utc=as_of_utc,
+        execution_evidence=execution_evidence,
+    )
     if state.status != "available":
         if descriptor.required:
             raise BuildError(
@@ -1740,6 +1829,8 @@ def _fred_macro(
                 source_url=f"https://fred.stlouisfed.org/series/{series_id}",
                 pit_class=obs_descriptor.pit_class or "current_vintage",
                 license_class=obs_descriptor.license_class,
+                realtime_start=item.get("realtime_start"),
+                realtime_end=item.get("realtime_end"),
             )
         )
     _set_state_from_frame(obs_state, observations, observed_column="date", retrieved_column="fetched_at")
@@ -1900,6 +1991,140 @@ def _ecb_macro(
     return rows, [state], []
 
 
+_MACRO_HEALTH_STATUSES = frozenset({
+    "available",
+    "partial",
+    "no_records",
+    "stale",
+    "not_applicable",
+    "unavailable",
+})
+
+
+def _health_count(value: Any) -> int:
+    try:
+        return int(value) if value is not None else 0
+    except (TypeError, ValueError):
+        return 0
+
+
+def _health_timestamp(value: Any) -> Any:
+    try:
+        return _timestamp(value)
+    except (TypeError, ValueError):
+        return pd.NaT
+
+
+def _read_macro_source_health(path: Path) -> tuple[dict[str, Any] | None, str | None]:
+    """Read the collector's macro_source_health.json sidecar.
+
+    The sidecar is a JSON object keyed by collector source id (e.g.
+    "official:fred_alfred") with SourceHealth.to_dict() payloads.  Returns
+    (payload, None) on success and (None, reason) when invalid.
+    """
+    if not path.is_file():
+        return None, None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        return None, f"macro source health sidecar is invalid: {exc}"
+    if not isinstance(payload, dict):
+        return None, "macro source health sidecar must be a JSON object keyed by source_id"
+    return payload, None
+
+
+def _load_macro_source_health(
+    descriptor: LocalInput,
+) -> tuple[list[_SourceState], list[str]]:
+    """Turn a collector health sidecar into per-source health states.
+
+    Each collector source (official:fred_alfred, official:bls, official:bea,
+    official:ecb, ...) becomes its own source_health row so the build surfaces
+    the collector's six-state contract instead of hiding it.
+    """
+    path = Path(descriptor.path)
+    states: list[_SourceState] = []
+    degraded: list[str] = []
+    if not path.is_file():
+        state = _optional_state(descriptor, "macro", MACRO_SOURCE_HEALTH_SCHEMA_ID)
+        state.status = "unavailable"
+        state.detail = "configured_optional_input_missing"
+        _append_state_error(state, code="missing_input", message=str(path))
+        if descriptor.required:
+            raise BuildError(f"required optional input missing: {path}")
+        return [state], [descriptor.source_id]
+    payload, health_error = _read_macro_source_health(path)
+    if health_error is not None:
+        state = _optional_state(descriptor, "macro", MACRO_SOURCE_HEALTH_SCHEMA_ID)
+        state.input_sha256 = _file_hash(path)
+        state.status = "degraded"
+        state.detail = f"optional_input_invalid:{health_error}"
+        _append_state_error(state, code="input_validation_failed", message=health_error)
+        if descriptor.required:
+            raise BuildError(f"required optional input invalid: {path}: {health_error}")
+        return [state], [descriptor.source_id]
+    if not payload:
+        state = _optional_state(descriptor, "macro", MACRO_SOURCE_HEALTH_SCHEMA_ID)
+        state.input_sha256 = _file_hash(path)
+        state.status = "degraded"
+        state.detail = "optional_input_invalid:health sidecar has no source entries"
+        _append_state_error(state, code="input_validation_failed", message="health sidecar has no source entries")
+        if descriptor.required:
+            raise BuildError(f"required optional input invalid: {path}: health sidecar has no source entries")
+        return [state], [descriptor.source_id]
+    for source_id, info in payload.items():
+        if not isinstance(info, dict):
+            continue
+        raw_status = str(info.get("status") or "").strip()
+        if raw_status not in _MACRO_HEALTH_STATUSES:
+            status = "degraded"
+        else:
+            # The collector vocabulary uses ``stale``; the build contract uses
+            # ``degraded`` for the same fail-closed condition.
+            status = "degraded" if raw_status == "stale" else raw_status
+        observation_count = _health_count(info.get("observation_count"))
+        event_count = _health_count(info.get("event_count"))
+        series_covered = info.get("series_covered") or []
+        if not isinstance(series_covered, list):
+            series_covered = []
+        health_state = _SourceState(
+            source_id=str(info.get("source_id") or source_id),
+            source_kind="macro",
+            path=path,
+            schema_version=MACRO_SOURCE_HEALTH_SCHEMA_ID,
+            required=descriptor.required,
+            pit_class=descriptor.pit_class,
+            license_class=descriptor.license_class,
+            status=status,
+            row_count=observation_count + event_count,
+            retrieved_at_utc=_health_timestamp(info.get("retrieved_at_utc")),
+            detail=(
+                f"collector_event_count={event_count};"
+                f"collector_observation_count={observation_count}"
+                + (f";collector_error={info['error_detail']}" if info.get("error_detail") else "")
+                + (f";series_covered={','.join(str(item) for item in series_covered)}" if series_covered else "")
+            ),
+        )
+        if status not in CONTRIBUTING_STATUSES | {"not_applicable"} and info.get("error_detail"):
+            _append_state_error(
+                health_state,
+                code="collector_source_unavailable",
+                message=str(info["error_detail"]),
+            )
+        states.append(health_state)
+    if states:
+        # The sidecar itself is a successful collector run: surface an
+        # aggregate descriptor state so _expected_health_states does not
+        # fabricate a degraded row for the sidecar descriptor.
+        aggregate = _optional_state(descriptor, "macro", MACRO_SOURCE_HEALTH_SCHEMA_ID)
+        aggregate.input_sha256 = _file_hash(path)
+        aggregate.status = "available"
+        aggregate.row_count = sum(state.row_count for state in states)
+        aggregate.detail = f"collector_sources={len(states)}"
+        states.insert(0, aggregate)
+    return states, degraded
+
+
 def _build_macro(
     events: EventBundle,
     registries: Any,
@@ -1911,8 +2136,8 @@ def _build_macro(
     states: list[_SourceState] = []
     degraded: list[str] = []
     collector_descriptor = (
-        _find_descriptor(inputs, "macro_observations_v1")
-        or _find_descriptor(inputs, "macro_collector_v1")
+        _find_descriptor(inputs, MACRO_OBSERVATIONS_SCHEMA_ID)
+        or _find_descriptor(inputs, MACRO_COLLECTOR_SCHEMA_ID)
         or _find_descriptor(inputs, "macro_observations")
     )
     if collector_descriptor is not None:
@@ -1923,6 +2148,25 @@ def _build_macro(
             _set_state_from_frame(c_state, c_frame, observed_column="observation_date", retrieved_column="retrieved_at_utc")
         else:
             degraded.append("macro_collector")
+    events_descriptor = _find_descriptor(inputs, MACRO_EVENTS_SCHEMA_ID)
+    if events_descriptor is not None:
+        ev_state, ev_frame, _ = _load_optional(events_descriptor, "macro", as_of_utc=as_of_utc)
+        states.append(ev_state)
+        if ev_frame is not None and not ev_frame.empty:
+            rows.extend(_macro_event_rows(ev_frame))
+            _set_state_from_frame(
+                ev_state,
+                ev_frame,
+                observed_column="starts_at",
+                retrieved_column="first_observed_at",
+            )
+        else:
+            degraded.append("macro_collector_events")
+    health_descriptor = _find_descriptor(inputs, MACRO_SOURCE_HEALTH_SCHEMA_ID)
+    if health_descriptor is not None:
+        health_states, health_degraded = _load_macro_source_health(health_descriptor)
+        states.extend(health_states)
+        degraded.extend(health_degraded)
     for adapter in (_fred_macro, _ofr_macro):
         adapter_rows, adapter_states, adapter_degraded = adapter(inputs, as_of_utc=as_of_utc)
         rows.extend(adapter_rows)
@@ -2951,15 +3195,18 @@ def _build_quote_snapshots(
         return _empty_quote_snapshots(), states, ["quote_snapshots"], fingerprints
 
     for descriptor_index, descriptor in enumerate(inputs):
+        status_path = _quote_status_path(descriptor)
         state, frame, schema_id = _load_optional(
-            descriptor, "market", as_of_utc=as_of_utc
+            descriptor,
+            "market",
+            as_of_utc=as_of_utc,
+            execution_evidence=status_path.is_file(),
         )
         states.append(state)
         if frame is None:
             degraded.append(descriptor.source_id)
             continue
 
-        status_path = _quote_status_path(descriptor)
         status_payload, status_error = _read_quote_status(status_path)
         if status_path.is_file():
             fingerprints[str(status_path)] = _file_hash(status_path)
@@ -4004,7 +4251,11 @@ __all__ = [
     "FRED_META_SCHEMA_ID",
     "FRED_OBSERVATIONS_SCHEMA_ID",
     "LocalInput",
+    "MACRO_COLLECTOR_SCHEMA_ID",
+    "MACRO_EVENTS_SCHEMA_ID",
+    "MACRO_OBSERVATIONS_SCHEMA_ID",
     "MACRO_OUTPUT_COLUMNS",
+    "MACRO_SOURCE_HEALTH_SCHEMA_ID",
     "NEWS_FILINGS_COLUMNS",
     "NEWS_SCHEMA_ID",
     "OFFICIAL_FILINGS_COLUMNS",

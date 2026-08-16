@@ -27,6 +27,10 @@ from src.research_control_tower.build import (
     ECB_FX_SCHEMA_ID,
     FRED_META_SCHEMA_ID,
     FRED_OBSERVATIONS_SCHEMA_ID,
+    MACRO_COLLECTOR_SCHEMA_ID,
+    MACRO_EVENTS_SCHEMA_ID,
+    MACRO_OBSERVATIONS_SCHEMA_ID,
+    MACRO_SOURCE_HEALTH_SCHEMA_ID,
     NEWS_SCHEMA_ID,
     OFFICIAL_FILINGS_COLUMNS,
     OFFICIAL_FILINGS_SCHEMA_ID,
@@ -46,6 +50,11 @@ from src.research_control_tower.build import (
     build_control_tower_marts,
     catalyst_eligibility,
     current_generation,
+)
+from src.research_control_tower.macro import (
+    MACRO_OBSERVATION_COLUMNS,
+    materialize_macro_calendar,
+    materialize_macro_observations,
 )
 from src.research_control_tower.events import is_catalyst_eligible
 import pyarrow as pa
@@ -683,6 +692,350 @@ def test_local_adapters_preserve_provenance_and_license_boundary(tmp_path, minim
     assert manifest.status == "degraded"
 
 
+def _collector_observation_row() -> dict:
+    return {
+        "observation_id": "macro_obs_CPIAUCSL_2026-01_20260101_20260213",
+        "event_id": "MACRO_US_CPI_R10_20260213",
+        "source_id": "official:fred_alfred",
+        "series_id": "CPIAUCSL",
+        "scope": "macro",
+        "event_type": "us_cpi",
+        "metric_name": "Consumer Price Index (CPI)",
+        "reference_period": "2026-01",
+        "observation_date": "2026-01-01",
+        "release_at": None,
+        "actual_value": 310.2,
+        "unit": "Index 1982-1984=100",
+        "frequency": "month",
+        "first_observed_at": None,
+        "source_published_at": None,
+        "retrieved_at_utc": "2026-08-12T00:00:00Z",
+        "source_url": "https://fred.stlouisfed.org/series/CPIAUCSL",
+        "pit_class": "official_first_release",
+        "source_license_class": "public_domain",
+        "is_provisional": False,
+        "realtime_start": "2026-02-13",
+        "realtime_end": "9999-12-31",
+        "registry_version": "v1",
+    }
+
+
+def test_macro_collector_observations_v1_descriptor_builds_and_contributes(
+    tmp_path, minimal_inputs
+):
+    # P1-1: macro_observations_v1/macro_collector_v1 are registered with the
+    # correct optional-column set, so a valid descriptor builds without a
+    # KeyError and contributes rows + health.
+    macro_root = tmp_path / "input" / "macro"
+    macro_root.mkdir(parents=True)
+    collector_path = macro_root / "macro_observations.parquet"
+    materialize_macro_observations([_collector_observation_row()]).to_parquet(
+        collector_path, index=False
+    )
+    config = replace(
+        minimal_inputs,
+        macro_inputs=(
+            LocalInput(
+                source_id="macro_collector",
+                path=collector_path,
+                format="parquet",
+                expected_schema=MACRO_OBSERVATIONS_SCHEMA_ID,
+            ),
+        ),
+    )
+
+    manifest = build_control_tower_marts(config)
+    macro = pd.read_parquet(_published(config, "macro_observations.parquet"))
+    collector_rows = macro[macro["source_id"] == "official:fred_alfred"]
+
+    assert not collector_rows.empty
+    assert collector_rows.iloc[0]["series_id"] == "CPIAUCSL"
+    assert collector_rows.iloc[0]["realtime_start"] == "2026-02-13"
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    health_row = health[health["source_id"] == "macro_collector"].iloc[0]
+    assert health_row["status"] == "available"
+    assert int(health_row["row_count"]) == 1
+    assert manifest.artifacts["macro_observations.parquet"]["status"] == "available"
+
+    # The legacy alias schema id resolves to the same optional-column set.
+    alias_config = replace(
+        config,
+        as_of_utc=pd.Timestamp("2026-08-14T00:00:00Z"),
+        build_id="fixture-build-alias-v1",
+        macro_inputs=(
+            LocalInput(
+                source_id="macro_collector_alias",
+                path=collector_path,
+                format="parquet",
+                expected_schema=MACRO_COLLECTOR_SCHEMA_ID,
+            ),
+        ),
+    )
+    build_control_tower_marts(alias_config)
+
+
+def test_vintaged_fred_observations_parquet_builds_without_schema_drift(
+    tmp_path, minimal_inputs
+):
+    # P1-2: realtime_start/realtime_end are allowed trailing columns for
+    # fred_observations_v1; vintaged exports build and keep their vintages.
+    macro_root = tmp_path / "input" / "macro"
+    macro_root.mkdir(parents=True)
+    obs_path = macro_root / "fred_observations.parquet"
+    pd.DataFrame(
+        [
+            {
+                "date": "2026-08-07",
+                "series_id": "NFCI",
+                "value": 0.1,
+                "fetched_at": "2026-08-08T04:34:37Z",
+                "realtime_start": "2026-08-01",
+                "realtime_end": "2026-08-08",
+            },
+            {
+                "date": "2026-08-07",
+                "series_id": "NFCI",
+                "value": 0.2,
+                "fetched_at": "2026-08-08T04:34:37Z",
+                "realtime_start": "2026-08-09",
+                "realtime_end": "9999-12-31",
+            },
+        ]
+    ).to_parquet(obs_path, index=False)
+    meta_path = macro_root / "fred_series_meta.parquet"
+    pd.DataFrame(
+        [
+            {
+                "series_id": "NFCI",
+                "title": "Chicago Fed National Financial Conditions Index",
+                "frequency": "W",
+                "units": "Index",
+                "seasonal_adjustment": "NSA",
+                "observation_start": "1971-01-08",
+                "last_updated": "2026-08-05 07:37:42-05",
+                "fetched_at": "2026-08-08T04:34:37Z",
+            }
+        ]
+    ).to_parquet(meta_path, index=False)
+    config = replace(
+        minimal_inputs,
+        macro_inputs=(
+            _input("fred_observations", obs_path, FRED_OBSERVATIONS_SCHEMA_ID),
+            _input("fred_meta", meta_path, FRED_META_SCHEMA_ID),
+        ),
+    )
+
+    manifest = build_control_tower_marts(config)
+    macro = pd.read_parquet(_published(config, "macro_observations.parquet"))
+    fred = macro[macro["source_id"] == "fred_observations"]
+
+    assert len(fred) == 2
+    assert set(fred["realtime_start"].dropna()) == {"2026-08-01", "2026-08-09"}
+    assert manifest.artifacts["macro_observations.parquet"]["status"] == "available"
+
+
+def test_empty_macro_optional_inputs_are_unavailable_and_degrade_build(
+    tmp_path, minimal_inputs
+):
+    # P2-7: zero-row sources must never report available; without execution
+    # evidence an empty frame is unavailable and degrades the build.
+    macro_root = tmp_path / "input" / "macro"
+    macro_root.mkdir(parents=True)
+    empty_obs = macro_root / "fred_observations.parquet"
+    pd.DataFrame(columns=["date", "series_id", "value", "fetched_at"]).to_parquet(
+        empty_obs, index=False
+    )
+    empty_meta = macro_root / "fred_series_meta.parquet"
+    pd.DataFrame(
+        columns=[
+            "series_id",
+            "title",
+            "frequency",
+            "units",
+            "seasonal_adjustment",
+            "observation_start",
+            "last_updated",
+            "fetched_at",
+        ]
+    ).to_parquet(empty_meta, index=False)
+    config = replace(
+        minimal_inputs,
+        macro_inputs=(
+            _input("fred_observations", empty_obs, FRED_OBSERVATIONS_SCHEMA_ID),
+            _input("fred_meta", empty_meta, FRED_META_SCHEMA_ID),
+        ),
+    )
+
+    manifest = build_control_tower_marts(config)
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    by_source = health.set_index("source_id")["status"].to_dict()
+
+    assert by_source["fred_observations"] == "unavailable"
+    assert by_source["fred_meta"] == "unavailable"
+    assert manifest.artifacts["macro_observations.parquet"]["status"] == "degraded"
+    assert "fred_observations" in manifest.degraded_inputs
+
+
+def test_macro_collector_health_and_events_reach_build(tmp_path, minimal_inputs):
+    # P2-8: macro_source_health.json and macro_events.parquet must reach the
+    # build: per-source health rows and macro calendar event rows.
+    macro_root = tmp_path / "input" / "macro"
+    macro_root.mkdir(parents=True)
+    obs_path = macro_root / "macro_observations.parquet"
+    materialize_macro_observations([_collector_observation_row()]).to_parquet(
+        obs_path, index=False
+    )
+    events_path = macro_root / "macro_events.parquet"
+    events_df = materialize_macro_calendar(
+        {
+            "us_cpi": pd.DataFrame(
+                [
+                    {
+                        "release_date": "2026-02-13",
+                        "release_id": 10,
+                        "source_timezone": "America/New_York",
+                        "title": "US CPI Release",
+                    }
+                ]
+            )
+        }
+    )
+    events_df.to_parquet(events_path, index=False)
+    health_path = macro_root / "macro_source_health.json"
+    health_path.write_text(
+        json.dumps(
+            {
+                "official:fred_alfred": {
+                    "source_id": "official:fred_alfred",
+                    "status": "available",
+                    "retrieved_at_utc": "2026-08-12T00:00:00Z",
+                    "event_count": 1,
+                    "observation_count": 1,
+                    "series_covered": ["CPIAUCSL"],
+                    "error_detail": None,
+                    "source_caveats": "fixture",
+                },
+                "official:bls": {
+                    "source_id": "official:bls",
+                    "status": "unavailable",
+                    "retrieved_at_utc": "2026-08-12T00:00:00Z",
+                    "event_count": 0,
+                    "observation_count": 0,
+                    "series_covered": [],
+                    "error_detail": "no native BLS key",
+                    "source_caveats": None,
+                },
+                "official:bea": {
+                    "source_id": "official:bea",
+                    "status": "partial",
+                    "retrieved_at_utc": "2026-08-12T00:00:00Z",
+                    "event_count": 1,
+                    "observation_count": 0,
+                    "series_covered": [],
+                    "error_detail": None,
+                    "source_caveats": None,
+                },
+                "official:ecb": {
+                    "source_id": "official:ecb",
+                    "status": "no_records",
+                    "retrieved_at_utc": "2026-08-12T00:00:00Z",
+                    "event_count": 0,
+                    "observation_count": 0,
+                    "series_covered": [],
+                    "error_detail": None,
+                    "source_caveats": None,
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    config = replace(
+        minimal_inputs,
+        macro_inputs=(
+            LocalInput(
+                source_id="macro_collector",
+                path=obs_path,
+                format="parquet",
+                expected_schema=MACRO_OBSERVATIONS_SCHEMA_ID,
+            ),
+            LocalInput(
+                source_id="macro_collector_events",
+                path=events_path,
+                format="parquet",
+                expected_schema=MACRO_EVENTS_SCHEMA_ID,
+            ),
+            LocalInput(
+                source_id="macro_collector_health",
+                path=health_path,
+                format="json",
+                expected_schema=MACRO_SOURCE_HEALTH_SCHEMA_ID,
+            ),
+        ),
+    )
+
+    manifest = build_control_tower_marts(config)
+    macro = pd.read_parquet(_published(config, "macro_observations.parquet"))
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+
+    # Macro calendar events from the collector reach the macro observations.
+    assert (macro["event_id"] == "MACRO_US_CPI_R10_20260213").any()
+    event_row = macro[macro["event_id"] == "MACRO_US_CPI_R10_20260213"].iloc[0]
+    assert event_row["event_type"] == "us_cpi"
+    assert event_row["source_id"] == "official:fred_alfred"
+
+    # Health propagation: collector sources appear with their own statuses.
+    by_source = health.set_index("source_id")["status"].to_dict()
+    assert by_source["official:fred_alfred"] == "available"
+    assert by_source["official:bls"] == "unavailable"
+    assert by_source["official:bea"] == "partial"
+    assert by_source["official:ecb"] == "no_records"
+    bls_row = health[health["source_id"] == "official:bls"].iloc[0]
+    assert "collector_error=no native BLS key" in bls_row["detail"]
+    assert int(bls_row["row_count"]) == 0
+    fred_health = health[health["source_id"] == "official:fred_alfred"].iloc[0]
+    assert int(fred_health["row_count"]) == 2  # 1 event + 1 observation
+    assert "series_covered=CPIAUCSL" in fred_health["detail"]
+    assert "official:bls" in manifest.degraded_inputs
+    # The collector's unavailable official:bls state degrades the artifact.
+    assert manifest.artifacts["macro_observations.parquet"]["status"] == "degraded"
+
+
+def test_stale_macro_collector_artifact_is_flagged(tmp_path, minimal_inputs):
+    # P2-8: macro_observations_v1 has freshness thresholds so stale collector
+    # artifacts are flagged and fail closed.
+    macro_root = tmp_path / "input" / "macro"
+    macro_root.mkdir(parents=True)
+    stale_row = _collector_observation_row()
+    stale_row["retrieved_at_utc"] = "2026-06-01T00:00:00Z"
+    obs_path = macro_root / "macro_observations.parquet"
+    materialize_macro_observations([stale_row]).to_parquet(obs_path, index=False)
+    config = replace(
+        minimal_inputs,
+        macro_inputs=(
+            LocalInput(
+                source_id="macro_collector",
+                path=obs_path,
+                format="parquet",
+                expected_schema=MACRO_OBSERVATIONS_SCHEMA_ID,
+            ),
+        ),
+    )
+
+    manifest = build_control_tower_marts(config)
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    health_row = health[health["source_id"] == "macro_collector"].iloc[0]
+
+    assert health_row["status"] == "degraded"
+    assert "stale_source" in health_row["detail"]
+    assert any(
+        error["code"] == "stale_source" for error in manifest.validation_errors
+    )
+    assert "macro_collector" in manifest.degraded_inputs
+    assert manifest.artifacts["macro_observations.parquet"]["status"] == "degraded"
+
+
 @pytest.mark.parametrize(
     "health_overrides",
     [
@@ -1147,7 +1500,9 @@ def test_quote_status_sidecar_propagates_partial_diagnostics_and_quote_age(
     assert "diagnostic_statuses=no_records:1" in str(quote_health["detail"])
 
 
-def test_empty_quote_output_is_not_available(tmp_path, minimal_inputs):
+def test_empty_quote_output_is_unavailable_without_execution_evidence(tmp_path, minimal_inputs):
+    # P2-7: an empty frame is no_records only with execution evidence (status
+    # sidecar); without evidence it is unavailable, never available.
     quote_path = tmp_path / "empty_quotes.parquet"
     pd.DataFrame(columns=QUOTE_SNAPSHOT_COLUMNS).to_parquet(quote_path, index=False)
     config = replace(
@@ -1165,8 +1520,8 @@ def test_empty_quote_output_is_not_available(tmp_path, minimal_inputs):
     manifest = build_control_tower_marts(config)
     health = pd.read_parquet(_published(config, "source_health.parquet"))
 
-    assert manifest.artifacts["quote_snapshots.parquet"]["status"] == "degraded"
-    assert health.loc[health["source_id"].eq("empty_quotes"), "status"].item() == "no_records"
+    assert manifest.artifacts["quote_snapshots.parquet"]["status"] == "unavailable"
+    assert health.loc[health["source_id"].eq("empty_quotes"), "status"].item() == "unavailable"
 
 
 def test_quote_source_priority_is_explicit_not_lexicographic(tmp_path, minimal_inputs):

@@ -22,6 +22,12 @@ Official-Source Caveats & Vintage Semantics:
 - Provenance: Series fetched via FRED/ALFRED transport (e.g., ECB policy rates or China/HK CPI on FRED)
   are attributed to source_id="official:fred_alfred" with origin_agency retained separately.
   Native source IDs (e.g., "official:ecb") are reserved for direct native API endpoints.
+- Event-key scheme: calendar events and vintage observations share one stable key
+  (``MACRO_<EVENT_TYPE>[_R<release_id>]_<YYYYMMDD>``, see _release_event_key) so an
+  observation's event_id joins to its release event; the timing token is the release
+  date on the calendar side and realtime_start on the observation side.  FRED
+  transport release events additionally thread supersedes_event_id to the previous
+  release of the same FRED release, forming a revision chain.
 
 Collectors run outside Streamlit and produce standardized local files:
 - macro events calendar (compatible with materialize_macro_calendar)
@@ -58,6 +64,12 @@ FRED_ALFRED_RELEASE_CAVEAT = (
     "Published release dates do not necessarily equal when data became available on FRED/ALFRED; "
     "realtime_start and realtime_end are used for strict point-in-time known-as-of filtering."
 )
+
+# Default real-time window start used when fetching FRED observations without
+# an explicit vintage window.  This is a documented default, not a semantic
+# claim: observations fetched this way carry per-observation realtime bounds
+# from the API and never fabricate vintages from this window (see client.py).
+DEFAULT_FRED_REALTIME_START = "2015-01-01"
 
 OFFICIAL_INDICATORS = {
     "us_cpi": {
@@ -159,7 +171,10 @@ OFFICIAL_INDICATORS = {
         "origin_agency": "European Central Bank",
         "timezone": "Europe/Frankfurt",
         "unit": "Percent",
-        "frequency": "month",
+        # ECBDFR is a daily-published rate series: FRED carries one observation
+        # per business day.  Declaring day keeps observation-date granularity
+        # in PIT dedup instead of collapsing every day of a month into one row.
+        "frequency": "day",
         "source_url": "https://fred.stlouisfed.org/series/ECBDFR",
         "license_class": "official_open_data",
     },
@@ -220,7 +235,7 @@ OFFICIAL_INDICATORS = {
 @dataclass
 class SourceHealth:
     source_id: str
-    status: str  # "available", "partial", "no_records", "stale", "unavailable"
+    status: str  # "available", "partial", "no_records", "stale", "not_applicable", "unavailable"
     retrieved_at_utc: str
     event_count: int = 0
     observation_count: int = 0
@@ -239,6 +254,32 @@ class SourceHealth:
             "error_detail": self.error_detail,
             "source_caveats": self.source_caveats,
         }
+
+def _observation_value(obs: Any, name: str, default: Any = None) -> Any:
+    """Read a field from a FredObservation or a plain dict fixture row."""
+    if isinstance(obs, Mapping):
+        return obs.get(name, default)
+    return getattr(obs, name, default)
+
+
+def _frequency_is_daily(frequency: Any) -> bool:
+    return str(frequency or "").strip().lower() in {"day", "daily", "d", "b", "business"}
+
+
+def _release_event_key(event_type: str, release_id: Any, timing_date: str | None) -> str:
+    """Stable release-event key shared by calendar events and observations.
+
+    The key is ``MACRO_<EVENT_TYPE>[_R<release_id>]_<YYYYMMDD>`` where the
+    timing token is the release date for calendar events and the observation's
+    realtime_start for observations, so a vintage observation links to the
+    release event whose date equals its realtime_start.  Returns "" when no
+    timing date is known (an observation without a vintage cannot be linked).
+    """
+    if not timing_date:
+        return ""
+    rel_token = f"_R{release_id}" if release_id else ""
+    return f"MACRO_{event_type.upper()}{rel_token}_{str(timing_date).replace('-', '')}"
+
 
 def filter_observations_pit(
     df: pd.DataFrame,
@@ -277,8 +318,24 @@ def filter_observations_pit(
         frame = frame.loc[frame["realtime_end"].isna() | (frame["realtime_end"].astype(str) >= as_of_str)]
 
     if "series_id" in frame.columns and "reference_period" in frame.columns and "realtime_start" in frame.columns:
-        frame = frame.sort_values(by=["series_id", "reference_period", "realtime_start"])
-        frame = frame.drop_duplicates(subset=["series_id", "reference_period"], keep="last")
+        if "frequency" in frame.columns and "observation_date" in frame.columns:
+            # Frequency-aware dedup: daily series keep observation-date
+            # granularity (one row per day, latest vintage wins); monthly and
+            # quarterly series keep reference-period granularity.  This keeps
+            # daily levels within a month intact instead of collapsing them.
+            daily = frame["frequency"].map(_frequency_is_daily).fillna(False)
+            granularity = pd.Series(
+                frame["observation_date"].where(daily, frame["reference_period"]),
+                index=frame.index,
+            )
+            frame = frame.assign(__pit_granularity=granularity)
+            frame = frame.sort_values(by=["series_id", "__pit_granularity", "realtime_start"])
+            frame = frame.drop_duplicates(
+                subset=["series_id", "__pit_granularity"], keep="last"
+            ).drop(columns="__pit_granularity")
+        else:
+            frame = frame.sort_values(by=["series_id", "reference_period", "realtime_start"])
+            frame = frame.drop_duplicates(subset=["series_id", "reference_period"], keep="last")
 
     return frame.reset_index(drop=True)
 
@@ -293,7 +350,7 @@ def _reference_period_from_date(date_str: str, frequency: str) -> str:
     return str(date_str)
 
 def transform_fred_observations_to_macro(
-    obs_list: list[FredObservation],
+    obs_list: list[FredObservation | Mapping[str, Any]],
     indicator_meta: dict[str, Any],
     retrieved_at_utc: str,
 ) -> pd.DataFrame:
@@ -308,6 +365,7 @@ def transform_fred_observations_to_macro(
     event_type = indicator_meta["event_type"]
     metric_name = indicator_meta["metric_name"]
     source_id = indicator_meta.get("source_id", "official:fred_alfred")
+    release_id = indicator_meta.get("fred_release_id")
     unit = indicator_meta["unit"]
     frequency = indicator_meta["frequency"]
     source_url = indicator_meta["source_url"]
@@ -316,46 +374,84 @@ def transform_fred_observations_to_macro(
 
     sorted_obs = sorted(
         obs_list,
-        key=lambda x: (x.date, x.realtime_start or "1776-07-04"),
+        key=lambda x: (
+            str(_observation_value(x, "date", "")),
+            _observation_value(x, "realtime_start") or "1776-07-04",
+        ),
     )
 
-    obs_rows = []
-    for idx, obs in enumerate(sorted_obs):
-        ref_period = _reference_period_from_date(obs.date, frequency)
-        is_vintaged = obs.realtime_start is not None
-        is_provisional = is_vintaged and (obs.realtime_start > obs.date)
-        pit_class = (
-            "official_revised_vintage"
-            if (is_vintaged and obs.realtime_start > obs.date and idx > 0)
-            else "official_first_release" if is_vintaged
-            else "latest_snapshot_unknown_vintage"
+    # Per-(series_id, reference_period) vintage classification: the earliest
+    # realtime_start for a reference period is its first release; every later
+    # vintage is a revision.  A later-vintage existence also marks an earlier
+    # observation as provisional (a superseded value), never merely the fact
+    # that realtime_start is after the reference date.
+    first_realtime_by_period: dict[tuple[str, str], str] = {}
+    latest_realtime_by_period: dict[tuple[str, str], str] = {}
+    for obs in sorted_obs:
+        rt_start = _observation_value(obs, "realtime_start")
+        if rt_start is None:
+            continue
+        ref_period = _reference_period_from_date(
+            _observation_value(obs, "date", ""), frequency
         )
+        key = (series_id, ref_period)
+        if rt_start < first_realtime_by_period.get(key, rt_start):
+            first_realtime_by_period[key] = rt_start
+        else:
+            first_realtime_by_period.setdefault(key, rt_start)
+        if rt_start > latest_realtime_by_period.get(key, rt_start):
+            latest_realtime_by_period[key] = rt_start
+        else:
+            latest_realtime_by_period.setdefault(key, rt_start)
 
-        obs_id = f"macro_obs_{series_id}_{ref_period}_{obs.realtime_start.replace('-', '') if obs.realtime_start else 'current'}_{idx:04d}"
+    obs_rows = []
+    for obs in sorted_obs:
+        obs_date = str(_observation_value(obs, "date", ""))
+        ref_period = _reference_period_from_date(obs_date, frequency)
+        rt_start = _observation_value(obs, "realtime_start")
+        rt_end = _observation_value(obs, "realtime_end")
+        period_key = (series_id, ref_period)
+        if rt_start is None:
+            pit_class = "latest_snapshot_unknown_vintage"
+        elif rt_start == first_realtime_by_period.get(period_key):
+            pit_class = "official_first_release"
+        else:
+            pit_class = "official_revised_vintage"
+        explicit_provisional = _observation_value(obs, "is_provisional")
+        if explicit_provisional is not None:
+            is_provisional = bool(explicit_provisional)
+        elif rt_start is None:
+            is_provisional = False
+        else:
+            is_provisional = rt_start < latest_realtime_by_period.get(period_key, rt_start)
+
+        rt_token = rt_start.replace("-", "") if rt_start else "unknown_vintage"
+        obs_id = f"macro_obs_{series_id}_{ref_period}_{obs_date.replace('-', '')}_{rt_token}"
+        event_id = _release_event_key(event_type, release_id, rt_start) if rt_start else ""
 
         obs_rows.append({
             "observation_id": obs_id,
-            "event_id": f"MACRO_{event_type.upper()}_{ref_period}",
+            "event_id": event_id,
             "source_id": source_id,
             "series_id": series_id,
             "scope": "macro",
             "event_type": event_type,
             "metric_name": metric_name,
             "reference_period": ref_period,
-            "observation_date": obs.date,
+            "observation_date": obs_date,
             "release_at": None,
-            "actual_value": obs.value,
+            "actual_value": _observation_value(obs, "value"),
             "unit": unit,
             "frequency": frequency,
-            "first_observed_at": obs.fetched_at,
+            "first_observed_at": _observation_value(obs, "fetched_at"),
             "source_published_at": None,
             "retrieved_at_utc": retrieved_at_utc,
             "source_url": source_url,
             "pit_class": pit_class,
             "source_license_class": license_class,
             "is_provisional": is_provisional,
-            "realtime_start": obs.realtime_start,
-            "realtime_end": obs.realtime_end,
+            "realtime_start": rt_start,
+            "realtime_end": rt_end,
             "registry_version": "v1",
         })
 
@@ -385,19 +481,27 @@ def transform_release_dates_to_macro_events(
     today_str = as_of_date_str or datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     event_rows = []
-    for rd in release_dates:
+    dated = [
+        rd for rd in release_dates
+        if (rd.get("date") or rd.get("release_date"))
+    ]
+    # Thread supersedes_event_id in release order: each release event for a
+    # FRED release supersedes the previous one (same release_id), so the
+    # calendar forms a revision chain observations can be checked against.
+    last_event_key_by_release: dict[str, str] = {}
+    for rd in sorted(dated, key=lambda item: str(item.get("date") or item.get("release_date"))):
         rel_date = rd.get("date") or rd.get("release_date")
-        if not rel_date:
-            continue
 
         rel_date_str = str(rel_date).strip()
         is_upcoming = rel_date_str > today_str
         status = "scheduled" if is_upcoming else "observed"
         rel_id = rd.get("release_id") or indicator_meta.get("fred_release_id")
-        timing_token = rel_date_str.replace("-", "")
-        rel_token = f"_R{rel_id}" if rel_id else ""
-        event_key = rd.get("event_id") or rd.get("event_key") or f"MACRO_{event_type.upper()}{rel_token}_{timing_token}"
+        provided_key = str(rd.get("event_id") or rd.get("event_key") or "").strip()
+        event_key = provided_key or _release_event_key(event_type, rel_id, rel_date_str)
         supersedes_id = str(rd.get("supersedes_event_id") or rd.get("supersedes") or "").strip()
+        if not supersedes_id:
+            supersedes_id = last_event_key_by_release.get(str(rel_id), "")
+        last_event_key_by_release[str(rel_id)] = event_key
 
         # Date-only release date stays date-only (precision='day')
         event_rows.append({
@@ -427,19 +531,23 @@ class MacroDataCollector:
         base_dir: Path | None = None,
         fred_client: FredMacroClient | None = None,
         offline_fixtures: dict[str, Any] | None = None,
+        realtime_start: str | None = None,
     ) -> None:
         self.base_dir = base_dir or Path.cwd()
         self.offline_fixtures = offline_fixtures or {}
         self.fred_client = fred_client
+        self.realtime_start = realtime_start or DEFAULT_FRED_REALTIME_START
 
     def collect_fred_alfred(
         self,
         indicators: list[str] | None = None,
         as_of_utc: str | None = None,
+        realtime_start: str | None = None,
     ) -> tuple[pd.DataFrame, pd.DataFrame, SourceHealth]:
         retrieved_at = datetime.now(timezone.utc).isoformat()
         source_id = "official:fred_alfred"
         target_keys = indicators or list(OFFICIAL_INDICATORS.keys())
+        vintage_window_start = realtime_start or self.realtime_start
 
         if "fred_alfred" in self.offline_fixtures:
             fixture = self.offline_fixtures["fred_alfred"]
@@ -457,10 +565,11 @@ class MacroDataCollector:
                 obs_list = ind_fixture.get("observations", [])
                 release_dates = ind_fixture.get("release_dates", [])
 
+                # Dict rows without a series_id cannot be attributed to any
+                # indicator and must never be transformed once per indicator.
                 filtered_obs = [
                     o for o in obs_list
-                    if (getattr(o, "series_id", None) == series_id if getattr(o, "series_id", None) is not None
-                        else (o.get("series_id") == series_id if isinstance(o, dict) and "series_id" in o else True))
+                    if _observation_value(o, "series_id") == series_id
                 ]
                 if filtered_obs:
                     ob_df = transform_fred_observations_to_macro(filtered_obs, meta_info, retrieved_at)
@@ -491,7 +600,7 @@ class MacroDataCollector:
                 retrieved_at_utc=retrieved_at,
                 event_count=len(events_df),
                 observation_count=len(obs_df),
-                series_covered=covered_series or target_keys,
+                series_covered=covered_series,
                 source_caveats=FRED_ALFRED_RELEASE_CAVEAT,
             )
             return events_df, obs_df, health
@@ -527,11 +636,15 @@ class MacroDataCollector:
             series_id = meta_info.get("fred_series_id")
             if not series_id:
                 continue
+            series_had_data = False
             try:
-                raw_obs = client.get_observations(series_id, realtime_start="2015-01-01")
+                raw_obs = client.get_observations(
+                    series_id, realtime_start=vintage_window_start
+                )
                 ob_df = transform_fred_observations_to_macro(raw_obs, meta_info, retrieved_at)
                 if not ob_df.empty:
                     all_obs.append(ob_df)
+                    series_had_data = True
 
                 rel_dates = []
                 rel_id = meta_info.get("fred_release_id")
@@ -545,15 +658,19 @@ class MacroDataCollector:
                     ev_df = transform_release_dates_to_macro_events(rel_dates, meta_info, retrieved_at)
                     if not ev_df.empty:
                         all_events.append(ev_df)
+                        series_had_data = True
 
-                covered_series.append(series_id)
+                # A successful-but-empty response is not coverage: zero-row
+                # sources must never report series_covered.
+                if series_had_data:
+                    covered_series.append(series_id)
             except Exception as e:
                 logger.error(f"Error fetching FRED series {series_id}: {e}")
                 errors.append(f"{series_id}: {e}")
 
         if not covered_series:
             status = "unavailable"
-            error_detail = "; ".join(errors) or "All series calls failed"
+            error_detail = "; ".join(errors) or "All series calls returned no data"
         elif len(covered_series) < len(target_keys):
             status = "partial"
             error_detail = "; ".join(errors)
