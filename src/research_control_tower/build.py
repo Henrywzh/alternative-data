@@ -1534,7 +1534,182 @@ def _validate_required_optional_inputs(config: BuildConfig) -> None:
                 raise BuildError(f"required optional input invalid: {path}: {exc}") from exc
 
 
+# Registry-authored macro rows (config/research_control_tower/events.csv,
+# scope="macro") are hand-entered by a human, not fetched by a live
+# collector.  Their source_id is namespaced with this prefix so it can never
+# collide with a real collector's source_id (e.g. "tw_monthly_revenue" the
+# Taiwan revenue collector vs. "registry:tw_monthly_revenue" a human's typed
+# citation of that same series).
+REGISTRY_SOURCE_ID_PREFIX = "registry:"
+
+# Explicit evidence_class -> (pit_class, source_license_class) mapping.
+#
+# - "internal_research": the analyst's own thesis note. Never point-in-time,
+#   never a public/official license.
+# - "source_observation": a human transcribed this value from something they
+#   read elsewhere (an internal normalized snapshot, a raw collector
+#   artifact, etc.) and typed it into the registry as a frozen constant. It
+#   is NOT a live collector fetch, so it must never carry
+#   "snapshot_from_live_source" -- that label implies exactly the automated,
+#   re-fetchable provenance this data does not have. "registry_transcribed"
+#   names that distinction honestly. The underlying fact itself (e.g. a
+#   government CPI print) is still genuinely official/public, so the license
+#   class is unaffected.
+# - "official_external": a human transcribed a value from a specific, dated,
+#   externally hosted official document (evidence_ref is an http(s) URL to
+#   that document, enforced by events.py validation). This reuses the design
+#   doc's existing "dated_public_broker_report" PIT vocabulary entry, which
+#   already describes "a specific dated external document was read and
+#   copied in" -- it is equally true here even when the document is not a
+#   broker report.
+#
+# Any evidence_class outside this mapping fails closed: raise rather than
+# silently defaulting to a live/official label the row has not earned.
+_MACRO_EVIDENCE_CLASS_PIT_LICENSE: dict[str, tuple[str, str]] = {
+    "internal_research": ("not_pit", "internal_research"),
+    "source_observation": ("registry_transcribed", "official_public"),
+    "official_external": ("dated_public_broker_report", "official_public"),
+}
+
+
+def _macro_evidence_pit_license(evidence_class: str, *, event_id: str) -> tuple[str, str]:
+    try:
+        return _MACRO_EVIDENCE_CLASS_PIT_LICENSE[evidence_class]
+    except KeyError:
+        raise BuildError(
+            "macro event row has an evidence_class with no honest pit_class/"
+            f"source_license_class mapping: event_id={event_id!r} "
+            f"evidence_class={evidence_class!r}"
+        ) from None
+
+
 def _macro_event_rows(events_frame: pd.DataFrame) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for _, row in events_frame[events_frame["scope"].eq("macro")].iterrows():
+        start = _timestamp(row.get("starts_at"))
+        evidence = str(row.get("evidence_class", ""))
+        pit_class, license_class = _macro_evidence_pit_license(
+            evidence, event_id=str(row.get("event_id", ""))
+        )
+        raw_source_id = str(row["source_id"])
+        rows.append(
+            {
+                "observation_id": _stable_hash("event_macro", row["event_id"]),
+                "event_id": row["event_id"],
+                "source_id": f"{REGISTRY_SOURCE_ID_PREFIX}{raw_source_id}",
+                "series_id": "",
+                "scope": row["scope"],
+                "event_type": row["event_type"],
+                "metric_name": row["event_type"],
+                "reference_period": row["reference_period"],
+                "observation_date": _source_local_date(start, row.get("source_timezone"))
+                if not pd.isna(start)
+                else pd.NaT,
+                "release_at": pd.NaT,
+                "actual_value": row["actual_value"],
+                "unit": row["actual_unit"],
+                "frequency": row["date_precision"],
+                "first_observed_at": row["first_observed_at"],
+                "source_published_at": row["source_published_at"],
+                # Registry-authored rows genuinely have no automated
+                # retrieval timestamp: nothing fetched them at build time, a
+                # human typed the value in. Fabricating a retrieval time
+                # would be worse than leaving it null; pit_class above
+                # (never "snapshot_from_live_source" for this path) is what
+                # keeps that null from being misread as a live fetch.
+                "retrieved_at_utc": pd.NaT,
+                "source_url": row["source_url"],
+                "pit_class": pit_class,
+                "source_license_class": license_class,
+                "is_provisional": row["certainty_class"] == "provisional",
+                "registry_version": row["registry_version"],
+            }
+        )
+    return rows
+
+
+def _macro_registry_source_states(events_frame: pd.DataFrame) -> list[_SourceState]:
+    """Build one source_health record per registry-authored macro source_id.
+
+    Every source_id emitted by ``_macro_event_rows`` must resolve to a
+    governing source_health record (the coverage layer treats an unresolved
+    source_id as "partial"), and that record must never claim "unavailable"
+    while ``macro_observations`` simultaneously carries rows attributed to
+    it. These states describe the registry rows honestly: they exist and
+    were validated as part of the required events bundle ("available"), but
+    there is no automated collector or freshness SLA behind them, so no
+    cadence/staleness policy is fabricated for them.
+    """
+
+    macro_rows = events_frame[events_frame["scope"].eq("macro")].copy()
+    macro_rows["source_id"] = macro_rows["source_id"].astype(str)
+    states: list[_SourceState] = []
+    for raw_source_id, group in macro_rows.groupby("source_id"):
+        first = group.iloc[0]
+        evidence = str(first.get("evidence_class", ""))
+        pit_class, license_class = _macro_evidence_pit_license(
+            evidence, event_id=str(first.get("event_id", ""))
+        )
+        observed_candidates = [
+            timestamp
+            for column in ("starts_at", "first_observed_at")
+            if column in group.columns
+            for timestamp in (_timestamp(value) for value in group[column])
+            if not pd.isna(timestamp)
+        ]
+        latest_observed = max(observed_candidates) if observed_candidates else pd.NaT
+        evidence_refs = sorted(
+            {
+                str(value).strip()
+                for value in (group["evidence_ref"] if "evidence_ref" in group.columns else [])
+                if not _is_blank(value)
+            }
+        )
+        states.append(
+            _SourceState(
+                source_id=f"{REGISTRY_SOURCE_ID_PREFIX}{raw_source_id}",
+                source_kind="macro",
+                path=None,
+                schema_version="registry_macro_event_v1",
+                required=False,
+                pit_class=pit_class,
+                license_class=license_class,
+                status="available",
+                row_count=len(group),
+                latest_observation_at=latest_observed,
+                detail=(
+                    f"registry_transcribed_macro_row; evidence_class={evidence}; "
+                    "hand-entered from config/research_control_tower/events.csv, "
+                    "not fetched by an automated collector at build time; "
+                    f"evidence_ref={','.join(evidence_refs) if evidence_refs else 'n/a'}"
+                ),
+            )
+        )
+    return states
+
+
+def _base_macro_frame(events: EventBundle) -> pd.DataFrame:
+    return _with_columns(pd.DataFrame(_macro_event_rows(events.events)), MACRO_OUTPUT_COLUMNS)
+
+
+def _macro_collector_event_rows(events_frame: pd.DataFrame) -> list[dict[str, Any]]:
+    """Rows for the *optional* ``macro_events_v1`` collector calendar feed.
+
+    This is a different provenance from ``_macro_event_rows``: the frame here
+    comes from :func:`research_control_tower.macro.materialize_macro_calendar`,
+    which normalizes an actual collector's release-calendar output (e.g. the
+    FRED ALFRED release calendar) into the same row shape as the events
+    registry for convenience. ``source_id`` values here are the collector's
+    own ids (e.g. ``"official:fred_alfred"``) and are not registry-authored,
+    so they must not be namespaced with the "registry:" prefix, and they
+    retain the live-source PIT classification: unlike a human's hand-typed
+    events.csv row, this frame is genuinely produced by an automated fetch.
+    ``evidence_class`` on these rows is a normalization artifact of reusing
+    the events shape (materialize_macro_calendar always writes
+    "source_observation"), not a signal about human transcription, so the
+    events-registry evidence_class mapping does not apply here.
+    """
+
     rows: list[dict[str, Any]] = []
     for _, row in events_frame[events_frame["scope"].eq("macro")].iterrows():
         start = _timestamp(row.get("starts_at"))
@@ -1569,10 +1744,6 @@ def _macro_event_rows(events_frame: pd.DataFrame) -> list[dict[str, Any]]:
             }
         )
     return rows
-
-
-def _base_macro_frame(events: EventBundle) -> pd.DataFrame:
-    return _with_columns(pd.DataFrame(_macro_event_rows(events.events)), MACRO_OUTPUT_COLUMNS)
 
 
 def _macro_row(
@@ -2135,6 +2306,11 @@ def _build_macro(
     rows = _base_macro_frame(events).to_dict("records")
     states: list[_SourceState] = []
     degraded: list[str] = []
+    # Every registry-authored macro source_id (namespaced "registry:...")
+    # needs its own governing source_health record so the coverage layer can
+    # resolve it, and so it never appears to be an "unavailable" provider
+    # while simultaneously emitting observations.
+    states.extend(_macro_registry_source_states(events.events))
     collector_descriptor = (
         _find_descriptor(inputs, MACRO_OBSERVATIONS_SCHEMA_ID)
         or _find_descriptor(inputs, MACRO_COLLECTOR_SCHEMA_ID)
@@ -2153,7 +2329,7 @@ def _build_macro(
         ev_state, ev_frame, _ = _load_optional(events_descriptor, "macro", as_of_utc=as_of_utc)
         states.append(ev_state)
         if ev_frame is not None and not ev_frame.empty:
-            rows.extend(_macro_event_rows(ev_frame))
+            rows.extend(_macro_collector_event_rows(ev_frame))
             _set_state_from_frame(
                 ev_state,
                 ev_frame,
@@ -4159,6 +4335,27 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
             input_fingerprints[str(state.path)] = state.input_sha256
     health_frame = _health_frame(optional_states, required_states)
     frames["source_health.parquet"] = health_frame
+
+    # A source marked "unavailable" must never simultaneously be the
+    # attributed source_id of a published macro_observations row: that
+    # combination is exactly the coverage-semantics violation this bundle
+    # exists to make impossible (a provider reported as absent cannot also
+    # be emitting observations).
+    macro_observation_source_ids = set(
+        frames["macro_observations.parquet"]["source_id"].astype("string").dropna()
+    ) - {""}
+    unavailable_source_ids = set(
+        health_frame.loc[
+            health_frame["status"].astype("string") == "unavailable", "source_id"
+        ].dropna()
+    )
+    conflicting_source_ids = sorted(macro_observation_source_ids & unavailable_source_ids)
+    if conflicting_source_ids:
+        raise BuildError(
+            "macro_observations rows are attributed to source_id(s) whose "
+            "source_health status is 'unavailable': "
+            + ", ".join(conflicting_source_ids)
+        )
 
     source_ids_by_artifact = {
         "entities.parquet": ["registry:entities"],

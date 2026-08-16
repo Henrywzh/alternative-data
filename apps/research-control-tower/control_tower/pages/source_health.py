@@ -68,6 +68,10 @@ _PIT_CLASSES = {
     "current_vintage",
     "snapshot_from_delayed_source",
     "not_pit",
+    # A human transcribed this value into the registry (events.csv) from
+    # cited evidence; it was never fetched by a live collector at build
+    # time. See build.py's _MACRO_EVIDENCE_CLASS_PIT_LICENSE mapping.
+    "registry_transcribed",
 }
 
 _LICENSE_LABELS = {

@@ -1173,7 +1173,14 @@ def test_optional_macro_adapters_cover_ofr_taiwan_and_ecb(tmp_path, minimal_inpu
             "market": "TWSE",
             "industry": "Semiconductors",
             "filing_date": None,
-            "revenue_month": "2026-06",
+            # Must stay within TAIWAN_REVENUE_SCHEMA_ID's 62-day freshness
+            # window of minimal_inputs' as_of_utc (2026-08-13T12:00:00Z), or
+            # the genuine collector adapter fails closed on staleness and
+            # contributes zero rows -- which would make this assertion pass
+            # for the wrong reason (a hand-authored events.csv row happening
+            # to share the unnamespaced "tw_monthly_revenue" source_id,
+            # rather than the adapter output this test is meant to exercise).
+            "revenue_month": "2026-07",
             "monthly_revenue_ntd": 100.0,
             "mom_pct": None,
             "mom_pct_is_derived": False,
@@ -1225,6 +1232,135 @@ def test_optional_macro_adapters_cover_ofr_taiwan_and_ecb(tmp_path, minimal_inpu
     assert {"ofr_observations", "tw_monthly_revenue", "ecb_fx_rates"} <= set(macro["source_id"])
     assert macro.loc[macro["source_id"] == "ecb_fx_rates", "release_at"].isna().all()
     assert {"ofr_observations", "tw_monthly_revenue", "ecb_fx_rates"} <= set(health["source_id"])
+
+
+def test_registry_macro_rows_are_namespaced_and_never_claim_live_source(minimal_inputs):
+    # P0 regression: config/research_control_tower/events.csv carries four
+    # hand-authored macro rows (evidence_class="source_observation") whose
+    # source_id (fred_NFCI, censtatd_cpi_headline, tw_monthly_revenue,
+    # airline_fx_rates) must never be indistinguishable from a genuine live
+    # collector fetch, and must never collide with a real collector's
+    # source_id namespace.
+    manifest = build_control_tower_marts(minimal_inputs)
+    macro = pd.read_parquet(_published(minimal_inputs, "macro_observations.parquet"))
+    health = pd.read_parquet(_published(minimal_inputs, "source_health.parquet"))
+
+    registry_rows = macro[macro["source_id"].str.startswith("registry:")]
+    assert len(registry_rows) == 4
+    assert set(registry_rows["source_id"]) == {
+        "registry:fred_NFCI",
+        "registry:censtatd_cpi_headline",
+        "registry:tw_monthly_revenue",
+        "registry:airline_fx_rates",
+    }
+    # Never the live-collector label, and never null-timestamp-but-claiming-live.
+    assert set(registry_rows["pit_class"]) == {"registry_transcribed"}
+    assert set(registry_rows["source_license_class"]) == {"official_public"}
+    # Honest: nothing fetched these at build time, so retrieval time stays null.
+    assert registry_rows["retrieved_at_utc"].isna().all()
+
+    # No literal, un-namespaced collision with a real collector id remains.
+    assert "tw_monthly_revenue" not in set(macro["source_id"])
+    assert "fred_NFCI" not in set(macro["source_id"])
+    assert "censtatd_cpi_headline" not in set(macro["source_id"])
+
+    # Every registry-authored source_id must resolve to its own governing
+    # source_health record, and that record must not say "unavailable" while
+    # macro_observations carries rows attributed to it.
+    registry_health = health[health["source_id"].isin(registry_rows["source_id"])]
+    assert set(registry_health["source_id"]) == set(registry_rows["source_id"])
+    assert (registry_health["status"] == "available").all()
+    assert (registry_health["source_kind"] == "macro").all()
+    assert manifest.status in {"success", "degraded"}  # build did not raise
+
+
+def test_macro_evidence_class_mapping_fails_closed_for_unknown_class():
+    # Defense in depth: even though events.py's registry validation already
+    # rejects an events.csv row with an evidence_class outside
+    # {internal_research, source_observation, official_external}, the mart
+    # builder's own evidence_class -> (pit_class, license_class) mapping must
+    # independently refuse to silently default an unrecognised evidence_class
+    # to a live/official label.
+    import src.research_control_tower.build as build_module
+
+    frame = pd.DataFrame(
+        [
+            {
+                "event_id": "TEST_UNKNOWN_EVIDENCE",
+                "scope": "macro",
+                "event_type": "test_metric",
+                "reference_period": "2026-08",
+                "starts_at": pd.Timestamp("2026-08-01T00:00:00Z"),
+                "source_timezone": "UTC",
+                "source_id": "some_source",
+                "source_url": "",
+                "source_published_at": pd.NaT,
+                "first_observed_at": pd.Timestamp("2026-08-01T00:00:00Z"),
+                "actual_value": 1.0,
+                "actual_unit": "index",
+                "date_precision": "month",
+                "certainty_class": "observed",
+                "registry_version": "v1",
+                "evidence_class": "not_a_real_evidence_class",
+            }
+        ]
+    )
+    with pytest.raises(build_module.BuildError, match="not_a_real_evidence_class"):
+        build_module._macro_event_rows(frame)
+
+
+def test_macro_observation_attributed_to_unavailable_source_fails_build(
+    tmp_path, minimal_inputs
+):
+    # P0 regression backstop: if a source_health record for a macro
+    # source_id is "unavailable", macro_observations must never
+    # simultaneously carry rows attributed to it -- that combination is the
+    # exact defect this bundle exists to make impossible.
+    macro_root = tmp_path / "input" / "macro"
+    macro_root.mkdir(parents=True)
+    obs_path = macro_root / "macro_observations.parquet"
+    forced_row = _collector_observation_row()
+    forced_row["source_id"] = "official:test_forced_unavailable"
+    materialize_macro_observations([forced_row]).to_parquet(obs_path, index=False)
+    health_path = macro_root / "macro_source_health.json"
+    health_path.write_text(
+        json.dumps(
+            {
+                "official:test_forced_unavailable": {
+                    "source_id": "official:test_forced_unavailable",
+                    "status": "unavailable",
+                    "retrieved_at_utc": "2026-08-12T00:00:00Z",
+                    "event_count": 0,
+                    "observation_count": 1,
+                    "series_covered": [],
+                    "error_detail": "forced inconsistency for regression test",
+                    "source_caveats": None,
+                }
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    config = replace(
+        minimal_inputs,
+        macro_inputs=(
+            LocalInput(
+                source_id="macro_collector",
+                path=obs_path,
+                format="parquet",
+                expected_schema=MACRO_OBSERVATIONS_SCHEMA_ID,
+            ),
+            LocalInput(
+                source_id="macro_collector_health",
+                path=health_path,
+                format="json",
+                expected_schema=MACRO_SOURCE_HEALTH_SCHEMA_ID,
+            ),
+        ),
+    )
+    with pytest.raises(BuildError, match="official:test_forced_unavailable"):
+        build_control_tower_marts(config)
 
 
 def test_links_split_without_losing_index_targets(minimal_inputs):
