@@ -445,6 +445,120 @@ NEWS_FILINGS_COLUMNS = [
     "derived_summary_if_permitted",
 ]
 
+# Batch 2/3 official-source marts.  These carry filing/announcement metadata
+# and versioned earnings actuals only; document bodies are never admitted.
+# Collector modules (official_filings.py, earnings_actuals.py) write the same
+# standardized columns into local inputs that this offline builder consumes.
+OFFICIAL_FILINGS_COLUMNS = [
+    "document_id",
+    "document_type",
+    "event_class",
+    "source_id",
+    "headline",
+    "publisher",
+    "published_at",
+    "accepted_at",
+    "scheduled_date",
+    "retrieved_at_utc",
+    "source_url",
+    "language",
+    "entity_id",
+    "listing_id",
+    "canonical_ticker",
+    "reporting_period_label",
+    "reporting_period_start",
+    "reporting_period_end",
+    "date_precision",
+    "source_timezone",
+    "event_status",
+    "source_quality",
+    "pit_class",
+    "source_license_class",
+    "content_hash_if_permitted",
+    "source_note",
+    "registry_version",
+]
+
+EARNINGS_CALENDAR_COLUMNS = [
+    "calendar_id",
+    "entity_id",
+    "listing_id",
+    "canonical_ticker",
+    "period_label",
+    "period_start",
+    "period_end",
+    "event_type",
+    "event_date",
+    "date_precision",
+    "date_basis",
+    "source_timezone",
+    "status",
+    "source_id",
+    "source_url",
+    "headline",
+    "published_at",
+    "retrieved_at_utc",
+    "source_quality",
+    "pit_class",
+    "source_license_class",
+    "source_note",
+    "registry_version",
+]
+
+EARNINGS_ACTUALS_COLUMNS = [
+    "actual_id",
+    "version",
+    "supersedes_actual_id",
+    "entity_id",
+    "listing_id",
+    "canonical_ticker",
+    "metric",
+    "period_label",
+    "period_start",
+    "period_end",
+    "reported_value",
+    "normalized_value",
+    "normalization_note",
+    "currency",
+    "unit",
+    "accounting_basis",
+    "filing_at",
+    "published_at",
+    "retrieved_at_utc",
+    "source_url",
+    "accession_no",
+    "form",
+    "xbrl_frame",
+    "revision_reason",
+    "is_restatement",
+    "source_id",
+    "source_quality",
+    "pit_class",
+    "source_license_class",
+    "source_note",
+    "registry_version",
+]
+
+# Per-source collection-state sidecar written by the Batch 2/3 collectors.
+# It keeps the plan's coverage semantics (available/partial/no_records/
+# not_applicable/unavailable) explicit instead of collapsing an empty query
+# response into a failed provider.
+SOURCE_STATE_COLUMNS = [
+    "source_id",
+    "source_kind",
+    "status",
+    "detail",
+    "row_count",
+    "first_observation_at",
+    "latest_observation_at",
+    "source_latest_at",
+    "retrieved_at_utc",
+    "source_url",
+    "pit_class",
+    "source_license_class",
+    "cadence",
+]
+
 SOURCE_HEALTH_COLUMNS = [
     "source_id",
     "input_path",
@@ -484,6 +598,9 @@ ARTIFACT_NAMES = (
     "consensus_revisions.parquet",
     "quote_snapshots.parquet",
     "news_filings.parquet",
+    "official_filings.parquet",
+    "earnings_calendar.parquet",
+    "earnings_actuals.parquet",
     "source_health.parquet",
     "build_manifest.json",
 )
@@ -493,6 +610,9 @@ OPTIONAL_ARTIFACT_NAMES = frozenset({
     "consensus_revisions.parquet",
     "quote_snapshots.parquet",
     "news_filings.parquet",
+    "official_filings.parquet",
+    "earnings_calendar.parquet",
+    "earnings_actuals.parquet",
 })
 
 FRED_OBSERVATIONS_SCHEMA_ID = "fred_observations_v1"
@@ -504,6 +624,9 @@ ECB_FX_SCHEMA_ID = "ecb_fx_rates_v1"
 NEWS_SCHEMA_ID = "ai_news_blog_posts_v1"
 FILING_SCHEMA_ID = "sec_edgar_filings_v1"
 QUOTE_SNAPSHOT_SCHEMA_ID = "quote_snapshots_v1"
+OFFICIAL_FILINGS_SCHEMA_ID = "official_filings_v1"
+EARNINGS_ACTUALS_SCHEMA_ID = "earnings_actuals_v1"
+SOURCE_STATE_SCHEMA_ID = "source_state_v1"
 
 _SCHEMA_ALIASES = {
     FRED_OBSERVATIONS_SCHEMA_ID: FRED_OBSERVATIONS_SCHEMA_ID,
@@ -526,6 +649,12 @@ _SCHEMA_ALIASES = {
     "edgar_filings": FILING_SCHEMA_ID,
     QUOTE_SNAPSHOT_SCHEMA_ID: QUOTE_SNAPSHOT_SCHEMA_ID,
     "quote_snapshots": QUOTE_SNAPSHOT_SCHEMA_ID,
+    OFFICIAL_FILINGS_SCHEMA_ID: OFFICIAL_FILINGS_SCHEMA_ID,
+    "official_filings": OFFICIAL_FILINGS_SCHEMA_ID,
+    EARNINGS_ACTUALS_SCHEMA_ID: EARNINGS_ACTUALS_SCHEMA_ID,
+    "earnings_actuals": EARNINGS_ACTUALS_SCHEMA_ID,
+    SOURCE_STATE_SCHEMA_ID: SOURCE_STATE_SCHEMA_ID,
+    "source_state": SOURCE_STATE_SCHEMA_ID,
 }
 
 _EXPECTED_OPTIONAL_SOURCES = (
@@ -539,6 +668,10 @@ _EXPECTED_OPTIONAL_SOURCES = (
     ("quote_snapshots", "market", QUOTE_SNAPSHOT_SCHEMA_ID, ""),
     ("news_official_ai_rss", "news", NEWS_SCHEMA_ID, ""),
     ("filings_sec_edgar", "filing", FILING_SCHEMA_ID, "US"),
+    ("official_filings", "official_filing", OFFICIAL_FILINGS_SCHEMA_ID, "CN,HK,US"),
+    ("official_filings_state", "official_filing", SOURCE_STATE_SCHEMA_ID, ""),
+    ("earnings_actuals", "earnings", EARNINGS_ACTUALS_SCHEMA_ID, "CN,HK,US"),
+    ("earnings_actuals_state", "earnings", SOURCE_STATE_SCHEMA_ID, ""),
 )
 
 # These are explicit source-specific freshness windows for current-vintage
@@ -557,6 +690,13 @@ SOURCE_FRESHNESS_THRESHOLDS = {
     "task3_consensus_export_v1": pd.Timedelta(days=14),
     "task3_consensus_source_health_v1": pd.Timedelta(days=14),
     QUOTE_SNAPSHOT_SCHEMA_ID: pd.Timedelta(minutes=5),
+    # The Batch 2/3 collectors are designed for weekly-to-monthly runs; the
+    # windows below are health policy for the collected snapshot, not
+    # publication claims.  A stale snapshot fails closed into a typed empty
+    # artifact and a degraded health row.
+    OFFICIAL_FILINGS_SCHEMA_ID: pd.Timedelta(days=45),
+    EARNINGS_ACTUALS_SCHEMA_ID: pd.Timedelta(days=120),
+    SOURCE_STATE_SCHEMA_ID: pd.Timedelta(days=45),
 }
 
 SOURCE_TIME_COLUMNS = {
@@ -608,6 +748,24 @@ SOURCE_TIME_COLUMNS = {
         "retrieved": ("fetched_at",),
         "future": ("file_date", "fetched_at"),
     },
+    OFFICIAL_FILINGS_SCHEMA_ID: {
+        "observed": ("published_at",),
+        "freshness": ("published_at", "accepted_at"),
+        "retrieved": ("retrieved_at_utc",),
+        "future": ("published_at", "accepted_at", "retrieved_at_utc"),
+    },
+    EARNINGS_ACTUALS_SCHEMA_ID: {
+        "observed": ("period_end",),
+        "freshness": ("filing_at", "published_at"),
+        "retrieved": ("retrieved_at_utc",),
+        "future": ("filing_at", "published_at", "retrieved_at_utc"),
+    },
+    SOURCE_STATE_SCHEMA_ID: {
+        "observed": ("first_observation_at",),
+        "freshness": ("latest_observation_at", "source_latest_at"),
+        "retrieved": ("retrieved_at_utc",),
+        "future": ("latest_observation_at", "source_latest_at", "retrieved_at_utc"),
+    },
     "task3_consensus_export_v1": {
         "observed": ("snapshot_at", "current_snapshot_at"),
         "freshness": ("snapshot_at", "current_snapshot_at", "provider_asof", "retrieved_at_utc"),
@@ -637,6 +795,13 @@ SOURCE_TIME_COLUMNS = {
 }
 
 QUALITY_CLASSES = frozenset({"official", "official_metadata", "discovery", "entitled", "unknown"})
+
+# Health statuses that mean "the source was queried and its result is usable"
+# for artifact availability.  ``no_records`` is an honest empty query result
+# (the plan's coverage semantics), ``partial`` covers only some listings, and
+# ``not_applicable`` describes a private entity with no public disclosure.
+# None of these mark a build degraded; ``unavailable``/``degraded`` do.
+CONTRIBUTING_STATUSES = frozenset({"available", "partial", "no_records"})
 
 
 class BuildError(ValueError):
@@ -679,6 +844,8 @@ class BuildConfig:
     macro_inputs: tuple[LocalInput, ...] = ()
     news_inputs: tuple[LocalInput, ...] = ()
     filing_inputs: tuple[LocalInput, ...] = ()
+    official_filing_inputs: tuple[LocalInput, ...] = ()
+    earnings_inputs: tuple[LocalInput, ...] = ()
     quote_inputs: tuple[LocalInput, ...] = ()
     consensus_export_dir: Path | None = None
     schema_version: str = SCHEMA_VERSION
@@ -700,7 +867,14 @@ class BuildConfig:
             raise ValueError("build_id must not be blank")
         if self.network_policy != NETWORK_POLICY:
             raise ValueError("network_policy must be 'forbidden'")
-        descriptors = (*self.macro_inputs, *self.news_inputs, *self.filing_inputs, *self.quote_inputs)
+        descriptors = (
+            *self.macro_inputs,
+            *self.news_inputs,
+            *self.filing_inputs,
+            *self.official_filing_inputs,
+            *self.earnings_inputs,
+            *self.quote_inputs,
+        )
         source_ids = [descriptor.source_id for descriptor in descriptors]
         if len(source_ids) != len(set(source_ids)):
             raise ValueError("optional LocalInput source_id values must be unique")
@@ -871,6 +1045,9 @@ _OPTIONAL_COLUMNS = {
         "filing_content",
         "body_text",
     },
+    OFFICIAL_FILINGS_SCHEMA_ID: set(OFFICIAL_FILINGS_COLUMNS),
+    EARNINGS_ACTUALS_SCHEMA_ID: set(EARNINGS_ACTUALS_COLUMNS),
+    SOURCE_STATE_SCHEMA_ID: set(SOURCE_STATE_COLUMNS),
     QUOTE_SNAPSHOT_SCHEMA_ID: set(QUOTE_SNAPSHOT_COLUMNS),
     FRED_OBSERVATIONS_SCHEMA_ID: {"date", "series_id", "value", "fetched_at"},
     FRED_META_SCHEMA_ID: {
@@ -1255,6 +1432,8 @@ def _validate_required_optional_inputs(config: BuildConfig) -> None:
         ("macro", config.macro_inputs),
         ("news", config.news_inputs),
         ("filing", config.filing_inputs),
+        ("official_filing", config.official_filing_inputs),
+        ("earnings", config.earnings_inputs),
         ("market", config.quote_inputs),
     ):
         for descriptor in descriptors:
@@ -1949,6 +2128,301 @@ def _build_news_filings(
     return _sort_frame(frame, ["document_id"]), states, sorted(set(degraded))
 
 
+def _sidecar_int(value: Any) -> int:
+    try:
+        numeric = pd.to_numeric(value, errors="coerce")
+        return int(numeric) if not pd.isna(numeric) else 0
+    except (TypeError, ValueError, OverflowError):
+        return 0
+
+
+def _sidecar_states(frame: pd.DataFrame) -> list[_SourceState]:
+    """Convert collector state-sidecar rows into explicit source-health rows.
+
+    The sidecar preserves the plan's coverage semantics (available/partial/
+    no_records/not_applicable/unavailable) as the raw status so an honest
+    empty query is never relabelled as a failed provider and a private entity
+    is never treated as a broken public source.
+    """
+
+    states: list[_SourceState] = []
+    for _, item in frame.iterrows():
+        source_id = str(item.get("source_id") or "").strip()
+        if not source_id:
+            continue
+        status = str(item.get("status") or "unavailable").strip() or "unavailable"
+        detail = str(item.get("detail") or "").strip()
+        states.append(
+            _SourceState(
+                source_id=source_id,
+                source_kind=str(item.get("source_kind") or "optional").strip() or "optional",
+                path=None,
+                schema_version=SOURCE_STATE_SCHEMA_ID,
+                required=False,
+                pit_class=str(item.get("pit_class") or "snapshot_from_live_source"),
+                license_class=str(item.get("source_license_class") or "public_metadata"),
+                cadence=str(item.get("cadence") or "").strip() or None,
+                source_url=str(item.get("source_url") or "").strip() or None,
+                status=status,
+                row_count=_sidecar_int(item.get("row_count")),
+                first_observation_at=_timestamp(item.get("first_observation_at")),
+                latest_observation_at=_timestamp(item.get("latest_observation_at")),
+                source_latest_at=_timestamp(item.get("source_latest_at")),
+                retrieved_at_utc=_timestamp(item.get("retrieved_at_utc")),
+                detail=detail or f"{status}; collector state sidecar",
+            )
+        )
+    return states
+
+
+def _resolve_official_relations(
+    frame: pd.DataFrame,
+    registries: Any,
+) -> tuple[pd.DataFrame, int]:
+    """Keep only rows whose entity/listing relations resolve in the registry.
+
+    Unknown or mismatched rows are dropped with a counted note rather than
+    silently admitted; the caller records the drop on the source-health row.
+    """
+
+    known_entities = set(registries.entities["entity_id"].astype("string"))
+    known_listings = set(registries.listings["listing_id"].astype("string"))
+    listing_entities = dict(
+        zip(
+            registries.listings["listing_id"].astype("string"),
+            registries.listings["entity_id"].astype("string"),
+        )
+    )
+    canonical_by_listing = dict(
+        zip(
+            registries.listings["listing_id"].astype("string"),
+            registries.listings["canonical_ticker"].astype("string"),
+        )
+    )
+    kept: list[dict[str, Any]] = []
+    dropped = 0
+    for _, item in frame.iterrows():
+        entity = str(item.get("entity_id") or "").strip()
+        listing = str(item.get("listing_id") or "").strip()
+        if (
+            entity not in known_entities
+            or listing not in known_listings
+            or listing_entities.get(listing) != entity
+        ):
+            dropped += 1
+            continue
+        row = dict(item)
+        row["canonical_ticker"] = canonical_by_listing.get(listing, row.get("canonical_ticker", ""))
+        kept.append(row)
+    return pd.DataFrame(kept), dropped
+
+
+def _calendar_event_type(period_label: Any, period_start: Any, period_end: Any) -> str:
+    label = str(period_label or "").upper()
+    if any(token in label for token in ("ANNUAL", "YEAR ENDED", "FULL YEAR")) or label.startswith("FY"):
+        return "annual_results"
+    if any(token in label for token in ("INTERIM", "SIX MONTH", "HALF YEAR")) or label.startswith("1H"):
+        return "interim_results"
+    if any(token in label for token in ("QUARTER", "THREE MONTH")) or re.match(r"^Q[1-4]", label):
+        return "quarterly_results"
+    start = _timestamp(period_start, date_only=True)
+    end = _timestamp(period_end, date_only=True)
+    if not pd.isna(start) and not pd.isna(end):
+        days = (end - start).days
+        if 330 <= days <= 380:
+            return "annual_results"
+        if 150 <= days <= 200:
+            return "interim_results"
+    return "results"
+
+
+def _calendar_rows_from_filings(filings: pd.DataFrame) -> pd.DataFrame:
+    """Derive the official earnings calendar from filing/announcement rows.
+
+    Only rows explicitly classified as earnings results by the source adapter
+    become calendar rows.  The event date is either the source-native
+    announcement date (HKEX publishes an exact local timestamp) or the filing
+    date (SEC metadata exposes the accepted date, not the press-release time);
+    ``date_basis`` keeps that distinction visible and ``date_precision`` is
+    never inflated beyond what the source provides.
+    """
+
+    rows: list[dict[str, Any]] = []
+    for _, item in filings.iterrows():
+        if str(item.get("event_class") or "") != "earnings_results":
+            continue
+        status = str(item.get("event_status") or "observed")
+        scheduled = _timestamp(item.get("scheduled_date"), date_only=True)
+        published = _timestamp(item.get("published_at"))
+        if status == "scheduled" and not pd.isna(scheduled):
+            event_date = scheduled
+            date_basis = "scheduled"
+            published_at = pd.NaT
+            headline = str(item.get("headline") or "")
+        elif not pd.isna(published):
+            event_date = published.tz_convert("UTC").normalize()
+            date_basis = (
+                "announcement_date"
+                if str(item.get("date_precision") or "") == "minute"
+                else "filing_date"
+            )
+            published_at = published
+            headline = str(item.get("headline") or "")
+        else:
+            continue
+        period_start = _timestamp(item.get("reporting_period_start"), date_only=True)
+        period_end = _timestamp(item.get("reporting_period_end"), date_only=True)
+        rows.append(
+            {
+                "calendar_id": _stable_hash(
+                    "earnings_calendar", item.get("document_id"), item.get("listing_id")
+                ),
+                "entity_id": item.get("entity_id"),
+                "listing_id": item.get("listing_id"),
+                "canonical_ticker": item.get("canonical_ticker"),
+                "period_label": item.get("reporting_period_label"),
+                "period_start": period_start,
+                "period_end": period_end,
+                "event_type": _calendar_event_type(
+                    item.get("reporting_period_label"), period_start, period_end
+                ),
+                "event_date": event_date,
+                "date_precision": "day",
+                "date_basis": date_basis,
+                "source_timezone": item.get("source_timezone"),
+                "status": status if status in {"scheduled", "confirmed", "observed"} else "observed",
+                "source_id": item.get("source_id"),
+                "source_url": item.get("source_url"),
+                "headline": headline,
+                "published_at": published_at,
+                "retrieved_at_utc": _timestamp(item.get("retrieved_at_utc")),
+                "source_quality": item.get("source_quality"),
+                "pit_class": item.get("pit_class"),
+                "source_license_class": item.get("source_license_class"),
+                "source_note": item.get("source_note"),
+                "registry_version": item.get("registry_version"),
+            }
+        )
+    return _sort_frame(
+        _with_columns(pd.DataFrame(rows), EARNINGS_CALENDAR_COLUMNS),
+        ["calendar_id"],
+    )
+
+
+def _build_official_filings(
+    registries: Any,
+    inputs: Sequence[LocalInput],
+    *,
+    as_of_utc: pd.Timestamp,
+) -> tuple[pd.DataFrame, pd.DataFrame, list[_SourceState], list[str]]:
+    """Materialize the official filings/announcements mart and the derived
+    earnings calendar from the Batch 2 collector inputs."""
+
+    filings_descriptor = _find_descriptor(inputs, OFFICIAL_FILINGS_SCHEMA_ID)
+    state_descriptor = _find_descriptor(inputs, SOURCE_STATE_SCHEMA_ID)
+    states: list[_SourceState] = []
+    degraded: list[str] = []
+    rows: list[dict[str, Any]] = []
+
+    if filings_descriptor is not None:
+        state, frame, _schema_id = _load_optional(
+            filings_descriptor, "official_filing", as_of_utc=as_of_utc
+        )
+        states.append(state)
+        if frame is None:
+            degraded.append(filings_descriptor.source_id)
+        else:
+            frame = _with_columns(frame, OFFICIAL_FILINGS_COLUMNS)
+            frame, dropped = _resolve_official_relations(frame, registries)
+            if dropped:
+                state.row_count = len(frame)
+                state.detail = (
+                    f"{state.detail}; " if state.detail else ""
+                ) + f"dropped_unresolved_relations={dropped}"
+                _append_state_error(
+                    state,
+                    code="unresolved_relations",
+                    message=f"dropped {dropped} rows with unknown entity/listing ids",
+                )
+            rows = frame.to_dict("records")
+    else:
+        degraded.append("official_filings")
+
+    if state_descriptor is not None:
+        state, state_frame, _schema_id = _load_optional(
+            state_descriptor, "official_filing", as_of_utc=as_of_utc
+        )
+        states.append(state)
+        if state_frame is None:
+            degraded.append(state_descriptor.source_id)
+        else:
+            states.extend(_sidecar_states(_with_columns(state_frame, SOURCE_STATE_COLUMNS)))
+    else:
+        degraded.append("official_filings_state")
+
+    filings_out = _with_columns(pd.DataFrame(rows), OFFICIAL_FILINGS_COLUMNS)
+    filings_out = _sort_frame(filings_out, ["document_id", "listing_id"])
+    calendar_out = _calendar_rows_from_filings(filings_out)
+    return filings_out, calendar_out, states, sorted(set(degraded))
+
+
+def _build_earnings_actuals(
+    registries: Any,
+    inputs: Sequence[LocalInput],
+    *,
+    as_of_utc: pd.Timestamp,
+) -> tuple[pd.DataFrame, list[_SourceState], list[str]]:
+    """Materialize the versioned earnings-actuals mart from Batch 3 inputs."""
+
+    actuals_descriptor = _find_descriptor(inputs, EARNINGS_ACTUALS_SCHEMA_ID)
+    state_descriptor = _find_descriptor(inputs, SOURCE_STATE_SCHEMA_ID)
+    states: list[_SourceState] = []
+    degraded: list[str] = []
+    rows: list[dict[str, Any]] = []
+
+    if actuals_descriptor is not None:
+        state, frame, _schema_id = _load_optional(
+            actuals_descriptor, "earnings", as_of_utc=as_of_utc
+        )
+        states.append(state)
+        if frame is None:
+            degraded.append(actuals_descriptor.source_id)
+        else:
+            frame = _with_columns(frame, EARNINGS_ACTUALS_COLUMNS)
+            frame, dropped = _resolve_official_relations(frame, registries)
+            if dropped:
+                state.row_count = len(frame)
+                state.detail = (
+                    f"{state.detail}; " if state.detail else ""
+                ) + f"dropped_unresolved_relations={dropped}"
+                _append_state_error(
+                    state,
+                    code="unresolved_relations",
+                    message=f"dropped {dropped} rows with unknown entity/listing ids",
+                )
+            rows = frame.to_dict("records")
+    else:
+        degraded.append("earnings_actuals")
+
+    if state_descriptor is not None:
+        state, state_frame, _schema_id = _load_optional(
+            state_descriptor, "earnings", as_of_utc=as_of_utc
+        )
+        states.append(state)
+        if state_frame is None:
+            degraded.append(state_descriptor.source_id)
+        else:
+            states.extend(_sidecar_states(_with_columns(state_frame, SOURCE_STATE_COLUMNS)))
+    else:
+        degraded.append("earnings_actuals_state")
+
+    actuals_out = _with_columns(pd.DataFrame(rows), EARNINGS_ACTUALS_COLUMNS)
+    actuals_out = _sort_frame(
+        actuals_out, ["entity_id", "metric", "period_end", "version"]
+    )
+    return actuals_out, states, sorted(set(degraded))
+
+
 def _task3_empty(columns: Sequence[str]) -> pd.DataFrame:
     return pd.DataFrame({column: pd.Series(dtype="object") for column in columns})
 
@@ -2422,6 +2896,8 @@ def _expected_health_states(config: BuildConfig, existing: Sequence[_SourceState
         *((descriptor, "macro") for descriptor in config.macro_inputs),
         *((descriptor, "news") for descriptor in config.news_inputs),
         *((descriptor, "filing") for descriptor in config.filing_inputs),
+        *((descriptor, "official_filing") for descriptor in config.official_filing_inputs),
+        *((descriptor, "earnings") for descriptor in config.earnings_inputs),
         *((descriptor, "market") for descriptor in config.quote_inputs),
     ]
     states = list(existing)
@@ -2497,11 +2973,16 @@ def _expected_health_states(config: BuildConfig, existing: Sequence[_SourceState
 
 
 def _unconfigured_optional_ids(config: BuildConfig) -> list[str]:
-    configured_by_kind: dict[str, set[str]] = {"macro": set(), "news": set(), "filing": set(), "market": set()}
+    configured_by_kind: dict[str, set[str]] = {
+        "macro": set(), "news": set(), "filing": set(),
+        "official_filing": set(), "earnings": set(), "market": set(),
+    }
     for source_kind, descriptors in (
         ("macro", config.macro_inputs),
         ("news", config.news_inputs),
         ("filing", config.filing_inputs),
+        ("official_filing", config.official_filing_inputs),
+        ("earnings", config.earnings_inputs),
         ("market", config.quote_inputs),
     ):
         for descriptor in descriptors:
@@ -2621,6 +3102,41 @@ def _arrow_schema() -> dict[str, pa.Schema]:
         NEWS_FILINGS_COLUMNS,
         {"published_at": timestamp, "first_observed_at": timestamp},
     )
+    official_filings_schema = fields(
+        OFFICIAL_FILINGS_COLUMNS,
+        {
+            "published_at": timestamp,
+            "accepted_at": timestamp,
+            "scheduled_date": date_type,
+            "retrieved_at_utc": timestamp,
+            "reporting_period_start": date_type,
+            "reporting_period_end": date_type,
+        },
+    )
+    earnings_calendar_schema = fields(
+        EARNINGS_CALENDAR_COLUMNS,
+        {
+            "period_start": date_type,
+            "period_end": date_type,
+            "event_date": date_type,
+            "published_at": timestamp,
+            "retrieved_at_utc": timestamp,
+        },
+    )
+    earnings_actuals_schema = fields(
+        EARNINGS_ACTUALS_COLUMNS,
+        {
+            "version": pa.int64(),
+            "period_start": date_type,
+            "period_end": date_type,
+            "reported_value": pa.float64(),
+            "normalized_value": pa.float64(),
+            "filing_at": timestamp,
+            "published_at": timestamp,
+            "retrieved_at_utc": timestamp,
+            "is_restatement": pa.bool_(),
+        },
+    )
     health_schema = fields(
         SOURCE_HEALTH_COLUMNS,
         {
@@ -2643,6 +3159,9 @@ def _arrow_schema() -> dict[str, pa.Schema]:
         "consensus_revisions.parquet": TASK3_REVISION_ARROW_SCHEMA,
         "quote_snapshots.parquet": QUOTE_SNAPSHOT_ARROW_SCHEMA,
         "news_filings.parquet": news_schema,
+        "official_filings.parquet": official_filings_schema,
+        "earnings_calendar.parquet": earnings_calendar_schema,
+        "earnings_actuals.parquet": earnings_actuals_schema,
         "source_health.parquet": health_schema,
     }
 
@@ -2703,7 +3222,8 @@ def _artifact_status(
     states_by_id: Mapping[str, _SourceState],
 ) -> str:
     contributing = [states_by_id[source_id] for source_id in source_ids if source_id in states_by_id]
-    if not contributing or all(state.status == "available" for state in contributing):
+    usable = CONTRIBUTING_STATUSES | {"not_applicable"}
+    if not contributing or all(state.status in usable for state in contributing):
         return "available"
     if all(state.status == "unavailable" for state in contributing):
         return "unavailable"
@@ -2731,7 +3251,9 @@ def _validate_written_generation(
         raise BuildError("generation must be a regular directory")
     entries = list(generation.iterdir())
     if set(path.name for path in entries) != set(ARTIFACT_NAMES):
-        raise BuildError("generation does not contain exactly the 16 Control Tower artifacts")
+        raise BuildError(
+            f"generation does not contain exactly the {len(ARTIFACT_NAMES)} Control Tower artifacts"
+        )
     if any(path.is_symlink() or not path.is_file() for path in entries):
         raise BuildError("generation artifacts must be regular non-symlink files")
     if expected_generation_id is not None:
@@ -3074,12 +3596,25 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
         config.filing_inputs,
         as_of_utc=config.as_of_utc,
     )
+    official_filings_frame, calendar_frame, official_states, official_degraded = _build_official_filings(
+        registries,
+        config.official_filing_inputs,
+        as_of_utc=config.as_of_utc,
+    )
+    actuals_frame, actuals_states, actuals_degraded = _build_earnings_actuals(
+        registries,
+        config.earnings_inputs,
+        as_of_utc=config.as_of_utc,
+    )
     input_fingerprints.update(consensus_fingerprints)
     frames["macro_observations.parquet"] = macro_frame
     frames["consensus_snapshots.parquet"] = consensus_snapshots
     frames["consensus_revisions.parquet"] = consensus_revisions
     frames["quote_snapshots.parquet"] = quote_frame
     frames["news_filings.parquet"] = news_frame
+    frames["official_filings.parquet"] = official_filings_frame
+    frames["earnings_calendar.parquet"] = calendar_frame
+    frames["earnings_actuals.parquet"] = actuals_frame
 
     required_row_counts = {
         "registry:entities": len(registry_frames["entities"]),
@@ -3096,7 +3631,14 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
 
     optional_states = _expected_health_states(
         config,
-        [*macro_states, *consensus_states, *quote_states, *news_states],
+        [
+            *macro_states,
+            *consensus_states,
+            *quote_states,
+            *news_states,
+            *official_states,
+            *actuals_states,
+        ],
     )
     for state in optional_states:
         if state.status != "available" and not state.errors:
@@ -3110,9 +3652,14 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
         *consensus_degraded,
         *quote_degraded,
         *news_degraded,
+        *official_degraded,
+        *actuals_degraded,
         *_unconfigured_optional_ids(config),
     ]
-    state_degraded = [state.source_id for state in optional_states if state.status != "available"]
+    non_contributing = CONTRIBUTING_STATUSES | {"not_applicable"}
+    state_degraded = [
+        state.source_id for state in optional_states if state.status not in non_contributing
+    ]
     optional_degraded = sorted(set([*optional_degraded, *state_degraded]))
     if optional_degraded and not config.allow_degraded_optional:
         raise BuildError(
@@ -3141,6 +3688,9 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
         "consensus_revisions.parquet": [state.source_id for state in consensus_states],
         "quote_snapshots.parquet": [state.source_id for state in quote_states],
         "news_filings.parquet": [state.source_id for state in news_states],
+        "official_filings.parquet": [state.source_id for state in official_states],
+        "earnings_calendar.parquet": [state.source_id for state in official_states],
+        "earnings_actuals.parquet": [state.source_id for state in actuals_states],
         "source_health.parquet": [state.source_id for state in [*required_states, *optional_states]],
     }
     _validate_output_frames(frames)
@@ -3201,7 +3751,11 @@ __all__ = [
     "BuildConfig",
     "BuildError",
     "BuildManifest",
+    "CONTRIBUTING_STATUSES",
     "CURRENT_POINTER_NAME",
+    "EARNINGS_ACTUALS_COLUMNS",
+    "EARNINGS_ACTUALS_SCHEMA_ID",
+    "EARNINGS_CALENDAR_COLUMNS",
     "ECB_FX_SCHEMA_ID",
     "EVENT_LINK_COLUMNS",
     "EVENT_OUTPUT_COLUMNS",
@@ -3213,6 +3767,8 @@ __all__ = [
     "MACRO_OUTPUT_COLUMNS",
     "NEWS_FILINGS_COLUMNS",
     "NEWS_SCHEMA_ID",
+    "OFFICIAL_FILINGS_COLUMNS",
+    "OFFICIAL_FILINGS_SCHEMA_ID",
     "OPTIONAL_ARTIFACT_NAMES",
     "QUOTE_SNAPSHOT_COLUMNS",
     "QUOTE_SNAPSHOT_SCHEMA_ID",
@@ -3221,6 +3777,8 @@ __all__ = [
     "OFR_OBSERVATIONS_SCHEMA_ID",
     "REGISTRY_OUTPUT_COLUMNS",
     "SOURCE_HEALTH_COLUMNS",
+    "SOURCE_STATE_COLUMNS",
+    "SOURCE_STATE_SCHEMA_ID",
     "TAIWAN_REVENUE_SCHEMA_ID",
     "TASK3_REVISION_COLUMNS",
     "TASK3_SNAPSHOT_COLUMNS",

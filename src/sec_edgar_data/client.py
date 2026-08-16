@@ -24,6 +24,12 @@ def _build_retrying_session(user_agent: str) -> requests.Session:
     session.mount("https://", HTTPAdapter(max_retries=retry))
     return session
 
+
+# Public alias so sibling collectors (e.g. the Research Control Tower Batch 2
+# SEC submissions adapter) reuse the same retry/throttle behaviour without
+# reaching into a private name.
+build_retrying_session = _build_retrying_session
+
 class EdgarFullTextSearchClient:
     """Thin client for the SEC EDGAR full-text search API (efts.sec.gov).
 

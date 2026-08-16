@@ -102,6 +102,32 @@ def _columns() -> dict[str, list[str]]:
             "related_basket_ids", "event_class", "importance", "source_quality", "pit_class",
             "source_license_class", "content_hash_if_permitted", "derived_summary_if_permitted",
         ],
+        "official_filings.parquet": [
+            "document_id", "document_type", "event_class", "source_id", "headline",
+            "publisher", "published_at", "accepted_at", "scheduled_date",
+            "retrieved_at_utc", "source_url", "language", "entity_id", "listing_id",
+            "canonical_ticker", "reporting_period_label", "reporting_period_start",
+            "reporting_period_end", "date_precision", "source_timezone",
+            "event_status", "source_quality", "pit_class", "source_license_class",
+            "content_hash_if_permitted", "source_note", "registry_version",
+        ],
+        "earnings_calendar.parquet": [
+            "calendar_id", "entity_id", "listing_id", "canonical_ticker",
+            "period_label", "period_start", "period_end", "event_type", "event_date",
+            "date_precision", "date_basis", "source_timezone", "status", "source_id",
+            "source_url", "headline", "published_at", "retrieved_at_utc",
+            "source_quality", "pit_class", "source_license_class", "source_note",
+            "registry_version",
+        ],
+        "earnings_actuals.parquet": [
+            "actual_id", "version", "supersedes_actual_id", "entity_id", "listing_id",
+            "canonical_ticker", "metric", "period_label", "period_start", "period_end",
+            "reported_value", "normalized_value", "normalization_note", "currency",
+            "unit", "accounting_basis", "filing_at", "published_at",
+            "retrieved_at_utc", "source_url", "accession_no", "form", "xbrl_frame",
+            "revision_reason", "is_restatement", "source_id", "source_quality",
+            "pit_class", "source_license_class", "source_note", "registry_version",
+        ],
         "source_health.parquet": [
             "source_id", "input_path", "source_kind", "status", "required", "row_count",
             "first_observation_at", "latest_observation_at", "source_latest_at", "retrieved_at_utc",
@@ -121,22 +147,29 @@ def _frame(name: str, rows: list[dict[str, object]]) -> pd.DataFrame:
     return pd.DataFrame([{**_blank(name), **row} for row in rows], columns=columns)
 
 
-_DATE_COLUMNS = {"active_from", "active_to", "mapping_verified_at", "review_by", "observation_date", "estimate_period_end"}
+_DATE_COLUMNS = {
+    "active_from", "active_to", "mapping_verified_at", "review_by", "observation_date",
+    "estimate_period_end", "scheduled_date", "reporting_period_start",
+    "reporting_period_end", "period_start", "period_end", "event_date",
+}
 _TIMESTAMP_COLUMNS = {
     "starts_at", "ends_at", "source_published_at", "first_observed_at", "last_verified_at", "release_at",
     "retrieved_at_utc", "snapshot_at", "provider_asof", "current_snapshot_at",
     "cutoff_at", "prior_snapshot_at", "prior_provider_asof", "provider_asof", "published_at", "first_observation_at", "latest_observation_at",
-    "source_latest_at", "quote_timestamp",
+    "source_latest_at", "quote_timestamp", "accepted_at", "filing_at",
 }
-_BOOLEAN_COLUMNS = {"collection_eligible", "primary_listing", "automated", "is_provisional", "required"}
+_BOOLEAN_COLUMNS = {
+    "collection_eligible", "primary_listing", "automated", "is_provisional",
+    "required", "is_restatement",
+}
 _INTEGER_COLUMNS = {
     "observation_version", "fiscal_year", "analyst_count", "provider_contributor_count", "lookback_days",
-    "current_analyst_count", "prior_analyst_count", "analyst_count_change", "row_count",
+    "current_analyst_count", "prior_analyst_count", "analyst_count_change", "row_count", "version",
 }
 _FLOAT_COLUMNS = {
     "confidence", "value", "low_value", "high_value", "current_value", "current_dispersion", "prior_value",
     "revision_value", "revision_pct", "dispersion", "last_price", "bid", "ask",
-    "day_change_pct", "volume",
+    "day_change_pct", "volume", "reported_value", "normalized_value",
 }
 
 
@@ -283,6 +316,9 @@ def _write_bundle(root: Path, *, previous_build_at: str | None = "2026-08-13T10:
         "consensus_revisions.parquet": _frame("consensus_revisions.parquet", [{"revision_id": "R1", "snapshot_id": "S1", "provider": "fixture", "entity_id": "E1", "listing_id": "L1", "canonical_ticker": "EONE", "metric": "eps", "fiscal_period": "FY2026", "fiscal_year": 2026, "horizon": "FY", "statistic": "mean", "current_snapshot_at": "2026-08-13T11:00:00Z", "current_value": 1.2, "current_analyst_count": 4, "prior_snapshot_at": "2026-08-01T11:00:00Z", "prior_value": 1.0, "prior_analyst_count": 3, "revision_value": .2, "revision_pct": .2, "currency": "USD", "unit": "per_share", "pit_class": "true_pit", "source_run_id": "run-1", "retrieved_at_utc": "2026-08-13T11:30:00Z", "alignment_status": "comparable"}]),
         "quote_snapshots.parquet": _frame("quote_snapshots.parquet", []),
         "news_filings.parquet": _frame("news_filings.parquet", [{"document_id": "D1", "document_type": "official_filing", "source_id": "source:official", "headline": "Fixture official filing", "publisher": "Fixture IR", "published_at": "2026-08-13T11:00:00Z", "first_observed_at": "2026-08-13T11:00:00Z", "source_url": "https://example.test/filing", "language": "en", "related_entity_ids": "E1", "event_class": "filing", "importance": "high", "source_quality": "official", "pit_class": "true_pit", "source_license_class": "public"}]),
+        "official_filings.parquet": _frame("official_filings.parquet", [{"document_id": "SEC-1", "document_type": "filing", "event_class": "general", "source_id": "sec_edgar_submissions", "headline": "Fixture SEC filing", "publisher": "SEC EDGAR", "published_at": "2026-08-13T11:00:00Z", "accepted_at": "2026-08-13T11:00:00Z", "retrieved_at_utc": "2026-08-13T11:30:00Z", "source_url": "https://example.test/sec", "language": "en", "entity_id": "E1", "listing_id": "L1", "canonical_ticker": "EONE", "date_precision": "minute", "source_timezone": "UTC", "event_status": "observed", "source_quality": "official_metadata", "pit_class": "snapshot_from_live_source", "source_license_class": "official_public_metadata", "source_note": "fixture", "registry_version": "v1"}]),
+        "earnings_calendar.parquet": _frame("earnings_calendar.parquet", [{"calendar_id": "CAL-1", "entity_id": "E1", "listing_id": "L1", "canonical_ticker": "EONE", "period_label": "FY2026", "event_type": "annual_results", "event_date": "2026-08-13", "date_precision": "day", "date_basis": "filing_date", "source_timezone": "UTC", "status": "observed", "source_id": "sec_edgar_submissions", "source_url": "https://example.test/sec", "headline": "Fixture annual results", "published_at": "2026-08-13T11:00:00Z", "retrieved_at_utc": "2026-08-13T11:30:00Z", "source_quality": "official_metadata", "pit_class": "snapshot_from_live_source", "source_license_class": "official_public_metadata", "source_note": "fixture", "registry_version": "v1"}]),
+        "earnings_actuals.parquet": _frame("earnings_actuals.parquet", [{"actual_id": "ACT-1", "version": 1, "entity_id": "E1", "listing_id": "L1", "canonical_ticker": "EONE", "metric": "revenue", "period_label": "FY2026", "period_end": "2026-03-31", "reported_value": 1.5, "normalized_value": 1.5, "normalization_note": "as_reported", "currency": "USD", "unit": "USD", "accounting_basis": "us-gaap as reported", "filing_at": "2026-08-13T11:00:00Z", "published_at": "2026-08-13T11:00:00Z", "retrieved_at_utc": "2026-08-13T11:30:00Z", "source_url": "https://example.test/actuals", "accession_no": "A1", "form": "20-F", "revision_reason": "initial_filing", "is_restatement": False, "source_id": "sec_companyfacts", "source_quality": "official_metadata", "pit_class": "snapshot_from_live_source", "source_license_class": "official_public_metadata", "source_note": "fixture", "registry_version": "v1"}]),
         "source_health.parquet": _frame("source_health.parquet", [
             {"source_id": "source:official", "input_path": "fixture", "source_kind": "official", "status": "available", "required": True, "row_count": 5, "latest_observation_at": "2026-08-13T11:00:00Z", "source_latest_at": "2026-08-13T11:00:00Z", "retrieved_at_utc": "2026-08-13T11:30:00Z", "pit_class": "true_pit", "source_license_class": "public", "schema_version": "v1", "detail": "fixture source"},
             {"source_id": "source:stale", "input_path": "fixture", "source_kind": "official", "status": "stale", "required": True, "row_count": 0, "latest_observation_at": "2026-08-01T00:00:00Z", "source_latest_at": "2026-08-01T00:00:00Z", "retrieved_at_utc": "2026-08-13T11:30:00Z", "pit_class": "not_pit", "source_license_class": "public", "schema_version": "v1", "detail": "fixture stale source"},
