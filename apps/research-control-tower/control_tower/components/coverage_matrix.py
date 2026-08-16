@@ -63,6 +63,21 @@ def stage1_matrix_to_dataframe(
 ) -> pd.DataFrame:
     """Entity-by-category matrix as a display frame with human labels."""
 
+    columns = [
+        "entity_id",
+        "display_name",
+        "entity_type",
+        "listing_count",
+        "listing_ids",
+        *[
+            column
+            for category in matrix.categories
+            for column in (
+                f"{category}_status",
+                f"{category}_details",
+            )
+        ],
+    ]
     rows: list[dict[str, object]] = []
     for entity in matrix.entity_rows:
         row: dict[str, object] = {
@@ -76,7 +91,7 @@ def stage1_matrix_to_dataframe(
             row[f"{category}_status"] = coverage_status_label(cell.status_code)
             row[f"{category}_details"] = cell.details
         rows.append(row)
-    return pd.DataFrame(rows)
+    return pd.DataFrame(rows, columns=columns)
 
 
 def stage1_listings_to_dataframe(
@@ -84,6 +99,13 @@ def stage1_listings_to_dataframe(
 ) -> pd.DataFrame:
     """Active-listing quote coverage as a display frame."""
 
+    columns = (
+        "listing_id",
+        "entity_id",
+        "canonical_ticker",
+        "quote_status",
+        "details",
+    )
     rows = [
         {
             "listing_id": listing.listing_id,
@@ -94,7 +116,7 @@ def stage1_listings_to_dataframe(
         }
         for listing in matrix.listing_rows
     ]
-    return pd.DataFrame(rows)
+    return pd.DataFrame(rows, columns=columns)
 
 
 def render_stage1_coverage_matrix(matrix: Stage1CoverageMatrix) -> None:

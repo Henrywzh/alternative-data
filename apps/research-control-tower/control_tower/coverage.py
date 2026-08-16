@@ -532,18 +532,22 @@ def _stage1_entity_ids(snapshot: ControlTowerSnapshot) -> set[str]:
 
     active_entities = _active_entity_rows(snapshot)
     memberships = snapshot.basket_memberships
-    basket_ids = (
-        {
-            _text(value)
-            for value in snapshot.baskets.get(
-                "basket_id", pd.Series(dtype="string")
-            ).dropna()
-            if _text(value)
-        }
+    stage1_baskets = (
+        snapshot.baskets.loc[
+            snapshot.baskets["basket_id"]
+            .astype("string")
+            .eq(STAGE1_BASKET_ID)
+        ]
         if not snapshot.baskets.empty
-        else set()
+        and "basket_id" in snapshot.baskets.columns
+        else snapshot.baskets.iloc[0:0]
     )
-    if STAGE1_BASKET_ID in basket_ids:
+    if not stage1_baskets.empty:
+        if not any(
+            _active_at_snapshot(row.to_dict(), snapshot)
+            for _, row in stage1_baskets.iterrows()
+        ):
+            return set()
         if memberships.empty or not {"entity_id", "basket_id"} <= set(
             memberships.columns
         ):
@@ -1471,6 +1475,22 @@ def _is_non_empty_relation(value: object) -> bool:
     return bool(_relation_values(value))
 
 
+def _unambiguous_listing_owners(
+    listings: pd.DataFrame,
+) -> dict[str, str]:
+    owner_candidates: dict[str, set[str]] = {}
+    for _, listing in listings.iterrows():
+        listing_id = _text(listing.get("listing_id"))
+        entity_id = _text(listing.get("entity_id"))
+        if listing_id and entity_id:
+            owner_candidates.setdefault(listing_id, set()).add(entity_id)
+    return {
+        listing_id: next(iter(owners))
+        for listing_id, owners in owner_candidates.items()
+        if len(owners) == 1
+    }
+
+
 def _registry_id_sets(
     snapshot: ControlTowerSnapshot,
 ) -> tuple[set[str], set[str], set[str]]:
@@ -1487,7 +1507,7 @@ def _registry_id_sets(
 
     return (
         ids(snapshot.entities, "entity_id"),
-        ids(snapshot.listings, "listing_id"),
+        set(_unambiguous_listing_owners(snapshot.listings)),
         ids(snapshot.baskets, "basket_id"),
     )
 
@@ -1507,17 +1527,7 @@ def _linked_row_count(
         return 0
     entity_ids, listing_ids, basket_ids = _registry_id_sets(snapshot)
     if {"entity_id", "listing_id"} <= set(columns):
-        owner_candidates: dict[str, set[str]] = {}
-        for _, listing in snapshot.listings.iterrows():
-            listing_id = _text(listing.get("listing_id"))
-            entity_id = _text(listing.get("entity_id"))
-            if listing_id and entity_id:
-                owner_candidates.setdefault(listing_id, set()).add(entity_id)
-        listing_owner = {
-            listing_id: next(iter(owners))
-            for listing_id, owners in owner_candidates.items()
-            if len(owners) == 1
-        }
+        listing_owner = _unambiguous_listing_owners(snapshot.listings)
         return sum(
             (
                 bool(_text(row.get("listing_id")))
@@ -1724,7 +1734,13 @@ def build_data_coverage_summary(snapshot: ControlTowerSnapshot) -> DataCoverageS
             source_id_columns=("source_id",),
             now_utc=snapshot.now_utc,
         )
-        if status_code == "available" and not linked_count:
+        missing_geographies = _missing_geographies(
+            snapshot,
+            "filings_news",
+        )
+        if status_code == "available" and (
+            not linked_count or missing_geographies
+        ):
             status_code = "partial"
         status_text = COVERAGE_STATUS_LABELS[status_code]
         details = (
@@ -1732,6 +1748,11 @@ def build_data_coverage_summary(snapshot: ControlTowerSnapshot) -> DataCoverageS
             f"found; {linked_count} carry entity, listing, or basket identifiers "
             f"that resolve in the registry. {source_detail} Evidence without "
             "a relation is not assigned to a company."
+            + (
+                " The governing source records uncovered geographies."
+                if missing_geographies
+                else ""
+            )
         )
         rows.append(
             CoverageRow(
@@ -1800,7 +1821,7 @@ def build_data_coverage_summary(snapshot: ControlTowerSnapshot) -> DataCoverageS
         macro_status = macro_cell.status_code
         if event_status == macro_status == "no_records":
             status_code = "no_records"
-        elif "unavailable" in {event_status, macro_status}:
+        elif event_status == macro_status == "unavailable":
             status_code = "unavailable"
         elif event_status == macro_status == "stale":
             status_code = "stale"
