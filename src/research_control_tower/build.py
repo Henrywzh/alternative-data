@@ -630,7 +630,7 @@ SOURCE_TIME_COLUMNS = {
     },
     QUOTE_SNAPSHOT_SCHEMA_ID: {
         "observed": ("quote_timestamp",),
-        "freshness": ("quote_timestamp", "retrieved_at_utc"),
+        "freshness": ("quote_timestamp",),
         "retrieved": ("retrieved_at_utc",),
         "future": ("quote_timestamp", "retrieved_at_utc"),
     },
@@ -656,6 +656,8 @@ class LocalInput:
     pit_class: str = "snapshot_from_live_source"
     license_class: str = "public_metadata"
     expected_schema: str = ""
+    status_path: Path | None = None
+    source_priority: int = 100
 
     def __post_init__(self) -> None:
         if not self.source_id.strip():
@@ -665,6 +667,15 @@ class LocalInput:
         if not self.expected_schema.strip():
             raise ValueError("LocalInput.expected_schema must not be blank")
         object.__setattr__(self, "path", Path(self.path))
+        if self.status_path is not None:
+            object.__setattr__(self, "status_path", Path(self.status_path))
+        if not isinstance(self.source_priority, int) or isinstance(self.source_priority, bool) or self.source_priority < 0:
+            raise ValueError("LocalInput.source_priority must be a non-negative integer")
+        if self.expected_schema.strip().lower() in {QUOTE_SNAPSHOT_SCHEMA_ID, "quote_snapshots"}:
+            if self.pit_class.strip().lower() in {"", "snapshot_from_live_source"}:
+                object.__setattr__(self, "pit_class", "snapshot_from_delayed_source")
+            if self.license_class.strip().lower() in {"", "public_metadata"}:
+                object.__setattr__(self, "license_class", "personal_use_terms_unverified")
 
 
 @dataclass(frozen=True)
@@ -1017,6 +1028,10 @@ def _is_blank(value: Any) -> bool:
     except (TypeError, ValueError):
         pass
     return not str(value).strip()
+
+
+def _text(value: Any) -> str:
+    return "" if _is_blank(value) else str(value).strip()
 
 
 def _json_list(values: Iterable[Any]) -> str:
@@ -2307,20 +2322,152 @@ def _empty_quote_snapshots() -> pd.DataFrame:
     return pd.DataFrame({column: pd.Series(dtype="object") for column in QUOTE_SNAPSHOT_COLUMNS})
 
 
+def _quote_status_path(descriptor: LocalInput) -> Path:
+    if descriptor.status_path is not None:
+        return Path(descriptor.status_path)
+    path = Path(descriptor.path)
+    return path.with_name(f"{path.stem}.status.json")
+
+
+def _quote_vendor_symbols(listing: Mapping[str, Any]) -> dict[str, tuple[str, ...]]:
+    raw = listing.get("vendor_tickers", "")
+    if _is_blank(raw):
+        return {}
+    providers: dict[str, list[str]] = {}
+    for token in str(raw).split(";"):
+        name, separator, symbol = token.partition(":")
+        if separator and name.strip() and symbol.strip():
+            providers.setdefault(name.strip().casefold(), []).append(symbol.strip())
+    return {key: tuple(dict.fromkeys(values)) for key, values in providers.items()}
+
+
+def _quote_interval_active(row: Mapping[str, Any], as_of_utc: pd.Timestamp) -> bool:
+    point = as_of_utc.tz_convert("UTC").tz_localize(None).normalize()
+    start = _timestamp(row.get("active_from"), date_only=True)
+    end = _timestamp(row.get("active_to"), date_only=True)
+    start_date = pd.NaT if pd.isna(start) else start.tz_localize(None).normalize()
+    end_date = pd.NaT if pd.isna(end) else end.tz_localize(None).normalize()
+    return (pd.isna(start_date) or point >= start_date) and (pd.isna(end_date) or point < end_date)
+
+
+def _quote_bool(value: Any) -> bool:
+    if _is_blank(value):
+        return False
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in {"true", "1", "yes"}
+
+
+def _quote_row_rejection(
+    item: Mapping[str, Any],
+    listing: Mapping[str, Any] | None,
+    entity: Mapping[str, Any] | None,
+    *,
+    source_id: str,
+    as_of_utc: pd.Timestamp,
+) -> str | None:
+    if listing is None:
+        return "unknown listing_id; registry truth is required"
+    if entity is None:
+        return "listing references an unknown entity_id"
+    entity_type = _text(entity.get("entity_type")).lower()
+    if entity_type == "private":
+        return "private entity has no public quote coverage"
+    if _text(entity.get("active_status")).lower() not in {"", "active"}:
+        return "entity is archived or inactive"
+    if not _quote_interval_active(entity, as_of_utc):
+        return "entity is outside its active interval"
+    if _text(listing.get("listing_status")).lower() != "active":
+        return "listing is archived or inactive"
+    if not _quote_interval_active(listing, as_of_utc):
+        return "listing is future or outside its active interval"
+    if not _quote_bool(listing.get("collection_eligible")):
+        return "listing is not collection eligible"
+    if _text(listing.get("mapping_status")).lower() != "verified":
+        return "listing mapping is not verified"
+
+    supplied_ticker = _text(item.get("canonical_ticker"))
+    registry_ticker = _text(listing.get("canonical_ticker"))
+    if supplied_ticker and supplied_ticker != registry_ticker:
+        return "canonical_ticker does not match listing registry"
+
+    supplied_currency = _text(item.get("currency")).upper()
+    registry_currency = _text(listing.get("currency")).upper()
+    if supplied_currency and registry_currency and supplied_currency != registry_currency:
+        return "currency does not match listing registry"
+
+    vendor_symbols = _quote_vendor_symbols(listing)
+    supplied_symbol = _text(item.get("provider_symbol"))
+    provider_key = _text(source_id).rsplit(":", 1)[-1].casefold()
+    accepted_symbols = vendor_symbols.get(provider_key, ())
+    if not accepted_symbols:
+        accepted_symbols = tuple(
+            symbol
+            for symbols in vendor_symbols.values()
+            for symbol in symbols
+        )
+    if supplied_symbol and accepted_symbols and supplied_symbol not in accepted_symbols:
+        return "provider_symbol does not match listing registry"
+    if supplied_symbol and not accepted_symbols and vendor_symbols:
+        return "provider_symbol cannot be derived from listing registry"
+    return None
+
+
+def _read_quote_status(path: Path) -> tuple[dict[str, Any] | None, str | None]:
+    if not path.is_file():
+        return None, None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        return None, f"quote collection status sidecar is invalid: {exc}"
+    if not isinstance(payload, dict) or payload.get("schema") != "quote_collection_status_v1":
+        return None, "quote collection status sidecar has an unsupported schema"
+    if payload.get("aggregate_status") not in {"available", "partial", "no_records", "unavailable"}:
+        return None, "quote collection status sidecar has an invalid aggregate_status"
+    diagnostics = payload.get("diagnostics", [])
+    if not isinstance(diagnostics, list):
+        return None, "quote collection status sidecar diagnostics must be a list"
+    for key in ("row_count", "expected_listing_count", "diagnostic_count"):
+        if not isinstance(payload.get(key), int) or isinstance(payload.get(key), bool):
+            return None, f"quote collection status sidecar has an invalid {key}"
+    if int(payload["diagnostic_count"]) != len(diagnostics):
+        return None, "quote collection status sidecar diagnostic_count does not match diagnostics"
+    if payload["aggregate_status"] in {"unavailable", "no_records"} and payload["row_count"] != 0:
+        return None, "quote collection status sidecar reports no rows but row_count is non-zero"
+    return payload, None
+
+
 def _build_quote_snapshots(
     registries: Any,
     inputs: Sequence[LocalInput],
     *,
     as_of_utc: pd.Timestamp,
-) -> tuple[pd.DataFrame, list[_SourceState], list[str]]:
+) -> tuple[pd.DataFrame, list[_SourceState], list[str], dict[str, str]]:
     """Load already-normalized quote snapshots without contacting providers."""
 
     listing_rows = registries.listings.set_index("listing_id", drop=False).to_dict("index")
+    entity_rows = registries.entities.set_index("entity_id", drop=False).to_dict("index")
     rows: list[dict[str, Any]] = []
     states: list[_SourceState] = []
     degraded: list[str] = []
+    fingerprints: dict[str, str] = {}
 
-    for descriptor in inputs:
+    if not inputs:
+        state = _SourceState(
+            source_id="quote_snapshots",
+            source_kind="market",
+            path=None,
+            schema_version=QUOTE_SNAPSHOT_SCHEMA_ID,
+            required=False,
+            pit_class="snapshot_from_delayed_source",
+            license_class="personal_use_terms_unverified",
+            status="unavailable",
+            detail="optional_quote_snapshot_input_not_configured",
+        )
+        states.append(state)
+        return _empty_quote_snapshots(), states, ["quote_snapshots"], fingerprints
+
+    for descriptor_index, descriptor in enumerate(inputs):
         state, frame, schema_id = _load_optional(
             descriptor, "market", as_of_utc=as_of_utc
         )
@@ -2329,6 +2476,19 @@ def _build_quote_snapshots(
             degraded.append(descriptor.source_id)
             continue
 
+        status_path = _quote_status_path(descriptor)
+        status_payload, status_error = _read_quote_status(status_path)
+        if status_path.is_file():
+            fingerprints[str(status_path)] = _file_hash(status_path)
+            if state.input_sha256:
+                state.input_sha256 = _composite_input_hash(
+                    {"data": state.input_sha256, "status": fingerprints[str(status_path)]}
+                )
+        if status_error:
+            state.status = "degraded"
+            _append_state_error(state, code="quote_status_sidecar_invalid", message=status_error)
+            degraded.append(descriptor.source_id)
+
         parsed_quote = pd.to_datetime(frame["quote_timestamp"], errors="coerce", utc=True)
         parsed_retrieved = pd.to_datetime(frame["retrieved_at_utc"], errors="coerce", utc=True)
         parsed_price = pd.to_numeric(frame["last_price"], errors="coerce")
@@ -2336,11 +2496,19 @@ def _build_quote_snapshots(
         for index, item in frame.iterrows():
             listing_id = str(item.get("listing_id") or "").strip()
             listing = listing_rows.get(listing_id)
+            entity = entity_rows.get(str(listing.get("entity_id")) if listing is not None else "")
             quote_timestamp = parsed_quote.loc[index]
             retrieved_at = parsed_retrieved.loc[index]
             price = parsed_price.loc[index]
-            if listing is None:
-                invalid_reasons.append(f"row {index}: unknown listing_id={listing_id}")
+            rejection = _quote_row_rejection(
+                item,
+                listing,
+                entity,
+                source_id=str(item.get("source_id") or descriptor.source_id),
+                as_of_utc=as_of_utc,
+            )
+            if rejection:
+                invalid_reasons.append(f"row {index}: {rejection}")
                 continue
             if pd.isna(quote_timestamp):
                 invalid_reasons.append(f"row {index}: invalid quote_timestamp")
@@ -2356,35 +2524,49 @@ def _build_quote_snapshots(
                 continue
 
             canonical_ticker = str(listing.get("canonical_ticker") or "").strip()
-            supplied_ticker = str(item.get("canonical_ticker") or "").strip()
-            if supplied_ticker and canonical_ticker and supplied_ticker != canonical_ticker:
-                invalid_reasons.append(
-                    f"row {index}: canonical_ticker does not match listing registry"
-                )
-                continue
+            vendor_symbols = _quote_vendor_symbols(listing)
+            provider_key = _text(item.get("source_id") or descriptor.source_id).rsplit(":", 1)[-1].casefold()
+            provider_candidates = vendor_symbols.get(provider_key, ()) or tuple(
+                symbol for symbols in vendor_symbols.values() for symbol in symbols
+            )
+            provider_symbol = _text(item.get("provider_symbol")) or (
+                provider_candidates[0] if len(provider_candidates) == 1 else ""
+            )
             quote_id = str(item.get("quote_id") or "").strip() or (
                 f"quote_{listing_id}_{quote_timestamp.strftime('%Y%m%dT%H%M%S')}_"
                 f"{descriptor.source_id}"
             )
+            raw_pit = str(item.get("pit_class") or descriptor.pit_class).strip()
+            raw_license = str(item.get("source_license_class") or descriptor.license_class).strip()
             row = item.to_dict()
             row.update({
                 "quote_id": quote_id,
                 "listing_id": listing_id,
-                "canonical_ticker": canonical_ticker or supplied_ticker,
-                "provider_symbol": str(item.get("provider_symbol") or "").strip() or canonical_ticker,
+                "canonical_ticker": canonical_ticker,
+                "provider_symbol": provider_symbol,
                 "quote_timestamp": quote_timestamp,
                 "retrieved_at_utc": retrieved_at,
                 "last_price": float(price),
-                "currency": str(item.get("currency") or listing.get("currency") or "").strip(),
+                "currency": str(listing.get("currency") or item.get("currency") or "").strip(),
                 "market_status": str(item.get("market_status") or "unknown").strip(),
-                "latency_class": str(item.get("latency_class") or "unknown").strip(),
+                "latency_class": "delayed",
                 "source_id": str(item.get("source_id") or descriptor.source_id).strip(),
                 "source_url": str(item.get("source_url") or descriptor.source_url or "").strip(),
-                "pit_class": str(item.get("pit_class") or descriptor.pit_class).strip(),
-                "source_license_class": str(item.get("source_license_class") or descriptor.license_class).strip(),
+                "pit_class": (
+                    "snapshot_from_delayed_source"
+                    if raw_pit.lower() in {"snapshot_from_live_source", "live"}
+                    else raw_pit
+                ),
+                "source_license_class": (
+                    "personal_use_terms_unverified"
+                    if raw_license.lower() in {"public", "public_metadata"}
+                    else raw_license
+                ),
                 "registry_version": str(item.get("registry_version") or listing.get("registry_version") or "v1").strip(),
+                "__source_priority": descriptor.source_priority,
+                "__source_order": descriptor_index,
             })
-            rows.append({column: row.get(column, pd.NA) for column in QUOTE_SNAPSHOT_COLUMNS})
+            rows.append(row)
 
         if invalid_reasons:
             state.status = "degraded"
@@ -2395,14 +2577,55 @@ def _build_quote_snapshots(
             )
             degraded.append(descriptor.source_id)
 
-    if not rows:
-        return _empty_quote_snapshots(), states, sorted(set(degraded))
+        if status_payload is not None:
+            reported_rows = int(status_payload["row_count"])
+            if reported_rows != len(frame):
+                state.status = "degraded"
+                _append_state_error(
+                    state,
+                    code="quote_status_row_count_mismatch",
+                    message=f"sidecar={reported_rows};input={len(frame)}",
+                )
+                degraded.append(descriptor.source_id)
+            reported_status = str(status_payload["aggregate_status"])
+            if reported_status != "available":
+                if state.status == "available":
+                    state.status = reported_status
+                degraded.append(descriptor.source_id)
+            sidecar_issues = [str(value) for value in status_payload.get("issues", []) if str(value).strip()]
+            sidecar_diag_count = int(status_payload.get("diagnostic_count", 0))
+            diagnostic_statuses: dict[str, int] = {}
+            for diagnostic in status_payload.get("diagnostics", []):
+                if isinstance(diagnostic, dict):
+                    status = str(diagnostic.get("status") or "unknown").strip() or "unknown"
+                    diagnostic_statuses[status] = diagnostic_statuses.get(status, 0) + 1
+            diagnostic_summary = ",".join(
+                f"{status}:{count}" for status, count in sorted(diagnostic_statuses.items())
+            )
+            if sidecar_issues or sidecar_diag_count or diagnostic_summary:
+                detail = (
+                    f"collector_status={reported_status};diagnostics={sidecar_diag_count}"
+                    + (f";diagnostic_statuses={diagnostic_summary}" if diagnostic_summary else "")
+                    + (f";issues={' | '.join(sidecar_issues[:3])}" if sidecar_issues else "")
+                )
+                state.detail = f"{state.detail}; {detail}" if state.detail else detail
 
-    frame = pd.DataFrame(rows, columns=QUOTE_SNAPSHOT_COLUMNS)
+    if not rows:
+        for state in states:
+            if state.status == "available":
+                state.status = "no_records"
+                _append_state_error(
+                    state,
+                    code="empty_quote_output",
+                    message="quote input contains no valid rows",
+                )
+        return _empty_quote_snapshots(), states, sorted(set(degraded)), fingerprints
+
+    frame = pd.DataFrame(rows)
     before_dedupe = len(frame)
     frame = frame.sort_values(
-        ["listing_id", "quote_timestamp", "retrieved_at_utc", "source_id", "quote_id"],
-        ascending=True,
+        ["listing_id", "quote_timestamp", "retrieved_at_utc", "__source_priority", "__source_order", "quote_id"],
+        ascending=[True, True, True, False, False, True],
         na_position="first",
         kind="mergesort",
     ).drop_duplicates(subset=["listing_id"], keep="last")
@@ -2413,7 +2636,7 @@ def _build_quote_snapshots(
                     f"{state.detail}; duplicate_latest_quote_rows_dropped="
                     f"{before_dedupe - len(frame)}"
                 ).strip("; ")
-    return _sort_frame(frame, ["listing_id"]), states, sorted(set(degraded))
+    return _sort_frame(frame.loc[:, QUOTE_SNAPSHOT_COLUMNS], ["listing_id"]), states, sorted(set(degraded)), fingerprints
 
 
 def _expected_health_states(config: BuildConfig, existing: Sequence[_SourceState]) -> list[_SourceState]:
@@ -2703,7 +2926,9 @@ def _artifact_status(
     states_by_id: Mapping[str, _SourceState],
 ) -> str:
     contributing = [states_by_id[source_id] for source_id in source_ids if source_id in states_by_id]
-    if not contributing or all(state.status == "available" for state in contributing):
+    if not contributing:
+        return "unavailable"
+    if all(state.status == "available" for state in contributing):
         return "available"
     if all(state.status == "unavailable" for state in contributing):
         return "unavailable"
@@ -3063,7 +3288,7 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
         events, registries, config.macro_inputs, as_of_utc=config.as_of_utc
     )
     consensus_snapshots, consensus_revisions, consensus_states, consensus_degraded, consensus_fingerprints = _build_consensus(config)
-    quote_frame, quote_states, quote_degraded = _build_quote_snapshots(
+    quote_frame, quote_states, quote_degraded, quote_fingerprints = _build_quote_snapshots(
         registries,
         config.quote_inputs,
         as_of_utc=config.as_of_utc,
@@ -3075,6 +3300,7 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
         as_of_utc=config.as_of_utc,
     )
     input_fingerprints.update(consensus_fingerprints)
+    input_fingerprints.update(quote_fingerprints)
     frames["macro_observations.parquet"] = macro_frame
     frames["consensus_snapshots.parquet"] = consensus_snapshots
     frames["consensus_revisions.parquet"] = consensus_revisions

@@ -35,6 +35,7 @@ _CERTAINTY_LABELS = {
 _PIT_LABELS = {
     "true_pit": "PIT · true",
     "snapshot_from_live_source": "PIT · live snapshot",
+    "snapshot_from_delayed_source": "Snapshot · delayed source",
     "dated_public_broker_report": "PIT · dated broker",
     "reconstructed_sparse": "PIT · reconstructed",
     "current_vintage": "PIT · current vintage",
