@@ -186,7 +186,18 @@ def materialize_macro_calendar(
                 if not pd.isna(starts_at)
                 else "TIMING_UNAVAILABLE"
             )
-            event_key = f"MACRO_{source_namespace}_{timing_token}_{row_number:04d}"
+            provided_key = _first(source_row, ("event_key", "event_id"), default="")
+            if provided_key:
+                event_key = str(provided_key).strip()
+            else:
+                release_id = _first(source_row, ("release_id",), default="")
+                ref_period = _first(source_row, ("reference_period", "period"), default="")
+                if release_id:
+                    event_key = f"MACRO_{source_namespace}_R{release_id}_{timing_token}"
+                elif ref_period:
+                    event_key = f"MACRO_{source_namespace}_{_safe_identifier(ref_period)}_{timing_token}"
+                else:
+                    event_key = f"MACRO_{source_namespace}_{timing_token}"
             title = str(
                 _first(
                     source_row,
@@ -240,7 +251,7 @@ def materialize_macro_calendar(
                     "first_observed_at": observed_at,
                     "last_verified_at": observed_at,
                     "review_by": _first(source_row, ("review_by",), default=""),
-                    "supersedes_event_id": "",
+                    "supersedes_event_id": str(_first(source_row, ("supersedes_event_id", "supersedes"), default="")).strip(),
                     "evidence_class": "source_observation",
                     "evidence_ref": source_url or f"source:{source_id}",
                     "reference_period": _value(source_row, ("reference_period", "period")),

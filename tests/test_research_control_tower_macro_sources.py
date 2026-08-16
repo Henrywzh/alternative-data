@@ -196,13 +196,13 @@ def test_collector_six_state_contract_for_unconfigured_sources(tmp_path: Path) -
     # never returning 'available' with zero rows.
     collector = MacroDataCollector(base_dir=tmp_path)
     _, _, ecb_health = collector.collect_ecb()
-    assert ecb_health.status == "unconfigured"
+    assert ecb_health.status == "unavailable"
     assert ecb_health.event_count == 0
     assert ecb_health.observation_count == 0
     assert ecb_health.error_detail
 
     _, _, nbs_health = collector.collect_nbs_hk()
-    assert nbs_health.status == "unconfigured"
+    assert nbs_health.status == "unavailable"
     assert nbs_health.event_count == 0
     assert nbs_health.observation_count == 0
     assert nbs_health.error_detail

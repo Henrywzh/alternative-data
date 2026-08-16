@@ -117,7 +117,8 @@ ARTIFACT_COLUMNS: Final[dict[str, tuple[str, ...]]] = {
         "event_type", "metric_name", "reference_period", "observation_date",
         "release_at", "actual_value", "unit", "frequency", "first_observed_at",
         "source_published_at", "retrieved_at_utc", "source_url", "pit_class",
-        "source_license_class", "is_provisional", "registry_version",
+        "source_license_class", "is_provisional", "realtime_start", "realtime_end",
+        "registry_version",
     ),
     "consensus_snapshots.parquet": (
         "snapshot_id", "provider", "entity_id", "listing_id",

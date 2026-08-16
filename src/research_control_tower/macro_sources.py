@@ -26,7 +26,7 @@ Official-Source Caveats & Vintage Semantics:
 Collectors run outside Streamlit and produce standardized local files:
 - macro events calendar (compatible with materialize_macro_calendar)
 - macro observations (Point-In-Time vintage aware)
-- source health manifest (recording status: available, partial, no_records, stale, unconfigured, failed)
+- source health manifest (recording status: available, partial, no_records, stale, not_applicable, unavailable)
 """
 
 from __future__ import annotations
@@ -220,7 +220,7 @@ OFFICIAL_INDICATORS = {
 @dataclass
 class SourceHealth:
     source_id: str
-    status: str  # "available", "partial", "no_records", "stale", "unconfigured", "failed"
+    status: str  # "available", "partial", "no_records", "stale", "unavailable"
     retrieved_at_utc: str
     event_count: int = 0
     observation_count: int = 0
@@ -331,7 +331,7 @@ def transform_fred_observations_to_macro(
             else "latest_snapshot_unknown_vintage"
         )
 
-        obs_id = f"macro_obs_{series_id}_{ref_period}_{obs.realtime_start.replace('-', '') if obs.realtime_start else 'current'}"
+        obs_id = f"macro_obs_{series_id}_{ref_period}_{obs.realtime_start.replace('-', '') if obs.realtime_start else 'current'}_{idx:04d}"
 
         obs_rows.append({
             "observation_id": obs_id,
@@ -343,12 +343,12 @@ def transform_fred_observations_to_macro(
             "metric_name": metric_name,
             "reference_period": ref_period,
             "observation_date": obs.date,
-            "release_at": obs.realtime_start or obs.date,
+            "release_at": None,
             "actual_value": obs.value,
             "unit": unit,
             "frequency": frequency,
             "first_observed_at": obs.fetched_at,
-            "source_published_at": obs.realtime_start or obs.date,
+            "source_published_at": None,
             "retrieved_at_utc": retrieved_at_utc,
             "source_url": source_url,
             "pit_class": pit_class,
@@ -393,9 +393,16 @@ def transform_release_dates_to_macro_events(
         rel_date_str = str(rel_date).strip()
         is_upcoming = rel_date_str > today_str
         status = "scheduled" if is_upcoming else "observed"
+        rel_id = rd.get("release_id") or indicator_meta.get("fred_release_id")
+        timing_token = rel_date_str.replace("-", "")
+        rel_token = f"_R{rel_id}" if rel_id else ""
+        event_key = rd.get("event_id") or rd.get("event_key") or f"MACRO_{event_type.upper()}{rel_token}_{timing_token}"
+        supersedes_id = str(rd.get("supersedes_event_id") or rd.get("supersedes") or "").strip()
 
         # Date-only release date stays date-only (precision='day')
         event_rows.append({
+            "event_id": event_key,
+            "event_key": event_key,
             "event_type": event_type,
             "title": f"{metric_name} Release ({rel_date_str})",
             "description": f"{metric_name} official release date by {indicator_meta['agency']}",
@@ -407,6 +414,7 @@ def transform_release_dates_to_macro_events(
             "status": status,
             "certainty_class": "scheduled" if is_upcoming else "observed",
             "date_precision": "day",
+            "supersedes_event_id": supersedes_id,
         })
 
     return materialize_macro_calendar({event_type: pd.DataFrame(event_rows)})
@@ -435,25 +443,55 @@ class MacroDataCollector:
 
         if "fred_alfred" in self.offline_fixtures:
             fixture = self.offline_fixtures["fred_alfred"]
-            obs_list = fixture.get("observations", [])
-            release_dates = fixture.get("release_dates", [])
-            obs_df = transform_fred_observations_to_macro(
-                obs_list,
-                OFFICIAL_INDICATORS["us_cpi"],
-                retrieved_at,
+            target_keys = indicators or list(OFFICIAL_INDICATORS.keys())
+            obs_df_list = []
+            events_df_list = []
+            covered_series = []
+
+            for key in target_keys:
+                meta_info = OFFICIAL_INDICATORS.get(key)
+                if not meta_info:
+                    continue
+                series_id = meta_info.get("fred_series_id")
+                ind_fixture = fixture.get(key) if isinstance(fixture.get(key), dict) else fixture
+                obs_list = ind_fixture.get("observations", [])
+                release_dates = ind_fixture.get("release_dates", [])
+
+                filtered_obs = [
+                    o for o in obs_list
+                    if (getattr(o, "series_id", None) == series_id if getattr(o, "series_id", None) is not None
+                        else (o.get("series_id") == series_id if isinstance(o, dict) and "series_id" in o else True))
+                ]
+                if filtered_obs:
+                    ob_df = transform_fred_observations_to_macro(filtered_obs, meta_info, retrieved_at)
+                    if not ob_df.empty:
+                        obs_df_list.append(ob_df)
+                        if series_id:
+                            covered_series.append(series_id)
+
+                if release_dates:
+                    ev_df = transform_release_dates_to_macro_events(release_dates, meta_info, retrieved_at)
+                    if not ev_df.empty:
+                        events_df_list.append(ev_df)
+
+            events_df = (
+                pd.concat(events_df_list, ignore_index=True)
+                if events_df_list
+                else pd.DataFrame(columns=MACRO_EVENT_COLUMNS)
             )
-            events_df = transform_release_dates_to_macro_events(
-                release_dates,
-                OFFICIAL_INDICATORS["us_cpi"],
-                retrieved_at,
+            obs_df = (
+                pd.concat(obs_df_list, ignore_index=True)
+                if obs_df_list
+                else pd.DataFrame(columns=MACRO_OBSERVATION_COLUMNS)
             )
+            status = "available" if (not obs_df.empty or not events_df.empty) else "unavailable"
             health = SourceHealth(
                 source_id=source_id,
-                status="available",
+                status=status,
                 retrieved_at_utc=retrieved_at,
                 event_count=len(events_df),
                 observation_count=len(obs_df),
-                series_covered=target_keys,
+                series_covered=covered_series or target_keys,
                 source_caveats=FRED_ALFRED_RELEASE_CAVEAT,
             )
             return events_df, obs_df, health
@@ -466,7 +504,7 @@ class MacroDataCollector:
             except Exception as exc:
                 health = SourceHealth(
                     source_id=source_id,
-                    status="unconfigured",
+                    status="unavailable",
                     retrieved_at_utc=retrieved_at,
                     error_detail=f"FRED API key missing or unconfigured: {exc}",
                     source_caveats=FRED_ALFRED_RELEASE_CAVEAT,
@@ -514,7 +552,7 @@ class MacroDataCollector:
                 errors.append(f"{series_id}: {e}")
 
         if not covered_series:
-            status = "failed"
+            status = "unavailable"
             error_detail = "; ".join(errors) or "All series calls failed"
         elif len(covered_series) < len(target_keys):
             status = "partial"
@@ -569,7 +607,7 @@ class MacroDataCollector:
 
         health = SourceHealth(
             source_id=source_id,
-            status="unconfigured",
+            status="unavailable",
             retrieved_at_utc=retrieved_at,
             error_detail="Direct native BLS API key not configured; US series covered via FRED/ALFRED official transport bridge",
             source_caveats="Official BLS release schedule uses 8:30 AM ET source-native timezone.",
@@ -598,7 +636,7 @@ class MacroDataCollector:
 
         health = SourceHealth(
             source_id=source_id,
-            status="unconfigured",
+            status="unavailable",
             retrieved_at_utc=retrieved_at,
             error_detail="Direct native BEA API key not configured; US GDP series covered via FRED/ALFRED official transport bridge",
             source_caveats="Official BEA NIPA release schedule uses 8:30 AM ET source-native timezone.",
@@ -626,7 +664,7 @@ class MacroDataCollector:
 
         health = SourceHealth(
             source_id=source_id,
-            status="unconfigured",
+            status="unavailable",
             retrieved_at_utc=retrieved_at,
             error_detail="Native FOMC meeting decision calendar endpoint not configured; FEDFUNDS rate tracked separately as observation series",
         )
@@ -653,7 +691,7 @@ class MacroDataCollector:
 
         health = SourceHealth(
             source_id=source_id,
-            status="unconfigured",
+            status="unavailable",
             retrieved_at_utc=retrieved_at,
             error_detail="Direct native ECB API endpoint not configured; series covered via FRED/ALFRED official transport bridge",
         )
@@ -680,7 +718,7 @@ class MacroDataCollector:
 
         health = SourceHealth(
             source_id=source_id,
-            status="unconfigured",
+            status="unavailable",
             retrieved_at_utc=retrieved_at,
             error_detail="Direct native NBS China & HK C&SD API endpoint not configured; series covered via FRED/ALFRED official transport bridge",
         )
