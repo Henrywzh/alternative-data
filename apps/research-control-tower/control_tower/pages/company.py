@@ -481,7 +481,14 @@ def build_company_view(
                 na_position="last",
                 kind="mergesort",
             ).reset_index(drop=True)
-    quote_status = "available" if not quote_snapshots.empty else "unavailable"
+    if quote_snapshots.empty:
+        quote_status = "unavailable"
+    elif "freshness" in quote_snapshots.columns and quote_snapshots["freshness"].eq("stale").all():
+        quote_status = "stale"
+    elif "freshness" in quote_snapshots.columns and quote_snapshots["freshness"].isin({"stale", "unavailable"}).any():
+        quote_status = "degraded"
+    else:
+        quote_status = "available"
 
     event_rows: list[dict[str, object]] = []
     question_counts = snapshot.event_watch_questions["event_id"].astype("string").value_counts().to_dict() if not snapshot.event_watch_questions.empty else {}
@@ -890,7 +897,12 @@ def render_company_page(
         key="ct_company_entity",
         format_func=lambda value: _text(snapshot.entities.loc[snapshot.entities["entity_id"].astype("string").eq(value), "display_name"].iloc[0]) if not snapshot.entities.loc[snapshot.entities["entity_id"].astype("string").eq(value)].empty else value,
     )
-    entity_listings = snapshot.listings.loc[snapshot.listings["entity_id"].astype("string").eq(selected_entity)] if not snapshot.listings.empty else snapshot.listings
+    as_of_point = snapshot.as_of_utc
+    entity_listings = snapshot.listings.loc[
+        snapshot.listings["entity_id"].astype("string").eq(selected_entity)
+        & snapshot.listings["listing_status"].astype("string").str.lower().eq("active")
+        & snapshot.listings.apply(lambda r: _active(r, as_of_point), axis=1)
+    ] if not snapshot.listings.empty else snapshot.listings
     listing_options = [None] + sorted(entity_listings["listing_id"].astype("string")) if not entity_listings.empty else [None]
     if st.session_state.get("ct_company_listing") not in listing_options:
         st.session_state["ct_company_listing"] = None

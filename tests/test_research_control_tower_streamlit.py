@@ -1999,3 +1999,17 @@ def test_task9_workbench_dedup_keeps_distinct_same_source_events() -> None:
         },
     ])
     assert len(_compact_catalyst_frame(frame)) == 2
+
+
+def test_today_page_renders_quote_snapshots_and_filters_by_universe(
+    generated_root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from streamlit.testing.v1 import AppTest
+
+    monkeypatch.setenv("CONTROL_TOWER_ARTIFACT_ROOT", str(generated_root))
+    app = AppTest.from_file(str(APP_PATH), default_timeout=30).run()
+    assert not app.exception
+    rendered = _app_text(app)
+    assert "Stage 1 market quotes (delayed)" in rendered
+    assert "Latest market quotes unavailable" in rendered
