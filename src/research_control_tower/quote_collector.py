@@ -9,7 +9,6 @@ disabled.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-import datetime
 import json
 import math
 from pathlib import Path
@@ -40,10 +39,6 @@ _EXCHANGE_TIMEZONES = {
     "ARCA": "America/New_York",
     "LSE": "Europe/London",
 }
-
-# Regular-session open used to attribute a pre-open quote to the prior local
-# session.  All Stage 1 exchanges (SEHK, NYSE, NASDAQ) open at 09:30 local.
-_REGULAR_SESSION_OPEN = datetime.time(9, 30)
 
 
 @dataclass(frozen=True, slots=True)
@@ -782,14 +777,6 @@ def collect_yfinance_quotes(
         if prev_close_val is None and not daily_frame.empty and "Close" in daily_frame.columns:
             daily_close = pd.to_numeric(daily_frame["Close"], errors="coerce").dropna()
             quote_session_date = _session_date(quote_timestamp, exchange_timezone)
-            # A quote observed before the exchange's regular session open
-            # belongs to the prior local session: the current session has not
-            # started, so the day-change reference is the previous calendar
-            # day's close rather than a same-day bar.
-            if quote_session_date is not None:
-                local_time = quote_timestamp.tz_convert(exchange_timezone).time()
-                if local_time < _REGULAR_SESSION_OPEN:
-                    quote_session_date = quote_session_date - pd.Timedelta(days=1)
             daily_dates = daily_frame.loc[daily_close.index, "__local_session_date"]
             prior_positions = [
                 position
