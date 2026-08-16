@@ -15,6 +15,7 @@ import streamlit as st
 from ..filters import apply_event_filters
 from ..market_data import QUOTE_SNAPSHOT_COLUMNS, classify_quote_freshness, format_quote_age
 from ..models import ControlTowerSnapshot, EventFilters
+from ..components.filings_earnings import render_filings_earnings_sections
 from .source_health import classify_source_health
 
 
@@ -1144,6 +1145,15 @@ def render_company_page(
         st.warning("Official documents unavailable — no local metadata export; no document body displayed.")
     else:
         st.dataframe(_friendly_document_frame(view.official_documents, viewer_timezone), width="stretch", hide_index=True)
+    # Batch 2/3 integration point: the filings/earnings-calendar and
+    # earnings-actuals sections live in a separate helper module so the
+    # quote-UI owner can evolve this page without touching that contract.
+    render_filings_earnings_sections(
+        snapshot,
+        entity_id=selected_entity,
+        listing_id=selected_listing,
+        viewer_timezone=viewer_timezone,
+    )
     st.markdown("#### Watch questions")
     if view.watch_questions.empty:
         st.info("No watch questions are registered.")

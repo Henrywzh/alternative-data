@@ -44,20 +44,23 @@ def _empty_frame(name: str) -> pd.DataFrame:
     numeric = {
         "observation_version", "fiscal_year", "analyst_count",
         "provider_contributor_count", "lookback_days", "current_analyst_count",
-        "prior_analyst_count", "analyst_count_change", "row_count",
+        "prior_analyst_count", "analyst_count_change", "row_count", "version",
     }
     floats = {
         "confidence", "value", "low_value", "high_value", "current_value",
         "current_dispersion", "prior_value", "revision_value", "revision_pct",
         "dispersion", "last_price", "bid", "ask", "day_change_pct", "volume",
+        "reported_value", "normalized_value",
     }
     booleans = {
-        "collection_eligible", "primary_listing", "automated",
-        "is_provisional", "required", "query_attempted",
+        "collection_eligible", "primary_listing", "automated", "is_provisional",
+        "required", "is_restatement", "query_attempted",
     }
     dates = {
         "active_from", "active_to", "mapping_verified_at", "review_by",
-        "observation_date", "estimate_period_end",
+        "observation_date", "estimate_period_end", "scheduled_date",
+        "reporting_period_start", "reporting_period_end", "period_start",
+        "period_end", "event_date",
     }
     timestamps = {
         "starts_at", "ends_at", "source_published_at", "first_observed_at",
@@ -65,8 +68,7 @@ def _empty_frame(name: str) -> pd.DataFrame:
         "provider_asof", "prior_provider_asof", "current_snapshot_at", "cutoff_at",
         "prior_snapshot_at", "published_at", "first_observed_at",
         "first_observation_at", "latest_observation_at", "source_latest_at",
-        "quote_timestamp",
-        "completed_at",
+        "quote_timestamp", "accepted_at", "filing_at", "completed_at",
     }
     data: dict[str, pd.Series] = {}
     for column in columns:
@@ -180,6 +182,24 @@ def _expected_types(name: str) -> dict[str, str]:
             "related_entity_ids": "list_or_string",
             "related_listing_ids": "list_or_string",
             "related_basket_ids": "list_or_string",
+        })
+    if name == "official_filings.parquet":
+        result.update({
+            "published_at": "timestamp", "accepted_at": "timestamp",
+            "scheduled_date": "date", "retrieved_at_utc": "timestamp",
+            "reporting_period_start": "date", "reporting_period_end": "date",
+        })
+    if name == "earnings_calendar.parquet":
+        result.update({
+            "period_start": "date", "period_end": "date", "event_date": "date",
+            "published_at": "timestamp", "retrieved_at_utc": "timestamp",
+        })
+    if name == "earnings_actuals.parquet":
+        result.update({
+            "version": "integer", "period_start": "date", "period_end": "date",
+            "reported_value": "float", "normalized_value": "float",
+            "filing_at": "timestamp", "published_at": "timestamp",
+            "retrieved_at_utc": "timestamp", "is_restatement": "boolean",
         })
     if name == "quote_snapshots.parquet":
         result.update({
@@ -722,6 +742,9 @@ class ControlTowerRepository:
             consensus_revisions=loaded["consensus_revisions.parquet"],
             quote_snapshots=loaded["quote_snapshots.parquet"],
             news_filings=loaded["news_filings.parquet"],
+            official_filings=loaded["official_filings.parquet"],
+            earnings_calendar=loaded["earnings_calendar.parquet"],
+            earnings_actuals=loaded["earnings_actuals.parquet"],
             source_health=source_health,
             manifest=manifest,
             status=status,

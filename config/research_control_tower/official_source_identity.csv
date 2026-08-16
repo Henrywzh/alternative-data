@@ -1,0 +1,9 @@
+entity_id,listing_id,canonical_ticker,source_kind,source_native_id,source_url,note
+ALIBABA,BABA_US,BABA.US,sec_cik,1577552,https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001577552&type=6-K&dateb=&owner=include&count=40,SEC filer identity for Alibaba Group Holding Ltd; issuer-level filings map to the NYSE ADR listing.
+ALIBABA,9988_HK,9988.HK,hkex_code,9988,https://www1.hkexnews.hk/search/titlesearch.xhtml?lang=en,HKEX listed issuer code 9988 for Alibaba ordinary shares.
+BAIDU,BIDU_US,BIDU.US,sec_cik,1329099,https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001329099&type=6-K&dateb=&owner=include&count=40,SEC filer identity for Baidu Inc; issuer-level filings map to the NASDAQ ADR listing.
+BAIDU,9888_HK,9888.HK,hkex_code,9888,https://www1.hkexnews.hk/search/titlesearch.xhtml?lang=en,HKEX listed issuer code 9888 for Baidu ordinary shares.
+BILIBILI,9626_HK,9626.HK,sec_cik,1730471,https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001730471&type=6-K&dateb=&owner=include&count=40,Historical SEC filer identity for Bilibili Inc; US ADR delisted 2025 so filings map to the active HKEX listing 9626.
+BILIBILI,9626_HK,9626.HK,hkex_code,9626,https://www1.hkexnews.hk/search/titlesearch.xhtml?lang=en,HKEX listed issuer code 9626 for Bilibili ordinary shares.
+KUAISHOU,1024_HK,1024.HK,hkex_code,1024,https://www1.hkexnews.hk/search/titlesearch.xhtml?lang=en,HKEX listed issuer code 1024 for Kuaishou ordinary shares.
+TENCENT,0700_HK,0700.HK,hkex_code,700,https://www1.hkexnews.hk/search/titlesearch.xhtml?lang=en,HKEX listed issuer code 700 for Tencent ordinary shares.

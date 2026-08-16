@@ -65,6 +65,9 @@ class ControlTowerSnapshot:
     consensus_revisions: pd.DataFrame
     quote_snapshots: pd.DataFrame
     news_filings: pd.DataFrame
+    official_filings: pd.DataFrame
+    earnings_calendar: pd.DataFrame
+    earnings_actuals: pd.DataFrame
     source_health: pd.DataFrame
     manifest: Mapping[str, Any]
     status: RepositoryStatus
