@@ -399,8 +399,17 @@ class SemiconductorMemoryPipeline:
         """Weighted AI-demand PPI basket + rebased components, derived only from FRED.
 
         Returns columns month, date, fred_ppi_value, fred_ppi_mom_pct,
-        fred_ppi_3m_trend and the five rebased component columns. Returns an empty
-        frame when no month carries the full required-series basket.
+        fred_ppi_3m_trend, component_coverage, missing_components, and the five
+        rebased component columns.
+
+        Months that carry every required series use the fixed basket weights.
+        Months missing one component (the smallest is 5% of the basket) are still
+        emitted as a *partial* point: available components are combined with their
+        weights renormalized so the value stays on the same index scale, and the
+        point is explicitly flagged via component_coverage/missing_components.
+        The dashboard renders partial points with a caveat instead of a silent gap.
+        Months missing more than one component are dropped as too incomplete to
+        estimate.
         """
         if fred.empty:
             return pd.DataFrame()
@@ -413,36 +422,77 @@ class SemiconductorMemoryPipeline:
             .drop_duplicates(subset=["series_id", "month"], keep="last")
         )
         required_series = list(AI_DEMAND_PPI_WEIGHTS)
+        available_series = [sid for sid in required_series if sid in fred_latest["series_id"].unique()]
+        if not available_series:
+            return pd.DataFrame()
+
         fred_wide = (
             fred_latest
             .pivot(index="month", columns="series_id", values="value")
             .sort_index()
             .reindex(columns=required_series)
         )
-        complete_months = fred_wide.dropna(subset=required_series, how="any")
+        present_count = fred_wide[required_series].notna().sum(axis=1)
+        # At least 4 of the 5 components are required to emit a (possibly partial)
+        # month; anything sparser is too incomplete to estimate.
+        candidate_months = fred_wide[present_count >= 4].index
+        if candidate_months.empty:
+            return pd.DataFrame()
+        monthly = fred_wide.loc[candidate_months].copy()
+
+        missing_components: dict[str, str] = {}
+        coverage: dict[str, str] = {}
+        for month in candidate_months:
+            missing = [sid for sid in required_series if pd.isna(monthly.loc[month, sid])]
+            missing_components[str(month)] = ", ".join(missing)
+            coverage[str(month)] = f"{len(required_series) - len(missing)}/{len(required_series)}"
+        monthly["component_coverage"] = pd.Series(coverage, dtype="string")
+        monthly["missing_components"] = pd.Series(missing_components, dtype="string")
+
+        # Weighted value: fixed basket for complete months; renormalized weights
+        # over the actually-available components for partial months. Renormalizing
+        # keeps the partial point on the same rebased-index scale as the complete
+        # series so the estimate represents the same "AI demand PPI" construct.
+        def _weighted_value(row: pd.Series) -> float:
+            present = [sid for sid in required_series if pd.notna(row[sid])]
+            weights = [AI_DEMAND_PPI_WEIGHTS[sid] for sid in present]
+            weight_sum = sum(weights)
+            if not present or weight_sum <= 0:
+                return float("nan")
+            norm = {sid: AI_DEMAND_PPI_WEIGHTS[sid] / weight_sum for sid in present}
+            return float(sum(row[sid] * norm[sid] for sid in present))
+
+        monthly["_weighted_raw"] = monthly.apply(_weighted_value, axis=1)
+        complete_months = monthly[monthly["component_coverage"] == f"{len(required_series)}/{len(required_series)}"]
         if complete_months.empty:
+            # No fully-covered month exists to act as the rebase anchor. Use the
+            # first candidate month's partial value as a provisional anchor; it
+            # will be rebased consistently once a complete month exists.
+            base_month = candidate_months[0]
+        else:
+            base_month = complete_months.index[0]
+        base_weighted_value = float(monthly.loc[base_month, "_weighted_raw"])
+        if not base_weighted_value or base_weighted_value <= 0:
             return pd.DataFrame()
 
-        weighted_raw = sum(
-            complete_months[series_id] * weight
-            for series_id, weight in AI_DEMAND_PPI_WEIGHTS.items()
-        )
-        base_month = complete_months.index[0]
-        base_weighted_value = float(weighted_raw.loc[base_month])
-
         fred_monthly = pd.DataFrame({
-            "month": complete_months.index,
-            "date": [f"{month}-01" for month in complete_months.index],
-            "fred_ppi_value": (weighted_raw / base_weighted_value) * 100.0,
+            "month": monthly.index,
+            "date": [f"{month}-01" for month in monthly.index],
+            "fred_ppi_value": (monthly["_weighted_raw"] / base_weighted_value) * 100.0,
+            "component_coverage": monthly["component_coverage"].astype(str),
+            "missing_components": monthly["missing_components"].astype(str),
         }).reset_index(drop=True)
         fred_monthly["fred_ppi_mom_pct"] = fred_monthly["fred_ppi_value"].pct_change() * 100
         fred_monthly["fred_ppi_3m_trend"] = fred_monthly["fred_ppi_value"].rolling(3, min_periods=1).mean()
 
         for series_id, column_name in PPI_COMPONENT_COLUMN_MAP.items():
-            base_component_value = float(complete_months.loc[base_month, series_id])
-            fred_monthly[column_name] = (
-                (complete_months[series_id] / base_component_value) * 100.0
-            ).to_numpy()
+            base_component_value = monthly.loc[base_month, series_id]
+            if pd.isna(base_component_value) or base_component_value == 0:
+                fred_monthly[column_name] = float("nan")
+            else:
+                fred_monthly[column_name] = (
+                    (monthly[series_id] / float(base_component_value)) * 100.0
+                ).to_numpy()
 
         return fred_monthly
 
@@ -462,6 +512,8 @@ class SemiconductorMemoryPipeline:
                     fred_ppi_value=_float_or_none(row.get("fred_ppi_value")),
                     fred_ppi_mom_pct=_float_or_none(row.get("fred_ppi_mom_pct")),
                     fred_ppi_3m_trend=_float_or_none(row.get("fred_ppi_3m_trend")),
+                    component_coverage=_str_or_none(row.get("component_coverage")),
+                    missing_components=_str_or_none(row.get("missing_components")),
                     ppi_component_pcu33443344_rebased=_float_or_none(row.get("ppi_component_pcu33443344_rebased")),
                     ppi_component_pcu33423342_rebased=_float_or_none(row.get("ppi_component_pcu33423342_rebased")),
                     ppi_component_pcu335313335313_rebased=_float_or_none(row.get("ppi_component_pcu335313335313_rebased")),

@@ -1277,6 +1277,8 @@ SEMICONDUCTOR_COLUMNS = [
     "fred_ppi_value",
     "fred_ppi_mom_pct",
     "fred_ppi_3m_trend",
+    "component_coverage",
+    "missing_components",
     "ppi_component_pcu33443344_rebased",
     "ppi_component_pcu33423342_rebased",
     "ppi_component_pcu335313335313_rebased",
