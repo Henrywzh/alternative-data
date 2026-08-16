@@ -202,7 +202,7 @@ def _status_class(status: str, *, age_days: float | None, threshold: int | None,
 
 def _display_label(display_status: str, entitlement_status: str, raw_status: str = "") -> str:
     if display_status == "entitlement_error":
-        if entitlement_status == "denied":
+        if entitlement_status in {"denied", "adverse"}:
             return "Entitlement denied"
         return "Entitlement required"
     if display_status == "no_records":
@@ -240,6 +240,7 @@ def _entitlement_status(row: Mapping[str, object], status: str) -> str:
     if explicit in {
         "active", "missing", "denied", "unknown", "not_applicable",
         "terms_unverified", "permitted_local_private", "entitlement_required",
+        "adverse",
     }:
         return explicit
     if status == "entitlement_denied":
@@ -349,16 +350,9 @@ def classify_source_health(
             "missing",
             "entitlement_required",
             "terms_unverified",
+            "adverse",
         }
-        if adverse_entitlement and status in {
-            "available",
-            "success",
-            "ok",
-            "entitlement_required",
-            "entitlement_denied",
-        }:
-            display_status = "entitlement_error"
-        elif base_status in {
+        explicit_adverse_statuses = {
             "failed",
             "conflicted",
             "review_required",
@@ -367,12 +361,21 @@ def classify_source_health(
             "degraded",
             "stale",
             "not_applicable",
-        }:
+        }
+        if adverse_entitlement and base_status not in explicit_adverse_statuses:
+            display_status = "entitlement_error"
+        elif base_status in explicit_adverse_statuses:
             display_status = base_status
         elif future or (
             completed_at is not None and completed_at > reference
         ):
             display_status = "clock_skew"
+        elif (
+            reported_rows == 0
+            and status in {"available", "success", "ok", "no_records"}
+            and not execution_completed
+        ):
+            display_status = "review_required"
         elif (
             reported_rows == 0
             and status in {"available", "success", "ok", "no_records"}

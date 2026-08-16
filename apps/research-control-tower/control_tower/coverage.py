@@ -259,6 +259,14 @@ class _CategorySources:
         )
 
     @property
+    def no_records(self) -> tuple[_SourceState, ...]:
+        return tuple(
+            source
+            for source in self.sources
+            if source.display_status == "no_records"
+        )
+
+    @property
     def stale(self) -> tuple[_SourceState, ...]:
         return tuple(
             source
@@ -524,19 +532,31 @@ def _stage1_entity_ids(snapshot: ControlTowerSnapshot) -> set[str]:
 
     active_entities = _active_entity_rows(snapshot)
     memberships = snapshot.basket_memberships
-    if not memberships.empty and {"entity_id", "basket_id"} <= set(
-        memberships.columns
-    ):
+    basket_ids = (
+        {
+            _text(value)
+            for value in snapshot.baskets.get(
+                "basket_id", pd.Series(dtype="string")
+            ).dropna()
+            if _text(value)
+        }
+        if not snapshot.baskets.empty
+        else set()
+    )
+    if STAGE1_BASKET_ID in basket_ids:
+        if memberships.empty or not {"entity_id", "basket_id"} <= set(
+            memberships.columns
+        ):
+            return set()
         stage1_rows = memberships.loc[
             memberships["basket_id"].astype("string").eq(STAGE1_BASKET_ID)
         ]
-        if not stage1_rows.empty:
-            return {
-                _text(row.get("entity_id"))
-                for _, row in stage1_rows.iterrows()
-                if _text(row.get("entity_id")) in active_entities
-                and _active_at_snapshot(row.to_dict(), snapshot)
-            }
+        return {
+            _text(row.get("entity_id"))
+            for _, row in stage1_rows.iterrows()
+            if _text(row.get("entity_id")) in active_entities
+            and _active_at_snapshot(row.to_dict(), snapshot)
+        }
     # Compatibility fallback for old focused bundles without the Stage 1
     # basket. A present-but-inactive basket never falls back to all entities.
     return set(active_entities)
@@ -888,6 +908,19 @@ def _assess_time_sensitive_rows(
                 f"Row source {source_id or 'unavailable'} cannot be matched "
                 "to one governing source-health record.",
             )
+        if source.display_status == "no_records":
+            return (
+                "partial",
+                "Rows conflict with a governing source that completed with "
+                "no records: "
+                + source.label,
+            )
+        if source.display_status == "not_applicable":
+            return (
+                "partial",
+                "Rows conflict with a governing source marked not applicable: "
+                + source.label,
+            )
         timestamp = _row_source_timestamp(row, timestamp_columns)
         if timestamp is None:
             return (
@@ -1152,6 +1185,64 @@ def _filings_news_cell(
     )
 
 
+def _event_component_status(
+    row_count: int,
+    *,
+    sources: _CategorySources,
+) -> tuple[CoverageStatusCode, str]:
+    """Assess event rows independently from macro observations."""
+
+    if row_count == 0:
+        return _empty_status(sources)
+    if sources.adverse:
+        return (
+            "partial",
+            "Event rows exist, but source coverage is impaired: "
+            + _source_state_details(sources.adverse),
+        )
+    if sources.no_records:
+        return (
+            "partial",
+            "Event rows conflict with a governing source that completed "
+            "with no records: "
+            + _source_state_details(sources.no_records),
+        )
+    not_applicable = tuple(
+        source
+        for source in sources.sources
+        if source.display_status == "not_applicable"
+    )
+    if not_applicable:
+        return (
+            "partial",
+            "Event rows conflict with a governing source marked not "
+            "applicable: "
+            + _source_state_details(not_applicable),
+        )
+    if sources.stale:
+        return (
+            "partial",
+            "Event rows exist, but a governing source is stale: "
+            + _source_state_details(sources.stale),
+        )
+    event_uncertain = tuple(
+        source
+        for source in sources.uncertain
+        if not (
+            source.execution_completed
+            and source.raw_status in {"available", "success", "ok"}
+        )
+    )
+    if event_uncertain or not sources.sources:
+        detail = (
+            _source_state_details(event_uncertain)
+            if event_uncertain
+            else "no governing source-health records"
+        )
+        return "partial", f"Event rows exist, but {detail}."
+    return "available", "Event source state checks passed."
+
+
 def _events_cell(
     snapshot: ControlTowerSnapshot,
     entity_id: str,
@@ -1164,46 +1255,19 @@ def _events_cell(
         entity_id,
         relation_map=relation_map,
     )
-    if not rows.empty:
-        if sources.adverse:
-            return CoverageCell(
-                "events",
-                "partial",
-                "Event rows exist, but source coverage is impaired: "
-                + _source_state_details(sources.adverse),
-                record_count=len(rows),
-            )
-        event_uncertain = tuple(
-            source
-            for source in sources.uncertain
-            if not (
-                source.execution_completed
-                and source.raw_status in {"available", "success", "ok"}
-            )
-        )
-        if event_uncertain or not sources.sources:
-            detail = (
-                _source_state_details(event_uncertain)
-                if event_uncertain
-                else "no governing source-health records"
-            )
-            return CoverageCell(
-                "events",
-                "partial",
-                f"{len(rows)} event row(s) resolve to this entity, but {detail}.",
-                record_count=len(rows),
-            )
+    status, detail = _event_component_status(len(rows), sources=sources)
+    if rows.empty:
         return CoverageCell(
             "events",
-            "available",
-            f"{len(rows)} event record(s) linked to this entity in the local registry.",
-            record_count=len(rows),
+            status,
+            f"No event records linked to this entity. {detail}",
         )
-    empty_status, empty_detail = _empty_status(sources)
     return CoverageCell(
         "events",
-        empty_status,
-        f"No event records linked to this entity. {empty_detail}",
+        status,
+        f"{len(rows)} event record(s) linked to this entity in the local "
+        f"registry. {detail}",
+        record_count=len(rows),
     )
 
 
@@ -1502,21 +1566,22 @@ def _linked_row_count(
 def _linked_event_count(snapshot: ControlTowerSnapshot) -> int:
     if snapshot.events.empty or "event_id" not in snapshot.events.columns:
         return 0
-    linked_event_ids: set[str] = set()
-    for frame in (snapshot.event_entity_links, snapshot.event_basket_links):
-        if not frame.empty and "event_id" in frame.columns:
-            linked_event_ids.update(frame["event_id"].dropna().astype(str))
-    for _, row in snapshot.events.iterrows():
-        if any(
-            _is_non_empty_relation(row.get(column))
-            for column in (
-                "related_entity_ids",
-                "related_listing_ids",
-                "related_basket_ids",
-            )
-        ):
-            linked_event_ids.add(str(row.get("event_id")))
-    return int(snapshot.events["event_id"].astype(str).isin(linked_event_ids).sum())
+    stage1_entity_ids = _stage1_entity_ids(snapshot)
+    _, listing_owner = _active_listing_map(snapshot, stage1_entity_ids)
+    members_by_basket = _active_members_by_basket(
+        snapshot,
+        stage1_entity_ids,
+    )
+    relation_map = _event_relation_map(
+        snapshot,
+        stage1_entity_ids=stage1_entity_ids,
+        listing_owner=listing_owner,
+        members_by_basket=members_by_basket,
+    )
+    return sum(
+        bool(relation_map.get(_text(row.get("event_id")), set()))
+        for _, row in snapshot.events.iterrows()
+    )
 
 
 def build_data_coverage_summary(snapshot: ControlTowerSnapshot) -> DataCoverageSummary:
@@ -1698,28 +1763,23 @@ def build_data_coverage_summary(snapshot: ControlTowerSnapshot) -> DataCoverageS
         else 0
     )
     evidence_count = event_count + macro_count
+    event_status, event_detail = _event_component_status(
+        event_count,
+        sources=source_groups["events"],
+    )
+    macro_cell = _macro_cell(
+        snapshot,
+        sources=source_groups["macro"],
+        now_utc=snapshot.now_utc,
+    )
     if evidence_count:
         linked_events = _linked_event_count(snapshot)
-        evidence_status: CoverageStatusCode = "available"
-        evidence_details: list[str] = []
-        if source_groups["events"].adverse:
-            evidence_status = "partial"
-            evidence_details.append(
-                _source_state_details(source_groups["events"].adverse)
-            )
-        if macro_count:
-            macro_cell = _macro_cell(
-                snapshot,
-                sources=source_groups["macro"],
-                now_utc=snapshot.now_utc,
-            )
-            if macro_cell.status_code != "available":
-                evidence_status = (
-                    "stale"
-                    if not event_count and macro_cell.status_code == "stale"
-                    else "partial"
-                )
-                evidence_details.append(macro_cell.details)
+        evidence_status: CoverageStatusCode = (
+            "available"
+            if event_status == "available"
+            and macro_cell.status_code == "available"
+            else "partial"
+        )
         rows.append(
             CoverageRow(
                 category="Alternative Evidence / Events",
@@ -1729,7 +1789,7 @@ def build_data_coverage_summary(snapshot: ControlTowerSnapshot) -> DataCoverageS
                     f"{event_count} event record{'s' if event_count != 1 else ''} and "
                     f"{macro_count} macro observation{'s' if macro_count != 1 else ''} present; "
                     f"event link registry covers {linked_events} event record{'s' if linked_events != 1 else ''}. "
-                    + (" ".join(evidence_details) + " " if evidence_details else "")
+                    f"Events: {event_detail} Macro: {macro_cell.details} "
                     + "This is evidence coverage, not a trading signal."
                 ),
                 record_count=evidence_count,
@@ -1737,12 +1797,13 @@ def build_data_coverage_summary(snapshot: ControlTowerSnapshot) -> DataCoverageS
             )
         )
     else:
-        event_status, event_detail = _empty_status(source_groups["events"])
-        macro_status, macro_detail = _empty_status(source_groups["macro"])
+        macro_status = macro_cell.status_code
         if event_status == macro_status == "no_records":
             status_code = "no_records"
         elif "unavailable" in {event_status, macro_status}:
             status_code = "unavailable"
+        elif event_status == macro_status == "stale":
+            status_code = "stale"
         else:
             status_code = "partial"
         rows.append(
@@ -1752,7 +1813,7 @@ def build_data_coverage_summary(snapshot: ControlTowerSnapshot) -> DataCoverageS
                 status_code=status_code,
                 details=(
                     f"No evidence or event records. Events: {event_detail} "
-                    f"Macro: {macro_detail}"
+                    f"Macro: {macro_cell.details}"
                 ),
             )
         )

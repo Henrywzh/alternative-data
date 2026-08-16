@@ -737,12 +737,24 @@ def test_macro_cell_transitions() -> None:
         [
             {
                 "observation_id": "M1",
+                "source_id": "fred_observations",
                 "release_at": FRESH,
                 "source_published_at": FRESH,
             }
         ]
     )
-    populated = _snapshot(macro_observations=macro, health=connected)
+    populated_health = _health(
+        fred_observations={
+            "status": "available",
+            "row_count": 1,
+            "source_latest_at": FRESH,
+            "cadence": "monthly",
+            "query_attempted": True,
+            "execution_status": "completed",
+            "completed_at": FRESH,
+        }
+    )
+    populated = _snapshot(macro_observations=macro, health=populated_health)
     assert _matrix(populated).global_macro.status_code == "available"
 
 
@@ -1357,3 +1369,176 @@ def test_event_link_registries_resolve_listing_basket_and_intervals() -> None:
     assert matrix.entity_cell("ALIBABA", "events").record_count == 2
     assert matrix.entity_cell("BYTEDANCE", "events").record_count == 1
     assert matrix.entity_cell("TENCENT", "events").record_count == 1
+
+
+def test_legacy_zero_row_source_health_requires_review_before_no_records() -> None:
+    from control_tower.pages.source_health import classify_source_health
+
+    health = _health(
+        quote_snapshots={
+            "status": "available",
+            "row_count": 0,
+            "source_latest_at": FRESH,
+            "cadence": "daily",
+        }
+    )
+    classified = classify_source_health(health, now_utc=AS_OF)
+    quote = classified.loc[classified["source_id"].eq("quote_snapshots")].iloc[0]
+
+    assert quote["display_status"] == "review_required"
+    assert _matrix(_snapshot(health=health)).status_of(
+        "ALIBABA", "price_quotes"
+    ) == "unavailable"
+
+
+def test_denied_entitlement_outranks_completed_zero_row_no_records() -> None:
+    from control_tower.pages.source_health import classify_source_health
+
+    health = _health(
+        quote_snapshots={
+            "status": "no_records",
+            "row_count": 0,
+            "source_latest_at": FRESH,
+            "cadence": "daily",
+            "entitlement_status": "denied",
+            "query_attempted": True,
+            "execution_status": "completed",
+            "completed_at": FRESH,
+        }
+    )
+    classified = classify_source_health(health, now_utc=AS_OF)
+    quote = classified.loc[classified["source_id"].eq("quote_snapshots")].iloc[0]
+
+    assert quote["display_status"] == "entitlement_error"
+    assert _matrix(_snapshot(health=health)).status_of(
+        "ALIBABA", "price_quotes"
+    ) == "unavailable"
+
+
+def test_artifact_rows_conflict_with_completed_zero_row_source_health() -> None:
+    from control_tower.coverage import build_data_coverage_summary
+
+    quotes = pd.DataFrame(
+        [
+            _quote("Q1", "9988_HK"),
+            _quote("Q2", "BABA_US"),
+        ]
+    )
+    health = _health(
+        quote_snapshots={
+            "status": "available",
+            "row_count": 0,
+            "source_latest_at": FRESH,
+            "cadence": "daily",
+            "query_attempted": True,
+            "execution_status": "completed",
+            "completed_at": FRESH,
+        }
+    )
+    snapshot = _snapshot(quotes=quotes, health=health)
+    matrix = _matrix(snapshot)
+
+    assert matrix.status_of("ALIBABA", "price_quotes") == "partial"
+    assert all(
+        row.status_code == "partial"
+        for row in matrix.listing_rows
+        if row.entity_id == "ALIBABA"
+    )
+    summary = {
+        row.category: row for row in build_data_coverage_summary(snapshot).rows
+    }
+    assert summary["Price / Market Quotes"].status_code == "partial"
+
+
+def test_present_stage1_basket_with_no_active_memberships_has_empty_matrix() -> None:
+    from dataclasses import replace
+
+    snapshot = _snapshot()
+    matrix = _matrix(
+        replace(
+            snapshot,
+            basket_memberships=snapshot.basket_memberships.iloc[0:0].copy(),
+        )
+    )
+
+    assert matrix.entity_rows == ()
+    assert matrix.listing_rows == ()
+
+
+def test_evidence_summary_assesses_unavailable_macro_when_events_have_rows() -> None:
+    from control_tower.coverage import build_data_coverage_summary
+
+    events = pd.DataFrame(
+        [{"event_id": "EV_VALID", "related_entity_ids": ("ALIBABA",)}]
+    )
+    health = _health(
+        **{
+            "events:events": {
+                "status": "available",
+                "row_count": 1,
+                "query_attempted": True,
+                "execution_status": "completed",
+                "completed_at": FRESH,
+            }
+        }
+    )
+    summary = {
+        row.category: row
+        for row in build_data_coverage_summary(
+            _snapshot(events=events, health=health)
+        ).rows
+    }
+    evidence = summary["Alternative Evidence / Events"]
+
+    assert evidence.status_code == "partial"
+    assert "fred" in evidence.details.lower()
+
+
+def test_summary_linked_event_count_uses_active_authoritative_links() -> None:
+    from dataclasses import replace
+    from control_tower.coverage import build_data_coverage_summary
+
+    events = pd.DataFrame(
+        [
+            {"event_id": "EV_ACTIVE", "related_entity_ids": ("ALIBABA",)},
+            {"event_id": "EV_EXPIRED", "related_entity_ids": ("TENCENT",)},
+        ]
+    )
+    health = _health(
+        **{
+            "events:events": {
+                "status": "available",
+                "row_count": 2,
+                "query_attempted": True,
+                "execution_status": "completed",
+                "completed_at": FRESH,
+            }
+        }
+    )
+    snapshot = replace(
+        _snapshot(events=events, health=health),
+        event_entity_links=pd.DataFrame(
+            [
+                {
+                    "event_id": "EV_ACTIVE",
+                    "target_type": "entity",
+                    "target_id": "ALIBABA",
+                    "active_from": "2026-01-01",
+                    "active_to": None,
+                },
+                {
+                    "event_id": "EV_EXPIRED",
+                    "target_type": "entity",
+                    "target_id": "TENCENT",
+                    "active_from": "2026-01-01",
+                    "active_to": "2026-08-13",
+                },
+            ]
+        ),
+    )
+    summary = {
+        row.category: row for row in build_data_coverage_summary(snapshot).rows
+    }
+
+    assert summary["Alternative Evidence / Events"].linked_count == 1
+    assert _matrix(snapshot).status_of("TENCENT", "events") == "no_records"
