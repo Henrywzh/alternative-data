@@ -125,6 +125,18 @@ def compute_semiconductor_views(datasets: dict[str, DatasetLoadResult]) -> dict[
             if latest_proxy_month is not None and not proxy_df.empty
             else pd.Series(dtype="object")
         )
+        # Partial-month metadata: a month missing one of the five basket
+        # components (e.g. storage devices lagging) is still shown, but flagged
+        # so it can never be mistaken for a complete observation.
+        latest_proxy_coverage = None
+        latest_proxy_missing = None
+        if latest_proxy_month is not None and not proxy_df.empty:
+            latest_proxy_coverage = latest_proxy_data.get("component_coverage")
+            latest_proxy_missing = latest_proxy_data.get("missing_components")
+            if pd.isna(latest_proxy_coverage) or latest_proxy_coverage in (None, ""):
+                latest_proxy_coverage = None
+            if pd.isna(latest_proxy_missing) or latest_proxy_missing in (None, ""):
+                latest_proxy_missing = None
     else:
         proxy_df = pd.DataFrame()
         component_columns = []
@@ -226,6 +238,8 @@ def compute_semiconductor_views(datasets: dict[str, DatasetLoadResult]) -> dict[
     views["base_month"] = base_month
     views["latest_proxy_month"] = latest_proxy_month
     views["latest_proxy_data"] = latest_proxy_data
+    views["latest_proxy_coverage"] = latest_proxy_coverage
+    views["latest_proxy_missing"] = latest_proxy_missing
     views["latest_fred_month"] = latest_fred_month
     views["latest_fred_series_names"] = latest_fred_series_names
     views["official_df"] = official_df
@@ -509,6 +523,8 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
         base_month = semi_views.get("base_month")
         latest_proxy_month = semi_views.get("latest_proxy_month")
         latest_proxy_data = semi_views.get("latest_proxy_data", pd.Series(dtype="object"))
+        latest_proxy_coverage = semi_views.get("latest_proxy_coverage")
+        latest_proxy_missing = semi_views.get("latest_proxy_missing")
         latest_fred_month = semi_views.get("latest_fred_month")
         latest_fred_series_names = semi_views.get("latest_fred_series_names", [])
 
@@ -531,9 +547,14 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
 
             if pd.notna(ppi_mom):
                 ppi_delta_cls = "up" if ppi_mom >= 0 else "down"
-                ppi_delta_text = f"{'↑' if ppi_mom >= 0 else '↓'} {abs(ppi_mom):.1f}% MoM"
+            ppi_delta_text = f"{'↑' if ppi_mom >= 0 else '↓'} {abs(ppi_mom):.1f}% MoM"
             else:
                 ppi_delta_cls, ppi_delta_text = "flat", "latest complete basket month"
+
+            partial_month = bool(latest_proxy_coverage) and latest_proxy_coverage != f"{len(AI_DEMAND_PPI_WEIGHTS)}/{len(AI_DEMAND_PPI_WEIGHTS)}"
+            if partial_month:
+                ppi_delta_cls = "flat"
+                ppi_delta_text = f"{latest_proxy_coverage} basket · provisional"
 
             trend_display_val = f"{ppi_trend:.1f}" if pd.notna(ppi_trend) else "—"
             snapshot_delta = "latest complete basket month"
@@ -541,6 +562,8 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
                 updated_count = len(latest_fred_series_names)
                 noun = "series" if updated_count != 1 else "series"
                 snapshot_delta = f"Using {active_month}; {latest_fred_month} has {updated_count} updated {noun}, but the basket is incomplete"
+            if partial_month:
+                snapshot_delta = f"{active_month} is a partial basket ({latest_proxy_coverage} components)"
 
             st.markdown(
                 kpi_grid_html(
@@ -551,6 +574,14 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
                 ),
                 unsafe_allow_html=True,
             )
+
+            if partial_month:
+                missing_label = latest_proxy_missing or "one basket component"
+                st.caption(
+                    f"⚠️ {active_month} AI Demand PPI is **partial ({latest_proxy_coverage} of 5 components)** — "
+                    f"FRED has not yet published **{missing_label}**. The renormalized value is provisional "
+                    "and may be revised when the missing component lands."
+                )
 
             st.markdown(
                 "[ADATA Industrial Market Watch](https://industrial.adata.com/en/edm)",
