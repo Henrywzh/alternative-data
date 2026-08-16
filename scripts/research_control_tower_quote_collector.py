@@ -22,6 +22,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from src.research_control_tower.quote_collector import (
     collect_yfinance_quotes,
+    quote_status_path,
     write_quote_snapshot,
 )
 
@@ -56,8 +57,12 @@ def main() -> int:
         basket_memberships=memberships,
         stage1_only=args.stage1_only,
     )
-    output = write_quote_snapshot(result.frame, args.output)
-    print(f"Quote collection finished: aggregate_status={result.aggregate_status}, rows={len(result.frame)}")
+    output = write_quote_snapshot(result.frame, args.output, result=result)
+    print(
+        "Quote collection finished: "
+        f"aggregate_status={result.aggregate_status}, rows={len(result.frame)}, "
+        f"status_sidecar={quote_status_path(output).name}"
+    )
     for diag in result.symbol_diagnostics:
         print(f"  [{diag.symbol}] listing_id={diag.listing_id} entity_id={diag.entity_id} status={diag.status} ({diag.reason})")
 
