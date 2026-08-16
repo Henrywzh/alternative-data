@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime, timezone
+from typing import Any
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -62,7 +63,7 @@ class FredMacroClient:
         vintage_dates: str | list[str] | None = None,
     ) -> list[FredObservation]:
         url = f"{self.BASE_URL}/series/observations"
-        params = {
+        params: dict[str, Any] = {
             "series_id": series_id,
             "api_key": self.api_key,
             "file_type": "json",
@@ -95,16 +96,51 @@ class FredMacroClient:
             except (TypeError, ValueError):
                 skipped += 1
                 continue
-            rt_start = str(obs.get("realtime_start", realtime_start or "1776-07-04"))
-            rt_end = str(obs.get("realtime_end", realtime_end or "9999-12-31"))
+            rt_start = obs.get("realtime_start") or realtime_start
+            rt_end = obs.get("realtime_end") or realtime_end
             points.append(FredObservation(
                 date=str(obs.get("date", "")),
                 series_id=series_id,
                 value=value,
                 fetched_at=fetched_at,
-                realtime_start=rt_start,
-                realtime_end=rt_end,
+                realtime_start=str(rt_start) if rt_start else None,
+                realtime_end=str(rt_end) if rt_end else None,
             ))
         if skipped:
             logger.warning(f"Skipped {skipped} missing/malformed observations for {series_id}.")
         return points
+
+    def get_release_dates(
+        self,
+        release_id: int,
+        realtime_start: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Fetch official release dates from FRED API `/fred/release/dates`."""
+        url = f"{self.BASE_URL}/release/dates"
+        params: dict[str, Any] = {
+            "release_id": release_id,
+            "api_key": self.api_key,
+            "file_type": "json",
+            "include_release_dates_with_no_data": "true",
+        }
+        if realtime_start:
+            params["realtime_start"] = realtime_start
+        r = self.session.get(url, params=params, timeout=self.timeout)
+        r.raise_for_status()
+        data = r.json()
+        return data.get("release_dates", [])
+
+    def get_series_release_dates(self, series_id: str) -> list[dict[str, Any]]:
+        """Fetch official release dates for a given series via FRED `/fred/series/release`."""
+        url = f"{self.BASE_URL}/series/release"
+        params = {"series_id": series_id, "api_key": self.api_key, "file_type": "json"}
+        r = self.session.get(url, params=params, timeout=self.timeout)
+        r.raise_for_status()
+        data = r.json()
+        releases = data.get("releases", [])
+        if not releases:
+            return []
+        release_id = releases[0].get("id")
+        if not release_id:
+            return []
+        return self.get_release_dates(release_id)
