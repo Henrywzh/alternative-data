@@ -266,7 +266,7 @@ def normalize_market_bars(
     source_id: str = "market_bars",
     source_url: str = "",
     pit_class: str = "snapshot_from_live_source",
-    license_class: str = "public_metadata",
+    license_class: str = "personal_use_terms_unverified",
     registry_version: str = "v1",
 ) -> NormalizationResult:
     """Normalize input price bars against the listing registry and as_of_utc gate."""
@@ -416,7 +416,7 @@ def normalize_quote_snapshots(
     source_id: str = "quote_snapshots",
     source_url: str = "",
     pit_class: str = "snapshot_from_live_source",
-    license_class: str = "public_metadata",
+    license_class: str = "personal_use_terms_unverified",
     registry_version: str = "v1",
 ) -> NormalizationResult:
     """Normalize latest quote snapshots against the listing registry and as_of_utc gate."""

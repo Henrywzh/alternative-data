@@ -760,6 +760,7 @@ def _render_coverage_matrix(summary: DataCoverageSummary) -> None:
 
 
 
+
 def _render_stage1_quote_snapshot(
     snapshot: ControlTowerSnapshot,
     filters: EventFilters,
@@ -767,20 +768,51 @@ def _render_stage1_quote_snapshot(
 ) -> None:
     st.markdown("### Stage 1 market quotes (delayed)")
     quotes = snapshot.quote_snapshots
-    if not quotes.empty and "listing_id" in quotes.columns:
-        selected_entities, selected_listings, _ = _selected_universe(snapshot, filters)
-        if selected_listings:
-            quotes = quotes.loc[quotes["listing_id"].astype("string").isin(selected_listings)].copy()
+
+    # Resolve selected universe
+    selected_entities, selected_listings, _ = _selected_universe(snapshot, filters)
+
+    # Filter quotes by selected universe listings
+    if not quotes.empty and "listing_id" in quotes.columns and selected_listings:
+        quotes = quotes.loc[quotes["listing_id"].astype("string").isin(selected_listings)].copy()
+
+    # Resolve private entities in selected universe
+    private_entities: list[dict[str, str]] = []
+    if selected_entities:
+        seen_private: set[str] = set()
+        for eid in selected_entities:
+            if eid in seen_private:
+                continue
+            if not snapshot.entities.empty and "entity_id" in snapshot.entities.columns:
+                row = snapshot.entities.loc[snapshot.entities["entity_id"].astype("string").eq(eid)]
+                if not row.empty:
+                    e_row = row.iloc[0]
+                    e_type = _text(e_row.get("entity_type")).lower()
+                    if e_type == "private" or eid == "BYTEDANCE":
+                        private_entities.append({
+                            "entity_id": eid,
+                            "display_name": _text(e_row.get("display_name")) or eid,
+                        })
+                        seen_private.add(eid)
+                        continue
+            if eid == "BYTEDANCE":
+                private_entities.append({
+                    "entity_id": "BYTEDANCE",
+                    "display_name": "ByteDance",
+                })
+                seen_private.add(eid)
+
     with st.container(border=True):
         if quotes.empty:
             st.info("Latest market quotes unavailable · no quote snapshot artifact loaded in data bundle for selected universe; app operates in no-network/read-only mode.")
-            st.markdown(
-                '<div class="ct-change" style="margin-top: 0.5rem; opacity: 0.85;">'
-                '<div class="ct-change-title"><strong>ByteDance</strong> · Private entity</div>'
-                '<div class="ct-change-detail">Not applicable · Private competitor with no public listing or market quote collection</div>'
-                '</div>',
-                unsafe_allow_html=True
-            )
+            for p_ent in private_entities:
+                st.markdown(
+                    f'<div class="ct-change" style="margin-top: 0.5rem; opacity: 0.85;">'
+                    f'<div class="ct-change-title"><strong>{escape(p_ent["display_name"])}</strong> · Private entity</div>'
+                    f'<div class="ct-change-detail">Not applicable · Private competitor with no public listing or market quote collection</div>'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
             return
         rows_html: list[str] = []
         for _, qrow in quotes.iterrows():
@@ -809,12 +841,13 @@ def _render_stage1_quote_snapshot(
                 f'<div class="ct-change-detail">Quote age: {escape(age_str)} · Source: {source_html}</div>'
                 f'</div>'
             )
-        rows_html.append(
-            '<div class="ct-change" style="margin-bottom: 0.5rem; opacity: 0.85;">'
-            '<div class="ct-change-title"><strong>ByteDance</strong> · Private entity</div>'
-            '<div class="ct-change-detail">Not applicable · Private competitor with no public listing or market quote collection</div>'
-            '</div>'
-        )
+        for p_ent in private_entities:
+            rows_html.append(
+                f'<div class="ct-change" style="margin-bottom: 0.5rem; opacity: 0.85;">'
+                f'<div class="ct-change-title"><strong>{escape(p_ent["display_name"])}</strong> · Private entity</div>'
+                f'<div class="ct-change-detail">Not applicable · Private competitor with no public listing or market quote collection</div>'
+                f'</div>'
+            )
         st.markdown('<div class="ct-change-list">' + "".join(rows_html) + '</div>', unsafe_allow_html=True)
 
 
