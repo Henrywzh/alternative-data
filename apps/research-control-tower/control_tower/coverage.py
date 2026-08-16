@@ -73,8 +73,9 @@ COVERAGE_CATEGORY_LABELS: Mapping[str, str] = {
 _CATEGORY_SOURCE_KINDS: Mapping[str, frozenset[str]] = {
     "price_quotes": frozenset({"market", "quote", "market_data"}),
     "consensus": frozenset({"consensus", "consensus_provider"}),
+    "earnings_actuals": frozenset({"earnings"}),
     "filings_news": frozenset(
-        {"filing", "news", "official_document_metadata"}
+        {"filing", "news", "official_document_metadata", "official_filing"}
     ),
     "events": frozenset({"events", "registry"}),
     "macro": frozenset({"macro"}),
@@ -85,8 +86,9 @@ _CATEGORY_SOURCE_IDS: Mapping[str, frozenset[str]] = {
     "consensus": frozenset(
         {"consensus_export", "consensus_snapshots", "consensus_revisions"}
     ),
+    "earnings_actuals": frozenset({"earnings_actuals"}),
     "filings_news": frozenset(
-        {"filings_sec_edgar", "news_official_ai_rss"}
+        {"filings_sec_edgar", "news_official_ai_rss", "official_filings"}
     ),
     "events": frozenset(
         {
@@ -116,6 +118,7 @@ _CONSENSUS_TS_COLUMNS = (
     "current_snapshot_at",
 )
 _FILINGS_TS_COLUMNS = ("published_at",)
+_EARNINGS_ACTUALS_TS_COLUMNS = ("filing_at", "published_at")
 _MACRO_TS_COLUMNS = ("release_at", "source_published_at")
 
 # Source-health display states that mean the provider is effectively absent:
@@ -294,6 +297,19 @@ class _CategorySources:
                     return source
                 if source.source_id.removeprefix("provider:") == text:
                     return source
+            # Per-provider governing sources are namespaced ("filings:hkexnews",
+            # "earnings:sec_companyfacts") while artifact rows carry the bare
+            # provider id ("hkexnews", "sec_companyfacts"). Match on the
+            # namespace suffix only when it resolves to exactly one source;
+            # an ambiguous suffix match is treated as unmatched.
+            suffix_matches = [
+                source
+                for source in self.sources
+                if ":" in source.source_id
+                and source.source_id.rsplit(":", 1)[-1] == text
+            ]
+            if len(suffix_matches) == 1:
+                return suffix_matches[0]
             return None
         populated = tuple(
             source
@@ -706,7 +722,7 @@ def _resolve_relation_entities(
     return related
 
 
-def _filings_rows_for_entity(
+def _news_filing_rows_for_entity(
     snapshot: ControlTowerSnapshot,
     entity_id: str,
     *,
@@ -728,6 +744,93 @@ def _filings_rows_for_entity(
         for _, row in filings.iterrows()
     ]
     return filings.loc[matched].copy()
+
+
+def _official_filing_rows_for_entity(
+    snapshot: ControlTowerSnapshot,
+    entity_id: str,
+    *,
+    listing_owner: Mapping[str, str],
+) -> pd.DataFrame:
+    """Match official-filings rows via their direct entity_id/listing_id columns.
+
+    Unlike news_filings, official_filings carries direct identity columns
+    rather than relation lists, so this mirrors ``_consensus_rows_for_entity``
+    rather than ``_resolve_relation_entities``.
+    """
+
+    filings = snapshot.official_filings
+    if filings.empty:
+        return filings.iloc[0:0]
+    matched: list[bool] = []
+    for _, row in filings.iterrows():
+        row_entity = _text(row.get("entity_id"))
+        row_listing = _text(row.get("listing_id"))
+        if row_listing:
+            owner = listing_owner.get(row_listing)
+            matched.append(
+                owner == entity_id
+                and (not row_entity or row_entity == owner)
+            )
+        else:
+            matched.append(row_entity == entity_id)
+    return filings.loc[matched].copy()
+
+
+def _filings_rows_for_entity(
+    snapshot: ControlTowerSnapshot,
+    entity_id: str,
+    *,
+    stage1_entity_ids: set[str],
+    listing_owner: Mapping[str, str],
+    members_by_basket: Mapping[str, set[str]],
+) -> pd.DataFrame:
+    """Union of news_filings (relation-linked) and official_filings (direct)."""
+
+    news_rows = _news_filing_rows_for_entity(
+        snapshot,
+        entity_id,
+        stage1_entity_ids=stage1_entity_ids,
+        listing_owner=listing_owner,
+        members_by_basket=members_by_basket,
+    )
+    official_rows = _official_filing_rows_for_entity(
+        snapshot,
+        entity_id,
+        listing_owner=listing_owner,
+    )
+    frames = [frame for frame in (news_rows, official_rows) if not frame.empty]
+    if not frames:
+        return snapshot.news_filings.iloc[0:0]
+    if len(frames) == 1:
+        return frames[0]
+    return pd.concat(frames, ignore_index=True, sort=False)
+
+
+def _earnings_actuals_rows_for_entity(
+    snapshot: ControlTowerSnapshot,
+    entity_id: str,
+    *,
+    listing_owner: Mapping[str, str],
+) -> pd.DataFrame:
+    """Match earnings-actuals rows via their direct entity_id/listing_id columns."""
+
+    actuals = snapshot.earnings_actuals
+    if actuals.empty:
+        return actuals.iloc[0:0]
+    matched: list[bool] = []
+    for _, row in actuals.iterrows():
+        row_entity = _text(row.get("entity_id"))
+        row_listing = _text(row.get("listing_id"))
+        if row_listing:
+            owner = listing_owner.get(row_listing)
+            matched.append(
+                owner == entity_id
+                and (not row_entity or row_entity == owner)
+            )
+        else:
+            matched.append(row_entity == entity_id)
+    return actuals.loc[matched].copy()
 
 
 def _event_relation_map(
@@ -1120,17 +1223,63 @@ def _consensus_cell(
     )
 
 
-def _earnings_actuals_cell(entity_type: str) -> CoverageCell:
+def _earnings_actuals_cell(
+    snapshot: ControlTowerSnapshot,
+    entity_id: str,
+    listing_ids: tuple[str, ...],
+    *,
+    entity_type: str,
+    listing_owner: Mapping[str, str],
+    sources: _CategorySources,
+    now_utc: pd.Timestamp,
+) -> CoverageCell:
     if entity_type == "private":
         return CoverageCell(
             "earnings_actuals",
             "not_applicable",
             "Private entity; no public earnings-actuals concept.",
         )
+    rows = _earnings_actuals_rows_for_entity(
+        snapshot,
+        entity_id,
+        listing_owner=listing_owner,
+    )
+    if not rows.empty:
+        source_status, source_detail = _assess_time_sensitive_rows(
+            rows,
+            sources=sources,
+            timestamp_columns=_EARNINGS_ACTUALS_TS_COLUMNS,
+            source_id_columns=("source_id",),
+            now_utc=now_utc,
+        )
+        if source_status != "available":
+            return CoverageCell(
+                "earnings_actuals",
+                source_status,
+                source_detail,
+                record_count=len(rows),
+            )
+        covered = _covered_listing_count(rows, listing_ids)
+        if listing_ids and covered < len(listing_ids):
+            return CoverageCell(
+                "earnings_actuals",
+                "partial",
+                f"Earnings-actuals rows cover {covered} of {len(listing_ids)} "
+                "active listings.",
+                record_count=len(rows),
+            )
+        return CoverageCell(
+            "earnings_actuals",
+            "available",
+            f"{len(rows)} earnings-actuals row(s) linked to this entity. "
+            f"{source_detail}",
+            record_count=len(rows),
+        )
+    empty_status, empty_detail = _empty_status(sources)
     return CoverageCell(
         "earnings_actuals",
-        "unavailable",
-        "No earnings-actuals artifact is part of the V1 data contract.",
+        empty_status,
+        f"No earnings-actuals rows for this entity. {empty_detail}",
     )
 
 
@@ -1361,7 +1510,15 @@ def build_stage1_coverage_matrix(
                 sources=sources["consensus"],
                 now_utc=now_utc,
             ),
-            _earnings_actuals_cell(entity_type),
+            _earnings_actuals_cell(
+                snapshot,
+                entity_id,
+                listing_ids,
+                entity_type=entity_type,
+                listing_owner=listing_owner,
+                sources=sources["earnings_actuals"],
+                now_utc=now_utc,
+            ),
             _filings_news_cell(
                 snapshot,
                 entity_id,

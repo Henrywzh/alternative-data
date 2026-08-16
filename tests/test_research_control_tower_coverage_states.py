@@ -171,6 +171,24 @@ def _health(**overrides: dict[str, object]) -> pd.DataFrame:
             "execution_status": None,
             "completed_at": None,
         },
+        {
+            "source_id": "official_filings",
+            "source_kind": "official_filing",
+            "status": "unavailable",
+            "row_count": 0,
+            "query_attempted": False,
+            "execution_status": None,
+            "completed_at": None,
+        },
+        {
+            "source_id": "earnings_actuals",
+            "source_kind": "earnings",
+            "status": "unavailable",
+            "row_count": 0,
+            "query_attempted": False,
+            "execution_status": None,
+            "completed_at": None,
+        },
     ]
     for source_id, values in overrides.items():
         for row in rows:
@@ -185,6 +203,8 @@ def _snapshot(
     consensus_snapshots: pd.DataFrame | None = None,
     consensus_revisions: pd.DataFrame | None = None,
     news_filings: pd.DataFrame | None = None,
+    official_filings: pd.DataFrame | None = None,
+    earnings_actuals: pd.DataFrame | None = None,
     events: pd.DataFrame | None = None,
     macro_observations: pd.DataFrame | None = None,
     health: pd.DataFrame | None = None,
@@ -245,13 +265,18 @@ def _snapshot(
                 )
             )
         ),
-        official_filings=frame(
-            (
-                "document_id",
-                "entity_id",
-                "listing_id",
-                "published_at",
-                "accepted_at",
+        official_filings=(
+            official_filings
+            if official_filings is not None
+            else frame(
+                (
+                    "document_id",
+                    "entity_id",
+                    "listing_id",
+                    "source_id",
+                    "published_at",
+                    "accepted_at",
+                )
             )
         ),
         earnings_calendar=frame(
@@ -263,13 +288,19 @@ def _snapshot(
                 "period_end",
             )
         ),
-        earnings_actuals=frame(
-            (
-                "actual_id",
-                "entity_id",
-                "listing_id",
-                "metric",
-                "period_end",
+        earnings_actuals=(
+            earnings_actuals
+            if earnings_actuals is not None
+            else frame(
+                (
+                    "actual_id",
+                    "entity_id",
+                    "listing_id",
+                    "metric",
+                    "source_id",
+                    "filing_at",
+                    "period_end",
+                )
             )
         ),
         source_health=health if health is not None else _health(),
@@ -613,6 +644,19 @@ def test_filings_news_status_transitions() -> None:
                 "execution_status": "completed",
                 "completed_at": FRESH,
             },
+            # This test exercises the news_filings path only; the
+            # official_filings governing source is also part of the
+            # filings_news category and must be an explicitly completed,
+            # non-adverse run so it doesn't mask the news_filings signal.
+            official_filings={
+                "status": "available",
+                "row_count": 0,
+                "source_latest_at": FRESH,
+                "cadence": "event_driven",
+                "query_attempted": True,
+                "execution_status": "completed",
+                "completed_at": FRESH,
+            },
         )
 
     def filing(document_id: str, entity: str) -> dict[str, object]:
@@ -696,6 +740,15 @@ def test_filings_news_status_transitions() -> None:
                 "execution_status": "completed",
                 "completed_at": FRESH,
             },
+            official_filings={
+                "status": "available",
+                "row_count": 0,
+                "source_latest_at": FRESH,
+                "cadence": "event_driven",
+                "query_attempted": True,
+                "execution_status": "completed",
+                "completed_at": FRESH,
+            },
         )
     )
     matrix = _matrix(empty_connected)
@@ -705,6 +758,137 @@ def test_filings_news_status_transitions() -> None:
         for row in build_data_coverage_summary(empty_connected).rows
     }
     assert summary["News & Filings"].status_code == "no_records"
+
+
+def test_earnings_actuals_available_from_populated_frame_and_healthy_source() -> None:
+    """Regression for the P0: earnings_actuals cell must read snapshot.earnings_actuals.
+
+    Before the fix, ``_earnings_actuals_cell`` took only ``entity_type`` and
+    hardcoded ``unavailable`` for every public entity regardless of what was
+    in the artifact bundle. This reproduces a populated, healthy case and
+    asserts the cell is no longer falsely unavailable.
+    """
+
+    earnings_actuals = pd.DataFrame(
+        [
+            {
+                "actual_id": "A1",
+                "entity_id": "BILIBILI",
+                "listing_id": "9626_HK",
+                "metric": "eps_basic",
+                "period_end": "2026-03-31",
+                "filing_at": FRESH,
+                "published_at": FRESH,
+                "source_id": "earnings_actuals",
+            }
+        ]
+    )
+    health = _health(
+        earnings_actuals={
+            "status": "available",
+            "row_count": 1,
+            "source_latest_at": FRESH,
+            "cadence": "quarterly",
+            "query_attempted": True,
+            "execution_status": "completed",
+            "completed_at": FRESH,
+        }
+    )
+    matrix = _matrix(
+        _snapshot(earnings_actuals=earnings_actuals, health=health)
+    )
+
+    cell = matrix.entity_cell("BILIBILI", "earnings_actuals")
+    assert cell.status_code != "unavailable"
+    assert cell.status_code == "available"
+    assert cell.record_count == 1
+    # Private entities are unaffected by this fix.
+    assert matrix.status_of("BYTEDANCE", "earnings_actuals") == "not_applicable"
+
+
+def test_official_filings_available_from_populated_frame_and_healthy_source() -> None:
+    """Regression for the P0: filings_news must also read snapshot.official_filings.
+
+    Before the fix, ``_filings_rows_for_entity`` only read ``news_filings``
+    (relation-linked, empty in production) and ignored ``official_filings``
+    (519 rows, direct entity_id/listing_id columns). This also exercises the
+    bare-provider-id-to-namespaced-source-health resolution (row source_id
+    "hkexnews" vs. governing source_id "filings:hkexnews").
+    """
+
+    official_filings = pd.DataFrame(
+        [
+            {
+                "document_id": "OF1",
+                "entity_id": "TENCENT",
+                "listing_id": "0700_HK",
+                "source_id": "hkexnews",
+                "published_at": FRESH,
+                "accepted_at": FRESH,
+            }
+        ]
+    )
+    base_health = _health(
+        filings_sec_edgar={
+            "status": "available",
+            "row_count": 0,
+            "source_latest_at": FRESH,
+            "cadence": "event_driven",
+            "missing_geographies": None,
+            "query_attempted": True,
+            "execution_status": "completed",
+            "completed_at": FRESH,
+        },
+        news_official_ai_rss={
+            "status": "available",
+            "row_count": 0,
+            "source_latest_at": FRESH,
+            "cadence": "event_driven",
+            "query_attempted": True,
+            "execution_status": "completed",
+            "completed_at": FRESH,
+        },
+        official_filings={
+            "status": "available",
+            "row_count": 1,
+            "source_latest_at": FRESH,
+            "cadence": "event_driven",
+            "query_attempted": True,
+            "execution_status": "completed",
+            "completed_at": FRESH,
+        },
+    )
+    # The per-provider governing source is namespaced ("filings:hkexnews")
+    # and is not part of the base fixture list, so it is appended directly.
+    health = pd.concat(
+        [
+            base_health,
+            pd.DataFrame(
+                [
+                    {
+                        "source_id": "filings:hkexnews",
+                        "source_kind": "official_filing",
+                        "status": "available",
+                        "row_count": 1,
+                        "source_latest_at": FRESH,
+                        "cadence": "event_driven",
+                        "query_attempted": True,
+                        "execution_status": "completed",
+                        "completed_at": FRESH,
+                    }
+                ]
+            ),
+        ],
+        ignore_index=True,
+    )
+    matrix = _matrix(
+        _snapshot(official_filings=official_filings, health=health)
+    )
+
+    cell = matrix.entity_cell("TENCENT", "filings_news")
+    assert cell.status_code != "unavailable"
+    assert cell.status_code == "available"
+    assert cell.record_count == 1
 
 
 def test_events_are_no_records_when_registry_read_but_nothing_linked() -> None:
