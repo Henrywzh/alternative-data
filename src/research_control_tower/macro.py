@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -289,6 +289,8 @@ MACRO_OBSERVATION_COLUMNS = [
     "pit_class",
     "source_license_class",
     "is_provisional",
+    "realtime_start",
+    "realtime_end",
     "registry_version",
 ]
 
@@ -298,7 +300,7 @@ def materialize_macro_observations(
 ) -> pd.DataFrame:
     """Normalize raw macro observation records into the unified macro observation shape.
 
-    Pure function: no network, no file I/O.
+    Pure function: no network, no file I/O. Retains realtime_start and realtime_end vintage fields.
     """
     if isinstance(source_rows, pd.DataFrame):
         records = source_rows.to_dict("records")
@@ -310,6 +312,8 @@ def materialize_macro_observations(
 
     rows: list[dict[str, Any]] = []
     for row in records:
+        rt_start = row.get("realtime_start")
+        rt_end = row.get("realtime_end")
         rows.append(
             {
                 "observation_id": str(row.get("observation_id", "")).strip(),
@@ -332,6 +336,8 @@ def materialize_macro_observations(
                 "pit_class": str(row.get("pit_class", "official_as_reported")).strip(),
                 "source_license_class": str(row.get("source_license_class", "public_domain")).strip(),
                 "is_provisional": bool(row.get("is_provisional", False)),
+                "realtime_start": str(rt_start) if (rt_start is not None and not pd.isna(rt_start)) else None,
+                "realtime_end": str(rt_end) if (rt_end is not None and not pd.isna(rt_end)) else None,
                 "registry_version": str(row.get("registry_version", "v1")).strip(),
             }
         )

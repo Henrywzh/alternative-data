@@ -18,10 +18,13 @@ import pandas as pd
 
 # Make direct ``python scripts/...`` execution resolve the repository package
 REPO_ROOT = Path(__file__).resolve().parents[1]
+SRC_ROOT = REPO_ROOT / "src"
+if str(SRC_ROOT) not in sys.path:
+    sys.path.insert(0, str(SRC_ROOT))
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from src.research_control_tower.macro_sources import (
+from research_control_tower.macro_sources import (
     MacroDataCollector,
     filter_observations_pit,
 )
@@ -65,13 +68,16 @@ def main() -> int:
     out_health = args.output_health or (out_dir / "macro_source_health.json")
 
     collector = MacroDataCollector(base_dir=REPO_ROOT)
-    events_df, obs_df, health_map = collector.collect_all(as_of_utc=args.as_of_utc)
+    events_df, obs_df, health_map = collector.collect_all(
+        indicators=args.indicators,
+        as_of_utc=args.as_of_utc,
+    )
 
     write_atomic_artifact(events_df, out_events)
     write_atomic_artifact(obs_df, out_obs)
     write_atomic_artifact(health_map, out_health)
 
-    print(f"Macro Collection Complete:")
+    print("Macro Collection Complete:")
     print(f"  - Events written: {len(events_df)} -> {out_events}")
     print(f"  - Observations written: {len(obs_df)} -> {out_obs}")
     print(f"  - Health report written: {len(health_map)} sources -> {out_health}")

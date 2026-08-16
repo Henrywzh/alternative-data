@@ -18,13 +18,13 @@ class FredSeriesMeta:
 
 @dataclass
 class FredObservation:
-    """A single (date, value) observation for a FRED series."""
+    """A single (date, value) observation for a FRED series, with optional ALFRED vintage bounds."""
     date: str
     series_id: str
     value: float
     fetched_at: str
-    realtime_start: str = "1776-07-04"
-    realtime_end: str = "9999-12-31"
+    realtime_start: str | None = None
+    realtime_end: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

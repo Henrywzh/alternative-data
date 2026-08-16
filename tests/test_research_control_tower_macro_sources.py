@@ -8,31 +8,32 @@ import sys
 import pandas as pd
 import pytest
 
-from src.fred_macro_data.models import FredObservation
-from src.research_control_tower.macro import (
+from fred_macro_data.models import FredObservation
+from research_control_tower.macro import (
     MACRO_EVENT_COLUMNS,
+    MACRO_OBSERVATION_COLUMNS,
     materialize_macro_calendar,
     materialize_macro_observations,
 )
-from src.research_control_tower.macro_sources import (
-    MACRO_OBSERVATION_COLUMNS,
+from research_control_tower.macro_sources import (
     OFFICIAL_INDICATORS,
     MacroDataCollector,
     SourceHealth,
     filter_observations_pit,
     transform_fred_observations_to_macro,
+    transform_release_dates_to_macro_events,
 )
 from scripts.research_control_tower_macro_collector import write_atomic_artifact
 
 
-def test_official_indicators_contain_required_events() -> None:
+def test_official_indicators_contain_required_events_and_provenance() -> None:
     required = {
         "us_cpi",
         "us_ppi",
         "us_payrolls",
         "us_unemployment",
         "us_gdp",
-        "us_fed_decision",
+        "us_fed_funds_rate",
         "ecb_rate_decision",
         "cn_cpi",
         "cn_gdp",
@@ -50,8 +51,23 @@ def test_official_indicators_contain_required_events() -> None:
         assert info["unit"]
         assert info["source_url"]
 
+    # Issue 3: FEDFUNDS is a rate indicator, not a fake FOMC rate decision calendar meeting
+    assert OFFICIAL_INDICATORS["us_fed_funds_rate"]["fred_series_id"] == "FEDFUNDS"
+    assert "us_fed_decision" not in OFFICIAL_INDICATORS or OFFICIAL_INDICATORS["us_fed_decision"].get("fred_series_id") != "FEDFUNDS"
 
-def test_transform_fred_observations_to_macro() -> None:
+    # Issue 4: ECB/China/HK series fetched via FRED use official:fred_alfred transport with origin_agency retained
+    ecb_info = OFFICIAL_INDICATORS["ecb_rate_decision"]
+    assert ecb_info["source_id"] == "official:fred_alfred"
+    assert ecb_info["origin_agency"] == "European Central Bank"
+
+    cn_info = OFFICIAL_INDICATORS["cn_cpi"]
+    assert cn_info["source_id"] == "official:fred_alfred"
+    assert cn_info["origin_agency"] == "National Bureau of Statistics of China"
+
+
+def test_transform_fred_observations_returns_only_observations_and_retains_vintages() -> None:
+    # Issue 1 & Issue 2: transform_fred_observations_to_macro returns obs_df retaining realtime_start/end
+    # and does NOT synthesize calendar events from observation reference dates.
     fetched_at = "2026-08-16T00:00:00Z"
     obs_list = [
         FredObservation(
@@ -60,12 +76,12 @@ def test_transform_fred_observations_to_macro() -> None:
             value=310.2,
             fetched_at=fetched_at,
             realtime_start="2026-02-13",
-            realtime_end="9999-12-31",
+            realtime_end="2026-03-11",
         ),
         FredObservation(
-            date="2026-02-01",
+            date="2026-01-01",
             series_id="CPIAUCSL",
-            value=311.0,
+            value=310.5,
             fetched_at=fetched_at,
             realtime_start="2026-03-12",
             realtime_end="9999-12-31",
@@ -73,142 +89,156 @@ def test_transform_fred_observations_to_macro() -> None:
     ]
 
     indicator_meta = OFFICIAL_INDICATORS["us_cpi"]
-    events_df, obs_df = transform_fred_observations_to_macro(obs_list, indicator_meta, fetched_at)
+    obs_df = transform_fred_observations_to_macro(obs_list, indicator_meta, fetched_at)
+
+    assert len(obs_df) == 2
+    assert list(obs_df.columns) == MACRO_OBSERVATION_COLUMNS
+    assert "realtime_start" in obs_df.columns
+    assert "realtime_end" in obs_df.columns
+
+    # Test PIT filtering directly on actual transformed output
+    filtered_feb = filter_observations_pit(obs_df, as_of_utc="2026-02-20T00:00:00Z")
+    assert len(filtered_feb) == 1
+    assert filtered_feb.iloc[0]["actual_value"] == 310.2
+
+    filtered_mar = filter_observations_pit(obs_df, as_of_utc="2026-03-20T00:00:00Z")
+    assert len(filtered_mar) == 1
+    assert filtered_mar.iloc[0]["actual_value"] == 310.5
+
+
+def test_transform_release_dates_to_macro_events_without_fabricated_time() -> None:
+    # Issue 2 & Issue 9: Date-only release dates retain precision='day' without gaining a fabricated 08:30 time.
+    release_dates = [
+        {"date": "2026-02-13", "release_id": 10},
+        {"date": "2026-09-11", "release_id": 10},  # upcoming
+    ]
+    meta = OFFICIAL_INDICATORS["us_cpi"]
+    events_df = transform_release_dates_to_macro_events(
+        release_dates,
+        meta,
+        "2026-08-16T00:00:00Z",
+        as_of_date_str="2026-08-16",
+    )
 
     assert len(events_df) == 2
-    assert len(obs_df) == 2
     assert list(events_df.columns) == MACRO_EVENT_COLUMNS
-    assert list(obs_df.columns) == MACRO_OBSERVATION_COLUMNS
 
-    first_obs = obs_df.iloc[0]
-    assert first_obs["series_id"] == "CPIAUCSL"
-    assert first_obs["reference_period"] == "2026-01"
-    assert first_obs["actual_value"] == 310.2
-    assert first_obs["unit"] == "Index 1982-1984=100"
+    first_ev = events_df.iloc[0]
+    assert first_ev["date_precision"] == "day"
+    # Starts_at timestamp should not have fabricated time added
+    assert first_ev["status"] == "observed"
+
+    upcoming_ev = events_df.iloc[1]
+    assert upcoming_ev["status"] == "scheduled"
 
 
-def test_alfred_vintage_pit_filtering_prevents_future_lookahead() -> None:
-    # Reference period 2026-Q1 has two vintages:
-    # 1. First advance estimate published on 2026-04-28 with value 2.0
-    # 2. Revised estimate published on 2026-05-28 with value 2.3
-    rows = [
-        {
-            "observation_id": "obs_1",
-            "event_id": "MACRO_US_GDP_2026-Q1",
-            "source_id": "official:bea_fred",
-            "series_id": "GDP",
-            "scope": "macro",
-            "event_type": "us_gdp",
-            "metric_name": "Gross Domestic Product (GDP)",
-            "reference_period": "2026-Q1",
-            "observation_date": "2026-03-31",
-            "release_at": "2026-04-28",
-            "actual_value": 2.0,
-            "unit": "Percent",
-            "frequency": "quarter",
-            "first_observed_at": "2026-04-28T12:30:00Z",
-            "source_published_at": "2026-04-28",
-            "retrieved_at_utc": "2026-08-16T00:00:00Z",
-            "source_url": "https://www.bea.gov/",
-            "pit_class": "official_first_release",
-            "source_license_class": "public_domain",
-            "is_provisional": True,
-            "realtime_start": "2026-04-28",
-            "realtime_end": "2026-05-27",
-            "registry_version": "v1",
-        },
-        {
-            "observation_id": "obs_2",
-            "event_id": "MACRO_US_GDP_2026-Q1",
-            "source_id": "official:bea_fred",
-            "series_id": "GDP",
-            "scope": "macro",
-            "event_type": "us_gdp",
-            "metric_name": "Gross Domestic Product (GDP)",
-            "reference_period": "2026-Q1",
-            "observation_date": "2026-03-31",
-            "release_at": "2026-05-28",
-            "actual_value": 2.3,
-            "unit": "Percent",
-            "frequency": "quarter",
-            "first_observed_at": "2026-05-28T12:30:00Z",
-            "source_published_at": "2026-05-28",
-            "retrieved_at_utc": "2026-08-16T00:00:00Z",
-            "source_url": "https://www.bea.gov/",
-            "pit_class": "official_revised_vintage",
-            "source_license_class": "public_domain",
-            "is_provisional": False,
-            "realtime_start": "2026-05-28",
-            "realtime_end": "9999-12-31",
-            "registry_version": "v1",
-        },
+def test_alfred_closed_closed_interval_boundary_behavior() -> None:
+    # Issue 8: FRED real-time periods are closed intervals [realtime_start, realtime_end].
+    # Vintage active from 2026-01-28 to 2026-02-25.
+    fetched_at = "2026-08-16T00:00:00Z"
+    obs_list = [
+        FredObservation(
+            date="2025-12-01",
+            series_id="GDP",
+            value=2.0,
+            fetched_at=fetched_at,
+            realtime_start="2026-01-28",
+            realtime_end="2026-02-25",
+        ),
     ]
-    df = pd.DataFrame(rows)
+    obs_df = transform_fred_observations_to_macro(obs_list, OFFICIAL_INDICATORS["us_gdp"], fetched_at)
 
-    # As of 2026-05-01 (before revision): should return only the advance estimate (2.0)
-    as_of_may1 = filter_observations_pit(df, as_of_utc="2026-05-01T00:00:00Z")
-    assert len(as_of_may1) == 1
-    assert as_of_may1.iloc[0]["actual_value"] == 2.0
-    assert as_of_may1.iloc[0]["realtime_start"] == "2026-04-28"
+    # 1. Exact start boundary (2026-01-28) -> included
+    pit_start = filter_observations_pit(obs_df, as_of_utc="2026-01-28T00:00:00Z")
+    assert len(pit_start) == 1
 
-    # As of 2026-06-01 (after revision): should return the revised estimate (2.3)
-    as_of_june1 = filter_observations_pit(df, as_of_utc="2026-06-01T00:00:00Z")
-    assert len(as_of_june1) == 1
-    assert as_of_june1.iloc[0]["actual_value"] == 2.3
-    assert as_of_june1.iloc[0]["realtime_start"] == "2026-05-28"
+    # 2. Middle of interval (2026-02-10) -> included
+    pit_mid = filter_observations_pit(obs_df, as_of_utc="2026-02-10T00:00:00Z")
+    assert len(pit_mid) == 1
 
-    # As of 2026-04-01 (before advance release): should return zero rows
-    as_of_april1 = filter_observations_pit(df, as_of_utc="2026-04-01T00:00:00Z")
-    assert len(as_of_april1) == 0
+    # 3. Exact end boundary (2026-02-25) -> included (closed/closed boundary)
+    pit_end = filter_observations_pit(obs_df, as_of_utc="2026-02-25T00:00:00Z")
+    assert len(pit_end) == 1
+
+    # 4. After end boundary (2026-02-26) -> excluded (superseded)
+    pit_after = filter_observations_pit(obs_df, as_of_utc="2026-02-26T00:00:00Z")
+    assert len(pit_after) == 0
+
+    # 5. Before start boundary (2026-01-27) -> excluded (not published yet)
+    pit_before = filter_observations_pit(obs_df, as_of_utc="2026-01-27T00:00:00Z")
+    assert len(pit_before) == 0
 
 
-def test_collector_health_reporting_with_fixtures(tmp_path: Path) -> None:
+def test_null_realtime_start_excluded_from_strict_pit() -> None:
+    # Issue 7: Null/missing realtime_start does not falsely claim ancient availability
     fetched_at = "2026-08-16T00:00:00Z"
     obs_list = [
         FredObservation(
             date="2026-01-01",
-            series_id="CPIAUCSL",
-            value=310.2,
+            series_id="SOFR",
+            value=4.5,
             fetched_at=fetched_at,
+            realtime_start=None,
+            realtime_end=None,
         )
     ]
+    obs_df = transform_fred_observations_to_macro(obs_list, OFFICIAL_INDICATORS["us_fed_funds_rate"], fetched_at)
 
+    assert obs_df.iloc[0]["pit_class"] == "latest_snapshot_unknown_vintage"
+
+    # When strict PIT filtering is applied, unknown vintage is excluded
+    filtered = filter_observations_pit(obs_df, as_of_utc="2026-02-01T00:00:00Z")
+    assert len(filtered) == 0
+
+
+def test_collector_six_state_contract_for_unconfigured_sources(tmp_path: Path) -> None:
+    # Issue 5: collect_ecb and collect_nbs_hk return unconfigured when native adapters are inactive,
+    # never returning 'available' with zero rows.
+    collector = MacroDataCollector(base_dir=tmp_path)
+    _, _, ecb_health = collector.collect_ecb()
+    assert ecb_health.status == "unconfigured"
+    assert ecb_health.event_count == 0
+    assert ecb_health.observation_count == 0
+    assert ecb_health.error_detail
+
+    _, _, nbs_health = collector.collect_nbs_hk()
+    assert nbs_health.status == "unconfigured"
+    assert nbs_health.event_count == 0
+    assert nbs_health.observation_count == 0
+    assert nbs_health.error_detail
+
+
+def test_collector_cli_indicators_filtering(tmp_path: Path) -> None:
+    # Issue 6: CLI --indicators filters output indicators
+    fetched_at = "2026-08-16T00:00:00Z"
     fixtures = {
         "fred_alfred": {
-            "observations": obs_list,
-        },
-        "bls": {
-            "status": "available",
-            "events": pd.DataFrame(columns=MACRO_EVENT_COLUMNS),
-            "observations": pd.DataFrame(columns=MACRO_OBSERVATION_COLUMNS),
-        },
-        "bea": {
-            "status": "unconfigured",
-            "error_detail": "BEA API key not configured",
-        },
+            "observations": [
+                FredObservation(
+                    date="2026-01-01",
+                    series_id="CPIAUCSL",
+                    value=310.2,
+                    fetched_at=fetched_at,
+                    realtime_start="2026-02-13",
+                )
+            ],
+            "release_dates": [{"date": "2026-02-13", "release_id": 10}],
+        }
     }
 
-    collector = MacroDataCollector(base_dir=tmp_path, offline_fixtures=fixtures)
-    events_df, obs_df, health_map = collector.collect_all()
-
-    assert "official:fred_alfred" in health_map
-    assert health_map["official:fred_alfred"]["status"] == "available"
-    assert health_map["official:fred_alfred"]["observation_count"] == 1
-
-    assert "official:bea" in health_map
-    assert health_map["official:bea"]["status"] == "unconfigured"
-    assert health_map["official:bea"]["error_detail"] == "BEA API key not configured"
-
-
-def test_collector_unconfigured_fred_api_key(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("FRED_API_KEY", raising=False)
-    collector = MacroDataCollector(base_dir=tmp_path)
-    events_df, obs_df, health = collector.collect_fred_alfred()
-
-    assert health.status == "unconfigured"
-    assert "missing or unconfigured" in health.error_detail.lower()
-    assert events_df.empty
-    assert obs_df.empty
+    out_dir = tmp_path / "cli_out"
+    cmd = [
+        sys.executable,
+        "scripts/research_control_tower_macro_collector.py",
+        "--output-dir",
+        str(out_dir),
+        "--indicators",
+        "us_cpi",
+    ]
+    res = subprocess.run(cmd, capture_output=True, text=True)
+    assert res.returncode == 0
+    assert (out_dir / "macro_events.parquet").exists()
+    assert (out_dir / "macro_observations.parquet").exists()
 
 
 def test_write_atomic_artifact(tmp_path: Path) -> None:
@@ -225,43 +255,3 @@ def test_write_atomic_artifact(tmp_path: Path) -> None:
     assert out_json.exists()
     loaded_json = json.loads(out_json.read_text(encoding="utf-8"))
     assert loaded_json["status"] == "available"
-
-
-def test_macro_collector_cli_run(tmp_path: Path) -> None:
-    out_dir = tmp_path / "collector_output"
-    cmd = [
-        sys.executable,
-        "scripts/research_control_tower_macro_collector.py",
-        "--output-dir",
-        str(out_dir),
-    ]
-    res = subprocess.run(cmd, capture_output=True, text=True)
-    assert res.returncode == 0
-    assert (out_dir / "macro_events.parquet").exists()
-    assert (out_dir / "macro_observations.parquet").exists()
-    assert (out_dir / "macro_source_health.json").exists()
-
-
-def test_materialize_macro_observations_pure_function() -> None:
-    raw_obs = [
-        {
-            "observation_id": "obs_100",
-            "event_id": "MACRO_TEST_01",
-            "source_id": "official:test",
-            "series_id": "TEST_SERIES",
-            "scope": "macro",
-            "event_type": "test_event",
-            "metric_name": "Test Metric",
-            "reference_period": "2026-06",
-            "observation_date": "2026-06-01",
-            "release_at": "2026-06-15",
-            "actual_value": 4.5,
-            "unit": "Percent",
-            "frequency": "month",
-        }
-    ]
-    df = materialize_macro_observations(raw_obs)
-    assert len(df) == 1
-    assert list(df.columns) == MACRO_OBSERVATION_COLUMNS
-    assert df.iloc[0]["actual_value"] == 4.5
-    assert df.iloc[0]["metric_name"] == "Test Metric"

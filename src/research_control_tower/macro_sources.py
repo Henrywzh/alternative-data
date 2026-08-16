@@ -12,8 +12,16 @@ Official-Source Caveats & Vintage Semantics:
 - FRED release/dates explicitly notes that published release dates do not necessarily equal when data
   became available on FRED/ALFRED. Therefore, ``realtime_start``, ``realtime_end``, and ``vintage_dates``
   are strictly required for known-as-of (PIT) semantics rather than assuming published release dates.
+- FRED real-time periods are closed intervals [realtime_start, realtime_end]. A vintage observation is
+  active for an as_of date if realtime_start <= as_of <= realtime_end.
 - BEA/BLS/Fed schedules provide source-native 8:30 AM ET release times; these source-native timezones
   (e.g., ``America/New_York``) and times are retained rather than truncating to date-only strings.
+  Date-only FRED release dates must not gain a fabricated time.
+- Macro observation reference dates (e.g. 2026-01-01) represent the accounting/reference period,
+  NOT publication release dates. Calendar events are created strictly from official release schedules.
+- Provenance: Series fetched via FRED/ALFRED transport (e.g., ECB policy rates or China/HK CPI on FRED)
+  are attributed to source_id="official:fred_alfred" with origin_agency retained separately.
+  Native source IDs (e.g., "official:ecb") are reserved for direct native API endpoints.
 
 Collectors run outside Streamlit and produce standardized local files:
 - macro events calendar (compatible with materialize_macro_calendar)
@@ -33,11 +41,11 @@ from zoneinfo import ZoneInfo
 
 import pandas as pd
 
-from src.fred_macro_data.client import FredMacroClient
-from src.fred_macro_data.config import resolve_api_key
-from src.fred_macro_data.models import FredObservation, FredSeriesMeta
-from src.fred_macro_data.storage import FredMacroStorage
-from src.research_control_tower.macro import (
+from fred_macro_data.client import FredMacroClient
+from fred_macro_data.config import resolve_api_key
+from fred_macro_data.models import FredObservation, FredSeriesMeta
+from fred_macro_data.storage import FredMacroStorage
+from research_control_tower.macro import (
     MACRO_EVENT_COLUMNS,
     MACRO_OBSERVATION_COLUMNS,
     materialize_macro_calendar,
@@ -56,90 +64,103 @@ OFFICIAL_INDICATORS = {
         "event_type": "us_cpi",
         "metric_name": "Consumer Price Index (CPI)",
         "fred_series_id": "CPIAUCSL",
+        "fred_release_id": 10,
         "bls_series_id": "CUUR0000SA0",
         "agency": "US Bureau of Labor Statistics",
-        "source_id": "official:bls_fred",
+        "source_id": "official:fred_alfred",
+        "origin_agency": "US Bureau of Labor Statistics",
         "timezone": "America/New_York",
         "unit": "Index 1982-1984=100",
         "frequency": "month",
-        "source_url": "https://www.bls.gov/cpi/",
+        "source_url": "https://fred.stlouisfed.org/series/CPIAUCSL",
         "license_class": "public_domain",
     },
     "us_ppi": {
         "event_type": "us_ppi",
         "metric_name": "Producer Price Index (PPI)",
         "fred_series_id": "PPIACO",
+        "fred_release_id": 21,
         "bls_series_id": "WPUFD4",
         "agency": "US Bureau of Labor Statistics",
-        "source_id": "official:bls_fred",
+        "source_id": "official:fred_alfred",
+        "origin_agency": "US Bureau of Labor Statistics",
         "timezone": "America/New_York",
         "unit": "Index 1982=100",
         "frequency": "month",
-        "source_url": "https://www.bls.gov/ppi/",
+        "source_url": "https://fred.stlouisfed.org/series/PPIACO",
         "license_class": "public_domain",
     },
     "us_payrolls": {
         "event_type": "us_payrolls",
         "metric_name": "Nonfarm Payrolls",
         "fred_series_id": "PAYEMS",
+        "fred_release_id": 19,
         "bls_series_id": "CES0000000001",
         "agency": "US Bureau of Labor Statistics",
-        "source_id": "official:bls_fred",
+        "source_id": "official:fred_alfred",
+        "origin_agency": "US Bureau of Labor Statistics",
         "timezone": "America/New_York",
         "unit": "Thousands of Persons",
         "frequency": "month",
-        "source_url": "https://www.bls.gov/ces/",
+        "source_url": "https://fred.stlouisfed.org/series/PAYEMS",
         "license_class": "public_domain",
     },
     "us_unemployment": {
         "event_type": "us_unemployment",
         "metric_name": "Unemployment Rate",
         "fred_series_id": "UNRATE",
+        "fred_release_id": 19,
         "bls_series_id": "LNS14000000",
         "agency": "US Bureau of Labor Statistics",
-        "source_id": "official:bls_fred",
+        "source_id": "official:fred_alfred",
+        "origin_agency": "US Bureau of Labor Statistics",
         "timezone": "America/New_York",
         "unit": "Percent",
         "frequency": "month",
-        "source_url": "https://www.bls.gov/cps/",
+        "source_url": "https://fred.stlouisfed.org/series/UNRATE",
         "license_class": "public_domain",
     },
     "us_gdp": {
         "event_type": "us_gdp",
         "metric_name": "Gross Domestic Product (GDP)",
         "fred_series_id": "GDP",
+        "fred_release_id": 53,
         "bea_table": "T10101",
         "agency": "US Bureau of Economic Analysis",
-        "source_id": "official:bea_fred",
+        "source_id": "official:fred_alfred",
+        "origin_agency": "US Bureau of Economic Analysis",
         "timezone": "America/New_York",
         "unit": "Billions of Dollars",
         "frequency": "quarter",
-        "source_url": "https://www.bea.gov/data/gdp/gross-domestic-product",
+        "source_url": "https://fred.stlouisfed.org/series/GDP",
         "license_class": "public_domain",
     },
-    "us_fed_decision": {
-        "event_type": "us_fed_decision",
-        "metric_name": "FOMC Federal Funds Rate Target",
+    "us_fed_funds_rate": {
+        "event_type": "us_fed_funds_rate",
+        "metric_name": "Effective Federal Funds Rate",
         "fred_series_id": "FEDFUNDS",
         "agency": "Federal Reserve Board of Governors",
-        "source_id": "official:fed_fomc",
+        "source_id": "official:fred_alfred",
+        "origin_agency": "Federal Reserve Board of Governors",
         "timezone": "America/New_York",
         "unit": "Percent",
-        "frequency": "day",
-        "source_url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+        "frequency": "month",
+        "source_url": "https://fred.stlouisfed.org/series/FEDFUNDS",
         "license_class": "public_domain",
     },
     "ecb_rate_decision": {
         "event_type": "ecb_rate_decision",
-        "metric_name": "ECB Policy Interest Rate",
+        "metric_name": "ECB Policy Deposit Facility Rate",
         "fred_series_id": "ECBDFR",
+        "fred_release_id": 46,
         "ecb_key": "FM.M.U2.EUR.4F.KR.DFR_RST.LEV",
         "agency": "European Central Bank",
-        "source_id": "official:ecb",
+        "source_id": "official:fred_alfred",
+        "origin_agency": "European Central Bank",
         "timezone": "Europe/Frankfurt",
         "unit": "Percent",
         "frequency": "month",
-        "source_url": "https://data-api.ecb.europa.eu/",
+        "source_url": "https://fred.stlouisfed.org/series/ECBDFR",
         "license_class": "official_open_data",
     },
     "cn_cpi": {
@@ -147,11 +168,12 @@ OFFICIAL_INDICATORS = {
         "metric_name": "China Consumer Price Index (CPI)",
         "fred_series_id": "CHNCPIALLMINMEI",
         "agency": "National Bureau of Statistics of China",
-        "source_id": "official:nbs_cn",
+        "source_id": "official:fred_alfred",
+        "origin_agency": "National Bureau of Statistics of China",
         "timezone": "Asia/Shanghai",
         "unit": "Index 2015=100",
         "frequency": "month",
-        "source_url": "https://www.stats.gov.cn/english/",
+        "source_url": "https://fred.stlouisfed.org/series/CHNCPIALLMINMEI",
         "license_class": "official_open_data",
     },
     "cn_gdp": {
@@ -159,11 +181,12 @@ OFFICIAL_INDICATORS = {
         "metric_name": "China Gross Domestic Product (GDP)",
         "fred_series_id": "CHNGDPNQDSMEI",
         "agency": "National Bureau of Statistics of China",
-        "source_id": "official:nbs_cn",
+        "source_id": "official:fred_alfred",
+        "origin_agency": "National Bureau of Statistics of China",
         "timezone": "Asia/Shanghai",
         "unit": "National Currency",
         "frequency": "quarter",
-        "source_url": "https://www.stats.gov.cn/english/",
+        "source_url": "https://fred.stlouisfed.org/series/CHNGDPNQDSMEI",
         "license_class": "official_open_data",
     },
     "hk_cpi": {
@@ -171,11 +194,12 @@ OFFICIAL_INDICATORS = {
         "metric_name": "Hong Kong Composite CPI",
         "fred_series_id": "HKGCPIALLMINMEI",
         "agency": "Hong Kong Census and Statistics Department",
-        "source_id": "official:hk_csd",
+        "source_id": "official:fred_alfred",
+        "origin_agency": "Hong Kong Census and Statistics Department",
         "timezone": "Asia/Hong_Kong",
         "unit": "Index 2015=100",
         "frequency": "month",
-        "source_url": "https://www.censtatd.gov.hk/",
+        "source_url": "https://fred.stlouisfed.org/series/HKGCPIALLMINMEI",
         "license_class": "official_open_data",
     },
     "hk_unemployment": {
@@ -183,11 +207,12 @@ OFFICIAL_INDICATORS = {
         "metric_name": "Hong Kong Unemployment Rate",
         "fred_series_id": "HKGURALLMINMEI",
         "agency": "Hong Kong Census and Statistics Department",
-        "source_id": "official:hk_csd",
+        "source_id": "official:fred_alfred",
+        "origin_agency": "Hong Kong Census and Statistics Department",
         "timezone": "Asia/Hong_Kong",
         "unit": "Percent",
         "frequency": "month",
-        "source_url": "https://www.censtatd.gov.hk/",
+        "source_url": "https://fred.stlouisfed.org/series/HKGURALLMINMEI",
         "license_class": "official_open_data",
     },
 }
@@ -222,11 +247,11 @@ def filter_observations_pit(
     """Filter macro observation rows to those known/active as of as_of_utc.
 
     ALFRED/FRED vintage semantics:
-    - Published release dates do not necessarily equal when data became available on FRED/ALFRED.
-    - Excludes observations with realtime_start > as_of_utc.
-    - Excludes observations superseded prior to as_of_utc (realtime_end <= as_of_utc).
-    - If multiple vintages exist for a (series_id, reference_period), selects the latest vintage
-      published on or before as_of_utc.
+    - FRED real-time periods are closed intervals [realtime_start, realtime_end].
+    - An observation is active for an as_of date if realtime_start <= as_of_date <= realtime_end.
+    - Excludes observations with realtime_start > as_of_date (not published yet).
+    - Excludes observations with realtime_end < as_of_date (superseded).
+    - Observations with None/missing realtime_start are excluded from strict PIT historical filtering.
     """
     if df is None or df.empty:
         return pd.DataFrame(columns=MACRO_OBSERVATION_COLUMNS)
@@ -243,10 +268,13 @@ def filter_observations_pit(
 
     as_of_str = as_of.strftime("%Y-%m-%d")
 
+    # Exclude rows where realtime_start is missing/None for strict PIT filtering
     if "realtime_start" in frame.columns:
-        frame = frame.loc[frame["realtime_start"].astype(str) <= as_of_str]
+        frame = frame.loc[frame["realtime_start"].notna() & (frame["realtime_start"].astype(str) <= as_of_str)]
+
+    # Closed-interval: active if realtime_start <= as_of <= realtime_end
     if "realtime_end" in frame.columns:
-        frame = frame.loc[frame["realtime_end"].astype(str) > as_of_str]
+        frame = frame.loc[frame["realtime_end"].isna() | (frame["realtime_end"].astype(str) >= as_of_str)]
 
     if "series_id" in frame.columns and "reference_period" in frame.columns and "realtime_start" in frame.columns:
         frame = frame.sort_values(by=["series_id", "reference_period", "realtime_start"])
@@ -268,52 +296,42 @@ def transform_fred_observations_to_macro(
     obs_list: list[FredObservation],
     indicator_meta: dict[str, Any],
     retrieved_at_utc: str,
-) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Transform raw FredObservation objects into Control Tower macro calendar events and observations."""
-    event_rows = []
-    obs_rows = []
+) -> pd.DataFrame:
+    """Transform raw FredObservation objects into Control Tower macro observations.
 
+    Note: This returns ONLY observation records. It does NOT synthesize calendar events from
+    observation reference dates, preserving release date accuracy.
+    """
     if not obs_list:
-        return pd.DataFrame(columns=MACRO_EVENT_COLUMNS), pd.DataFrame(columns=MACRO_OBSERVATION_COLUMNS)
+        return pd.DataFrame(columns=MACRO_OBSERVATION_COLUMNS)
 
     event_type = indicator_meta["event_type"]
     metric_name = indicator_meta["metric_name"]
-    source_id = indicator_meta["source_id"]
-    tz_name = indicator_meta["timezone"]
+    source_id = indicator_meta.get("source_id", "official:fred_alfred")
     unit = indicator_meta["unit"]
     frequency = indicator_meta["frequency"]
     source_url = indicator_meta["source_url"]
     license_class = indicator_meta["license_class"]
     series_id = indicator_meta.get("fred_series_id", "")
 
-    sorted_obs = sorted(obs_list, key=lambda x: (x.date, x.realtime_start))
+    sorted_obs = sorted(
+        obs_list,
+        key=lambda x: (x.date, x.realtime_start or "1776-07-04"),
+    )
 
-    prev_val = None
+    obs_rows = []
     for idx, obs in enumerate(sorted_obs):
         ref_period = _reference_period_from_date(obs.date, frequency)
-        is_provisional = (obs.realtime_start != "1776-07-04") and (obs.realtime_start > obs.date)
-        pit_class = "official_revised_vintage" if (obs.realtime_start > obs.date and idx > 0) else "official_first_release"
+        is_vintaged = obs.realtime_start is not None
+        is_provisional = is_vintaged and (obs.realtime_start > obs.date)
+        pit_class = (
+            "official_revised_vintage"
+            if (is_vintaged and obs.realtime_start > obs.date and idx > 0)
+            else "official_first_release" if is_vintaged
+            else "latest_snapshot_unknown_vintage"
+        )
 
-        # Retain source-native 8:30 ET release time for US indicators (BLS/BEA/Fed)
-        event_rows.append({
-            "event_type": event_type,
-            "title": f"{metric_name} ({ref_period})",
-            "description": f"{metric_name} reported by {indicator_meta['agency']}",
-            "starts_at": f"{obs.date} 08:30:00",
-            "source_timezone": tz_name,
-            "source_id": source_id,
-            "source_url": source_url,
-            "first_observed_at": obs.fetched_at,
-            "status": "observed",
-            "certainty_class": "provisional" if is_provisional else "observed",
-            "reference_period": ref_period,
-            "previous_value": prev_val if prev_val is not None else "",
-            "actual_value": obs.value,
-            "actual_unit": unit,
-            "date_precision": frequency,
-        })
-
-        obs_id = f"macro_obs_{series_id}_{ref_period}_{obs.realtime_start.replace('-', '')}"
+        obs_id = f"macro_obs_{series_id}_{ref_period}_{obs.realtime_start.replace('-', '') if obs.realtime_start else 'current'}"
 
         obs_rows.append({
             "observation_id": obs_id,
@@ -325,12 +343,12 @@ def transform_fred_observations_to_macro(
             "metric_name": metric_name,
             "reference_period": ref_period,
             "observation_date": obs.date,
-            "release_at": obs.realtime_start if obs.realtime_start != "1776-07-04" else obs.date,
+            "release_at": obs.realtime_start or obs.date,
             "actual_value": obs.value,
             "unit": unit,
             "frequency": frequency,
             "first_observed_at": obs.fetched_at,
-            "source_published_at": obs.realtime_start if obs.realtime_start != "1776-07-04" else obs.date,
+            "source_published_at": obs.realtime_start or obs.date,
             "retrieved_at_utc": retrieved_at_utc,
             "source_url": source_url,
             "pit_class": pit_class,
@@ -341,12 +359,57 @@ def transform_fred_observations_to_macro(
             "registry_version": "v1",
         })
 
-        prev_val = obs.value
+    return materialize_macro_observations(obs_rows)
 
-    events_df = materialize_macro_calendar({event_type: pd.DataFrame(event_rows)})
-    obs_df = materialize_macro_observations(obs_rows)
+def transform_release_dates_to_macro_events(
+    release_dates: list[dict[str, Any]],
+    indicator_meta: dict[str, Any],
+    retrieved_at_utc: str,
+    as_of_date_str: str | None = None,
+) -> pd.DataFrame:
+    """Transform official publication release dates into macro calendar events.
 
-    return events_df, obs_df
+    Date-only release dates retain precision='day' without gaining a fabricated 08:30 time.
+    Includes upcoming scheduled/confirmed release dates when release date >= current date.
+    """
+    if not release_dates:
+        return pd.DataFrame(columns=MACRO_EVENT_COLUMNS)
+
+    event_type = indicator_meta["event_type"]
+    metric_name = indicator_meta["metric_name"]
+    source_id = indicator_meta.get("source_id", "official:fred_alfred")
+    tz_name = indicator_meta["timezone"]
+    source_url = indicator_meta["source_url"]
+    frequency = indicator_meta["frequency"]
+
+    today_str = as_of_date_str or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    event_rows = []
+    for rd in release_dates:
+        rel_date = rd.get("date") or rd.get("release_date")
+        if not rel_date:
+            continue
+
+        rel_date_str = str(rel_date).strip()
+        is_upcoming = rel_date_str > today_str
+        status = "scheduled" if is_upcoming else "observed"
+
+        # Date-only release date stays date-only (precision='day')
+        event_rows.append({
+            "event_type": event_type,
+            "title": f"{metric_name} Release ({rel_date_str})",
+            "description": f"{metric_name} official release date by {indicator_meta['agency']}",
+            "starts_at": rel_date_str,
+            "source_timezone": tz_name,
+            "source_id": source_id,
+            "source_url": source_url,
+            "first_observed_at": retrieved_at_utc,
+            "status": status,
+            "certainty_class": "scheduled" if is_upcoming else "observed",
+            "date_precision": "day",
+        })
+
+    return materialize_macro_calendar({event_type: pd.DataFrame(event_rows)})
 
 class MacroDataCollector:
     """Official Macro Data Collector orchestrating primary official sources."""
@@ -373,8 +436,14 @@ class MacroDataCollector:
         if "fred_alfred" in self.offline_fixtures:
             fixture = self.offline_fixtures["fred_alfred"]
             obs_list = fixture.get("observations", [])
-            events_df, obs_df = transform_fred_observations_to_macro(
+            release_dates = fixture.get("release_dates", [])
+            obs_df = transform_fred_observations_to_macro(
                 obs_list,
+                OFFICIAL_INDICATORS["us_cpi"],
+                retrieved_at,
+            )
+            events_df = transform_release_dates_to_macro_events(
+                release_dates,
                 OFFICIAL_INDICATORS["us_cpi"],
                 retrieved_at,
             )
@@ -417,14 +486,28 @@ class MacroDataCollector:
             meta_info = OFFICIAL_INDICATORS.get(key)
             if not meta_info:
                 continue
-            series_id = meta_info["fred_series_id"]
+            series_id = meta_info.get("fred_series_id")
+            if not series_id:
+                continue
             try:
                 raw_obs = client.get_observations(series_id, realtime_start="2015-01-01")
-                ev_df, ob_df = transform_fred_observations_to_macro(raw_obs, meta_info, retrieved_at)
-                if not ev_df.empty:
-                    all_events.append(ev_df)
+                ob_df = transform_fred_observations_to_macro(raw_obs, meta_info, retrieved_at)
                 if not ob_df.empty:
                     all_obs.append(ob_df)
+
+                rel_dates = []
+                rel_id = meta_info.get("fred_release_id")
+                if rel_id:
+                    try:
+                        rel_dates = client.get_release_dates(rel_id)
+                    except Exception as re_exc:
+                        logger.warning(f"Could not fetch FRED release dates for release {rel_id}: {re_exc}")
+
+                if rel_dates:
+                    ev_df = transform_release_dates_to_macro_events(rel_dates, meta_info, retrieved_at)
+                    if not ev_df.empty:
+                        all_events.append(ev_df)
+
                 covered_series.append(series_id)
             except Exception as e:
                 logger.error(f"Error fetching FRED series {series_id}: {e}")
@@ -488,7 +571,7 @@ class MacroDataCollector:
             source_id=source_id,
             status="unconfigured",
             retrieved_at_utc=retrieved_at,
-            error_detail="BLS direct API key not configured; US series covered via FRED/ALFRED official bridge",
+            error_detail="Direct native BLS API key not configured; US series covered via FRED/ALFRED official transport bridge",
             source_caveats="Official BLS release schedule uses 8:30 AM ET source-native timezone.",
         )
         return pd.DataFrame(columns=MACRO_EVENT_COLUMNS), pd.DataFrame(columns=MACRO_OBSERVATION_COLUMNS), health
@@ -517,8 +600,35 @@ class MacroDataCollector:
             source_id=source_id,
             status="unconfigured",
             retrieved_at_utc=retrieved_at,
-            error_detail="BEA direct API key not configured; US GDP series covered via FRED/ALFRED official bridge",
+            error_detail="Direct native BEA API key not configured; US GDP series covered via FRED/ALFRED official transport bridge",
             source_caveats="Official BEA NIPA release schedule uses 8:30 AM ET source-native timezone.",
+        )
+        return pd.DataFrame(columns=MACRO_EVENT_COLUMNS), pd.DataFrame(columns=MACRO_OBSERVATION_COLUMNS), health
+
+    def collect_fed_fomc(self, indicators: list[str] | None = None) -> tuple[pd.DataFrame, pd.DataFrame, SourceHealth]:
+        retrieved_at = datetime.now(timezone.utc).isoformat()
+        source_id = "official:fed_fomc"
+
+        if "fed_fomc" in self.offline_fixtures:
+            fixture = self.offline_fixtures["fed_fomc"]
+            events_df = fixture.get("events", pd.DataFrame(columns=MACRO_EVENT_COLUMNS))
+            obs_df = fixture.get("observations", pd.DataFrame(columns=MACRO_OBSERVATION_COLUMNS))
+            health = SourceHealth(
+                source_id=source_id,
+                status=fixture.get("status", "available"),
+                retrieved_at_utc=retrieved_at,
+                event_count=len(events_df),
+                observation_count=len(obs_df),
+                series_covered=list(indicators or ["FOMC_TARGET_RATE"]),
+                error_detail=fixture.get("error_detail"),
+            )
+            return events_df, obs_df, health
+
+        health = SourceHealth(
+            source_id=source_id,
+            status="unconfigured",
+            retrieved_at_utc=retrieved_at,
+            error_detail="Native FOMC meeting decision calendar endpoint not configured; FEDFUNDS rate tracked separately as observation series",
         )
         return pd.DataFrame(columns=MACRO_EVENT_COLUMNS), pd.DataFrame(columns=MACRO_OBSERVATION_COLUMNS), health
 
@@ -543,12 +653,9 @@ class MacroDataCollector:
 
         health = SourceHealth(
             source_id=source_id,
-            status="available",
+            status="unconfigured",
             retrieved_at_utc=retrieved_at,
-            event_count=0,
-            observation_count=0,
-            series_covered=list(indicators or ["FM.M.U2.EUR.4F.KR.DFR_RST.LEV"]),
-            error_detail=None,
+            error_detail="Direct native ECB API endpoint not configured; series covered via FRED/ALFRED official transport bridge",
         )
         return pd.DataFrame(columns=MACRO_EVENT_COLUMNS), pd.DataFrame(columns=MACRO_OBSERVATION_COLUMNS), health
 
@@ -573,17 +680,15 @@ class MacroDataCollector:
 
         health = SourceHealth(
             source_id=source_id,
-            status="available",
+            status="unconfigured",
             retrieved_at_utc=retrieved_at,
-            event_count=0,
-            observation_count=0,
-            series_covered=list(indicators or ["CN_CPI", "CN_GDP", "HK_CPI", "HK_UNEMP"]),
-            error_detail=None,
+            error_detail="Direct native NBS China & HK C&SD API endpoint not configured; series covered via FRED/ALFRED official transport bridge",
         )
         return pd.DataFrame(columns=MACRO_EVENT_COLUMNS), pd.DataFrame(columns=MACRO_OBSERVATION_COLUMNS), health
 
     def collect_all(
         self,
+        indicators: list[str] | None = None,
         as_of_utc: pd.Timestamp | str | None = None,
     ) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, dict[str, Any]]]:
         all_events = []
@@ -591,7 +696,10 @@ class MacroDataCollector:
         health_map = {}
 
         # 1. FRED / ALFRED
-        fred_events, fred_obs, fred_health = self.collect_fred_alfred(as_of_utc=str(as_of_utc) if as_of_utc else None)
+        fred_events, fred_obs, fred_health = self.collect_fred_alfred(
+            indicators=indicators,
+            as_of_utc=str(as_of_utc) if as_of_utc else None,
+        )
         if not fred_events.empty:
             all_events.append(fred_events)
         if not fred_obs.empty:
@@ -599,7 +707,7 @@ class MacroDataCollector:
         health_map[fred_health.source_id] = fred_health.to_dict()
 
         # 2. BLS
-        bls_events, bls_obs, bls_health = self.collect_bls()
+        bls_events, bls_obs, bls_health = self.collect_bls(indicators=indicators)
         if not bls_events.empty:
             all_events.append(bls_events)
         if not bls_obs.empty:
@@ -607,23 +715,31 @@ class MacroDataCollector:
         health_map[bls_health.source_id] = bls_health.to_dict()
 
         # 3. BEA
-        bea_events, bea_obs, bea_health = self.collect_bea()
+        bea_events, bea_obs, bea_health = self.collect_bea(indicators=indicators)
         if not bea_events.empty:
             all_events.append(bea_events)
         if not bea_obs.empty:
             all_obs.append(bea_obs)
         health_map[bea_health.source_id] = bea_health.to_dict()
 
-        # 4. ECB
-        ecb_events, ecb_obs, ecb_health = self.collect_ecb()
+        # 4. Fed FOMC
+        fomc_events, fomc_obs, fomc_health = self.collect_fed_fomc(indicators=indicators)
+        if not fomc_events.empty:
+            all_events.append(fomc_events)
+        if not fomc_obs.empty:
+            all_obs.append(fomc_obs)
+        health_map[fomc_health.source_id] = fomc_health.to_dict()
+
+        # 5. ECB
+        ecb_events, ecb_obs, ecb_health = self.collect_ecb(indicators=indicators)
         if not ecb_events.empty:
             all_events.append(ecb_events)
         if not ecb_obs.empty:
             all_obs.append(ecb_obs)
         health_map[ecb_health.source_id] = ecb_health.to_dict()
 
-        # 5. NBS China / HK C&SD
-        nbs_events, nbs_obs, nbs_health = self.collect_nbs_hk()
+        # 6. NBS China / HK C&SD
+        nbs_events, nbs_obs, nbs_health = self.collect_nbs_hk(indicators=indicators)
         if not nbs_events.empty:
             all_events.append(nbs_events)
         if not nbs_obs.empty:
