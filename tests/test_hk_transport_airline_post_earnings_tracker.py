@@ -59,6 +59,14 @@ def test_nci_leg_transparency(tracker: pd.DataFrame) -> None:
     assert "NCI" in str(southern.source_note) or "not attributable" in str(southern.source_note)
 
 
+def test_mainland_rows_carry_locked_v4_pre_event_fields(tracker: pd.DataFrame) -> None:
+    spring = tracker[tracker.company.eq("Spring Airlines")].iloc[0]
+    assert spring.pre_event_v4_model_version == "v4_decomposition_ask_x_lf_x_yield"
+    assert spring.pre_event_v4_h1_revenue_native_mn > 0
+    assert spring.pre_event_v4_h1_eps_rmb > 0
+    assert spring.pre_event_v4_surprise_season_adjusted_pct > spring.pre_event_v4_surprise_x2_pct
+
+
 def test_output_written(tracker: pd.DataFrame) -> None:
     assert OUTPUT_PATH.exists()
     on_disk = pd.read_csv(OUTPUT_PATH)

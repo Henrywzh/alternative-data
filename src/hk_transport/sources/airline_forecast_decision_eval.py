@@ -137,13 +137,19 @@ def build_airline_forecast_decision_eval() -> tuple[pd.DataFrame, pd.DataFrame, 
         rev_sigma = rev_mae / 100.0 if rev_mae is not None else 0.06
         cost_sigma = cost_mae / 100.0 if cost_mae is not None else 0.14
         rng = np.random.default_rng(42 + len(company))
-        rev_err = rng.normal(0.0, rev_sigma, MC_DRAWS)
-        cost_err = rng.normal(0.0, cost_sigma, MC_DRAWS)
-        # Correlate revenue and cost errors (0.3) - cost overrun tends to
-        # accompany revenue shortfall but not perfectly.
-        common = rng.normal(0.0, 1.0, MC_DRAWS)
-        rev_err = rev_sigma * (0.8 * rev_err / rev_sigma + 0.6 * common) / np.sqrt(0.8**2 + 0.6**2)
-        cost_err = cost_sigma * (0.8 * cost_err / cost_sigma + 0.6 * common) / np.sqrt(0.8**2 + 0.6**2)
+        # Correlate revenue and cost errors at the stated rho=0.30: cost
+        # overruns tend to accompany revenue shortfalls, but not perfectly.
+        # The previous 0.8/0.6 construction actually implied rho=0.36 while
+        # recording 0.30 in the output.
+        target_error_correlation = 0.30
+        rev_z = rng.normal(0.0, 1.0, MC_DRAWS)
+        cost_z_independent = rng.normal(0.0, 1.0, MC_DRAWS)
+        cost_z = (
+            target_error_correlation * rev_z
+            + np.sqrt(1.0 - target_error_correlation**2) * cost_z_independent
+        )
+        rev_err = rev_sigma * rev_z
+        cost_err = cost_sigma * cost_z
         revenue = (b["forecast_h1_2026_revenue_native_mn"] or 0.0) if not pd.isna(b.get("forecast_h1_2026_revenue_native_mn")) else 0.0
         annualised_revenue = revenue * 2.0
         net_draws = model_net_fy + annualised_revenue * rev_err - annualised_revenue * cost_err * 0.9
@@ -193,7 +199,7 @@ def build_airline_forecast_decision_eval() -> tuple[pd.DataFrame, pd.DataFrame, 
                 "mc_draws": MC_DRAWS,
                 "revenue_sigma_pct": rev_sigma * 100.0,
                 "cost_sigma_pct": cost_sigma * 100.0,
-                "error_correlation": 0.3,
+                "error_correlation": target_error_correlation,
                 "model_net_profit_native_mn": model_net,
                 "model_net_profit_annualised_native_mn": model_net_fy,
                 "p5_net_profit_native_mn": float(np.percentile(net_draws, 5)),

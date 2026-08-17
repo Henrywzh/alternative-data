@@ -58,7 +58,9 @@ MODEL_VERSION = "v4_decomposition_ask_x_lf_x_yield"
 FORECAST_TYPE = "pre_event"
 FORECAST_HORIZON = "H1_2026"
 DATA_CUTOFF = "2026-08-01"  # latest KPI cutoff used by the residual-yield model
-FORECAST_ASOF = "2026-08-10"
+# 2026-08-11 is the final pre-event lock created for the current report
+# cycle.  Earlier 2026-08-10 snapshots remain immutable audit references.
+FORECAST_ASOF = "2026-08-11"
 
 YIELD_MODIFIER_CAP = 0.03
 SPRING_RECOVERY_YIELD_PREMIUM_PCT = 10.0
