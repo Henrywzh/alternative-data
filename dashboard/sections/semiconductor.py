@@ -143,6 +143,8 @@ def compute_semiconductor_views(datasets: dict[str, DatasetLoadResult]) -> dict[
         base_month = None
         latest_proxy_month = None
         latest_proxy_data = pd.Series(dtype="object")
+        latest_proxy_coverage = None
+        latest_proxy_missing = None
 
     latest_fred_month = None
     latest_fred_series_names: list[str] = []
