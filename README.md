@@ -50,7 +50,7 @@ Apps datasets:
 - `artificial_analysis_leading_models_by_lab_daily`: highest-intelligence model per lab per snapshot date
 - `artificial_analysis_context_window_quarter_daily`: release-quarter median context window by proprietary/open-source bucket
 - `artificial_analysis_capex_quarterly`: capital expenditure by quarter for major tech companies
-- `tw_monthly_revenue`: monthly Taiwan semiconductor operating revenue history from MOPS for TSMC, UMC, and VIS
+- `tw_monthly_revenue`: monthly Taiwan semiconductor operating revenue history from MOPS for 11 tracked foundry, memory, OSAT, controller and AI-server ODM companies
 - `semiconductor_official_monthly`: official/native monthly semiconductor trade and production signals
 - `semiconductor_backup_check_monthly`: Comtrade-based backup/check monthly series for cross-validation
 - `semiconductor_source_catalog`: source metadata, cadence, and expected lag catalog for the semiconductor tracker
@@ -76,7 +76,7 @@ Framework adoption tracked inside `provider_adoption`:
 - `data/normalized/provider_adoption/`: analytics-ready CSV and Parquet outputs for provider adoption signals
 - `data/raw/artificial_analysis/`: timestamped raw Artificial Analysis API payloads, trends HTML, JS bundle snapshots, and run manifests
 - `data/normalized/artificial_analysis/`: analytics-ready CSV and Parquet outputs for Artificial Analysis datasets
-- `data/raw/taiwan_semiconductor_revenue/`: timestamped raw MOPS monthly revenue HTML snapshots and run manifests
+- `data/raw/taiwan_semiconductor_revenue/`: timestamped raw MOPS monthly revenue API snapshots and run manifests
 - `data/normalized/taiwan_semiconductor_revenue/`: analytics-ready parquet outputs for Taiwan semiconductor revenue
 - `data/raw/semiconductor_proxies/`: timestamped raw official/native and backup semiconductor tracker snapshots with manifests
 - `data/normalized/semiconductor_proxies/`: parquet-only normalized semiconductor tracker outputs
@@ -245,7 +245,7 @@ Validate the first enabled Google Trends watchlist entry without writing dataset
 python -m google_trends_data.batch_cli validate --base-dir .
 ```
 
-Operator notes for the self-hosted Google Trends workflow live in [docs/google-trends-self-hosted.md](/Users/henrywzh/Desktop/Quant/alternative-data/docs/google-trends-self-hosted.md).
+Operator notes for the self-hosted Google Trends workflow live in [docs/google-trends-self-hosted.md](docs/google-trends-self-hosted.md).
 
 Validate the stored Taiwan revenue parquet:
 
@@ -340,7 +340,7 @@ For GitHub Actions backup/check runs, set the repository secret `SEMICONDUCTOR_C
 
 ## Semiconductor Automation
 
-- `Taiwan Semiconductor Revenue Monthly` runs monthly on GitHub Actions and updates the Taiwan MOPS revenue parquet for the default company set.
+- `Taiwan Semiconductor Revenue Monthly` runs monthly on GitHub Actions and updates the Taiwan MOPS revenue parquet for all 11 tracked companies by default.
 - `Semiconductor Proxy Monthly` also runs monthly on GitHub Actions and currently targets `japan,korea,hongkong` official sources by default.
 - The scheduled proxy workflow uses `sources=official`, so it fetches country-native official data first:
   - Japan: Japan Customs

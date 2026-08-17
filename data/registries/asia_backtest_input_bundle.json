@@ -1,0 +1,136 @@
+{
+  "schema": "asia_backtest_input_bundle_v1",
+  "inputs": {
+    "airline_cost": {
+      "path": "data/normalized/hk_transport/airline_cost_engine_v2.csv",
+      "sha256": "f8c2939a65707955d16afcb25e8704888b7e2e9a99391e80926200f356e33f21",
+      "bytes": 18449,
+      "rows": 47,
+      "canonical_table_fingerprint": "435c61242a505049f97aeb58cd91c7d15433f3c286d1e9538709b874ccfe5108"
+    },
+    "airline_h1": {
+      "path": "data/normalized/hk_transport/airline_h1_kpi_backtest.csv",
+      "sha256": "33489a7933475f0049e683bf004178bdacee88f33111ea0bcb9357164fdadc33",
+      "bytes": 84104,
+      "rows": 60,
+      "canonical_table_fingerprint": "21a2b8038d2749a5fc668af7eb168850dd2c0e73ccc687072427a5138beb1595"
+    },
+    "airline_period": {
+      "path": "data/normalized/hk_transport/airline_period_kpi_backtest.csv",
+      "sha256": "f3d831f7056996335d08486e6f34584856de3d1126887ffac6369122491b1096",
+      "bytes": 225679,
+      "rows": 162,
+      "canonical_table_fingerprint": "28b566185c3dd663e4d679acde80575f0f1fbd73a5fc8443769a870f57a86dac"
+    },
+    "airline_v4": {
+      "path": "data/normalized/hk_transport/airline_earnings_model_v4.csv",
+      "sha256": "b740fa3c8d11dbba87b1083ec680361fd4495935072b6ee7f95327859f605b9a",
+      "bytes": 46011,
+      "rows": 108,
+      "canonical_table_fingerprint": "cf88044a90fe65a9771671205344f97368cccc8a9c999c2bb8d008f5996ce32e"
+    },
+    "immd_daily_traffic_snapshot": {
+      "path": "data/raw/hk_population_migration/immd_daily_traffic_20260812_221931.csv",
+      "sha256": "732a4ad8fba02862819b3d268cb472b3d259e1ed1a4ad9492c1005756bfbc02e",
+      "bytes": 3267714,
+      "rows": 60792,
+      "canonical_table_fingerprint": "e6614f17a9bcfc03b431fafab114637b4e4190b31ac82a8db48642fbee635372"
+    },
+    "mtr_annual": {
+      "path": "data/processed/transport/mtr_farebox_revenue_annual_backtest.csv",
+      "sha256": "6045aeee5d84f4ac3c61707f8977b991aca0856e69d6d5aa28daecaff52e6c50",
+      "bytes": 4576,
+      "rows": 27,
+      "canonical_table_fingerprint": "1eab82a871d5311394e84b820277023fe034e356241083cb1531494e61d77c36"
+    },
+    "mtr_canonical_actuals": {
+      "path": "data/normalized/hk_transport/mtr_transport_ops_actuals.csv",
+      "sha256": "2d01d99d4bc1becddc4bb0ced461d0428ec01737759c96fcf9bc98a157c8d09f",
+      "bytes": 4102,
+      "rows": 16,
+      "canonical_table_fingerprint": "1ca1c7df8391b78c6e86897edcfcf9fbeaae2eb4f9a072b81401ffbf07b0bbc4"
+    },
+    "mtr_h1": {
+      "path": "data/processed/transport/mtr_farebox_revenue_h1_backtest.csv",
+      "sha256": "7ce70a5c2a39ac5aaf083e1d4e6a128dc679ff0dbe5633d997d022edc4eefed1",
+      "bytes": 4876,
+      "rows": 27,
+      "canonical_table_fingerprint": "73916ad72e96fee00bbfebf77794e3bf0def553631165aef3f85bd0bfffed6cd"
+    },
+    "mtr_monthly_nowcast": {
+      "path": "data/processed/transport/mtr_farebox_monthly_nowcast.csv",
+      "sha256": "e38c7e6a5232dd128a0d049159ecca61cb18ee59f158de2a51f97417fd7537a2",
+      "bytes": 41268,
+      "rows": 90,
+      "canonical_table_fingerprint": "47edad97e8b8f00da815c27079e82e339259fc2a388436be8023941cc4e07c7b"
+    },
+    "mtr_patronage_snapshot": {
+      "path": "data/raw/hk_transport/mtr_patronage_20260812_223726.json",
+      "sha256": "1f5f7b13236ccd20492dffde8ec8ce05331995a998b378f0db66a778b17031f2",
+      "bytes": 180378
+    },
+    "mtr_walk_forward": {
+      "path": "data/processed/transport/mtr_farebox_walk_forward_oos.csv",
+      "sha256": "ab5c4b471be26606ed87e2fd7615d5ff621f1384e5d2d2f88473fb07fdb9f1ac",
+      "bytes": 11970,
+      "rows": 16,
+      "canonical_table_fingerprint": "fe8fb041d4a1d0d24d978c95d6cd20306557239899dd11c76f744831e4849a2c"
+    },
+    "mtr_walk_forward_model_code": {
+      "path": "scripts/build_mtr_walk_forward_oos.py",
+      "sha256": "924aff14bc8b9bd9a939bc9d450eb0daf24ddc82d92823572abde945516a27cb",
+      "bytes": 16583
+    },
+    "registry_row_status": {
+      "path": "data/registries/asia_backtest_row_status.csv",
+      "sha256": "5f8b8abfcd3faa615c97a8d9305ed062d59815ebb61e3d5a202d199068aaf68f",
+      "bytes": 2090013,
+      "rows": 2951,
+      "canonical_table_fingerprint": "06cbfa42c0d470ea76bfcc4e685ffe51d370af25d182d294af34dc935bf011e6"
+    },
+    "registry_target": {
+      "path": "data/registries/asia_backtest_target_registry.csv",
+      "sha256": "9a4375026eb94e9f0852c23a1563ef13a7bbe326e903746283e20be38bbdabee",
+      "bytes": 59993,
+      "rows": 55,
+      "canonical_table_fingerprint": "fabe847b5c274b6cccf51b19da41947b0276a7f59fffa1ad045544b935c135de"
+    },
+    "shkp_commercial_backtest:data": {
+      "path": "data/normalized/hk_real_estate/shkp_commercial_backtest/shkp-commercial-model-066f8e0d-8950-4de6-8fdf-2aee471076cb/shkp_commercial_backtest.parquet",
+      "sha256": "e8c580f36a1f6d940b7c928313f6796340e2e6d02ad08ea94d6ee306ad73dc96",
+      "bytes": 9823,
+      "rows": 30,
+      "canonical_table_fingerprint": "9c58fdafc64c502ab1ef942c94fdb6b16ef5ad1a1502a0785d55fff40f2043c3"
+    },
+    "shkp_commercial_backtest:lineage": {
+      "path": "data/normalized/hk_real_estate/shkp_commercial_backtest/shkp-commercial-model-066f8e0d-8950-4de6-8fdf-2aee471076cb/lineage.json",
+      "sha256": "af3fd2c115acaf0eff1b1e718cb1478880e7519028460c03d3ec488b9c919c62",
+      "bytes": 1019
+    },
+    "shkp_indicative_sales_model_backtest:data": {
+      "path": "data/normalized/hk_real_estate/shkp_indicative_sales_model_backtest/shkp-indicative-sales-model-ec9efc2f-0db6-4ebd-88f0-4216fb1334af/shkp_indicative_sales_model_backtest.parquet",
+      "sha256": "631296ad61d8cb02e7fcd3a3a5838cceabac752b6d69e96dd530edbc07c8ec07",
+      "bytes": 53515,
+      "rows": 948,
+      "canonical_table_fingerprint": "dc120cffd5bbe3cb65bf09206e7474744b05aca0015be0977e2810aa81bc8666"
+    },
+    "shkp_indicative_sales_model_backtest:lineage": {
+      "path": "data/normalized/hk_real_estate/shkp_indicative_sales_model_backtest/shkp-indicative-sales-model-ec9efc2f-0db6-4ebd-88f0-4216fb1334af/lineage.json",
+      "sha256": "544a8299375e38dd12e71ff56b5abbabf1080c966017ec64dff77229235a5383",
+      "bytes": 1312
+    },
+    "shkp_skeleton_historical_backtest:data": {
+      "path": "data/normalized/hk_real_estate/shkp_skeleton_historical_backtest/shkp-skeleton-backtest-6c3134af-ac96-4379-bf17-8a7ea0f5f8d7/shkp_skeleton_historical_backtest.parquet",
+      "sha256": "a9841064a1daee82f219b9a10b7fb2cfa4029a9be33e4b91b31805a2ceb2055e",
+      "bytes": 13666,
+      "rows": 9,
+      "canonical_table_fingerprint": "b551b17ad82de4f0f943e265c128e636db3298d293815e93e29d4652345bfddd"
+    },
+    "shkp_skeleton_historical_backtest:lineage": {
+      "path": "data/normalized/hk_real_estate/shkp_skeleton_historical_backtest/shkp-skeleton-backtest-6c3134af-ac96-4379-bf17-8a7ea0f5f8d7/lineage.json",
+      "sha256": "4a2183eaf8018b166e9b1ae5bac8b54fc785f8b2c37530d3beb9f76a9c165ad2",
+      "bytes": 808
+    }
+  },
+  "bundle_id": "asia_backtest_input_bundle-b1ddb611566da708"
+}

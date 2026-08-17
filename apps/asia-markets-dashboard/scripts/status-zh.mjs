@@ -106,6 +106,16 @@ export const STATUS_ZH = {
       source: "屋宇署",
       notes: "屋宇署月度摘要 / 项目生命周期；详见上方图表/表格。",
     },
+    "SHKP Hong Kong business financial bridge": {
+      dataset: "新鸿基香港业务财务桥接",
+      source: "新鸿基香港业务财务桥接",
+      notes: "官方披露、香港 recurring portfolio、0016.HK 实际值及共识快照；不同 row type 不应直接相加。",
+    },
+    "SHKP sales / handover / revenue timing bridge": {
+      dataset: "新鸿基销售／交付／收入时序桥接",
+      source: "新鸿基销售／交付／收入时序桥接",
+      notes: "SRPE 原始合约活动与财报交付证据、预计完工窗口及屋宇署入伙纸快照分开保存；不做阶段收入分配。",
+    },
     "First-hand residential project documents": {
       dataset: "一手住宅项目文件",
       source: "SRPE",

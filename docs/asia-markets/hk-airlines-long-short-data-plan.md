@@ -4,6 +4,11 @@ Status: P0 research build, 2026-08-07. This is a personal long/short
 research project. The purpose of this note is to complete a point-in-time
 evidence pack before selecting a pair; it is not yet a trade recommendation.
 
+The companion [free online data-source research note](airline-free-data-source-research.md)
+records the additional official/open sources reviewed on 2026-08-09, their
+point-in-time and access limitations, and the P0/P1 ingestion order for the v3
+earnings model. It is intentionally separate from the normalized data tables.
+
 ## Research universe
 
 The initial comparable set is Cathay Pacific (`0293.HK`), Air China
@@ -50,6 +55,70 @@ comparables, not automatically eligible pair legs.
   ECB public endpoint does not expose a complete historical release-vintage
   field, so the file retains observation date and retrieval timestamp and is
   not a full point-in-time revision history.
+- `data/normalized/hk_transport/airline_cargo_demand_proxies.csv` is the first
+  newly implemented P0 free-online source from the v3 research pass. It
+  captures MOFCOM monthly total trade, exports, imports, balance and YoY rates
+  in USD 100 million, with the raw JSON response and retrieval-vintage fields.
+  It is a broad external cargo-cycle proxy, not airline cargo revenue or a
+  full release-vintage series because the endpoint does not expose its original
+  publication timestamp.
+- `data/normalized/hk_transport/airline_caac_sector_monthly.csv` is the second
+  live P0 source: official CAAC monthly PDFs backfilled from 2020-01 through
+  2026-06, expanded into monthly/YTD sector observations with release dates.
+  It adds sector passenger/cargo volume and turnover, utilization, load-factor
+  and airport-throughput context; it is a regulator fast-report layer, not a
+  company-specific yield or profit forecast. The current layer has 5,928 rows;
+  2019 remains an explicit source gap rather than an interpolated history.
+- `data/normalized/hk_transport/airline_postal_demand_proxies.csv` is the
+  official State Post Bureau postal/express context layer. It contains 33
+  normalized rows across 2025 H1, 2026 Jan-Apr and 2026 H1, with article
+  release dates and normalized RMB-million / million-parcel units. It is a
+  broad logistics proxy only; the v3 join keeps it separate from airline
+  cargo revenue and enforces the model-date release cutoff.
+- `data/normalized/hk_transport/airline_caac_route_licence_events.csv` is the
+  dated CAAC 2026 summer/autumn planned-supply layer. It contains 53 route/
+  cargo-licence additions and cancellations, including carrier, route, start
+  date and stated initial frequency. It is a forward-capacity event layer,
+  not realized ASK; v3 only carries route counts and frequency context.
+- `data/normalized/hk_transport/airline_earnings_model_v3.csv` adds a separate
+  bear/base/bull cargo-demand triangulation to the existing unit-economics
+  bridge. It grows reported cargo revenue from CAAC/MOFCOM/State Post Bureau
+  context where the official split is available, while other revenue is kept
+  as a separately labelled passenger-growth residual; it does not treat these
+  proxies as airline cargo revenue.
+  `airline_earnings_model_v3_kpi_coverage.csv` is the explicit coverage
+  contract: it marks each KPI `modelled`, `partial`, `proxy`, `snapshot` or
+  `not_modelled`, so missing EPS/ancillary/cargo-yield/net-income bridges are
+  not hidden by a populated revenue row.
+- `data/normalized/hk_transport/airline_travel_demand_events.csv` adds the
+  release-date-safe MOT/MCT holiday demand context layer. It is useful for
+  sector regime and HSR-versus-air controls, but its sparse event grain is not
+  a substitute for company ASK/RPK or realized yield.
+- `data/normalized/hk_transport/airline_airport_traffic.csv` adds issuer
+  monthly airport production statistics for Shanghai Pudong/Hongqiao,
+  Shenzhen, Guangzhou Baiyun and Beijing Capital (2026-01 through 2026-06).
+  Beijing Capital is parsed from the issuer's investor-relations monthly fast
+  reports with release-date safety. It is a hub-demand context layer for
+  Spring/Juneyao/9 Air base coverage and is not company revenue.
+- `data/normalized/hk_transport/airline_cargo_airport_bridge.csv` adds the
+  airport-cargo calibration layer that compares hub cargo throughput with
+  company cargo tonnage and reported revenue, supporting the v3 cargo bridge.
+- `data/normalized/hk_transport/airline_cargo_yield_bridge.csv` adds the
+  forward cargo-revenue bridge: reported revenue-per-tonne anchors applied to
+  H1-2026 tonnage, usable as an H1 evidence layer and for the H1-2026 report
+  validation playbook.
+- `data/normalized/hk_transport/airline_forward_assumptions.csv` adds the
+  forward tax-rate and FX assumption table that the waterfall proxy consumes,
+  including curated FY2025 tax anchors and the ECB USD/CNY carry.
+- `data/normalized/hk_transport/airline_h1_2026_validation_playbook.csv` adds
+  the H1-2026 report reconciliation table: all pre-report forecasts plus
+  filing dates, ready for actuals and error columns after publication.
+- `data/normalized/hk_transport/airline_cargo_bridge_backtest.csv` adds the
+  cargo-bridge backtest with a 1H2025 yield-anchor holdout and the airport
+  signal direction check.
+- `data/normalized/hk_transport/airline_fuel_surcharge_recovery.csv` adds a
+  dated surcharge-versus-EIA-fuel recovery proxy, giving the fuel pass-through
+  KPI a measurable context signal instead of schedule text only.
 - `data/normalized/hk_transport/airline_event_timeline.csv` records Cathay's
   2026 H1 formal results and preceding guidance/June operating update, plus the
   2026 H1 preliminary loss ranges for Air China, China Eastern and China Southern. Native HKD/RMB
@@ -186,13 +255,17 @@ comparables, not automatically eligible pair legs.
   used as a strict announcement-date PIT backtest without primary-report
   reconciliation.
 - `data/normalized/hk_transport/airline_historical_earnings_bridge.csv` is the
-  synchronized 246-row company-period panel across 2016-03-31 to 2026-03-31.
-  It aligns financial revenue/cost/profit/cash flow with monthly ASK/RPK,
-  passengers/cargo, weighted load factors, period-average jet fuel/Brent and
-  USD/CNY/USD/HKD benchmarks. Current HK broker and A-share detailed FY2026
-  consensus are separate fields, with explicit snapshot dates and unit
-  normalization; it is not a historical consensus-vintage tape. Source-derived
-  load-factor anomalies are retained and flagged rather than clipped.
+  synchronized 250-row company-period panel across 2016-03-31 to 2026-03-31.
+  The six mainland groups retain the long provider/monthly panel; Cathay adds
+  four explicit official-driver rows for 1H2024, 1H2025, FY2025 and 1H2026.
+  Cathay's rows retain HKD/group-scope and unit metadata and are marked
+  partial rather than treated as like-for-like mainland history. The bridge
+  aligns financial revenue/cost/profit/cash flow with ASK/RPK, passengers/cargo,
+  load factors, period-average fuel/Brent and USD/CNY/USD/HKD benchmarks.
+  Current HK broker and A-share detailed FY2026 consensus are separate fields,
+  with explicit snapshot dates and unit normalization; it is not a historical
+  consensus-vintage tape. Source-derived load-factor anomalies are retained
+  and flagged rather than clipped.
 - `data/normalized/hk_transport/airline_pair_historical_bridge.csv` converts
   the company-period panel into 21 pair rows. It compares FY2019/FY2024/FY2025
   profitability, Q1 2025/Q1 2026 demand-capacity changes, current consensus

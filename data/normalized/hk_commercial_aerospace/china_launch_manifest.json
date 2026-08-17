@@ -1,12 +1,12 @@
 {
   "parser_version": "china-launch-records-v1",
-  "event_count": 613,
-  "payload_row_count": 700,
+  "event_count": 611,
+  "payload_row_count": 698,
   "first_launch_date": "1970-04-24",
-  "last_launch_date": "2026-08-17",
+  "last_launch_date": "2026-08-05",
   "official_sources": [
     "https://www.spacechina.com/n25/n142/n152/n657792/c3556658/content.html",
     "http://calt.spacechina.com/n482/n505/index.html"
   ],
-  "updated_at": "2026-08-17T07:17:07.385253+00:00"
+  "updated_at": "2026-08-09T16:09:05.505880+00:00"
 }

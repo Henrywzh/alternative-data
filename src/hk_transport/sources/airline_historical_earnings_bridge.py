@@ -1,13 +1,17 @@
-"""Synchronized historical earnings bridge for mainland listed airlines.
+"""Synchronized historical earnings bridge for listed airlines.
 
 The bridge aligns provider financial periods with issuer-released monthly
 operating KPIs and period-average fuel/FX benchmarks.  Current FY2026
 consensus is joined as a separate forward-looking snapshot; it is never
-presented as a historical consensus vintage.
+presented as a historical consensus vintage.  The six mainland names retain
+their long provider-history panel; Cathay is added through a separate,
+explicitly partial official-driver history because its international/group
+scope does not share the mainland provider panel's full period coverage.
 """
 
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -17,6 +21,7 @@ from ..config import NORMALIZED_DIR, ROOT_DIR
 
 
 FINANCIAL_PATH = NORMALIZED_DIR / "airline_financial_history_trend.csv"
+CATHAY_DRIVERS_PATH = NORMALIZED_DIR / "airline_earnings_driver_comparability.csv"
 MONTHLY_PATH = ROOT_DIR / "data" / "processed" / "airline_traffic" / "china_airlines_monthly.parquet"
 ENERGY_PATH = NORMALIZED_DIR / "airline_energy_prices.parquet"
 FX_PATH = NORMALIZED_DIR / "airline_fx_rates.parquet"
@@ -70,8 +75,18 @@ OUTPUT_COLUMNS = [
     "current_ashare_detailed_snapshot_date",
     "current_ashare_detailed_forecast_date_min",
     "current_ashare_detailed_forecast_date_max",
+    "bridge_scope", "operating_kpi_unit_note", "financial_source_path",
+    "financial_driver_provenance_json",
     "source_quality", "point_in_time_status", "source_note", "retrieved_at",
 ]
+
+CATHAY_PERIOD_TYPE = {"FY": "FY", "1H": "H1_or_2Q"}
+CATHAY_FINANCIAL_METRICS = {
+    "total_revenue": ("revenue_native_mn", "revenue_usd_mn"),
+    "operating_cost": ("operating_cost_native_mn", "operating_cost_usd_mn"),
+    "attributable_profit": ("attributable_net_income_native_mn", "attributable_net_income_usd_mn"),
+    "operating_cash_flow": ("operating_cash_flow_native_mn", "operating_cash_flow_usd_mn"),
+}
 
 
 def _period_start_and_months(period_end: pd.Timestamp, period_type: str) -> tuple[pd.Timestamp, list[str]]:
@@ -177,6 +192,171 @@ def _detailed_consensus_usd_mn(row: dict[str, object]) -> float | None:
     return float(value * 100.0) if unit == "RMB 100 million" else float(value)
 
 
+def _cathay_metric_value(frame: pd.DataFrame, statement_period: str, metric: str, column: str) -> float | None:
+    rows = frame.loc[
+        frame["statement_period"].eq(statement_period)
+        & frame["canonical_metric"].eq(metric)
+    ]
+    if rows.empty or column not in rows.columns:
+        return None
+    values = pd.to_numeric(rows[column], errors="coerce").dropna()
+    return float(values.iloc[0]) if not values.empty else None
+
+
+def _cathay_metric_unit(frame: pd.DataFrame, statement_period: str, metric: str) -> str | None:
+    rows = frame.loc[
+        frame["statement_period"].eq(statement_period)
+        & frame["canonical_metric"].eq(metric)
+    ]
+    if rows.empty:
+        return None
+    value = rows.iloc[0].get("native_unit")
+    return None if pd.isna(value) else str(value)
+
+
+def _cathay_provenance(frame: pd.DataFrame, statement_period: str) -> str:
+    """Keep metric-level official lineage auditable in the wide bridge row."""
+    result: dict[str, dict[str, object]] = {}
+    rows = frame.loc[frame["statement_period"].eq(statement_period)]
+    for metric, group in rows.groupby("canonical_metric", sort=True):
+        source = group.iloc[0]
+
+        def _clean(value: object) -> object:
+            if value is None or pd.isna(value):
+                return None
+            if isinstance(value, float) and value.is_integer():
+                return int(value)
+            return value
+
+        result[str(metric)] = {
+            "source_url": _clean(source.get("source_url")),
+            "source_page": _clean(source.get("source_page")),
+            "source_note": _clean(source.get("source_note")),
+            "native_unit": _clean(source.get("native_unit")),
+            "native_currency": _clean(source.get("native_currency")),
+            "information_date": _clean(source.get("information_date")),
+            "point_in_time_status": _clean(source.get("point_in_time_status")),
+        }
+    return json.dumps(result, ensure_ascii=False, sort_keys=True)
+
+
+def _build_cathay_bridge_rows(
+    drivers: pd.DataFrame,
+    energy: pd.DataFrame,
+    fx: pd.DataFrame,
+    consensus_by_company: dict[str, dict[str, object]],
+    *,
+    retrieved: str,
+) -> pd.DataFrame:
+    """Build the partial Cathay cross-region rows without faking mainland history.
+
+    The canonical driver layer currently contains 1H2024, 1H2025, FY2025 and
+    1H2026 Cathay observations.  Physical units remain explicit: cargo is
+    converted from thousand tonnes to tonnes only to match the bridge column,
+    while passengers retain the existing bridge's thousand-passenger numeric
+    convention.
+    """
+    required = {"company", "statement_period", "period_end", "canonical_metric"}
+    if drivers.empty or not required.issubset(drivers.columns):
+        return pd.DataFrame(columns=OUTPUT_COLUMNS)
+    cathay = drivers.loc[drivers["company"].eq("Cathay Pacific")].copy()
+    if cathay.empty:
+        return pd.DataFrame(columns=OUTPUT_COLUMNS)
+    cathay["period_end"] = pd.to_datetime(cathay["period_end"], errors="coerce")
+    cathay = cathay.dropna(subset=["period_end"])
+    rows: list[dict[str, object]] = []
+    for (statement_period, period_end), group in cathay.groupby(["statement_period", "period_end"], sort=True):
+        period_label = str(statement_period)
+        period_type = next((value for prefix, value in CATHAY_PERIOD_TYPE.items() if period_label.startswith(prefix)), None)
+        if period_type is None:
+            continue
+        period_start = pd.Timestamp(year=period_end.year, month=1, day=1)
+        info_dates = pd.to_datetime(group.get("information_date"), errors="coerce").dropna()
+        information_date = info_dates.max().strftime("%Y-%m-%d") if not info_dates.empty else period_end.strftime("%Y-%m-%d")
+        point_status = "issuer_information_date_available" if not info_dates.empty else "period_evidence_without_announcement_date"
+        row: dict[str, object] = {
+            "dataset_id": "airline_historical_earnings_bridge",
+            "company": "Cathay Pacific",
+            "ticker": "0293.HK",
+            "market": "HK",
+            "period_end": period_end.strftime("%Y-%m-%d"),
+            "period_type": period_type,
+            "period_start": period_start.strftime("%Y-%m-%d"),
+            "financial_as_of_date": information_date,
+            "financial_point_in_time_status": point_status,
+            "bridge_scope": "cathay_cross_region_partial_official_driver_history",
+            "operating_kpi_unit_note": (
+                "Cathay Group scope; ASK/RPK are million, passengers retain thousand-passenger numeric units, "
+                "and cargo_tonnes is converted from thousand tonnes to tonnes. No mainland monthly operating rows are joined."
+            ),
+            "financial_source_path": str(CATHAY_DRIVERS_PATH),
+            "financial_driver_provenance_json": _cathay_provenance(group, period_label),
+        }
+        for metric, (native_name, usd_name) in CATHAY_FINANCIAL_METRICS.items():
+            row[native_name] = _cathay_metric_value(group, period_label, metric, "value_native")
+            row[usd_name] = _cathay_metric_value(group, period_label, metric, "value_usd")
+        revenue = row.get("revenue_native_mn")
+        profit = row.get("attributable_net_income_native_mn")
+        row["net_margin_pct"] = 100.0 * profit / revenue if revenue not in (None, 0) and profit is not None else None
+        row["ask_mn_seat_km"] = _cathay_metric_value(group, period_label, "ask", "value_native")
+        row["rpk_mn_passenger_km"] = _cathay_metric_value(group, period_label, "rpk", "value_native")
+        row["passengers_mn"] = _cathay_metric_value(group, period_label, "passengers", "value_native")
+        cargo_thousand = _cathay_metric_value(group, period_label, "cargo_tonnes", "value_native")
+        row["cargo_tonnes"] = cargo_thousand * 1000.0 if cargo_thousand is not None else None
+        row["passenger_load_factor_pct"] = _cathay_metric_value(group, period_label, "passenger_load_factor_pct", "value_native")
+        row["freight_load_factor_pct"] = _cathay_metric_value(group, period_label, "cargo_load_factor_pct", "value_native")
+        row["operating_month_count"] = 0
+        row["operating_latest_announcement_date"] = None
+        row["operating_anomaly_flag"] = None
+
+        jet_avg, jet_end, jet_count, jet_latest = _period_benchmark(energy, period_end, period_start, "EER_EPJK_PF4_RGC_DPG")
+        brent_avg, brent_end, _, _ = _period_benchmark(energy, period_end, period_start, "RBRTE")
+        row.update({
+            "jet_fuel_avg_usd_per_gallon": jet_avg,
+            "jet_fuel_end_usd_per_gallon": jet_end,
+            "brent_avg_usd_per_barrel": brent_avg,
+            "brent_end_usd_per_barrel": brent_end,
+            "fuel_observation_count": jet_count,
+            "fuel_latest_observation_date": jet_latest,
+        })
+        cny_avg, cny_count, cny_latest = _fx_benchmark(fx, period_end, period_start, "USD_CNY")
+        hkd_avg, hkd_count, hkd_latest = _fx_benchmark(fx, period_end, period_start, "USD_HKD")
+        row.update({
+            "usd_cny_avg": cny_avg,
+            "usd_hkd_avg": hkd_avg,
+            "fx_observation_count": min(cny_count, hkd_count),
+            "fx_latest_observation_date": min(value for value in (cny_latest, hkd_latest) if value) if cny_latest and hkd_latest else cny_latest or hkd_latest,
+        })
+        current = consensus_by_company.get("Cathay Pacific", {})
+        hk = current.get("hk", {})
+        row.update({
+            "current_hk_broker_fy2026_net_profit_usd_mn": hk.get("net_profit_avg_usd_mn"),
+            "current_hk_broker_fy2026_net_profit_low_usd_mn": hk.get("net_profit_low_usd_mn"),
+            "current_hk_broker_fy2026_net_profit_high_usd_mn": hk.get("net_profit_high_usd_mn"),
+            "current_hk_broker_count": hk.get("broker_count"),
+            "current_hk_broker_snapshot_date": hk.get("snapshot_date"),
+            "current_hk_broker_forecast_date_min": hk.get("forecast_date_min"),
+            "current_hk_broker_forecast_date_max": hk.get("forecast_date_max"),
+            "current_ashare_detailed_fy2026_net_profit_usd_mn": None,
+            "current_ashare_detailed_snapshot_date": None,
+            "current_ashare_detailed_forecast_date_min": None,
+            "current_ashare_detailed_forecast_date_max": None,
+            "source_quality": "derived_cross_region_driver_bridge",
+            "point_in_time_status": "official_cathay_driver_rows_with_mixed_announcement_date_coverage_and_current_hk_consensus_snapshot",
+            "source_note": (
+                "Cathay Group official driver comparability rows for a cross-region airline sleeve. "
+                "This is not a like-for-like extension of the six-company mainland provider history: "
+                "period coverage is partial, operating scope is international/group consolidated, and "
+                "passenger/cargo unit conventions are preserved in the unit note."
+            ),
+            "retrieved_at": retrieved,
+        })
+        for column in OUTPUT_COLUMNS:
+            row.setdefault(column, None)
+        rows.append(row)
+    return pd.DataFrame(rows, columns=OUTPUT_COLUMNS).sort_values(["company", "period_end"]).reset_index(drop=True)
+
+
 def build_airline_historical_earnings_bridge(
     financial: pd.DataFrame | None = None,
     monthly: pd.DataFrame | None = None,
@@ -184,6 +364,7 @@ def build_airline_historical_earnings_bridge(
     fx: pd.DataFrame | None = None,
     consensus: pd.DataFrame | None = None,
     detailed_consensus: pd.DataFrame | None = None,
+    cathay_drivers: pd.DataFrame | None = None,
     *,
     retrieved_at: str | None = None,
 ) -> pd.DataFrame:
@@ -193,6 +374,9 @@ def build_airline_historical_earnings_bridge(
     fx = fx if fx is not None else pd.read_parquet(FX_PATH)
     consensus = consensus if consensus is not None else pd.read_csv(CONSENSUS_PATH)
     detailed_consensus = detailed_consensus if detailed_consensus is not None else pd.read_csv(ASHARE_DETAILED_CONSENSUS_PATH)
+    cathay_drivers = cathay_drivers if cathay_drivers is not None else (
+        pd.read_csv(CATHAY_DRIVERS_PATH) if CATHAY_DRIVERS_PATH.exists() else pd.DataFrame()
+    )
     required_financial = {"company", "ticker", "period_end", "period_type", "metric", "value_native", "value_usd"}
     missing = required_financial.difference(financial.columns)
     if missing:
@@ -284,6 +468,10 @@ def build_airline_historical_earnings_bridge(
             "current_ashare_detailed_forecast_date_max": ashare.get("forecast_date_max"),
         })
         row["source_quality"] = "derived_multi_source_bridge"
+        row["bridge_scope"] = "mainland_synchronized_provider_history"
+        row["operating_kpi_unit_note"] = "Existing mainland normalized monthly layer; passengers and cargo_tonnes follow its stored numeric conventions."
+        row["financial_source_path"] = str(FINANCIAL_PATH)
+        row["financial_driver_provenance_json"] = None
         row["point_in_time_status"] = "mixed_period_end_financial_ops_release_benchmark_and_current_consensus_snapshot"
         row["source_note"] = (
             "Financial history is provider discovery data with period-end only and no issuer announcement date; "
@@ -298,6 +486,18 @@ def build_airline_historical_earnings_bridge(
     for column in OUTPUT_COLUMNS:
         if column not in result:
             result[column] = None
+    cathay_result = _build_cathay_bridge_rows(
+        cathay_drivers,
+        energy,
+        fx,
+        consensus_by_company,
+        retrieved=retrieved,
+    )
+    if not cathay_result.empty:
+        result = pd.DataFrame.from_records(
+            [*result.to_dict(orient="records"), *cathay_result.to_dict(orient="records")],
+            columns=OUTPUT_COLUMNS,
+        )
     return result[OUTPUT_COLUMNS].sort_values(["company", "period_end"]).reset_index(drop=True)
 
 

@@ -28,3 +28,11 @@ def test_priority_matrix_has_one_trigger_row_per_pair() -> None:
     assert len(frame) == 5
     assert frame.pair_id.is_unique
     assert frame.trade_status.eq("wait_for_event_trigger_no_pre_event_trade").all()
+
+
+def test_spring_juneyao_entry_threshold_uses_the_independent_pre_event_view() -> None:
+    frame = build_airline_pair_event_trade_triggers()
+    row = frame.loc[frame.pair_id.eq("601021.SH__603885.SH")].iloc[0]
+    assert row.surprise_threshold_basis == "independent_pre_event_forecast"
+    assert row.pre_event_profit_gap_spread_pp > 30.0
+    assert row.minimum_profit_surprise_gap_for_entry_pp > 15.0

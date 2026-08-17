@@ -1,0 +1,28 @@
+year,h1_model_revenue_hkdm,h1_actual_transport_ops_revenue_hkdm,source_url,release_source_url,actual_definition,actual_available_at,actual_status,model_error_hkdm,model_error_pct,absolute_error_pct,backtest_role
+2000,2839.2397318099092,,,,,,not_yet_reported,,,,model_only_no_official_actual
+2001,2757.9152612511302,,,,,,not_yet_reported,,,,model_only_no_official_actual
+2002,2737.1976906640216,,,,,,not_yet_reported,,,,model_only_no_official_actual
+2003,2587.994936429,,,,,,not_yet_reported,,,,model_only_no_official_actual
+2004,2935.6539979094778,,,,,,not_yet_reported,,,,model_only_no_official_actual
+2005,3015.8517994344074,,,,,,not_yet_reported,,,,model_only_no_official_actual
+2006,3076.1599044468703,,,,,,not_yet_reported,,,,model_only_no_official_actual
+2007,3168.984971377991,,,,,,not_yet_reported,,,,model_only_no_official_actual
+2008,5672.216585259533,,,,,,not_yet_reported,,,,model_only_no_official_actual
+2009,5649.8014485650465,,,,,,not_yet_reported,,,,model_only_no_official_actual
+2010,6016.861201959794,,,,,,not_yet_reported,,,,model_only_no_official_actual
+2011,6471.6898556469405,,,,,,not_yet_reported,,,,model_only_no_official_actual
+2012,7129.4425025782575,,,,,,not_yet_reported,,,,model_only_no_official_actual
+2013,7575.61956808193,,,,,,not_yet_reported,,,,model_only_no_official_actual
+2014,8065.260391418908,,,,,,not_yet_reported,,,,model_only_no_official_actual
+2015,8769.747033196078,,,,,,not_yet_reported,,,,model_only_no_official_actual
+2016,8995.743997494244,,,,,,not_yet_reported,,,,model_only_no_official_actual
+2017,9184.80314833516,8957.0,https://www.mtr.com.hk/archive/corporate/en/investor/interim2017/EMTRIR17.pdf,https://www.mtr.com.hk/archive/corporate/en/press_release/PR-17-067-E.pdf,Hong Kong Transport Operations / Total Revenue; six months ended 30 June; HK$m,2017-08-10,reported,227.80314833516059,2.543297402424479,2.543297402424479,historical_structural_check
+2018,9750.480250983623,9328.0,https://www.mtr.com.hk/archive/corporate/en/investor/interim2018/EMTRIR18.pdf,https://www.mtr.com.hk/archive/corporate/en/press_release/PR-18-070-E.pdf,Hong Kong Transport Operations / Total Revenue; six months ended 30 June; HK$m,2018-08-09,reported,422.4802509836227,4.529162210373314,4.529162210373314,historical_structural_check
+2019,11437.980672426347,10690.0,https://www.mtr.com.hk/archive/corporate/en/investor/interim2019/EMTRIR19.pdf,https://www.mtr.com.hk/archive/corporate/en/press_release/PR-19-047-E.pdf,Hong Kong Transport Operations / Total Revenue; six months ended 30 June; HK$m,2019-08-08,reported,747.9806724263472,6.997012838412976,6.997012838412976,historical_structural_check
+2020,5589.242011699564,6234.0,https://www.mtr.com.hk/archive/corporate/en/press_release/PR-20-052-E.pdf,https://www.mtr.com.hk/archive/corporate/en/press_release/PR-20-052-E.pdf,Hong Kong Transport Operations / Total Revenue; six months ended 30 June; HK$m,2020-08-06,reported,-644.7579883004364,-10.342604881303119,10.342604881303119,historical_structural_check
+2021,5891.234766890146,6004.0,https://www.mtr.com.hk/archive/corporate/en/press_release/PR-21-053-E.pdf,https://www.mtr.com.hk/archive/corporate/en/press_release/PR-21-053-E.pdf,Hong Kong Transport Operations / Total Revenue; six months ended 30 June; HK$m,2021-08-12,reported,-112.76523310985431,-1.87816843953788,1.87816843953788,historical_structural_check
+2022,5207.012254786075,5815.0,https://www.mtr.com.hk/archive/corporate/en/press_release/PR-22-057-E.pdf,https://www.mtr.com.hk/archive/corporate/en/press_release/PR-22-057-E.pdf,Hong Kong Transport Operations / Total Revenue; six months ended 30 June; HK$m,2022-08-11,reported,-607.9877452139253,-10.455507226378767,10.455507226378767,historical_structural_check
+2023,9366.888984699819,9342.0,https://www.mtr.com.hk/archive/corporate/en/press_release/PR-23-054-E.pdf,https://www.mtr.com.hk/archive/corporate/en/press_release/PR-23-054-E.pdf,Hong Kong Transport Operations / Total Revenue; six months ended 30 June; HK$m,2023-08-10,reported,24.888984699819048,0.26642030293105384,0.26642030293105384,historical_structural_check
+2024,11123.608060273586,11138.0,https://www.mtr.com.hk/archive/corporate/en/press_release/PR-24-049-E.pdf,https://www.mtr.com.hk/archive/corporate/en/press_release/PR-24-049-E.pdf,Hong Kong Transport Operations / Total Revenue; six months ended 30 June; HK$m,2024-08-15,reported,-14.39193972641442,-0.1292147578237962,0.1292147578237962,calibration_year
+2025,11548.020795637949,11509.0,https://www.mtr.com.hk/archive/corporate/en/investor/interim2025/2025IR_Eng.pdf,https://www.mtr.com.hk/archive/corporate/en/press_release/PR-25-059-E.pdf,Hong Kong Transport Operations / Total Revenue; six months ended 30 June; HK$m,2025-08-14,reported,39.02079563794905,0.33904592612693585,0.33904592612693585,practical_forward_validation
+2026,11976.685623054635,,,,,,not_yet_reported,,,,current_forecast

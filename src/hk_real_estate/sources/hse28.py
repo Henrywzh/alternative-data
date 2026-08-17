@@ -9,14 +9,16 @@ from typing import Dict, Any
 from ..config import HSE28_ESTATE_INDEX_URL, HSE28_NEW_PROPERTIES_URL, DEFAULT_HEADERS
 from ..storage import save_raw_snapshot
 
-def fetch_28hse_new_projects() -> pd.DataFrame:
-    response = requests.get(HSE28_NEW_PROPERTIES_URL, headers=DEFAULT_HEADERS, timeout=15)
-    response.raise_for_status()
+def parse_28hse_new_projects_html(html: str) -> pd.DataFrame:
+    """Parse the server-rendered 28Hse new-project cards.
 
-    raw_path = save_raw_snapshot("hse28_new_projects", response.text, file_ext="html", source_url=HSE28_NEW_PROPERTIES_URL)
-
-    soup = BeautifulSoup(response.text, 'html.parser')
-    cards = soup.find_all('div', class_=re.compile(r'item\b|property_item'))
+    The portal publishes several distinct unit states on each card.  Keep
+    them separate: ``remaining_units`` is not necessarily ``total - sold``
+    because the portal's definitions/timing and phase scope are not documented
+    as an official contract.
+    """
+    soup = BeautifulSoup(html or "", "html.parser")
+    cards = soup.select("div.content")
 
     records = []
     for c in cards:
@@ -37,19 +39,24 @@ def fetch_28hse_new_projects() -> pd.DataFrame:
                     first_text = meta_elem.find(string=True, recursive=False)
                     district = first_text.strip() if first_text and first_text.strip() else None
 
-                # Total unit count is a labelled "ui mini statistic" block
-                # (label text "總伙數"). A bare digit+"伙" regex over the
-                # whole card's text also matches the remaining/on-sale/sold
-                # counts shown alongside it, so it must be matched by label.
-                units = None
+                # Unit states are labelled "ui mini statistic" blocks.  A
+                # whole-card digit regex would confuse total/remaining/on-sale
+                # and sold counts, so match each label explicitly.
+                stats: dict[str, int | None] = {}
                 for stat in c.find_all('div', class_='ui mini statistic'):
                     label_elem = stat.find('div', class_='label')
-                    if label_elem and '總伙數' in label_elem.get_text():
+                    if label_elem:
+                        label = label_elem.get_text(" ", strip=True)
                         value_elem = stat.find('div', class_='value')
-                        if value_elem:
-                            digits = re.sub(r'[^0-9]', '', value_elem.get_text())
-                            units = int(digits) if digits else None
-                        break
+                        digits = re.sub(r'[^0-9]', '', value_elem.get_text()) if value_elem else ""
+                        stats[label] = int(digits) if digits else None
+
+                status = None
+                row = c.select_one(".description .middle.aligned.row")
+                if row:
+                    columns = row.find_all("div", recursive=False)
+                    if columns:
+                        status = columns[0].get_text(" ", strip=True) or None
 
                 # Estimated move-in year, e.g. "2027年入伙" -- not shown for
                 # every listing (some cards only carry a developer label).
@@ -61,14 +68,33 @@ def fetch_28hse_new_projects() -> pd.DataFrame:
                 records.append({
                     'project_name': title,
                     'location_district': district,
-                    'estimated_total_units': units,
+                    'project_url': title_a.get('href'),
+                    'status': status,
+                    'estimated_total_units': stats.get('總伙數'),
+                    'remaining_units': stats.get('餘貨'),
+                    'on_sale_units': stats.get('在售'),
+                    'sold_units': stats.get('已售'),
                     'estimated_move_in_year': move_in_year,
                     'source_platform': '28Hse'
                 })
 
-    df = pd.DataFrame(records)
+    columns = [
+        'project_name', 'project_url', 'location_district', 'status',
+        'estimated_total_units', 'remaining_units', 'on_sale_units',
+        'sold_units', 'estimated_move_in_year', 'source_platform'
+    ]
+    df = pd.DataFrame(records, columns=columns)
     if not df.empty:
         df = df.drop_duplicates(subset=['project_name']).reset_index(drop=True)
+    return df
+
+
+def fetch_28hse_new_projects() -> pd.DataFrame:
+    response = requests.get(HSE28_NEW_PROPERTIES_URL, headers=DEFAULT_HEADERS, timeout=15)
+    response.raise_for_status()
+
+    raw_path = save_raw_snapshot("hse28_new_projects", response.text, file_ext="html", source_url=HSE28_NEW_PROPERTIES_URL)
+    df = parse_28hse_new_projects_html(response.text)
     df.attrs['raw_snapshot'] = str(raw_path)
     df.attrs['source_url'] = HSE28_NEW_PROPERTIES_URL
     return df

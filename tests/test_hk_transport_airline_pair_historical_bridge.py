@@ -29,6 +29,8 @@ def test_pair_historical_bridge_covers_universe_and_priority_buckets() -> None:
     assert len(cathay) == 6
     assert cathay["historical_bridge_status"].eq("partial").all()
     assert cathay["historical_divergence_status"].eq("historical_bridge_incomplete").all()
+    assert cathay["fy2025_revenue_usd_mn_a"].notna().all()
+    assert cathay["fy2025_net_margin_pct_a"].notna().all()
 
 
 def test_pair_historical_bridge_retains_anomaly_and_expectation_caveats() -> None:

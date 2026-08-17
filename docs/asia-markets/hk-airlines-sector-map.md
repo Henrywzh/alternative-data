@@ -137,6 +137,49 @@ resolved at group level; the model must still control for route mix,
 international share, fleet type, hub and HSR overlap before interpreting margin
 differences as management skill or mispricing.
 
+## Company fundamental profiles: the business behind the KPI
+
+The operating data answers **what moved**. This section answers **why the same
+sector shock can affect each company differently**. The descriptions below are
+anchored to the normalized company-fundamentals and FY2025 driver tables; the
+thesis implications are analytical hypotheses that still need to be tested
+against yield, cost, route and consensus revisions.
+
+| Company | What the business actually is | Demand engine | Supply / cost character | Structural edge | Main earnings vulnerability | H1 2026 read-through |
+|---|---|---|---|---|---|---|
+| Air China | State-linked flag/network carrier centred on Beijing and Chengdu, with domestic trunk routes, international connectivity and belly cargo | Domestic business and hub traffic, international restoration, transfer flows and premium/long-haul mix | Large mixed narrowbody/widebody fleet; fuel, FX, labour, aircraft ownership/lease and maintenance are material | Flag-carrier network, slots/hubs and international connectivity | Widebody and international recovery can be sensitive to fuel, FX, geopolitics and weak business travel; network capacity can dilute yield | ASK was broadly controlled while RPK grew faster, producing a strong LF improvement; this is a positive utilization signal, but it is not yet proof of yield or profit conversion |
+| China Southern | Largest-scale mainland network carrier in this set, anchored by Guangzhou and Beijing Daxing, with domestic, regional and international passenger/cargo operations | South China economic activity, domestic trunk/regional travel, international restoration and hub connectivity | 972-aircraft group scale, multiple branches/subsidiaries and a broad aircraft mix; absolute fuel and fixed operating cost are large | Scale, dense domestic network, hub breadth and operating infrastructure | Scale can become overcapacity if ASK is pushed ahead of RPK; fuel and fleet-renewal costs matter, and broad network exposure makes route-level weakness harder to hide | H1 ASK grew faster than RPK and passenger LF fell; June/Q2 deterioration makes the key question whether this is temporary timing or early capacity/yield pressure |
+| China Eastern | Shanghai-centred network carrier using Hongqiao/Pudong hubs, with East China domestic routes and regional/international connectivity | Shanghai/East China business and leisure, international recovery, hub transfers and cargo/belly capacity | Large narrowbody/widebody network; Shanghai airport/hub costs, fuel, FX, labour and fleet utilization are important | Valuable Shanghai hub and international/regional connectivity | High HSR overlap on selected short-haul city pairs; hub congestion/cost, fare pressure and weak cargo monetization can offset traffic growth | Passenger demand outpaced capacity on H1 totals and LF improved, while cargo capacity expanded sharply; verify whether cargo growth is monetized before treating it as an earnings positive |
+| Spring Airlines | Pure LCC, Shanghai-based, standardized A320-family operation focused on low fares and high utilization | Price-sensitive leisure, stimulated demand, short-haul international/Greater China and tourism | Homogeneous fleet, high utilization and high LF; fuel, airport/handling, distribution and ancillary revenue are the key operating levers | Lower structural cost and the ability to create incremental demand through price; simple fleet lowers complexity | Short-haul HSR substitution and fare competition; fast fleet/ASK growth can turn the cost advantage into yield dilution | H1 RPK grew faster than ASK and LF stayed very high, supporting the LCC demand thesis; June LF softened slightly, so the next test is yield and ancillary revenue rather than passenger growth alone |
+| Juneyao Air + 9 Air | Listed group combines a higher-value network airline with a separately operated LCC subsidiary; Juneyao Air uses A320 plus B787-9, while 9 Air uses B737 | Juneyao Air: premium leisure/business, Shanghai/Nanjing hubs and international/long-haul recovery; 9 Air: price-sensitive domestic and short-haul demand | Two different fleets and cost structures; fuel, FX, widebody utilization, long-haul complexity and subsidiary scope are material | Mainline service/network positioning plus an LCC option inside the group | Consolidated results can hide opposite trends between Juneyao Air and 9 Air; widebody and international volatility, and any 9 Air capacity/yield weakness, can contaminate the group read-through | H1 group demand grew faster than capacity and LF improved, but this is a mixed-scope result; do not infer Juneyao Air premium pricing from group totals without separating 9 Air |
+| Hainan Airlines | Consolidated multi-carrier group with Hainan/Beijing roots and a mixed domestic/international network; reported scope is less homogeneous than a single airline | Tourism, domestic connectivity, international routes and group-network restructuring | Multi-carrier fleet/network and consolidated costs; fuel, FX, labour, lease/maintenance and subsidiary scope all matter | Network breadth and potentially useful international/regional connectivity | Group consolidation, restructuring and heterogeneous fleet make unit economics less transparent; route/fleet changes can overwhelm a top-down demand read | H1 capacity contracted while RPK was roughly flat and LF improved, but June demand and LF weakened; this points to discipline or supply removal, not automatically stronger underlying demand |
+| Cathay Pacific | Hong Kong hub group with premium international passenger, cargo, HK Express and associate exposure; not a like-for-like mainland domestic carrier | Hong Kong transfer traffic, premium long-haul and regional travel, China international connectivity and cargo cycle | Widebody-heavy international network plus low-cost subsidiary and associates; fuel, FX, labour, airport/route charges and aircraft utilization matter | Hong Kong hub, premium brand, long-haul network and cargo capability | International demand, Middle East/airspace/geopolitical disruption, fuel/FX and cargo-cycle swings; one-off associate gains can obscure recurring profit | H1 traffic and LF were strong, but the reported profit included an Air China dilution gain; recurring profit is the cleaner control for testing whether volume converts into earnings |
+
+### How to use the profiles in the thesis
+
+The profiles imply that the main cross-sectional questions are not simply
+“which company has the highest passenger growth?” They are:
+
+1. **Network carriers:** can Air China, Southern and Eastern convert hub and
+   international recovery into yield, or are they adding seats faster than
+   monetizable demand?
+2. **LCC:** is Spring's high LF and standardized fleet a structural cost/moat,
+   or is the market capitalizing a temporary low-fare demand window while yield
+   compresses?
+3. **Mixed-scope group:** is Juneyao's apparent resilience coming from
+   Juneyao Air, 9 Air, or simply the consolidation boundary?
+4. **Group restructuring:** is Hainan's lower capacity a deliberate supply
+   discipline signal, or a symptom of weaker network/fleet availability?
+5. **Control case:** does Cathay show that strong ASK/RPK/LF can coexist with
+   weak yield or a profit result dominated by a non-recurring item?
+
+For each company explorer page, expose these fields next to the time series:
+`business_model`, `hub_region`, `international_share`, `fleet_mix`,
+`scope_boundary`, `hsr_overlap`, `fuel_cost_share`, `yield`, `ASK`, `RPK`,
+`LF`, and the latest **consensus revision / company guidance / invalidation
+event**. This is the minimum context required to turn the dashboard from a
+data catalogue into a thesis-testing tool.
+
 ## Exposure questions to test, not assumptions to hard-code
 
 | Driver | Working question for Spring | Working question for Juneyao | Evidence needed |

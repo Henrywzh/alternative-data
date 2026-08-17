@@ -6,7 +6,7 @@
     "title": "香港劳动力市场与人才政策",
     "description": "劳动力、就业、失业、职位空缺、工资、就业收入及官方人才政策流量的来源快照。",
     "sector": "hk-labour-market",
-    "generatedAt": "2026-07-31T20:19:45.796215Z",
+    "generatedAt": "2026-08-09T16:08:44.910278Z",
     "cards": [
       {
         "id": "labour_force_card",
@@ -686,13 +686,13 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `cba9287a3610f8ab` · 生成于 2026-07-31T20:19:45.796215Z。"
+        "body": "**数据快照：** `cba9287a3610f8ab` · 生成于 2026-08-09T16:08:44.910278Z。"
       }
     ]
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-31T20:19:45.796215Z",
+    "generatedAt": "2026-08-09T16:08:44.910278Z",
     "status": "ready",
     "datasets": {
       "kpi_labour_force": [

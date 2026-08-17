@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-08-01T11:13:50.178166Z",
-  "snapshot_id": "e186c861fc950ada",
+  "generated_at": "2026-08-09T16:09:01.081916Z",
+  "snapshot_id": "d9891023da667880",
   "data_as_of": "2026-07-27",
   "overall_status": "Healthy",
   "live_sources": 8,
@@ -13,7 +13,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-01",
       "records": 961,
-      "freshness": "31d old",
+      "freshness": "39d old",
       "notes": "Monthly hours under Typhoon Signal 8+ & Red/Black Rainstorm warnings alongside HKD/RMB FX."
     },
     {
@@ -23,7 +23,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-28",
       "records": 2035,
-      "freshness": "4d old",
+      "freshness": "12d old",
       "notes": "Daily clearance across 17 control points for HK residents & Mainland visitors."
     },
     {
@@ -33,7 +33,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-27",
       "records": 2497,
-      "freshness": "5d old",
+      "freshness": "13d old",
       "notes": "Daily AM/PM benchmark fixing."
     },
     {
@@ -43,7 +43,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-30",
       "records": 4015,
-      "freshness": "2d old",
+      "freshness": "10d old",
       "notes": "PE (TTM), PB, and market cap only; no dividend-yield indicator is available from this endpoint."
     },
     {
@@ -53,7 +53,7 @@
       "status": "Healthy",
       "latest_observation": "2026-05-01",
       "records": 6500,
-      "freshness": "92d old",
+      "freshness": "100d old",
       "notes": "25 outlet-type categories, monthly since 2004."
     },
     {
@@ -63,7 +63,7 @@
       "status": "Healthy",
       "latest_observation": "2026-03-31",
       "records": 516,
-      "freshness": "123d old",
+      "freshness": "131d old",
       "notes": "Sector-wide purchases only; per-type purchases are not published."
     },
     {
@@ -87,5 +87,5 @@
       "notes": "75 months across 11 categories and 12 supermarket codes. Coverage only; no price index is rendered."
     }
   ],
-  "attachment_filename": "hk-local-consumer-dashboard-2026-08-01.html"
+  "attachment_filename": "hk-local-consumer-dashboard-2026-08-09.html"
 }
