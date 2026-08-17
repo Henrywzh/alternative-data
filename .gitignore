@@ -427,3 +427,14 @@ data/normalized/hk_transport/snapshots/*
 /.generated/test_*.png
 apps/asia-markets-dashboard/.generated/*.verification-failure*.png
 apps/asia-markets-dashboard/.generated/portable-verification-failure-*.png
+
+# asia-backtest input bundle: the long-form builder fails closed on these, so a
+# clean checkout cannot run the backtest tests without them. One patronage
+# snapshot is pinned as the CI input (the builder picks the newest valid file,
+# so a fresher local capture still wins locally).
+!data/raw/hk_transport/
+data/raw/hk_transport/*
+!data/raw/hk_transport/mtr_patronage_20260817_140455.json
+!docs/asia-markets/REAL_ESTATE_SHKP_IRIS_ORDER_PLAN.csv
+!docs/asia-markets/REAL_ESTATE_SHKP_IRIS_PILOT_TEMPLATE.csv
+!docs/asia-markets/REAL_ESTATE_SHKP_PHASE_DECISION_TEMPLATE.csv
