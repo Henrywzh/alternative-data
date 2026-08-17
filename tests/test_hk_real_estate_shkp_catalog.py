@@ -1,5 +1,7 @@
 import json
 
+from conftest import require_local_normalized
+
 import pandas as pd
 
 from src.hk_real_estate.cli import main as cli_main
@@ -101,6 +103,9 @@ def test_historical_transaction_merge_repairs_shifted_price_and_quarantines_miss
 
 
 def test_shkp_catalog_offline_audit_has_required_layers_and_keeps_gate_closed():
+    # The offline audit walks the full SHKP catalog: 38 normalized datasets
+    # that are pipeline outputs and are not tracked by git.
+    require_local_normalized("shkp_property_catalog", "srpe_development_index")
     result = run_shkp_catalog(offline=True)
 
     assert result["mode"] == "offline"
