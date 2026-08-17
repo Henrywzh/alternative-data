@@ -105,6 +105,22 @@ def save_normalized_dataset(
     target_dir.mkdir(parents=True, exist_ok=False)
     parquet_path = target_dir / f"{dataset_name}.parquet"
 
+    # pyarrow's pandas conversion tries to infer a numeric type for object
+    # columns.  A single evidence column can mix plain numeric strings (e.g.
+    # "58.0") with JSON-array strings (e.g. "[2.0, 58.0]") when a source
+    # prints several candidate percentages for one project.  That mixed
+    # column makes inference attempt a double cast and abort with
+    # ArrowInvalid ("Could not convert '[...]' with type str").  Pin such
+    # evidence columns to a string dtype before writing so the full pipeline
+    # is not blocked by one source's formatting.  Purely numeric columns are
+    # left untouched.
+    for column in df.columns:
+        if df[column].dtype == object and df[column].map(
+            lambda value: isinstance(value, str) and value.strip().startswith("["),
+            na_action="ignore",
+        ).any():
+            df[column] = df[column].astype("string")
+
     df.to_parquet(parquet_path, index=False)
 
     lineage_path = target_dir / "lineage.json"
