@@ -3,9 +3,11 @@
 import json
 import logging
 import os
+import re
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, Mapping
+from urllib.parse import unquote, urlparse
 
 import pandas as pd
 
@@ -22,20 +24,120 @@ from .sources.midland_transactions import fetch_midland_transaction_pilot
 from .sources.centaline_transactions import fetch_centaline_transaction_pilot
 from .sources.epi import fetch_28hse_epi_eri
 from .sources.rvd import run_rvd_ingestion, fetch_rvd_office_rental_index, fetch_rvd_retail_rental_index
+from .sources.commercial_controls import (
+    fetch_cnsd_retail_sales_control,
+    fetch_rvd_commercial_forecast_completions,
+    fetch_rvd_commercial_stock_vacancy_district,
+    fetch_rvd_office_stock_vacancy_district,
+    fetch_rvd_office_vacancy_annual,
+    fetch_tourism_hotel_adr_category,
+    fetch_tourism_hotel_occupancy_category,
+    fetch_tourism_hotel_rooms_category,
+)
 from .sources.landreg import fetch_landreg_monthly_sp, fetch_landreg_monthly_statistics
 from .sources.srpe import fetch_srpe_project_documents, fetch_srpe_firsthand_sales_digest
 from .sources.buildings_dept import fetch_buildings_dept_digests, fetch_buildings_dept_monthly_stats
 from .sources.hkma import fetch_hkma_residential_mortgage_survey
 from .sources.bd_projects import fetch_bd_project_lifecycle_events, fetch_bd_supply_leading_indicators
-from .sources.bd_history import fetch_bd_supply_pipeline_history
+from .sources.bd_history import (
+    fetch_bd_project_lifecycle_history,
+    fetch_bd_project_lifecycle_history_audit,
+    fetch_bd_supply_pipeline_history,
+    reparse_bd_project_lifecycle_history_from_local_snapshots,
+)
 from .sources.policy_events import build_primary_policy_sources_catalog, validate_developer_project_registry
 from .mapping.developer_registry import REGISTRY_CSV_PATH
 from .dedup.transaction_dedup import deduplicate_agency_transactions
-from .storage import NORMALIZED_DIR, save_normalized_dataset, save_raw_snapshot
+from .storage import NORMALIZED_DIR, load_latest_normalized, save_normalized_dataset, save_raw_snapshot
+from .shkp_commercial import (
+    build_shkp_commercial_asset_master,
+    build_shkp_quarterly_events,
+)
+from .sources.shkp_quarterly import fetch_shkp_quarterly_numeric_facts
+from .sources.shkp import fetch_shkp_corporate_documents, fetch_shkp_property_catalog
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("hk_real_estate_pipeline")
+
+
+def _select_landsd_consent_urls(
+    document_urls: list[str] | tuple[str, ...],
+    *,
+    priority_districts: list[str] | tuple[str, ...] | None = None,
+    max_urls: int = 5,
+) -> list[str]:
+    """Select a bounded, district-diverse LandsD consent PDF set.
+
+    LandsD publishes both image-only PDFs and text-accessible ``wac_e``
+    variants for many districts.  This helper keeps at most one document per
+    district, prefers the accessible variant, and applies an explicit
+    priority order.  It is only a fetch-budget selector; it does not infer a
+    project, ownership, or coverage status from a missing district.
+    """
+    if max_urls < 0:
+        raise ValueError("max_urls must be non-negative")
+    urls = [str(url).strip() for url in document_urls if str(url).strip()]
+    if not urls or max_urls == 0:
+        return []
+
+    aliases = {
+        "ke": "kowloon east",
+        "kowlooneast": "kowloon east",
+        "kw": "kowloon west",
+        "kowloonwest": "kowloon west",
+        "he": "hong kong east",
+        "hongeast": "hong kong east",
+        "hw": "hong kong west",
+        "hongkongwest": "hong kong west",
+    }
+
+    def district_key(url: str) -> str:
+        filename = unquote(urlparse(url).path.rsplit("/", 1)[-1]).casefold()
+        filename = re.sub(r"\[from\s*\d{4}\].*$", "", filename)
+        filename = re.sub(r"\(pre\s*\d{4}\).*$", "", filename)
+        filename = re.sub(r"wac_e\.pdf$|\.pdf$", "", filename)
+        compact = re.sub(r"[^a-z0-9]+", "", filename)
+        if compact in aliases:
+            return aliases[compact]
+        return re.sub(r"\s+", " ", re.sub(r"[_-]+", " ", filename)).strip()
+
+    def is_accessible(url: str) -> bool:
+        path = unquote(urlparse(url).path).casefold()
+        return "/accessible/" in path or "wac_e" in path
+
+    by_district: dict[str, list[str]] = {}
+    for url in urls:
+        key = district_key(url)
+        by_district.setdefault(key, [])
+        if url not in by_district[key]:
+            by_district[key].append(url)
+    for key, candidates in by_district.items():
+        by_district[key] = sorted(
+            candidates,
+            key=lambda candidate: (not is_accessible(candidate), urls.index(candidate)),
+        )
+
+    ordered_keys: list[str] = []
+    if priority_districts:
+        for district in priority_districts:
+            normalized = re.sub(r"\s+", " ", str(district).casefold().strip())
+            normalized = aliases.get(re.sub(r"[^a-z0-9]+", "", normalized), normalized)
+            if normalized in by_district and normalized not in ordered_keys:
+                ordered_keys.append(normalized)
+    if not priority_districts:
+        for key in by_district:
+            if key not in ordered_keys:
+                ordered_keys.append(key)
+
+    selected: list[str] = []
+    for key in ordered_keys:
+        if len(selected) >= max_urls:
+            break
+        candidates = by_district[key]
+        if candidates:
+            selected.append(candidates[0])
+    return selected
 
 
 class PipelineRunError(RuntimeError):
@@ -62,6 +164,23 @@ QUALITY_SPECS: Dict[str, Dict[str, Any]] = {
     "midland_field_dictionary": {"kind": "catalog", "required": ["dataset", "field_name", "metric_group", "unit", "source_field"], "lineage_required": True},
     "rvd_office_rental_index_monthly": {"kind": "measure", "required": ["date", "segment", "metric", "value", "is_provisional"], "numeric": ["value"], "nonnegative": ["value"], "lineage_required": True, "max_age_days": 400},
     "rvd_retail_index_monthly": {"kind": "measure", "required": ["date", "segment", "metric", "value", "is_provisional"], "numeric": ["value"], "nonnegative": ["value"], "lineage_required": True, "max_age_days": 400},
+    "rvd_office_vacancy_annual": {"kind": "measure", "required": ["date", "segment", "metric", "value", "frequency"], "numeric": ["value"], "nonnegative": ["value"], "lineage_required": True, "max_age_days": 800},
+    "rvd_office_stock_vacancy_district_annual": {"kind": "measure", "required": ["date", "district", "segment", "metric", "value", "frequency"], "numeric": ["value"], "nonnegative": ["value"], "lineage_required": True, "max_age_days": 800},
+    "rvd_commercial_stock_vacancy_district_annual": {"kind": "measure", "required": ["date", "district", "segment", "metric", "value", "frequency"], "numeric": ["value"], "nonnegative": ["value"], "lineage_required": True, "max_age_days": 800},
+    # Forecast completion rows legitimately carry future observation years;
+    # keep them as a catalog/snapshot contract so the generic measure gate
+    # does not reject a forecast for being ahead of today's date.
+    "rvd_commercial_forecast_completions_annual": {"kind": "catalog", "required": ["date", "district", "segment", "metric", "value", "frequency"], "numeric": ["value"], "nonnegative": ["value"], "lineage_required": True},
+    "cnsd_retail_sales_control_monthly": {"kind": "measure", "required": ["date", "category", "metric", "value", "is_provisional"], "numeric": ["value"], "nonnegative": ["value"], "lineage_required": True, "max_age_days": 400},
+    "tourism_hotel_occupancy_category_monthly": {"kind": "measure", "required": ["date", "category", "metric", "value", "is_provisional"], "numeric": ["value"], "nonnegative": ["value"], "lineage_required": True, "max_age_days": 400},
+    "tourism_hotel_adr_category_monthly": {"kind": "measure", "required": ["date", "category", "metric", "value", "is_provisional"], "numeric": ["value"], "nonnegative": ["value"], "lineage_required": True, "max_age_days": 400},
+    # The public room-supply file can lag the occupancy/ADR files by several
+    # releases.  Keep the returned vintage as an explicit catalog snapshot
+    # rather than rejecting it as a fabricated current measure.
+    "tourism_hotel_rooms_category_monthly": {"kind": "catalog", "required": ["date", "category", "metric", "value", "is_provisional"], "numeric": ["value"], "nonnegative": ["value"], "lineage_required": True},
+    "shkp_quarterly_events": {"kind": "catalog", "required": ["event_id", "event_date", "title", "event_type", "property_relevance"], "lineage_required": True},
+    "shkp_quarterly_numeric_facts": {"kind": "catalog", "required": ["fact_id", "event_id", "fact_type", "value", "unit", "source_url"], "numeric": ["value"], "nonnegative": ["value"], "lineage_required": True},
+    "shkp_commercial_asset_master": {"kind": "catalog", "required": ["asset_id", "canonical_name", "source_layer", "status"], "lineage_required": True},
     "midland_market_snapshots": {"kind": "measure", "required": ["date", "scope_type", "scope_id", "period_type", "metric", "value", "unit"], "numeric": ["value"], "nonnegative": ["value"], "lineage_required": True, "max_age_days": 400},
     "midland_transaction_summary_snapshot": {"kind": "catalog", "required": ["date", "as_of_date", "asset_class", "metric", "value", "unit"], "numeric": ["value"], "lineage_required": True},
     "midland_property_event_hints": {"kind": "catalog", "required": ["event_date", "event_id", "description", "status"], "lineage_required": True},
@@ -86,6 +205,160 @@ QUALITY_SPECS: Dict[str, Dict[str, Any]] = {
     # archival batch must not be rejected merely because its final month is
     # older than the current date.
     "bd_supply_pipeline_history": {"kind": "catalog", "required": ["date", "permit_stage", "property_category", "revision_status", "parser_confidence"]},
+    "bd_project_lifecycle_history": {"kind": "catalog", "required": ["digest_month", "observation_month", "permit_stage", "site_address", "parser_confidence", "source_url"], "lineage_required": True},
+    "bd_project_lifecycle_history_audit": {"kind": "catalog", "required": ["observation_month", "permit_stage", "reconciliation_status", "detail_row_count", "summary_row_count"], "lineage_required": True},
+    "shkp_bd_history_crosswalk": {
+        "kind": "catalog",
+        "required": ["bd_match_method", "bd_match_status", "project_identity_status", "ownership_promotion_status"],
+        "lineage_required": True,
+    },
+    "shkp_phase_role_evidence": {
+        "kind": "catalog",
+        "required": [
+            "evidence_id",
+            "srpe_development_id",
+            "phase_label",
+            "role_scope",
+            "source_url",
+            "promotion_status",
+        ],
+    },
+    "shkp_indicative_ownership_roster": {
+        "kind": "catalog",
+        "required": [
+            "registry_key",
+            "srpe_development_id",
+            "indicative_owner_status",
+            "indicative_numeric_consistency_status",
+            "strict_ownership_attribution_ready",
+        ],
+        "lineage_required": True,
+    },
+    "shkp_bd_phase_group_evidence": {
+        "kind": "catalog",
+        "required": [
+            "phase_group_id",
+            "group_resolution_status",
+            "srpe_phase_ids",
+            "bd_permit_numbers",
+            "ownership_promotion_status",
+            "permit_attribution_status",
+            "research_only",
+        ],
+        "lineage_required": True,
+    },
+    "shkp_bd_phase_permit_candidate_evidence": {
+        "kind": "catalog",
+        "required": [
+            "phase_group_id",
+            "candidate_context_key",
+            "candidate_phase_count",
+            "bd_pdf_token_coverage_status",
+            "phase_context_review_status",
+            "indicative_ownership_context_status",
+            "indicative_ownership_role_alignment_status",
+            "resolution_status",
+            "resolution_priority",
+            "ownership_promotion_status",
+            "permit_attribution_status",
+            "research_only",
+        ],
+        "numeric": ["candidate_phase_count", "bd_history_row_count", "schedule_candidate_count"],
+        "nonnegative": ["candidate_phase_count", "bd_history_row_count", "schedule_candidate_count"],
+        "lineage_required": True,
+    },
+    # Address-only SHKP/BD entity review remains a research queue.  The
+    # required fields are decision-status fields that are non-null even for
+    # unmatched or malformed candidate rows; nullable dates and identifiers
+    # are intentionally excluded from the generic gate.
+    "shkp_bd_history_entity_resolution_review_queue": {
+        "kind": "catalog",
+        "required": [
+            "entity_resolution_status",
+            "review_priority",
+            "ownership_promotion_status",
+            "permit_attribution_status",
+            "research_only",
+        ],
+        "lineage_required": True,
+    },
+    "shkp_bd_phase_permit_reconciliation": {
+        "kind": "catalog",
+        "required": [
+            "reconciliation_id",
+            "phase_group_id",
+            "candidate_context_key",
+            "bd_pdf_token_coverage_status",
+            "phase_context_review_status",
+            "indicative_ownership_context_status",
+            "indicative_ownership_role_alignment_status",
+            "reconciliation_status",
+            "permit_assignment_status",
+            "ownership_promotion_status",
+            "permit_attribution_status",
+            "research_only",
+        ],
+        "lineage_required": True,
+    },
+    "shkp_bd_phase_ownership_review": {
+        "kind": "catalog",
+        "required": [
+            "srpe_development_id",
+            "phase_context_review_status",
+            "indicative_ownership_context_status",
+            "ownership_review_status",
+            "ownership_promotion_status",
+            "permit_attribution_status",
+            "research_only",
+        ],
+        "numeric": [
+            "bd_candidate_row_count",
+            "bd_history_row_count",
+            "bd_distinct_permit_number_count",
+            "phase_context_supported_row_count",
+            "phase_context_other_group_row_count",
+            "phase_context_same_family_variant_row_count",
+            "phase_context_unresolved_row_count",
+            "phase_role_evidence_count",
+            "indicative_evidence_source_count",
+        ],
+        "nonnegative": [
+            "bd_candidate_row_count",
+            "bd_history_row_count",
+            "bd_distinct_permit_number_count",
+            "phase_context_supported_row_count",
+            "phase_context_other_group_row_count",
+            "phase_context_same_family_variant_row_count",
+            "phase_context_unresolved_row_count",
+            "phase_role_evidence_count",
+            "indicative_evidence_source_count",
+        ],
+        "lineage_required": True,
+    },
+    "shkp_bd_history_entity_resolution_summary": {
+        "kind": "catalog",
+        "required": [
+            "candidate_phase_count",
+            "ownership_promotion_status",
+            "permit_attribution_status",
+            "research_only",
+        ],
+        "numeric": ["candidate_phase_count"],
+        "nonnegative": ["candidate_phase_count"],
+        "lineage_required": True,
+    },
+    "shkp_bd_phase_resolution_candidates": {
+        "kind": "catalog",
+        "required": [
+            "phase_resolution_status",
+            "phase_resolution_priority",
+            "permit_identity_status",
+            "ownership_promotion_status",
+            "permit_attribution_status",
+            "research_only",
+        ],
+        "lineage_required": True,
+    },
     "hkma_residential_mortgage_survey": {"kind": "measure", "required": ["observation_date", "approved_loans_amount_mhkd"], "max_age_days": 400},
     "bd_project_lifecycle_events": {"kind": "catalog", "required": ["permit_stage", "site_address"]},
 }
@@ -136,7 +409,7 @@ def _quality_errors(dataset_name: str, df: pd.DataFrame) -> list[str]:
         if dates.isna().any():
             return [f"{date_col} contains invalid values"]
         duplicate_key = [date_col]
-        for candidate in ("index_type", "series_id", "metric", "indicator_name", "segment", "scope_type", "scope_id", "period_type", "asset_class", "as_of_date", "statistic_name", "table_id", "source_record_id", "dedup_transaction_id", "permit_stage", "region", "property_category", "comparison_type", "revision_status", "source_url"):
+        for candidate in ("index_type", "series_id", "metric", "indicator_name", "segment", "category", "district", "geography", "scope_type", "scope_id", "period_type", "asset_class", "as_of_date", "statistic_name", "table_id", "source_record_id", "dedup_transaction_id", "permit_stage", "region", "property_category", "comparison_type", "revision_status", "source_url"):
             if candidate in df.columns:
                 duplicate_key.append(candidate)
         if df.duplicated(subset=duplicate_key).any():
@@ -343,6 +616,103 @@ def run_rvd_commercial_pipeline(run_id: str | None = None, *, _raise_on_failure:
     return _finalize_group(run_id, "tranche_3_rvd_commercial", results, _raise_on_failure)
 
 
+def run_hk_commercial_controls_pipeline(run_id: str | None = None, *, _raise_on_failure: bool = True) -> Dict[str, Any]:
+    """Refresh SHKP Quarterly events and free HK commercial control layers.
+
+    This tranche is intentionally separate from the Mainland project work and
+    from the existing residential index tranches.  Each source is recorded
+    independently so a tourism or C&SD outage cannot erase the last valid RVD
+    or issuer-event snapshot.
+    """
+    run_id = run_id or str(uuid.uuid4())
+    results: Dict[str, Any] = {}
+
+    # Derived SHKP issuer layers.  Prefer the durable catalog snapshots; a
+    # fresh fetch is only used when the local source contract is absent.
+    try:
+        corporate = load_latest_normalized("shkp_corporate_documents")
+        if corporate.empty:
+            corporate = fetch_shkp_corporate_documents(timeout=60)
+        catalog = load_latest_normalized("shkp_property_catalog")
+        if catalog.empty:
+            catalog = fetch_shkp_property_catalog(timeout=60, max_pages=None)
+        events = build_shkp_quarterly_events(corporate, property_catalog=catalog)
+        events.attrs["raw_snapshots"] = list(dict.fromkeys(
+            [str(value) for value in corporate.attrs.get("raw_snapshots", []) if value]
+            + [str(value) for value in catalog.attrs.get("raw_snapshots", []) if value]
+        ))
+        events.attrs["source_urls"] = list(dict.fromkeys(
+            [str(value) for value in corporate.attrs.get("source_urls", []) if value]
+            + [str(value) for value in catalog.attrs.get("source_urls", []) if value]
+            + ["https://www.shkp.com/en-US/investor-relations/shkp-quarterly"]
+        ))
+        _record_many(run_id, results, {"shkp_quarterly_events": events})
+        try:
+            facts = fetch_shkp_quarterly_numeric_facts(
+                corporate_documents=corporate,
+                quarterly_events=events,
+                max_documents=24,
+            )
+            facts.attrs["raw_snapshots"] = list(dict.fromkeys(
+                [str(value) for value in facts.attrs.get("raw_snapshots", []) if value]
+                + [str(value) for value in corporate.attrs.get("raw_snapshots", []) if value]
+            ))
+            facts.attrs["source_urls"] = list(dict.fromkeys(
+                [str(value) for value in facts.attrs.get("source_urls", []) if value]
+                + [str(value) for value in corporate.attrs.get("source_urls", []) if value]
+                + ["https://www.shkp.com/en-US/investor-relations/shkp-quarterly"]
+            ))
+            _record_many(run_id, results, {"shkp_quarterly_numeric_facts": facts})
+        except Exception as exc:
+            logger.exception("SHKP Quarterly numeric fact layer failed")
+            results["shkp_quarterly_numeric_facts"] = _error_result(exc)
+    except Exception as exc:
+        logger.exception("SHKP Quarterly event layer failed")
+        results["shkp_quarterly_events"] = _error_result(exc)
+        results["shkp_quarterly_numeric_facts"] = _error_result(exc)
+
+    try:
+        catalog = load_latest_normalized("shkp_property_catalog")
+        if catalog.empty:
+            catalog = fetch_shkp_property_catalog(timeout=60, max_pages=None)
+        completed = load_latest_normalized("shkp_completed_properties")
+        completion = load_latest_normalized("shkp_completion_schedule_projects")
+        assets = build_shkp_commercial_asset_master(
+            property_catalog=catalog,
+            completed_properties=completed,
+            completion_schedule=completion,
+        )
+        assets.attrs["raw_snapshots"] = list(dict.fromkeys(
+            [str(value) for frame in (catalog, completed, completion) for value in frame.attrs.get("raw_snapshots", []) if value]
+        ))
+        assets.attrs["source_urls"] = list(dict.fromkeys(
+            [str(value) for frame in (catalog, completed, completion) for value in frame.attrs.get("source_urls", []) if value]
+            + ["https://www.shkp.com/en-US/our-business/hong-kong-properties", "https://www.shkp.com/en-US/investor-relations"]
+        ))
+        _record_many(run_id, results, {"shkp_commercial_asset_master": assets})
+    except Exception as exc:
+        logger.exception("SHKP commercial asset master failed")
+        results["shkp_commercial_asset_master"] = _error_result(exc)
+
+    source_fetchers = {
+        "rvd_office_vacancy_annual": fetch_rvd_office_vacancy_annual,
+        "rvd_office_stock_vacancy_district_annual": fetch_rvd_office_stock_vacancy_district,
+        "rvd_commercial_stock_vacancy_district_annual": fetch_rvd_commercial_stock_vacancy_district,
+        "rvd_commercial_forecast_completions_annual": fetch_rvd_commercial_forecast_completions,
+        "cnsd_retail_sales_control_monthly": fetch_cnsd_retail_sales_control,
+        "tourism_hotel_occupancy_category_monthly": fetch_tourism_hotel_occupancy_category,
+        "tourism_hotel_adr_category_monthly": fetch_tourism_hotel_adr_category,
+        "tourism_hotel_rooms_category_monthly": fetch_tourism_hotel_rooms_category,
+    }
+    for dataset_name, fetcher in source_fetchers.items():
+        try:
+            _record_many(run_id, results, {dataset_name: fetcher()})
+        except Exception as exc:
+            logger.exception("Commercial control source failed: %s", dataset_name)
+            results[dataset_name] = _error_result(exc)
+    return _finalize_group(run_id, "hk_commercial_controls", results, _raise_on_failure)
+
+
 def run_midland_snapshot_pipeline(run_id: str | None = None, *, _raise_on_failure: bool = True) -> Dict[str, Any]:
     """Run Tranche 4 only: current rolling market and registration snapshots."""
     run_id = run_id or str(uuid.uuid4())
@@ -545,6 +915,103 @@ def run_bd_history_backfill(
     return _finalize_group(run_id, "bd_history_backfill", results, _raise_on_failure)
 
 
+def run_bd_project_history_backfill(
+    run_id: str | None = None,
+    *,
+    start_year: int = 2005,
+    end_year: int | None = None,
+    months: list[int] | tuple[int, ...] | None = None,
+    _raise_on_failure: bool = True,
+) -> Dict[str, Any]:
+    """Run the explicit detailed Md52--Md56 project-history backfill.
+
+    This is separate from the stable Section-1 aggregate backfill because the
+    detailed PDF layout is more fragile and should be expanded only after a
+    bounded year/month QA sample passes.
+    """
+    run_id = run_id or str(uuid.uuid4())
+    results: Dict[str, Any] = {}
+    try:
+        logger.info(
+            "Backfilling detailed Buildings Department Md52--Md56 project history (%s-%s; months=%s)...",
+            start_year,
+            end_year or "latest",
+            months or "all",
+        )
+        _record_many(
+            run_id,
+            results,
+            {
+                "bd_project_lifecycle_history": fetch_bd_project_lifecycle_history(
+                    start_year=start_year,
+                    end_year=end_year,
+                    months=months,
+                )
+            },
+        )
+    except Exception as exc:
+        logger.exception("Buildings Department detailed project history failed")
+        results["bd_project_lifecycle_history"] = _error_result(exc)
+    return _finalize_group(run_id, "bd_project_history_backfill", results, _raise_on_failure)
+
+
+def run_bd_project_history_local_reparse(
+    run_id: str | None = None,
+    *,
+    _raise_on_failure: bool = True,
+) -> Dict[str, Any]:
+    """Reparse the latest BD detail history from existing local raw PDFs.
+
+    This is the safe follow-up to a parser correction: it does not download
+    the official archive again and refuses to persist a partial replacement if
+    any referenced raw snapshot is missing or unreadable.
+    """
+    run_id = run_id or str(uuid.uuid4())
+    results: Dict[str, Any] = {}
+    try:
+        previous = load_latest_normalized("bd_project_lifecycle_history")
+        if previous.empty:
+            raise RuntimeError("bd_project_lifecycle_history is required and must contain rows")
+        reparsed = reparse_bd_project_lifecycle_history_from_local_snapshots(previous, strict=True)
+        _record_many(run_id, results, {"bd_project_lifecycle_history": reparsed})
+    except Exception as exc:
+        logger.exception("Buildings Department local detail reparse failed")
+        results["bd_project_lifecycle_history"] = _error_result(exc)
+    return _finalize_group(run_id, "bd_project_history_local_reparse", results, _raise_on_failure)
+
+
+def run_bd_project_history_audit_backfill(
+    run_id: str | None = None,
+    *,
+    start_year: int = 2005,
+    end_year: int | None = None,
+    _raise_on_failure: bool = True,
+) -> Dict[str, Any]:
+    """Persist the bounded detailed-vs-summary Buildings Department audit."""
+    run_id = run_id or str(uuid.uuid4())
+    results: Dict[str, Any] = {}
+    try:
+        logger.info(
+            "Auditing detailed Buildings Department Md52--Md56 rows against Section 1 aggregates (%s-%s)...",
+            start_year,
+            end_year or "latest",
+        )
+        _record_many(
+            run_id,
+            results,
+            {
+                "bd_project_lifecycle_history_audit": fetch_bd_project_lifecycle_history_audit(
+                    start_year=start_year,
+                    end_year=end_year,
+                )
+            },
+        )
+    except Exception as exc:
+        logger.exception("Buildings Department detailed project history audit failed")
+        results["bd_project_lifecycle_history_audit"] = _error_result(exc)
+    return _finalize_group(run_id, "bd_project_history_audit", results, _raise_on_failure)
+
+
 def run_all_incomplete_pipelines(run_id: str | None = None, *, _raise_on_failure: bool = False) -> Dict[str, Any]:
     """Run digestion pipeline for all 5 incomplete HK Real Estate data sources."""
     run_id = run_id or str(uuid.uuid4())
@@ -658,6 +1125,7 @@ def run_all_pipelines() -> Dict[str, Any]:
         run_all_incomplete_pipelines,
         run_midland_monthly_pipeline,
         run_rvd_commercial_pipeline,
+        run_hk_commercial_controls_pipeline,
         run_midland_snapshot_pipeline,
         run_policy_event_research_pipeline,
     )
