@@ -35,6 +35,9 @@ dev = [
   "pytest>=8.2",
   "pytest-xdist>=3.6",
   "pytest-timeout>=2.3",
+  # tests/test_capture_yfinance_intraday.py builds a DuckDB fixture for the
+  # HKEX event-study capture lane.
+  "duckdb>=1.0",
 ]
 
 [project.scripts]
