@@ -143,6 +143,8 @@ def compute_semiconductor_views(datasets: dict[str, DatasetLoadResult]) -> dict[
         base_month = None
         latest_proxy_month = None
         latest_proxy_data = pd.Series(dtype="object")
+        latest_proxy_coverage = None
+        latest_proxy_missing = None
 
     latest_fred_month = None
     latest_fred_series_names: list[str] = []
@@ -547,7 +549,7 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
 
             if pd.notna(ppi_mom):
                 ppi_delta_cls = "up" if ppi_mom >= 0 else "down"
-            ppi_delta_text = f"{'↑' if ppi_mom >= 0 else '↓'} {abs(ppi_mom):.1f}% MoM"
+                ppi_delta_text = f"{'↑' if ppi_mom >= 0 else '↓'} {abs(ppi_mom):.1f}% MoM"
             else:
                 ppi_delta_cls, ppi_delta_text = "flat", "latest complete basket month"
 
