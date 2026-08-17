@@ -2399,7 +2399,13 @@ def build_shkp_historical_phase_review_queue(
         status = str(record.get("match_status") or "unmatched")
         if status not in {"ambiguous", "matched_needs_review", "unmatched"}:
             continue
-        phase_id = str(record.get("srpe_development_id") or "").strip() or None
+        # `or ""` is not enough to normalise a missing id: a null read out of a
+        # DataFrame arrives as NaN, which is truthy, so str() would yield the
+        # literal "nan" and an unmatched row would look matched.
+        raw_phase_id = record.get("srpe_development_id")
+        if raw_phase_id is None or (isinstance(raw_phase_id, float) and pd.isna(raw_phase_id)):
+            raw_phase_id = ""
+        phase_id = str(raw_phase_id).strip() or None
         phase = roster_by_id.get(phase_id or "", {})
         manifest_rows = manifest_counts.get(phase_id or "", 0)
         active = str(phase.get("active") or "").strip() or None

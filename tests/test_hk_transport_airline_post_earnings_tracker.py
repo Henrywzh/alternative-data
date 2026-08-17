@@ -5,6 +5,7 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
+from conftest import require_local_capture
 from hk_transport.sources.airline_post_earnings_tracker import (
     OUTPUT_PATH,
     build_airline_post_earnings_tracker,
@@ -40,6 +41,13 @@ def test_mainland_rows_awaiting(tracker: pd.DataFrame) -> None:
 
 
 def test_cathay_row_filled_with_market_reaction(tracker: pd.DataFrame) -> None:
+    # The T0/T+1/T+5 legs read a 4 MB yfinance daily-bar capture under
+    # data/raw/, which the repository does not track.  The builder degrades to
+    # status="no_price_history" without it, so only the filled-case assertions
+    # below need the capture present.
+    require_local_capture(
+        "data/raw/market_data/yfinance/20260808T-stage3-daily-5y/bars_1d.parquet"
+    )
     cathay = tracker[tracker.company.eq("Cathay Pacific")].iloc[0]
     assert cathay.validation_status == "filled"
     assert cathay.announcement_date == "2026-08-05"
