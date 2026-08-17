@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-08-16T06:59:40.143245Z",
-  "snapshot_id": "fab9d849b8982ef4",
+  "generated_at": "2026-08-17T07:16:44.142206Z",
+  "snapshot_id": "0935db785e3ad0d9",
   "data_as_of": "2026-07-31",
   "overall_status": "Healthy",
   "live_sources": 6,
@@ -53,7 +53,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-31",
       "records": 49059,
-      "freshness": "16d old",
+      "freshness": "17d old",
       "notes": "Daily final-effluent flow and sparse laboratory observations (BOD, TSS, nitrogen, oil/grease, pH and E. coli) by sewage treatment works; treatment-works coverage changes over time."
     },
     {
@@ -61,11 +61,11 @@
       "dataset": "wsd_water_suspension",
       "type": "Event",
       "status": "Healthy",
-      "latest_observation": "2026-08-16",
-      "records": 123,
+      "latest_observation": "2026-08-17",
+      "records": 116,
       "freshness": "Live at build time",
       "notes": "Current planned and emergency water-suspension notices with district, affected address, start/resumption time, cause and current status; refreshed every five minutes and not a continuous consumption series."
     }
   ],
-  "attachment_filename": "hk-utilities-dashboard-2026-08-16.html"
+  "attachment_filename": "hk-utilities-dashboard-2026-08-17.html"
 }
