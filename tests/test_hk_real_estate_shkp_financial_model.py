@@ -21,6 +21,7 @@ from src.hk_real_estate.shkp_financial_model import (
     load_shkp_consensus_revisions,
     validate_shkp_financial_model_inputs,
 )
+from conftest import require_local_normalized
 from src.hk_real_estate.storage import load_latest_normalized
 from src.hk_real_estate.shkp_price import (
     SHKP_PRICE_HISTORY_COLUMNS,
@@ -764,6 +765,7 @@ def test_historical_earnings_bridge_15_years():
 
 def test_hotel_segment_series_13_years():
     """Hotel segment series must cover FY2013-2025 with verified COVID leverage."""
+    require_local_normalized("shkp_hotel_segment_series")
     from src.hk_real_estate.shkp_earnings_bridge import _HOTEL_SEGMENT, build_shkp_historical_earnings_bridge
     from src.hk_real_estate.storage import load_latest_normalized
     assert len(_HOTEL_SEGMENT) == 13
@@ -782,6 +784,11 @@ def test_hotel_segment_series_13_years():
 
 def test_whole_company_skeleton_base_scenario():
     """Skeleton base scenario must produce a sane underlying EPS near consensus."""
+    require_local_normalized(
+        "shkp_historical_earnings_bridge",
+        "shkp_hotel_segment_series",
+        "shkp_financial_model_consensus",
+    )
     from src.hk_real_estate.shkp_whole_company_model import build_shkp_whole_company_skeleton
     bridge = load_latest_normalized("shkp_historical_earnings_bridge")
     hotel = load_latest_normalized("shkp_hotel_segment_series")
@@ -838,6 +845,7 @@ def test_whole_company_skeleton_defaults_do_not_require_hotel_frame():
 
 def test_handover_lag_distribution_and_recognition():
     """Lag distribution from paired phases must be complete with sane weights."""
+    require_local_normalized("shkp_sales_handover_revenue_bridge", "shkp_historical_phase_roster")
     from src.hk_real_estate.shkp_handover_lag import (
         build_shkp_handover_lag_distribution,
         build_shkp_residential_recognition_schedule,
@@ -863,6 +871,11 @@ def test_handover_lag_distribution_and_recognition():
 
 def test_project_margin_model_weighted_fy27():
     """Project-mix weighted margin must be close to consensus-implied ~29.6%."""
+    require_local_normalized(
+        "shkp_residential_recognition_schedule",
+        "shkp_indicative_project_month_signals_all_history",
+        "shkp_historical_phase_roster",
+    )
     from src.hk_real_estate.shkp_project_margin_model import (
         build_shkp_fy27_weighted_margin,
         build_shkp_project_margin_model,
@@ -885,6 +898,7 @@ def test_project_margin_model_weighted_fy27():
 
 def test_margin_variant_group_sensitivity_and_consensus_required():
     """Group sensitivity + consensus-required feasibility must be coherent."""
+    require_local_normalized("shkp_project_margin_model")
     from src.hk_real_estate.shkp_margin_variant import (
         build_shkp_margin_consensus_required,
         build_shkp_margin_group_sensitivity,
@@ -924,6 +938,11 @@ def test_below_segment_decomposition_mainland():
 
 def test_skeleton_backtest_converges():
     """Backtest (vintage margin default) must converge to single-digit MAE."""
+    require_local_normalized(
+        "shkp_historical_earnings_bridge",
+        "shkp_hk_development_margin_history",
+        "shkp_indicative_project_month_signals_all_history",
+    )
     from src.hk_real_estate.shkp_skeleton_backtest import build_shkp_skeleton_backtest
     bridge = load_latest_normalized("shkp_historical_earnings_bridge")
     margin_history = load_latest_normalized("shkp_hk_development_margin_history")
@@ -942,6 +961,11 @@ def test_skeleton_backtest_converges():
 
 def test_skeleton_margin_decomposition_attributes_error():
     """Margin-vs-data attribution must exist and isolate the bucket conservatism."""
+    require_local_normalized(
+        "shkp_historical_earnings_bridge",
+        "shkp_hk_development_margin_history",
+        "shkp_indicative_project_month_signals_all_history",
+    )
     from src.hk_real_estate.shkp_skeleton_backtest import build_shkp_skeleton_margin_decomposition
     bridge = load_latest_normalized("shkp_historical_earnings_bridge")
     margin_history = load_latest_normalized("shkp_hk_development_margin_history")
@@ -959,6 +983,11 @@ def test_skeleton_margin_decomposition_attributes_error():
 
 def test_v1_full_chain_invariants():
     """v1.0 freeze gate: unit consistency + accounting identities across the chain."""
+    require_local_normalized(
+        "shkp_residential_recognition_schedule",
+        "shkp_fy27_weighted_development_margin",
+        "shkp_whole_company_earnings_skeleton",
+    )
     rec = load_latest_normalized("shkp_residential_recognition_schedule")
     wm = load_latest_normalized("shkp_fy27_weighted_development_margin")
     sk = load_latest_normalized("shkp_whole_company_earnings_skeleton")

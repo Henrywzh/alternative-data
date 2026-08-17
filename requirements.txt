@@ -1,4 +1,11 @@
-pandas>=2.2
+# Pinned below 3.0: this repository's pandas usage is developed and verified
+# against the 2.x semantics.  pandas 3 changes default string-column inference,
+# which turns a None in an object column into NaN -- and NaN is truthy, so
+# idioms like `str(value or "")` silently yield the string "nan" instead of an
+# empty string.  CI was resolving pandas 3 while every local environment ran
+# 2.x, so that class of behaviour change surfaced only as a CI-only failure.
+# Lift this cap as a deliberate migration, not as a transitive resolution.
+pandas>=2.2,<3
 plotly>=5.24
 pyarrow>=16.0.0
 pypdf>=5.0

@@ -34,3 +34,22 @@ def require_local_normalized(*dataset_names: str) -> None:
             + ", ".join(missing)
             + f" (expected under {root.relative_to(ROOT)}/)"
         )
+
+
+def require_local_capture(*relative_paths: str) -> None:
+    """Skip when a gitignored raw capture this test needs is absent.
+
+    Same contract as :func:`require_local_normalized`, for captured raw inputs
+    under ``data/raw/`` rather than normalized pipeline output.  Production code
+    is expected to degrade gracefully when these are missing (the market-reaction
+    fields simply stay blank); it is only the assertions about the *filled* case
+    that need the capture on disk.
+    """
+
+    import pytest
+
+    missing = [path for path in relative_paths if not (ROOT / path).exists()]
+    if missing:
+        pytest.skip(
+            "requires locally captured raw inputs not tracked by git: " + ", ".join(missing)
+        )
