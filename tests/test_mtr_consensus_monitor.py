@@ -10,6 +10,24 @@ def test_our_estimates_load():
     assert ours["eps_low"] < ours["eps_base"] < ours["eps_high"]
 
 
+def test_h1_forecast_falls_back_to_monthly_when_h1_row_is_missing(monkeypatch, tmp_path):
+    from scripts import mtr_consensus_monitor as monitor
+
+    h1_path = tmp_path / "h1.csv"
+    monthly_path = tmp_path / "monthly.csv"
+    pd.DataFrame({"year": [2025], "h1_model_revenue_hkdm": [11548.0]}).to_csv(h1_path, index=False)
+    pd.DataFrame(
+        {
+            "date": ["2026-01-01", "2026-06-01", "2026-07-01"],
+            "farebox_revenue_hkdm": [1900.0, 2000.0, 9999.0],
+        }
+    ).to_csv(monthly_path, index=False)
+    monkeypatch.setattr(monitor, "H1_BACKTEST_CSV", str(h1_path))
+    monkeypatch.setattr(monitor, "MONTHLY_FAREBOX_CSV", str(monthly_path))
+
+    assert monitor._load_fy2026_h1_transport_forecast() == pytest.approx(3900.0)
+
+
 def test_consensus_implied_property_backout():
     """EPS 2.52 back-out: property implied ~68.4bn if IP reval +30亿."""
     eps_c = 2.52417

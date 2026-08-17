@@ -39,6 +39,8 @@ FY25_ACTUAL_EPS = 2.36
 FY25_TRANSPORT_REV = 23595.0
 FY25_TOTAL_REV = 55465.0
 FY25_PROPERTY_POST_TAX = 11084.0
+H1_BACKTEST_CSV = os.path.join(REPO_ROOT, "data", "processed", "transport", "mtr_farebox_revenue_h1_backtest.csv")
+MONTHLY_FAREBOX_CSV = os.path.join(REPO_ROOT, "data", "processed", "transport", "mtr_farebox_revenue_monthly.csv")
 
 # Verified external consensus readings (ET Net / MarketScreener, 2026-08-09):
 # yfinance 0y 2.52 was a YEAR_AGO_EPS field misread; FY26E is ~2.69-2.76.
@@ -48,10 +50,26 @@ VERIFIED_FY27_EPS = 1.65       # ET Net consolidated (JPM 1.87..CLSA 0.943)
 VERIFIED_FY27_EPS_MEAN = 1.52
 
 
+def _load_fy2026_h1_transport_forecast() -> float:
+    """Read the H1 forecast, falling back to the monthly model if needed."""
+    if os.path.exists(H1_BACKTEST_CSV):
+        h1_df = pd.read_csv(H1_BACKTEST_CSV)
+        if {"year", "h1_model_revenue_hkdm"}.issubset(h1_df.columns):
+            h1_row = h1_df[h1_df["year"].eq(2026)]
+            if len(h1_row) == 1 and pd.notna(h1_row.iloc[0]["h1_model_revenue_hkdm"]):
+                return float(h1_row.iloc[0]["h1_model_revenue_hkdm"])
+    monthly = pd.read_csv(MONTHLY_FAREBOX_CSV)
+    monthly["date"] = pd.to_datetime(monthly["date"], errors="raise")
+    h1 = monthly[(monthly["date"].dt.year == 2026) & (monthly["date"].dt.month <= 6)]
+    if h1.empty:
+        raise FileNotFoundError("No FY2026 H1 farebox forecast found; run mtr_farebox_revenue_backtest.py first")
+    return float(h1["farebox_revenue_hkdm"].sum())
+
+
 def load_our_estimates() -> dict:
     """Our FY26E ranges from the model chain (verified outputs)."""
     # transport revenue from farebox H1 nowcast x FY25 seasonality
-    h1 = 11976.7
+    h1 = _load_fy2026_h1_transport_forecast()
     transport = h1 * (1 + 11915.0 / 11680.0)
     # property expected profit (bear/base/bull totals)
     exp = pd.read_csv(os.path.join(NORM_DIR, "mtr_property_expected_profit_fy26.csv"))

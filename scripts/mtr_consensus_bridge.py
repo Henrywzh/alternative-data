@@ -39,6 +39,8 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 NORM_DIR = os.path.join(REPO_ROOT, "data", "normalized", "hk_transport")
 PROC_DIR = os.path.join(REPO_ROOT, "data", "processed", "transport")
 OUT_CSV = os.path.join(NORM_DIR, "mtr_consensus_bridge.csv")
+H1_BACKTEST_CSV = os.path.join(PROC_DIR, "mtr_farebox_revenue_h1_backtest.csv")
+MONTHLY_FAREBOX_CSV = os.path.join(PROC_DIR, "mtr_farebox_revenue_monthly.csv")
 
 # ---------------------------------------------------------------------------
 # Observed inputs (verified)
@@ -56,8 +58,23 @@ FY2025_FINANCE_COST = 1006.0
 FY2025_PDP_POST_TAX = 11084.0
 FY2025_RECURRENT_POST_TAX = 5653.0
 
+def _load_fy2026_h1_transport_forecast() -> float:
+    """Read the canonical H1 forecast produced by the farebox backtest."""
+    if os.path.exists(H1_BACKTEST_CSV):
+        h1 = pd.read_csv(H1_BACKTEST_CSV)
+        row = h1[h1["year"].eq(2026)]
+        if len(row) == 1:
+            return float(row.iloc[0]["h1_model_revenue_hkdm"])
+    monthly = pd.read_csv(MONTHLY_FAREBOX_CSV)
+    monthly["date"] = pd.to_datetime(monthly["date"], errors="raise")
+    h1 = monthly[(monthly["date"].dt.year == 2026) & (monthly["date"].dt.month <= 6)]
+    if h1.empty:
+        raise FileNotFoundError("No FY2026 H1 farebox forecast found; run mtr_farebox_revenue_backtest.py first")
+    return float(h1["farebox_revenue_hkdm"].sum())
+
+
 # Our farebox nowcast: 2026 H1 (Jan-Jun) from monthly patronage x dynamic yield
-FY2026_H1_TRANSPORT = 11976.7  # data/processed/transport/mtr_farebox_revenue_monthly.csv
+FY2026_H1_TRANSPORT = _load_fy2026_h1_transport_forecast()
 
 # ---------------------------------------------------------------------------
 # Explicit assumptions (ASSUMED - the only synthetic inputs, clearly labelled)
