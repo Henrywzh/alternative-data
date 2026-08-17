@@ -20,3 +20,14 @@ def test_trade_thesis_exposes_payoff_risk_catalyst_and_invalidation_fields() -> 
         "catalyst_a", "catalyst_b", "risk_rule", "trade_construction_rule",
     ]
     assert frame[required].notna().all().all()
+
+
+def test_spring_juneyao_trade_thesis_carries_the_independent_pre_event_view() -> None:
+    frame = build_airline_pair_trade_thesis_scenarios()
+    row = frame.loc[(frame.pair_id == "601021.SH__603885.SH") & (frame.scenario == "base")].iloc[0]
+    assert row.pre_event_view_status == "pre_event_view_defined"
+    assert row.pre_event_view_direction == "long Spring Airlines / short Juneyao Airlines"
+    assert row.pre_event_profit_gap_spread_a_minus_b_pct > 30.0
+    assert row.pre_event_independent_target_method.startswith("3y_median")
+    assert row.pre_event_independent_target_price_a_native > row.current_price_a_native
+    assert row.pre_event_independent_beta_hedged_pair_payoff_pct > 0

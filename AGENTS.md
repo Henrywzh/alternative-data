@@ -35,19 +35,54 @@ The canonical financial-data repository is the sibling repo at
 `/Users/henrywzh/Desktop/Quant/financial-data`. See
 `docs/asia-markets/REPO_BRIDGE.md` for the high-level relationship.
 
+## Repository Location
+
+This repository lives at `/Users/henrywzh/Quant/alternative-data`, deliberately
+**outside** `~/Desktop/`. Do not move it back.
+
+Reason: macOS iCloud "Desktop & Documents" sync is enabled, so anything under
+`~/Desktop/Quant/` is continuously synced. That produced duplicate `<name> 2`
+files inside `.git/objects`, blocked `git gc` (a stale `gc.log` stopped
+automatic cleanup for weeks), and risked real corruption — iCloud can rewrite
+or evict files mid-write while git is building objects. A 31 GB `.git`-bearing
+repo also burns iCloud quota for no benefit; code is backed up by its git
+remote, not by file-level cloud sync.
+
+Note: `mv` cannot move a large synced tree out of the iCloud domain — it blocks
+indefinitely in the file provider with zero CPU. Use `ditto` to copy, verify,
+then delete the source.
+
+The sibling repos below are still under `~/Desktop/Quant/` and those paths
+remain correct.
+
 ## Wider Workspace
 
-Two other repos under `~/Desktop/Quant/` are part of the same user's broader
-quant work but are not currently wired to this repo or to `financial-data` —
-no shared code or data as of 2026-08-07:
+Other repos under `~/Desktop/Quant/` are part of the same user's broader
+quant work:
 
 - `/Users/henrywzh/Desktop/Quant/quantamental-lab` — mid-frequency
-  quantamental factor research. Currently implements a US-equities
-  SEC-filing earnings-alpha strategy only, but is scoped more broadly; HK
-  equity is a planned future expansion that should converge with
-  `financial-data`'s existing HK universe rather than duplicate it.
+  quantamental factor research. **Actually connected as of 2026-08-08**: its
+  regime-risk v2 overlay (`scripts/prepare_regime_inputs_v2.py`) hard-codes a
+  path into this repo and reads this repo's normalized OFR/FRED macro data as
+  a fallback and positioning source. It has also started a research-only
+  "HKEX Corporate Event Impact Baseline v1" chain that pulls its input event
+  panel from this repo's and `financial-data`'s HKEX announcement inventory —
+  this is the previously-planned HK equity expansion, now underway rather
+  than future. It uses a pre-registered-quality-rule selection methodology
+  (family chosen before looking at return output) and is explicitly
+  research-only in v1: no portfolio construction or trading signal yet.
+  The matching half of this work lives here as uncommitted paths under
+  `scripts/run_hkex_event_study_yfinance.py`, `data/raw/market_data/yfinance/`
+  and `outputs/hkex_event_study_candidates/` — check `git status` for current
+  state before assuming it's been committed.
 - `/Users/henrywzh/Desktop/Quant/portfolio-research` — the main
-  systematic-strategy repo `quantamental-lab` was extracted from.
+  systematic-strategy repo `quantamental-lab` was extracted from. No direct
+  connection to this repo found as of 2026-08-08.
+- `/Users/henrywzh/Desktop/Quant/equity-research` — referenced by
+  `quantamental-lab` for `daily-macro` release-calendar/nowcast code (fetched
+  independently via FRED release timing, not shared runtime code). Not yet
+  surveyed from this repo's side.
 
-Check both before assuming a code/data connection doesn't exist elsewhere in
-the workspace, and update this note if either becomes actually connected.
+Re-check this section periodically — it has already gone stale once (written
+2026-08-07 as "no connection," corrected 2026-08-08 after real coupling
+appeared within 24 hours).

@@ -6,7 +6,7 @@
     "title": "Hong Kong Telecom Sector Monitor",
     "description": "HKT, SmarTone, and Hutchison Telecom (3 HK) semi-annual postpaid subscriber and ARPU disclosures, plus an OFCA all-operator mobile-number-block capacity snapshot.",
     "sector": "hk-telecom",
-    "generatedAt": "2026-08-17T07:16:43.862107Z",
+    "generatedAt": "2026-08-09T16:08:45.007405Z",
     "cards": [
       {
         "id": "hkt_card",
@@ -298,7 +298,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-17T07:16:43.862107Z",
+    "generatedAt": "2026-08-09T16:08:45.007405Z",
     "status": "ready",
     "datasets": {
       "kpi_hkt": [
@@ -324,13 +324,13 @@
       ],
       "kpi_hutchison": [
         {
-          "latest_gross_arpu": 184.0,
-          "latest_net_arpu": 173.0,
-          "postpaid_customers_thousands": 1304.0,
+          "latest_gross_arpu": 187.0,
+          "latest_net_arpu": 176.0,
+          "postpaid_customers_thousands": 1289.0,
           "churn_rate_pct": 0.9,
-          "penetration_5g_pct": null,
-          "period_change": -0.021277,
-          "observation_date": "2026-06-30"
+          "penetration_5g_pct": 62.0,
+          "period_change": 0.033149,
+          "observation_date": "2025-12-31"
         }
       ],
       "hkt_history": [
@@ -428,30 +428,56 @@
       ],
       "hutchison_history": [
         {
+          "period": "2024-06-30",
+          "date": "2024-06-30",
+          "postpaid_customers_thousands": 1444.0,
+          "prepaid_customers_thousands": 2827.0,
+          "total_customers_thousands": 4271.0,
+          "postpaid_churn_rate_pct": 1.0,
+          "postpaid_gross_arpu_hkd": 184.0,
+          "postpaid_net_arpu_hkd": 168.0,
+          "postpaid_net_ampu_hkd": 148.0,
+          "penetration_5g_pct": null,
+          "month": "2024-06"
+        },
+        {
+          "period": "2024-12-31",
+          "date": "2024-12-31",
+          "postpaid_customers_thousands": 1316.0,
+          "prepaid_customers_thousands": 3162.0,
+          "total_customers_thousands": 4478.0,
+          "postpaid_churn_rate_pct": 1.0,
+          "postpaid_gross_arpu_hkd": 190.0,
+          "postpaid_net_arpu_hkd": 175.0,
+          "postpaid_net_ampu_hkd": 153.0,
+          "penetration_5g_pct": null,
+          "month": "2024-12"
+        },
+        {
           "period": "2025-06-30",
           "date": "2025-06-30",
-          "postpaid_customers_thousands": 1297.0,
-          "prepaid_customers_thousands": 1922.0,
-          "total_customers_thousands": 3196.0,
+          "postpaid_customers_thousands": 1399.0,
+          "prepaid_customers_thousands": 4735.0,
+          "total_customers_thousands": 6134.0,
           "postpaid_churn_rate_pct": 0.9,
-          "postpaid_gross_arpu_hkd": 188.0,
-          "postpaid_net_arpu_hkd": 176.0,
-          "postpaid_net_ampu_hkd": 151.0,
-          "penetration_5g_pct": null,
+          "postpaid_gross_arpu_hkd": 181.0,
+          "postpaid_net_arpu_hkd": 171.0,
+          "postpaid_net_ampu_hkd": 146.0,
+          "penetration_5g_pct": 57.0,
           "month": "2025-06"
         },
         {
-          "period": "2026-06-30",
-          "date": "2026-06-30",
-          "postpaid_customers_thousands": 1304.0,
-          "prepaid_customers_thousands": 2.0,
-          "total_customers_thousands": 3226.0,
+          "period": "2025-12-31",
+          "date": "2025-12-31",
+          "postpaid_customers_thousands": 1289.0,
+          "prepaid_customers_thousands": 6843.0,
+          "total_customers_thousands": 8132.0,
           "postpaid_churn_rate_pct": 0.9,
-          "postpaid_gross_arpu_hkd": 184.0,
-          "postpaid_net_arpu_hkd": 173.0,
-          "postpaid_net_ampu_hkd": 142.0,
-          "penetration_5g_pct": null,
-          "month": "2026-06"
+          "postpaid_gross_arpu_hkd": 187.0,
+          "postpaid_net_arpu_hkd": 176.0,
+          "postpaid_net_ampu_hkd": 149.0,
+          "penetration_5g_pct": 62.0,
+          "month": "2025-12"
         }
       ],
       "numbering_plan_snapshot": [
@@ -535,7 +561,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-telecom/",
-    "snapshotId": "e3b26efe103a01a8",
+    "snapshotId": "f0e6f40e11908723",
     "dataAsOf": "2026-06-30"
   }
 }

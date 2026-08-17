@@ -32,6 +32,7 @@ from .sources.srpe_pdf import (
     parse_srpe_price_list_pdf,
     parse_srpe_transaction_pdf,
 )
+from .sources.shkp import _record_has_phase_specific_effective_interval
 from .storage import RAW_DIR, save_normalized_dataset, save_raw_snapshot
 
 
@@ -52,6 +53,23 @@ REGISTRY_REQUIRED_COLUMNS = {
     "development_address",
     "pilot_group",
 }
+
+REGISTRY_OPTIONAL_GATE_COLUMNS = {
+    "ownership_effective_from",
+    "ownership_effective_to",
+    "ownership_interval_evidence_type",
+    "ownership_attribution_decision_id",
+    "ownership_interval_promotion_status",
+    "ownership_attribution_ready",
+}
+
+
+def _as_bool(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return False
+    return str(value).strip().casefold() in {"true", "1", "yes", "y"}
 
 AUDIT_COLUMNS = [
     "run_id",
@@ -93,6 +111,24 @@ def load_srpe_project_registry(path: Path = SRPE_PROJECT_REGISTRY_PATH) -> pd.Da
         raise ValueError("SRPE project registry ownership_pct must be between 0 and 100")
     frame["srpe_dev_id"] = frame["srpe_dev_id"].astype("string").str.strip()
     frame["srpe_development_id"] = frame["srpe_development_id"].astype("string").str.strip()
+    for column in REGISTRY_OPTIONAL_GATE_COLUMNS:
+        if column not in frame.columns:
+            frame[column] = None
+    frame["ownership_attribution_ready"] = frame.apply(
+        lambda row: _as_bool(row.get("ownership_attribution_ready"))
+        and _record_has_phase_specific_effective_interval(row.to_dict()),
+        axis=1,
+    )
+    # Keep the derived status available to the monthly-signal join even when
+    # the registry CSV predates this column.  The effective-interval check is
+    # the only route to the approved value; a legacy snapshot percentage is
+    # never enough.
+    frame["sales_attribution_status"] = frame["ownership_attribution_ready"].map(
+        {
+            True: "approved_phase_specific_interval",
+            False: "blocked_phase_specific_interval",
+        }
+    )
     return frame
 
 
@@ -133,10 +169,16 @@ def fetch_srpe_project_detail(
             "Referer": "https://www.srpe.gov.hk/opip/",
         }
     )
+    # Use an explicit connect/read tuple.  A scalar timeout is normally
+    # sufficient, but the SRPE endpoint has occasionally left a pooled TLS
+    # connection waiting indefinitely during a multi-phase batch; a bounded
+    # read timeout keeps one unavailable manifest from blocking all later
+    # phases.
+    bounded_timeout = max(float(timeout), 1.0)
     response = client.post(
         SRPE_DETAIL_ENDPOINT,
         json={"timeStamp": int(time.time() * 1000), "devId": str(srpe_dev_id)},
-        timeout=timeout,
+        timeout=(bounded_timeout, bounded_timeout),
     )
     response.raise_for_status()
     result = response.json().get("resultData") or {}
@@ -190,6 +232,24 @@ def select_price_documents(
     return list(unique.values())
 
 
+def select_transaction_documents(
+    documents: list[dict[str, Any]],
+    *,
+    all_transaction_documents: bool = False,
+) -> list[dict[str, Any]]:
+    """Select transaction-register versions without losing chronology.
+
+    The default remains the bounded pilot's latest-register behavior.  Full
+    history mode returns every metadata row in printing/submission order;
+    downstream unit-state reconciliation is responsible for collapsing
+    revisions and cancellations.
+    """
+    dated = sorted(documents or [], key=lambda item: (pd.isna(_document_date(item)), _document_date(item)))
+    if all_transaction_documents:
+        return dated
+    return dated[-1:] if dated else []
+
+
 def _empty_frame(columns: list[str]) -> pd.DataFrame:
     return pd.DataFrame(columns=columns)
 
@@ -221,6 +281,7 @@ def _reuse_or_save_pdf(
 
 
 def _project_fields(project: pd.Series) -> dict[str, Any]:
+    attribution_ready = _as_bool(project.get("ownership_attribution_ready")) and _record_has_phase_specific_effective_interval(project.to_dict())
     return {
         "project_id": project["project_id"],
         "stock_code": project["stock_code"],
@@ -228,6 +289,17 @@ def _project_fields(project: pd.Series) -> dict[str, Any]:
         "srpe_dev_id": project["srpe_dev_id"],
         "srpe_development_id": project["srpe_development_id"],
         "project_phase_no": project["phase_no"],
+        "ownership_attribution_ready": attribution_ready,
+        "ownership_effective_from": project.get("ownership_effective_from"),
+        "ownership_effective_to": project.get("ownership_effective_to"),
+        "ownership_interval_evidence_type": project.get("ownership_interval_evidence_type"),
+        "ownership_attribution_decision_id": project.get("ownership_attribution_decision_id"),
+        "ownership_interval_promotion_status": project.get("ownership_interval_promotion_status"),
+        "sales_attribution_status": (
+            "approved_phase_specific_interval"
+            if attribution_ready
+            else "blocked_phase_specific_interval"
+        ),
     }
 
 
@@ -235,12 +307,17 @@ def _with_project_fields(frame: pd.DataFrame, project: pd.Series) -> pd.DataFram
     result = frame.copy()
     for column, value in _project_fields(project).items():
         result[column] = value
+    attribution_ready = bool(result.get("ownership_attribution_ready", pd.Series(dtype=bool)).iloc[0]) if not result.empty else False
     if "transaction_price_hkd" in result.columns:
-        result["transaction_value_attributable_hkd"] = (
-            result["transaction_price_hkd"] * result["ownership_pct"] / 100
-        )
+        result["transaction_value_attributable_hkd"] = float("nan")
+        if attribution_ready:
+            result["transaction_value_attributable_hkd"] = (
+                result["transaction_price_hkd"] * result["ownership_pct"] / 100
+            )
     if "price_hkd" in result.columns:
-        result["price_value_attributable_hkd"] = result["price_hkd"] * result["ownership_pct"] / 100
+        result["price_value_attributable_hkd"] = float("nan")
+        if attribution_ready:
+            result["price_value_attributable_hkd"] = result["price_hkd"] * result["ownership_pct"] / 100
     return result
 
 
@@ -310,10 +387,16 @@ def run_srpe_pilot(
     until: str | None = None,
     price_selection: str = "first_latest",
     max_price_documents: int = 0,
+    all_transaction_documents: bool = False,
+    transactions_only: bool = False,
+    dataset_prefix: str = "",
     request_delay: float = 0.2,
     timeout: float = 30,
 ) -> dict[str, Any]:
     """Run the bounded SRPE project backfill and persist four datasets."""
+    if dataset_prefix and not dataset_prefix.endswith("_"):
+        dataset_prefix = f"{dataset_prefix}_"
+    dataset_name = lambda base: f"{dataset_prefix}{base}"
     run_id = run_id or str(uuid.uuid4())
     registry = load_srpe_project_registry(registry_path)
     selected = select_srpe_projects(registry, projects, pilot_group)
@@ -344,6 +427,8 @@ def run_srpe_pilot(
             "errors": [],
             "transaction_rows": 0,
             "price_rows": 0,
+            "ownership_attribution_ready": bool(project.get("ownership_attribution_ready")),
+            "sales_attribution_status": project.get("sales_attribution_status"),
         }
         try:
             detail = fetch_srpe_project_detail(project["srpe_dev_id"], session=session, timeout=timeout)
@@ -356,12 +441,15 @@ def run_srpe_pilot(
             )
             raw_snapshots.append(str(detail_raw))
             dev_info = detail.get("dev") or {}
-            transaction_docs = sorted(
+            # The original bounded pilot intentionally parsed only the latest
+            # register.  Full-history scratch runs can opt into every
+            # register version; raw hashes and unit-state reconciliation keep
+            # revisions from being mistaken for new sales.
+            transaction_docs = select_transaction_documents(
                 detail.get("transactions") or [],
-                key=lambda item: (pd.isna(_document_date(item)), _document_date(item)),
+                all_transaction_documents=all_transaction_documents,
             )
-            transaction_docs = transaction_docs[-1:] if transaction_docs else []
-            price_docs = select_price_documents(
+            price_docs = [] if transactions_only else select_price_documents(
                 detail.get("prices") or [],
                 since=since_ts,
                 until=until_ts,
@@ -465,43 +553,55 @@ def run_srpe_pilot(
         signal_frame["stock_code"] = signal_frame["development_id"].map(mapping["stock_code"])
         signal_frame["ownership_pct"] = signal_frame["development_id"].map(mapping["ownership_pct"])
         signal_frame["srpe_development_id"] = signal_frame["development_id"].map(mapping["srpe_development_id"])
-        signal_frame["sales_value_attributable_hkd"] = signal_frame["sales_value_gross_hkd"] * signal_frame["ownership_pct"] / 100
+        signal_frame["ownership_attribution_ready"] = signal_frame["development_id"].map(mapping["ownership_attribution_ready"]).fillna(False).astype(bool)
+        signal_frame["sales_attribution_status"] = signal_frame["development_id"].map(mapping["sales_attribution_status"])
+        signal_frame["sales_value_attributable_hkd"] = float("nan")
+        ready_mask = signal_frame["ownership_attribution_ready"]
+        signal_frame.loc[ready_mask, "sales_value_attributable_hkd"] = (
+            signal_frame.loc[ready_mask, "sales_value_gross_hkd"]
+            * signal_frame.loc[ready_mask, "ownership_pct"]
+            / 100
+        )
     signal_frame = signal_frame.reindex(columns=list(signal_frame.columns) + ["project_id"] if "project_id" not in signal_frame.columns else signal_frame.columns)
     audit_frame = pd.DataFrame(audit, columns=AUDIT_COLUMNS)
     lineage_metadata = {
         "lineage_type": "srpe_bounded_pdf_pilot",
         "project_count": len(selected),
         "price_selection": price_selection,
+        "all_transaction_documents": all_transaction_documents,
+        "transactions_only": transactions_only,
+        "dataset_prefix": dataset_prefix,
         "since": since,
         "until": until,
+        "attribution_policy": "only approved phase-specific bounded interval may populate attributable values; legacy snapshot percentages remain review-only",
     }
     stored = {
-        "srpe_pilot_transaction_events": save_normalized_dataset(
-            "srpe_pilot_transaction_events",
+        dataset_name("srpe_pilot_transaction_events"): save_normalized_dataset(
+            dataset_name("srpe_pilot_transaction_events"),
             transaction_frame,
             run_id=run_id,
             raw_snapshots=raw_snapshots,
             source_urls=sorted(set(source_urls)),
             lineage_metadata=lineage_metadata,
         ),
-        "srpe_pilot_price_list_units": save_normalized_dataset(
-            "srpe_pilot_price_list_units",
+        dataset_name("srpe_pilot_price_list_units"): save_normalized_dataset(
+            dataset_name("srpe_pilot_price_list_units"),
             price_frame,
             run_id=run_id,
             raw_snapshots=raw_snapshots,
             source_urls=sorted(set(source_urls)),
             lineage_metadata=lineage_metadata,
         ),
-        "srpe_pilot_developer_monthly_signals": save_normalized_dataset(
-            "srpe_pilot_developer_monthly_signals",
+        dataset_name("srpe_pilot_developer_monthly_signals"): save_normalized_dataset(
+            dataset_name("srpe_pilot_developer_monthly_signals"),
             signal_frame,
             run_id=run_id,
             raw_snapshots=raw_snapshots,
             source_urls=sorted(set(source_urls)),
             lineage_metadata=lineage_metadata,
         ),
-        "srpe_pilot_document_audit": save_normalized_dataset(
-            "srpe_pilot_document_audit",
+        dataset_name("srpe_pilot_document_audit"): save_normalized_dataset(
+            dataset_name("srpe_pilot_document_audit"),
             audit_frame,
             run_id=run_id,
             raw_snapshots=raw_snapshots,

@@ -6,8 +6,8 @@
     "title": "Hong Kong Population, Migration & Cross-Border Data Monitor",
     "description": "High-frequency passenger net flow, population estimates, MPF departure claims, Mainland student enrolment & GBA transport signals.",
     "sector": "hk-population-migration",
-    "generatedAt": "2026-08-17T07:16:44.069956Z",
-    "dataAsOf": "2026-08-16",
+    "generatedAt": "2026-08-09T16:08:44.964608Z",
+    "dataAsOf": "2026-08-07",
     "liveSourcesCount": 6,
     "totalSourcesCount": 6,
     "cards": [
@@ -344,7 +344,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `729619795e13fb00` · generated 2026-08-17T07:16:44.069956Z.  This is a published snapshot, not a live connection. Official ImmD, C&SD, MPFA, UGC and TD open data."
+        "body": "**Data snapshot:** `0d9c0cf261435f40` · generated 2026-08-09T16:08:44.964608Z.  This is a published snapshot, not a live connection. Official ImmD, C&SD, MPFA, UGC and TD open data."
       },
       {
         "id": "kpi_grid",
@@ -404,10 +404,73 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-17T07:16:44.069956Z",
+    "generatedAt": "2026-08-09T16:08:44.964608Z",
     "status": "ready",
     "datasets": {
       "immd_daily_traffic": [
+        {
+          "date": "2025-08-08",
+          "hk_resident_net_flow": -74661.0,
+          "mainland_visitor_net_retention": 5653.0,
+          "hk_resident_departures_7d_ma": 304811.1,
+          "mainland_visitor_arrivals_7d_ma": 123794.1
+        },
+        {
+          "date": "2025-08-09",
+          "hk_resident_net_flow": -135356.0,
+          "mainland_visitor_net_retention": 7038.0,
+          "hk_resident_departures_7d_ma": 313435.9,
+          "mainland_visitor_arrivals_7d_ma": 130505.4
+        },
+        {
+          "date": "2025-08-10",
+          "hk_resident_net_flow": 169887.0,
+          "mainland_visitor_net_retention": -17377.0,
+          "hk_resident_departures_7d_ma": 319770.7,
+          "mainland_visitor_arrivals_7d_ma": 136911.6
+        },
+        {
+          "date": "2025-08-11",
+          "hk_resident_net_flow": 61746.0,
+          "mainland_visitor_net_retention": 293.0,
+          "hk_resident_departures_7d_ma": 325790.4,
+          "mainland_visitor_arrivals_7d_ma": 140692.7
+        },
+        {
+          "date": "2025-08-12",
+          "hk_resident_net_flow": 26461.0,
+          "mainland_visitor_net_retention": -1002.0,
+          "hk_resident_departures_7d_ma": 340279.7,
+          "mainland_visitor_arrivals_7d_ma": 146669.9
+        },
+        {
+          "date": "2025-08-13",
+          "hk_resident_net_flow": 14171.0,
+          "mainland_visitor_net_retention": 455.0,
+          "hk_resident_departures_7d_ma": 344250.1,
+          "mainland_visitor_arrivals_7d_ma": 149892.6
+        },
+        {
+          "date": "2025-08-14",
+          "hk_resident_net_flow": -3232.0,
+          "mainland_visitor_net_retention": -6225.0,
+          "hk_resident_departures_7d_ma": 333314.7,
+          "mainland_visitor_arrivals_7d_ma": 144954.9
+        },
+        {
+          "date": "2025-08-15",
+          "hk_resident_net_flow": -65715.0,
+          "mainland_visitor_net_retention": 6581.0,
+          "hk_resident_departures_7d_ma": 330692.6,
+          "mainland_visitor_arrivals_7d_ma": 142854.0
+        },
+        {
+          "date": "2025-08-16",
+          "hk_resident_net_flow": -131394.0,
+          "mainland_visitor_net_retention": 14399.0,
+          "hk_resident_departures_7d_ma": 329342.1,
+          "mainland_visitor_arrivals_7d_ma": 144010.7
+        },
         {
           "date": "2025-08-17",
           "hk_resident_net_flow": 182531.0,
@@ -2899,72 +2962,99 @@
           "mainland_visitor_net_retention": 648.0,
           "hk_resident_departures_7d_ma": 348293.6,
           "mainland_visitor_arrivals_7d_ma": 149983.0
-        },
-        {
-          "date": "2026-08-08",
-          "hk_resident_net_flow": -131298.0,
-          "mainland_visitor_net_retention": 11494.0,
-          "hk_resident_departures_7d_ma": 349416.7,
-          "mainland_visitor_arrivals_7d_ma": 154293.1
-        },
-        {
-          "date": "2026-08-09",
-          "hk_resident_net_flow": 170485.0,
-          "mainland_visitor_net_retention": -15526.0,
-          "hk_resident_departures_7d_ma": 352568.9,
-          "mainland_visitor_arrivals_7d_ma": 159253.9
-        },
-        {
-          "date": "2026-08-10",
-          "hk_resident_net_flow": 63784.0,
-          "mainland_visitor_net_retention": 559.0,
-          "hk_resident_departures_7d_ma": 353401.3,
-          "mainland_visitor_arrivals_7d_ma": 161123.9
-        },
-        {
-          "date": "2026-08-11",
-          "hk_resident_net_flow": 26240.0,
-          "mainland_visitor_net_retention": -1874.0,
-          "hk_resident_departures_7d_ma": 352732.9,
-          "mainland_visitor_arrivals_7d_ma": 161792.0
-        },
-        {
-          "date": "2026-08-12",
-          "hk_resident_net_flow": 13911.0,
-          "mainland_visitor_net_retention": 949.0,
-          "hk_resident_departures_7d_ma": 351548.1,
-          "mainland_visitor_arrivals_7d_ma": 160705.6
-        },
-        {
-          "date": "2026-08-13",
-          "hk_resident_net_flow": -1119.0,
-          "mainland_visitor_net_retention": 496.0,
-          "hk_resident_departures_7d_ma": 349794.1,
-          "mainland_visitor_arrivals_7d_ma": 158761.7
-        },
-        {
-          "date": "2026-08-14",
-          "hk_resident_net_flow": -78618.0,
-          "mainland_visitor_net_retention": -3187.0,
-          "hk_resident_departures_7d_ma": 348311.0,
-          "mainland_visitor_arrivals_7d_ma": 156809.1
-        },
-        {
-          "date": "2026-08-15",
-          "hk_resident_net_flow": -135547.0,
-          "mainland_visitor_net_retention": 4727.0,
-          "hk_resident_departures_7d_ma": 348526.7,
-          "mainland_visitor_arrivals_7d_ma": 153410.0
-        },
-        {
-          "date": "2026-08-16",
-          "hk_resident_net_flow": 186536.0,
-          "mainland_visitor_net_retention": -9748.0,
-          "hk_resident_departures_7d_ma": 348555.7,
-          "mainland_visitor_arrivals_7d_ma": 151897.7
         }
       ],
       "immd_net_flow_history": [
+        {
+          "date": "2025-08-08",
+          "series": "HK Resident Net Flow",
+          "value": -74661.0
+        },
+        {
+          "date": "2025-08-08",
+          "series": "Mainland Visitor Net Retention",
+          "value": 5653.0
+        },
+        {
+          "date": "2025-08-09",
+          "series": "HK Resident Net Flow",
+          "value": -135356.0
+        },
+        {
+          "date": "2025-08-09",
+          "series": "Mainland Visitor Net Retention",
+          "value": 7038.0
+        },
+        {
+          "date": "2025-08-10",
+          "series": "HK Resident Net Flow",
+          "value": 169887.0
+        },
+        {
+          "date": "2025-08-10",
+          "series": "Mainland Visitor Net Retention",
+          "value": -17377.0
+        },
+        {
+          "date": "2025-08-11",
+          "series": "HK Resident Net Flow",
+          "value": 61746.0
+        },
+        {
+          "date": "2025-08-11",
+          "series": "Mainland Visitor Net Retention",
+          "value": 293.0
+        },
+        {
+          "date": "2025-08-12",
+          "series": "HK Resident Net Flow",
+          "value": 26461.0
+        },
+        {
+          "date": "2025-08-12",
+          "series": "Mainland Visitor Net Retention",
+          "value": -1002.0
+        },
+        {
+          "date": "2025-08-13",
+          "series": "HK Resident Net Flow",
+          "value": 14171.0
+        },
+        {
+          "date": "2025-08-13",
+          "series": "Mainland Visitor Net Retention",
+          "value": 455.0
+        },
+        {
+          "date": "2025-08-14",
+          "series": "HK Resident Net Flow",
+          "value": -3232.0
+        },
+        {
+          "date": "2025-08-14",
+          "series": "Mainland Visitor Net Retention",
+          "value": -6225.0
+        },
+        {
+          "date": "2025-08-15",
+          "series": "HK Resident Net Flow",
+          "value": -65715.0
+        },
+        {
+          "date": "2025-08-15",
+          "series": "Mainland Visitor Net Retention",
+          "value": 6581.0
+        },
+        {
+          "date": "2025-08-16",
+          "series": "HK Resident Net Flow",
+          "value": -131394.0
+        },
+        {
+          "date": "2025-08-16",
+          "series": "Mainland Visitor Net Retention",
+          "value": 14399.0
+        },
         {
           "date": "2025-08-17",
           "series": "HK Resident Net Flow",
@@ -6524,96 +6614,6 @@
           "date": "2026-08-07",
           "series": "Mainland Visitor Net Retention",
           "value": 648.0
-        },
-        {
-          "date": "2026-08-08",
-          "series": "HK Resident Net Flow",
-          "value": -131298.0
-        },
-        {
-          "date": "2026-08-08",
-          "series": "Mainland Visitor Net Retention",
-          "value": 11494.0
-        },
-        {
-          "date": "2026-08-09",
-          "series": "HK Resident Net Flow",
-          "value": 170485.0
-        },
-        {
-          "date": "2026-08-09",
-          "series": "Mainland Visitor Net Retention",
-          "value": -15526.0
-        },
-        {
-          "date": "2026-08-10",
-          "series": "HK Resident Net Flow",
-          "value": 63784.0
-        },
-        {
-          "date": "2026-08-10",
-          "series": "Mainland Visitor Net Retention",
-          "value": 559.0
-        },
-        {
-          "date": "2026-08-11",
-          "series": "HK Resident Net Flow",
-          "value": 26240.0
-        },
-        {
-          "date": "2026-08-11",
-          "series": "Mainland Visitor Net Retention",
-          "value": -1874.0
-        },
-        {
-          "date": "2026-08-12",
-          "series": "HK Resident Net Flow",
-          "value": 13911.0
-        },
-        {
-          "date": "2026-08-12",
-          "series": "Mainland Visitor Net Retention",
-          "value": 949.0
-        },
-        {
-          "date": "2026-08-13",
-          "series": "HK Resident Net Flow",
-          "value": -1119.0
-        },
-        {
-          "date": "2026-08-13",
-          "series": "Mainland Visitor Net Retention",
-          "value": 496.0
-        },
-        {
-          "date": "2026-08-14",
-          "series": "HK Resident Net Flow",
-          "value": -78618.0
-        },
-        {
-          "date": "2026-08-14",
-          "series": "Mainland Visitor Net Retention",
-          "value": -3187.0
-        },
-        {
-          "date": "2026-08-15",
-          "series": "HK Resident Net Flow",
-          "value": -135547.0
-        },
-        {
-          "date": "2026-08-15",
-          "series": "Mainland Visitor Net Retention",
-          "value": 4727.0
-        },
-        {
-          "date": "2026-08-16",
-          "series": "HK Resident Net Flow",
-          "value": 186536.0
-        },
-        {
-          "date": "2026-08-16",
-          "series": "Mainland Visitor Net Retention",
-          "value": -9748.0
         }
       ],
       "csd_population": [
@@ -18198,7 +18198,7 @@
       "label": "Immigration Department Daily Passenger Traffic",
       "status": "success",
       "records": 365,
-      "latest_observation": "2026-08-16",
+      "latest_observation": "2026-08-07",
       "freshness": "dated",
       "notes": "Daily passenger clearance by control point, direction and residency, used to derive HK-resident net flow and Mainland-visitor net retention."
     },
@@ -18252,8 +18252,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-population-migration/",
     "sector_id": "hk-population-migration",
     "sector_name": "Hong Kong Population, Migration & Cross-Border Data Monitor",
-    "snapshotId": "729619795e13fb00",
-    "generatedAt": "2026-08-17T07:16:44.069956Z",
-    "dataAsOf": "2026-08-16"
+    "snapshotId": "0d9c0cf261435f40",
+    "generatedAt": "2026-08-09T16:08:44.964608Z",
+    "dataAsOf": "2026-08-07"
   }
 }

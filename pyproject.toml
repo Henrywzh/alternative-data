@@ -15,6 +15,7 @@ dependencies = [
   "openpyxl>=3.1",
   "playwright>=1.52",
   "pyarrow>=16.0.0",
+  "duckdb>=1.1,<2",
   "pdfplumber>=0.11",
   "pypdf>=5.0",
   "requests>=2.32",

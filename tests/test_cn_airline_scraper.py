@@ -124,6 +124,7 @@ def test_auxiliary_metric_unit_scale(header: str, metric: str, expected: float) 
         # broke plain substring matching and dropped the whole metric.
         ("载运旅客人 次（千）", "passengers"),
         ("可用货邮吨公里（万吨公里）", "aftk"),
+        ("可用货邮吨公", "aftk"),
         ("可利用吨公里——货邮运（百万）", "aftk"),
         ("收入吨公里——货邮运（百万）", "rftk"),
         ("货运及邮运量（千吨）", "cargo_tonnes"),
@@ -239,6 +240,89 @@ def test_rftk_unit_on_continuation_row_is_applied() -> None:
         if row["metric"] == "rftk" and row["region"] == "Total"
     ]
     assert rftk_total == pytest.approx([11.4455])
+
+
+def test_southern_2019_06_pdf_shift_recovery_restores_source_values() -> None:
+    scraper = _scraper()
+    pdf = ROOT / "data" / "raw" / "airline_pdfs" / "600029" / "1206446698.PDF"
+    if not pdf.exists():
+        pytest.skip(f"cached source PDF not present: {pdf}")
+    rows = scraper.parse_airline_pdf(pdf.read_bytes(), "600029", "2019-06")
+    values = {
+        (row["metric"], row["region"]): row["value"]
+        for row in rows
+        if row.get("recovery_method")
+    }
+    assert values[("rpk", "Domestic")] == pytest.approx(15453.20)
+    assert values[("rpk", "Regional")] == pytest.approx(314.09)
+    assert values[("rpk", "International")] == pytest.approx(6995.79)
+    assert values[("rpk", "Total")] == pytest.approx(22763.08)
+    assert values[("ask", "Total")] == pytest.approx(27466.80)
+    assert values[("cargo_tonnes", "Total")] == pytest.approx(141920.0)
+    assert values[("passenger_load_factor_pct", "Total")] == pytest.approx(82.87)
+    assert values[("overall_load_factor_pct", "Domestic")] == pytest.approx(64.50)
+
+
+@pytest.mark.parametrize(
+    ("code", "month", "filename", "metric", "expected_total"),
+    [
+        ("603885", "2019-12", "1207249027.PDF", "ask", 3421.0648),
+        ("603885", "2020-02", "1207383601.PDF", "rpk", 667.4558),
+    ],
+)
+def test_juneyao_page_split_ask_rpk_recovery(
+    code: str,
+    month: str,
+    filename: str,
+    metric: str,
+    expected_total: float,
+) -> None:
+    scraper = _scraper()
+    pdf = ROOT / "data" / "raw" / "airline_pdfs" / code / filename
+    if not pdf.exists():
+        pytest.skip(f"cached source PDF not present: {pdf}")
+    rows = scraper.parse_airline_pdf(pdf.read_bytes(), code, month)
+    metric_rows = [row for row in rows if row["metric"] == metric]
+    assert {row["region"] for row in metric_rows} == {
+        "Domestic", "International", "Regional", "Total",
+    }
+    assert sum(
+        row["value"] for row in metric_rows if row["region"] != "Total"
+    ) == pytest.approx(expected_total)
+    assert next(row["value"] for row in metric_rows if row["region"] == "Total") == pytest.approx(expected_total)
+
+
+@pytest.mark.parametrize(
+    ("code", "month", "metric", "region", "expected"),
+    [
+        ("603885", "2020-12", "aftk", "Total", 93.5201),
+        ("600115", "2025-05", "aftk", "Total", 854.54),
+        ("601111", "2023-10", "rftk", "Total", 326.3),
+        ("601021", "2016-04", "freight_load_factor_pct", "Domestic", 58.36),
+    ],
+)
+def test_known_modern_and_column_shift_repairs_are_source_values(
+    code: str, month: str, metric: str, region: str, expected: float
+) -> None:
+    scraper = _scraper()
+    registry = pd.read_csv(
+        ROOT / "data" / "normalized" / "hk_transport" / "airline_operating_release_registry.csv",
+        dtype={"airline_code": str},
+    )
+    release = registry.loc[
+        registry["airline_code"].astype(str).str.zfill(6).eq(code)
+        & registry["month"].eq(month)
+    ].iloc[0]
+    pdf = ROOT / "data" / "raw" / "airline_pdfs" / code / f"{int(release['announcement_id'])}.PDF"
+    if not pdf.exists():
+        pytest.skip(f"cached source PDF not present: {pdf}")
+    rows = scraper.parse_airline_pdf(pdf.read_bytes(), code, month)
+    matches = [
+        row for row in rows
+        if row["metric"] == metric and row["region"] == region
+    ]
+    assert len(matches) == 1
+    assert matches[0]["value"] == pytest.approx(expected)
 
 
 @pytest.mark.parametrize(
@@ -461,12 +545,12 @@ def test_route_history_distinguishes_explicit_zero_from_undisclosed_month(
     assert not routes["value"].isna().any()
 
 
-# A source PDF can be present while one metric family remains unsafe to
-# recover. Keep this separate from a whole-month discovery gap: South China
-# 2019-06 still has freight/overall-load-factor rows, but its passenger/ASK/
-# RPK blocks have the documented page-break/header corruption.
+# A source PDF can be present while one metric family used to be unsafe to
+# recover. The repaired parser now recovers this South China block; the source
+# recovery audit retains the PDF evidence and the raw layer's current parser
+# refresh makes the recovered rows visible here.
 KNOWN_UNRECOVERABLE_MONTHS: dict[str, dict[str, str]] = {}
-KNOWN_UNRECOVERABLE_METRICS: dict[str, dict[str, tuple[str, ...]]] = {
+KNOWN_PARSER_RECOVERABLE_METRICS: dict[str, dict[str, tuple[str, ...]]] = {
     "600029": {
         "2019-06": (
             "ask", "rpk", "passengers", "passenger_load_factor_pct",
@@ -498,9 +582,11 @@ def test_no_month_gap_in_carrier_history(traffic: pd.DataFrame, code: str) -> No
     )
 
 
-def test_documented_metric_gaps_remain_explicit(traffic: pd.DataFrame) -> None:
-    """Metric-level PDF corruption must not be mistaken for source absence."""
-    for code, month_map in KNOWN_UNRECOVERABLE_METRICS.items():
+def test_repaired_metric_gaps_are_present_in_the_refreshed_parser_layer(
+    traffic: pd.DataFrame,
+) -> None:
+    """Known parser gaps remain covered after the parser repair."""
+    for code, month_map in KNOWN_PARSER_RECOVERABLE_METRICS.items():
         for month, metrics in month_map.items():
             observed = set(
                 traffic.loc[
@@ -508,10 +594,9 @@ def test_documented_metric_gaps_remain_explicit(traffic: pd.DataFrame) -> None:
                     "metric",
                 ]
             )
-            missing = set(metrics) - observed
-            assert missing == set(metrics), (
-                f"{CARRIERS[code]} {month}: documented metric gap changed; "
-                f"re-audit the PDF before removing it: {sorted(observed)}"
+            assert set(metrics) <= observed, (
+                f"{CARRIERS[code]} {month}: repaired parser gap regressed; "
+                f"re-audit the PDF: observed={sorted(observed)}"
             )
 
 

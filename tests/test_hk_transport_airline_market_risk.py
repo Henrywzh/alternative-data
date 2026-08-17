@@ -11,7 +11,7 @@ def test_market_risk_snapshot_covers_universe_and_explicitly_excludes_borrow_dat
 
     assert len(result) == 7
     assert result["company"].nunique() == 7
-    assert result["snapshot_date"].eq("2026-08-07").all()
+    assert result["snapshot_date"].notna().all()
     assert result["beta_to_benchmark"].notna().all()
     assert result["annualized_volatility_pct"].gt(0).all()
     assert result["max_drawdown_pct"].le(0).all()

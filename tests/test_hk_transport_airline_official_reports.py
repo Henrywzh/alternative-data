@@ -5,9 +5,155 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
+from src.hk_transport.sources.airline_official_reports import (
+    _segment_closing_rows,
+    _statement_value_from_line,
+)
+
 
 ROOT = Path(__file__).resolve().parents[1]
 TRANSPORT = ROOT / "data" / "normalized" / "hk_transport"
+
+
+def test_waterfall_statement_parser_skips_note_numbers_and_preserves_negative_cells() -> None:
+    assert _statement_value_from_line(
+        "财务费用 七（67） 158,967,460 108,403,569",
+        ("财务费用",),
+    ) == pytest.approx(158_967_460.0)
+    assert _statement_value_from_line(
+        "财务费用 42 4,853,956 6,766,999",
+        ("财务费用",),
+    ) == pytest.approx(4_853_956.0)
+    assert _statement_value_from_line(
+        "投资收益（损失以“－”号填列） 注释 68 3,744,822.54 -181,651.96",
+        ("投资收益",),
+    ) == pytest.approx(3_744_822.54)
+    assert _statement_value_from_line(
+        "信用减值损失 四 (51) - (21)",
+        ("信用减值损失",),
+    ) is None
+    assert _statement_value_from_line(
+        "二、营业亏损  (2,047,902)  (3,431,959)",
+        ("营业亏损",),
+    ) == pytest.approx(-2_047_902.0)
+    assert _statement_value_from_line(
+        "投资收益/(损失) 四 (49) 79 (599)",
+        ("投资收益",),
+    ) == pytest.approx(79.0)
+    assert _statement_value_from_line(
+        "公允价值变动收益 四 (50) 32 195",
+        ("公允价值变动收益",),
+    ) == pytest.approx(32.0)
+
+
+def test_statement_parser_keeps_variance_table_current_period() -> None:
+    # A three-column variance table (current / prior / change) must return the
+    # current-period value, not the prior period.  The bare-note-number rule
+    # previously misread the current-period figure as a note number.
+    assert _statement_value_from_line(
+        "投资收益 162 130 24.62",
+        ("投资收益",),
+    ) == pytest.approx(162.0)
+    assert _statement_value_from_line(
+        "财务费用 2,213 3,027 -26.89",
+        ("财务费用",),
+    ) == pytest.approx(2_213.0)
+
+
+def test_segment_closing_rows_recovers_tax_and_net_from_segment_note() -> None:
+    pages = [
+        "六、 分部信息\n"
+        "航空分部 其他业务分部 未分配的金额 分部间抵销 合计\n"
+        "(亏损)/利润总额 (1,767) 39 197 - (1,531)\n"
+        "所得税费用 (40) (21) - - (61)\n"
+        "净(亏损)/利润 (1,807) 18 197 - (1,592)\n",
+        "七、 关联方\nrelated-party note",
+    ]
+    wanted = {
+        "income_tax_expense": ("所得税费用",),
+        "net_income_total": ("净(亏损)/利润", "净利润"),
+    }
+    result = _segment_closing_rows(pages, wanted)
+    by_metric = {metric: value for metric, value, _ in result}
+    assert by_metric == {
+        "income_tax_expense": -61.0,
+        "net_income_total": -1592.0,
+    }
+
+
+def test_segment_closing_rows_ignores_management_discussion_table() -> None:
+    pages = [
+        "报告期净利润（百万） -252 2 -192 103 -28 -72\n"
+        "上一报告期净利润（百万） -542 -26 -336 -163 94 18",
+        "六、 分部信息\n"
+        "(亏损)/利润总额 (1,767) 39 197 - (1,531)\n"
+        "所得税费用 (40) (21) - - (61)\n"
+        "净(亏损)/利润 (1,807) 18 197 - (1,592)\n",
+    ]
+    wanted = {
+        "income_tax_expense": ("所得税费用",),
+        "net_income_total": ("净(亏损)/利润", "净利润"),
+    }
+    result = _segment_closing_rows(pages, wanted)
+    by_metric = {metric: value for metric, value, _ in result}
+    assert by_metric["net_income_total"] == -1592.0
+    assert by_metric["income_tax_expense"] == -61.0
+
+
+def test_segment_closing_rows_excludes_two_period_tables() -> None:
+    # China Southern's segment note repeats the columns for the prior year
+    # (10 numeric cells), so the last number is the PRIOR-year total.  The
+    # column-count guard must reject such rows instead of returning a
+    # wrong-period value.
+    pages = [
+        "六、 分部信息\n"
+        "航空营运业务分部 其他业务分部 分部间抵销 未分配项目 合计\n"
+        "所得税费用 1,160 569 172 71 2 2 94 42 1,428 684\n"
+        "净利润 / (亏损) (1,115) 53 292 305 28 16 (37) (899) (832) (525)\n",
+    ]
+    wanted = {
+        "income_tax_expense": ("所得税费用",),
+        "net_income_total": ("净(亏损)/利润", "净(损失)/利润", "净利润"),
+    }
+    result = _segment_closing_rows(pages, wanted)
+    assert result == []
+
+
+def test_segment_closing_rows_excludes_table_header_fragment() -> None:
+    # A header fragment carries the label in the middle of the line and
+    # date-like numbers; the label-position guard must reject it.
+    pages = [
+        "六、 分部信息\n"
+        "12月31日 于母公司 6月30日 发生额 减：所得税费用 税后归属于母公司 税后归属于少数股东\n"
+        "所得税费用 (40) (21) - - (61)\n"
+        "净(亏损)/利润 (1,807) 18 197 - (1,592)\n",
+    ]
+    wanted = {
+        "income_tax_expense": ("所得税费用",),
+        "net_income_total": ("净(亏损)/利润", "净(损失)/利润"),
+    }
+    result = _segment_closing_rows(pages, wanted)
+    by_metric = {metric: value for metric, value, _ in result}
+    assert by_metric == {
+        "income_tax_expense": -61.0,
+        "net_income_total": -1592.0,
+    }
+
+
+def test_segment_closing_rows_rejects_eps_table_net_profit_label() -> None:
+    # EPS-per-share tables contain "净利润/(亏损)" with small per-share
+    # values; the generic "净利润" label was removed from the wanted set so
+    # these must not be returned.
+    pages = [
+        "六、 分部信息\n"
+        "归属于母公司股东的净利润/(亏损) 2.44 (4.72) 0.05 (0.09)\n"
+        "净(亏损)/利润 (1,807) 18 197 - (1,592)\n",
+    ]
+    wanted = {
+        "net_income_total": ("净(亏损)/利润", "净(损失)/利润"),
+    }
+    result = _segment_closing_rows(pages, wanted)
+    assert result == [("net_income_total", -1592.0, 1)]
 
 
 def test_curated_official_report_registry_is_primary_and_fully_parsed() -> None:
@@ -130,9 +276,13 @@ def test_official_interim_driver_snapshot_has_sane_values_and_verified_anchors()
     assert len(hainan_yield) == 1
     assert hainan_yield.item() == pytest.approx(28_953.261 / 64_480.17)
 
-    # When passenger revenue is not separately disclosed, a labelled RASK
-    # proxy can still be constructed from the issuer's yield and RPK/ASK.
-    for report_id in ("600115_2025_fy", "601021_2025_h1", "603885_2025_h1"):
+    # Spring and Juneyao interim reports disclose passenger revenue directly
+    # (revenue notes p176 / p144), so a RASK proxy is no longer needed; only
+    # Eastern FY2025 (no passenger-revenue line in the driver layer) uses the
+    # labelled yield-based RASK proxy.
+    assert value("601021.SH", "passenger_revenue") == pytest.approx(9_989.925618)
+    assert value("603885.SH", "passenger_revenue") == pytest.approx(10_512.157818)
+    for report_id in ("600115_2025_fy",):
         report = drivers.loc[drivers["report_id"].eq(report_id)].set_index("metric")["value_native"]
         assert "rask_from_reported_yield_derived" in report.index
         assert report["rask_from_reported_yield_derived"] == pytest.approx(

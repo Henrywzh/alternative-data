@@ -1,10 +1,4 @@
-"""Peer-comparability and valuation-evidence gate for priority airline pairs.
-
-The current pair workstream has a useful point-in-time relative P/S snapshot,
-but it does not yet have dated historical price/market-cap observations. This
-module makes that limitation explicit and prevents a current relative multiple
-from being presented as a historical fair-value target.
-"""
+"""Peer-comparability and valuation-evidence gate for priority airline pairs."""
 
 from __future__ import annotations
 
@@ -18,10 +12,14 @@ FUNDAMENTALS_PATH = NORMALIZED_DIR / "airline_company_fundamentals.csv"
 HISTORY_PATH = NORMALIZED_DIR / "airline_financial_history_trend.csv"
 WORKING_PATH = NORMALIZED_DIR / "airline_pair_thesis_working_set.csv"
 PB_PATH = NORMALIZED_DIR / "airline_historical_pb_valuation.csv"
+FREE_HISTORY_PATH = NORMALIZED_DIR / "airline_free_valuation_history.csv"
+FREE_CURRENT_PATH = NORMALIZED_DIR / "airline_free_current_valuation.csv"
+BANDS_PATH = NORMALIZED_DIR / "airline_historical_valuation_bands.csv"
 OUTPUT_PATH = NORMALIZED_DIR / "airline_valuation_peer_comparability.csv"
 
 
 PEER_CLASS = {
+    "Cathay Pacific": "international_hub_carrier",
     "Air China": "network_carrier",
     "China Southern Airlines": "network_carrier",
     "China Eastern Airlines": "network_carrier",
@@ -99,12 +97,38 @@ def _historical_market_multiple_status(history: pd.DataFrame, company: str) -> t
     return ("missing_historical_price_market_cap_series", min_period, max_period, pit or "financial_period_end_only")
 
 
+def _free_valuation_status(
+    free_history: pd.DataFrame,
+    bands: pd.DataFrame,
+    asset: str,
+) -> tuple[str, str, str, str, dict[str, float | None]]:
+    subset = free_history.loc[free_history["asset"].eq(asset)].copy() if not free_history.empty else pd.DataFrame()
+    if subset.empty:
+        return "missing_free_valuation_history", "pending", "pending", "free_layer_missing", {}
+    dates = pd.to_datetime(subset.get("observation_date"), errors="coerce")
+    min_period = dates.min().date().isoformat() if dates.notna().any() else "pending"
+    max_period = dates.max().date().isoformat() if dates.notna().any() else "pending"
+    pit = ";".join(sorted(set(subset.get("point_in_time_status", pd.Series(dtype=str)).dropna().astype(str))))
+    stats: dict[str, float | None] = {}
+    if not bands.empty:
+        rows = bands.loc[bands["asset"].eq(asset) & bands["window"].eq("3y")]
+        for metric in ("pe_ttm", "pb", "ps_annual_period_end"):
+            row = rows.loc[rows["metric"].eq(metric)]
+            if not row.empty:
+                stats[f"{metric}_median_3y"] = _num(row.iloc[0].get("median_value"))
+                stats[f"{metric}_current_percentile_3y"] = _num(row.iloc[0].get("current_percentile_positive"))
+    return "free_dated_pe_pb_market_cap_plus_constructed_ps", min_period, max_period, pit or "free_vendor_dated", stats
+
+
 def build_airline_valuation_peer_comparability(
     *,
     fundamentals: pd.DataFrame | None = None,
     history: pd.DataFrame | None = None,
     working: pd.DataFrame | None = None,
     pb: pd.DataFrame | None = None,
+    free_history: pd.DataFrame | None = None,
+    free_current: pd.DataFrame | None = None,
+    valuation_bands: pd.DataFrame | None = None,
     retrieved_at: str | None = None,
 ) -> pd.DataFrame:
     """Build the valuation evidence gate for the five priority pair rows."""
@@ -113,7 +137,11 @@ def build_airline_valuation_peer_comparability(
     history = history if history is not None else pd.read_csv(HISTORY_PATH)
     working = working if working is not None else pd.read_csv(WORKING_PATH)
     pb = pb if pb is not None else (pd.read_csv(PB_PATH) if PB_PATH.exists() else pd.DataFrame())
+    free_history = free_history if free_history is not None else (pd.read_csv(FREE_HISTORY_PATH) if FREE_HISTORY_PATH.exists() else pd.DataFrame())
+    free_current = free_current if free_current is not None else (pd.read_csv(FREE_CURRENT_PATH) if FREE_CURRENT_PATH.exists() else pd.DataFrame())
+    valuation_bands = valuation_bands if valuation_bands is not None else (pd.read_csv(BANDS_PATH) if BANDS_PATH.exists() else pd.DataFrame())
     retrieved = retrieved_at or datetime.now(timezone.utc).isoformat()
+    free_layer_available = not free_history.empty
     rows: list[dict[str, object]] = []
 
     for _, pair in working.iterrows():
@@ -123,8 +151,13 @@ def build_airline_valuation_peer_comparability(
         fund_b = _fundamental_row(fundamentals, company_b)
         class_a = PEER_CLASS.get(company_a, "unclassified")
         class_b = PEER_CLASS.get(company_b, "unclassified")
-        hist_a, min_a, max_a, pit_a = _historical_market_multiple_status(history, company_a)
-        hist_b, min_b, max_b, pit_b = _historical_market_multiple_status(history, company_b)
+        free_a, min_a, max_a, pit_a, stats_a = _free_valuation_status(free_history, valuation_bands, _text(pair.get("asset_a")))
+        free_b, min_b, max_b, pit_b, stats_b = _free_valuation_status(free_history, valuation_bands, _text(pair.get("asset_b")))
+        hist_a, hist_b = free_a, free_b
+        if free_history.empty:
+            hist_a, min_a, max_a, pit_a = _historical_market_multiple_status(history, company_a)
+            hist_b, min_b, max_b, pit_b = _historical_market_multiple_status(history, company_b)
+            stats_a, stats_b = {}, {}
         ps_a = _num(pair.get("ps_consensus_revenue_a"))
         ps_b = _num(pair.get("ps_consensus_revenue_b"))
         pe_a = _num(pair.get("pe_consensus_profit_a"))
@@ -133,7 +166,7 @@ def build_airline_valuation_peer_comparability(
         market_b = _text(pair.get("market_b"))
         same_market = market_a == market_b and bool(market_a)
         warnings = [x for x in (_text(fund_a.get("operating_scope_warning")), _text(fund_b.get("operating_scope_warning"))) if x]
-        historical_missing = hist_a == "missing_historical_price_market_cap_series" or hist_b == "missing_historical_price_market_cap_series"
+        historical_missing = hist_a.startswith("missing_") or hist_b.startswith("missing_")
         comparable_class = class_a == class_b
         current_ps_available = ps_a is not None and ps_b is not None and ps_a > 0 and ps_b > 0
         current_pe_available = pe_a is not None and pe_b is not None and pe_a > 0 and pe_b > 0
@@ -144,7 +177,9 @@ def build_airline_valuation_peer_comparability(
 
         if current_ps_available and historical_missing:
             method_status = "current_relative_ps_only_no_historical_multiple"
-        elif current_ps_available:
+        elif current_ps_available and not historical_missing and free_layer_available:
+            method_status = "current_relative_ps_plus_free_historical_valuation_bands"
+        elif current_ps_available and not historical_missing:
             method_status = "current_relative_ps_with_historical_market_series_check_pending"
         else:
             method_status = "no_comparable_current_revenue_multiple"
@@ -209,11 +244,19 @@ def build_airline_valuation_peer_comparability(
                 "historical_period_max_b": max_b,
                 "historical_pit_status_a": pit_a,
                 "historical_pit_status_b": pit_b,
+                "historical_pe_ttm_median_3y_a": stats_a.get("pe_ttm_median_3y"),
+                "historical_pe_ttm_median_3y_b": stats_b.get("pe_ttm_median_3y"),
+                "historical_pb_median_3y_a": stats_a.get("pb_median_3y"),
+                "historical_pb_median_3y_b": stats_b.get("pb_median_3y"),
+                "historical_ps_annual_median_3y_a": stats_a.get("ps_annual_period_end_median_3y"),
+                "historical_ps_annual_median_3y_b": stats_b.get("ps_annual_period_end_median_3y"),
+                "current_ps_percentile_3y_a": stats_a.get("ps_annual_period_end_current_percentile_3y"),
+                "current_ps_percentile_3y_b": stats_b.get("ps_annual_period_end_current_percentile_3y"),
                 "valuation_method_status": method_status,
                 "valuation_target_readiness": readiness,
-                "required_next_evidence": "Add dated 1Y/3Y/5Y price and market-cap history with announcement-aligned revenue/profit; construct historical P/S and P/E distributions; use the available P/B only as an asset-value cross-check; separate LCC, network-carrier and multi-carrier scope; refresh 1H2026 actuals and consensus revisions before approving a target.",
+                "required_next_evidence": "Reconcile free-provider denominator semantics to announcement-aligned revenue/profit; use historical PE/PB bands and constructed annual-revenue PS as valuation diagnostics; separate LCC, network-carrier and multi-carrier scope; refresh 1H2026 actuals and consensus revisions before approving a target.",
                 "source_quality": "derived_peer_comparability_valuation_gate",
-                "source_paths": f"{FUNDAMENTALS_PATH};{HISTORY_PATH};{WORKING_PATH};{PB_PATH}",
+                "source_paths": f"{FUNDAMENTALS_PATH};{HISTORY_PATH};{WORKING_PATH};{PB_PATH};{FREE_HISTORY_PATH};{FREE_CURRENT_PATH};{BANDS_PATH}",
                 "retrieved_at": retrieved,
             }
         )

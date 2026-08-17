@@ -20,6 +20,7 @@ CAPACITY_WEIGHTS_PATH = NORMALIZED_DIR / "airline_route_capacity_weights.csv"
 
 # Known city coordinates for stage length (Haversine km) calculation
 CITY_COORDINATES: dict[str, tuple[float, float]] = {
+    "beijing": (116.4074, 39.9042),
     "shanghai": (121.4737, 31.2304),
     "guangzhou": (113.2644, 23.1291),
     "dali": (100.2297, 25.5916),
@@ -39,6 +40,20 @@ CITY_COORDINATES: dict[str, tuple[float, float]] = {
     "hailaer": (119.7658, 49.2116),
     "jinan": (117.1205, 36.6512),
     "wulumuqi": (87.6168, 43.8256),
+    "nanjing": (118.7969, 32.0603),
+    "jiaxing": (120.7585, 30.7520),
+    "huangshan": (118.1692, 29.7147),
+    "xilinhot": (116.0900, 43.9440),
+    "wuxi": (120.3119, 31.4912),
+    "yangzhou": (119.4127, 32.3942),
+    "zhangye": (100.4498, 38.9259),
+    "ningbo": (121.5503, 29.8746),
+    "yulin": (109.7346, 38.2849),
+    "hanzhong": (107.0233, 33.0676),
+    "lijiang": (100.2278, 26.8550),
+    "tacheng": (82.9853, 46.7464),
+    "korla": (86.1605, 41.7303),
+    "ganzhou": (114.9350, 25.8311),
 }
 
 
@@ -125,6 +140,20 @@ def get_fleet_seats_per_flight(operating_entity: str) -> dict[str, object]:
             "conflict_note": conflict_note,
         }
     elif op == "juneyao airlines mainline":
+        return {
+            "seats_operational_proxy": 180.0,
+            "seats_scenario_189": 180.0,
+            "seats_source_quality": "juneyao_annual_report_2025_narrowbody_fleet_180_seats",
+            "seats_operational_source_url": "https://static.cninfo.com.cn/finalpage/2026-04-23/1225151299.PDF",
+            "seats_operational_source_date": "2026-04-23",
+            "seats_scenario_source_url": "https://static.cninfo.com.cn/finalpage/2026-04-23/1225151299.PDF",
+            "seats_scenario_source_date": "2026-04-23",
+            "conflict_note": None,
+        }
+    elif op == "juneyao airlines":
+        # Juneyao mainline (not the 9 Air subsidiary): the same FY2025 annual
+        # report discloses the mainline narrowbody fleet at 180 seats; CAAC
+        # licence candidates for the mainline entity carry this anchor.
         return {
             "seats_operational_proxy": 180.0,
             "seats_scenario_189": 180.0,
