@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
@@ -106,6 +107,7 @@ class TaiwanSemiconductorRevenuePipeline:
         raw_run_dir = self.storage.write_raw_run(context.run_id, snapshots, manifest)
 
         existing = self.storage.load_dataset("tw_monthly_revenue")
+        points = _fill_missing_mom(points, existing)
         written = self.storage.upsert_dataset("tw_monthly_revenue", points)
         return PipelineResult(
             run_id=context.run_id,
@@ -160,3 +162,30 @@ def _month_range(start_month: str, end_month: str) -> list[str]:
     if end < start:
         raise ValueError("end_month must be greater than or equal to start_month")
     return [period.strftime("%Y-%m") for period in pd.period_range(start=start, end=end, freq="M")]
+
+
+def _fill_missing_mom(points: list[object], existing: pd.DataFrame) -> list[object]:
+    """Derive MoM only when the source did not publish it and prior revenue exists."""
+    revenue_by_key: dict[tuple[str, str], float] = {}
+    if not existing.empty:
+        for row in existing.itertuples(index=False):
+            value = getattr(row, "monthly_revenue_ntd", None)
+            if pd.notna(value):
+                revenue_by_key[(str(row.company_code), str(row.revenue_month))] = float(value)
+
+    enriched: list[object] = []
+    for point in sorted(points, key=lambda item: (item.company_code, item.revenue_month)):
+        current = point.monthly_revenue_ntd
+        mom = point.mom_pct
+        derived = point.mom_pct_is_derived
+        if mom is None and current is not None:
+            previous_month = (pd.Period(point.revenue_month, freq="M") - 1).strftime("%Y-%m")
+            previous = revenue_by_key.get((point.company_code, previous_month))
+            if previous not in (None, 0):
+                mom = round((float(current) / previous - 1.0) * 100.0, 10)
+                derived = True
+        enriched_point = replace(point, mom_pct=mom, mom_pct_is_derived=derived)
+        enriched.append(enriched_point)
+        if current is not None:
+            revenue_by_key[(point.company_code, point.revenue_month)] = float(current)
+    return enriched

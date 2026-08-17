@@ -31,6 +31,7 @@ class CompanyConfig:
     company_name: str
     market: str
     industry: str
+    coverage_start_month: str | None = None
 
 
 @dataclass
@@ -51,6 +52,7 @@ class MonthlyRevenuePoint:
     source_run_id: str
     scraped_at: str
     parser_version: str
+    mom_pct_is_derived: bool = False
     raw_company_name_text: str | None = None
     raw_monthly_revenue_text: str | None = None
     raw_mom_pct_text: str | None = None
@@ -68,4 +70,3 @@ class PipelineResult:
     datasets_written: dict[str, int]
     raw_run_dir: str
     dataset_row_deltas: dict[str, int] = field(default_factory=dict)
-
