@@ -1,0 +1,16 @@
+{
+  "response": {
+    "header": {"resultCode": "00", "resultMsg": "OK"},
+    "body": {
+      "items": {
+        "item": {
+          "itemUsdAmt00": "123,456",
+          "itemUsdAmt01": "45,678",
+          "priodDt": "2026.07.10",
+          "priodMon": "2026.07",
+          "priodYear": "2026"
+        }
+      }
+    }
+  }
+}
