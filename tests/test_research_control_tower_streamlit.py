@@ -1202,6 +1202,7 @@ def _production_task7_generation_or_skip() -> Path:
     from control_tower.config import (
         ARTIFACT_COLUMNS,
         DATA_ARTIFACT_NAMES,
+        SOURCE_HEALTH_EXECUTION_COLUMNS,
         resolve_artifact_root,
     )
 
@@ -1227,7 +1228,17 @@ def _production_task7_generation_or_skip() -> Path:
             assert name == "quote_snapshots.parquet"
             continue
         actual_columns = tuple(pq.read_schema(resolution.artifact_root / name).names)
-        assert actual_columns in (ARTIFACT_COLUMNS[name], ARTIFACT_COLUMNS[name][:20] + (ARTIFACT_COLUMNS[name][-1],)), (
+        accepted = (ARTIFACT_COLUMNS[name], ARTIFACT_COLUMNS[name][:20] + (ARTIFACT_COLUMNS[name][-1],))
+        if name == "source_health.parquet":
+            # Backward-compatible trailing execution-evidence columns, exactly
+            # as tolerated by control_tower.repository._validate_parquet_schema
+            # and the privacy schema allowlist: legacy publications omit them,
+            # current builder output carries them in this fixed order.
+            accepted = (
+                *accepted,
+                (*ARTIFACT_COLUMNS[name], *SOURCE_HEALTH_EXECUTION_COLUMNS),
+            )
+        assert actual_columns in accepted, (
             f"CURRENT publication {resolution.current_target} has non-final "
             f"{name} schema: {actual_columns!r}"
         )
