@@ -27,12 +27,53 @@ def load_latest_normalized(dataset_name: str) -> pd.DataFrame:
     run_dirs = [d for d in dataset_dir.iterdir() if d.is_dir()]
     if not run_dirs:
         return pd.DataFrame()
-    for candidate in sorted(run_dirs, key=lambda d: d.stat().st_mtime, reverse=True):
+    def _sort_key(candidate: Path) -> tuple[float, float, str]:
+        # Directory mtimes have only second-level resolution on some
+        # filesystems, so several immutable snapshots can tie (especially
+        # during a bounded historical backfill).  Prefer the persisted
+        # lineage timestamp, then mtime/name as deterministic fallbacks.
+        created_at = ""
+        lineage_path = candidate / "lineage.json"
+        if lineage_path.exists():
+            try:
+                created_at = str(json.loads(lineage_path.read_text(encoding="utf-8")).get("created_at") or "")
+            except (OSError, ValueError, TypeError):
+                created_at = ""
+        try:
+            created_epoch = datetime.fromisoformat(created_at.replace("Z", "+00:00")).timestamp() if created_at else 0.0
+        except ValueError:
+            created_epoch = 0.0
+        return (created_epoch, candidate.stat().st_mtime, candidate.name)
+
+    for candidate in sorted(run_dirs, key=_sort_key, reverse=True):
         parquet_path = candidate / f"{dataset_name}.parquet"
         if not parquet_path.exists():
             continue
         frame = pd.read_parquet(parquet_path)
         if not frame.empty:
+            # Preserve the immutable source lineage when a normalized frame is
+            # reused as an input to a derived contract.  Pandas does not store
+            # DataFrame.attrs in Parquet, so restore the metadata explicitly
+            # from the sibling lineage.json instead of making downstream
+            # datasets appear to have no raw provenance.
+            lineage_path = candidate / "lineage.json"
+            if lineage_path.exists():
+                try:
+                    lineage = json.loads(lineage_path.read_text(encoding="utf-8"))
+                    frame.attrs["raw_snapshot"] = lineage.get("raw_snapshot")
+                    frame.attrs["raw_snapshots"] = lineage.get("raw_snapshots") or (
+                        [lineage.get("raw_snapshot")] if lineage.get("raw_snapshot") else []
+                    )
+                    frame.attrs["source_url"] = lineage.get("source_url")
+                    frame.attrs["source_urls"] = lineage.get("source_urls") or (
+                        [lineage.get("source_url")] if lineage.get("source_url") else []
+                    )
+                    frame.attrs["lineage_metadata"] = lineage
+                except (OSError, ValueError, TypeError):
+                    # A malformed sidecar must not make the data loader fail;
+                    # the normalizer/quality gate will still surface missing
+                    # lineage when this frame is persisted again.
+                    pass
             return frame
     return pd.DataFrame()
 

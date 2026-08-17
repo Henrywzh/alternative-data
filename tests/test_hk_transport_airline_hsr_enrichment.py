@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 
 from src.hk_transport.sources.airline_hsr_enrichment import (
+    build_caac_hsr_candidates,
     build_airline_hsr_query_queue,
     calculate_ask_weighted_exposure,
     calculate_hsr_substitution_score,
@@ -257,3 +258,110 @@ def test_pipeline_matches_dalian_yantai_defensible_geography_score():
     assert row['hsr_score_status'] == 'defensible_no_rail_geography'
     assert row['hsr_substitution_score'] == 0.0
     assert row['rail_query_status'] == 'no_direct_train_result'
+
+
+def test_build_caac_hsr_candidates_appends_domestic_new_licence_routes(tmp_path):
+    licence = pd.DataFrame(
+        [
+            {
+                "event_type": "新增许可",
+                "airline_normalized_name": "Spring Airlines",
+                "route_text": "广州-无锡",
+                "initial_frequency_per_week": 14.0,
+                "frequency_status": "stated_initial_frequency",
+                "source_url": "https://www.caac.gov.cn/XXGK/XXGK/TZTG/202603/P020260323513975216641.pdf",
+                "source_quality": "caac_primary_route_licence_pdf",
+                "source_release_date": "2026-03-23",
+            },
+            {
+                "event_type": "新增许可",
+                "airline_normalized_name": "9 Air",
+                "route_text": "广州-黄山",
+                "initial_frequency_per_week": 14.0,
+                "frequency_status": "stated_initial_frequency",
+                "source_url": "https://www.caac.gov.cn/XXGK/XXGK/TZTG/202603/P020260323513975216641.pdf",
+                "source_quality": "caac_primary_route_licence_pdf",
+                "source_release_date": "2026-03-23",
+            },
+            {
+                "event_type": "新增许可",
+                "airline_normalized_name": "Untracked Carrier",
+                "route_text": "南京-广州",
+                "initial_frequency_per_week": 14.0,
+                "frequency_status": "stated_initial_frequency",
+                "source_url": "https://www.caac.gov.cn/",
+                "source_quality": "caac_primary_route_licence_pdf",
+                "source_release_date": "2026-03-23",
+            },
+            {
+                "event_type": "注销",
+                "airline_normalized_name": "Spring Airlines",
+                "route_text": "广州-扬州",
+                "initial_frequency_per_week": None,
+                "frequency_status": "cancelled",
+                "source_url": "https://www.caac.gov.cn/",
+                "source_quality": "caac_primary_route_licence_pdf",
+                "source_release_date": "2026-03-23",
+            },
+        ]
+    )
+    existing = pd.DataFrame(
+        [
+            {
+                "dataset_id": "airline_hsr_route_candidates",
+                "as_of_date": "2026-08-07",
+                "company": "Spring Airlines",
+                "operating_entity": "Spring Airlines",
+                "parent_group": "Spring Airlines",
+                "ticker": "601021.SH",
+                "event_month": "2025-10",
+                "route_text": "上海虹桥=大理",
+                "route_scope": "domestic",
+                "screening_bucket": "hsr_enrichment_candidate",
+                "airline_frequency_text": "周246",
+                "airline_source_url": "https://example.com/a.pdf",
+                "airline_source_quality": "issuer_cninfo_operating_release",
+                "rail_time_minutes": np.nan,
+                "rail_frequency_per_day": np.nan,
+                "rail_fare_rmb": np.nan,
+                "airport_station_access_score": np.nan,
+                "hsr_substitution_score": np.nan,
+                "hsr_score_status": "not_scored",
+                "next_enrichment": "12306 route query",
+                "source_note": "existing",
+                "retrieved_at": "2026-08-07",
+            }
+        ]
+    )
+
+    result = build_caac_hsr_candidates(
+        licence_events=licence,
+        candidates=existing.copy(),
+        retrieved_at="2026-08-10T00:00:00+00:00",
+        output_path=tmp_path / "candidates.csv",
+    )
+
+    # Two tracked new-licence routes appended; untracked carrier and cancellation skipped.
+    assert len(result) == 3
+    assert result["route_text"].tolist() == ["上海虹桥=大理", "广州=无锡", "广州=黄山"]
+    spring = result[result["route_text"].eq("广州=无锡")].iloc[0]
+    # separator normalized from '-' to '='.
+    assert spring["airline_frequency_text"] == "每周14班"
+    assert spring["airline_source_quality"] == "caac_primary_route_licence_pdf"
+    assert spring["company"] == "Spring Airlines"
+    nine_air = result[result["route_text"].eq("广州=黄山")].iloc[0]
+    # 9 Air is attributed to the Juneyao group like existing candidate rows.
+    assert nine_air["company"] == "Juneyao Airlines"
+    assert nine_air["operating_entity"] == "9 Air"
+    assert nine_air["parent_group"] == "Juneyao Airlines"
+
+
+def test_build_caac_hsr_candidates_with_empty_inputs_returns_panel_unchanged(tmp_path):
+    existing = pd.DataFrame({"dataset_id": [], "retrieved_at": []})
+    result = build_caac_hsr_candidates(
+        licence_events=pd.DataFrame(),
+        candidates=existing.copy(),
+        output_path=tmp_path / "candidates.csv",
+    )
+    assert isinstance(result, pd.DataFrame)
+    assert len(result) == 0

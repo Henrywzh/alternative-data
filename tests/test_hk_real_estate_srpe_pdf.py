@@ -6,6 +6,7 @@ from src.hk_real_estate.sources.srpe import (
     download_srpe_document,
 )
 from src.hk_real_estate.sources.srpe_pdf import (
+    _parse_date,
     build_srpe_sales_signals,
     parse_srpe_price_list_metadata,
     parse_srpe_price_list_tables,
@@ -89,6 +90,11 @@ def _price_metadata():
     return first_page_tables, metadata
 
 
+def test_parse_date_handles_iso_and_display_formats_without_ambiguity():
+    assert _parse_date("2026-08-01") == "2026-08-01"
+    assert _parse_date("01/08/2026") == "2026-08-01"
+
+
 def test_transaction_tables_parse_bilingual_headers_and_cancellation():
     result = parse_srpe_transaction_tables(
         [(2, [_transaction_table()])],
@@ -108,6 +114,124 @@ def test_transaction_tables_parse_bilingual_headers_and_cancellation():
     assert result.iloc[1]["date_of_asp_termination"] == "2024-02-23"
     assert result.iloc[1]["is_cancelled"] == True
     assert result.iloc[1]["related_party_flag"] == "Yes"
+
+
+def test_transaction_tables_carry_schema_to_headerless_following_pages():
+    header = _transaction_table()[:3]
+    data_page = [_transaction_table()[3]]
+    result = parse_srpe_transaction_tables(
+        [(2, [header]), (3, [data_page])],
+        metadata={"development_id": "7705", "development_name": "THE PAVILIA FARM"},
+        document_id="pavilia-register",
+        document_hash="hash",
+    )
+    assert len(result) == 1
+    assert result.iloc[0]["source_page"] == 3
+    assert result.iloc[0]["unit"] == "A"
+
+
+def test_transaction_tables_skip_unrelated_headerless_tables_after_schema():
+    unrelated = [
+        [
+            "01/04/2024",
+            "",
+            "",
+            "Annual project summary",
+            "",
+            "",
+            "",
+            "$123,000,000",
+            "",
+            "",
+            "",
+        ],
+    ]
+    result = parse_srpe_transaction_tables(
+        [
+            (2, [_transaction_table()[:3]]),
+            (3, [[_transaction_table()[3]]]),
+            (4, [unrelated]),
+        ],
+        metadata={"development_id": "7705", "development_name": "THE PAVILIA FARM"},
+        document_id="pavilia-register",
+        document_hash="hash",
+    )
+    assert len(result) == 1
+    assert result.iloc[0]["block_name"] == "Tower 1\n第1座"
+
+
+def test_transaction_tables_accept_statutory_no_asp_marker():
+    no_asp = list(_transaction_table()[3])
+    no_asp[1] = (
+        "簽訂臨時買賣合約後交易再未有進展\n"
+        "The PASP has not proceeded further"
+    )
+    result = parse_srpe_transaction_tables(
+        [(2, [[*_transaction_table()[:3], no_asp]])],
+        metadata={"development_id": "7705", "development_name": "THE PAVILIA FARM"},
+        document_id="pavilia-register",
+        document_hash="hash",
+    )
+    assert len(result) == 1
+    assert result.iloc[0]["date_of_asp"] is None
+
+
+def test_transaction_tables_preserve_distinct_price_revisions():
+    first = _transaction_table()[3]
+    revised = list(first)
+    revised[7] = "$48,090,000"
+    revised[8] = "Price revised on 01/04/2021"
+    result = parse_srpe_transaction_tables(
+        [(2, [[*_transaction_table()[:3], first, revised]])],
+        metadata={"development_id": "7405", "development_name": "GRAND VICTORIA"},
+        document_id="revision-register",
+        document_hash="hash",
+    )
+    assert result["transaction_price_hkd"].tolist() == [47090000, 48090000]
+    assert result["transaction_id"].nunique() == 2
+    assert result.iloc[1]["price_revision_details"] == "Price revised on 01/04/2021"
+
+
+def test_transaction_tables_align_compact_old_tender_rows():
+    compact = [
+        ["13-10-2016", "16-10-2016", "", "17G Shouson Hill Road", "", "$228,420,000", "", "Payment Plan A", ""],
+    ]
+    result = parse_srpe_transaction_tables(
+        [(3, [_transaction_table()[:3]]), (4, [compact])],
+        metadata={"development_id": "285", "development_name": "SHOUSON PEAK"},
+        document_id="compact-old-register",
+        document_hash="hash",
+    )
+    row = result.loc[result["date_of_pasp"].eq("2016-10-13")].iloc[0]
+    assert row["transaction_price_hkd"] == 228420000
+    assert row["unit"] == ""
+    assert row["payment_terms"] == "Payment Plan A"
+
+
+def test_transaction_tables_do_not_treat_numeric_floor_as_shifted_price():
+    ordinary_short_row = [
+        [
+            "13-10-2016",
+            "16-10-2016",
+            "",
+            "Tower 1",
+            "10",
+            "A",
+            "",
+            "$22,842,000",
+            "",
+        ],
+    ]
+    result = parse_srpe_transaction_tables(
+        [(3, [_transaction_table()[:3]]), (4, [ordinary_short_row])],
+        metadata={"development_id": "test", "development_name": "TEST"},
+        document_id="ordinary-short-register",
+        document_hash="hash",
+    )
+    row = result.iloc[0]
+    assert row["floor"] == "10"
+    assert row["unit"] == "A"
+    assert row["transaction_price_hkd"] == 22842000
 
 
 def test_price_list_tables_parse_inventory_and_version_identity():

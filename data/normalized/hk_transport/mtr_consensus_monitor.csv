@@ -1,0 +1,21 @@
+kpi,our_low,our_base,our_high,consensus,basis
+HK transport revenue (HK$m),23469.0,24194.0,24920.0,23488.0,farebox H1 nowcast x FY25 seasonality; consensus = revenue cons x FY25 transport share
+"Property development profit (post-tax, HK$m)",4608.0,6330.0,8145.0,,Timing x Magnitude (P x eligible x 15/20/25%)
+Reported EPS (HK$),1.76,2.36,2.97,2.52417,our bridge vs yfinance 0y
+
+# ---- implied consensus property profit (EPS back-out) ----
+ip_reval_assumption,implied_property_profit_hkdm
+IP reval -50亿,14863.0
+IP reval -15亿,11363.0
+IP reval +0亿,9863.0
+IP reval +30亿,6863.0
+
+# ---- our EPS under the same IP-reval scenarios (property = our base) ----
+ip_reval_assumption,our_reported_eps
+IP reval -15亿,1.71
+IP reval +0亿,1.96
+IP reval +30亿,2.44
+
+# ---- consensus snapshot meta ----
+source,fetched_ok,eps_consensus_0y,eps_consensus_0y_low,eps_consensus_0y_high,eps_consensus_1y,eps_analyst_count,revenue_consensus_0y_hkdm,year_ago_eps_reported_by_yf,fy25_actual_eps_official,error
+yfinance 0066.HK,True,2.52417,2.37252,2.76841,1.55297,7,55214.24338,2.69,2.36,invalid literal for int() with base 10: '0m'

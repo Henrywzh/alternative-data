@@ -69,6 +69,20 @@ def fetch_immd_daily_traffic() -> pd.DataFrame:
         oth_arr = float(arr["Other Visitors"].sum()) if not arr.empty else 0.0
         oth_dep = float(dep["Other Visitors"].sum()) if not dep.empty else 0.0
 
+        # Control Point specific totals
+        hsr_grp = group[group["Control Point"] == "Express Rail Link West Kowloon"]
+        hsr_arr = float(hsr_grp[hsr_grp["Arrival / Departure"] == "Arrival"]["Total"].sum())
+        hsr_dep = float(hsr_grp[hsr_grp["Arrival / Departure"] == "Departure"]["Total"].sum())
+        hsr_tot = hsr_arr + hsr_dep
+
+        lo_wu_tot = float(group[group["Control Point"] == "Lo Wu"]["Total"].sum())
+        lmc_spur_tot = float(group[group["Control Point"] == "Lok Ma Chau Spur Line"]["Total"].sum())
+        mtr_cb_tot = lo_wu_tot + lmc_spur_tot
+
+        airport_tot = float(group[group["Control Point"] == "Airport"]["Total"].sum())
+        road_pts = ["Shenzhen Bay", "Heung Yuen Wai", "Hong Kong-Zhuhai-Macao Bridge", "Lok Ma Chau", "Man Kam To", "Sha Tau Kok"]
+        road_tot = float(group[group["Control Point"].isin(road_pts)]["Total"].sum())
+
         records.append({
             "date": dt_str,
             "hk_resident_arrivals": hk_arr,
@@ -81,12 +95,20 @@ def fetch_immd_daily_traffic() -> pd.DataFrame:
             "other_visitor_departures": oth_dep,
             "total_arrivals": hk_arr + ml_arr + oth_arr,
             "total_departures": hk_dep + ml_dep + oth_dep,
+            "hsr_west_kowloon_arrivals": hsr_arr,
+            "hsr_west_kowloon_departures": hsr_dep,
+            "hsr_west_kowloon_total": hsr_tot,
+            "lo_wu_total": lo_wu_tot,
+            "lok_ma_chau_spur_line_total": lmc_spur_tot,
+            "mtr_cross_boundary_total": mtr_cb_tot,
+            "airport_total": airport_tot,
+            "road_boundary_total": road_tot,
         })
 
     res_df = pd.DataFrame(records).sort_values("date").reset_index(drop=True)
 
     # Compute 7d and 30d moving averages
-    for col in ["hk_resident_departures", "mainland_visitor_arrivals", "hk_resident_net_flow", "mainland_visitor_net_retention"]:
+    for col in ["hk_resident_departures", "mainland_visitor_arrivals", "hk_resident_net_flow", "mainland_visitor_net_retention", "hsr_west_kowloon_total", "mtr_cross_boundary_total"]:
         res_df[f"{col}_7d_ma"] = res_df[col].rolling(window=7, min_periods=1).mean().round(1)
         res_df[f"{col}_30d_ma"] = res_df[col].rolling(window=30, min_periods=1).mean().round(1)
 

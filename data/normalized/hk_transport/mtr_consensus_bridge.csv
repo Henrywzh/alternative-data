@@ -1,0 +1,7 @@
+line,fy2025_actual_hkdm,fy2026e_hkdm,basis
+HK transport operations (our farebox nowcast),23595.0,24194.0,"H1 nowcast 11,977 x (1 + H2/H1 FY25 1.0201)"
+Station commercial,5345.0,5400.0,ASSUMED +1%
+Property rental & mgmt,5067.0,5100.0,ASSUMED +1%
+Mainland & international subsidiaries,20686.0,21000.0,ASSUMED +1.5% (UK handover drag done)
+Other businesses,758.0,800.0,ASSUMED flat
+TOTAL revenue,55465.0,56494.0,sum of lines above

@@ -147,6 +147,69 @@ def _row_cells(row: Sequence[Any], width: int) -> list[str]:
     return cells[:width] + [""] * max(0, width - len(cells))
 
 
+def _transaction_row_cells(row: Sequence[Any]) -> list[str]:
+    """Align old SRPE rows whose empty property columns were collapsed.
+
+    A subset of older/tender registers is extracted by pdfplumber with only
+    nine cells: the empty floor/unit/car-park columns disappear and the price
+    shifts from column H to column F. Padding such a row at the end silently
+    puts the price into ``unit`` and a numeric payment-plan marker into
+    ``transaction_price_hkd``. Detect the compact shape before applying the
+    normal eleven-column schema.
+    """
+    cells = [_clean_multiline(cell) for cell in row]
+    if len(cells) >= 11:
+        return cells[:11]
+
+    def compact_price_candidate(value: str) -> bool:
+        text = str(value or "").strip()
+        currency_match = re.search(
+            r"(?:HK)?\$\s*(\d[\d,]*(?:\.\d+)?)",
+            text,
+            flags=re.IGNORECASE,
+        )
+        plain_match = re.match(r"^\s*(\d[\d,]*(?:\.\d+)?)", text)
+        match = currency_match or plain_match
+        if not match:
+            return False
+        try:
+            return float(match.group(1).replace(",", "")) >= 100_000
+        except ValueError:
+            return False
+
+    price_index = next(
+        (
+            index
+            for index, value in enumerate(cells[4:], start=4)
+            if compact_price_candidate(value)
+        ),
+        None,
+    )
+    if price_index is not None and price_index < 7 and len(cells) >= 6:
+        aligned = [""] * 11
+        aligned[0:4] = cells[0:4]
+        aligned[4:price_index] = cells[4:price_index]
+        aligned[7] = cells[price_index]
+        # The first non-empty cell after the shifted price is the compact
+        # version's payment/revision text; retain it as payment terms rather
+        # than dropping the evidence.
+        trailing = [value for value in cells[price_index + 1:] if value]
+        if trailing:
+            if re.search(r"payment|付款|terms", trailing[0], flags=re.IGNORECASE):
+                aligned[9] = trailing[0]
+            else:
+                aligned[8] = trailing[0]
+        if len(trailing) > 1:
+            if aligned[9]:
+                aligned[10] = trailing[1]
+            else:
+                aligned[9] = trailing[1]
+        if len(trailing) > 2:
+            aligned[10] = trailing[2]
+        return aligned
+    return cells[:11] + [""] * max(0, 11 - len(cells))
+
+
 def _first_non_label_value(row: Sequence[Any], start: int) -> str:
     for value in row[start + 1 :]:
         candidate = _clean_multiline(value)
@@ -182,7 +245,14 @@ def _parse_date(value: Any) -> str | None:
         match = re.search(r"\d{1,4}[/-]\d{1,2}[/-]\d{1,4}", text)
         if match:
             text = match.group(0)
-    parsed = pd.to_datetime(text, errors="coerce", dayfirst=True)
+    # SRPE files mix ISO dates (YYYY-MM-DD) with the statutory DD/MM/YYYY
+    # display format.  Passing ``dayfirst=True`` to every value makes pandas
+    # warn on ISO strings and can become ambiguous for dates such as
+    # 2026-08-01.  Route each explicit shape to its matching parser instead.
+    if re.fullmatch(r"\d{4}[/-]\d{1,2}[/-]\d{1,2}", text):
+        parsed = pd.to_datetime(text, errors="coerce", yearfirst=True)
+    else:
+        parsed = pd.to_datetime(text, errors="coerce", dayfirst=True)
     if pd.isna(parsed):
         return None
     return parsed.strftime("%Y-%m-%d")
@@ -250,6 +320,73 @@ def _transaction_table(table: Sequence[Sequence[Any]]) -> bool:
     )
 
 
+def _transaction_data_row(
+    raw_row: Sequence[Any],
+) -> tuple[list[str], str | None, str | None, str | None, float] | None:
+    """Return one strictly shaped transaction row, or ``None``.
+
+    Once a register header has appeared, later PDF pages often omit it.  That
+    does not make every later table part of the register: appendices and
+    summary tables can also contain a date, description and large amount.
+    Transaction date columns may contain only a date or a statutory blank
+    marker, so reject a row when any of its first three cells contains other
+    text.
+    """
+    if not 8 <= len(raw_row) <= 11:
+        return None
+    row = _transaction_row_cells(raw_row)
+    parsed_dates = tuple(_parse_date(row[index]) for index in range(3))
+    blank_markers = {"", "-", "—", "nil", "n/a", "not applicable"}
+    for index, (raw_value, parsed_value) in enumerate(zip(row[:3], parsed_dates)):
+        normalized = _label_text(raw_value).strip().lower()
+        statutory_no_asp = index == 1 and (
+            ("pasp" in normalized and "not proceeded" in normalized)
+            or "交易再未有進展" in normalized
+            or "交易再未有进展" in normalized
+        )
+        if normalized not in blank_markers and parsed_value is None and not statutory_no_asp:
+            return None
+    if not any(parsed_dates):
+        return None
+    price = _parse_number(row[7])
+    block = _label_text(row[3]).strip()
+    property_text = " ".join(_label_text(row[index]).strip() for index in (3, 4, 5, 6) if row[index])
+    summary_label = bool(
+        re.search(
+            r"\b(?:summary|total|aggregate)\b|合計|總計|总计",
+            property_text,
+            flags=re.IGNORECASE,
+        )
+    )
+    property_detail_present = any(row[index] for index in (4, 5, 6))
+    property_label_present = bool(
+        re.search(
+            r"\b(?:block|flat|house|residential|tower|unit)\b|座|洋房|住宅|單位|单位",
+            block,
+            flags=re.IGNORECASE,
+        )
+    )
+    # Compact legacy tables can collapse the floor/unit/car-park columns into
+    # the address cell. Standard eleven-column rows need either explicit
+    # property detail or a residential-property label.
+    # A standard-width headerless table is only accepted when the extracted
+    # row contains an actual floor/unit/car-park value.  This is deliberately
+    # stricter than checking for a date + amount: summary tables often have
+    # the same width and can otherwise masquerade as transactions. Compact
+    # legacy rows remain supported through the dedicated shifted-column path.
+    property_present = bool(block) and not summary_label and (
+        property_detail_present if len(raw_row) >= 11 else True
+    )
+    if not property_present or price is None:
+        return None
+    return row, parsed_dates[0], parsed_dates[1], parsed_dates[2], price
+
+
+def _transaction_continuation_table(table: Sequence[Sequence[Any]]) -> bool:
+    """Return whether a headerless table contains a strict transaction row."""
+    return any(_transaction_data_row(row) is not None for row in table)
+
+
 def parse_srpe_transaction_tables(
     page_tables: Iterable[tuple[int, Sequence[Sequence[Sequence[Any]]]]],
     *,
@@ -262,21 +399,26 @@ def parse_srpe_transaction_tables(
     """Parse extracted SRPE transaction tables into one row per unit event."""
     metadata = dict(metadata or {})
     records: list[dict[str, Any]] = []
+    transaction_header_seen = False
     for page_no, tables in page_tables:
         for table in tables:
-            if not _transaction_table(table):
+            has_transaction_header = _transaction_table(table)
+            if has_transaction_header:
+                transaction_header_seen = True
+            # SRPE registers normally print the transaction header only on
+            # the first data page.  Once that schema has been established,
+            # subsequent pages contain headerless rows with the same eleven
+            # columns.  Carry the schema only into tables that contain a
+            # strictly shaped transaction row; later appendices are unrelated.
+            if not has_transaction_header and (
+                not transaction_header_seen or not _transaction_continuation_table(table)
+            ):
                 continue
             for row_no, raw_row in enumerate(table):
-                row = _row_cells(raw_row, 11)
-                pasp_date = _parse_date(row[0])
-                asp_date = _parse_date(row[1])
-                termination_date = _parse_date(row[2])
-                price = _parse_number(row[7])
-                property_present = any(row[index] for index in (3, 4, 5))
-                if not (pasp_date or asp_date or termination_date):
+                parsed = _transaction_data_row(raw_row)
+                if parsed is None:
                     continue
-                if not property_present or price is None:
-                    continue
+                row, pasp_date, asp_date, termination_date, price = parsed
                 block = row[3]
                 floor = row[4]
                 unit = row[5]
@@ -289,9 +431,13 @@ def parse_srpe_transaction_tables(
                         metadata.get("phase_name"),
                         pasp_date,
                         asp_date,
+                        termination_date,
                         block,
                         floor,
                         unit,
+                        car_parking,
+                        f"{price:.10f}",
+                        row[8],
                     )
                 )
                 records.append(
@@ -345,23 +491,30 @@ def parse_srpe_transaction_pdf(
     content = _read_pdf_bytes(source)
     document_hash = hashlib.sha256(content).hexdigest()
     with pdfplumber.open(io.BytesIO(content)) as pdf:
-        page_tables = [(page_no, page.extract_tables() or []) for page_no, page in enumerate(pdf.pages, 1)]
-    first_tables = page_tables[0][1] if page_tables else []
-    extracted = _extract_basic_info(first_tables)
-    metadata = {
-        "development_id": development_id,
-        "development_name": development_name or extracted.get("development_name"),
-        "phase_name": phase_name or extracted.get("phase_name"),
-        "development_address": development_address or extracted.get("development_address"),
-    }
-    return parse_srpe_transaction_tables(
-        page_tables,
-        metadata=metadata,
-        document_id=document_id,
-        document_serial_no=document_serial_no,
-        document_hash=document_hash,
-        source_document=source_document,
-    )
+        first_tables = pdf.pages[0].extract_tables() or [] if pdf.pages else []
+        extracted = _extract_basic_info(first_tables)
+        metadata = {
+            "development_id": development_id,
+            "development_name": development_name or extracted.get("development_name"),
+            "phase_name": phase_name or extracted.get("phase_name"),
+            "development_address": development_address or extracted.get("development_address"),
+        }
+
+        def iter_page_tables() -> Iterable[tuple[int, Sequence[Sequence[Sequence[Any]]]]]:
+            for page_no, page in enumerate(pdf.pages, 1):
+                # Reuse the first extraction for metadata and parsing; later
+                # pages are extracted and released one at a time.
+                tables = first_tables if page_no == 1 else (page.extract_tables() or [])
+                yield page_no, tables
+
+        return parse_srpe_transaction_tables(
+            iter_page_tables(),
+            metadata=metadata,
+            document_id=document_id,
+            document_serial_no=document_serial_no,
+            document_hash=document_hash,
+            source_document=source_document,
+        )
 
 
 def _price_table(table: Sequence[Sequence[Any]]) -> bool:

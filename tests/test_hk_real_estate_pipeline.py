@@ -893,6 +893,7 @@ def test_run_all_includes_new_tranches(monkeypatch):
         "run_all_incomplete_pipelines": "incomplete_dataset",
         "run_midland_monthly_pipeline": "midland_monthly_dataset",
         "run_rvd_commercial_pipeline": "rvd_commercial_dataset",
+        "run_hk_commercial_controls_pipeline": "hk_commercial_controls_dataset",
         "run_midland_snapshot_pipeline": "midland_snapshot_dataset",
         "run_policy_event_research_pipeline": "policy_dataset",
     }

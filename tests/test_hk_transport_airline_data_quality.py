@@ -56,7 +56,20 @@ def test_energy_and_fx_observation_grains_are_unique() -> None:
 
     # Daily and weekly EIA observations can share a calendar date; frequency
     # is therefore part of the natural key rather than a duplicate.
-    assert energy.duplicated(["frequency", "series_id", "observation_date"]).sum() == 0
+    #
+    # source_release_date is part of the grain too: the collector deliberately
+    # preserves one row per EIA workbook release so a revision stays visible
+    # next to the vintage it replaced (see energy_prices.py, "a revised
+    # workbook release remains preserved").  Asserting uniqueness without it
+    # would forbid keeping any second vintage at all.
+    assert energy.duplicated(
+        ["frequency", "series_id", "observation_date", "source_release_date"]
+    ).sum() == 0
+    # Within one release the observation grain must still be unique.
+    for release, rows in energy.groupby("source_release_date"):
+        assert rows.duplicated(["frequency", "series_id", "observation_date"]).sum() == 0, (
+            f"release {release} carries duplicate observations"
+        )
     assert fx.duplicated(["pair", "observation_date"]).sum() == 0
 
 
