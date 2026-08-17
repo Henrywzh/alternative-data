@@ -36,8 +36,8 @@ Four stacked ablations (every stage adds exactly one component):
 Every normal level is computed walk-forward: only rows with
 target_year < t are visible, so there is no look-ahead.
 
-Evaluation (per stage): FY/H1/H2 revenue MAE, direction accuracy
-(sign of predicted YoY change vs actual), cross-sectional rank IC
+Evaluation (per stage): FY/H1/H2 revenue MAE, acceleration-direction accuracy
+(the sign of predicted versus actual growth acceleration), cross-sectional rank IC
 (Spearman across carriers per period-year), and regime split
 (2020-2023 vs normal years).
 """
@@ -78,11 +78,10 @@ PERIODS = ["FY", "H1", "H2"]
 # Dynamic shrinkage: lambda ramps from LAMBDA_MAX (trust prior year) to
 # LAMBDA_MIN (trust normal level) as the prior-year LF deviation reaches
 # KAPPA_SIGMA standard deviations of the company's own history.
-# LAMBDA_MIN was tuned by a walk-forward sweep (0.05..1.0): lambda_min=0.5
-# minimises MAE (7.92%) while keeping cross-sectional rank IC high (0.81);
-# more aggressive shrinkage (0.2) hurts both MAE (8.30%) and rank IC (0.79)
-# because it pulls every carrier toward its own normal and flattens the
-# cross-sectional growth dispersion that matters for long/short ranking.
+# LAMBDA_MIN is fixed at 0.50 from an earlier exploratory sweep.  The sweep
+# artifact is not persisted in this repository, so this is a design parameter
+# rather than independent OOS evidence.  Keep the claim auditable by reporting
+# the ablation result below, not by implying a reproducible tuning file exists.
 LAMBDA_MAX = 0.90
 LAMBDA_MIN = 0.50
 KAPPA_SIGMA = 2.0

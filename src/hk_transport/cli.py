@@ -42,6 +42,7 @@ from .sources.airline_h1_2026_validation_playbook import build_airline_h1_2026_v
 from .sources.airline_catalyst_calendar import build_airline_catalyst_calendar
 from .sources.airline_post_earnings_tracker import build_airline_post_earnings_tracker
 from .sources.airline_pre_event_locked_baseline import build_airline_pre_event_locked_baseline
+from .sources.airline_pre_event_unified_snapshot import build_airline_pre_event_unified_snapshot
 from .sources.airline_earnings_model_v4 import build_airline_earnings_model_v4
 from .sources.airline_earnings_model_v4_live import build_airline_earnings_model_v4_live
 from .sources.airline_cost_engine_v2 import build_airline_cost_engine_v2
@@ -262,9 +263,18 @@ def main():
         "run-airline-post-earnings-tracker",
         help="Build the post-earnings tracking ledger (actuals + market reaction + revisions)",
     )
-    subparsers.add_parser(
+    pre_event_parser = subparsers.add_parser(
         "run-airline-pre-event-locked-baseline",
         help="Freeze the pre-1H2026 report forecast baseline per carrier",
+    )
+    pre_event_parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Deliberately create a new baseline lock after reviewing inputs",
+    )
+    subparsers.add_parser(
+        "run-airline-pre-event-unified-snapshot",
+        help="Build the locked v3/v4/consensus/decision pre-event reconciliation view",
     )
     subparsers.add_parser(
         "run-airline-earnings-model-v4",
@@ -791,8 +801,11 @@ def main():
             df = build_airline_post_earnings_tracker()
             print(f"Built airline post-earnings tracker: {len(df)} records\n", df)
         elif args.command == "run-airline-pre-event-locked-baseline":
-            df = build_airline_pre_event_locked_baseline()
+            df = build_airline_pre_event_locked_baseline(overwrite=args.overwrite)
             print(f"Built airline pre-event locked baseline: {len(df)} records\n", df)
+        elif args.command == "run-airline-pre-event-unified-snapshot":
+            df = build_airline_pre_event_unified_snapshot()
+            print(f"Built unified airline pre-event snapshot: {len(df)} carriers\n", df)
         elif args.command == "run-airline-earnings-model-v4":
             df = build_airline_earnings_model_v4()
             print(f"Built airline v4 earnings model: {len(df)} records\n", df.tail(8))

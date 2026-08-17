@@ -115,16 +115,23 @@ def build_airline_residual_yield_model() -> pd.DataFrame:
         flat["target_revenue_native_mn"] / flat["predicted_revenue_native_mn"] - 1.0
     ) * 100.0
 
-    # Per-company, per-year yield-pressure score (mean of that year's months).
-    # Historical evaluation rows use the score from the SAME target year
-    # (PIT: the score uses only data up to that year); current forecasts use
-    # the most recent 12-month mean.
+    # Per-company, per-period yield-pressure score.  Historical H1 rows may
+    # use only Jan-Jun, H2 only Jul-Dec, and FY Jan-Dec.  Using one annual
+    # score for all three rows would leak the second half of the year into an
+    # H1 forecast, even though each monthly score is itself PIT-safe.
+    pressure = pressure.copy()
+    pressure["month"] = pressure["month"].astype(str)
     pressure["year"] = pressure["month"].str[:4].astype(int)
-    year_score = (
-        pressure.groupby(["company", "year"])["yield_pressure_score"]
-        .mean()
-        .to_dict()
-    )
+    pressure["month_num"] = pressure["month"].str[5:7].astype(int)
+    period_month_ranges = {"H1": (1, 6), "H2": (7, 12), "FY": (1, 12)}
+    period_score: dict[str, dict[tuple[str, int], float]] = {}
+    for period_name, (start_month, end_month) in period_month_ranges.items():
+        period_pressure = pressure[pressure["month_num"].between(start_month, end_month)]
+        period_score[period_name] = (
+            period_pressure.groupby(["company", "year"])["yield_pressure_score"]
+            .mean()
+            .to_dict()
+        )
     pressure_sorted = pressure.sort_values(["company", "month"])
     recent = pressure_sorted.groupby("company").tail(12)
     recent_score = recent.groupby("company")["yield_pressure_score"].mean().to_dict()
@@ -151,7 +158,7 @@ def build_airline_residual_yield_model() -> pd.DataFrame:
         company_residual = flat[flat["company"].eq(company)]["residual_pct"]
         residual_std = float(company_residual.std(ddof=0)) if len(company_residual) >= 2 else None
         score = (
-            year_score.get((company, int(target_year)))
+            period_score.get(period, {}).get((company, int(target_year)))
             if row_status == "historical_evaluated"
             else recent_score.get(company)
         )
@@ -208,7 +215,9 @@ def build_airline_residual_yield_model() -> pd.DataFrame:
                     "Residual yield model: flat-yield baseline (ASK x prior "
                     "RASK) plus a shrunk signed adjustment from the 3-class "
                     "yield-pressure bucket (lambda 0.5 x historical residual "
-                    "std).  The adjustment is capped so the weakly-validated "
+                    "std). Historical pressure scores are period-specific "
+                    "(H1 Jan-Jun, H2 Jul-Dec, FY Jan-Dec) to prevent intra-year "
+                    "look-ahead. The adjustment is capped so the weakly-validated "
                     "yield signal cannot dominate the strong flat-yield prior."
                 ),
                 "retrieved_at": retrieved,

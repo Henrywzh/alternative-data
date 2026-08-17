@@ -95,8 +95,15 @@ def _row(frame: pd.DataFrame, **criteria: object) -> pd.Series:
     return rows.iloc[0] if not rows.empty else pd.Series(dtype=object)
 
 
-def build_airline_pre_event_locked_baseline() -> pd.DataFrame:
-    """Build the pre-event locked baseline snapshot (1H2026)."""
+def build_airline_pre_event_locked_baseline(*, overwrite: bool = False) -> pd.DataFrame:
+    """Build or read the locked pre-event baseline snapshot (1H2026).
+
+    Normal pipeline runs must not silently replace a pre-event anchor after
+    new data or post-report information arrives.  A deliberate ``overwrite``
+    is available for creating a new explicit lock after reviewing the inputs.
+    """
+    if OUTPUT_PATH.exists() and not overwrite:
+        return pd.read_csv(OUTPUT_PATH)
     retrieved = datetime.now(timezone.utc).isoformat()
     snapshot_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     filing = pd.read_csv(FILING_PATH)

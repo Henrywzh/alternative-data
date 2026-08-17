@@ -10,9 +10,10 @@ Captures the full earnings event loop for each carrier / report period:
 
 The ledger is designed to be filled in two passes:
 
-1. Pre-event pass (now): every row carries the model forecast (v3 base),
-   the consensus profit and the scheduled filing date.  For the six
-   mainland carriers the status is ``awaiting_report``.
+1. Pre-event pass (now): every row carries the v3 base forecast, the frozen
+   v4 H1 revenue/EPS fields when the unified snapshot is available, the
+   consensus profit and the scheduled filing date.  For the six mainland
+   carriers the status is ``awaiting_report``.
 2. Post-event pass (after each 1H2026 / FY2026 print): fill the actual
    columns, market-reaction returns and analyst-revision signal, and flip
    the status to ``filled``.
@@ -51,6 +52,7 @@ DATASET_ID = "airline_post_earnings_tracker"
 PLAYBOOK_PATH = NORMALIZED_DIR / "airline_h1_2026_validation_playbook.csv"
 EXPECTATION_PATH = NORMALIZED_DIR / "airline_expectation_bridge.csv"
 FILING_CALENDAR_PATH = NORMALIZED_DIR / "airline_filing_calendar.csv"
+UNIFIED_PRE_EVENT_PATH = NORMALIZED_DIR / "airline_pre_event_unified_snapshot.csv"
 YFINANCE_BARS_PATH = (
     Path(NORMALIZED_DIR).parent.parent.parent
     / "data/raw/market_data/yfinance/20260808T-stage3-daily-5y/bars_1d.parquet"
@@ -67,6 +69,13 @@ OUTPUT_COLUMNS = [
     "pre_event_consensus_fy2026_net_profit_usd_mn",
     "model_vs_consensus_pct",
     "net_income_leg",
+    "pre_event_v4_model_version",
+    "pre_event_v4_h1_revenue_native_mn",
+    "pre_event_v4_h1_eps_rmb",
+    "pre_event_v4_fy_eps_annualised_rmb",
+    "pre_event_v4_consensus_eps_rmb",
+    "pre_event_v4_surprise_x2_pct",
+    "pre_event_v4_surprise_season_adjusted_pct",
     "actual_h1_net_profit_native_mn",
     "actual_h1_net_profit_currency",
     "actual_h1_net_profit_usd_mn",
@@ -149,13 +158,18 @@ def _returns_for_ticker(ticker: str, announcement_date: str) -> dict[str, Any]:
     return {"day0": day0, "t1": t1, "t5": t5, "status": status}
 
 
-def _mainland_rows(playbook: pd.DataFrame, calendar: pd.DataFrame) -> list[dict[str, Any]]:
+def _mainland_rows(
+    playbook: pd.DataFrame,
+    calendar: pd.DataFrame,
+    unified: pd.DataFrame,
+) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for _, r in playbook.iterrows():
         company = r["company"]
         if company == "9 Air":
             continue  # no consensus / filing line; keep the playbook-only row out of the ledger
         cal = _row(calendar, company=company, statement_period="1H2026")
+        v4 = _row(unified, company=company)
         model = _num(r.get("fy2026_v3_base_net_profit_usd_mn"))
         consensus = _num(r.get("consensus_fy2026_profit_usd_mn"))
         model_vs_consensus = (
@@ -172,6 +186,13 @@ def _mainland_rows(playbook: pd.DataFrame, calendar: pd.DataFrame) -> list[dict[
                 "pre_event_consensus_fy2026_net_profit_usd_mn": consensus,
                 "model_vs_consensus_pct": model_vs_consensus,
                 "net_income_leg": str(r.get("net_income_leg", "")),
+                "pre_event_v4_model_version": v4.get("v4_model_version") if not v4.empty else None,
+                "pre_event_v4_h1_revenue_native_mn": _num(v4.get("v4_h1_revenue_native_mn")),
+                "pre_event_v4_h1_eps_rmb": _num(v4.get("v4_h1_eps_rmb")),
+                "pre_event_v4_fy_eps_annualised_rmb": _num(v4.get("v4_fy_eps_annualised_rmb")),
+                "pre_event_v4_consensus_eps_rmb": _num(v4.get("v4_consensus_eps_fy2026_rmb")),
+                "pre_event_v4_surprise_x2_pct": _num(v4.get("v4_surprise_x2_pct")),
+                "pre_event_v4_surprise_season_adjusted_pct": _num(v4.get("v4_surprise_season_adjusted_pct")),
                 "actual_h1_net_profit_native_mn": None,
                 "actual_h1_net_profit_currency": "",
                 "actual_h1_net_profit_usd_mn": None,
@@ -234,6 +255,13 @@ def _cathay_row(expectation: pd.DataFrame) -> dict[str, Any]:
         "pre_event_consensus_fy2026_net_profit_usd_mn": consensus_usd,
         "model_vs_consensus_pct": model_vs_consensus,
         "net_income_leg": "n_a_cathay_not_in_v3",
+        "pre_event_v4_model_version": None,
+        "pre_event_v4_h1_revenue_native_mn": None,
+        "pre_event_v4_h1_eps_rmb": None,
+        "pre_event_v4_fy_eps_annualised_rmb": None,
+        "pre_event_v4_consensus_eps_rmb": None,
+        "pre_event_v4_surprise_x2_pct": None,
+        "pre_event_v4_surprise_season_adjusted_pct": None,
         "actual_h1_net_profit_native_mn": native,
         "actual_h1_net_profit_currency": str(cx.get("latest_financial_currency", "")),
         "actual_h1_net_profit_usd_mn": actual_usd,
@@ -265,8 +293,9 @@ def build_airline_post_earnings_tracker() -> pd.DataFrame:
     playbook = pd.read_csv(PLAYBOOK_PATH)
     calendar = pd.read_csv(FILING_CALENDAR_PATH)
     expectation = pd.read_csv(EXPECTATION_PATH)
+    unified = pd.read_csv(UNIFIED_PRE_EVENT_PATH) if UNIFIED_PRE_EVENT_PATH.exists() else pd.DataFrame()
 
-    rows: list[dict[str, Any]] = _mainland_rows(playbook, calendar)
+    rows: list[dict[str, Any]] = _mainland_rows(playbook, calendar, unified)
     cathay = _cathay_row(expectation)
     if cathay:
         rows.append(cathay)

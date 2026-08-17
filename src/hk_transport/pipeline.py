@@ -42,6 +42,7 @@ from .sources.airline_catalyst_calendar import build_airline_catalyst_calendar
 from .sources.airline_h1_2026_validation_playbook import build_airline_h1_2026_validation_playbook
 from .sources.airline_post_earnings_tracker import build_airline_post_earnings_tracker
 from .sources.airline_pre_event_locked_baseline import build_airline_pre_event_locked_baseline
+from .sources.airline_pre_event_unified_snapshot import build_airline_pre_event_unified_snapshot
 from .sources.airline_earnings_model_v4 import build_airline_earnings_model_v4
 from .sources.airline_earnings_model_v4_live import build_airline_earnings_model_v4_live
 from .sources.airline_cost_engine_v2 import build_airline_cost_engine_v2
@@ -465,6 +466,23 @@ QUALITY_SPECS = {
             "retrieved_at",
         ],
         "max_age_days": 15,
+    },
+    "airline_pre_event_unified_snapshot": {
+        "kind": "snapshot",
+        "required": [
+            "company",
+            "forecast_horizon",
+            "forecast_type",
+            "unified_model_version",
+            "unified_snapshot_date",
+            "lock_status",
+            "v3_model_version",
+            "v4_model_version",
+            "decision_model_version",
+            "source_vintage_status",
+            "retrieved_at",
+        ],
+        "max_age_days": 30,
     },
     "airline_earnings_model_v4": {
         "kind": "measure",
@@ -1897,6 +1915,13 @@ def run_stage_1_pipeline() -> dict[str, Any]:
     except Exception as exc:
         logger.exception("Consensus reverse v2 build failed")
         results["airline_consensus_reverse_v2_sanity"] = {"error": str(exc)}
+
+    try:
+        logger.info("Building unified airline pre-event snapshot...")
+        results["airline_pre_event_unified_snapshot"] = build_airline_pre_event_unified_snapshot()
+    except Exception as exc:
+        logger.exception("Airline unified pre-event snapshot build failed")
+        results["airline_pre_event_unified_snapshot"] = {"error": str(exc)}
 
     try:
         logger.info("Building valuation v2 (Street vs Own)...")
