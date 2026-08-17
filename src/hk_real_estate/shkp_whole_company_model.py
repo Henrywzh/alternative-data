@@ -206,9 +206,39 @@ def build_shkp_whole_company_skeleton(
     if not cons.empty and "metric" in cons.columns:
         for fiscal_year in (2026, 2027):
             eps = cons[cons["metric"].eq("eps") & cons["fiscal_year"].eq(fiscal_year)]
-            median = float(eps.loc[eps["statistic"].eq("median"), "value"].iloc[0]) if not eps[eps["statistic"].eq("median")].empty else None
-            low = float(eps.loc[eps["statistic"].eq("low"), "value"].iloc[0]) if not eps[eps["statistic"].eq("low")].empty else None
-            high = float(eps.loc[eps["statistic"].eq("high"), "value"].iloc[0]) if not eps[eps["statistic"].eq("high")].empty else None
+            if "statistic" in eps.columns:
+                # Pre-aggregated frame: read the published statistics directly.
+                median = float(eps.loc[eps["statistic"].eq("median"), "value"].iloc[0]) if not eps[eps["statistic"].eq("median")].empty else None
+                low = float(eps.loc[eps["statistic"].eq("low"), "value"].iloc[0]) if not eps[eps["statistic"].eq("low")].empty else None
+                high = float(eps.loc[eps["statistic"].eq("high"), "value"].iloc[0]) if not eps[eps["statistic"].eq("high")].empty else None
+                excluded: list[float] = []
+            else:
+                # One row per contributing source with no statistic labels
+                # (the shape of shkp_financial_model_consensus).  Derive the
+                # dispersion here, but drop scale outliers first: the frame
+                # mixes units, e.g. FY2027 carries 0.381 against a cluster of
+                # 8.05-9.33.  Feeding that straight into low/high would report
+                # a unit error as the consensus floor.
+                #
+                # The rule is a unit-error filter, not a view on which broker
+                # is right: keep values within an order of magnitude of the
+                # median (ratio in [1/5, 5]).  Genuine broker disagreement
+                # never spans 5x on an EPS estimate, so this cannot silently
+                # discard a real bear case.  Exclusions are recorded on the
+                # output row rather than dropped quietly.
+                values = pd.to_numeric(eps["value"], errors="coerce").dropna()
+                values = values[values > 0]
+                median = low = high = None
+                excluded = []
+                if not values.empty:
+                    anchor = float(values.median())
+                    ratio = values / anchor if anchor else values
+                    kept = values[(ratio >= 0.2) & (ratio <= 5.0)]
+                    excluded = sorted(float(v) for v in values[~values.index.isin(kept.index)])
+                    if not kept.empty:
+                        median = float(kept.median())
+                        low = float(kept.min())
+                        high = float(kept.max())
             model_eps = (
                 float(
                     skeleton.loc[
@@ -226,6 +256,7 @@ def build_shkp_whole_company_skeleton(
                     "consensus_median_eps": median,
                     "consensus_low_eps": low,
                     "consensus_high_eps": high,
+                    "consensus_excluded_scale_outliers": ",".join(f"{v:g}" for v in excluded),
                     "model_base_underlying_eps": model_eps,
                     "consensus_metric_assumption": "broker_eps_treated_as_underlying_per_hk_developer_convention",
                     "model_use": "whole_company_consensus_comparison",

@@ -72,11 +72,30 @@ def build_shkp_handover_lag_distribution(
     if valid.empty:
         return pd.DataFrame()
     valid["lag_years"] = (valid["handover_fy"] - valid["launch_fy"]).astype(int)
-    dist = valid["lag_years"].value_counts(normalize=True).sort_index()
+
+    # The three published weights must be a complete partition of the valid
+    # observations, so two corrections happen before normalising.
+    #
+    # 1. A negative lag means handover was recorded before launch, which cannot
+    #    happen: it marks a bad launch/handover pairing, not a fast project.
+    #    Those rows are excluded and counted, never normalised away silently.
+    # 2. The observed tail runs to seven years for large multi-phase
+    #    developments.  lag_2 is therefore "two years or more", not "exactly
+    #    two" -- otherwise a fifth of the real mass would vanish and the three
+    #    weights would not sum to 1.
+    impossible = valid[valid["lag_years"] < 0]
+    usable = valid[valid["lag_years"] >= 0].copy()
+    if usable.empty:
+        return pd.DataFrame()
+    usable["lag_bucket"] = usable["lag_years"].clip(upper=2)
+    dist = usable["lag_bucket"].value_counts(normalize=True).sort_index()
     weights = {
         "lag_0_weight": float(dist.get(0, 0.0)),
         "lag_1_weight": float(dist.get(1, 0.0)),
         "lag_2_weight": float(dist.get(2, 0.0)),
+        "lag_2_is_two_or_more": True,
+        "excluded_negative_lag_phases": int(len(impossible)),
+        "max_observed_lag_years": int(valid["lag_years"].max()),
         "mean_lag_years": float(valid["lag_years"].mean()),
         "median_lag_years": float(valid["lag_years"].median()),
         "n_phases": int(len(valid)),
