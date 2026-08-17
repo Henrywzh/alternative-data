@@ -3,9 +3,13 @@ __pycache__/
 *.py[cod]
 .python-version
 .venv/
+.venv-*/
 venv/
 env/
 *.egg-info/
+
+# Browser-automation scratch output (page snapshots, console logs)
+.playwright-cli/
 
 # Jupyter
 .ipynb_checkpoints/
