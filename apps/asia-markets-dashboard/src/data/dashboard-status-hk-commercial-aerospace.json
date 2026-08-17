@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-08-17T02:54:03.509077Z",
-  "snapshot_id": "f4f88f7e115b72dc",
-  "data_as_of": "2026-08-17",
+  "generated_at": "2026-08-08T21:56:28.040228Z",
+  "snapshot_id": "1df19e83de603c25",
+  "data_as_of": "2026-08-08",
   "overall_status": "Degraded",
   "live_sources": 11,
   "planned_sources": 0,
@@ -11,7 +11,7 @@
       "dataset": "sse_star_market_ipo",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "nan",
+      "latest_observation": "2026-06-29",
       "records": 5,
       "freshness": "Live",
       "notes": "Filing status, numeric audit numbers (stockAuditNum), and update dates for Chinese commercial launch companies."
@@ -31,8 +31,8 @@
       "dataset": "official_china_launch_records",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-10",
-      "records": 612,
+      "latest_observation": "2026-08-05",
+      "records": 611,
       "freshness": "Live",
       "notes": "First-party Long March and Jielong event baseline; official records decide inclusion in the national/state-owned monthly series."
     },
@@ -41,7 +41,7 @@
       "dataset": "launch_library_2_national_enrichment",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-16",
+      "latest_observation": "2026-08-05",
       "records": 113,
       "freshness": "Live",
       "notes": "Structured fields for matching official Long March/Jielong events; LL2-only rows are never counted as official launches."
@@ -51,7 +51,7 @@
       "dataset": "celestrak",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-17",
+      "latest_observation": "2026-08-08",
       "records": 2,
       "freshness": "Live",
       "notes": "Active satellite counts for Qianfan (G60) and Jilin-1 constellations."
@@ -61,7 +61,7 @@
       "dataset": "google_patents",
       "type": "Measure",
       "status": "Degraded",
-      "latest_observation": "2026-08-17",
+      "latest_observation": "2026-08-08",
       "records": 0,
       "freshness": "Unavailable",
       "notes": "Estimated patent filing counts for Chinese commercial space companies."
@@ -71,7 +71,7 @@
       "dataset": "szse_aerospace_ipo",
       "type": "Measure",
       "status": "Degraded",
-      "latest_observation": "2026-08-17",
+      "latest_observation": "2026-08-08",
       "records": 0,
       "freshness": "Unavailable",
       "notes": "Current IPO projects classified by SZSE under rail, ship, aviation, aerospace and other transport equipment manufacturing."
@@ -81,7 +81,7 @@
       "dataset": "faa_commercial_space",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-17",
+      "latest_observation": "2026-08-08",
       "records": 6,
       "freshness": "Live",
       "notes": "Cumulative licensed launches, reentries, spaceport licenses, experimental launches, safety approvals and active launch licenses."
@@ -91,7 +91,7 @@
       "dataset": "usaspending_contracts",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-17",
+      "latest_observation": "2026-08-08",
       "records": 123,
       "freshness": "Live",
       "notes": "Recent federal awards discovered using commercial-space, commercial-satellite and launch-services keywords."
@@ -101,7 +101,7 @@
       "dataset": "sec_space_company_filings",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-13",
+      "latest_observation": "2026-08-06",
       "records": 150,
       "freshness": "Live",
       "notes": "Official filing-event feed for Rocket Lab, AST SpaceMobile, Planet Labs, Intuitive Machines and Redwire; no inferred order amount."
@@ -131,11 +131,11 @@
       "dataset": "wikimedia_pageviews",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-13",
-      "records": 5668,
+      "latest_observation": "2026-08-07",
+      "records": 5704,
       "freshness": "Live",
       "notes": "Daily English Wikipedia pageviews for a curated aerospace page basket, aggregated into monthly and complete Monday-Sunday weekly views; user, search-engine spider, automated and all-agent traffic remain separate."
     }
   ],
-  "attachment_filename": "hk-commercial-aerospace-dashboard-2026-08-17.html"
+  "attachment_filename": "hk-commercial-aerospace-dashboard-2026-08-08.html"
 }

@@ -11,10 +11,15 @@ requires-python = ">=3.11"
 dependencies = [
   "beautifulsoup4>=4.12",
   "lxml>=5.2",
-  "pandas>=2.2",
+  # Capped below 3.0 deliberately -- see the note in requirements.txt: pandas 3
+  # changes default string inference so a None becomes a truthy NaN, which
+  # breaks `str(value or "")` idioms across this codebase.
+  "pandas>=2.2,<3",
   "openpyxl>=3.1",
   "playwright>=1.52",
   "pyarrow>=16.0.0",
+  "duckdb>=1.1,<2",
+  "scikit-learn>=1.5",
   "pdfplumber>=0.11",
   "pypdf>=5.0",
   "requests>=2.32",

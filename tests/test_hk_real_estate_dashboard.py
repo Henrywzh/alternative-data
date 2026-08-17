@@ -186,6 +186,12 @@ def test_srpe_project_sales_views_are_wired_and_attributable():
                 "ownership_pct": 100.0,
                 "srpe_development_id": "38009",
                 "sales_value_attributable_hkd": 100_000_000,
+                "ownership_attribution_ready": True,
+                "ownership_effective_from": "2024-01-01",
+                "ownership_effective_to": "2026-12-31",
+                "ownership_interval_evidence_type": "approved_phase_attribution_decision",
+                "ownership_attribution_decision_id": "decision:novo-3b",
+                "ownership_interval_promotion_status": "approved_phase_attribution",
             },
             {
                 "development_id": "7405",
@@ -210,6 +216,12 @@ def test_srpe_project_sales_views_are_wired_and_attributable():
                 "ownership_pct": 22.5,
                 "srpe_development_id": "61337",
                 "sales_value_attributable_hkd": 4_500_000,
+                "ownership_attribution_ready": True,
+                "ownership_effective_from": "2024-01-01",
+                "ownership_effective_to": "2026-12-31",
+                "ownership_interval_evidence_type": "approved_phase_attribution_decision",
+                "ownership_attribution_decision_id": "decision:grand-victoria",
+                "ownership_interval_promotion_status": "approved_phase_attribution",
             },
         ]
     )
@@ -301,6 +313,190 @@ def test_new_real_estate_feeds_are_not_repeated_in_source_coverage():
     csi = next(row for row in coverage if row["source"] == dashboard_export.PUBLIC_SOURCES["centaline_csi"]["label"])
     assert csi["latest_observation"] == "2026-01-05"
     assert csi["records"] == 1
+
+
+def test_shkp_financial_bridge_keeps_hk_scope_and_pit_caveats():
+    finance = {
+        "shkp_financial_disclosed": pd.DataFrame([
+            {
+                "fact_group": "segment_financials",
+                "metric": "property_sales_revenue_including_jv_associates",
+                "value": 34_556,
+                "unit": "HKD_m",
+                "currency": "HKD",
+                "period_end": "2025-06-30",
+                "period_type": "annual",
+                "attribution_scope": "company_reported_group_or_segment",
+                "source_label": "SHKP annual report",
+                "source_url": "https://www.shkp.com/report.pdf",
+                "available_at": "2025-09-04",
+                "evidence_status": "observed",
+                "caveat": "Includes JV/associate shares.",
+            },
+            {
+                "fact_group": "contracted_sales_backlog",
+                "metric": "mainland_contract_sales_yet_to_be_recognized",
+                "value": 8_100,
+                "unit": "RMB_m",
+                "currency": "RMB",
+                "period_end": "2025-06-30",
+                "period_type": "point_in_time_backlog",
+                "source_label": "SHKP annual report",
+                "source_url": "https://www.shkp.com/report.pdf",
+                "available_at": "2025-09-04",
+                "evidence_status": "observed",
+                "caveat": "Mainland control row.",
+            },
+        ]),
+        "shkp_financial_recurring": pd.DataFrame([
+            {
+                "geography": "hong_kong",
+                "asset_class": "property_investment",
+                "metric": "gross_rental_income",
+                "value": 17_531,
+                "unit": "HKD_m",
+                "currency": "HKD",
+                "period_end": "2025-06-30",
+                "period_type": "annual",
+                "scope": "portfolio",
+                "source_label": "SHKP annual report",
+                "source_url": "https://www.shkp.com/report.pdf",
+                "availability_date": "2025-09-04",
+                "evidence_status": "observed",
+                "caveat": "Not asset-level rent roll.",
+            },
+            {
+                "geography": "mainland",
+                "asset_class": "property_investment",
+                "metric": "gross_rental_income",
+                "value": 6_173,
+                "unit": "HKD_m",
+                "currency": "HKD",
+                "period_end": "2025-06-30",
+                "period_type": "annual",
+                "scope": "portfolio",
+                "source_label": "SHKP annual report",
+                "source_url": "https://www.shkp.com/report.pdf",
+                "availability_date": "2025-09-04",
+                "evidence_status": "observed",
+                "caveat": "Mainland control row.",
+            },
+        ]),
+        "shkp_financial_actuals": pd.DataFrame([
+            {
+                "statement_type": "income_statement",
+                "metric": "revenue",
+                "value": 79_721_000_000,
+                "unit": "currency",
+                "currency": "HKD",
+                "period_end": "2025-06-30",
+                "period_type": "annual",
+                "source": "yfinance",
+                "available_at": "2026-07-28",
+                "point_in_time_quality": "low",
+                "caveat": "No original announcement date.",
+            },
+            {
+                "statement_type": "financial_indicators",
+                "metric": "roe_yearly",
+                "value": 3.2,
+                "unit": "reported",
+                "currency": "HKD",
+                "period_end": "2025-06-30",
+                "period_type": "annual",
+                "source": "akshare",
+                "available_at": "2026-07-28",
+                "point_in_time_quality": "low",
+            },
+        ]),
+        "shkp_financial_reconciliation": pd.DataFrame([
+            {
+                "metric": "group_revenue",
+                "period_end": "2025-06-30",
+                "official_value_hkd_m": 79_721,
+                "financial_data_value_hkd_m": 79_721,
+                "difference_pct": 0.0,
+                "financial_data_source": "yfinance",
+                "status": "reconciled_after_unit_normalization",
+                "caveat": "Arithmetic check only.",
+            },
+        ]),
+        "shkp_financial_consensus": pd.DataFrame([
+            {
+                "metric": "eps",
+                "statistic": "mean",
+                "value": 8.3,
+                "unit": "currency_per_share",
+                "currency": "HKD",
+                "estimate_period_end": pd.NaT,
+                "fiscal_year": 2027,
+                "snapshot_date": "2026-07-26",
+                "source": "akshare",
+                "caveat": "Single current snapshot.",
+            },
+        ]),
+        "shkp_financial_vintage": pd.DataFrame([
+            {
+                "layer": "financial_data_actuals",
+                "row_count": 952,
+                "period_end": "2025-12-31",
+                "snapshot_end": "2026-07-28",
+                "source": "financial-data",
+                "status": "not_pit_safe_missing_announcement_dates",
+                "point_in_time_quality": "low_missing_announcement_date",
+                "model_use": "historical_context_only",
+                "caveat": "Fetch-time availability only.",
+            },
+        ]),
+        "shkp_financial_coverage": pd.DataFrame([
+            {
+                "disclosed_rows": 86,
+                "recurring_portfolio_rows": 46,
+                "financial_data_actual_rows": 952,
+                "consensus_rows": 55,
+                "filing_vintage_rows": 333,
+                "project_bridge_rows": 3_265,
+                "validation_status": "valid",
+                "validation_warnings": "Actuals lack original announcement dates.",
+                "last_verified_at": "2026-08-08T20:53:46Z",
+            },
+        ]),
+    }
+    artifact, _ = dashboard_export.build_artifact(
+        _frames(),
+        raw_hkma=_hkma_frame(),
+        raw_cnsd=_cnsd_frame(),
+        raw_land_disposals=pd.DataFrame(),
+        raw_epi_eri=pd.DataFrame(),
+        raw_new_projects=pd.DataFrame(),
+        raw_landreg=(pd.DataFrame(), pd.DataFrame()),
+        raw_bd_monthly_stats=pd.DataFrame(),
+        raw_bd_supply=pd.DataFrame(),
+        raw_bd_supply_history=pd.DataFrame(),
+        raw_new_series=finance,
+        now=NOW,
+    )
+    rows = artifact["snapshot"]["datasets"]["shkp_hk_financial_bridge"]
+    assert rows
+    assert not any(row.get("geography") == "mainland" for row in rows)
+    assert {row["row_type"] for row in rows} == {
+        "official_disclosed_fact",
+        "hk_recurring_portfolio_fact",
+        "financial_data_actual",
+        "reconciliation",
+        "consensus_snapshot",
+        "vintage_diagnostic",
+        "coverage_diagnostic",
+    }
+    actual = next(row for row in rows if row["row_type"] == "financial_data_actual")
+    assert actual["value"] == pytest.approx(79_721.0)
+    assert actual["unit"] == "HKD_m"
+    assert actual["model_use"] == "historical_context_only"
+    table = next(table for table in artifact["manifest"]["tables"] if table["id"] == "shkp_hk_financial_bridge_table")
+    assert table["dataset"] == "shkp_hk_financial_bridge"
+    bridge_source = next(row for row in artifact["snapshot"]["datasets"]["source_health"] if row["source"] == "SHKP — Hong Kong business financial bridge")
+    assert bridge_source["status"] == "Healthy"
+    assert "/Users/" not in json.dumps(artifact)
 
 
 def test_artifact_contains_no_machine_local_paths_or_secrets():
@@ -566,3 +762,54 @@ def test_bd_history_is_a_dated_aggregate_trend_separate_from_current_snapshot():
     assert unit_chart["dataset"] == "bd_supply_pipeline_history_units"
     assert count_chart["dataset"] == "bd_supply_pipeline_history_counts"
     assert unit_chart["sourceId"] == count_chart["sourceId"] == "bd_supply_history"
+
+
+def test_shkp_leading_indicators_and_28hse_reconciliation_are_monitoring_only():
+    leading = pd.DataFrame([
+        {
+            "phase_id": "1", "project_id": "shkp-srpe-1", "development_group_id": "srpe-development-1",
+            "srpe_development_id": "1", "development_id": "1", "development_name": "TEST DEVELOPMENT",
+            "phase_name": "PHASE 1", "period": "2026-01-01", "sales_units_gross": 10,
+            "sales_value_gross_hkd": 100_000_000, "active_units_eom": 9, "published_inventory_units": 100,
+            "sell_through_pct_eom": 9.0, "month_status": "observed_transactions", "candidate_status": "matched",
+            "ownership_review_status": "blocked_interval_missing", "ownership_attribution_ready": False,
+        },
+        {
+            "phase_id": "1", "project_id": "shkp-srpe-1", "development_group_id": "srpe-development-1",
+            "srpe_development_id": "1", "development_id": "1", "development_name": "TEST DEVELOPMENT",
+            "phase_name": "PHASE 1", "period": "2026-02-01", "sales_units_gross": 0,
+            "sales_value_gross_hkd": 0, "active_units_eom": 9, "published_inventory_units": 100,
+            "sell_through_pct_eom": 9.0, "month_status": "observed_zero_transactions", "candidate_status": "matched",
+            "ownership_review_status": "blocked_interval_missing", "ownership_attribution_ready": False,
+        },
+    ])
+    reconciliation = pd.DataFrame([{
+        "row_side": "hse28_project", "hse28_project_name": "UNMATCHED", "srpe_development_id": None,
+        "srpe_phase_name": None, "hse28_status": "開售中", "hse28_total_units": 100,
+        "hse28_remaining_units": 90, "hse28_sold_units": 10, "srpe_active_units_eom": None,
+        "srpe_published_inventory_units": None, "match_status": "not_matched_current_28hse_listing",
+        "coverage_note": "not comparable",
+    }])
+    artifact, _ = dashboard_export.build_artifact(
+        _frames(), raw_hkma=_hkma_frame(), raw_cnsd=_cnsd_frame(), raw_epi_eri=pd.DataFrame(),
+        raw_new_projects=pd.DataFrame(), raw_landreg=(pd.DataFrame(), pd.DataFrame()),
+        raw_bd_monthly_stats=pd.DataFrame(), raw_bd_supply=pd.DataFrame(), raw_bd_supply_history=pd.DataFrame(),
+        raw_unified_tx=pd.DataFrame(), raw_shkp_leading_signals=leading,
+        raw_28hse_reconciliation=reconciliation, now=NOW,
+    )
+    datasets = artifact["snapshot"]["datasets"]
+    assert len(datasets["shkp_leading_signal_history"]) == 2
+    assert datasets["shkp_leading_phase_latest"][0]["model_use"] == "leading_indicator_only"
+    assert datasets["shkp_28hse_reconciliation"][0]["match_status"] == "not_matched_current_28hse_listing"
+    chart_ids = {chart["id"] for chart in artifact["manifest"]["charts"]}
+    table_ids = {table["id"] for table in artifact["manifest"]["tables"]}
+    block_ids = {block["id"] for block in artifact["manifest"]["blocks"]}
+    assert {"shkp_leading_contract_sales_chart", "shkp_leading_active_units_chart", "shkp_leading_coverage_chart"} <= chart_ids
+    assert {"shkp_leading_phase_latest_table", "shkp_28hse_reconciliation_table"} <= table_ids
+    assert {
+        "shkp_leading_contract_sales_block",
+        "shkp_leading_active_units_block",
+        "shkp_leading_coverage_block",
+        "shkp_leading_phase_latest_block",
+        "shkp_28hse_reconciliation_block",
+    } <= block_ids

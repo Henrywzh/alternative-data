@@ -1721,6 +1721,74 @@ def render_transport_metric(
         st.caption(observation_date_label(signal.get("date"), language))
 
 
+def render_airline_h1_backtest(
+    artifact: dict[str, Any], labels: dict[str, Any], language: str
+) -> None:
+    """Render source-recovery coverage and the H1 KPI calibration evidence."""
+    if not frame_for_dataset(artifact, "airline_h1_backtest_summary").empty:
+        section_heading(
+            language,
+            "H1 2026 earnings calibration",
+            "2026 年上半年财报校准",
+            "Historical KPI calibration and source-recovery sensitivity for the pre-report earnings view. This is calibration evidence, not a strict point-in-time trading backtest.",
+            "用于财报前盈利判断的历史 KPI 校准及数据恢复敏感性；这是校准证据，不是严格的点时交易回测。",
+        )
+        left, right = st.columns(2)
+        with left:
+            with st.container(border=True):
+                render_bar_chart(artifact, labels, "airline_h1_revenue_mae_chart", language, height=390)
+        with right:
+            with st.container(border=True):
+                render_bar_chart(artifact, labels, "airline_h1_cost_mae_chart", language, height=390)
+        with st.container(border=True):
+            render_table(artifact, labels, "airline_h1_backtest_summary_table", language)
+
+    if not frame_for_dataset(artifact, "airline_period_backtest_summary").empty:
+        section_heading(
+            language,
+            "H1 / H2 / FY calibration and Spring error diagnosis",
+            "H1 / H2 / FY 校准与春秋误差诊断",
+            "The period view separates first half, derived second half and full-year calibration. The table keeps logical-assumption coverage visible instead of treating it as observed data.",
+            "期间视图分开上半年、由 FY 减 H1 推导的下半年及全年校准；表格保留逻辑假设覆盖，不把它当作观测数据。",
+        )
+        with st.container(border=True):
+            render_bar_chart(artifact, labels, "airline_period_revenue_mae_chart", language, height=430)
+        with st.container(border=True):
+            render_table(artifact, labels, "airline_period_backtest_summary_table", language)
+
+    if not frame_for_dataset(artifact, "airline_source_recovery_summary").empty:
+        section_heading(
+            language,
+            "Recovered-source audit",
+            "恢复数据源审计",
+            "Monthly airline charts prefer verified official-PDF recoveries. Rows confirmed as absent from the source PDF remain missing; research interpolation is not silently displayed as observed data.",
+            "月度航司图表优先使用已核验的官方 PDF 恢复值；确认源 PDF 未披露的行仍保持缺失，研究插值不会被静默当作观测值显示。",
+        )
+        left, right = st.columns(2)
+        with left:
+            with st.container(border=True):
+                render_bar_chart(artifact, labels, "airline_source_recovery_chart", language, height=360)
+        with right:
+            with st.container(border=True):
+                render_table(artifact, labels, "airline_source_recovery_audit_table", language, max_rows=100)
+
+    if not frame_for_dataset(artifact, "airline_h1_revenue_nowcast_comparison").empty:
+        section_heading(
+            language,
+            "Current H1 2026 nowcast",
+            "当前 2026 年上半年预测",
+            "Spring and Juneyao flat-ASK baselines versus the analyst overlay, shown in USD million. Formal interim actuals remain the eventual event test.",
+            "春秋与吉祥的 flat-ASK 基准与分析师调整项，单位为百万美元；正式中报实际值将是最终检验。",
+        )
+        left, right = st.columns(2)
+        with left:
+            with st.container(border=True):
+                render_bar_chart(artifact, labels, "airline_h1_revenue_nowcast_chart", language, height=370)
+        with right:
+            with st.container(border=True):
+                render_bar_chart(artifact, labels, "airline_h1_profit_nowcast_chart", language, height=370)
+
+
 def render_transport_tabs(artifact: dict[str, Any], labels: dict[str, Any], language: str, window: str) -> None:
     """Render transport as separate Hong Kong aviation, China aviation and MTR tabs."""
     render_header(
@@ -2016,6 +2084,8 @@ def render_transport_tabs(artifact: dict[str, Any], labels: dict[str, Any], lang
                 artifact, labels, "china_airline_operating_events_latest_table", language,
                 value_maps=CHINA_AIRLINE_TABLE_LABELS_ZH if language == "zh" else None,
             )
+
+        render_airline_h1_backtest(artifact, labels, language)
 
     with mtr_tab:
         section_heading(
@@ -2408,6 +2478,8 @@ def render_transport(artifact: dict[str, Any], labels: dict[str, Any], language:
             language,
             value_maps=CHINA_AIRLINE_TABLE_LABELS_ZH if language == "zh" else None,
         )
+
+    render_airline_h1_backtest(artifact, labels, language)
 
     section_heading(
         language,

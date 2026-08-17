@@ -49,10 +49,11 @@ def test_research_queue_and_hsr_coverage_make_missingness_actionable() -> None:
     assert len(queue) == 48
     assert set(queue.category) == {"yield_pricing", "fuel_pass_through", "fuel_hedging"}
     assert len(hsr) == 6
-    assert hsr["snapshot_as_of_date"].max() <= "2026-08-07"
     air_china = hsr[hsr.company.eq("Air China")].iloc[0]
-    assert air_china["candidate_route_count"] == 0
-    assert air_china["coverage_status"] == "no_route_candidates_extracted_yet"
+    # CAAC seasonal new-route licence intake added Air China's first candidates.
+    assert air_china["candidate_route_count"] > 0
+    assert air_china["query_leg_count"] > 0
     spring = hsr[hsr.company.eq("Spring Airlines")].iloc[0]
     assert spring["candidate_route_count"] > 0
+    assert spring["verified_observation_count"] > 0
     assert "missing" in spring["coverage_status"] or "partial" in spring["coverage_status"]

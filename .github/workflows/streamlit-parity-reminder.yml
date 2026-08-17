@@ -1,0 +1,130 @@
+name: Streamlit parity reminder
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "apps/asia-markets-dashboard/**"
+      - "src/hk_*/**"
+      - "src/asia_*/**"
+      - "docs/asia-markets/STREAMLIT_PARITY_PROTOCOL.md"
+  push:
+    paths:
+      - "apps/asia-markets-dashboard/**"
+      - "src/hk_*/**"
+      - "src/asia_*/**"
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: streamlit-parity-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  parity-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Check Cloudflare artifact contracts
+        id: parity
+        env:
+          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          python apps/asia-markets-dashboard/scripts/check_streamlit_parity.py \
+            --base "$BASE_SHA" \
+            --head "$HEAD_SHA" \
+            --summary-file "$GITHUB_STEP_SUMMARY" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Update pull-request reminder
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: actions/github-script@v7
+        env:
+          PARITY_COMMENT: ${{ steps.parity.outputs.comment }}
+        with:
+          script: |
+            const marker = '<!-- streamlit-parity-reminder -->';
+            const body = process.env.PARITY_COMMENT || marker + '\n## Streamlit parity\n\nNo report generated.';
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                per_page: 100,
+              }
+            );
+            const existing = comments.find(
+              (comment) => comment.user?.type === 'Bot' && comment.body?.includes(marker)
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      - name: Update direct-push reminder issue
+        if: github.event_name == 'push' && steps.parity.outputs.needs_review == 'true'
+        continue-on-error: true
+        uses: actions/github-script@v7
+        env:
+          PARITY_COMMENT: ${{ steps.parity.outputs.comment }}
+        with:
+          script: |
+            const marker = '<!-- streamlit-parity-push-reminder -->';
+            const title = '[Streamlit parity] Review Cloudflare changes';
+            const report = process.env.PARITY_COMMENT || 'No report generated.';
+            const body = `${marker}\n${report}\n\nTriggered by commit ${context.sha} on ${context.ref}. Review the protocol and close this issue after recording the Streamlit decision.`;
+            const issues = await github.paginate(
+              github.rest.issues.listForRepo,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'open',
+                per_page: 100,
+              }
+            );
+            const existing = issues.find(
+              (issue) => !issue.pull_request && issue.body?.includes(marker)
+            );
+            if (existing) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                title,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+              });
+            }

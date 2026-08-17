@@ -151,6 +151,17 @@ data/processed/airline_traffic/*
 # builder that reads them.
 !data/processed/transport/
 data/processed/transport/*
+!data/processed/transport/mtr_farebox_revenue_monthly.csv
+!data/processed/transport/mtr_farebox_revenue_annual_backtest.csv
+# Walk-forward/nowcast outputs are inputs to the asia-backtest input bundle,
+# which fails closed on a missing path. Left ignored they exist only on the
+# machine that generated them.
+!data/processed/transport/mtr_farebox_walk_forward_oos.csv
+!data/processed/transport/mtr_farebox_walk_forward_summary.json
+!data/processed/transport/mtr_farebox_half_year_walk_forward_oos.csv
+!data/processed/transport/mtr_farebox_half_year_walk_forward_summary.json
+!data/processed/transport/mtr_farebox_monthly_nowcast.csv
+!data/processed/transport/mtr_farebox_revenue_h1_backtest.csv
 !data/processed/transport/*.parquet
 
 # artificial_analysis: commit normalized CSVs/parquet + raw run manifests only
@@ -268,15 +279,62 @@ data/raw/minerals_signal_data/*
 !data/raw/minerals_signal_data/*.parquet
 data/raw/minerals_signal_data/images/
 
+# SHKP backtest outputs feed build_asia_backtest_registry.py, whose result is
+# itself committed. Left ignored, a clean checkout regenerates the registry
+# without any SHKP row (42 instead of 55) and overwrites the committed copy, so
+# the asia-backtest tests could only ever pass on the machine that happened to
+# hold these files locally.
+!data/normalized/hk_real_estate/
+data/normalized/hk_real_estate/*
+!data/normalized/hk_real_estate/shkp_skeleton_historical_backtest/
+!data/normalized/hk_real_estate/shkp_skeleton_historical_backtest/**
+!data/normalized/hk_real_estate/shkp_commercial_backtest/
+!data/normalized/hk_real_estate/shkp_commercial_backtest/**
+!data/normalized/hk_real_estate/shkp_indicative_sales_model_backtest/
+!data/normalized/hk_real_estate/shkp_indicative_sales_model_backtest/**
+
 # hk_real_estate developer/project registry: small, hand-curated reference table
 # required at test/runtime by DeveloperRegistry — must be committed, not regenerated.
 !data/registries/
 data/registries/*
 !data/registries/hk_developer_project_registry.csv
+!data/registries/asia_backtest_target_registry.csv
+!data/registries/asia_backtest_row_status.csv
+!data/registries/asia_backtest_document_registry.csv
+!data/registries/asia_backtest_registry_manifest.json
+!data/registries/asia_backtest_long_form.parquet
+!data/registries/asia_backtest_metrics.parquet
+!data/registries/asia_backtest_metric_intervals.parquet
+!data/registries/asia_backtest_metrics_manifest.json
+!data/registries/asia_backtest_input_bundle.json
+!data/registries/asia_backtest_reconciliation.json
+!data/registries/asia_backtest_latest.json
+!data/registries/runs/
+data/registries/runs/*
+!data/registries/runs/*/
+!data/registries/runs/*/*.parquet
+!data/registries/runs/*/*.json
+# Chart PNGs written by scripts/build_asia_backtest_charts.py under each run
+# directory's charts/ subfolder are regenerable from the run's own parquet
+# artifacts and are not covered by the parquet/json re-includes above (they
+# are two levels deep, e.g. runs/<run_id>/charts/<view>/<slug>.png). Keep
+# them out of git history for the same reason the .csv twins are excluded --
+# see the run-directory retention note in
+# docs/asia-markets/unified-kpi-backtest-v1.md.
+data/registries/runs/*/charts/
 
 # Repo-size control: never commit normalized CSVs — the dashboard loader reads the
 # parquet twin first (dashboard/data.py load_dataset), so committing the CSV too just
-# bloats git history (these are regenerated daily). Keep parquet only.
+# bloats git history (these are regenerated daily). Keep parquet only. This also
+# applies to the top-level asia_backtest_long_form/metrics/metric_intervals CSVs
+# above: each has a smaller parquet twin that the engine's own build scripts
+# already prefer (see scripts/build_asia_backtest_metrics.py), so only the
+# .parquet is committed; the .csv is still written to disk for local inspection,
+# just not tracked. asia_backtest_row_status.csv/target_registry.csv/
+# document_registry.csv have no parquet twin and stay committed as CSV. Run
+# snapshots under data/registries/runs/ follow the same rule: only the .parquet
+# twin and the .json manifests/reconciliation are tracked, never the .csv (see
+# scripts/prune_backtest_runs.py for how old run directories are retired).
 data/normalized/**/*.csv
 
 # Commercial aerospace append-only history used to turn CelesTrak snapshots
@@ -348,6 +406,12 @@ data/normalized/hk_local_consumer/*
 data/normalized/hk_transport/*
 !data/normalized/hk_transport/*.csv
 !data/normalized/hk_transport/*.parquet
+# Pre-event frozen snapshots: written once per forecast_asof and never
+# recomputed after the reports, so they are tracked like any other stage
+# output (the audit trail depends on them surviving in the repo).
+!data/normalized/hk_transport/snapshots/
+data/normalized/hk_transport/snapshots/*
+!data/normalized/hk_transport/snapshots/*.csv
 
 # Local dashboard-verification by-products. Canonical dashboard artifacts
 # (hk-*-artifact*.json) live in both these .generated directories and are
@@ -363,3 +427,14 @@ data/normalized/hk_transport/*
 /.generated/test_*.png
 apps/asia-markets-dashboard/.generated/*.verification-failure*.png
 apps/asia-markets-dashboard/.generated/portable-verification-failure-*.png
+
+# asia-backtest input bundle: the long-form builder fails closed on these, so a
+# clean checkout cannot run the backtest tests without them. One patronage
+# snapshot is pinned as the CI input (the builder picks the newest valid file,
+# so a fresher local capture still wins locally).
+!data/raw/hk_transport/
+data/raw/hk_transport/*
+!data/raw/hk_transport/mtr_patronage_20260817_140455.json
+!docs/asia-markets/REAL_ESTATE_SHKP_IRIS_ORDER_PLAN.csv
+!docs/asia-markets/REAL_ESTATE_SHKP_IRIS_PILOT_TEMPLATE.csv
+!docs/asia-markets/REAL_ESTATE_SHKP_PHASE_DECISION_TEMPLATE.csv

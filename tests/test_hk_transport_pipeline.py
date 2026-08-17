@@ -6,6 +6,7 @@ import os
 
 import pandas as pd
 import pytest
+import requests
 
 from src.hk_transport.pipeline import run_stage_1_pipeline
 from src.hk_transport.sources.cathay_traffic import (
@@ -67,49 +68,136 @@ def test_hk_transport_stage_1_execution():
     assert "td_parking_vacancy_current" in results
 
 
+class _StageStub:
+    """Stands in for the return value of any stage callable.
+
+    Stage results are consumed three ways -- stored directly, indexed as a dict
+    ("live"/"surprise", "backtest"/"ablation", ...), and tuple-unpacked -- so the
+    stub answers indexing with itself and identity-compares against itself.
+    """
+
+    def __getitem__(self, _key: object) -> "_StageStub":
+        return self
+
+    def __repr__(self) -> str:
+        return "<stage stub>"
+
+
+_STAGE_STUB = _StageStub()
+
+# Stage callables whose return value is tuple-unpacked, with the exact arity the
+# pipeline unpacks.  Everything else receives the stub directly.
+_TUPLE_UNPACKED_STAGES = {
+    "fetch_airline_weather_risk": 2,
+    "build_airline_forecast_decision_eval": 3,
+}
+
+# The composed stage-1 key contract.  A stage added to the pipeline shows up
+# here as a set difference with the new key named, which is the point of the
+# test; before this was frozen, an added stage instead went unnoticed until it
+# made a real network call.
+_STAGE_1_KEYS = {
+    "mtr_patronage_monthly",
+    "cathay_hkia_traffic_monthly",
+    "airline_energy_prices",
+    "airline_cargo_demand_proxies",
+    "airline_postal_demand_proxies",
+    "airline_travel_demand_events",
+    "airline_nbs_demand",
+    "airline_airport_traffic",
+    "airline_weather_risk",
+    "airline_fleet_wikipedia_snapshot",
+    "airline_cargo_airport_bridge",
+    "airline_cargo_yield_bridge",
+    "airline_forward_assumptions",
+    "airline_forward_net_income_bridge",
+    "airline_unit_economics",
+    "airline_yield_pressure_index",
+    "airline_capacity_pipeline",
+    "airline_consensus_reverse",
+    "airline_earnings_sensitivity",
+    "airline_valuation_snapshot",
+    "airline_trade_construction",
+    "airline_residual_yield_model",
+    "airline_cask_driver_model",
+    "airline_forecast_decision_eval",
+    "airline_pair_spread_model",
+    "airline_h1_2026_validation_playbook",
+    "airline_catalyst_calendar",
+    "airline_post_earnings_tracker",
+    "airline_pre_event_locked_baseline",
+    "airline_earnings_model_v4",
+    "airline_earnings_model_v4_live_forecast",
+    "airline_earnings_model_v4_surprise",
+    "airline_cost_engine_v2",
+    "airline_cost_engine_v2_ablation",
+    "airline_consensus_reverse_v2_sanity",
+    "airline_consensus_reverse_v2_surface",
+    "airline_pre_event_unified_snapshot",
+    "airline_valuation_v2",
+    "airline_valuation_v2_pair",
+    "airline_catalyst_underwriting",
+    "airline_thesis_scoreboard",
+    "airline_cargo_bridge_backtest",
+    "airline_caac_sector_monthly",
+    "airline_caac_route_licence_events",
+    "airline_fx_rates",
+    "airline_fuel_surcharges",
+    "airline_fuel_surcharge_recovery",
+    "cathay_fleet_profile_history",
+    "td_private_car_first_reg_monthly",
+    "td_first_registered_vehicle_details_monthly",
+    "td_parking_vacancy_current",
+    "td_carpark_occupancy",
+    "mttd_passenger_journeys_monthly",
+    "censtatd_boundary_movements_monthly",
+    "td_vehicle_fleet_stock_monthly",
+    "td_private_car_net_registration_monthly",
+}
+
+
 def test_hk_transport_stage_1_orchestration(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Exercise the composed stage-1 key contract without live network calls."""
+    """Exercise the composed stage-1 key contract without live network calls.
+
+    Every stage callable the pipeline module exposes is stubbed by
+    introspection rather than by a hand-kept list, and the network is severed
+    underneath.  The previous version listed 14 of the 56 stages by hand: the
+    unlisted ones made real HTTPS calls, and a weather-archive fetch added
+    later hung on a slow socket until the 240s pytest timeout.
+    """
     import src.hk_transport.pipeline as pipeline
 
-    fetcher_names = (
-        "fetch_mtr_patronage",
-        "fetch_cathay_traffic",
-        "fetch_eia_airline_energy_prices",
-        "fetch_ecb_airline_fx_rates",
-        "fetch_fuel_surcharge_snapshots",
-        "fetch_cathay_fleet_history",
-        "fetch_td_private_car_first_reg",
-        "fetch_td_first_registered_vehicle_details",
-        "fetch_td_parking_vacancy",
-        "fetch_td_carpark_occupancy",
-        "fetch_mttd_passenger_journeys",
-        "fetch_censtatd_boundary_movements",
-        "fetch_td_vehicle_fleet_stock",
-        "fetch_td_private_car_net_registration",
-    )
-    expected_keys = {
-        "mtr_patronage_monthly",
-        "cathay_hkia_traffic_monthly",
-        "airline_energy_prices",
-        "airline_fx_rates",
-        "airline_fuel_surcharges",
-        "cathay_fleet_profile_history",
-        "td_private_car_first_reg_monthly",
-        "td_first_registered_vehicle_details_monthly",
-        "td_parking_vacancy_current",
-        "td_carpark_occupancy",
-        "mttd_passenger_journeys_monthly",
-        "censtatd_boundary_movements_monthly",
-        "td_vehicle_fleet_stock_monthly",
-        "td_private_car_net_registration_monthly",
-    }
-    for name in fetcher_names:
-        monkeypatch.setattr(pipeline, name, lambda: {"stub": True})
+    stage_names = [
+        name
+        for name in dir(pipeline)
+        if (name.startswith("fetch_") or name.startswith("build_"))
+        and callable(getattr(pipeline, name))
+    ]
+    assert stage_names, "pipeline exposes no stage callables to stub"
+
+    for name in stage_names:
+        arity = _TUPLE_UNPACKED_STAGES.get(name)
+        if arity is None:
+            monkeypatch.setattr(pipeline, name, lambda: _STAGE_STUB)
+        else:
+            monkeypatch.setattr(
+                pipeline, name, lambda arity=arity: (_STAGE_STUB,) * arity
+            )
+
+    # Every stage body catches Exception, so an unstubbed one would reach the
+    # real internet and surface as a hang rather than a failure.  Severing the
+    # transport turns that into an immediate, named error instead.
+    def _no_network(*args: object, **kwargs: object) -> None:
+        raise AssertionError(f"unstubbed stage attempted a live request: {args!r}")
+
+    monkeypatch.setattr(requests.Session, "request", _no_network)
+    monkeypatch.setattr(requests, "get", _no_network)
+    monkeypatch.setattr(requests, "post", _no_network)
 
     results = pipeline.run_stage_1_pipeline()
 
-    assert set(results) == expected_keys
-    assert all(value == {"stub": True} for value in results.values())
+    assert set(results) == _STAGE_1_KEYS
+    assert all(value is _STAGE_STUB for value in results.values())
 
 
 def test_cathay_discover_traffic_pdfs_real_archive():

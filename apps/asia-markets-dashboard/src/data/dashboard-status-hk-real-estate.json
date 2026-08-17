@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-08-09T13:36:08.172583Z",
-  "snapshot_id": "a77540ad836d605f",
+  "generated_at": "2026-08-07T20:29:48.028404Z",
+  "snapshot_id": "86dd35261061c42f",
   "data_as_of": "2026-08-03",
   "overall_status": "Healthy",
-  "live_sources": 12,
+  "live_sources": 11,
   "planned_sources": 1,
   "provisional_series": 2,
   "sources": [
@@ -14,7 +14,7 @@
       "status": "Healthy",
       "latest_observation": "2026-08-02",
       "records": 1701,
-      "freshness": "7d old",
+      "freshness": "5d old",
       "notes": "Latest observation is published without a provisional flag."
     },
     {
@@ -24,7 +24,7 @@
       "status": "Healthy",
       "latest_observation": "2026-08-03",
       "records": 543,
-      "freshness": "6d old",
+      "freshness": "4d old",
       "notes": "Latest observation is published without a provisional flag."
     },
     {
@@ -34,7 +34,7 @@
       "status": "Healthy",
       "latest_observation": "2026-08-03",
       "records": 445,
-      "freshness": "6d old",
+      "freshness": "4d old",
       "notes": "Latest observation is published without a provisional flag."
     },
     {
@@ -44,7 +44,7 @@
       "status": "Healthy",
       "latest_observation": "2026-06-01",
       "records": 402,
-      "freshness": "69d old",
+      "freshness": "67d old",
       "notes": "Latest observation is provisional."
     },
     {
@@ -54,7 +54,7 @@
       "status": "Healthy",
       "latest_observation": "2026-06-01",
       "records": 402,
-      "freshness": "69d old",
+      "freshness": "67d old",
       "notes": "Latest observation is provisional."
     },
     {
@@ -64,7 +64,7 @@
       "status": "Healthy",
       "latest_observation": "2026-05-01",
       "records": 389,
-      "freshness": "100d old",
+      "freshness": "98d old",
       "notes": "Normalized residential price index; CCI is not a sentiment measure."
     },
     {
@@ -73,8 +73,8 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "2026-06-01",
-      "records": 707,
-      "freshness": "69d old",
+      "records": 354,
+      "freshness": "67d old",
       "notes": "Normalized residential rental index; rental-yield history is a companion dataset."
     },
     {
@@ -84,7 +84,7 @@
       "status": "Healthy",
       "latest_observation": "2026-08-03",
       "records": 1118,
-      "freshness": "6d old",
+      "freshness": "4d old",
       "notes": "Normalized sentiment history; not a transaction or price series."
     },
     {
@@ -92,9 +92,9 @@
       "dataset": "RVD office rental monthly",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-06-01",
-      "records": 1608,
-      "freshness": "69d old",
+      "latest_observation": "2026-05-01",
+      "records": 1604,
+      "freshness": "98d old",
       "notes": "Official grade-level rental index; provisional flags are retained."
     },
     {
@@ -102,20 +102,20 @@
       "dataset": "RVD retail monthly",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-06-01",
-      "records": 804,
-      "freshness": "69d old",
+      "latest_observation": "2026-05-01",
+      "records": 802,
+      "freshness": "98d old",
       "notes": "Official retail rental/price indices; provisional flags are retained."
     },
     {
       "source": "Sales of First-hand Residential Properties Electronic Platform (SRPE)",
-      "dataset": "SRPE phase-level first-hand sales signals",
+      "dataset": "SHKP-wide SRPE project leading indicators",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-07",
-      "records": 41,
+      "latest_observation": "2026-08-01",
+      "records": 2643,
       "freshness": "Published snapshot",
-      "notes": "Six explicitly registered phases; attributable sales use the ownership registry and sell-through uses unique active units."
+      "notes": "56 candidate phases; raw contract activity only. Ownership intervals remain blocked."
     },
     {
       "source": "28Hse",
@@ -133,7 +133,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "—",
-      "records": 151,
+      "records": 300,
       "freshness": "Live at build time",
       "notes": "Deduplicated agency transaction feeds; see the chart/table above."
     },
@@ -158,26 +158,6 @@
       "notes": "Buildings Department Monthly Digest / Project Lifecycle; see the chart/table above."
     },
     {
-      "source": "SRPE pilot",
-      "dataset": "Phase-level first-hand sales signals",
-      "type": "Measure",
-      "status": "Healthy",
-      "latest_observation": "2026-07",
-      "records": 31,
-      "freshness": "Published snapshot",
-      "notes": "Sales of First-hand Residential Properties Electronic Platform (SRPE); see the chart/table above."
-    },
-    {
-      "source": "SRPE expansion",
-      "dataset": "Full developer / project coverage",
-      "type": "Catalog",
-      "status": "Catalog only",
-      "latest_observation": "—",
-      "records": 0,
-      "freshness": "Content parser pending",
-      "notes": "The dashboard currently covers six explicit pilot phases; broader developer and phase coverage still requires registry expansion and backfill."
-    },
-    {
       "source": "Buildings Department history",
       "dataset": "Md52-Md56 stage aggregates",
       "type": "Measure",
@@ -188,15 +168,25 @@
       "notes": "Buildings Department Monthly Digest PDF archive (Section 1 aggregate tables); see the chart/table above."
     },
     {
-      "source": "HKMA Residential Mortgage Survey",
-      "dataset": "HKMA residential mortgage survey",
+      "source": "SRPE pilot",
+      "dataset": "Phase-level first-hand sales signals",
       "type": "Measure",
-      "status": "Healthy",
-      "latest_observation": "2026-05-01",
-      "records": 114,
-      "freshness": "69d old",
-      "notes": "Official monthly residential mortgage survey; the source may revise the latest month."
+      "status": "No data this run",
+      "latest_observation": "—",
+      "records": 0,
+      "freshness": "Fetch returned no rows",
+      "notes": "Sales of First-hand Residential Properties Electronic Platform (SRPE); live fetch returned no usable rows this run."
+    },
+    {
+      "source": "SRPE expansion",
+      "dataset": "Full developer / project coverage",
+      "type": "Catalog",
+      "status": "Catalog only",
+      "latest_observation": "—",
+      "records": 0,
+      "freshness": "Content parser pending",
+      "notes": "The dashboard currently covers six explicit pilot phases; broader developer and phase coverage still requires registry expansion and backfill."
     }
   ],
-  "attachment_filename": "hk-real-estate-dashboard-2026-08-09.html"
+  "attachment_filename": "hk-real-estate-dashboard-2026-08-07.html"
 }

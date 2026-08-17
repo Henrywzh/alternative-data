@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 from datetime import date, timedelta
+from pathlib import Path
 
 from bs4 import BeautifulSoup
 import numpy as np
@@ -19,6 +20,7 @@ from ..config import NORMALIZED_DIR
 
 
 CANDIDATE_PATH = NORMALIZED_DIR / 'airline_hsr_route_candidates.csv'
+CAAC_LICENCE_PATH = NORMALIZED_DIR / 'airline_caac_route_licence_events.csv'
 QUEUE_PATH = NORMALIZED_DIR / 'airline_hsr_route_query_queue.csv'
 STATION_CODES_URL = 'https://kyfw.12306.cn/otn/resources/js/framework/station_name.js'
 STATION_CODES_PATH = NORMALIZED_DIR / 'airline_hsr_station_codes.csv'
@@ -27,6 +29,68 @@ OBSERVATION_PATH = NORMALIZED_DIR / 'airline_hsr_route_observations.csv'
 CTRIP_TRAIN_URL = 'https://trains.ctrip.com/trainbooking/search'
 OSRM_BASE_URL = 'http://router.project-osrm.org/route/v1/driving'
 ROUTE_SPLIT_RE = re.compile(r'\s*(?:=|—|–|->|→)\s*')
+
+# CAAC new-route licence records are emitted with plain hyphen separators
+# (e.g. "南京-广州"), while the HSR candidate/query layer normalizes every
+# route to '=' so split_route_legs() works consistently.  The builder below
+# rewrites the separator without changing the city strings.
+_CAAC_ROUTE_SEP_RE = re.compile(r'\s*(?:-|—|－|->|→|至)\s*')
+
+# Only these issuer families are tracked at company level by the airline
+# research layer; licence rows outside the set are not promoted to candidates.
+_TRACKED_CAAC_AIRLINES = {
+    'Spring Airlines',
+    'Juneyao Airlines',
+    '9 Air',
+    'China Eastern Airlines',
+    'China Southern Airlines',
+    'Air China',
+    'Hainan Airlines Holdings',
+}
+
+_OPERATING_ENTITY_BY_AIRLINE = {
+    'Spring Airlines': 'Spring Airlines',
+    'Juneyao Airlines': 'Juneyao Airlines',
+    '9 Air': '9 Air',
+    'China Eastern Airlines': 'China Eastern Airlines',
+    'China Southern Airlines': 'China Southern Airlines',
+    'Air China': 'Air China',
+    'Hainan Airlines Holdings': 'Hainan Airlines Holdings',
+}
+
+# Company-level parent (the group the route candidate is attributed to in the
+# research layer).  9 Air is a Juneyao-group subsidiary: existing candidate
+# rows record company=Juneyao Airlines / operating_entity=9 Air and share
+# Juneyao's ticker, so CAAC licence rows for 9 Air are mapped the same way.
+_COMPANY_BY_CAAC_AIRLINE = {
+    'Spring Airlines': 'Spring Airlines',
+    'Juneyao Airlines': 'Juneyao Airlines',
+    '9 Air': 'Juneyao Airlines',
+    'China Eastern Airlines': 'China Eastern Airlines',
+    'China Southern Airlines': 'China Southern Airlines',
+    'Air China': 'Air China',
+    'Hainan Airlines Holdings': 'Hainan Airlines Holdings',
+}
+
+_PARENT_GROUP_BY_CAAC_AIRLINE = {
+    'Spring Airlines': 'Spring Airlines',
+    'Juneyao Airlines': 'Juneyao Airlines',
+    '9 Air': 'Juneyao Airlines',
+    'China Eastern Airlines': 'China Eastern Airlines',
+    'China Southern Airlines': 'China Southern Airlines',
+    'Air China': 'Air China',
+    'Hainan Airlines Holdings': 'Hainan Airlines Holdings',
+}
+
+_TICKER_BY_AIRLINE = {
+    'Spring Airlines': '601021.SH',
+    'Juneyao Airlines': '603885.SH',
+    '9 Air': '603885.SH',
+    'China Eastern Airlines': '600115.SH',
+    'China Southern Airlines': '600029.SH',
+    'Air China': '601111.SH',
+    'Hainan Airlines Holdings': '600221.SH',
+}
 
 # Explicit verified OSRM coordinates for hub-to-CBD access score calculations
 HUB_COORDINATES: dict[str, dict[str, float]] = {
@@ -43,6 +107,118 @@ NO_RAIL_GEOGRAPHY_PAIRS: set[tuple[str, str]] = {
     ('dalian', 'yantai'),
     ('yantai', 'dalian'),
 }
+
+
+def _normalize_caac_route_text(route_text: str) -> str | None:
+    """Rewrite CAAC licence route separators to the '=' convention.
+
+    CAAC licence rows use plain hyphens (e.g. "南京-广州") or other dash glyphs;
+    the HSR route layer uses '=' and the shared route_leg_splitter only handles
+    '='/—/–/->/→.  City strings are preserved; only the separator changes.
+    Returns None for single-city or empty routes.
+    """
+    cities = [part.strip() for part in _CAAC_ROUTE_SEP_RE.split(str(route_text)) if part.strip()]
+    if len(cities) < 2:
+        return None
+    return "=".join(cities)
+
+
+def build_caac_hsr_candidates(
+    licence_events: pd.DataFrame | None = None,
+    candidates: pd.DataFrame | None = None,
+    *,
+    retrieved_at: str | None = None,
+    output_path: str | os.PathLike | None = None,
+) -> pd.DataFrame:
+    """Supplement HSR route candidates from CAAC seasonal new-licence events.
+
+    The CAAC seasonal route-licence table names newly approved domestic
+    routes (including stated initial weekly frequency and an official release
+    date).  Only the issuer families tracked by the airline research layer are
+    promoted, and only records whose route text has at least two cities.  The
+    function returns the existing candidate panel with new CAAC rows appended;
+    it never drops or edits existing rows.
+    """
+    candidate_path = Path(output_path) if output_path is not None else CANDIDATE_PATH
+    if candidates is None and candidate_path.exists():
+        candidates = pd.read_csv(candidate_path)
+    if candidates is None:
+        candidates = pd.DataFrame()
+
+    if licence_events is None and CAAC_LICENCE_PATH.exists():
+        licence_events = pd.read_csv(CAAC_LICENCE_PATH)
+    if licence_events is None or licence_events.empty:
+        return candidates
+
+    now = retrieved_at or pd.Timestamp.now(tz="UTC").isoformat()
+    existing = set(str(value) for value in candidates["route_text"].tolist()) if "route_text" in candidates.columns else set()
+    added_rows: list[dict[str, object]] = []
+
+    # The CAAC licence table is a domestic route-licence table; it does not
+    # expose a route_scope column, so promotion is not scope-filtered here.
+    # Rows with a single city (e.g. the "国内（不含港澳台）货运航线" trailer) are
+    # dropped by _normalize_caac_route_text, and any blank/ordinate rows by the
+    # frequency/source checks below.
+    new_events = licence_events[
+        licence_events.get("event_type", pd.Series(index=licence_events.index, dtype=object)).astype(str).eq("新增许可")
+    ]
+    for _, row in new_events.iterrows():
+        airline = str(row.get("airline_normalized_name", "") or "")
+        if airline not in _TRACKED_CAAC_AIRLINES:
+            continue
+        route_text = _normalize_caac_route_text(str(row.get("route_text", "") or ""))
+        if route_text is None:
+            continue
+        if route_text in existing:
+            continue
+        frequency = row.get("initial_frequency_per_week")
+        frequency_text = (
+            f"每周{int(frequency)}班"
+            if frequency is not None and pd.notna(frequency) and int(frequency) > 0
+            else None
+        )
+        source_url = str(row.get("source_url", "") or "")
+        source_quality = str(row.get("source_quality", "") or "caac_primary_route_licence_pdf")
+        as_of_date = str(row.get("source_release_date", "") or "")[:10] or now[:10]
+        added_rows.append(
+            {
+                "dataset_id": "airline_hsr_route_candidates",
+                "as_of_date": as_of_date,
+                "company": _COMPANY_BY_CAAC_AIRLINE.get(airline, airline),
+                "operating_entity": _OPERATING_ENTITY_BY_AIRLINE.get(airline, airline),
+                "parent_group": _PARENT_GROUP_BY_CAAC_AIRLINE.get(airline, airline),
+                "ticker": _TICKER_BY_AIRLINE.get(airline),
+                "event_month": as_of_date[:7],
+                "route_text": route_text,
+                "route_scope": "domestic",
+                "screening_bucket": "hsr_enrichment_candidate",
+                "airline_frequency_text": frequency_text,
+                "airline_source_url": source_url,
+                "airline_source_quality": source_quality,
+                "rail_time_minutes": None,
+                "rail_frequency_per_day": None,
+                "rail_fare_rmb": None,
+                "airport_station_access_score": None,
+                "hsr_substitution_score": None,
+                "hsr_score_status": "not_scored",
+                "next_enrichment": "12306 route query plus centre-to-centre access and fare capture",
+                "source_note": (
+                    "CAAC seasonal new-route licence names a new domestic route with stated initial "
+                    "frequency; planned licence frequency is not realized flight activity or company ASK."
+                ),
+                "retrieved_at": now,
+            }
+        )
+        existing.add(route_text)
+
+    if not added_rows:
+        return candidates
+    if candidates.empty:
+        result = pd.DataFrame(added_rows)
+    else:
+        result = pd.concat([candidates, pd.DataFrame(added_rows)], ignore_index=True)
+    result.to_csv(candidate_path, index=False)
+    return result
 
 
 def get_pinyin_for_city(city_name: str) -> str:
@@ -69,6 +245,23 @@ def get_pinyin_for_city(city_name: str) -> str:
         '乌鲁木齐': 'wulumuqi',
         '深圳': 'shenzhen',
         '雅加达': 'jakarta',
+        '南京': 'nanjing',
+        '广州南': 'guangzhounan',
+        '无锡': 'wuxi',
+        '扬州': 'yangzhou',
+        '张掖': 'zhangye',
+        '北京': 'beijing',
+        '北京大兴': 'daxing',
+        '宁波': 'ningbo',
+        '嘉兴': 'jiaxing',
+        '黄山': 'huangshan',
+        '锡林浩特': 'xilinhot',
+        '榆林': 'yulin',
+        '汉中': 'hanzhong',
+        '丽江': 'lijiang',
+        '塔城': 'tacheng',
+        '库尔勒': 'korla',
+        '赣州': 'ganzhou',
     }
     clean_name = city_name.strip()
     return mapping.get(clean_name, clean_name.lower())
