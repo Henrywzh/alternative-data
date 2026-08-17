@@ -1,0 +1,15 @@
+{
+  "OutBlock_1": [
+    {
+      "TRD_DD": "20260730",
+      "ISU_NM": "SK hynix",
+      "MKT_NM": "KOSPI",
+      "FOR_BUY_QTY": "1,234",
+      "FOR_SELL_QTY": "900",
+      "FOR_NETBUY_QTY": "334",
+      "FOR_BUY_AMT": "250000000",
+      "FOR_SELL_AMT": "180000000",
+      "FOR_NETBUY_AMT": "70000000"
+    }
+  ]
+}
