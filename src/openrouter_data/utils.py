@@ -20,16 +20,23 @@ def iter_next_f_decoded_strings(html: str) -> Iterable[str]:
 
 def iter_next_f_objects(html: str) -> Iterable[Any]:
     for decoded in iter_next_f_decoded_strings(html):
-        if ":" not in decoded:
-            continue
-        _, payload = decoded.split(":", 1)
-        payload = payload.strip()
-        if not payload.startswith("["):
-            continue
-        try:
-            yield json.loads(payload)
-        except json.JSONDecodeError:
-            continue
+        # Next.js currently emits several newline-delimited flight chunks in
+        # one script. Older responses contained a single ``label:payload``
+        # chunk, so iterate over lines while retaining compatibility with
+        # either shape.
+        for line in decoded.splitlines():
+            if ":" not in line:
+                continue
+            _, payload = line.split(":", 1)
+            payload = payload.strip()
+            if not payload.startswith(("[", "{")):
+                # Module/import instructions (for example ``1:I[...]``) are
+                # not JSON data and should not be handed to the walkers.
+                continue
+            try:
+                yield json.loads(payload)
+            except json.JSONDecodeError:
+                continue
 
 
 def walk_json(obj: Any) -> Iterable[Any]:
