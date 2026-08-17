@@ -355,14 +355,26 @@ def collect_yfinance_quotes(
     basket_memberships: pd.DataFrame | None = None,
     stage1_only: bool = True,
     timeout_seconds: float = 10.0,
+    now_utc: pd.Timestamp | str | None = None,
 ) -> QuoteCollectionResult:
     """Collect one latest quote snapshot per eligible registry listing.
 
     yfinance is intentionally imported lazily and its output is labelled
     delayed with source_license_class="personal_use_terms_unverified".
+
+    ``now_utc`` is the wall-clock reference used for the current-run
+    tolerance check and as the ``retrieved_at_utc`` stamp on emitted rows.
+    It defaults to the real wall clock (``pd.Timestamp.now(tz="UTC")``) when
+    omitted, so production behaviour is unchanged; tests should pass a fixed
+    value so results do not depend on when the suite happens to run.
     """
 
-    retrieved_at_wall_utc = pd.Timestamp.now(tz="UTC")
+    if now_utc is not None:
+        retrieved_at_wall_utc = _quote_timestamp(now_utc)
+        if retrieved_at_wall_utc is None:
+            raise ValueError("now_utc must be a valid timestamp")
+    else:
+        retrieved_at_wall_utc = pd.Timestamp.now(tz="UTC")
     as_of = _quote_timestamp(as_of_utc) if as_of_utc is not None else retrieved_at_wall_utc
     if as_of is None:
         raise ValueError("as_of_utc must be a valid timestamp")
