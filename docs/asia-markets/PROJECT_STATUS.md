@@ -11,7 +11,39 @@ replacement for the operating manual or generated source-status JSON.
   transport artifacts.
 - Canonical financial-data sibling: `/Users/henrywzh/Desktop/Quant/financial-data`;
   see `REPO_BRIDGE.md` for the shared contract.
+- Research Control Tower V1 is a local/private, read-only publication. The
+  current immutable `CURRENT` generation is
+  `task8-post-strictness-final-evidence-20260814-a256b41d9e01d991`. The final
+  focused Control Tower suite passed with 185 passed and 0 skipped; the
+  privacy suite passed with 12 passed and 0 skipped, with zero findings in the
+  active-bundle scan. The financial-data exporter suite passed with 20 tests,
+  and the full financial-data suite passed with 404 tests. Real browser QA
+  passed for all five pages at 1440x900, 1280x800, 768x1024 and 390x844, with
+  loopback-only resources and no console errors. Current Source Health has 21
+  sources: 14 available, 4 unavailable and 3 degraded. Consensus is
+  intentionally typed-empty/degraded because the real export was stale at the
+  build cutoff. This remains local/private only; it makes no hosting,
+  deployment or public-redistribution readiness claim.
 - Live sector roster: 10 sectors; see `apps/asia-markets-dashboard/sectors.json`.
+- Unified KPI backtest engine (2026-08-12): Steps 1–6 complete, with the MTR
+  chronological practical-OOS track added afterward. Step 1
+  metadata registry (`data/registries/asia_backtest_*`), shared package
+  (`src/common/backtest/`), additive long form (5,308 rows: 2,788 primary +
+  163 source aliases + 2,357 same-period-last-year baselines), MTR actuals
+  migrated out of the script
+  into `data/normalized/hk_transport/mtr_transport_ops_actuals.csv`, SHKP
+  split into three targets (contract activity stays D/diagnostic), and the
+  metric-policy table with explicit pooled-reference/per-entity grains,
+  baseline-coverage guards and directional hit rate. The current data has no
+  final headline contracts after independent-period and PIT gates. Run
+  everything with `python scripts/run_backtest_engine.py`; the latest run also
+  includes the independent MTR FY/H1 walk-forward contracts and their isolated
+  baselines. The MTR legacy 4.78%/4.06% values remain structural replay
+  diagnostics; the new chronological track is FY 9.32% / H1 8.10% practical
+  MAPE and records origin/cutoff/input fingerprints. Monthly output remains
+  forecast-only because no official monthly revenue actual exists.
+  wide tables and dashboards are untouched.  See
+  `docs/asia-markets/unified-kpi-backtest-v1.md`.
 - English and Chinese hub/data-status pages are published.
 - Sector artifacts are generated as portable HTML from `.generated/*.json`.
 - `STREAMLIT_PARITY_PROTOCOL.md` is the shared Cloudflare-to-Streamlit
@@ -111,18 +143,34 @@ replacement for the operating manual or generated source-status JSON.
 - MTR Property Timing Engine V0 is live: `scripts/mtr_timing_engine.py` writes `mtr_property_timing_history.csv` linking presale -> first transaction -> BD occupancy permit -> MTR recognition. Four STRONG-mapped cases (address + permit count + timing): 晉環 OP 2022-04 (PR4/2022/OP, 800u) -> 2022; 揚海 OP 2022-08 (PR6/2022/OP, 600u) -> 2022; 海盈山 OP 2024-11 (PR12/2024/OP, 800u) -> 2024; 瑜一 OP 2024-11 (PR11/2024/OP, 630u) -> 2025. Two SUSPECTED shared-lot cases: LOHAS Park P11 OP 2024-12 (1,880u) -> 2024; P12 OP 2025-10 (1,985u) -> 2025. H1/H2 recognition split is now official: interim results show 2022H1 7,747 (LP10/SOUTHLAND/La Marina) vs 2022H2 2,666; 2023H1 712 (LP11 initial) vs H2 1,371; 2024H1 1,740 vs H2 8,525 (LP11 bulk + SOUTHSIDE + Ho Man Tin P1); 2025H1 5,542 (Ho Man Tin P1/P2, SOUTHSIDE P3/P5) vs H2 5,542 (LP12). Annual = H1 + H2 reconciles for all six years. Per-package recognition half is attached to the timing history (晉環 2022-H1 strong, 瑜一 2025-H1 strong, 海盈山 2024-H2 inferred, LP11 2023-H1+2024-H2 strong). Empirical pattern: OP issuance and recognition fall in the same calendar year (median lag ~1 month). THE SOUTHSIDE mapped via 11 Heung Yip Road in the BD history.
 - MTR Consensus Bridge (P0C skeleton) is live: `scripts/mtr_consensus_bridge.py` writes `mtr_consensus_bridge.csv` (our FY2026E revenue bridge vs Street) and `mtr_eps_sensitivity.csv`. Street EPS/revenue from yfinance 0066.HK (7 analysts; FY2026E EPS 2.52 avg, revenue 55.2bn). Our FY2026E transport revenue is derived from the farebox H1 nowcast (11,977) x FY25 H2/H1 seasonality (1.0201) = ~24.2bn; other segments are explicitly labelled ASSUMED. EPS sensitivity confirms research priority: one property package timing shift moves EPS ~+/-0.45 (17.7% of consensus) vs farebox +1% (+1.5%), HIBOR +100bp (-3.4%), Mainland +10% (+0.3%).
 - MTR Property Project Master (P0B skeleton) is live: `src/hk_transport/sources/mtr_property_project_master.py` and `data/normalized/hk_transport/mtr_property_project_master.csv` (19 project/package rows). Rows are official-disclosure-only: profit-recognition years from MTR annual results (2021: LOHAS Park P7-9; 2022: LP10, SOUTHLAND, La Marina; 2024: Villa Garda, SOUTHSIDE P1/2/4/5, Ho Man Tin P1; 2025: SOUTHSIDE P3/P5, LOHAS Park P12, Ho Man Tin P1/P2), tender years (THE SOUTHSIDE P5/P6 2021; Tung Chung East P1 2024; Tuen Mun A16 P1 2025), plus SHKP-verified LOHAS Park 4A/4B and YOHO WEST cross-references. Units/GFA/ASP/remaining profit stay unpopulated until verified - no fabricated economics. v2 adds an SRPE crosswalk (8/19 rows confirmed): THE SOUTHSIDE P1 晉環/SOUTHLAND (SRPE 7585, first price list 2021-04-19), P2 揚海/La Marina (7787, 2021-08-17), P4 海盈山/La Montagne (9345, 2023-06-27), Ho Man Tin P2 瑜一/IN ONE (8745, 2023-05-08), LOHAS Park P11 凱柏峰/Villa Garda (8545, 2022-06-20), LOHAS Park 4A/4B 晉海/晉海II (4745/4865, 2017), Tai Wai 柏傲莊 I (7225, 2020-10-06). Mappings require an official-name match or repo-verified SHKP data; ambiguous phases (THE SOUTHSIDE P3/P5/P6, Ho Man Tin P1, LOHAS Park P7-10/P12) stay unmapped with evidence_level=official_recognition_only.
-- MTR farebox revenue backtest is live: `scripts/mtr_farebox_revenue_backtest.py`
+- MTR farebox revenue backtest is live: `scripts/mtr_farebox_revenue_backtest.py`; annual and H1 outputs are now generated together (`mtr_farebox_revenue_annual_backtest.csv`, `mtr_farebox_revenue_h1_backtest.csv`) from canonical FY/H1 actuals in `data/normalized/hk_transport/mtr_transport_ops_actuals.csv`, with official 2017-2025 interim actuals and a 2026 H1 forecast row.
   calibrates per-passenger yields to MTR's disclosed FY2024 segment revenue
   (domestic / cross-boundary / HSR & intercity / Airport Express / Light Rail
   & Bus) and evolves them through the cumulative Fare Adjustment Mechanism
   series (2010-2024 plus the 2025/2026 freeze; AEL and HSR yields flat).
   It produces a monthly farebox revenue estimate from 2000-01 to 2026-06 in
   `data/processed/transport/mtr_farebox_revenue_monthly.csv` plus an annual
-  backtest file. The 2019-2023 holdout (2024 excluded as the calibration
-  year) tracks reported HK transport operations revenue with ~4.8% MAPE;
-  COVID-era years under-estimate by 7-9% (journey-mix drift, not captured by
-  FAM-only yield shifts), and the 2008 step is the MTR-KCR merger coverage
-  change, not a fare event. This gives MTR a monthly revenue nowcast leg ahead of annual results. It integrates ImmD daily control-point statistics (HSR West Kowloon vs Lo Wu/LMC Spur Line) and a regularized Ridge L2 residual model (2019-2023 holdout MAPE 4.06%), achieving +0.43% error on FY2025 live forward OOS validation (HK$23.70bn forecast vs HK$23.60bn reported). A 16-fiscal-year MTR historical earnings bridge (annual, 2010-2025) is live in `src/hk_transport/sources/mtr_historical_earnings_bridge.py` and `data/normalized/hk_transport/mtr_historical_earnings_bridge.csv`; every value was hand-verified against official MTR results PDFs (full announcements for 2020-2025, analyst result decks for 2010-2019). It reconciles segment revenue, recurrent post-tax profit, HK property development post-tax profit, underlying profit, IP fair-value movements, reported NPAT, EPS and DPS; the underlying = recurrent + property development identity holds for all 12 years 2014-2025. 2016-2018 decks disclose station commercial + property rental as a merged revenue line; 2010-2013 decks disclose no segment revenue breakdown.
+  backtest file. The legacy FY2024-anchor physics/Ridge results (2019-2023
+  4.78%/4.06%) are structural replay diagnostics, not OOS; COVID-era years
+  under-estimate by 7-9% (journey-mix drift, not captured by FAM-only yield
+  shifts), and the 2008 step is the MTR-KCR merger coverage change, not a fare
+  event. The independent chronological prior-period-yield track now reports
+  FY MAPE 9.32% and H1 MAPE 8.10% on practical-OOS rows, with forecast origin,
+  information cutoff and input bundle fingerprints recorded; historical
+  patronage release vintages are not yet captured, so it remains B-practical
+  rather than strict A-PIT. The monthly companion is forecast-only because
+  MTR does not publish monthly transport-operations revenue actuals. A
+  16-fiscal-year MTR historical earnings bridge (annual, 2010-2025) is live in
+  `src/hk_transport/sources/mtr_historical_earnings_bridge.py` and
+  `data/normalized/hk_transport/mtr_historical_earnings_bridge.csv`; every
+  value was hand-verified against official MTR results PDFs (full
+  announcements for 2020-2025, analyst result decks for 2010-2019). It
+  reconciles segment revenue, recurrent post-tax profit, HK property
+  development post-tax profit, underlying profit, IP fair-value movements,
+  reported NPAT, EPS and DPS; the underlying = recurrent + property
+  development identity holds for all 12 years 2014-2025. 2016-2018 decks
+  disclose station commercial + property rental as a merged revenue line;
+  2010-2013 decks disclose no segment revenue breakdown.
 - China listed airline monthly operating data is wired into transport for six
   listed groups: Air China, China Southern, China Eastern, Spring Airlines,
   Hainan Airlines Holdings and Juneyao Airlines. The artifact includes
@@ -483,6 +531,13 @@ replacement for the operating manual or generated source-status JSON.
   explicit direction, variant perception, target/payoff, catalyst,
   invalidation, direction-aware hedge/drawdown and sizing context; all remain
   conditional until the event gates pass.
+- The v4 revenue layer was re-audited and rebuilt on 2026-08-11: historical
+  residual-yield scores are now period-specific (H1 Jan-Jun, H2 Jul-Dec, FY
+  Jan-Dec), removing the prior intra-year H1 look-ahead. Period-safe final
+  revenue MAE is 7.47% across 108 rows. A locked
+  `airline_pre_event_unified_snapshot.csv` now reconciles v3, v4, consensus
+  and decision-evaluation layers with explicit model versions and vintages;
+  it is not a new forecast or an executable strategy backtest.
 - `airline-pair-thesis-review.md` records the written provisional thesis for
   the core, three backups and Spring–Juneyao monitor. It states the proposed
   direction, variant perception, target/payoff diagnostic, catalysts,
@@ -1202,6 +1257,59 @@ four with a current BD OP crosswalk match. Revenue remains a company-level
 annual anchor; no phase-level revenue is allocated. Missing months are not
 zero-filled, and the BD OP crosswalk currently lacks an event date.
 
+### SHKP official H1 actual panel and recognition backtest (2026-08-12)
+
+The H1 data-preparation layer is now live through
+`python -m src.hk_real_estate.cli run-shkp-h1-backtest`. It fetches the
+issuer's official English interim-report PDFs for FY2016/17–FY2025/26, saves
+immutable raw snapshots and writes six linked datasets:
+
+- `shkp_h1_report_registry`: 10 reports with period end, exact issuer release
+  date, source URL, parser status and `strict_release_date_observed` PIT label;
+- `shkp_h1_actual_panel`: 149 fact rows. Revenue, reported/underlying profit,
+  gross/net rental income, EPS and interim dividend each have a complete
+  ten-report series. The parser now recovers Hong Kong development/rental
+  revenue from legacy/current segment tables and adds combined hotel revenue;
+  explicit office/retail revenue remains available for only the recent three
+  reports;
+- `shkp_h1_to_fy_bridge`: 29 rows across consolidated group revenue, reported
+  profit and Hong Kong property-sales revenue. H2 is explicitly FY minus H1;
+  it is not a separately filed observation;
+- `shkp_h1_actual_vs_nowcast`: 26 rows comparing 2×H1 annualization with an
+  expanding prior-three-year median H1-share holdout. Training fiscal years
+  are stored and strictly precede the target.
+- `shkp_h1_component_annual_history`: 16 annual component anchors combining
+  consolidated group revenue with Hong Kong development, Hong Kong rental and
+  combined hotel revenue; the residual is explicit and absorbs Mainland,
+  telecom/infrastructure, other businesses and JV/scope differences.
+- `shkp_h1_component_actual_vs_nowcast`: 10 rows, including seven valid
+  historical holdouts and the current FY2025/26 H1-only forecast. It forecasts
+  H2 by prior component H2/H1 ratios and is deliberately a rough recognition
+  diagnostic, not a project-level handover model.
+
+The current H1/FY bridge is a recognition-seasonality diagnostic, not a
+finished earnings forecast. For group revenue, valid holdouts show a mean APE
+of about 14% for 2×H1 versus about 19% for the prior-share baseline; the
+relative ranking changes by year. HK property-sales recognition is much more
+lumpy (the corrected segment-table history ranges from roughly 12%–89%), so it must remain a separate
+handover scenario layer. FY2026 H1 has no FY actual yet and is excluded from
+scoring.
+
+The official H1 panel is strict on issuer availability: report release date is
+the earliest usable date, not 31 December. Consolidated FY2017–FY2020 annual
+fallback rows still come from the sibling financial-data source and are marked
+non-PIT because original announcement timestamps are unavailable; official
+annual summary/segment history is preferred from FY2021 onward. The component
+bridge currently has mean APE about 28.5% across seven holdouts, worse than
+the 2×H1 baseline; this is useful evidence that H2/FY component ratios are not
+stationary enough yet, not a reason to tune the model after seeing the target.
+The report and five QA charts are in
+`docs/asia-markets/SHKP_H1_BACKTEST_REPORT.md` and
+`docs/asia-markets/charts/shkp_h1_*.png`. The focused H1 test suite has 8
+passing tests. Two unrelated pre-existing financial-model invariant tests
+remain failing in the broader selected suite and are not caused by this H1
+layer.
+
 ### Buildings Department historical detail QA (2026-08-09)
 
 The detailed Md52–Md56 parser now has a bounded cross-year QA contract. Parser
@@ -1678,6 +1786,58 @@ for the complete report. Headline items:
   EPS MEDIUM (below-segment residual the key risk).
 * Next phase is the INVESTMENT LAYER (FY26 upside sources, consensus
   revision catalysts, falsification data), not further model building.
+
+### Skeleton backtest v2: vintage margin default (2026-08-09)
+
+User question: why is the 2013-2022 underlying error so large, and is it
+missing 2013-era SHKP phases or the mainland real-estate boom?
+
+`run-shkp-skeleton-margin-decomposition` now attributes the backtest error
+to margin assumption vs data coverage by replaying the SAME frozen engine
+under four margin treatments per fiscal year (does not touch the frozen
+v1.0 backtest output):
+
+| mode | MAE underlying | meaning |
+|---|---:|---|
+| bucket (frozen) | 12.4% | static FY26/27-calibrated 22.5/29.5/37.5% |
+| vintage (launch-cohort) | 6.4% | PIT, deployable: margin from `coverage_start` year |
+| rolling_actual | 11.4% | PIT prior-3y mean of actual HK dev margin |
+| actual (hindsight) | 8.3% | ceiling: perfect margin model |
+
+Key findings:
+* It is NOT the mainland boom: mainland dev profit only spiked in FY2021
+  (6.4bn) and FY2025 (5.1bn); in FY2021 the non-res run-rate captured it
+  (error -135m) and in FY2025 it was offset by residential over-prediction.
+  The systematic FY2017-2022 under-estimate is a residential-model effect.
+* The single largest fixable source is the static margin bucket being
+  calibrated to the FROZEN low-margin FY26/27 mix while actual HK dev
+  margins in 2017-2022 ran 32.8-45.1% (bucket mid 29.5%).
+* A launch-cohort ("vintage") margin calibration is PIT and deployable and
+  cuts MAE from 12.4% -> 6.4%, beating even the hindsight "actual" mode on
+  recent FY2023-25 where the market margin collapsed and a rolling actual
+  overshoots. This is the recommended margin history fix.
+* Residual error after the margin fix is dominated by: FY2016/17
+  (data floor - SRPE went live 2013, kernel 0.36), FY2019/20 and FY2021/22
+  non-residential run-rate swings, and the FY2024/25 non-res run-rate
+  lagging the Mainland development spike (-3.8bn).
+* Recommendation: adopt the vintage margin calibration for historical
+  backtests (MAE 12.4->6.4%); only then pursue 2013-era phase backfill for
+  the FY2017/18 and FY2022 kernel gaps; FY2016/17 stays a documented source
+  limit.
+
+ACTED ON (user directed: no 2013-era legacy backfill, update backtest):
+* `build_shkp_skeleton_backtest` now defaults to ``margin_mode="vintage"``
+  (launch-cohort margin from `coverage_start` year); the legacy static bucket
+  remains available as ``margin_mode="bucket"`` for comparison.
+* Historical backtest MAE improved 12.4% -> 6.4% without touching the frozen
+  v1.0 forward engine.  Full 9-year vintage backtest:
+  FY2016/17 -7.6%, FY2017/18 -6.5%, FY2018/19 -1.4%, FY2019/20 +12.9%,
+  FY2020/21 -4.6%, FY2021/22 -16.1%, FY2022/23 -5.4%, FY2023/24 +2.6%,
+  FY2024/25 +0.05%.  Residual FY2021/22 (-16%) and FY2019/20 (+12.9%) are
+  non-residential run-rate swings around Mainland/rental cycles, not a margin
+  or data-coverage problem; FY2016/17 is the SRPE-2013 data floor.
+* The conforming tests were updated to assert the vintage default and that
+  bucket mode remains strictly more conservative.
 
 ### Historical coverage backfill (2026-08-09, COMPLETE)
 

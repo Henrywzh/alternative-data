@@ -1,6 +1,6 @@
 # v4 Live Pre-Event Forecast (1H2026) + Diagnostics
 
-Status: 2026-08-10.  This is the v4 engine in its pre-event form for the
+Status: 2026-08-11.  This is the v4 engine in its pre-event form for the
 2026-08-25/29/31 report cycle: a frozen, attributable forecast per carrier,
 a surprise ranking vs consensus, and two honest diagnostics.
 
@@ -37,18 +37,23 @@ POSITIVE H1-2025 attributable profit.  The big three lost money in H1-2025
 (their losses are H1-seasonal, not full-year), so their x2 proxy would be
 a fabricated surprise and is flagged invalid rather than reported.
 
-**Pair read**: the Spring long / Juneyao short thesis HOLDS under v4, and
-Spring's edge over consensus is now much larger (+64.7% vs +18.5%, a 46pp
-gap, up from 7pp under v3).  The v4 engine is more bullish on Spring
+**Pair read**: the v4 operating/earnings view remains stronger for Spring
+than Juneyao (+64.7% vs +18.5% under simple H1 x2 annualisation).  After
+using the recent three-year seasonality correction, the comparable figures
+are +67.5% and +58.1%, a +9.5pp edge.  This is an earnings view, not an
+approved trade: valuation, revision and borrow gates remain unresolved.  The v4 engine is more bullish on Spring
 primarily through the LF/yield mean-reversion layers: consensus is priced
 on a weaker yield recovery than the v4 normal-level anchor implies.
 
 ## Frozen pre-event snapshot
 
-- `data/normalized/hk_transport/snapshots/airline_v4_pre_event_20260810.csv`
+- `data/normalized/hk_transport/snapshots/airline_v4_pre_event_20260811.csv`
 - Written ONCE per forecast_asof; never overwritten or recomputed after the
   reports.  Carries `forecast_asof`, `data_cutoff` (2026-08-01),
   `model_version`, `forecast_type = pre_event`.
+- The prior `20260810` file remains an immutable audit reference; the
+  20260811 file is the corrected final pre-event lock after the forward-NI
+  bridge refresh.
 - Post-report corrections belong in the validation playbook and
   post-earnings tracker, never in this file.
 
@@ -92,6 +97,7 @@ keep the v4 mean-reversion layers as the regime handling.
 - Surprise: `data/normalized/hk_transport/airline_earnings_model_v4_surprise.csv`
 - Spread diagnostic: `data/normalized/hk_transport/airline_earnings_model_v4_spread_residual_diagnostic.csv`
 - Persistence: `data/normalized/hk_transport/airline_earnings_model_v4_error_persistence.csv`
-- Snapshot: `data/normalized/hk_transport/snapshots/airline_v4_pre_event_20260810.csv`
+- Snapshot: `data/normalized/hk_transport/snapshots/airline_v4_pre_event_20260811.csv`
+- Unified reconciliation: `data/normalized/hk_transport/airline_pre_event_unified_snapshot.csv`
 - Tests: `tests/test_hk_transport_airline_earnings_model_v4_live.py` (8 tests)
 - CLI: `run-airline-earnings-model-v4-live`

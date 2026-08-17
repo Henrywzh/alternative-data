@@ -23,11 +23,11 @@ persistence) instead of one-off backtests.
 
 - Data: `data/normalized/hk_transport/airline_post_earnings_tracker.csv`
 - Module: `src/hk_transport/sources/airline_post_earnings_tracker.py`
-- Tests: `tests/test_hk_transport_airline_post_earnings_tracker.py` (5 tests)
+- Tests: `tests/test_hk_transport_airline_post_earnings_tracker.py` (6 tests)
 - Pipeline registry id: `airline_post_earnings_tracker` (kind `measure`, max age 30d)
 - CLI: `run-airline-post-earnings-tracker`
 
-## Current contents (2026-08-10)
+## Current contents (2026-08-11)
 
 7 rows: six mainland carriers (`awaiting_report`) + Cathay Pacific (`filled`).
 
@@ -41,6 +41,12 @@ Cathay is the first filled example - its 1H2026 print (announced
 | T0 return (announcement-day close vs prior close) | +2.78% |
 | T+1 return | +2.30% |
 | T+5 return | pending (not elapsed in price capture) |
+
+The six mainland rows also carry the locked v4 fields, including H1 revenue,
+H1 EPS, simple x2 annualised surprise and seasonality-adjusted surprise. For
+example, the current Spring/Juneyao seasonality-adjusted values are +67.5%
+and +58.1%, respectively. These are pre-event model fields, not actual
+post-print surprises.
 
 ## Design rules (honesty constraints)
 
