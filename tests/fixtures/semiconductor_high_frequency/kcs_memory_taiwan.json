@@ -1,0 +1,23 @@
+{
+  "response": {
+    "header": {"resultCode": "00", "resultMsg": "OK"},
+    "body": {
+      "items": {
+        "item": [
+          {
+            "year": "2026.06",
+            "statCdCntnKor1": "대만",
+            "statCd": "TW",
+            "statKor": "메모리",
+            "hsCd": "854232",
+            "expWgt": "100000",
+            "expDlr": "60000000",
+            "impWgt": "1000",
+            "impDlr": "500000",
+            "balPayments": "59500000"
+          }
+        ]
+      }
+    }
+  }
+}

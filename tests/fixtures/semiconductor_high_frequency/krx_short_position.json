@@ -1,0 +1,13 @@
+{
+  "OutBlock_1": [
+    {
+      "TRD_DD": "20260730",
+      "ISU_NM": "SK hynix",
+      "MKT_NM": "KOSPI",
+      "CVSRTSELL_TRDVOL": "1000",
+      "CVSRTSELL_TRDVAL": "500000000",
+      "STR_CONST_VAL1": "12000",
+      "STR_CONST_VAL2": "6000000000"
+    }
+  ]
+}
