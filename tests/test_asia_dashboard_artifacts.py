@@ -151,6 +151,39 @@ def test_china_airline_snapshot_table_keeps_structured_columns():
     assert artifact["snapshot"]["datasets"][table["dataset"]][0]["airline"]
 
 
+def test_transport_artifact_exposes_source_recovery_and_h1_calibration_views():
+    """Recovered monthly KPIs and the calibration evidence share the public artifact."""
+    artifact = json.loads(
+        (APP / ".generated" / "hk-transport-artifact.json").read_text(encoding="utf-8")
+    )
+    datasets = artifact["snapshot"]["datasets"]
+    assert len(datasets) <= 50
+    assert len(datasets["airline_h1_revenue_mae_comparison"]) == 12
+    assert len(datasets["airline_h1_cost_mae_comparison"]) == 12
+    assert len(datasets["airline_period_backtest_summary"]) == 18
+    assert len(datasets["airline_source_recovery_summary"]) == 2
+    assert len(datasets["airline_source_recovery_audit"]) == 200
+    assert {row["value"] for row in datasets["airline_source_recovery_summary"]} == {178, 22}
+
+    chart_ids = {chart["id"] for chart in artifact["manifest"]["charts"]}
+    assert {
+        "airline_h1_revenue_mae_chart",
+        "airline_h1_cost_mae_chart",
+        "airline_source_recovery_chart",
+        "airline_period_revenue_mae_chart",
+        "airline_h1_revenue_nowcast_chart",
+        "airline_h1_profit_nowcast_chart",
+    }.issubset(chart_ids)
+
+    table_ids = {table["id"] for table in artifact["manifest"]["tables"]}
+    assert "airline_period_backtest_summary_table" in table_ids
+    audit_table = next(
+        table for table in artifact["manifest"]["tables"]
+        if table["id"] == "airline_source_recovery_audit_table"
+    )
+    assert "disclosure_check" in {column["field"] for column in audit_table["columns"]}
+
+
 def _regional_rows(metric: str, regions: dict[str, float]) -> list[dict]:
     return [
         {
