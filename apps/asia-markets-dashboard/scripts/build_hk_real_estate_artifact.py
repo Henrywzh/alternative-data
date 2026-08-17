@@ -34,11 +34,22 @@ from src.hk_real_estate.sources.rvd import (
     fetch_rvd_retail_rental_index,
     run_rvd_ingestion,
 )
+from src.hk_real_estate.sources.commercial_controls import (
+    fetch_cnsd_retail_sales_control,
+    fetch_rvd_commercial_forecast_completions,
+    fetch_rvd_commercial_stock_vacancy_district,
+    fetch_rvd_office_stock_vacancy_district,
+    fetch_rvd_office_vacancy_annual,
+    fetch_tourism_hotel_adr_category,
+    fetch_tourism_hotel_occupancy_category,
+    fetch_tourism_hotel_rooms_category,
+)
 from src.hk_real_estate.sources.hkma import fetch_hkma_residential_mortgage_survey
 from src.common.cnsd_mdt import fetch_cnsd_table
 from src.hk_real_estate.storage import load_latest_normalized
 from src.hk_real_estate.sources.epi import fetch_28hse_epi_eri
 from src.hk_real_estate.sources.hse28 import fetch_28hse_new_projects, fetch_28hse_transaction_pilot
+from src.hk_real_estate.sources.shkp import fetch_shkp_corporate_documents, fetch_shkp_property_catalog
 from src.hk_real_estate.sources.midland_transactions import fetch_midland_transaction_pilot
 from src.hk_real_estate.sources.centaline_transactions import fetch_centaline_transaction_pilot
 from src.hk_real_estate.sources.landreg import fetch_landreg_monthly_statistics
@@ -46,6 +57,17 @@ from src.hk_real_estate.sources.buildings_dept import fetch_buildings_dept_month
 from src.hk_real_estate.sources.bd_projects import fetch_bd_supply_leading_indicators
 from src.hk_real_estate.sources.land_disposals import fetch_land_disposals
 from src.hk_real_estate.dedup.transaction_dedup import deduplicate_agency_transactions
+from src.hk_real_estate.shkp_commercial import (
+    build_shkp_commercial_asset_master,
+    build_shkp_quarterly_events,
+)
+from src.hk_real_estate.shkp_financial_model import run_shkp_financial_model
+from src.hk_real_estate.shkp_sales_handover_bridge import (
+    ANNUAL_DATASET as SHKP_SALES_HANDOVER_ANNUAL_DATASET,
+    PHASE_DATASET as SHKP_SALES_HANDOVER_PHASE_DATASET,
+    run_shkp_sales_handover_revenue_bridge,
+)
+from src.hk_real_estate.sources.shkp_quarterly import fetch_shkp_quarterly_numeric_facts
 
 
 @dataclass(frozen=True)
@@ -269,6 +291,83 @@ PUBLIC_SOURCES = {
             "description": "Monthly private retail rental and price indices with official provisional flags.",
         },
     },
+    "rvd_commercial_controls": {
+        "id": "rvd_commercial_controls",
+        "label": "Rating and Valuation Department — Commercial stock / vacancy / completions",
+        "href": "https://www.rvd.gov.hk/tc/publications/property_market_statistics.html",
+        "query": {
+            "engine": "official CSV",
+            "url": "https://www.rvd.gov.hk/datagovhk/Com_Stock_Completions_and_Vacancy_by_District_Eng.csv",
+            "language": "CSV",
+            "description": "Annual office and private-commercial stock, completions, vacancy and forecast-completion controls; these are market snapshots, not SHKP assets.",
+        },
+    },
+    "cnsd_retail_sales_control": {
+        "id": "cnsd_retail_sales_control",
+        "label": "C&SD — Monthly Retail Sales Control",
+        "href": "https://data.gov.hk/en-data/dataset/hk-censtatd-tablechart-b1080003",
+        "query": {
+            "engine": "official C&SD MDT CSV",
+            "url": "https://www.censtatd.gov.hk/data/MDT_75_620-67002_VAL_IDX_RS_Raw_1dp_idx_n.csv",
+            "language": "CSV",
+            "description": "Monthly retail sales value and volume indices by outlet category; economy-wide demand control, not tenant sales at an SHKP mall.",
+        },
+    },
+    "tourism_hotel_controls": {
+        "id": "tourism_hotel_controls",
+        "label": "Culture, Sports and Tourism Bureau — Hotel occupancy / room-rate controls",
+        "href": "https://data.gov.hk/en-data/dataset/hk-cstb-cstb_tc-tc-hotel-room-occupancy-rate-by-category",
+        "query": {
+            "engine": "official tourism CSV",
+            "url": "https://www.tourism.gov.hk/datagovhk/hotelroomoccupancy/hotel_room_occupancy_rate_monthly_by_cat_en.csv",
+            "language": "CSV",
+            "description": "Rolling five-year monthly hotel occupancy, achieved room-rate and room-supply controls by category; not SHKP hotel KPIs.",
+        },
+    },
+    "shkp_quarterly": {
+        "id": "shkp_quarterly",
+        "label": "SHKP Quarterly — issuer project and commercial events",
+        "href": "https://www.shkp.com/en-US/investor-relations/shkp-quarterly",
+        "query": {
+            "engine": "official issuer PDF catalogue",
+            "url": "https://www.shkp.com/en-US/investor-relations/shkp-quarterly",
+            "language": "HTML/PDF",
+            "description": "Quarterly article headlines since 2021; event classification is research-only and does not infer sales value, ownership or asset-level occupancy.",
+        },
+    },
+    "shkp_commercial_assets": {
+        "id": "shkp_commercial_assets",
+        "label": "SHKP — Hong Kong commercial asset observation master",
+        "href": "https://www.shkp.com/en-US/our-business/hong-kong-properties",
+        "query": {
+            "engine": "pandas source-layer union",
+            "url": "https://www.shkp.com/en-US/our-business/hong-kong-properties",
+            "language": "Python",
+            "description": "Current issuer directory, annual-report completed-property exposure and HK Completion Schedule commercial rows kept as separate observations.",
+        },
+    },
+    "shkp_financial_bridge": {
+        "id": "shkp_financial_bridge",
+        "label": "SHKP — Hong Kong business financial bridge",
+        "href": "https://www.shkp.com/en-US/investor-relations/financial-results-reports",
+        "query": {
+            "engine": "official issuer disclosures + read-only financial-data DuckDB join",
+            "url": "https://www.shkp.com/en-US/investor-relations/financial-results-reports",
+            "language": "PDF/Parquet/DuckDB",
+            "description": "Selected SHKP group/segment facts, Hong Kong recurring portfolio facts, source-selected 0016.HK actuals, current consensus and filing-vintage diagnostics. Group/segment facts include JV/associate shares where stated and are not a project-level HK revenue split.",
+        },
+    },
+    "shkp_sales_handover_bridge": {
+        "id": "shkp_sales_handover_bridge",
+        "label": "SHKP — Sales / handover / revenue timing bridge",
+        "href": "https://www.srpe.gov.hk/opip/all_development",
+        "query": {
+            "engine": "normalized SRPE + SHKP annual-report/completion-schedule/BD crosswalk",
+            "url": "https://www.srpe.gov.hk/opip/all_development",
+            "language": "Parquet/Python",
+            "description": "Gross phase-month SRPE activity is aligned to issuer handover evidence, planned completion windows and the current BD occupation-permit crosswalk; company revenue remains an annual non-allocated anchor.",
+        },
+    },
     "cross_source": {
         "id": "cross_source",
         "label": "Cross-source normalized comparison",
@@ -415,12 +514,50 @@ def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _json_safe(value: Any) -> Any:
+    """Convert pandas/numpy missing values to JSON nulls before persistence.
+
+    Optional control sources are intentionally allowed to retain sparse fields
+    (for example an asset row without a GFA or an issuer event without a
+    project alias).  ``DataFrame.iterrows()`` can expose those missing cells as
+    ``numpy.nan`` rather than ``None``; Python's strict ``allow_nan=False``
+    serializer correctly rejects them.  Normalize recursively at the artifact
+    boundary so one sparse upstream field cannot abort an otherwise valid
+    build, while keeping missingness explicit as JSON ``null``.
+    """
+    if value is None or isinstance(value, (str, bool, int)):
+        return value
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
+    if isinstance(value, (datetime, pd.Timestamp)):
+        return value.isoformat()
+    if isinstance(value, dict):
+        return {str(key): _json_safe(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(item) for item in value]
+    # numpy scalar values (np.int64/np.float64/np.bool_) expose ``item``;
+    # converting them here keeps the helper dependency-free.
+    item = getattr(value, "item", None)
+    if callable(item):
+        try:
+            return _json_safe(item())
+        except (TypeError, ValueError):
+            pass
+    try:
+        missing = pd.isna(value)
+        if isinstance(missing, bool) and missing:
+            return None
+    except (TypeError, ValueError):
+        pass
+    return value
+
+
 def _atomic_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
-            json.dump(payload, handle, ensure_ascii=False, indent=2, allow_nan=False)
+            json.dump(_json_safe(payload), handle, ensure_ascii=False, indent=2, allow_nan=False)
             handle.write("\n")
         os.replace(temporary_name, path)
     except Exception:
@@ -656,25 +793,455 @@ def _new_source_health(
     dataset: str,
     now: datetime,
     note: str,
+    record_type: str = "Measure",
+    status_override: str | None = None,
+    stale_after_days: int | None = None,
 ) -> dict[str, Any] | None:
     """Build a source-health row for an optional normalized tranche."""
-    if frame.empty or "date" not in frame.columns:
+    if frame.empty:
         return None
-    dates = pd.to_datetime(frame["date"], errors="coerce").dropna()
+    date_column = next((column for column in ("date", "event_date", "as_of_date", "quarter_end") if column in frame.columns), None)
+    if date_column is None:
+        return None
+    dates = pd.to_datetime(frame[date_column], errors="coerce").dropna()
     if dates.empty:
         return None
-    latest = dates.max()
-    age = (pd.Timestamp(now.replace(tzinfo=None)).normalize() - latest.normalize()).days
+    # Normalized parquet files may preserve timezone-aware timestamps while
+    # the builder's ``now`` is a naive UTC datetime (or vice versa).  Strip
+    # timezone metadata before subtracting so an optional source cannot make
+    # the whole artifact build fail merely because its lineage parser kept a
+    # ``Z`` suffix.  The observation date shown to users remains unchanged.
+    latest = pd.Timestamp(dates.max())
+    if latest.tzinfo is not None:
+        latest = latest.tz_localize(None)
+    now_ts = pd.Timestamp(now)
+    if now_ts.tzinfo is not None:
+        now_ts = now_ts.tz_localize(None)
+    age = (now_ts.normalize() - latest.normalize()).days
+    if age < 0:
+        freshness = f"forecast +{abs(age)}d"
+    else:
+        freshness = f"{age}d old"
+    status = status_override or ("Stale" if stale_after_days is not None and age > stale_after_days else "Healthy")
     return {
         "source": PUBLIC_SOURCES[source_id]["label"],
         "dataset": dataset,
-        "type": "Measure",
-        "status": "Healthy",
+        "type": record_type,
+        "status": status,
         "latest_observation": latest.strftime("%Y-%m-%d"),
         "records": int(len(frame)),
-        "freshness": f"{age}d old",
+        "freshness": freshness,
         "notes": note,
     }
+
+
+_SHKP_BRIDGE_COLUMNS = [
+    "row_type",
+    "period",
+    "target_period",
+    "period_type",
+    "layer",
+    "geography",
+    "asset_class",
+    "metric",
+    "statistic",
+    "value",
+    "comparison_value",
+    "difference_pct",
+    "unit",
+    "currency",
+    "scope",
+    "source",
+    "source_url",
+    "availability_date",
+    "snapshot_date",
+    "status",
+    "point_in_time_quality",
+    "model_use",
+    "caveat",
+]
+
+
+def _clean_bridge_value(value: Any) -> Any:
+    """Convert pandas/numpy scalars to JSON-safe values for the artifact."""
+    try:
+        if pd.isna(value):
+            return None
+    except (TypeError, ValueError):
+        pass
+    if isinstance(value, pd.Timestamp):
+        return value.strftime("%Y-%m-%d")
+    if isinstance(value, datetime):
+        return value.isoformat()
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return float(value)
+    return value
+
+
+def _shkp_financial_bridge_rows(
+    *,
+    disclosed: pd.DataFrame,
+    recurring: pd.DataFrame,
+    actuals: pd.DataFrame,
+    reconciliation: pd.DataFrame,
+    consensus: pd.DataFrame,
+    vintage_coverage: pd.DataFrame,
+    coverage: pd.DataFrame,
+    timing_phase: pd.DataFrame | None = None,
+    timing_annual: pd.DataFrame | None = None,
+) -> list[dict[str, Any]]:
+    """Project the financial-model inputs into one compact monitoring table.
+
+    The normalized financial-model datasets remain the canonical research
+    contract.  This projection deliberately keeps official segment facts,
+    HK recurring facts, sibling-database actuals, consensus and PIT diagnostics
+    in separate ``row_type`` values so a renderer cannot accidentally sum them
+    together.  Mainland rows are excluded from this HK-only dashboard view.
+    """
+    rows: list[dict[str, Any]] = []
+
+    def append(**values: Any) -> None:
+        row = {column: None for column in _SHKP_BRIDGE_COLUMNS}
+        row.update({key: _clean_bridge_value(value) for key, value in values.items()})
+        rows.append(row)
+
+    official_metrics = {
+        "group_revenue",
+        "property_sales_revenue_including_jv_associates",
+        "property_rental_revenue_including_jv_associates",
+        "property_sales_operating_profit_including_jv_associates",
+        "property_rental_operating_profit_including_jv_associates",
+        "hk_contract_sales_yet_to_be_recognized",
+        "hk_contract_sales_expected_recognition",
+        "investment_properties",
+        "associates_and_joint_ventures",
+    }
+    if not disclosed.empty and {"metric", "value"}.issubset(disclosed.columns):
+        for raw in disclosed.to_dict("records"):
+            metric = str(raw.get("metric") or "")
+            if metric not in official_metrics or _clean_bridge_value(raw.get("value")) is None:
+                continue
+            geography = "hong_kong" if metric.startswith("hk_") else "group"
+            append(
+                row_type="official_disclosed_fact",
+                period=raw.get("period_end"),
+                target_period=raw.get("target_period_end"),
+                period_type=raw.get("period_type"),
+                layer=raw.get("fact_group"),
+                geography=geography,
+                asset_class="residential_development" if "contract_sales" in metric else "property_business",
+                metric=metric,
+                value=raw.get("value"),
+                unit=raw.get("unit"),
+                currency=raw.get("currency"),
+                scope=raw.get("attribution_scope"),
+                source=raw.get("source_label"),
+                source_url=raw.get("source_url"),
+                availability_date=raw.get("available_at"),
+                status=raw.get("evidence_status"),
+                model_use="historical_context_and_forecast_anchor",
+                caveat=raw.get("caveat"),
+            )
+
+    # Recurring portfolio facts are already normalized into HKD/RMB and
+    # geography/asset-class fields.  Keep only group and Hong Kong rows here;
+    # the Mainland rows remain available in normalized storage for a later,
+    # separately scoped branch.
+    if not recurring.empty and {"geography", "metric", "value"}.issubset(recurring.columns):
+        for raw in recurring.to_dict("records"):
+            geography = str(raw.get("geography") or "").strip().lower()
+            if geography not in {"group", "hong_kong"} or _clean_bridge_value(raw.get("value")) is None:
+                continue
+            append(
+                row_type="hk_recurring_portfolio_fact",
+                period=raw.get("period_end"),
+                period_type=raw.get("period_type"),
+                layer="recurring_portfolio",
+                geography=geography,
+                asset_class=raw.get("asset_class"),
+                metric=raw.get("metric"),
+                value=raw.get("value"),
+                unit=raw.get("unit"),
+                currency=raw.get("currency"),
+                scope=raw.get("scope"),
+                source=raw.get("source_label"),
+                source_url=raw.get("source_url"),
+                availability_date=raw.get("availability_date"),
+                status=raw.get("evidence_status"),
+                model_use="historical_context_and_capacity_anchor",
+                caveat=raw.get("caveat"),
+            )
+
+    # Keep a small, interpretable subset of the sibling financial database.
+    # Values with unit=currency are normalized to HKD millions; no financial
+    # indicator ratios are mixed into this level series.
+    actual_metric_map = {
+        "revenue",
+        "net_income_attributable",
+        "operating_income",
+        "total_assets",
+        "total_debt",
+        "net_debt",
+        "stockholders_equity",
+        "operating_cash_flow",
+        "purchase_of_investment_properties",
+    }
+    if not actuals.empty and {"statement_type", "metric", "value"}.issubset(actuals.columns):
+        for raw in actuals.to_dict("records"):
+            if str(raw.get("statement_type") or "") not in {"income_statement", "balance_sheet", "cash_flow"}:
+                continue
+            if str(raw.get("metric") or "") not in actual_metric_map:
+                continue
+            value = _clean_bridge_value(raw.get("value"))
+            if value is None:
+                continue
+            unit = raw.get("unit")
+            currency = raw.get("currency")
+            if unit == "currency" and currency == "HKD":
+                value = float(value) / 1_000_000.0
+                unit = "HKD_m"
+            append(
+                row_type="financial_data_actual",
+                period=raw.get("period_end"),
+                period_type=raw.get("period_type"),
+                layer=raw.get("statement_type"),
+                geography="group",
+                asset_class="company",
+                metric=raw.get("metric"),
+                value=value,
+                unit=unit,
+                currency=currency,
+                source=raw.get("source"),
+                availability_date=raw.get("available_at"),
+                status="selected_actual",
+                point_in_time_quality=raw.get("point_in_time_quality"),
+                model_use="historical_context_only",
+                caveat=raw.get("caveat") or "Sibling financial-data observation; current snapshot lacks original announcement date for full PIT replay.",
+            )
+
+    if not consensus.empty and {"metric", "statistic", "value"}.issubset(consensus.columns):
+        for raw in consensus.to_dict("records"):
+            if _clean_bridge_value(raw.get("value")) is None:
+                continue
+            fiscal_year = _clean_bridge_value(raw.get("fiscal_year"))
+            period = raw.get("estimate_period_end")
+            if _clean_bridge_value(period) is None and fiscal_year is not None:
+                period = f"FY{int(fiscal_year)}"
+            append(
+                row_type="consensus_snapshot",
+                period=period,
+                period_type="current_snapshot",
+                layer="consensus",
+                geography="group",
+                asset_class="company",
+                metric=raw.get("metric"),
+                statistic=raw.get("statistic"),
+                value=raw.get("value"),
+                unit=raw.get("unit"),
+                currency=raw.get("currency"),
+                source=raw.get("source"),
+                snapshot_date=raw.get("snapshot_date"),
+                status="current_snapshot_only",
+                model_use="current_scenario_input_only",
+                caveat=raw.get("caveat") or "Consensus is a dated market-expectation snapshot, not issuer guidance or an audited actual.",
+            )
+
+    if not reconciliation.empty:
+        for raw in reconciliation.to_dict("records"):
+            append(
+                row_type="reconciliation",
+                period=raw.get("period_end"),
+                period_type="annual",
+                layer="official_vs_financial_data",
+                geography="group",
+                asset_class="company",
+                metric=raw.get("metric"),
+                value=raw.get("official_value_hkd_m"),
+                comparison_value=raw.get("financial_data_value_hkd_m"),
+                difference_pct=raw.get("difference_pct"),
+                unit="HKD_m",
+                currency="HKD",
+                source=raw.get("financial_data_source"),
+                status=raw.get("status"),
+                model_use="unit_reconciliation_only",
+                caveat=raw.get("caveat"),
+            )
+
+    if not vintage_coverage.empty:
+        for raw in vintage_coverage.to_dict("records"):
+            append(
+                row_type="vintage_diagnostic",
+                period=raw.get("period_end") or raw.get("snapshot_end"),
+                period_type="coverage_summary",
+                layer=raw.get("layer"),
+                geography="group",
+                asset_class="company",
+                metric="row_count",
+                value=raw.get("row_count"),
+                unit="rows",
+                source=raw.get("source"),
+                status=raw.get("status"),
+                point_in_time_quality=raw.get("point_in_time_quality"),
+                model_use=raw.get("model_use"),
+                caveat=raw.get("caveat"),
+            )
+
+    if not coverage.empty:
+        count_fields = [
+            "disclosed_rows",
+            "recurring_portfolio_rows",
+            "financial_data_actual_rows",
+            "consensus_rows",
+            "filing_vintage_rows",
+            "project_bridge_rows",
+        ]
+        raw = coverage.iloc[0].to_dict()
+        for field in count_fields:
+            if field not in raw or _clean_bridge_value(raw.get(field)) is None:
+                continue
+            append(
+                row_type="coverage_diagnostic",
+                period=raw.get("last_verified_at"),
+                period_type="coverage_summary",
+                layer="financial_model_coverage",
+                geography="group",
+                asset_class="company",
+                metric=field,
+                value=raw.get(field),
+                unit="rows",
+                status=raw.get("validation_status"),
+                model_use="coverage_only",
+                caveat=raw.get("validation_warnings"),
+            )
+
+    for timing_row in _shkp_sales_handover_bridge_rows(timing_phase, timing_annual):
+        append(**timing_row)
+
+    rows.sort(key=lambda row: (str(row.get("period") or "9999"), str(row.get("row_type") or ""), str(row.get("metric") or "")))
+    return rows[:320]
+
+
+def _shkp_sales_handover_bridge_rows(
+    phase_bridge: pd.DataFrame,
+    annual_bridge: pd.DataFrame,
+) -> list[dict[str, Any]]:
+    """Project compact timing rows into the existing financial bridge table.
+
+    The portable renderer has a 50-dataset contract.  The normalized timing
+    bridge therefore stays in Parquet while this projection reuses the
+    already-visible financial bridge dataset.  Two rows per current candidate
+    phase (gross activity and latest active units) plus one annual diagnostic
+    row per scope keeps the projection below the existing 320-row budget.
+    """
+    if phase_bridge is None or phase_bridge.empty:
+        return []
+    rows: list[dict[str, Any]] = []
+
+    def first_url(value: Any) -> str | None:
+        try:
+            parsed = json.loads(value) if isinstance(value, str) else value
+        except (TypeError, ValueError):
+            parsed = []
+        if isinstance(parsed, list):
+            urls = [str(item) for item in parsed if str(item).startswith(("http://", "https://"))]
+            return urls[0] if urls else None
+        return value if isinstance(value, str) and value.startswith(("http://", "https://")) else None
+
+    current = phase_bridge.loc[
+        phase_bridge.get("signal_scope", pd.Series(dtype="string")).eq("current_candidate_signal")
+    ].copy()
+    if current.empty:
+        current = phase_bridge.sort_values("sales_period_end", na_position="last").drop_duplicates(
+            "srpe_development_id", keep="last"
+        )
+    current = current.sort_values(["sales_period_end", "srpe_development_id"], na_position="last")
+    for raw in current.to_dict("records"):
+        phase_label = raw.get("phase_name") or raw.get("development_name") or raw.get("srpe_development_id")
+        period = raw.get("last_nonzero_sales_period") or raw.get("sales_period_end") or raw.get("completion_schedule_as_of")
+        source_url = first_url(raw.get("source_urls_json"))
+        common = {
+            "row_type": "sales_handover_phase_summary",
+            "period": period,
+            "period_type": "phase_summary",
+            "layer": "sales_handover_timing",
+            "geography": "hong_kong",
+            "asset_class": "residential_development",
+            "statistic": raw.get("bridge_status"),
+            "scope": phase_label,
+            "source": PUBLIC_SOURCES["shkp_sales_handover_bridge"]["label"],
+            "source_url": source_url,
+            "availability_date": raw.get("completion_schedule_as_of") or raw.get("handover_report_period_end"),
+            "status": raw.get("bridge_status"),
+            "point_in_time_quality": "research_snapshot_not_pit_safe",
+            "model_use": raw.get("model_use"),
+            "caveat": raw.get("caveat"),
+        }
+        sales_value = pd.to_numeric(pd.Series([raw.get("sales_value_gross_hkd")]), errors="coerce").iloc[0]
+        if pd.notna(sales_value):
+            rows.append(
+                {
+                    **common,
+                    "metric": "sales_value_gross_hkd",
+                    "value": float(sales_value),
+                    "unit": "HKD",
+                    "currency": "HKD",
+                }
+            )
+        active_units = pd.to_numeric(pd.Series([raw.get("active_units_latest")]), errors="coerce").iloc[0]
+        if pd.notna(active_units):
+            rows.append(
+                {
+                    **common,
+                    "metric": "active_units_latest",
+                    "value": float(active_units),
+                    "unit": "units",
+                    "currency": None,
+                    "caveat": (
+                        f"Latest non-null active-unit snapshot; sales activity is gross and handover state is "
+                        f"{raw.get('handover_disclosure_status')}. " + str(raw.get("caveat") or "")
+                    ),
+                }
+            )
+
+    if annual_bridge is not None and not annual_bridge.empty:
+        for raw in annual_bridge.to_dict("records"):
+            ratio = pd.to_numeric(pd.Series([raw.get("gross_sales_to_property_revenue_ratio_pct")]), errors="coerce").iloc[0]
+            sales_m = pd.to_numeric(pd.Series([raw.get("sales_value_gross_hkd")]), errors="coerce").iloc[0] / 1_000_000.0
+            if pd.notna(ratio):
+                metric = "gross_sales_to_property_revenue_ratio_pct"
+                value = float(ratio)
+                unit = "%"
+                currency = None
+            elif pd.notna(sales_m):
+                metric = "gross_contract_activity_hkd_m"
+                value = float(sales_m)
+                unit = "HKD_m"
+                currency = "HKD"
+            else:
+                continue
+            rows.append(
+                {
+                    "row_type": "sales_handover_annual_diagnostic",
+                    "period": raw.get("fiscal_label") or raw.get("fiscal_year_end"),
+                    "period_type": "fiscal_year",
+                    "layer": "sales_handover_timing",
+                    "geography": "hong_kong",
+                    "asset_class": "residential_development",
+                    "metric": metric,
+                    "statistic": raw.get("signal_scope"),
+                    "value": value,
+                    "unit": unit,
+                    "currency": currency,
+                    "source": PUBLIC_SOURCES["shkp_sales_handover_bridge"]["label"],
+                    "source_url": first_url(raw.get("source_urls_json")),
+                    "availability_date": raw.get("fiscal_year_end"),
+                    "status": raw.get("bridge_status"),
+                    "point_in_time_quality": "research_snapshot_not_pit_safe",
+                    "model_use": raw.get("model_use"),
+                    "caveat": raw.get("caveat"),
+                }
+            )
+    return rows
 
 
 def _srpe_signal_views(frame: pd.DataFrame) -> tuple[
@@ -705,8 +1272,16 @@ def _srpe_signal_views(frame: pd.DataFrame) -> tuple[
     }
     if frame.empty or not required.issubset(frame.columns):
         return [], [], [], None, None, None, None
+    # Legacy SRPE pilot snapshots may carry a numeric ownership percentage
+    # without the reviewed phase-specific interval.  Never expose those rows
+    # as attributable company sales; the raw transaction/sell-through layers
+    # remain available for review in normalized storage.
+    if "ownership_attribution_ready" not in frame.columns:
+        return [], [], [], None, None, None, None
+    visible = frame.loc[frame["ownership_attribution_ready"].fillna(False).astype(bool)].copy()
+    if visible.empty:
+        return [], [], [], None, None, None, None
 
-    visible = frame.copy()
     visible["period_date"] = pd.to_datetime(visible["period"], errors="coerce")
     visible = visible[visible["period_date"].notna()].copy()
     if visible.empty:
@@ -838,6 +1413,117 @@ def _srpe_signal_views(frame: pd.DataFrame) -> tuple[
     return developer_rows, sell_through_rows, latest_project_rows, sales_kpi, units_kpi, sell_through_kpi, projects_kpi
 
 
+def _shkp_leading_signal_views(
+    frame: pd.DataFrame,
+    timing_bridge: pd.DataFrame | None = None,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Project-level SHKP monitoring views that remain non-attributable."""
+    required = {
+        "period",
+        "srpe_development_id",
+        "sales_units_gross",
+        "sales_value_gross_hkd",
+        "active_units_eom",
+        "month_status",
+    }
+    if frame is None or frame.empty or not required.issubset(frame.columns):
+        return [], []
+    signal = frame.copy()
+    signal["period_date"] = pd.to_datetime(signal["period"], errors="coerce")
+    signal = signal[signal["period_date"].notna()].copy()
+    if signal.empty:
+        return [], []
+    for column in ("sales_units_gross", "sales_value_gross_hkd", "active_units_eom", "published_inventory_units", "sell_through_pct_eom"):
+        if column not in signal.columns:
+            signal[column] = pd.NA
+        signal[column] = pd.to_numeric(signal[column], errors="coerce")
+    signal["srpe_development_id"] = signal["srpe_development_id"].astype(str)
+    history = (
+        signal.groupby("period_date", as_index=False)
+        .agg(
+            raw_contract_sales_hkd=("sales_value_gross_hkd", lambda values: values.sum(min_count=1)),
+            gross_pasp_units=("sales_units_gross", lambda values: values.sum(min_count=1)),
+            active_units_eom=("active_units_eom", lambda values: values.sum(min_count=1)),
+            phase_count=("srpe_development_id", "nunique"),
+            covered_phase_count=("month_status", lambda values: int(values.ne("not_covered").sum())),
+            not_covered_phase_count=("month_status", lambda values: int(values.eq("not_covered").sum())),
+            observed_transaction_phase_count=("month_status", lambda values: int(values.eq("observed_transactions").sum())),
+            observed_zero_phase_count=("month_status", lambda values: int(values.eq("observed_zero_transactions").sum())),
+        )
+        .sort_values("period_date")
+    )
+    history["coverage_ratio_pct"] = history["covered_phase_count"] / history["phase_count"] * 100
+
+    def clean_number(value: Any, *, integer: bool = False) -> Any:
+        try:
+            if pd.isna(value):
+                return None
+        except (TypeError, ValueError):
+            pass
+        return int(value) if integer else float(value)
+
+    history_rows = [
+        {
+            "date": row["period_date"].strftime("%Y-%m-%d"),
+            "raw_contract_sales_hkd_m": round(clean_number(row["raw_contract_sales_hkd"]) / 1_000_000, 4) if clean_number(row["raw_contract_sales_hkd"]) is not None else None,
+            "gross_pasp_units": clean_number(row["gross_pasp_units"], integer=True),
+            "active_units_eom": clean_number(row["active_units_eom"], integer=True),
+            "phase_count": int(row["phase_count"]),
+            "covered_phase_count": int(row["covered_phase_count"]),
+            "not_covered_phase_count": int(row["not_covered_phase_count"]),
+            "coverage_ratio_pct": round(float(row["coverage_ratio_pct"]), 4),
+            "observed_transaction_phase_count": int(row["observed_transaction_phase_count"]),
+            "observed_zero_phase_count": int(row["observed_zero_phase_count"]),
+            "ownership_policy": "leading_indicator_only",
+        }
+        for _, row in history.iterrows()
+    ]
+    latest = signal.sort_values("period_date").groupby("srpe_development_id", as_index=False).tail(1)
+    latest = latest.sort_values(["candidate_status", "srpe_development_id"], na_position="last")
+    timing = timing_bridge.copy() if timing_bridge is not None else pd.DataFrame()
+    timing_map = {}
+    if not timing.empty and {"srpe_development_id", "signal_scope"}.issubset(timing.columns):
+        timing = timing.loc[timing["signal_scope"].eq("current_candidate_signal")].copy()
+        timing["srpe_development_id"] = timing["srpe_development_id"].astype(str)
+        timing_map = timing.set_index("srpe_development_id").to_dict("index")
+    latest_rows: list[dict[str, Any]] = []
+    for _, row in latest.iterrows():
+        def clean(value: Any) -> Any:
+            try:
+                return None if pd.isna(value) else value
+            except (TypeError, ValueError):
+                return value
+        phase_timing = timing_map.get(str(row.get("srpe_development_id")), {})
+        latest_rows.append(
+            {
+                "project_id": clean(row.get("project_id")),
+                "srpe_development_id": clean(row.get("srpe_development_id")),
+                "development_name": clean(row.get("development_name")),
+                "phase_name": clean(row.get("phase_name")),
+                "candidate_status": clean(row.get("candidate_status")),
+                "latest_period": row["period_date"].strftime("%Y-%m"),
+                "sales_units_gross": clean_number(row.get("sales_units_gross"), integer=True),
+                "raw_contract_sales_hkd": round(clean_number(row.get("sales_value_gross_hkd")), 2) if clean_number(row.get("sales_value_gross_hkd")) is not None else None,
+                "active_units_eom": (
+                    clean_number(row.get("active_units_eom"), integer=True)
+                    if clean_number(row.get("active_units_eom"), integer=True) is not None
+                    else clean_number(phase_timing.get("active_units_latest"), integer=True)
+                ),
+                "published_inventory_units": clean(row.get("published_inventory_units")),
+                "sell_through_pct_eom": clean(row.get("sell_through_pct_eom")),
+                "month_status": clean(row.get("month_status")),
+                "coverage_end": clean(row.get("coverage_end")),
+                "ownership_review_status": clean(row.get("ownership_review_status")) or "blocked_interval_missing",
+                "handover_disclosure_status": clean(phase_timing.get("handover_disclosure_status")),
+                "completion_window": clean(phase_timing.get("completion_window")),
+                "bd_occupation_status": clean(phase_timing.get("bd_occupation_status")),
+                "timing_bridge_status": clean(phase_timing.get("bridge_status")),
+                "model_use": "leading_indicator_only",
+            }
+        )
+    return history_rows, latest_rows
+
+
 def _stamp_sources(generated_at: str) -> list[dict[str, Any]]:
     result = []
     for source in PUBLIC_SOURCES.values():
@@ -861,6 +1547,8 @@ def build_artifact(
     raw_new_series: dict[str, pd.DataFrame] | None = None,
     raw_land_disposals: pd.DataFrame | None = None,
     raw_srpe_signals: pd.DataFrame | None = None,
+    raw_shkp_leading_signals: pd.DataFrame | None = None,
+    raw_28hse_reconciliation: pd.DataFrame | None = None,
     *,
     now: datetime | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -889,7 +1577,29 @@ def build_artifact(
     df_csi = new_series.get("centaline_csi", pd.DataFrame())
     df_rvd_office = new_series.get("rvd_office", pd.DataFrame())
     df_rvd_retail = new_series.get("rvd_retail", pd.DataFrame())
+    df_rvd_office_vacancy = new_series.get("rvd_office_vacancy", pd.DataFrame())
+    df_rvd_office_stock = new_series.get("rvd_office_stock", pd.DataFrame())
+    df_rvd_commercial_stock = new_series.get("rvd_commercial_stock", pd.DataFrame())
+    df_rvd_commercial_forecast = new_series.get("rvd_commercial_forecast", pd.DataFrame())
+    df_cnsd_retail_control = new_series.get("cnsd_retail_control", pd.DataFrame())
+    df_tourism_occupancy = new_series.get("tourism_occupancy", pd.DataFrame())
+    df_tourism_adr = new_series.get("tourism_adr", pd.DataFrame())
+    df_tourism_rooms = new_series.get("tourism_rooms", pd.DataFrame())
+    df_shkp_quarterly = new_series.get("shkp_quarterly_events", pd.DataFrame())
+    df_shkp_quarterly_facts = new_series.get("shkp_quarterly_facts", pd.DataFrame())
+    df_shkp_commercial_assets = new_series.get("shkp_commercial_assets", pd.DataFrame())
+    df_shkp_financial_disclosed = new_series.get("shkp_financial_disclosed", pd.DataFrame())
+    df_shkp_financial_recurring = new_series.get("shkp_financial_recurring", pd.DataFrame())
+    df_shkp_financial_actuals = new_series.get("shkp_financial_actuals", pd.DataFrame())
+    df_shkp_financial_reconciliation = new_series.get("shkp_financial_reconciliation", pd.DataFrame())
+    df_shkp_financial_consensus = new_series.get("shkp_financial_consensus", pd.DataFrame())
+    df_shkp_financial_vintage = new_series.get("shkp_financial_vintage", pd.DataFrame())
+    df_shkp_financial_coverage = new_series.get("shkp_financial_coverage", pd.DataFrame())
+    df_shkp_sales_handover_phase = new_series.get("shkp_sales_handover_phase", pd.DataFrame())
+    df_shkp_sales_handover_annual = new_series.get("shkp_sales_handover_annual", pd.DataFrame())
     df_srpe_signals = raw_srpe_signals if raw_srpe_signals is not None else pd.DataFrame()
+    df_shkp_leading_signals = raw_shkp_leading_signals if raw_shkp_leading_signals is not None else pd.DataFrame()
+    df_28hse_reconciliation = raw_28hse_reconciliation if raw_28hse_reconciliation is not None else pd.DataFrame()
 
     # New normalized tranches are deliberately kept optional.  A clean
     # checkout can still build the legacy artifact while a local or scheduled
@@ -903,6 +1613,146 @@ def build_artifact(
     csi_rows = _index_history_rows(df_csi, metric="sentiment", date_format="%Y-%m-%d")
     rvd_office_rows = _commercial_history_rows(df_rvd_office, metric="rental_index")
     rvd_retail_rows = _commercial_history_rows(df_rvd_retail)
+
+    def _control_rows(
+        frame: pd.DataFrame,
+        *,
+        metric: str | None = None,
+        category_column: str = "category",
+        series_column: str = "segment",
+        category_values: set[str] | None = None,
+        max_rows: int = 2_000,
+    ) -> list[dict[str, Any]]:
+        if frame is None or frame.empty or not {"date", "value"}.issubset(frame.columns):
+            return []
+        selected = frame.copy()
+        if metric is not None and "metric" in selected.columns:
+            selected = selected.loc[selected["metric"].eq(metric)]
+        if category_values is not None and category_column in selected.columns:
+            selected = selected.loc[selected[category_column].astype(str).isin(category_values)]
+        rows: list[dict[str, Any]] = []
+        for _, row in selected.iterrows():
+            date = pd.to_datetime(row.get("date"), errors="coerce")
+            value = pd.to_numeric(row.get("value"), errors="coerce")
+            if pd.isna(date) or pd.isna(value):
+                continue
+            series_value = row.get(series_column)
+            if pd.isna(series_value) or str(series_value).strip() == "":
+                series_value = row.get(category_column, row.get("metric", "value"))
+            rows.append({
+                "date": date.strftime("%Y-%m"),
+                "series": str(series_value),
+                "value": round(float(value), 4),
+                "metric": str(row.get("metric", metric or "value")),
+                "unit": row.get("unit"),
+                "is_provisional": bool(row.get("is_provisional", False)),
+            })
+        rows.sort(key=lambda item: (item["series"], item["date"], item["metric"]))
+        return rows[-max_rows:] if len(rows) > max_rows else rows
+
+    cnsd_retail_rows = _control_rows(
+        df_cnsd_retail_control,
+        category_column="category",
+        series_column="metric",
+        category_values={"All retail outlet"},
+        max_rows=1_500,
+    )
+    tourism_occupancy_rows = _control_rows(df_tourism_occupancy, series_column="category", max_rows=500)
+    tourism_adr_rows = _control_rows(df_tourism_adr, series_column="category", max_rows=500)
+    tourism_rooms_rows = _control_rows(df_tourism_rooms, series_column="category", max_rows=500)
+    rvd_office_vacancy_rows = _control_rows(df_rvd_office_vacancy, metric="vacancy_pct", series_column="segment", max_rows=500)
+    rvd_office_stock_rows = _control_rows(
+        df_rvd_office_stock,
+        metric="vacancy_pct",
+        category_column="district",
+        series_column="district",
+        category_values={"HONG KONG", "KOWLOON", "NEW TERRITORIES"},
+        max_rows=500,
+    )
+    rvd_commercial_vacancy_rows = _control_rows(
+        df_rvd_commercial_stock,
+        metric="vacancy_pct",
+        category_column="district",
+        series_column="district",
+        category_values={"HONG KONG", "KOWLOON", "NEW TERRITORIES"},
+        max_rows=500,
+    )
+    rvd_commercial_forecast_rows = _control_rows(
+        df_rvd_commercial_forecast,
+        metric="forecast_completions",
+        category_column="district",
+        series_column="district",
+        category_values={"HONG KONG", "KOWLOON", "NEW TERRITORIES"},
+        max_rows=500,
+    )
+    shkp_quarterly_event_rows = []
+    if not df_shkp_quarterly.empty:
+        selected_events = df_shkp_quarterly.loc[
+            df_shkp_quarterly.get("property_relevance", pd.Series(dtype="string")).eq("property")
+        ].copy()
+        for _, row in selected_events.head(120).iterrows():
+            shkp_quarterly_event_rows.append({
+                "date": str(row.get("event_date") or row.get("quarter_end") or "")[:10],
+                "quarter": row.get("quarter_label"),
+                "event_type": row.get("event_type"),
+                "asset_class": row.get("asset_class"),
+                "geography": row.get("geography"),
+                "project": row.get("project_label") or "—",
+                "title": row.get("title"),
+                "source_url": row.get("document_url"),
+                "date_semantics": row.get("event_date_semantics"),
+            })
+        shkp_quarterly_event_rows.sort(key=lambda item: item["date"], reverse=True)
+    shkp_quarterly_fact_rows = []
+    if not df_shkp_quarterly_facts.empty:
+        fact_slice = df_shkp_quarterly_facts.sort_values(
+            ["event_date", "fact_type", "fact_id"], ascending=[False, True, True], na_position="last"
+        ).head(160)
+        for _, row in fact_slice.iterrows():
+            shkp_quarterly_fact_rows.append(
+                {
+                    "date": str(row.get("event_date") or row.get("quarter_end") or "")[:10],
+                    "quarter": row.get("quarter_label"),
+                    "project": row.get("project_label") or "—",
+                    "asset_class": row.get("asset_class"),
+                    "fact_type": row.get("fact_type"),
+                    "value": float(row["value"]) if pd.notna(row.get("value")) else None,
+                    "unit": row.get("unit"),
+                    "confidence": row.get("confidence"),
+                    "fact_text": row.get("fact_text"),
+                    "source_url": row.get("source_url"),
+                    "page": int(row["page_number"]) if pd.notna(row.get("page_number")) else None,
+                }
+            )
+    shkp_commercial_asset_rows = []
+    if not df_shkp_commercial_assets.empty:
+        for _, row in df_shkp_commercial_assets.head(180).iterrows():
+            shkp_commercial_asset_rows.append({
+                "asset_id": row.get("asset_id"),
+                "asset_name": row.get("canonical_name") or row.get("name_raw"),
+                "asset_class": row.get("asset_class"),
+                "asset_subtype": row.get("asset_subtype"),
+                "status": row.get("status"),
+                "source_layer": row.get("source_layer"),
+                "district": row.get("district"),
+                "group_interest_pct": row.get("group_interest_pct"),
+                "as_of_date": row.get("as_of_date"),
+                "completion_window": row.get("completion_window"),
+                "total_gfa_sqft": row.get("total_gfa_sqft"),
+                "source_url": row.get("source_url"),
+                "coverage_status": row.get("coverage_status"),
+            })
+    shkp_financial_bridge_rows = _shkp_financial_bridge_rows(
+        disclosed=df_shkp_financial_disclosed,
+        recurring=df_shkp_financial_recurring,
+        actuals=df_shkp_financial_actuals,
+        reconciliation=df_shkp_financial_reconciliation,
+        consensus=df_shkp_financial_consensus,
+        vintage_coverage=df_shkp_financial_vintage,
+        coverage=df_shkp_financial_coverage,
+        timing_phase=df_shkp_sales_handover_phase,
+        timing_annual=df_shkp_sales_handover_annual,
+    )
     (
         srpe_developer_monthly_rows,
         srpe_sell_through_rows,
@@ -912,6 +1762,15 @@ def build_artifact(
         srpe_sell_through_kpi,
         srpe_projects_kpi,
     ) = _srpe_signal_views(df_srpe_signals)
+    shkp_leading_history_rows, shkp_leading_latest_rows = _shkp_leading_signal_views(
+        df_shkp_leading_signals,
+        timing_bridge=df_shkp_sales_handover_phase,
+    )
+    shkp_leading_phase_count = len({
+        str(row.get("srpe_development_id"))
+        for row in shkp_leading_latest_rows
+        if row.get("srpe_development_id") not in (None, "", "nan")
+    })
     srpe_signal_history_rows: list[dict[str, Any]] = []
     if not df_srpe_signals.empty:
         history_columns = [
@@ -1151,6 +2010,62 @@ def build_artifact(
     ):
         if health_row:
             health.append(health_row)
+    for health_row in (
+        _new_source_health(df_shkp_quarterly, source_id="shkp_quarterly", dataset="SHKP Quarterly property events", now=now, note="Issuer headline events; property relevance and project aliases are heuristic.") if not df_shkp_quarterly.empty else None,
+        _new_source_health(df_shkp_quarterly_facts, source_id="shkp_quarterly", dataset="SHKP Quarterly numeric facts", now=now, note="Bounded PDF text extraction of explicit units/areas/rates/milestones; not revenue or ownership.") if not df_shkp_quarterly_facts.empty else None,
+        _new_source_health(df_shkp_commercial_assets, source_id="shkp_commercial_assets", dataset="SHKP Hong Kong commercial asset master", now=now, note="Current/annual-report/pipeline asset observations; no asset-level rent or NOI is inferred.") if not df_shkp_commercial_assets.empty else None,
+        _new_source_health(df_cnsd_retail_control, source_id="cnsd_retail_sales_control", dataset="C&SD retail sales control", now=now, note="Economy-wide retail value/volume indices; not SHKP tenant sales.") if not df_cnsd_retail_control.empty else None,
+        _new_source_health(df_tourism_occupancy, source_id="tourism_hotel_controls", dataset="Tourism hotel occupancy", now=now, note="Rolling five-year hotel-category occupancy; not SHKP hotel occupancy.") if not df_tourism_occupancy.empty else None,
+        _new_source_health(df_tourism_adr, source_id="tourism_hotel_controls", dataset="Tourism hotel achieved room rate", now=now, note="Rolling five-year industry average room rate; not SHKP ADR.") if not df_tourism_adr.empty else None,
+        _new_source_health(df_tourism_rooms, source_id="tourism_hotel_controls", dataset="Tourism hotel room supply", now=now, note="The public file currently ends at 2024-06; retained as a stale catalog/control input until the publisher updates it.", record_type="Catalog", status_override="Stale") if not df_tourism_rooms.empty else None,
+        _new_source_health(df_rvd_office_vacancy, source_id="rvd_commercial_controls", dataset="RVD office vacancy annual", now=now, note="Historical year-end grade-level office vacancy; market control only.") if not df_rvd_office_vacancy.empty else None,
+        _new_source_health(df_rvd_commercial_stock, source_id="rvd_commercial_controls", dataset="RVD commercial stock/vacancy district", now=now, note="Latest annual district snapshot; source does not provide a monthly history here.") if not df_rvd_commercial_stock.empty else None,
+        _new_source_health(df_rvd_commercial_forecast, source_id="rvd_commercial_controls", dataset="RVD commercial forecast completions", now=now, note="Latest annual district forecast snapshot; future-dated by design and not SHKP pipeline.", record_type="Catalog", status_override="Catalog") if not df_rvd_commercial_forecast.empty else None,
+    ):
+        if health_row:
+            health.append(health_row)
+    if shkp_financial_bridge_rows:
+        bridge_periods = pd.to_datetime(
+            [row.get("period") for row in shkp_financial_bridge_rows], errors="coerce"
+        ).dropna()
+        latest_bridge = bridge_periods.max().strftime("%Y-%m-%d") if not bridge_periods.empty else "—"
+        validation_status = (
+            str(df_shkp_financial_coverage.iloc[0].get("validation_status"))
+            if not df_shkp_financial_coverage.empty
+            else "available"
+        )
+        health.append(
+            {
+                "source": PUBLIC_SOURCES["shkp_financial_bridge"]["label"],
+                "dataset": "SHKP HK business financial bridge",
+                "type": "Measure",
+                "status": "Healthy" if validation_status in {"valid", "available"} else "Degraded",
+                "latest_observation": latest_bridge,
+                "records": len(shkp_financial_bridge_rows),
+                "freshness": "Research snapshot",
+                "notes": (
+                    "Official group/segment facts, HK recurring portfolio facts, selected 0016.HK actuals, "
+                    "consensus and PIT diagnostics; no project-level HK revenue split is inferred."
+                ),
+            }
+        )
+    if not df_shkp_sales_handover_phase.empty:
+        timing_dates = pd.to_datetime(
+            df_shkp_sales_handover_phase.get("sales_period_end", pd.Series(dtype="string")),
+            errors="coerce",
+        ).dropna()
+        health.append(
+            {
+                "source": PUBLIC_SOURCES["shkp_sales_handover_bridge"]["label"],
+                "dataset": "SHKP sales / handover / revenue timing bridge",
+                "type": "Measure",
+                "status": "Research",
+                "latest_observation": timing_dates.max().strftime("%Y-%m-%d") if not timing_dates.empty else "—",
+                "records": int(len(df_shkp_sales_handover_phase)),
+                "freshness": "Normalized snapshot",
+                "notes": "Gross SRPE activity aligned to handover evidence and planned windows; no phase-level revenue allocation.",
+            }
+        )
     if srpe_developer_monthly_rows:
         srpe_latest_date = max(row["date"] for row in srpe_developer_monthly_rows)
         health.append(
@@ -1165,6 +2080,19 @@ def build_artifact(
                 "notes": "Six explicitly registered phases; attributable sales use the ownership registry and sell-through uses unique active units.",
             }
         )
+    if shkp_leading_history_rows:
+        health.append(
+            {
+                "source": PUBLIC_SOURCES["srpe_sales"]["label"],
+                "dataset": "SHKP-wide SRPE project leading indicators",
+                "type": "Measure",
+                "status": "Healthy",
+                "latest_observation": shkp_leading_history_rows[-1]["date"],
+                "records": int(len(df_shkp_leading_signals)),
+                "freshness": "Published snapshot",
+                "notes": f"{shkp_leading_phase_count} candidate phases; raw contract activity only. Ownership intervals remain blocked.",
+            }
+        )
 
     # 28Hse new-project catalogue -> small supporting table.
     df_new_projects = (
@@ -1176,8 +2104,13 @@ def build_artifact(
             new_project_rows.append(
                 {
                     "project_name": r.get("project_name"),
+                    "project_url": r.get("project_url"),
                     "location_district": r.get("location_district"),
+                    "status": r.get("status"),
                     "estimated_total_units": float(r["estimated_total_units"]) if pd.notna(r.get("estimated_total_units")) else None,
+                    "remaining_units": float(r["remaining_units"]) if pd.notna(r.get("remaining_units")) else None,
+                    "on_sale_units": float(r["on_sale_units"]) if pd.notna(r.get("on_sale_units")) else None,
+                    "sold_units": float(r["sold_units"]) if pd.notna(r.get("sold_units")) else None,
                     "estimated_move_in_year": int(r["estimated_move_in_year"]) if pd.notna(r.get("estimated_move_in_year")) else None,
                 }
             )
@@ -1480,6 +2413,18 @@ def build_artifact(
         "csi_history": csi_rows,
         "rvd_office_history": rvd_office_rows,
         "rvd_retail_history": rvd_retail_rows,
+        "rvd_office_vacancy_history": rvd_office_vacancy_rows,
+        "rvd_office_stock_vacancy_history": rvd_office_stock_rows,
+        "rvd_commercial_vacancy_history": rvd_commercial_vacancy_rows,
+        "rvd_commercial_forecast_history": rvd_commercial_forecast_rows,
+        "cnsd_retail_sales_history": cnsd_retail_rows,
+        "tourism_hotel_occupancy_history": tourism_occupancy_rows,
+        "tourism_hotel_adr_history": tourism_adr_rows,
+        "tourism_hotel_rooms_history": tourism_rooms_rows,
+        "shkp_quarterly_property_events": shkp_quarterly_event_rows,
+        "shkp_quarterly_numeric_facts": shkp_quarterly_fact_rows,
+        "shkp_hk_commercial_asset_master": shkp_commercial_asset_rows,
+        "shkp_hk_financial_bridge": shkp_financial_bridge_rows,
         "rvd_history": [
             {
                 # One observation per calendar month (see obs_d above).
@@ -1517,6 +2462,15 @@ def build_artifact(
         "srpe_project_sell_through": srpe_sell_through_rows,
         "srpe_latest_project_snapshot": srpe_latest_project_rows,
         "srpe_project_signal_history": srpe_signal_history_rows,
+        "shkp_leading_signal_history": shkp_leading_history_rows,
+        "shkp_leading_phase_latest": shkp_leading_latest_rows,
+        "shkp_28hse_reconciliation": [
+            {
+                key: (None if pd.isna(value) else value)
+                for key, value in row.items()
+            }
+            for row in df_28hse_reconciliation.to_dict("records")
+        ] if not df_28hse_reconciliation.empty else [],
         "source_health": health,
         "source_coverage": coverage,
     }
@@ -2156,6 +3110,180 @@ def build_artifact(
             }
         )
 
+    if shkp_leading_history_rows:
+        charts.append(
+            {
+                "id": "shkp_leading_contract_sales_chart",
+                "title": "SHKP Project Activity — Raw Contract Sales",
+                "subtitle": f"{shkp_leading_phase_count} candidate phases; gross SRPE contract activity in HK$ million, not SHKP-attributable revenue.",
+                "type": "line",
+                "intent": "trend",
+                "dataset": "shkp_leading_signal_history",
+                "sourceId": "srpe_sales",
+                "encodings": {
+                    "x": {"field": "date", "type": "temporal", "label": "Month"},
+                    "y": {"field": "raw_contract_sales_hkd_m", "type": "quantitative", "label": "Raw contract activity (HK$m)"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+            }
+        )
+        charts.append(
+            {
+                "id": "shkp_leading_active_units_chart",
+                "title": "SHKP Project Activity — Month-end Active Units",
+                "subtitle": "Sum of active units for phases whose SRPE register is covered in that month; the coverage chart below shows how many phases are actually covered.",
+                "type": "line",
+                "intent": "trend",
+                "dataset": "shkp_leading_signal_history",
+                "sourceId": "srpe_sales",
+                "encodings": {
+                    "x": {"field": "date", "type": "temporal", "label": "Month"},
+                    "y": {"field": "active_units_eom", "type": "quantitative", "label": "Covered-phase active units"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+            }
+        )
+        charts.append(
+            {
+                "id": "shkp_leading_coverage_chart",
+                "title": "SHKP Project Activity — SRPE Register Coverage",
+                "subtitle": "Covered phase count versus the candidate phase universe; months after a phase's last observed register are marked not covered, not zero sales.",
+                "type": "line",
+                "intent": "trend",
+                "dataset": "shkp_leading_signal_history",
+                "sourceId": "srpe_sales",
+                "encodings": {
+                    "x": {"field": "date", "type": "temporal", "label": "Month"},
+                    "y": {"field": "covered_phase_count", "type": "quantitative", "label": "Covered phases"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+            }
+        )
+
+    if cnsd_retail_rows:
+        charts.append(
+            {
+                "id": "cnsd_retail_sales_control_chart",
+                "title": "Commercial Control — C&SD retail sales",
+                "subtitle": "Monthly all-retail value and volume indices; economy-wide demand control, not SHKP tenant sales.",
+                "type": "line",
+                "intent": "comparison",
+                "dataset": "cnsd_retail_sales_history",
+                "sourceId": "cnsd_retail_sales_control",
+                "encodings": {
+                    "x": {"field": "date", "type": "temporal", "label": "Month"},
+                    "y": {"field": "value", "type": "quantitative", "label": "Index"},
+                    "color": {"field": "series", "type": "nominal", "label": "Measure"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+                "maxRows": 1_500,
+            }
+        )
+    if tourism_occupancy_rows:
+        charts.append(
+            {
+                "id": "tourism_hotel_occupancy_control_chart",
+                "title": "Commercial Control — Hong Kong hotel occupancy",
+                "subtitle": "Monthly occupancy by hotel category; industry control, not SHKP hotel occupancy.",
+                "type": "line",
+                "intent": "comparison",
+                "dataset": "tourism_hotel_occupancy_history",
+                "sourceId": "tourism_hotel_controls",
+                "encodings": {
+                    "x": {"field": "date", "type": "temporal", "label": "Month"},
+                    "y": {"field": "value", "type": "quantitative", "label": "Occupancy (%)"},
+                    "color": {"field": "series", "type": "nominal", "label": "Hotel category"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+                "maxRows": 500,
+            }
+        )
+    if tourism_adr_rows:
+        charts.append(
+            {
+                "id": "tourism_hotel_adr_control_chart",
+                "title": "Commercial Control — Hong Kong hotel achieved room rate",
+                "subtitle": "Monthly industry average achieved room rate by hotel category; not SHKP asset ADR.",
+                "type": "line",
+                "intent": "comparison",
+                "dataset": "tourism_hotel_adr_history",
+                "sourceId": "tourism_hotel_controls",
+                "encodings": {
+                    "x": {"field": "date", "type": "temporal", "label": "Month"},
+                    "y": {"field": "value", "type": "quantitative", "label": "HKD / room"},
+                    "color": {"field": "series", "type": "nominal", "label": "Hotel category"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+                "maxRows": 500,
+            }
+        )
+    if rvd_office_vacancy_rows:
+        charts.append(
+            {
+                "id": "rvd_office_vacancy_control_chart",
+                "title": "Commercial Control — RVD office vacancy",
+                "subtitle": "Historical year-end vacancy by office grade; annual observations, not SHKP occupancy.",
+                "type": "line",
+                "intent": "comparison",
+                "dataset": "rvd_office_vacancy_history",
+                "sourceId": "rvd_commercial_controls",
+                "encodings": {
+                    "x": {"field": "date", "type": "temporal", "label": "Year"},
+                    "y": {"field": "value", "type": "quantitative", "label": "Vacancy (%)"},
+                    "color": {"field": "series", "type": "nominal", "label": "Grade"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+                "maxRows": 500,
+            }
+        )
+    if rvd_commercial_vacancy_rows:
+        charts.append(
+            {
+                "id": "rvd_commercial_vacancy_control_chart",
+                "title": "Commercial Control — RVD private-commercial vacancy",
+                "subtitle": "Latest annual district vacancy snapshot; market control, not SHKP mall occupancy.",
+                "type": "line",
+                "intent": "comparison",
+                "dataset": "rvd_commercial_vacancy_history",
+                "sourceId": "rvd_commercial_controls",
+                "encodings": {
+                    "x": {"field": "date", "type": "temporal", "label": "Year"},
+                    "y": {"field": "value", "type": "quantitative", "label": "Vacancy (%)"},
+                    "color": {"field": "series", "type": "nominal", "label": "Region"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+                "maxRows": 500,
+            }
+        )
+    if rvd_commercial_forecast_rows:
+        charts.append(
+            {
+                "id": "rvd_commercial_forecast_control_chart",
+                "title": "Commercial Control — RVD forecast completions",
+                "subtitle": "Annual private-commercial forecast completions by broad region; not SHKP pipeline capacity.",
+                "type": "line",
+                "intent": "trend",
+                "dataset": "rvd_commercial_forecast_history",
+                "sourceId": "rvd_commercial_controls",
+                "encodings": {
+                    "x": {"field": "date", "type": "temporal", "label": "Year"},
+                    "y": {"field": "value", "type": "quantitative", "label": "Forecast completions (sqft)"},
+                    "color": {"field": "series", "type": "nominal", "label": "Region"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+                "maxRows": 500,
+            }
+        )
+
     tables = [
         {
             "id": "source_health_table",
@@ -2194,6 +3322,115 @@ def build_artifact(
             ],
         },
     ]
+
+    if shkp_quarterly_event_rows:
+        tables.append(
+            {
+                "id": "shkp_quarterly_property_events_table",
+                "title": "SHKP Quarterly — Hong Kong property events",
+                "subtitle": "Issuer headline events classified from quarterly PDFs; event dates may use a quarter-end proxy when no publication date is exposed.",
+                "dataset": "shkp_quarterly_property_events",
+                "sourceId": "shkp_quarterly",
+                "defaultSort": {"field": "date", "direction": "desc"},
+                "density": "dense",
+                "layout": "full",
+                "columns": [
+                    {"field": "date", "label": "Date", "type": "date"},
+                    {"field": "quarter", "label": "Quarter", "type": "text"},
+                    {"field": "event_type", "label": "Event type", "type": "text"},
+                    {"field": "asset_class", "label": "Asset class", "type": "text"},
+                    {"field": "geography", "label": "Geography", "type": "text"},
+                    {"field": "project", "label": "Project", "type": "text"},
+                    {"field": "title", "label": "Issuer headline", "type": "text"},
+                    {"field": "date_semantics", "label": "Date semantics", "type": "text"},
+                ],
+            }
+        )
+    if shkp_quarterly_fact_rows:
+        tables.append(
+            {
+                "id": "shkp_quarterly_numeric_facts_table",
+                "title": "SHKP Quarterly — extracted Hong Kong numeric facts",
+                "subtitle": "Bounded PDF-text facts with page and source sentence; research context only, not revenue or ownership.",
+                "dataset": "shkp_quarterly_numeric_facts",
+                "sourceId": "shkp_quarterly",
+                "defaultSort": {"field": "date", "direction": "desc"},
+                "density": "dense",
+                "layout": "full",
+                "columns": [
+                    {"field": "date", "label": "Date", "type": "date"},
+                    {"field": "quarter", "label": "Quarter", "type": "text"},
+                    {"field": "project", "label": "Project", "type": "text"},
+                    {"field": "asset_class", "label": "Asset class", "type": "text"},
+                    {"field": "fact_type", "label": "Fact type", "type": "text"},
+                    {"field": "value", "label": "Value", "format": "number"},
+                    {"field": "unit", "label": "Unit", "type": "text"},
+                    {"field": "confidence", "label": "Confidence", "type": "text"},
+                    {"field": "page", "label": "Page", "format": "number"},
+                    {"field": "fact_text", "label": "Evidence", "type": "text"},
+                ],
+            }
+        )
+    if shkp_commercial_asset_rows:
+        tables.append(
+            {
+                "id": "shkp_hk_commercial_asset_master_table",
+                "title": "SHKP — Hong Kong commercial asset master",
+                "subtitle": "Current directory, completed-property and pipeline observations; repeated assets remain separated by source layer.",
+                "dataset": "shkp_hk_commercial_asset_master",
+                "sourceId": "shkp_commercial_assets",
+                "defaultSort": {"field": "asset_name", "direction": "asc"},
+                "density": "dense",
+                "layout": "full",
+                "columns": [
+                    {"field": "asset_name", "label": "Asset", "type": "text"},
+                    {"field": "asset_class", "label": "Class", "type": "text"},
+                    {"field": "asset_subtype", "label": "Subtype", "type": "text"},
+                    {"field": "status", "label": "Status", "type": "text"},
+                    {"field": "source_layer", "label": "Source layer", "type": "text"},
+                    {"field": "district", "label": "District", "type": "text"},
+                    {"field": "group_interest_pct", "label": "Group interest (%)", "format": "number"},
+                    {"field": "as_of_date", "label": "As of", "type": "date"},
+                    {"field": "completion_window", "label": "Completion window", "type": "text"},
+                    {"field": "total_gfa_sqft", "label": "Total GFA (sqft)", "format": "number"},
+                    {"field": "coverage_status", "label": "Coverage", "type": "text"},
+                ],
+            }
+        )
+    if shkp_financial_bridge_rows:
+        tables.append(
+            {
+                "id": "shkp_hk_financial_bridge_table",
+                "title": "SHKP — Hong Kong business financial bridge",
+                "subtitle": "Official group/segment facts, HK recurring portfolio observations, selected 0016.HK actuals, consensus and PIT diagnostics. Row types must not be summed together.",
+                "dataset": "shkp_hk_financial_bridge",
+                "sourceId": "shkp_financial_bridge",
+                "defaultSort": {"field": "period", "direction": "desc"},
+                "density": "dense",
+                "layout": "full",
+                "columns": [
+                    {"field": "row_type", "label": "Row type", "type": "text"},
+                    {"field": "period", "label": "Period", "type": "text"},
+                    {"field": "target_period", "label": "Target recognition period", "type": "text"},
+                    {"field": "period_type", "label": "Period type", "type": "text"},
+                    {"field": "layer", "label": "Layer", "type": "text"},
+                    {"field": "geography", "label": "Geography", "type": "text"},
+                    {"field": "asset_class", "label": "Asset class", "type": "text"},
+                    {"field": "metric", "label": "Metric", "type": "text"},
+                    {"field": "statistic", "label": "Statistic", "type": "text"},
+                    {"field": "value", "label": "Value", "format": "number"},
+                    {"field": "comparison_value", "label": "Comparison value", "format": "number"},
+                    {"field": "difference_pct", "label": "Difference (%)", "format": "number"},
+                    {"field": "unit", "label": "Unit", "type": "text"},
+                    {"field": "currency", "label": "Currency", "type": "text"},
+                    {"field": "status", "label": "Status", "type": "text"},
+                    {"field": "point_in_time_quality", "label": "PIT quality", "type": "text"},
+                    {"field": "model_use", "label": "Model use", "type": "text"},
+                    {"field": "source", "label": "Source", "type": "text"},
+                    {"field": "caveat", "label": "Caveat", "type": "text"},
+                ],
+            }
+        )
 
     if hkma_activity_rows:
         latest_activity = hkma_activity_rows[-1] if hkma_activity_rows else {}
@@ -2250,6 +3487,14 @@ def build_artifact(
             _new_project_columns.append({"field": "location_district", "label": "District", "type": "text"})
         if any(row.get("estimated_total_units") is not None for row in new_project_rows):
             _new_project_columns.append({"field": "estimated_total_units", "label": "Est. Units", "format": "number"})
+        if any(row.get("remaining_units") is not None for row in new_project_rows):
+            _new_project_columns.append({"field": "remaining_units", "label": "Remaining", "format": "number"})
+        if any(row.get("on_sale_units") is not None for row in new_project_rows):
+            _new_project_columns.append({"field": "on_sale_units", "label": "On Sale", "format": "number"})
+        if any(row.get("sold_units") is not None for row in new_project_rows):
+            _new_project_columns.append({"field": "sold_units", "label": "Sold", "format": "number"})
+        if any(row.get("status") for row in new_project_rows):
+            _new_project_columns.append({"field": "status", "label": "Status", "type": "text"})
         if any(row.get("estimated_move_in_year") is not None for row in new_project_rows):
             _new_project_columns.append({"field": "estimated_move_in_year", "label": "Est. Move-in Year", "format": "number"})
         tables.append(
@@ -2262,6 +3507,66 @@ def build_artifact(
                 "density": "dense",
                 "layout": "half",
                 "columns": _new_project_columns,
+            }
+        )
+
+    if shkp_leading_latest_rows:
+        tables.append(
+            {
+                "id": "shkp_leading_phase_latest_table",
+                "title": "SHKP Project Activity — Latest Phase Snapshot",
+                "subtitle": "Leading indicators only. Handover fields are separate annual-report / planned-window / BD snapshot evidence; no row is treated as SHKP-attributable sales or phase-level revenue.",
+                "dataset": "shkp_leading_phase_latest",
+                "sourceId": "srpe_sales",
+                "defaultSort": {"field": "latest_period", "direction": "desc"},
+                "density": "dense",
+                "layout": "full",
+                "columns": [
+                    {"field": "srpe_development_id", "label": "SRPE Phase", "type": "text"},
+                    {"field": "development_name", "label": "Development", "type": "text"},
+                    {"field": "phase_name", "label": "Phase", "type": "text"},
+                    {"field": "candidate_status", "label": "Candidate Status", "type": "text"},
+                    {"field": "latest_period", "label": "Latest", "type": "date"},
+                    {"field": "sales_units_gross", "label": "Gross PASP Units", "format": "number"},
+                    {"field": "raw_contract_sales_hkd", "label": "Raw Sales (HK$)", "format": "number"},
+                    {"field": "active_units_eom", "label": "Active Units EOM", "format": "number"},
+                    {"field": "published_inventory_units", "label": "Published Inventory", "format": "number"},
+                    {"field": "sell_through_pct_eom", "label": "Sell-through %", "format": "percent"},
+                    {"field": "month_status", "label": "Month Status", "type": "text"},
+                    {"field": "coverage_end", "label": "Register Coverage End", "type": "date"},
+                    {"field": "ownership_review_status", "label": "Ownership Review", "type": "text"},
+                    {"field": "handover_disclosure_status", "label": "Handover Evidence", "type": "text"},
+                    {"field": "completion_window", "label": "Completion Window", "type": "text"},
+                    {"field": "bd_occupation_status", "label": "BD OP Snapshot", "type": "text"},
+                ],
+            }
+        )
+
+    if not df_28hse_reconciliation.empty:
+        tables.append(
+            {
+                "id": "shkp_28hse_reconciliation_table",
+                "title": "28Hse ↔ SRPE Reconciliation Coverage",
+                "subtitle": "Exact-unique alias matches only; non-matches are coverage gaps, not zero inventory.",
+                "dataset": "shkp_28hse_reconciliation",
+                "sourceId": "hse28_new_projects",
+                "defaultSort": {"field": "match_status", "direction": "asc"},
+                "density": "dense",
+                "layout": "full",
+                "columns": [
+                    {"field": "row_side", "label": "Side", "type": "text"},
+                    {"field": "hse28_project_name", "label": "28Hse Project", "type": "text"},
+                    {"field": "srpe_development_id", "label": "SRPE Phase", "type": "text"},
+                    {"field": "srpe_phase_name", "label": "SRPE Phase Name", "type": "text"},
+                    {"field": "hse28_status", "label": "28Hse Status", "type": "text"},
+                    {"field": "hse28_total_units", "label": "28Hse Total", "format": "number"},
+                    {"field": "hse28_remaining_units", "label": "28Hse Remaining", "format": "number"},
+                    {"field": "hse28_sold_units", "label": "28Hse Sold", "format": "number"},
+                    {"field": "srpe_active_units_eom", "label": "SRPE Active EOM", "format": "number"},
+                    {"field": "srpe_published_inventory_units", "label": "SRPE Inventory", "format": "number"},
+                    {"field": "match_status", "label": "Match Status", "type": "text"},
+                    {"field": "coverage_note", "label": "Coverage Note", "type": "text"},
+                ],
             }
         )
 
@@ -2413,6 +3718,22 @@ def build_artifact(
         blocks.append({"id": "rvd_office_chart_block", "type": "chart", "chartId": "rvd_office_trend"})
     if rvd_retail_rows:
         blocks.append({"id": "rvd_retail_chart_block", "type": "chart", "chartId": "rvd_retail_trend"})
+    if rvd_office_vacancy_rows:
+        blocks.append({"id": "rvd_office_vacancy_control_block", "type": "chart", "chartId": "rvd_office_vacancy_control_chart"})
+    if rvd_commercial_vacancy_rows:
+        blocks.append({"id": "rvd_commercial_vacancy_control_block", "type": "chart", "chartId": "rvd_commercial_vacancy_control_chart"})
+    if rvd_commercial_forecast_rows:
+        blocks.append({"id": "rvd_commercial_forecast_control_block", "type": "chart", "chartId": "rvd_commercial_forecast_control_chart"})
+    if cnsd_retail_rows:
+        blocks.append({"id": "cnsd_retail_control_block", "type": "chart", "chartId": "cnsd_retail_sales_control_chart"})
+    if tourism_occupancy_rows:
+        blocks.append({"id": "tourism_occupancy_control_block", "type": "chart", "chartId": "tourism_hotel_occupancy_control_chart"})
+    if tourism_adr_rows:
+        blocks.append({"id": "tourism_adr_control_block", "type": "chart", "chartId": "tourism_hotel_adr_control_chart"})
+    if shkp_quarterly_event_rows:
+        blocks.append({"id": "shkp_quarterly_events_block", "type": "table", "tableId": "shkp_quarterly_property_events_table"})
+    if shkp_commercial_asset_rows:
+        blocks.append({"id": "shkp_commercial_asset_master_block", "type": "table", "tableId": "shkp_hk_commercial_asset_master_table"})
 
     if epi_eri_rows:
         blocks.append({"id": "epi_eri_chart_block", "type": "chart", "chartId": "epi_eri_chart"})
@@ -2455,6 +3776,37 @@ def build_artifact(
         blocks.append({"id": "srpe_project_sell_through_chart_block", "type": "chart", "chartId": "srpe_project_sell_through_chart"})
     if srpe_latest_project_rows:
         blocks.append({"id": "srpe_latest_project_snapshot_block", "type": "table", "tableId": "srpe_latest_project_snapshot_table"})
+
+    # These SHKP-wide charts/tables are declared conditionally above, so they
+    # must also be added to manifest.blocks. The portable renderer renders
+    # blocks (not every chart/table declaration) and would otherwise omit the
+    # new leading-indicator views while still showing their source-health row.
+    if shkp_leading_history_rows:
+        blocks.append(
+            {
+                "id": "shkp_leading_indicators_section",
+                "type": "markdown",
+                "body": f"## SHKP project activity monitoring\n\nThese {shkp_leading_phase_count} candidate phases are raw SRPE contract-activity leading indicators only. They are not SHKP-attributable sales or booked revenue until a dated ownership interval is approved.",
+            }
+        )
+        blocks.append({"id": "shkp_leading_contract_sales_block", "type": "chart", "chartId": "shkp_leading_contract_sales_chart"})
+        blocks.append({"id": "shkp_leading_active_units_block", "type": "chart", "chartId": "shkp_leading_active_units_chart"})
+        blocks.append({"id": "shkp_leading_coverage_block", "type": "chart", "chartId": "shkp_leading_coverage_chart"})
+    if shkp_leading_latest_rows:
+        blocks.append({"id": "shkp_leading_phase_latest_block", "type": "table", "tableId": "shkp_leading_phase_latest_table"})
+    if not df_28hse_reconciliation.empty:
+        blocks.append({"id": "shkp_28hse_reconciliation_block", "type": "table", "tableId": "shkp_28hse_reconciliation_table"})
+    if shkp_quarterly_fact_rows:
+        blocks.append({"id": "shkp_quarterly_numeric_facts_block", "type": "table", "tableId": "shkp_quarterly_numeric_facts_table"})
+    if shkp_financial_bridge_rows:
+        blocks.append(
+            {
+                "id": "shkp_hk_financial_bridge_section",
+                "type": "markdown",
+                "body": "## SHKP Hong Kong business financial bridge\n\nThis is a monitoring/evidence table, not a synthetic HK-only revenue series. Group and segment disclosures may include the Group's share of joint ventures and associates; sibling financial-data actuals currently lack complete original announcement dates; consensus is a current snapshot only.",
+            }
+        )
+        blocks.append({"id": "shkp_hk_financial_bridge_block", "type": "table", "tableId": "shkp_hk_financial_bridge_table"})
 
     blocks.extend([
         {"id": "source_health_table", "type": "table", "tableId": "source_health_table"},
@@ -2542,12 +3894,109 @@ def _load_dataset_from_committed_artifact(dataset_key: str) -> pd.DataFrame:
     return pd.DataFrame(rows) if isinstance(rows, list) else pd.DataFrame()
 
 
+FRESHNESS_MAX_DAYS = 45
+
+
+def _extract_latest_date(frame: pd.DataFrame) -> pd.Timestamp | None:
+    if frame.empty:
+        return None
+    date_cols = [
+        col for col in ("date", "observation_date", "observation_month", "period", "as_of_date", "event_date", "quarter_end")
+        if col in frame.columns
+    ]
+    if not date_cols:
+        date_cols = [col for col in frame.columns if any(kw in str(col).lower() for kw in ("date", "period", "month"))]
+
+    max_dates = []
+    for col in date_cols:
+        parsed = pd.to_datetime(frame[col], errors="coerce").dropna()
+        if not parsed.empty:
+            max_dates.append(parsed.max())
+    if not max_dates:
+        return None
+    latest = max(max_dates)
+    if pd.isna(latest):
+        return None
+    return pd.Timestamp(latest)
+
+
 def _load_normalized_or_fetch(dataset_name: str, label: str, fetch_fn) -> pd.DataFrame:
-    """Prefer durable normalized output, with a bounded live-fetch fallback."""
+    """Prefer durable normalized output, with a bounded live-fetch fallback and freshness check."""
     normalized = load_latest_normalized(dataset_name)
     if not normalized.empty:
+        latest_date = _extract_latest_date(normalized)
+        if latest_date is not None:
+            latest_naive = latest_date.tz_localize(None) if latest_date.tzinfo else latest_date
+            now = pd.Timestamp.now().normalize()
+            if (now - latest_naive.normalize()).days <= FRESHNESS_MAX_DAYS:
+                normalized.attrs["is_cached"] = True
+                return normalized
+
+    fetched = _safe_fetch(label, fetch_fn)
+    if not fetched.empty:
+        fetched.attrs["is_cached"] = False
+        return fetched
+    if not normalized.empty:
+        normalized.attrs["is_cached"] = True
         return normalized
-    return _safe_fetch(label, fetch_fn)
+    return pd.DataFrame()
+
+
+def _load_shkp_financial_model_frames() -> dict[str, pd.DataFrame]:
+    """Load the ticker-scoped SHKP financial bridge without copying DuckDB.
+
+    A local refresh may have already materialised the model inputs.  If the
+    essential layers are absent, run the model's read-only sibling-DB join once
+    (without fetching price history) and reload the normalized snapshots.  A
+    clean CI checkout without the sibling repository simply returns empty
+    frames; the dashboard then reports the bridge as unavailable rather than
+    fabricating financial rows.
+    """
+    dataset_map = {
+        "disclosed": "shkp_financial_model_disclosed_facts",
+        "recurring": "shkp_financial_model_recurring_portfolio_facts",
+        "actuals": "shkp_financial_model_financial_data_actuals",
+        "reconciliation": "shkp_financial_model_financial_reconciliation",
+        "consensus": "shkp_financial_model_consensus",
+        "vintage_coverage": "shkp_financial_model_vintage_coverage",
+        "coverage": "shkp_financial_model_coverage",
+    }
+
+    def load() -> dict[str, pd.DataFrame]:
+        return {key: load_latest_normalized(dataset_name) for key, dataset_name in dataset_map.items()}
+
+    frames = load()
+    if any(frames[key].empty for key in ("disclosed", "recurring", "actuals")):
+        try:
+            run_shkp_financial_model(include_price_history=False)
+            frames = load()
+        except Exception as exc:  # noqa: BLE001 - optional sibling dependency
+            print(f"  [hk_real_estate] SHKP financial bridge unavailable, continuing without it: {exc}", file=sys.stderr)
+    return frames
+
+
+def _load_shkp_sales_handover_bridge_frames() -> dict[str, pd.DataFrame]:
+    """Load the latest timing bridge, materialising it once when absent."""
+    dataset_map = {
+        "phase": SHKP_SALES_HANDOVER_PHASE_DATASET,
+        "annual": SHKP_SALES_HANDOVER_ANNUAL_DATASET,
+        "coverage": "shkp_sales_handover_revenue_coverage",
+    }
+
+    def load() -> dict[str, pd.DataFrame]:
+        return {key: load_latest_normalized(dataset_name) for key, dataset_name in dataset_map.items()}
+
+    frames = load()
+    if frames["phase"].empty:
+        try:
+            run_shkp_sales_handover_revenue_bridge()
+            frames = load()
+        except Exception as exc:  # noqa: BLE001 - optional timing layer
+            print(
+                f"  [hk_real_estate] SHKP sales/handover bridge unavailable, continuing without it: {exc}",
+                file=sys.stderr,
+            )
+    return frames
 
 
 def _fetch_centaline_history(index_code: str) -> pd.DataFrame:
@@ -2582,6 +4031,37 @@ def fetch_live_frames() -> dict[str, pd.DataFrame]:
     csi = _load_normalized_or_fetch("centaline_csi_weekly", "Centaline CSI", lambda: _fetch_centaline_history("CSI"))
     rvd_office = _load_normalized_or_fetch("rvd_office_rental_index_monthly", "RVD office rental", fetch_rvd_office_rental_index)
     rvd_retail = _load_normalized_or_fetch("rvd_retail_index_monthly", "RVD retail rental", fetch_rvd_retail_rental_index)
+    rvd_office_vacancy = _load_normalized_or_fetch("rvd_office_vacancy_annual", "RVD office vacancy", fetch_rvd_office_vacancy_annual)
+    rvd_office_stock = _load_normalized_or_fetch("rvd_office_stock_vacancy_district_annual", "RVD office stock/vacancy", fetch_rvd_office_stock_vacancy_district)
+    rvd_commercial_stock = _load_normalized_or_fetch("rvd_commercial_stock_vacancy_district_annual", "RVD commercial stock/vacancy", fetch_rvd_commercial_stock_vacancy_district)
+    rvd_commercial_forecast = _load_normalized_or_fetch("rvd_commercial_forecast_completions_annual", "RVD commercial forecast completions", fetch_rvd_commercial_forecast_completions)
+    cnsd_retail_control = _load_normalized_or_fetch("cnsd_retail_sales_control_monthly", "C&SD retail sales control", fetch_cnsd_retail_sales_control)
+    tourism_occupancy = _load_normalized_or_fetch("tourism_hotel_occupancy_category_monthly", "Tourism hotel occupancy", fetch_tourism_hotel_occupancy_category)
+    tourism_adr = _load_normalized_or_fetch("tourism_hotel_adr_category_monthly", "Tourism hotel achieved room rate", fetch_tourism_hotel_adr_category)
+    tourism_rooms = _load_normalized_or_fetch("tourism_hotel_rooms_category_monthly", "Tourism hotel room supply", fetch_tourism_hotel_rooms_category)
+    shkp_catalog = load_latest_normalized("shkp_property_catalog")
+    if shkp_catalog.empty:
+        shkp_catalog = _safe_fetch("SHKP commercial asset directory", lambda: fetch_shkp_property_catalog(timeout=60, max_pages=None))
+    shkp_corporate = load_latest_normalized("shkp_corporate_documents")
+    if shkp_corporate.empty:
+        shkp_corporate = _safe_fetch("SHKP Quarterly catalogue", lambda: fetch_shkp_corporate_documents(timeout=60))
+    shkp_quarterly = build_shkp_quarterly_events(shkp_corporate, property_catalog=shkp_catalog)
+    shkp_quarterly_facts = _load_normalized_or_fetch(
+        "shkp_quarterly_numeric_facts",
+        "SHKP Quarterly numeric facts",
+        lambda: fetch_shkp_quarterly_numeric_facts(
+            corporate_documents=shkp_corporate,
+            quarterly_events=shkp_quarterly,
+            max_documents=24,
+        ),
+    )
+    shkp_commercial_assets = build_shkp_commercial_asset_master(
+        property_catalog=shkp_catalog,
+        completed_properties=load_latest_normalized("shkp_completed_properties"),
+        completion_schedule=load_latest_normalized("shkp_completion_schedule_projects"),
+    )
+    shkp_financial_frames = _load_shkp_financial_model_frames()
+    shkp_sales_handover_frames = _load_shkp_sales_handover_bridge_frames()
     agency_frames = []
     for label, fetch_fn in (
         ("28Hse transactions", fetch_28hse_transaction_pilot),
@@ -2599,6 +4079,8 @@ def fetch_live_frames() -> dict[str, pd.DataFrame]:
         # through the committed artifact until the separate SRPE ingestion job
         # writes a newer normalized snapshot.
         srpe_signals = _load_dataset_from_committed_artifact("srpe_project_signal_history")
+    shkp_leading_signals = load_latest_normalized("shkp_srpe_project_month_signals")
+    shkp_reconciliation = load_latest_normalized("shkp_28hse_reconciliation")
     return {
         "ccl": fetch_centaline_ccl(),
         "mhpi": mhpi,
@@ -2611,10 +4093,63 @@ def fetch_live_frames() -> dict[str, pd.DataFrame]:
         "centaline_csi": csi,
         "rvd_office": rvd_office,
         "rvd_retail": rvd_retail,
+        "rvd_office_vacancy": rvd_office_vacancy,
+        "rvd_office_stock": rvd_office_stock,
+        "rvd_commercial_stock": rvd_commercial_stock,
+        "rvd_commercial_forecast": rvd_commercial_forecast,
+        "cnsd_retail_control": cnsd_retail_control,
+        "tourism_occupancy": tourism_occupancy,
+        "tourism_adr": tourism_adr,
+        "tourism_rooms": tourism_rooms,
+        "shkp_quarterly_events": shkp_quarterly,
+        "shkp_quarterly_facts": shkp_quarterly_facts,
+        "shkp_commercial_assets": shkp_commercial_assets,
+        "shkp_financial_disclosed": shkp_financial_frames["disclosed"],
+        "shkp_financial_recurring": shkp_financial_frames["recurring"],
+        "shkp_financial_actuals": shkp_financial_frames["actuals"],
+        "shkp_financial_reconciliation": shkp_financial_frames["reconciliation"],
+        "shkp_financial_consensus": shkp_financial_frames["consensus"],
+        "shkp_financial_vintage": shkp_financial_frames["vintage_coverage"],
+        "shkp_financial_coverage": shkp_financial_frames["coverage"],
+        "shkp_sales_handover_phase": shkp_sales_handover_frames["phase"],
+        "shkp_sales_handover_annual": shkp_sales_handover_frames["annual"],
         "midland_estates": estates,
         "unified_tx": unified_tx,
         "srpe_signals": srpe_signals,
+        "shkp_leading_signals": shkp_leading_signals,
+        "shkp_reconciliation": shkp_reconciliation,
         "bd_supply_history": load_latest_normalized("bd_supply_pipeline_history"),
+    }
+
+
+def _prune_unreferenced_portable_datasets(artifact: dict[str, Any]) -> None:
+    """Keep the portable artifact within the renderer's dataset contract.
+
+    ``build_artifact`` intentionally returns a rich research snapshot for unit
+    tests and local inspection.  The portable renderer has a hard limit of 50
+    dataset keys, so the on-disk dashboard should carry the datasets actually
+    referenced by cards/charts/tables plus the source-health surfaces.  The
+    omitted raw views remain available in normalized Parquet and can be added
+    to a future research surface without silently changing dashboard rows.
+    """
+    snapshot = artifact.get("snapshot")
+    manifest = artifact.get("manifest")
+    if not isinstance(snapshot, dict) or not isinstance(manifest, dict):
+        return
+    datasets = snapshot.get("datasets")
+    if not isinstance(datasets, dict):
+        return
+    referenced = {"source_health", "source_coverage"}
+    for section in ("cards", "charts", "tables"):
+        items = manifest.get(section, [])
+        if isinstance(items, list):
+            referenced.update(
+                str(item["dataset"])
+                for item in items
+                if isinstance(item, dict) and item.get("dataset")
+            )
+    snapshot["datasets"] = {
+        key: value for key, value in datasets.items() if key in referenced
     }
 
 
@@ -2628,9 +4163,38 @@ def main() -> int:
     unified_tx = live_frames.pop("unified_tx", pd.DataFrame())
     bd_supply_history = live_frames.pop("bd_supply_history", pd.DataFrame())
     srpe_signals = live_frames.pop("srpe_signals", pd.DataFrame())
+    shkp_leading_signals = live_frames.pop("shkp_leading_signals", pd.DataFrame())
+    shkp_reconciliation = live_frames.pop("shkp_reconciliation", pd.DataFrame())
     new_series = {
         key: live_frames.pop(key, pd.DataFrame())
-        for key in ("centaline_cci", "centaline_cri", "centaline_cri_yield", "centaline_csi", "rvd_office", "rvd_retail")
+        for key in (
+            "centaline_cci",
+            "centaline_cri",
+            "centaline_cri_yield",
+            "centaline_csi",
+            "rvd_office",
+            "rvd_retail",
+            "rvd_office_vacancy",
+            "rvd_office_stock",
+            "rvd_commercial_stock",
+            "rvd_commercial_forecast",
+            "cnsd_retail_control",
+            "tourism_occupancy",
+            "tourism_adr",
+            "tourism_rooms",
+            "shkp_quarterly_events",
+            "shkp_quarterly_facts",
+            "shkp_commercial_assets",
+            "shkp_financial_disclosed",
+            "shkp_financial_recurring",
+            "shkp_financial_actuals",
+            "shkp_financial_reconciliation",
+            "shkp_financial_consensus",
+            "shkp_financial_vintage",
+            "shkp_financial_coverage",
+            "shkp_sales_handover_phase",
+            "shkp_sales_handover_annual",
+        )
     }
     artifact, status = build_artifact(
         live_frames,
@@ -2638,7 +4202,10 @@ def main() -> int:
         raw_bd_supply_history=bd_supply_history,
         raw_new_series=new_series,
         raw_srpe_signals=srpe_signals,
+        raw_shkp_leading_signals=shkp_leading_signals,
+        raw_28hse_reconciliation=shkp_reconciliation,
     )
+    _prune_unreferenced_portable_datasets(artifact)
     _atomic_json(args.output, artifact)
     _atomic_json(args.status_output, status)
     print(
