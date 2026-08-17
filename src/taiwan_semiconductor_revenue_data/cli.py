@@ -16,7 +16,10 @@ def main() -> None:
     parser.add_argument(
         "--companies",
         default=None,
-        help="Optional comma-separated company code override (default: 2330,2303,5347)",
+        help=(
+            "Optional comma-separated company code or preset override "
+            "(default: all 11 tracked companies; presets: memory, ai_server_odms, all)"
+        ),
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
