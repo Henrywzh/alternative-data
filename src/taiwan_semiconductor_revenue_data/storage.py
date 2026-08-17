@@ -22,6 +22,7 @@ DATASET_SPECS: dict[str, dict[str, list[str]]] = {
             "revenue_month",
             "monthly_revenue_ntd",
             "mom_pct",
+            "mom_pct_is_derived",
             "yoy_pct",
             "ytd_revenue_ntd",
             "ytd_yoy_pct",
@@ -45,7 +46,7 @@ DATASET_SPECS: dict[str, dict[str, list[str]]] = {
             "ytd_revenue_ntd",
             "ytd_yoy_pct",
         ],
-        "bool": [],
+        "bool": ["mom_pct_is_derived"],
     }
 }
 
@@ -107,6 +108,8 @@ class StorageManager:
         spec = DATASET_SPECS[dataset_id]
         for column in spec["numeric"]:
             dataframe[column] = pd.to_numeric(dataframe[column], errors="coerce")
+        for column in spec["bool"]:
+            dataframe[column] = dataframe[column].astype("boolean")
         text_columns = [column for column in spec["columns"] if column not in spec["numeric"] and column not in spec["bool"]]
         for column in text_columns:
             dataframe[column] = dataframe[column].astype("string")

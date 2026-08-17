@@ -17,6 +17,35 @@ DEFAULT_COMPANIES: tuple[CompanyConfig, ...] = (
     CompanyConfig(company_code="5347", company_name="VIS", market="TPEx", industry="Foundry"),
 )
 
+KOREAN_MEMORY_COMPANIES: tuple[CompanyConfig, ...] = (
+    CompanyConfig(company_code="6239", company_name="Powertech Technology", market="TWSE", industry="OSAT"),
+    CompanyConfig(company_code="8299", company_name="Phison Electronics", market="TPEx", industry="NAND controller"),
+    CompanyConfig(company_code="2408", company_name="Nanya Technology", market="TWSE", industry="Specialty DRAM"),
+    CompanyConfig(company_code="2344", company_name="Winbond Electronics", market="TWSE", industry="Specialty memory"),
+)
+
+AI_SERVER_ODM_COMPANIES: tuple[CompanyConfig, ...] = (
+    CompanyConfig(company_code="2317", company_name="Foxconn (Hon Hai)", market="TWSE", industry="AI Server ODM"),
+    CompanyConfig(company_code="2382", company_name="Quanta Computer", market="TWSE", industry="AI Server ODM"),
+    CompanyConfig(company_code="3231", company_name="Wistron", market="TWSE", industry="AI Server ODM"),
+    CompanyConfig(
+        company_code="6669",
+        company_name="Wiwynn",
+        market="TWSE",
+        industry="AI Server ODM",
+        coverage_start_month="2016-01",
+    ),
+)
+
+SUPPORTED_COMPANIES = DEFAULT_COMPANIES + KOREAN_MEMORY_COMPANIES + AI_SERVER_ODM_COMPANIES
+
+PRESETS: dict[str, tuple[CompanyConfig, ...]] = {
+    "default": SUPPORTED_COMPANIES,
+    "memory": KOREAN_MEMORY_COMPANIES,
+    "ai_server_odms": AI_SERVER_ODM_COMPANIES,
+    "all": SUPPORTED_COMPANIES,
+}
+
 MARKET_PATHS = {
     "TWSE": "sii",
     "TPEx": "otc",
@@ -69,13 +98,21 @@ class MopsMonthlyRevenueSource:
 
     def resolve_companies(self, company_codes: list[str] | None = None) -> list[CompanyConfig]:
         if not company_codes:
-            return list(DEFAULT_COMPANIES)
+            return list(SUPPORTED_COMPANIES)
 
-        available = {company.company_code: company for company in DEFAULT_COMPANIES}
-        unknown = [code for code in company_codes if code not in available]
+        available = {company.company_code: company for company in SUPPORTED_COMPANIES}
+        expanded_codes: list[str] = []
+        for item in company_codes:
+            key = item.strip().lower()
+            if key in PRESETS:
+                expanded_codes.extend([c.company_code for c in PRESETS[key]])
+            else:
+                expanded_codes.append(item.strip())
+
+        unknown = [code for code in expanded_codes if code not in available]
         if unknown:
             raise ValueError(f"Unsupported company codes: {', '.join(sorted(unknown))}")
-        return [available[code] for code in company_codes]
+        return list(dict.fromkeys([available[code] for code in expanded_codes]))
 
     def fetch_snapshots(self, months: list[str], companies: list[CompanyConfig]) -> list[Snapshot]:
         snapshots: list[Snapshot] = []
@@ -83,6 +120,8 @@ class MopsMonthlyRevenueSource:
             year, month_number = month.split("-")
             roc_year = int(year) - 1911
             for company in companies:
+                if company.coverage_start_month and month < company.coverage_start_month:
+                    continue
                 url = "https://mops.twse.com.tw/mops/api/t05st10_ifrs"
                 payload = self._build_payload(company.company_code, roc_year, int(month_number))
                 response = self.session.post(
@@ -223,7 +262,10 @@ class MopsMonthlyRevenueSource:
             return [], [f"{snapshot.name}:missing-company-config"]
 
         revenue_month = _roc_yymm_to_gregorian(result.get("yymm"))
-        filing_date = _extract_json_filing_date(payload.get("datetime"))
+        # The JSON endpoint's datetime is the response retrieval time, not the
+        # historical publication date. Keep it in scraped_at and leave
+        # filing_date null unless a source-specific filing date is available.
+        filing_date = None
         values = _json_metric_map(result.get("data") or [])
         market_name = _stringify(result.get("marketKindName")) or ""
 
@@ -237,6 +279,7 @@ class MopsMonthlyRevenueSource:
             revenue_month=revenue_month,
             monthly_revenue_ntd=_parse_number(values.get("本月")),
             mom_pct=None,
+            mom_pct_is_derived=False,
             yoy_pct=_parse_number(values.get("增減百分比_本月")),
             ytd_revenue_ntd=_parse_number(values.get("本年累計")),
             ytd_yoy_pct=_parse_number(values.get("增減百分比_累計")),

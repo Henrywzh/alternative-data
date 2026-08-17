@@ -6,8 +6,12 @@ import json
 import pandas as pd
 
 from taiwan_semiconductor_revenue_data.models import CompanyConfig, Snapshot
-from taiwan_semiconductor_revenue_data.pipeline import TaiwanSemiconductorRevenuePipeline
-from taiwan_semiconductor_revenue_data.sources.mops import MopsMonthlyRevenueSource
+from taiwan_semiconductor_revenue_data.pipeline import TaiwanSemiconductorRevenuePipeline, _fill_missing_mom
+from taiwan_semiconductor_revenue_data.sources.mops import (
+    AI_SERVER_ODM_COMPANIES,
+    KOREAN_MEMORY_COMPANIES,
+    MopsMonthlyRevenueSource,
+)
 from taiwan_semiconductor_revenue_data.storage import StorageManager
 
 
@@ -143,7 +147,7 @@ def test_source_extracts_live_api_json_shape() -> None:
     assert len(points) == 1
     point = points[0]
     assert point.revenue_month == "2026-05"
-    assert point.filing_date == "2026-06-20"
+    assert point.filing_date is None
     assert point.monthly_revenue_ntd == 416975163.0
     assert point.yoy_pct == 30.09
     assert point.ytd_yoy_pct == 29.98
@@ -338,3 +342,73 @@ def test_pipeline_continues_when_one_company_row_fails(tmp_path: Path) -> None:
     assert set(dataset["company_code"]) == {"2330", "2303"}
     assert counts["rows"] == 2
     assert counts["duplicate_keys"] == 0
+
+
+def test_source_registry_supports_korean_memory_and_ai_server_odm_presets() -> None:
+    source = MopsMonthlyRevenueSource()
+
+    memory_companies = source.resolve_companies(["memory"])
+    assert [c.company_code for c in memory_companies] == ["6239", "8299", "2408", "2344"]
+    assert [c.company_name for c in memory_companies] == [c.company_name for c in KOREAN_MEMORY_COMPANIES]
+
+    odm_companies = source.resolve_companies(["ai_server_odms"])
+    assert [c.company_code for c in odm_companies] == ["2317", "2382", "3231", "6669"]
+    assert [c.company_name for c in odm_companies] == [c.company_name for c in AI_SERVER_ODM_COMPANIES]
+
+    mixed_companies = source.resolve_companies(["memory", "2317"])
+    assert "6239" in [c.company_code for c in mixed_companies]
+    assert "2317" in [c.company_code for c in mixed_companies]
+
+
+def test_default_registry_covers_all_tracked_companies() -> None:
+    source = MopsMonthlyRevenueSource()
+    assert [company.company_code for company in source.resolve_companies()] == [
+        "2330", "2303", "5347", "6239", "8299", "2408", "2344",
+        "2317", "2382", "3231", "6669",
+    ]
+
+
+def test_missing_mom_is_derived_from_prior_revenue() -> None:
+    companies = [CompanyConfig(company_code="2330", company_name="TSMC", market="TWSE", industry="Foundry")]
+    previous, failures = MopsMonthlyRevenueSource().extract(
+        Snapshot(
+            name="2330_2025_05",
+            source_url="fixture://api/2330/2025-05",
+            body=json.dumps({
+                "code": 200,
+                "result": {
+                    "data": [["本月", "100"], ["增減百分比", "1"], ["本年累計", "100"], ["增減百分比", "1"]],
+                    "yymm": "11405",
+                    "companyAbbreviation": "台積電",
+                    "marketKindName": "上市公司",
+                },
+            }),
+        ),
+        companies=companies,
+        run_id="run-1",
+        scraped_at="2026-06-20T00:00:00Z",
+        parser_version="test-parser",
+    )
+    current, failures_current = MopsMonthlyRevenueSource().extract(
+        Snapshot(
+            name="2330_2025_06",
+            source_url="fixture://api/2330/2025-06",
+            body=json.dumps({
+                "code": 200,
+                "result": {
+                    "data": [["本月", "110"], ["增減百分比", "1"], ["本年累計", "210"], ["增減百分比", "1"]],
+                    "yymm": "11406",
+                    "companyAbbreviation": "台積電",
+                    "marketKindName": "上市公司",
+                },
+            }),
+        ),
+        companies=companies,
+        run_id="run-2",
+        scraped_at="2026-07-20T00:00:00Z",
+        parser_version="test-parser",
+    )
+    assert failures == [] and failures_current == []
+    enriched = _fill_missing_mom(previous + current, pd.DataFrame())
+    assert enriched[-1].mom_pct == 10.0
+    assert enriched[-1].mom_pct_is_derived is True

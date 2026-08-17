@@ -153,16 +153,17 @@ class AppsSource(SourceExtractor):
     def _parse_flight_chunks(self, html: str) -> dict[str, Any]:
         chunks: dict[str, Any] = {}
         for decoded in iter_next_f_decoded_strings(html):
-            if ":" not in decoded:
-                continue
-            label, payload = decoded.split(":", 1)
-            payload = payload.strip()
-            if not payload.startswith("[") and not payload.startswith("{"):
-                continue
-            try:
-                chunks[label] = json.loads(payload)
-            except json.JSONDecodeError:
-                continue
+            for line in decoded.splitlines():
+                if ":" not in line:
+                    continue
+                label, payload = line.split(":", 1)
+                payload = payload.strip()
+                if not payload.startswith("[") and not payload.startswith("{"):
+                    continue
+                try:
+                    chunks[label] = json.loads(payload)
+                except json.JSONDecodeError:
+                    continue
         return chunks
 
     def _resolve_ranking_map(self, ranking_map: dict[str, Any], chunks: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
