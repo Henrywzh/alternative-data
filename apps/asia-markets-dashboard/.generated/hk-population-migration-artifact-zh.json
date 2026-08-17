@@ -6,9 +6,9 @@
     "title": "香港人口、迁移与跨境数据监测",
     "description": "入境处高频每日出入境净流量、政府统计处人口估算与净移动、积金局永久离港强积金申索、教资会内地生入学人数及大湾区跨境车流/高铁客流。",
     "sector": "hk-population-migration",
-    "generatedAt": "2026-08-01T08:34:39.901813Z",
-    "dataAsOf": "2026-07-31",
-    "liveSourcesCount": 5,
+    "generatedAt": "2026-08-09T16:08:44.964608Z",
+    "dataAsOf": "2026-08-07",
+    "liveSourcesCount": 6,
     "totalSourcesCount": 6,
     "cards": [
       {
@@ -344,7 +344,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `7a5d13f010c71849` · 生成于 2026-08-01T08:34:39.901813Z。这是已发布快照，不是实时连接。"
+        "body": "**数据快照：** `0d9c0cf261435f40` · 生成于 2026-08-09T16:08:44.964608Z。这是已发布快照，不是实时连接。"
       },
       {
         "id": "kpi_grid",
@@ -378,6 +378,18 @@
         "chartId": "visitor_arrivals_chart"
       },
       {
+        "id": "mpfa_claims_chart_block",
+        "type": "chart",
+        "chartId": "mpfa_claims_chart",
+        "layout": "half"
+      },
+      {
+        "id": "mpfa_claims_count_chart_block",
+        "type": "chart",
+        "chartId": "mpfa_claims_count_chart",
+        "layout": "half"
+      },
+      {
         "id": "ugc_students_chart_block",
         "type": "chart",
         "chartId": "ugc_students_chart",
@@ -392,59 +404,10 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-01T08:34:39.901813Z",
-    "status": "partial",
+    "generatedAt": "2026-08-09T16:08:44.964608Z",
+    "status": "ready",
     "datasets": {
       "immd_daily_traffic": [
-        {
-          "date": "2025-08-01",
-          "hk_resident_net_flow": -93827,
-          "mainland_visitor_net_retention": -261,
-          "hk_resident_departures_7d_ma": 337574.6,
-          "mainland_visitor_arrivals_7d_ma": 132412.7
-        },
-        {
-          "date": "2025-08-02",
-          "hk_resident_net_flow": -136444,
-          "mainland_visitor_net_retention": 7637,
-          "hk_resident_departures_7d_ma": 327901.1,
-          "mainland_visitor_arrivals_7d_ma": 127939
-        },
-        {
-          "date": "2025-08-03",
-          "hk_resident_net_flow": 164345,
-          "mainland_visitor_net_retention": -9648,
-          "hk_resident_departures_7d_ma": 320869.7,
-          "mainland_visitor_arrivals_7d_ma": 124314.1
-        },
-        {
-          "date": "2025-08-04",
-          "hk_resident_net_flow": 52168,
-          "mainland_visitor_net_retention": 7040,
-          "hk_resident_departures_7d_ma": 315591.3,
-          "mainland_visitor_arrivals_7d_ma": 121607.1
-        },
-        {
-          "date": "2025-08-05",
-          "hk_resident_net_flow": 23989,
-          "mainland_visitor_net_retention": 648,
-          "hk_resident_departures_7d_ma": 305543.7,
-          "mainland_visitor_arrivals_7d_ma": 117612.7
-        },
-        {
-          "date": "2025-08-06",
-          "hk_resident_net_flow": 11363,
-          "mainland_visitor_net_retention": 3771,
-          "hk_resident_departures_7d_ma": 302413.3,
-          "mainland_visitor_arrivals_7d_ma": 117078.4
-        },
-        {
-          "date": "2025-08-07",
-          "hk_resident_net_flow": -10767,
-          "mainland_visitor_net_retention": 13781,
-          "hk_resident_departures_7d_ma": 304356.3,
-          "mainland_visitor_arrivals_7d_ma": 119913.4
-        },
         {
           "date": "2025-08-08",
           "hk_resident_net_flow": -74661,
@@ -2950,79 +2913,58 @@
           "mainland_visitor_net_retention": -9241,
           "hk_resident_departures_7d_ma": 300055.9,
           "mainland_visitor_arrivals_7d_ma": 116398.3
+        },
+        {
+          "date": "2026-08-01",
+          "hk_resident_net_flow": -136720,
+          "mainland_visitor_net_retention": 14536,
+          "hk_resident_departures_7d_ma": 313080.6,
+          "mainland_visitor_arrivals_7d_ma": 121676.1
+        },
+        {
+          "date": "2026-08-02",
+          "hk_resident_net_flow": 154217,
+          "mainland_visitor_net_retention": -12773,
+          "hk_resident_departures_7d_ma": 341638.4,
+          "mainland_visitor_arrivals_7d_ma": 136719
+        },
+        {
+          "date": "2026-08-03",
+          "hk_resident_net_flow": 50534,
+          "mainland_visitor_net_retention": 8041,
+          "hk_resident_departures_7d_ma": 340782.9,
+          "mainland_visitor_arrivals_7d_ma": 139109.6
+        },
+        {
+          "date": "2026-08-04",
+          "hk_resident_net_flow": 14697,
+          "mainland_visitor_net_retention": 2938,
+          "hk_resident_departures_7d_ma": 341248.3,
+          "mainland_visitor_arrivals_7d_ma": 140715.1
+        },
+        {
+          "date": "2026-08-05",
+          "hk_resident_net_flow": 5556,
+          "mainland_visitor_net_retention": 6440,
+          "hk_resident_departures_7d_ma": 343333.7,
+          "mainland_visitor_arrivals_7d_ma": 143586.1
+        },
+        {
+          "date": "2026-08-06",
+          "hk_resident_net_flow": -6488,
+          "mainland_visitor_net_retention": 2784,
+          "hk_resident_departures_7d_ma": 344557.6,
+          "mainland_visitor_arrivals_7d_ma": 146309.3
+        },
+        {
+          "date": "2026-08-07",
+          "hk_resident_net_flow": -77632,
+          "mainland_visitor_net_retention": 648,
+          "hk_resident_departures_7d_ma": 348293.6,
+          "mainland_visitor_arrivals_7d_ma": 149983
         }
       ],
       "immd_net_flow_history": [
-        {
-          "date": "2025-08-01",
-          "series": "香港居民净流量",
-          "value": -93827
-        },
-        {
-          "date": "2025-08-01",
-          "series": "内地访客净留存",
-          "value": -261
-        },
-        {
-          "date": "2025-08-02",
-          "series": "香港居民净流量",
-          "value": -136444
-        },
-        {
-          "date": "2025-08-02",
-          "series": "内地访客净留存",
-          "value": 7637
-        },
-        {
-          "date": "2025-08-03",
-          "series": "香港居民净流量",
-          "value": 164345
-        },
-        {
-          "date": "2025-08-03",
-          "series": "内地访客净留存",
-          "value": -9648
-        },
-        {
-          "date": "2025-08-04",
-          "series": "香港居民净流量",
-          "value": 52168
-        },
-        {
-          "date": "2025-08-04",
-          "series": "内地访客净留存",
-          "value": 7040
-        },
-        {
-          "date": "2025-08-05",
-          "series": "香港居民净流量",
-          "value": 23989
-        },
-        {
-          "date": "2025-08-05",
-          "series": "内地访客净留存",
-          "value": 648
-        },
-        {
-          "date": "2025-08-06",
-          "series": "香港居民净流量",
-          "value": 11363
-        },
-        {
-          "date": "2025-08-06",
-          "series": "内地访客净留存",
-          "value": 3771
-        },
-        {
-          "date": "2025-08-07",
-          "series": "香港居民净流量",
-          "value": -10767
-        },
-        {
-          "date": "2025-08-07",
-          "series": "内地访客净留存",
-          "value": 13781
-        },
         {
           "date": "2025-08-08",
           "series": "香港居民净流量",
@@ -6602,6 +6544,76 @@
           "date": "2026-07-31",
           "series": "内地访客净留存",
           "value": -9241
+        },
+        {
+          "date": "2026-08-01",
+          "series": "香港居民净流量",
+          "value": -136720
+        },
+        {
+          "date": "2026-08-01",
+          "series": "内地访客净留存",
+          "value": 14536
+        },
+        {
+          "date": "2026-08-02",
+          "series": "香港居民净流量",
+          "value": 154217
+        },
+        {
+          "date": "2026-08-02",
+          "series": "内地访客净留存",
+          "value": -12773
+        },
+        {
+          "date": "2026-08-03",
+          "series": "香港居民净流量",
+          "value": 50534
+        },
+        {
+          "date": "2026-08-03",
+          "series": "内地访客净留存",
+          "value": 8041
+        },
+        {
+          "date": "2026-08-04",
+          "series": "香港居民净流量",
+          "value": 14697
+        },
+        {
+          "date": "2026-08-04",
+          "series": "内地访客净留存",
+          "value": 2938
+        },
+        {
+          "date": "2026-08-05",
+          "series": "香港居民净流量",
+          "value": 5556
+        },
+        {
+          "date": "2026-08-05",
+          "series": "内地访客净留存",
+          "value": 6440
+        },
+        {
+          "date": "2026-08-06",
+          "series": "香港居民净流量",
+          "value": -6488
+        },
+        {
+          "date": "2026-08-06",
+          "series": "内地访客净留存",
+          "value": 2784
+        },
+        {
+          "date": "2026-08-07",
+          "series": "香港居民净流量",
+          "value": -77632
+        },
+        {
+          "date": "2026-08-07",
+          "series": "内地访客净留存",
+          "value": 648
         }
       ],
       "csd_population": [
@@ -8678,7 +8690,78 @@
           "value": 7510.8
         }
       ],
-      "mpfa_claims": [],
+      "mpfa_claims": [
+        {
+          "quarter": "2022-Q4",
+          "claims_count": 7000,
+          "amount_mhkd": 1716
+        },
+        {
+          "quarter": "2023-Q1",
+          "claims_count": 6700,
+          "amount_mhkd": 1573
+        },
+        {
+          "quarter": "2023-Q2",
+          "claims_count": 7300,
+          "amount_mhkd": 1787
+        },
+        {
+          "quarter": "2023-Q3",
+          "claims_count": 8700,
+          "amount_mhkd": 2213
+        },
+        {
+          "quarter": "2023-Q4",
+          "claims_count": 7200,
+          "amount_mhkd": 1688
+        },
+        {
+          "quarter": "2024-Q1",
+          "claims_count": 6500,
+          "amount_mhkd": 1507
+        },
+        {
+          "quarter": "2024-Q2",
+          "claims_count": 7300,
+          "amount_mhkd": 1702
+        },
+        {
+          "quarter": "2024-Q3",
+          "claims_count": 7600,
+          "amount_mhkd": 1815
+        },
+        {
+          "quarter": "2024-Q4",
+          "claims_count": 6600,
+          "amount_mhkd": 1572
+        },
+        {
+          "quarter": "2025-Q1",
+          "claims_count": 6700,
+          "amount_mhkd": 1626
+        },
+        {
+          "quarter": "2025-Q2",
+          "claims_count": 6400,
+          "amount_mhkd": 1575
+        },
+        {
+          "quarter": "2025-Q3",
+          "claims_count": 6900,
+          "amount_mhkd": 1661
+        },
+        {
+          "quarter": "2025-Q4",
+          "claims_count": 4200,
+          "amount_mhkd": 1024
+        },
+        {
+          "quarter": "2026-Q1",
+          "claims_count": 5000,
+          "amount_mhkd": 1188
+        }
+      ],
       "ugc_students": [
         {
           "academic_year": "2010/11",
@@ -18028,7 +18111,7 @@
         {
           "latest_pop": 7510.8,
           "latest_net_mov": 29.1,
-          "latest_mpfa": null,
+          "latest_mpfa": 1188,
           "latest_ugc": 23961,
           "latest_visitors": 4464840
         }
@@ -18115,7 +18198,7 @@
       "label": "Immigration Department Daily Passenger Traffic",
       "status": "success",
       "records": 365,
-      "latest_observation": "2026-07-31",
+      "latest_observation": "2026-08-07",
       "freshness": "dated",
       "notes": "Daily passenger clearance by control point, direction and residency, used to derive HK-resident net flow and Mainland-visitor net retention."
     },
@@ -18131,10 +18214,10 @@
     {
       "id": "mpfa",
       "label": "MPFA Statistical Digest",
-      "status": "degraded",
-      "records": 0,
-      "latest_observation": "—",
-      "freshness": "unavailable",
+      "status": "success",
+      "records": 14,
+      "latest_observation": "2026-Q1",
+      "freshness": "dated",
       "notes": "Quarterly MPF claims for permanent departure from Hong Kong (count and amount), parsed from the official Statistical Digest."
     },
     {
@@ -18169,8 +18252,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-population-migration/",
     "sector_id": "hk-population-migration",
     "sector_name": "Hong Kong Population, Migration & Cross-Border Data Monitor",
-    "snapshotId": "7a5d13f010c71849",
-    "generatedAt": "2026-08-01T08:34:39.901813Z",
-    "dataAsOf": "2026-07-31"
+    "snapshotId": "0d9c0cf261435f40",
+    "generatedAt": "2026-08-09T16:08:44.964608Z",
+    "dataAsOf": "2026-08-07"
   }
 }

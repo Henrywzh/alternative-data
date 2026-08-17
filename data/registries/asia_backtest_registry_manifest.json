@@ -12,14 +12,14 @@
   },
   "target_rows": 55,
   "row_status_rows": 2951,
-  "document_rows": 134,
+  "document_rows": 96,
   "default_model_selection": {
     "method": "per_entity_skill_vs_baseline_majority_vote",
     "note": "Diagnostic-grade prior evidence only, not a validated ranking: every contract measured so far is metric_status=insufficient_sample (headline_contracts == 0). See default_model_selection_confidence and default_model_id_by_entity per row for the evidence behind each declared default.",
     "metrics_available": true,
     "metrics_source": "data/registries/asia_backtest_metrics.csv",
-    "evidence_fingerprint": "selection_evidence-43beef66b8ad9770",
-    "input_bundle_id": "asia_backtest_input_bundle-5f1168f5880e219d",
+    "evidence_fingerprint": "selection_evidence-484711b93fb9451e",
+    "input_bundle_id": "asia_backtest_input_bundle-b1ddb611566da708",
     "latest_run_id": "asia_backtest_engine_v1_11-cad038e2087e2f15"
   },
   "known_gaps": [

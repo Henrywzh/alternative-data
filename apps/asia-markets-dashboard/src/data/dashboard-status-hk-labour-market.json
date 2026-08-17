@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-31T20:19:45.796215Z",
+  "generated_at": "2026-08-09T16:08:44.910278Z",
   "snapshot_id": "cba9287a3610f8ab",
   "data_as_of": "2026-06-30",
   "overall_status": "Healthy",
@@ -57,5 +57,5 @@
       "notes": "Applications/approvals and QMAS quota are policy-flow indicators; QMAS quota-allotted successful selection cases are included as the approval-equivalent display measure, not actual arrivals or employment."
     }
   ],
-  "attachment_filename": "hk-labour-market-dashboard-2026-07-31.html"
+  "attachment_filename": "hk-labour-market-dashboard-2026-08-09.html"
 }

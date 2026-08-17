@@ -36,7 +36,7 @@
     "not_available": 1
   },
   "input_bundle_ids": [
-    "asia_backtest_input_bundle-5f1168f5880e219d"
+    "asia_backtest_input_bundle-b1ddb611566da708"
   ],
   "runtime": {
     "python": "3.11.9",

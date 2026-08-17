@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-08-01T14:30:59.336476Z",
-  "snapshot_id": "52ea617f5870f23b",
-  "data_as_of": "2026-07-27",
+  "generated_at": "2026-08-07T20:29:48.028404Z",
+  "snapshot_id": "86dd35261061c42f",
+  "data_as_of": "2026-08-03",
   "overall_status": "Healthy",
   "live_sources": 11,
   "planned_sources": 1,
@@ -12,9 +12,9 @@
       "dataset": "Centaline CCL",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-07-26",
-      "records": 1700,
-      "freshness": "6d old",
+      "latest_observation": "2026-08-02",
+      "records": 1701,
+      "freshness": "5d old",
       "notes": "Latest observation is published without a provisional flag."
     },
     {
@@ -22,9 +22,9 @@
       "dataset": "Midland MHPI",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-07-27",
-      "records": 542,
-      "freshness": "5d old",
+      "latest_observation": "2026-08-03",
+      "records": 543,
+      "freshness": "4d old",
       "notes": "Latest observation is published without a provisional flag."
     },
     {
@@ -32,9 +32,9 @@
       "dataset": "Midland Confidence Index",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-07-27",
-      "records": 444,
-      "freshness": "5d old",
+      "latest_observation": "2026-08-03",
+      "records": 445,
+      "freshness": "4d old",
       "notes": "Latest observation is published without a provisional flag."
     },
     {
@@ -44,7 +44,7 @@
       "status": "Healthy",
       "latest_observation": "2026-06-01",
       "records": 402,
-      "freshness": "61d old",
+      "freshness": "67d old",
       "notes": "Latest observation is provisional."
     },
     {
@@ -54,7 +54,7 @@
       "status": "Healthy",
       "latest_observation": "2026-06-01",
       "records": 402,
-      "freshness": "61d old",
+      "freshness": "67d old",
       "notes": "Latest observation is provisional."
     },
     {
@@ -64,7 +64,7 @@
       "status": "Healthy",
       "latest_observation": "2026-05-01",
       "records": 389,
-      "freshness": "92d old",
+      "freshness": "98d old",
       "notes": "Normalized residential price index; CCI is not a sentiment measure."
     },
     {
@@ -74,7 +74,7 @@
       "status": "Healthy",
       "latest_observation": "2026-06-01",
       "records": 354,
-      "freshness": "61d old",
+      "freshness": "67d old",
       "notes": "Normalized residential rental index; rental-yield history is a companion dataset."
     },
     {
@@ -82,9 +82,9 @@
       "dataset": "Centaline CSI weekly",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-07-27",
-      "records": 1116,
-      "freshness": "5d old",
+      "latest_observation": "2026-08-03",
+      "records": 1118,
+      "freshness": "4d old",
       "notes": "Normalized sentiment history; not a transaction or price series."
     },
     {
@@ -94,7 +94,7 @@
       "status": "Healthy",
       "latest_observation": "2026-05-01",
       "records": 1604,
-      "freshness": "92d old",
+      "freshness": "98d old",
       "notes": "Official grade-level rental index; provisional flags are retained."
     },
     {
@@ -104,18 +104,18 @@
       "status": "Healthy",
       "latest_observation": "2026-05-01",
       "records": 802,
-      "freshness": "92d old",
+      "freshness": "98d old",
       "notes": "Official retail rental/price indices; provisional flags are retained."
     },
     {
       "source": "Sales of First-hand Residential Properties Electronic Platform (SRPE)",
-      "dataset": "SRPE phase-level first-hand sales signals",
+      "dataset": "SHKP-wide SRPE project leading indicators",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-07",
-      "records": 196,
+      "latest_observation": "2026-08-01",
+      "records": 2643,
       "freshness": "Published snapshot",
-      "notes": "Six explicitly registered phases; attributable sales use the ownership registry and sell-through uses unique active units."
+      "notes": "56 candidate phases; raw contract activity only. Ownership intervals remain blocked."
     },
     {
       "source": "28Hse",
@@ -123,7 +123,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "—",
-      "records": 1098,
+      "records": 1100,
       "freshness": "Live at build time",
       "notes": "28Hse EPI / ERI Historical Index; see the chart/table above."
     },
@@ -143,7 +143,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "—",
-      "records": 708,
+      "records": 710,
       "freshness": "Live at build time",
       "notes": "Land Registry Monthly Statistics (JSON); see the chart/table above."
     },
@@ -171,11 +171,11 @@
       "source": "SRPE pilot",
       "dataset": "Phase-level first-hand sales signals",
       "type": "Measure",
-      "status": "Healthy",
-      "latest_observation": "2026-07",
-      "records": 161,
-      "freshness": "Published snapshot",
-      "notes": "Sales of First-hand Residential Properties Electronic Platform (SRPE); see the chart/table above."
+      "status": "No data this run",
+      "latest_observation": "—",
+      "records": 0,
+      "freshness": "Fetch returned no rows",
+      "notes": "Sales of First-hand Residential Properties Electronic Platform (SRPE); live fetch returned no usable rows this run."
     },
     {
       "source": "SRPE expansion",
@@ -188,5 +188,5 @@
       "notes": "The dashboard currently covers six explicit pilot phases; broader developer and phase coverage still requires registry expansion and backfill."
     }
   ],
-  "attachment_filename": "hk-real-estate-dashboard-2026-08-01.html"
+  "attachment_filename": "hk-real-estate-dashboard-2026-08-07.html"
 }

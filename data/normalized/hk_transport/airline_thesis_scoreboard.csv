@@ -1,12 +1,12 @@
 dataset_id,component,spring,juneyao,edge,evidence,status,retrieved_at
-airline_thesis_scoreboard,Capacity,ASK +15.4% H1 (strong),ASK +1.1% H1 (muted),Spring,H1 ASK YoY from expectation bridge / capacity pipeline,confirmed_pre_event,2026-08-10T20:55:00.351048+00:00
-airline_thesis_scoreboard,Load factor,LF 91.5% (FY25),LF 85.6% (FY25),Spring,unit economics FY2025,confirmed_pre_event,2026-08-10T20:55:00.351048+00:00
-airline_thesis_scoreboard,Yield (key uncertainty),consensus needs RASK +2.6% vs ours,consensus needs RASK +14.1% vs ours,Spring (consensus asks less of Spring yield),consensus reverse surface,variant_perception,2026-08-10T20:55:00.351048+00:00
-airline_thesis_scoreboard,Fuel CASK,"0.167 (FY25 anchor, +66% spot vs FY25 avg flagged)",0.182,Spring (lower fuel intensity),cost engine v2,shared_risk_hedged,2026-08-10T20:55:00.351048+00:00
-airline_thesis_scoreboard,Non-fuel CASK,0.199 (FY25),0.235,Spring (+15% structural advantage),unit economics FY2025,confirmed_pre_event,2026-08-10T20:55:00.351048+00:00
-airline_thesis_scoreboard,International mix,low intl share (LCC domestic),international ramp underway,Juneyao risk (margin conversion unknown),capacity pipeline / thesis docs,key_uncertainty_short_leg,2026-08-10T20:55:00.351048+00:00
-airline_thesis_scoreboard,Earnings vs Street,+67.5% (season-adj),+58.1% (season-adj),"Spring, but gap narrowed from 46pp (x2) to ~9pp (season-adj)",consensus-reverse-v2 sanity (seasonality-adjusted),confirmed_pre_event,2026-08-10T20:55:00.351048+00:00
-airline_thesis_scoreboard,Valuation,PE_street 20.9x / PE_own 12.5x / P/B 1y pct 10%,PE_street 27.0x / PE_own 17.1x / P/B 1y pct 18%,Spring (cheaper both ways + low P/B percentile),valuation v2,confirmed_pre_event,2026-08-10T20:55:00.351048+00:00
-airline_thesis_scoreboard,Cost model improvement,n/a (pair-level),n/a,cost MAE 18.8% -> 11.6% (engine-wide),cost engine v2 ablation,engine_upgrade,2026-08-10T20:55:00.351048+00:00
-airline_thesis_scoreboard,Catalyst,1H26 report 08-29,1H26 report 08-31,Spring prints first,catalyst calendar,upcoming_2_3_weeks,2026-08-10T20:55:00.351048+00:00
-airline_thesis_scoreboard,Risk (one-offs),1H25 other income 651m = 32% of PBT - persistence unknown,1H25 other income 577m = 98% of PBT,both flagged; Spring less exposed in % terms,consensus reverse sanity checks,watch_item,2026-08-10T20:55:00.351048+00:00
+airline_thesis_scoreboard,Capacity,ASK +15.4% H1 (strong),ASK +1.1% H1 (muted),Spring,H1 ASK YoY from expectation bridge / capacity pipeline,confirmed_pre_event,2026-08-17T02:54:27.588990+00:00
+airline_thesis_scoreboard,Load factor,LF 91.5% (FY25),LF 85.6% (FY25),Spring,unit economics FY2025,confirmed_pre_event,2026-08-17T02:54:27.588990+00:00
+airline_thesis_scoreboard,Yield (key uncertainty),consensus needs RASK +2.6% vs ours,consensus needs RASK +14.1% vs ours,Spring (consensus asks less of Spring yield),consensus reverse surface,variant_perception,2026-08-17T02:54:27.588990+00:00
+airline_thesis_scoreboard,Fuel CASK,"0.167 (FY25 anchor, +66% spot vs FY25 avg flagged)",0.182,Spring (lower fuel intensity),cost engine v2,shared_risk_hedged,2026-08-17T02:54:27.588990+00:00
+airline_thesis_scoreboard,Non-fuel CASK,0.199 (FY25),0.235,Spring (+15% structural advantage),unit economics FY2025,confirmed_pre_event,2026-08-17T02:54:27.588990+00:00
+airline_thesis_scoreboard,International mix,low intl share (LCC domestic),international ramp underway,Juneyao risk (margin conversion unknown),capacity pipeline / thesis docs,key_uncertainty_short_leg,2026-08-17T02:54:27.588990+00:00
+airline_thesis_scoreboard,Earnings vs Street,+67.5% (season-adj),+58.1% (season-adj),"Spring, but gap narrowed from 46pp (x2) to ~9pp (season-adj)",consensus-reverse-v2 sanity (seasonality-adjusted),confirmed_pre_event,2026-08-17T02:54:27.588990+00:00
+airline_thesis_scoreboard,Valuation,PE_street 20.9x / PE_own 12.5x / P/B 1y pct 10%,PE_street 27.0x / PE_own 17.1x / P/B 1y pct 18%,Spring (cheaper both ways + low P/B percentile),valuation v2,confirmed_pre_event,2026-08-17T02:54:27.588990+00:00
+airline_thesis_scoreboard,Cost model improvement,n/a (pair-level),n/a,cost MAE 18.8% -> 11.6% (engine-wide),cost engine v2 ablation,engine_upgrade,2026-08-17T02:54:27.588990+00:00
+airline_thesis_scoreboard,Catalyst,1H26 report 08-29,1H26 report 08-31,Spring prints first,catalyst calendar,upcoming_2_3_weeks,2026-08-17T02:54:27.588990+00:00
+airline_thesis_scoreboard,Risk (one-offs),1H25 other income 651m = 32% of PBT - persistence unknown,1H25 other income 577m = 98% of PBT,both flagged; Spring less exposed in % terms,consensus reverse sanity checks,watch_item,2026-08-17T02:54:27.588990+00:00

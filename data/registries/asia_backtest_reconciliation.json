@@ -76,7 +76,7 @@
     }
   ],
   "hard_gate_passed": true,
-  "input_bundle_id": "asia_backtest_input_bundle-5f1168f5880e219d",
+  "input_bundle_id": "asia_backtest_input_bundle-b1ddb611566da708",
   "input_bundle": {
     "schema": "asia_backtest_input_bundle_v1",
     "inputs": {
@@ -162,17 +162,17 @@
       },
       "registry_row_status": {
         "path": "data/registries/asia_backtest_row_status.csv",
-        "sha256": "e2160139464e1caab82b0416e95410d389b2ccc8905b7971f95348b050fb1bae",
+        "sha256": "5f8b8abfcd3faa615c97a8d9305ed062d59815ebb61e3d5a202d199068aaf68f",
         "bytes": 2090013,
         "rows": 2951,
-        "canonical_table_fingerprint": "5ffe722e6c6a4c94ae3f3a735a1ee082ff09f480014b943c2f8aff853797f72e"
+        "canonical_table_fingerprint": "06cbfa42c0d470ea76bfcc4e685ffe51d370af25d182d294af34dc935bf011e6"
       },
       "registry_target": {
         "path": "data/registries/asia_backtest_target_registry.csv",
-        "sha256": "4cf4a1f338cc52a3cdc3717a600a00902598dac9903048f597c5d2eea466519e",
+        "sha256": "9a4375026eb94e9f0852c23a1563ef13a7bbe326e903746283e20be38bbdabee",
         "bytes": 59993,
         "rows": 55,
-        "canonical_table_fingerprint": "098268309ee45ad9cf29469fdf2bf2636116ad513e68c9de1f93506fb07b6cac"
+        "canonical_table_fingerprint": "fabe847b5c274b6cccf51b19da41947b0276a7f59fffa1ad045544b935c135de"
       },
       "shkp_commercial_backtest:data": {
         "path": "data/normalized/hk_real_estate/shkp_commercial_backtest/shkp-commercial-model-066f8e0d-8950-4de6-8fdf-2aee471076cb/shkp_commercial_backtest.parquet",
@@ -187,15 +187,15 @@
         "bytes": 1019
       },
       "shkp_indicative_sales_model_backtest:data": {
-        "path": "data/normalized/hk_real_estate/shkp_indicative_sales_model_backtest/shkp-indicative-sales-model-7eacb288-81ae-4de0-8433-dcf06c078a9d/shkp_indicative_sales_model_backtest.parquet",
-        "sha256": "ef604815f1a7cea43b5dbbb33d7527957fafb343ae67b47ddf3c4788a4d52abd",
-        "bytes": 53522,
+        "path": "data/normalized/hk_real_estate/shkp_indicative_sales_model_backtest/shkp-indicative-sales-model-ec9efc2f-0db6-4ebd-88f0-4216fb1334af/shkp_indicative_sales_model_backtest.parquet",
+        "sha256": "631296ad61d8cb02e7fcd3a3a5838cceabac752b6d69e96dd530edbc07c8ec07",
+        "bytes": 53515,
         "rows": 948,
-        "canonical_table_fingerprint": "1ca2f45ce81edcb9a759a0a842c3d42260d545733a6c51508f71e9c72b1d56c8"
+        "canonical_table_fingerprint": "dc120cffd5bbe3cb65bf09206e7474744b05aca0015be0977e2810aa81bc8666"
       },
       "shkp_indicative_sales_model_backtest:lineage": {
-        "path": "data/normalized/hk_real_estate/shkp_indicative_sales_model_backtest/shkp-indicative-sales-model-7eacb288-81ae-4de0-8433-dcf06c078a9d/lineage.json",
-        "sha256": "0a8804cbcde78f3dd5b4dbe6b477a2446ea0030805890407462351a74049e974",
+        "path": "data/normalized/hk_real_estate/shkp_indicative_sales_model_backtest/shkp-indicative-sales-model-ec9efc2f-0db6-4ebd-88f0-4216fb1334af/lineage.json",
+        "sha256": "544a8299375e38dd12e71ff56b5abbabf1080c966017ec64dff77229235a5383",
         "bytes": 1312
       },
       "shkp_skeleton_historical_backtest:data": {
@@ -211,7 +211,7 @@
         "bytes": 808
       }
     },
-    "bundle_id": "asia_backtest_input_bundle-5f1168f5880e219d"
+    "bundle_id": "asia_backtest_input_bundle-b1ddb611566da708"
   },
   "metrics_rows": 263,
   "structural_rows_excluded_from_accuracy": 1455,
