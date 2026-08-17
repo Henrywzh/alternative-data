@@ -1,5 +1,6 @@
 import importlib.util
 import json
+from datetime import datetime
 from pathlib import Path
 
 
@@ -58,8 +59,19 @@ def test_overview_helpers_read_real_artifact_values_and_dates() -> None:
         "number",
         "en",
     )
-    assert resident_flow == "-9,576"
-    assert flow_date == "30 Jul 2026"
+    # Derived from the artifact rather than frozen: this series is a daily
+    # reading that moves with every refresh, so a hardcoded literal only
+    # records which day the expectation was written (it was stale at -9,576
+    # while the artifact had already advanced to 2026-08-07). The reader is
+    # still under test -- it must reproduce exactly what the artifact holds.
+    _flow_rows = [
+        row
+        for row in population["snapshot"]["datasets"]["immd_net_flow_history"]
+        if row["series"] == "HK Resident Net Flow"
+    ]
+    _latest_flow = max(_flow_rows, key=lambda row: row["date"])
+    assert resident_flow == f"{int(_latest_flow['value']):,}"
+    assert flow_date == datetime.strptime(_latest_flow["date"], "%Y-%m-%d").strftime("%d %b %Y")
 
     labour_frame, labour_title, labour_latest, labour_range, labour_note = asia_app.sparkline_context(
         labour,

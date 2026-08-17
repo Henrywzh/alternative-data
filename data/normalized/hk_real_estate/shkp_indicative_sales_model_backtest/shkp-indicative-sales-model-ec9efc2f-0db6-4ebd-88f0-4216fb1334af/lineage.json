@@ -1,0 +1,48 @@
+{
+  "dataset_name": "shkp_indicative_sales_model_backtest",
+  "run_id": "shkp-indicative-sales-model-ec9efc2f-0db6-4ebd-88f0-4216fb1334af",
+  "created_at": "2026-08-17T01:06:23.145512+00:00",
+  "raw_snapshot": null,
+  "source_url": null,
+  "raw_snapshots": [],
+  "source_urls": [],
+  "records": 948,
+  "columns": [
+    "target_period",
+    "scenario",
+    "forecast_method",
+    "lookback_months",
+    "training_period_start",
+    "training_period_end",
+    "history_rows",
+    "history_contiguous",
+    "same_month_last_year_available",
+    "forecast_value_hkd",
+    "actual_value_hkd",
+    "error_hkd",
+    "absolute_error_hkd",
+    "absolute_percentage_error",
+    "direction_hit",
+    "backtest_status",
+    "covered_phase_count",
+    "not_covered_phase_count",
+    "unknown_phase_count",
+    "model_grid_coverage_ratio",
+    "universe_coverage_ratio",
+    "model_use",
+    "research_only",
+    "caveat"
+  ],
+  "lineage_type": "shkp_indicative_sales_growth_model",
+  "source_datasets": [
+    "shkp_indicative_project_month_signals_all_history"
+  ],
+  "jv_scenario_shares": {
+    "low": 0.25,
+    "base": 0.5,
+    "high": 0.75
+  },
+  "indicative_only": true,
+  "strict_ownership_promotion": false,
+  "model_semantics": "monthly gross SRPE contract-activity proxy with numeric stake and JV sensitivity split"
+}
