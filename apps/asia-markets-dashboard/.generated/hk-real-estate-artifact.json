@@ -26577,25 +26577,31 @@
         {
           "date": "2026-02",
           "series": "Grade A",
-          "value": 206.8,
-          "is_provisional": true
+          "value": 207.0,
+          "is_provisional": false
         },
         {
           "date": "2026-03",
           "series": "Grade A",
-          "value": 206.8,
+          "value": 207.0,
           "is_provisional": true
         },
         {
           "date": "2026-04",
           "series": "Grade A",
-          "value": 207.2,
+          "value": 207.3,
           "is_provisional": true
         },
         {
           "date": "2026-05",
           "series": "Grade A",
-          "value": 207.3,
+          "value": 207.7,
+          "is_provisional": true
+        },
+        {
+          "date": "2026-06",
+          "series": "Grade A",
+          "value": 207.7,
           "is_provisional": true
         },
         {
@@ -28984,24 +28990,30 @@
           "date": "2026-02",
           "series": "Grade B",
           "value": 214.1,
-          "is_provisional": true
+          "is_provisional": false
         },
         {
           "date": "2026-03",
           "series": "Grade B",
-          "value": 214.4,
+          "value": 214.1,
           "is_provisional": true
         },
         {
           "date": "2026-04",
           "series": "Grade B",
-          "value": 214.6,
+          "value": 214.1,
           "is_provisional": true
         },
         {
           "date": "2026-05",
           "series": "Grade B",
-          "value": 214.9,
+          "value": 214.2,
+          "is_provisional": true
+        },
+        {
+          "date": "2026-06",
+          "series": "Grade B",
+          "value": 214.7,
           "is_provisional": true
         },
         {
@@ -31389,25 +31401,31 @@
         {
           "date": "2026-02",
           "series": "Grade C",
-          "value": 206.3,
-          "is_provisional": true
+          "value": 206.6,
+          "is_provisional": false
         },
         {
           "date": "2026-03",
           "series": "Grade C",
-          "value": 206.3,
+          "value": 206.9,
           "is_provisional": true
         },
         {
           "date": "2026-04",
           "series": "Grade C",
-          "value": 206.4,
+          "value": 206.9,
           "is_provisional": true
         },
         {
           "date": "2026-05",
           "series": "Grade C",
-          "value": 206.9,
+          "value": 207.0,
+          "is_provisional": true
+        },
+        {
+          "date": "2026-06",
+          "series": "Grade C",
+          "value": 207.1,
           "is_provisional": true
         },
         {
@@ -33795,13 +33813,13 @@
         {
           "date": "2026-02",
           "series": "Overall",
-          "value": 208.9,
-          "is_provisional": true
+          "value": 209.1,
+          "is_provisional": false
         },
         {
           "date": "2026-03",
           "series": "Overall",
-          "value": 209.0,
+          "value": 209.1,
           "is_provisional": true
         },
         {
@@ -33814,6 +33832,12 @@
           "date": "2026-05",
           "series": "Overall",
           "value": 209.5,
+          "is_provisional": true
+        },
+        {
+          "date": "2026-06",
+          "series": "Overall",
+          "value": 209.7,
           "is_provisional": true
         }
       ],
@@ -36203,25 +36227,31 @@
         {
           "date": "2026-02",
           "series": "Prices",
-          "value": 323.3,
-          "is_provisional": true
+          "value": 324.4,
+          "is_provisional": false
         },
         {
           "date": "2026-03",
           "series": "Prices",
-          "value": 319.0,
+          "value": 321.5,
           "is_provisional": true
         },
         {
           "date": "2026-04",
           "series": "Prices",
-          "value": 316.9,
+          "value": 319.9,
           "is_provisional": true
         },
         {
           "date": "2026-05",
           "series": "Prices",
-          "value": 315.4,
+          "value": 318.3,
+          "is_provisional": true
+        },
+        {
+          "date": "2026-06",
+          "series": "Prices",
+          "value": 317.8,
           "is_provisional": true
         },
         {
@@ -38610,24 +38640,30 @@
           "date": "2026-02",
           "series": "Rents",
           "value": 154.3,
-          "is_provisional": true
+          "is_provisional": false
         },
         {
           "date": "2026-03",
           "series": "Rents",
-          "value": 153.7,
+          "value": 153.5,
           "is_provisional": true
         },
         {
           "date": "2026-04",
           "series": "Rents",
-          "value": 153.0,
+          "value": 152.9,
           "is_provisional": true
         },
         {
           "date": "2026-05",
           "series": "Rents",
-          "value": 152.2,
+          "value": 152.3,
+          "is_provisional": true
+        },
+        {
+          "date": "2026-06",
+          "series": "Rents",
+          "value": 152.0,
           "is_provisional": true
         }
       ],
