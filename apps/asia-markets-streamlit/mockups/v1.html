@@ -1,0 +1,984 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Asia Markets — Streamlit V1 Mock</title>
+    <style>
+      :root {
+        --canvas: #ffffff;
+        --surface: #ffffff;
+        --sidebar: #f7f8fa;
+        --soft: #f5f7fb;
+        --line: #e5e7eb;
+        --line-strong: #d7dce5;
+        --ink: #111827;
+        --muted: #6b7280;
+        --faint: #9ca3af;
+        --accent: #2563eb;
+        --accent-soft: #eff5ff;
+        --green: #14804a;
+        --green-soft: #edf9f2;
+        --amber: #b86a00;
+        --amber-soft: #fff7e8;
+        --red: #c83c3c;
+        --shadow: 0 8px 24px rgba(16, 24, 40, 0.045);
+        --radius: 10px;
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body { margin: 0; min-height: 100%; }
+
+      body {
+        background: var(--canvas);
+        color: var(--ink);
+        font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        font-size: 14px;
+        line-height: 1.45;
+      }
+
+      button, select, input { font: inherit; }
+
+      button { cursor: pointer; }
+
+      .app-shell { display: flex; min-height: 100vh; }
+
+      .sidebar {
+        position: sticky;
+        top: 0;
+        display: flex;
+        flex: 0 0 220px;
+        flex-direction: column;
+        min-height: 100vh;
+        padding: 22px 14px 16px;
+        background: var(--sidebar);
+        border-right: 1px solid var(--line);
+        transition: flex-basis 180ms ease, padding 180ms ease;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0 8px 24px;
+      }
+
+      .brand-mark {
+        display: grid;
+        width: 32px;
+        height: 32px;
+        place-items: center;
+        border-radius: 8px;
+        background: var(--accent);
+        color: white;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: -0.05em;
+      }
+
+      .brand-copy strong { display: block; font-size: 15px; letter-spacing: -0.02em; }
+      .brand-copy span { display: block; margin-top: 1px; color: var(--muted); font-size: 11px; }
+
+      .nav-group { margin: 12px 0 4px; }
+      .nav-group-label {
+        padding: 0 10px 6px;
+        color: var(--faint);
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+      }
+
+      .nav-item {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        gap: 10px;
+        margin: 2px 0;
+        padding: 9px 10px;
+        border: 0;
+        border-radius: 7px;
+        background: transparent;
+        color: #4b5563;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 550;
+      }
+
+      .nav-item:hover { background: rgba(37, 99, 235, 0.06); color: var(--ink); }
+      .nav-item.active { background: #eaf1ff; color: var(--accent); font-weight: 700; }
+
+      .nav-icon {
+        display: grid;
+        width: 18px;
+        height: 18px;
+        place-items: center;
+        color: currentColor;
+      }
+
+      .nav-icon svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+      .sidebar-footer { margin-top: auto; padding: 16px 9px 0; color: var(--faint); font-size: 11px; }
+      .sidebar-footer .snapshot { margin-top: 5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+      .main { min-width: 0; flex: 1; }
+
+      .topbar {
+        display: flex;
+        min-height: 64px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 0 34px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .crumb { color: var(--muted); font-size: 12px; }
+      .crumb strong { color: var(--ink); font-weight: 650; }
+
+      .top-actions { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 12px; }
+      .top-actions .last-updated { white-space: nowrap; }
+
+      .icon-button, .language-button {
+        display: inline-flex;
+        min-width: 31px;
+        height: 31px;
+        align-items: center;
+        justify-content: center;
+        padding: 0 8px;
+        border: 1px solid transparent;
+        border-radius: 7px;
+        background: transparent;
+        color: var(--muted);
+      }
+
+      .icon-button:hover, .language-button:hover { border-color: var(--line); background: var(--soft); color: var(--ink); }
+      .icon-button svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+      .language-button { border-color: var(--line); color: var(--ink); font-size: 12px; font-weight: 650; }
+      .mobile-menu { display: none; }
+
+      .content { max-width: 1420px; margin: 0 auto; padding: 34px 34px 56px; }
+
+      .page { display: none; animation: page-in 160ms ease-out; }
+      .page.active { display: block; }
+      @keyframes page-in { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
+
+      .page-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 25px; }
+      .page-heading h1 { margin: 0; color: var(--ink); font-size: 28px; line-height: 1.12; letter-spacing: -0.04em; }
+      .page-heading p { max-width: 720px; margin: 8px 0 0; color: var(--muted); font-size: 14px; }
+      .heading-meta { color: var(--faint); font-size: 12px; text-align: right; white-space: nowrap; }
+
+      .metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 22px; }
+      .metric-card { padding: 18px 19px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
+      .metric-label { color: var(--muted); font-size: 11px; font-weight: 650; letter-spacing: 0.02em; }
+      .metric-value { margin-top: 7px; color: var(--ink); font-size: 29px; font-weight: 780; letter-spacing: -0.045em; line-height: 1; }
+      .metric-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; color: var(--faint); font-size: 11px; }
+      .delta-up { color: var(--green); font-weight: 700; }
+      .delta-down { color: var(--amber); font-weight: 700; }
+
+      .panel { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
+      .panel-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 18px 19px 0; }
+      .panel-title { margin: 0; font-size: 15px; font-weight: 750; letter-spacing: -0.015em; }
+      .panel-subtitle { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+      .panel-action { border: 0; background: transparent; color: var(--accent); font-size: 12px; font-weight: 700; }
+      .panel-action:hover { text-decoration: underline; }
+      .panel-body { padding: 16px 19px 19px; }
+
+      .overview-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(340px, 0.95fr); gap: 15px; align-items: stretch; }
+      .chart-wrap { height: 290px; padding-top: 10px; }
+      .chart-wrap svg { display: block; width: 100%; height: 100%; overflow: visible; }
+      .chart-grid-line { stroke: #eef1f5; stroke-width: 1; }
+      .chart-axis-label { fill: #9ca3af; font-size: 10px; }
+      .chart-line { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+      .chart-area { fill: #eaf1ff; opacity: 0.78; }
+      .chart-dot { fill: white; stroke: var(--accent); stroke-width: 2; }
+      .chart-bar { fill: #c9dafa; }
+      .chart-bar.accent { fill: var(--accent); }
+      .chart-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 4px; color: var(--muted); font-size: 11px; }
+      .legend-item { display: inline-flex; align-items: center; gap: 6px; }
+      .legend-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+      .legend-square { width: 8px; height: 8px; border-radius: 2px; background: #c9dafa; }
+
+      .sector-table, .health-table, .data-table { width: 100%; border-collapse: collapse; }
+      .sector-table th, .sector-table td, .health-table th, .health-table td, .data-table th, .data-table td { padding: 10px 6px; border-bottom: 1px solid #f0f2f5; text-align: left; white-space: nowrap; }
+      .sector-table th, .health-table th, .data-table th { color: var(--faint); font-size: 10px; font-weight: 750; letter-spacing: 0.06em; text-transform: uppercase; }
+      .sector-table td { color: #374151; font-size: 12px; }
+      .sector-table tr:last-child td, .health-table tr:last-child td, .data-table tr:last-child td { border-bottom: 0; }
+      .sector-name { color: var(--ink); font-weight: 700; }
+      .sparkline { width: 54px; height: 20px; }
+      .sparkline polyline { fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+      .status { display: inline-flex; align-items: center; gap: 5px; color: var(--green); font-size: 11px; font-weight: 700; }
+      .status::before { width: 7px; height: 7px; border-radius: 50%; background: currentColor; content: ""; }
+      .status.fair { color: var(--amber); }
+      .status.degraded { color: var(--red); }
+
+      .source-strip { margin-top: 15px; }
+      .source-strip-content { display: grid; grid-template-columns: minmax(230px, 1.1fr) repeat(5, minmax(100px, 1fr)); gap: 0; padding: 16px 19px 18px; }
+      .source-overview { display: flex; align-items: center; gap: 13px; padding-right: 20px; }
+      .health-ring { position: relative; display: grid; width: 64px; height: 64px; place-items: center; border-radius: 50%; background: conic-gradient(var(--green) 0 76%, #e5a528 76% 93%, #e26969 93% 97%, #e5e7eb 97% 100%); }
+      .health-ring::after { position: absolute; width: 43px; height: 43px; border-radius: 50%; background: white; content: ""; }
+      .health-ring strong { position: relative; z-index: 1; font-size: 13px; }
+      .source-overview strong { display: block; font-size: 13px; }
+      .source-overview span { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; }
+      .source-type { display: flex; min-height: 55px; flex-direction: column; justify-content: center; padding: 0 15px; border-left: 1px solid var(--line); }
+      .source-type strong { font-size: 12px; }
+      .source-type span { margin-top: 5px; color: var(--muted); font-size: 11px; }
+
+      .control-panel { margin-bottom: 16px; padding: 17px 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--soft); }
+      .control-grid { display: grid; grid-template-columns: 1.15fr 1.25fr 1.15fr 0.95fr; gap: 12px; align-items: end; }
+      .control-label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 11px; font-weight: 700; }
+      .control-select, .control-input { width: 100%; height: 36px; padding: 0 10px; border: 1px solid var(--line-strong); border-radius: 7px; background: white; color: var(--ink); outline: none; }
+      .control-select:focus, .control-input:focus { border-color: #8fb1f5; box-shadow: 0 0 0 3px #eaf1ff; }
+      .segment-wrap { display: flex; height: 36px; overflow: hidden; border: 1px solid var(--line-strong); border-radius: 7px; background: white; }
+      .segment-button { flex: 1; border: 0; border-right: 1px solid var(--line); background: white; color: var(--muted); font-size: 12px; font-weight: 700; }
+      .segment-button:last-child { border-right: 0; }
+      .segment-button.active { background: var(--accent); color: white; }
+      .selection-meta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 13px; color: var(--muted); font-size: 11px; }
+      .selection-meta span { display: inline-flex; align-items: center; gap: 5px; }
+      .selection-meta strong { color: var(--ink); font-weight: 700; }
+
+      .sector-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 18px; padding: 13px 15px; border: 1px solid var(--line); border-radius: 9px; background: var(--soft); }
+      .market-context { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 12px; }
+      .market-context strong { color: var(--ink); font-size: 13px; }
+      .market-context .live-count { padding-left: 9px; border-left: 1px solid var(--line-strong); color: var(--green); font-size: 11px; font-weight: 700; }
+      .section-nav { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 5px; }
+      .section-nav a { padding: 5px 8px; border-radius: 5px; color: var(--muted); font-size: 11px; font-weight: 700; text-decoration: none; }
+      .section-nav a:hover { background: white; color: var(--accent); }
+      .sector-section { scroll-margin-top: 20px; margin-top: 15px; }
+      .sector-summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+      .sector-summary-card { padding: 14px 15px; border: 1px solid var(--line); border-radius: 8px; background: white; }
+      .sector-summary-card span { display: block; color: var(--muted); font-size: 11px; }
+      .sector-summary-card strong { display: block; margin-top: 5px; font-size: 20px; letter-spacing: -0.03em; }
+      .sector-summary-card small { display: block; margin-top: 5px; color: var(--faint); font-size: 10px; }
+      .section-control { display: flex; align-items: center; gap: 6px; }
+      .section-toggle { height: 28px; padding: 0 9px; border: 1px solid var(--line); border-radius: 5px; background: white; color: var(--muted); font-size: 11px; font-weight: 750; }
+      .section-toggle.active { border-color: #a8c4f6; background: var(--accent-soft); color: var(--accent); }
+      .section-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr); gap: 15px; }
+      .subtab-bar { display: flex; gap: 3px; margin-top: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+      .subtab { flex: 0 0 auto; padding: 6px 9px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font-size: 12px; font-weight: 700; }
+      .subtab:hover { color: var(--ink); }
+      .subtab.active { border-bottom-color: var(--accent); color: var(--accent); }
+      .section-table-wrap { overflow-x: auto; max-height: 245px; }
+      .section-table-wrap .data-table { min-width: 440px; }
+      .section-note { margin-top: 8px; color: var(--faint); font-size: 11px; }
+
+      .explorer-chart-panel { margin-bottom: 15px; }
+      .explorer-chart { height: auto; padding-top: 10px; }
+      .explorer-chart svg { height: 300px; }
+      .explorer-chart .chart-legend { margin-top: 10px; }
+      .chart-toolbar { display: flex; align-items: center; gap: 8px; }
+      .copy-button { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 1px solid var(--line); border-radius: 6px; background: white; color: var(--muted); font-size: 11px; font-weight: 700; }
+      .copy-button:hover { border-color: #aac3f6; color: var(--accent); }
+      .copy-button.copied { border-color: #b9e4c8; background: var(--green-soft); color: var(--green); }
+
+      .table-panel { overflow: hidden; }
+      .table-scroll { overflow-x: auto; padding: 0 19px; }
+      .data-table td { color: #374151; font-size: 12px; font-variant-numeric: tabular-nums; }
+      .data-table td:first-child { color: var(--ink); font-weight: 650; }
+      .table-footer { display: flex; align-items: center; justify-content: space-between; padding: 12px 19px 15px; border-top: 1px solid #f0f2f5; color: var(--faint); font-size: 11px; }
+
+      .data-explorer-grid { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 15px; align-items: start; }
+      .dataset-list { padding: 10px; }
+      .dataset-list button { display: block; width: 100%; margin: 2px 0; padding: 10px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); text-align: left; font-size: 12px; font-weight: 600; }
+      .dataset-list button:hover { background: var(--soft); color: var(--ink); }
+      .dataset-list button.active { background: var(--accent-soft); color: var(--accent); font-weight: 750; }
+      .dataset-list small { display: block; margin-top: 2px; color: var(--faint); font-size: 10px; font-weight: 500; }
+      .data-content .panel { margin-bottom: 15px; }
+      .metadata-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; padding: 15px 19px 18px; }
+      .metadata-item { padding: 11px 12px; border: 1px solid var(--line); border-radius: 7px; background: var(--soft); }
+      .metadata-item span { display: block; color: var(--muted); font-size: 10px; }
+      .metadata-item strong { display: block; margin-top: 4px; font-size: 13px; }
+      .column-list { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 19px 18px; }
+      .column-chip { padding: 4px 7px; border: 1px solid var(--line); border-radius: 5px; background: white; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; }
+
+      .health-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 15px; }
+      .health-card { padding: 17px 18px; border: 1px solid var(--line); border-radius: var(--radius); background: white; box-shadow: var(--shadow); }
+      .health-card span { color: var(--muted); font-size: 11px; }
+      .health-card strong { display: block; margin-top: 5px; font-size: 24px; letter-spacing: -0.035em; }
+      .health-card small { display: block; margin-top: 5px; color: var(--faint); font-size: 11px; }
+      .health-table-wrap { overflow-x: auto; padding: 0 19px; }
+      .health-table td { color: #374151; font-size: 12px; }
+      .health-table td:first-child { color: var(--ink); font-weight: 700; }
+      .freshness { color: var(--muted); font-variant-numeric: tabular-nums; }
+      .caveat { max-width: 330px; color: var(--muted); white-space: normal !important; }
+
+      .info-note { display: flex; gap: 10px; margin-top: 15px; padding: 13px 15px; border: 1px solid #dce8ff; border-radius: 8px; background: #f7faff; color: #42516b; font-size: 12px; }
+      .info-note strong { color: var(--ink); }
+      .info-note svg { flex: 0 0 16px; width: 16px; height: 16px; fill: none; stroke: var(--accent); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+      @media (max-width: 1120px) {
+        .sidebar { flex-basis: 196px; }
+        .topbar { padding: 0 24px; }
+        .content { padding: 28px 24px 48px; }
+        .overview-grid { grid-template-columns: 1fr; }
+        .source-strip-content { grid-template-columns: 1.1fr repeat(3, 1fr); }
+        .source-type:nth-last-child(-n + 2) { margin-top: 12px; border-top: 1px solid var(--line); border-left: 0; }
+        .source-type:nth-last-child(2) { grid-column: 2; }
+        .source-type:last-child { grid-column: 3; }
+        .sector-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .section-grid { grid-template-columns: 1fr; }
+      }
+
+      @media (max-width: 780px) {
+        .app-shell { display: block; }
+        .sidebar { position: fixed; z-index: 10; top: 0; bottom: 0; left: 0; display: none; width: 238px; min-height: auto; box-shadow: 12px 0 30px rgba(16, 24, 40, 0.12); }
+        .sidebar.open { display: flex; }
+        .mobile-menu { display: inline-flex; }
+        .topbar { min-height: 58px; padding: 0 16px; }
+        .top-actions .last-updated { display: none; }
+        .content { padding: 24px 16px 42px; }
+        .overview-grid { min-width: 0; }
+        .overview-grid > .panel { min-width: 0; overflow: hidden; }
+        .sector-table { table-layout: fixed; }
+        .sector-table th, .sector-table td { overflow: hidden; padding-right: 3px; padding-left: 3px; text-overflow: ellipsis; }
+        .sector-table th:nth-child(1), .sector-table td:nth-child(1) { width: 34%; }
+        .sector-table th:nth-child(2), .sector-table td:nth-child(2) { width: 18%; }
+        .sector-table th:nth-child(3), .sector-table td:nth-child(3) { width: 16%; }
+        .sector-table th:nth-child(4), .sector-table td:nth-child(4) { width: 17%; }
+        .sector-table th:nth-child(5), .sector-table td:nth-child(5) { width: 15%; }
+        .sparkline { width: 42px; }
+        .page-heading { display: block; margin-bottom: 20px; }
+        .page-heading h1 { font-size: 24px; }
+        .heading-meta { margin-top: 10px; text-align: left; }
+        .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+        .metric-card { padding: 14px; }
+        .metric-value { font-size: 24px; }
+        .control-grid { grid-template-columns: 1fr 1fr; }
+        .control-grid > :last-child { grid-column: 1 / -1; }
+        .source-strip-content { grid-template-columns: repeat(2, 1fr); }
+        .source-overview { grid-column: 1 / -1; padding: 0 0 14px; }
+        .source-type { margin-top: 0 !important; padding: 10px 12px; border-top: 1px solid var(--line); border-left: 0; }
+        .source-type:nth-last-child(2), .source-type:last-child { grid-column: auto; }
+        .sector-toolbar { display: block; }
+        .section-nav { justify-content: flex-start; margin-top: 10px; }
+        .sector-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .data-explorer-grid { grid-template-columns: 1fr; }
+        .dataset-list { display: flex; gap: 7px; overflow-x: auto; padding: 10px; }
+        .dataset-list button { min-width: 170px; }
+        .metadata-grid { grid-template-columns: repeat(2, 1fr); }
+        .chart-toolbar { margin-top: 8px; }
+      }
+
+      @media (max-width: 480px) {
+        .metric-grid { grid-template-columns: 1fr 1fr; }
+        .metric-label { font-size: 10px; }
+        .metric-value { font-size: 22px; }
+        .metric-foot { display: block; }
+        .metric-foot span { display: block; margin-top: 3px; }
+        .control-grid { grid-template-columns: 1fr; }
+        .control-grid > :last-child { grid-column: auto; }
+        .panel-header { display: block; }
+        .panel-action { display: block; margin-top: 8px; padding: 0; }
+        .source-type { min-height: 66px; }
+        .sector-summary-card strong { font-size: 18px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" id="sidebar">
+        <div class="brand">
+          <span class="brand-mark">AM</span>
+          <div class="brand-copy">
+            <strong>Asia Markets</strong>
+            <span>Private research terminal</span>
+          </div>
+        </div>
+
+        <nav aria-label="Primary navigation">
+          <div class="nav-group">
+            <div class="nav-group-label" data-en="Workspace" data-zh="工作台">Workspace</div>
+            <button class="nav-item active" data-page="overview">
+              <span class="nav-icon"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg></span>
+              <span data-en="Overview" data-zh="总览">Overview</span>
+            </button>
+          </div>
+
+          <div class="nav-group">
+            <div class="nav-group-label" data-en="Hong Kong" data-zh="香港">Hong Kong</div>
+            <button class="nav-item" data-page="sector-explorer" data-sector="Hong Kong Real Estate"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M4 20V9l8-5 8 5v11"/><path d="M8 20v-6h8v6M9 10h.01M15 10h.01"/></svg></span><span data-en="Real Estate" data-zh="房地产">Real Estate</span></button>
+            <button class="nav-item" data-page="sector-explorer" data-sector="Hong Kong Local Consumer"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M5 7h14l-1 13H6L5 7Z"/><path d="M9 7a3 3 0 0 1 6 0M4 7h16"/></svg></span><span data-en="Local Consumer" data-zh="本地消费">Local Consumer</span></button>
+            <button class="nav-item" data-page="sector-explorer" data-sector="Hong Kong Utilities"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M13 2 5 13h6l-1 9 8-11h-6l1-9Z"/></svg></span><span data-en="Utilities & Infrastructure" data-zh="公用事业与基础设施">Utilities & Infrastructure</span></button>
+            <button class="nav-item" data-page="sector-explorer" data-sector="Hong Kong Transport"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M5 16h14l-1-7H6l-1 7Z"/><path d="M8 16v3M16 16v3M7 9l1-3h8l1 3M8 12h.01M16 12h.01"/></svg></span><span data-en="Transport & Aviation" data-zh="交通与航空">Transport & Aviation</span></button>
+            <button class="nav-item" data-page="sector-explorer" data-sector="Hong Kong Telecom"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M5 20V9M12 20V4M19 20v-7"/><path d="M3 20h18"/></svg></span><span data-en="Telecom" data-zh="电讯">Telecom</span></button>
+            <button class="nav-item" data-page="sector-explorer" data-sector="Hong Kong Labour Market"><span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M5 20a7 7 0 0 1 14 0M3 12h3M18 12h3"/></svg></span><span data-en="Labour Market" data-zh="劳动力市场">Labour Market</span></button>
+            <button class="nav-item" data-page="sector-explorer" data-sector="Hong Kong Population & Migration"><span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="10" r="2"/><path d="M3 20a6 6 0 0 1 12 0M14 20a4 4 0 0 1 7 0"/></svg></span><span data-en="Population & Migration" data-zh="人口与迁移">Population & Migration</span></button>
+            <button class="nav-item" data-page="sector-explorer" data-sector="Hong Kong REITs"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M4 19V5h16v14H4Z"/><path d="M8 15v-3M12 15V8M16 15v-5"/></svg></span><span data-en="REITs" data-zh="房地产信托">REITs</span></button>
+            <button class="nav-item" data-page="sector-explorer" data-sector="Hong Kong Commercial Aerospace"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="m12 3 3 8 6 3-6 2-3 5-3-5-6-2 6-3 3-8Z"/></svg></span><span data-en="Commercial Aerospace" data-zh="商业航天">Commercial Aerospace</span></button>
+            <button class="nav-item" data-page="sector-explorer" data-sector="Hong Kong Stablecoin & Crypto"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="m12 3 7 4v10l-7 4-7-4V7l7-4Z"/><path d="m8 9 4-2 4 2-4 2-4-2ZM8 13l4 2 4-2"/></svg></span><span data-en="Stablecoin & Crypto" data-zh="稳定币与加密资产">Stablecoin & Crypto</span></button>
+          </div>
+
+          <div class="nav-group">
+            <div class="nav-group-label" data-en="Data" data-zh="数据">Data</div>
+            <button class="nav-item" data-page="data-explorer">
+              <span class="nav-icon"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v7c0 1.7 3.1 3 7 3s7-1.3 7-3V5"/><path d="M5 12v7c0 1.7 3.1 3 7 3s7-1.3 7-3v-7"/></svg></span>
+              <span data-en="Data Explorer" data-zh="数据探索器">Data Explorer</span>
+            </button>
+            <button class="nav-item" data-page="source-health">
+              <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.7 3 8.5 7 10 4-1.5 7-5.3 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg></span>
+              <span data-en="Source Health" data-zh="来源健康度">Source Health</span>
+            </button>
+          </div>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div data-en="Snapshot" data-zh="数据快照">Snapshot</div>
+          <div class="snapshot">asia-v1 · 2026-07-30</div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div class="crumb">
+            <button class="icon-button mobile-menu" id="mobileMenu" aria-label="Open menu"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+            <span data-en="Research terminal" data-zh="研究终端">Research terminal</span>
+            <span> / </span>
+            <strong id="breadcrumb">Overview</strong>
+          </div>
+          <div class="top-actions">
+            <span class="last-updated" data-en="Last updated 30 Jul 2026 · 23:25 HKT" data-zh="最后更新：2026年7月30日 · 23:25 HKT">Last updated 30 Jul 2026 · 23:25 HKT</span>
+            <button class="language-button" id="languageToggle">中文</button>
+            <button class="icon-button" aria-label="Refresh mock"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14-5L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14 5l2-2"/><path d="M20 20v-4h-4"/></svg></button>
+          </div>
+        </header>
+
+        <div class="content">
+          <section class="page active" id="page-overview">
+            <div class="page-heading">
+              <div>
+                <h1 data-en="Asia Markets Overview" data-zh="亚洲市场总览">Asia Markets Overview</h1>
+                <p data-en="A lightweight landing page for the latest Hong Kong-first market signals, coverage and source freshness." data-zh="轻量级入口页：查看香港优先的最新市场信号、数据覆盖和来源新鲜度。">A lightweight landing page for the latest Hong Kong-first market signals, coverage and source freshness.</p>
+              </div>
+              <div class="heading-meta" data-en="10 live sectors · Full history available in Explorer" data-zh="10个实时板块 · 探索器提供完整历史">10 live sectors · Full history available in Explorer</div>
+            </div>
+
+            <div class="metric-grid">
+              <article class="metric-card">
+                <div class="metric-label" data-en="Labour force ('000)" data-zh="劳动力（千人）">Labour force ('000)</div>
+                <div class="metric-value">3,785.8</div>
+                <div class="metric-foot"><span>2026-06</span><span class="delta-up">▲ 0.4% MoM</span></div>
+              </article>
+              <article class="metric-card">
+                <div class="metric-label" data-en="Unemployment rate" data-zh="失业率">Unemployment rate</div>
+                <div class="metric-value">3.7%</div>
+                <div class="metric-foot"><span>3M average</span><span class="delta-down">▼ 0.1pp YoY</span></div>
+              </article>
+              <article class="metric-card">
+                <div class="metric-label" data-en="Airport passengers" data-zh="机场客运量">Airport passengers</div>
+                <div class="metric-value">5.1m</div>
+                <div class="metric-foot"><span>2026-06</span><span class="delta-up">▲ 8.9% YoY</span></div>
+              </article>
+              <article class="metric-card">
+                <div class="metric-label" data-en="Population estimate ('000)" data-zh="人口估计（千人）">Population estimate ('000)</div>
+                <div class="metric-value">7,510.3</div>
+                <div class="metric-foot"><span>2025-12</span><span class="delta-up">▲ 0.3% YoY</span></div>
+              </article>
+            </div>
+
+            <div class="overview-grid">
+              <article class="panel">
+                <div class="panel-header">
+                  <div>
+                    <h2 class="panel-title" data-en="Hong Kong labour market pulse" data-zh="香港劳动力市场脉搏">Hong Kong labour market pulse</h2>
+                    <p class="panel-subtitle" data-en="Employment and labour force · rolling three-month series" data-zh="就业与劳动力 · 三个月移动平均序列">Employment and labour force · rolling three-month series</p>
+                  </div>
+                  <button class="panel-action" data-open-page="sector-explorer" data-en="View in Explorer →" data-zh="在探索器中查看 →">View in Explorer →</button>
+                </div>
+                <div class="panel-body">
+                  <div class="chart-wrap"><svg id="overviewChart" viewBox="0 0 760 290" role="img" aria-label="Labour force and employment chart"></svg></div>
+                  <div class="chart-legend">
+                    <span class="legend-item"><i class="legend-dot"></i><span data-en="Labour force" data-zh="劳动力">Labour force</span></span>
+                    <span class="legend-item"><i class="legend-square"></i><span data-en="Employment" data-zh="就业人数">Employment</span></span>
+                  </div>
+                  <div class="info-note">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 10v6M12 7h.01"/></svg>
+                    <span data-en="The overview uses compact summary marts only. Full history, transformations and rows are available after entering Sector Explorer." data-zh="总览只读取紧凑的摘要数据。进入板块探索器后，才加载完整历史、变换方式和数据表。">The overview uses compact summary marts only. Full history, transformations and rows are available after entering Sector Explorer.</span>
+                  </div>
+                </div>
+              </article>
+
+              <article class="panel">
+                <div class="panel-header">
+                  <div>
+                    <h2 class="panel-title" data-en="Sector snapshot" data-zh="板块快照">Sector snapshot</h2>
+                    <p class="panel-subtitle" data-en="Latest available measure and source health" data-zh="最新可用指标和来源健康度">Latest available measure and source health</p>
+                  </div>
+                  <button class="panel-action" data-open-page="source-health" data-en="Source health →" data-zh="来源健康度 →">Source health →</button>
+                </div>
+                <div class="panel-body" style="padding-top: 9px;">
+                  <table class="sector-table">
+                    <thead><tr><th data-en="Sector" data-zh="板块">Sector</th><th data-en="Trend" data-zh="趋势">Trend</th><th data-en="Latest" data-zh="最新值">Latest</th><th data-en="YoY" data-zh="同比">YoY</th><th data-en="Status" data-zh="状态">Status</th></tr></thead>
+                    <tbody>
+                      <tr><td class="sector-name" data-en="Labour market" data-zh="劳动力市场">Labour market</td><td><svg class="sparkline" viewBox="0 0 54 20"><polyline points="1,14 8,12 15,14 22,10 29,11 36,7 43,9 53,5"/></svg></td><td>3.7%</td><td class="delta-up">▲ 0.1pp</td><td><span class="status" data-en="Healthy" data-zh="健康">Healthy</span></td></tr>
+                      <tr><td class="sector-name" data-en="Real estate" data-zh="房地产">Real estate</td><td><svg class="sparkline" viewBox="0 0 54 20"><polyline points="1,8 8,10 15,8 22,11 29,8 36,6 43,8 53,4"/></svg></td><td>146.2</td><td class="delta-down">▼ 2.3%</td><td><span class="status" data-en="Healthy" data-zh="健康">Healthy</span></td></tr>
+                      <tr><td class="sector-name" data-en="Local consumer" data-zh="本地消费">Local consumer</td><td><svg class="sparkline" viewBox="0 0 54 20"><polyline points="1,11 8,10 15,13 22,8 29,10 36,6 43,8 53,7"/></svg></td><td>98.4</td><td class="delta-up">▲ 1.2%</td><td><span class="status" data-en="Healthy" data-zh="健康">Healthy</span></td></tr>
+                      <tr><td class="sector-name" data-en="Transport" data-zh="交通">Transport</td><td><svg class="sparkline" viewBox="0 0 54 20"><polyline points="1,15 8,13 15,13 22,10 29,9 36,8 43,6 53,7"/></svg></td><td>5.1m</td><td class="delta-up">▲ 8.9%</td><td><span class="status" data-en="Healthy" data-zh="健康">Healthy</span></td></tr>
+                      <tr><td class="sector-name" data-en="Population" data-zh="人口迁移">Population</td><td><svg class="sparkline" viewBox="0 0 54 20"><polyline points="1,14 8,12 15,12 22,10 29,11 36,8 43,8 53,7"/></svg></td><td>7.51m</td><td class="delta-up">▲ 0.3%</td><td><span class="status" data-en="Healthy" data-zh="健康">Healthy</span></td></tr>
+                      <tr><td class="sector-name" data-en="Utilities" data-zh="公用事业">Utilities</td><td><svg class="sparkline" viewBox="0 0 54 20"><polyline points="1,9 8,11 15,8 22,12 29,10 36,12 43,9 53,10"/></svg></td><td>1,206</td><td class="delta-down">▼ 0.4%</td><td><span class="status fair" data-en="Partial" data-zh="部分">Partial</span></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+            </div>
+
+            <article class="panel source-strip">
+              <div class="panel-header">
+                <div>
+                  <h2 class="panel-title" data-en="Source health overview" data-zh="来源健康度总览">Source health overview</h2>
+                  <p class="panel-subtitle" data-en="Freshness and coverage across the published snapshot" data-zh="已发布数据快照的更新时间和覆盖情况">Freshness and coverage across the published snapshot</p>
+                </div>
+                <button class="panel-action" data-open-page="source-health" data-en="View Source Health →" data-zh="查看来源健康度 →">View Source Health →</button>
+              </div>
+              <div class="source-strip-content">
+                <div class="source-overview"><div class="health-ring"><strong>92%</strong></div><div><strong data-en="22 tracked sources" data-zh="22个已跟踪来源">22 tracked sources</strong><span data-en="17 healthy · 4 partial · 1 stale" data-zh="17个健康 · 4个部分 · 1个过期">17 healthy · 4 partial · 1 stale</span></div></div>
+                <div class="source-type"><strong data-en="Government" data-zh="政府">Government</strong><span class="status" data-en="Healthy" data-zh="健康">Healthy</span></div>
+                <div class="source-type"><strong data-en="Statutory bodies" data-zh="法定机构">Statutory bodies</strong><span class="status" data-en="Healthy" data-zh="健康">Healthy</span></div>
+                <div class="source-type"><strong data-en="Industry data" data-zh="行业数据">Industry data</strong><span class="status fair" data-en="Partial" data-zh="部分">Partial</span></div>
+                <div class="source-type"><strong data-en="Research feeds" data-zh="研究数据">Research feeds</strong><span class="status" data-en="Healthy" data-zh="健康">Healthy</span></div>
+                <div class="source-type"><strong data-en="Snapshots" data-zh="快照">Snapshots</strong><span class="status fair" data-en="Mixed" data-zh="混合">Mixed</span></div>
+              </div>
+            </article>
+          </section>
+
+          <section class="page" id="page-sector-explorer">
+            <div class="page-heading">
+              <div>
+                <h1 id="sectorPageTitle">Hong Kong Labour Market</h1>
+                <p id="sectorPageDescription">A complete sector page: browse the main charts and tables by scrolling, then use sub-tabs only where a theme contains several related measures.</p>
+              </div>
+              <div class="heading-meta" id="sectorPageMeta">Hong Kong · 10 ready sectors</div>
+            </div>
+
+            <div class="sector-toolbar">
+              <div class="market-context"><span data-en="Market" data-zh="市场">Market</span><strong>Hong Kong</strong><span class="live-count" data-en="10 ready sectors" data-zh="10个已就绪板块">10 ready sectors</span></div>
+              <nav class="section-nav" aria-label="On this page">
+                <a href="#sector-summary" data-en="Summary" data-zh="摘要">Summary</a>
+                <a href="#sector-core" data-en="Core trend" data-zh="核心趋势">Core trend</a>
+                <a href="#sector-related" data-en="Related measures" data-zh="相关指标">Related measures</a>
+                <a href="#sector-tables" data-en="Tables" data-zh="数据表">Tables</a>
+                <a href="#sector-sources" data-en="Sources" data-zh="来源">Sources</a>
+              </nav>
+            </div>
+
+            <div id="sectorSections"></div>
+          </section>
+
+          <section class="page" id="page-data-explorer">
+            <div class="page-heading">
+              <div><h1 data-en="Data Explorer" data-zh="数据探索器">Data Explorer</h1><p data-en="Inspect the actual rows, schema and coverage of one normalized dataset." data-zh="查看一个规范化数据集的实际行、字段结构和覆盖范围。">Inspect the actual rows, schema and coverage of one normalized dataset.</p></div>
+              <div class="heading-meta" data-en="Read-only preview · Lazy loaded" data-zh="只读预览 · 按需加载">Read-only preview · Lazy loaded</div>
+            </div>
+
+            <div class="data-explorer-grid">
+              <article class="panel dataset-list" id="datasetList"></article>
+              <div class="data-content">
+                <article class="panel"><div class="panel-header"><div><h2 class="panel-title" id="dataTitle">Labour market monthly</h2><p class="panel-subtitle" id="dataSubtitle">C&SD labour force, employment and unemployment series</p></div></div><div class="metadata-grid" id="metadataGrid"></div><div class="column-list" id="columnList"></div></article>
+                <article class="panel table-panel"><div class="panel-header"><div><h2 class="panel-title" data-en="Rows preview" data-zh="数据行预览">Rows preview</h2><p class="panel-subtitle" data-en="First 10 rows from the current snapshot." data-zh="当前快照的前10行。">First 10 rows from the current snapshot.</p></div><button class="panel-action" id="openSectorFromData" data-en="Open in Sector Explorer →" data-zh="在板块探索器中打开 →">Open in Sector Explorer →</button></div><div class="table-scroll"><table class="data-table"><thead id="dataTableHead"></thead><tbody id="dataTableBody"></tbody></table></div><div class="table-footer"><span id="dataRowCount">10 rows shown</span><span data-en="Pagination and download come later" data-zh="分页和下载功能后续加入">Pagination and download come later</span></div></article>
+              </div>
+            </div>
+          </section>
+
+          <section class="page" id="page-source-health">
+            <div class="page-heading">
+              <div><h1 data-en="Source Health" data-zh="来源健康度">Source Health</h1><p data-en="Freshness, coverage and caveats for every live sector source." data-zh="查看每个实时板块来源的更新时间、覆盖范围和限制。">Freshness, coverage and caveats for every live sector source.</p></div>
+              <div class="heading-meta" data-en="Manifest only · No source fetch on navigation" data-zh="仅读取 manifest · 页面切换不抓取来源">Manifest only · No source fetch on navigation</div>
+            </div>
+
+            <div class="health-summary"><article class="health-card"><span data-en="Tracked sources" data-zh="跟踪来源">Tracked sources</span><strong>22</strong><small data-en="Across 10 live sectors" data-zh="覆盖10个实时板块">Across 10 live sectors</small></article><article class="health-card"><span data-en="Healthy" data-zh="健康">Healthy</span><strong style="color:var(--green)">17</strong><small data-en="Usable and dated" data-zh="可用且有日期">Usable and dated</small></article><article class="health-card"><span data-en="Partial" data-zh="部分">Partial</span><strong style="color:var(--amber)">4</strong><small data-en="Coverage caveat visible" data-zh="显示覆盖限制">Coverage caveat visible</small></article><article class="health-card"><span data-en="Stale / unavailable" data-zh="过期 / 不可用">Stale / unavailable</span><strong style="color:var(--red)">1</strong><small data-en="Never silently hidden" data-zh="不会静默隐藏">Never silently hidden</small></article></div>
+
+            <article class="panel table-panel"><div class="panel-header"><div><h2 class="panel-title" data-en="Live source registry" data-zh="实时来源登记表">Live source registry</h2><p class="panel-subtitle" data-en="The page reads the published manifest, not the external endpoints." data-zh="本页读取已发布的 manifest，不会访问外部端点。">The page reads the published manifest, not the external endpoints.</p></div><button class="panel-action" data-en="Refresh manifest" data-zh="刷新 manifest">Refresh manifest</button></div><div class="health-table-wrap"><table class="health-table"><thead><tr><th data-en="Dataset" data-zh="数据集">Dataset</th><th data-en="Sector" data-zh="板块">Sector</th><th data-en="Status" data-zh="状态">Status</th><th data-en="Latest" data-zh="最新日期">Latest</th><th data-en="Cadence" data-zh="频率">Cadence</th><th data-en="Rows" data-zh="行数">Rows</th><th data-en="Caveat" data-zh="限制">Caveat</th></tr></thead><tbody>
+              <tr><td>labour_monthly</td><td data-en="Labour market" data-zh="劳动力市场">Labour market</td><td><span class="status">Healthy</span></td><td class="freshness">2026-06-30</td><td>Monthly</td><td>13,425</td><td class="caveat" data-en="Three-month moving average series." data-zh="三个月移动平均序列。">Three-month moving average series.</td></tr>
+              <tr><td>vacancies_by_industry</td><td data-en="Labour market" data-zh="劳动力市场">Labour market</td><td><span class="status">Healthy</span></td><td class="freshness">2026-03-31</td><td>Quarterly</td><td>6,930</td><td class="caveat" data-en="Excludes civil-service vacancies." data-zh="不包括公务员职位空缺。">Excludes civil-service vacancies.</td></tr>
+              <tr><td>ccl_weekly</td><td data-en="Real estate" data-zh="房地产">Real estate</td><td><span class="status">Healthy</span></td><td class="freshness">2026-07-26</td><td>Weekly</td><td>1,116</td><td class="caveat" data-en="Weekly dates preserved; not collapsed to month." data-zh="保留每周日期，不压缩为月度。">Weekly dates preserved; not collapsed to month.</td></tr>
+              <tr><td>retail_history</td><td data-en="Local consumer" data-zh="本地消费">Local consumer</td><td><span class="status fair">Partial</span></td><td class="freshness">2026-05-31</td><td>Monthly</td><td>121</td><td class="caveat" data-en="Latest ten-year window where available." data-zh="可用时显示最新十年窗口。">Latest ten-year window where available.</td></tr>
+              <tr><td>immd_daily_traffic</td><td data-en="Population & migration" data-zh="人口与迁移">Population & migration</td><td><span class="status">Healthy</span></td><td class="freshness">2026-07-29</td><td>Daily</td><td>365</td><td class="caveat" data-en="Artifact keeps a recent display window." data-zh="artifact保留近期显示窗口。">Artifact keeps a recent display window.</td></tr>
+              <tr><td>afcd_category_history</td><td data-en="Local consumer" data-zh="本地消费">Local consumer</td><td><span class="status fair">Partial</span></td><td class="freshness">2026-07-30</td><td>Snapshot</td><td>5</td><td class="caveat" data-en="Run-accumulated snapshots, not a backfilled history." data-zh="运行累积快照，不是完整回溯历史。">Run-accumulated snapshots, not a backfilled history.</td></tr>
+              <tr><td>hk_valuation</td><td data-en="Local consumer" data-zh="本地消费">Local consumer</td><td><span class="status degraded">Degraded</span></td><td class="freshness">2026-07-30</td><td>Daily</td><td>4,015</td><td class="caveat" data-en="Endpoint currently exposes about one rolling year." data-zh="端点目前只提供约一年的滚动历史。">Endpoint currently exposes about one rolling year.</td></tr>
+            </tbody></table></div></article>
+            <div class="info-note"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 10v6M12 7h.01"/></svg><span data-en="Health describes the published data snapshot. It does not mean the browser has a live connection to every source." data-zh="健康度描述已发布的数据快照，并不表示浏览器正在连接每个实时来源。">Health describes the published data snapshot. It does not mean the browser has a live connection to every source.</span></div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const sectorCatalog = {
+        "Hong Kong Labour Market": {
+          zh: "香港劳动力市场",
+          metrics: {
+            "Labour force and employment": { zh: "劳动力与就业", source: "C&SD", cadence: "Monthly · 3M MA", unit: "'000", series: ["Labour force", "Employment"], values: [3664, 3682, 3697, 3680, 3698, 3711, 3726, 3740, 3750, 3764, 3776, 3786], titleZh: "劳动力与就业人数" },
+            "Median employment earnings": { zh: "每月就业收入中位数", source: "C&SD", cadence: "Monthly", unit: "HKD / month", series: ["Total", "Finance", "Construction", "Retail"], values: [18400, 18800, 19100, 19500, 19800, 20100, 20500, 20800, 21100, 21400, 21700, 21000], titleZh: "每月就业收入中位数" },
+            "Vacancies by industry": { zh: "各行业职位空缺", source: "C&SD", cadence: "Quarterly", unit: "Vacancies", series: ["Total", "Finance", "Professional services", "Retail"], values: [58400, 60100, 57300, 54800, 53200, 51600, 49800, 48610], titleZh: "各行业职位空缺" }
+          }
+        },
+        "Hong Kong Real Estate": {
+          zh: "香港房地产",
+          metrics: {
+            "CCL weekly index": { zh: "CCL每周指数", source: "Centaline", cadence: "Weekly", unit: "Index", series: ["CCL", "Small / medium", "Large"], values: [178, 175, 172, 169, 166, 164, 162, 160, 158, 156, 153, 150], titleZh: "中原城市领先指数" },
+            "Residential rent index": { zh: "住宅租金指数", source: "RVD", cadence: "Monthly", unit: "Index", series: ["Private domestic", "Small / medium", "Large"], values: [122, 123, 124, 124, 125, 126, 127, 128, 129, 130, 131, 132], titleZh: "住宅租金指数" }
+          }
+        },
+        "Hong Kong Local Consumer": {
+          zh: "香港本地消费",
+          metrics: {
+            "Retail sales value": { zh: "零售销售价值", source: "C&SD", cadence: "Monthly", unit: "Index", series: ["Total", "Food", "Clothing", "Jewellery"], values: [96, 98, 95, 99, 101, 100, 102, 104, 103, 106, 108, 110], titleZh: "零售销售价值指数" },
+            "Restaurant receipts": { zh: "餐饮收益", source: "C&SD", cadence: "Quarterly", unit: "HKD mn", series: ["Total", "Restaurants", "Fast food", "Bars"], values: [28700, 29400, 30100, 29900, 30700, 31400, 31900, 32500], titleZh: "餐饮收益" }
+          }
+        },
+        "Hong Kong Transport": {
+          zh: "香港交通与航空",
+          metrics: {
+            "Airport passenger traffic": { zh: "机场客运量", source: "AAHK", cadence: "Monthly", unit: "Passengers", series: ["Total", "International", "Mainland"], values: [3.4, 3.8, 4.1, 4.4, 4.6, 4.8, 5.0, 5.1, 5.0, 5.2, 5.0, 5.1], titleZh: "机场客运量" },
+            "MTR service breakdown": { zh: "港铁客运量按服务类型", source: "MTR", cadence: "Monthly", unit: "Passengers mn", series: ["Heavy rail", "Light rail", "Bus"], values: [39, 41, 43, 44, 45, 46, 47, 48, 49, 49, 50, 51], titleZh: "港铁客运量按服务类型" }
+          }
+        },
+        "Hong Kong Population & Migration": {
+          zh: "香港人口与迁移",
+          metrics: {
+            "Population estimate": { zh: "人口估计", source: "C&SD", cadence: "Half-yearly", unit: "'000", series: ["Population", "Net movement"], values: [7448, 7468, 7486, 7500, 7510, 7513, 7510, 7510], titleZh: "香港人口估计" },
+            "Immigration daily traffic": { zh: "每日出入境客流", source: "ImmD", cadence: "Daily", unit: "Passengers", series: ["HK resident net flow", "Mainland visitor retention"], values: [102, 110, 98, 116, 120, 115, 124, 131, 128, 138, 142, 145], titleZh: "每日出入境客流" }
+          }
+        },
+        "Hong Kong Utilities": {
+          zh: "香港公用事业与基础设施",
+          metrics: {
+            "Electricity demand": { zh: "电力需求", source: "CLP / HKO", cadence: "Monthly", unit: "GWh", series: ["Total demand", "Peak demand"], values: [6850, 6910, 7020, 7140, 7080, 7190, 7250, 7320, 7290, 7380, 7440, 7510], titleZh: "电力需求" },
+            "Towngas customers": { zh: "煤气客户数", source: "Towngas", cadence: "Annual", unit: "'000", series: ["Residential", "Commercial"], values: [1930, 1950, 1970, 1990, 2010, 2030, 2050, 2070], titleZh: "煤气客户数" }
+          }
+        },
+        "Hong Kong Telecom": {
+          zh: "香港电讯",
+          metrics: {
+            "Mobile postpaid ARPU": { zh: "移动后付费ARPU", source: "HKT / SmarTone", cadence: "Semiannual", unit: "HKD", series: ["HKT", "SmarTone", "Hutchison"], values: [164, 166, 168, 171, 173, 175, 178, 181], titleZh: "移动后付费ARPU" },
+            "5G penetration": { zh: "5G渗透率", source: "Operator disclosures", cadence: "Semiannual", unit: "%", series: ["HKT", "SmarTone", "Hutchison"], values: [24, 29, 35, 42, 48, 55, 62, 68], titleZh: "5G渗透率" }
+          }
+        },
+        "Hong Kong REITs": {
+          zh: "香港房地产信托",
+          metrics: {
+            "Portfolio occupancy": { zh: "投资组合出租率", source: "REIT disclosures", cadence: "Quarterly", unit: "%", series: ["Link REIT", "Champion REIT", "Fortune REIT"], values: [96, 95, 95, 94, 94, 93, 94, 94], titleZh: "房地产信托投资组合出租率" },
+            "DPU history": { zh: "每基金单位分派", source: "REIT disclosures", cadence: "Semiannual", unit: "HKD", series: ["Link REIT", "Champion REIT", "Fortune REIT"], values: [1.42, 1.39, 1.36, 1.34, 1.31, 1.29, 1.27, 1.25], titleZh: "每基金单位分派" }
+          }
+        },
+        "Hong Kong Commercial Aerospace": {
+          zh: "香港商业航天",
+          metrics: {
+            "Listed company activity": { zh: "上市公司活动", source: "SSE / HKEX / CelesTrak", cadence: "Irregular", unit: "Count", series: ["Launches", "Satellites", "Filings"], values: [12, 14, 16, 18, 21, 24, 28, 31], titleZh: "商业航天公司活动" }
+          }
+        },
+        "Hong Kong Stablecoin & Crypto": {
+          zh: "香港稳定币与加密资产",
+          metrics: {
+            "Global stablecoin supply": { zh: "全球稳定币供应量", source: "DefiLlama", cadence: "Daily", unit: "USD bn", series: ["Total supply", "Ethereum", "Other chains"], values: [118, 121, 125, 129, 134, 139, 145, 151, 157, 162, 168, 174], titleZh: "全球稳定币供应量" }
+          }
+        }
+      };
+
+      const datasets = {
+        labour_monthly: { title: "Labour market monthly", zh: "劳动力市场月度数据", subtitle: "C&SD labour force, employment and unemployment series", zhSubtitle: "政府统计处劳动力、就业和失业序列", date: "2026-06-30", cadence: "Monthly · 3M MA", rows: 13425, columns: ["period", "labour_force", "employment", "unemployment_rate", "underemployment_rate"], sample: [["2026-06", "3,785.8", "3,646.1", "3.7%", "1.6%"], ["2026-05", "3,781.4", "3,639.6", "3.8%", "1.7%"], ["2026-04", "3,776.2", "3,634.1", "3.9%", "1.8%"], ["2026-03", "3,769.5", "3,625.4", "4.0%", "1.8%"], ["2026-02", "3,764.1", "3,618.8", "4.1%", "1.9%"], ["2026-01", "3,758.8", "3,610.3", "4.2%", "1.9%"]] },
+        vacancies_by_industry: { title: "Vacancies by industry", zh: "各行业职位空缺", subtitle: "Quarterly labour demand survey", zhSubtitle: "按季劳动力需求统计调查", date: "2026-03-31", cadence: "Quarterly", rows: 6930, columns: ["period", "industry", "vacancies", "vacancy_rate", "provisional"], sample: [["2026-Q1", "Finance and insurance", "8,410", "2.2%", "No"], ["2026-Q1", "Professional services", "7,820", "2.5%", "No"], ["2026-Q1", "Retail", "6,330", "1.9%", "No"], ["2025-Q4", "Finance and insurance", "8,790", "2.3%", "No"], ["2025-Q4", "Professional services", "8,020", "2.6%", "No"], ["2025-Q4", "Retail", "6,570", "2.0%", "No"]] },
+        ccl_weekly: { title: "CCL weekly index", zh: "CCL每周指数", subtitle: "Centaline residential price index", zhSubtitle: "中原住宅价格指数", date: "2026-07-26", cadence: "Weekly", rows: 1116, columns: ["week_date", "series", "index", "source", "provisional"], sample: [["2026-07-26", "CCL", "150.2", "Centaline", "No"], ["2026-07-19", "CCL", "151.1", "Centaline", "No"], ["2026-07-12", "CCL", "152.0", "Centaline", "No"], ["2026-07-05", "CCL", "153.6", "Centaline", "No"], ["2026-06-28", "CCL", "154.2", "Centaline", "No"], ["2026-06-21", "CCL", "154.9", "Centaline", "No"]] },
+        retail_history: { title: "Retail sales value", zh: "零售销售价值", subtitle: "Monthly retail sales value index", zhSubtitle: "月度零售销售价值指数", date: "2026-05-31", cadence: "Monthly", rows: 121, columns: ["period", "category", "index", "yoy_change", "source"], sample: [["2026-05", "Total", "110.2", "+4.8%", "C&SD"], ["2026-04", "Total", "108.4", "+3.1%", "C&SD"], ["2026-03", "Total", "106.8", "+1.9%", "C&SD"], ["2026-02", "Total", "104.2", "-0.7%", "C&SD"], ["2026-01", "Total", "103.9", "+0.2%", "C&SD"], ["2025-12", "Total", "105.3", "+2.6%", "C&SD"]] },
+        immd_daily_traffic: { title: "Immigration daily traffic", zh: "每日出入境客流", subtitle: "Daily passenger clearance by control point", zhSubtitle: "按管制站统计的每日出入境客流", date: "2026-07-29", cadence: "Daily", rows: 365, columns: ["date", "control_point", "arrival_departure", "hk_resident_net_flow", "mainland_visitor_net_retention"], sample: [["2026-07-29", "Lo Wu", "Arrival", "+21,403", "+8,210"], ["2026-07-28", "Lo Wu", "Arrival", "+20,912", "+7,882"], ["2026-07-27", "Lo Wu", "Arrival", "+18,344", "+6,792"], ["2026-07-26", "Lo Wu", "Arrival", "+24,006", "+9,045"], ["2026-07-25", "Lo Wu", "Arrival", "+26,511", "+10,203"], ["2026-07-24", "Lo Wu", "Arrival", "+22,908", "+8,990"]] }
+      };
+
+      const state = { language: "en", page: "overview", sector: "Hong Kong Labour Market", metric: "Labour force and employment", series: "Labour force", view: "level", dataset: "labour_monthly" };
+
+      const $ = (selector) => document.querySelector(selector);
+      const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+
+      function setLanguage(language) {
+        state.language = language;
+        document.documentElement.lang = language === "zh" ? "zh-Hans" : "en";
+        $$('[data-en][data-zh]').forEach((node) => {
+          node.textContent = node.dataset[language === "zh" ? "zh" : "en"];
+        });
+        $("#languageToggle").textContent = language === "zh" ? "EN" : "中文";
+        updateBreadcrumb();
+        renderSectorControls();
+        renderSectorView();
+        renderDataExplorer();
+      }
+
+      function updateBreadcrumb() {
+        const labels = {
+          overview: ["Overview", "总览"],
+          "sector-explorer": ["Sector Explorer", "板块探索器"],
+          "data-explorer": ["Data Explorer", "数据探索器"],
+          "source-health": ["Source Health", "来源健康度"]
+        };
+        $("#breadcrumb").textContent = labels[state.page][state.language === "zh" ? 1 : 0];
+      }
+
+      function openPage(page) {
+        state.page = page;
+        $$(".page").forEach((node) => node.classList.toggle("active", node.id === `page-${page}`));
+        $$(".nav-item").forEach((node) => node.classList.toggle("active", node.dataset.page === page));
+        updateBreadcrumb();
+        if (page === "sector-explorer") renderSectorView();
+        if (page === "data-explorer") renderDataExplorer();
+        $("#sidebar").classList.remove("open");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      function renderOverviewChart() {
+        const svg = $("#overviewChart");
+        const valuesA = [3610, 3630, 3650, 3670, 3695, 3704, 3722, 3736, 3752, 3761, 3776, 3786];
+        const valuesB = [3472, 3490, 3518, 3532, 3551, 3570, 3589, 3604, 3618, 3628, 3638, 3646];
+        const width = 760, height = 290, left = 38, right = 14, top = 16, bottom = 31;
+        const plotW = width - left - right, plotH = height - top - bottom;
+        const min = 3400, max = 3850;
+        const x = (i) => left + i * (plotW / (valuesA.length - 1));
+        const y = (value) => top + (max - value) / (max - min) * plotH;
+        const line = (values) => values.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+        const area = `${left},${height - bottom} ${line(valuesA)} ${x(valuesA.length - 1)},${height - bottom}`;
+        const ticks = [3400, 3550, 3700, 3850];
+        const months = ["2023-07", "2024-01", "2024-07", "2025-01", "2025-07", "2026-01", "2026-06"];
+        svg.innerHTML = `${ticks.map((tick) => `<line class="chart-grid-line" x1="${left}" x2="${width - right}" y1="${y(tick)}" y2="${y(tick)}"/><text class="chart-axis-label" x="0" y="${y(tick) + 3}">${(tick / 1000).toFixed(1)}k</text>`).join("")}${months.map((month, i) => { const pos = i * (plotW / (months.length - 1)); return `<text class="chart-axis-label" text-anchor="middle" x="${left + pos}" y="${height - 7}">${month}</text>`; }).join("")}<polygon class="chart-area" points="${area}"/><polyline class="chart-line" points="${line(valuesA)}"/>${valuesA.map((v, i) => `<circle class="chart-dot" cx="${x(i)}" cy="${y(v)}" r="3"/>`).join("")}<polyline points="${line(valuesB)}" fill="none" stroke="#a9c4f4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+      }
+
+      function renderSectorControls() {
+        const sectorSelect = $("#sectorSelect");
+        sectorSelect.innerHTML = Object.entries(sectorCatalog).map(([key, item]) => `<option value="${key}" ${key === state.sector ? "selected" : ""}>${state.language === "zh" ? item.zh : key}</option>`).join("");
+        const metricSelect = $("#metricSelect");
+        const metrics = sectorCatalog[state.sector].metrics;
+        if (!metrics[state.metric]) state.metric = Object.keys(metrics)[0];
+        metricSelect.innerHTML = Object.entries(metrics).map(([key, item]) => `<option value="${key}" ${key === state.metric ? "selected" : ""}>${state.language === "zh" ? item.zh : key}</option>`).join("");
+        const metric = metrics[state.metric];
+        if (!metric.series.includes(state.series)) state.series = metric.series[0];
+        $("#seriesSelect").innerHTML = metric.series.map((key) => `<option value="${key}" ${key === state.series ? "selected" : ""}>${key}</option>`).join("");
+        $$(".segment-button").forEach((button) => button.classList.toggle("active", button.dataset.view === state.view));
+      }
+
+      function makeChart(values, view) {
+        const svg = $("#sectorChart");
+        const width = 1000, height = 345, left = 48, right = 18, top = 18, bottom = 34;
+        const plotW = width - left - right, plotH = height - top - bottom;
+        let plotted = values.slice();
+        if (view === "mom") plotted = values.map((value, index) => index === 0 ? null : ((value - values[index - 1]) / values[index - 1]) * 100).slice(1);
+        if (view === "yoy") plotted = values.map((value, index) => index < 3 ? null : ((value - values[index - 3]) / values[index - 3]) * 100).slice(3);
+        plotted = plotted.filter((value) => value !== null && Number.isFinite(value));
+        if (!plotted.length) return;
+        const min = Math.min(...plotted), max = Math.max(...plotted), padding = (max - min || 1) * 0.16;
+        const lo = min - padding, hi = max + padding;
+        const x = (i) => left + i * (plotW / Math.max(1, plotted.length - 1));
+        const y = (value) => top + (hi - value) / (hi - lo) * plotH;
+        const points = plotted.map((value, i) => `${x(i).toFixed(1)},${y(value).toFixed(1)}`).join(" ");
+        const ticks = [0, 1, 2, 3, 4].map((i) => lo + (hi - lo) * i / 4);
+        const labels = ["2016", "2018", "2020", "2022", "2024", "2026"];
+        svg.innerHTML = `${ticks.map((tick) => `<line class="chart-grid-line" x1="${left}" x2="${width - right}" y1="${y(tick)}" y2="${y(tick)}"/><text class="chart-axis-label" x="0" y="${y(tick) + 3}">${formatValue(tick, view)}</text>`).join("")}${labels.map((label, i) => `<text class="chart-axis-label" text-anchor="middle" x="${left + i * (plotW / (labels.length - 1))}" y="${height - 7}">${label}</text>`).join("")}<polyline class="chart-line" points="${points}"/>${plotted.map((value, i) => `<circle class="chart-dot" cx="${x(i)}" cy="${y(value)}" r="3.3"/>`).join("")}`;
+      }
+
+      function formatValue(value, view) {
+        if (view !== "level") return `${value.toFixed(1)}%`;
+        if (Math.abs(value) >= 1000) return `${(value / 1000).toFixed(1)}k`;
+        return value.toFixed(0);
+      }
+
+      function renderSectorView() {
+        renderSectorControls();
+        const metric = sectorCatalog[state.sector].metrics[state.metric];
+        const viewLabel = state.view === "level" ? (state.language === "zh" ? "水平" : "Level") : state.view === "mom" ? "MoM" : "YoY";
+        $("#metaCadence").textContent = metric.cadence;
+        $("#metaSource").textContent = metric.source;
+        $("#metaLatest").textContent = "2026-06-30";
+        $("#explorerTitle").textContent = state.language === "zh" ? metric.titleZh : state.metric;
+        $("#explorerSubtitle").textContent = `${metric.cadence} · ${viewLabel} · ${state.language === "zh" ? sectorCatalog[state.sector].zh : state.sector}`;
+        $("#sectorLegend").innerHTML = metric.series.map((item, index) => `<span class="legend-item"><i class="legend-dot" style="background:${index === 0 ? "var(--accent)" : index === 1 ? "#8cb2ef" : "#c4cedc"}"></i>${item}</span>`).join("");
+        makeChart(metric.values, state.view);
+        renderSectorTable(metric);
+      }
+
+      function renderSectorTable(metric) {
+        const header = state.view === "level" ? ["Date", metric.series[0], "Unit", "Status"] : ["Date", state.view.toUpperCase(), "Direction", "Status"];
+        $("#sectorTableHead").innerHTML = `<tr>${header.map((item) => `<th>${item}</th>`).join("")}</tr>`;
+        const rows = metric.values.slice(-10).reverse().map((value, index) => {
+          const date = `2026-${String(6 - Math.floor(index / 2)).padStart(2, "0")}-${index % 2 ? "30" : "01"}`;
+          const display = state.view === "level" ? formatValue(value, state.view) : `${(index % 3 === 0 ? -1 : 1) * (1.1 + index * 0.2).toFixed(1)}%`;
+          return `<tr><td>${date}</td><td>${display}</td><td>${state.view === "level" ? metric.unit : "Change"}</td><td><span class="status">Healthy</span></td></tr>`;
+        }).join("");
+        $("#sectorTableBody").innerHTML = rows;
+        $("#sectorRowCount").textContent = state.language === "zh" ? "显示 10 / 318 行" : "Showing 10 of 318 rows";
+      }
+
+      function renderDataExplorer() {
+        const list = $("#datasetList");
+        list.innerHTML = Object.entries(datasets).map(([key, item]) => `<button class="${key === state.dataset ? "active" : ""}" data-dataset="${key}">${state.language === "zh" ? item.zh : item.title}<small>${item.cadence} · ${item.rows.toLocaleString()} rows</small></button>`).join("");
+        const dataset = datasets[state.dataset];
+        $("#dataTitle").textContent = state.language === "zh" ? dataset.zh : dataset.title;
+        $("#dataSubtitle").textContent = state.language === "zh" ? dataset.zhSubtitle : dataset.subtitle;
+        $("#metadataGrid").innerHTML = [[state.language === "zh" ? "最新日期" : "Latest", dataset.date], [state.language === "zh" ? "频率" : "Cadence", dataset.cadence], [state.language === "zh" ? "行数" : "Rows", dataset.rows.toLocaleString()], [state.language === "zh" ? "读取方式" : "Read mode", "Lazy / read-only"]].map(([label, value]) => `<div class="metadata-item"><span>${label}</span><strong>${value}</strong></div>`).join("");
+        $("#columnList").innerHTML = dataset.columns.map((column) => `<span class="column-chip">${column}</span>`).join("");
+        $("#dataTableHead").innerHTML = `<tr>${dataset.columns.map((column) => `<th>${column}</th>`).join("")}</tr>`;
+        $("#dataTableBody").innerHTML = dataset.sample.map((row) => `<tr>${row.map((value) => `<td>${value}</td>`).join("")}</tr>`).join("");
+        $("#dataRowCount").textContent = state.language === "zh" ? "显示 6 行预览" : "6 preview rows shown";
+      }
+
+      // Revised sector-page model: the sidebar chooses the sector; the page
+      // renders its related measures as a scrollable report, with sub-tabs only
+      // where the measures belong to one semantic section.
+      function setLanguage(language) {
+        state.language = language;
+        document.documentElement.lang = language === "zh" ? "zh-Hans" : "en";
+        $$('[data-en][data-zh]').forEach((node) => {
+          node.textContent = node.dataset[language === "zh" ? "zh" : "en"];
+        });
+        $("#languageToggle").textContent = language === "zh" ? "EN" : "中文";
+        updateBreadcrumb();
+        renderSectorPage();
+        renderDataExplorer();
+      }
+
+      function updateBreadcrumb() {
+        const labels = {
+          overview: ["Overview", "总览"],
+          "sector-explorer": [state.sector, sectorCatalog[state.sector]?.zh || "板块"],
+          "data-explorer": ["Data Explorer", "数据探索器"],
+          "source-health": ["Source Health", "来源健康度"]
+        };
+        const label = labels[state.page] || labels.overview;
+        $("#breadcrumb").textContent = label[state.language === "zh" ? 1 : 0];
+      }
+
+      function openPage(page, sector = null) {
+        if (sector && sectorCatalog[sector]) {
+          state.sector = sector;
+          const keys = Object.keys(sectorCatalog[sector].metrics);
+          state.subMetric = keys[1] || null;
+          state.view = "level";
+        }
+        state.page = page;
+        $$(".page").forEach((node) => node.classList.toggle("active", node.id === `page-${page}`));
+        $$(".nav-item").forEach((node) => node.classList.toggle("active", node.dataset.page === page && (!node.dataset.sector || node.dataset.sector === state.sector)));
+        updateBreadcrumb();
+        if (page === "sector-explorer") renderSectorPage();
+        if (page === "data-explorer") renderDataExplorer();
+        $("#sidebar").classList.remove("open");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      function makeChart(values, view, svgId = "coreChart") {
+        const svg = $("#" + svgId);
+        if (!svg) return;
+        const width = 1000, height = 300, left = 48, right = 18, top = 18, bottom = 34;
+        const plotW = width - left - right, plotH = height - top - bottom;
+        let plotted = values.slice();
+        if (view === "mom") plotted = values.map((value, index) => index === 0 ? null : ((value - values[index - 1]) / values[index - 1]) * 100).slice(1);
+        if (view === "yoy") plotted = values.map((value, index) => index < 3 ? null : ((value - values[index - 3]) / values[index - 3]) * 100).slice(3);
+        plotted = plotted.filter((value) => value !== null && Number.isFinite(value));
+        if (!plotted.length) return;
+        const min = Math.min(...plotted), max = Math.max(...plotted), padding = (max - min || 1) * 0.16;
+        const lo = min - padding, hi = max + padding;
+        const x = (i) => left + i * (plotW / Math.max(1, plotted.length - 1));
+        const y = (value) => top + (hi - value) / (hi - lo) * plotH;
+        const points = plotted.map((value, i) => `${x(i).toFixed(1)},${y(value).toFixed(1)}`).join(" ");
+        const ticks = [0, 1, 2, 3, 4].map((i) => lo + (hi - lo) * i / 4);
+        const labels = ["2016", "2018", "2020", "2022", "2024", "2026"];
+        svg.innerHTML = `${ticks.map((tick) => `<line class="chart-grid-line" x1="${left}" x2="${width - right}" y1="${y(tick)}" y2="${y(tick)}"/><text class="chart-axis-label" x="0" y="${y(tick) + 3}">${formatValue(tick, view)}</text>`).join("")}${labels.map((label, i) => `<text class="chart-axis-label" text-anchor="middle" x="${left + i * (plotW / (labels.length - 1))}" y="${height - 7}">${label}</text>`).join("")}<polyline class="chart-line" points="${points}"/>${plotted.map((value, i) => `<circle class="chart-dot" cx="${x(i)}" cy="${y(value)}" r="3.3"/>`).join("")}`;
+      }
+
+      function formatValue(value, view) {
+        if (view !== "level") return `${value.toFixed(1)}%`;
+        if (Math.abs(value) >= 1000) return `${(value / 1000).toFixed(1)}k`;
+        return value.toFixed(value % 1 ? 1 : 0);
+      }
+
+      function metricLabel(metricKey, metric) {
+        return state.language === "zh" ? metric.zh : metricKey;
+      }
+
+      function renderMetricTable(metric, view, headId, bodyId) {
+        const header = view === "level" ? ["Date", metric.series[0], "Unit", "Status"] : ["Date", view.toUpperCase(), "Direction", "Status"];
+        $("#" + headId).innerHTML = `<tr>${header.map((item) => `<th>${item}</th>`).join("")}</tr>`;
+        const rows = metric.values.slice(-6).reverse().map((value, index) => {
+          const date = `2026-${String(6 - Math.floor(index / 2)).padStart(2, "0")}-${index % 2 ? "30" : "01"}`;
+          const display = view === "level" ? formatValue(value, view) : `${(index % 3 === 0 ? -1 : 1) * (1.1 + index * 0.2).toFixed(1)}%`;
+          return `<tr><td>${date}</td><td>${display}</td><td>${view === "level" ? metric.unit : "Change"}</td><td><span class="status">Healthy</span></td></tr>`;
+        }).join("");
+        $("#" + bodyId).innerHTML = rows;
+      }
+
+      function renderMetricLegend(metric, targetId) {
+        $("#" + targetId).innerHTML = metric.series.map((item, index) => `<span class="legend-item"><i class="legend-dot" style="background:${index === 0 ? "var(--accent)" : index === 1 ? "#8cb2ef" : "#c4cedc"}"></i>${item}</span>`).join("");
+      }
+
+      function renderSectorPage() {
+        const entry = sectorCatalog[state.sector] || sectorCatalog["Hong Kong Labour Market"];
+        const metrics = Object.entries(entry.metrics);
+        const primary = metrics[0];
+        const related = metrics.slice(1);
+        const [primaryKey, primaryMetric] = primary;
+        if (!related.some(([key]) => key === state.subMetric)) state.subMetric = related[0]?.[0] || null;
+        const relatedPair = related.find(([key]) => key === state.subMetric) || related[0] || primary;
+        const [relatedKey, relatedMetric] = relatedPair;
+        const text = (en, zh) => state.language === "zh" ? zh : en;
+        const sectorTitle = state.language === "zh" ? entry.zh : state.sector;
+        $("#sectorPageTitle").textContent = sectorTitle;
+        $("#sectorPageDescription").textContent = text("A complete sector page: browse the main charts and tables by scrolling, then use sub-tabs only where a theme contains several related measures.", "完整板块页面：向下滚动浏览主要图表和数据表；只有在一个主题包含多个相关指标时才使用子标签。");
+        $("#sectorPageMeta").textContent = `${text("Hong Kong", "香港")} · ${metrics.length} ${text("key datasets", "个核心数据集")}`;
+        $("#sectorSections").innerHTML = `
+          <section class="sector-section" id="sector-summary">
+            <div class="sector-summary-grid">
+              <div class="sector-summary-card"><span>${text("Primary measure", "主要指标")}</span><strong>${formatValue(primaryMetric.values.at(-1), "level")}</strong><small>${metricLabel(primaryKey, primaryMetric)}</small></div>
+              <div class="sector-summary-card"><span>${text("Cadence", "频率")}</span><strong>${primaryMetric.cadence.split(" · ")[0]}</strong><small>${text("Source-backed series", "来源支持的序列")}</small></div>
+              <div class="sector-summary-card"><span>${text("Latest source", "最新来源")}</span><strong>${primaryMetric.source}</strong><small>${text("Latest observation", "最新观察日期")} · 2026-06</small></div>
+              <div class="sector-summary-card"><span>${text("Available views", "可用视图")}</span><strong>${metrics.length}</strong><small>${text("Charts and tables", "图表和数据表")}</small></div>
+            </div>
+          </section>
+
+          <section class="sector-section" id="sector-core">
+            <article class="panel">
+              <div class="panel-header"><div><h2 class="panel-title">${metricLabel(primaryKey, primaryMetric)}</h2><p class="panel-subtitle">${primaryMetric.cadence} · ${primaryMetric.unit} · ${primaryMetric.source}</p></div><div class="section-control"><span class="control-label" style="margin:0">${text("View", "视图")}</span><button class="section-toggle ${state.view === "level" ? "active" : ""}" data-sector-view="level">Level</button><button class="section-toggle ${state.view === "mom" ? "active" : ""}" data-sector-view="mom">MoM</button><button class="section-toggle ${state.view === "yoy" ? "active" : ""}" data-sector-view="yoy">YoY</button></div></div>
+              <div class="panel-body"><div class="chart-wrap explorer-chart"><svg id="coreChart" viewBox="0 0 1000 300" role="img" aria-label="Core sector chart"></svg><div class="chart-legend" id="coreLegend"></div></div><p class="section-note">${text("Full available history · source cadence preserved · table preview below", "全部可用历史 · 保留来源频率 · 下方提供数据表预览")}</p></div>
+            </article>
+          </section>
+
+          <section class="sector-section" id="sector-related">
+            <article class="panel">
+              <div class="panel-header"><div><h2 class="panel-title">${text("Related measures", "相关指标")}</h2><p class="panel-subtitle">${text("Sub-tabs group datasets that belong to one research theme.", "子标签用于整理属于同一研究主题的数据集。")}</p></div></div>
+              ${related.length ? `<div class="subtab-bar" id="sectorSubtabs">${related.map(([key, metric]) => `<button class="subtab ${key === relatedKey ? "active" : ""}" data-submetric="${key}">${metricLabel(key, metric)}</button>`).join("")}</div><div class="panel-body"><div class="panel-header" style="padding:0"><div><h3 class="panel-title">${metricLabel(relatedKey, relatedMetric)}</h3><p class="panel-subtitle">${relatedMetric.cadence} · ${relatedMetric.unit} · ${relatedMetric.source}</p></div></div><div class="chart-wrap explorer-chart"><svg id="relatedChart" viewBox="0 0 1000 300" role="img" aria-label="Related sector chart"></svg><div class="chart-legend" id="relatedLegend"></div></div></div>` : `<div class="panel-body"><div class="info-note"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 10v6M12 7h.01"/></svg><span>${text("This sector currently has one primary dataset; its source table is shown below.", "这个板块目前只有一个主要数据集；下方显示其来源数据表。")}</span></div></div>`}
+            </article>
+          </section>
+
+          <section class="sector-section" id="sector-tables">
+            <div class="section-grid">
+              <article class="panel table-panel"><div class="panel-header"><div><h2 class="panel-title">${text("Primary data preview", "主要数据预览")}</h2><p class="panel-subtitle">${text("The table follows the core chart view.", "数据表跟随核心图表视图。")}</p></div><button class="panel-action" data-open-page="data-explorer">${text("Open full data →", "打开完整数据 →")}</button></div><div class="section-table-wrap"><table class="data-table"><thead id="coreTableHead"></thead><tbody id="coreTableBody"></tbody></table></div><div class="table-footer"><span>${text("6 preview rows", "6行预览")}</span><span>${primaryMetric.source}</span></div></article>
+              <article class="panel table-panel"><div class="panel-header"><div><h2 class="panel-title">${related.length ? text("Related data preview", "相关数据预览") : text("Coverage notes", "覆盖说明")}</h2><p class="panel-subtitle">${related.length ? metricLabel(relatedKey, relatedMetric) : text("Snapshot and source limitations", "快照和来源限制")}</p></div></div>${related.length ? `<div class="section-table-wrap"><table class="data-table"><thead id="relatedTableHead"></thead><tbody id="relatedTableBody"></tbody></table></div><div class="table-footer"><span>${text("6 preview rows", "6行预览")}</span><span>${relatedMetric.source}</span></div>` : `<div class="panel-body"><div class="info-note"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 10v6M12 7h.01"/></svg><span>${text("Snapshot, cadence and source caveats stay visible beside the data.", "快照、频率和来源限制会与数据一起显示。")}</span></div></div>`}</article>
+            </div>
+          </section>
+
+          <section class="sector-section" id="sector-sources">
+            <article class="panel"><div class="panel-header"><div><h2 class="panel-title">${text("Source and coverage", "来源与覆盖范围")}</h2><p class="panel-subtitle">${text("This sector page reads one compact bundle; source health is manifest-backed.", "本板块页面读取一个紧凑数据包；来源健康度来自 manifest。")}</p></div><button class="panel-action" data-open-page="source-health">${text("View Source Health →", "查看来源健康度 →")}</button></div><div class="panel-body"><div class="selection-meta"><span><strong>${primaryMetric.source}</strong></span><span>•</span><span>${primaryMetric.cadence}</span><span>•</span><span>${text("Latest observation", "最新观察日期")} <strong>2026-06-30</strong></span><span>•</span><span>${text("Full history available in Data Explorer", "数据探索器提供完整历史")} </span></div></div></article>
+          </section>`;
+        makeChart(primaryMetric.values, state.view, "coreChart");
+        renderMetricLegend(primaryMetric, "coreLegend");
+        renderMetricTable(primaryMetric, state.view, "coreTableHead", "coreTableBody");
+        if (related.length) {
+          makeChart(relatedMetric.values, state.view, "relatedChart");
+          renderMetricLegend(relatedMetric, "relatedLegend");
+          renderMetricTable(relatedMetric, state.view, "relatedTableHead", "relatedTableBody");
+        }
+        $$('[data-sector-view]').forEach((button) => button.addEventListener("click", () => { state.view = button.dataset.sectorView; renderSectorPage(); }));
+        $$('[data-submetric]').forEach((button) => button.addEventListener("click", () => { state.subMetric = button.dataset.submetric; renderSectorPage(); }));
+        $("#sectorSections").querySelectorAll('[data-open-page]').forEach((button) => button.addEventListener("click", () => openPage(button.dataset.openPage)));
+      }
+
+      function renderSectorView() {
+        renderSectorPage();
+      }
+
+      $$(".nav-item").forEach((button) => button.addEventListener("click", () => openPage(button.dataset.page, button.dataset.sector)));
+      $$('[data-open-page]').forEach((button) => button.addEventListener("click", () => openPage(button.dataset.openPage)));
+      $("#mobileMenu").addEventListener("click", () => $("#sidebar").classList.toggle("open"));
+      $("#languageToggle").addEventListener("click", () => setLanguage(state.language === "en" ? "zh" : "en"));
+      $("#openSectorFromData").addEventListener("click", () => openPage("sector-explorer"));
+      $("#datasetList").addEventListener("click", (event) => { const button = event.target.closest("button[data-dataset]"); if (!button) return; state.dataset = button.dataset.dataset; renderDataExplorer(); });
+
+      renderOverviewChart();
+      renderSectorView();
+      renderDataExplorer();
+    </script>
+  </body>
+</html>
