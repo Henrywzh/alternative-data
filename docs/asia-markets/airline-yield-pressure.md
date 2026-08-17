@@ -1,6 +1,6 @@
 # Synthetic Yield-Pressure Index
 
-Status: 2026-08-10.  Route-level realized yield is not available from free
+Status: 2026-08-11.  Route-level realized yield is not available from free
 public sources, so this layer infers yield pressure indirectly from
 operating data.  It is a direction modifier, not a realised-yield forecast.
 
@@ -15,8 +15,9 @@ YP = 0.5 x z(RPK growth - ASK growth)      demand-capacity gap
    - 0.10 x z(industry passenger growth)   competitive capacity
 ```
 
-Components are 3-month centred moving averages, z-scored over the company's
-own history, and combined with economic-prior weights (not fitted).  Inputs:
+Components are 3-month trailing moving averages (t-2..t), z-scored using
+expanding history available at each month, and combined with economic-prior
+weights (not fitted).  Inputs:
 `china_airlines_monthly.parquet` (company ASK/RPK by region, 2016-2026-06)
 and the CAAC sector monthly passenger volume.  Machine-readable outputs:
 `airline_yield_pressure_index.csv` and
@@ -42,14 +43,14 @@ cross-sectionally across the six carriers each year:
 
 All-year mean Spearman: **-0.09**; direction-consistent rate: **39%**.
 
-NOTE (2026-08-10 PIT fix): the index was rebuilt with point-in-time
-z-scoring.  The previous version standardised each component over the FULL
-2017-2026 sample and used a centred 3-month window (leaking t+1), so every
-historical score contained future information.  Now each month's z-score
-uses only the expanding history up to that month, and smoothing is
-trailing (t-2..t).  The validation numbers above are the honest PIT
-results; the earlier reported "+0.66 in 2025 / all-year -0.14" reflected
-the look-ahead version and should not be quoted.
+NOTE (2026-08-11 PIT audit): the monthly index uses point-in-time
+z-scoring and trailing smoothing.  The residual-yield consumer now also
+aggregates scores by target period: H1 uses Jan-Jun, H2 uses Jul-Dec and FY
+uses Jan-Dec.  The earlier consumer used one full-year score for H1/H2/FY,
+which leaked the second half into H1; its downstream v4 result is no longer
+the official figure.  The validation numbers above are the honest monthly
+index results; the earlier reported "+0.66 in 2025 / all-year -0.14"
+reflected the original look-ahead version and should not be quoted.
 
 **Conclusion: the simple demand-capacity index does NOT explain historical
 yield variation.**  It is mixed/negative in most years.  The negative

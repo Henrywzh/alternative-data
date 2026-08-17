@@ -18,8 +18,11 @@ alternative data to FY26 property-profit and EPS ranges vs Street.
 ## 2. Model chain
 
 1. **Farebox nowcast** — `scripts/mtr_farebox_revenue_backtest.py`
-   - FY2025 live OOS: forecast 23,696 vs reported 23,595 = **+0.43%**
-   - Holdout MAPE (2019-2023): 4.06% (Ridge L2 residual)
+   - FY2025 practical forward validation: forecast 23,696 vs reported 23,595 = **+0.43%**
+   - 2019-2023 structural replay MAPE: 4.06% (Ridge L2 residual; not chronological OOS)
+   - H1 backtest: official 2017-2025 interim actuals; 2019-2023 H1 structural replay MAPE 5.99%; FY2025 H1 practical forward validation +0.34%; FY2026 H1 forecast 11,976.7 HK$m
+   - Strict chronological track: `scripts/build_mtr_walk_forward_oos.py`; FY MAPE 9.32% and H1 MAPE 8.10% on prior-period-yield practical OOS rows, with forecast origin, information cutoff and input bundle recorded
+   - Monthly companion is forecast-only because MTR publishes no monthly transport-operations revenue actuals; it is not a scored monthly OOS series
 2. **Timing Engine** — `scripts/mtr_timing_engine.py`
    - OP -> recognition: same calendar year (median lag ~1 month, 4 strong cases)
    - H1/H2 split from interim reports (2022H1 7,747 / 2024H2 8,525 / 2025H1 5,542...)
@@ -72,6 +75,7 @@ Assumptions (explicit):
       deal, sell-out pace) — first pass: P5 87% absorbed in 7 months
 - [ ] Street property-profit decomposition: consensus 2.52 EPS implies FY26
       property profit much higher than our base — verify via sell-side notes
+- [x] HK transport H1 history backtest: `mtr_farebox_revenue_h1_backtest.csv` plus official actuals table and H1 chart
 - [ ] HK transport FY26 full-year nowcast refresh (H2 2026 as data lands)
 - [ ] 2026 interim results (Aug 2026): validate H1 property recognition
       against our timing probabilities (the first true forward test)

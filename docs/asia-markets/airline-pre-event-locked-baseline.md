@@ -17,9 +17,10 @@ fact.  This file is the anchor for that discipline.
 - Module: `src/hk_transport/sources/airline_pre_event_locked_baseline.py`
 - Tests: `tests/test_hk_transport_airline_pre_event_locked_baseline.py` (5 tests)
 - Pipeline registry id: `airline_pre_event_locked_baseline` (kind `snapshot`, max age 15d)
-- CLI: `run-airline-pre-event-locked-baseline`
+- CLI: `run-airline-pre-event-locked-baseline` (add `--overwrite` only after
+  deliberately reviewing a new pre-event vintage)
 
-## What is locked per carrier (as of 2026-08-10)
+## What is locked per carrier (as of 2026-08-11)
 
 | Company | Filing | H1 ASK YoY | H1 RPK YoY | H1 flat-yield revenue (RMB mn) | Fuel CASK | FY26 v3 base (USD mn) | FY26 consensus (USD mn) | Model vs consensus |
 |---|---|---|---|---|---|---|---|---|
@@ -61,8 +62,9 @@ be mapped directly to the affected carrier's baseline row.
    file's numbers; corrections belong in the validation playbook
    (`airline_h1_2026_validation_playbook.csv`) and the post-earnings
    tracker (`airline_post_earnings_tracker.csv`).
-2. Refresh cadence: re-run only if a materially better pre-event input
-   arrives (e.g. a monthly release changes H1 ASK/RPK).  Each refresh
-   changes `snapshot_date`; keep the previous snapshot for the audit trail.
+2. Refresh cadence: normal pipeline runs read the existing lock and do not
+   replace it.  If a materially better pre-event input arrives (e.g. a
+   monthly release changes H1 ASK/RPK), explicitly run the CLI with
+   `--overwrite` and preserve the previous file in the audit trail first.
 3. After the last filing (08-31), the baseline becomes the "pre-event"
    reference for the tracker's beat/miss and T+1/T+5 return study.

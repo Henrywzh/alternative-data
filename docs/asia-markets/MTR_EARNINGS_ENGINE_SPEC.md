@@ -5,13 +5,25 @@
 This document defines the canonical specification for the **MTR (66.HK) Total Earnings Engine & Buy-Side Research Specification**.
 
 ### Validated Revenue Baselines
-- **FY2025 Live Forward Out-of-Sample (OOS) Validation**:
+- **FY2025 Practical Forward Validation**:
   - **Forecast HK Transport Operations Revenue**: **HK$23,696.2M**
   - **Reported Actual (MTR 2025 Annual Results)**: **HK$23,595.0M** (+2.5% YoY)
-  - **True Forward OOS Error**: **+0.43%**
-- **2019-2023 Holdout Model Performance**:
+  - **Practical forward validation error**: **+0.43%**
+- **2019-2023 Structural Replay Diagnostics** (not chronological OOS):
   - Baseline Physics Model MAPE: **4.78%**
-  - Regularized Ridge L2 Residual Model MAPE: **4.06%** (2023 error: −0.5%)
+  - Regularized Ridge L2 Residual Model MAPE: **4.06%** (2023 error: −0.5%; leave-one-out structural replay)
+
+The independent chronological track is `scripts/build_mtr_walk_forward_oos.py`.
+It yields FY MAPE 9.32% and H1 MAPE 8.10% on the currently available prior-
+period-yield practical-OOS rows. These are not A-grade strict PIT metrics
+because the MTR patronage page does not provide historical monthly release
+vintages; the model records this caveat and the SHA-256 input bundle for each
+run.
+
+Its monthly companion is a forecast-only series (`mtr_farebox_monthly_nowcast.csv`):
+MTR does not publish monthly transport-operations revenue actuals, so it is not
+scored as a monthly backtest. It is intended for current-period monitoring and
+for future scoring if an official monthly revenue history becomes available.
 
 ---
 

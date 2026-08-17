@@ -1,5 +1,5 @@
 # 港铁（MTR, 66.HK）量化建模报告
-**版本**：v1.0 ｜ **日期**：2026-08-09 ｜ **数据截止**：2026-08-09
+**版本**：v1.1 ｜ **日期**：2026-08-11 ｜ **数据截止**：2026-08-11
 
 ---
 
@@ -9,7 +9,8 @@
 
 | 模块 | 核心结果 |
 |---|---|
-| **客运营收 Nowcast** | 2019–2023 保留集 MAPE **4.06%**；**2025 真样本外误差 +0.43%** |
+| **客运营收 Nowcast** | 2019–2023 structural replay MAPE **4.06%**；**2025 practical forward validation +0.43%** |
+| **客运营收 H1 Backtest** | 2017–2025 官方中报 actuals；2019–2023 H1 structural replay MAPE **5.99%**；**2025 H1 practical forward validation +0.34%**；2026 H1 forecast **HK$11,976.7m** |
 | **历史财报桥** | 2010–2025 十六年官方数据，`Underlying = 经常性 + 物业` 勾稽 12/12 年吻合 |
 | **物业 Timing** | OP 入伙纸 → 利润确认**同一年**（强映射中位 lag ~1 个月）|
 | **物业 Magnitude** | 13 个期数 9,819 笔法定交易，确认利润/货值比锚定 **17–24%** |
@@ -62,9 +63,9 @@
 | 2022 | 12,224 | 13,404 | −8.8% |
 | 2023 | 20,283 | 20,131 | +0.8% |
 | 2024 | 22,908 | 23,013 | −0.5%（校准年）|
-| **2025** | **23,696** | **23,595** | **+0.43%（真 OOS）** |
+| **2025** | **23,696** | **23,595** | **+0.43%（practical forward validation）** |
 
-- Baseline 物理模型 MAPE：**4.78%**；Ridge L2 残差模型：**4.06%**
+- Structural replay baseline 物理模型 MAPE：**4.78%**；structural replay Ridge L2 残差模型：**4.06%**。这两项使用 FY2024 yield anchor，且 Ridge leave-one-out 会使用其他年份（包括目标期之后的实际值），不能称为严格 OOS。
 - 校准：FY2024 分部收入 ÷ 客流 → 每乘客 yield（domestic 9.06 / 跨境 36.20 / 高铁 124.88 / AEL 61.14 / 轻铁 3.27），经 FAM 累计调整率演进
 
 ### 4.2 月度序列（2000–2026）
@@ -72,6 +73,46 @@
 ![farebox monthly](charts/chart2_farebox_monthly.png)
 
 **已知局限**（如实记录）：2008 跳升 = 两铁合并覆盖变化；COVID 年份低估 7–9%（旅程结构漂移）；2010 年前 yield 恒定。
+
+### 4.3 H1 历史回测：Jan–Jun 模型 vs 官方中报
+
+![farebox H1 backtest](charts/chart1b_farebox_h1.png)
+
+模型按同一套 FY2024 segment-yield anchor 和 FAM 逻辑，只累加每年 1–6 月；actual 是 MTR
+中报披露的 **Hong Kong Transport Operations / Total Revenue**，单位 HK$m。
+
+| H1 | 模型估算 | 官方实际 | 误差 | 角色 |
+|---|---:|---:|---:|---|
+| 2017 | 9,184.8 | 8,957.0 | +2.5% | 历史结构检查 |
+| 2018 | 9,750.5 | 9,328.0 | +4.5% | 历史结构检查 |
+| 2019 | 11,438.0 | 10,690.0 | +7.0% | 历史结构检查 |
+| 2020 | 5,589.2 | 6,234.0 | −10.3% | 疫情结构偏差 |
+| 2021 | 5,891.2 | 6,004.0 | −1.9% | 历史结构检查 |
+| 2022 | 5,207.0 | 5,815.0 | −10.5% | 疫情结构偏差 |
+| 2023 | 9,366.9 | 9,342.0 | +0.3% | 历史结构检查 |
+| 2024 | 11,123.6 | 11,138.0 | −0.1% | 校准年 |
+| **2025** | **11,548.0** | **11,509.0** | **+0.34%** | **practical forward validation** |
+| **2026 H1** | **11,976.7** | — | — | **当前 forecast** |
+
+H1 structural replay MAPE（2019–2023）为 **5.99%**；2025 H1 的 practical forward validation 误差为 **+0.34%**。2017–2023
+不能称为严格 point-in-time forecast，因为模型使用了 FY2024 segment revenue 作为 yield anchor，
+因此这部分应理解为历史结构验证；2025 是最有意义的 forward H1 test，但因 MTR 客流历史表没有逐月 release-vintage，仍不升级为严格 A-grade PIT/OOS。
+
+### 4.3 严格时间顺序的 walk-forward 轨道
+
+`scripts/build_mtr_walk_forward_oos.py` 独立运行，不改写上述 legacy replay。它只使用目标期之前同一频率、已公布的官方 transport-operations actual 估计 prior-period blended yield，再用目标期客流和 FAM factor 生成预测。输出：
+
+- `data/processed/transport/mtr_farebox_walk_forward_oos.csv`
+- `data/processed/transport/mtr_farebox_monthly_nowcast.csv`
+- `data/processed/transport/mtr_farebox_walk_forward_summary.json`
+
+当前结果为 FY MAPE **9.32%**（6 个可预测期）、H1 MAPE **8.10%**（8 个可预测期）。这是更诚实的 chronological practical-OOS 基准；其 `forecast_origin`/`information_cutoff` 已记录为期间结束日，input bundle 也有 SHA-256 指纹。但由于 MTR 客流页面只提供当前完整历史表，没有历史逐月发布日，当前等级为 `B_practical_pit`，不能称为严格 `A_strict_pit`。
+
+月度 companion 是 forecast-only：MTR 不披露月度 Hong Kong Transport Operations 收入，因此目前没有月度 actual，不能计算月度 MAPE；它只作为期间内监控序列，待有官方月度收入或可审计的月度收入 vintage 后再评分。
+
+官方 H1 actuals 和逐年输出分别保存在：
+`data/normalized/hk_transport/mtr_h1_transport_operations_actuals.csv` 和
+`data/processed/transport/mtr_farebox_revenue_h1_backtest.csv`。
 
 ---
 
@@ -162,7 +203,7 @@
 
 ## 九、关键实证发现
 
-1. **客运营收可高精度 nowcast**：2025 真 OOS +0.43%，月度序列 318 个月
+1. **客运营收可做实用 nowcast**：2025 practical forward validation +0.43%；严格 chronological track 的 FY/H1 MAPE 分别为 9.32%/8.10%，月度序列 318 个月
 2. **OP → 确认同年**：屋宇署入伙纸是物业利润确认的领先事件信号
 3. **两套独立数据互相印证**：SRPE 交易登记（1,961 笔）≈ BD OP 单位（1,880）
 4. **P5 滶晨去化极快**：2025 年 7 个月售出 121.8 亿（87%）
@@ -175,7 +216,7 @@
 
 | 优先级 | 行动 | 理由 |
 |---|---|---|
-| **P0** | 2026 中期业绩（8 月）验证 H1 物业确认 | 模型链第一次真样本外检验 |
+| **P0** | 2026 中期业绩（8 月）验证 H1 物业确认 | 模型链第一次新的 forward validation |
 | **P0** | 确认 LP13 = SRPE 10486 及其真实货值 | 最大新确认项目的不确定性 |
 | **P1** | 查找 P6 / Yau Tong 公开货值 | 替换 ASSUMED 场景值 |
 | **P1** | 用交易速度细化 P(确认) | P5 7 个月 87% 去化的先例 |
