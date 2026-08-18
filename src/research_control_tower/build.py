@@ -3892,7 +3892,15 @@ def _validated_current_lineage(
             continue
         if record.get("status") not in {"available", "degraded", "unavailable"}:
             raise BuildError(f"CURRENT selected manifest artifact status is invalid: {name}")
-        if name not in OPTIONAL_ARTIFACT_NAMES and record.get("status") != "available":
+        # "degraded" is a usable required artifact whose sources are partly
+        # impaired -- it was written, hashed and schema-checked like any other,
+        # and the per-source reasons travel in source_health. Only
+        # "unavailable" means there is nothing to build lineage on. Requiring
+        # "available" here made a build unrepeatable the moment real sources
+        # were wired in: macro_observations went from "available" with four
+        # hand-entered rows to "degraded" with 19,761 collected ones, and the
+        # next build refused to accept its own predecessor.
+        if name not in OPTIONAL_ARTIFACT_NAMES and record.get("status") not in {"available", "degraded"}:
             raise BuildError(f"CURRENT selected manifest required artifact is not available: {name}")
         if record.get("sha256") != _file_hash(path):
             raise BuildError(f"CURRENT selected manifest sha256 mismatch: {name}")

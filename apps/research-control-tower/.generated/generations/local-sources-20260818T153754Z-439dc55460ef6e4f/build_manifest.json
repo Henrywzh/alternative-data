@@ -1,0 +1,377 @@
+{
+  "artifacts": {
+    "basket_memberships.parquet": {
+      "byte_size": 10640,
+      "name": "basket_memberships.parquet",
+      "relative_path": "basket_memberships.parquet",
+      "row_count": 97,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "620365e94e7d23ed3d62dc4c14043154fb1f02e7266d0a398e7c8c8f617a6788",
+      "source_ids": [
+        "registry:basket_memberships"
+      ],
+      "status": "available"
+    },
+    "baskets.parquet": {
+      "byte_size": 6009,
+      "name": "baskets.parquet",
+      "relative_path": "baskets.parquet",
+      "row_count": 7,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "c4b94cb2e70d11beb3761655fd40eadd103e744d5ea4f0df18a69d2afc71b754",
+      "source_ids": [
+        "registry:baskets"
+      ],
+      "status": "available"
+    },
+    "build_manifest.json": {
+      "byte_size": 13638,
+      "name": "build_manifest.json",
+      "relative_path": "build_manifest.json",
+      "row_count": 1,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": null,
+      "source_ids": [],
+      "status": "available"
+    },
+    "consensus_revisions.parquet": {
+      "byte_size": 17364,
+      "name": "consensus_revisions.parquet",
+      "relative_path": "consensus_revisions.parquet",
+      "row_count": 0,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "965116bd3808fa8f54c75ce1c628d1f16e3490dc242bddf00dab69c933110238",
+      "source_ids": [
+        "consensus_export"
+      ],
+      "status": "unavailable"
+    },
+    "consensus_snapshots.parquet": {
+      "byte_size": 13958,
+      "name": "consensus_snapshots.parquet",
+      "relative_path": "consensus_snapshots.parquet",
+      "row_count": 0,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "a45be090040b1c9b28bf0e29db7810f10ce2bd3b600271dab97337fd973cfcba",
+      "source_ids": [
+        "consensus_export"
+      ],
+      "status": "unavailable"
+    },
+    "earnings_actuals.parquet": {
+      "byte_size": 22264,
+      "name": "earnings_actuals.parquet",
+      "relative_path": "earnings_actuals.parquet",
+      "row_count": 48,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "d755732c0df463f9d368757130843f7727dd6689a4fecccb6e309af8a57563cf",
+      "source_ids": [
+        "earnings:bytedance",
+        "earnings:hkex_issuer_ir",
+        "earnings:sec_companyfacts",
+        "earnings_actuals",
+        "earnings_actuals_state"
+      ],
+      "status": "available"
+    },
+    "earnings_calendar.parquet": {
+      "byte_size": 17461,
+      "name": "earnings_calendar.parquet",
+      "relative_path": "earnings_calendar.parquet",
+      "row_count": 10,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "d943755c4577cfd7e229e4eb6ce3e23768d45353544f14ee281b93fc427000a5",
+      "source_ids": [
+        "filings:bytedance",
+        "filings:hkexnews",
+        "filings:issuer_ir",
+        "filings:sec_edgar_submissions",
+        "official_filings",
+        "official_filings_state"
+      ],
+      "status": "available"
+    },
+    "entities.parquet": {
+      "byte_size": 13097,
+      "name": "entities.parquet",
+      "relative_path": "entities.parquet",
+      "row_count": 71,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "7fb0633da2b3c38fbc3e000a093cf5f32f707e5d254dd589b245a7ab8050f767",
+      "source_ids": [
+        "registry:entities"
+      ],
+      "status": "available"
+    },
+    "event_basket_links.parquet": {
+      "byte_size": 6267,
+      "name": "event_basket_links.parquet",
+      "relative_path": "event_basket_links.parquet",
+      "row_count": 12,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "2c18ddbbb2caacfb4065984bdaad6ffb048f6935e68e5003d8274dec287d975d",
+      "source_ids": [
+        "events:event_links"
+      ],
+      "status": "available"
+    },
+    "event_entity_links.parquet": {
+      "byte_size": 7130,
+      "name": "event_entity_links.parquet",
+      "relative_path": "event_entity_links.parquet",
+      "row_count": 21,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "6e4f005108ae9f54cbf5a0a84da6a0291856f662cab4a35098854c3eb1ac122e",
+      "source_ids": [
+        "events:event_links"
+      ],
+      "status": "available"
+    },
+    "event_watch_questions.parquet": {
+      "byte_size": 5059,
+      "name": "event_watch_questions.parquet",
+      "relative_path": "event_watch_questions.parquet",
+      "row_count": 10,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "83272c10282d8d23ea597eb37cc44c94f5cd42a6e62769f2ccbde41db8a264a9",
+      "source_ids": [
+        "events:event_watch_questions"
+      ],
+      "status": "available"
+    },
+    "events.parquet": {
+      "byte_size": 31129,
+      "name": "events.parquet",
+      "relative_path": "events.parquet",
+      "row_count": 15,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "7b0337e261dd8c9a98d7e24d4b99ca7d2882e51fd149291353ecc6f744298516",
+      "source_ids": [
+        "events:events"
+      ],
+      "status": "available"
+    },
+    "indices.parquet": {
+      "byte_size": 12136,
+      "name": "indices.parquet",
+      "relative_path": "indices.parquet",
+      "row_count": 12,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "432f529801af02717be04afbd600ed7df5be6616f91ccacc2992461c0d165c77",
+      "source_ids": [
+        "registry:indices"
+      ],
+      "status": "available"
+    },
+    "listings.parquet": {
+      "byte_size": 27907,
+      "name": "listings.parquet",
+      "relative_path": "listings.parquet",
+      "row_count": 80,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "5509454b542c387db5336884e7e9d3fac544ca4795a33c89c3689e27ce3a2e35",
+      "source_ids": [
+        "registry:listings"
+      ],
+      "status": "available"
+    },
+    "macro_observations.parquet": {
+      "byte_size": 656784,
+      "name": "macro_observations.parquet",
+      "relative_path": "macro_observations.parquet",
+      "row_count": 19761,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "9135c32aec7c55c41337c85970d5bad1b69059a9a0773f11de76e1742981d4d0",
+      "source_ids": [
+        "events:events",
+        "fred_observations",
+        "fred_series_meta",
+        "ofr_mnemonics",
+        "ofr_timeseries",
+        "tw_monthly_revenue"
+      ],
+      "status": "degraded"
+    },
+    "news_filings.parquet": {
+      "byte_size": 125534,
+      "name": "news_filings.parquet",
+      "relative_path": "news_filings.parquet",
+      "row_count": 2045,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "071f68b6b80a36c3ec659c8ebf812327019cc706938415ceeab5678fc5467934",
+      "source_ids": [
+        "filings_sec_edgar",
+        "news_official_ai_rss"
+      ],
+      "status": "degraded"
+    },
+    "official_filings.parquet": {
+      "byte_size": 40299,
+      "name": "official_filings.parquet",
+      "relative_path": "official_filings.parquet",
+      "row_count": 403,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "a05e6f79a95f13bb3defaf4991dea07341c4921d2dfd93170f89c7b201b67477",
+      "source_ids": [
+        "filings:bytedance",
+        "filings:hkexnews",
+        "filings:issuer_ir",
+        "filings:sec_edgar_submissions",
+        "official_filings",
+        "official_filings_state"
+      ],
+      "status": "available"
+    },
+    "quote_snapshots.parquet": {
+      "byte_size": 12336,
+      "name": "quote_snapshots.parquet",
+      "relative_path": "quote_snapshots.parquet",
+      "row_count": 7,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "76d486d3f3149ec38a1e93b354f6093b6384b5a4c52f8d2b022c060128e57ffe",
+      "source_ids": [
+        "quote_snapshots"
+      ],
+      "status": "available"
+    },
+    "source_health.parquet": {
+      "byte_size": 19988,
+      "name": "source_health.parquet",
+      "relative_path": "source_health.parquet",
+      "row_count": 29,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "d048a2c375173472b4f4ba84641384b91c43b966d7476a51e8cf71221c39ae7f",
+      "source_ids": [
+        "consensus_export",
+        "earnings:bytedance",
+        "earnings:hkex_issuer_ir",
+        "earnings:sec_companyfacts",
+        "earnings_actuals",
+        "earnings_actuals_state",
+        "ecb_fx_rates",
+        "events:event_links",
+        "events:event_watch_questions",
+        "events:events",
+        "filings:bytedance",
+        "filings:hkexnews",
+        "filings:issuer_ir",
+        "filings:sec_edgar_submissions",
+        "filings_sec_edgar",
+        "fred_observations",
+        "fred_series_meta",
+        "news_official_ai_rss",
+        "official_filings",
+        "official_filings_state",
+        "ofr_mnemonics",
+        "ofr_timeseries",
+        "quote_snapshots",
+        "registry:basket_memberships",
+        "registry:baskets",
+        "registry:entities",
+        "registry:indices",
+        "registry:listings",
+        "tw_monthly_revenue"
+      ],
+      "status": "available"
+    }
+  },
+  "as_of_utc": "2026-08-18T15:37:54.030734Z",
+  "build_id": "local-sources-20260818T153754Z",
+  "built_at_utc": "2026-08-18T15:37:54.030734Z",
+  "current_pointer": "generations/local-sources-20260818T153754Z-439dc55460ef6e4f",
+  "degraded_inputs": [
+    "consensus_export",
+    "ecb_fx_rates",
+    "news_official_ai_rss",
+    "ofr",
+    "ofr_timeseries",
+    "taiwan_semiconductor_revenue",
+    "tw_monthly_revenue"
+  ],
+  "generation_id": "local-sources-20260818T153754Z-439dc55460ef6e4f",
+  "input_fingerprints": {
+    "/Users/henrywzh/Quant/alternative-data/config/research_control_tower/basket_memberships.csv": "f1adc3b73ae41e243824bfc607a8a9042a436d3e17b31879ce1a4aed0ae98768",
+    "/Users/henrywzh/Quant/alternative-data/config/research_control_tower/baskets.csv": "e139d1c2b4003e23fe418c3ac3ee717c23ae6378754e8e93c9e60a5b9ba33e7d",
+    "/Users/henrywzh/Quant/alternative-data/config/research_control_tower/entities.csv": "8f5b7bcd409c72b9373299fe93ecf75486088ee3efe09e5cb8347e9d4edbb5f7",
+    "/Users/henrywzh/Quant/alternative-data/config/research_control_tower/event_links.csv": "713b5621c1639ab88c4751d330ab22301c98659dc74e3058d66480cd37c779e4",
+    "/Users/henrywzh/Quant/alternative-data/config/research_control_tower/event_watch_questions.csv": "303c4e3c45f251be5625b673ccda7eb44139f0b6f104ae5e1dfb8dc03ef79846",
+    "/Users/henrywzh/Quant/alternative-data/config/research_control_tower/events.csv": "c2e9f7965d55b62ce6cecff6167f381c564fd31ae71eedc76ef6d8dcf15a8693",
+    "/Users/henrywzh/Quant/alternative-data/config/research_control_tower/indices.csv": "f8a16664344cf1d1a541a334d5879079b9b6407c1bec729802ec4f81ba486357",
+    "/Users/henrywzh/Quant/alternative-data/config/research_control_tower/listings.csv": "476e989b710c03d6affa62e5bf2812c259294957b80be1e1ba8829d7a774b90b",
+    "/Users/henrywzh/Quant/alternative-data/data/normalized/research_control_tower/quote_snapshots_v1.status.json": "99d7adee221321f62b6bc4de880b0547c7ca908a2a51e33c2598764b35aea178"
+  },
+  "network_policy": "forbidden",
+  "previous_build_at": "2026-08-18T15:23:42.401284Z",
+  "schema_version": "control_tower_marts_v1",
+  "source_health_summary": {
+    "available": 19,
+    "degraded": 2,
+    "no_records": 2,
+    "not_applicable": 2,
+    "partial": 1,
+    "unavailable": 3
+  },
+  "status": "degraded",
+  "validation_errors": [
+    {
+      "code": "stale_source",
+      "message": "latest=2026-07-17T00:00:00Z;cutoff=2026-07-19T15:37:54.030734Z;threshold=30 days 00:00:00",
+      "severity": "warning",
+      "source_id": "ofr_timeseries"
+    },
+    {
+      "code": "stale_source",
+      "message": "latest=2026-06-01T00:00:00Z;cutoff=2026-06-17T15:37:54.030734Z;threshold=62 days 00:00:00",
+      "severity": "warning",
+      "source_id": "tw_monthly_revenue"
+    },
+    {
+      "code": "optional_source_unavailable",
+      "message": "optional_task3_export_directory_missing",
+      "severity": "warning",
+      "source_id": "consensus_export"
+    },
+    {
+      "code": "optional_source_unavailable",
+      "message": "optional_official_ai_rss_not_configured",
+      "severity": "warning",
+      "source_id": "news_official_ai_rss"
+    },
+    {
+      "code": "optional_source_degraded",
+      "message": "KUAISHOU: HTTPSConnectionPool(host='www1.hkexnews.hk', port=443): Read timed out. (read timeout=20)",
+      "severity": "warning",
+      "source_id": "filings:hkexnews"
+    },
+    {
+      "code": "optional_source_degraded",
+      "message": "no machine-readable issuer IR calendar snapshot configured; official exchange metadata (SEC/HKEX) is used instead; HTML IR pages are not scraped",
+      "severity": "warning",
+      "source_id": "filings:issuer_ir"
+    },
+    {
+      "code": "optional_source_degraded",
+      "message": "private company with no public filings or earnings calendar; competitor research only",
+      "severity": "warning",
+      "source_id": "filings:bytedance"
+    },
+    {
+      "code": "optional_source_degraded",
+      "message": "HKEX-only issuers without SEC XBRL actuals: ALIBABA, BAIDU, BILIBILI, KUAISHOU, TENCENT; no machine-readable issuer IR actuals snapshot configured; no values fabricated",
+      "severity": "warning",
+      "source_id": "earnings:hkex_issuer_ir"
+    },
+    {
+      "code": "optional_source_degraded",
+      "message": "private company with no public earnings disclosure; partial/not_applicable unless a reusable public company disclosure exists",
+      "severity": "warning",
+      "source_id": "earnings:bytedance"
+    },
+    {
+      "code": "optional_source_unavailable",
+      "message": "optional_source_not_configured",
+      "severity": "warning",
+      "source_id": "ecb_fx_rates"
+    }
+  ]
+}

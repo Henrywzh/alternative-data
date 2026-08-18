@@ -438,3 +438,7 @@ data/raw/hk_transport/*
 !docs/asia-markets/REAL_ESTATE_SHKP_IRIS_ORDER_PLAN.csv
 !docs/asia-markets/REAL_ESTATE_SHKP_IRIS_PILOT_TEMPLATE.csv
 !docs/asia-markets/REAL_ESTATE_SHKP_PHASE_DECISION_TEMPLATE.csv
+
+# Staging output from scripts/build_research_control_tower.py (--publish writes
+# into apps/research-control-tower/.generated instead).
+.rct-staging/

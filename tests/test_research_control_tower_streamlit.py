@@ -14,6 +14,7 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
+import re
 
 
 APP_ROOT = Path(__file__).resolve().parents[1] / "apps" / "research-control-tower"
@@ -1513,7 +1514,14 @@ def test_task7_real_hbm_catalyst_render_discloses_not_pit_and_missing_link(monke
     app = app.run()
     assert not app.exception
     rendered = _app_text(app)
-    assert "PIT not_pit" in rendered
+    # The lineage line lists every pit_class present in the layer, so asserting
+    # the literal "PIT not_pit" only passed while not_pit happened to sort
+    # first. Wiring real FRED observations in made the line read
+    # "PIT current_vintage, not_pit" -- the same disclosure, one position over.
+    # Assert the disclosure, not its position.
+    lineage = re.search(r"Lineage status[^\n]*", rendered)
+    assert lineage is not None, "lineage status line is missing"
+    assert "not_pit" in lineage.group(0)
     assert "Source link unavailable" in rendered
 
 
