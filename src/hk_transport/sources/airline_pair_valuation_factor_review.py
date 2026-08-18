@@ -80,7 +80,26 @@ def build_airline_pair_valuation_factor_review(
         scope_status = "mixed_market_legs_CNA_forward_consensus" if market_scope_a != market_scope_b else "same_market_leg"
         valuation_gate_status = str(gate.get("valuation_target_readiness", "missing")) if not gate.empty else "missing"
         valuation_gate_pass = valuation_gate_status.startswith("candidate_")
-        ready = base_payoff is not None and stress_10 is not None and stress_10 > 0 and factor_flag != "material_factor_gap" and scope_status == "same_market_leg" and valuation_gate_pass
+        # Clearing the quant screen -- a positive beta-hedged payoff that
+        # survives a 10pp long-multiple compression, no material factor gap,
+        # both legs in the same market -- is necessary but not sufficient.
+        # The valuation gate is a separate hurdle, so the two failures are
+        # reported separately: collapsing them would label a pair that passed
+        # the screen as having a valuation/factor/scope gap it does not have.
+        quant_screen_passed = (
+            base_payoff is not None
+            and stress_10 is not None
+            and stress_10 > 0
+            and factor_flag != "material_factor_gap"
+            and scope_status == "same_market_leg"
+        )
+        ready = quant_screen_passed and valuation_gate_pass
+        if ready:
+            readiness_status = "provisional_trade_ready_for_review"
+        elif quant_screen_passed:
+            readiness_status = "not_trade_ready_pending_required_evidence"
+        else:
+            readiness_status = "not_trade_ready_valuation_factor_or_scope_gap"
         rows.append({
             "dataset_id": "airline_pair_valuation_factor_review", "pair_id": t.pair_id,
             "selection_bucket": t.selection_bucket, "long_leg": t.long_leg, "short_leg": t.short_leg,
@@ -103,7 +122,8 @@ def build_airline_pair_valuation_factor_review(
             "valuation_gate_status": valuation_gate_status,
             "market_scope_a": market_scope_a, "market_scope_b": market_scope_b,
             "consensus_market_scope_status": scope_status,
-            "trade_readiness_status": "provisional_trade_ready_for_review" if ready else "not_trade_ready_valuation_factor_or_scope_gap",
+            "quant_screen_status": "passed" if quant_screen_passed else "failed",
+            "trade_readiness_status": readiness_status,
             "required_next_evidence": "Use the bottom-up pre-event forecast as the starting view; compare its illustrative P/S target/payoff with P/B and historical-band definitions; stress factor residual alpha across windows and factor definitions; validate route-level yield and 1H2026 actuals as the earnings catalyst; reconcile annual-P/S history to announcement-aligned TTM/forward revenue before treating reversion as fair value.",
             "source_quality": "derived_valuation_factor_review",
             "source_paths": f"{WORKING_PATH};{TRADE_PATH};{VALUATION_GATE_PATH};{RESIDUAL_TEST_PATH}", "retrieved_at": retrieved,
