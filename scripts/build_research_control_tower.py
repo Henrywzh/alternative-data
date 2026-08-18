@@ -95,6 +95,15 @@ REPO_SOURCES: tuple[tuple[str, str, str, str, str, str, str, str], ...] = (
         "monthly", "https://mops.twse.com.tw/",
     ),
     (
+        # Collected by the hk-transport airline pipeline as airline_fx_rates;
+        # the Control Tower's schema alias already maps that name onto
+        # ecb_fx_rates_v1, so it is the same contract under two labels.
+        "macro", "ecb_fx_rates",
+        "data/normalized/hk_transport/airline_fx_rates.parquet",
+        "ecb_fx_rates_v1", "current_vintage", "official_public",
+        "daily", "https://www.ecb.europa.eu/stats/eurofxref/",
+    ),
+    (
         "filing", "filings_sec_edgar",
         "data/normalized/sec_edgar/edgar_filings.parquet",
         "sec_edgar_filings_v1", "current_vintage", "official_public",

@@ -1875,6 +1875,71 @@ def test_stale_optional_rows_degrade_by_source_threshold(tmp_path, minimal_input
     assert health.loc[health["source_id"].eq("stale_fred"), "status"].iloc[0] == "degraded"
     assert "stale_source" in health.loc[health["source_id"].eq("stale_fred"), "detail"].iloc[0]
 
+    # Staleness degrades the source; it does not delete the evidence. The rows
+    # were validly collected and are simply older than the freshness window, so
+    # they reach the mart and the reason travels in source_health beside them.
+    # Dropping them emptied 13,598 real ECB FX observations off the dashboard
+    # while reporting the source as merely "unavailable".
+    observations = pd.read_parquet(_published(config, "macro_observations.parquet"))
+    assert not observations.empty
+    assert (observations["source_id"] == "stale_fred").any()
+
+
+def test_stale_rows_are_retained_but_future_rows_still_fail_closed(tmp_path, minimal_inputs):
+    """Staleness and lookahead are different failures and must stay different.
+
+    A stale row is real evidence that is merely old. A row dated after as_of
+    would leak lookahead into anything built on it, so it still fails closed --
+    the relaxation that carries stale rows through must not widen to cover it.
+    """
+    def _write(path: Path, date_value: str, fetched_at: str) -> Path:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame(
+            [{"date": date_value, "series_id": "NFCI", "value": 0.1, "fetched_at": fetched_at}]
+        ).to_parquet(path, index=False)
+        return path
+
+    def _meta(path: Path, last_updated: str, fetched_at: str) -> Path:
+        pd.DataFrame(
+            [{
+                "series_id": "NFCI", "title": "NFCI", "frequency": "W", "units": "Index",
+                "seasonal_adjustment": "NSA", "observation_start": "1971-01-08",
+                "last_updated": last_updated, "fetched_at": fetched_at,
+            }]
+        ).to_parquet(path, index=False)
+        return path
+
+    stale = _write(tmp_path / "stale" / "obs.parquet", "2026-07-01", "2026-07-02T01:00:00Z")
+    stale_meta = _meta(tmp_path / "stale" / "meta.parquet", "2026-07-02T00:00:00Z", "2026-07-02T01:00:00Z")
+    stale_config = replace(
+        minimal_inputs,
+        macro_inputs=(
+            _input("stale_fred", stale, FRED_OBSERVATIONS_SCHEMA_ID),
+            _input("stale_fred_meta", stale_meta, FRED_META_SCHEMA_ID),
+        ),
+    )
+    build_control_tower_marts(stale_config)
+    stale_rows = pd.read_parquet(_published(stale_config, "macro_observations.parquet"))
+    assert (stale_rows["source_id"] == "stale_fred").any(), "stale evidence must be retained"
+
+    future_dir = tmp_path / "future"
+    ahead = _write(future_dir / "obs.parquet", "2026-09-30", "2026-09-30T01:00:00Z")
+    ahead_meta = _meta(future_dir / "meta.parquet", "2026-09-30T00:00:00Z", "2026-09-30T01:00:00Z")
+    future_config = replace(
+        minimal_inputs,
+        output_dir=tmp_path / "future-out",
+        macro_inputs=(
+            _input("future_fred", ahead, FRED_OBSERVATIONS_SCHEMA_ID),
+            _input("future_fred_meta", ahead_meta, FRED_META_SCHEMA_ID),
+        ),
+    )
+    build_control_tower_marts(future_config)
+    future_rows = pd.read_parquet(_published(future_config, "macro_observations.parquet"))
+    future_health = pd.read_parquet(_published(future_config, "source_health.parquet"))
+    assert not (future_rows["source_id"] == "future_fred").any(), "lookahead must fail closed"
+    detail = future_health.loc[future_health["source_id"].eq("future_fred"), "detail"].iloc[0]
+    assert "future_row_beyond_as_of" in detail
+
 
 def test_current_pointer_and_generation_reject_symlinks(minimal_inputs):
     build_control_tower_marts(minimal_inputs)

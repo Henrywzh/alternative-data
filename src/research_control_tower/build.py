@@ -1756,11 +1756,30 @@ def _load_optional(
         execution_evidence=execution_evidence,
     )
     if state.status != "available":
-        if descriptor.required:
+        # Not every policy failure means the rows are unusable, and the two
+        # cases must not be collapsed:
+        #
+        #   future_row_beyond_as_of -- a row dated after as_of would leak
+        #     lookahead into anything built on it. This still fails closed;
+        #     there is no reading under which including it is correct.
+        #   stale_source -- the rows are real and were validly collected, they
+        #     are just older than the source's freshness window.
+        #
+        # Discarding the frame for staleness is what emptied 13,598 ECB FX
+        # observations (11 days old against a 7-day window) and a collected
+        # quote snapshot (47 minutes old against a 5-minute window). Stale
+        # rows are now carried through; the state stays non-available, so the
+        # artifact is still marked degraded and the reason still travels in
+        # source_health for the coverage matrix to render.
+        stale_only = bool(state.errors) and all(
+            error.get("code") == "stale_source" for error in state.errors
+        )
+        if descriptor.required and not stale_only:
             raise BuildError(
                 f"required optional input freshness policy failed: {descriptor.path}: {state.detail}"
             )
-        return state, None, schema_id
+        if not stale_only:
+            return state, None, schema_id
     return state, frame, schema_id
 
 
