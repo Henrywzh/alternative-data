@@ -368,10 +368,20 @@ def _validate_manifest(root: Path, manifest: Any) -> dict[str, Any]:
     validation_errors = manifest.get("validation_errors", [])
     if not isinstance(degraded_inputs, list) or not isinstance(validation_errors, list):
         raise _manifest_error("degraded_inputs and validation_errors must be lists")
+    # A required artifact must be usable, which is not the same as every
+    # provider behind it being connected.  "degraded" means the artifact was
+    # written and passed schema validation while some of its sources are
+    # impaired -- stale, partial, or unconfigured -- and the per-source reasons
+    # are already carried in source_health and validation_errors, which the
+    # coverage matrix renders.  Demanding "available" here conflated the two:
+    # wiring real FRED observations into macro_observations moved it from
+    # "available" with four hand-entered rows to "degraded" with 19,761 real
+    # ones, and the app refused to start on the richer artifact.  Only
+    # "unavailable" -- no usable rows -- still fails closed.
     bad_required_records = [
         name
         for name in REQUIRED_ARTIFACT_NAMES
-        if manifest["artifacts"][name].get("status") != "available"
+        if manifest["artifacts"][name].get("status") not in {"available", "degraded"}
     ]
     if bad_required_records:
         raise _manifest_error(
@@ -660,13 +670,27 @@ class ControlTowerRepository:
                 loaded[name] = _empty_frame(name)
                 synthetic_health.append(_health_reason_row(name, reason))
                 continue
-            if not required and record.get("status") in {"degraded", "unavailable"}:
+            if not required and record.get("status") == "unavailable":
                 stem = Path(name).stem
                 missing_optional.add(stem)
                 degraded_reasons[stem] = "unavailable"
                 loaded[name] = _empty_frame(name)
                 synthetic_health.append(_health_reason_row(name, "unavailable"))
                 continue
+            if not required and record.get("status") == "degraded":
+                # A degraded optional artifact holds real rows that passed
+                # schema validation; only some of its sources are impaired.
+                # Emptying it here discarded them and relabelled the result
+                # "unavailable", which is how 2,045 SEC filings were reported
+                # as "News & Filings: Unavailable" merely because the AI RSS
+                # feed beside them was unconfigured. The degradation is still
+                # recorded, so the coverage matrix reports partial rather than
+                # available -- it just no longer throws the evidence away.
+                stem = Path(name).stem
+                missing_optional.add(stem)
+                degraded_reasons[stem] = "degraded"
+                synthetic_health.append(_health_reason_row(name, "degraded"))
+                # fall through to the normal integrity-checked load
             try:
                 expected_hash = record.get("sha256")
                 if expected_hash and str(expected_hash) != _sha256(path):
