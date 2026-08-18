@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-08-09T16:08:45.007405Z",
-  "snapshot_id": "f0e6f40e11908723",
+  "generated_at": "2026-08-18T07:05:19.366129Z",
+  "snapshot_id": "e3b26efe103a01a8",
   "data_as_of": "2026-06-30",
   "overall_status": "Healthy",
   "live_sources": 4,
@@ -31,8 +31,8 @@
       "dataset": "hutchison_telecom_operating_drivers",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2025-12-31",
-      "records": 4,
+      "latest_observation": "2026-06-30",
+      "records": 2,
       "freshness": "Live",
       "notes": "Semi-annual Key Performance Indicators table: postpaid/prepaid customers, monthly postpaid churn rate, postpaid gross & net ARPU, and 5G penetration rate."
     },
@@ -47,5 +47,5 @@
       "notes": "Mobile number block allocations by operator, all 4 licensed MNOs plus MVNOs -- a capacity/footprint proxy, not a subscriber-count or time-series metric (see table caveat)."
     }
   ],
-  "attachment_filename": "hk-telecom-dashboard-2026-08-09.html"
+  "attachment_filename": "hk-telecom-dashboard-2026-08-18.html"
 }
