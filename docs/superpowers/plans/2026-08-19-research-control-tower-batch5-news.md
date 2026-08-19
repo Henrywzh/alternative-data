@@ -148,3 +148,36 @@ UI never presents a discovery row as a confirmed fact. A private entity
 - Full narrative/news sentiment NLP.
 - Transcript extraction (spec §8.3) — separate later batch.
 - Any paid key / account-gated provider becoming a hard dependency.
+
+## 6. Provider contract & probe evidence (Completed Design & Verification Slice)
+
+Detailed provider contracts and empirical HTTP probe results are formally specified in [`docs/superpowers/plans/2026-08-19-rct-batch5-provider-probes.md`](2026-08-19-rct-batch5-provider-probes.md).
+
+### 6.1 Status of Batch 5 Components & Deliverables
+
+- [x] **Provider Contract Specs:** Endpoint definitions, parameter specifications, metadata mapping schemas, and free-tier limits defined for Finnhub, Marketaux, and FMP.
+- [x] **Empirical Official IR Probes:** Network probes executed on Stage 1 candidate URLs (2026-08-19).
+  - **Proven / Admitted Feeds (2):** `BAIDU` (`https://ir.baidu.com/rss/news-releases.xml` — RSS 2.0, 10 items) and `ALIBABA` Corporate (`https://www.alizila.com/feed/` — RSS 2.0, 10 items).
+  - **Blocked / Excluded HTML Feeds (4):** `TENCENT`, `BYTEDANCE`, `KUAISHOU`, `BILIBILI` lack structured RSS feeds (return HTML shells or 404); recorded as `no_records`.
+- [x] **Acceptance Test Matrix Defined:** Grouped test specifications established for schema/freshness, entity resolution with negative exclusions, source quality/event class mapping, no-body policy, offline builder network guards, and failure state handling.
+- [ ] **Collector & Builder Implementation:** Integration of `news_collector.py`, `_source_quality_class` fix, and registry crosswalk wiring (owned by integration agent).
+- [ ] **Integration Test Suite Execution:** Implementation of `tests/` matching the acceptance matrix (owned by integration agent).
+
+### 6.2 Provider Verdict Summary
+
+| Provider | Provider Category | Status / Verdict | Primary Entity Coverage | Primary Limitations / Notes |
+|---|---|---|---|---|
+| **Official IR Allowlist** | Official IR | **PROVEN (Admitted)** | `BAIDU` (IR RSS), `ALIBABA` (Alizila RSS) | `TENCENT`, `BYTEDANCE`, `KUAISHOU`, `BILIBILI` report `no_records`. |
+| **Finnhub Company News** | Entitled / Secondary | **PROBE READY (Pending Key)** | US primary/ADRs (`BABA`, `BIDU`, `BILI`) | 60 calls/min; HK tickers (`0700.HK`) return empty array on free tier. |
+| **Marketaux News** | Entitled / Secondary | **PROBE READY (Pending Key)** | Global (`BABA`, `0700.HK`, `BIDU`, `1024.HK`, `9626.HK`) + `ByteDance` search | 100 reqs/day hard cap on free tier; max 3 articles/call (`limit=3`). |
+| **FMP Stock News** | Entitled / Secondary | **PROBE READY (Pending Key)** | US primary/ADRs (`BABA`, `BIDU`, `BILI`) | 250 reqs/day hard cap; HK/CN tickers unsupported on free tier. |
+| **Google News RSS** | Discovery | **BLOCKED as Primary** | N/A | Excluded per design challenge (un-SLA'd, mislabelled as official by legacy classifier). |
+
+### 6.3 Acceptance Test Requirements for Integration Step
+
+1. **Schema & Freshness:** `ai_news_blog_posts_v1` columns enforced; 45-day publish cutoff window verified.
+2. **Entity Resolution:** Registry-backed mapping for US/HK tickers & `ByteDance`; negative exclusions enforced (`Tencent Music` ≠ `TENCENT`).
+3. **Source Quality Mapping:** Official IR allowlist -> `official`/`official_news_metadata`; Entitled APIs -> `entitled`/`market_news_metadata`; Discovery -> `discovery`/`discovery_news_metadata`.
+4. **Privacy & Storage:** Metadata only stored; zero full text or body snippets; deterministic SHA-256 `document_id`.
+5. **Offline Architecture:** Offline builder (`build.py`) guarded against network access.
+6. **State & Degraded Mode:** Provider errors write state sidecars (`unavailable`/`partial`) and trigger `degraded` manifest state.
