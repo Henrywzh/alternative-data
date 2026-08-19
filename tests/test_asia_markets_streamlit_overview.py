@@ -49,8 +49,18 @@ def test_overview_helpers_read_real_artifact_values_and_dates() -> None:
         label_zh="人口（千人）",
         language="en",
     )[1:]
-    assert population_value == "7,510.8"
-    assert population_date == "01 Dec 2025"
+    # Derived from the artifact for the same reason as the net-flow reading
+    # below: CSD both publishes new periods and revises published ones, so a
+    # frozen literal goes stale from two directions. This pair was stale both
+    # ways at once -- it asserted 7,510.8 / Dec 2025 while the artifact had
+    # advanced to 2026-06 and revised Dec 2025 down to 7,508.7. The reader is
+    # still under test: it must reproduce exactly what the artifact holds.
+    _population_rows = population["snapshot"]["datasets"]["csd_population"]
+    _latest_population = max(_population_rows, key=lambda row: row["period"])
+    assert population_value == f"{_latest_population['mid_year_population_thousands']:,.1f}"
+    assert population_date == datetime.strptime(
+        _latest_population["period"], "%Y-%m"
+    ).strftime("%d %b %Y")
 
     resident_flow, flow_date = asia_app.latest_series_reading(
         population,
