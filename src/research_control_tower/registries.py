@@ -268,6 +268,12 @@ def _news_contains_word(haystack: str, token: str) -> bool:
         return False
     if not any(char.isalnum() for char in token):
         return token in haystack
+    # CJK characters are all "alphanumeric" from Python's perspective, so the
+    # boundary check below can never fire for a token like "腾讯".  Fall back
+    # to substring matching so a CJK display_name (if one is ever registered)
+    # silently degrades instead of silently never matching.
+    if any("\u4e00" <= char <= "\u9fff" for char in token):
+        return token in haystack
     start = 0
     while True:
         start = haystack.find(token, start)
@@ -314,6 +320,19 @@ def resolve_news_entities(
     yields empty ids -- never a guessed link.  The listing crosswalk comes from
     ``listings.csv`` (``financial_data_security_id`` / ``canonical_ticker`` /
     ``vendor_tickers`` are the canonical identity carried per listing).
+
+    Two deliberate trade-offs:
+
+    - Negative exclusion is entity-level: a headline mentioning BOTH a
+      subsidiary and the parent's own business (e.g. "Tencent Music partners
+      with Tencent Cloud") suppresses the parent entirely.  For V1 this is
+      the correct fail-safe direction -- a missing link is debuggable, a
+      false link silently pollutes the entity timeline.
+    - Archived entities participate in resolution.  A headline mentioning
+      "ZTE" links to the ZTE entity even though it is archived out of the
+      active Stage 1 universe.  Historical news about an entity remains
+      valid regardless of its current research-universe status; filtering
+      happens downstream via entity/basket active intervals.
     """
 
     haystack = str(text or "").casefold()

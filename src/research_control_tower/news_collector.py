@@ -168,6 +168,14 @@ def _now_utc() -> pd.Timestamp:
 def _utc(value: object) -> pd.Timestamp | pd.NaT:
     if value is None or value is pd.NA or value is pd.NaT:
         return pd.NaT
+    # News APIs (Finnhub) return Unix epoch SECONDS for datetime fields.
+    # pd.Timestamp(int) would misinterpret that as nanoseconds (1970 dates);
+    # every integer/float reaching here is a seconds-epoch timestamp.
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        try:
+            return pd.Timestamp(value, unit="s", tz="UTC")
+        except (TypeError, ValueError, OverflowError):
+            return pd.NaT
     try:
         parsed = pd.Timestamp(value)
     except (TypeError, ValueError, OverflowError):
@@ -583,6 +591,7 @@ def _fetch_structured_symbol(
                 now_utc=now_utc,
                 title=item.get("headline"),
                 link=item.get("url"),
+                # Finnhub datetime is Unix epoch seconds; _utc() handles it.
                 published=item.get("datetime"),
                 license_class=str(spec["license_class"]),
             )
@@ -714,7 +723,7 @@ def collect_official_ir_allowlist(
     allowlist: pd.DataFrame,
     *,
     fetch: ProviderFetch,
-    as_of_utc: pd.Timestamp,
+    as_of_utc: pd.Timestamp | None = None,
     lookback_days: int,
     timeout: float,
 ) -> NewsCollectionResult:
