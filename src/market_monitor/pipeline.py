@@ -100,13 +100,14 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
     raw = fetch_all_raw(start_date=start_date, limit_exposures=limit_exposures, etf_only=etf_only)
     meta = build_metadata_frame()
     results: dict[str, Any] = {}
+    run_scope = "partial" if (limit_exposures or etf_only) else "full"
 
     # Persist raw observations first so the raw -> normalized -> derived chain
     # is not missing its bottom layer on disk (PIT discipline).
     raw_write: dict[str, dict[str, str] | None] = {}
     if write:
         for dataset_name in ("index_close", "etf_close", "etf_spot"):
-            raw_write[dataset_name] = save_raw(dataset_name, raw[dataset_name], metadata={"type": "raw"}) if dataset_name in raw and not raw[dataset_name].empty else None
+            raw_write[dataset_name] = save_raw(dataset_name, raw[dataset_name], metadata={"type": "raw", "run_scope": run_scope}) if dataset_name in raw and not raw[dataset_name].empty else None
         results["_raw_run"] = raw_write
 
     # Normalized: index prices (close from OHLCV).
@@ -167,12 +168,11 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
     wrapper = merge_premium(raw.get("etf_spot", pd.DataFrame()), meta)
     # Guarantee the optional EM columns exist (they may be absent when the
     # spot endpoint is unavailable); missing values stay NaN on the dashboard.
-    for optional in ("aum", "market_price", "iopv", "turnover", "premium_pct"):
+    for optional in ("aum", "market_price", "iopv", "turnover", "premium_pct", "spread_bp"):
         if optional not in wrapper.columns:
             wrapper[optional] = float("nan")
     if "turnover" in wrapper.columns:
         wrapper["turnover"] = pd.to_numeric(wrapper["turnover"], errors="coerce")
-    wrapper["spread_bp"] = float("nan")
     if "inception_date" in wrapper.columns:
         wrapper["fund_age_days"] = pd.to_datetime(date.today()) - pd.to_datetime(wrapper["inception_date"], errors="coerce")
         wrapper["fund_age_days"] = wrapper["fund_age_days"].dt.days
@@ -186,10 +186,10 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
     if write:
         run_id = new_run_id()
         run_info: dict[str, Any] = {}
-        run_info["index_price_daily"] = save_normalized("index_price_daily", normalized_index, metadata={"type": "normalized"}, run_id=run_id) if not normalized_index.empty else None
-        run_info["etf_price_daily"] = save_normalized("etf_price_daily", normalized_etf, metadata={"type": "normalized"}, run_id=run_id) if not normalized_etf.empty else None
-        run_info["exposure_technicals"] = save_derived("exposure_technicals", results["exposure_technicals"], metadata={"type": "derived"}, run_id=run_id) if not results["exposure_technicals"].empty else None
-        run_info["relative_regime"] = save_derived("relative_regime", results["relative_regime"], metadata={"type": "derived"}, run_id=run_id) if not results["relative_regime"].empty else None
-        run_info["wrapper_metrics"] = save_derived("wrapper_metrics", ranked, metadata={"type": "derived"}, run_id=run_id) if not ranked.empty else None
+        run_info["index_price_daily"] = save_normalized("index_price_daily", normalized_index, metadata={"type": "normalized", "run_scope": run_scope}, run_id=run_id) if not normalized_index.empty else None
+        run_info["etf_price_daily"] = save_normalized("etf_price_daily", normalized_etf, metadata={"type": "normalized", "run_scope": run_scope}, run_id=run_id) if not normalized_etf.empty else None
+        run_info["exposure_technicals"] = save_derived("exposure_technicals", results["exposure_technicals"], metadata={"type": "derived", "run_scope": run_scope}, run_id=run_id) if not results["exposure_technicals"].empty else None
+        run_info["relative_regime"] = save_derived("relative_regime", results["relative_regime"], metadata={"type": "derived", "run_scope": run_scope}, run_id=run_id) if not results["relative_regime"].empty else None
+        run_info["wrapper_metrics"] = save_derived("wrapper_metrics", ranked, metadata={"type": "derived", "run_scope": run_scope}, run_id=run_id) if not ranked.empty else None
         results["_run"] = run_info
     return results

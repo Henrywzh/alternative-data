@@ -60,11 +60,11 @@ jobs:
 
       - name: Commit refreshed data + artifact
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/normalized/market_monitor data/derived/market_monitor data/raw/market_monitor \
-            apps/asia-markets-dashboard/.generated/market-monitor-artifact.json \
-            apps/asia-markets-dashboard/.generated/market-monitor-artifact-zh.json \
+         git config user.name "github-actions[bot]"
+         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/normalized/market_monitor data/derived/market_monitor \
+           apps/asia-markets-dashboard/.generated/market-monitor-artifact.json \
+           apps/asia-markets-dashboard/.generated/market-monitor-artifact-zh.json \
             apps/asia-markets-dashboard/src/data/dashboard-status-market-monitor.json
           if git diff --staged --quiet; then
             echo "No market-monitor changes to commit"

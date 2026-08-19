@@ -89,6 +89,9 @@ def test_rank_wrappers_produces_two_ranks():
     assert sorted(ranked["buy_rank"].tolist()) == [1, 2, 3]
     assert sorted(ranked["hold_rank"].tolist()) == [1, 2, 3]
 
+from market_monitor.storage import save_derived, load_latest
+from market_monitor.wrapper import merge_premium
+from market_monitor.metadata import build_metadata_frame
 
 def test_rank_wrappers_survives_missing_fund():
     """A halted / unquoted fund (all NaN) must not crash the daily ranking."""
@@ -111,3 +114,53 @@ def test_rank_wrappers_survives_missing_fund():
     # a (best) ranks 1; b and the fully-missing c both score 0 -> tied last.
     assert ranked.loc[ranked["fund_id"] == "a", "buy_rank"].iloc[0] == 1
     assert ranked.loc[ranked["fund_id"] == "c", "buy_rank"].iloc[0] >= 2
+
+
+def test_rank_wrappers_entry_status():
+    frame = pd.DataFrame(
+        {
+            "exposure_id": ["sp500", "csi300"],
+            "fund_id": ["513500", "510300"],
+            "ticker": ["513500", "510300"],
+            "premium_pct": [7.01, -0.2],
+            "is_cross_border": [True, False],
+        }
+    )
+    ranked = rank_wrappers(frame)
+    assert "entry_status" in ranked.columns
+    assert ranked.loc[ranked["fund_id"] == "513500", "entry_status"].iloc[0] == "AVOID"
+    assert ranked.loc[ranked["fund_id"] == "510300", "entry_status"].iloc[0] == "ATTRACTIVE"
+
+
+def test_storage_run_scope_filtering():
+    from market_monitor.config import DERIVED_DIR
+    df_full = pd.DataFrame({"a": [1, 2]})
+    df_test = pd.DataFrame({"a": [3]})
+
+    save_derived("test_scope_ds", df_full, metadata={"run_scope": "full"}, run_id="20260819T070000-full")
+    save_derived("test_scope_ds", df_test, metadata={"run_scope": "test"}, run_id="20260819T080000-test")
+
+    loaded_full = load_latest(DERIVED_DIR, "test_scope_ds", scope="full")
+    assert len(loaded_full) == 2
+    loaded_test = load_latest(DERIVED_DIR, "test_scope_ds", scope="test")
+    assert len(loaded_test) == 1
+
+
+def test_merge_premium_aum_resolution():
+    meta = build_metadata_frame()
+    spot = pd.DataFrame(
+        {
+            "ticker": ["510300", "510500"],
+            "premium_pct": [0.05, -0.10],
+            "markcap": [30000000000.0, 15000000000.0],
+            "bid": [4.65, 5.20],
+            "ask": [4.66, 5.21],
+            "spread_bp": [2.1, 1.9],
+        }
+    )
+    merged = merge_premium(spot, meta)
+    assert "aum" in merged.columns
+    assert "aum_x" not in merged.columns
+    assert "aum_y" not in merged.columns
+    row_300 = merged[merged["ticker"].str.startswith("510300")]
+    assert row_300["aum"].iloc[0] == 30000000000.0

@@ -17,14 +17,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--etf-only", nargs="*", default=None, help="Restrict ETF fetches to these tickers")
     parser.add_argument("--start-date", default=None, help="YYYYMMDD start for history")
     parser.add_argument("--no-write", action="store_true", help="Run without persisting snapshots")
+    parser.add_argument("--allow-partial-write", action="store_true", help="Allow persisting partial/test runs to disk")
     parser.add_argument("--send-report", action="store_true", help="Send the daily Gmail digest after running")
     args = parser.parse_args(argv)
+
+    is_partial = bool(args.limit_exposures or args.etf_only)
+    should_write = (not args.no_write) and (not is_partial or args.allow_partial_write)
 
     results = run_pipeline(
         limit_exposures=tuple(args.limit_exposures) if args.limit_exposures else None,
         etf_only=tuple(args.etf_only) if args.etf_only else None,
         start_date=args.start_date,
-        write=not args.no_write,
+        write=should_write,
     )
     summary = {k: (int(v) if isinstance(v, int) else (len(v) if hasattr(v, "__len__") and not isinstance(v, str) else v)) for k, v in results.items() if k != "_run"}
     print(json.dumps(summary, ensure_ascii=False, indent=2, default=str))

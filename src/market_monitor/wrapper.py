@@ -22,14 +22,25 @@ def merge_premium(
     else:
         spot["ticker"] = spot["ticker"].astype(str).str.zfill(6)
         spot_rows = spot.copy()
+        if "markcap" in spot_rows.columns and "aum" not in spot_rows.columns:
+            spot_rows["aum"] = spot_rows["markcap"]
 
     meta = metadata.copy()
     # Normalize ticker keys to bare 6-digit code on both sides.
     meta["ticker"] = meta["ticker"].astype(str).str.split(".").str[0].str.zfill(6)
-    spot_cols = [c for c in ("ticker", "premium_pct", "market_price", "iopv", "turnover", "aum", "units", "markcap") if c in spot_rows.columns]
+    spot_cols = [c for c in ("ticker", "premium_pct", "market_price", "iopv", "turnover", "aum", "units", "markcap", "bid", "ask", "spread_bp") if c in spot_rows.columns]
     if "ticker" in spot_rows.columns:
         spot_rows["ticker"] = spot_rows["ticker"].astype(str).str.zfill(6)
     merged = meta.merge(spot_rows[spot_cols], on="ticker", how="left")
+    if "aum_y" in merged.columns and "aum_x" in merged.columns:
+        merged["aum"] = merged["aum_y"].combine_first(merged["aum_x"])
+        merged.drop(columns=["aum_x", "aum_y"], inplace=True)
+    elif "aum_y" in merged.columns:
+        merged["aum"] = merged["aum_y"]
+        merged.drop(columns=["aum_y"], inplace=True)
+    elif "aum_x" in merged.columns:
+        merged["aum"] = merged["aum_x"]
+        merged.drop(columns=["aum_x"], inplace=True)
     if "premium_pct" not in merged.columns:
         merged["premium_pct"] = float("nan")
 

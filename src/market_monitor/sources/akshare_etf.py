@@ -167,16 +167,22 @@ def fetch_etf_spot() -> pd.DataFrame:
             # for investors (positive = trading above IOPV), keep the raw value
             # and document the sign, rather than silently flipping it.
             "基金折价率": "premium_pct",
+            "买一": "bid",
+            "卖一": "ask",
             "最新份额": "units",
             "总市值": "markcap",
             "流通市值": "float_markcap",
         }
     )
-    keep = [c for c in ("ticker", "fund_name", "market_price", "iopv", "pct_chg", "turnover", "volume", "premium_pct", "units", "markcap", "float_markcap") if c in out.columns]
+    keep = [c for c in ("ticker", "fund_name", "market_price", "iopv", "pct_chg", "turnover", "volume", "premium_pct", "bid", "ask", "units", "markcap", "float_markcap") if c in out.columns]
     out = out[keep].copy()
-    for col in ("market_price", "iopv", "pct_chg", "turnover", "volume", "premium_pct", "units", "markcap", "float_markcap"):
+    for col in ("market_price", "iopv", "pct_chg", "turnover", "volume", "premium_pct", "bid", "ask", "units", "markcap", "float_markcap"):
         if col in out.columns:
             out[col] = pd.to_numeric(out[col], errors="coerce")
+    if "bid" in out.columns and "ask" in out.columns:
+        mid = (out["ask"] + out["bid"]) / 2.0
+        out["spread_bp"] = ((out["ask"] - out["bid"]) / mid * 10000.0).where(mid > 0, float("nan"))
+        keep.append("spread_bp")
     # Normalize premium sign to Eastmoney's definition: positive = ETF trades
     # at a premium to IOPV. Em's field is literally 折价率, so we flip its sign
     # so a positive value reads as "expensive" consistently across the domain.

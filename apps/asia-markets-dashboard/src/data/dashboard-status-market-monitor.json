@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-08-19T09:02:42.869238+00:00",
-  "snapshot_id": "7389e92f8e767b81",
-  "data_as_of": "2026-08-18",
-  "overall_status": "Healthy",
+  "generated_at": "2026-08-19T09:34:24.897057+00:00",
+  "snapshot_id": "9f93d2600e42faf5",
+  "data_as_of": "2026-08-19",
+  "overall_status": "Degraded",
   "live_sources": 3,
   "planned_sources": 0,
   "attachment_filename": "market-monitor-dashboard-2026-08-19.html"
