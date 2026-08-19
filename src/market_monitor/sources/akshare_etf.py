@@ -123,7 +123,12 @@ def fetch_index_daily(symbol: str, start_date: str | None = None, end_date: str 
         if df is not None and isinstance(df, pd.DataFrame) and "date" in df.columns:
             df = df.copy()
             df["date"] = pd.to_datetime(df["date"], errors="coerce")
-            df = df[df["date"] >= pd.Timestamp(start[:4] + "-01-01")]
+            start_ts = _parse_date(start)
+            end_ts = _parse_date(end) or pd.Timestamp(date.today())
+            if start_ts:
+                df = df[df["date"] >= start_ts]
+            if end_ts:
+                df = df[df["date"] <= end_ts]
     elif sina_symbol:
         # Sina history has no start/end filter; slice here.
         df = ak.stock_zh_index_daily(symbol=sina_symbol)
