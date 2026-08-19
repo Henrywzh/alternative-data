@@ -183,9 +183,9 @@ def fetch_etf_spot() -> pd.DataFrame:
             "成交额": "turnover",
             "成交量": "volume",
             "IOPV实时估值": "iopv",
-            # Em labels this "折价率" (discount rate); sign is premium-positive
-            # for investors (positive = trading above IOPV), keep the raw value
-            # and document the sign, rather than silently flipping it.
+            # Em's field is literally 折价率 (discount rate), so it arrives
+            # discount-positive and is flipped below. Verified against a live
+            # snapshot: 512100 mp=3.048 iopv=3.0431 -> +0.161%, stored as +0.16.
             "基金折价率": "premium_pct",
             "买一": "bid",
             "卖一": "ask",
@@ -203,9 +203,9 @@ def fetch_etf_spot() -> pd.DataFrame:
         mid = (out["ask"] + out["bid"]) / 2.0
         out["spread_bp"] = ((out["ask"] - out["bid"]) / mid * 10000.0).where(mid > 0, float("nan"))
         keep.append("spread_bp")
-    # Normalize premium sign to Eastmoney's definition: positive = ETF trades
-    # at a premium to IOPV. Em's field is literally 折价率, so we flip its sign
-    # so a positive value reads as "expensive" consistently across the domain.
+    # Flip away from Eastmoney's convention into this domain's: positive =
+    # ETF trades at a premium to IOPV = expensive. entry_status and the whole
+    # buy-side ranking read the sign this way, so it is fixed here once.
     if "premium_pct" in out.columns:
         out["premium_pct"] = -out["premium_pct"]
     if "units" in out.columns and "markcap" in out.columns:

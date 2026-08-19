@@ -1,5 +1,7 @@
 """Offline unit tests for market_monitor derived-signal math."""
 
+import sys
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -217,3 +219,127 @@ def test_rsi_wilder_smoothing():
     # With Wilder, RSI should be defined and in valid range
     assert result["rsi"] is not None
     assert 0 <= result["rsi"] <= 100
+
+
+def test_buy_score_does_not_double_count_premium():
+    """relative_premium_pct must not be a buy component.
+
+    Within a cohort it is premium_pct shifted by a constant (the cohort
+    median), and min-max normalization is invariant to a constant shift, so
+    scoring both gave premium two of the four weights. The regression this
+    guards is concrete: with the duplicate in place the only ATTRACTIVE
+    csi300 wrapper ranked second behind a FAIR one.
+    """
+    frame = pd.DataFrame(
+        {
+            "exposure_id": ["csi300"] * 3,
+            "ticker": ["510330", "510300", "159919"],
+            "premium_pct": [-0.28, -0.06, -0.05],
+            "spread_bp": [4.0, 2.0, 3.0],
+            "turnover": [8.4e8, 7.1e9, 1.1e9],
+            "is_cross_border": [False] * 3,
+        }
+    )
+    frame["relative_premium_pct"] = frame.groupby("exposure_id")["premium_pct"].transform(
+        lambda s: s - s.median()
+    )
+    ranked = rank_wrappers(frame).set_index("ticker")
+
+    # The two columns are byte-identical after min-max, which is exactly why
+    # only one of them may be scored.
+    def _minmax(series: pd.Series) -> list[float]:
+        lo, hi = series.min(), series.max()
+        return [round(v, 9) for v in ((series - lo) / (hi - lo) * 100.0)]
+
+    assert _minmax(frame["premium_pct"]) == _minmax(frame["relative_premium_pct"])
+
+    # The best premium in the cohort must win the premium component outright.
+    assert ranked.loc["510330", "entry_status"] == "ATTRACTIVE"
+    assert ranked.loc["510330", "buy_score"] > ranked.loc["159919", "buy_score"]
+
+
+def test_buy_score_separates_wrappers_with_different_premiums():
+    """Two-member cohorts must no longer tie when the premiums differ.
+
+    Scope note: de-duplicating premium breaks the tie but does NOT make the
+    cheaper wrapper win. _norm is min-max within the cohort, so a two-member
+    cohort maps every component to {0, 100} and the score degenerates into a
+    vote tally -- 513310 still ranks first on spread + turnover despite a
+    premium 4 points worse. That is the separate design issue (min-max has no
+    absolute scale); this test pins only what de-duplication is responsible
+    for, so a future absolute-scale fix is free to change the winner.
+    """
+    frame = pd.DataFrame(
+        {
+            "exposure_id": ["sp500"] * 2,
+            "ticker": ["513310", "513500"],
+            "premium_pct": [11.11, 7.01],
+            "spread_bp": [10.0, 12.0],
+            "turnover": [5.0e8, 4.0e8],
+            "is_cross_border": [True] * 2,
+        }
+    )
+    ranked = rank_wrappers(frame).set_index("ticker")
+    assert ranked.loc["513500", "buy_score"] != ranked.loc["513310", "buy_score"]
+    assert ranked.loc["513500", "buy_rank"] != ranked.loc["513310", "buy_rank"]
+    assert set(ranked["buy_rank"]) == {1, 2}
+
+
+def test_email_trend_arrow_distinguishes_missing_from_down():
+    """A missing MA20 must not render as a down arrow."""
+    from market_monitor.alerts import build_email_html
+
+    technicals = pd.DataFrame(
+        [
+            {"label": "Has MA20", "ma20_pct": -1.2, "ma60_pct": -0.5, "rsi": 44.0},
+            {"label": "No MA20", "ma20_pct": float("nan"), "ma60_pct": None, "rsi": None},
+        ]
+    )
+    html = build_email_html(
+        report_date="2026-08-19",
+        technicals=technicals,
+        regime=pd.DataFrame(),
+        wrappers=pd.DataFrame(),
+    )
+    down_row = html.split("<td>Has MA20</td>")[1].split("</tr>")[0]
+    missing_row = html.split("<td>No MA20</td>")[1].split("</tr>")[0]
+    assert "▼" in down_row
+    assert "▼" not in missing_row
+    assert "—" in missing_row
+
+
+def test_spot_premium_sign_is_premium_positive():
+    """premium_pct must read positive when price is above IOPV.
+
+    Eastmoney ships 基金折价率 (discount-positive); the source layer flips it.
+    Guards the flip against a comment-only "fix" that removes it.
+    """
+    import market_monitor.sources.akshare_etf as src
+
+    frame = pd.DataFrame(
+        {
+            "代码": ["512100", "510330"],
+            "最新价": [3.048, 4.848],
+            "IOPV实时估值": [3.0431, 4.8617],
+            # discount-positive, as Eastmoney reports it
+            "基金折价率": [-0.16, 0.28],
+        }
+    )
+
+    class _FakeAk:
+        @staticmethod
+        def fund_etf_spot_em():
+            return frame
+
+    sys.modules["akshare"] = _FakeAk
+    try:
+        out = src.fetch_etf_spot().set_index("ticker")
+    finally:
+        del sys.modules["akshare"]
+
+    # 3.048 / 3.0431 - 1 = +0.161% -> the ETF trades above IOPV
+    assert out.loc["512100", "premium_pct"] > 0
+    assert out.loc["510330", "premium_pct"] < 0
+    for ticker in ("512100", "510330"):
+        implied = (out.loc[ticker, "market_price"] / out.loc[ticker, "iopv"] - 1.0) * 100.0
+        assert abs(implied - out.loc[ticker, "premium_pct"]) < 0.01
