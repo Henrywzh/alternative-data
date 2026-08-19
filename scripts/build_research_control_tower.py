@@ -54,6 +54,7 @@ from research_control_tower.build import (  # noqa: E402
 REGISTRY_ROOT = REPO_ROOT / "config" / "research_control_tower"
 PUBLISH_DIR = REPO_ROOT / "apps" / "research-control-tower" / ".generated"
 COLLECTOR_DIR = REPO_ROOT / "data" / "normalized" / "research_control_tower"
+CONSENSUS_DIR = COLLECTOR_DIR / "consensus"
 
 # (build kind, source_id, path relative to the repo root, expected schema,
 #  pit_class, license_class, cadence, source_url)
@@ -157,6 +158,10 @@ COLLECTOR_COMMANDS = {
         "--identity config/research_control_tower/official_source_identity.csv "
         f"--output-dir {COLLECTOR_DIR.relative_to(REPO_ROOT)}"
     ),
+    "consensus_export": (
+        "python scripts/research_control_tower_consensus_collector.py "
+        "--basket RESEARCH_STAGE_1_CHINA_INTERNET"
+    ),
     "quote_snapshots": (
         "python scripts/research_control_tower_quote_collector.py "
         "--listings config/research_control_tower/listings.csv "
@@ -238,6 +243,7 @@ def main(argv: list[str] | None = None) -> int:
         output_dir=output_dir,
         as_of_utc=as_of,
         build_id=build_id,
+        consensus_export_dir=CONSENSUS_DIR if CONSENSUS_DIR.is_dir() else None,
         macro_inputs=tuple(by_kind["macro"]),
         news_inputs=tuple(by_kind["news"]),
         filing_inputs=tuple(by_kind["filing"]),

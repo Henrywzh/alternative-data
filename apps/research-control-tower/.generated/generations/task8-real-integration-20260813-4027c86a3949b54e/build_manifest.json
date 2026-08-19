@@ -1,0 +1,274 @@
+{
+  "artifacts": {
+    "basket_memberships.parquet": {
+      "byte_size": 10322,
+      "name": "basket_memberships.parquet",
+      "relative_path": "basket_memberships.parquet",
+      "row_count": 91,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "33283ee7d05c77688f4682f66eeabdec10e149756a6e619cb45b652f081dbacc",
+      "source_ids": [
+        "registry:basket_memberships"
+      ],
+      "status": "available"
+    },
+    "baskets.parquet": {
+      "byte_size": 5730,
+      "name": "baskets.parquet",
+      "relative_path": "baskets.parquet",
+      "row_count": 6,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "6fbbbbc3beeac2154c2970d3249b6747ba32529a69a46c5973b5e5f16e53c534",
+      "source_ids": [
+        "registry:baskets"
+      ],
+      "status": "available"
+    },
+    "build_manifest.json": {
+      "byte_size": 9756,
+      "name": "build_manifest.json",
+      "relative_path": "build_manifest.json",
+      "row_count": 1,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": null,
+      "source_ids": [],
+      "status": "available"
+    },
+    "consensus_revisions.parquet": {
+      "byte_size": 17364,
+      "name": "consensus_revisions.parquet",
+      "relative_path": "consensus_revisions.parquet",
+      "row_count": 0,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "965116bd3808fa8f54c75ce1c628d1f16e3490dc242bddf00dab69c933110238",
+      "source_ids": [
+        "consensus_export"
+      ],
+      "status": "degraded"
+    },
+    "consensus_snapshots.parquet": {
+      "byte_size": 13958,
+      "name": "consensus_snapshots.parquet",
+      "relative_path": "consensus_snapshots.parquet",
+      "row_count": 0,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "a45be090040b1c9b28bf0e29db7810f10ce2bd3b600271dab97337fd973cfcba",
+      "source_ids": [
+        "consensus_export"
+      ],
+      "status": "degraded"
+    },
+    "entities.parquet": {
+      "byte_size": 12295,
+      "name": "entities.parquet",
+      "relative_path": "entities.parquet",
+      "row_count": 69,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "838480e846baa80df59c88bac98b6408b0abbb6af038a6492e55e371b9b6479a",
+      "source_ids": [
+        "registry:entities"
+      ],
+      "status": "available"
+    },
+    "event_basket_links.parquet": {
+      "byte_size": 6267,
+      "name": "event_basket_links.parquet",
+      "relative_path": "event_basket_links.parquet",
+      "row_count": 12,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "2c18ddbbb2caacfb4065984bdaad6ffb048f6935e68e5003d8274dec287d975d",
+      "source_ids": [
+        "events:event_links"
+      ],
+      "status": "available"
+    },
+    "event_entity_links.parquet": {
+      "byte_size": 7130,
+      "name": "event_entity_links.parquet",
+      "relative_path": "event_entity_links.parquet",
+      "row_count": 21,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "6e4f005108ae9f54cbf5a0a84da6a0291856f662cab4a35098854c3eb1ac122e",
+      "source_ids": [
+        "events:event_links"
+      ],
+      "status": "available"
+    },
+    "event_watch_questions.parquet": {
+      "byte_size": 5059,
+      "name": "event_watch_questions.parquet",
+      "relative_path": "event_watch_questions.parquet",
+      "row_count": 10,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "83272c10282d8d23ea597eb37cc44c94f5cd42a6e62769f2ccbde41db8a264a9",
+      "source_ids": [
+        "events:event_watch_questions"
+      ],
+      "status": "available"
+    },
+    "events.parquet": {
+      "byte_size": 31129,
+      "name": "events.parquet",
+      "relative_path": "events.parquet",
+      "row_count": 15,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "7b0337e261dd8c9a98d7e24d4b99ca7d2882e51fd149291353ecc6f744298516",
+      "source_ids": [
+        "events:events"
+      ],
+      "status": "available"
+    },
+    "indices.parquet": {
+      "byte_size": 12136,
+      "name": "indices.parquet",
+      "relative_path": "indices.parquet",
+      "row_count": 12,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "432f529801af02717be04afbd600ed7df5be6616f91ccacc2992461c0d165c77",
+      "source_ids": [
+        "registry:indices"
+      ],
+      "status": "available"
+    },
+    "listings.parquet": {
+      "byte_size": 27721,
+      "name": "listings.parquet",
+      "relative_path": "listings.parquet",
+      "row_count": 79,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "7ce24002451408e93a063048ba4c9caee9209b3112cf2925da7740c19cd53324",
+      "source_ids": [
+        "registry:listings"
+      ],
+      "status": "available"
+    },
+    "macro_observations.parquet": {
+      "byte_size": 559118,
+      "name": "macro_observations.parquet",
+      "relative_path": "macro_observations.parquet",
+      "row_count": 6990,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "94d6fcda0c65b9f30a81c26ca86cd9829d0f7f64e004a6732bffb419af8bd268",
+      "source_ids": [
+        "events:events",
+        "fred_observations",
+        "fred_series_meta"
+      ],
+      "status": "available"
+    },
+    "news_filings.parquet": {
+      "byte_size": 248456,
+      "name": "news_filings.parquet",
+      "relative_path": "news_filings.parquet",
+      "row_count": 2719,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "1f19fbd18f0bbf924be9d960de876da9eed09012ff73bb14fbc88396f1b53876",
+      "source_ids": [
+        "official_ai_rss",
+        "sec_edgar"
+      ],
+      "status": "available"
+    },
+    "source_health.parquet": {
+      "byte_size": 15466,
+      "name": "source_health.parquet",
+      "relative_path": "source_health.parquet",
+      "row_count": 19,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "697194dfc50d4733be73559858ec3d6140142d9d42eeca57fe356651289f22db",
+      "source_ids": [
+        "consensus_export",
+        "ecb_fx_rates",
+        "events:event_links",
+        "events:event_watch_questions",
+        "events:events",
+        "filings_sec_edgar",
+        "fred_observations",
+        "fred_series_meta",
+        "news_official_ai_rss",
+        "official_ai_rss",
+        "ofr_mnemonics",
+        "ofr_timeseries",
+        "registry:basket_memberships",
+        "registry:baskets",
+        "registry:entities",
+        "registry:indices",
+        "registry:listings",
+        "sec_edgar",
+        "tw_monthly_revenue"
+      ],
+      "status": "available"
+    }
+  },
+  "as_of_utc": "2026-08-13T12:00:00Z",
+  "build_id": "task8-real-integration-20260813",
+  "built_at_utc": "2026-08-13T12:00:00Z",
+  "current_pointer": "generations/task8-real-integration-20260813-4027c86a3949b54e",
+  "degraded_inputs": [
+    "consensus_export",
+    "ecb_fx_rates",
+    "ofr_mnemonics",
+    "ofr_timeseries",
+    "tw_monthly_revenue"
+  ],
+  "generation_id": "task8-real-integration-20260813-4027c86a3949b54e",
+  "input_fingerprints": {
+    "/tmp/research-control-tower-task8-consensus.xzbVwB/control_tower_consensus_revisions.parquet": "5a1b443da33c1d25e1c512e4c0dc79077177823463a7d29dd9b26ffb5b957182",
+    "/tmp/research-control-tower-task8-consensus.xzbVwB/control_tower_consensus_snapshots.parquet": "3728c1d6e10ed883d3a23bf47a904e39201dbecd04453ae55ecea6fc8d93b924",
+    "/tmp/research-control-tower-task8-consensus.xzbVwB/control_tower_consensus_source_health.parquet": "7abbc873bdcafb57ea6076b2632432ef62529b8fc33ba81de79f49264ab8ada5",
+    "config/research_control_tower/basket_memberships.csv": "7b085e5f4adcd6e8096fa0873b8f07b1cd832aee4cc565a1d1698500934f8c61",
+    "config/research_control_tower/baskets.csv": "2f84d381802f6181375725a8bf25bffd1fa8757588b1d7658b4cce7de94680ee",
+    "config/research_control_tower/entities.csv": "3ef5a634789d59abc6717228d5d7c7c37e70d4f6430aefc0b3483840ba2c067b",
+    "config/research_control_tower/event_links.csv": "713b5621c1639ab88c4751d330ab22301c98659dc74e3058d66480cd37c779e4",
+    "config/research_control_tower/event_watch_questions.csv": "303c4e3c45f251be5625b673ccda7eb44139f0b6f104ae5e1dfb8dc03ef79846",
+    "config/research_control_tower/events.csv": "c2e9f7965d55b62ce6cecff6167f381c564fd31ae71eedc76ef6d8dcf15a8693",
+    "config/research_control_tower/indices.csv": "f8a16664344cf1d1a541a334d5879079b9b6407c1bec729802ec4f81ba486357",
+    "config/research_control_tower/listings.csv": "08d6bb3b08e69281ac875a0bea7504a1c09c1751ef7b2765a80b960a16d2f74c"
+  },
+  "network_policy": "forbidden",
+  "schema_version": "control_tower_marts_v1",
+  "source_health_summary": {
+    "available": 14,
+    "degraded": 1,
+    "unavailable": 4
+  },
+  "status": "degraded",
+  "validation_errors": [
+    {
+      "code": "stale_source",
+      "message": "latest=2026-07-26T00:00:00Z;cutoff=2026-07-30T12:00:00Z;threshold=14 days 00:00:00",
+      "severity": "warning",
+      "source_id": "consensus_export"
+    },
+    {
+      "code": "stale_source",
+      "message": "latest=2026-07-26T00:00:00Z;cutoff=2026-07-30T12:00:00Z;threshold=14 days 00:00:00",
+      "severity": "warning",
+      "source_id": "consensus_export"
+    },
+    {
+      "code": "optional_source_unavailable",
+      "message": "optional_source_not_configured",
+      "severity": "warning",
+      "source_id": "ofr_timeseries"
+    },
+    {
+      "code": "optional_source_unavailable",
+      "message": "optional_source_not_configured",
+      "severity": "warning",
+      "source_id": "ofr_mnemonics"
+    },
+    {
+      "code": "optional_source_unavailable",
+      "message": "optional_source_not_configured",
+      "severity": "warning",
+      "source_id": "tw_monthly_revenue"
+    },
+    {
+      "code": "optional_source_unavailable",
+      "message": "optional_source_not_configured",
+      "severity": "warning",
+      "source_id": "ecb_fx_rates"
+    }
+  ]
+}
