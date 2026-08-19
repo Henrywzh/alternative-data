@@ -17,6 +17,7 @@ from typing import Any, Iterable
 
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
 
@@ -3212,6 +3213,52 @@ def _market_price_frame(datasets: dict[str, Any]) -> pd.DataFrame:
     return frame.dropna(subset=["_date", "close"]).sort_values("_date")
 
 
+def _market_label(technical_row: pd.Series, language: str) -> str:
+    """Return the bilingual label for an exposure row."""
+    if language == "zh":
+        zh = technical_row.get("label_zh")
+        if pd.notna(zh) and str(zh).strip():
+            return str(zh)
+    return str(technical_row.get("label", ""))
+
+
+def _market_etf_price_frame(datasets: dict[str, Any]) -> pd.DataFrame:
+    """Daily ETF closes from the artifact, typed and sorted."""
+    rows = datasets.get("etf_price_daily_tail", [])
+    if not rows:
+        return pd.DataFrame()
+    frame = pd.DataFrame(rows)
+    if "date" not in frame.columns or "close" not in frame.columns:
+        return pd.DataFrame()
+    frame["_date"] = pd.to_datetime(frame["date"], errors="coerce")
+    frame["close"] = pd.to_numeric(frame["close"], errors="coerce")
+    return frame.dropna(subset=["_date", "close"]).sort_values("_date")
+
+
+def _market_premium_history_frame(datasets: dict[str, Any]) -> pd.DataFrame:
+    """Daily premium history from the artifact."""
+    rows = datasets.get("premium_history", [])
+    if not rows:
+        return pd.DataFrame()
+    frame = pd.DataFrame(rows)
+    if "date" not in frame.columns or "premium_pct" not in frame.columns:
+        return pd.DataFrame()
+    frame["_date"] = pd.to_datetime(frame["date"], errors="coerce")
+    frame["premium_pct"] = pd.to_numeric(frame["premium_pct"], errors="coerce")
+    return frame.dropna(subset=["_date"]).sort_values("_date")
+
+
+def _compute_rsi_series(close: pd.Series, window: int = 14) -> pd.Series:
+    """Wilder RSI for a close series."""
+    delta = close.diff()
+    gain = delta.clip(lower=0.0)
+    loss = (-delta).clip(lower=0.0)
+    avg_gain = gain.ewm(alpha=1.0 / window, adjust=False).mean()
+    avg_loss = loss.ewm(alpha=1.0 / window, adjust=False).mean()
+    rs = avg_gain / avg_loss.replace(0.0, float("nan"))
+    return 100.0 - 100.0 / (1.0 + rs)
+
+
 def render_market_leadership_chart(
     prices: pd.DataFrame,
     label_by_exposure: dict[str, str],
@@ -3278,6 +3325,94 @@ def render_market_leadership_chart(
     )
 
 
+def render_market_ratio_chart(
+    prices: pd.DataFrame,
+    technicals: pd.DataFrame,
+    language: str,
+    history_window_name: str,
+) -> None:
+    """Reindexed ratio of two exposures: A / B rebased to its own first value."""
+    if technicals.empty:
+        return
+
+    labels = {}
+    for _, row in technicals.iterrows():
+        eid = str(row["exposure_id"])
+        labels[eid] = _market_label(row, language) if language == "zh" else str(row.get("label", eid))
+
+    eids = sorted(labels.keys())
+    col1, col2 = st.columns(2)
+    with col1:
+        numerator = st.selectbox(
+            tr(language, "Numerator (A)", "分子 (A)"),
+            eids,
+            index=eids.index("csi1000") if "csi1000" in eids else 0,
+            key="market_ratio_num",
+            format_func=lambda e: labels.get(e, e),
+        )
+    with col2:
+        denominator = st.selectbox(
+            tr(language, "Denominator (B)", "分母 (B)"),
+            eids,
+            index=eids.index("csi300") if "csi300" in eids else min(1, len(eids) - 1),
+            key="market_ratio_den",
+            format_func=lambda e: labels.get(e, e),
+        )
+    if numerator == denominator:
+        st.caption(tr(language, "Select two different indices to see their ratio.", "选择两个不同指数以查看比值。"))
+        return
+
+    left = prices[prices["exposure_id"].eq(numerator)].sort_values("_date").set_index("_date")["close"]
+    right = prices[prices["exposure_id"].eq(denominator)].sort_values("_date").set_index("_date")["close"]
+    joined = pd.concat([left.rename("a"), right.rename("b")], axis=1, join="inner").dropna()
+    if joined.empty:
+        st.info(tr(language, "No overlapping history for this pair.", "该配对没有重叠的历史区间。"))
+        return
+
+    ratio = (joined["a"] / joined["b"]).dropna()
+    if ratio.empty:
+        return
+
+    # Use existing history_window via the prices frame approach
+    ratio_frame = pd.DataFrame({"date": ratio.index, "ratio": ratio.values})
+    ratio_frame["_date"] = pd.to_datetime(ratio_frame["date"])
+    windowed, coverage = history_window(ratio_frame, "date", history_window_name)
+    if windowed.empty:
+        st.info(tr(language, "No rows in this window.", "该时间窗口没有数据。"))
+        return
+    series = windowed.set_index("_date")["ratio"].dropna()
+    if series.empty:
+        return
+
+    title = f"{labels.get(numerator, numerator)} / {labels.get(denominator, denominator)}"
+    st.markdown(
+        f'<div class="am-chart-title">{escape(title)} — {tr(language, "ratio", "比值")}</div>',
+        unsafe_allow_html=True,
+    )
+    st.caption(
+        " · ".join(
+            [
+                tr(language, "Rising = A outperforming B.", "上升 = A 跑赢 B。"),
+                coverage,
+            ]
+        )
+    )
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=series.index, y=series.values, mode="lines", name=title, line=dict(color=PALETTE[0], width=2)))
+    ma20 = series.rolling(20).mean()
+    ma60 = series.rolling(60).mean()
+    fig.add_trace(go.Scatter(x=ma20.index, y=ma20.values, mode="lines", name=tr(language, "20D MA", "20日均线"), line=dict(color=PALETTE[1], width=1, dash="dot")))
+    fig.add_trace(go.Scatter(x=ma60.index, y=ma60.values, mode="lines", name=tr(language, "60D MA", "60日均线"), line=dict(color=PALETTE[2], width=1, dash="dash")))
+    fig.update_yaxes(title=tr(language, "Ratio", "比值"))
+    fig.update_xaxes(title=None, tickformat="%b %Y")
+    st.plotly_chart(
+        chart_theme(fig, "number", date_axis=True, height=380),
+        width="stretch",
+        config={"displaylogo": False, "responsive": True},
+    )
+
+
 def render_market_index_detail(
     exposure_id: str,
     label: str,
@@ -3286,11 +3421,14 @@ def render_market_index_detail(
     wrappers: pd.DataFrame,
     language: str,
     history_window_name: str,
+    etf_prices: pd.DataFrame | None = None,
+    premium_history: pd.DataFrame | None = None,
 ) -> None:
-    """One index: its price path with moving averages, then every ETF on it."""
+    """One index: price, all ETF wrappers on it, premium history, and RSI."""
     series = prices[prices["exposure_id"].eq(exposure_id)].sort_values("_date").copy()
     windowed, coverage = history_window(series, "date", history_window_name)
 
+    # --- Metric cards: RSI, MA20, avg premium, drawdown (no MA60) ---
     tech_row = technicals[technicals["exposure_id"].eq(exposure_id)]
     if not tech_row.empty:
         row = tech_row.iloc[0]
@@ -3298,31 +3436,26 @@ def render_market_index_detail(
         readings = (
             ("RSI", "RSI", row.get("rsi"), "{:.0f}"),
             ("vs MA20", "相对20日均线", row.get("ma20_pct"), "{:+.2f}%"),
-            ("vs MA60", "相对60日均线", row.get("ma60_pct"), "{:+.2f}%"),
+            ("Avg premium 30D", "平均溢价 30日", row.get("avg_premium_30d"), "{:+.2f}%"),
             ("60D drawdown", "60日回撤", row.get("drawdown_60d"), "{:+.2f}%"),
         )
         for column, (en, zh, value, fmt) in zip(columns, readings):
-            # A missing reading shows as an em dash, never as a zero: this page
-            # already had a bug where an absent MA rendered as a down arrow.
             display = "—" if value is None or pd.isna(value) else fmt.format(float(value))
             column.metric(tr(language, en, zh), display)
 
+    # --- Index price + MA ---
     if not windowed.empty:
         plot = windowed[["_date", "close"]].copy()
-        # Computed from the plotted window, so the averages match the line the
-        # reader is looking at rather than a longer series held elsewhere.
         plot["MA20"] = plot["close"].rolling(20).mean()
-        plot["MA60"] = plot["close"].rolling(60).mean()
         long_form = plot.melt(id_vars="_date", var_name="series", value_name="_value").dropna(subset=["_value"])
         long_form["series"] = long_form["series"].map(
             {
                 "close": tr(language, "Close", "收盘"),
                 "MA20": tr(language, "MA20", "20日均线"),
-                "MA60": tr(language, "MA60", "60日均线"),
             }
         ).fillna(long_form["series"])
         st.markdown(
-            f'<div class="am-chart-title">{escape(label)} — {tr(language, "price and moving averages", "价格与均线")}</div>',
+            f'<div class="am-chart-title">{escape(label)} — {tr(language, "price", "价格")}</div>',
             unsafe_allow_html=True,
         )
         st.caption(coverage)
@@ -3331,11 +3464,112 @@ def render_market_index_detail(
         fig.update_xaxes(title=None, tickformat="%b %Y")
         apply_line_hover(fig, long_form, "number")
         st.plotly_chart(
-            chart_theme(fig, "number", date_axis=True, height=380),
+            chart_theme(fig, "number", date_axis=True, height=320),
             width="stretch",
             config={"displaylogo": False, "responsive": True},
         )
 
+    # --- RSI subgraph ---
+    if not series.empty and len(series) >= 15:
+        rsi = _compute_rsi_series(series.set_index("_date")["close"])
+        rsi = rsi.dropna()
+        if not rsi.empty:
+            st.markdown(
+                f'<div class="am-chart-title">{escape(label)} — {tr(language, "RSI (14)", "RSI (14)")}</div>',
+                unsafe_allow_html=True,
+            )
+            fig_rsi = go.Figure()
+            fig_rsi.add_trace(go.Scatter(x=rsi.index, y=rsi.values, mode="lines", name="RSI", line=dict(color=PALETTE[0], width=1.5)))
+            fig_rsi.add_hrect(y0=70, y1=100, fillcolor="#EF4444", opacity=0.06, line_width=0)
+            fig_rsi.add_hrect(y0=0, y1=30, fillcolor="#10B981", opacity=0.06, line_width=0)
+            fig_rsi.add_hline(y=70, line_dash="dot", line_color="#D1D5DB", line_width=0.5)
+            fig_rsi.add_hline(y=30, line_dash="dot", line_color="#D1D5DB", line_width=0.5)
+            fig_rsi.update_yaxes(title="RSI", range=[0, 100])
+            fig_rsi.update_xaxes(title=None, tickformat="%b %Y")
+            st.plotly_chart(
+                chart_theme(fig_rsi, "number", date_axis=True, height=180),
+                width="stretch",
+                config={"displaylogo": False, "responsive": True},
+            )
+
+    # --- All ETF prices on this index (rebased to 100) ---
+    cohort_tickers: list[str] = []
+    if not wrappers.empty:
+        cohort = wrappers[wrappers["exposure_id"].eq(exposure_id)]
+        if not cohort.empty and "ticker" in cohort.columns:
+            cohort_tickers = cohort["ticker"].astype(str).str.zfill(6).tolist()
+
+    if etf_prices is not None and not etf_prices.empty and cohort_tickers:
+        ep = etf_prices[etf_prices["ticker"].astype(str).str.zfill(6).isin(cohort_tickers)].copy()
+        if not ep.empty:
+            ep_windowed, ep_cov = history_window(ep, "date", history_window_name)
+            if not ep_windowed.empty:
+                # Rebase each ETF to 100 at the common first date
+                common = ep_windowed.groupby("ticker")["_date"].min().max()
+                ep_al = ep_windowed[ep_windowed["_date"] >= common].copy()
+                if not ep_al.empty:
+                    base = ep_al.sort_values("_date").groupby("ticker")["close"].transform("first")
+                    ep_al["_value"] = ep_al["close"] / base * 100.0
+                    name_map = {}
+                    if not wrappers.empty:
+                        for _, w in wrappers[wrappers["exposure_id"].eq(exposure_id)].iterrows():
+                            name_map[str(w["ticker"]).zfill(6)] = f"{w['ticker']} {str(w.get('fund_name', ''))[:12]}"
+                    ep_al["series"] = ep_al["ticker"].astype(str).str.zfill(6).map(name_map).fillna(ep_al["ticker"])
+                    st.markdown(
+                        f'<div class="am-chart-title">{escape(label)} — {tr(language, "ETF prices (rebased to 100)", "ETF价格（归一至 100）")}</div>',
+                        unsafe_allow_html=True,
+                    )
+                    st.caption(ep_cov)
+                    fig_etf = px.line(
+                        ep_al.sort_values(["series", "_date"]),
+                        x="_date",
+                        y="_value",
+                        color="series",
+                        color_discrete_sequence=PALETTE,
+                    )
+                    fig_etf.add_hline(y=100.0, line_dash="dot", line_color="#9CA3AF", line_width=1)
+                    fig_etf.update_yaxes(title=tr(language, "Rebased level", "归一水平"))
+                    fig_etf.update_xaxes(title=None, tickformat="%b %Y")
+                    apply_line_hover(fig_etf, ep_al, "number")
+                    st.plotly_chart(
+                        chart_theme(fig_etf, "number", date_axis=True, height=300),
+                        width="stretch",
+                        config={"displaylogo": False, "responsive": True},
+                    )
+
+    # --- Premium history ---
+    if premium_history is not None and not premium_history.empty and cohort_tickers:
+        ph = premium_history[premium_history["ticker"].astype(str).str.zfill(6).isin(cohort_tickers)].copy()
+        if not ph.empty:
+            ph_windowed, ph_cov = history_window(ph, "date", history_window_name)
+            if not ph_windowed.empty:
+                name_map_ph = {}
+                if not wrappers.empty:
+                    for _, w in wrappers[wrappers["exposure_id"].eq(exposure_id)].iterrows():
+                        name_map_ph[str(w["ticker"]).zfill(6)] = str(w["ticker"])
+                ph_windowed["series"] = ph_windowed["ticker"].astype(str).str.zfill(6).map(name_map_ph).fillna(ph_windowed["ticker"])
+                st.markdown(
+                    f'<div class="am-chart-title">{escape(label)} — {tr(language, "premium history (IOPV)", "溢价历史（IOPV）")}</div>',
+                    unsafe_allow_html=True,
+                )
+                st.caption(ph_cov + " · " + tr(language, "History grows as daily snapshots accumulate.", "历史随每日快照积累而增长。"))
+                fig_ph = px.line(
+                    ph_windowed.sort_values(["series", "_date"]),
+                    x="_date",
+                    y="premium_pct",
+                    color="series",
+                    color_discrete_sequence=PALETTE,
+                )
+                fig_ph.add_hline(y=0.0, line_dash="dot", line_color="#9CA3AF", line_width=1)
+                fig_ph.update_yaxes(title=tr(language, "Premium %", "溢价率 %"))
+                fig_ph.update_xaxes(title=None, tickformat="%b %Y")
+                st.plotly_chart(
+                    chart_theme(fig_ph, "number", date_axis=True, height=280),
+                    width="stretch",
+                    config={"displaylogo": False, "responsive": True},
+                )
+
+    # --- ETF wrapper table ---
     cohort = wrappers[wrappers["exposure_id"].eq(exposure_id)].copy()
     st.markdown(
         f'<div class="am-chart-title">{tr(language, "ETF wrappers on this index", "追踪该指数的 ETF")}</div>',
@@ -3420,8 +3654,7 @@ def render_market_entry_cost_chart(cohort: pd.DataFrame, language: str) -> None:
 
 def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: str, window: str) -> None:
     """Index & ETF Allocation Monitor: exposure leadership, relative regime,
-    and wrapper selection.
-    """
+    and wrapper selection."""
     st.markdown(f'<div class="am-page-title">{tr(language, SECTORS["market"]["name_en"], SECTORS["market"]["name_zh"])}</div>', unsafe_allow_html=True)
     st.caption(tr(language, "Exposure → Index → ETF wrapper. Relative signals over absolute RSI.", "Exposure → 指数 → ETF 包装。相对信号优先于绝对 RSI。"))
 
@@ -3431,23 +3664,42 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
     regime = datasets.get("relative_regime", [])
     wrappers = pd.DataFrame(datasets.get("wrapper_metrics", []))
     prices = _market_price_frame(datasets)
+    etf_prices = _market_etf_price_frame(datasets)
+    premium_history = _market_premium_history_frame(datasets)
 
     if technicals.empty and not regime and wrappers.empty:
         st.info(tr(language, "This chart is not available in the current artifact snapshot.", "当前数据快照未包含此图表。"))
         return
 
+    # Bilingual label map
     label_by_exposure: dict[str, str] = {}
-    if not technicals.empty and {"exposure_id", "label"} <= set(technicals.columns):
-        label_by_exposure = dict(zip(technicals["exposure_id"].astype(str), technicals["label"].astype(str)))
+    if not technicals.empty and "exposure_id" in technicals.columns:
+        for _, row in technicals.iterrows():
+            eid = str(row["exposure_id"])
+            label_by_exposure[eid] = _market_label(row, language)
 
     # --- Leadership ---
     section_heading(language, "Market Leadership", "市场领导力", "Which exposure is leading, and the technical snapshot behind it.", "哪个指数在领跑，以及其技术面快照。")
+    view_mode = st.radio(
+        tr(language, "View", "视图"),
+        [tr(language, "All (rebased)", "全部（归一）"), tr(language, "Ratio (A/B)", "比值 (A/B)")],
+        horizontal=True,
+        key="market_leadership_mode",
+    )
     if not prices.empty:
-        render_market_leadership_chart(prices, label_by_exposure, language, window)
+        if view_mode == tr(language, "Ratio (A/B)", "比值 (A/B)"):
+            render_market_ratio_chart(prices, technicals, language, window)
+        else:
+            render_market_leadership_chart(prices, label_by_exposure, language, window)
     if not technicals.empty:
-        show_cols = [c for c in ("label", "rsi", "ma20_pct", "ma60_pct", "drawdown_60d") if c in technicals.columns]
+        show_cols = [c for c in ("label" if language == "en" else "label_zh", "rsi", "ma20_pct", "drawdown_60d", "avg_premium_30d") if c in technicals.columns]
+        if language == "zh" and "label_zh" not in show_cols and "label" in technicals.columns:
+            show_cols = ["label"] + [c for c in show_cols if c != "label"]
         if show_cols:
-            st.dataframe(technicals[show_cols].sort_values("label"), hide_index=True, width="stretch")
+            display_tech = technicals.copy()
+            if language == "zh" and "label_zh" in display_tech.columns:
+                display_tech = display_tech.rename(columns={"label_zh": "label"})
+            st.dataframe(display_tech[show_cols].sort_values("label"), hide_index=True, width="stretch")
 
     # --- Relative Regime ---
     if regime:
@@ -3474,8 +3726,8 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
             language,
             "By Index",
             "按指数查看",
-            "Pick an index to see its price path and every ETF wrapper tracking it. Entry Cost = premium paid over IOPV + half the spread crossed, in bp; Peer Rank orders same-index wrappers by it. Liquidity is reported beside the cost, not blended into it. Hold Rank weighs fee (double weight -- a certain annual cost) against size proxy and age (survivorship proxies), all on absolute scales.",
-            "选择一个指数，查看其价格走势与全部追踪它的 ETF。入场成本 = 相对 IOPV 的溢价 + 跨越半个价差，单位 bp；同类排名按该成本排序。流动性单列显示，不混入成本。持有排名以费率为双倍权重（确定的年度成本），规模代理与存续期为存续风险代理，全部使用绝对刻度。",
+            "Pick an index to see its price, RSI, all ETF wrappers tracking it, and premium history.",
+            "选择一个指数，查看其价格、RSI、全部追踪 ETF 及溢价历史。",
         )
         available = [e for e in label_by_exposure if not prices.empty and e in set(prices["exposure_id"])]
         if not available and not wrappers.empty:
@@ -3498,6 +3750,8 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
                 wrappers,
                 language,
                 window,
+                etf_prices=etf_prices,
+                premium_history=premium_history,
             )
 
 

@@ -67,6 +67,30 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     regime, regime_lineage = load_latest_with_lineage(DERIVED_DIR, "relative_regime", scope="full")
     wrappers, wrap_lineage = load_latest_with_lineage(DERIVED_DIR, "wrapper_metrics", scope="full")
     index_px, index_lineage = load_latest_with_lineage(NORMALIZED_DIR, "index_price_daily", scope="full")
+    premium_hist, premium_lineage = load_latest_with_lineage(DERIVED_DIR, "premium_history", scope="full")
+    etf_px, etf_px_lineage = load_latest_with_lineage(NORMALIZED_DIR, "etf_price_daily", scope="full")
+
+    # Add bilingual labels from config
+    label_zh_map = {e["exposure_id"]: e.get("label_zh", e["label"]) for e in EXPOSURES}
+    index_zh_map = {e["exposure_id"]: e.get("index_id", "") for e in EXPOSURES}
+    if not technicals.empty and "exposure_id" in technicals.columns:
+        technicals = technicals.copy()
+        technicals["label_zh"] = technicals["exposure_id"].map(label_zh_map).fillna(technicals["label"])
+        technicals["index_id"] = technicals["exposure_id"].map(index_zh_map)
+
+    # Average premium (30D) per exposure from premium_history
+    if not premium_hist.empty and not technicals.empty:
+        wrapper_exp = wrappers[["fund_id", "exposure_id"]].drop_duplicates() if not wrappers.empty and "fund_id" in wrappers.columns else pd.DataFrame()
+        if not wrapper_exp.empty:
+            ph = premium_hist.merge(wrapper_exp, on="fund_id", how="left")
+            ph["date"] = pd.to_datetime(ph["date"], errors="coerce")
+            cutoff = ph["date"].max() - pd.Timedelta(days=30)
+            recent = ph[ph["date"] >= cutoff]
+            if not recent.empty and "exposure_id" in recent.columns:
+                avg_prem = recent.groupby("exposure_id")["premium_pct"].mean().round(2)
+                technicals["avg_premium_30d"] = technicals["exposure_id"].map(avg_prem)
+            else:
+                technicals["avg_premium_30d"] = float("nan")
 
     # --- Run consistency check: all datasets must come from the same run ---
     lineages = {
@@ -92,6 +116,8 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         "exposure_technicals": _records(technicals),
         "relative_regime": _records(regime),
         "wrapper_metrics": _records(wrappers),
+        "premium_history": _records(premium_hist.tail(2000)) if not premium_hist.empty else [],
+        "etf_price_daily_tail": _records(etf_px.sort_values("date").groupby("fund_id", sort=False).tail(250)) if not etf_px.empty and "fund_id" in etf_px.columns else [],
         # Keep up to 250 trailing trading days per exposure, not 250 global
         # rows (which with 8 indexes collapses to ~1 month of history).
         "index_price_daily_tail": _records(index_px.sort_values("date").groupby("exposure_id", sort=False).tail(250)) if not index_px.empty else [],
@@ -195,7 +221,7 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
             "notes": f"Covering {sina_actual_count} of {len(sina_expected)} Sina-owned exposures (CN/HK)." if sina_actual_count < len(sina_expected) else f"Daily OHLCV for all {sina_actual_count} Sina-owned exposures (CN/HK).",
         },
         {
-            "source": "Yahoo Finance (S&P 500 index)",
+            "source": "Yahoo Finance (US indexes: S&P 500, Nasdaq 100)",
             "status": yfinance_status,
             "latest_observation": yahoo_latest,
             "records": len(index_px[index_px["exposure_id"].eq("sp500")]) if sp500_ok else 0,

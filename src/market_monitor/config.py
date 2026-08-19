@@ -32,6 +32,7 @@ EXPOSURES = (
     {
         "exposure_id": "csi300",
         "label": "CSI 300",
+        "label_zh": "沪深300",
         "region": "China",
         "size": "Large",
         "style": "Broad",
@@ -41,6 +42,7 @@ EXPOSURES = (
     {
         "exposure_id": "csi500",
         "label": "CSI 500",
+        "label_zh": "中证500",
         "region": "China",
         "size": "Mid",
         "style": "Broad",
@@ -50,6 +52,7 @@ EXPOSURES = (
     {
         "exposure_id": "csi1000",
         "label": "CSI 1000",
+        "label_zh": "中证1000",
         "region": "China",
         "size": "Small",
         "style": "Broad",
@@ -58,7 +61,8 @@ EXPOSURES = (
     },
     {
         "exposure_id": "dividend",
-        "label": "Dividend",
+        "label": "SSE Dividend",
+        "label_zh": "上证红利",
         "region": "China",
         "size": "Mixed",
         "style": "Dividend / Value",
@@ -69,7 +73,8 @@ EXPOSURES = (
     },
     {
         "exposure_id": "growth",
-        "label": "Growth / Innovation",
+        "label": "STAR 50",
+        "label_zh": "科创50",
         "region": "China",
         "size": "Mixed",
         "style": "Growth",
@@ -79,6 +84,7 @@ EXPOSURES = (
     {
         "exposure_id": "hstech",
         "label": "Hang Seng Tech",
+        "label_zh": "恒生科技",
         "region": "HK / China",
         "size": "Large / Mid",
         "style": "Tech / Growth",
@@ -86,8 +92,29 @@ EXPOSURES = (
         "index_id": "HSTECH",
     },
     {
+        "exposure_id": "hsi",
+        "label": "Hang Seng Index",
+        "label_zh": "恒生指数",
+        "region": "HK",
+        "size": "Large",
+        "style": "Broad",
+        "risk_character": "Core",
+        "index_id": "HSI",
+    },
+    {
+        "exposure_id": "ndx",
+        "label": "Nasdaq 100",
+        "label_zh": "纳斯达克100",
+        "region": "US",
+        "size": "Large",
+        "style": "Tech / Growth",
+        "risk_character": "Global core",
+        "index_id": "NDX",
+    },
+    {
         "exposure_id": "sp500",
         "label": "S&P 500",
+        "label_zh": "标普500",
         "region": "US",
         "size": "Large",
         "style": "Broad",
