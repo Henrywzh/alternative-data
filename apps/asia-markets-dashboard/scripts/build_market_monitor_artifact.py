@@ -19,12 +19,22 @@ from typing import Any
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[3]
+SCRIPTS_DIR = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
 
 from src.market_monitor.config import DERIVED_DIR, EXPOSURES, NORMALIZED_DIR, exposures_by_price_source
 from src.market_monitor.metadata import build_metadata_frame
 from src.market_monitor.storage import load_lineage_history, load_latest_with_lineage  # noqa: E402
+from history_policy import history_window  # noqa: E402
+
+# Charts read a date window, not a row count: with a row count the displayed
+# history depends on how many series share the slice and on how many sessions
+# each venue happened to trade.  Two years is what the pipeline fetches, so
+# this ships everything collected rather than silently halving it.
+CHART_HISTORY_YEARS = 2
 
 
 def _records(frame: pd.DataFrame) -> list[dict[str, Any]]:
@@ -35,6 +45,40 @@ def _records(frame: pd.DataFrame) -> list[dict[str, Any]]:
         if pd.api.types.is_datetime64_any_dtype(out[col]):
             out[col] = out[col].dt.strftime("%Y-%m-%d")
     return json.loads(out.to_json(orient="records", date_format="iso", default_handler=str))
+
+
+def _chart_series(
+    frame: pd.DataFrame,
+    id_column: str,
+    value_column: str,
+    *,
+    years: int = CHART_HISTORY_YEARS,
+    id_as: str | None = None,
+) -> list[dict[str, Any]]:
+    """Rows for a line chart: the latest ``years`` of ``date``/id/value only.
+
+    Everything else the normalized store carries -- OHLC, volume, turnover,
+    the second and third identifier for the same fund -- is dropped, because
+    no renderer reads it and each unread field is paid for in every row of
+    every daily artifact.  Add a column here when a chart starts needing it.
+
+    ``id_as`` renames the identifier so that every dataset a renderer joins
+    keys on the same value.  The ETF datasets previously disagreed: the price
+    series carried the exchange-qualified ``159919.SZ`` while wrapper metrics
+    and premium history carried the bare ``159919``, so the join that draws
+    every ETF on an index matched nothing and the chart silently never drew.
+    """
+    if frame is None or frame.empty:
+        return []
+    if not {"date", id_column, value_column}.issubset(frame.columns):
+        return []
+    windowed = history_window(frame, "date", years=years)
+    if windowed.empty:
+        return []
+    projected = windowed[["date", id_column, value_column]].sort_values(["date", id_column])
+    if id_as and id_as != id_column:
+        projected = projected.rename(columns={id_column: id_as})
+    return _records(projected)
 
 
 def coverage_regressions(current: dict[str, Any], previous: dict[str, Any]) -> list[str]:
@@ -124,11 +168,9 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         "exposure_technicals": _records(technicals),
         "relative_regime": _records(regime),
         "wrapper_metrics": _records(wrappers),
-        "premium_history": _records(premium_hist.tail(2000)) if not premium_hist.empty else [],
-        "etf_price_daily_tail": _records(etf_px.sort_values("date").groupby("fund_id", sort=False).tail(250)) if not etf_px.empty and "fund_id" in etf_px.columns else [],
-        # Keep up to 250 trailing trading days per exposure, not 250 global
-        # rows (which with 8 indexes collapses to ~1 month of history).
-        "index_price_daily_tail": _records(index_px.sort_values("date").groupby("exposure_id", sort=False).tail(250)) if not index_px.empty else [],
+        "premium_history": _chart_series(premium_hist, "ticker", "premium_pct"),
+        "etf_price_daily_tail": _chart_series(etf_px, "fund_id", "close", id_as="ticker"),
+        "index_price_daily_tail": _chart_series(index_px, "exposure_id", "close"),
     }
     # Source-specific latest observations (do not share across sources).
     # Split on the declared price_source, not on "is it sp500" -- Nasdaq 100
