@@ -7,6 +7,8 @@ from pathlib import Path
 
 import pytest
 
+from conftest import require_local_capture
+
 
 MODULE_PATH = Path(__file__).resolve().parents[1] / "scripts" / "mtr_thesis_b_commercial_mix.py"
 SPEC = importlib.util.spec_from_file_location("mtr_thesis_b_commercial_mix", MODULE_PATH)
@@ -16,6 +18,9 @@ SPEC.loader.exec_module(mtr_b)
 
 
 def test_flow_uses_mainland_land_control_points_not_all_departures():
+    # Reads the same gitignored ImmD archive as the farebox backtest; the 2025
+    # totals below only exist once a capture is on disk.
+    require_local_capture("data/raw/hk_population_migration/immd_daily_traffic_*.csv")
     flow = mtr_b.build_immd_flow_yearly()
 
     assert "hk_resident_mainland_land_departures" in flow.columns
