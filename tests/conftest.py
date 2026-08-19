@@ -48,7 +48,16 @@ def require_local_capture(*relative_paths: str) -> None:
 
     import pytest
 
-    missing = [path for path in relative_paths if not (ROOT / path).exists()]
+    # A pattern containing "*" is matched as a glob: the captures are named
+    # with a capture timestamp, so the test depends on one existing, not on a
+    # particular one.
+    missing = []
+    for path in relative_paths:
+        if "*" in path:
+            if not list(ROOT.glob(path)):
+                missing.append(path)
+        elif not (ROOT / path).exists():
+            missing.append(path)
     if missing:
         pytest.skip(
             "requires locally captured raw inputs not tracked by git: " + ", ".join(missing)

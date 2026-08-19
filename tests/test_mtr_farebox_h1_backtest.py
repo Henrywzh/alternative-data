@@ -8,6 +8,8 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
+from conftest import require_local_capture
+
 
 MODULE_PATH = Path(__file__).resolve().parents[1] / "scripts" / "mtr_farebox_revenue_backtest.py"
 SPEC = importlib.util.spec_from_file_location("mtr_farebox_revenue_backtest", MODULE_PATH)
@@ -40,6 +42,11 @@ def test_official_h1_actuals_are_complete_and_source_backed():
 
 
 def test_default_immigration_input_uses_local_snapshot_without_fetch():
+    # The loader globs gitignored ImmD captures and returns an empty frame with
+    # a warning when there are none, which is correct behaviour. This test
+    # asserts the *filled* case, so it needs a capture on disk. It used to pass
+    # on a clean checkout only because another test fetched one mid-run.
+    require_local_capture("data/raw/hk_population_migration/immd_daily_traffic_*.csv")
     traffic = mtr._load_immd_daily_traffic(False)
     assert not traffic.empty
     assert traffic["date"].notna().all()
