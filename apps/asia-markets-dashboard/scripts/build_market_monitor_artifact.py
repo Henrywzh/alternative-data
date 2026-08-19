@@ -23,7 +23,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.market_monitor.config import DERIVED_DIR, EXPOSURES, NORMALIZED_DIR
-from src.market_monitor.storage import load_latest  # noqa: E402
+from src.market_monitor.metadata import build_metadata_frame
+from src.market_monitor.storage import load_latest_with_lineage  # noqa: E402
 
 
 def _records(frame: pd.DataFrame) -> list[dict[str, Any]]:
@@ -39,10 +40,25 @@ def _records(frame: pd.DataFrame) -> list[dict[str, Any]]:
 def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     now = datetime.now(timezone.utc)
     generated_at = now.isoformat()
-    technicals = load_latest(DERIVED_DIR, "exposure_technicals", scope="full")
-    regime = load_latest(DERIVED_DIR, "relative_regime", scope="full")
-    wrappers = load_latest(DERIVED_DIR, "wrapper_metrics", scope="full")
-    index_px = load_latest(NORMALIZED_DIR, "index_price_daily", scope="full")
+    technicals, tech_lineage = load_latest_with_lineage(DERIVED_DIR, "exposure_technicals", scope="full")
+    regime, regime_lineage = load_latest_with_lineage(DERIVED_DIR, "relative_regime", scope="full")
+    wrappers, wrap_lineage = load_latest_with_lineage(DERIVED_DIR, "wrapper_metrics", scope="full")
+    index_px, index_lineage = load_latest_with_lineage(NORMALIZED_DIR, "index_price_daily", scope="full")
+
+    # --- Run consistency check: all datasets must come from the same run ---
+    lineages = {
+        "exposure_technicals": tech_lineage,
+        "relative_regime": regime_lineage,
+        "wrapper_metrics": wrap_lineage,
+        "index_price_daily": index_lineage,
+    }
+    run_ids = {name: (li or {}).get("run_id") for name, li in lineages.items()}
+    unique_run_ids = {rid for rid in run_ids.values() if rid}
+    run_consistent = len(unique_run_ids) == 1 and all(run_ids.values())
+    if not run_consistent:
+        stale_datasets = [name for name, rid in run_ids.items() if not rid or rid != max(unique_run_ids, key=str)]
+    else:
+        stale_datasets = []
 
     data_as_of = "—"
     if not technicals.empty and "date" in technicals.columns:
@@ -56,10 +72,16 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         # rows (which with 8 indexes collapses to ~1 month of history).
         "index_price_daily_tail": _records(index_px.sort_values("date").groupby("exposure_id", sort=False).tail(250)) if not index_px.empty else [],
     }
+    # Source-specific latest observations (do not share across sources)
     if not index_px.empty and "date" in index_px.columns:
+        cn_index = index_px[index_px["exposure_id"].ne("sp500")]
+        sina_latest = str(pd.to_datetime(cn_index["date"], errors="coerce").max().date()) if not cn_index.empty else "—"
+        us_index = index_px[index_px["exposure_id"].eq("sp500")]
+        yahoo_latest = str(pd.to_datetime(us_index["date"], errors="coerce").max().date()) if not us_index.empty else "—"
         latest_obs = str(pd.to_datetime(index_px["date"], errors="coerce").max().date())
     else:
-        latest_obs = "—"
+        sina_latest = yahoo_latest = latest_obs = "—"
+    spot_latest = (wrap_lineage or {}).get("created_at", "—")[:10] if wrap_lineage else "—"
 
     # Compact KPI rows for the Overview pulse card (kept separate from the
     # full technicals table so the overview contract stays small).
@@ -103,7 +125,7 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
 
     expected_count = len(EXPOSURES)
     actual_exposures = technicals["exposure_id"].nunique() if not technicals.empty and "exposure_id" in technicals.columns else 0
-    expected_wrappers = len(datasets["wrapper_metrics"])
+    expected_wrappers = len(build_metadata_frame())
     if not wrappers.empty and "market_price" in wrappers.columns and "premium_pct" in wrappers.columns:
         spot_observed = int((wrappers["market_price"].notna() & wrappers["premium_pct"].notna()).sum())
     else:
@@ -122,30 +144,46 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
 
     sina_status = "Healthy" if actual_exposures >= expected_count else "Degraded"
     yfinance_status = "Healthy" if sp500_ok else "Degraded"
+    overall_healthy = (
+        actual_exposures >= expected_count
+        and spot_status == "Healthy"
+        and sp500_ok
+        and run_consistent
+    )
 
     datasets["source_health"] = [
         {
             "source": "Eastmoney ETF spot (premium / turnover / IOPV)",
             "status": spot_status,
-            "latest_observation": latest_obs,
+            "latest_observation": spot_latest,
             "records": spot_observed,
             "notes": spot_notes,
         },
         {
             "source": "Sina index/ETF daily (China indexes, A-share & HK-listed ETF)",
             "status": sina_status,
-            "latest_observation": latest_obs,
+            "latest_observation": sina_latest,
             "records": len(datasets["index_price_daily_tail"]),
             "notes": f"Covering {actual_exposures} of {expected_count} expected exposures." if actual_exposures < expected_count else f"Daily OHLCV for all {actual_exposures} exposures.",
         },
         {
             "source": "Yahoo Finance (S&P 500 index)",
             "status": yfinance_status,
-            "latest_observation": latest_obs,
+            "latest_observation": yahoo_latest,
             "records": len(index_px[index_px["exposure_id"].eq("sp500")]) if sp500_ok else 0,
             "notes": "US session history for the S&P 500 exposure." if sp500_ok else "S&P 500 index data missing.",
         },
     ]
+    if stale_datasets:
+        datasets["source_health"].append(
+            {
+                "source": "Pipeline run consistency",
+                "status": "Degraded",
+                "latest_observation": "—",
+                "records": 0,
+                "notes": f"Datasets from different pipeline runs: {', '.join(sorted(stale_datasets))}. Do not mix timelines.",
+            }
+        )
     sources = [
         {"id": "eastmoney_etf_spot", "label": "Eastmoney ETF snapshot (premium / spread / turnover / IOPV)", "href": "https://quote.eastmoney.com/center/gridlist.html#fund_etf", "query": {"engine": "akshare fund_etf_spot_em"}},
         {"id": "sina_index_daily", "label": "Sina Finance index / ETF daily OHLCV", "href": "https://finance.sina.com.cn/", "query": {"engine": "akshare stock_zh_index_daily / fund_etf_hist_sina"}},
@@ -208,7 +246,7 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     tables.append(
         {
             "id": "wrapper_selection_table",
-            "title": "Wrapper Selection (Buy-Now vs Hold)",
+            "title": "Wrapper Selection (Entry Status / Peer Rank / Hold Rank)",
             "dataset": "wrapper_metrics",
             "columns": [
                 {"field": "ticker", "label": "Ticker", "format": "text"},
@@ -230,15 +268,16 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         "manifest": {"version": 1, "generatedAt": generated_at, "cards": [], "charts": charts, "tables": tables, "blocks": blocks},
         "snapshot": {"version": 1, "generatedAt": generated_at, "status": "ready", "datasets": datasets},
         "sources": sources,
-        "package_info": {"originUrl": "https://asia-markets-dashboard.pages.dev/sectors/market-monitor/", "snapshotId": snapshot_id, "dataAsOf": data_as_of},
+        "package_info": {"originUrl": "https://asia-markets-dashboard.pages.dev/sectors/market-monitor/", "snapshotId": snapshot_id, "dataAsOf": data_as_of, "pipelineRunId": max(unique_run_ids, key=str) if unique_run_ids else None, "runConsistent": run_consistent},
     }
     status = {
         "generated_at": generated_at,
         "snapshot_id": snapshot_id,
         "data_as_of": data_as_of,
-        "overall_status": "Healthy" if (actual_exposures >= expected_count and spot_observed == expected_wrappers and sp500_ok) else "Degraded",
+        "overall_status": "Healthy" if overall_healthy else "Degraded",
         "live_sources": 3,
         "planned_sources": 0,
+        "sources": datasets["source_health"],
         "attachment_filename": f"market-monitor-dashboard-{now.date().isoformat()}.html",
     }
     return artifact, status

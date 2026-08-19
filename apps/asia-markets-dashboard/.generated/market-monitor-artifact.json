@@ -1,7 +1,7 @@
 {
   "manifest": {
     "version": 1,
-    "generatedAt": "2026-08-19T11:25:12.553874+00:00",
+    "generatedAt": "2026-08-19T12:01:25.352454+00:00",
     "cards": [],
     "charts": [
       {
@@ -93,7 +93,7 @@
       },
       {
         "id": "wrapper_selection_table",
-        "title": "Wrapper Selection (Buy-Now vs Hold)",
+        "title": "Wrapper Selection (Entry Status / Peer Rank / Hold Rank)",
         "dataset": "wrapper_metrics",
         "columns": [
           {
@@ -164,7 +164,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-19T11:25:12.553874+00:00",
+    "generatedAt": "2026-08-19T12:01:25.352454+00:00",
     "status": "ready",
     "datasets": {
       "exposure_technicals": [
@@ -18256,7 +18256,7 @@
         {
           "source": "Yahoo Finance (S&P 500 index)",
           "status": "Healthy",
-          "latest_observation": "2026-08-19",
+          "latest_observation": "2026-08-18",
           "records": 501,
           "notes": "US session history for the S&P 500 exposure."
         }
@@ -18291,7 +18291,9 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/market-monitor/",
-    "snapshotId": "bf9c6f967592fcbe",
-    "dataAsOf": "2026-08-19"
+    "snapshotId": "8cca389e767c1432",
+    "dataAsOf": "2026-08-19",
+    "pipelineRunId": "20260819T112503-0d045743",
+    "runConsistent": true
   }
 }

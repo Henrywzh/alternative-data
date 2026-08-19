@@ -101,13 +101,14 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
     meta = build_metadata_frame()
     results: dict[str, Any] = {}
     run_scope = "partial" if (limit_exposures or etf_only) else "full"
+    shared_run_id = new_run_id()
 
     # Persist raw observations first so the raw -> normalized -> derived chain
     # is not missing its bottom layer on disk (PIT discipline).
     raw_write: dict[str, dict[str, str] | None] = {}
     if write:
         for dataset_name in ("index_close", "etf_close", "etf_spot"):
-            raw_write[dataset_name] = save_raw(dataset_name, raw[dataset_name], metadata={"type": "raw", "run_scope": run_scope}) if dataset_name in raw and not raw[dataset_name].empty else None
+            raw_write[dataset_name] = save_raw(dataset_name, raw[dataset_name], metadata={"type": "raw", "run_scope": run_scope}, run_id=shared_run_id) if dataset_name in raw and not raw[dataset_name].empty else None
         results["_raw_run"] = raw_write
 
     # Normalized: index prices (close from OHLCV).
@@ -184,7 +185,7 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
     results["wrapper_metrics"] = ranked
 
     if write:
-        run_id = new_run_id()
+        run_id = shared_run_id
         run_info: dict[str, Any] = {}
         run_info["index_price_daily"] = save_normalized("index_price_daily", normalized_index, metadata={"type": "normalized", "run_scope": run_scope}, run_id=run_id) if not normalized_index.empty else None
         run_info["etf_price_daily"] = save_normalized("etf_price_daily", normalized_etf, metadata={"type": "normalized", "run_scope": run_scope}, run_id=run_id) if not normalized_etf.empty else None

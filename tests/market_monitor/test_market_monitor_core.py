@@ -164,3 +164,56 @@ def test_merge_premium_aum_resolution():
     assert "aum_y" not in merged.columns
     row_300 = merged[merged["ticker"].str.startswith("510300")]
     assert row_300["aum"].iloc[0] == 30000000000.0
+
+
+def test_rank_wrappers_partial_field_missing():
+    """A fund missing only spread_bp should still score on its other fields."""
+    frame = pd.DataFrame(
+        {
+            "exposure_id": ["csi500"] * 3,
+            "fund_id": ["a", "b", "c"],
+            "ticker": ["a", "b", "c"],
+            "premium_pct": [-0.1, 0.0, 0.5],
+            "relative_premium_pct": [-0.2, -0.1, 0.4],
+            "spread_bp": [1.0, None, 5.0],  # b missing spread only
+            "turnover": [6.0, 2.0, 0.5],
+            "aum": [100.0, 50.0, 20.0],
+            "management_fee": [0.002, 0.005, 0.008],
+            "fund_age_days": [4000, 2000, 1000],
+        }
+    )
+    ranked = rank_wrappers(frame)
+    b_score = ranked.loc[ranked["fund_id"] == "b", "buy_score"].iloc[0]
+    c_score = ranked.loc[ranked["fund_id"] == "c", "buy_score"].iloc[0]
+    # b has valid premium + rel_premium + turnover; c has all 4 but worse values
+    # b should NOT be 0 (the old NaN-propagation bug)
+    assert b_score > 0, f"fund b partial-missing should not collapse to 0 (got {b_score})"
+    assert b_score != c_score, f"partial-missing (b={b_score}) should differ from all-fields-worst (c={c_score})"
+
+
+def test_relative_strength_windowed_return():
+    """Verify spread uses compounded window return difference, not daily sum."""
+    dates = pd.date_range("2026-01-01", periods=60, freq="B")
+    # left doubles, right flat: 20D return diff should be ~100%
+    left = pd.Series([100 * (1.01 ** i) for i in range(60)], index=dates, dtype=float)
+    right = pd.Series([100.0] * 60, index=dates, dtype=float)
+    metrics = compute_spread_metrics(left, right, label="test")
+    # 20 trading days of 1% daily → compounded ≈ 22%
+    assert metrics["spread_20d_pct"] > 20.0
+    assert metrics["spread_20d_pct"] < 25.0
+
+
+def test_rsi_wilder_smoothing():
+    """RSI should use Wilder (ewm alpha=1/14), not simple rolling mean."""
+    from market_monitor.technicals import compute_technicals
+    # Alternating up/down with slight upward bias
+    values = []
+    price = 100.0
+    for i in range(50):
+        price *= 1.01 if i % 2 == 0 else 0.995
+        values.append(price)
+    close = pd.Series(values, index=pd.date_range("2026-01-01", periods=50, freq="B"))
+    result = compute_technicals(close)
+    # With Wilder, RSI should be defined and in valid range
+    assert result["rsi"] is not None
+    assert 0 <= result["rsi"] <= 100

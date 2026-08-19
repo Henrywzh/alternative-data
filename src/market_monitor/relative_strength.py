@@ -49,13 +49,11 @@ def compute_spread_metrics(
     """
     out: dict[str, float | None] = {"label": label}
     joined = pd.concat([left_close.rename("l"), right_close.rename("r")], axis=1, join="inner").dropna()
-    lr = joined["l"].pct_change()
-    rr = joined["r"].pct_change()
-    spread_daily = (lr - rr) * 100.0
-    spread_daily = spread_daily.dropna()
-
     for window in WINDOWS:
-        out[f"spread_{window}d_pct"] = _rolling_days_ago(spread_daily.cumsum(), window)
+        left_ret = joined["l"] / joined["l"].shift(window) - 1.0
+        right_ret = joined["r"] / joined["r"].shift(window) - 1.0
+        spread = ((left_ret - right_ret) * 100.0).dropna()
+        out[f"spread_{window}d_pct"] = round(float(spread.iloc[-1]), 4) if not spread.empty else None
 
     z_window = 20
     # Use a fixed lookback (1 trading year) for the z-score mean/std so the
@@ -63,8 +61,10 @@ def compute_spread_metrics(
     # otherwise switching start_date from 2y to 1y silently rescales every
     # historical z-score.
     lookback = 252
-    if len(spread_daily) >= z_window + 1:
-        roll = spread_daily.rolling(z_window).sum()
+    if len(joined) >= z_window + 1:
+        left_ret_z = joined["l"] / joined["l"].shift(z_window) - 1.0
+        right_ret_z = joined["r"] / joined["r"].shift(z_window) - 1.0
+        roll = ((left_ret_z - right_ret_z) * 100.0).dropna()
         hist = roll.dropna()
         if len(hist) >= z_window:
             baseline = hist.tail(lookback)

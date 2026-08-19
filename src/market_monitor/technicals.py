@@ -25,12 +25,12 @@ def compute_technicals(
     last = float(series.iloc[-1])
     result: dict[str, float | None] = {}
 
-    # RSI (Wilder / SMA-based for length parity with akshare history)
+    # RSI (Wilder smoothing, alpha=1/window, matching standard charting)
     delta = series.diff()
     gain = delta.clip(lower=0.0)
     loss = (-delta).clip(lower=0.0)
-    avg_gain = gain.rolling(rsi_window).mean()
-    avg_loss = loss.rolling(rsi_window).mean()
+    avg_gain = gain.ewm(alpha=1.0 / rsi_window, adjust=False).mean()
+    avg_loss = loss.ewm(alpha=1.0 / rsi_window, adjust=False).mean()
     rs = avg_gain / avg_loss.replace(0.0, np.nan)
     rsi = 100.0 - 100.0 / (1.0 + rs)
     latest_rsi = rsi.iloc[-1] if len(rsi) else np.nan

@@ -20,7 +20,7 @@ FUND_ID = "fund_id"
 
 
 # V1 tracking universe (source of truth, not derived). Exposures are:
-#  * China size: CSI 300 / 500 / 1000 / 2000
+#  * China size: CSI 300 / 500 / 1000 (CSI2000 deferred until stable source)
 #  * China style: Dividend / Growth-Innovation
 #  * HK: Hang Seng Tech
 #  * Global: S&P 500 (mandatory)
