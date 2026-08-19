@@ -1,10 +1,14 @@
 entity_id,alias_kind,match_token,match_mode,registry_version,source_or_research_note
 TENCENT,positive,tencent holdings,word,v1,Issuer-style variant of the Tencent Holdings legal name.
 TENCENT,negative,tencent music,substring,v1,Tencent Music Entertainment (separately listed TME) is NOT the Tencent Holdings issuer 0700.HK; a Tencent Music headline must never resolve to TENCENT.
+TENCENT,negative,腾讯音乐,substring,v1,腾讯音乐娱乐（TME，独立上市）不是腾讯控股 0700.HK；腾讯音乐新闻不得解析为 TENCENT。
 TENCENT,positive,腾讯,substring,v1,Chinese name variant for Tencent Holdings.
 ALIBABA,positive,alibaba group,word,v1,Issuer-style variant of Alibaba Group Holding.
 ALIBABA,negative,alibaba pictures,substring,v1,Alibaba Pictures (film arm) is NOT Alibaba Group 9988.HK; must never resolve to ALIBABA.
 ALIBABA,negative,alibaba health,substring,v1,Alibaba Health (separate HK issuer) is NOT Alibaba Group 9988.HK; must never resolve to ALIBABA.
+ALIBABA,negative,阿里巴巴影业,substring,v1,阿里巴巴影业（独立上市）不是阿里巴巴集团 9988.HK；不得解析为 ALIBABA。
+ALIBABA,negative,阿里影业,substring,v1,阿里影业是独立上市实体，不是阿里巴巴集团 9988.HK。
+ALIBABA,negative,阿里健康,substring,v1,阿里健康（独立 HK 上市）不是阿里巴巴集团 9988.HK；不得解析为 ALIBABA。
 ALIBABA,positive,阿里巴巴,substring,v1,Chinese name variant for Alibaba Group.
 BAIDU,positive,baidu inc,word,v1,Issuer-style variant of the Baidu Inc legal name.
 BAIDU,positive,百度,substring,v1,Chinese name variant for Baidu.
@@ -15,5 +19,7 @@ KUAISHOU,positive,快手,substring,v1,Chinese name variant for Kuaishou.
 JD_COM,positive,jd.com,word,v1,JD.com issuer token; resolves to the 9618.HK/JD.US listings.
 JD_COM,positive,京东,substring,v1,Chinese name variant for JD.com.
 JD_COM,negative,jd logistics,substring,v1,JD Logistics (separate HK issuer) is NOT JD.com 9618.HK/JD.US; must never resolve to JD_COM.
+JD_COM,negative,京东物流,substring,v1,京东物流（独立 HK 上市）不是京东集团 9618.HK/JD.US；不得解析为 JD_COM。
+JD_COM,negative,京东健康,substring,v1,京东健康（独立 HK 上市）不是京东集团 9618.HK/JD.US；不得解析为 JD_COM。
 MEITUAN,positive,美团,substring,v1,Chinese name variant for Meituan.
 BYTEDANCE,positive,字节跳动,substring,v1,Chinese name variant for ByteDance (private; discovery coverage only).

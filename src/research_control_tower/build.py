@@ -903,6 +903,19 @@ NEWS_EVENT_CLASS_OFFICIAL = "official_news_metadata"
 NEWS_EVENT_CLASS_SECONDARY_PROBE = "secondary_probe_news_metadata"
 NEWS_EVENT_CLASS_DISCOVERY = "discovery_news_metadata"
 
+# Structured third-party news providers are ALWAYS entitled regardless of the
+# LocalInput license_class default.  The CLI descriptor form
+# (SOURCE_ID|PATH|FORMAT|SCHEMA_ID) cannot carry a license and would otherwise
+# default to ``public_metadata``, silently mislabelling a commercial/free-tier
+# API as official news (the exact bug Batch 5's design review fixed).
+ENTITLED_NEWS_SOURCE_IDS = frozenset(
+    {
+        "news_finnhub",
+        "news_marketaux",
+        "news_fmp",
+    }
+)
+
 # Health statuses that mean "the source was queried and its result is usable"
 # for artifact availability.  ``no_records`` is an honest empty query result
 # (the plan's coverage semantics), ``partial`` covers only some listings, and
@@ -2376,6 +2389,8 @@ def _classify_source_quality(source_id: str, license_class: str, document_type: 
 
     if document_type == "filing":
         return "official_metadata"
+    if source_id.strip().lower() in ENTITLED_NEWS_SOURCE_IDS:
+        return "entitled"
     source_text = f"{source_id} {license_class}".lower()
     if "entitled" in source_text or "commercial" in source_text:
         return "entitled"
@@ -2433,7 +2448,7 @@ def _news_rows(
         # any explicit crosswalk hints carried in the input row.  Unmatchable
         # headlines resolve to EMPTY related ids -- never a guessed link.
         resolved_entity_ids, resolved_listing_ids = resolve_news_entities(
-            f"{headline} {item.get('title')}",
+            headline,
             entities=registries.entities,
             listings=registries.listings,
             aliases=news_aliases,

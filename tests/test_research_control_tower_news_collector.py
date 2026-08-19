@@ -24,9 +24,12 @@ from src.research_control_tower.build import (
 from src.research_control_tower.news_collector import (
     NEWS_INPUT_COLUMNS,
     NEWS_STATUS_SCHEMA,
+    FINNHUB_SPEC,
     NewsCollectionResult,
     NewsProbeEvidence,
     collect_news,
+    _row,
+    _utc,
     news_status_path,
     write_news_input,
 )
@@ -98,6 +101,14 @@ def _aliases() -> pd.DataFrame:
                 "source_or_research_note": "TME is a separate issuer",
             },
             {
+                "entity_id": "TENCENT",
+                "alias_kind": "negative",
+                "match_token": "腾讯音乐",
+                "match_mode": "substring",
+                "registry_version": "v1",
+                "source_or_research_note": "TME is a separate issuer (Chinese)",
+            },
+            {
                 "entity_id": "ALIBABA",
                 "alias_kind": "negative",
                 "match_token": "Alibaba Pictures",
@@ -155,6 +166,33 @@ def test_probed_provider_is_secondary_probe() -> None:
     assert _news_event_class("news_fmp", "free_tier_metadata_only") == NEWS_EVENT_CLASS_SECONDARY_PROBE
 
 
+def test_probed_provider_entitled_even_with_cli_default_license() -> None:
+    """CLI 4-field descriptors default license to public_metadata; the three
+    structured provider source_ids must still classify as entitled, not
+    official (the Blocker-2 regression)."""
+    assert _classify_source_quality("news_finnhub", "public_metadata", "news") == "entitled"
+    assert _classify_source_quality("news_marketaux", "public_metadata", "news") == "entitled"
+    assert _classify_source_quality("news_fmp", "public_metadata", "news") == "entitled"
+    assert _news_event_class("news_finnhub", "public_metadata") == NEWS_EVENT_CLASS_SECONDARY_PROBE
+
+
+def test_finnhub_epoch_seconds_parsed_correctly() -> None:
+    """Finnhub datetime is Unix epoch SECONDS; must not be misread as
+    nanoseconds yielding 1970 dates (the Blocker-1 regression)."""
+    epoch_seconds = 1755648000  # 2025-08-20 00:00:00 UTC
+    row = _row(
+        provider="Finnhub",
+        endpoint="https://finnhub.io/api/v1/company-news",
+        run_id="run-test",
+        now_utc=pd.Timestamp("2026-08-19T00:00:00Z"),
+        title="Test headline",
+        link="https://example.test/a",
+        published=epoch_seconds,
+        license_class="free_tier_metadata_only",
+    )
+    assert row["pub_date"] == pd.Timestamp("2025-08-20T00:00:00Z")
+
+
 def test_entity_resolution_positive_and_negative_exclusions() -> None:
     entities = _entities()
     listings = _listings()
@@ -180,6 +218,15 @@ def test_entity_resolution_positive_and_negative_exclusions() -> None:
     # Negative exclusion: Tencent Music is NOT Tencent Holdings.
     entity_ids, _ = resolve_news_entities(
         "Tencent Music reports quarterly results",
+        entities=entities,
+        listings=listings,
+        aliases=aliases,
+    )
+    assert entity_ids == []
+
+    # Chinese negative exclusion: 腾讯音乐 is NOT 腾讯控股.
+    entity_ids, _ = resolve_news_entities(
+        "腾讯音乐发布第二季度财报",
         entities=entities,
         listings=listings,
         aliases=aliases,
