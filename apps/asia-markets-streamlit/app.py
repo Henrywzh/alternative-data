@@ -3224,7 +3224,7 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
 
     # --- Wrapper Selection ---
     if wrappers:
-        section_heading(language, "Wrapper Selection", "ETF包装选择", "Entry Cost = premium paid over IOPV + half the spread crossed, in bp; Peer Rank orders same-index wrappers by it. Liquidity is reported beside the cost, not blended into it. Hold Rank weighs fee / market-cap size proxy / age.", "入场成本 = 相对 IOPV 的溢价 + 跨越半个价差，单位 bp；同类排名按该成本排序。流动性单列显示，不混入成本。持有排名侧重费率 / 市值规模代理 / 存续期。")
+        section_heading(language, "Wrapper Selection", "ETF包装选择", "Entry Cost = premium paid over IOPV + half the spread crossed, in bp; Peer Rank orders same-index wrappers by it. Liquidity is reported beside the cost, not blended into it. Hold Rank weighs fee (double weight -- a certain annual cost) against size proxy and age (survivorship proxies), all on absolute scales.", "入场成本 = 相对 IOPV 的溢价 + 跨越半个价差，单位 bp；同类排名按该成本排序。流动性单列显示，不混入成本。持有排名以费率为双倍权重（确定的年度成本），规模代理与存续期为存续风险代理，全部使用绝对刻度。")
         frame = pd.DataFrame(wrappers)
         show_cols = [c for c in ("ticker", "fund_name", "premium_pct", "relative_premium_pct", "entry_status", "entry_cost_bp", "spread_bp", "liquidity_score", "aum_proxy", "peer_rank", "hold_rank", "is_cross_border") if c in frame.columns]
         if show_cols:

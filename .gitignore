@@ -66,6 +66,11 @@ data/derived/market_monitor/**
 !data/derived/market_monitor/**/*.parquet
 !data/derived/market_monitor/**/*.json
 data/derived/market_monitor/test_scope_ds/
+# etf_price_daily is no longer produced: nothing read it, and every run
+# rewrote the whole history (~260KB/trading day of committed near-duplicates).
+# See the note in pipeline.fetch_all_raw for what would justify turning it
+# back on.
+data/normalized/market_monitor/etf_price_daily/
 !data/normalized/provider_adoption/
 data/normalized/provider_adoption/*
 !data/normalized/provider_adoption/*.csv

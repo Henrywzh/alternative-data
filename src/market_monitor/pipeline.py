@@ -18,9 +18,14 @@ from .metadata import build_metadata_frame
 from .ranking import rank_wrappers
 from .relative_strength import build_relative_regime, compute_spread_metrics
 from .sources import akshare_etf, yfinance
-from .storage import load_latest_normalized, new_run_id, save_derived, save_normalized, save_raw
+from .storage import load_latest_normalized, new_run_id, prune_runs, save_derived, save_normalized, save_raw
 from .technicals import compute_technicals
 from .wrapper import merge_premium
+
+
+# How many immutable run snapshots to keep per dataset. Each one holds the
+# full history, so this is a retention window on redundant copies, not on data.
+RUN_RETENTION = 5
 
 
 def _last_2y_start() -> str:
@@ -65,25 +70,15 @@ def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, 
             print(f"  [market_monitor] index fetch failed {exposure} ({idx}): {exc}")
     raw["index_close"] = pd.concat(index_frames.values(), ignore_index=True) if index_frames else pd.DataFrame()
 
-    # --- ETF daily closes ---
-    etf_frames: list[pd.DataFrame] = []
-    for _, row in meta.iterrows():
-        exposure = row["exposure_id"]
-        if limit_exposures and exposure not in limit_exposures:
-            continue
-        if etf_only and row["ticker"] not in etf_only:
-            continue
-        try:
-            frame = akshare_etf.fetch_etf_daily(row["ticker"], start_date=start)
-            if frame is not None and not frame.empty:
-                frame = frame.copy()
-                frame["fund_id"] = row["fund_id"]
-                frame["ticker"] = row["ticker"]
-                frame["exposure_id"] = exposure
-                etf_frames.append(frame)
-        except Exception as exc:  # noqa: BLE001
-            print(f"  [market_monitor] etf fetch failed {row['ticker']} ({row['fund_name']}): {exc}")
-    raw["etf_close"] = pd.concat(etf_frames, ignore_index=True) if etf_frames else pd.DataFrame()
+    # ETF daily closes are deliberately NOT fetched. akshare_etf.fetch_etf_daily
+    # still exists and works; nothing consumes its output. Technicals and the
+    # relative regime are computed from index closes, and the artifact builder
+    # loads four datasets, none of them etf_price_daily. It was costing 15
+    # sequential network calls per run and ~260KB of committed parquet per
+    # trading day to produce a table with no reader. Re-enable it here when
+    # something actually needs wrapper price history -- tracking error and
+    # premium history are the obvious candidates -- and not before.
+    raw["etf_close"] = pd.DataFrame()
 
     # --- ETF spot / premium snapshot ---
     try:
@@ -130,6 +125,36 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
         index_close_rows.append(rows[["date", "exposure_id", "index_id", "close", "open", "high", "low", "volume"]])
     normalized_index = pd.concat(index_close_rows, ignore_index=True) if index_close_rows else pd.DataFrame()
     results["index_price_daily"] = normalized_index
+
+    # What this run actually received, recorded beside what it set out to get.
+    # run_scope is derived from the CLI arguments, so it reports intent: a run
+    # that asked for every exposure and got a third of the history is still
+    # labelled "full", and load_latest happily selects it over a complete
+    # earlier one. This block is what lets a consumer notice that.
+    expected_exposures = [
+        spec["exposure_id"]
+        for spec in EXPOSURES
+        if not limit_exposures or spec["exposure_id"] in limit_exposures
+    ]
+    if normalized_index.empty:
+        rows_by_exposure: dict[str, int] = {}
+        first_date = last_date = None
+    else:
+        rows_by_exposure = {
+            str(k): int(v) for k, v in normalized_index.groupby("exposure_id").size().items()
+        }
+        first_date = str(normalized_index["date"].min())
+        last_date = str(normalized_index["date"].max())
+    coverage = {
+        "expected_exposures": expected_exposures,
+        "observed_exposures": sorted(rows_by_exposure),
+        "missing_exposures": sorted(set(expected_exposures) - set(rows_by_exposure)),
+        "rows_by_exposure": rows_by_exposure,
+        "first_date": first_date,
+        "last_date": last_date,
+        "requested_start_date": start_date,
+    }
+    results["_coverage"] = coverage
 
     # Normalized: ETF prices.
     normalized_etf = raw["etf_close"].copy() if not raw["etf_close"].empty else pd.DataFrame()
@@ -189,10 +214,20 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
     if write:
         run_id = shared_run_id
         run_info: dict[str, Any] = {}
-        run_info["index_price_daily"] = save_normalized("index_price_daily", normalized_index, metadata={"type": "normalized", "run_scope": run_scope}, run_id=run_id) if not normalized_index.empty else None
-        run_info["etf_price_daily"] = save_normalized("etf_price_daily", normalized_etf, metadata={"type": "normalized", "run_scope": run_scope}, run_id=run_id) if not normalized_etf.empty else None
+        run_info["index_price_daily"] = save_normalized("index_price_daily", normalized_index, metadata={"type": "normalized", "run_scope": run_scope, "coverage": coverage}, run_id=run_id) if not normalized_index.empty else None
         run_info["exposure_technicals"] = save_derived("exposure_technicals", results["exposure_technicals"], metadata={"type": "derived", "run_scope": run_scope}, run_id=run_id) if not results["exposure_technicals"].empty else None
         run_info["relative_regime"] = save_derived("relative_regime", results["relative_regime"], metadata={"type": "derived", "run_scope": run_scope}, run_id=run_id) if not results["relative_regime"].empty else None
         run_info["wrapper_metrics"] = save_derived("wrapper_metrics", ranked, metadata={"type": "derived", "run_scope": run_scope}, run_id=run_id) if not ranked.empty else None
         results["_run"] = run_info
+        # Bounded retention. Every run writes the complete history rather than
+        # a delta, so old snapshots are pure duplication; see prune_runs.
+        pruned: dict[str, list[str]] = {}
+        for root, datasets in ((NORMALIZED_DIR, ("index_price_daily", "etf_price_daily")),
+                               (DERIVED_DIR, ("exposure_technicals", "relative_regime", "wrapper_metrics")),
+                               (RAW_DIR, ("index_close", "etf_close", "etf_spot"))):
+            for dataset_name in datasets:
+                dropped = prune_runs(root, dataset_name, keep=RUN_RETENTION)
+                if dropped:
+                    pruned[dataset_name] = dropped
+        results["_pruned"] = pruned
     return results

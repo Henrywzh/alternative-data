@@ -44,6 +44,35 @@ _LIQUIDITY_LOG_ANCHORS: tuple[list[float], list[float]] = (
     [0.0, 40.0, 75.0, 95.0, 100.0],
 )
 
+# Hold-side anchors, absolute for the same reason the buy side is. Min-max
+# within a cohort cannot express "all three of these are expensive": when the
+# three CSI 300 wrappers all charge exactly 0.50%, _norm sees nunique() == 1
+# and hands every one of them 50, so a component advertised as differentiating
+# on fee was only pulling every score toward the middle.
+#
+# Management fee in bp per year. 15bp is a price-war passive fund, 50bp is the
+# A-share standard, 100bp+ is being charged for beta.
+_FEE_BP_ANCHORS: tuple[list[float], list[float]] = (
+    [5.0, 15.0, 50.0, 100.0, 200.0],
+    [100.0, 90.0, 60.0, 30.0, 0.0],
+)
+# Fund size on log10 CNY, saturating: size is a survivorship proxy (closure and
+# delisting risk), and past ~10bn CNY more size stops telling you anything.
+_SIZE_LOG_ANCHORS: tuple[list[float], list[float]] = (
+    [7.0, 8.0, 9.0, 10.0, 11.0],
+    [0.0, 30.0, 70.0, 90.0, 100.0],
+)
+# Fund age in days, saturating: the risk being priced is an unproven fund, and
+# a decade of operating history is not twice as reassuring as five years.
+_AGE_DAY_ANCHORS: tuple[list[float], list[float]] = (
+    [0.0, 365.0, 1095.0, 3650.0],
+    [0.0, 50.0, 85.0, 100.0],
+)
+# Fee is a certain, compounding, annual cost; size and age are risk proxies.
+# Weighting them equally said a fund's launch date matters as much as what it
+# charges you every year for holding it.
+_HOLD_WEIGHTS = {"fee": 2.0, "size": 1.0, "age": 1.0}
+
 
 def entry_cost_bp(frame: pd.DataFrame) -> pd.Series:
     """Cost of entering one wrapper, in basis points.
@@ -86,60 +115,61 @@ def _liquidity_score(turnover: pd.Series) -> pd.Series:
     return pd.Series(np.interp(np.log10(positive.to_numpy(dtype=float)), xs, ys), index=turnover.index)
 
 
-def _norm(series: pd.Series, *, invert: bool) -> pd.Series:
-    """Min-max normalize to 0-100. If invert, higher raw => lower score."""
-    s = series.astype(float)
-    finite = s.replace([float("inf"), float("-inf")], float("nan")).dropna()
-    if finite.empty or finite.nunique() <= 1:
-        return pd.Series(50.0, index=series.index)
-    lo, hi = finite.min(), finite.max()
-    norm = (s - lo) / (hi - lo) * 100.0
-    if invert:
-        norm = 100.0 - norm
-    return norm.clip(0, 100)
+def _hold_quality_score(frame: pd.DataFrame) -> pd.Series:
+    """Structural quality of holding one wrapper, on an absolute 0-100 scale.
+
+    Each component is scored against what the number means in itself, not
+    against the other wrappers in the cohort, so a cohort in which every fund
+    is expensive scores low across the board instead of spreading 0/50/100.
+    Components that are missing contribute no score and no weight; the rest are
+    renormalised, and a row with nothing to score stays NaN rather than 0.
+    """
+    parts: list[tuple[pd.Series, float]] = []
+
+    if "management_fee" in frame.columns:
+        fee_bp = pd.to_numeric(frame["management_fee"], errors="coerce") * 10000.0
+        parts.append((_interp_or_nan(fee_bp, *_FEE_BP_ANCHORS), _HOLD_WEIGHTS["fee"]))
+    size_col = "aum_proxy" if "aum_proxy" in frame.columns else ("aum" if "aum" in frame.columns else None)
+    if size_col:
+        size = pd.to_numeric(frame[size_col], errors="coerce")
+        parts.append((_interp_or_nan(np.log10(size.where(size > 0)), *_SIZE_LOG_ANCHORS), _HOLD_WEIGHTS["size"]))
+    if "fund_age_days" in frame.columns:
+        age = pd.to_numeric(frame["fund_age_days"], errors="coerce")
+        parts.append((_interp_or_nan(age, *_AGE_DAY_ANCHORS), _HOLD_WEIGHTS["age"]))
+
+    if not parts:
+        return pd.Series(float("nan"), index=frame.index)
+    total = pd.Series(0.0, index=frame.index)
+    weight = pd.Series(0.0, index=frame.index)
+    for scores, w in parts:
+        valid = scores.notna()
+        total = total + scores.where(valid, 0.0) * w
+        weight = weight + valid.astype(float) * w
+    return total / weight.replace(0.0, float("nan"))
 
 
-def _z_score(series: pd.Series) -> pd.Series:
-    s = series.astype(float)
-    finite = s.dropna()
-    if finite.empty or finite.std(ddof=0) == 0:
-        return pd.Series(0.0, index=series.index)
-    return ((s - finite.mean()) / finite.std(ddof=0)).fillna(0.0)
+def _interp_or_nan(values: pd.Series, xs: list[float], ys: list[float]) -> pd.Series:
+    """np.interp that preserves NaN instead of clamping it to an endpoint."""
+    arr = pd.to_numeric(values, errors="coerce")
+    out = pd.Series(np.interp(arr.to_numpy(dtype=float), xs, ys), index=values.index)
+    return out.where(arr.notna())
 
 
 def rank_wrappers(frame: pd.DataFrame, *, group_col: str = "exposure_id") -> pd.DataFrame:
-    """Add buy_now_score / hold_score / buy_rank / hold_rank for each cohort.
+    """Score and rank wrappers within each same-index cohort.
 
-    Expects columns: premium_pct (IOPV premium %), relative_premium_pct,
-    spread_bp, turnover (amount), aum, management_fee, fund_age_days.
+    Reads premium_pct (IOPV premium %), spread_bp, turnover, aum_proxy (or
+    aum), management_fee and fund_age_days; every one is optional and a row
+    scores on whatever it has. Writes entry_cost_bp, buy_score,
+    liquidity_score, hold_score, buy_rank / peer_rank, hold_rank and
+    entry_status.
+
+    Scores are absolute, not cohort-relative -- the cohort decides who is
+    compared with whom, not what the numbers mean. Ranks are per cohort, so a
+    QDII wrapper is never ranked against a mainland A-share ETF.
     """
     out = frame.copy()
-    HOLD_COMPONENTS = {
-        "management_fee": -1.0,
-        "aum": 1.0,
-        "fund_age_days": 1.0,
-    }
-
-    hold_score_sum = pd.Series(0.0, index=out.index)
-    hold_weight = pd.Series(0.0, index=out.index)
-    # Normalize each component *within* the same-index cohort (group_col), not
-    # globally, so QDII wrappers are never scored against mainland A-share ETFs
-    # on fee/AUM. Missing components contribute neither score nor weight; the
-    # remaining weights are renormalised so a funded cohort still gets 0-100.
-    for cohort, cohort_rows in out.groupby(group_col):
-        cohort_index = cohort_rows.index
-        for col, direction in HOLD_COMPONENTS.items():
-            if col in out.columns:
-                sub = out.loc[cohort_index, col]
-                if sub.notna().any():
-                    norm_scores = _norm(sub, invert=bool(direction == -1.0))
-                    valid = sub.notna()
-                    hold_score_sum.loc[cohort_index] = hold_score_sum.loc[cohort_index] + norm_scores.where(valid, 0.0)
-                    hold_weight.loc[cohort_index] = hold_weight.loc[cohort_index] + valid.astype(float)
-
-    # Row-level normalization: score = sum(valid scores) / count(valid weights)
-    # A fund with only 2 of 3 hold fields gets scored on those 2.
-    hold_score = hold_score_sum / hold_weight.replace(0, float("nan"))
+    hold_score = _hold_quality_score(out)
 
     cross_border = out["is_cross_border"] if "is_cross_border" in out.columns else pd.Series(False, index=out.index)
     out["entry_cost_bp"] = entry_cost_bp(out).round(2)

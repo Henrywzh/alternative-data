@@ -24,7 +24,7 @@ if str(ROOT) not in sys.path:
 
 from src.market_monitor.config import DERIVED_DIR, EXPOSURES, NORMALIZED_DIR
 from src.market_monitor.metadata import build_metadata_frame
-from src.market_monitor.storage import load_latest_with_lineage  # noqa: E402
+from src.market_monitor.storage import load_lineage_history, load_latest_with_lineage  # noqa: E402
 
 
 def _records(frame: pd.DataFrame) -> list[dict[str, Any]]:
@@ -35,6 +35,29 @@ def _records(frame: pd.DataFrame) -> list[dict[str, Any]]:
         if pd.api.types.is_datetime64_any_dtype(out[col]):
             out[col] = out[col].dt.strftime("%Y-%m-%d")
     return json.loads(out.to_json(orient="records", date_format="iso", default_handler=str))
+
+
+def coverage_regressions(current: dict[str, Any], previous: dict[str, Any]) -> list[str]:
+    """Ways this run covers less ground than the previous one, in words.
+
+    Empty means no regression, which includes the case where there is nothing
+    to compare against -- a first run cannot have shrunk.
+    """
+    notes: list[str] = []
+    for exposure_id in sorted(current.get("missing_exposures") or []):
+        notes.append(f"no rows for {exposure_id}")
+    current_rows = current.get("rows_by_exposure") or {}
+    previous_rows = previous.get("rows_by_exposure") or {}
+    for exposure_id, previous_count in sorted(previous_rows.items()):
+        current_count = int(current_rows.get(exposure_id, 0))
+        # 10% absorbs a routine trading-calendar wobble while still catching
+        # the 38% collapse this check was written for. A vanished exposure is
+        # already reported above, so skip it here to avoid saying it twice.
+        if exposure_id in (current.get("missing_exposures") or []):
+            continue
+        if previous_count and current_count < previous_count * 0.9:
+            notes.append(f"{exposure_id} {current_count} rows vs {previous_count} in the previous run")
+    return notes
 
 
 def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
@@ -188,6 +211,35 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
             "notes": "US session history for the S&P 500 exposure." if sp500_ok else "S&P 500 index data missing.",
         },
     ]
+    # --- Coverage regression check -------------------------------------
+    # run_scope reports intent, not receipt: it is derived from the CLI
+    # arguments, so a run that asked for everything and got a third of the
+    # history is still "full", and load_latest selects it over the complete
+    # earlier one purely because its run_id sorts later. That happened on
+    # 2026-08-19: 5,541 rows across 7 exposures at 11:25, 3,416 rows at 12:28,
+    # both labelled full, all three sources reported Healthy. Compare what
+    # arrived against the previous run and say so when it shrank.
+    history = load_lineage_history(NORMALIZED_DIR, "index_price_daily", scope="full", limit=2)
+    current_cov = (history[0].get("coverage") if history else None) or {}
+    previous_cov = (history[1].get("coverage") if len(history) > 1 else None) or {}
+    coverage_notes = coverage_regressions(current_cov, previous_cov)
+    current_rows = current_cov.get("rows_by_exposure") or {}
+    coverage_ok = not coverage_notes
+    if not coverage_ok:
+        datasets["source_health"].append(
+            {
+                "source": "Index history coverage",
+                "status": "Degraded",
+                "latest_observation": current_cov.get("last_date") or "—",
+                "records": int(sum(current_rows.values())),
+                "notes": (
+                    "Coverage shrank against the previous run: "
+                    + "; ".join(coverage_notes)
+                    + ". run_scope reports intent, not receipt -- check the ingestion start date."
+                ),
+            }
+        )
+
     if stale_datasets:
         datasets["source_health"].append(
             {
@@ -279,10 +331,19 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     )
     blocks.append({"id": "wrapper_selection_block", "type": "table", "tableId": "wrapper_selection_table"})
 
+    overall_healthy = overall_healthy and coverage_ok
+
     snapshot_id = hashlib.sha1(json.dumps(datasets, sort_keys=True, default=str).encode()).hexdigest()[:16]
     artifact: dict[str, Any] = {
         "manifest": {"version": 1, "generatedAt": generated_at, "cards": [], "charts": charts, "tables": tables, "blocks": blocks},
-        "snapshot": {"version": 1, "generatedAt": generated_at, "status": "ready", "datasets": datasets},
+        # Was the literal "ready" regardless of health: the real verdict lived
+        # in the status dict below, which the artifact never carries, so a
+        # consumer reading the artifact alone could not see a degraded build.
+        # "partial" matches build_hk_population_migration_artifact.py, which
+        # already makes this field conditional; the Streamlit surface reads the
+        # source_health rows rather than this field, but a consumer that only
+        # has the artifact should not be told everything is fine.
+        "snapshot": {"version": 1, "generatedAt": generated_at, "status": "ready" if overall_healthy else "partial", "datasets": datasets},
         "sources": sources,
         "package_info": {"snapshotId": snapshot_id, "dataAsOf": data_as_of, "pipelineRunId": latest_run_id, "runConsistent": run_consistent},
     }
