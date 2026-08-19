@@ -49,6 +49,22 @@ data/normalized/overview/*
 !data/normalized/openrouter_archive/
 data/normalized/openrouter_archive/*
 !data/normalized/openrouter_archive/*.parquet
+
+# market_monitor (Index & ETF Allocation Monitor): commit immutable
+# normalized + derived snapshots so the dashboard artifact rebuilds from
+# PIT-fast data on a clean CI checkout; raw spot snapshots stay ignored.
+!data/normalized/market_monitor/
+data/normalized/market_monitor/**
+!data/normalized/market_monitor/**/
+!data/normalized/market_monitor/**/*.parquet
+!data/normalized/market_monitor/**/*.json
+!data/derived/
+data/derived/*
+!data/derived/market_monitor/
+data/derived/market_monitor/**
+!data/derived/market_monitor/**/
+!data/derived/market_monitor/**/*.parquet
+!data/derived/market_monitor/**/*.json
 !data/normalized/provider_adoption/
 data/normalized/provider_adoption/*
 !data/normalized/provider_adoption/*.csv

@@ -78,6 +78,7 @@ hk-labour-market-data = "hk_labour_market.cli:main"
 hk-reit-data = "hk_reit.cli:main"
 opencode-data = "opencode_data.cli:main"
 replicate-data = "replicate_data.cli:main"
+market-monitor = "market_monitor.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
