@@ -32,6 +32,7 @@ ARTIFACT_NAMES: Final[tuple[str, ...]] = (
     "consensus_snapshots.parquet",
     "consensus_revisions.parquet",
     "quote_snapshots.parquet",
+    "price_bars.parquet",
     "news_filings.parquet",
     "official_filings.parquet",
     "earnings_calendar.parquet",
@@ -52,6 +53,7 @@ OPTIONAL_ARTIFACT_NAMES: Final[tuple[str, ...]] = (
     "consensus_snapshots.parquet",
     "consensus_revisions.parquet",
     "quote_snapshots.parquet",
+    "price_bars.parquet",
     "news_filings.parquet",
     "official_filings.parquet",
     "earnings_calendar.parquet",
@@ -153,6 +155,12 @@ ARTIFACT_COLUMNS: Final[dict[str, tuple[str, ...]]] = {
         "day_change_pct", "volume", "currency", "market_status", "latency_class",
         "source_id", "source_url", "pit_class", "source_license_class",
         "registry_version",
+    ),
+    "price_bars.parquet": (
+        "bar_id", "listing_id", "entity_id", "canonical_ticker", "provider_symbol",
+        "interval", "bar_date", "open", "high", "low", "close", "adj_close",
+        "volume", "currency", "source_id", "source_url", "retrieved_at_utc",
+        "pit_class", "source_license_class", "registry_version",
     ),
     "news_filings.parquet": (
         "document_id", "document_type", "source_id", "headline", "publisher",

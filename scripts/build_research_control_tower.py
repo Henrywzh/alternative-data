@@ -140,6 +140,12 @@ COLLECTOR_SOURCES: tuple[tuple[str, str, str, str, str, str, str, str], ...] = (
         "quarterly", "",
     ),
     (
+        "market", "price_bars",
+        "data/normalized/research_control_tower/price_bars_v1.parquet",
+        "price_bars_v1", "current_vintage", "personal_use_terms_unverified",
+        "daily", "https://finance.yahoo.com/",
+    ),
+    (
         "market", "quote_snapshots",
         "data/normalized/research_control_tower/quote_snapshots_v1.parquet",
         "quote_snapshots_v1", "snapshot_from_delayed_source", "personal_use_terms_unverified",
@@ -161,6 +167,10 @@ COLLECTOR_COMMANDS = {
     "consensus_export": (
         "python scripts/research_control_tower_consensus_collector.py "
         "--basket RESEARCH_STAGE_1_CHINA_INTERNET"
+    ),
+    "price_bars": (
+        "python scripts/research_control_tower_price_bars.py "
+        "--basket RESEARCH_STAGE_1_CHINA_INTERNET --years 5"
     ),
     "quote_snapshots": (
         "python scripts/research_control_tower_quote_collector.py "
@@ -187,7 +197,7 @@ def _descriptor(row: tuple[str, str, str, str, str, str, str, str]) -> tuple[str
 def _collect_inputs(verbose: bool = True) -> tuple[dict[str, list[LocalInput]], list[str]]:
     by_kind: dict[str, list[LocalInput]] = {
         "macro": [], "news": [], "filing": [],
-        "official_filing": [], "earnings": [], "market": [],
+        "official_filing": [], "earnings": [], "market": [], "price_bar": [],
     }
     missing: list[str] = []
     for row in REPO_SOURCES + COLLECTOR_SOURCES:
@@ -249,7 +259,8 @@ def main(argv: list[str] | None = None) -> int:
         filing_inputs=tuple(by_kind["filing"]),
         official_filing_inputs=tuple(by_kind["official_filing"]),
         earnings_inputs=tuple(by_kind["earnings"]),
-        quote_inputs=tuple(by_kind["market"]),
+        quote_inputs=tuple(d for d in by_kind["market"] if d.source_id != "price_bars"),
+        price_bar_inputs=tuple(d for d in by_kind["market"] if d.source_id == "price_bars"),
     )
     manifest = build_control_tower_marts(config)
 

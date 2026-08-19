@@ -83,6 +83,7 @@ class CompanyView:
     memberships: pd.DataFrame
     quote_snapshots: pd.DataFrame
     quote_status: str
+    price_bars: pd.DataFrame
     events: pd.DataFrame
     official_documents: pd.DataFrame
     consensus: pd.DataFrame
@@ -559,6 +560,20 @@ def build_company_view(
     memberships = memberships.loc[:, COMPANY_MEMBERSHIP_COLUMNS]
     basket_ids = set(memberships["basket_id"].astype("string")) if not memberships.empty else set()
 
+    # Price history is scoped to the same listing the quote is: a chart that
+    # silently blended the HK and US lines of one issuer would mix two
+    # currencies and two trading calendars into a single series.
+    bars_source = getattr(snapshot, "price_bars", pd.DataFrame())
+    bar_listing_ids = {selected_listing_id} if selected_listing_id else listing_ids
+    if bars_source is None or bars_source.empty or not bar_listing_ids:
+        price_bars = pd.DataFrame(columns=["bar_date", "close", "adj_close", "volume", "listing_id", "currency", "source_id"])
+    else:
+        price_bars = bars_source.loc[
+            bars_source["listing_id"].astype("string").isin(bar_listing_ids)
+        ].copy()
+        if not price_bars.empty:
+            price_bars = price_bars.sort_values("bar_date")
+
     quote_source = snapshot.quote_snapshots
     quote_listing_ids = {selected_listing_id} if selected_listing_id else listing_ids
     if quote_source.empty or not quote_listing_ids:
@@ -787,6 +802,7 @@ def build_company_view(
         listings=listings,
         memberships=memberships,
         quote_snapshots=quote_snapshots,
+        price_bars=price_bars,
         quote_status=quote_status,
         events=events,
         official_documents=official_documents,
@@ -1008,6 +1024,56 @@ def _format_listing_option(snapshot: ControlTowerSnapshot, listing_id: str | Non
     return " · ".join(value for value in (ticker, exchange, currency) if value) or "Listing unavailable"
 
 
+
+def _render_price_history(view: "CompanyView", snapshot: ControlTowerSnapshot) -> None:
+    """Daily close for the selected listing, with its provenance stated.
+
+    The chart plots adjusted close where the source carries one and says which
+    it used, because an unadjusted series across a dividend or a split is a
+    different series and silently mixing the two would misread every event
+    window drawn on top of it.
+    """
+
+    st.markdown("#### Price history")
+    if view.entity_type == "private":
+        st.info(
+            f"Not applicable · {_text(view.display_name)} is a private company with no public listing; "
+            "no price history is collected."
+        )
+        return
+    bars = view.price_bars
+    if bars is None or bars.empty:
+        st.warning(
+            "Price history unavailable · no price-bar rows for the selected listing; "
+            "the app remains no-network/read-only and did not query a provider."
+        )
+        return
+
+    frame = bars.copy()
+    frame["bar_date"] = pd.to_datetime(frame["bar_date"], errors="coerce")
+    frame = frame.loc[frame["bar_date"].notna()]
+    adjusted = frame["adj_close"].notna().any() if "adj_close" in frame.columns else False
+    series_column = "adj_close" if adjusted else "close"
+    basis = "adjusted close" if adjusted else "unadjusted close"
+    frame = frame.loc[frame[series_column].notna()]
+    if frame.empty:
+        st.warning("Price history unavailable · rows carry no usable close price.")
+        return
+
+    currency = _text(frame.iloc[-1].get("currency")) or ""
+    chart = frame.set_index("bar_date")[[series_column]].rename(columns={series_column: f"{currency} {basis}".strip()})
+    st.line_chart(chart, height=260)
+
+    first = frame["bar_date"].min().date()
+    last = frame["bar_date"].max().date()
+    sources = ", ".join(sorted({_text(v) for v in frame["source_id"] if _text(v)}))
+    span_days = (last - first).days
+    st.caption(
+        f"{len(frame):,} daily bars · {first} to {last} ({span_days} calendar days) · {basis} · "
+        f"source: {sources or 'unattributed'} · read from the published artifact, no provider was queried"
+    )
+
+
 def render_company_page(
     snapshot: ControlTowerSnapshot,
     *,
@@ -1117,6 +1183,7 @@ def render_company_page(
             width="stretch",
             hide_index=True,
         )
+    _render_price_history(view, snapshot)
     st.markdown("#### Events and evidence lineage")
     if view.events.empty:
         st.info("No explicitly linked events are available for this company.")

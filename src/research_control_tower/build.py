@@ -402,6 +402,59 @@ QUOTE_SNAPSHOT_ARROW_SCHEMA = pa.schema(
     ]
 )
 
+
+# Daily price history per listing.  ``quote_snapshots`` answers "what is it
+# worth now"; this answers "what has it done", which is what a price chart and
+# any event-window read-through need.  Kept as its own optional artifact rather
+# than folded into quotes because the two have different cadences, different
+# freshness policies and different provenance.
+PRICE_BARS_COLUMNS = [
+    "bar_id",
+    "listing_id",
+    "entity_id",
+    "canonical_ticker",
+    "provider_symbol",
+    "interval",
+    "bar_date",
+    "open",
+    "high",
+    "low",
+    "close",
+    "adj_close",
+    "volume",
+    "currency",
+    "source_id",
+    "source_url",
+    "retrieved_at_utc",
+    "pit_class",
+    "source_license_class",
+    "registry_version",
+]
+PRICE_BARS_ARROW_SCHEMA = pa.schema(
+    [
+        ("bar_id", pa.string()),
+        ("listing_id", pa.string()),
+        ("entity_id", pa.string()),
+        ("canonical_ticker", pa.string()),
+        ("provider_symbol", pa.string()),
+        ("interval", pa.string()),
+        ("bar_date", pa.date32()),
+        ("open", pa.float64()),
+        ("high", pa.float64()),
+        ("low", pa.float64()),
+        ("close", pa.float64()),
+        ("adj_close", pa.float64()),
+        ("volume", pa.int64()),
+        ("currency", pa.string()),
+        ("source_id", pa.string()),
+        ("source_url", pa.string()),
+        ("retrieved_at_utc", _TASK3_UTC_TIMESTAMP),
+        ("pit_class", pa.string()),
+        ("source_license_class", pa.string()),
+        ("registry_version", pa.string()),
+    ]
+)
+
 NEWS_FILINGS_COLUMNS = [
     "document_id",
     "document_type",
@@ -576,6 +629,7 @@ ARTIFACT_NAMES = (
     "consensus_snapshots.parquet",
     "consensus_revisions.parquet",
     "quote_snapshots.parquet",
+    "price_bars.parquet",
     "news_filings.parquet",
     "official_filings.parquet",
     "earnings_calendar.parquet",
@@ -588,6 +642,7 @@ OPTIONAL_ARTIFACT_NAMES = frozenset({
     "consensus_snapshots.parquet",
     "consensus_revisions.parquet",
     "quote_snapshots.parquet",
+    "price_bars.parquet",
     "news_filings.parquet",
     "official_filings.parquet",
     "earnings_calendar.parquet",
@@ -607,6 +662,7 @@ MACRO_SOURCE_HEALTH_SCHEMA_ID = "macro_source_health_v1"
 NEWS_SCHEMA_ID = "ai_news_blog_posts_v1"
 FILING_SCHEMA_ID = "sec_edgar_filings_v1"
 QUOTE_SNAPSHOT_SCHEMA_ID = "quote_snapshots_v1"
+PRICE_BARS_SCHEMA_ID = "price_bars_v1"
 OFFICIAL_FILINGS_SCHEMA_ID = "official_filings_v1"
 EARNINGS_ACTUALS_SCHEMA_ID = "earnings_actuals_v1"
 SOURCE_STATE_SCHEMA_ID = "source_state_v1"
@@ -632,6 +688,9 @@ _SCHEMA_ALIASES = {
     "edgar_filings": FILING_SCHEMA_ID,
     QUOTE_SNAPSHOT_SCHEMA_ID: QUOTE_SNAPSHOT_SCHEMA_ID,
     "quote_snapshots": QUOTE_SNAPSHOT_SCHEMA_ID,
+    PRICE_BARS_SCHEMA_ID: PRICE_BARS_SCHEMA_ID,
+    "price_bars": PRICE_BARS_SCHEMA_ID,
+    "market_data_bars": PRICE_BARS_SCHEMA_ID,
     OFFICIAL_FILINGS_SCHEMA_ID: OFFICIAL_FILINGS_SCHEMA_ID,
     "official_filings": OFFICIAL_FILINGS_SCHEMA_ID,
     EARNINGS_ACTUALS_SCHEMA_ID: EARNINGS_ACTUALS_SCHEMA_ID,
@@ -656,6 +715,7 @@ _EXPECTED_OPTIONAL_SOURCES = (
     ("ecb_fx_rates", "macro", ECB_FX_SCHEMA_ID, "Europe"),
     ("consensus_export", "consensus", "task3_consensus_export_v1", ""),
     ("quote_snapshots", "market", QUOTE_SNAPSHOT_SCHEMA_ID, ""),
+    ("price_bars", "market", PRICE_BARS_SCHEMA_ID, ""),
     ("news_official_ai_rss", "news", NEWS_SCHEMA_ID, ""),
     ("filings_sec_edgar", "filing", FILING_SCHEMA_ID, "US"),
     ("official_filings", "official_filing", OFFICIAL_FILINGS_SCHEMA_ID, "CN,HK,US"),
@@ -683,6 +743,9 @@ SOURCE_FRESHNESS_THRESHOLDS = {
     "task3_consensus_export_v1": pd.Timedelta(days=14),
     "task3_consensus_source_health_v1": pd.Timedelta(days=14),
     QUOTE_SNAPSHOT_SCHEMA_ID: pd.Timedelta(minutes=5),
+    # Daily bars: a long weekend plus a market holiday is normal, so the
+    # window is deliberately wider than the calendar gap it must tolerate.
+    PRICE_BARS_SCHEMA_ID: pd.Timedelta(days=6),
     # The Batch 2/3 collectors are designed for weekly-to-monthly runs; the
     # windows below are health policy for the collected snapshot, not
     # publication claims.  A stale snapshot fails closed into a typed empty
@@ -808,6 +871,12 @@ SOURCE_TIME_COLUMNS = {
         "retrieved": ("retrieved_at_utc",),
         "future": ("quote_timestamp", "retrieved_at_utc"),
     },
+    PRICE_BARS_SCHEMA_ID: {
+        "observed": ("bar_date",),
+        "freshness": ("bar_date",),
+        "retrieved": ("retrieved_at_utc",),
+        "future": ("bar_date", "retrieved_at_utc"),
+    },
 }
 
 QUALITY_CLASSES = frozenset({"official", "official_metadata", "discovery", "entitled", "unknown"})
@@ -888,6 +957,7 @@ class BuildConfig:
     official_filing_inputs: tuple[LocalInput, ...] = ()
     earnings_inputs: tuple[LocalInput, ...] = ()
     quote_inputs: tuple[LocalInput, ...] = ()
+    price_bar_inputs: tuple[LocalInput, ...] = ()
     consensus_export_dir: Path | None = None
     schema_version: str = SCHEMA_VERSION
     allow_degraded_optional: bool = True
@@ -1090,6 +1160,7 @@ _OPTIONAL_COLUMNS = {
     EARNINGS_ACTUALS_SCHEMA_ID: set(EARNINGS_ACTUALS_COLUMNS),
     SOURCE_STATE_SCHEMA_ID: set(SOURCE_STATE_COLUMNS),
     QUOTE_SNAPSHOT_SCHEMA_ID: set(QUOTE_SNAPSHOT_COLUMNS),
+    PRICE_BARS_SCHEMA_ID: set(PRICE_BARS_COLUMNS),
     # realtime_start/realtime_end are optional trailing vintage columns: a
     # legacy non-vintaged FRED export must keep building, while vintaged
     # exports (FredMacroStorage) validate cleanly.
@@ -3183,6 +3254,44 @@ def _read_quote_status(path: Path) -> tuple[dict[str, Any] | None, str | None]:
     return payload, None
 
 
+def _build_price_bars(
+    registries: "RegistryBundle",
+    inputs: Sequence[LocalInput],
+    *,
+    as_of_utc: pd.Timestamp,
+) -> tuple[pd.DataFrame, list[_SourceState], list[str]]:
+    """Attach daily bars to registry listings, dropping rows that do not map.
+
+    A bar for a ticker the registry does not list is not evidence about
+    anything in this universe, so it is discarded rather than carried as an
+    orphan; the count is reported on the source state instead of vanishing.
+    """
+
+    empty = pd.DataFrame({column: pd.Series(dtype="object") for column in PRICE_BARS_COLUMNS})
+    descriptor = _find_descriptor(inputs, PRICE_BARS_SCHEMA_ID)
+    if descriptor is None:
+        return empty, [], []
+    state, frame, _ = _load_optional(descriptor, "market", as_of_utc=as_of_utc)
+    if frame is None:
+        return empty, [state], ["price_bars"]
+    listings = registries.listings
+    known = set(listings["listing_id"].astype(str)) if not listings.empty else set()
+    mapped = frame.loc[frame["listing_id"].astype(str).isin(known)].copy()
+    dropped = len(frame) - len(mapped)
+    if dropped:
+        _append_state_error(
+            state,
+            code="unmapped_listing_rows_dropped",
+            message=f"rows={dropped};reason=listing_id not in the registry",
+        )
+    _set_state_from_frame(state, mapped, observed_column="bar_date", retrieved_column="retrieved_at_utc")
+    state.row_count = len(mapped)
+    degraded = [] if not mapped.empty else ["price_bars"]
+    if mapped.empty:
+        state.status = "no_records"
+    return _sort_frame(mapped.loc[:, PRICE_BARS_COLUMNS], ["listing_id", "bar_date"]), [state], degraded
+
+
 def _build_quote_snapshots(
     registries: Any,
     inputs: Sequence[LocalInput],
@@ -3656,6 +3765,7 @@ def _arrow_schema() -> dict[str, pa.Schema]:
         "consensus_snapshots.parquet": TASK3_SNAPSHOT_ARROW_SCHEMA,
         "consensus_revisions.parquet": TASK3_REVISION_ARROW_SCHEMA,
         "quote_snapshots.parquet": QUOTE_SNAPSHOT_ARROW_SCHEMA,
+        "price_bars.parquet": PRICE_BARS_ARROW_SCHEMA,
         "news_filings.parquet": news_schema,
         "official_filings.parquet": official_filings_schema,
         "earnings_calendar.parquet": earnings_calendar_schema,
@@ -3820,8 +3930,20 @@ def _validate_current_pointer(output_dir: Path, pointer_value: str) -> Path:
     if not generation.is_dir():
         raise BuildError(f"CURRENT generation does not exist: {value}")
     entries = list(generation.iterdir())
-    if set(path.name for path in entries) != set(ARTIFACT_NAMES):
-        raise BuildError("CURRENT target must contain exactly the 16 artifacts")
+    present = {path.name for path in entries}
+    if present != set(ARTIFACT_NAMES):
+        # The count used to be written into this message by hand and had gone
+        # stale, so a mismatch reported a number that matched neither side and
+        # named nothing. Report the actual difference instead: adding an
+        # artifact to the contract makes every earlier generation fail here,
+        # and the reader needs to see which one to know that is why.
+        missing = sorted(set(ARTIFACT_NAMES) - present)
+        unexpected = sorted(present - set(ARTIFACT_NAMES))
+        raise BuildError(
+            "CURRENT target artifacts do not match the contract"
+            + (f"; missing={','.join(missing)}" if missing else "")
+            + (f"; unexpected={','.join(unexpected)}" if unexpected else "")
+        )
     if any(path.is_symlink() or not path.is_file() for path in entries):
         raise BuildError("CURRENT target artifacts must be regular non-symlink files")
     return generation
@@ -4103,6 +4225,11 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
         config.quote_inputs,
         as_of_utc=config.as_of_utc,
     )
+    price_bar_frame, price_bar_states, price_bar_degraded = _build_price_bars(
+        registries,
+        config.price_bar_inputs,
+        as_of_utc=config.as_of_utc,
+    )
     news_frame, news_states, news_degraded = _build_news_filings(
         registries,
         config.news_inputs,
@@ -4125,6 +4252,7 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
     frames["consensus_snapshots.parquet"] = consensus_snapshots
     frames["consensus_revisions.parquet"] = consensus_revisions
     frames["quote_snapshots.parquet"] = quote_frame
+    frames["price_bars.parquet"] = price_bar_frame
     frames["news_filings.parquet"] = news_frame
     frames["official_filings.parquet"] = official_filings_frame
     frames["earnings_calendar.parquet"] = calendar_frame
@@ -4149,6 +4277,7 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
             *macro_states,
             *consensus_states,
             *quote_states,
+            *price_bar_states,
             *news_states,
             *official_states,
             *actuals_states,
@@ -4165,6 +4294,7 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
         *macro_degraded,
         *consensus_degraded,
         *quote_degraded,
+        *price_bar_degraded,
         *news_degraded,
         *official_degraded,
         *actuals_degraded,
@@ -4201,6 +4331,7 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
         "consensus_snapshots.parquet": [state.source_id for state in consensus_states],
         "consensus_revisions.parquet": [state.source_id for state in consensus_states],
         "quote_snapshots.parquet": [state.source_id for state in quote_states],
+        "price_bars.parquet": [state.source_id for state in price_bar_states],
         "news_filings.parquet": [state.source_id for state in news_states],
         "official_filings.parquet": [state.source_id for state in official_states],
         "earnings_calendar.parquet": [state.source_id for state in official_states],
@@ -4289,6 +4420,8 @@ __all__ = [
     "OFFICIAL_FILINGS_SCHEMA_ID",
     "OPTIONAL_ARTIFACT_NAMES",
     "QUOTE_SNAPSHOT_COLUMNS",
+    "PRICE_BARS_COLUMNS",
+    "PRICE_BARS_SCHEMA_ID",
     "QUOTE_SNAPSHOT_SCHEMA_ID",
     "QUOTE_SNAPSHOT_ARROW_SCHEMA",
     "OFR_META_SCHEMA_ID",
