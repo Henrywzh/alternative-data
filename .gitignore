@@ -65,6 +65,7 @@ data/derived/market_monitor/**
 !data/derived/market_monitor/**/
 !data/derived/market_monitor/**/*.parquet
 !data/derived/market_monitor/**/*.json
+data/derived/market_monitor/test_scope_ds/
 !data/normalized/provider_adoption/
 data/normalized/provider_adoption/*
 !data/normalized/provider_adoption/*.csv
