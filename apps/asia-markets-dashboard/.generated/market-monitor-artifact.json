@@ -1,7 +1,7 @@
 {
   "manifest": {
     "version": 1,
-    "generatedAt": "2026-08-19T17:16:56.921340+00:00",
+    "generatedAt": "2026-08-19T23:44:52.580762+00:00",
     "cards": [],
     "charts": [
       {
@@ -174,7 +174,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-19T17:16:56.921340+00:00",
+    "generatedAt": "2026-08-19T23:44:52.580762+00:00",
     "status": "ready",
     "datasets": {
       "exposure_technicals": [
@@ -191,7 +191,8 @@
           "date": "2026-08-19",
           "label_zh": "沪深300",
           "index_id": "000300.SH",
-          "avg_premium_30d": -0.13
+          "avg_premium_30d": -0.13,
+          "avg_premium_days": 2
         },
         {
           "rsi": 45.5622417083,
@@ -206,7 +207,8 @@
           "date": "2026-08-19",
           "label_zh": "中证500",
           "index_id": "000905.SH",
-          "avg_premium_30d": 0.06
+          "avg_premium_30d": 0.06,
+          "avg_premium_days": 2
         },
         {
           "rsi": 46.2863961682,
@@ -221,7 +223,8 @@
           "date": "2026-08-19",
           "label_zh": "中证1000",
           "index_id": "000852.SH",
-          "avg_premium_30d": 0.21
+          "avg_premium_30d": 0.21,
+          "avg_premium_days": 2
         },
         {
           "rsi": 63.4731183709,
@@ -236,7 +239,8 @@
           "date": "2026-08-19",
           "label_zh": "上证红利",
           "index_id": "000015.SH",
-          "avg_premium_30d": -0.19
+          "avg_premium_30d": -0.19,
+          "avg_premium_days": 2
         },
         {
           "rsi": 43.186131016,
@@ -251,7 +255,8 @@
           "date": "2026-08-19",
           "label_zh": "科创50",
           "index_id": "000688.SH",
-          "avg_premium_30d": -0.04
+          "avg_premium_30d": -0.04,
+          "avg_premium_days": 2
         },
         {
           "rsi": 45.0096616875,
@@ -266,7 +271,8 @@
           "date": "2026-08-19",
           "label_zh": "恒生科技",
           "index_id": "HSTECH",
-          "avg_premium_30d": -0.17
+          "avg_premium_30d": -0.17,
+          "avg_premium_days": 2
         },
         {
           "rsi": 53.9987102169,
@@ -281,37 +287,40 @@
           "date": "2026-08-19",
           "label_zh": "恒生指数",
           "index_id": "HSI",
-          "avg_premium_30d": -0.21
+          "avg_premium_30d": -0.21,
+          "avg_premium_days": 2
         },
         {
-          "rsi": 51.7541331025,
-          "ma20": 29050.71875,
-          "ma20_pct": 1.3943,
-          "ma60": 29440.0425130208,
-          "ma60_pct": 0.0535,
-          "realized_vol_20d": 0.0150504181,
-          "drawdown_60d": -3.929539304,
+          "rsi": 51.3853010327,
+          "ma20": 29049.2309570312,
+          "ma20_pct": 1.2971,
+          "ma60": 29439.5465820312,
+          "ma60_pct": -0.0459,
+          "realized_vol_20d": 0.015059456,
+          "drawdown_60d": -4.0265884803,
           "exposure_id": "ndx",
           "label": "Nasdaq 100",
           "date": "2026-08-19",
           "label_zh": "纳斯达克100",
           "index_id": "NDX",
-          "avg_premium_30d": 9.22
+          "avg_premium_30d": 9.22,
+          "avg_premium_days": 2
         },
         {
-          "rsi": 58.0896689671,
-          "ma20": 7620.1479736328,
-          "ma20_pct": 1.2798,
-          "ma60": 7528.6756754557,
-          "ma60_pct": 2.5103,
-          "realized_vol_20d": 0.0085661684,
-          "drawdown_60d": -1.0427030943,
+          "rsi": 57.4023961691,
+          "ma20": 7619.6634765625,
+          "ma20_pct": 1.1591,
+          "ma60": 7528.5141764323,
+          "ma60_pct": 2.3838,
+          "realized_vol_20d": 0.0085561238,
+          "drawdown_60d": -1.1669491969,
           "exposure_id": "sp500",
           "label": "S&P 500",
           "date": "2026-08-19",
           "label_zh": "标普500",
           "index_id": "SPX",
-          "avg_premium_30d": 7.89
+          "avg_premium_30d": 7.89,
+          "avg_premium_days": 2
         }
       ],
       "relative_regime": [
@@ -346,9 +355,9 @@
           "label": "China / S&P 500",
           "left": "csi300",
           "right": "sp500",
-          "spread_20d_zscore": -1.6228,
-          "spread_5d_pct": -1.7812,
-          "spread_20d_pct": -5.6416,
+          "spread_20d_zscore": -1.5836,
+          "spread_5d_pct": -1.6562,
+          "spread_20d_pct": -5.5124,
           "trend": "DOWN"
         }
       ],
@@ -375,8 +384,8 @@
           "bid": 3.132,
           "ask": 3.133,
           "spread_bp": 3.1923383879,
-          "aum": 7452360979,
-          "aum_proxy": 7452360979,
+          "aum": 7452360979.0,
+          "aum_proxy": 7452360979.0,
           "relative_premium_pct": 0.16,
           "fund_age_days": 1749,
           "entry_cost_bp": 33.6,
@@ -407,18 +416,18 @@
           "market_price": 3.048,
           "iopv": 3.0431,
           "turnover": 5561657491.0,
-          "units": 6277217536.0,
+          "units": 6681217536.0,
           "bid": 3.048,
           "ask": 3.049,
           "spread_bp": 3.2803017878,
-          "aum": 19132959050,
-          "aum_proxy": 19132959050,
+          "aum": 20364351050.0,
+          "aum_proxy": 20364351050.0,
           "relative_premium_pct": 0.0,
           "fund_age_days": 3612,
           "entry_cost_bp": 17.64,
           "buy_score": 52.0,
           "liquidity_score": 98.7,
-          "hold_score": 78.1,
+          "hold_score": 78.2,
           "buy_rank": 1,
           "hold_rank": 1,
           "peer_rank": 1,
@@ -447,8 +456,8 @@
           "bid": 3.13,
           "ask": 3.131,
           "spread_bp": 3.1943778949,
-          "aum": 5811225908,
-          "aum_proxy": 5811225908,
+          "aum": 5811225908.0,
+          "aum_proxy": 5811225908.0,
           "relative_premium_pct": 0.0,
           "fund_age_days": 1841,
           "entry_cost_bp": 17.6,
@@ -483,8 +492,8 @@
           "bid": 4.85,
           "ask": 4.851,
           "spread_bp": 2.0616431296,
-          "aum": 29936221325,
-          "aum_proxy": 29936221325,
+          "aum": 29936221325.0,
+          "aum_proxy": 29936221325.0,
           "relative_premium_pct": 0.01,
           "fund_age_days": 5218,
           "entry_cost_bp": -3.97,
@@ -519,8 +528,8 @@
           "bid": 4.654,
           "ask": 4.655,
           "spread_bp": 2.148458481,
-          "aum": 107247184658,
-          "aum_proxy": 107247184658,
+          "aum": 107247184658.0,
+          "aum_proxy": 107247184658.0,
           "relative_premium_pct": 0.0,
           "fund_age_days": 5197,
           "entry_cost_bp": -4.93,
@@ -555,8 +564,8 @@
           "bid": 4.848,
           "ask": 4.85,
           "spread_bp": 4.1245617653,
-          "aum": 41390526812,
-          "aum_proxy": 41390526812,
+          "aum": 41390526812.0,
+          "aum_proxy": 41390526812.0,
           "relative_premium_pct": -0.22,
           "fund_age_days": 4986,
           "entry_cost_bp": -25.94,
@@ -591,8 +600,8 @@
           "bid": 3.163,
           "ask": 3.164,
           "spread_bp": 3.1610557926,
-          "aum": 8658845294,
-          "aum_proxy": 8658845294,
+          "aum": 8658845294.0,
+          "aum_proxy": 8658845294.0,
           "relative_premium_pct": 0.0,
           "fund_age_days": 4943,
           "entry_cost_bp": 11.58,
@@ -627,8 +636,8 @@
           "bid": 7.803,
           "ask": 7.804,
           "spread_bp": 1.2814762607,
-          "aum": 40126362966,
-          "aum_proxy": 40126362966,
+          "aum": 40126362966.0,
+          "aum_proxy": 40126362966.0,
           "relative_premium_pct": 0.14,
           "fund_age_days": 4943,
           "entry_cost_bp": 24.64,
@@ -659,12 +668,12 @@
           "market_price": 4.421,
           "iopv": 4.4282,
           "turnover": 822632669.0,
-          "units": 1782408800.0,
+          "units": 1837608800.0,
           "bid": 4.421,
           "ask": 4.423,
           "spread_bp": 4.5228403437,
-          "aum": 7880029305,
-          "aum_proxy": 7880029305,
+          "aum": 8124068505.0,
+          "aum_proxy": 8124068505.0,
           "relative_premium_pct": -0.26,
           "fund_age_days": 4125,
           "entry_cost_bp": -13.74,
@@ -699,8 +708,8 @@
           "bid": 3.36,
           "ask": 3.361,
           "spread_bp": 2.9757476566,
-          "aum": 20876270715,
-          "aum_proxy": 20876270715,
+          "aum": 20876270715.0,
+          "aum_proxy": 20876270715.0,
           "relative_premium_pct": 0.0,
           "fund_age_days": 7216,
           "entry_cost_bp": -17.51,
@@ -731,12 +740,12 @@
           "market_price": 1.761,
           "iopv": 1.7623,
           "turnover": 10889020913.0,
-          "units": 47138668288.0,
+          "units": 47030668288.0,
           "bid": 1.761,
           "ask": 1.762,
           "spread_bp": 5.6769798467,
-          "aum": 83011194855,
-          "aum_proxy": 83011194855,
+          "aum": 82821006855.0,
+          "aum_proxy": 82821006855.0,
           "relative_premium_pct": -0.03,
           "fund_age_days": 2103,
           "entry_cost_bp": -4.16,
@@ -767,12 +776,12 @@
           "market_price": 1.707,
           "iopv": 1.7071,
           "turnover": 2774409617.0,
-          "units": 23398628096.0,
+          "units": 23377628160.0,
           "bid": 1.707,
           "ask": 1.708,
           "spread_bp": 5.8565153734,
-          "aum": 39941458160,
-          "aum_proxy": 39941458160,
+          "aum": 39905611269.0,
+          "aum_proxy": 39905611269.0,
           "relative_premium_pct": 0.03,
           "fund_age_days": 2152,
           "entry_cost_bp": 1.93,
@@ -807,8 +816,8 @@
           "bid": 1.497,
           "ask": 1.498,
           "spread_bp": 6.6777963272,
-          "aum": 8729683634,
-          "aum_proxy": 8729683634,
+          "aum": 8729683634.0,
+          "aum_proxy": 8729683634.0,
           "relative_premium_pct": -0.06,
           "fund_age_days": 5124,
           "entry_cost_bp": -23.66,
@@ -843,8 +852,8 @@
           "bid": 1.508,
           "ask": 1.509,
           "spread_bp": 6.6291017567,
-          "aum": 2833902314,
-          "aum_proxy": 2833902314,
+          "aum": 2833902314.0,
+          "aum_proxy": 2833902314.0,
           "relative_premium_pct": 0.06,
           "fund_age_days": 2988,
           "entry_cost_bp": -11.69,
@@ -879,8 +888,8 @@
           "bid": 0.608,
           "ask": 0.609,
           "spread_bp": 16.4338537387,
-          "aum": 27058057007,
-          "aum_proxy": 27058057007,
+          "aum": 27058057007.0,
+          "aum_proxy": 27058057007.0,
           "relative_premium_pct": 0.0,
           "fund_age_days": 2018,
           "entry_cost_bp": -6.78,
@@ -911,12 +920,12 @@
           "market_price": 0.582,
           "iopv": 0.5829,
           "turnover": 2110625556.0,
-          "units": 56116347136.0,
+          "units": 55861347072.0,
           "bid": 0.581,
           "ask": 0.582,
           "spread_bp": 17.1969045572,
-          "aum": 32659714033,
-          "aum_proxy": 32659714033,
+          "aum": 32511303996.0,
+          "aum_proxy": 32511303996.0,
           "relative_premium_pct": 0.0,
           "fund_age_days": 1914,
           "entry_cost_bp": -6.4,
@@ -947,12 +956,12 @@
           "market_price": 0.59,
           "iopv": 0.5913,
           "turnover": 1960628354.0,
-          "units": 69686759424.0,
+          "units": 69688758272.0,
           "bid": 0.589,
           "ask": 0.59,
           "spread_bp": 16.9635284139,
-          "aum": 41115188060,
-          "aum_proxy": 41115188060,
+          "aum": 41116367380.0,
+          "aum_proxy": 41116367380.0,
           "relative_premium_pct": -0.07,
           "fund_age_days": 1926,
           "entry_cost_bp": -13.52,
@@ -987,8 +996,8 @@
           "bid": 1.638,
           "ask": 1.639,
           "spread_bp": 6.1031431187,
-          "aum": 36923408783,
-          "aum_proxy": 36923408783,
+          "aum": 36923408783.0,
+          "aum_proxy": 36923408783.0,
           "relative_premium_pct": 0.0,
           "fund_age_days": 4220,
           "entry_cost_bp": 966.05,
@@ -1023,8 +1032,8 @@
           "bid": 2.2,
           "ask": 2.201,
           "spread_bp": 4.5444217223,
-          "aum": 20823243162,
-          "aum_proxy": 20823243162,
+          "aum": 20823243162.0,
+          "aum_proxy": 20823243162.0,
           "relative_premium_pct": 0.58,
           "fund_age_days": 4845,
           "entry_cost_bp": 1023.27,
@@ -1059,8 +1068,8 @@
           "bid": 2.668,
           "ask": 2.669,
           "spread_bp": 3.7474236462,
-          "aum": 14134146006,
-          "aum_proxy": 14134146006,
+          "aum": 14134146006.0,
+          "aum_proxy": 14134146006.0,
           "relative_premium_pct": -1.81,
           "fund_age_days": 2351,
           "entry_cost_bp": 783.87,
@@ -1095,8 +1104,8 @@
           "bid": 4.713,
           "ask": 4.714,
           "spread_bp": 2.1215657155,
-          "aum": 11284934489,
-          "aum_proxy": 11284934489,
+          "aum": 11284934489.0,
+          "aum_proxy": 11284934489.0,
           "relative_premium_pct": 4.1,
           "fund_age_days": 653,
           "entry_cost_bp": 1112.06,
@@ -1131,8 +1140,8 @@
           "bid": 2.642,
           "ask": 2.643,
           "spread_bp": 3.784295175,
-          "aum": 26751937329,
-          "aum_proxy": 26751937329,
+          "aum": 26751937329.0,
+          "aum_proxy": 26751937329.0,
           "relative_premium_pct": 0.0,
           "fund_age_days": 4641,
           "entry_cost_bp": 702.89,
@@ -1167,8 +1176,8 @@
           "bid": 1.986,
           "ask": 1.987,
           "spread_bp": 5.0339793607,
-          "aum": 8626655756,
-          "aum_proxy": 8626655756,
+          "aum": 8626655756.0,
+          "aum_proxy": 8626655756.0,
           "relative_premium_pct": -1.45,
           "fund_age_days": 2267,
           "entry_cost_bp": 558.52,
@@ -1185,187 +1194,371 @@
       "premium_history": [
         {
           "date": "2026-08-19",
+          "fund_id": "159845",
           "ticker": "159845",
           "premium_pct": 0.32,
           "spread_bp": 3.1923383879,
-          "market_price": 3.132,
-          "fund_id": "159845"
+          "market_price": 3.132
+        },
+        {
+          "date": "2026-08-20",
+          "fund_id": "159845",
+          "ticker": "159845",
+          "premium_pct": 0.32,
+          "spread_bp": 3.1923383879,
+          "market_price": 3.132
         },
         {
           "date": "2026-08-19",
+          "fund_id": "159919",
           "ticker": "159919",
           "premium_pct": -0.05,
           "spread_bp": 2.0616431296,
-          "market_price": 4.85,
-          "fund_id": "159919"
+          "market_price": 4.85
+        },
+        {
+          "date": "2026-08-20",
+          "fund_id": "159919",
+          "ticker": "159919",
+          "premium_pct": -0.05,
+          "spread_bp": 2.0616431296,
+          "market_price": 4.85
         },
         {
           "date": "2026-08-19",
+          "fund_id": "159920",
           "ticker": "159920",
           "premium_pct": -0.27,
           "spread_bp": 6.6777963272,
-          "market_price": 1.498,
-          "fund_id": "159920"
+          "market_price": 1.498
+        },
+        {
+          "date": "2026-08-20",
+          "fund_id": "159920",
+          "ticker": "159920",
+          "premium_pct": -0.27,
+          "spread_bp": 6.6777963272,
+          "market_price": 1.498
         },
         {
           "date": "2026-08-19",
+          "fund_id": "159922",
           "ticker": "159922",
           "premium_pct": 0.1,
           "spread_bp": 3.1610557926,
-          "market_price": 3.164,
-          "fund_id": "159922"
+          "market_price": 3.164
+        },
+        {
+          "date": "2026-08-20",
+          "fund_id": "159922",
+          "ticker": "159922",
+          "premium_pct": 0.1,
+          "spread_bp": 3.1610557926,
+          "market_price": 3.164
         },
         {
           "date": "2026-08-19",
+          "fund_id": "159941",
           "ticker": "159941",
           "premium_pct": 9.63,
           "spread_bp": 6.1031431187,
-          "market_price": 1.639,
-          "fund_id": "159941"
+          "market_price": 1.639
+        },
+        {
+          "date": "2026-08-20",
+          "fund_id": "159941",
+          "ticker": "159941",
+          "premium_pct": 9.63,
+          "spread_bp": 6.1031431187,
+          "market_price": 1.639
         },
         {
           "date": "2026-08-19",
+          "fund_id": "510300",
           "ticker": "510300",
           "premium_pct": -0.06,
           "spread_bp": 2.148458481,
-          "market_price": 4.654,
-          "fund_id": "510300"
+          "market_price": 4.654
+        },
+        {
+          "date": "2026-08-20",
+          "fund_id": "510300",
+          "ticker": "510300",
+          "premium_pct": -0.06,
+          "spread_bp": 2.148458481,
+          "market_price": 4.654
         },
         {
           "date": "2026-08-19",
+          "fund_id": "510330",
           "ticker": "510330",
           "premium_pct": -0.28,
           "spread_bp": 4.1245617653,
-          "market_price": 4.848,
-          "fund_id": "510330"
+          "market_price": 4.848
+        },
+        {
+          "date": "2026-08-20",
+          "fund_id": "510330",
+          "ticker": "510330",
+          "premium_pct": -0.28,
+          "spread_bp": 4.1245617653,
+          "market_price": 4.848
         },
         {
           "date": "2026-08-19",
+          "fund_id": "510500",
           "ticker": "510500",
           "premium_pct": 0.24,
           "spread_bp": 1.2814762607,
-          "market_price": 7.804,
-          "fund_id": "510500"
+          "market_price": 7.804
+        },
+        {
+          "date": "2026-08-20",
+          "fund_id": "510500",
+          "ticker": "510500",
+          "premium_pct": 0.24,
+          "spread_bp": 1.2814762607,
+          "market_price": 7.804
         },
         {
           "date": "2026-08-19",
+          "fund_id": "510880",
           "ticker": "510880",
           "premium_pct": -0.19,
           "spread_bp": 2.9757476566,
-          "market_price": 3.36,
-          "fund_id": "510880"
+          "market_price": 3.36
+        },
+        {
+          "date": "2026-08-20",
+          "fund_id": "510880",
+          "ticker": "510880",
+          "premium_pct": -0.19,
+          "spread_bp": 2.9757476566,
+          "market_price": 3.36
         },
         {
           "date": "2026-08-19",
+          "fund_id": "512100",
           "ticker": "512100",
           "premium_pct": 0.16,
           "spread_bp": 3.2803017878,
-          "market_price": 3.048,
-          "fund_id": "512100"
+          "market_price": 3.048
+        },
+        {
+          "date": "2026-08-20",
+          "fund_id": "512100",
+          "ticker": "512100",
+          "premium_pct": 0.16,
+          "spread_bp": 3.2803017878,
+          "market_price": 3.048
         },
         {
           "date": "2026-08-19",
+          "fund_id": "512500",
           "ticker": "512500",
           "premium_pct": -0.16,
           "spread_bp": 4.5228403437,
-          "market_price": 4.421,
-          "fund_id": "512500"
+          "market_price": 4.421
+        },
+        {
+          "date": "2026-08-20",
+          "fund_id": "512500",
+          "ticker": "512500",
+          "premium_pct": -0.16,
+          "spread_bp": 4.5228403437,
+          "market_price": 4.421
         },
         {
           "date": "2026-08-19",
+          "fund_id": "513010",
           "ticker": "513010",
           "premium_pct": -0.15,
           "spread_bp": 16.4338537387,
-          "market_price": 0.609,
-          "fund_id": "513010"
+          "market_price": 0.609
+        },
+        {
+          "date": "2026-08-20",
+          "fund_id": "513010",
+          "ticker": "513010",
+          "premium_pct": -0.15,
+          "spread_bp": 16.4338537387,
+          "market_price": 0.609
         },
         {
           "date": "2026-08-19",
+          "fund_id": "513100",
           "ticker": "513100",
           "premium_pct": 10.21,
           "spread_bp": 4.5444217223,
-          "market_price": 2.2,
-          "fund_id": "513100"
+          "market_price": 2.2
+        },
+        {
+          "date": "2026-08-20",
+          "fund_id": "513100",
+          "ticker": "513100",
+          "premium_pct": 10.21,
+          "spread_bp": 4.5444217223,
+          "market_price": 2.2
         },
         {
           "date": "2026-08-19",
+          "fund_id": "513130",
           "ticker": "513130",
           "premium_pct": -0.15,
           "spread_bp": 17.1969045572,
-          "market_price": 0.582,
-          "fund_id": "513130"
+          "market_price": 0.582
+        },
+        {
+          "date": "2026-08-20",
+          "fund_id": "513130",
+          "ticker": "513130",
+          "premium_pct": -0.15,
+          "spread_bp": 17.1969045572,
+          "market_price": 0.582
         },
         {
           "date": "2026-08-19",
+          "fund_id": "513180",
           "ticker": "513180",
           "premium_pct": -0.22,
           "spread_bp": 16.9635284139,
-          "market_price": 0.59,
-          "fund_id": "513180"
+          "market_price": 0.59
+        },
+        {
+          "date": "2026-08-20",
+          "fund_id": "513180",
+          "ticker": "513180",
+          "premium_pct": -0.22,
+          "spread_bp": 16.9635284139,
+          "market_price": 0.59
         },
         {
           "date": "2026-08-19",
+          "fund_id": "513300",
           "ticker": "513300",
           "premium_pct": 7.82,
           "spread_bp": 3.7474236462,
-          "market_price": 2.669,
-          "fund_id": "513300"
+          "market_price": 2.669
+        },
+        {
+          "date": "2026-08-20",
+          "fund_id": "513300",
+          "ticker": "513300",
+          "premium_pct": 7.82,
+          "spread_bp": 3.7474236462,
+          "market_price": 2.669
         },
         {
           "date": "2026-08-19",
+          "fund_id": "513310",
           "ticker": "513310",
           "premium_pct": 11.11,
           "spread_bp": 2.1215657155,
-          "market_price": 4.713,
-          "fund_id": "513310"
+          "market_price": 4.713
+        },
+        {
+          "date": "2026-08-20",
+          "fund_id": "513310",
+          "ticker": "513310",
+          "premium_pct": 11.11,
+          "spread_bp": 2.1215657155,
+          "market_price": 4.713
         },
         {
           "date": "2026-08-19",
+          "fund_id": "513500",
           "ticker": "513500",
           "premium_pct": 7.01,
           "spread_bp": 3.784295175,
-          "market_price": 2.642,
-          "fund_id": "513500"
+          "market_price": 2.642
+        },
+        {
+          "date": "2026-08-20",
+          "fund_id": "513500",
+          "ticker": "513500",
+          "premium_pct": 7.01,
+          "spread_bp": 3.784295175,
+          "market_price": 2.642
         },
         {
           "date": "2026-08-19",
+          "fund_id": "513650",
           "ticker": "513650",
           "premium_pct": 5.56,
           "spread_bp": 5.0339793607,
-          "market_price": 1.986,
-          "fund_id": "513650"
+          "market_price": 1.986
+        },
+        {
+          "date": "2026-08-20",
+          "fund_id": "513650",
+          "ticker": "513650",
+          "premium_pct": 5.56,
+          "spread_bp": 5.0339793607,
+          "market_price": 1.986
         },
         {
           "date": "2026-08-19",
+          "fund_id": "513660",
           "ticker": "513660",
           "premium_pct": -0.15,
           "spread_bp": 6.6291017567,
-          "market_price": 1.509,
-          "fund_id": "513660"
+          "market_price": 1.509
+        },
+        {
+          "date": "2026-08-20",
+          "fund_id": "513660",
+          "ticker": "513660",
+          "premium_pct": -0.15,
+          "spread_bp": 6.6291017567,
+          "market_price": 1.509
         },
         {
           "date": "2026-08-19",
+          "fund_id": "560010",
           "ticker": "560010",
           "premium_pct": 0.16,
           "spread_bp": 3.1943778949,
-          "market_price": 3.13,
-          "fund_id": "560010"
+          "market_price": 3.13
+        },
+        {
+          "date": "2026-08-20",
+          "fund_id": "560010",
+          "ticker": "560010",
+          "premium_pct": 0.16,
+          "spread_bp": 3.1943778949,
+          "market_price": 3.13
         },
         {
           "date": "2026-08-19",
+          "fund_id": "588000",
           "ticker": "588000",
           "premium_pct": -0.07,
           "spread_bp": 5.6769798467,
-          "market_price": 1.761,
-          "fund_id": "588000"
+          "market_price": 1.761
+        },
+        {
+          "date": "2026-08-20",
+          "fund_id": "588000",
+          "ticker": "588000",
+          "premium_pct": -0.07,
+          "spread_bp": 5.6769798467,
+          "market_price": 1.761
         },
         {
           "date": "2026-08-19",
+          "fund_id": "588080",
           "ticker": "588080",
           "premium_pct": -0.01,
           "spread_bp": 5.8565153734,
-          "market_price": 1.707,
-          "fund_id": "588080"
+          "market_price": 1.707
+        },
+        {
+          "date": "2026-08-20",
+          "fund_id": "588080",
+          "ticker": "588080",
+          "premium_pct": -0.01,
+          "spread_bp": 5.8565153734,
+          "market_price": 1.707
         }
       ],
       "etf_price_daily_tail": [
@@ -92835,11 +93028,11 @@
           "date": "2026-08-19",
           "exposure_id": "ndx",
           "index_id": "NDX",
-          "close": 29455.779296875,
+          "close": 29426.0234375,
           "open": 29580.8515625,
           "high": 29652.294921875,
           "low": 29288.75390625,
-          "volume": 677290706
+          "volume": 1270711000
         },
         {
           "date": "2026-08-19",
@@ -92865,17 +93058,17 @@
           "date": "2026-08-19",
           "exposure_id": "sp500",
           "index_id": "SPX",
-          "close": 7717.669921875,
+          "close": 7707.9799804688,
           "open": 7716.740234375,
           "high": 7743.9301757812,
           "low": 7700.0698242188,
-          "volume": 1452295000
+          "volume": 2981221000
         }
       ],
       "kpi_market": [
         {
           "csi300_rsi": 42.89756023816748,
-          "sp500_rsi": 58.08966896708785,
+          "sp500_rsi": 57.40239616906633,
           "small_large_z": 1.6576,
           "observation_date": "2026-08-19"
         }
@@ -92884,7 +93077,7 @@
         {
           "source": "Eastmoney ETF spot (premium / turnover / IOPV)",
           "status": "Healthy",
-          "latest_observation": "run 2026-08-19 17:16Z",
+          "latest_observation": "run 2026-08-19 23:44Z",
           "records": 23,
           "notes": "Eastmoney ETF spot: all 23 / 23 wrappers observed."
         },
@@ -92892,15 +93085,15 @@
           "source": "Sina index daily (CN/HK)",
           "status": "Healthy",
           "latest_observation": "2026-08-19",
-          "records": 3901,
-          "notes": "Daily OHLCV for all 8 Sina-owned exposures (CN/HK)."
+          "records": 3400,
+          "notes": "Daily OHLCV for all 7 Sina-owned exposures (CN/HK)."
         },
         {
-          "source": "Yahoo Finance (US indexes: S&P 500, Nasdaq 100)",
+          "source": "Yahoo Finance (Nasdaq 100, S&P 500)",
           "status": "Healthy",
           "latest_observation": "2026-08-19",
-          "records": 501,
-          "notes": "US session history for the S&P 500 exposure."
+          "records": 1002,
+          "notes": "US session history for 2 of 2 Yahoo-served exposures."
         }
       ]
     }
@@ -92932,9 +93125,9 @@
     }
   ],
   "package_info": {
-    "snapshotId": "adf50cb35ba5f8e9",
+    "snapshotId": "e050a4d58b782cea",
     "dataAsOf": "2026-08-19",
-    "pipelineRunId": "20260819T171605-a9500541",
+    "pipelineRunId": "20260819T234437-ad03b188",
     "runConsistent": true
   }
 }

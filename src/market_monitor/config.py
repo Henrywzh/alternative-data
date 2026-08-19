@@ -28,9 +28,18 @@ FUND_ID = "fund_id"
 # ``risk_character`` is a *structural* label (core / cyclical-ish / ...).
 # The dynamic regime (what is actually leading now) is computed from market
 # data in relative_strength, never hard-coded here.
+#
+# ``price_source`` names the provider that serves this index, and is the single
+# place that says so: the pipeline routes its fetch on it and the dashboard
+# attributes source health with it. Both used to encode "everything except
+# sp500 comes from Sina", so adding Nasdaq 100 on yfinance credited Sina with
+# 501 rows of an index it does not serve -- the same mistake cd09fd40 fixed for
+# S&P 500, re-made by the next US index. A per-exposure declaration cannot
+# drift that way: a new index has to state where it comes from.
 EXPOSURES = (
     {
         "exposure_id": "csi300",
+        "price_source": "sina",
         "label": "CSI 300",
         "label_zh": "沪深300",
         "region": "China",
@@ -41,6 +50,7 @@ EXPOSURES = (
     },
     {
         "exposure_id": "csi500",
+        "price_source": "sina",
         "label": "CSI 500",
         "label_zh": "中证500",
         "region": "China",
@@ -51,6 +61,7 @@ EXPOSURES = (
     },
     {
         "exposure_id": "csi1000",
+        "price_source": "sina",
         "label": "CSI 1000",
         "label_zh": "中证1000",
         "region": "China",
@@ -61,6 +72,7 @@ EXPOSURES = (
     },
     {
         "exposure_id": "dividend",
+        "price_source": "sina",
         "label": "SSE Dividend",
         "label_zh": "上证红利",
         "region": "China",
@@ -73,6 +85,7 @@ EXPOSURES = (
     },
     {
         "exposure_id": "growth",
+        "price_source": "sina",
         "label": "STAR 50",
         "label_zh": "科创50",
         "region": "China",
@@ -83,6 +96,7 @@ EXPOSURES = (
     },
     {
         "exposure_id": "hstech",
+        "price_source": "sina",
         "label": "Hang Seng Tech",
         "label_zh": "恒生科技",
         "region": "HK / China",
@@ -93,6 +107,7 @@ EXPOSURES = (
     },
     {
         "exposure_id": "hsi",
+        "price_source": "sina",
         "label": "Hang Seng Index",
         "label_zh": "恒生指数",
         "region": "HK",
@@ -103,6 +118,7 @@ EXPOSURES = (
     },
     {
         "exposure_id": "ndx",
+        "price_source": "yfinance",
         "label": "Nasdaq 100",
         "label_zh": "纳斯达克100",
         "region": "US",
@@ -113,6 +129,7 @@ EXPOSURES = (
     },
     {
         "exposure_id": "sp500",
+        "price_source": "yfinance",
         "label": "S&P 500",
         "label_zh": "标普500",
         "region": "US",
@@ -129,3 +146,8 @@ def exposure_by_id(exposure_id: str) -> dict:
         if spec["exposure_id"] == exposure_id:
             return spec
     raise KeyError(f"unknown exposure_id: {exposure_id}")
+
+
+def exposures_by_price_source(source: str) -> tuple[str, ...]:
+    """Exposure ids served by one provider, for routing and source health."""
+    return tuple(spec["exposure_id"] for spec in EXPOSURES if spec["price_source"] == source)
