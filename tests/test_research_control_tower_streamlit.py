@@ -1312,7 +1312,16 @@ def test_task7_real_generation_acceptance_covers_registry_company_and_source_mat
     assert tuple(company.consensus.columns) == COMPANY_CONSENSUS_COLUMNS
     assert tuple(company.consensus_revisions.columns) == COMPANY_REVISION_COLUMNS
     provider_ids = {value.casefold() for value in company.source_health["source_id"].astype("string")}
-    assert {"provider:yfinance", "provider:akshare", "provider:fnguide", "provider:futu"} <= provider_ids
+    # Every Task 3 provider must be represented, but not always under the same
+    # id: the page synthesises "provider:<name>" only when the build supplied
+    # no health row of its own. Once real consensus rows exist for a provider
+    # the build emits "consensus:<name>", which is the better record -- the
+    # synthetic placeholder is deliberately skipped. Assert the coverage, not
+    # which of the two spellings a provider currently has.
+    for provider in ("yfinance", "akshare", "fnguide", "futu"):
+        assert {f"provider:{provider}", f"consensus:{provider}"} & provider_ids, (
+            f"{provider} has no source-health row under either id form"
+        )
     provider_statuses = company.source_health.loc[
         company.source_health["source_id"].astype("string").str.startswith("provider:")
     ]

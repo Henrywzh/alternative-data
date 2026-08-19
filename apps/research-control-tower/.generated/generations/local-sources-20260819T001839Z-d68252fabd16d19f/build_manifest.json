@@ -25,7 +25,7 @@
       "status": "available"
     },
     "build_manifest.json": {
-      "byte_size": 13899,
+      "byte_size": 14485,
       "name": "build_manifest.json",
       "relative_path": "build_manifest.json",
       "row_count": 1,
@@ -35,28 +35,32 @@
       "status": "available"
     },
     "consensus_revisions.parquet": {
-      "byte_size": 17364,
+      "byte_size": 36604,
       "name": "consensus_revisions.parquet",
       "relative_path": "consensus_revisions.parquet",
-      "row_count": 0,
+      "row_count": 112,
       "schema_version": "control_tower_marts_v1",
-      "sha256": "965116bd3808fa8f54c75ce1c628d1f16e3490dc242bddf00dab69c933110238",
+      "sha256": "be577c43604db844a49862622121641576558eb31323b2bcf630e9b5710a288d",
       "source_ids": [
+        "consensus:akshare",
+        "consensus:yfinance",
         "consensus_export"
       ],
-      "status": "unavailable"
+      "status": "available"
     },
     "consensus_snapshots.parquet": {
-      "byte_size": 13958,
+      "byte_size": 30795,
       "name": "consensus_snapshots.parquet",
       "relative_path": "consensus_snapshots.parquet",
-      "row_count": 0,
+      "row_count": 71,
       "schema_version": "control_tower_marts_v1",
-      "sha256": "a45be090040b1c9b28bf0e29db7810f10ce2bd3b600271dab97337fd973cfcba",
+      "sha256": "f4764f09d93929d3db6873e9e665f29bc4d8c0660563d412504c90e89e56d923",
       "source_ids": [
+        "consensus:akshare",
+        "consensus:yfinance",
         "consensus_export"
       ],
-      "status": "unavailable"
+      "status": "available"
     },
     "earnings_actuals.parquet": {
       "byte_size": 22264,
@@ -224,25 +228,27 @@
       "status": "available"
     },
     "quote_snapshots.parquet": {
-      "byte_size": 12336,
+      "byte_size": 12343,
       "name": "quote_snapshots.parquet",
       "relative_path": "quote_snapshots.parquet",
       "row_count": 7,
       "schema_version": "control_tower_marts_v1",
-      "sha256": "76d486d3f3149ec38a1e93b354f6093b6384b5a4c52f8d2b022c060128e57ffe",
+      "sha256": "cf2678dda68ad2c75bb4abe79de157f2e7b51060bbb6b1dfb5e28a3cfb15f90a",
       "source_ids": [
         "quote_snapshots"
       ],
       "status": "degraded"
     },
     "source_health.parquet": {
-      "byte_size": 20331,
+      "byte_size": 21047,
       "name": "source_health.parquet",
       "relative_path": "source_health.parquet",
-      "row_count": 29,
+      "row_count": 31,
       "schema_version": "control_tower_marts_v1",
-      "sha256": "2849e6ddb83db455fdb2191974da03bfa02a73924161b4d744e1f09325e8c5df",
+      "sha256": "1de6c05ff0af6d412516887a42c10395a5bb79df8974c0d81fd237b5c9da1526",
       "source_ids": [
+        "consensus:akshare",
+        "consensus:yfinance",
         "consensus_export",
         "earnings:bytedance",
         "earnings:hkex_issuer_ir",
@@ -276,19 +282,18 @@
       "status": "available"
     }
   },
-  "as_of_utc": "2026-08-18T16:32:10.414522Z",
-  "build_id": "local-sources-20260818T163210Z",
-  "built_at_utc": "2026-08-18T16:32:10.414522Z",
-  "current_pointer": "generations/local-sources-20260818T163210Z-dc02e0603a8f566b",
+  "as_of_utc": "2026-08-19T00:18:39.258646Z",
+  "build_id": "local-sources-20260819T001839Z",
+  "built_at_utc": "2026-08-19T00:18:39.258646Z",
+  "current_pointer": "generations/local-sources-20260819T001839Z-d68252fabd16d19f",
   "degraded_inputs": [
-    "consensus_export",
     "ecb_fx_rates",
     "news_official_ai_rss",
     "ofr_timeseries",
     "quote_snapshots",
     "tw_monthly_revenue"
   ],
-  "generation_id": "local-sources-20260818T163210Z-dc02e0603a8f566b",
+  "generation_id": "local-sources-20260819T001839Z-d68252fabd16d19f",
   "input_fingerprints": {
     "/Users/henrywzh/Quant/alternative-data/config/research_control_tower/basket_memberships.csv": "f1adc3b73ae41e243824bfc607a8a9042a436d3e17b31879ce1a4aed0ae98768",
     "/Users/henrywzh/Quant/alternative-data/config/research_control_tower/baskets.csv": "e139d1c2b4003e23fe418c3ac3ee717c23ae6378754e8e93c9e60a5b9ba33e7d",
@@ -298,48 +303,45 @@
     "/Users/henrywzh/Quant/alternative-data/config/research_control_tower/events.csv": "c2e9f7965d55b62ce6cecff6167f381c564fd31ae71eedc76ef6d8dcf15a8693",
     "/Users/henrywzh/Quant/alternative-data/config/research_control_tower/indices.csv": "f8a16664344cf1d1a541a334d5879079b9b6407c1bec729802ec4f81ba486357",
     "/Users/henrywzh/Quant/alternative-data/config/research_control_tower/listings.csv": "476e989b710c03d6affa62e5bf2812c259294957b80be1e1ba8829d7a774b90b",
+    "/Users/henrywzh/Quant/alternative-data/data/normalized/research_control_tower/consensus/control_tower_consensus_revisions.parquet": "ce2dc2ffd3c82b7d8db3ac1633316832d3b34456e77d92c78700c46f5d0a0c22",
+    "/Users/henrywzh/Quant/alternative-data/data/normalized/research_control_tower/consensus/control_tower_consensus_snapshots.parquet": "83d8a0b44ac0b867abf80e4680afa3517e01f4420e32040c772e4abeeb461a80",
+    "/Users/henrywzh/Quant/alternative-data/data/normalized/research_control_tower/consensus/control_tower_consensus_source_health.parquet": "89c3d2feaf576afd2eed3b9165a9be163c8307746cdff8fec734a50277939e35",
     "/Users/henrywzh/Quant/alternative-data/data/normalized/research_control_tower/quote_snapshots_v1.status.json": "99d7adee221321f62b6bc4de880b0547c7ca908a2a51e33c2598764b35aea178"
   },
   "network_policy": "forbidden",
-  "previous_build_at": "2026-08-18T16:28:55.750071Z",
+  "previous_build_at": "2026-08-19T00:17:16.800751Z",
   "schema_version": "control_tower_marts_v1",
   "source_health_summary": {
-    "available": 18,
+    "available": 21,
     "degraded": 4,
     "no_records": 2,
     "not_applicable": 2,
     "partial": 1,
-    "unavailable": 2
+    "unavailable": 1
   },
   "status": "degraded",
   "validation_errors": [
     {
       "code": "stale_source",
-      "message": "latest=2026-07-17T00:00:00Z;cutoff=2026-07-19T16:32:10.414522Z;threshold=30 days 00:00:00",
+      "message": "latest=2026-07-17T00:00:00Z;cutoff=2026-07-20T00:18:39.258646Z;threshold=30 days 00:00:00",
       "severity": "warning",
       "source_id": "ofr_timeseries"
     },
     {
       "code": "stale_source",
-      "message": "latest=2026-06-01T00:00:00Z;cutoff=2026-06-17T16:32:10.414522Z;threshold=62 days 00:00:00",
+      "message": "latest=2026-06-01T00:00:00Z;cutoff=2026-06-18T00:18:39.258646Z;threshold=62 days 00:00:00",
       "severity": "warning",
       "source_id": "tw_monthly_revenue"
     },
     {
       "code": "stale_source",
-      "message": "latest=2026-08-07T00:00:00Z;cutoff=2026-08-11T16:32:10.414522Z;threshold=7 days 00:00:00",
+      "message": "latest=2026-08-07T00:00:00Z;cutoff=2026-08-12T00:18:39.258646Z;threshold=7 days 00:00:00",
       "severity": "warning",
       "source_id": "ecb_fx_rates"
     },
     {
-      "code": "optional_source_unavailable",
-      "message": "optional_task3_export_directory_missing",
-      "severity": "warning",
-      "source_id": "consensus_export"
-    },
-    {
       "code": "stale_source",
-      "message": "latest=2026-08-18T15:36:00Z;cutoff=2026-08-18T16:27:10.414522Z;threshold=0 days 00:05:00",
+      "message": "latest=2026-08-18T19:59:00Z;cutoff=2026-08-19T00:13:39.258646Z;threshold=0 days 00:05:00",
       "severity": "warning",
       "source_id": "quote_snapshots"
     },
