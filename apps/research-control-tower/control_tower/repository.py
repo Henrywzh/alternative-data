@@ -201,6 +201,13 @@ def _expected_types(name: str) -> dict[str, str]:
             "filing_at": "timestamp", "published_at": "timestamp",
             "retrieved_at_utc": "timestamp", "is_restatement": "boolean",
         })
+    if name == "price_bars.parquet":
+        result.update({
+            "bar_date": "date",
+            "retrieved_at_utc": "timestamp",
+            "open": "float", "high": "float", "low": "float",
+            "close": "float", "adj_close": "float", "volume": "float",
+        })
     if name == "quote_snapshots.parquet":
         result.update({
             "quote_timestamp": "timestamp",
@@ -776,6 +783,7 @@ class ControlTowerRepository:
             consensus_snapshots=loaded["consensus_snapshots.parquet"],
             consensus_revisions=loaded["consensus_revisions.parquet"],
             quote_snapshots=loaded["quote_snapshots.parquet"],
+            price_bars=loaded["price_bars.parquet"],
             news_filings=loaded["news_filings.parquet"],
             official_filings=loaded["official_filings.parquet"],
             earnings_calendar=loaded["earnings_calendar.parquet"],

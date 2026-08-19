@@ -97,6 +97,12 @@ def _columns() -> dict[str, list[str]]:
             "source_id", "source_url", "pit_class", "source_license_class",
             "registry_version",
         ],
+        "price_bars.parquet": [
+            "bar_id", "listing_id", "entity_id", "canonical_ticker", "provider_symbol",
+            "interval", "bar_date", "open", "high", "low", "close", "adj_close",
+            "volume", "currency", "source_id", "source_url", "retrieved_at_utc",
+            "pit_class", "source_license_class", "registry_version",
+        ],
         "news_filings.parquet": [
             "document_id", "document_type", "source_id", "headline", "publisher", "published_at",
             "first_observed_at", "source_url", "language", "related_entity_ids", "related_listing_ids",
@@ -152,7 +158,7 @@ _DATE_COLUMNS = {
     "active_from", "active_to", "mapping_verified_at", "review_by", "observation_date",
     "estimate_period_end", "scheduled_date", "reporting_period_start",
     "reporting_period_end", "period_start", "period_end", "event_date",
-}
+ "bar_date",}
 _TIMESTAMP_COLUMNS = {
     "starts_at", "ends_at", "source_published_at", "first_observed_at", "last_verified_at", "release_at",
     "retrieved_at_utc", "snapshot_at", "provider_asof", "current_snapshot_at",
@@ -171,7 +177,7 @@ _FLOAT_COLUMNS = {
     "confidence", "value", "low_value", "high_value", "current_value", "current_dispersion", "prior_value",
     "revision_value", "revision_pct", "dispersion", "last_price", "bid", "ask",
     "day_change_pct", "volume", "reported_value", "normalized_value",
-}
+ "open", "high", "low", "close", "adj_close",}
 
 
 def _typed(frame: pd.DataFrame) -> pd.DataFrame:
@@ -316,6 +322,7 @@ def _write_bundle(root: Path, *, previous_build_at: str | None = "2026-08-13T10:
         "consensus_snapshots.parquet": _frame("consensus_snapshots.parquet", [{"snapshot_id": "S1", "provider": "fixture", "entity_id": "E1", "listing_id": "L1", "canonical_ticker": "EONE", "metric": "eps", "fiscal_period": "FY2026", "fiscal_year": 2026, "horizon": "FY", "snapshot_at": "2026-08-13T11:00:00Z", "value": 1.2, "statistic": "mean", "analyst_count": 4, "provider_contributor_count": 6, "currency": "USD", "unit": "per_share", "pit_class": "snapshot_from_live_source", "source_run_id": "run-1", "source_url": "https://example.test/consensus"}]),
         "consensus_revisions.parquet": _frame("consensus_revisions.parquet", [{"revision_id": "R1", "snapshot_id": "S1", "provider": "fixture", "entity_id": "E1", "listing_id": "L1", "canonical_ticker": "EONE", "metric": "eps", "fiscal_period": "FY2026", "fiscal_year": 2026, "horizon": "FY", "statistic": "mean", "current_snapshot_at": "2026-08-13T11:00:00Z", "current_value": 1.2, "current_analyst_count": 4, "prior_snapshot_at": "2026-08-01T11:00:00Z", "prior_value": 1.0, "prior_analyst_count": 3, "revision_value": .2, "revision_pct": .2, "currency": "USD", "unit": "per_share", "pit_class": "true_pit", "source_run_id": "run-1", "retrieved_at_utc": "2026-08-13T11:30:00Z", "alignment_status": "comparable"}]),
         "quote_snapshots.parquet": _frame("quote_snapshots.parquet", []),
+        "price_bars.parquet": _frame("price_bars.parquet", []),
         "news_filings.parquet": _frame("news_filings.parquet", [{"document_id": "D1", "document_type": "official_filing", "source_id": "source:official", "headline": "Fixture official filing", "publisher": "Fixture IR", "published_at": "2026-08-13T11:00:00Z", "first_observed_at": "2026-08-13T11:00:00Z", "source_url": "https://example.test/filing", "language": "en", "related_entity_ids": "E1", "event_class": "filing", "importance": "high", "source_quality": "official", "pit_class": "true_pit", "source_license_class": "public"}]),
         "official_filings.parquet": _frame("official_filings.parquet", [{"document_id": "SEC-1", "document_type": "filing", "event_class": "general", "source_id": "sec_edgar_submissions", "headline": "Fixture SEC filing", "publisher": "SEC EDGAR", "published_at": "2026-08-13T11:00:00Z", "accepted_at": "2026-08-13T11:00:00Z", "retrieved_at_utc": "2026-08-13T11:30:00Z", "source_url": "https://example.test/sec", "language": "en", "entity_id": "E1", "listing_id": "L1", "canonical_ticker": "EONE", "date_precision": "minute", "source_timezone": "UTC", "event_status": "observed", "source_quality": "official_metadata", "pit_class": "snapshot_from_live_source", "source_license_class": "official_public_metadata", "source_note": "fixture", "registry_version": "v1"}]),
         "earnings_calendar.parquet": _frame("earnings_calendar.parquet", [{"calendar_id": "CAL-1", "entity_id": "E1", "listing_id": "L1", "canonical_ticker": "EONE", "period_label": "FY2026", "event_type": "annual_results", "event_date": "2026-08-13", "date_precision": "day", "date_basis": "filing_date", "source_timezone": "UTC", "status": "observed", "source_id": "sec_edgar_submissions", "source_url": "https://example.test/sec", "headline": "Fixture annual results", "published_at": "2026-08-13T11:00:00Z", "retrieved_at_utc": "2026-08-13T11:30:00Z", "source_quality": "official_metadata", "pit_class": "snapshot_from_live_source", "source_license_class": "official_public_metadata", "source_note": "fixture", "registry_version": "v1"}]),

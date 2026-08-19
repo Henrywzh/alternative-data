@@ -113,6 +113,12 @@ def _columns() -> dict[str, list[str]]:
             "source_id", "source_url", "pit_class", "source_license_class",
             "registry_version",
         ],
+        "price_bars.parquet": [
+            "bar_id", "listing_id", "entity_id", "canonical_ticker", "provider_symbol",
+            "interval", "bar_date", "open", "high", "low", "close", "adj_close",
+            "volume", "currency", "source_id", "source_url", "retrieved_at_utc",
+            "pit_class", "source_license_class", "registry_version",
+        ],
         "news_filings.parquet": [
             "document_id", "document_type", "source_id", "headline", "publisher",
             "published_at", "first_observed_at", "source_url", "language",
@@ -387,6 +393,7 @@ def _write_bundle(root: Path) -> None:
         {"revision_id": "R1", "snapshot_id": "S1", "provider": "fixture", "prior_provider": "fixture", "entity_id": "E1", "listing_id": "L1", "financial_data_security_id": "SEC1", "canonical_ticker": "ONE", "metric": "eps", "fiscal_period": "FY2026", "fiscal_year": 2026, "estimate_period_end": "2026-12-31", "horizon": "FY", "statistic": "mean", "current_snapshot_at": "2026-08-13T00:00:00Z", "current_value": 1.0, "current_analyst_count": 4, "current_dispersion": 0.1, "lookback_days": 7, "cutoff_at": "2026-08-06T00:00:00Z", "prior_snapshot_id": "S0", "prior_snapshot_at": "2026-08-06T00:00:00Z", "prior_value": 0.9, "prior_provider_asof": "2026-08-05T00:00:00Z", "provider_asof": "2026-08-12T00:00:00Z", "retrieved_at_utc": "2026-08-13T00:00:00Z", "source_url": "https://example.test/consensus", "pit_class": "snapshot", "source_run_id": "run-001", "prior_analyst_count": 3, "revision_value": 0.1, "revision_pct": 0.111111, "analyst_count_change": 1, "dispersion": 0.1, "alignment_status": "aligned"},
     ])
     frames["quote_snapshots.parquet"] = _frame("quote_snapshots.parquet", [])
+    frames["price_bars.parquet"] = _frame("price_bars.parquet", [])
     frames["news_filings.parquet"] = _frame("news_filings.parquet", [])
     frames["official_filings.parquet"] = _frame("official_filings.parquet", [])
     frames["earnings_calendar.parquet"] = _frame("earnings_calendar.parquet", [])

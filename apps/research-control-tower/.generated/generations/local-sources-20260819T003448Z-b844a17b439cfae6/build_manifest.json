@@ -25,7 +25,7 @@
       "status": "available"
     },
     "build_manifest.json": {
-      "byte_size": 14485,
+      "byte_size": 14882,
       "name": "build_manifest.json",
       "relative_path": "build_manifest.json",
       "row_count": 1,
@@ -227,6 +227,18 @@
       ],
       "status": "available"
     },
+    "price_bars.parquet": {
+      "byte_size": 877756,
+      "name": "price_bars.parquet",
+      "relative_path": "price_bars.parquet",
+      "row_count": 8598,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "c5e6203ac4712def8405247857a7d938b199d96ec0f319ac2097363166fe72f9",
+      "source_ids": [
+        "price_bars"
+      ],
+      "status": "available"
+    },
     "quote_snapshots.parquet": {
       "byte_size": 12343,
       "name": "quote_snapshots.parquet",
@@ -240,12 +252,12 @@
       "status": "degraded"
     },
     "source_health.parquet": {
-      "byte_size": 21047,
+      "byte_size": 21208,
       "name": "source_health.parquet",
       "relative_path": "source_health.parquet",
-      "row_count": 31,
+      "row_count": 32,
       "schema_version": "control_tower_marts_v1",
-      "sha256": "1de6c05ff0af6d412516887a42c10395a5bb79df8974c0d81fd237b5c9da1526",
+      "sha256": "adde3c940ae8053ebf038d81be411eb9cf44d86014f0335f16c6c3b53d980076",
       "source_ids": [
         "consensus:akshare",
         "consensus:yfinance",
@@ -271,6 +283,7 @@
         "official_filings_state",
         "ofr_mnemonics",
         "ofr_timeseries",
+        "price_bars",
         "quote_snapshots",
         "registry:basket_memberships",
         "registry:baskets",
@@ -282,18 +295,19 @@
       "status": "available"
     }
   },
-  "as_of_utc": "2026-08-19T00:18:39.258646Z",
-  "build_id": "local-sources-20260819T001839Z",
-  "built_at_utc": "2026-08-19T00:18:39.258646Z",
-  "current_pointer": "generations/local-sources-20260819T001839Z-d68252fabd16d19f",
+  "as_of_utc": "2026-08-19T00:34:48.375609Z",
+  "build_id": "local-sources-20260819T003448Z",
+  "built_at_utc": "2026-08-19T00:34:48.375609Z",
+  "current_pointer": "generations/local-sources-20260819T003448Z-b844a17b439cfae6",
   "degraded_inputs": [
     "ecb_fx_rates",
     "news_official_ai_rss",
     "ofr_timeseries",
+    "price_bars",
     "quote_snapshots",
     "tw_monthly_revenue"
   ],
-  "generation_id": "local-sources-20260819T001839Z-d68252fabd16d19f",
+  "generation_id": "local-sources-20260819T003448Z-b844a17b439cfae6",
   "input_fingerprints": {
     "/Users/henrywzh/Quant/alternative-data/config/research_control_tower/basket_memberships.csv": "f1adc3b73ae41e243824bfc607a8a9042a436d3e17b31879ce1a4aed0ae98768",
     "/Users/henrywzh/Quant/alternative-data/config/research_control_tower/baskets.csv": "e139d1c2b4003e23fe418c3ac3ee717c23ae6378754e8e93c9e60a5b9ba33e7d",
@@ -309,10 +323,10 @@
     "/Users/henrywzh/Quant/alternative-data/data/normalized/research_control_tower/quote_snapshots_v1.status.json": "99d7adee221321f62b6bc4de880b0547c7ca908a2a51e33c2598764b35aea178"
   },
   "network_policy": "forbidden",
-  "previous_build_at": "2026-08-19T00:17:16.800751Z",
+  "previous_build_at": null,
   "schema_version": "control_tower_marts_v1",
   "source_health_summary": {
-    "available": 21,
+    "available": 22,
     "degraded": 4,
     "no_records": 2,
     "not_applicable": 2,
@@ -323,25 +337,25 @@
   "validation_errors": [
     {
       "code": "stale_source",
-      "message": "latest=2026-07-17T00:00:00Z;cutoff=2026-07-20T00:18:39.258646Z;threshold=30 days 00:00:00",
+      "message": "latest=2026-07-17T00:00:00Z;cutoff=2026-07-20T00:34:48.375609Z;threshold=30 days 00:00:00",
       "severity": "warning",
       "source_id": "ofr_timeseries"
     },
     {
       "code": "stale_source",
-      "message": "latest=2026-06-01T00:00:00Z;cutoff=2026-06-18T00:18:39.258646Z;threshold=62 days 00:00:00",
+      "message": "latest=2026-06-01T00:00:00Z;cutoff=2026-06-18T00:34:48.375609Z;threshold=62 days 00:00:00",
       "severity": "warning",
       "source_id": "tw_monthly_revenue"
     },
     {
       "code": "stale_source",
-      "message": "latest=2026-08-07T00:00:00Z;cutoff=2026-08-12T00:18:39.258646Z;threshold=7 days 00:00:00",
+      "message": "latest=2026-08-07T00:00:00Z;cutoff=2026-08-12T00:34:48.375609Z;threshold=7 days 00:00:00",
       "severity": "warning",
       "source_id": "ecb_fx_rates"
     },
     {
       "code": "stale_source",
-      "message": "latest=2026-08-18T19:59:00Z;cutoff=2026-08-19T00:13:39.258646Z;threshold=0 days 00:05:00",
+      "message": "latest=2026-08-18T19:59:00Z;cutoff=2026-08-19T00:29:48.375609Z;threshold=0 days 00:05:00",
       "severity": "warning",
       "source_id": "quote_snapshots"
     },

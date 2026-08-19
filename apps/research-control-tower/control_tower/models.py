@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Literal, Mapping
 
@@ -77,6 +77,10 @@ class ControlTowerSnapshot:
     built_at_utc: pd.Timestamp
     as_of_utc: pd.Timestamp
     previous_build_at: pd.Timestamp | None
+    # Optional artifact, defaulted so that adding it to the contract does not
+    # force every existing construction site to supply one. An empty frame is
+    # the honest value when a bundle predates the price-bar mart.
+    price_bars: pd.DataFrame = field(default_factory=pd.DataFrame)
 
     @property
     def now_utc(self) -> pd.Timestamp:

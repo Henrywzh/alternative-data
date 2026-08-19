@@ -420,6 +420,7 @@ def test_build_writes_stable_artifact_set(tmp_path, minimal_inputs):
         "consensus_snapshots.parquet",
         "consensus_revisions.parquet",
         "quote_snapshots.parquet",
+        "price_bars.parquet",
         "news_filings.parquet",
         "official_filings.parquet",
         "earnings_calendar.parquet",
