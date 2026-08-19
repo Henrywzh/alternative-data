@@ -6,7 +6,7 @@
     "title": "HK Transport & Aviation Sector Monitor",
     "description": "MTR Corporation monthly rail patronage, CAD HKIA airport traffic, Cathay Pacific Group operating statistics, China listed-airline operating data, TD public-transport and private-car series, C&SD cross-boundary movements, EV registrations and metered-space parking occupancy.",
     "sector": "hk-transport",
-    "generatedAt": "2026-08-09T16:08:45.177300Z",
+    "generatedAt": "2026-08-19T07:06:54.351708Z",
     "cards": [
       {
         "id": "mtr_card",
@@ -2025,7 +2025,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-09T16:08:45.177300Z",
+    "generatedAt": "2026-08-19T07:06:54.351708Z",
     "status": "ready",
     "datasets": {
       "kpi_mtr": [
@@ -7945,196 +7945,6 @@
           "cathay_freighter_flight_sectors": null
         },
         {
-          "date": "2020-05-01 00:00:00",
-          "month": "2020-05",
-          "hkia_passengers": 37423.0,
-          "hkia_aircraft_movements": 11363.0,
-          "hkia_freight_tonnes": 374433.0,
-          "cathay_passengers": 18473.0,
-          "cathay_rpk_thousands": 100133.0,
-          "cathay_ask_thousands": 338027.0,
-          "cathay_passenger_load_factor_pct": 29.6,
-          "cathay_cargo_tonnes": 98710.0,
-          "cathay_aftk_thousands": 913775.0,
-          "cathay_rftk_thousands": 666880.0,
-          "cathay_cargo_load_factor_pct": 73.0,
-          "cathay_atk_thousands": 945929.0,
-          "cathay_flight_sectors": 1432.0,
-          "cathay_passenger_flight_sectors": null,
-          "cathay_freighter_flight_sectors": null
-        },
-        {
-          "date": "2020-06-01 00:00:00",
-          "month": "2020-06",
-          "hkia_passengers": 59199.0,
-          "hkia_aircraft_movements": 9963.0,
-          "hkia_freight_tonnes": 354367.0,
-          "cathay_passengers": 27106.0,
-          "cathay_rpk_thousands": 145713.0,
-          "cathay_ask_thousands": 533147.0,
-          "cathay_passenger_load_factor_pct": 27.3,
-          "cathay_cargo_tonnes": 93228.0,
-          "cathay_aftk_thousands": 799987.0,
-          "cathay_rftk_thousands": 596037.0,
-          "cathay_cargo_load_factor_pct": 74.5,
-          "cathay_atk_thousands": 850713.0,
-          "cathay_flight_sectors": 1110.0,
-          "cathay_passenger_flight_sectors": null,
-          "cathay_freighter_flight_sectors": null
-        },
-        {
-          "date": "2020-07-01 00:00:00",
-          "month": "2020-07",
-          "hkia_passengers": 96028.0,
-          "hkia_aircraft_movements": 9873.0,
-          "hkia_freight_tonnes": 369477.0,
-          "cathay_passengers": 42984.0,
-          "cathay_rpk_thousands": 242927.0,
-          "cathay_ask_thousands": 1036254.0,
-          "cathay_passenger_load_factor_pct": 23.4,
-          "cathay_cargo_tonnes": 102129.0,
-          "cathay_aftk_thousands": 837080.0,
-          "cathay_rftk_thousands": 634779.0,
-          "cathay_cargo_load_factor_pct": 75.8,
-          "cathay_atk_thousands": 935735.0,
-          "cathay_flight_sectors": 1140.0,
-          "cathay_passenger_flight_sectors": null,
-          "cathay_freighter_flight_sectors": null
-        },
-        {
-          "date": "2020-08-01 00:00:00",
-          "month": "2020-08",
-          "hkia_passengers": 83807.0,
-          "hkia_aircraft_movements": 10005.0,
-          "hkia_freight_tonnes": 368087.0,
-          "cathay_passengers": 35773.0,
-          "cathay_rpk_thousands": 222544.0,
-          "cathay_ask_thousands": 1119756.0,
-          "cathay_passenger_load_factor_pct": 19.9,
-          "cathay_cargo_tonnes": 102122.0,
-          "cathay_aftk_thousands": 859880.0,
-          "cathay_rftk_thousands": 645048.0,
-          "cathay_cargo_load_factor_pct": 75.0,
-          "cathay_atk_thousands": 966438.0,
-          "cathay_flight_sectors": 1157.0,
-          "cathay_passenger_flight_sectors": null,
-          "cathay_freighter_flight_sectors": null
-        },
-        {
-          "date": "2020-09-01 00:00:00",
-          "month": "2020-09",
-          "hkia_passengers": 99805.0,
-          "hkia_aircraft_movements": 10544.0,
-          "hkia_freight_tonnes": 382049.0,
-          "cathay_passengers": 47061.0,
-          "cathay_rpk_thousands": 301698.0,
-          "cathay_ask_thousands": 1213977.0,
-          "cathay_passenger_load_factor_pct": 24.9,
-          "cathay_cargo_tonnes": 109453.0,
-          "cathay_aftk_thousands": 887471.0,
-          "cathay_rftk_thousands": 668278.0,
-          "cathay_cargo_load_factor_pct": 75.3,
-          "cathay_atk_thousands": 1003011.0,
-          "cathay_flight_sectors": 1283.0,
-          "cathay_passenger_flight_sectors": null,
-          "cathay_freighter_flight_sectors": null
-        },
-        {
-          "date": "2020-10-01 00:00:00",
-          "month": "2020-10",
-          "hkia_passengers": 79360.0,
-          "hkia_aircraft_movements": 10877.0,
-          "hkia_freight_tonnes": 399316.0,
-          "cathay_passengers": 38541.0,
-          "cathay_rpk_thousands": 210168.0,
-          "cathay_ask_thousands": 1153938.0,
-          "cathay_passenger_load_factor_pct": 18.2,
-          "cathay_cargo_tonnes": 114346.0,
-          "cathay_aftk_thousands": 906202.0,
-          "cathay_rftk_thousands": 709964.0,
-          "cathay_cargo_load_factor_pct": 78.3,
-          "cathay_atk_thousands": 1015991.0,
-          "cathay_flight_sectors": 1347.0,
-          "cathay_passenger_flight_sectors": null,
-          "cathay_freighter_flight_sectors": null
-        },
-        {
-          "date": "2020-11-01 00:00:00",
-          "month": "2020-11",
-          "hkia_passengers": 81001.0,
-          "hkia_aircraft_movements": 12559.0,
-          "hkia_freight_tonnes": 430145.0,
-          "cathay_passengers": 37815.0,
-          "cathay_rpk_thousands": 210103.0,
-          "cathay_ask_thousands": 1133508.0,
-          "cathay_passenger_load_factor_pct": 18.5,
-          "cathay_cargo_tonnes": 116853.0,
-          "cathay_aftk_thousands": 949553.0,
-          "cathay_rftk_thousands": 737454.0,
-          "cathay_cargo_load_factor_pct": 77.7,
-          "cathay_atk_thousands": 1057366.0,
-          "cathay_flight_sectors": 1479.0,
-          "cathay_passenger_flight_sectors": null,
-          "cathay_freighter_flight_sectors": null
-        },
-        {
-          "date": "2020-12-01 00:00:00",
-          "month": "2020-12",
-          "hkia_passengers": 90531.0,
-          "hkia_aircraft_movements": 12659.0,
-          "hkia_freight_tonnes": 435327.0,
-          "cathay_passengers": 39989.0,
-          "cathay_rpk_thousands": 223781.0,
-          "cathay_ask_thousands": 1219512.0,
-          "cathay_passenger_load_factor_pct": 18.4,
-          "cathay_cargo_tonnes": 120218.0,
-          "cathay_aftk_thousands": 930811.0,
-          "cathay_rftk_thousands": 747356.0,
-          "cathay_cargo_load_factor_pct": 80.3,
-          "cathay_atk_thousands": 1046822.0,
-          "cathay_flight_sectors": 1503.0,
-          "cathay_passenger_flight_sectors": null,
-          "cathay_freighter_flight_sectors": null
-        },
-        {
-          "date": "2021-01-01 00:00:00",
-          "month": "2021-01",
-          "hkia_passengers": 71094.0,
-          "hkia_aircraft_movements": 11380.0,
-          "hkia_freight_tonnes": 406499.0,
-          "cathay_passengers": 30410.0,
-          "cathay_rpk_thousands": 152055.0,
-          "cathay_ask_thousands": 1144614.0,
-          "cathay_passenger_load_factor_pct": 13.3,
-          "cathay_cargo_tonnes": 108930.0,
-          "cathay_aftk_thousands": 842806.0,
-          "cathay_rftk_thousands": 669496.0,
-          "cathay_cargo_load_factor_pct": 79.4,
-          "cathay_atk_thousands": 951676.0,
-          "cathay_flight_sectors": 1258.0,
-          "cathay_passenger_flight_sectors": null,
-          "cathay_freighter_flight_sectors": null
-        },
-        {
-          "date": "2021-02-01 00:00:00",
-          "month": "2021-02",
-          "hkia_passengers": 47729.0,
-          "hkia_aircraft_movements": 8492.0,
-          "hkia_freight_tonnes": 307315.0,
-          "cathay_passengers": 21134.0,
-          "cathay_rpk_thousands": 94156.0,
-          "cathay_ask_thousands": 679186.0,
-          "cathay_passenger_load_factor_pct": 13.9,
-          "cathay_cargo_tonnes": 82297.0,
-          "cathay_aftk_thousands": 647442.0,
-          "cathay_rftk_thousands": 514987.0,
-          "cathay_cargo_load_factor_pct": 79.5,
-          "cathay_atk_thousands": 712041.0,
-          "cathay_flight_sectors": 958.0,
-          "cathay_passenger_flight_sectors": null,
-          "cathay_freighter_flight_sectors": null
-        },
-        {
           "date": "2021-03-01 00:00:00",
           "month": "2021-03",
           "hkia_passengers": 58245.0,
@@ -9239,9 +9049,9 @@
         {
           "date": "2026-01-01 00:00:00",
           "month": "2026-01",
-          "hkia_passengers": 5474000.0,
-          "hkia_aircraft_movements": 34445.0,
-          "hkia_freight_tonnes": 412000.0,
+          "hkia_passengers": 5449562.0,
+          "hkia_aircraft_movements": 34439.0,
+          "hkia_freight_tonnes": 411537.0,
           "cathay_passengers": 2622316.0,
           "cathay_rpk_thousands": 10934223.0,
           "cathay_ask_thousands": 12876965.0,
@@ -9258,9 +9068,9 @@
         {
           "date": "2026-02-01 00:00:00",
           "month": "2026-02",
-          "hkia_passengers": 5396000.0,
-          "hkia_aircraft_movements": 32100.0,
-          "hkia_freight_tonnes": 359000.0,
+          "hkia_passengers": 5393022.0,
+          "hkia_aircraft_movements": 32096.0,
+          "hkia_freight_tonnes": 358908.0,
           "cathay_passengers": 2558431.0,
           "cathay_rpk_thousands": 10106181.0,
           "cathay_ask_thousands": 11804261.0,
@@ -13693,126 +13503,6 @@
           "value": 79799.0
         },
         {
-          "date": "2020-05-01",
-          "month": "2020-05",
-          "series": "ASK ('000)",
-          "value": 338027.0
-        },
-        {
-          "date": "2020-05-01",
-          "month": "2020-05",
-          "series": "RPK ('000)",
-          "value": 100133.0
-        },
-        {
-          "date": "2020-06-01",
-          "month": "2020-06",
-          "series": "ASK ('000)",
-          "value": 533147.0
-        },
-        {
-          "date": "2020-06-01",
-          "month": "2020-06",
-          "series": "RPK ('000)",
-          "value": 145713.0
-        },
-        {
-          "date": "2020-07-01",
-          "month": "2020-07",
-          "series": "ASK ('000)",
-          "value": 1036254.0
-        },
-        {
-          "date": "2020-07-01",
-          "month": "2020-07",
-          "series": "RPK ('000)",
-          "value": 242927.0
-        },
-        {
-          "date": "2020-08-01",
-          "month": "2020-08",
-          "series": "ASK ('000)",
-          "value": 1119756.0
-        },
-        {
-          "date": "2020-08-01",
-          "month": "2020-08",
-          "series": "RPK ('000)",
-          "value": 222544.0
-        },
-        {
-          "date": "2020-09-01",
-          "month": "2020-09",
-          "series": "ASK ('000)",
-          "value": 1213977.0
-        },
-        {
-          "date": "2020-09-01",
-          "month": "2020-09",
-          "series": "RPK ('000)",
-          "value": 301698.0
-        },
-        {
-          "date": "2020-10-01",
-          "month": "2020-10",
-          "series": "ASK ('000)",
-          "value": 1153938.0
-        },
-        {
-          "date": "2020-10-01",
-          "month": "2020-10",
-          "series": "RPK ('000)",
-          "value": 210168.0
-        },
-        {
-          "date": "2020-11-01",
-          "month": "2020-11",
-          "series": "ASK ('000)",
-          "value": 1133508.0
-        },
-        {
-          "date": "2020-11-01",
-          "month": "2020-11",
-          "series": "RPK ('000)",
-          "value": 210103.0
-        },
-        {
-          "date": "2020-12-01",
-          "month": "2020-12",
-          "series": "ASK ('000)",
-          "value": 1219512.0
-        },
-        {
-          "date": "2020-12-01",
-          "month": "2020-12",
-          "series": "RPK ('000)",
-          "value": 223781.0
-        },
-        {
-          "date": "2021-01-01",
-          "month": "2021-01",
-          "series": "ASK ('000)",
-          "value": 1144614.0
-        },
-        {
-          "date": "2021-01-01",
-          "month": "2021-01",
-          "series": "RPK ('000)",
-          "value": 152055.0
-        },
-        {
-          "date": "2021-02-01",
-          "month": "2021-02",
-          "series": "ASK ('000)",
-          "value": 679186.0
-        },
-        {
-          "date": "2021-02-01",
-          "month": "2021-02",
-          "series": "RPK ('000)",
-          "value": 94156.0
-        },
-        {
           "date": "2021-03-01",
           "month": "2021-03",
           "series": "ASK ('000)",
@@ -15289,126 +14979,6 @@
           "month": "2020-04",
           "series": "RFTK ('000)",
           "value": 568988.0
-        },
-        {
-          "date": "2020-05-01",
-          "month": "2020-05",
-          "series": "AFTK ('000)",
-          "value": 913775.0
-        },
-        {
-          "date": "2020-05-01",
-          "month": "2020-05",
-          "series": "RFTK ('000)",
-          "value": 666880.0
-        },
-        {
-          "date": "2020-06-01",
-          "month": "2020-06",
-          "series": "AFTK ('000)",
-          "value": 799987.0
-        },
-        {
-          "date": "2020-06-01",
-          "month": "2020-06",
-          "series": "RFTK ('000)",
-          "value": 596037.0
-        },
-        {
-          "date": "2020-07-01",
-          "month": "2020-07",
-          "series": "AFTK ('000)",
-          "value": 837080.0
-        },
-        {
-          "date": "2020-07-01",
-          "month": "2020-07",
-          "series": "RFTK ('000)",
-          "value": 634779.0
-        },
-        {
-          "date": "2020-08-01",
-          "month": "2020-08",
-          "series": "AFTK ('000)",
-          "value": 859880.0
-        },
-        {
-          "date": "2020-08-01",
-          "month": "2020-08",
-          "series": "RFTK ('000)",
-          "value": 645048.0
-        },
-        {
-          "date": "2020-09-01",
-          "month": "2020-09",
-          "series": "AFTK ('000)",
-          "value": 887471.0
-        },
-        {
-          "date": "2020-09-01",
-          "month": "2020-09",
-          "series": "RFTK ('000)",
-          "value": 668278.0
-        },
-        {
-          "date": "2020-10-01",
-          "month": "2020-10",
-          "series": "AFTK ('000)",
-          "value": 906202.0
-        },
-        {
-          "date": "2020-10-01",
-          "month": "2020-10",
-          "series": "RFTK ('000)",
-          "value": 709964.0
-        },
-        {
-          "date": "2020-11-01",
-          "month": "2020-11",
-          "series": "AFTK ('000)",
-          "value": 949553.0
-        },
-        {
-          "date": "2020-11-01",
-          "month": "2020-11",
-          "series": "RFTK ('000)",
-          "value": 737454.0
-        },
-        {
-          "date": "2020-12-01",
-          "month": "2020-12",
-          "series": "AFTK ('000)",
-          "value": 930811.0
-        },
-        {
-          "date": "2020-12-01",
-          "month": "2020-12",
-          "series": "RFTK ('000)",
-          "value": 747356.0
-        },
-        {
-          "date": "2021-01-01",
-          "month": "2021-01",
-          "series": "AFTK ('000)",
-          "value": 842806.0
-        },
-        {
-          "date": "2021-01-01",
-          "month": "2021-01",
-          "series": "RFTK ('000)",
-          "value": 669496.0
-        },
-        {
-          "date": "2021-02-01",
-          "month": "2021-02",
-          "series": "AFTK ('000)",
-          "value": 647442.0
-        },
-        {
-          "date": "2021-02-01",
-          "month": "2021-02",
-          "series": "RFTK ('000)",
-          "value": 514987.0
         },
         {
           "date": "2021-03-01",
@@ -96009,7 +95579,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-transport/",
-    "snapshotId": "07255c5f66de5c38",
+    "snapshotId": "6e81fb5889bbee78",
     "dataAsOf": "2026-08-01"
   }
 }
