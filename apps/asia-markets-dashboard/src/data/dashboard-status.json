@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-08-12T18:30:21.234438Z",
-  "snapshot_id": "1914d5f44854454e",
-  "data_as_of": "2026-08-10",
-  "overall_status": "Healthy",
-  "live_sources": 23,
+  "generated_at": "2026-08-19T18:02:48.626203Z",
+  "snapshot_id": "e39dda4c67c1bd8c",
+  "data_as_of": "2026-08-17",
+  "overall_status": "Degraded",
+  "live_sources": 24,
   "planned_sources": 1,
   "provisional_series": 2,
   "sources": [
@@ -12,8 +12,8 @@
       "dataset": "Centaline CCL",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-02",
-      "records": 1701,
+      "latest_observation": "2026-08-09",
+      "records": 1702,
       "freshness": "10d old",
       "notes": "Latest observation is published without a provisional flag."
     },
@@ -22,8 +22,8 @@
       "dataset": "Midland MHPI",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-10",
-      "records": 544,
+      "latest_observation": "2026-08-17",
+      "records": 545,
       "freshness": "2d old",
       "notes": "Latest observation is published without a provisional flag."
     },
@@ -32,8 +32,8 @@
       "dataset": "Midland Confidence Index",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-10",
-      "records": 446,
+      "latest_observation": "2026-08-17",
+      "records": 447,
       "freshness": "2d old",
       "notes": "Latest observation is published without a provisional flag."
     },
@@ -44,7 +44,7 @@
       "status": "Healthy",
       "latest_observation": "2026-06-01",
       "records": 402,
-      "freshness": "72d old",
+      "freshness": "79d old",
       "notes": "Latest observation is provisional."
     },
     {
@@ -54,17 +54,27 @@
       "status": "Healthy",
       "latest_observation": "2026-06-01",
       "records": 402,
-      "freshness": "72d old",
+      "freshness": "79d old",
       "notes": "Latest observation is provisional."
+    },
+    {
+      "source": "HKMA Residential Mortgage Survey",
+      "dataset": "HKMA residential mortgage survey",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-05-01",
+      "records": 114,
+      "freshness": "110d old",
+      "notes": "Official monthly residential mortgage survey; the source may revise the latest month."
     },
     {
       "source": "Centaline CCI — Residential Price Index",
       "dataset": "Centaline CCI monthly",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-05-01",
-      "records": 389,
-      "freshness": "103d old",
+      "latest_observation": "2026-06-01",
+      "records": 390,
+      "freshness": "79d old",
       "notes": "Normalized residential price index; CCI is not a sentiment measure."
     },
     {
@@ -73,8 +83,8 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "2026-07-01",
-      "records": 355,
-      "freshness": "42d old",
+      "records": 709,
+      "freshness": "49d old",
       "notes": "Normalized residential rental index; rental-yield history is a companion dataset."
     },
     {
@@ -82,8 +92,8 @@
       "dataset": "Centaline CSI weekly",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-10",
-      "records": 1120,
+      "latest_observation": "2026-08-17",
+      "records": 1122,
       "freshness": "2d old",
       "notes": "Normalized sentiment history; not a transaction or price series."
     },
@@ -92,9 +102,9 @@
       "dataset": "RVD office rental monthly",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-05-01",
-      "records": 1604,
-      "freshness": "103d old",
+      "latest_observation": "2026-06-01",
+      "records": 1608,
+      "freshness": "79d old",
       "notes": "Official grade-level rental index; provisional flags are retained."
     },
     {
@@ -102,9 +112,9 @@
       "dataset": "RVD retail monthly",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-05-01",
-      "records": 802,
-      "freshness": "103d old",
+      "latest_observation": "2026-06-01",
+      "records": 804,
+      "freshness": "79d old",
       "notes": "Official retail rental/price indices; provisional flags are retained."
     },
     {
@@ -114,7 +124,7 @@
       "status": "Healthy",
       "latest_observation": "2026-06-30",
       "records": 244,
-      "freshness": "43d old",
+      "freshness": "50d old",
       "notes": "Issuer headline events; property relevance and project aliases are heuristic."
     },
     {
@@ -122,9 +132,9 @@
       "dataset": "SHKP Quarterly numeric facts",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-03-31",
-      "records": 54,
-      "freshness": "134d old",
+      "latest_observation": "2026-06-30",
+      "records": 55,
+      "freshness": "50d old",
       "notes": "Bounded PDF text extraction of explicit units/areas/rates/milestones; not revenue or ownership."
     },
     {
@@ -132,9 +142,9 @@
       "dataset": "SHKP Hong Kong commercial asset master",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-06",
+      "latest_observation": "2026-08-16",
       "records": 132,
-      "freshness": "6d old",
+      "freshness": "3d old",
       "notes": "Current/annual-report/pipeline asset observations; no asset-level rent or NOI is inferred."
     },
     {
@@ -144,7 +154,7 @@
       "status": "Healthy",
       "latest_observation": "2026-06-01",
       "records": 13050,
-      "freshness": "72d old",
+      "freshness": "79d old",
       "notes": "Economy-wide retail value/volume indices; not SHKP tenant sales."
     },
     {
@@ -154,7 +164,7 @@
       "status": "Healthy",
       "latest_observation": "2026-05-01",
       "records": 180,
-      "freshness": "103d old",
+      "freshness": "110d old",
       "notes": "Rolling five-year hotel-category occupancy; not SHKP hotel occupancy."
     },
     {
@@ -164,7 +174,7 @@
       "status": "Healthy",
       "latest_observation": "2026-05-01",
       "records": 180,
-      "freshness": "103d old",
+      "freshness": "110d old",
       "notes": "Rolling five-year industry average room rate; not SHKP ADR."
     },
     {
@@ -174,7 +184,7 @@
       "status": "Stale",
       "latest_observation": "2024-06-01",
       "records": 148,
-      "freshness": "802d old",
+      "freshness": "809d old",
       "notes": "The public file currently ends at 2024-06; retained as a stale catalog/control input until the publisher updates it."
     },
     {
@@ -184,7 +194,7 @@
       "status": "Healthy",
       "latest_observation": "2025-12-31",
       "records": 328,
-      "freshness": "224d old",
+      "freshness": "231d old",
       "notes": "Historical year-end grade-level office vacancy; market control only."
     },
     {
@@ -194,7 +204,7 @@
       "status": "Healthy",
       "latest_observation": "2024-12-31",
       "records": 118,
-      "freshness": "589d old",
+      "freshness": "596d old",
       "notes": "Latest annual district snapshot; source does not provide a monthly history here."
     },
     {
@@ -204,7 +214,7 @@
       "status": "Catalog",
       "latest_observation": "2026-12-31",
       "records": 45,
-      "freshness": "forecast +141d",
+      "freshness": "forecast +134d",
       "notes": "Latest annual district forecast snapshot; future-dated by design and not SHKP pipeline."
     },
     {
@@ -213,7 +223,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "2026-08-01",
-      "records": 313,
+      "records": 274,
       "freshness": "Research snapshot",
       "notes": "Official group/segment facts, HK recurring portfolio facts, selected 0016.HK actuals, consensus and PIT diagnostics; no project-level HK revenue split is inferred."
     },
@@ -223,7 +233,7 @@
       "type": "Measure",
       "status": "Research",
       "latest_observation": "2026-08-01",
-      "records": 197,
+      "records": 237,
       "freshness": "Normalized snapshot",
       "notes": "Gross SRPE activity aligned to handover evidence and planned windows; no phase-level revenue allocation."
     },
@@ -243,7 +253,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "—",
-      "records": 1100,
+      "records": 1102,
       "freshness": "Live at build time",
       "notes": "28Hse EPI / ERI Historical Index; see the chart/table above."
     },
@@ -273,7 +283,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "—",
-      "records": 240,
+      "records": 257,
       "freshness": "Live at build time",
       "notes": "Buildings Department Monthly Digest / Project Lifecycle; see the chart/table above."
     },
@@ -308,5 +318,5 @@
       "notes": "The dashboard currently covers six explicit pilot phases; broader developer and phase coverage still requires registry expansion and backfill."
     }
   ],
-  "attachment_filename": "hk-real-estate-dashboard-2026-08-12.html"
+  "attachment_filename": "hk-real-estate-dashboard-2026-08-19.html"
 }
