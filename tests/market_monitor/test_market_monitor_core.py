@@ -671,3 +671,98 @@ def test_fetch_errors_reach_lineage_not_just_stdout(monkeypatch, capsys):
     errors = raw["_fetch_errors"]
     assert {err["exposure_id"] for err in errors} == {"csi300", "csi500"}
     assert all("sina timed out" in err["error"] for err in errors)
+
+
+def test_every_exposure_declares_where_its_prices_come_from():
+    """Source ownership is declared per exposure, not inferred by exclusion.
+
+    Source health twice encoded "everything except sp500 is Sina": once for
+    S&P 500 (fixed in cd09fd40) and again when Nasdaq 100 arrived on yfinance,
+    which credited Sina with 501 rows of an index it does not serve while Yahoo
+    reported 501 rows for the two it does. A per-exposure declaration cannot
+    drift: a new index has to state its source or this test fails.
+    """
+    from market_monitor.config import EXPOSURES, exposures_by_price_source
+
+    sina = exposures_by_price_source("sina")
+    yahoo = exposures_by_price_source("yfinance")
+    assert len(sina) + len(yahoo) == len(EXPOSURES), "an exposure declares an unknown price_source"
+    assert set(sina).isdisjoint(yahoo)
+    # The US indexes are the ones yfinance serves, and both need a ticker.
+    from market_monitor.pipeline import YFINANCE_SYMBOLS
+
+    assert set(yahoo) == set(YFINANCE_SYMBOLS), "a yfinance exposure has no ticker, or vice versa"
+
+
+def test_source_health_attributes_rows_to_the_provider_that_served_them():
+    builder = _load_builder()
+    from market_monitor.config import exposures_by_price_source
+
+    sina = set(exposures_by_price_source("sina"))
+    yahoo = set(exposures_by_price_source("yfinance"))
+    rows_by_exposure = {"csi300": 484, "hsi": 490, "hstech": 490, "ndx": 501, "sp500": 501}
+    sina_rows = sum(n for e, n in rows_by_exposure.items() if e in sina)
+    yahoo_rows = sum(n for e, n in rows_by_exposure.items() if e in yahoo)
+    # Nasdaq 100 belongs to Yahoo; counting it under Sina is the regression.
+    assert "ndx" in yahoo and "ndx" not in sina
+    assert yahoo_rows == 1002
+    assert sina_rows + yahoo_rows == sum(rows_by_exposure.values())
+    assert builder is not None
+
+
+def test_premium_history_accumulates_instead_of_being_rebuilt(tmp_path, monkeypatch):
+    """Each run must carry the whole series forward, not recompute it.
+
+    It was rebuilt from data/raw/etf_spot every run. That directory is
+    gitignored, so CI starts with none and writes exactly one, and prune_runs
+    caps local runs at five -- the shipped artifact held one observation per
+    fund on a single date, behind a chart captioned as a growing history.
+    """
+    import market_monitor.pipeline as pl
+    import market_monitor.storage as storage
+
+    monkeypatch.setattr(storage, "DERIVED_DIR", tmp_path / "derived")
+    monkeypatch.setattr(pl, "RAW_DIR", tmp_path / "raw")  # no raw snapshots at all
+
+    meta = pd.DataFrame(
+        {
+            "ticker": ["510300.SH", "159919.SZ"],
+            "fund_id": ["510300", "159919"],
+            "exposure_id": ["csi300", "csi300"],
+        }
+    )
+
+    def _spot(premium):
+        return pd.DataFrame({"ticker": ["510300", "159919"], "premium_pct": premium,
+                             "spread_bp": [2.0, 2.1], "market_price": [4.65, 4.85]})
+
+    day1 = pl._build_premium_history(meta, _spot([-0.06, -0.05]), "2026-08-19")
+    assert len(day1) == 2
+    storage.save_derived("premium_history", day1, metadata={"run_scope": "full"})
+
+    day2 = pl._build_premium_history(meta, _spot([0.11, 0.09]), "2026-08-20")
+    assert sorted(day2["date"].unique()) == ["2026-08-19", "2026-08-20"]
+    assert len(day2) == 4, "the previous day's observations were dropped"
+    storage.save_derived("premium_history", day2, metadata={"run_scope": "full"})
+
+    # A second run on the same day supersedes rather than duplicates.
+    day2_again = pl._build_premium_history(meta, _spot([0.20, 0.18]), "2026-08-20")
+    assert len(day2_again) == 4
+    latest = day2_again[day2_again["date"].eq("2026-08-20")].set_index("ticker")["premium_pct"]
+    assert latest.loc["510300"] == 0.20
+
+
+def test_avg_premium_reports_how_many_days_it_averaged():
+    """The card said 30D whatever the answer was."""
+    builder = _load_builder()
+    import inspect
+
+    source = inspect.getsource(builder.build_artifact)
+    assert "avg_premium_days" in source, "the window size must reach the renderer"
+
+    app_source = (
+        Path(__file__).resolve().parents[2]
+        / "apps" / "asia-markets-streamlit" / "app.py"
+    ).read_text(encoding="utf-8")
+    assert "Premium (today)" in app_source
+    assert 'f"Avg premium {premium_days}D"' in app_source

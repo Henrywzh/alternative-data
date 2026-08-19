@@ -7,6 +7,7 @@ Flow:
 
 from __future__ import annotations
 
+import json
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
@@ -18,7 +19,15 @@ from .metadata import build_metadata_frame
 from .ranking import rank_wrappers
 from .relative_strength import build_relative_regime, compute_spread_metrics
 from .sources import akshare_etf, yfinance
-from .storage import load_latest_normalized, new_run_id, prune_runs, save_derived, save_normalized, save_raw
+from .storage import (
+    load_latest_derived,
+    load_latest_normalized,
+    new_run_id,
+    prune_runs,
+    save_derived,
+    save_normalized,
+    save_raw,
+)
 from .technicals import compute_technicals
 from .wrapper import merge_premium
 
@@ -26,6 +35,11 @@ from .wrapper import merge_premium
 # How many immutable run snapshots to keep per dataset. Each one holds the
 # full history, so this is a retention window on redundant copies, not on data.
 RUN_RETENTION = 5
+
+# yfinance ticker per exposure. Keyed off exposure_id rather than inlined in a
+# conditional so a new US index is a one-line addition beside its price_source
+# declaration instead of another branch to remember.
+YFINANCE_SYMBOLS = {"sp500": "^GSPC", "ndx": "^NDX"}
 
 
 def _last_2y_start() -> str:
@@ -36,59 +50,93 @@ def _iso_start() -> str:
     return (date.today() - timedelta(days=730)).strftime("%Y-%m-%d")
 
 
-def _build_premium_history(meta: pd.DataFrame) -> pd.DataFrame:
-    """Build a per-fund premium time series from historical raw etf_spot snapshots."""
-    tracked = set(meta["ticker"].astype(str).str.split(".").str[0].str.zfill(6))
+PREMIUM_HISTORY_COLUMNS = ["date", "fund_id", "ticker", "premium_pct", "spread_bp", "market_price"]
+
+
+def _premium_rows_from_raw_snapshots(tracked: set[str]) -> list[dict]:
+    """Backfill from whatever local raw etf_spot snapshots happen to exist.
+
+    Only ever a bootstrap: data/raw/ is gitignored, so a fresh checkout has
+    none, and prune_runs keeps five. It is the accumulated derived snapshot
+    below that carries the history.
+    """
     spot_dir = RAW_DIR / "etf_spot"
     if not spot_dir.is_dir():
-        return pd.DataFrame(columns=["date", "fund_id", "ticker", "premium_pct", "spread_bp"])
-
-    import json as _json
-    rows = []
+        return []
+    rows: list[dict] = []
     for run_dir in sorted(spot_dir.iterdir()):
-        if not run_dir.is_dir():
-            continue
         parquet = run_dir / "etf_spot.parquet"
         lineage = run_dir / "lineage.json"
-        if not parquet.exists() or not lineage.exists():
+        if not run_dir.is_dir() or not parquet.exists() or not lineage.exists():
             continue
         try:
-            lin = _json.loads(lineage.read_text(encoding="utf-8"))
-            snapshot_date = str(lin.get("created_at", ""))[:10]
+            snapshot_date = str(json.loads(lineage.read_text(encoding="utf-8")).get("created_at", ""))[:10]
             if not snapshot_date:
                 continue
             spot = pd.read_parquet(parquet)
             if spot.empty or "ticker" not in spot.columns:
                 continue
+            spot = spot.copy()
             spot["ticker"] = spot["ticker"].astype(str).str.zfill(6)
-            sub = spot[spot["ticker"].isin(tracked)]
-            if sub.empty:
-                continue
-            for _, row in sub.iterrows():
-                rows.append(
-                    {
-                        "date": snapshot_date,
-                        "ticker": row["ticker"],
-                        "premium_pct": pd.to_numeric(row.get("premium_pct"), errors="coerce"),
-                        "spread_bp": pd.to_numeric(row.get("spread_bp"), errors="coerce"),
-                        "market_price": pd.to_numeric(row.get("market_price"), errors="coerce"),
-                    }
-                )
-        except Exception:
-            continue
+            rows.extend(_premium_rows(spot[spot["ticker"].isin(tracked)], snapshot_date))
+        except Exception as exc:  # noqa: BLE001 - a bad snapshot must not stop the run
+            print(f"  [market_monitor] skipped raw spot snapshot {run_dir.name}: {exc}")
+    return rows
 
-    if not rows:
-        return pd.DataFrame(columns=["date", "fund_id", "ticker", "premium_pct", "spread_bp"])
-    frame = pd.DataFrame(rows)
+
+def _premium_rows(spot: pd.DataFrame, observation_date: str) -> list[dict]:
+    if spot is None or spot.empty or "ticker" not in spot.columns:
+        return []
+    frame = spot.copy()
+    frame["ticker"] = frame["ticker"].astype(str).str.zfill(6)
+    return [
+        {
+            "date": observation_date,
+            "ticker": str(row["ticker"]),
+            "premium_pct": pd.to_numeric(row.get("premium_pct"), errors="coerce"),
+            "spread_bp": pd.to_numeric(row.get("spread_bp"), errors="coerce"),
+            "market_price": pd.to_numeric(row.get("market_price"), errors="coerce"),
+        }
+        for _, row in frame.iterrows()
+    ]
+
+
+def _build_premium_history(meta: pd.DataFrame, spot: pd.DataFrame, observation_date: str) -> pd.DataFrame:
+    """Accumulate a per-fund premium series across runs.
+
+    The history is carried by the derived snapshot itself: each run loads the
+    previous one, appends today's observation, and writes the whole series back,
+    the same way index_price_daily carries its own history. That is what makes
+    it survive both the retention window and a fresh checkout.
+
+    It was previously rebuilt from scratch out of ``data/raw/etf_spot`` on every
+    run, which could not accumulate at all. data/raw is gitignored, so CI starts
+    with none and writes exactly one; prune_runs then caps local runs at five.
+    The shipped artifact carried a single observation per fund, on one date,
+    behind a chart captioned as a growing history.
+    """
+    tracked = set(meta["ticker"].astype(str).str.split(".").str[0].str.zfill(6))
     fund_map = dict(
-        zip(
-            meta["ticker"].astype(str).str.split(".").str[0].str.zfill(6),
-            meta["fund_id"],
-        )
+        zip(meta["ticker"].astype(str).str.split(".").str[0].str.zfill(6), meta["fund_id"])
     )
-    frame["fund_id"] = frame["ticker"].map(fund_map)
-    frame = frame.drop_duplicates(subset=["date", "ticker"], keep="last")
-    return frame.sort_values(["ticker", "date"]).reset_index(drop=True)
+
+    previous = load_latest_derived("premium_history")
+    rows = _premium_rows_from_raw_snapshots(tracked)
+    rows.extend(row for row in _premium_rows(spot, observation_date) if row["ticker"] in tracked)
+
+    frames = [frame for frame in (previous, pd.DataFrame(rows)) if frame is not None and not frame.empty]
+    if not frames:
+        return pd.DataFrame(columns=PREMIUM_HISTORY_COLUMNS)
+    history = pd.concat(frames, ignore_index=True)
+    history = history[[c for c in PREMIUM_HISTORY_COLUMNS if c in history.columns]]
+    history["ticker"] = history["ticker"].astype(str).str.zfill(6)
+    history["fund_id"] = history["ticker"].map(fund_map)
+    # A fund that has left the tracked universe keeps its past observations out
+    # of the series rather than sitting in it with a null fund_id.
+    history = history[history["ticker"].isin(tracked)]
+    # Today's reading supersedes an earlier one for the same day.
+    history = history.drop_duplicates(subset=["date", "ticker"], keep="last")
+    return history.sort_values(["ticker", "date"]).reset_index(drop=True)
 
 
 def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, ...] | None = None, etf_only: tuple[str, ...] | None = None) -> dict[str, Any]:
@@ -111,14 +159,14 @@ def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, 
             continue
         idx = spec["index_id"]
         try:
-            if exposure in ("sp500", "ndx"):
+            if spec["price_source"] == "yfinance":
                 # yfinance expects ISO dates; honour the caller's start_date
                 # (EM format) by converting, defaulting to the 2y ISO start.
                 if start_date and "-" not in start_date and len(start_date) >= 8:
                     us_start = f"{start_date[:4]}-{start_date[4:6]}-{start_date[6:8]}"
                 else:
                     us_start = start_date or _iso_start()
-                yf_symbol = "^GSPC" if exposure == "sp500" else "^NDX"
+                yf_symbol = YFINANCE_SYMBOLS[exposure]
                 frame = yfinance.fetch_daily(yf_symbol, start_date=us_start)
                 if frame is not None and not frame.empty:
                     frame["index_id"] = idx
@@ -156,6 +204,10 @@ def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, 
                 etf_frames.append(frame)
         except Exception as exc:  # noqa: BLE001
             print(f"  [market_monitor] etf fetch failed {row['ticker']} ({row['fund_name']}): {exc}")
+            fetch_errors.append(
+                {"dataset": "etf_close", "exposure_id": str(exposure), "ticker": str(row["ticker"]),
+                 "error": f"{type(exc).__name__}: {exc}"}
+            )
     raw["etf_close"] = pd.concat(etf_frames, ignore_index=True) if etf_frames else pd.DataFrame()
 
     # --- ETF spot / premium snapshot ---
@@ -175,6 +227,7 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
     meta = build_metadata_frame()
     results: dict[str, Any] = {}
     run_scope = "partial" if (limit_exposures or etf_only) else "full"
+    as_of_date = date.today().isoformat()
     shared_run_id = new_run_id()
 
     # Persist raw observations first so the raw -> normalized -> derived chain
@@ -291,8 +344,10 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
     )
     results["wrapper_metrics"] = ranked
 
-    # Premium history from accumulated raw etf_spot snapshots.
-    premium_history = _build_premium_history(meta)
+    # Premium history, accumulated across runs (see _build_premium_history).
+    premium_history = _build_premium_history(
+        meta, raw.get("etf_spot", pd.DataFrame()), as_of_date
+    )
     results["premium_history"] = premium_history
 
     if write:

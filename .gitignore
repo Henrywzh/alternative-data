@@ -66,10 +66,12 @@ data/derived/market_monitor/**
 !data/derived/market_monitor/**/*.parquet
 !data/derived/market_monitor/**/*.json
 data/derived/market_monitor/test_scope_ds/
-# etf_price_daily is no longer produced: nothing read it, and every run
-# rewrote the whole history (~260KB/trading day of committed near-duplicates).
-# See the note in pipeline.fetch_all_raw for what would justify turning it
-# back on.
+# etf_price_daily is produced again -- the per-index view charts every wrapper
+# rebased to 100 -- but deliberately stays out of git. Every run rewrites the
+# whole history rather than a delta, so committing it would add ~260KB of
+# near-duplicate parquet per trading day, and nothing needs the parquet
+# versioned: the dashboard reads the trailing window embedded in the published
+# artifact, which the daily workflow does commit.
 data/normalized/market_monitor/etf_price_daily/
 !data/normalized/provider_adoption/
 data/normalized/provider_adoption/*

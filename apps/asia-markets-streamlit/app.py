@@ -3433,10 +3433,22 @@ def render_market_index_detail(
     if not tech_row.empty:
         row = tech_row.iloc[0]
         columns = st.columns(4)
+        # Name the window the mean was actually taken over. The premium series
+        # accumulates one observation per run, so a fresh deployment has a
+        # single day of it; labelling that "30D" states a month of averaging
+        # that did not happen.
+        premium_days = row.get("avg_premium_days")
+        premium_days = 0 if premium_days is None or pd.isna(premium_days) else int(premium_days)
+        if premium_days <= 1:
+            premium_en, premium_zh = "Premium (today)", "溢价（当日）"
+        elif premium_days >= 30:
+            premium_en, premium_zh = "Avg premium 30D", "平均溢价 30日"
+        else:
+            premium_en, premium_zh = f"Avg premium {premium_days}D", f"平均溢价 {premium_days}日"
         readings = (
             ("RSI", "RSI", row.get("rsi"), "{:.0f}"),
             ("vs MA20", "相对20日均线", row.get("ma20_pct"), "{:+.2f}%"),
-            ("Avg premium 30D", "平均溢价 30日", row.get("avg_premium_30d"), "{:+.2f}%"),
+            (premium_en, premium_zh, row.get("avg_premium_30d"), "{:+.2f}%"),
             ("60D drawdown", "60日回撤", row.get("drawdown_60d"), "{:+.2f}%"),
         )
         for column, (en, zh, value, fmt) in zip(columns, readings):
