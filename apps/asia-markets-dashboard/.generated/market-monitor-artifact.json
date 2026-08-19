@@ -1,7 +1,7 @@
 {
   "manifest": {
     "version": 1,
-    "generatedAt": "2026-08-19T15:19:41.639532+00:00",
+    "generatedAt": "2026-08-19T16:28:35.533652+00:00",
     "cards": [],
     "charts": [
       {
@@ -174,7 +174,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-19T15:19:41.639532+00:00",
+    "generatedAt": "2026-08-19T16:28:35.533652+00:00",
     "status": "ready",
     "datasets": {
       "exposure_technicals": [
@@ -18239,25 +18239,10 @@
       ],
       "kpi_market": [
         {
-          "exposure_id": "csi300",
-          "label": "CSI 300",
-          "metric": "rsi",
-          "value": 42.89756023816747,
-          "date": "2026-08-19"
-        },
-        {
-          "exposure_id": "sp500",
-          "label": "S&P 500",
-          "metric": "rsi",
-          "value": 56.20008528068751,
-          "date": "2026-08-18"
-        },
-        {
-          "exposure_id": "relative",
-          "label": "Small / Large z",
-          "metric": "spread_20d_zscore",
-          "value": 1.6576,
-          "date": null
+          "csi300_rsi": 42.89756023816747,
+          "sp500_rsi": 56.20008528068751,
+          "small_large_z": 1.6576,
+          "observation_date": "2026-08-19"
         }
       ],
       "source_health": [
@@ -18312,7 +18297,7 @@
     }
   ],
   "package_info": {
-    "snapshotId": "3f80264ff7cc4a6a",
+    "snapshotId": "a50edb417289b476",
     "dataAsOf": "2026-08-19",
     "pipelineRunId": "20260819T151941-4e35d646",
     "runConsistent": true

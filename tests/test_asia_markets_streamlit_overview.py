@@ -125,3 +125,42 @@ def test_transport_exposes_expanded_airline_signals_and_six_carrier_labels() -> 
     region_rows = transport["snapshot"]["datasets"]["china_airline_region_by_carrier_history"]
     assert any(row["series"] == "Juneyao · Domestic" for row in region_rows)
     assert any(row["series"] == "Juneyao · Regional" for row in region_rows)
+
+
+def test_no_sector_pulse_reuses_one_dataset_field_for_two_metrics() -> None:
+    """Two metrics on the same (dataset, field) always render the same number.
+
+    latest_metric_reading takes latest_row(frame) and reads row[field]; it has
+    no way to select a row by metric name. The market pulse pointed both of its
+    metrics at kpi_market's "value" column, because that dataset was long-form
+    with one row per metric, and the overview showed "Small / Large z 42.9" --
+    the CSI 300 RSI -- while the real z-score sat in the artifact at 1.66.
+    """
+    for sector_key, config in asia_app.OVERVIEW_PULSE_CONFIG.items():
+        # `series` legitimately distinguishes two metrics that share a dataset
+        # and field, so it is part of the identity; a source is either a
+        # dataset or a chart_id.
+        keys = [
+            (metric.get("dataset") or metric.get("chart_id"), metric["field"], metric.get("series"))
+            for metric in config.get("metrics", ())
+        ]
+        assert len(keys) == len(set(keys)), f"{sector_key} reuses one source/field/series: {keys}"
+
+
+def test_market_pulse_fields_exist_and_read_distinct_values() -> None:
+    market = _artifact("market-monitor")
+    config = asia_app.OVERVIEW_PULSE_CONFIG["market"]
+    readings = []
+    for metric in config["metrics"]:
+        label, value, _date = asia_app.latest_metric_reading(
+            market,
+            metric["dataset"],
+            metric["field"],
+            metric["format"],
+            label_en=metric["label_en"],
+            label_zh=metric["label_zh"],
+            language="en",
+        )
+        assert value != "—", f"{label} did not resolve against the shipped artifact"
+        readings.append(value)
+    assert len(set(readings)) == len(readings), f"pulse metrics collapsed to the same value: {readings}"

@@ -110,41 +110,29 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     # labelled as a run time rather than an observation.
     spot_latest = (wrap_lineage or {}).get("created_at", "—")[:16].replace("T", " ") if wrap_lineage else "—"
 
-    # Compact KPI rows for the Overview pulse card (kept separate from the
-    # full technicals table so the overview contract stays small).
-    kpi_rows: list[dict[str, Any]] = []
+    # Compact KPI row for the Overview pulse card. ONE WIDE ROW, one column per
+    # metric: latest_metric_reading takes latest_row(frame) and reads
+    # row[field], so it has no way to pick a row by metric name. This was a
+    # long-form table of three rows all carrying the reading in a column called
+    # "value", and both configured pulse metrics resolved to the same row --
+    # the overview showed "Small / Large z 42.9", which was the CSI 300 RSI,
+    # while the real z-score sat in the artifact at 1.66.
+    kpi_row: dict[str, Any] = {}
     if not technicals.empty and "exposure_id" in technicals.columns:
-        for exposure_id, label, key in (
-            ("csi300", "CSI 300", "rsi"),
-            ("sp500", "S&P 500", "rsi"),
-        ):
+        for exposure_id, field in (("csi300", "csi300_rsi"), ("sp500", "sp500_rsi")):
             row = technicals[technicals["exposure_id"].eq(exposure_id)]
             if row.empty:
                 continue
-            latest = row.iloc[-1]
-            kpi_rows.append(
-                {
-                    "exposure_id": exposure_id,
-                    "label": label,
-                    "metric": key,
-                    "value": float(latest[key]) if latest.get(key) is not None else None,
-                    "date": latest.get("date"),
-                }
-            )
-    if regime is not None and not regime.empty:
+            value = row.iloc[-1].get("rsi")
+            kpi_row[field] = float(value) if value is not None and not pd.isna(value) else None
+    if regime is not None and not regime.empty and "label" in regime.columns:
         small_large = regime[regime["label"].eq("Small / Large")]
         if not small_large.empty:
-            row = small_large.iloc[-1]
-            kpi_rows.append(
-                {
-                    "exposure_id": "relative",
-                    "label": "Small / Large z",
-                    "metric": "spread_20d_zscore",
-                    "value": float(row["spread_20d_zscore"]) if row.get("spread_20d_zscore") is not None else None,
-                    "date": None,
-                }
-            )
-    datasets["kpi_market"] = kpi_rows
+            value = small_large.iloc[-1].get("spread_20d_zscore")
+            kpi_row["small_large_z"] = float(value) if value is not None and not pd.isna(value) else None
+    if kpi_row:
+        kpi_row["observation_date"] = data_as_of
+    datasets["kpi_market"] = [kpi_row] if kpi_row else []
     if not index_px.empty and "date" in index_px.columns:
         latest_obs = str(pd.to_datetime(index_px["date"], errors="coerce").max().date())
     else:
