@@ -7,9 +7,10 @@ import json
 import sys
 from datetime import date
 
+import pandas as pd
+
 from .alerts import build_email_html, send_report
 from .pipeline import run_pipeline
-from .storage import load_latest_derived
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -21,10 +22,6 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--allow-partial-write", action="store_true", help="Allow persisting partial/test runs to disk")
     parser.add_argument("--send-report", action="store_true", help="Send the daily Gmail digest after running")
     args = parser.parse_args(argv)
-
-    if args.no_write and args.send_report:
-        print("Error: --no-write cannot be combined with --send-report (would email stale disk snapshot with today's date).", file=sys.stderr)
-        return 1
 
     is_partial = bool(args.limit_exposures or args.etf_only)
     should_write = (not args.no_write) and (not is_partial or args.allow_partial_write)
@@ -38,17 +35,25 @@ def main(argv: list[str] | None = None) -> int:
     summary = {k: (int(v) if isinstance(v, int) else (len(v) if hasattr(v, "__len__") and not isinstance(v, str) else v)) for k, v in results.items() if k != "_run"}
     print(json.dumps(summary, ensure_ascii=False, indent=2, default=str))
     if args.send_report:
-        technicals = load_latest_derived("exposure_technicals")
-        regime = load_latest_derived("relative_regime")
-        wrappers = load_latest_derived("wrapper_metrics")
-        body = build_email_html(
-            report_date=date.today().isoformat(),
-            technicals=technicals,
-            regime=regime,
-            wrappers=wrappers,
-        )
-        send_report(subject=f"Index & ETF Allocation Monitor — {date.today().isoformat()}", body_html=body)
-        print("daily Gmail digest sent")
+        # Use the current in-memory run, not load_latest_derived(), to
+        # guarantee the email always matches the pipeline result that was
+        # just computed (never silently mixes old/new snapshots from disk).
+        technicals = results.get("exposure_technicals", pd.DataFrame())
+        regime = results.get("relative_regime", pd.DataFrame())
+        wrappers = results.get("wrapper_metrics", pd.DataFrame())
+        try:
+            body = build_email_html(
+                report_date=date.today().isoformat(),
+                technicals=technicals,
+                regime=regime,
+                wrappers=wrappers,
+            )
+            send_report(subject=f"Index & ETF Allocation Monitor — {date.today().isoformat()}", body_html=body)
+            print("daily Gmail digest sent")
+        except Exception as exc:
+            # Email is best-effort; pipeline/dashboard must never fail because
+            # SMTP or Gmail credentials are unavailable.
+            print(f"Warning: Gmail digest not sent ({exc})", file=sys.stderr)
     return 0
 
 
