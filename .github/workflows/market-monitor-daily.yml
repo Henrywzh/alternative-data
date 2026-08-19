@@ -38,10 +38,14 @@ jobs:
           python -m pip install -e .[dev]
 
       - name: Validate Gmail configuration
+        id: gmail_config
         run: |
-          test -n "$GMAIL_SENDER" || { echo "Missing GMAIL_SENDER"; exit 1; }
-          test -n "$GMAIL_APP_PASSWORD" || { echo "Missing GMAIL_APP_PASSWORD"; exit 1; }
-          test -n "$GMAIL_RECIPIENTS" || { echo "Missing GMAIL_RECIPIENTS"; exit 1; }
+          if test -n "$GMAIL_SENDER" && test -n "$GMAIL_APP_PASSWORD" && test -n "$GMAIL_RECIPIENTS"; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Gmail not fully configured; email will be skipped but dashboard still updates."
+          fi
 
       - name: Run offline unit tests
         run: |
@@ -49,7 +53,7 @@ jobs:
 
       - name: Fetch and derive index/ETF signals
         run: |
-          python -m market_monitor.cli --send-report
+          python -m market_monitor.cli
 
       - name: Build dashboard artifact
         working-directory: apps/asia-markets-dashboard
@@ -57,6 +61,21 @@ jobs:
           python scripts/build_market_monitor_artifact.py \
             --output .generated/market-monitor-artifact.json \
             --status-output src/data/dashboard-status-market-monitor.json
+
+      - name: Send daily email digest
+        if: steps.gmail_config.outputs.configured == 'true'
+        continue-on-error: true
+        run: |
+          python -c "
+          from market_monitor.alerts import build_email_html, send_report
+          from market_monitor.storage import load_latest_derived
+          from datetime import date
+          tech = load_latest_derived('exposure_technicals')
+          regime = load_latest_derived('relative_regime')
+          wrap = load_latest_derived('wrapper_metrics')
+          body = build_email_html(report_date=date.today().isoformat(), technicals=tech, regime=regime, wrappers=wrap)
+          send_report(subject=f'Index & ETF Allocation Monitor — {date.today().isoformat()}', body_html=body)
+          "
 
       - name: Commit refreshed data + artifact
         run: |

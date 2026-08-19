@@ -40,6 +40,16 @@ def _fmt_start(value: str | date | None, *, em: bool) -> str:
     return text if em else f"{text[:4]}-{text[4:6]}-{text[6:8]}"
 
 
+def _parse_date(value: str | date | None) -> pd.Timestamp | None:
+    """Parse YYYYMMDD or YYYY-MM-DD into a Timestamp, or None."""
+    if value is None:
+        return None
+    text = str(value).replace("-", "")
+    if len(text) >= 8:
+        return pd.Timestamp(f"{text[:4]}-{text[4:6]}-{text[6:8]}")
+    return None
+
+
 def _coerce_symbol(value: str) -> str:
     """Turn 510300.SH / 510300.SZ / 510300 into a bare 6-digit code."""
     return str(value).split(".")[0].zfill(6)
@@ -62,10 +72,12 @@ def fetch_etf_daily(symbol: str, start_date: str | date | None = None, end_date:
             df = df.rename(columns={"日期": "date", "开盘": "open", "最高": "high", "最低": "low", "收盘": "close", "成交量": "volume", "成交额": "amount"})
             df = df.copy()
             df["date"] = pd.to_datetime(df["date"], errors="coerce")
-            if start:
-                df = df[df["date"] >= pd.Timestamp(start[:4] + "-01-01")]
-            if end:
-                df = df[df["date"] <= pd.Timestamp(end[:4] + "-12-31")]
+            start_ts = _parse_date(start)
+            end_ts = _parse_date(end) or pd.Timestamp(date.today())
+            if start_ts:
+                df = df[df["date"] >= start_ts]
+            if end_ts:
+                df = df[df["date"] <= end_ts]
         else:
             raise RuntimeError("empty sina frame")
     except Exception:
@@ -115,13 +127,16 @@ def fetch_index_daily(symbol: str, start_date: str | None = None, end_date: str 
     elif sina_symbol:
         # Sina history has no start/end filter; slice here.
         df = ak.stock_zh_index_daily(symbol=sina_symbol)
-        slice_from = str(int(start[:4]) - 1) + "-01-01" if len(start) >= 8 else None
+        slice_from = _parse_date(start)
         if df is not None and not df.empty and isinstance(df, pd.DataFrame):
             df = df.copy()
             if "date" in df.columns:
                 df["date"] = pd.to_datetime(df["date"], errors="coerce")
                 if slice_from:
-                    df = df[df["date"] >= pd.Timestamp(slice_from)]
+                    df = df[df["date"] >= slice_from]
+                end_ts = _parse_date(end) or pd.Timestamp(date.today())
+                if end_ts:
+                    df = df[df["date"] <= end_ts]
     else:
         df = ak.index_zh_a_hist(symbol=code, period="daily", start_date=start, end_date=end)
     if df is None or df.empty:

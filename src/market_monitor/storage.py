@@ -100,6 +100,34 @@ def load_latest(root: Path, dataset_name: str, scope: str | None = "full") -> pd
     return pd.DataFrame()
 
 
+def load_latest_with_lineage(root: Path, dataset_name: str, scope: str | None = "full") -> tuple[pd.DataFrame, dict[str, Any] | None]:
+    """Load the newest valid snapshot and its lineage metadata.
+
+    Returns (frame, lineage) so callers can verify all datasets came from
+    the same pipeline run. Lineage is None when no snapshot is found.
+    """
+    dataset_dir = Path(root) / dataset_name
+    if not dataset_dir.is_dir():
+        return pd.DataFrame(), None
+    for run in sorted(dataset_dir.iterdir(), key=lambda p: p.name, reverse=True):
+        if not run.is_dir():
+            continue
+        parquet = run / f"{dataset_name}.parquet"
+        lineage_path = run / "lineage.json"
+        if not parquet.exists() or not lineage_path.exists():
+            continue
+        try:
+            lineage = json.loads(lineage_path.read_text(encoding="utf-8"))
+            if scope is not None and lineage.get("run_scope", "full") != scope:
+                continue
+            frame = pd.read_parquet(parquet)
+            if not frame.empty:
+                return frame, lineage
+        except Exception:
+            continue
+    return pd.DataFrame(), None
+
+
 def load_latest_normalized(dataset_name: str, scope: str | None = "full") -> pd.DataFrame:
     return load_latest(NORMALIZED_DIR, dataset_name, scope=scope)
 

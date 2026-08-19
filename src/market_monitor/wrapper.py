@@ -36,12 +36,15 @@ def merge_premium(
         spot_aum = pd.to_numeric(merged["aum_y"], errors="coerce")
         meta_aum = pd.to_numeric(merged["aum_x"], errors="coerce")
         merged["aum"] = spot_aum.combine_first(meta_aum)
+        merged["aum_proxy"] = merged["aum"]
         merged.drop(columns=["aum_x", "aum_y"], inplace=True)
     elif "aum_y" in merged.columns:
         merged["aum"] = pd.to_numeric(merged["aum_y"], errors="coerce")
+        merged["aum_proxy"] = merged["aum"]
         merged.drop(columns=["aum_y"], inplace=True)
     elif "aum_x" in merged.columns:
         merged["aum"] = pd.to_numeric(merged["aum_x"], errors="coerce")
+        merged["aum_proxy"] = merged["aum"]
         merged.drop(columns=["aum_x"], inplace=True)
     if "premium_pct" not in merged.columns:
         merged["premium_pct"] = float("nan")

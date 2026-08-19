@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from datetime import date
 
 from .alerts import build_email_html, send_report
@@ -20,6 +21,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--allow-partial-write", action="store_true", help="Allow persisting partial/test runs to disk")
     parser.add_argument("--send-report", action="store_true", help="Send the daily Gmail digest after running")
     args = parser.parse_args(argv)
+
+    if args.no_write and args.send_report:
+        print("Error: --no-write cannot be combined with --send-report (would email stale disk snapshot with today's date).", file=sys.stderr)
+        return 1
 
     is_partial = bool(args.limit_exposures or args.etf_only)
     should_write = (not args.no_write) and (not is_partial or args.allow_partial_write)

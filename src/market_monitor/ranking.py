@@ -56,33 +56,41 @@ def rank_wrappers(frame: pd.DataFrame, *, group_col: str = "exposure_id") -> pd.
         "fund_age_days": 1.0,
     }
 
-    buy_score = pd.Series(0.0, index=out.index)
-    hold_score = pd.Series(0.0, index=out.index)
+    buy_score_sum = pd.Series(0.0, index=out.index)
+    buy_weight = pd.Series(0.0, index=out.index)
+    hold_score_sum = pd.Series(0.0, index=out.index)
+    hold_weight = pd.Series(0.0, index=out.index)
     # Normalize each component *within* the same-index cohort (group_col), not
     # globally, so QDII wrappers are never scored against mainland A-share ETFs
     # on fee/AUM. Missing components contribute neither score nor weight; the
     # remaining weights are renormalised so a funded cohort still gets 0-100.
     for cohort, cohort_rows in out.groupby(group_col):
         cohort_index = cohort_rows.index
-        buy_i = pd.Series(0.0, index=cohort_index)
-        hold_i = pd.Series(0.0, index=cohort_index)
-        buy_w, hold_w = 0.0, 0.0
         for col, direction in BUY_COMPONENTS.items():
             if col in out.columns:
                 sub = out.loc[cohort_index, col]
                 if sub.notna().any():
-                    buy_i = buy_i + _norm(sub, invert=bool(direction == -1.0))
-                    buy_w += 1.0
+                    norm_scores = _norm(sub, invert=bool(direction == -1.0))
+                    # Row-level weight: only count components that are non-NaN
+                    # for this specific row, so one missing field doesn't zero
+                    # out the entire fund score.
+                    valid = sub.notna()
+                    buy_score_sum.loc[cohort_index] = buy_score_sum.loc[cohort_index] + norm_scores.where(valid, 0.0)
+                    buy_weight.loc[cohort_index] = buy_weight.loc[cohort_index] + valid.astype(float)
         for col, direction in HOLD_COMPONENTS.items():
             if col in out.columns:
                 sub = out.loc[cohort_index, col]
                 if sub.notna().any():
-                    hold_i = hold_i + _norm(sub, invert=bool(direction == -1.0))
-                    hold_w += 1.0
-        if buy_w:
-            buy_score.loc[cohort_index] = buy_i / buy_w
-        if hold_w:
-            hold_score.loc[cohort_index] = hold_i / hold_w
+                    norm_scores = _norm(sub, invert=bool(direction == -1.0))
+                    valid = sub.notna()
+                    hold_score_sum.loc[cohort_index] = hold_score_sum.loc[cohort_index] + norm_scores.where(valid, 0.0)
+                    hold_weight.loc[cohort_index] = hold_weight.loc[cohort_index] + valid.astype(float)
+
+    # Row-level normalization: score = sum(valid scores) / count(valid weights)
+    # A fund with only 2 of 4 fields gets scored on those 2; a fund with 0
+    # valid fields gets score 0 (ranked last, not crash).
+    buy_score = buy_score_sum / buy_weight.replace(0, float("nan"))
+    hold_score = hold_score_sum / hold_weight.replace(0, float("nan"))
 
     # A component that is entirely missing (e.g. a newly-listed or halted ETF
     # with no Eastmoney spot row) would make the fund's score NaN. NaN rows
