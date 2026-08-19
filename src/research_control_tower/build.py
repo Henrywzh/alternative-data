@@ -35,7 +35,14 @@ from .events import (
     validate_event_bundle,
 )
 from .macro import MACRO_EVENT_COLUMNS, MACRO_OBSERVATION_COLUMNS
-from .registries import REGISTRY_FILES, load_registry_bundle, validate_registry_bundle
+from .registries import (
+    NEWS_ENTITY_ALIAS_FILENAME,
+    REGISTRY_FILES,
+    load_news_entity_aliases,
+    load_registry_bundle,
+    resolve_news_entities,
+    validate_registry_bundle,
+)
 
 
 SCHEMA_VERSION = "control_tower_marts_v1"
@@ -716,6 +723,14 @@ _EXPECTED_OPTIONAL_SOURCES = (
     ("consensus_export", "consensus", "task3_consensus_export_v1", ""),
     ("quote_snapshots", "market", QUOTE_SNAPSHOT_SCHEMA_ID, ""),
     ("price_bars", "market", PRICE_BARS_SCHEMA_ID, ""),
+    # Batch 5 news metadata sources.  ``news_official_ai_rss`` stays as a
+    # legacy alias (reported ``unavailable`` unless configured); the structured
+    # provider adapters and the explicit official-IR allowlist are the primary
+    # fill behind entitlement probes.
+    ("news_finnhub", "news", NEWS_SCHEMA_ID, ""),
+    ("news_marketaux", "news", NEWS_SCHEMA_ID, ""),
+    ("news_fmp", "news", NEWS_SCHEMA_ID, ""),
+    ("news_official_ir_allowlist", "news", NEWS_SCHEMA_ID, ""),
     ("news_official_ai_rss", "news", NEWS_SCHEMA_ID, ""),
     ("filings_sec_edgar", "filing", FILING_SCHEMA_ID, "US"),
     ("official_filings", "official_filing", OFFICIAL_FILINGS_SCHEMA_ID, "CN,HK,US"),
@@ -880,6 +895,26 @@ SOURCE_TIME_COLUMNS = {
 }
 
 QUALITY_CLASSES = frozenset({"official", "official_metadata", "discovery", "entitled", "unknown"})
+
+# Deterministic news event classes keyed to the source kind (Batch 5).  The
+# label is derived from the same descriptor signals as ``QUALITY_CLASSES`` so
+# an RSS/discovery feed can never be emitted as official news metadata.
+NEWS_EVENT_CLASS_OFFICIAL = "official_news_metadata"
+NEWS_EVENT_CLASS_SECONDARY_PROBE = "secondary_probe_news_metadata"
+NEWS_EVENT_CLASS_DISCOVERY = "discovery_news_metadata"
+
+# Structured third-party news providers are ALWAYS entitled regardless of the
+# LocalInput license_class default.  The CLI descriptor form
+# (SOURCE_ID|PATH|FORMAT|SCHEMA_ID) cannot carry a license and would otherwise
+# default to ``public_metadata``, silently mislabelling a commercial/free-tier
+# API as official news (the exact bug Batch 5's design review fixed).
+ENTITLED_NEWS_SOURCE_IDS = frozenset(
+    {
+        "news_finnhub",
+        "news_marketaux",
+        "news_fmp",
+    }
+)
 
 # Health statuses that mean "the source was queried and its result is usable"
 # for artifact availability.  ``no_records`` is an honest empty query result
@@ -1143,6 +1178,9 @@ _OPTIONAL_COLUMNS = {
         "pub_date",
         "description",
         "body_text",
+        # Batch 5 extension: provider-license-independent content fingerprint.
+        # Optional so legacy inputs without it keep building.
+        "content_hash",
     },
     FILING_SCHEMA_ID: {
         "query",
@@ -1241,6 +1279,7 @@ _REQUIRED_OPTIONAL_COLUMNS = {
     key: set(value) for key, value in _OPTIONAL_COLUMNS.items()
 }
 _REQUIRED_OPTIONAL_COLUMNS[NEWS_SCHEMA_ID] -= {"description", "body_text"}
+_REQUIRED_OPTIONAL_COLUMNS[NEWS_SCHEMA_ID] -= {"content_hash"}
 _REQUIRED_OPTIONAL_COLUMNS[FILING_SCHEMA_ID] -= {"filing_content", "body_text"}
 _REQUIRED_OPTIONAL_COLUMNS[FRED_OBSERVATIONS_SCHEMA_ID] -= {"realtime_start", "realtime_end"}
 
@@ -2335,31 +2374,91 @@ def _explicit_related_ids(row: Mapping[str, Any], registries: Any) -> tuple[list
     return sorted(entity_ids), sorted(listing_ids), sorted(basket_ids)
 
 
-def _source_quality_class(descriptor: LocalInput, document_type: str) -> str:
-    """Normalize quality separately from the publisher/display name."""
+def _classify_source_quality(source_id: str, license_class: str, document_type: str) -> str:
+    """Pure, testable source-quality classifier shared by the builder and tests.
+
+    Design-review fix (Batch 5): an RSS/discovery feed is never auto-labelled
+    ``official`` merely because its transport is RSS.  An explicit official
+    marker (``official`` / ``public_metadata`` in the source id or license)
+    still wins, so a genuinely official feed (e.g. ``official_ai_rss`` with
+    ``public_metadata`` license) keeps its official class; a bare RSS source
+    with no official marker (e.g. ``google_news_rss``) is ``discovery``.
+    Filings stay ``official_metadata``; entitled/commercial stays ``entitled``;
+    anything else is ``unknown``.
+    """
 
     if document_type == "filing":
         return "official_metadata"
-    source_text = f"{descriptor.source_id} {descriptor.license_class}".lower()
+    if source_id.strip().lower() in ENTITLED_NEWS_SOURCE_IDS:
+        return "entitled"
+    source_text = f"{source_id} {license_class}".lower()
     if "entitled" in source_text or "commercial" in source_text:
         return "entitled"
     if "discovery" in source_text:
         return "discovery"
-    if "official" in source_text or "rss" in source_text or "public_metadata" in source_text:
+    if "official" in source_text or "public_metadata" in source_text:
         return "official"
+    if "rss" in source_text:
+        return "discovery"
     return "unknown"
 
 
+def _source_quality_class(descriptor: LocalInput, document_type: str) -> str:
+    """Normalize quality separately from the publisher/display name."""
+
+    return _classify_source_quality(descriptor.source_id, descriptor.license_class, document_type)
+
+
+def _news_event_class(source_id: str, license_class: str) -> str:
+    """Deterministic news event class keyed to the source kind (Batch 5).
+
+    Only a source classified ``official`` emits official news metadata; probed
+    providers (entitled/commercial/unknown) emit secondary-probe news metadata;
+    discovery (incl. RSS/GDELT) emits discovery news metadata.  Never official
+    for an RSS/discovery source, and never guessed for an unknown provider.
+    """
+
+    quality = _classify_source_quality(source_id, license_class, "news")
+    if quality == "official":
+        return NEWS_EVENT_CLASS_OFFICIAL
+    if quality == "discovery":
+        return NEWS_EVENT_CLASS_DISCOVERY
+    return NEWS_EVENT_CLASS_SECONDARY_PROBE
+
+
 def _news_rows(
-    descriptor: LocalInput, frame: pd.DataFrame, registries: Any
+    descriptor: LocalInput,
+    frame: pd.DataFrame,
+    registries: Any,
+    *,
+    news_aliases: pd.DataFrame | None = None,
 ) -> list[dict[str, Any]]:
+    baskets_by_entity: dict[str, set[str]] = {}
+    for _, membership in registries.basket_memberships.iterrows():
+        baskets_by_entity.setdefault(str(membership["entity_id"]), set()).add(
+            str(membership["basket_id"])
+        )
     rows: list[dict[str, Any]] = []
     for _, item in frame.iterrows():
         headline = "" if _is_blank(item.get("title")) else str(item.get("title"))
         url = "" if _is_blank(item.get("link")) else str(item.get("link"))
         published = _timestamp(item.get("pub_date"))
         first_seen = _timestamp(item.get("first_seen_at"))
-        entity_ids, listing_ids, basket_ids = _explicit_related_ids(item, registries)
+        # Headline/title-driven registry resolution (Batch 5) is combined with
+        # any explicit crosswalk hints carried in the input row.  Unmatchable
+        # headlines resolve to EMPTY related ids -- never a guessed link.
+        resolved_entity_ids, resolved_listing_ids = resolve_news_entities(
+            headline,
+            entities=registries.entities,
+            listings=registries.listings,
+            aliases=news_aliases,
+        )
+        explicit_entity_ids, explicit_listing_ids, _ = _explicit_related_ids(item, registries)
+        entity_ids = sorted(set(resolved_entity_ids) | set(explicit_entity_ids))
+        listing_ids = sorted(set(resolved_listing_ids) | set(explicit_listing_ids))
+        basket_ids: set[str] = set()
+        for entity_id in entity_ids:
+            basket_ids.update(baskets_by_entity.get(entity_id, set()))
         rows.append(
             {
                 "document_id": _stable_hash("news", descriptor.source_id, url, headline, published),
@@ -2374,12 +2473,12 @@ def _news_rows(
                 "related_entity_ids": _json_list(entity_ids),
                 "related_listing_ids": _json_list(listing_ids),
                 "related_basket_ids": _json_list(basket_ids),
-                "event_class": "official_news_metadata",
+                "event_class": _news_event_class(descriptor.source_id, descriptor.license_class),
                 "importance": item.get("importance", "") if "importance" in frame.columns else "",
                 "source_quality": _source_quality_class(descriptor, "news"),
                 "pit_class": descriptor.pit_class,
                 "source_license_class": descriptor.license_class,
-                "content_hash_if_permitted": "",
+                "content_hash_if_permitted": item.get("content_hash", "") if "content_hash" in frame.columns else "",
                 "derived_summary_if_permitted": "",
             }
         )
@@ -2427,6 +2526,7 @@ def _build_news_filings(
     filing_inputs: Sequence[LocalInput],
     *,
     as_of_utc: pd.Timestamp,
+    news_aliases: pd.DataFrame | None = None,
 ) -> tuple[pd.DataFrame, list[_SourceState], list[str]]:
     rows: list[dict[str, Any]] = []
     states: list[_SourceState] = []
@@ -2436,17 +2536,76 @@ def _build_news_filings(
         *[(item, "news", _news_rows) for item in news_inputs],
         *[(item, "filing", _filing_rows) for item in filing_inputs],
     ]:
-        state, frame, schema_id = _load_optional(descriptor, kind, as_of_utc=as_of_utc)
+        status_path = _news_status_path(descriptor) if kind == "news" else None
+        has_status_sidecar = bool(status_path is not None and status_path.is_file())
+        state, frame, schema_id = _load_optional(
+            descriptor,
+            kind,
+            as_of_utc=as_of_utc,
+            execution_evidence=has_status_sidecar,
+        )
         state.missing_geographies = missing_geographies
         states.append(state)
         if frame is None:
+            if kind == "news" and has_status_sidecar:
+                status_payload, status_error = _read_news_status(status_path)  # type: ignore[arg-type]
+                if status_error:
+                    state.status = "degraded"
+                    _append_state_error(
+                        state,
+                        code="news_status_sidecar_invalid",
+                        message=status_error,
+                    )
+                elif status_payload is not None:
+                    if not state.errors:
+                        # Genuinely empty parquet + honest sidecar: let the
+                        # collector's coverage status be authoritative.
+                        _merge_news_empty_sidecar_state(state, status_payload)
+                    # A missing/invalid input keeps its own state; the sidecar
+                    # never promotes it back to success.
+                if state.status in {"unavailable", "degraded"}:
+                    degraded.append(descriptor.source_id)
+                continue
             degraded.append(descriptor.source_id)
             continue
         if kind == "news":
-            rows.extend(row_builder(descriptor, frame, registries))
+            rows.extend(row_builder(descriptor, frame, registries, news_aliases=news_aliases))
             _set_state_from_frame(state, frame, observed_column="pub_date", retrieved_column="first_seen_at")
             if "source_url" in frame.columns and frame["source_url"].notna().any():
                 state.source_url = str(frame["source_url"].dropna().iloc[0])
+            if has_status_sidecar:
+                if state.input_sha256:
+                    state.input_sha256 = _composite_input_hash(
+                        {"data": state.input_sha256, "status": _file_hash(status_path)}  # type: ignore[arg-type]
+                    )
+                status_payload, status_error = _read_news_status(status_path)  # type: ignore[arg-type]
+                if status_error:
+                    state.status = "degraded"
+                    _append_state_error(
+                        state,
+                        code="news_status_sidecar_invalid",
+                        message=status_error,
+                    )
+                elif status_payload is not None:
+                    _merge_news_sidecar_state(state, frame, status_payload)
+                    sidecar_issues = [
+                        str(value)
+                        for value in status_payload.get("issues", [])
+                        if str(value).strip()
+                    ]
+                    probe_detail = ""
+                    probe = status_payload.get("probe")
+                    if isinstance(probe, dict) and str(probe.get("status") or "").strip():
+                        probe_detail = f"probe_status={str(probe.get('status')).strip()}"
+                    if sidecar_issues or probe_detail:
+                        detail = (
+                            f"collector_status={status_payload.get('aggregate_status', '')};"
+                            + (f"{probe_detail};" if probe_detail else "")
+                            + " | ".join(sidecar_issues[:3])
+                        ).rstrip(";")
+                        state.detail = f"{state.detail}; {detail}" if state.detail else detail
+                if state.status in {"unavailable", "degraded"}:
+                    degraded.append(descriptor.source_id)
         else:
             rows.extend(row_builder(descriptor, frame, registries))
             _set_state_from_frame(state, frame, observed_column="file_date", retrieved_column="fetched_at")
@@ -3252,6 +3411,97 @@ def _read_quote_status(path: Path) -> tuple[dict[str, Any] | None, str | None]:
     if payload["aggregate_status"] in {"unavailable", "no_records"} and payload["row_count"] != 0:
         return None, "quote collection status sidecar reports no rows but row_count is non-zero"
     return payload, None
+
+
+def _news_status_path(descriptor: LocalInput) -> Path:
+    """Status sidecar path for a news input, following the collector convention."""
+
+    if descriptor.status_path is not None:
+        return Path(descriptor.status_path)
+    path = Path(descriptor.path)
+    return path.with_name(f"{path.stem}.status.json")
+
+
+def _read_news_status(path: Path) -> tuple[dict[str, Any] | None, str | None]:
+    """Validate a news collector ``.status.json`` sidecar (Batch 5)."""
+
+    if not path.is_file():
+        return None, None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        return None, f"news collection status sidecar is invalid: {exc}"
+    if not isinstance(payload, dict) or payload.get("schema") != "news_collection_status_v1":
+        return None, "news collection status sidecar has an unsupported schema"
+    if payload.get("aggregate_status") not in {"available", "partial", "no_records", "unavailable"}:
+        return None, "news collection status sidecar has an invalid aggregate_status"
+    if not isinstance(payload.get("source_id"), str) or not payload["source_id"].strip():
+        return None, "news collection status sidecar is missing source_id"
+    if not isinstance(payload.get("row_count"), int) or isinstance(payload.get("row_count"), bool):
+        return None, "news collection status sidecar has an invalid row_count"
+    if not isinstance(payload.get("probe"), dict):
+        return None, "news collection status sidecar is missing the entitlement probe record"
+    for key in ("diagnostic_count",):
+        if not isinstance(payload.get(key), int) or isinstance(payload.get(key), bool):
+            return None, f"news collection status sidecar has an invalid {key}"
+    diagnostics = payload.get("diagnostics", [])
+    if not isinstance(diagnostics, list):
+        return None, "news collection status sidecar diagnostics must be a list"
+    if int(payload["diagnostic_count"]) != len(diagnostics):
+        return None, "news collection status sidecar diagnostic_count does not match diagnostics"
+    if payload["aggregate_status"] in {"unavailable", "no_records"} and payload["row_count"] != 0:
+        return None, "news collection status sidecar reports no rows but row_count is non-zero"
+    if payload["aggregate_status"] in {"available", "partial"} and payload["row_count"] == 0:
+        return None, "news collection status sidecar reports rows but row_count is zero"
+    return payload, None
+
+
+def _merge_news_sidecar_state(
+    state: _SourceState,
+    frame: pd.DataFrame,
+    status_payload: Mapping[str, Any],
+) -> None:
+    """Make the collector's honest status authoritative unless data truth wins.
+
+    The sidecar carries the plan's coverage semantics (available/partial/
+    no_records/unavailable) straight from the collector, so a failed provider
+    probe surfaces as ``unavailable`` and an honest empty query as
+    ``no_records``.  A freshness/future-row degradation derived from the data
+    itself is never promoted back to success by its own sidecar.
+    """
+
+    reported = str(status_payload["aggregate_status"])
+    sidecar_rows = int(status_payload["row_count"])
+    if sidecar_rows != len(frame):
+        state.status = "degraded"
+        _append_state_error(
+            state,
+            code="news_status_row_count_mismatch",
+            message=f"sidecar={sidecar_rows};input={len(frame)}",
+        )
+        return
+    if any(
+        error.get("code") in {"stale_source", "future_row_beyond_as_of"}
+        for error in state.errors
+    ):
+        return
+    state.status = reported
+    state.row_count = sidecar_rows
+
+
+def _merge_news_empty_sidecar_state(
+    state: _SourceState,
+    status_payload: Mapping[str, Any],
+) -> None:
+    """Authoritative collector status for an empty news parquet with a sidecar.
+
+    ``_load_optional`` discards empty frames, so the honest state must come
+    from the sidecar: ``no_records`` is a contributing success and
+    ``unavailable`` is a real failure -- never a guess either way.
+    """
+
+    state.status = str(status_payload["aggregate_status"])
+    state.row_count = int(status_payload["row_count"])
 
 
 def _build_price_bars(
@@ -4230,11 +4480,18 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
         config.price_bar_inputs,
         as_of_utc=config.as_of_utc,
     )
+    news_aliases_path = config.registry_root / NEWS_ENTITY_ALIAS_FILENAME
+    news_aliases = (
+        load_news_entity_aliases(news_aliases_path)
+        if news_aliases_path.is_file()
+        else None
+    )
     news_frame, news_states, news_degraded = _build_news_filings(
         registries,
         config.news_inputs,
         config.filing_inputs,
         as_of_utc=config.as_of_utc,
+        news_aliases=news_aliases,
     )
     official_filings_frame, calendar_frame, official_states, official_degraded = _build_official_filings(
         registries,
