@@ -72,7 +72,15 @@ def build_email_html(
     rows_html = []
     if not technicals.empty:
         for _, row in technicals.iterrows():
-            trend = "▲" if (row.get("ma20_pct") or 0) > 0 else "▼"
+            # `(x or 0) > 0` reads NaN as truthy, returns NaN, and NaN > 0 is
+            # False -- a missing MA20 rendered as a down arrow, indistinguishable
+            # from a genuine downtrend. Missing is its own state, as it already
+            # is for RSI on the next line.
+            ma20_val = row.get("ma20_pct")
+            if ma20_val is None or pd.isna(ma20_val):
+                trend = "—"
+            else:
+                trend = "▲" if float(ma20_val) > 0 else "▼"
             rsi_val = row.get("rsi")
             rsi_display = "—" if rsi_val is None or (isinstance(rsi_val, float) and rsi_val != rsi_val) else f"{float(rsi_val):.0f}"
             rows_html.append(

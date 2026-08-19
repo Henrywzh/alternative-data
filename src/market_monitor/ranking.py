@@ -44,9 +44,16 @@ def rank_wrappers(frame: pd.DataFrame, *, group_col: str = "exposure_id") -> pd.
         out["relative_premium_z"] = _z_score(out["relative_premium_pct"])
     else:
         out["relative_premium_z"] = 0.0
+    # relative_premium_pct is deliberately NOT a component. Within a cohort it
+    # is premium_pct minus a constant (the cohort median), and _norm is min-max,
+    # which is invariant to a constant shift -- the two columns normalize to
+    # byte-identical scores. Including both silently gave premium 2 of the 4
+    # buy weights, which was enough to rank the only ATTRACTIVE csi300 wrapper
+    # (510330, -0.28%) second, and to tie both S&P 500 wrappers at rank 1 with
+    # 11.11% and 7.01% premium. Keep the absolute column: entry_status keys off
+    # the same absolute scale.
     BUY_COMPONENTS = {
         "premium_pct": -1.0,  # negative premium (discount) preferred
-        "relative_premium_pct": -1.0,
         "spread_bp": -1.0,
         "turnover": 1.0,
     }
