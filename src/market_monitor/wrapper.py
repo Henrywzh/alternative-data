@@ -33,13 +33,15 @@ def merge_premium(
         spot_rows["ticker"] = spot_rows["ticker"].astype(str).str.zfill(6)
     merged = meta.merge(spot_rows[spot_cols], on="ticker", how="left")
     if "aum_y" in merged.columns and "aum_x" in merged.columns:
-        merged["aum"] = merged["aum_y"].combine_first(merged["aum_x"])
+        spot_aum = pd.to_numeric(merged["aum_y"], errors="coerce")
+        meta_aum = pd.to_numeric(merged["aum_x"], errors="coerce")
+        merged["aum"] = spot_aum.combine_first(meta_aum)
         merged.drop(columns=["aum_x", "aum_y"], inplace=True)
     elif "aum_y" in merged.columns:
-        merged["aum"] = merged["aum_y"]
+        merged["aum"] = pd.to_numeric(merged["aum_y"], errors="coerce")
         merged.drop(columns=["aum_y"], inplace=True)
     elif "aum_x" in merged.columns:
-        merged["aum"] = merged["aum_x"]
+        merged["aum"] = pd.to_numeric(merged["aum_x"], errors="coerce")
         merged.drop(columns=["aum_x"], inplace=True)
     if "premium_pct" not in merged.columns:
         merged["premium_pct"] = float("nan")

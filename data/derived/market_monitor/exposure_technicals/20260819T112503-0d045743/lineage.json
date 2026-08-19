@@ -1,0 +1,21 @@
+{
+  "dataset_name": "exposure_technicals",
+  "run_id": "20260819T112503-0d045743",
+  "created_at": "2026-08-19T11:25:03.910906+00:00",
+  "run_scope": "full",
+  "records": 7,
+  "columns": [
+    "rsi",
+    "ma20",
+    "ma20_pct",
+    "ma60",
+    "ma60_pct",
+    "realized_vol_20d",
+    "drawdown_60d",
+    "exposure_id",
+    "label",
+    "date"
+  ],
+  "sha256": "b52300626e6a4794612ea396065adebb707d0de68f18498b5dd9e297a39c7987",
+  "type": "derived"
+}

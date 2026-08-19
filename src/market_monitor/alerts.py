@@ -46,7 +46,9 @@ def load_gmail_config() -> dict[str, str]:
 
 
 def _fmt_pct(value: float | None, digits: int = 1) -> str:
-    return "—" if value is None else f"{value:+.{digits}f}%"
+    if value is None or pd.isna(value):
+        return "—"
+    return f"{value:+.{digits}f}%"
 
 
 def _arrow(trend: str | None) -> str:
@@ -54,7 +56,9 @@ def _arrow(trend: str | None) -> str:
 
 
 def _fmt_z(z: float | None) -> str:
-    return "—" if z is None else f"{z:+.1f}σ"
+    if z is None or pd.isna(z):
+        return "—"
+    return f"{z:+.1f}σ"
 
 
 def build_email_html(
@@ -85,7 +89,8 @@ def build_email_html(
     wrap_html = "".join(
         f"<tr><td>{w.get('ticker','')}</td><td>{w.get('fund_name','')}</td>"
         f"<td>{_fmt_pct(w.get('premium_pct'),2)}</td><td>{_fmt_pct(w.get('relative_premium_pct'),2)}</td>"
-        f"<td>{int(round(w.get('buy_rank'))) if pd.notna(w.get('buy_rank')) else '-'}</td>"
+        f"<td>{w.get('entry_status','—')}</td>"
+        f"<td>{int(round(w.get('peer_rank'))) if pd.notna(w.get('peer_rank')) else '-'}</td>"
         f"<td>{int(round(w.get('hold_rank'))) if pd.notna(w.get('hold_rank')) else '-'}</td></tr>"
         for _, w in wrappers.head(24).iterrows()
     )
@@ -101,9 +106,9 @@ def build_email_html(
 <tr><th align="left">Spread</th><th align="left">20D z-score</th><th>Trend</th><th align="left">20D ret</th></tr>
 {regime_html}
 </table>
-<h3>Wrapper Opportunities (Buy-Now vs Hold)</h3>
+<h3>Wrapper Opportunities (Entry Status vs Peer / Hold Rank)</h3>
 <table border="0" cellspacing="0" cellpadding="6">
-<tr><th align="left">Ticker</th><th align="left">Fund</th><th align="left">Premium</th><th align="left">Rel Premium</th><th>Buy</th><th>Hold</th></tr>
+<tr><th align="left">Ticker</th><th align="left">Fund</th><th align="left">Premium</th><th align="left">Rel Premium</th><th align="left">Entry</th><th>Peer</th><th>Hold</th></tr>
 {wrap_html}
 </table>
 <p style="color:#666;font-size:12px">Cross-border (QDII) premium interpretation differs from domestic ETFs. This is a research digest, not investment advice.</p>
