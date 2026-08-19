@@ -18,6 +18,15 @@
   ],
   "live": [
     {
+      "code": "12",
+      "id": "market-monitor",
+      "package": "market_monitor",
+      "nameEn": "Index & ETF Allocation Monitor",
+      "nameZh": "指数与ETF配置监控",
+      "builder": "scripts/build_market_monitor_artifact.py",
+      "statusFile": "dashboard-status-market-monitor.json"
+    },
+    {
       "code": "01",
       "id": "hk-real-estate",
       "package": "hk_real_estate",

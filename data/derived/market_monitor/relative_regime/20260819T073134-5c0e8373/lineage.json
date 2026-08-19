@@ -1,0 +1,17 @@
+{
+  "dataset_name": "relative_regime",
+  "run_id": "20260819T073134-5c0e8373",
+  "created_at": "2026-08-19T07:31:34.895389+00:00",
+  "records": 4,
+  "columns": [
+    "label",
+    "left",
+    "right",
+    "spread_20d_zscore",
+    "spread_5d_pct",
+    "spread_20d_pct",
+    "trend"
+  ],
+  "sha256": "8d9653469c07dd6128245d80ba1cdfe39ebf9777ccabcd0142cb853079ac36ef",
+  "type": "derived"
+}

@@ -66,6 +66,13 @@ SECTORS: dict[str, dict[str, str]] = {
         "short_en": "Commercial Aerospace",
         "short_zh": "商业航天",
     },
+    "market": {
+        "slug": "market-monitor",
+        "name_en": "Index & ETF Allocation Monitor",
+        "name_zh": "指数与ETF配置监控",
+        "short_en": "ETF Monitor",
+        "short_zh": "ETF监控",
+    },
 }
 
 HISTORY_WINDOWS = {
@@ -286,6 +293,33 @@ def get_pair_heights(h1: int | None, h2: int | None, type1: str = "line", type2:
 # pulse row by adding metadata here, but it does not automatically add another
 # full chart section to the page.
 OVERVIEW_PULSE_CONFIG: dict[str, dict[str, Any]] = {
+    "market": {
+        "metrics": (
+            {
+                "dataset": "kpi_market",
+                "field": "value",
+                "format": "number",
+                "label_en": "CSI 300 RSI",
+                "label_zh": "沪深300 RSI",
+            },
+            {
+                "dataset": "kpi_market",
+                "field": "value",
+                "format": "number",
+                "label_en": "Small / Large z",
+                "label_zh": "小盘/大盘 z",
+            },
+        ),
+        "sparkline": {
+            "chart_id": "small_large_regime_chart",
+            "series": "Small / Large",
+            "title_en": "Small vs Large relative strength",
+            "title_zh": "小盘 vs 大盘相对强度",
+            "note_en": "20D z-score of the rolling spread",
+            "note_zh": "滚动价差的 20 日 z 得分",
+            "format": "number",
+        },
+    },
     "labour": {
         "metrics": (
             {
@@ -3158,6 +3192,49 @@ def render_data_explorer(artifacts: dict[str, dict[str, Any]], language: str) ->
     st.dataframe(frame, hide_index=True, width="stretch")
 
 
+def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: str, window: str) -> None:
+    """Index & ETF Allocation Monitor: exposure leadership, relative regime,
+    and wrapper selection.
+    """
+    st.markdown(f'<div class="am-page-title">{tr(language, SECTORS["market"]["name_en"], SECTORS["market"]["name_zh"])}</div>', unsafe_allow_html=True)
+    st.caption(tr(language, "Exposure → Index → ETF wrapper. Relative signals over absolute RSI.", "Exposure → 指数 → ETF 包装。相对信号优先于绝对 RSI。"))
+
+    datasets = artifact.get("snapshot", {}).get("datasets", {})
+
+    technicals = datasets.get("exposure_technicals", [])
+    regime = datasets.get("relative_regime", [])
+    wrappers = datasets.get("wrapper_metrics", [])
+
+    if not technicals and not regime and not wrappers:
+        st.info(tr(language, "This chart is not available in the current artifact snapshot.", "当前数据快照未包含此图表。"))
+        return
+
+    # --- Market Leadership ---
+    if technicals:
+        section_heading(language, "Market Leadership", "市场领导力", "Exposure technical snapshot (RSI / MA / drawdown).", "各指数技术面快照（RSI / 均线 / 回撤）。")
+        frame = pd.DataFrame(technicals)
+        show_cols = [c for c in ("label", "rsi", "ma20_pct", "ma60_pct", "drawdown_60d") if c in frame.columns]
+        if show_cols:
+            st.dataframe(frame[show_cols].sort_values("label"), hide_index=True, width="stretch")
+
+    # --- Relative Regime ---
+    if regime:
+        section_heading(language, "Relative Regime", "相对强弱", "Rolling 20D z-score of windowed spread; trend is 5D vs 20D.", "滚动20日z-score的区间价差；趋势为5日对20日。")
+        st.dataframe(pd.DataFrame(regime), hide_index=True, width="stretch")
+
+    # --- Wrapper Selection ---
+    if wrappers:
+        section_heading(language, "Wrapper Selection", "ETF包装选择", "Buy-Now weights premium/spread/liquidity; Hold weights fee/AUM/age. Cross-border premium caveat applies.", "买入排名侧重溢价/价差/流动性；持有排名侧重费率/规模/存续期。跨境溢价需谨慎解读。")
+        frame = pd.DataFrame(wrappers)
+        show_cols = [c for c in ("ticker", "fund_name", "premium_pct", "relative_premium_pct", "buy_rank", "hold_rank", "is_cross_border") if c in frame.columns]
+        if show_cols:
+            st.dataframe(frame[show_cols], hide_index=True, width="stretch")
+        if "premium_caveat" in frame.columns:
+            caveat_texts = [str(x) for x in frame["premium_caveat"].dropna().unique().tolist() if x]
+            if caveat_texts:
+                st.caption(" · ".join(caveat_texts))
+
+
 def set_app_page(page_key: str) -> None:
     st.session_state["page"] = page_key
 
@@ -3965,6 +4042,7 @@ def make_sidebar(language: str) -> tuple[str, str, str]:
         active_language = "zh" if language_choice == "中文" else "en"
         page_labels = {
             "overview": tr(active_language, "Overview", "总览"),
+            "market": tr(active_language, "ETF Monitor", "ETF监控"),
             "labour": tr(active_language, "Labour Market", "劳动力市场"),
             "population": tr(active_language, "Population & Migration", "人口与迁移"),
             "real_estate": tr(active_language, "Hong Kong Real Estate", "地产"),
@@ -3994,6 +4072,8 @@ def make_sidebar(language: str) -> tuple[str, str, str]:
 
         st.markdown(f'<div class="am-sidebar-group-label">{tr(active_language, "Workspace", "工作台")}</div>', unsafe_allow_html=True)
         nav_button("overview")
+        st.markdown(f'<div class="am-sidebar-group-label">{tr(active_language, "Markets", "市场")}</div>', unsafe_allow_html=True)
+        nav_button("market")
         st.markdown(f'<div class="am-sidebar-group-label">{tr(active_language, "Hong Kong", "香港")}</div>', unsafe_allow_html=True)
         nav_button("labour")
         nav_button("population")
@@ -4040,6 +4120,8 @@ def main() -> None:
 
     if page == "overview":
         render_overview(artifacts, labels, language, window)
+    elif page == "market":
+        render_market(artifacts["market"], labels["market"], language, window)
     elif page == "labour":
         render_labour(artifacts["labour"], labels["labour"], language, window)
     elif page == "population":
