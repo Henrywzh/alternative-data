@@ -21,20 +21,6 @@ import pandas as pd
 WINDOWS = (5, 20, 60, 120)
 
 
-def _rolling_days_ago(cumulative: pd.Series, days: int) -> float | None:
-    """Windowed return from an already-cumulative series, by position.
-
-    ``cumulative`` is a cumulative-sum series of daily spread returns. The last
-    ``days`` observations are summed (position-based so it works across
-    trading-day calendars; the caller is responsible for aligning both legs to
-    the same dates first).
-    """
-    if len(cumulative) < days + 1:
-        return None
-    val = float(cumulative.iloc[-1] - cumulative.iloc[-1 - days])
-    return round(val, 4)
-
-
 def compute_spread_metrics(
     left_close: pd.Series,
     right_close: pd.Series,

@@ -8,6 +8,7 @@ a chart attachment dump.
 
 from __future__ import annotations
 
+import html
 import os
 import re
 import smtplib
@@ -43,6 +44,19 @@ def load_gmail_config() -> dict[str, str]:
     if missing:
         raise RuntimeError("Missing Gmail config for market_monitor: " + ", ".join(missing))
     return values
+
+
+def _esc(value: object) -> str:
+    """Escape a value for interpolation into the digest HTML.
+
+    fund_name and the exposure labels reach this template from the Eastmoney
+    spot endpoint, so they are provider-supplied text going straight into
+    markup. Nothing today contains a bracket, but a provider is not a thing
+    this repository controls.
+    """
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return ""
+    return html.escape(str(value))
 
 
 def _fmt_pct(value: float | None, digits: int = 1) -> str:
@@ -84,20 +98,20 @@ def build_email_html(
             rsi_val = row.get("rsi")
             rsi_display = "—" if rsi_val is None or (isinstance(rsi_val, float) and rsi_val != rsi_val) else f"{float(rsi_val):.0f}"
             rows_html.append(
-                f"<tr><td>{row.get('label','')}</td>"
+                f"<tr><td>{_esc(row.get('label'))}</td>"
                 f"<td>{_fmt_pct(row.get('ma20_pct'))}</td>"
                 f"<td>{_fmt_pct(row.get('ma60_pct'))}</td>"
                 f"<td>{trend}</td>"
                 f"<td>{rsi_display}</td></tr>"
             )
     regime_html = "".join(
-        f"<tr><td>{r.get('label','')}</td><td>{_fmt_z(r.get('spread_20d_zscore'))}</td><td>{_arrow(r.get('trend'))}</td><td>{_fmt_pct(r.get('spread_20d_pct'))}</td></tr>"
+        f"<tr><td>{_esc(r.get('label'))}</td><td>{_fmt_z(r.get('spread_20d_zscore'))}</td><td>{_arrow(r.get('trend'))}</td><td>{_fmt_pct(r.get('spread_20d_pct'))}</td></tr>"
         for _, r in regime.iterrows()
     )
     wrap_html = "".join(
-        f"<tr><td>{w.get('ticker','')}</td><td>{w.get('fund_name','')}</td>"
+        f"<tr><td>{_esc(w.get('ticker'))}</td><td>{_esc(w.get('fund_name'))}</td>"
         f"<td>{_fmt_pct(w.get('premium_pct'),2)}</td><td>{_fmt_pct(w.get('relative_premium_pct'),2)}</td>"
-        f"<td>{w.get('entry_status','—')}</td>"
+        f"<td>{_esc(w.get('entry_status')) or '—'}</td>"
         f"<td>{int(round(w.get('peer_rank'))) if pd.notna(w.get('peer_rank')) else '-'}</td>"
         f"<td>{int(round(w.get('hold_rank'))) if pd.notna(w.get('hold_rank')) else '-'}</td></tr>"
         for _, w in wrappers.head(24).iterrows()

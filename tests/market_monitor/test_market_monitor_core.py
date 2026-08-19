@@ -2,6 +2,7 @@
 
 import json
 import sys
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -580,3 +581,93 @@ def test_coverage_regression_tolerates_calendar_wobble_and_first_runs():
     # A vanished exposure is reported once, not twice.
     gone = {"rows_by_exposure": {}, "missing_exposures": ["csi300"]}
     assert builder.coverage_regressions(gone, steady) == ["no rows for csi300"]
+
+
+def test_email_escapes_provider_supplied_text():
+    """fund_name arrives from Eastmoney and goes straight into markup."""
+    from market_monitor.alerts import build_email_html
+
+    wrappers = pd.DataFrame(
+        [
+            {
+                "ticker": "510300",
+                "fund_name": "<script>alert(1)</script>华泰柏瑞",
+                "premium_pct": -0.06,
+                "relative_premium_pct": 0.0,
+                "entry_status": "FAIR",
+                "peer_rank": 1,
+                "hold_rank": 1,
+            }
+        ]
+    )
+    html_out = build_email_html(
+        report_date="2026-08-19",
+        technicals=pd.DataFrame(),
+        regime=pd.DataFrame(),
+        wrappers=wrappers,
+    )
+    assert "<script>" not in html_out
+    assert "&lt;script&gt;alert(1)&lt;/script&gt;华泰柏瑞" in html_out
+
+
+def test_merge_premium_does_not_mutate_the_caller_frame():
+    """The pipeline hands merge_premium the same object it wrote to raw."""
+    from market_monitor.metadata import build_metadata_frame
+    from market_monitor.wrapper import merge_premium
+
+    spot = pd.DataFrame(
+        {
+            "ticker": ["510300", "159919"],  # unpadded, as Eastmoney sends them
+            "premium_pct": [-0.06, -0.05],
+            "markcap": [1.07e11, 2.99e10],
+            "turnover": [7.1e9, 1.1e9],
+        }
+    )
+    snapshot = spot.copy(deep=True)
+    merge_premium(spot, build_metadata_frame())
+    pd.testing.assert_frame_equal(spot, snapshot)
+
+
+def test_merge_premium_resolves_size_without_pandas_deprecation():
+    """The registry's aum column is None for every fund.
+
+    combine_first against an all-None column raised the empty-entry
+    concatenation FutureWarning on every single production run.
+    """
+    from market_monitor.metadata import build_metadata_frame
+    from market_monitor.wrapper import merge_premium
+
+    spot = pd.DataFrame({"ticker": ["510300"], "premium_pct": [-0.06], "markcap": [1.07e11]})
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", FutureWarning)
+        merged = merge_premium(spot, build_metadata_frame())
+    row = merged.loc[merged["ticker"] == "510300"].iloc[0]
+    assert row["aum_proxy"] == 1.07e11
+    # markcap is not carried through: it and aum_proxy were the same number
+    # under two names, which is how "AUM" came to label a market-cap proxy.
+    assert "markcap" not in merged.columns
+
+
+def test_index_fetch_rejects_a_symbol_it_would_mangle():
+    """_coerce_symbol zero-pads, turning "SPX" into "000SPX"."""
+    from market_monitor.sources import akshare_etf
+
+    with pytest.raises(ValueError, match="no Sina mapping"):
+        akshare_etf.fetch_index_daily("SPX")
+
+
+def test_fetch_errors_reach_lineage_not_just_stdout(monkeypatch, capsys):
+    """A source that fails must leave a record, not only a printed line."""
+    from market_monitor import pipeline as pl
+
+    def _boom(index_id, start_date=None, end_date=None):
+        raise RuntimeError("sina timed out")
+
+    monkeypatch.setattr(pl.akshare_etf, "fetch_index_daily", _boom)
+    monkeypatch.setattr(pl.akshare_etf, "fetch_etf_spot", lambda: pd.DataFrame())
+    monkeypatch.setattr(pl.yfinance, "fetch_daily", lambda *a, **k: pd.DataFrame())
+
+    raw = pl.fetch_all_raw(limit_exposures=("csi300", "csi500"))
+    errors = raw["_fetch_errors"]
+    assert {err["exposure_id"] for err in errors} == {"csi300", "csi500"}
+    assert all("sina timed out" in err["error"] for err in errors)

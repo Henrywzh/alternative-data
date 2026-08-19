@@ -1,8 +1,9 @@
 {
-  "dataset_name": "wrapper_metrics",
-  "run_id": "20260819T094409-59c4acfe",
-  "created_at": "2026-08-19T09:44:09.241117+00:00",
+  "type": "derived",
   "run_scope": "full",
+  "dataset_name": "wrapper_metrics",
+  "run_id": "20260819T151941-4e35d646",
+  "created_at": "2026-08-19T15:19:41.133547+00:00",
   "records": 12,
   "columns": [
     "exposure_id",
@@ -23,15 +24,16 @@
     "iopv",
     "turnover",
     "units",
-    "markcap",
     "bid",
     "ask",
     "spread_bp",
     "aum",
+    "aum_proxy",
     "relative_premium_pct",
     "fund_age_days",
-    "relative_premium_z",
+    "entry_cost_bp",
     "buy_score",
+    "liquidity_score",
     "hold_score",
     "buy_rank",
     "hold_rank",
@@ -39,6 +41,5 @@
     "entry_status",
     "premium_caveat"
   ],
-  "sha256": "4526d22e6c08ab269610a51ec31473cb2d44a7d6f909b68d009c7c77d8aca2b3",
-  "type": "derived"
+  "sha256": "317b4368965f5a90990c6981ace668bf83fcb8c0e25f3c8570ce57df3e2fa22c"
 }
