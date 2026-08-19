@@ -87,4 +87,29 @@ def rank_wrappers(frame: pd.DataFrame, *, group_col: str = "exposure_id") -> pd.
     out["hold_score"] = hold_score.fillna(0.0).round(1)
     out["buy_rank"] = out.groupby(group_col)["buy_score"].rank(ascending=False, method="dense", na_option="keep").fillna(99).astype(int)
     out["hold_rank"] = out.groupby(group_col)["hold_score"].rank(ascending=False, method="dense", na_option="keep").fillna(99).astype(int)
+    out["peer_rank"] = out["buy_rank"]
+
+    def _calc_entry_status(row: pd.Series) -> str:
+        p = row.get("premium_pct")
+        if pd.isna(p):
+            return "UNAVAILABLE"
+        p = float(p)
+        is_cross = bool(row.get("is_cross_border", False))
+        if is_cross:
+            if p <= 0.0:
+                return "ATTRACTIVE"
+            if p <= 1.5:
+                return "FAIR"
+            if p <= 4.0:
+                return "EXPENSIVE"
+            return "AVOID"
+        if p <= -0.1:
+            return "ATTRACTIVE"
+        if p <= 0.2:
+            return "FAIR"
+        if p <= 1.0:
+            return "EXPENSIVE"
+        return "AVOID"
+
+    out["entry_status"] = out.apply(_calc_entry_status, axis=1)
     return out

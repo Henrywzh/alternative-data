@@ -34,6 +34,7 @@ def _write_run_dataset(root: Path, dataset_name: str, frame: pd.DataFrame, *, me
         "dataset_name": dataset_name,
         "run_id": run_id,
         "created_at": _utc_now(),
+        "run_scope": str(metadata.get("run_scope", "full")) if metadata and "run_scope" in metadata else "full",
         "records": int(len(frame)),
         "columns": list(frame.columns),
         "sha256": hashlib.sha256(parquet_path.read_bytes()).hexdigest(),
@@ -65,9 +66,9 @@ def new_run_id() -> str:
     return f"{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S')}-{uuid.uuid4().hex[:8]}"
 
 
-def load_latest(root: Path, dataset_name: str) -> pd.DataFrame:
-    """Load the newest non-empty run snapshot for a dataset."""
-    dataset_dir = root / dataset_name
+def load_latest(root: Path, dataset_name: str, scope: str | None = "full") -> pd.DataFrame:
+    """Load the newest non-empty run snapshot matching scope (default 'full')."""
+    dataset_dir = Path(root) / dataset_name
     if not dataset_dir.is_dir():
         return pd.DataFrame()
     # run_id directories already embed an ISO-ish timestamp (20260819T073000-…)
@@ -80,15 +81,25 @@ def load_latest(root: Path, dataset_name: str) -> pd.DataFrame:
         parquet = run / f"{dataset_name}.parquet"
         if not parquet.exists():
             continue
+        if scope is not None:
+            lineage_path = run / "lineage.json"
+            if lineage_path.exists():
+                try:
+                    meta = json.loads(lineage_path.read_text(encoding="utf-8"))
+                    run_scope = meta.get("run_scope", "full")
+                    if run_scope != scope:
+                        continue
+                except Exception:
+                    pass
         frame = pd.read_parquet(parquet)
         if not frame.empty:
             return frame
     return pd.DataFrame()
 
 
-def load_latest_normalized(dataset_name: str) -> pd.DataFrame:
-    return load_latest(NORMALIZED_DIR, dataset_name)
+def load_latest_normalized(dataset_name: str, scope: str | None = "full") -> pd.DataFrame:
+    return load_latest(NORMALIZED_DIR, dataset_name, scope=scope)
 
 
-def load_latest_derived(dataset_name: str) -> pd.DataFrame:
-    return load_latest(DERIVED_DIR, dataset_name)
+def load_latest_derived(dataset_name: str, scope: str | None = "full") -> pd.DataFrame:
+    return load_latest(DERIVED_DIR, dataset_name, scope=scope)

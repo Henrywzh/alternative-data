@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[3]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.market_monitor.config import DERIVED_DIR, NORMALIZED_DIR
+from src.market_monitor.config import DERIVED_DIR, EXPOSURES, NORMALIZED_DIR
 from src.market_monitor.storage import load_latest  # noqa: E402
 
 
@@ -39,10 +39,10 @@ def _records(frame: pd.DataFrame) -> list[dict[str, Any]]:
 def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     now = datetime.now(timezone.utc)
     generated_at = now.isoformat()
-    technicals = load_latest(DERIVED_DIR, "exposure_technicals")
-    regime = load_latest(DERIVED_DIR, "relative_regime")
-    wrappers = load_latest(DERIVED_DIR, "wrapper_metrics")
-    index_px = load_latest(NORMALIZED_DIR, "index_price_daily")
+    technicals = load_latest(DERIVED_DIR, "exposure_technicals", scope="full")
+    regime = load_latest(DERIVED_DIR, "relative_regime", scope="full")
+    wrappers = load_latest(DERIVED_DIR, "wrapper_metrics", scope="full")
+    index_px = load_latest(NORMALIZED_DIR, "index_price_daily", scope="full")
 
     data_as_of = "—"
     if not technicals.empty and "date" in technicals.columns:
@@ -100,12 +100,39 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         latest_obs = str(pd.to_datetime(index_px["date"], errors="coerce").max().date())
     else:
         latest_obs = "—"
-    datasets["source_health"] = [
-        {"source": "Eastmoney ETF spot (premium / turnover / IOPV)", "status": "Healthy", "latest_observation": latest_obs, "records": len(datasets["wrapper_metrics"]), "notes": "Same-day A-share ETF snapshot; premium sign positive = trading above IOPV."},
-        {"source": "Sina index/ETF daily (China indexes, A-share & HK-listed ETF)", "status": "Healthy", "latest_observation": latest_obs, "records": len(datasets["index_price_daily_tail"]), "notes": "Daily OHLCV backfilled ~2 years."},
-        {"source": "Yahoo Finance (S&P 500 index)", "status": "Healthy", "latest_observation": latest_obs, "records": None, "notes": "US session history for the S&P 500 exposure."},
-    ]
 
+    expected_count = len(EXPOSURES)
+    actual_exposures = technicals["exposure_id"].nunique() if not technicals.empty and "exposure_id" in technicals.columns else 0
+    wrapper_count = len(datasets["wrapper_metrics"])
+    sp500_ok = not index_px.empty and "exposure_id" in index_px.columns and not index_px[index_px["exposure_id"].eq("sp500")].empty
+
+    spot_status = "Healthy" if wrapper_count > 0 else "Degraded"
+    sina_status = "Healthy" if actual_exposures >= expected_count else "Degraded"
+    yfinance_status = "Healthy" if sp500_ok else "Degraded"
+
+    datasets["source_health"] = [
+        {
+            "source": "Eastmoney ETF spot (premium / turnover / IOPV)",
+            "status": spot_status,
+            "latest_observation": latest_obs,
+            "records": wrapper_count,
+            "notes": f"Snapshot tracking {wrapper_count} ETF wrappers; premium sign positive = trading above IOPV." if wrapper_count > 0 else "No ETF spot snapshot available.",
+        },
+        {
+            "source": "Sina index/ETF daily (China indexes, A-share & HK-listed ETF)",
+            "status": sina_status,
+            "latest_observation": latest_obs,
+            "records": len(datasets["index_price_daily_tail"]),
+            "notes": f"Covering {actual_exposures} of {expected_count} expected exposures." if actual_exposures < expected_count else f"Daily OHLCV for all {actual_exposures} exposures.",
+        },
+        {
+            "source": "Yahoo Finance (S&P 500 index)",
+            "status": yfinance_status,
+            "latest_observation": latest_obs,
+            "records": len(index_px[index_px["exposure_id"].eq("sp500")]) if sp500_ok else 0,
+            "notes": "US session history for the S&P 500 exposure." if sp500_ok else "S&P 500 index data missing.",
+        },
+    ]
     sources = [
         {"id": "eastmoney_etf_spot", "label": "Eastmoney ETF snapshot (premium / spread / turnover / IOPV)", "href": "https://quote.eastmoney.com/center/gridlist.html#fund_etf", "query": {"engine": "akshare fund_etf_spot_em"}},
         {"id": "sina_index_daily", "label": "Sina Finance index / ETF daily OHLCV", "href": "https://finance.sina.com.cn/", "query": {"engine": "akshare stock_zh_index_daily / fund_etf_hist_sina"}},
@@ -175,6 +202,9 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
                 {"field": "fund_name", "label": "Fund", "format": "text"},
                 {"field": "premium_pct", "label": "Premium %", "format": "pct"},
                 {"field": "relative_premium_pct", "label": "Rel Premium %", "format": "pct"},
+                {"field": "entry_status", "label": "Entry Status", "format": "text"},
+                {"field": "spread_bp", "label": "Spread (bp)", "format": "number"},
+                {"field": "aum", "label": "AUM (CNY)", "format": "number"},
                 {"field": "buy_rank", "label": "Buy", "format": "number"},
                 {"field": "hold_rank", "label": "Hold", "format": "number"},
             ],
@@ -193,7 +223,7 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         "generated_at": generated_at,
         "snapshot_id": snapshot_id,
         "data_as_of": data_as_of,
-        "overall_status": "Healthy" if not technicals.empty else "Degraded",
+        "overall_status": "Healthy" if (actual_exposures >= expected_count and wrapper_count > 0) else "Degraded",
         "live_sources": 3,
         "planned_sources": 0,
         "attachment_filename": f"market-monitor-dashboard-{now.date().isoformat()}.html",
