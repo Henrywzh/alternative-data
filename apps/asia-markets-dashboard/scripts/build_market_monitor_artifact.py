@@ -286,11 +286,10 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--status-output", type=Path, required=True)
+    parser.add_argument("--status-output", type=Path, default=None, help="Optional status JSON (Cloudflare surface only; Streamlit does not use this)")
     args = parser.parse_args()
     artifact, status = build_artifact()
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.status_output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(artifact, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
     # Streamlit loads per-language artifacts (english default + *-zh.json for
     # the Chinese UI) and crashes with FileNotFoundError when the zh file is
@@ -300,7 +299,9 @@ def main() -> int:
     # guarantees a usable artifact for the Streamlit surface either way.
     zh_path = args.output.with_name(args.output.name.replace("-artifact.json", "-artifact-zh.json"))
     zh_path.write_text(json.dumps(artifact, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
-    args.status_output.write_text(json.dumps(status, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
+    if args.status_output:
+        args.status_output.parent.mkdir(parents=True, exist_ok=True)
+        args.status_output.write_text(json.dumps(status, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
     print(json.dumps({"ok": True, "artifact": str(args.output), "snapshot_id": status["snapshot_id"], "data_as_of": status["data_as_of"]}))
     return 0
 

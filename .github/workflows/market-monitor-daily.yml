@@ -53,29 +53,13 @@ jobs:
 
       - name: Fetch and derive index/ETF signals
         run: |
-          python -m market_monitor.cli
+          python -m market_monitor.cli --send-report
 
       - name: Build dashboard artifact
         working-directory: apps/asia-markets-dashboard
         run: |
           python scripts/build_market_monitor_artifact.py \
-            --output .generated/market-monitor-artifact.json \
-            --status-output src/data/dashboard-status-market-monitor.json
-
-      - name: Send daily email digest
-        if: steps.gmail_config.outputs.configured == 'true'
-        continue-on-error: true
-        run: |
-          python -c "
-          from market_monitor.alerts import build_email_html, send_report
-          from market_monitor.storage import load_latest_derived
-          from datetime import date
-          tech = load_latest_derived('exposure_technicals')
-          regime = load_latest_derived('relative_regime')
-          wrap = load_latest_derived('wrapper_metrics')
-          body = build_email_html(report_date=date.today().isoformat(), technicals=tech, regime=regime, wrappers=wrap)
-          send_report(subject=f'Index & ETF Allocation Monitor — {date.today().isoformat()}', body_html=body)
-          "
+            --output .generated/market-monitor-artifact.json
 
       - name: Commit refreshed data + artifact
         run: |
@@ -83,8 +67,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/normalized/market_monitor data/derived/market_monitor \
             apps/asia-markets-dashboard/.generated/market-monitor-artifact.json \
-            apps/asia-markets-dashboard/.generated/market-monitor-artifact-zh.json \
-            apps/asia-markets-dashboard/src/data/dashboard-status-market-monitor.json
+            apps/asia-markets-dashboard/.generated/market-monitor-artifact-zh.json
           if git diff --staged --quiet; then
             echo "No market-monitor changes to commit"
             exit 0
