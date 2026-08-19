@@ -38,6 +38,7 @@ _PIT_LABELS = {
     "snapshot_from_delayed_source": "Snapshot · delayed source",
     "dated_public_broker_report": "PIT · dated broker",
     "reconstructed_sparse": "PIT · reconstructed",
+    "repository_captured": "PIT · captured",
     "current_vintage": "PIT · current vintage",
     "not_pit": "Not PIT",
 }
