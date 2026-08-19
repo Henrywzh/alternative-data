@@ -38,7 +38,12 @@ def rank_wrappers(frame: pd.DataFrame, *, group_col: str = "exposure_id") -> pd.
     spread_bp, turnover (amount), aum, management_fee, fund_age_days.
     """
     out = frame.copy()
-    out["relative_premium_z"] = _z_score(out.get("relative_premium_pct", pd.Series(0.0, index=out.index)))
+    if "relative_premium_pct" in out.columns and group_col in out.columns:
+        out["relative_premium_z"] = out.groupby(group_col)["relative_premium_pct"].transform(_z_score)
+    elif "relative_premium_pct" in out.columns:
+        out["relative_premium_z"] = _z_score(out["relative_premium_pct"])
+    else:
+        out["relative_premium_z"] = 0.0
     BUY_COMPONENTS = {
         "premium_pct": -1.0,  # negative premium (discount) preferred
         "relative_premium_pct": -1.0,
