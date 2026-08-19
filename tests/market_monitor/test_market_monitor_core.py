@@ -766,3 +766,73 @@ def test_avg_premium_reports_how_many_days_it_averaged():
     ).read_text(encoding="utf-8")
     assert "Premium (today)" in app_source
     assert 'f"Avg premium {premium_days}D"' in app_source
+
+
+def test_chart_series_ships_a_date_window_not_a_row_count():
+    """A row-count slice makes history depend on how many sessions a venue ran.
+
+    The Sina and Yahoo calendars differ by ~17 sessions a year, so `.tail(250)`
+    handed the US exposures a shorter calendar window than the CN/HK ones and
+    put two different amounts of history on one shared x-axis.
+    """
+    builder = _load_builder()
+    dates = pd.bdate_range("2020-01-01", "2026-08-19")
+    frame = pd.DataFrame(
+        {
+            "date": dates.strftime("%Y-%m-%d"),
+            "exposure_id": "csi300",
+            "close": np.linspace(100.0, 200.0, len(dates)),
+        }
+    )
+
+    rows = builder._chart_series(frame, "exposure_id", "close", years=2)
+
+    assert rows, "a populated series must produce rows"
+    assert rows[0]["date"] >= "2024-08-19"
+    assert rows[-1]["date"] == "2026-08-19"
+    # Two calendar years of business days, not a fixed 250.
+    assert 480 <= len(rows) <= 530
+
+
+def test_chart_series_carries_only_what_a_chart_reads():
+    """Every unread field is paid for in every row of every daily artifact."""
+    builder = _load_builder()
+    frame = pd.DataFrame(
+        {
+            "date": ["2026-08-18", "2026-08-19"],
+            "exposure_id": ["csi300", "csi300"],
+            "close": [1.0, 2.0],
+            "open": [1.0, 2.0],
+            "high": [1.0, 2.0],
+            "low": [1.0, 2.0],
+            "volume": [1, 2],
+            "amount": [1, 2],
+            "index_id": ["000300.SH", "000300.SH"],
+        }
+    )
+
+    rows = builder._chart_series(frame, "exposure_id", "close")
+
+    assert set(rows[0]) == {"date", "exposure_id", "close"}
+
+
+def test_etf_prices_key_on_the_same_id_as_wrapper_metrics():
+    """The per-index "all ETFs" chart joins these two datasets by ticker.
+
+    The price series carried the exchange-qualified `159919.SZ` while wrapper
+    metrics carried the bare `159919`, so the join matched nothing and the
+    chart drew no lines without ever raising.
+    """
+    builder = _load_builder()
+    prices = pd.DataFrame(
+        {
+            "date": ["2026-08-19", "2026-08-19"],
+            "fund_id": ["159919", "510300"],
+            "ticker": ["159919.SZ", "510300.SH"],
+            "close": [4.1, 3.9],
+        }
+    )
+
+    rows = builder._chart_series(prices, "fund_id", "close", id_as="ticker")
+
+    assert {row["ticker"] for row in rows} == {"159919", "510300"}
