@@ -104,7 +104,9 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
     shared_run_id = new_run_id()
 
     # Persist raw observations first so the raw -> normalized -> derived chain
-    # is not missing its bottom layer on disk (PIT discipline).
+    # is not missing its bottom layer on disk (PIT discipline). Note this layer
+    # is local only: data/raw/* is gitignored, so a run reconstructed from the
+    # repository starts at "normalized" and cannot re-derive from source grain.
     raw_write: dict[str, dict[str, str] | None] = {}
     if write:
         for dataset_name in ("index_close", "etf_close", "etf_spot"):

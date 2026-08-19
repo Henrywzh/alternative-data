@@ -113,9 +113,12 @@ def test_rank_wrappers_survives_missing_fund():
     )
     ranked = rank_wrappers(frame)
     assert len(ranked) == 3  # missing fund kept, not dropped
-    # a (best) ranks 1; b and the fully-missing c both score 0 -> tied last.
+    # a (best) ranks 1; the fully-missing c is unmeasured, not worst, so it
+    # lands on the out-of-band 99 rather than being scored 0 and ranked last.
     assert ranked.loc[ranked["fund_id"] == "a", "buy_rank"].iloc[0] == 1
-    assert ranked.loc[ranked["fund_id"] == "c", "buy_rank"].iloc[0] >= 2
+    assert ranked.loc[ranked["fund_id"] == "b", "buy_rank"].iloc[0] == 2
+    assert ranked.loc[ranked["fund_id"] == "c", "buy_rank"].iloc[0] == 99
+    assert pd.isna(ranked.loc[ranked["fund_id"] == "c", "buy_score"].iloc[0])
 
 
 def test_rank_wrappers_entry_status():
@@ -187,8 +190,9 @@ def test_rank_wrappers_partial_field_missing():
     ranked = rank_wrappers(frame)
     b_score = ranked.loc[ranked["fund_id"] == "b", "buy_score"].iloc[0]
     c_score = ranked.loc[ranked["fund_id"] == "c", "buy_score"].iloc[0]
-    # b has valid premium + rel_premium + turnover; c has all 4 but worse values
-    # b should NOT be 0 (the old NaN-propagation bug)
+    # b has a premium and only lacks the (much smaller) spread term, so its
+    # entry cost is still known to within a few bp; c is priced on both and is
+    # genuinely worse. b must not collapse (the old NaN-propagation bug).
     assert b_score > 0, f"fund b partial-missing should not collapse to 0 (got {b_score})"
     assert b_score != c_score, f"partial-missing (b={b_score}) should differ from all-fields-worst (c={c_score})"
 
@@ -253,21 +257,22 @@ def test_buy_score_does_not_double_count_premium():
 
     assert _minmax(frame["premium_pct"]) == _minmax(frame["relative_premium_pct"])
 
-    # The best premium in the cohort must win the premium component outright.
+    # The cohort's only ATTRACTIVE wrapper must rank first outright, even
+    # though it has the widest spread and the lowest turnover of the three.
     assert ranked.loc["510330", "entry_status"] == "ATTRACTIVE"
-    assert ranked.loc["510330", "buy_score"] > ranked.loc["159919", "buy_score"]
+    assert ranked.loc["510330", "buy_rank"] == 1
+    assert ranked.loc["510330", "buy_score"] > ranked.loc["510300", "buy_score"]
+    assert ranked.loc["510330", "liquidity_score"] < ranked.loc["510300", "liquidity_score"]
 
 
 def test_buy_score_separates_wrappers_with_different_premiums():
-    """Two-member cohorts must no longer tie when the premiums differ.
+    """The cheaper wrapper must win, by the size of the gap, not a vote.
 
-    Scope note: de-duplicating premium breaks the tie but does NOT make the
-    cheaper wrapper win. _norm is min-max within the cohort, so a two-member
-    cohort maps every component to {0, 100} and the score degenerates into a
-    vote tally -- 513310 still ranks first on spread + turnover despite a
-    premium 4 points worse. That is the separate design issue (min-max has no
-    absolute scale); this test pins only what de-duplication is responsible
-    for, so a future absolute-scale fix is free to change the winner.
+    Under min-max-within-cohort these two tied at exactly 50.0 and shared
+    rank 1, four percentage points of premium apart: a two-member cohort maps
+    every component to {0, 100}, so the score counted components won instead
+    of pricing them. Both are still AVOID -- the point is that 7.01% is
+    unambiguously the cheaper way in, and the ranking has to say so.
     """
     frame = pd.DataFrame(
         {
@@ -280,9 +285,14 @@ def test_buy_score_separates_wrappers_with_different_premiums():
         }
     )
     ranked = rank_wrappers(frame).set_index("ticker")
-    assert ranked.loc["513500", "buy_score"] != ranked.loc["513310", "buy_score"]
-    assert ranked.loc["513500", "buy_rank"] != ranked.loc["513310", "buy_rank"]
-    assert set(ranked["buy_rank"]) == {1, 2}
+    assert ranked.loc["513500", "buy_rank"] == 1
+    assert ranked.loc["513310", "buy_rank"] == 2
+    assert ranked.loc["513500", "buy_score"] > ranked.loc["513310", "buy_score"]
+    # Cross-border bands: both are past the AVOID edge, so both score under 25.
+    assert ranked.loc["513500", "buy_score"] < 25.0
+    # 513310 has the better spread and 20x the turnover; neither may rescue a
+    # premium 410bp worse.
+    assert ranked.loc["513310", "liquidity_score"] > ranked.loc["513500", "liquidity_score"]
 
 
 def test_email_trend_arrow_distinguishes_missing_from_down():
@@ -343,3 +353,67 @@ def test_spot_premium_sign_is_premium_positive():
     for ticker in ("512100", "510330"):
         implied = (out.loc[ticker, "market_price"] / out.loc[ticker, "iopv"] - 1.0) * 100.0
         assert abs(implied - out.loc[ticker, "premium_pct"]) < 0.01
+
+
+@pytest.mark.parametrize("is_cross_border", [False, True])
+def test_buy_score_and_entry_status_cannot_disagree(is_cross_border):
+    """The score's band edges are entry_status's thresholds, by construction.
+
+    75 / 50 / 25 are the ATTRACTIVE|FAIR, FAIR|EXPENSIVE and EXPENSIVE|AVOID
+    boundaries. Pinning this is the reason the score is on an absolute scale
+    at all: under min-max the score was cohort-relative, so a wrapper labelled
+    AVOID could outscore one labelled ATTRACTIVE in a different cohort and the
+    two readings on the same row told different stories.
+    """
+    floors = {"ATTRACTIVE": 75.0, "FAIR": 50.0, "EXPENSIVE": 25.0, "AVOID": 0.0}
+    ceilings = {"ATTRACTIVE": 100.0, "FAIR": 75.0, "EXPENSIVE": 50.0, "AVOID": 25.0}
+    premiums = [-3.0, -0.5, -0.11, -0.1, 0.0, 0.19, 0.2, 0.5, 1.0, 1.49, 1.5, 3.9, 4.0, 6.0, 11.0]
+    frame = pd.DataFrame(
+        {
+            "exposure_id": ["cohort"] * len(premiums),
+            "ticker": [str(i) for i in range(len(premiums))],
+            "premium_pct": premiums,
+            # zero spread so the cost is the premium exactly, which is what
+            # entry_status reads -- any spread would legitimately shift the
+            # score a fraction of a bp across a boundary.
+            "spread_bp": [0.0] * len(premiums),
+            "turnover": [1e9] * len(premiums),
+            "is_cross_border": [is_cross_border] * len(premiums),
+        }
+    )
+    ranked = rank_wrappers(frame)
+    for _, row in ranked.iterrows():
+        status = row["entry_status"]
+        assert floors[status] <= row["buy_score"] <= ceilings[status], (
+            f"{status} wrapper at premium {row['premium_pct']}% scored "
+            f"{row['buy_score']}, outside [{floors[status]}, {ceilings[status]}]"
+        )
+    # And the score must be strictly monotone in cost across the whole range.
+    ordered = ranked.sort_values("premium_pct")["buy_score"].tolist()
+    assert ordered == sorted(ordered, reverse=True)
+
+
+def test_liquidity_saturates_and_is_not_blended_into_buy_score():
+    """Turnover must not buy its way past a worse entry cost."""
+    frame = pd.DataFrame(
+        {
+            "exposure_id": ["cohort"] * 2,
+            "ticker": ["cheap_thin", "dear_deep"],
+            "premium_pct": [-0.25, 0.30],
+            "spread_bp": [6.0, 1.0],
+            "turnover": [3.0e8, 2.0e10],  # 60x the turnover
+            "is_cross_border": [False] * 2,
+        }
+    )
+    ranked = rank_wrappers(frame).set_index("ticker")
+    assert ranked.loc["cheap_thin", "buy_rank"] == 1
+    assert ranked.loc["dear_deep", "liquidity_score"] > ranked.loc["cheap_thin", "liquidity_score"]
+
+    # Saturation: past ~1e9 CNY/day, another decade of turnover is worth
+    # almost nothing, because it no longer changes what an entry costs.
+    thin = pd.DataFrame({"exposure_id": ["c"], "ticker": ["t"], "premium_pct": [0.0], "turnover": [1e7], "is_cross_border": [False]})
+    ample = thin.assign(turnover=[1e9])
+    more = thin.assign(turnover=[1e10])
+    score = lambda f: rank_wrappers(f)["liquidity_score"].iloc[0]
+    assert score(ample) - score(thin) > 40.0
+    assert score(more) - score(ample) < 10.0
