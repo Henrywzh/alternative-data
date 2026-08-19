@@ -55,8 +55,9 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     run_ids = {name: (li or {}).get("run_id") for name, li in lineages.items()}
     unique_run_ids = {rid for rid in run_ids.values() if rid}
     run_consistent = len(unique_run_ids) == 1 and all(run_ids.values())
+    latest_run_id = max(unique_run_ids, key=str) if unique_run_ids else None
     if not run_consistent:
-        stale_datasets = [name for name, rid in run_ids.items() if not rid or rid != max(unique_run_ids, key=str)]
+        stale_datasets = [name for name, rid in run_ids.items() if not rid or rid != latest_run_id]
     else:
         stale_datasets = []
 
@@ -151,6 +152,11 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         spot_notes = f"Eastmoney ETF spot snapshot failed (0 / {expected_wrappers} wrappers observed)."
 
     sina_status = "Healthy" if sina_actual_count >= len(sina_expected) else "Degraded"
+    sina_records = (
+        len(index_px[index_px["exposure_id"].isin(sina_expected)])
+        if not index_px.empty and "exposure_id" in index_px.columns
+        else 0
+    )
     yfinance_status = "Healthy" if sp500_ok else "Degraded"
     overall_healthy = (
         actual_exposures >= expected_count
@@ -168,10 +174,10 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
             "notes": spot_notes,
         },
         {
-            "source": "Sina index/ETF daily (China indexes, A-share & HK-listed ETF)",
+            "source": "Sina index daily (CN/HK)",
             "status": sina_status,
             "latest_observation": sina_latest,
-            "records": len(datasets["index_price_daily_tail"]),
+            "records": sina_records,
             "notes": f"Covering {sina_actual_count} of {len(sina_expected)} Sina-owned exposures (CN/HK)." if sina_actual_count < len(sina_expected) else f"Daily OHLCV for all {sina_actual_count} Sina-owned exposures (CN/HK).",
         },
         {
@@ -263,7 +269,7 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
                 {"field": "relative_premium_pct", "label": "Rel Premium %", "format": "pct"},
                 {"field": "entry_status", "label": "Entry Status", "format": "text"},
                 {"field": "spread_bp", "label": "Spread (bp)", "format": "number"},
-                {"field": "aum", "label": "AUM (CNY)", "format": "number"},
+                {"field": "aum_proxy", "label": "Market Cap Proxy (CNY)", "format": "number"},
                 {"field": "peer_rank", "label": "Peer Rank", "format": "number"},
                 {"field": "hold_rank", "label": "Hold Rank", "format": "number"},
             ],
@@ -276,7 +282,7 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         "manifest": {"version": 1, "generatedAt": generated_at, "cards": [], "charts": charts, "tables": tables, "blocks": blocks},
         "snapshot": {"version": 1, "generatedAt": generated_at, "status": "ready", "datasets": datasets},
         "sources": sources,
-        "package_info": {"originUrl": "https://asia-markets-dashboard.pages.dev/sectors/market-monitor/", "snapshotId": snapshot_id, "dataAsOf": data_as_of, "pipelineRunId": max(unique_run_ids, key=str) if unique_run_ids else None, "runConsistent": run_consistent},
+        "package_info": {"snapshotId": snapshot_id, "dataAsOf": data_as_of, "pipelineRunId": latest_run_id, "runConsistent": run_consistent},
     }
     status = {
         "generated_at": generated_at,

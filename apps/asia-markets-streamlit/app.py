@@ -3224,9 +3224,9 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
 
     # --- Wrapper Selection ---
     if wrappers:
-        section_heading(language, "Wrapper Selection", "ETF包装选择", "Entry status gates absolute premium; Peer Rank compares same-index wrappers; Hold Rank weighs fee/AUM/age.", "入场状态判断绝对溢价；同类排名比较同指数ETF；持有排名侧重费率/规模/存续期。")
+        section_heading(language, "Wrapper Selection", "ETF包装选择", "Entry status gates absolute premium; Peer Rank compares same-index wrappers; Hold Rank weighs fee / market-cap size proxy / age.", "入场状态判断绝对溢价；同类排名比较同指数ETF；持有排名侧重费率 / 市值规模代理 / 存续期。")
         frame = pd.DataFrame(wrappers)
-        show_cols = [c for c in ("ticker", "fund_name", "premium_pct", "relative_premium_pct", "entry_status", "spread_bp", "aum", "peer_rank", "hold_rank", "is_cross_border") if c in frame.columns]
+        show_cols = [c for c in ("ticker", "fund_name", "premium_pct", "relative_premium_pct", "entry_status", "spread_bp", "aum_proxy", "peer_rank", "hold_rank", "is_cross_border") if c in frame.columns]
         if show_cols:
             st.dataframe(frame[show_cols], hide_index=True, width="stretch")
         if "premium_caveat" in frame.columns:
