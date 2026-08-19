@@ -13,6 +13,7 @@ from src.hk_utilities.sources.power_assets_segments import fetch_power_assets_se
 from src.hk_utilities.sources.towngas_proxy import fetch_towngas_proxy
 
 
+@pytest.mark.network
 def test_fetch_clp_electricity():
     df = fetch_clp_electricity()
     assert not df.empty
@@ -27,6 +28,7 @@ def test_fetch_clp_electricity():
     assert len(df) >= 3
 
 
+@pytest.mark.network
 def test_fetch_towngas_proxy():
     df = fetch_towngas_proxy()
     assert not df.empty
@@ -37,6 +39,7 @@ def test_fetch_towngas_proxy():
     assert len(df) >= 50
 
 
+@pytest.mark.network
 def test_fetch_hko_temperature():
     try:
         df = fetch_hko_temperature()
@@ -48,6 +51,7 @@ def test_fetch_hko_temperature():
     assert len(df) >= 100
 
 
+@pytest.mark.network
 def test_fetch_power_assets_segments():
     df = fetch_power_assets_segments()
     assert not df.empty

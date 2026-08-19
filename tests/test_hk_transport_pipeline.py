@@ -19,6 +19,7 @@ from src.hk_transport.sources.cathay_fleet import _parse_fleet_profile
 from src.hk_transport.sources.mtr_patronage import fetch_mtr_patronage
 
 
+@pytest.mark.network
 def test_fetch_mtr_patronage():
     df = fetch_mtr_patronage()
     assert not df.empty
@@ -29,6 +30,7 @@ def test_fetch_mtr_patronage():
     assert len(df) >= 6
 
 
+@pytest.mark.network
 def test_fetch_cathay_traffic():
     df = fetch_cathay_traffic()
     assert not df.empty
@@ -200,6 +202,7 @@ def test_hk_transport_stage_1_orchestration(monkeypatch: pytest.MonkeyPatch) -> 
     assert all(value is _STAGE_STUB for value in results.values())
 
 
+@pytest.mark.network
 def test_cathay_discover_traffic_pdfs_real_archive():
     """The archive-crawl discovery step should find real per-month PDF links
     (not guessed URLs), including months well before the old pipeline's

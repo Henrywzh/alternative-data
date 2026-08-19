@@ -58,6 +58,7 @@ def test_emitter_passes_hard_gate_and_produces_baselines() -> None:
     assert mtr_reported["actual_source_url"].str.startswith("https://").all()
 
 
+@pytest.mark.network
 def test_csv_and_parquet_preserve_optional_provenance_values() -> None:
     build_long_form(write_outputs=True, write_run_store=False)
     csv = pd.read_csv("data/registries/asia_backtest_long_form.csv")

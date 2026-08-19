@@ -25,6 +25,7 @@ from src.hk_stablecoin_crypto.sources.wikimedia_pageviews import (
 )
 
 
+@pytest.mark.network
 def test_fetch_hkma_register():
     df = fetch_licensed_issuers()
     assert not df.empty
@@ -49,6 +50,7 @@ def test_anchorpoint_is_not_anchorx():
     assert not any("anchorx" in str(i) for i in issuers)
 
 
+@pytest.mark.network
 def test_fetch_sfc_vatp_register():
     df = fetch_vatp_register()
     assert not df.empty
@@ -65,6 +67,7 @@ def test_fetch_sfc_vatp_register():
     assert len(forced_closures) == 0
 
 
+@pytest.mark.network
 def test_fetch_stablecoin_supply():
     df = fetch_stablecoin_supply()
     assert not df.empty
@@ -136,6 +139,7 @@ def test_wikimedia_crypto_pageviews_builds_cross_year_weekly_and_monthly_cache(t
     )
 
 
+@pytest.mark.network
 def test_fetch_etf_aum_known_funds():
     df = fetch_all_etf_aum()
     assert not df.empty
@@ -270,6 +274,7 @@ def test_pipeline_stage_1_execution():
 # --- SFC news --------------------------------------------------------------
 
 
+@pytest.mark.network
 def test_sfc_news_api_returns_full_archive(monkeypatch):
     """Directly probe the raw SFC news-search API (bypassing our own
     keyword/date filtering) and assert `total` reflects the full historical
@@ -324,6 +329,7 @@ def test_fetch_sfc_news_dates_are_sane_and_filter_narrows_results():
 # --- HKMA news ---------------------------------------------------------------
 
 
+@pytest.mark.network
 def test_hkma_news_api_returns_real_press_releases():
     """Directly probe HKMA's own documented Open API and assert it returns
     real, dated press releases -- proof this is a live official feed, not a
@@ -345,6 +351,7 @@ def test_hkma_news_api_returns_real_press_releases():
     assert all("date" in r and "title" in r for r in records)
 
 
+@pytest.mark.network
 def test_fetch_hkma_news_dates_are_sane_and_filter_narrows_results():
     df = fetch_hkma_news()
 

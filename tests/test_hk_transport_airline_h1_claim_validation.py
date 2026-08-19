@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pytest
 import pandas as pd
 
 from src.hk_transport.sources.airline_h1_claim_validation import (
@@ -17,6 +18,7 @@ def test_h1_claim_queue_covers_core_financial_and_9air_scope_claims() -> None:
     assert frame["validation_rule"].notna().all()
 
 
+@pytest.mark.network
 def test_h1_claim_queue_preserves_preliminary_warning_and_pending_9air_pnl() -> None:
     frame = build_airline_h1_claim_validation_queue()
     warning = frame[frame.claim_id.eq("603885.SH__h1_warning_reconciliation")].iloc[0]
