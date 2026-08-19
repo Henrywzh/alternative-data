@@ -1,6 +1,8 @@
 """Offline unit tests for market_monitor derived-signal math."""
 
+import json
 import sys
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -417,3 +419,164 @@ def test_liquidity_saturates_and_is_not_blended_into_buy_score():
     score = lambda f: rank_wrappers(f)["liquidity_score"].iloc[0]
     assert score(ample) - score(thin) > 40.0
     assert score(more) - score(ample) < 10.0
+
+
+def test_hold_score_is_absolute_not_cohort_relative():
+    """A cohort where every fund charges the same must not fabricate a spread.
+
+    Under min-max, three CSI 300 wrappers all charging 0.50% hit
+    nunique() == 1, every one scored 50 on fee, and the remaining differences
+    got stretched across the full 0-100 range -- a 1.4x size difference became
+    a 58-point score gap (21.7 vs 80.3). On an absolute scale identical fees
+    score identically because they *are* identical, and near-identical funds
+    land near each other.
+    """
+    from market_monitor.ranking import _hold_quality_score
+
+    frame = pd.DataFrame(
+        {
+            "exposure_id": ["csi300"] * 3,
+            "ticker": ["510300", "510330", "159919"],
+            "management_fee": [0.005] * 3,
+            "aum_proxy": [107.2e9, 41.4e9, 29.7e9],
+            "fund_age_days": [5196, 4985, 5217],
+        }
+    )
+    scores = _hold_quality_score(frame)
+    assert scores.max() - scores.min() < 10.0, f"near-identical funds spread {scores.tolist()}"
+
+    # And a uniformly expensive cohort must score low, which a within-cohort
+    # normalisation can never express.
+    dear = frame.assign(management_fee=[0.015] * 3)
+    assert _hold_quality_score(dear).max() < scores.min()
+
+
+def test_hold_score_prices_a_fee_advantage_over_size():
+    """512500 charges a third of its peers' fee and was ranked last for it."""
+    frame = pd.DataFrame(
+        {
+            "exposure_id": ["csi500"] * 3,
+            "ticker": ["512500", "510500", "159922"],
+            "management_fee": [0.0015, 0.005, 0.005],
+            "aum_proxy": [7.9e9, 40.1e9, 8.5e9],  # 512500 is the smallest
+            "fund_age_days": [4125, 4928, 4928],
+            "premium_pct": [-0.16, 0.24, 0.10],
+            "is_cross_border": [False] * 3,
+        }
+    )
+    ranked = rank_wrappers(frame).set_index("ticker")
+    assert ranked.loc["512500", "hold_rank"] == 1, ranked["hold_score"].to_dict()
+
+
+def test_prune_runs_keeps_the_newest_and_reports_what_it_dropped(tmp_path):
+    from market_monitor.storage import prune_runs, load_lineage_history, save_normalized
+
+    root = tmp_path / "normalized"
+    for day in range(1, 8):
+        run_id = f"2026081{day}T000000-{day:08x}"
+        target = root / "ds" / run_id
+        target.mkdir(parents=True)
+        pd.DataFrame({"a": [day]}).to_parquet(target / "ds.parquet", index=False)
+        (target / "lineage.json").write_text(
+            json.dumps({"run_id": run_id, "run_scope": "full", "records": day}), encoding="utf-8"
+        )
+
+    dropped = prune_runs(root, "ds", keep=3)
+    kept = sorted(p.name for p in (root / "ds").iterdir())
+    assert len(kept) == 3
+    assert len(dropped) == 4
+    # Newest by run_id, which embeds the timestamp -- not by mtime, which is
+    # identical across every file of a fresh git checkout.
+    assert kept == sorted(kept, key=str)[-3:]
+    assert all(name < min(kept) for name in dropped)
+
+
+def test_lineage_history_is_newest_first_and_scope_filtered(tmp_path):
+    from market_monitor.storage import load_lineage_history
+
+    root = tmp_path / "normalized"
+    for run_id, scope in (
+        ("20260819T010000-aaaa", "full"),
+        ("20260819T020000-bbbb", "partial"),
+        ("20260819T030000-cccc", "full"),
+    ):
+        target = root / "ds" / run_id
+        target.mkdir(parents=True)
+        (target / "lineage.json").write_text(
+            json.dumps({"run_id": run_id, "run_scope": scope}), encoding="utf-8"
+        )
+    history = load_lineage_history(root, "ds", scope="full", limit=2)
+    assert [h["run_id"] for h in history] == ["20260819T030000-cccc", "20260819T010000-aaaa"]
+
+
+def test_lineage_measured_fields_survive_caller_metadata(tmp_path, monkeypatch):
+    """Caller metadata must not overwrite the row count or digest."""
+    import market_monitor.storage as storage
+
+    monkeypatch.setattr(storage, "NORMALIZED_DIR", tmp_path)
+    frame = pd.DataFrame({"a": [1, 2, 3]})
+    info = storage.save_normalized(
+        "ds", frame, metadata={"records": 999, "sha256": "not-a-digest", "type": "normalized"}
+    )
+    lineage = json.loads(Path(info["lineage"]).read_text(encoding="utf-8"))
+    assert lineage["records"] == 3
+    assert lineage["sha256"] != "not-a-digest"
+    assert lineage["type"] == "normalized"
+
+
+def _load_builder():
+    import importlib.util
+
+    root = Path(__file__).resolve().parents[2]
+    path = root / "apps" / "asia-markets-dashboard" / "scripts" / "build_market_monitor_artifact.py"
+    spec = importlib.util.spec_from_file_location("_mm_builder", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_coverage_regression_catches_the_2026_08_19_history_collapse():
+    """The exact run pair that shipped a 38% shorter history as Healthy.
+
+    At 11:25 the run held 5,541 rows over 7 exposures back to 2023-01-03; at
+    12:28 it held 3,416 back to 2024-08-19. Both were labelled run_scope
+    "full" -- the label is derived from the CLI arguments, so it reports what
+    the run meant to fetch -- and load_latest picked the shorter one purely
+    because its run_id sorts later.
+    """
+    builder = _load_builder()
+    previous = {
+        "rows_by_exposure": {
+            "csi1000": 879, "csi300": 879, "csi500": 879, "dividend": 879,
+            "growth": 879, "hstech": 645, "sp500": 501,
+        },
+        "missing_exposures": [],
+    }
+    current = {
+        "rows_by_exposure": {
+            "csi1000": 485, "csi300": 485, "csi500": 485, "dividend": 485,
+            "growth": 485, "hstech": 490, "sp500": 501,
+        },
+        "missing_exposures": [],
+    }
+    notes = builder.coverage_regressions(current, previous)
+    assert len(notes) == 6, notes
+    assert any("csi300 485 rows vs 879" in note for note in notes)
+    # sp500 was unchanged and hstech dropped only 24%... it did drop, so it is
+    # reported; the one exposure that held steady must not be.
+    assert not any(note.startswith("sp500") for note in notes)
+
+
+def test_coverage_regression_tolerates_calendar_wobble_and_first_runs():
+    builder = _load_builder()
+    steady = {"rows_by_exposure": {"csi300": 879}, "missing_exposures": []}
+    assert builder.coverage_regressions(steady, steady) == []
+    # A holiday-shortened refresh is not a regression.
+    assert builder.coverage_regressions(
+        {"rows_by_exposure": {"csi300": 875}, "missing_exposures": []}, steady
+    ) == []
+    # Nothing to compare against yet.
+    assert builder.coverage_regressions(steady, {}) == []
+    # A vanished exposure is reported once, not twice.
+    gone = {"rows_by_exposure": {}, "missing_exposures": ["csi300"]}
+    assert builder.coverage_regressions(gone, steady) == ["no rows for csi300"]
