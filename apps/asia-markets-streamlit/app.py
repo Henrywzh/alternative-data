@@ -297,14 +297,21 @@ OVERVIEW_PULSE_CONFIG: dict[str, dict[str, Any]] = {
         "metrics": (
             {
                 "dataset": "kpi_market",
-                "field": "value",
+                "field": "csi300_rsi",
                 "format": "number",
                 "label_en": "CSI 300 RSI",
                 "label_zh": "沪深300 RSI",
             },
             {
                 "dataset": "kpi_market",
-                "field": "value",
+                "field": "sp500_rsi",
+                "format": "number",
+                "label_en": "S&P 500 RSI",
+                "label_zh": "标普500 RSI",
+            },
+            {
+                "dataset": "kpi_market",
+                "field": "small_large_z",
                 "format": "number",
                 "label_en": "Small / Large z",
                 "label_zh": "小盘/大盘 z",
@@ -3192,6 +3199,225 @@ def render_data_explorer(artifacts: dict[str, dict[str, Any]], language: str) ->
     st.dataframe(frame, hide_index=True, width="stretch")
 
 
+def _market_price_frame(datasets: dict[str, Any]) -> pd.DataFrame:
+    """Daily index closes from the artifact, typed and sorted."""
+    rows = datasets.get("index_price_daily_tail", [])
+    if not rows:
+        return pd.DataFrame()
+    frame = pd.DataFrame(rows)
+    if "date" not in frame.columns or "close" not in frame.columns:
+        return pd.DataFrame()
+    frame["_date"] = pd.to_datetime(frame["date"], errors="coerce")
+    frame["close"] = pd.to_numeric(frame["close"], errors="coerce")
+    return frame.dropna(subset=["_date", "close"]).sort_values("_date")
+
+
+def render_market_leadership_chart(
+    prices: pd.DataFrame,
+    label_by_exposure: dict[str, str],
+    language: str,
+    history_window_name: str,
+) -> None:
+    """Every exposure rebased to 100, which is the only way to read leadership.
+
+    Rebasing is anchored to the latest first-observation across the series, not
+    to each series' own first point. CSI and S&P 500 histories start days apart
+    and run on different trading calendars, so rebasing each to its own start
+    would silently hand the later-starting series a different measurement
+    period and read as performance.
+    """
+    windowed, coverage = history_window(prices, "date", history_window_name)
+    if windowed.empty:
+        st.info(tr(language, "No rows are available for this selection.", "这个选择没有可用数据。"))
+        return
+    common_start = windowed.groupby("exposure_id")["_date"].min().max()
+    aligned = windowed[windowed["_date"] >= common_start].copy()
+    if aligned.empty:
+        st.info(tr(language, "No overlapping history across exposures.", "各指数没有重叠的历史区间。"))
+        return
+    base = aligned.sort_values("_date").groupby("exposure_id")["close"].transform("first")
+    aligned["_value"] = aligned["close"] / base * 100.0
+    aligned["series"] = aligned["exposure_id"].map(label_by_exposure).fillna(aligned["exposure_id"])
+
+    st.markdown(
+        f'<div class="am-chart-title">{tr(language, "Relative Performance (rebased to 100)", "相对表现（归一至 100）")}</div>',
+        unsafe_allow_html=True,
+    )
+    st.caption(
+        " · ".join(
+            [
+                tr(
+                    language,
+                    f"All exposures rebased at {common_start:%d %b %Y}, the first date every series covers.",
+                    f"全部指数以 {common_start:%Y-%m-%d} 归一，该日期是所有序列共同覆盖的最早一天。",
+                ),
+                tr(
+                    language,
+                    "CN, HK and US sessions run on different calendars; lines are plotted on their own trading days.",
+                    "中国内地、香港与美国的交易日历不同，各线按各自的交易日绘制。",
+                ),
+                coverage,
+            ]
+        )
+    )
+    fig = px.line(
+        aligned.sort_values(["series", "_date"]),
+        x="_date",
+        y="_value",
+        color="series",
+        color_discrete_sequence=PALETTE,
+    )
+    fig.add_hline(y=100.0, line_dash="dot", line_color="#9CA3AF", line_width=1)
+    fig.update_yaxes(title=tr(language, "Rebased level", "归一水平"))
+    fig.update_xaxes(title=None, tickformat="%b %Y")
+    apply_line_hover(fig, aligned, "number")
+    st.plotly_chart(
+        chart_theme(fig, "number", date_axis=True, height=420),
+        width="stretch",
+        config={"displaylogo": False, "responsive": True},
+    )
+
+
+def render_market_index_detail(
+    exposure_id: str,
+    label: str,
+    prices: pd.DataFrame,
+    technicals: pd.DataFrame,
+    wrappers: pd.DataFrame,
+    language: str,
+    history_window_name: str,
+) -> None:
+    """One index: its price path with moving averages, then every ETF on it."""
+    series = prices[prices["exposure_id"].eq(exposure_id)].sort_values("_date").copy()
+    windowed, coverage = history_window(series, "date", history_window_name)
+
+    tech_row = technicals[technicals["exposure_id"].eq(exposure_id)]
+    if not tech_row.empty:
+        row = tech_row.iloc[0]
+        columns = st.columns(4)
+        readings = (
+            ("RSI", "RSI", row.get("rsi"), "{:.0f}"),
+            ("vs MA20", "相对20日均线", row.get("ma20_pct"), "{:+.2f}%"),
+            ("vs MA60", "相对60日均线", row.get("ma60_pct"), "{:+.2f}%"),
+            ("60D drawdown", "60日回撤", row.get("drawdown_60d"), "{:+.2f}%"),
+        )
+        for column, (en, zh, value, fmt) in zip(columns, readings):
+            # A missing reading shows as an em dash, never as a zero: this page
+            # already had a bug where an absent MA rendered as a down arrow.
+            display = "—" if value is None or pd.isna(value) else fmt.format(float(value))
+            column.metric(tr(language, en, zh), display)
+
+    if not windowed.empty:
+        plot = windowed[["_date", "close"]].copy()
+        # Computed from the plotted window, so the averages match the line the
+        # reader is looking at rather than a longer series held elsewhere.
+        plot["MA20"] = plot["close"].rolling(20).mean()
+        plot["MA60"] = plot["close"].rolling(60).mean()
+        long_form = plot.melt(id_vars="_date", var_name="series", value_name="_value").dropna(subset=["_value"])
+        long_form["series"] = long_form["series"].map(
+            {
+                "close": tr(language, "Close", "收盘"),
+                "MA20": tr(language, "MA20", "20日均线"),
+                "MA60": tr(language, "MA60", "60日均线"),
+            }
+        ).fillna(long_form["series"])
+        st.markdown(
+            f'<div class="am-chart-title">{escape(label)} — {tr(language, "price and moving averages", "价格与均线")}</div>',
+            unsafe_allow_html=True,
+        )
+        st.caption(coverage)
+        fig = px.line(long_form, x="_date", y="_value", color="series", color_discrete_sequence=PALETTE)
+        fig.update_yaxes(title=tr(language, "Index level", "指数点位"))
+        fig.update_xaxes(title=None, tickformat="%b %Y")
+        apply_line_hover(fig, long_form, "number")
+        st.plotly_chart(
+            chart_theme(fig, "number", date_axis=True, height=380),
+            width="stretch",
+            config={"displaylogo": False, "responsive": True},
+        )
+
+    cohort = wrappers[wrappers["exposure_id"].eq(exposure_id)].copy()
+    st.markdown(
+        f'<div class="am-chart-title">{tr(language, "ETF wrappers on this index", "追踪该指数的 ETF")}</div>',
+        unsafe_allow_html=True,
+    )
+    if cohort.empty:
+        st.info(tr(language, "No ETF wrapper is tracked for this index yet.", "该指数暂无纳入跟踪的 ETF。"))
+        return
+
+    if "peer_rank" in cohort.columns:
+        cohort = cohort.sort_values("peer_rank")
+    show_cols = [
+        c
+        for c in (
+            "ticker", "fund_name", "entry_status", "entry_cost_bp", "premium_pct",
+            "spread_bp", "liquidity_score", "management_fee", "aum_proxy",
+            "fund_age_days", "peer_rank", "hold_rank",
+        )
+        if c in cohort.columns
+    ]
+    st.dataframe(cohort[show_cols], hide_index=True, width="stretch")
+
+    if "entry_cost_bp" in cohort.columns and cohort["entry_cost_bp"].notna().any():
+        render_market_entry_cost_chart(cohort, language)
+
+    if "premium_caveat" in cohort.columns:
+        caveats = [str(x) for x in cohort["premium_caveat"].dropna().unique().tolist() if x]
+        if caveats:
+            st.caption(" · ".join(caveats))
+
+
+def render_market_entry_cost_chart(cohort: pd.DataFrame, language: str) -> None:
+    """Entry cost per wrapper against the bands that name it.
+
+    The bar is the number the ranking is computed from, and the reference lines
+    are the same thresholds entry_status uses, so "why is this one ATTRACTIVE"
+    is answerable by looking rather than by trusting the label.
+    """
+    frame = cohort.dropna(subset=["entry_cost_bp"]).copy()
+    if frame.empty:
+        return
+    frame["_label"] = frame.get("ticker", pd.Series(dtype=str)).astype(str)
+    if "fund_name" in frame.columns:
+        frame["_label"] = frame["_label"] + " " + frame["fund_name"].astype(str).str.slice(0, 14)
+    frame = frame.sort_values("entry_cost_bp")
+
+    fig = px.bar(
+        frame,
+        x="entry_cost_bp",
+        y="_label",
+        orientation="h",
+        color_discrete_sequence=[PALETTE[0]],
+    )
+    cross = frame.get("is_cross_border")
+    if cross is not None and cross.notna().any() and cross.astype(bool).nunique() == 1:
+        # Domestic and cross-border wrappers are read against different bands,
+        # so the lines are only drawn when the whole cohort shares a regime.
+        edges = (0.0, 150.0, 400.0) if bool(cross.iloc[0]) else (-10.0, 20.0, 100.0)
+        names = (
+            tr(language, "Attractive ≤", "有吸引力 ≤"),
+            tr(language, "Fair ≤", "合理 ≤"),
+            tr(language, "Expensive ≤", "偏贵 ≤"),
+        )
+        for edge, name in zip(edges, names):
+            fig.add_vline(
+                x=edge,
+                line_dash="dot",
+                line_color="#9CA3AF",
+                line_width=1,
+                annotation_text=f"{name} {edge:g}",
+                annotation_position="top",
+                annotation_font_size=10,
+            )
+    fig.update_xaxes(title=tr(language, "Entry cost (bp) — premium + half-spread", "入场成本（bp）= 溢价 + 半价差"))
+    fig.update_yaxes(title=None)
+    st.plotly_chart(
+        chart_theme(fig, "number", date_axis=False, height=max(200, 60 * len(frame))),
+        width="stretch",
+        config={"displaylogo": False, "responsive": True},
+    )
+
+
 def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: str, window: str) -> None:
     """Index & ETF Allocation Monitor: exposure leadership, relative regime,
     and wrapper selection.
@@ -3201,38 +3427,78 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
 
     datasets = artifact.get("snapshot", {}).get("datasets", {})
 
-    technicals = datasets.get("exposure_technicals", [])
+    technicals = pd.DataFrame(datasets.get("exposure_technicals", []))
     regime = datasets.get("relative_regime", [])
-    wrappers = datasets.get("wrapper_metrics", [])
+    wrappers = pd.DataFrame(datasets.get("wrapper_metrics", []))
+    prices = _market_price_frame(datasets)
 
-    if not technicals and not regime and not wrappers:
+    if technicals.empty and not regime and wrappers.empty:
         st.info(tr(language, "This chart is not available in the current artifact snapshot.", "当前数据快照未包含此图表。"))
         return
 
-    # --- Market Leadership ---
-    if technicals:
-        section_heading(language, "Market Leadership", "市场领导力", "Exposure technical snapshot (RSI / MA / drawdown).", "各指数技术面快照（RSI / 均线 / 回撤）。")
-        frame = pd.DataFrame(technicals)
-        show_cols = [c for c in ("label", "rsi", "ma20_pct", "ma60_pct", "drawdown_60d") if c in frame.columns]
+    label_by_exposure: dict[str, str] = {}
+    if not technicals.empty and {"exposure_id", "label"} <= set(technicals.columns):
+        label_by_exposure = dict(zip(technicals["exposure_id"].astype(str), technicals["label"].astype(str)))
+
+    # --- Leadership ---
+    section_heading(language, "Market Leadership", "市场领导力", "Which exposure is leading, and the technical snapshot behind it.", "哪个指数在领跑，以及其技术面快照。")
+    if not prices.empty:
+        render_market_leadership_chart(prices, label_by_exposure, language, window)
+    if not technicals.empty:
+        show_cols = [c for c in ("label", "rsi", "ma20_pct", "ma60_pct", "drawdown_60d") if c in technicals.columns]
         if show_cols:
-            st.dataframe(frame[show_cols].sort_values("label"), hide_index=True, width="stretch")
+            st.dataframe(technicals[show_cols].sort_values("label"), hide_index=True, width="stretch")
 
     # --- Relative Regime ---
     if regime:
         section_heading(language, "Relative Regime", "相对强弱", "Rolling 20D z-score of windowed spread; trend is 5D vs 20D.", "滚动20日z-score的区间价差；趋势为5日对20日。")
-        st.dataframe(pd.DataFrame(regime), hide_index=True, width="stretch")
+        regime_frame = pd.DataFrame(regime)
+        if {"label", "spread_20d_zscore"} <= set(regime_frame.columns):
+            z_frame = regime_frame.dropna(subset=["spread_20d_zscore"]).copy()
+            if not z_frame.empty:
+                z_frame["_z"] = pd.to_numeric(z_frame["spread_20d_zscore"], errors="coerce")
+                fig = px.bar(z_frame.sort_values("_z"), x="_z", y="label", orientation="h", color_discrete_sequence=[PALETTE[0]])
+                fig.add_vline(x=0.0, line_color="#9CA3AF", line_width=1)
+                fig.update_xaxes(title=tr(language, "20D spread z-score", "20日价差 z-score"))
+                fig.update_yaxes(title=None)
+                st.plotly_chart(
+                    chart_theme(fig, "number", date_axis=False, height=max(200, 60 * len(z_frame))),
+                    width="stretch",
+                    config={"displaylogo": False, "responsive": True},
+                )
+        st.dataframe(regime_frame, hide_index=True, width="stretch")
 
-    # --- Wrapper Selection ---
-    if wrappers:
-        section_heading(language, "Wrapper Selection", "ETF包装选择", "Entry Cost = premium paid over IOPV + half the spread crossed, in bp; Peer Rank orders same-index wrappers by it. Liquidity is reported beside the cost, not blended into it. Hold Rank weighs fee (double weight -- a certain annual cost) against size proxy and age (survivorship proxies), all on absolute scales.", "入场成本 = 相对 IOPV 的溢价 + 跨越半个价差，单位 bp；同类排名按该成本排序。流动性单列显示，不混入成本。持有排名以费率为双倍权重（确定的年度成本），规模代理与存续期为存续风险代理，全部使用绝对刻度。")
-        frame = pd.DataFrame(wrappers)
-        show_cols = [c for c in ("ticker", "fund_name", "premium_pct", "relative_premium_pct", "entry_status", "entry_cost_bp", "spread_bp", "liquidity_score", "aum_proxy", "peer_rank", "hold_rank", "is_cross_border") if c in frame.columns]
-        if show_cols:
-            st.dataframe(frame[show_cols], hide_index=True, width="stretch")
-        if "premium_caveat" in frame.columns:
-            caveat_texts = [str(x) for x in frame["premium_caveat"].dropna().unique().tolist() if x]
-            if caveat_texts:
-                st.caption(" · ".join(caveat_texts))
+    # --- Per-index detail ---
+    if not wrappers.empty or not prices.empty:
+        section_heading(
+            language,
+            "By Index",
+            "按指数查看",
+            "Pick an index to see its price path and every ETF wrapper tracking it. Entry Cost = premium paid over IOPV + half the spread crossed, in bp; Peer Rank orders same-index wrappers by it. Liquidity is reported beside the cost, not blended into it. Hold Rank weighs fee (double weight -- a certain annual cost) against size proxy and age (survivorship proxies), all on absolute scales.",
+            "选择一个指数，查看其价格走势与全部追踪它的 ETF。入场成本 = 相对 IOPV 的溢价 + 跨越半个价差，单位 bp；同类排名按该成本排序。流动性单列显示，不混入成本。持有排名以费率为双倍权重（确定的年度成本），规模代理与存续期为存续风险代理，全部使用绝对刻度。",
+        )
+        available = [e for e in label_by_exposure if not prices.empty and e in set(prices["exposure_id"])]
+        if not available and not wrappers.empty:
+            available = sorted(wrappers["exposure_id"].astype(str).unique())
+        if available:
+            wrapper_counts = (
+                wrappers.groupby("exposure_id").size().to_dict() if not wrappers.empty else {}
+            )
+            selected = st.selectbox(
+                tr(language, "Index", "指数"),
+                available,
+                key="market_index_select",
+                format_func=lambda e: f"{label_by_exposure.get(e, e)} ({wrapper_counts.get(e, 0)} ETF)",
+            )
+            render_market_index_detail(
+                selected,
+                label_by_exposure.get(selected, selected),
+                prices,
+                technicals,
+                wrappers,
+                language,
+                window,
+            )
 
 
 def set_app_page(page_key: str) -> None:
