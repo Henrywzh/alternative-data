@@ -105,7 +105,10 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         latest_obs = str(pd.to_datetime(index_px["date"], errors="coerce").max().date())
     else:
         sina_latest = yahoo_latest = latest_obs = "—"
-    spot_latest = (wrap_lineage or {}).get("created_at", "—")[:10] if wrap_lineage else "—"
+    # The run's write time, not a quote time -- Eastmoney's spot snapshot
+    # carries no per-row timestamp, so this is the closest honest answer and is
+    # labelled as a run time rather than an observation.
+    spot_latest = (wrap_lineage or {}).get("created_at", "—")[:16].replace("T", " ") if wrap_lineage else "—"
 
     # Compact KPI rows for the Overview pulse card (kept separate from the
     # full technicals table so the overview contract stays small).
@@ -192,7 +195,7 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         {
             "source": "Eastmoney ETF spot (premium / turnover / IOPV)",
             "status": spot_status,
-            "latest_observation": spot_latest,
+            "latest_observation": f"run {spot_latest}Z" if spot_latest != "—" else "—",
             "records": spot_observed,
             "notes": spot_notes,
         },
@@ -237,6 +240,22 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
                     + "; ".join(coverage_notes)
                     + ". run_scope reports intent, not receipt -- check the ingestion start date."
                 ),
+            }
+        )
+
+    fetch_errors = current_cov.get("fetch_errors") or []
+    if fetch_errors:
+        detail = "; ".join(
+            f"{err.get('exposure_id') or err.get('dataset')}: {err.get('error')}"
+            for err in fetch_errors[:6]
+        )
+        datasets["source_health"].append(
+            {
+                "source": "Upstream fetch errors",
+                "status": "Degraded",
+                "latest_observation": current_cov.get("last_date") or "—",
+                "records": len(fetch_errors),
+                "notes": f"{len(fetch_errors)} source call(s) failed this run: {detail}",
             }
         )
 
@@ -331,7 +350,7 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     )
     blocks.append({"id": "wrapper_selection_block", "type": "table", "tableId": "wrapper_selection_table"})
 
-    overall_healthy = overall_healthy and coverage_ok
+    overall_healthy = overall_healthy and coverage_ok and not fetch_errors
 
     snapshot_id = hashlib.sha1(json.dumps(datasets, sort_keys=True, default=str).encode()).hexdigest()[:16]
     artifact: dict[str, Any] = {
@@ -352,7 +371,9 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         "snapshot_id": snapshot_id,
         "data_as_of": data_as_of,
         "overall_status": "Healthy" if overall_healthy else "Degraded",
-        "live_sources": 3,
+        # Counted, not asserted: this was the literal 3 even when one of the
+        # three was reporting Unavailable.
+        "live_sources": sum(1 for row in datasets["source_health"] if row["status"] == "Healthy"),
         "planned_sources": 0,
         "sources": datasets["source_health"],
         "attachment_filename": f"market-monitor-dashboard-{now.date().isoformat()}.html",

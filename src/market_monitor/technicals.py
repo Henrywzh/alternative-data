@@ -54,7 +54,12 @@ def compute_technicals(
         ma_last = ma.dropna()
         result[f"ma{window}"] = float(ma_last.iloc[-1]) if not ma_last.empty else None
         ma_val = result[f"ma{window}"]
-        result[f"ma{window}_pct"] = round((last / ma_val - 1.0) * 100.0, 4) if ma_val else None
+        # `if ma_val` would also discard a moving average of exactly 0.0. No
+        # index prices at zero, but the idiom is how a missing value becomes a
+        # wrong value elsewhere in this repository, so it is not used here.
+        result[f"ma{window}_pct"] = (
+            round((last / ma_val - 1.0) * 100.0, 4) if ma_val is not None and ma_val != 0.0 else None
+        )
 
     ret = series.pct_change()
     rv = ret.rolling(vol_window).std()

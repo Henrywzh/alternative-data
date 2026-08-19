@@ -40,6 +40,12 @@ def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, 
     """Call the source layers; return raw frames keyed by dataset name."""
     start = start_date or _last_2y_start()
     raw: dict[str, Any] = {}
+    # A source that fails used to be printed and nothing else, so an exposure
+    # simply stopped appearing downstream with no record of why. Collected here
+    # and carried into lineage, they turn "this exposure is missing" into "this
+    # exposure is missing because Sina timed out".
+    fetch_errors: list[dict[str, str]] = []
+    raw["_fetch_errors"] = fetch_errors
     meta = build_metadata_frame()
 
     # --- index closes (S&P 500 via yfinance, others via akshare) ---
@@ -68,6 +74,10 @@ def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, 
                 index_frames[exposure] = frame
         except Exception as exc:  # noqa: BLE001
             print(f"  [market_monitor] index fetch failed {exposure} ({idx}): {exc}")
+            fetch_errors.append(
+                {"dataset": "index_close", "exposure_id": exposure, "index_id": str(idx),
+                 "error": f"{type(exc).__name__}: {exc}"}
+            )
     raw["index_close"] = pd.concat(index_frames.values(), ignore_index=True) if index_frames else pd.DataFrame()
 
     # ETF daily closes are deliberately NOT fetched. akshare_etf.fetch_etf_daily
@@ -86,6 +96,7 @@ def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, 
     except Exception as exc:  # noqa: BLE001
         print(f"  [market_monitor] etf spot fetch failed: {exc}")
         raw["etf_spot"] = pd.DataFrame()
+        fetch_errors.append({"dataset": "etf_spot", "error": f"{type(exc).__name__}: {exc}"})
 
     return raw
 
@@ -104,7 +115,7 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
     # repository starts at "normalized" and cannot re-derive from source grain.
     raw_write: dict[str, dict[str, str] | None] = {}
     if write:
-        for dataset_name in ("index_close", "etf_close", "etf_spot"):
+        for dataset_name in ("index_close", "etf_close", "etf_spot"):  # not _fetch_errors
             raw_write[dataset_name] = save_raw(dataset_name, raw[dataset_name], metadata={"type": "raw", "run_scope": run_scope}, run_id=shared_run_id) if dataset_name in raw and not raw[dataset_name].empty else None
         results["_raw_run"] = raw_write
 
@@ -153,6 +164,7 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
         "first_date": first_date,
         "last_date": last_date,
         "requested_start_date": start_date,
+        "fetch_errors": raw.get("_fetch_errors") or [],
     }
     results["_coverage"] = coverage
 

@@ -117,6 +117,16 @@ def fetch_index_daily(symbol: str, start_date: str | None = None, end_date: str 
     end = _fmt_start(end_date, em=True) or date.today().strftime("%Y%m%d")
     code = _coerce_symbol(symbol)
     sina_symbol = SINA_INDEX_SYMBOLS.get(symbol)
+    if symbol not in SINA_INDEX_SYMBOLS and not symbol[:1].isdigit():
+        # _coerce_symbol zero-pads, so a non-numeric ticker that reaches the
+        # Eastmoney branch is silently turned into nonsense ("SPX" -> "000SPX")
+        # and the request fails with a confusing provider error. The pipeline
+        # routes SPX to yfinance so this is unreachable today; fail loudly
+        # rather than leave the trap armed for the next index that is added.
+        raise ValueError(
+            f"{symbol!r} has no Sina mapping and is not an Eastmoney numeric code; "
+            "add it to SINA_INDEX_SYMBOLS or route it to another source"
+        )
     if symbol in ("HSTECH",):
         # Hang Seng TECH via Sina's HK index endpoint.
         df = ak.stock_hk_index_daily_sina(symbol="HSTECH")
@@ -208,7 +218,10 @@ def fetch_etf_spot() -> pd.DataFrame:
     # buy-side ranking read the sign this way, so it is fixed here once.
     if "premium_pct" in out.columns:
         out["premium_pct"] = -out["premium_pct"]
-    if "units" in out.columns and "markcap" in out.columns:
+    # Guarded on markcap alone: the previous condition also required `units`,
+    # which is not involved in the assignment, so a snapshot carrying market
+    # cap but no share count silently produced no size column at all.
+    if "markcap" in out.columns:
         out["aum"] = out["markcap"]  # CNY, from EM total market cap
     out["ticker"] = out["ticker"].astype(str)
     return out.reset_index(drop=True)

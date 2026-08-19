@@ -1,7 +1,7 @@
 {
   "manifest": {
     "version": 1,
-    "generatedAt": "2026-08-19T15:08:47.895132+00:00",
+    "generatedAt": "2026-08-19T15:19:41.639532+00:00",
     "cards": [],
     "charts": [
       {
@@ -174,7 +174,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-19T15:08:47.895132+00:00",
+    "generatedAt": "2026-08-19T15:19:41.639532+00:00",
     "status": "ready",
     "datasets": {
       "exposure_technicals": [
@@ -321,7 +321,6 @@
           "iopv": 3.0431,
           "turnover": 5561657491.0,
           "units": 6681217536.0,
-          "markcap": 20364351050,
           "bid": 3.048,
           "ask": 3.049,
           "spread_bp": 3.2803017878,
@@ -358,7 +357,6 @@
           "iopv": 4.8522,
           "turnover": 1124228894.4,
           "units": 6172416768.0,
-          "markcap": 29936221325,
           "bid": 4.85,
           "ask": 4.851,
           "spread_bp": 2.0616431296,
@@ -395,7 +393,6 @@
           "iopv": 4.657,
           "turnover": 7147497737.0,
           "units": 23044087808.0,
-          "markcap": 107247184658,
           "bid": 4.654,
           "ask": 4.655,
           "spread_bp": 2.148458481,
@@ -432,7 +429,6 @@
           "iopv": 4.8617,
           "turnover": 841807608.0,
           "units": 8537649920.0,
-          "markcap": 41390526812,
           "bid": 4.848,
           "ask": 4.85,
           "spread_bp": 4.1245617653,
@@ -469,7 +465,6 @@
           "iopv": 3.1609,
           "turnover": 449897353.668,
           "units": 2736676768.0,
-          "markcap": 8658845294,
           "bid": 3.163,
           "ask": 3.164,
           "spread_bp": 3.1610557926,
@@ -506,7 +501,6 @@
           "iopv": 7.7852,
           "turnover": 3807705937.0,
           "units": 5141768704.0,
-          "markcap": 40126362966,
           "bid": 7.803,
           "ask": 7.804,
           "spread_bp": 1.2814762607,
@@ -543,7 +537,6 @@
           "iopv": 4.4282,
           "turnover": 822632669.0,
           "units": 1837608800.0,
-          "markcap": 8124068505,
           "bid": 4.421,
           "ask": 4.423,
           "spread_bp": 4.5228403437,
@@ -580,7 +573,6 @@
           "iopv": 3.3664,
           "turnover": 678670956.0,
           "units": 6213175808.0,
-          "markcap": 20876270715,
           "bid": 3.36,
           "ask": 3.361,
           "spread_bp": 2.9757476566,
@@ -617,7 +609,6 @@
           "iopv": 1.7623,
           "turnover": 10889020913.0,
           "units": 47030668288.0,
-          "markcap": 82821006855,
           "bid": 1.761,
           "ask": 1.762,
           "spread_bp": 5.6769798467,
@@ -654,7 +645,6 @@
           "iopv": 0.5913,
           "turnover": 1960628354.0,
           "units": 69688758272.0,
-          "markcap": 41116367380,
           "bid": 0.589,
           "ask": 0.59,
           "spread_bp": 16.9635284139,
@@ -690,13 +680,12 @@
           "market_price": 4.713,
           "iopv": 4.2417,
           "turnover": 9243982060.0,
-          "units": 2397427008.0,
-          "markcap": 11299073489,
+          "units": 2394427008.0,
           "bid": 4.713,
           "ask": 4.714,
           "spread_bp": 2.1215657155,
-          "aum": 11299073489,
-          "aum_proxy": 11299073489,
+          "aum": 11284934489,
+          "aum_proxy": 11284934489,
           "relative_premium_pct": 2.05,
           "fund_age_days": 652,
           "entry_cost_bp": 1112.06,
@@ -727,13 +716,12 @@
           "market_price": 2.642,
           "iopv": 2.469,
           "turnover": 469993920.0,
-          "units": 10175638528.0,
-          "markcap": 26884036991,
+          "units": 10125638656.0,
           "bid": 2.642,
           "ask": 2.643,
           "spread_bp": 3.784295175,
-          "aum": 26884036991,
-          "aum_proxy": 26884036991,
+          "aum": 26751937329,
+          "aum_proxy": 26751937329,
           "relative_premium_pct": -2.05,
           "fund_age_days": 4640,
           "entry_cost_bp": 702.89,
@@ -18276,7 +18264,7 @@
         {
           "source": "Eastmoney ETF spot (premium / turnover / IOPV)",
           "status": "Healthy",
-          "latest_observation": "2026-08-19",
+          "latest_observation": "run 2026-08-19 15:19Z",
           "records": 12,
           "notes": "Eastmoney ETF spot: all 12 / 12 wrappers observed."
         },
@@ -18324,9 +18312,9 @@
     }
   ],
   "package_info": {
-    "snapshotId": "7c65954bd79f9f48",
+    "snapshotId": "3f80264ff7cc4a6a",
     "dataAsOf": "2026-08-19",
-    "pipelineRunId": "20260819T150745-db62be90",
+    "pipelineRunId": "20260819T151941-4e35d646",
     "runConsistent": true
   }
 }
