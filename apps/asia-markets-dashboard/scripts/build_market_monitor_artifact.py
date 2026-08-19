@@ -103,10 +103,23 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
 
     expected_count = len(EXPOSURES)
     actual_exposures = technicals["exposure_id"].nunique() if not technicals.empty and "exposure_id" in technicals.columns else 0
-    wrapper_count = len(datasets["wrapper_metrics"])
+    expected_wrappers = len(datasets["wrapper_metrics"])
+    if not wrappers.empty and "market_price" in wrappers.columns and "premium_pct" in wrappers.columns:
+        spot_observed = int((wrappers["market_price"].notna() & wrappers["premium_pct"].notna()).sum())
+    else:
+        spot_observed = 0
     sp500_ok = not index_px.empty and "exposure_id" in index_px.columns and not index_px[index_px["exposure_id"].eq("sp500")].empty
 
-    spot_status = "Healthy" if wrapper_count > 0 else "Degraded"
+    if spot_observed == expected_wrappers and expected_wrappers > 0:
+        spot_status = "Healthy"
+        spot_notes = f"Eastmoney ETF spot: all {spot_observed} / {expected_wrappers} wrappers observed."
+    elif spot_observed > 0:
+        spot_status = "Degraded"
+        spot_notes = f"Eastmoney ETF spot: {spot_observed} / {expected_wrappers} wrappers observed."
+    else:
+        spot_status = "Unavailable"
+        spot_notes = f"Eastmoney ETF spot snapshot failed (0 / {expected_wrappers} wrappers observed)."
+
     sina_status = "Healthy" if actual_exposures >= expected_count else "Degraded"
     yfinance_status = "Healthy" if sp500_ok else "Degraded"
 
@@ -115,8 +128,8 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
             "source": "Eastmoney ETF spot (premium / turnover / IOPV)",
             "status": spot_status,
             "latest_observation": latest_obs,
-            "records": wrapper_count,
-            "notes": f"Snapshot tracking {wrapper_count} ETF wrappers; premium sign positive = trading above IOPV." if wrapper_count > 0 else "No ETF spot snapshot available.",
+            "records": spot_observed,
+            "notes": spot_notes,
         },
         {
             "source": "Sina index/ETF daily (China indexes, A-share & HK-listed ETF)",
@@ -205,8 +218,8 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
                 {"field": "entry_status", "label": "Entry Status", "format": "text"},
                 {"field": "spread_bp", "label": "Spread (bp)", "format": "number"},
                 {"field": "aum", "label": "AUM (CNY)", "format": "number"},
-                {"field": "buy_rank", "label": "Buy", "format": "number"},
-                {"field": "hold_rank", "label": "Hold", "format": "number"},
+                {"field": "peer_rank", "label": "Peer Rank", "format": "number"},
+                {"field": "hold_rank", "label": "Hold Rank", "format": "number"},
             ],
         }
     )
@@ -223,7 +236,7 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         "generated_at": generated_at,
         "snapshot_id": snapshot_id,
         "data_as_of": data_as_of,
-        "overall_status": "Healthy" if (actual_exposures >= expected_count and wrapper_count > 0) else "Degraded",
+        "overall_status": "Healthy" if (actual_exposures >= expected_count and spot_observed == expected_wrappers and sp500_ok) else "Degraded",
         "live_sources": 3,
         "planned_sources": 0,
         "attachment_filename": f"market-monitor-dashboard-{now.date().isoformat()}.html",

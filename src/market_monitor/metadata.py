@@ -153,23 +153,6 @@ ETF_REGISTRY = (
         "is_cross_border": False,
         "underlying_timezone": "Asia/Shanghai",
     },
-    # --- CSI 2000 (data quality gate; drop if unusable) ---
-    {
-        "exposure_id": "csi2000",
-        "index_id": "932000.CSI",
-        "fund_id": "159536",
-        "ticker": "159536.SZ",
-        "fund_name": "嘉实中证2000ETF",
-        "venue": "SZ",
-        "currency": "CNY",
-        "wrapper_type": "domestic",
-        "management_fee": 0.0015,
-        "inception_date": "2023-08-25",
-        "aum": None,
-        "is_qdii": False,
-        "is_cross_border": False,
-        "underlying_timezone": "Asia/Shanghai",
-    },
     # --- Dividend / Value ---
     {
         "exposure_id": "dividend",
