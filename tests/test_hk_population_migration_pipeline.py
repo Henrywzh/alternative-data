@@ -34,6 +34,7 @@ def test_csd_population_estimates_fetch():
         pytest.skip("C&SD population estimates live API unavailable (network fetch failed, not a code regression)")
 
 
+@pytest.mark.network
 def test_mpfa_claims_fetch():
     # Hits the live mpfa.org.hk PDF digests with no offline fixture path. The
     # fetcher caps total download time and returns an honest partial result
@@ -46,6 +47,7 @@ def test_mpfa_claims_fetch():
     assert "claims_count" in df.columns
 
 
+@pytest.mark.network
 def test_ugc_students_fetch():
     df = fetch_ugc_nonlocal_students()
     assert isinstance(df, pd.DataFrame)
@@ -53,6 +55,7 @@ def test_ugc_students_fetch():
     assert "mainland_students" in df.columns
 
 
+@pytest.mark.network
 def test_td_cross_border_fetch():
     df = fetch_td_cross_border_traffic()
     assert isinstance(df, pd.DataFrame)

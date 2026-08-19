@@ -6,6 +6,7 @@ from src.hk_local_consumer.sources.consumer_council_oilprice import fetch_consum
 from src.hk_local_consumer.sources.consumer_council_complaints import fetch_consumer_council_complaints
 
 
+@pytest.mark.network
 def test_fetch_consumer_council_pricewatch():
     df = fetch_consumer_council_pricewatch()
     assert isinstance(df, pd.DataFrame)
@@ -15,6 +16,7 @@ def test_fetch_consumer_council_pricewatch():
     assert df.attrs.get("data_source") in ("live", "fallback_sample")
 
 
+@pytest.mark.network
 def test_fetch_consumer_council_oilprice():
     df = fetch_consumer_council_oilprice()
     assert isinstance(df, pd.DataFrame)
@@ -24,6 +26,7 @@ def test_fetch_consumer_council_oilprice():
     assert df.attrs.get("data_source") in ("live", "fallback_sample")
 
 
+@pytest.mark.network
 def test_fetch_consumer_council_complaints():
     df = fetch_consumer_council_complaints()
     assert isinstance(df, pd.DataFrame)

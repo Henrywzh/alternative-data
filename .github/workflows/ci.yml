@@ -15,11 +15,14 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
-    # hk_stablecoin_crypto's stage-1 pipeline tests legitimately need up to
-    # 480s each now (run_stage_1_pipeline() hits ~8 live external sites
-    # sequentially; see the HKEXnews hard-timeout fix). Whichever pytest-xdist
-    # worker lands those becomes the critical path, so 15 minutes was already
-    # tight even before that and started hard-cancelling the whole job.
+    # The suite runs offline (tests/conftest.py blocks outbound connections;
+    # the 31 tests that verify live endpoints are marked @pytest.mark.network
+    # and skipped without --run-network). That removed the live-site fetches
+    # that used to dominate the critical path -- ~10.5 minutes down to ~1.5 --
+    # and, more importantly, the fetches were rewriting the gitignored captures
+    # under data/raw/ that other tests read, so the same commit could pass or
+    # fail depending on how xdist distributed the run. The live endpoints are
+    # exercised for real by the daily data workflows.
     timeout-minutes: 25
     steps:
       - name: Check out repository

@@ -55,6 +55,7 @@ def test_all_watchlist_tickers_covers_full_watchlist():
 # --- Positive test: real, live fetch for an active watchlist ticker --------
 
 
+@pytest.mark.network
 def test_fetch_ticker_announcements_returns_only_matching_rows_for_osl():
     """OSL Group (00863.HK) is TIER_1 and actively trading/reporting. Every
     row returned must genuinely belong to stock code 863 -- this is the
@@ -72,6 +73,7 @@ def test_fetch_ticker_announcements_returns_only_matching_rows_for_osl():
         )
 
 
+@pytest.mark.network
 def test_fetch_ticker_announcements_returns_only_matching_rows_for_tencent():
     """Cross-check against a second, unrelated ticker (Tencent, 00700.HK --
     not itself in the watchlist, but the exact ticker used to discover the

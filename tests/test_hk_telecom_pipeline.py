@@ -20,6 +20,7 @@ from src.hk_telecom.sources.numbering_plan import fetch_numbering_plan
 from src.hk_telecom.sources.smartone_operating_drivers import fetch_smartone_operating_drivers
 
 
+@pytest.mark.network
 def test_fetch_hkt_operating_drivers():
     df = fetch_hkt_operating_drivers()
     assert not df.empty
@@ -33,6 +34,7 @@ def test_fetch_hkt_operating_drivers():
     assert df["mobile_postpaid_arpu_hkd"].dropna().gt(0).all()
 
 
+@pytest.mark.network
 def test_fetch_smartone_operating_drivers():
     df = fetch_smartone_operating_drivers()
     assert not df.empty
@@ -42,6 +44,7 @@ def test_fetch_smartone_operating_drivers():
     assert df["postpaid_arpu_hkd"].dropna().gt(0).all()
 
 
+@pytest.mark.network
 def test_fetch_hutchison_telecom_operating_drivers():
     df = fetch_hutchison_telecom_operating_drivers()
     assert not df.empty
@@ -55,6 +58,7 @@ def test_fetch_hutchison_telecom_operating_drivers():
     assert (both["postpaid_gross_arpu_hkd"] >= both["postpaid_net_arpu_hkd"]).all()
 
 
+@pytest.mark.network
 def test_fetch_numbering_plan():
     df = fetch_numbering_plan()
     assert not df.empty
@@ -72,6 +76,7 @@ def test_fetch_numbering_plan():
     assert top["allocatee"] == "HKT"
 
 
+@pytest.mark.network
 def test_hk_telecom_stage_1_execution():
     results = run_stage_1_pipeline()
     assert results is not None

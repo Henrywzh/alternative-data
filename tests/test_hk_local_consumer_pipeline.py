@@ -99,6 +99,7 @@ def test_parse_consumer_council_payload():
     assert bool(df.iloc[1]["is_on_sale"]) is False
 
 
+@pytest.mark.network
 def test_sge_gold_benchmark_fallback():
     df = fetch_sge_gold_benchmark()
     assert not df.empty
@@ -137,6 +138,7 @@ def test_censtatd_restaurant_survey():
     assert "All restaurants" in set(df["sub_sector"])
 
 
+@pytest.mark.network
 def test_fetch_immigration_flow():
     from src.hk_local_consumer.sources.immigration_flow import fetch_immigration_flow
     df = fetch_immigration_flow()
