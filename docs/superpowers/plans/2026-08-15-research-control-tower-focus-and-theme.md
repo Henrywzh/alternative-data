@@ -1,11 +1,14 @@
 # Research Control Tower Focus Universe and Theme Plan
 
 **Date:** 2026-08-15
-**Last updated:** 2026-08-16
-**Status:** Stage 1 focus/archive and explicit theme implemented; Stage 1.5
-focus and an archived-universe selector remain pending. The next locked scope
-is data-coverage Batches 0–4; Stage 1.5 and any wider universe expansion are
-blocked until that gate is complete.
+**Last updated:** 2026-08-19
+**Status:** Batches 0–4 complete for Stage 1 (coverage semantics + identity QA,
+live quote snapshots, daily market bars, official filings + earnings calendar,
+earnings actuals, and US/ECB/CN/HK macro calendar with PIT/vintage handling),
+plus consensus snapshots from yfinance and financial-data. Batches 5, 7, 8
+(news metadata, consensus revisions, alt-data signals) remain; the optional
+Polygon/Twelve Data entitlement probe is open; Stage 1.5 and any wider universe
+expansion stay blocked until the Stage 1 gate is signed off.
 **Repository:** `alternative-data`
 **Parent scope:** Research Control Tower + investment-thesis workflow
 
@@ -62,16 +65,16 @@ into one `unavailable` label:
 
 ### Batch 0 — coverage and linkage foundation
 
-- [ ] Add explicit `available`, `partial`, `stale`, `not_applicable`,
+- [x] Add explicit `available`, `partial`, `stale`, `not_applicable`,
   `no_records` and `unavailable` display semantics to source health and the
   Company/Data coverage components.
-- [ ] Produce a coverage matrix for the six Stage 1 entities and seven active
+- [x] Produce a coverage matrix for the six Stage 1 entities and seven active
   listings. A private entity must not create a fake listing row just to make a
   table complete.
-- [ ] Validate that every quote, filing, earnings, consensus and macro row has
+- [x] Validate that every quote, filing, earnings, consensus and macro row has
   the correct source-native time, `retrieved_at_utc`, identity relation and
   source/license/PIT label where applicable.
-- [ ] Keep provider errors and missing entitlements visible; do not convert an
+- [x] Keep provider errors and missing entitlements visible; do not convert an
   empty response into successful coverage.
 
 ### Batch 1 — market snapshot first
@@ -79,19 +82,20 @@ into one `unavailable` label:
 The first user-visible data batch should fill the existing `quote_snapshots`
 contract before introducing a larger market-bars mart.
 
-- [ ] Run the existing free/delayed yfinance collector for active public Stage
+- [x] Run the existing free/delayed yfinance collector for active public Stage
   1 listings and publish a manifest-bound quote snapshot artifact.
-- [ ] Label yfinance output as delayed and preserve quote time, retrieval time,
+- [x] Label yfinance output as delayed and preserve quote time, retrieval time,
   market status, provider symbol and source URL. Do not call it real-time.
-- [ ] Show latest price, day change, quote age/freshness and source status on
+- [x] Show latest price, day change, quote age/freshness and source status on
   the Company and Today pages.
-- [ ] Add daily OHLCV/history only after the snapshot path is stable. Keep
+- [x] Add daily OHLCV/history only after the snapshot path is stable. Keep
   adjusted/unadjusted, exchange timezone and corporate-action treatment
   explicit.
 - [ ] Probe Massive/Polygon and Twelve Data only as optional alternatives for
   US coverage; their free plans, exchange entitlements, rate limits and display
-  terms must be recorded before adoption.
-- [ ] Render ByteDance's market-data state as `not_applicable`, not as a failed
+  terms must be recorded before adoption. (open: optional; not needed for Stage
+  1 width — live yfinance+financial-data path already covers it)
+- [x] Render ByteDance's market-data state as `not_applicable`, not as a failed
   quote request.
 
 ### Batch 2 — official filings and earnings calendar
@@ -142,15 +146,15 @@ as the accounting source of truth.
 Macro is a shared Control Tower layer and can be implemented independently of
 the company universe, but it must retain release-time and vintage semantics.
 
-- [ ] Add release-calendar rows for US CPI/PPI/payrolls/unemployment/GDP,
+- [x] Add release-calendar rows for US CPI/PPI/payrolls/unemployment/GDP,
   Fed decisions, China/HK releases and relevant ECB events.
-- [ ] Prefer FRED/ALFRED, BLS, BEA, Federal Reserve, ECB, NBS China and other
+- [x] Prefer FRED/ALFRED, BLS, BEA, Federal Reserve, ECB, NBS China and other
   native official sources. Use third-party calendars only as discovery or
   cross-checks.
-- [ ] Store release time, reference period, actual/previous/consensus/nowcast
+- [x] Store release time, reference period, actual/previous/consensus/nowcast
   fields only when each field has a clearly identified source, plus vintage,
   retrieval and provisional/revised labels.
-- [ ] Populate the macro timeline and source-health panel without implying
+- [x] Populate the macro timeline and source-health panel without implying
   that a current value was known historically.
 
 ### Free-source evaluation rules for Batches 0–4 and later
