@@ -1252,7 +1252,7 @@ def test_unresolved_mapping_is_excluded_and_health_mentions_missing_geography(
                 "first_seen_at": "2026-08-10T00:00:00Z",
                 "last_seen_at": "2026-08-10T00:00:00Z",
                 "source_name": "Official",
-                "title": "Watch-only ZTE listing note",
+                "title": "Unrelated industry note on an unlisted vendor",
                 "link": "https://example.test/zte",
                 "pub_date": "Mon, 10 Aug 2026 09:00:00 +0000",
                 "description": "ignored",
