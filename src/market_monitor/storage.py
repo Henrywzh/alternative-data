@@ -90,7 +90,7 @@ def load_latest(root: Path, dataset_name: str, scope: str | None = "full") -> pd
                     if run_scope != scope:
                         continue
                 except Exception:
-                    pass
+                    continue
         frame = pd.read_parquet(parquet)
         if not frame.empty:
             return frame

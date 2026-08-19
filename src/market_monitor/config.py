@@ -57,15 +57,6 @@ EXPOSURES = (
         "index_id": "000852.SH",
     },
     {
-        "exposure_id": "csi2000",
-        "label": "CSI 2000",
-        "region": "China",
-        "size": "Micro",
-        "style": "Broad",
-        "risk_character": "Highest beta",
-        "index_id": "932000.CSI",
-    },
-    {
         "exposure_id": "dividend",
         "label": "Dividend",
         "region": "China",
