@@ -123,6 +123,14 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     else:
         latest_obs = "—"
 
+    # Source ownership: Sina owns CN/HK indexes; Yahoo owns SP500.
+    # Sina health must not count SP500 toward its own coverage.
+    sina_expected = [e["exposure_id"] for e in EXPOSURES if e["exposure_id"] != "sp500"]
+    sina_actual_count = (
+        technicals[technicals["exposure_id"].isin(sina_expected)]["exposure_id"].nunique()
+        if not technicals.empty and "exposure_id" in technicals.columns
+        else 0
+    )
     expected_count = len(EXPOSURES)
     actual_exposures = technicals["exposure_id"].nunique() if not technicals.empty and "exposure_id" in technicals.columns else 0
     expected_wrappers = len(build_metadata_frame())
@@ -142,7 +150,7 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         spot_status = "Unavailable"
         spot_notes = f"Eastmoney ETF spot snapshot failed (0 / {expected_wrappers} wrappers observed)."
 
-    sina_status = "Healthy" if actual_exposures >= expected_count else "Degraded"
+    sina_status = "Healthy" if sina_actual_count >= len(sina_expected) else "Degraded"
     yfinance_status = "Healthy" if sp500_ok else "Degraded"
     overall_healthy = (
         actual_exposures >= expected_count
@@ -164,7 +172,7 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
             "status": sina_status,
             "latest_observation": sina_latest,
             "records": len(datasets["index_price_daily_tail"]),
-            "notes": f"Covering {actual_exposures} of {expected_count} expected exposures." if actual_exposures < expected_count else f"Daily OHLCV for all {actual_exposures} exposures.",
+            "notes": f"Covering {sina_actual_count} of {len(sina_expected)} Sina-owned exposures (CN/HK)." if sina_actual_count < len(sina_expected) else f"Daily OHLCV for all {sina_actual_count} Sina-owned exposures (CN/HK).",
         },
         {
             "source": "Yahoo Finance (S&P 500 index)",
