@@ -103,6 +103,9 @@ MEMBERSHIP_TIERS = {"core", "read_through", "watch_only"}
 ENTITY_TYPES = {"public", "private"}
 MAPPING_STATUSES = {"verified", "unresolved"}
 LISTING_ROLES = {"primary", "dual_primary", "secondary", "depositary_receipt"}
+NEWS_ENTITY_ALIAS_FILENAME = "news_entity_aliases.csv"
+NEWS_ALIAS_KINDS = {"positive", "negative"}
+NEWS_ALIAS_MODES = {"word", "substring"}
 AI_BASKET_ID = "AI_BOTTLENECKS_GLOBAL"
 FOCUS_STAGE_1_BASKET_ID = "RESEARCH_STAGE_1_CHINA_INTERNET"
 REQUIRED_BASKETS = {
@@ -208,6 +211,152 @@ def load_registry_bundle(config_root: Path) -> RegistryBundle:
         for name, filename in REGISTRY_FILES.items()
     }
     return RegistryBundle(**frames)
+
+
+def load_news_entity_aliases(path: Path) -> pd.DataFrame:
+    """Load the versioned news entity alias/negative-exclusion table (Batch 5).
+
+    The table is keyed by ``entity_id`` and carries ``alias_kind``
+    (``positive`` matching token or ``negative`` exclusion token),
+    ``match_token``, ``match_mode`` (``word`` boundary vs ``substring``) and a
+    ``registry_version`` for versioning.  It is a small adjunct to the registry
+    crosswalks -- not a standalone replacement alias dictionary.
+    """
+
+    frame = pd.read_csv(path, dtype="string", keep_default_na=False)
+    required = {
+        "entity_id",
+        "alias_kind",
+        "match_token",
+        "match_mode",
+        "registry_version",
+        "source_or_research_note",
+    }
+    missing = sorted(required - set(frame.columns))
+    if missing:
+        raise ValueError(
+            f"news entity aliases are missing required columns: {', '.join(missing)}"
+        )
+    for column in frame.select_dtypes(include=["string"]).columns:
+        frame[column] = frame[column].str.strip()
+    invalid_kind = frame.loc[
+        ~frame["alias_kind"].str.lower().isin(NEWS_ALIAS_KINDS), "alias_kind"
+    ].unique()
+    if len(invalid_kind):
+        raise ValueError(
+            f"news entity aliases have invalid alias_kind values: {sorted(invalid_kind)}"
+        )
+    invalid_mode = frame.loc[
+        ~frame["match_mode"].str.lower().isin(NEWS_ALIAS_MODES), "match_mode"
+    ].unique()
+    if len(invalid_mode):
+        raise ValueError(
+            f"news entity aliases have invalid match_mode values: {sorted(invalid_mode)}"
+        )
+    blank = frame["entity_id"].map(_blank) | frame["match_token"].map(_blank)
+    if blank.any():
+        raise ValueError("news entity aliases must not have a blank entity_id or match_token")
+    if frame["registry_version"].map(_blank).any():
+        raise ValueError("news entity aliases must declare registry_version on every row")
+    return frame
+
+
+def _news_contains_word(haystack: str, token: str) -> bool:
+    """Whole-token (word-boundary) containment match over a casefolded string."""
+
+    if not token:
+        return False
+    if not any(char.isalnum() for char in token):
+        return token in haystack
+    start = 0
+    while True:
+        start = haystack.find(token, start)
+        if start < 0:
+            return False
+        before_ok = start == 0 or not haystack[start - 1].isalnum()
+        after = start + len(token)
+        after_ok = after >= len(haystack) or not haystack[after].isalnum()
+        if before_ok and after_ok:
+            return True
+        start += 1
+
+
+def _verified_collection_listings(listings: pd.DataFrame) -> dict[str, str]:
+    """Map listing_id -> entity_id for verified, collection-eligible listings."""
+
+    if listings is None or listings.empty:
+        return {}
+    subset = listings[
+        listings["mapping_status"].astype("string").str.lower().eq("verified")
+        & listings["collection_eligible"].fillna(False).astype(bool)
+    ]
+    return {
+        str(row["listing_id"]).strip(): str(row["entity_id"]).strip()
+        for _, row in subset.iterrows()
+        if str(row["listing_id"]).strip()
+    }
+
+
+def resolve_news_entities(
+    text: str,
+    *,
+    entities: pd.DataFrame,
+    listings: pd.DataFrame,
+    aliases: pd.DataFrame | None = None,
+) -> tuple[list[str], list[str]]:
+    """Resolve news headline/title text to registry entities and their listings.
+
+    Deterministic and pure (no I/O).  Positive matching is registry-backed:
+    whole-word display/legal names from ``entities.csv`` plus any explicit
+    positive alias rows.  Negative-exclusion alias rows suppress an entity even
+    when its name token is present (e.g. "Tencent Music" must not resolve to
+    TENCENT; "Alibaba Pictures" must not resolve to ALIBABA).  Unmatchable text
+    yields empty ids -- never a guessed link.  The listing crosswalk comes from
+    ``listings.csv`` (``financial_data_security_id`` / ``canonical_ticker`` /
+    ``vendor_tickers`` are the canonical identity carried per listing).
+    """
+
+    haystack = str(text or "").casefold()
+    matched: set[str] = set()
+    if entities is not None and not entities.empty:
+        for _, entity in entities.iterrows():
+            entity_id = str(entity.get("entity_id") or "").strip()
+            if not entity_id:
+                continue
+            for key in ("display_name", "legal_name"):
+                token = str(entity.get(key) or "").strip()
+                if token and _news_contains_word(haystack, token.casefold()):
+                    matched.add(entity_id)
+                    break
+    blocked: set[str] = set()
+    if aliases is not None and not aliases.empty:
+        for _, row in aliases.iterrows():
+            kind = str(row.get("alias_kind") or "").strip().lower()
+            mode = str(row.get("match_mode") or "substring").strip().lower()
+            token = str(row.get("match_token") or "").strip().casefold()
+            entity_id = str(row.get("entity_id") or "").strip()
+            if not token or not entity_id:
+                continue
+            hit = (
+                _news_contains_word(haystack, token)
+                if mode == "word"
+                else token in haystack
+            )
+            if not hit:
+                continue
+            if kind == "negative":
+                blocked.add(entity_id)
+            elif kind == "positive":
+                matched.add(entity_id)
+    matched -= blocked
+    entity_ids = sorted(matched)
+    listing_entities = _verified_collection_listings(listings)
+    listing_ids = sorted(
+        str(listing_id)
+        for listing_id, entity_id in listing_entities.items()
+        if entity_id in matched
+    )
+    return entity_ids, listing_ids
 
 
 def _issue(

@@ -1,0 +1,6 @@
+entity_id,listing_id,canonical_ticker,feed_url,feed_format,registry_version,note
+ALIBABA,9988_HK,9988.HK,https://www.alizila.com/feed/,rss,v1,Alibaba Group official corporate-newsroom feed; probe-verified 2026-08-19 (HTTP 200 application/rss+xml, RSS 2.0 with items).
+ALIBABA,BABA_US,BABA.US,https://www.alizila.com/feed/,rss,v1,Alibaba Group official corporate-newsroom feed for the NYSE ADR listing; probe-verified 2026-08-19.
+TENCENT,0700_HK,0700.HK,https://www.tencent.com/en-us/investors.html,rss,v1,Candidate issuer newsroom pages return HTML only (probe 2026-08-19); the collector records no_records unless a structured RSS/Atom feed is later confirmed.
+BAIDU,9888_HK,9888.HK,https://ir.baidu.com/rss/news-releases.xml,rss,v1,Baidu IR official news-releases feed; probe-verified 2026-08-19 (HTTP 200 application/rss+xml, RSS 2.0 with items).
+BAIDU,BIDU_US,BIDU.US,https://ir.baidu.com/rss/news-releases.xml,rss,v1,Baidu IR official news-releases feed for the NASDAQ ADR listing; probe-verified 2026-08-19.
