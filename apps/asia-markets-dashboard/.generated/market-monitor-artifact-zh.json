@@ -1,7 +1,7 @@
 {
   "manifest": {
     "version": 1,
-    "generatedAt": "2026-08-19T12:28:32.546602+00:00",
+    "generatedAt": "2026-08-19T14:07:58.376135+00:00",
     "cards": [],
     "charts": [
       {
@@ -127,8 +127,8 @@
             "format": "number"
           },
           {
-            "field": "aum",
-            "label": "AUM (CNY)",
+            "field": "aum_proxy",
+            "label": "Market Cap Proxy (CNY)",
             "format": "number"
           },
           {
@@ -164,7 +164,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-19T12:28:32.546602+00:00",
+    "generatedAt": "2026-08-19T14:07:58.376135+00:00",
     "status": "ready",
     "datasets": {
       "exposure_technicals": [
@@ -18259,10 +18259,10 @@
           "notes": "Eastmoney ETF spot: all 12 / 12 wrappers observed."
         },
         {
-          "source": "Sina index/ETF daily (China indexes, A-share & HK-listed ETF)",
+          "source": "Sina index daily (CN/HK)",
           "status": "Healthy",
           "latest_observation": "2026-08-19",
-          "records": 1750,
+          "records": 2915,
           "notes": "Daily OHLCV for all 6 Sina-owned exposures (CN/HK)."
         },
         {
@@ -18302,8 +18302,7 @@
     }
   ],
   "package_info": {
-    "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/market-monitor/",
-    "snapshotId": "cc90a70b7a751c3f",
+    "snapshotId": "677aaa82ae2150c6",
     "dataAsOf": "2026-08-19",
     "pipelineRunId": "20260819T122821-688bf003",
     "runConsistent": true
