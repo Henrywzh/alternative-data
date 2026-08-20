@@ -27,9 +27,11 @@ SINA_INDEX_SYMBOLS = {
     "000993.SH": "sh000993",
     "000932.SH": "sh000932",
     "932000.CSI": None,  # not available on Sina's index endpoint
-    "HSTECH": None,
-    "HSI": None,
 }
+
+# Hang Seng and CSI-Hong-Kong indices come from Sina's separate HK endpoint,
+# which takes the index's own symbol rather than an sh/sz-prefixed code.
+SINA_HK_INDEX_SYMBOLS = frozenset({"HSI", "HSTECH", "HSCEI", "CSHKDIV", "CSHKMCS"})
 
 
 def _fmt_start(value: str | date | None, *, em: bool) -> str:
@@ -121,7 +123,7 @@ def fetch_index_daily(symbol: str, start_date: str | None = None, end_date: str 
     end = _fmt_start(end_date, em=True) or date.today().strftime("%Y%m%d")
     code = _coerce_symbol(symbol)
     sina_symbol = SINA_INDEX_SYMBOLS.get(symbol)
-    if symbol not in SINA_INDEX_SYMBOLS and not symbol[:1].isdigit():
+    if symbol not in SINA_INDEX_SYMBOLS and symbol not in SINA_HK_INDEX_SYMBOLS and not symbol[:1].isdigit():
         # _coerce_symbol zero-pads, so a non-numeric ticker that reaches the
         # Eastmoney branch is silently turned into nonsense ("SPX" -> "000SPX")
         # and the request fails with a confusing provider error. The pipeline
@@ -131,8 +133,8 @@ def fetch_index_daily(symbol: str, start_date: str | None = None, end_date: str 
             f"{symbol!r} has no Sina mapping and is not an Eastmoney numeric code; "
             "add it to SINA_INDEX_SYMBOLS or route it to another source"
         )
-    if symbol in ("HSTECH", "HSI"):
-        # Hang Seng indexes via Sina's HK index endpoint.
+    if symbol in SINA_HK_INDEX_SYMBOLS:
+        # Hong Kong indexes via Sina's HK index endpoint.
         df = ak.stock_hk_index_daily_sina(symbol=symbol)
         if df is not None and isinstance(df, pd.DataFrame) and "date" in df.columns:
             df = df.copy()
