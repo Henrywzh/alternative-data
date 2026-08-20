@@ -25,6 +25,7 @@ SINA_INDEX_SYMBOLS = {
     "000688.SH": "sh000688",
     "932000.CSI": None,  # not available on Sina's index endpoint
     "HSTECH": None,
+    "HSI": None,
 }
 
 
@@ -127,9 +128,9 @@ def fetch_index_daily(symbol: str, start_date: str | None = None, end_date: str 
             f"{symbol!r} has no Sina mapping and is not an Eastmoney numeric code; "
             "add it to SINA_INDEX_SYMBOLS or route it to another source"
         )
-    if symbol in ("HSTECH",):
-        # Hang Seng TECH via Sina's HK index endpoint.
-        df = ak.stock_hk_index_daily_sina(symbol="HSTECH")
+    if symbol in ("HSTECH", "HSI"):
+        # Hang Seng indexes via Sina's HK index endpoint.
+        df = ak.stock_hk_index_daily_sina(symbol=symbol)
         if df is not None and isinstance(df, pd.DataFrame) and "date" in df.columns:
             df = df.copy()
             df["date"] = pd.to_datetime(df["date"], errors="coerce")

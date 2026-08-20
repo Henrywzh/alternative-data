@@ -7,6 +7,7 @@ Flow:
 
 from __future__ import annotations
 
+import json
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
@@ -18,7 +19,15 @@ from .metadata import build_metadata_frame
 from .ranking import rank_wrappers
 from .relative_strength import build_relative_regime, compute_spread_metrics
 from .sources import akshare_etf, yfinance
-from .storage import load_latest_normalized, new_run_id, prune_runs, save_derived, save_normalized, save_raw
+from .storage import (
+    load_latest_derived,
+    load_latest_normalized,
+    new_run_id,
+    prune_runs,
+    save_derived,
+    save_normalized,
+    save_raw,
+)
 from .technicals import compute_technicals
 from .wrapper import merge_premium
 
@@ -27,6 +36,11 @@ from .wrapper import merge_premium
 # full history, so this is a retention window on redundant copies, not on data.
 RUN_RETENTION = 5
 
+# yfinance ticker per exposure. Keyed off exposure_id rather than inlined in a
+# conditional so a new US index is a one-line addition beside its price_source
+# declaration instead of another branch to remember.
+YFINANCE_SYMBOLS = {"sp500": "^GSPC", "ndx": "^NDX"}
+
 
 def _last_2y_start() -> str:
     return (date.today() - timedelta(days=730)).strftime("%Y%m%d")
@@ -34,6 +48,95 @@ def _last_2y_start() -> str:
 
 def _iso_start() -> str:
     return (date.today() - timedelta(days=730)).strftime("%Y-%m-%d")
+
+
+PREMIUM_HISTORY_COLUMNS = ["date", "fund_id", "ticker", "premium_pct", "spread_bp", "market_price"]
+
+
+def _premium_rows_from_raw_snapshots(tracked: set[str]) -> list[dict]:
+    """Backfill from whatever local raw etf_spot snapshots happen to exist.
+
+    Only ever a bootstrap: data/raw/ is gitignored, so a fresh checkout has
+    none, and prune_runs keeps five. It is the accumulated derived snapshot
+    below that carries the history.
+    """
+    spot_dir = RAW_DIR / "etf_spot"
+    if not spot_dir.is_dir():
+        return []
+    rows: list[dict] = []
+    for run_dir in sorted(spot_dir.iterdir()):
+        parquet = run_dir / "etf_spot.parquet"
+        lineage = run_dir / "lineage.json"
+        if not run_dir.is_dir() or not parquet.exists() or not lineage.exists():
+            continue
+        try:
+            snapshot_date = str(json.loads(lineage.read_text(encoding="utf-8")).get("created_at", ""))[:10]
+            if not snapshot_date:
+                continue
+            spot = pd.read_parquet(parquet)
+            if spot.empty or "ticker" not in spot.columns:
+                continue
+            spot = spot.copy()
+            spot["ticker"] = spot["ticker"].astype(str).str.zfill(6)
+            rows.extend(_premium_rows(spot[spot["ticker"].isin(tracked)], snapshot_date))
+        except Exception as exc:  # noqa: BLE001 - a bad snapshot must not stop the run
+            print(f"  [market_monitor] skipped raw spot snapshot {run_dir.name}: {exc}")
+    return rows
+
+
+def _premium_rows(spot: pd.DataFrame, observation_date: str) -> list[dict]:
+    if spot is None or spot.empty or "ticker" not in spot.columns:
+        return []
+    frame = spot.copy()
+    frame["ticker"] = frame["ticker"].astype(str).str.zfill(6)
+    return [
+        {
+            "date": observation_date,
+            "ticker": str(row["ticker"]),
+            "premium_pct": pd.to_numeric(row.get("premium_pct"), errors="coerce"),
+            "spread_bp": pd.to_numeric(row.get("spread_bp"), errors="coerce"),
+            "market_price": pd.to_numeric(row.get("market_price"), errors="coerce"),
+        }
+        for _, row in frame.iterrows()
+    ]
+
+
+def _build_premium_history(meta: pd.DataFrame, spot: pd.DataFrame, observation_date: str) -> pd.DataFrame:
+    """Accumulate a per-fund premium series across runs.
+
+    The history is carried by the derived snapshot itself: each run loads the
+    previous one, appends today's observation, and writes the whole series back,
+    the same way index_price_daily carries its own history. That is what makes
+    it survive both the retention window and a fresh checkout.
+
+    It was previously rebuilt from scratch out of ``data/raw/etf_spot`` on every
+    run, which could not accumulate at all. data/raw is gitignored, so CI starts
+    with none and writes exactly one; prune_runs then caps local runs at five.
+    The shipped artifact carried a single observation per fund, on one date,
+    behind a chart captioned as a growing history.
+    """
+    tracked = set(meta["ticker"].astype(str).str.split(".").str[0].str.zfill(6))
+    fund_map = dict(
+        zip(meta["ticker"].astype(str).str.split(".").str[0].str.zfill(6), meta["fund_id"])
+    )
+
+    previous = load_latest_derived("premium_history")
+    rows = _premium_rows_from_raw_snapshots(tracked)
+    rows.extend(row for row in _premium_rows(spot, observation_date) if row["ticker"] in tracked)
+
+    frames = [frame for frame in (previous, pd.DataFrame(rows)) if frame is not None and not frame.empty]
+    if not frames:
+        return pd.DataFrame(columns=PREMIUM_HISTORY_COLUMNS)
+    history = pd.concat(frames, ignore_index=True)
+    history = history[[c for c in PREMIUM_HISTORY_COLUMNS if c in history.columns]]
+    history["ticker"] = history["ticker"].astype(str).str.zfill(6)
+    history["fund_id"] = history["ticker"].map(fund_map)
+    # A fund that has left the tracked universe keeps its past observations out
+    # of the series rather than sitting in it with a null fund_id.
+    history = history[history["ticker"].isin(tracked)]
+    # Today's reading supersedes an earlier one for the same day.
+    history = history.drop_duplicates(subset=["date", "ticker"], keep="last")
+    return history.sort_values(["ticker", "date"]).reset_index(drop=True)
 
 
 def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, ...] | None = None, etf_only: tuple[str, ...] | None = None) -> dict[str, Any]:
@@ -56,14 +159,15 @@ def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, 
             continue
         idx = spec["index_id"]
         try:
-            if exposure == "sp500":
+            if spec["price_source"] == "yfinance":
                 # yfinance expects ISO dates; honour the caller's start_date
                 # (EM format) by converting, defaulting to the 2y ISO start.
                 if start_date and "-" not in start_date and len(start_date) >= 8:
-                    sp500_start = f"{start_date[:4]}-{start_date[4:6]}-{start_date[6:8]}"
+                    us_start = f"{start_date[:4]}-{start_date[4:6]}-{start_date[6:8]}"
                 else:
-                    sp500_start = start_date or _iso_start()
-                frame = yfinance.fetch_daily("^GSPC", start_date=sp500_start)
+                    us_start = start_date or _iso_start()
+                yf_symbol = YFINANCE_SYMBOLS[exposure]
+                frame = yfinance.fetch_daily(yf_symbol, start_date=us_start)
                 if frame is not None and not frame.empty:
                     frame["index_id"] = idx
             else:
@@ -80,15 +184,31 @@ def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, 
             )
     raw["index_close"] = pd.concat(index_frames.values(), ignore_index=True) if index_frames else pd.DataFrame()
 
-    # ETF daily closes are deliberately NOT fetched. akshare_etf.fetch_etf_daily
-    # still exists and works; nothing consumes its output. Technicals and the
-    # relative regime are computed from index closes, and the artifact builder
-    # loads four datasets, none of them etf_price_daily. It was costing 15
-    # sequential network calls per run and ~260KB of committed parquet per
-    # trading day to produce a table with no reader. Re-enable it here when
-    # something actually needs wrapper price history -- tracking error and
-    # premium history are the obvious candidates -- and not before.
-    raw["etf_close"] = pd.DataFrame()
+    # --- ETF daily closes ---
+    # Re-enabled: the per-index view now charts every ETF wrapper rebased to
+    # 100 alongside the index, which requires wrapper price history.
+    etf_frames: list[pd.DataFrame] = []
+    for _, row in meta.iterrows():
+        exposure = row["exposure_id"]
+        if limit_exposures and exposure not in limit_exposures:
+            continue
+        if etf_only and row["ticker"] not in etf_only:
+            continue
+        try:
+            frame = akshare_etf.fetch_etf_daily(row["ticker"], start_date=start)
+            if frame is not None and not frame.empty:
+                frame = frame.copy()
+                frame["fund_id"] = row["fund_id"]
+                frame["ticker"] = row["ticker"]
+                frame["exposure_id"] = exposure
+                etf_frames.append(frame)
+        except Exception as exc:  # noqa: BLE001
+            print(f"  [market_monitor] etf fetch failed {row['ticker']} ({row['fund_name']}): {exc}")
+            fetch_errors.append(
+                {"dataset": "etf_close", "exposure_id": str(exposure), "ticker": str(row["ticker"]),
+                 "error": f"{type(exc).__name__}: {exc}"}
+            )
+    raw["etf_close"] = pd.concat(etf_frames, ignore_index=True) if etf_frames else pd.DataFrame()
 
     # --- ETF spot / premium snapshot ---
     try:
@@ -107,6 +227,7 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
     meta = build_metadata_frame()
     results: dict[str, Any] = {}
     run_scope = "partial" if (limit_exposures or etf_only) else "full"
+    as_of_date = date.today().isoformat()
     shared_run_id = new_run_id()
 
     # Persist raw observations first so the raw -> normalized -> derived chain
@@ -223,13 +344,21 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
     )
     results["wrapper_metrics"] = ranked
 
+    # Premium history, accumulated across runs (see _build_premium_history).
+    premium_history = _build_premium_history(
+        meta, raw.get("etf_spot", pd.DataFrame()), as_of_date
+    )
+    results["premium_history"] = premium_history
+
     if write:
         run_id = shared_run_id
         run_info: dict[str, Any] = {}
         run_info["index_price_daily"] = save_normalized("index_price_daily", normalized_index, metadata={"type": "normalized", "run_scope": run_scope, "coverage": coverage}, run_id=run_id) if not normalized_index.empty else None
+        run_info["etf_price_daily"] = save_normalized("etf_price_daily", normalized_etf, metadata={"type": "normalized", "run_scope": run_scope}, run_id=run_id) if not normalized_etf.empty else None
         run_info["exposure_technicals"] = save_derived("exposure_technicals", results["exposure_technicals"], metadata={"type": "derived", "run_scope": run_scope}, run_id=run_id) if not results["exposure_technicals"].empty else None
         run_info["relative_regime"] = save_derived("relative_regime", results["relative_regime"], metadata={"type": "derived", "run_scope": run_scope}, run_id=run_id) if not results["relative_regime"].empty else None
         run_info["wrapper_metrics"] = save_derived("wrapper_metrics", ranked, metadata={"type": "derived", "run_scope": run_scope}, run_id=run_id) if not ranked.empty else None
+        run_info["premium_history"] = save_derived("premium_history", premium_history, metadata={"type": "derived", "run_scope": run_scope}, run_id=run_id) if not premium_history.empty else None
         results["_run"] = run_info
         # Bounded retention. Every run writes the complete history rather than
         # a delta, so old snapshots are pure duplication; see prune_runs.

@@ -660,14 +660,194 @@ def test_fetch_errors_reach_lineage_not_just_stdout(monkeypatch, capsys):
     """A source that fails must leave a record, not only a printed line."""
     from market_monitor import pipeline as pl
 
-    def _boom(index_id, start_date=None, end_date=None):
+    def _index_boom(index_id, start_date=None, end_date=None):
         raise RuntimeError("sina timed out")
 
-    monkeypatch.setattr(pl.akshare_etf, "fetch_index_daily", _boom)
+    def _etf_boom(ticker, start_date=None, end_date=None):
+        raise RuntimeError("etf endpoint refused")
+
+    # Both fetch legs are stubbed. Leaving the ETF loop live made the test
+    # depend on whether the worktree happened to hold a local capture: with
+    # one it never raised, without one it raised a blocked-socket error whose
+    # message is not the one under test.
+    monkeypatch.setattr(pl.akshare_etf, "fetch_index_daily", _index_boom)
+    monkeypatch.setattr(pl.akshare_etf, "fetch_etf_daily", _etf_boom)
     monkeypatch.setattr(pl.akshare_etf, "fetch_etf_spot", lambda: pd.DataFrame())
     monkeypatch.setattr(pl.yfinance, "fetch_daily", lambda *a, **k: pd.DataFrame())
 
     raw = pl.fetch_all_raw(limit_exposures=("csi300", "csi500"))
     errors = raw["_fetch_errors"]
-    assert {err["exposure_id"] for err in errors} == {"csi300", "csi500"}
-    assert all("sina timed out" in err["error"] for err in errors)
+
+    index_errors = [err for err in errors if "sina timed out" in err["error"]]
+    assert {err["exposure_id"] for err in index_errors} == {"csi300", "csi500"}
+
+    # The ETF loop only printed its failures before; a dashboard cannot show
+    # a missing wrapper it was never told about.
+    etf_errors = [err for err in errors if "etf endpoint refused" in err["error"]]
+    assert etf_errors, "ETF fetch failures must reach lineage, not only stdout"
+    assert {err["exposure_id"] for err in etf_errors} == {"csi300", "csi500"}
+
+
+def test_every_exposure_declares_where_its_prices_come_from():
+    """Source ownership is declared per exposure, not inferred by exclusion.
+
+    Source health twice encoded "everything except sp500 is Sina": once for
+    S&P 500 (fixed in cd09fd40) and again when Nasdaq 100 arrived on yfinance,
+    which credited Sina with 501 rows of an index it does not serve while Yahoo
+    reported 501 rows for the two it does. A per-exposure declaration cannot
+    drift: a new index has to state its source or this test fails.
+    """
+    from market_monitor.config import EXPOSURES, exposures_by_price_source
+
+    sina = exposures_by_price_source("sina")
+    yahoo = exposures_by_price_source("yfinance")
+    assert len(sina) + len(yahoo) == len(EXPOSURES), "an exposure declares an unknown price_source"
+    assert set(sina).isdisjoint(yahoo)
+    # The US indexes are the ones yfinance serves, and both need a ticker.
+    from market_monitor.pipeline import YFINANCE_SYMBOLS
+
+    assert set(yahoo) == set(YFINANCE_SYMBOLS), "a yfinance exposure has no ticker, or vice versa"
+
+
+def test_source_health_attributes_rows_to_the_provider_that_served_them():
+    builder = _load_builder()
+    from market_monitor.config import exposures_by_price_source
+
+    sina = set(exposures_by_price_source("sina"))
+    yahoo = set(exposures_by_price_source("yfinance"))
+    rows_by_exposure = {"csi300": 484, "hsi": 490, "hstech": 490, "ndx": 501, "sp500": 501}
+    sina_rows = sum(n for e, n in rows_by_exposure.items() if e in sina)
+    yahoo_rows = sum(n for e, n in rows_by_exposure.items() if e in yahoo)
+    # Nasdaq 100 belongs to Yahoo; counting it under Sina is the regression.
+    assert "ndx" in yahoo and "ndx" not in sina
+    assert yahoo_rows == 1002
+    assert sina_rows + yahoo_rows == sum(rows_by_exposure.values())
+    assert builder is not None
+
+
+def test_premium_history_accumulates_instead_of_being_rebuilt(tmp_path, monkeypatch):
+    """Each run must carry the whole series forward, not recompute it.
+
+    It was rebuilt from data/raw/etf_spot every run. That directory is
+    gitignored, so CI starts with none and writes exactly one, and prune_runs
+    caps local runs at five -- the shipped artifact held one observation per
+    fund on a single date, behind a chart captioned as a growing history.
+    """
+    import market_monitor.pipeline as pl
+    import market_monitor.storage as storage
+
+    monkeypatch.setattr(storage, "DERIVED_DIR", tmp_path / "derived")
+    monkeypatch.setattr(pl, "RAW_DIR", tmp_path / "raw")  # no raw snapshots at all
+
+    meta = pd.DataFrame(
+        {
+            "ticker": ["510300.SH", "159919.SZ"],
+            "fund_id": ["510300", "159919"],
+            "exposure_id": ["csi300", "csi300"],
+        }
+    )
+
+    def _spot(premium):
+        return pd.DataFrame({"ticker": ["510300", "159919"], "premium_pct": premium,
+                             "spread_bp": [2.0, 2.1], "market_price": [4.65, 4.85]})
+
+    day1 = pl._build_premium_history(meta, _spot([-0.06, -0.05]), "2026-08-19")
+    assert len(day1) == 2
+    storage.save_derived("premium_history", day1, metadata={"run_scope": "full"})
+
+    day2 = pl._build_premium_history(meta, _spot([0.11, 0.09]), "2026-08-20")
+    assert sorted(day2["date"].unique()) == ["2026-08-19", "2026-08-20"]
+    assert len(day2) == 4, "the previous day's observations were dropped"
+    storage.save_derived("premium_history", day2, metadata={"run_scope": "full"})
+
+    # A second run on the same day supersedes rather than duplicates.
+    day2_again = pl._build_premium_history(meta, _spot([0.20, 0.18]), "2026-08-20")
+    assert len(day2_again) == 4
+    latest = day2_again[day2_again["date"].eq("2026-08-20")].set_index("ticker")["premium_pct"]
+    assert latest.loc["510300"] == 0.20
+
+
+def test_avg_premium_reports_how_many_days_it_averaged():
+    """The card said 30D whatever the answer was."""
+    builder = _load_builder()
+    import inspect
+
+    source = inspect.getsource(builder.build_artifact)
+    assert "avg_premium_days" in source, "the window size must reach the renderer"
+
+    app_source = (
+        Path(__file__).resolve().parents[2]
+        / "apps" / "asia-markets-streamlit" / "app.py"
+    ).read_text(encoding="utf-8")
+    assert "Premium (today)" in app_source
+    assert 'f"Avg premium {premium_days}D"' in app_source
+
+
+def test_chart_series_ships_a_date_window_not_a_row_count():
+    """A row-count slice makes history depend on how many sessions a venue ran.
+
+    The Sina and Yahoo calendars differ by ~17 sessions a year, so `.tail(250)`
+    handed the US exposures a shorter calendar window than the CN/HK ones and
+    put two different amounts of history on one shared x-axis.
+    """
+    builder = _load_builder()
+    dates = pd.bdate_range("2020-01-01", "2026-08-19")
+    frame = pd.DataFrame(
+        {
+            "date": dates.strftime("%Y-%m-%d"),
+            "exposure_id": "csi300",
+            "close": np.linspace(100.0, 200.0, len(dates)),
+        }
+    )
+
+    rows = builder._chart_series(frame, "exposure_id", "close", years=2)
+
+    assert rows, "a populated series must produce rows"
+    assert rows[0]["date"] >= "2024-08-19"
+    assert rows[-1]["date"] == "2026-08-19"
+    # Two calendar years of business days, not a fixed 250.
+    assert 480 <= len(rows) <= 530
+
+
+def test_chart_series_carries_only_what_a_chart_reads():
+    """Every unread field is paid for in every row of every daily artifact."""
+    builder = _load_builder()
+    frame = pd.DataFrame(
+        {
+            "date": ["2026-08-18", "2026-08-19"],
+            "exposure_id": ["csi300", "csi300"],
+            "close": [1.0, 2.0],
+            "open": [1.0, 2.0],
+            "high": [1.0, 2.0],
+            "low": [1.0, 2.0],
+            "volume": [1, 2],
+            "amount": [1, 2],
+            "index_id": ["000300.SH", "000300.SH"],
+        }
+    )
+
+    rows = builder._chart_series(frame, "exposure_id", "close")
+
+    assert set(rows[0]) == {"date", "exposure_id", "close"}
+
+
+def test_etf_prices_key_on_the_same_id_as_wrapper_metrics():
+    """The per-index "all ETFs" chart joins these two datasets by ticker.
+
+    The price series carried the exchange-qualified `159919.SZ` while wrapper
+    metrics carried the bare `159919`, so the join matched nothing and the
+    chart drew no lines without ever raising.
+    """
+    builder = _load_builder()
+    prices = pd.DataFrame(
+        {
+            "date": ["2026-08-19", "2026-08-19"],
+            "fund_id": ["159919", "510300"],
+            "ticker": ["159919.SZ", "510300.SH"],
+            "close": [4.1, 3.9],
+        }
+    )
+
+    rows = builder._chart_series(prices, "fund_id", "close", id_as="ticker")
+
+    assert {row["ticker"] for row in rows} == {"159919", "510300"}
