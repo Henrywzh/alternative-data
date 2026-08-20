@@ -206,6 +206,7 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     # a US session close as the CN/HK feed's freshness.
     sina_ids = list(exposures_by_price_source("sina"))
     sina_hk_ids = list(exposures_by_price_source("sina_hk"))
+    csindex_ids = list(exposures_by_price_source("csindex"))
     yahoo_ids = list(exposures_by_price_source("yfinance"))
     if not index_px.empty and "date" in index_px.columns:
         cn_index = index_px[index_px["exposure_id"].isin(sina_ids)]
@@ -267,6 +268,8 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     sina_actual_count = served[served.isin(sina_expected)].nunique()
     sina_hk_count = served[served.isin(sina_hk_ids)].nunique()
     sina_hk_rows = int(served.isin(sina_hk_ids).sum()) if len(served) else 0
+    csindex_count = served[served.isin(csindex_ids)].nunique()
+    csindex_rows = int(served.isin(csindex_ids).sum()) if len(served) else 0
     expected_count = len(EXPOSURES)
     actual_exposures = served.nunique()
     expected_wrappers = len(build_metadata_frame())
@@ -324,6 +327,13 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
             "latest_observation": f"run {spot_latest}Z" if spot_latest != "—" else "—",
             "records": spot_observed,
             "notes": spot_notes,
+        },
+        {
+            "source": "CSI index daily (Hong Kong Connect thematics)",
+            "status": "Healthy" if csindex_count >= len(csindex_ids) else "Degraded",
+            "latest_observation": sina_latest,
+            "records": csindex_rows,
+            "notes": f"Daily OHLCV for {csindex_count} of {len(csindex_ids)} CSI-served exposures.",
         },
         {
             "source": "Sina HK index daily (Hang Seng / CSI Hong Kong)",
