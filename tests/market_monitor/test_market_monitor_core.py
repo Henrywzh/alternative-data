@@ -660,17 +660,32 @@ def test_fetch_errors_reach_lineage_not_just_stdout(monkeypatch, capsys):
     """A source that fails must leave a record, not only a printed line."""
     from market_monitor import pipeline as pl
 
-    def _boom(index_id, start_date=None, end_date=None):
+    def _index_boom(index_id, start_date=None, end_date=None):
         raise RuntimeError("sina timed out")
 
-    monkeypatch.setattr(pl.akshare_etf, "fetch_index_daily", _boom)
+    def _etf_boom(ticker, start_date=None, end_date=None):
+        raise RuntimeError("etf endpoint refused")
+
+    # Both fetch legs are stubbed. Leaving the ETF loop live made the test
+    # depend on whether the worktree happened to hold a local capture: with
+    # one it never raised, without one it raised a blocked-socket error whose
+    # message is not the one under test.
+    monkeypatch.setattr(pl.akshare_etf, "fetch_index_daily", _index_boom)
+    monkeypatch.setattr(pl.akshare_etf, "fetch_etf_daily", _etf_boom)
     monkeypatch.setattr(pl.akshare_etf, "fetch_etf_spot", lambda: pd.DataFrame())
     monkeypatch.setattr(pl.yfinance, "fetch_daily", lambda *a, **k: pd.DataFrame())
 
     raw = pl.fetch_all_raw(limit_exposures=("csi300", "csi500"))
     errors = raw["_fetch_errors"]
-    assert {err["exposure_id"] for err in errors} == {"csi300", "csi500"}
-    assert all("sina timed out" in err["error"] for err in errors)
+
+    index_errors = [err for err in errors if "sina timed out" in err["error"]]
+    assert {err["exposure_id"] for err in index_errors} == {"csi300", "csi500"}
+
+    # The ETF loop only printed its failures before; a dashboard cannot show
+    # a missing wrapper it was never told about.
+    etf_errors = [err for err in errors if "etf endpoint refused" in err["error"]]
+    assert etf_errors, "ETF fetch failures must reach lineage, not only stdout"
+    assert {err["exposure_id"] for err in etf_errors} == {"csi300", "csi500"}
 
 
 def test_every_exposure_declares_where_its_prices_come_from():
