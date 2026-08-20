@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-08-19T07:06:54.351708Z",
-  "snapshot_id": "6e81fb5889bbee78",
+  "generated_at": "2026-08-20T07:06:42.206412Z",
+  "snapshot_id": "e56b4b822b3e0c88",
   "data_as_of": "2026-08-01",
   "overall_status": "Healthy",
   "live_sources": 16,
@@ -21,8 +21,8 @@
       "dataset": "cathay_hkia_traffic",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-06-01",
-      "records": 123,
+      "latest_observation": "2026-07-01",
+      "records": 124,
       "freshness": "Live",
       "notes": "HKIA airport monthly aircraft movements, passenger volume, and freight tonnage alongside Cathay Pacific passengers, RPK, ASK, passenger/cargo load factors, cargo tonnage, AFTK/RFTK and reported flight sectors, fetched directly from Cathay's own investor-relations traffic-figures PDFs discovered through the official archive."
     },
@@ -133,7 +133,7 @@
       "status": "Healthy",
       "latest_observation": "2026-05-01",
       "records": 19304,
-      "freshness": "110d old",
+      "freshness": "111d old",
       "notes": "Monthly first registrations of private cars by make, fuel type, first-registration status and body type; a genuine time series from May 2016 onward."
     },
     {
@@ -143,7 +143,7 @@
       "status": "Healthy",
       "latest_observation": "2026-06-01",
       "records": 357,
-      "freshness": "79d old",
+      "freshness": "80d old",
       "notes": "Latest available monthly private-car make/model detail; used as a bounded lookup snapshot, while the make/fuel history above supplies the time-series chart."
     },
     {
@@ -167,5 +167,5 @@
       "notes": "Observed occupancy rate for sensor-backed metered/on-street parking spaces. The static inventory supplies the listed-space denominator and the live CSV marks each observed space occupied or vacant; sample_size and listed_spaces remain visible because a small number of status rows may be unmatched."
     }
   ],
-  "attachment_filename": "hk-transport-dashboard-2026-08-19.html"
+  "attachment_filename": "hk-transport-dashboard-2026-08-20.html"
 }
