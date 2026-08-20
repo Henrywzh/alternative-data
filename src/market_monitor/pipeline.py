@@ -15,7 +15,7 @@ from typing import Any
 import pandas as pd
 
 from .config import EXPOSURES, DERIVED_DIR, NORMALIZED_DIR, RAW_DIR
-from .metadata import build_metadata_frame
+from .metadata import build_metadata_frame, reconcile_registry_names
 from .ranking import rank_wrappers
 from .relative_strength import build_relative_regime, compute_spread_metrics
 from .sources import akshare_etf, yfinance
@@ -217,6 +217,26 @@ def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, 
         print(f"  [market_monitor] etf spot fetch failed: {exc}")
         raw["etf_spot"] = pd.DataFrame()
         fetch_errors.append({"dataset": "etf_spot", "error": f"{type(exc).__name__}: {exc}"})
+
+    # --- Registry reconciliation ---
+    # The wrapper universe is hand-maintained, so the only thing that had been
+    # checking it against reality was someone looking at a chart. Compare it
+    # to the venue's own fund names on every run and report a contradiction
+    # the same way a failed fetch is reported, so it reaches Source Health.
+    for problem in reconcile_registry_names(meta, raw["etf_spot"]):
+        message = (
+            f"registry says {problem['fund_id']} is {problem['registry_name']} "
+            f"under {problem['exposure_id']}, exchange says {problem['exchange_name']}"
+        )
+        print(f"  [market_monitor] registry mismatch: {message}")
+        fetch_errors.append(
+            {
+                "dataset": "etf_spot",
+                "exposure_id": problem["exposure_id"],
+                "ticker": problem["fund_id"],
+                "error": f"RegistryMismatch: {message}",
+            }
+        )
 
     return raw
 

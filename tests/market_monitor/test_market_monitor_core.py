@@ -851,3 +851,75 @@ def test_etf_prices_key_on_the_same_id_as_wrapper_metrics():
     rows = builder._chart_series(prices, "fund_id", "close", id_as="ticker")
 
     assert {row["ticker"] for row in rows} == {"159919", "510300"}
+
+
+def test_registry_is_reconciled_against_the_exchanges_own_fund_name():
+    """513310 sat in the S&P 500 cohort as "景顺长城标普500ETF(QDII)".
+
+    It is 中韩半导体ETF华泰柏瑞, a China/Korea semiconductor fund: +271% over
+    two years against the index's +38%, correlating 0.13 with what it was
+    filed under. Nothing detected it because the universe is hand-typed and
+    the only check was someone looking at a chart.
+    """
+    from market_monitor.metadata import reconcile_registry_names
+
+    metadata = pd.DataFrame(
+        [
+            {"exposure_id": "sp500", "fund_id": "513500", "fund_name": "博时标普500ETF(QDII)"},
+            {"exposure_id": "sp500", "fund_id": "513310", "fund_name": "景顺长城标普500ETF(QDII)"},
+            {"exposure_id": "csi300", "fund_id": "510300", "fund_name": "华泰柏瑞沪深300ETF"},
+        ]
+    )
+    spot = pd.DataFrame(
+        [
+            {"ticker": "513500", "fund_name": "标普500ETF博时"},
+            {"ticker": "513310", "fund_name": "中韩半导体ETF华泰柏瑞"},
+            {"ticker": "510300", "fund_name": "沪深300ETF华泰柏瑞"},
+        ]
+    )
+
+    problems = reconcile_registry_names(metadata, spot)
+
+    assert [p["fund_id"] for p in problems] == ["513310"]
+    assert problems[0]["exchange_name"] == "中韩半导体ETF华泰柏瑞"
+    # Word order differs between our naming and the venue's; that is not a
+    # contradiction and must not be reported as one.
+    assert all(p["fund_id"] != "510300" for p in problems)
+
+
+def test_hang_seng_cohort_does_not_swallow_hang_seng_tech():
+    """恒生科技 contains 恒生, so the broad cohort needs the explicit exclusion."""
+    from market_monitor.metadata import reconcile_registry_names
+
+    metadata = pd.DataFrame(
+        [{"exposure_id": "hsi", "fund_id": "513180", "fund_name": "华夏恒生ETF"}]
+    )
+    spot = pd.DataFrame([{"ticker": "513180", "fund_name": "恒生科技ETF华夏"}])
+
+    assert reconcile_registry_names(metadata, spot)
+
+
+def test_every_exposure_has_a_name_token_to_reconcile_against():
+    """A new exposure without tokens would be silently exempt from the check."""
+    from market_monitor.config import EXPOSURES
+    from market_monitor.metadata import EXPOSURE_NAME_TOKENS
+
+    missing = [
+        spec["exposure_id"]
+        for spec in EXPOSURES
+        if spec["exposure_id"] not in EXPOSURE_NAME_TOKENS
+    ]
+    assert not missing, f"no fund-name token declared for {missing}"
+
+
+def test_shipped_registry_agrees_with_itself():
+    """Our own fund_name must carry the token of the exposure it is filed under."""
+    from market_monitor.metadata import EXPOSURE_NAME_TOKENS, build_metadata_frame
+
+    frame = build_metadata_frame()
+    wrong = [
+        (row.exposure_id, row.fund_id, row.fund_name)
+        for row in frame.itertuples()
+        if not any(token in str(row.fund_name) for token in EXPOSURE_NAME_TOKENS[row.exposure_id])
+    ]
+    assert not wrong, f"registry names contradict their exposure: {wrong}"
