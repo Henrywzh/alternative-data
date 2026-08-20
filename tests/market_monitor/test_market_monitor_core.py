@@ -923,3 +923,121 @@ def test_shipped_registry_agrees_with_itself():
         if not any(token in str(row.fund_name) for token in EXPOSURE_NAME_TOKENS[row.exposure_id])
     ]
     assert not wrong, f"registry names contradict their exposure: {wrong}"
+
+
+def test_premium_from_nav_prices_the_wrapper_against_its_own_valuation():
+    from market_monitor.sources.eastmoney_nav import premium_from_nav
+
+    prices = pd.DataFrame(
+        [
+            {"date": "2026-08-17", "fund_id": "513500", "close": 2.748},
+            {"date": "2026-08-18", "fund_id": "513500", "close": 2.688},
+            # No NAV published for this day: an inner join must drop it rather
+            # than emit a gap in a series meant to be continuous.
+            {"date": "2026-08-19", "fund_id": "513500", "close": 2.642},
+        ]
+    )
+    nav = pd.DataFrame(
+        [
+            {"fund_id": "513500", "date": "2026-08-17", "nav": 2.4847},
+            {"fund_id": "513500", "date": "2026-08-18", "nav": 2.4683},
+        ]
+    )
+
+    out = premium_from_nav(prices, nav)
+
+    assert out["date"].tolist() == ["2026-08-17", "2026-08-18"]
+    assert out["premium_pct"].round(2).tolist() == [10.60, 8.90]
+    assert set(out["basis"]) == {"nav"}
+
+
+def test_premium_from_nav_refuses_a_non_positive_nav():
+    """A zero NAV would render as a -100% premium instead of as missing."""
+    from market_monitor.sources.eastmoney_nav import premium_from_nav
+
+    prices = pd.DataFrame([{"date": "2026-08-18", "fund_id": "513500", "close": 2.688}])
+    nav = pd.DataFrame([{"fund_id": "513500", "date": "2026-08-18", "nav": 0.0}])
+
+    assert premium_from_nav(prices, nav).empty
+
+
+def test_premium_history_prefers_nav_and_keeps_iopv_for_the_tail(tmp_path, monkeypatch):
+    """NAV is the fund's own valuation, so it wins where both describe a day.
+
+    IOPV still carries today and the extra session a QDII lags by, which NAV
+    has not published yet.
+    """
+    from market_monitor import pipeline as pl
+    from market_monitor.sources import eastmoney_nav
+
+    meta = pd.DataFrame(
+        [{"ticker": "513500.SH", "fund_id": "513500", "exposure_id": "sp500"}]
+    )
+    prices = pd.DataFrame(
+        [
+            {"date": "2026-08-17", "fund_id": "513500", "close": 2.748},
+            {"date": "2026-08-18", "fund_id": "513500", "close": 2.688},
+            {"date": "2026-08-19", "fund_id": "513500", "close": 2.642},
+        ]
+    )
+    spot = pd.DataFrame(
+        [{"ticker": "513500", "premium_pct": 99.0, "spread_bp": 3.8, "market_price": 2.642}]
+    )
+
+    monkeypatch.setattr(
+        eastmoney_nav,
+        "fetch_nav_history",
+        lambda fund_id, start, end, session=None, pause=0.0: pd.DataFrame(
+            [
+                {"fund_id": "513500", "date": "2026-08-17", "nav": 2.4847},
+                {"fund_id": "513500", "date": "2026-08-18", "nav": 2.4683},
+            ]
+        ),
+    )
+    monkeypatch.setattr(pl, "_premium_rows_from_raw_snapshots", lambda tracked: [])
+    monkeypatch.setattr(pl, "load_latest_derived", lambda name: None)
+
+    # The snapshot is taken on the 18th, a day NAV has also published, so the
+    # two measurements collide there on purpose.
+    same_day = pl._build_premium_history(meta, spot, "2026-08-18", prices=prices)
+    row = same_day.set_index("date").loc["2026-08-18"]
+    assert row["basis"] == "nav", "the fund's own valuation must win over IOPV"
+    assert round(float(row["premium_pct"]), 2) == 8.90
+
+    # Taken on the 19th, which NAV has not reached: IOPV holds the tail so the
+    # series still ends on the latest session.
+    tail = pl._build_premium_history(meta, spot, "2026-08-19", prices=prices)
+    by_date = tail.set_index("date")
+    assert sorted(by_date.index) == ["2026-08-17", "2026-08-18", "2026-08-19"]
+    assert by_date.loc["2026-08-19", "basis"] == "iopv"
+    assert by_date.loc["2026-08-18", "basis"] == "nav"
+
+
+def test_premium_history_only_refetches_the_nav_tail(monkeypatch):
+    """A full 2-year backfill is 25 pages per fund; do it once, not daily."""
+    from market_monitor import pipeline as pl
+    from market_monitor.sources import eastmoney_nav
+
+    meta = pd.DataFrame([{"ticker": "513500.SH", "fund_id": "513500"}])
+    prices = pd.DataFrame([{"date": "2026-08-18", "fund_id": "513500", "close": 2.688}])
+    previous = pd.DataFrame(
+        [
+            {"date": "2026-08-17", "ticker": "513500", "fund_id": "513500",
+             "premium_pct": 10.6, "spread_bp": float("nan"),
+             "market_price": float("nan"), "basis": "nav"},
+        ]
+    )
+
+    windows: list[str] = []
+
+    def _record(fund_id, start, end, session=None, pause=0.0):
+        windows.append(start)
+        return pd.DataFrame(columns=["fund_id", "date", "nav"])
+
+    monkeypatch.setattr(eastmoney_nav, "fetch_nav_history", _record)
+
+    pl._nav_premium_rows(meta, prices, previous)
+
+    assert windows, "the tail must still be refreshed"
+    # Ten days back from the newest stored NAV, not two years back.
+    assert windows[0] == "2026-08-07"

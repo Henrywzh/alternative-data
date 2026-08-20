@@ -3633,10 +3633,31 @@ def render_market_index_detail(
                         name_map_ph[str(w["ticker"]).zfill(6)] = str(w["ticker"])
                 ph_windowed["series"] = ph_windowed["ticker"].astype(str).str.zfill(6).map(name_map_ph).fillna(ph_windowed["ticker"])
                 st.markdown(
-                    f'<div class="am-chart-title">{escape(label)} — {tr(language, "premium history (IOPV)", "溢价历史（IOPV）")}</div>',
+                    f'<div class="am-chart-title">{escape(label)} — {tr(language, "premium history", "溢价历史")}</div>',
                     unsafe_allow_html=True,
                 )
-                st.caption(ph_cov + " · " + tr(language, "History grows as daily snapshots accumulate.", "历史随每日快照积累而增长。"))
+                # The series mixes two measurements of the same quantity:
+                # published NAV for the history, IOPV for the days NAV has not
+                # caught up to. Say which, rather than labelling the whole
+                # line with one of them.
+                bases = (
+                    set(ph_windowed["basis"].dropna().astype(str))
+                    if "basis" in ph_windowed.columns
+                    else set()
+                )
+                if bases == {"nav"}:
+                    basis_note = tr(language, "Close vs published NAV.", "收盘价对已公布净值。")
+                elif bases == {"iopv"}:
+                    basis_note = tr(language, "Close vs intraday IOPV.", "收盘价对盘中 IOPV。")
+                elif bases:
+                    basis_note = tr(
+                        language,
+                        "Close vs published NAV, with IOPV for the most recent days NAV has not reached.",
+                        "收盘价对已公布净值；净值尚未公布的最近几日以 IOPV 补足。",
+                    )
+                else:
+                    basis_note = ""
+                st.caption(" · ".join(part for part in (ph_cov, basis_note) if part))
                 fig_ph = px.line(
                     ph_windowed.sort_values(["series", "_date"]),
                     x="_date",
@@ -3645,6 +3666,21 @@ def render_market_index_detail(
                     color_discrete_sequence=PALETTE,
                 )
                 fig_ph.add_hline(y=0.0, line_dash="dot", line_color="#9CA3AF", line_width=1)
+                # A premium only means something against its own history: 7%
+                # is cheap for a wrapper that usually trades at 10% and dear
+                # for one that usually trades at 3%.
+                median_premium = pd.to_numeric(ph_windowed["premium_pct"], errors="coerce").median()
+                if pd.notna(median_premium) and len(ph_windowed) >= 20:
+                    fig_ph.add_hline(
+                        y=float(median_premium),
+                        line_dash="dash",
+                        line_color="#9CA3AF",
+                        line_width=1,
+                        annotation_text=tr(language, "cohort median", "同组中位数")
+                        + f" {median_premium:+.2f}%",
+                        annotation_position="top left",
+                        annotation_font_size=10,
+                    )
                 fig_ph.update_yaxes(title=tr(language, "Premium %", "溢价率 %"))
                 fig_ph.update_xaxes(title=None, tickformat=date_tick_format(ph_windowed["_date"]))
                 fig_ph.update_xaxes(hoverformat=date_hover_format(ph_windowed["_date"]))
