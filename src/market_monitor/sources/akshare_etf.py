@@ -23,6 +23,9 @@ SINA_INDEX_SYMBOLS = {
     "000852.SH": "sh000852",
     "000015.SH": "sh000015",
     "000688.SH": "sh000688",
+    "399006.SZ": "sz399006",
+    "000993.SH": "sh000993",
+    "000932.SH": "sh000932",
     "932000.CSI": None,  # not available on Sina's index endpoint
     "HSTECH": None,
     "HSI": None,
