@@ -25,7 +25,7 @@ from .relative_strength import (
     build_relative_regime,
     compute_spread_metrics,
 )
-from .sources import akshare_etf, eastmoney_fee, eastmoney_nav, yfinance
+from .sources import akshare_etf, csindex, eastmoney_fee, eastmoney_nav, yfinance
 from .storage import (
     load_latest_derived,
     load_latest_normalized,
@@ -60,6 +60,11 @@ YFINANCE_SYMBOLS = {
 # filling the baseline. Five years gives the pair charts a z-score over their
 # whole displayed window. Indices are a handful of thin series, so the extra
 # depth is cheap; ETF prices stay at two years.
+# Every price_source an exposure may declare. A source with no branch in the
+# fetch loop would fall through to the mainland Sina route and fail with a
+# confusing provider error rather than saying what is wrong.
+ROUTABLE_PRICE_SOURCES = frozenset({"sina", "sina_hk", "csindex", "yfinance"})
+
 INDEX_HISTORY_DAYS = 1825
 ETF_HISTORY_DAYS = 730
 
@@ -206,6 +211,24 @@ FEE_FETCH_BUDGET_SECONDS = 120.0
 FEE_COLUMNS = ["fund_id", "management_fee", "custody_fee", "fetched_at"]
 
 
+def _stack_index_frames(frames: dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """Concatenate per-exposure index frames on one agreed date representation.
+
+    Nothing had been holding the four price sources to a common shape; three
+    happened to return ``date`` as an ISO string and the fourth returned
+    datetimes, which concatenated into an object column of mixed str and
+    Timestamp that parquet refused to write. Coercing here rather than only in
+    the new source means the next source cannot reintroduce it.
+    """
+    if not frames:
+        return pd.DataFrame()
+    stacked = pd.concat(frames.values(), ignore_index=True)
+    if "date" in stacked.columns:
+        stacked["date"] = pd.to_datetime(stacked["date"], errors="coerce").dt.strftime("%Y-%m-%d")
+        stacked = stacked[stacked["date"].notna()]
+    return stacked
+
+
 def _published_fee_schedule(meta: pd.DataFrame) -> dict[str, dict]:
     """Issuer-published fees per fund, refreshed only where stale."""
     cached = load_latest_derived("fund_fees")
@@ -337,6 +360,10 @@ def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, 
                 frame = yfinance.fetch_daily(yf_symbol, start_date=us_start)
                 if frame is not None and not frame.empty:
                     frame["index_id"] = idx
+            elif spec["price_source"] == "csindex":
+                frame = csindex.fetch_index_daily(idx, start_date=start)
+                if frame is not None and not frame.empty:
+                    frame["index_id"] = idx
             else:
                 frame = akshare_etf.fetch_index_daily(idx, start_date=start)
                 if frame is not None and not frame.empty:
@@ -349,7 +376,7 @@ def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, 
                 {"dataset": "index_close", "exposure_id": exposure, "index_id": str(idx),
                  "error": f"{type(exc).__name__}: {exc}"}
             )
-    raw["index_close"] = pd.concat(index_frames.values(), ignore_index=True) if index_frames else pd.DataFrame()
+    raw["index_close"] = _stack_index_frames(index_frames)
 
     # --- ETF daily closes ---
     # Re-enabled: the per-index view now charts every ETF wrapper rebased to
