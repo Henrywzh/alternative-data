@@ -102,7 +102,7 @@ EXPOSURES = (
     },
     {
         "exposure_id": "hstech",
-        "price_source": "sina",
+        "price_source": "sina_hk",
         "label": "Hang Seng Tech",
         "label_zh": "恒生科技",
         "region": "HK / China",
@@ -113,7 +113,7 @@ EXPOSURES = (
     },
     {
         "exposure_id": "hsi",
-        "price_source": "sina",
+        "price_source": "sina_hk",
         "label": "Hang Seng Index",
         "label_zh": "恒生指数",
         "region": "HK",
@@ -149,11 +149,56 @@ EXPOSURES = (
         # into a delisted-ticker warning and an empty frame.
         "yf_symbol": "^GSPC",
     },
+    {
+        # The only HK dividend index that is live on a route we use. Sina's HK
+        # index list carries this one; S&P 港股通低波红利 and 恒生高股息低波 --
+        # the indices the three wrappers below actually track -- are on
+        # neither Sina's HK list nor the CSI endpoint. The wrapper ranking
+        # does not depend on it: premium is measured against each fund's own
+        # NAV, and fee/size/age are index-independent.
+        "exposure_id": "hk_dividend",
+        "price_source": "sina_hk",
+        "label": "HK Dividend",
+        "label_zh": "港股红利",
+        "region": "HK",
+        "size": "Broad",
+        "style": "Value",
+        "risk_character": "Defensive",
+        "index_id": "CSHKDIV",
+    },
     # --- Benchmarks: relative-strength legs, not investable exposures ---
     # Verified live on 2026-08-20. The obvious alternatives are traps: Sina
     # answers 200 for 中证800成长 (000967) and 中证800价值 (000969) but stopped
     # updating them in 2016 and 2019, so a style pair built on them would have
     # frozen without ever erroring.
+    {
+        # HK mid cap. 标普香港大型股 correlates 0.98 with the Hang Seng over two
+        # years, so the large leg reuses hsi rather than adding a near-duplicate
+        # series; this is the half that carries the signal (0.86 correlation,
+        # 20pp of relative performance over two years).
+        "exposure_id": "hk_midcap",
+        "role": "benchmark",
+        "price_source": "sina_hk",
+        "label": "HK Mid Cap",
+        "label_zh": "香港中盘",
+        "region": "HK",
+        "size": "Mid",
+        "style": "Broad",
+        "risk_character": "Cyclical-ish",
+        "index_id": "CSHKMCS",
+    },
+    {
+        "exposure_id": "hk_hshares",
+        "role": "benchmark",
+        "price_source": "sina_hk",
+        "label": "Hang Seng China Enterprises",
+        "label_zh": "恒生中国企业",
+        "region": "HK",
+        "size": "Large",
+        "style": "Broad",
+        "risk_character": "Mainland core",
+        "index_id": "HSCEI",
+    },
     {
         "exposure_id": "chinext",
         "role": "benchmark",
