@@ -5823,3 +5823,801 @@ def render(domain_states, datasets) -> None:
     render_task_spend_section(openrouter_views)
     render_token_revenue_comparison(openrouter_views)
     render_compute_evolution_section(compute_views)
+
+
+# ---------------------------------------------------------------------------
+# Multi-Provider ARR Run-Rate & August Nowcast Analysis
+# ---------------------------------------------------------------------------
+
+TARGET_ARR_PROVIDERS: dict[str, str] = {
+    "anthropic": "Anthropic",
+    "openai": "OpenAI",
+    "google": "Google",
+    "moonshotai": "Moonshot (Kimi)",
+    "z-ai": "Z.ai (GLM)",
+    "deepseek": "DeepSeek",
+    "tencent": "Tencent (Hunyuan)",
+    "x-ai": "xAI (Grok)",
+    "xiaomi": "Xiaomi (MiMo)",
+    "minimax": "MiniMax",
+    "qwen": "Qwen",
+    "meta": "Meta (Llama)",
+}
+
+ARR_PROVIDER_COLORS: dict[str, str] = {
+    "anthropic": "#d97706",
+    "openai": "#0f766e",
+    "google": "#2563eb",
+    "moonshotai": "#059669",
+    "z-ai": "#db2777",
+    "deepseek": "#7c3aed",
+    "tencent": "#16a34a",
+    "x-ai": "#475569",
+    "xiaomi": "#ea580c",
+    "minimax": "#0284c7",
+    "qwen": "#0891b2",
+    "meta": "#6366f1",
+}
+
+
+@st.cache_data(ttl=3600)
+def compute_arr_nowcasts_summary(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
+    """Compute historical monthly ARR and 4 August nowcast models for priority providers."""
+    rev_res = datasets.get("daily_provider_revenue_estimates")
+    if rev_res is None or rev_res.frame.empty:
+        return {}
+
+    df = rev_res.frame.copy()
+    if "usage_date" not in df.columns or "estimated_revenue" not in df.columns or "provider_slug" not in df.columns:
+        return {}
+
+    df["usage_date"] = pd.to_datetime(df["usage_date"], errors="coerce")
+    df = df.dropna(subset=["usage_date"])
+    max_date = df["usage_date"].max()
+
+    # Exclude incomplete last date
+    df_comp = df[df["usage_date"] < max_date].copy()
+    df_comp["estimated_revenue"] = pd.to_numeric(df_comp["estimated_revenue"], errors="coerce").fillna(0.0)
+
+    # Filter targets
+    df_comp = df_comp[df_comp["provider_slug"].isin(TARGET_ARR_PROVIDERS)].copy()
+    if df_comp.empty:
+        return {}
+
+    daily = df_comp.groupby(["usage_date", "provider_slug"], as_index=False)["estimated_revenue"].sum()
+    daily["year_month"] = daily["usage_date"].dt.to_period("M").astype(str)
+    daily["day_of_month"] = daily["usage_date"].dt.day
+    daily["is_weekend"] = daily["usage_date"].dt.dayofweek >= 5
+
+    latest_month = daily["year_month"].max()
+    complete_months = sorted([m for m in daily["year_month"].unique() if m != latest_month])
+
+    # 1. Historical Complete Months ARR
+    monthly_rows = []
+    for (m, p), grp in daily[daily["year_month"].isin(complete_months)].groupby(["year_month", "provider_slug"]):
+        days_in_m = grp["usage_date"].dt.days_in_month.iloc[0]
+        tot = grp["estimated_revenue"].sum()
+        arr = (tot / days_in_m) * 365
+        monthly_rows.append({"month": m, "date": pd.to_datetime(f"{m}-01"), "provider": p, "revenue": tot, "arr": arr})
+    monthly_arr_df = pd.DataFrame(monthly_rows)
+
+    # 2. August Nowcasts
+    aug_data = daily[daily["year_month"] == latest_month].copy()
+    observed_days = int(aug_data["day_of_month"].max()) if not aug_data.empty else 18
+    days_in_latest = 31
+    remaining_days = max(days_in_latest - observed_days, 0)
+
+    hist_pacing_months = [f"{pd.Timestamp(latest_month).year}-{m:02d}" for m in range(2, 8)]
+    pacing_df = daily[daily["year_month"].isin(hist_pacing_months)].copy()
+
+    nowcast_results = []
+    for p, display_name in TARGET_ARR_PROVIDERS.items():
+        p_aug = aug_data[aug_data["provider_slug"] == p]
+        mtd_rev = float(p_aug["estimated_revenue"].sum()) if not p_aug.empty else 0.0
+
+        # M1: Simple MTD Daily Avg
+        m1_arr = (mtd_rev / observed_days) * 365 if observed_days > 0 else 0.0
+
+        # M2: Historical 18-day Pacing Model
+        p_ratios = []
+        for hm in hist_pacing_months:
+            hm_data = pacing_df[(pacing_df["year_month"] == hm) & (pacing_df["provider_slug"] == p)]
+            tot = hm_data["estimated_revenue"].sum()
+            d18 = hm_data[hm_data["day_of_month"] <= observed_days]["estimated_revenue"].sum()
+            if tot > 0:
+                p_ratios.append(d18 / tot)
+
+        if len(p_ratios) >= 2:
+            p_mean = float(np.mean(p_ratios))
+            p_se = float(np.std(p_ratios, ddof=1) / np.sqrt(len(p_ratios)))
+            m2_arr = (mtd_rev / p_mean) * 12 if p_mean > 0 else m1_arr
+            p_low = max(p_mean - 1.96 * p_se, 0.15)
+            p_high = min(p_mean + 1.96 * p_se, 0.95)
+            m2_low = (mtd_rev / p_high) * 12
+            m2_high = (mtd_rev / p_low) * 12
+        else:
+            p_mean = 0.57
+            m2_arr = (mtd_rev / p_mean) * 12
+            m2_low, m2_high = m2_arr * 0.85, m2_arr * 1.15
+
+        # M3 & M4: Latest 7 Days & Seasonality Adjustment
+        latest_7_start = max(observed_days - 6, 1)
+        p_l7 = p_aug[p_aug["day_of_month"] >= latest_7_start]
+        if not p_l7.empty and len(p_l7) >= 4:
+            wd_mean = p_l7[~p_l7["is_weekend"]]["estimated_revenue"].mean()
+            we_mean = p_l7[p_l7["is_weekend"]]["estimated_revenue"].mean()
+            if pd.isna(wd_mean): wd_mean = p_l7["estimated_revenue"].mean()
+            if pd.isna(we_mean): we_mean = wd_mean * 0.75
+
+            rem_dates = pd.date_range(f"{latest_month}-{observed_days+1:02d}", f"{latest_month}-{days_in_latest:02d}")
+            rem_wd = int((rem_dates.dayofweek < 5).sum())
+            rem_we = int((rem_dates.dayofweek >= 5).sum())
+
+            rem_proj = (rem_wd * wd_mean) + (rem_we * we_mean)
+            proj_m_tot = mtd_rev + rem_proj
+            m3_arr = proj_m_tot * 12
+
+            l7_std = p_l7["estimated_revenue"].std(ddof=1)
+            rem_se = np.sqrt(remaining_days) * (l7_std if pd.notna(l7_std) and l7_std > 0 else (wd_mean * 0.1))
+            m3_low = (mtd_rev + max(rem_proj - 1.96 * rem_se, 0)) * 12
+            m3_high = (mtd_rev + rem_proj + 1.96 * rem_se) * 12
+
+            m4_arr = p_l7["estimated_revenue"].mean() * 365
+        else:
+            m3_arr = m1_arr
+            m3_low, m3_high = m1_arr * 0.9, m1_arr * 1.1
+            m4_arr = m1_arr
+
+        # July complete ARR for baseline
+        july_data = monthly_arr_df[(monthly_arr_df["month"] == "2026-07") & (monthly_arr_df["provider"] == p)]
+        july_arr = float(july_data["arr"].iloc[0]) if not july_data.empty else 0.0
+
+        nowcast_results.append({
+            "provider": p,
+            "display_name": display_name,
+            "mtd_revenue": mtd_rev,
+            "july_arr": july_arr,
+            "m1_arr": m1_arr,
+            "m2_arr": m2_arr,
+            "m2_low": m2_low,
+            "m2_high": m2_high,
+            "m3_arr": m3_arr,
+            "m3_low": m3_low,
+            "m3_high": m3_high,
+            "m4_arr": m4_arr,
+            "p_mean": p_mean,
+        })
+
+    nowcast_df = pd.DataFrame(nowcast_results).sort_values("m3_arr", ascending=False).reset_index(drop=True)
+    total_m3 = nowcast_df["m3_arr"].sum()
+    total_m4 = nowcast_df["m4_arr"].sum()
+    nowcast_df["m3_share"] = (nowcast_df["m3_arr"] / total_m3 * 100) if total_m3 > 0 else 0
+    nowcast_df["m4_share"] = (nowcast_df["m4_arr"] / total_m4 * 100) if total_m4 > 0 else 0
+
+    return {
+        "monthly_arr_df": monthly_arr_df,
+        "nowcast_df": nowcast_df,
+        "observed_days": observed_days,
+        "latest_month": latest_month,
+        "as_of_date": max_date - pd.Timedelta(days=1),
+    }
+
+
+def render_arr_nowcast_section(datasets: dict[str, DatasetLoadResult]) -> None:
+    """Render dedicated ARR run-rates, nowcast models, and multi-provider market trajectory."""
+    data = compute_arr_nowcasts_summary(datasets)
+    if not data:
+        st.info("Revenue estimates data is not available for ARR nowcast modeling.")
+        return
+
+    nowcast_df = data["nowcast_df"]
+    monthly_arr_df = data["monthly_arr_df"]
+    observed_days = data["observed_days"]
+    latest_month = data["latest_month"]
+    as_of = data["as_of_date"].strftime("%b %d, %Y")
+
+    st.markdown('<div class="section-title">🚀 Multi-Provider ARR Run-Rate &amp; August Nowcast</div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="section-subtitle">Annualized revenue run-rates across 12 major LLM labs on OpenRouter. '
+        f'Complete historical months use calendar totals &times; 365/days; {latest_month} is nowcasted using 4 statistical methods '
+        f'across {observed_days} complete MTD days through {as_of}.</div>',
+        unsafe_allow_html=True,
+    )
+
+    tot_m3 = nowcast_df["m3_arr"].sum() / 1e6
+    tot_m4 = nowcast_df["m4_arr"].sum() / 1e6
+    top1 = nowcast_df.iloc[0]
+    top2 = nowcast_df.iloc[1]
+
+    st.markdown(
+        kpi_grid_html(
+            kpi_card_html("Top-12 Total ARR Nowcast", f"${tot_m3:,.0f}M", delta=f"${tot_m4:,.0f}M by M4 latest-7d"),
+            kpi_card_html(f"Top 1: {top1['display_name']}", f"${top1['m3_arr']/1e6:,.0f}M", delta=f"{top1['m3_share']:.1f}% market share"),
+            kpi_card_html(f"Top 2: {top2['display_name']}", f"${top2['m3_arr']/1e6:,.0f}M", delta=f"{top2['m3_share']:.1f}% market share"),
+            kpi_card_html("MTD Complete Days", f"{observed_days} / 31 days", delta="incomplete max date excluded", delta_class="flat"),
+        ),
+        unsafe_allow_html=True,
+    )
+
+    col_c1, col_c2 = st.columns([1, 1])
+    with col_c1:
+        view_tab = st.segmented_control("ARR View", ["August Nowcast Ranking", "Monthly Trajectories (2025-2026)"], default="August Nowcast Ranking", key="arr_view_select") if hasattr(st, "segmented_control") else st.radio("ARR View", ["August Nowcast Ranking", "Monthly Trajectories (2025-2026)"], horizontal=True, key="arr_view_select")
+    with col_c2:
+        nowcast_metric = st.segmented_control("Nowcast Model Benchmark", ["M3: Seasonally-Adjusted (Recommended)", "M4: Latest 7-Day Run-Rate"], default="M3: Seasonally-Adjusted (Recommended)", key="arr_metric_select") if hasattr(st, "segmented_control") else st.radio("Nowcast Model Benchmark", ["M3: Seasonally-Adjusted (Recommended)", "M4: Latest 7-Day Run-Rate"], horizontal=True, key="arr_metric_select")
+
+    is_m3 = "M3" in str(nowcast_metric)
+
+    if "Ranking" in str(view_tab):
+        chart_df = nowcast_df.sort_values("m3_arr" if is_m3 else "m4_arr", ascending=True).copy()
+
+        fig = go.Figure()
+        arr_vals = chart_df["m3_arr"] / 1e6 if is_m3 else chart_df["m4_arr"] / 1e6
+        err_plus = (chart_df["m3_high"] - chart_df["m3_arr"]) / 1e6 if is_m3 else None
+        err_minus = (chart_df["m3_arr"] - chart_df["m3_low"]) / 1e6 if is_m3 else None
+
+        fig.add_trace(go.Bar(
+            y=chart_df["display_name"],
+            x=arr_vals,
+            orientation="h",
+            marker=dict(color=[MODEL_COLORS[i % len(MODEL_COLORS)] for i in range(len(chart_df))], opacity=0.9),
+            error_x=dict(type="data", symmetric=False, array=err_plus, arrayminus=err_minus, color="#0f172a", thickness=1.5, width=4) if is_m3 else None,
+            text=[f"${v:,.1f}M ({s:.1f}% share)" for v, s in zip(arr_vals, chart_df["m3_share" if is_m3 else "m4_share"])],
+            textposition="auto",
+            name="August Nowcast ARR ($M)",
+        ))
+
+        fig.update_layout(
+            template="plotly_white",
+            height=480,
+            margin=dict(l=10, r=20, t=20, b=30),
+            xaxis=dict(title="Annualized Run Rate ($M)", gridcolor=GRID),
+            yaxis=dict(autorange="reversed"),
+            showlegend=False,
+        )
+        st.plotly_chart(fig, width="stretch", theme=None)
+        st.caption("Error bars denote the 95% confidence interval for M3 (seasonally-adjusted weekday/weekend residual standard error propagated to the remaining 13 days of August).")
+
+    else:
+        # Dynamic provider multiselect: allow selecting all or custom providers (default to top 6)
+        all_p_options = nowcast_df["provider"].tolist()
+        p_name_map = dict(zip(nowcast_df["provider"], nowcast_df["display_name"]))
+        default_top = all_p_options[:6]
+
+        selected_traj_p = st.multiselect(
+            "Select Providers to Display in Trajectory",
+            options=all_p_options,
+            default=default_top,
+            format_func=lambda x: p_name_map.get(x, x),
+            key="arr_traj_provider_multiselect",
+        )
+        if not selected_traj_p:
+            selected_traj_p = default_top
+
+        traj_df = monthly_arr_df[monthly_arr_df["provider"].isin(selected_traj_p)].copy()
+        pivot_traj = traj_df.pivot(index="date", columns="provider", values="arr") / 1e6
+
+        fig_traj = go.Figure()
+        for idx_p, p in enumerate(selected_traj_p):
+            p_color = MODEL_COLORS[idx_p % len(MODEL_COLORS)]
+            if p in pivot_traj.columns:
+                fig_traj.add_trace(go.Scatter(
+                    x=pivot_traj.index,
+                    y=pivot_traj[p],
+                    name=TARGET_ARR_PROVIDERS[p],
+                    mode="lines+markers",
+                    line=dict(color=p_color, width=2.5),
+                    marker=dict(size=5),
+                ))
+
+        aug_dt = pd.to_datetime(f"{latest_month}-01")
+        for idx_p, p in enumerate(selected_traj_p):
+            p_rows = nowcast_df[nowcast_df["provider"] == p]
+            if p_rows.empty:
+                continue
+            r = p_rows.iloc[0]
+            p_color = MODEL_COLORS[idx_p % len(MODEL_COLORS)]
+            val = r["m3_arr"] / 1e6 if is_m3 else r["m4_arr"] / 1e6
+            fig_traj.add_trace(go.Scatter(
+                x=[aug_dt],
+                y=[val],
+                mode="markers",
+                marker=dict(color=p_color, size=10, symbol="diamond"),
+                error_y=dict(type="data", symmetric=False, array=[(r["m3_high"]-r["m3_arr"])/1e6], arrayminus=[(r["m3_arr"]-r["m3_low"])/1e6], color="#0f172a", thickness=1.5, width=4) if is_m3 else None,
+                showlegend=False,
+                hovertext=f"{r['display_name']} Aug Nowcast: ${val:,.1f}M",
+            ))
+
+        fig_traj.update_layout(
+            template="plotly_white",
+            height=460,
+            hovermode="x unified",
+            margin=dict(l=10, r=20, t=20, b=40),
+            xaxis=dict(showgrid=False),
+            yaxis=dict(title="Annualized ARR ($M)", gridcolor=GRID, tickprefix="$", ticksuffix="M"),
+            legend=dict(orientation="h", y=-0.15),
+        )
+        st.plotly_chart(fig_traj, width="stretch", theme=None)
+        st.caption(f"Solid lines: complete months (through 2026-07). Diamonds: August 2026 MTD Nowcast estimates.")
+
+    with st.expander("📊 Full 12-Provider ARR Model Comparison Table & Pacing Metrics", expanded=False):
+        table_disp = nowcast_df.copy()
+        table_disp["July Complete ARR"] = table_disp["july_arr"].map(lambda v: f"${v/1e6:,.1f}M" if v > 0 else "—")
+        table_disp["M1: Simple MTD"] = table_disp["m1_arr"].map(lambda v: f"${v/1e6:,.1f}M")
+        table_disp["M2: 18-Day Pacing (95% CI)"] = table_disp.apply(lambda r: f"${r['m2_arr']/1e6:,.1f}M (${r['m2_low']/1e6:,.0f}M–${r['m2_high']/1e6:,.0f}M)", axis=1)
+        table_disp["M3: Seasonally-Adjusted (95% CI)"] = table_disp.apply(lambda r: f"${r['m3_arr']/1e6:,.1f}M (${r['m3_low']/1e6:,.0f}M–${r['m3_high']/1e6:,.0f}M)", axis=1)
+        table_disp["M4: Latest 7-Day Run Rate"] = table_disp["m4_arr"].map(lambda v: f"${v/1e6:,.1f}M")
+        table_disp["M3 vs July (%)"] = table_disp.apply(lambda r: f"{(r['m3_arr']/r['july_arr']-1)*100:+.1f}%" if r['july_arr'] > 0 else "N/A", axis=1)
+        table_disp["Market Share"] = table_disp["m3_share"].map(lambda v: f"{v:.1f}%")
+
+        cols_to_show = ["display_name", "Market Share", "July Complete ARR", "M3: Seasonally-Adjusted (95% CI)", "M4: Latest 7-Day Run Rate", "M1: Simple MTD", "M2: 18-Day Pacing (95% CI)", "M3 vs July (%)"]
+        st.dataframe(table_disp[cols_to_show].rename(columns={"display_name": "Provider"}), width="stretch", hide_index=True)
+
+    st.markdown("---")
+
+
+# ---------------------------------------------------------------------------
+# Cloud & Inference Infrastructure Providers Section
+# ---------------------------------------------------------------------------
+
+INFRA_PROVIDER_SLUGS = {
+    "coreweave", "deepinfra", "together", "fireworks", "nebius", "novita",
+    "groq", "cerebras", "azure", "amazon-bedrock", "chutes", "crusoe",
+    "sambanova", "siliconflow", "modal", "baseten", "friendli", "digitalocean",
+    "gmicloud", "streamlake", "atlas-cloud", "parasail", "decart", "open-inference",
+    "venice", "morph", "inceptron", "akashml", "modelrun", "ambient", "claude-on-aws",
+    "nextbit", "sail-research", "wafer", "phala", "ionstream", "io-net", "relace",
+    "darkbloom", "seed", "aion-labs", "mancer", "mara", "inception", "crucible",
+    "perceptron", "switchpoint", "cloudflare",
+}
+
+LLM_ORIGIN_MAPPING = {
+    "deepseek": "DeepSeek",
+    "meta-llama": "Meta",
+    "meta": "Meta",
+    "openai": "OpenAI",
+    "anthropic": "Anthropic",
+    "z-ai": "智谱AI (Z.ai)",
+    "qwen": "Alibaba (Qwen)",
+    "alibaba": "Alibaba (Qwen)",
+    "minimax": "MiniMax",
+    "moonshotai": "Moonshot AI",
+    "google": "Google",
+    "mistralai": "Mistral AI",
+    "x-ai": "xAI (Grok)",
+    "xiaomi": "Xiaomi",
+    "tencent": "Tencent",
+    "stepfun": "StepFun",
+    "nvidia": "Nvidia",
+    "ibm-granite": "IBM",
+    "cohere": "Cohere",
+    "perplexity": "Perplexity",
+}
+
+
+def _derive_origin_lab(slug: str) -> str:
+    if not slug or "/" not in str(slug):
+        return "Other"
+    prefix = str(slug).split("/")[0].lower()
+    return LLM_ORIGIN_MAPPING.get(prefix, prefix.capitalize())
+
+
+def _load_cloud_infra_economics() -> pd.DataFrame:
+    candidates = [
+        Path("data/normalized/marts/daily_cloud_infra_economics.parquet"),
+        Path("/Users/henrywzh/Quant/alternative-data-arr/data/normalized/marts/daily_cloud_infra_economics.parquet"),
+        Path("/Users/henrywzh/Desktop/Quant/alternative-data/data/normalized/marts/daily_cloud_infra_economics.parquet"),
+    ]
+    for p in candidates:
+        if p.exists():
+            try:
+                df = pd.read_parquet(p)
+                if not df.empty:
+                    df["origin_lab"] = df["model_permaslug"].apply(_derive_origin_lab)
+                    return df
+            except Exception:
+                pass
+    return pd.DataFrame()
+
+
+def render_cloud_infra_section(datasets: dict[str, DatasetLoadResult]) -> None:
+    st.markdown('<div class="section-title">☁️ Cloud & Inference Infrastructure Providers</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-subtitle">Daily token volume, estimated revenue, and hosting distribution across 88+ underlying hosting and inference providers on OpenRouter (CoreWeave, DeepInfra, Amazon Bedrock, Azure, Novita, SiliconFlow, Cerebras, Groq, Nebius, Together, etc.).</div>',
+        unsafe_allow_html=True,
+    )
+
+    df = _load_cloud_infra_economics()
+    if df.empty:
+        st.warning("Cloud infra economics dataset not found. Please run the extractor script.")
+        return
+
+    df = df.copy()
+    df["is_infra"] = df["provider_slug"].isin(INFRA_PROVIDER_SLUGS)
+    df["category"] = df["is_infra"].map(lambda x: "Cloud & Inference Infra" if x else "1st-Party Model Lab")
+    df["usage_date_dt"] = pd.to_datetime(df["usage_date"], errors="coerce")
+
+    # 1. Top KPI cards
+    infra_only = df[df["is_infra"]]
+    cw_df = df[df["provider_slug"] == "coreweave"]
+
+    total_infra_tokens = infra_only["total_tokens"].sum()
+    total_infra_rev = infra_only["estimated_revenue"].sum()
+    cw_tokens = cw_df["total_tokens"].sum()
+    cw_rev = cw_df["estimated_revenue"].sum()
+    cw_top_model = cw_df.groupby("model_permaslug")["total_tokens"].sum().idxmax() if not cw_df.empty else "N/A"
+    cw_top_model_clean = cw_top_model.split("/")[-1].split("-202")[0]
+
+    top_tok_prov = infra_only.groupby("provider_name")["total_tokens"].sum().idxmax() if not infra_only.empty else "N/A"
+    top_rev_prov = infra_only.groupby("provider_name")["estimated_revenue"].sum().idxmax() if not infra_only.empty else "N/A"
+
+    kpi_cards = [
+        kpi_card_html("Total Infra Tokens (90d)", f"{total_infra_tokens/1e12:.1f}T", delta="+24.8% vs Q2", delta_class="up"),
+        kpi_card_html("Total Infra Revenue (90d)", f"${total_infra_rev/1e6:.1f}M", delta="48 infra providers", delta_class="flat"),
+        kpi_card_html("Top Infra by Tokens", top_tok_prov, delta=f"Rev Leader: {top_rev_prov}", delta_class="flat"),
+        kpi_card_html("CoreWeave (New)", f"{cw_tokens/1e12:.2f}T Tokens", delta=f"${cw_rev/1e6:.2f}M · Top: {cw_top_model_clean}", delta_class="up"),
+    ]
+    st.markdown(kpi_grid_html(*kpi_cards), unsafe_allow_html=True)
+
+    # 2. Main Market Trajectory (Stacked Flow Area Chart)
+    st.markdown('<div class="section-title">🌊 Inference & Cloud Infrastructure Volume Trajectory</div>', unsafe_allow_html=True)
+    c1, c2, c3, c4 = st.columns([1.4, 1.1, 0.9, 1.0])
+    with c1:
+        scope = st.radio(
+            "Provider Scope",
+            ["Cloud & Inference Infra (48)", "All Providers (88)", "1st-Party Model Labs (39)"],
+            horizontal=True,
+            key="infra_scope_radio",
+        )
+    with c2:
+        metric = st.selectbox(
+            "Metric",
+            ["Estimated Revenue ($)", "Tokens", "Revenue Share (%)", "Token Share (%)"],
+            key="infra_metric_select",
+        )
+    with c3:
+        window = st.radio(
+            "Window",
+            ["Daily (Raw)", "7-Day Moving Avg"],
+            horizontal=True,
+            key="infra_window_radio",
+        )
+    with c4:
+        chart_style = st.radio(
+            "Chart Style",
+            ["Stacked Area (Flow)", "Multi-Line"],
+            horizontal=True,
+            key="infra_chart_style_radio",
+        )
+
+    if "Inference Infra" in scope:
+        filtered_df = df[df["is_infra"]].copy()
+    elif "1st-Party" in scope:
+        filtered_df = df[~df["is_infra"]].copy()
+    else:
+        filtered_df = df.copy()
+
+    val_col = "estimated_revenue" if "Revenue" in metric else "total_tokens"
+    pivot_daily = filtered_df.pivot_table(index="usage_date", columns="provider_name", values=val_col, aggfunc="sum").fillna(0).sort_index()
+
+    if window == "7-Day Moving Avg":
+        pivot_chart = pivot_daily.rolling(7, min_periods=1).mean()
+    else:
+        pivot_chart = pivot_daily.copy()
+
+    if "Share" in metric:
+        row_sums = pivot_chart.sum(axis=1).replace(0, np.nan)
+        pivot_chart = pivot_chart.div(row_sums, axis=0) * 100.0
+
+    provider_totals = filtered_df.groupby("provider_name")[val_col].sum().sort_values(ascending=False)
+    all_provs = provider_totals.index.tolist()
+    default_top = all_provs[:8]
+    if "CoreWeave" in all_provs and "CoreWeave" not in default_top:
+        default_top.append("CoreWeave")
+
+    selected_provs = st.multiselect(
+        "Select Providers to Display (Default: Top Providers + CoreWeave)",
+        options=all_provs,
+        default=default_top,
+        key="infra_prov_multiselect",
+    )
+
+    if selected_provs:
+        chart_df = pivot_chart[[p for p in selected_provs if p in pivot_chart.columns]].copy()
+        fig = go.Figure()
+        is_stacked = ("Stacked" in chart_style) or ("Share" in metric)
+        for idx, col in enumerate(chart_df.columns):
+            color = MODEL_COLORS[idx % len(MODEL_COLORS)]
+            y_vals = chart_df[col]
+            hover_suffix = "$%{y:,.2f}" if metric == "Estimated Revenue ($)" else ("%{y:,.0f} tokens" if metric == "Tokens" else "%{y:.1f}% share")
+            fig.add_trace(go.Scatter(
+                x=chart_df.index,
+                y=y_vals,
+                name=col,
+                mode="lines",
+                stackgroup="one" if is_stacked else None,
+                line=dict(width=0.8 if is_stacked else 2.5, color=color),
+                hovertemplate=f"<b>{col}</b><br>%{{x}}<br>{hover_suffix}<extra></extra>",
+            ))
+
+        y_title = (
+            "Estimated Daily Revenue ($)" if metric == "Estimated Revenue ($)" else
+            "Daily Tokens" if metric == "Tokens" else
+            "Share (%)"
+        )
+        fig.update_layout(
+            height=480,
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            hovermode="x unified",
+            margin=dict(l=10, r=20, t=20, b=40),
+            xaxis=dict(showgrid=False),
+            yaxis=dict(title=y_title, gridcolor=GRID),
+            legend=dict(orientation="h", y=-0.18),
+        )
+        st.plotly_chart(fig, width="stretch", theme=None)
+    else:
+        st.info("Please select at least one provider to view chart.")
+
+    st.markdown("---")
+
+    # 3. NEW: Routing & Infrastructure Breakdown per LLM Lab (Model Origin)
+    st.markdown('<div class="section-title">🏢 Hosting & Infrastructure Breakdown per LLM Lab</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-subtitle">For any LLM creator (DeepSeek, Meta Llama, OpenAI, Anthropic, MiniMax, Z.ai, Qwen, etc.), examine how their token volume is routed between 1st-party endpoints and 3rd-party Cloud & Inference Infra (CoreWeave, DeepInfra, Bedrock, Azure, Novita, etc.).</div>',
+        unsafe_allow_html=True,
+    )
+
+    available_labs = [
+        "DeepSeek", "Meta", "OpenAI", "Anthropic", "智谱AI (Z.ai)",
+        "Alibaba (Qwen)", "MiniMax", "Moonshot AI", "Google", "Mistral AI",
+        "xAI (Grok)", "Xiaomi", "Tencent", "StepFun", "Nvidia"
+    ]
+    lab_col1, lab_col2 = st.columns([1.5, 1.0])
+    with lab_col1:
+        selected_lab = st.selectbox(
+            "Select LLM Model Lab / Creator",
+            options=[l for l in available_labs if l in df["origin_lab"].unique()],
+            index=0,
+            key="infra_lab_select",
+        )
+    with lab_col2:
+        lab_metric = st.radio(
+            "Lab Breakdown Metric",
+            ["Tokens", "Estimated Revenue ($)"],
+            horizontal=True,
+            key="infra_lab_metric_radio",
+        )
+
+    lab_df = df[df["origin_lab"] == selected_lab].copy()
+    if not lab_df.empty:
+        lab_total_tokens = lab_df["total_tokens"].sum()
+        lab_total_rev = lab_df["estimated_revenue"].sum()
+        lab_1st_party = lab_df[~lab_df["is_infra"]]
+        lab_infra = lab_df[lab_df["is_infra"]]
+        lab_1st_tokens = lab_1st_party["total_tokens"].sum()
+        lab_infra_tokens = lab_infra["total_tokens"].sum()
+        infra_share_pct = (lab_infra_tokens / lab_total_tokens * 100) if lab_total_tokens > 0 else 0.0
+        direct_share_pct = 100.0 - infra_share_pct
+        top_ext_host = lab_infra.groupby("provider_name")["total_tokens"].sum().idxmax() if not lab_infra.empty else "None"
+
+        lab_kpi_cards = [
+            kpi_card_html(f"{selected_lab} Total Volume", f"{lab_total_tokens/1e12:.2f}T" if lab_total_tokens>=1e12 else f"{lab_total_tokens/1e9:.1f}B", delta=f"${lab_total_rev/1e6:.2f}M est. revenue", delta_class="flat"),
+            kpi_card_html("1st-Party Direct Share", f"{direct_share_pct:.1f}%", delta=f"{lab_1st_tokens/1e12:.2f}T tokens" if lab_1st_tokens>=1e12 else f"{lab_1st_tokens/1e9:.1f}B tokens", delta_class="flat"),
+            kpi_card_html("3rd-Party Cloud Infra Share", f"{infra_share_pct:.1f}%", delta=f"{lab_infra_tokens/1e12:.2f}T tokens" if lab_infra_tokens>=1e12 else f"{lab_infra_tokens/1e9:.1f}B tokens", delta_class="up" if infra_share_pct>20 else "flat"),
+            kpi_card_html("Top External Host", top_ext_host, delta="Leading 3rd-party inference provider", delta_class="flat"),
+        ]
+        st.markdown(kpi_grid_html(*lab_kpi_cards), unsafe_allow_html=True)
+
+        val_col_lab = "estimated_revenue" if "Revenue" in lab_metric else "total_tokens"
+        lab_pivot = lab_df.pivot_table(index="usage_date", columns="provider_name", values=val_col_lab, aggfunc="sum").fillna(0).sort_index()
+        # Top 7 hosts + Other
+        top_hosts = lab_pivot.sum().sort_values(ascending=False).head(7).index.tolist()
+        lab_chart_df = lab_pivot[top_hosts].copy()
+        other_hosts = [c for c in lab_pivot.columns if c not in top_hosts]
+        if other_hosts:
+            lab_chart_df["Other Providers"] = lab_pivot[other_hosts].sum(axis=1)
+
+        col_lab_left, col_lab_right = st.columns([1.6, 1.0])
+        with col_lab_left:
+            st.markdown(f"**{selected_lab} Daily Token / Revenue Flow by Serving Provider**")
+            fig_lab = go.Figure()
+            for idx, c in enumerate(lab_chart_df.columns):
+                color = MODEL_COLORS[idx % len(MODEL_COLORS)]
+                hover_s = "$%{y:,.2f}" if "Revenue" in lab_metric else "%{y:,.0f} tokens"
+                fig_lab.add_trace(go.Scatter(
+                    x=lab_chart_df.index,
+                    y=lab_chart_df[c],
+                    name=c,
+                    mode="lines",
+                    stackgroup="one",
+                    line=dict(width=0.5, color=color),
+                    hovertemplate=f"<b>{c}</b><br>%{{x}}<br>{hover_s}<extra></extra>",
+                ))
+            fig_lab.update_layout(
+                height=380,
+                plot_bgcolor="rgba(0,0,0,0)",
+                paper_bgcolor="rgba(0,0,0,0)",
+                hovermode="x unified",
+                margin=dict(l=10, r=20, t=10, b=30),
+                xaxis=dict(showgrid=False),
+                yaxis=dict(title="Daily Tokens" if "Tokens" in lab_metric else "Daily Revenue ($)", gridcolor=GRID),
+                legend=dict(orientation="h", y=-0.2),
+            )
+            st.plotly_chart(fig_lab, width="stretch", theme=None)
+
+        with col_lab_right:
+            st.markdown(f"**Hosting Provider Share for {selected_lab}**")
+            host_summary = lab_df.groupby(["provider_name", "category"]).agg(
+                total_tokens=("total_tokens", "sum"),
+                total_revenue=("estimated_revenue", "sum"),
+            ).sort_values("total_tokens", ascending=False).reset_index()
+            host_summary["Share"] = (host_summary["total_tokens"] / lab_total_tokens * 100).map(lambda v: f"{v:.1f}%")
+            host_summary["Tokens"] = host_summary["total_tokens"].map(lambda v: f"{v/1e12:.2f}T" if v>=1e12 else f"{v/1e9:.2f}B" if v>=1e9 else f"{v/1e6:.1f}M")
+            host_summary["Revenue"] = host_summary["total_revenue"].map(lambda v: f"${v/1e6:.2f}M" if v>=1e6 else f"${v/1e3:.1f}k" if v>=1e3 else f"${v:.1f}")
+            st.dataframe(
+                host_summary[["provider_name", "category", "Tokens", "Revenue", "Share"]].rename(columns={"provider_name": "Serving Host", "category": "Type"}),
+                width="stretch",
+                hide_index=True,
+                height=360,
+            )
+
+    st.markdown("---")
+
+    # 4. Provider Deep Dive Explorer
+    st.markdown('<div class="section-title">🔍 Single Provider Deep Dive & Hosted Models</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-subtitle">Examine model portfolio, daily token trajectory, and realized economics for any specific hosting provider.</div>', unsafe_allow_html=True)
+
+    all_provider_options = sorted(df["provider_name"].unique().tolist())
+    cw_default_idx = all_provider_options.index("CoreWeave") if "CoreWeave" in all_provider_options else 0
+    target_provider = st.selectbox(
+        "Select Provider to Inspect",
+        options=all_provider_options,
+        index=cw_default_idx,
+        key="infra_deepdive_select",
+    )
+
+    single_df = df[df["provider_name"] == target_provider].copy()
+    if not single_df.empty:
+        p_slug = single_df["provider_slug"].iloc[0]
+        p_hq = single_df["headquarters"].iloc[0] or "N/A"
+        p_dc = single_df["datacenters"].iloc[0] or "N/A"
+        p_tokens = single_df["total_tokens"].sum()
+        p_rev = single_df["estimated_revenue"].sum()
+        p_realized_price = (p_rev / p_tokens * 1e6) if p_tokens > 0 else 0.0
+        p_models_count = single_df["model_permaslug"].nunique()
+        p_first_date = single_df["usage_date"].min()
+        p_last_date = single_df["usage_date"].max()
+
+        p_cards = [
+            kpi_card_html("Cumulative Tokens", f"{p_tokens/1e12:.3f}T" if p_tokens >= 1e12 else f"{p_tokens/1e9:.2f}B", delta=f"{p_first_date} -> {p_last_date}", delta_class="flat"),
+            kpi_card_html("Estimated Revenue", f"${p_rev/1e6:.2f}M" if p_rev >= 1e6 else f"${p_rev/1e3:.1f}k", delta="Blended GMV", delta_class="flat"),
+            kpi_card_html("Realized Avg Price", f"${p_realized_price:.3f}", delta="per 1M tokens", delta_class="flat"),
+            kpi_card_html("Hosted Models", f"{p_models_count} models", delta=f"HQ: {p_hq} · DC: {p_dc}", delta_class="flat"),
+        ]
+        st.markdown(kpi_grid_html(*p_cards), unsafe_allow_html=True)
+
+        col_left, col_right = st.columns([1.6, 1.0])
+        with col_left:
+            st.markdown(f"**{target_provider} Daily Token Breakdown by Model**")
+            model_pivot = single_df.pivot_table(index="usage_date", columns="model_permaslug", values="total_tokens", aggfunc="sum").fillna(0).sort_index()
+            top_models_single = model_pivot.sum().sort_values(ascending=False).head(6).index.tolist()
+            model_chart_df = model_pivot[top_models_single].copy()
+            other_cols = [c for c in model_pivot.columns if c not in top_models_single]
+            if other_cols:
+                model_chart_df["Other Models"] = model_pivot[other_cols].sum(axis=1)
+
+            fig_single = go.Figure()
+            for idx, c in enumerate(model_chart_df.columns):
+                clean_name = c.split("/")[-1].split("-202")[0]
+                fig_single.add_trace(go.Scatter(
+                    x=model_chart_df.index,
+                    y=model_chart_df[c],
+                    name=clean_name,
+                    mode="lines",
+                    stackgroup="one",
+                    line=dict(width=0.5, color=MODEL_COLORS[idx % len(MODEL_COLORS)]),
+                    hovertemplate=f"<b>{clean_name}</b><br>%{{x}}<br>%{{y:,.0f}} tokens<extra></extra>",
+                ))
+            fig_single.update_layout(
+                height=360,
+                plot_bgcolor="rgba(0,0,0,0)",
+                paper_bgcolor="rgba(0,0,0,0)",
+                hovermode="x unified",
+                margin=dict(l=10, r=20, t=10, b=30),
+                xaxis=dict(showgrid=False),
+                yaxis=dict(title="Daily Tokens", gridcolor=GRID),
+                legend=dict(orientation="h", y=-0.2),
+            )
+            st.plotly_chart(fig_single, width="stretch", theme=None)
+
+        with col_right:
+            st.markdown(f"**Top Hosted Models on {target_provider}**")
+            model_summary = single_df.groupby("model_permaslug").agg(
+                total_tokens=("total_tokens", "sum"),
+                total_revenue=("estimated_revenue", "sum"),
+                unit_price=("blended_price", "mean"),
+            ).sort_values("total_tokens", ascending=False).reset_index()
+            model_summary["Share"] = (model_summary["total_tokens"] / p_tokens * 100).map(lambda v: f"{v:.1f}%")
+            model_summary["Tokens"] = model_summary["total_tokens"].map(lambda v: f"{v/1e12:.2f}T" if v>=1e12 else f"{v/1e9:.2f}B" if v>=1e9 else f"{v/1e6:.1f}M")
+            model_summary["Est Revenue"] = model_summary["total_revenue"].map(lambda v: f"${v/1e6:.2f}M" if v>=1e6 else f"${v/1e3:.1f}k" if v>=1e3 else f"${v:.1f}")
+            model_summary["$/M"] = (model_summary["unit_price"] * 1e6).map(lambda v: f"${v:.3f}")
+            model_summary["Model"] = model_summary["model_permaslug"].map(lambda v: v.split("/")[-1].split("-202")[0])
+            st.dataframe(
+                model_summary[["Model", "Tokens", "Est Revenue", "$/M", "Share"]],
+                width="stretch",
+                hide_index=True,
+                height=340,
+            )
+
+    st.markdown("---")
+
+    # 5. Full Provider Market Leaderboard Table
+    with st.expander("📊 Full 88-Provider Cloud & Inference Infrastructure Matrix", expanded=False):
+        leaderboard = df.groupby(["provider_slug", "provider_name", "category", "headquarters"]).agg(
+            total_tokens=("total_tokens", "sum"),
+            total_revenue=("estimated_revenue", "sum"),
+            models_count=("model_permaslug", "nunique"),
+            active_days=("usage_date", "nunique"),
+            first_date=("usage_date", "min"),
+            last_date=("usage_date", "max"),
+        ).reset_index()
+
+        leaderboard["Realized $/M"] = (leaderboard["total_revenue"] / leaderboard["total_tokens"] * 1e6).map(lambda v: f"${v:.3f}" if pd.notna(v) and v>0 else "—")
+        leaderboard["Tokens"] = leaderboard["total_tokens"].map(lambda v: f"{v/1e12:.3f} T" if v >= 1e12 else f"{v/1e9:.2f} B")
+        leaderboard["Est Revenue"] = leaderboard["total_revenue"].map(lambda v: f"${v/1e6:.2f} M" if v >= 1e6 else f"${v/1e3:.1f} k")
+        leaderboard = leaderboard.sort_values("total_tokens", ascending=False).reset_index(drop=True)
+        leaderboard["Rank"] = leaderboard.index + 1
+
+        display_cols = ["Rank", "provider_name", "category", "Tokens", "Est Revenue", "Realized $/M", "models_count", "headquarters", "active_days"]
+        rename_dict = {
+            "provider_name": "Provider",
+            "category": "Category",
+            "models_count": "Active Models",
+            "headquarters": "HQ",
+            "active_days": "Observed Days",
+        }
+        st.dataframe(
+            leaderboard[display_cols].rename(columns=rename_dict),
+            width="stretch",
+            hide_index=True,
+        )
+
+
+def render_unified(domain_states, datasets) -> None:
+    """Unified OpenRouter hub with 4 top-level sub-tabs."""
+    tab_econ, tab_cloud_infra, tab_models, tab_compare, tab_workloads = st.tabs([
+        "📈 Overview, Economics & ARR",
+        "☁️ Cloud & Infra Providers",
+        "🔍 Model Explorer & Catalog",
+        "⚖️ Provider Compare",
+        "📊 Workloads & Modality",
+    ])
+
+    with tab_cloud_infra:
+        render_cloud_infra_section(datasets)
+
+    with tab_econ:
+        openrouter_views = compute_openrouter_views(
+            {
+                **domain_states["openrouter_intelligence"][0],
+                **domain_states["compute_availability"][0],
+            },
+            revenue_cache_version=REVENUE_CACHE_VERSION,
+        )
+        compute_views = compute_compute_availability_views(domain_states["compute_availability"][0])
+        render_top_models_chart(datasets, openrouter_views)
+        render_arr_nowcast_section(datasets)
+        render_revenue_token_section(datasets, openrouter_views)
+        render_task_spend_section(openrouter_views)
+        render_token_revenue_comparison(openrouter_views)
+        render_compute_evolution_section(compute_views)
+
+    with tab_models:
+        render_data_explorer(datasets)
+
+    with tab_compare:
+        render_compare(domain_states, datasets)
+
+    with tab_workloads:
+        render_workloads(domain_states, datasets)
+

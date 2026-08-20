@@ -207,6 +207,14 @@ def rank_capability_families(
             )
         )
         eligible["_mapped"] = eligible["model_id"].isin(effective_entries)
+        # Rank only curated families, and filter them before assigning
+        # ranks, so family_rank is always contiguous (1..N) over mapped
+        # families. Ranking unmapped benchmark leaders first and dropping
+        # them afterwards left rank holes that broke downstream tier-cohort
+        # completeness guards.
+        eligible = eligible.loc[eligible["_mapped"]].copy()
+        if eligible.empty:
+            continue
         eligible = eligible.sort_values(
             ["family_id", "intelligence_index", "release_date", "model_id"],
             ascending=[True, False, False, True],
@@ -217,7 +225,6 @@ def rank_capability_families(
         ).reset_index(drop=True)
         eligible["family_rank"] = range(1, len(eligible) + 1)
         eligible["capability_tier"] = eligible["family_rank"].map(_tier)
-        eligible = eligible.loc[eligible["_mapped"]].copy()
         eligible["usage_date"] = usage_date
         eligible["benchmark_snapshot_date"] = benchmark_snapshot_date
         eligible["representative_aa_model_id"] = eligible["model_id"]

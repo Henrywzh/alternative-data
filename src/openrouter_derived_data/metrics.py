@@ -987,9 +987,7 @@ def _realized_sota_row(
     row = _base_daily_row(
         usage_date, "realized_sota_price", "sota", provenance
     )
-    current_rankings, complete_current_cohort = _tier_cohort(
-        current_rankings, "sota"
-    )
+    current_rankings, _ = _tier_cohort(current_rankings, "sota")
     window_start = usage_date - pd.Timedelta(days=6)
     paid = daily_sota.loc[
         daily_sota["usage_date"].between(window_start, usage_date)
@@ -1013,11 +1011,10 @@ def _realized_sota_row(
         .fillna(False)
         .any()
     )
-    guarded = (
-        complete_current_cohort
-        and observed_count >= 3
-        and priced_count >= 3
-    )
+    # Grace floor: with at least three observed and three priced families in
+    # the window, compute from the available families instead of forcing a
+    # missing value whenever the full five-family cohort is not complete.
+    guarded = observed_count >= 3 and priced_count >= 3
     row.update(
         {
             "value": numerator / denominator * 1_000_000
@@ -1060,10 +1057,14 @@ def _prepare_sota_daily(
     paid_days: list[pd.DataFrame] = []
     coverage_rows: list[dict[str, object]] = []
     for activity_date, activity_day in economics.groupby("usage_date"):
-        daily_rankings, complete_cohort = _tier_cohort(
+        daily_rankings, _ = _tier_cohort(
             rankings.loc[rankings["usage_date"].eq(activity_date)], "sota"
         )
-        if not complete_cohort:
+        # Keep any day with at least three ranked SOTA families instead of
+        # skipping it whenever the five-family cohort is not complete. The
+        # realized row's own coverage guard decides whether the day's data
+        # supports a published value.
+        if daily_rankings["family_id"].nunique() < 3:
             continue
         daily_routes = _routes_for_rankings(
             daily_rankings, capability_map, activity_date
