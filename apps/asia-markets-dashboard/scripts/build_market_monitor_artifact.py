@@ -19,12 +19,22 @@ from typing import Any
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[3]
+SCRIPTS_DIR = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
 
-from src.market_monitor.config import DERIVED_DIR, EXPOSURES, NORMALIZED_DIR
+from src.market_monitor.config import DERIVED_DIR, EXPOSURES, NORMALIZED_DIR, exposures_by_price_source
 from src.market_monitor.metadata import build_metadata_frame
 from src.market_monitor.storage import load_lineage_history, load_latest_with_lineage  # noqa: E402
+from history_policy import history_window  # noqa: E402
+
+# Charts read a date window, not a row count: with a row count the displayed
+# history depends on how many series share the slice and on how many sessions
+# each venue happened to trade.  Two years is what the pipeline fetches, so
+# this ships everything collected rather than silently halving it.
+CHART_HISTORY_YEARS = 2
 
 
 def _records(frame: pd.DataFrame) -> list[dict[str, Any]]:
@@ -35,6 +45,40 @@ def _records(frame: pd.DataFrame) -> list[dict[str, Any]]:
         if pd.api.types.is_datetime64_any_dtype(out[col]):
             out[col] = out[col].dt.strftime("%Y-%m-%d")
     return json.loads(out.to_json(orient="records", date_format="iso", default_handler=str))
+
+
+def _chart_series(
+    frame: pd.DataFrame,
+    id_column: str,
+    value_column: str,
+    *,
+    years: int = CHART_HISTORY_YEARS,
+    id_as: str | None = None,
+) -> list[dict[str, Any]]:
+    """Rows for a line chart: the latest ``years`` of ``date``/id/value only.
+
+    Everything else the normalized store carries -- OHLC, volume, turnover,
+    the second and third identifier for the same fund -- is dropped, because
+    no renderer reads it and each unread field is paid for in every row of
+    every daily artifact.  Add a column here when a chart starts needing it.
+
+    ``id_as`` renames the identifier so that every dataset a renderer joins
+    keys on the same value.  The ETF datasets previously disagreed: the price
+    series carried the exchange-qualified ``159919.SZ`` while wrapper metrics
+    and premium history carried the bare ``159919``, so the join that draws
+    every ETF on an index matched nothing and the chart silently never drew.
+    """
+    if frame is None or frame.empty:
+        return []
+    if not {"date", id_column, value_column}.issubset(frame.columns):
+        return []
+    windowed = history_window(frame, "date", years=years)
+    if windowed.empty:
+        return []
+    projected = windowed[["date", id_column, value_column]].sort_values(["date", id_column])
+    if id_as and id_as != id_column:
+        projected = projected.rename(columns={id_column: id_as})
+    return _records(projected)
 
 
 def coverage_regressions(current: dict[str, Any], previous: dict[str, Any]) -> list[str]:
@@ -67,6 +111,38 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     regime, regime_lineage = load_latest_with_lineage(DERIVED_DIR, "relative_regime", scope="full")
     wrappers, wrap_lineage = load_latest_with_lineage(DERIVED_DIR, "wrapper_metrics", scope="full")
     index_px, index_lineage = load_latest_with_lineage(NORMALIZED_DIR, "index_price_daily", scope="full")
+    premium_hist, premium_lineage = load_latest_with_lineage(DERIVED_DIR, "premium_history", scope="full")
+    etf_px, etf_px_lineage = load_latest_with_lineage(NORMALIZED_DIR, "etf_price_daily", scope="full")
+
+    # Add bilingual labels from config
+    label_zh_map = {e["exposure_id"]: e.get("label_zh", e["label"]) for e in EXPOSURES}
+    index_zh_map = {e["exposure_id"]: e.get("index_id", "") for e in EXPOSURES}
+    if not technicals.empty and "exposure_id" in technicals.columns:
+        technicals = technicals.copy()
+        technicals["label_zh"] = technicals["exposure_id"].map(label_zh_map).fillna(technicals["label"])
+        technicals["index_id"] = technicals["exposure_id"].map(index_zh_map)
+
+    # Average premium (30D) per exposure from premium_history
+    if not premium_hist.empty and not technicals.empty:
+        wrapper_exp = wrappers[["fund_id", "exposure_id"]].drop_duplicates() if not wrappers.empty and "fund_id" in wrappers.columns else pd.DataFrame()
+        if not wrapper_exp.empty:
+            ph = premium_hist.merge(wrapper_exp, on="fund_id", how="left")
+            ph["date"] = pd.to_datetime(ph["date"], errors="coerce")
+            cutoff = ph["date"].max() - pd.Timedelta(days=30)
+            recent = ph[ph["date"] >= cutoff]
+            if not recent.empty and "exposure_id" in recent.columns:
+                avg_prem = recent.groupby("exposure_id")["premium_pct"].mean().round(2)
+                technicals["avg_premium_30d"] = technicals["exposure_id"].map(avg_prem)
+                # How many distinct observation days actually went into that
+                # mean. The label used to read "30D" whatever the answer was,
+                # and the shipped artifact held one observation per fund on a
+                # single date -- a point-in-time premium presented as a
+                # thirty-day average. The renderer names the real window.
+                days = recent.groupby("exposure_id")["date"].nunique()
+                technicals["avg_premium_days"] = technicals["exposure_id"].map(days).fillna(0).astype(int)
+            else:
+                technicals["avg_premium_30d"] = float("nan")
+                technicals["avg_premium_days"] = 0
 
     # --- Run consistency check: all datasets must come from the same run ---
     lineages = {
@@ -92,15 +168,20 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         "exposure_technicals": _records(technicals),
         "relative_regime": _records(regime),
         "wrapper_metrics": _records(wrappers),
-        # Keep up to 250 trailing trading days per exposure, not 250 global
-        # rows (which with 8 indexes collapses to ~1 month of history).
-        "index_price_daily_tail": _records(index_px.sort_values("date").groupby("exposure_id", sort=False).tail(250)) if not index_px.empty else [],
+        "premium_history": _chart_series(premium_hist, "ticker", "premium_pct"),
+        "etf_price_daily_tail": _chart_series(etf_px, "fund_id", "close", id_as="ticker"),
+        "index_price_daily_tail": _chart_series(index_px, "exposure_id", "close"),
     }
-    # Source-specific latest observations (do not share across sources)
+    # Source-specific latest observations (do not share across sources).
+    # Split on the declared price_source, not on "is it sp500" -- Nasdaq 100
+    # also comes from Yahoo, and dating it as a Sina observation would report
+    # a US session close as the CN/HK feed's freshness.
+    sina_ids = list(exposures_by_price_source("sina"))
+    yahoo_ids = list(exposures_by_price_source("yfinance"))
     if not index_px.empty and "date" in index_px.columns:
-        cn_index = index_px[index_px["exposure_id"].ne("sp500")]
+        cn_index = index_px[index_px["exposure_id"].isin(sina_ids)]
         sina_latest = str(pd.to_datetime(cn_index["date"], errors="coerce").max().date()) if not cn_index.empty else "—"
-        us_index = index_px[index_px["exposure_id"].eq("sp500")]
+        us_index = index_px[index_px["exposure_id"].isin(yahoo_ids)]
         yahoo_latest = str(pd.to_datetime(us_index["date"], errors="coerce").max().date()) if not us_index.empty else "—"
         latest_obs = str(pd.to_datetime(index_px["date"], errors="coerce").max().date())
     else:
@@ -138,9 +219,13 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     else:
         latest_obs = "—"
 
-    # Source ownership: Sina owns CN/HK indexes; Yahoo owns SP500.
-    # Sina health must not count SP500 toward its own coverage.
-    sina_expected = [e["exposure_id"] for e in EXPOSURES if e["exposure_id"] != "sp500"]
+    # Source ownership comes from each exposure's declared price_source, not
+    # from a hard-coded exclusion. "Everything except sp500 is Sina" was true
+    # until Nasdaq 100 arrived on yfinance, after which Sina was credited with
+    # 501 rows and an exposure it does not serve, while Yahoo reported 501 rows
+    # for the two indexes it actually fetched.
+    sina_expected = sina_ids
+    yahoo_expected = yahoo_ids
     sina_actual_count = (
         technicals[technicals["exposure_id"].isin(sina_expected)]["exposure_id"].nunique()
         if not technicals.empty and "exposure_id" in technicals.columns
@@ -153,7 +238,13 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         spot_observed = int((wrappers["market_price"].notna() & wrappers["premium_pct"].notna()).sum())
     else:
         spot_observed = 0
-    sp500_ok = not index_px.empty and "exposure_id" in index_px.columns and not index_px[index_px["exposure_id"].eq("sp500")].empty
+    yahoo_rows = (
+        index_px[index_px["exposure_id"].isin(yahoo_expected)]
+        if not index_px.empty and "exposure_id" in index_px.columns
+        else pd.DataFrame()
+    )
+    yahoo_actual_count = yahoo_rows["exposure_id"].nunique() if not yahoo_rows.empty else 0
+    sp500_ok = yahoo_actual_count >= len(yahoo_expected)
 
     if spot_observed == expected_wrappers and expected_wrappers > 0:
         spot_status = "Healthy"
@@ -172,6 +263,10 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         else 0
     )
     yfinance_status = "Healthy" if sp500_ok else "Degraded"
+    yahoo_labels = ", ".join(
+        next((e["label"] for e in EXPOSURES if e["exposure_id"] == exposure_id), exposure_id)
+        for exposure_id in yahoo_expected
+    )
     overall_healthy = (
         actual_exposures >= expected_count
         and spot_status == "Healthy"
@@ -195,11 +290,17 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
             "notes": f"Covering {sina_actual_count} of {len(sina_expected)} Sina-owned exposures (CN/HK)." if sina_actual_count < len(sina_expected) else f"Daily OHLCV for all {sina_actual_count} Sina-owned exposures (CN/HK).",
         },
         {
-            "source": "Yahoo Finance (S&P 500 index)",
+            "source": f"Yahoo Finance ({yahoo_labels})",
             "status": yfinance_status,
             "latest_observation": yahoo_latest,
-            "records": len(index_px[index_px["exposure_id"].eq("sp500")]) if sp500_ok else 0,
-            "notes": "US session history for the S&P 500 exposure." if sp500_ok else "S&P 500 index data missing.",
+            # Counted over every exposure Yahoo actually serves. This was
+            # len(sp500 rows) even after Nasdaq 100 was added to the label.
+            "records": int(len(yahoo_rows)),
+            "notes": (
+                f"US session history for {yahoo_actual_count} of {len(yahoo_expected)} Yahoo-served exposures."
+                if sp500_ok
+                else f"Only {yahoo_actual_count} of {len(yahoo_expected)} Yahoo-served indexes returned data."
+            ),
         },
     ]
     # --- Coverage regression check -------------------------------------
