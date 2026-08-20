@@ -525,6 +525,17 @@ def test_lineage_measured_fields_survive_caller_metadata(tmp_path, monkeypatch):
     assert lineage["type"] == "normalized"
 
 
+def _shipped_market_artifact():
+    """The built artifact, or None in a checkout that has not built one."""
+    path = (
+        Path(__file__).resolve().parents[2]
+        / "apps" / "asia-markets-dashboard" / ".generated" / "market-monitor-artifact.json"
+    )
+    if not path.is_file():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 def _load_builder():
     import importlib.util
 
@@ -900,13 +911,17 @@ def test_hang_seng_cohort_does_not_swallow_hang_seng_tech():
 
 
 def test_every_exposure_has_a_name_token_to_reconcile_against():
-    """A new exposure without tokens would be silently exempt from the check."""
-    from market_monitor.config import EXPOSURES
+    """A new exposure without tokens would be silently exempt from the check.
+
+    Benchmarks are exempt by construction: they have no ETF wrapper, so there
+    is no exchange fund name to reconcile against.
+    """
+    from market_monitor.config import investable_exposures
     from market_monitor.metadata import EXPOSURE_NAME_TOKENS
 
     missing = [
         spec["exposure_id"]
-        for spec in EXPOSURES
+        for spec in investable_exposures()
         if spec["exposure_id"] not in EXPOSURE_NAME_TOKENS
     ]
     assert not missing, f"no fund-name token declared for {missing}"
@@ -1091,3 +1106,127 @@ def test_a_missing_iopv_is_an_absence_not_a_stale_quote():
     out = fill_premium_from_last_close(merged, prices)
 
     assert pd.isna(out.loc[0, "premium_pct"])
+
+
+def test_every_yfinance_exposure_resolves_to_a_provider_symbol():
+    """index_id names the index; yf_symbol names what the provider calls it.
+
+    Deriving one from the other asked yfinance for "SPX", which answers
+    "possibly delisted" and an empty frame rather than an error, so the S&P
+    500 leg of every US pair would have silently vanished.
+    """
+    from market_monitor.config import exposures_by_price_source
+    from market_monitor.pipeline import YFINANCE_SYMBOLS
+
+    assert set(YFINANCE_SYMBOLS) == set(exposures_by_price_source("yfinance"))
+    assert all(str(symbol).strip() for symbol in YFINANCE_SYMBOLS.values())
+    assert YFINANCE_SYMBOLS["sp500"] == "^GSPC"
+    assert YFINANCE_SYMBOLS["ndx"] == "^NDX"
+
+
+def test_every_sina_exposure_has_a_sina_symbol():
+    """A Sina index with no mapping raises; one with a stale mapping does not.
+
+    Sina answers 200 for 中证800成长 (000967) and 中证800价值 (000969) with
+    data that stopped in 2016 and 2019, so those are deliberately absent from
+    the universe -- see the benchmark block in config.
+    """
+    from market_monitor.config import exposures_by_price_source, exposure_by_id
+    from market_monitor.sources.akshare_etf import SINA_INDEX_SYMBOLS
+
+    for exposure_id in exposures_by_price_source("sina"):
+        index_id = exposure_by_id(exposure_id)["index_id"]
+        assert index_id in SINA_INDEX_SYMBOLS, f"{exposure_id} ({index_id}) has no Sina mapping"
+
+
+def test_benchmarks_do_not_appear_on_the_etf_monitor():
+    """A benchmark is one leg of a ratio; there is no ETF wrapper to rank."""
+    from market_monitor.config import EXPOSURES, exposure_role, investable_exposures
+    from market_monitor.metadata import build_metadata_frame
+
+    investable = {spec["exposure_id"] for spec in investable_exposures()}
+    benchmarks = {spec["exposure_id"] for spec in EXPOSURES if exposure_role(spec) == "benchmark"}
+
+    assert investable and benchmarks
+    assert not (investable & benchmarks)
+    wrapped = set(build_metadata_frame()["exposure_id"].astype(str))
+    assert wrapped == investable, "every investable exposure needs wrappers, and only those"
+
+
+def test_equal_weight_basket_averages_returns_not_prices():
+    """The members are quoted on unrelated scales.
+
+    Averaging levels would weight XLK's ~$250 quote about five times XLC's
+    ~$50 one; averaging returns is what makes "equal weight" true.
+    """
+    from market_monitor.relative_strength import equal_weight_basket
+
+    index = pd.bdate_range("2026-01-01", periods=4)
+    cheap = pd.Series([10.0, 11.0, 12.1, 13.31], index=index)   # +10% a day
+    dear = pd.Series([1000.0, 1000.0, 1000.0, 1000.0], index=index)  # flat
+
+    basket = equal_weight_basket({"cheap": cheap, "dear": dear}, ("cheap", "dear"))
+
+    # Equal weight on returns compounds at +5% a day. A price average would
+    # have moved about +0.1%, dominated entirely by the flat 1000 quote.
+    assert round(float(basket.iloc[-1] / basket.iloc[0] - 1.0), 6) == round(1.05**2 - 1.0, 6)
+
+
+def test_pair_ratio_is_rebased_and_carries_its_own_zscore():
+    from market_monitor.relative_strength import pair_ratio_frame
+
+    index = pd.bdate_range("2022-01-03", periods=400)
+    winner = pd.Series(np.linspace(100.0, 200.0, 400), index=index)
+    loser = pd.Series(np.linspace(500.0, 500.0, 400), index=index)
+
+    frame = pair_ratio_frame(
+        {"a": winner, "b": loser},
+        {"pair_id": "demo", "left": ("a",), "right": ("b",)},
+    )
+
+    assert frame["ratio"].iloc[0] == 1.0, "every pair starts at 1.0, whatever the quote scales"
+    assert frame["ratio"].iloc[-1] > 1.9
+    # 252 observations of baseline before the first z-score exists.
+    assert frame["zscore"].iloc[:251].isna().all()
+    assert frame["zscore"].iloc[-1] > 0
+
+
+def test_regime_label_names_both_directions_and_the_gap():
+    from market_monitor.relative_strength import regime_label
+
+    assert regime_label(1.5)[0].endswith("numerator")
+    assert regime_label(-1.5)[0].endswith("denominator")
+    assert regime_label(None) == ("Unavailable", "无数据")
+
+
+def test_shipped_artifact_carries_pair_ratios_with_a_full_zscore():
+    """The five-year store exists so the first day shown already has a z-score.
+
+    With a two-year store the ratio's trailing-year baseline eats the first
+    year, and the z-score panel would be blank across half the chart.
+    """
+    artifact = _shipped_market_artifact()
+    if artifact is None:
+        pytest.skip("no built market-monitor artifact in this checkout")
+    datasets = artifact["snapshot"]["datasets"]
+
+    summary = pd.DataFrame(datasets["relative_pairs"])
+    history = pd.DataFrame(datasets["relative_pair_history"])
+    assert not summary.empty and not history.empty
+    assert set(summary["pair_id"]) == set(history["pair_id"])
+    assert history["zscore"].notna().all(), "every plotted day must have a z-score"
+    assert {"China", "US", "Cross"} <= set(summary["region"])
+
+
+def test_shipped_artifact_does_not_ship_benchmark_price_series():
+    """Benchmarks feed the ratios server-side; their closes are not charted."""
+    artifact = _shipped_market_artifact()
+    if artifact is None:
+        pytest.skip("no built market-monitor artifact in this checkout")
+    from market_monitor.config import EXPOSURES, exposure_role
+
+    benchmarks = {spec["exposure_id"] for spec in EXPOSURES if exposure_role(spec) == "benchmark"}
+    shipped = {row["exposure_id"] for row in artifact["snapshot"]["datasets"]["index_price_daily_tail"]}
+
+    assert benchmarks
+    assert not (shipped & benchmarks), f"benchmark closes are dead weight in the artifact: {shipped & benchmarks}"
