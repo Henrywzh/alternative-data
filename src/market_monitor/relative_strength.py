@@ -131,6 +131,16 @@ RELATIVE_PAIRS: tuple[dict, ...] = (
     {"pair_id": "cn_risk_appetite", "region": "China",
      "label": "Offensive / Defensive", "label_zh": "进攻 / 防御",
      "left": ("cn_infotech",), "right": ("cn_staples",)},
+    # --- Hong Kong ---
+    {"pair_id": "hk_growth_value", "region": "HK",
+     "label": "Growth / Value", "label_zh": "成长 / 价值",
+     "left": ("hstech",), "right": ("hk_dividend",)},
+    {"pair_id": "hk_large_mid", "region": "HK",
+     "label": "Large / Mid", "label_zh": "大盘 / 中盘",
+     "left": ("hsi",), "right": ("hk_midcap",)},
+    {"pair_id": "hk_hshares", "region": "HK",
+     "label": "H-shares / Hang Seng", "label_zh": "国企 / 恒生",
+     "left": ("hk_hshares",), "right": ("hsi",)},
     # --- United States ---
     {"pair_id": "us_growth_value", "region": "US",
      "label": "Growth / Value", "label_zh": "成长 / 价值",
