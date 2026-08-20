@@ -125,4 +125,30 @@ def premium_from_nav(prices: pd.DataFrame, nav: pd.DataFrame) -> pd.DataFrame:
         return pd.DataFrame(columns=["date", "fund_id", "premium_pct", "basis"])
     merged["premium_pct"] = (merged["close"] / merged["nav"] - 1.0) * 100.0
     merged["basis"] = "nav"
+    merged = merged.sort_values(["fund_id", "date"])
+    merged = merged[~_misprinted_nav(merged)]
     return merged[["date", "fund_id", "premium_pct", "basis"]].sort_values(["date", "fund_id"]).reset_index(drop=True)
+
+
+# How far a single day's premium may sit from its own local level before it is
+# read as a misprinted NAV rather than an observation. Calibrated against two
+# years of real data: genuine QDII premiums top out near 14% and move
+# smoothly, while the two bad points found -- 159922 at +149.7% on 2024-11-29
+# and 513660 at +98.6% on 2026-04-20 -- were single days sandwiched between
+# normal ones (0.09 -> 149.7 -> 0.00). Nothing real sits between 14% and 98%.
+_NAV_SPIKE_TOLERANCE_PP = 20.0
+_NAV_SPIKE_WINDOW = 11
+
+
+def _misprinted_nav(frame: pd.DataFrame) -> pd.Series:
+    """Rows whose premium departs from its own neighbourhood and returns.
+
+    A local median rather than a fixed cap, so a fund that genuinely trades at
+    a sustained 13% premium keeps every one of those days while a one-day jump
+    to 149% is dropped.
+    """
+    local = (
+        frame.groupby("fund_id")["premium_pct"]
+        .transform(lambda s: s.rolling(_NAV_SPIKE_WINDOW, center=True, min_periods=3).median())
+    )
+    return (frame["premium_pct"] - local).abs().gt(_NAV_SPIKE_TOLERANCE_PP).fillna(False)

@@ -3298,6 +3298,7 @@ def _pair_label(row: pd.Series, language: str) -> str:
 
 REGION_NAMES = {
     "China": ("China A-shares", "A股"),
+    "HK": ("Hong Kong", "港股"),
     "US": ("United States", "美股"),
     "Cross": ("Cross-region", "跨区域"),
 }
@@ -3317,7 +3318,7 @@ def render_relative_regime(
     """
     frame = summary.copy()
     frame["_label"] = frame.apply(lambda row: _pair_label(row, language), axis=1)
-    regions = [r for r in ("China", "US", "Cross") if r in set(frame.get("region", pd.Series(dtype=str)))]
+    regions = [r for r in ("China", "HK", "US", "Cross") if r in set(frame.get("region", pd.Series(dtype=str)))]
     if not regions:
         regions = sorted(set(frame.get("region", pd.Series(dtype=str)).dropna()))
 

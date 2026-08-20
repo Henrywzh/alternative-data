@@ -685,6 +685,12 @@ def test_fetch_errors_reach_lineage_not_just_stdout(monkeypatch, capsys):
     monkeypatch.setattr(pl.akshare_etf, "fetch_etf_daily", _etf_boom)
     monkeypatch.setattr(pl.akshare_etf, "fetch_etf_spot", lambda: pd.DataFrame())
     monkeypatch.setattr(pl.yfinance, "fetch_daily", lambda *a, **k: pd.DataFrame())
+    # The fee reconciliation is 26 live calls; unstubbed it spends 20s hitting
+    # the offline socket guard for something this test is not about.
+    monkeypatch.setattr(
+        pl.eastmoney_fee, "fetch_fund_fees",
+        lambda fund_id: {"management_fee": None, "custody_fee": None},
+    )
 
     raw = pl.fetch_all_raw(limit_exposures=("csi300", "csi500"))
     errors = raw["_fetch_errors"]
@@ -711,8 +717,11 @@ def test_every_exposure_declares_where_its_prices_come_from():
     from market_monitor.config import EXPOSURES, exposures_by_price_source
 
     sina = exposures_by_price_source("sina")
+    sina_hk = exposures_by_price_source("sina_hk")
     yahoo = exposures_by_price_source("yfinance")
-    assert len(sina) + len(yahoo) == len(EXPOSURES), "an exposure declares an unknown price_source"
+    assert len(sina) + len(sina_hk) + len(yahoo) == len(EXPOSURES), (
+        "an exposure declares an unknown price_source"
+    )
     assert set(sina).isdisjoint(yahoo)
     # The US indexes are the ones yfinance serves, and both need a ticker.
     from market_monitor.pipeline import YFINANCE_SYMBOLS
@@ -725,14 +734,18 @@ def test_source_health_attributes_rows_to_the_provider_that_served_them():
     from market_monitor.config import exposures_by_price_source
 
     sina = set(exposures_by_price_source("sina"))
+    sina_hk = set(exposures_by_price_source("sina_hk"))
     yahoo = set(exposures_by_price_source("yfinance"))
     rows_by_exposure = {"csi300": 484, "hsi": 490, "hstech": 490, "ndx": 501, "sp500": 501}
     sina_rows = sum(n for e, n in rows_by_exposure.items() if e in sina)
+    sina_hk_rows = sum(n for e, n in rows_by_exposure.items() if e in sina_hk)
     yahoo_rows = sum(n for e, n in rows_by_exposure.items() if e in yahoo)
     # Nasdaq 100 belongs to Yahoo; counting it under Sina is the regression.
     assert "ndx" in yahoo and "ndx" not in sina
     assert yahoo_rows == 1002
-    assert sina_rows + yahoo_rows == sum(rows_by_exposure.values())
+    # Hang Seng comes off Sina's separate HK endpoint, not the mainland one.
+    assert {"hsi", "hstech"} <= sina_hk
+    assert sina_rows + sina_hk_rows + yahoo_rows == sum(rows_by_exposure.values())
     assert builder is not None
 
 
@@ -1230,3 +1243,176 @@ def test_shipped_artifact_does_not_ship_benchmark_price_series():
 
     assert benchmarks
     assert not (shipped & benchmarks), f"benchmark closes are dead weight in the artifact: {shipped & benchmarks}"
+
+
+def test_fee_reconciliation_reports_a_registry_that_disagrees_with_the_issuer():
+    """16 of 23 hand-typed fees were wrong, mostly a placeholder 0.50%.
+
+    The uniformity was worse than the error: all three CSI 300 wrappers
+    carried the same wrong number, so the fee component of the hold score
+    could not differentiate them while holding weight 2.0.
+    """
+    from market_monitor.sources.eastmoney_fee import reconcile_fees
+
+    metadata = pd.DataFrame(
+        [
+            {"fund_id": "510300", "management_fee": 0.005},
+            {"fund_id": "512500", "management_fee": 0.0015},
+            {"fund_id": "159655", "management_fee": None},
+            {"fund_id": "999999", "management_fee": 0.005},
+        ]
+    )
+    observed = {
+        "510300": {"management_fee": 0.0015},
+        "512500": {"management_fee": 0.0015},
+        "159655": {"management_fee": 0.006},
+        # 999999 not answered for: an absence, not a contradiction.
+    }
+
+    problems = {p["fund_id"] for p in reconcile_fees(metadata, observed)}
+
+    assert problems == {"510300", "159655"}
+
+
+def test_hold_score_prices_management_plus_custody():
+    """Custody is charged to the same holder and is 5-15bp of real money."""
+    from market_monitor.ranking import _hold_quality_score
+
+    frame = pd.DataFrame(
+        [
+            {"management_fee": 0.0015, "custody_fee": 0.0005},
+            {"management_fee": 0.0015, "custody_fee": 0.0015},
+        ]
+    )
+
+    scores = _hold_quality_score(frame)
+
+    assert scores.iloc[0] > scores.iloc[1], "the cheaper custodian must score better"
+
+
+@pytest.mark.parametrize(
+    ("regime", "premium", "expected"),
+    [
+        # A Stock Connect wrapper at +1.3% is at its own two-year 95th
+        # percentile. On the quota scale that read FAIR.
+        ("connect", 1.3, "EXPENSIVE"),
+        ("connect", -0.2, "ATTRACTIVE"),
+        ("quota", 1.3, "FAIR"),
+        ("domestic", 0.3, "EXPENSIVE"),
+    ],
+)
+def test_entry_status_uses_the_regime_the_wrapper_actually_lives_in(regime, premium, expected):
+    from market_monitor.ranking import rank_wrappers
+
+    frame = pd.DataFrame(
+        [{
+            "exposure_id": "x", "fund_id": "1", "ticker": "1", "premium_pct": premium,
+            "spread_bp": 10.0, "premium_regime": regime, "is_cross_border": regime != "domestic",
+        }]
+    )
+
+    assert rank_wrappers(frame)["entry_status"].iloc[0] == expected
+
+
+def test_a_one_day_nav_misprint_is_not_a_premium_observation():
+    """159922 came back at +149.7% on 2024-11-29, between 0.09% and 0.00%.
+
+    A local median rather than a fixed cap, so a fund genuinely trading at a
+    sustained 13% premium keeps every one of those days.
+    """
+    from market_monitor.sources.eastmoney_nav import premium_from_nav
+
+    dates = pd.bdate_range("2024-11-01", periods=30).strftime("%Y-%m-%d")
+    prices = pd.DataFrame({"date": dates, "fund_id": "159922", "close": 1.0})
+    nav = pd.DataFrame({"fund_id": "159922", "date": dates, "nav": 1.0})
+    nav.loc[15, "nav"] = 0.4  # implies +150%
+
+    out = premium_from_nav(prices, nav)
+
+    assert len(out) == 29
+    assert out["premium_pct"].abs().max() < 1.0
+
+    # A sustained high premium survives.
+    sustained = pd.DataFrame({"date": dates, "fund_id": "513500", "close": 1.13})
+    sustained_nav = pd.DataFrame({"fund_id": "513500", "date": dates, "nav": 1.0})
+    kept = premium_from_nav(sustained, sustained_nav)
+    assert len(kept) == 30
+    assert round(float(kept["premium_pct"].iloc[0]), 1) == 13.0
+
+
+def test_fee_fetch_cannot_stall_the_run(monkeypatch):
+    """A reconciliation check must not be able to block what it checks.
+
+    akshare's fund_fee_em exposes no timeout, so a connection the server holds
+    open blocks forever. Twenty-one minutes of a daily run were spent inside
+    one such call before this bound existed.
+    """
+    import time as _time
+
+    from market_monitor import pipeline as pl
+    from market_monitor.sources import eastmoney_fee
+
+    calls: list[str] = []
+
+    def _slow(fund_id):
+        calls.append(fund_id)
+        # Simulate the budget being consumed without actually sleeping.
+        monkeypatch.setattr(pl.time, "monotonic", lambda: 1e9)
+        return {"management_fee": 0.005, "custody_fee": 0.001}
+
+    monkeypatch.setattr(eastmoney_fee, "fetch_fund_fees", _slow)
+    monkeypatch.setattr(pl, "load_latest_derived", lambda name: None)
+    monkeypatch.setattr(pl.time, "monotonic", _time.monotonic)
+
+    meta = pd.DataFrame([{"fund_id": f"{i:06d}"} for i in range(10)])
+    schedule = pl._published_fee_schedule(meta)
+
+    assert len(calls) == 1, "the budget must stop the loop, not merely slow it"
+    assert len(schedule) == 1
+
+
+def test_fees_are_not_refetched_every_day(monkeypatch):
+    """A published fee changes on an announcement, not daily."""
+    from datetime import date as _date
+
+    from market_monitor import pipeline as pl
+    from market_monitor.sources import eastmoney_fee
+
+    calls: list[str] = []
+    monkeypatch.setattr(
+        eastmoney_fee, "fetch_fund_fees",
+        lambda fund_id: (calls.append(fund_id), {"management_fee": 0.005, "custody_fee": 0.001})[1],
+    )
+    today = _date.today().strftime("%Y-%m-%d")
+    cached = pd.DataFrame(
+        [
+            {"fund_id": "510300", "management_fee": 0.0015, "custody_fee": 0.0005, "fetched_at": today},
+            {"fund_id": "510330", "management_fee": 0.0015, "custody_fee": 0.0005, "fetched_at": "2020-01-01"},
+        ]
+    )
+    monkeypatch.setattr(pl, "load_latest_derived", lambda name: cached)
+
+    meta = pd.DataFrame([{"fund_id": "510300"}, {"fund_id": "510330"}])
+    schedule = pl._published_fee_schedule(meta)
+
+    assert calls == ["510330"], "only the stale entry should be refetched"
+    assert schedule["510300"]["management_fee"] == 0.0015
+
+
+def test_a_failed_fee_fetch_keeps_the_cached_fee(monkeypatch):
+    """Losing a fee to a bad network call would score the fund as unmeasured."""
+    from market_monitor import pipeline as pl
+    from market_monitor.sources import eastmoney_fee
+
+    monkeypatch.setattr(
+        eastmoney_fee, "fetch_fund_fees",
+        lambda fund_id: {"management_fee": None, "custody_fee": None},
+    )
+    cached = pd.DataFrame(
+        [{"fund_id": "510300", "management_fee": 0.0015, "custody_fee": 0.0005, "fetched_at": "2020-01-01"}]
+    )
+    monkeypatch.setattr(pl, "load_latest_derived", lambda name: cached)
+
+    schedule = pl._published_fee_schedule(pd.DataFrame([{"fund_id": "510300"}]))
+
+    assert schedule["510300"]["management_fee"] == 0.0015

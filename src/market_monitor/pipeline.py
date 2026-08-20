@@ -8,6 +8,7 @@ Flow:
 from __future__ import annotations
 
 import json
+import time
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
@@ -24,7 +25,7 @@ from .relative_strength import (
     build_relative_regime,
     compute_spread_metrics,
 )
-from .sources import akshare_etf, eastmoney_nav, yfinance
+from .sources import akshare_etf, eastmoney_fee, eastmoney_nav, yfinance
 from .storage import (
     load_latest_derived,
     load_latest_normalized,
@@ -196,6 +197,57 @@ def _nav_premium_rows(
     return rows
 
 
+# A published fee changes on a fund-company announcement, not daily, so the
+# schedule is cached and only stale or missing entries are refetched. The
+# whole loop also runs under a wall-clock budget: this is a reconciliation
+# check, and a check must never be able to stall the run it is checking.
+FEE_REFRESH_DAYS = 30
+FEE_FETCH_BUDGET_SECONDS = 120.0
+FEE_COLUMNS = ["fund_id", "management_fee", "custody_fee", "fetched_at"]
+
+
+def _published_fee_schedule(meta: pd.DataFrame) -> dict[str, dict]:
+    """Issuer-published fees per fund, refreshed only where stale."""
+    cached = load_latest_derived("fund_fees")
+    known: dict[str, dict] = {}
+    if cached is not None and not cached.empty and "fund_id" in cached.columns:
+        for row in cached.to_dict("records"):
+            known[str(row["fund_id"]).zfill(6)] = row
+
+    cutoff = (date.today() - timedelta(days=FEE_REFRESH_DAYS)).strftime("%Y-%m-%d")
+    today = date.today().strftime("%Y-%m-%d")
+    deadline = time.monotonic() + FEE_FETCH_BUDGET_SECONDS
+    out: dict[str, dict] = {}
+    for record in meta.to_dict("records"):
+        fund_id = str(record["fund_id"]).zfill(6)
+        entry = known.get(fund_id)
+        fresh = (
+            entry is not None
+            and str(entry.get("fetched_at") or "") >= cutoff
+            and entry.get("management_fee") is not None
+            and not pd.isna(entry.get("management_fee"))
+        )
+        if fresh:
+            out[fund_id] = entry
+            continue
+        if time.monotonic() >= deadline:
+            # Out of budget: keep whatever was cached rather than dropping the
+            # fee, and leave the rest for the next run.
+            if entry is not None:
+                out[fund_id] = entry
+            continue
+        try:
+            fees = eastmoney_fee.fetch_fund_fees(fund_id)
+        except Exception as exc:  # noqa: BLE001 - one fund must not stop the run
+            print(f"  [market_monitor] fee fetch failed {fund_id}: {exc}")
+            fees = {"management_fee": None, "custody_fee": None}
+        if fees.get("management_fee") is None and entry is not None:
+            out[fund_id] = entry
+            continue
+        out[fund_id] = {"fund_id": fund_id, **fees, "fetched_at": today}
+    return out
+
+
 def _build_premium_history(
     meta: pd.DataFrame,
     spot: pd.DataFrame,
@@ -332,6 +384,24 @@ def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, 
         print(f"  [market_monitor] etf spot fetch failed: {exc}")
         raw["etf_spot"] = pd.DataFrame()
         fetch_errors.append({"dataset": "etf_spot", "error": f"{type(exc).__name__}: {exc}"})
+
+    # --- Published fee schedule ---
+    # The registry's fees were hand-typed and 16 of 23 were wrong, mostly a
+    # placeholder 0.50% standing in for a real 0.15%. Fetch the issuer's own
+    # numbers each run, use them, and report a disagreement the way a failed
+    # fetch is reported so it reaches Source Health.
+    published_fees = _published_fee_schedule(meta)
+    raw["_published_fees"] = published_fees
+    for problem in eastmoney_fee.reconcile_fees(meta, published_fees):
+        message = (
+            f"registry states {problem['fund_id']} management fee {problem['stated']}, "
+            f"issuer publishes {problem['published']}"
+        )
+        print(f"  [market_monitor] fee mismatch: {message}")
+        fetch_errors.append(
+            {"dataset": "fund_fee", "ticker": problem["fund_id"],
+             "error": f"FeeMismatch: {message}"}
+        )
 
     # --- Registry reconciliation ---
     # The wrapper universe is hand-maintained, so the only thing that had been
@@ -471,6 +541,16 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
 
     # Derived: wrapper metrics + ranking.
     wrapper = merge_premium(raw.get("etf_spot", pd.DataFrame()), meta)
+    # The issuer's published schedule wins over the registry; the registry is
+    # the fallback for a fund the endpoint did not answer for.
+    published_fees = raw.get("_published_fees") or {}
+    if published_fees and "fund_id" in wrapper.columns:
+        keys = wrapper["fund_id"].astype(str).str.zfill(6)
+        for column in ("management_fee", "custody_fee"):
+            observed = keys.map(lambda k: (published_fees.get(k) or {}).get(column))
+            observed = pd.to_numeric(observed, errors="coerce")
+            existing = pd.to_numeric(wrapper.get(column), errors="coerce") if column in wrapper.columns else pd.Series(float("nan"), index=wrapper.index)
+            wrapper[column] = observed.where(observed.notna(), existing)
     # A fund the spot feed did not refresh today still has a last traded price
     # in our own series; use it rather than dropping the row to UNAVAILABLE.
     wrapper = fill_premium_from_last_close(wrapper, normalized_etf)
@@ -506,6 +586,10 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
         run_info["relative_regime"] = save_derived("relative_regime", results["relative_regime"], metadata={"type": "derived", "run_scope": run_scope}, run_id=run_id) if not results["relative_regime"].empty else None
         run_info["wrapper_metrics"] = save_derived("wrapper_metrics", ranked, metadata={"type": "derived", "run_scope": run_scope}, run_id=run_id) if not ranked.empty else None
         run_info["premium_history"] = save_derived("premium_history", premium_history, metadata={"type": "derived", "run_scope": run_scope}, run_id=run_id) if not premium_history.empty else None
+        fee_frame = pd.DataFrame(list((raw.get("_published_fees") or {}).values()))
+        if not fee_frame.empty:
+            fee_frame = fee_frame.reindex(columns=FEE_COLUMNS)
+            run_info["fund_fees"] = save_derived("fund_fees", fee_frame, metadata={"type": "derived", "run_scope": run_scope}, run_id=run_id)
         run_info["relative_pairs"] = save_derived("relative_pairs", results["relative_pairs"], metadata={"type": "derived", "run_scope": run_scope}, run_id=run_id) if not results["relative_pairs"].empty else None
         run_info["relative_pair_history"] = save_derived("relative_pair_history", results["relative_pair_history"], metadata={"type": "derived", "run_scope": run_scope}, run_id=run_id) if not results["relative_pair_history"].empty else None
         results["_run"] = run_info
@@ -518,7 +602,8 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
                                # kept every run it had ever written while the
                                # small ones were capped at five.
                                (DERIVED_DIR, ("exposure_technicals", "relative_regime", "wrapper_metrics",
-                                              "premium_history", "relative_pairs", "relative_pair_history")),
+                                              "premium_history", "relative_pairs", "relative_pair_history",
+                                              "fund_fees")),
                                (RAW_DIR, ("index_close", "etf_close", "etf_spot"))):
             for dataset_name in datasets:
                 dropped = prune_runs(root, dataset_name, keep=RUN_RETENTION)

@@ -31,10 +31,48 @@ import pandas as pd
 # means: 75 is the ATTRACTIVE/FAIR boundary, 50 the FAIR/EXPENSIVE boundary,
 # 25 the EXPENSIVE/AVOID boundary. The outer points extend the scale far
 # enough that real quotes land inside it and stay strictly ordered.
-_ENTRY_COST_ANCHORS: dict[bool, tuple[list[float], list[float]]] = {
-    False: ([-200.0, -10.0, 20.0, 100.0, 300.0], [100.0, 75.0, 50.0, 25.0, 0.0]),
-    True: ([-500.0, 0.0, 150.0, 400.0, 1200.0], [100.0, 75.0, 50.0, 25.0, 0.0]),
+# Three regimes, not two. Measured over two years of NAV-based premium for
+# every tracked wrapper:
+#
+#     domestic (CSI 300/500/1000, dividend, growth)   median  0.00%, p95 0.2%
+#     connect  (Hang Seng, HS Tech, HK dividend)      median -0.02%, p95 1.3%
+#     quota    (Nasdaq 100, S&P 500 QDII)             median  3.1%,  p95 8.7%
+#
+# A Stock Connect wrapper is cross-border but not quota-constrained: arbitrage
+# works, so it trades near NAV and only the session mismatch with Hong Kong
+# widens it. Scored on the quota scale, a connect fund at its own 95th
+# percentile of 1.3% reads FAIR -- a two-year extreme presented as ordinary.
+_ENTRY_COST_ANCHORS: dict[str, tuple[list[float], list[float]]] = {
+    "domestic": ([-200.0, -10.0, 20.0, 100.0, 300.0], [100.0, 75.0, 50.0, 25.0, 0.0]),
+    "connect": ([-300.0, -10.0, 60.0, 160.0, 500.0], [100.0, 75.0, 50.0, 25.0, 0.0]),
+    "quota": ([-500.0, 0.0, 150.0, 400.0, 1200.0], [100.0, 75.0, 50.0, 25.0, 0.0]),
 }
+
+# The status bands are the anchors above read as percentages of premium, so a
+# score and its label can never disagree.
+_ENTRY_STATUS_BANDS: dict[str, tuple[float, float, float]] = {
+    "domestic": (-0.1, 0.2, 1.0),
+    "connect": (-0.1, 0.5, 1.5),
+    "quota": (0.0, 1.5, 4.0),
+}
+
+
+def premium_regime(frame: pd.DataFrame) -> pd.Series:
+    """Which premium regime each wrapper lives in.
+
+    Declared per fund; falls back to the older is_cross_border flag so an
+    artifact built before the column existed still scores.
+    """
+    if "premium_regime" in frame.columns:
+        declared = frame["premium_regime"].astype("string")
+        if declared.notna().any():
+            fallback = frame["is_cross_border"] if "is_cross_border" in frame.columns else False
+            legacy = pd.Series(fallback, index=frame.index).astype(bool).map(
+                {True: "quota", False: "domestic"}
+            )
+            return declared.fillna(legacy).astype(str)
+    cross = frame["is_cross_border"] if "is_cross_border" in frame.columns else False
+    return pd.Series(cross, index=frame.index).astype(bool).map({True: "quota", False: "domestic"})
 
 # Turnover on a log10 scale, deliberately saturating: the step from 1e6 to 1e7
 # CNY/day is the difference between untradeable and thin, the step from 1e9 to
@@ -50,8 +88,11 @@ _LIQUIDITY_LOG_ANCHORS: tuple[list[float], list[float]] = (
 # and hands every one of them 50, so a component advertised as differentiating
 # on fee was only pulling every score toward the middle.
 #
-# Management fee in bp per year. 15bp is a price-war passive fund, 50bp is the
-# A-share standard, 100bp+ is being charged for beta.
+# Total holding cost (management + custody) in bp per year -- custody is
+# 5-15bp and is charged to the same holder, so pricing management alone
+# understated every fund by roughly the same amount it differentiated them by.
+# 20bp is a price-war passive fund, 60bp the A-share standard, 100bp+ is being
+# charged for beta.
 _FEE_BP_ANCHORS: tuple[list[float], list[float]] = (
     [5.0, 15.0, 50.0, 100.0, 200.0],
     [100.0, 90.0, 60.0, 30.0, 0.0],
@@ -96,14 +137,13 @@ def entry_cost_bp(frame: pd.DataFrame) -> pd.Series:
     return premium * 100.0 + spread / 2.0
 
 
-def _entry_cost_score(cost: pd.Series, cross_border: pd.Series) -> pd.Series:
+def _entry_cost_score(cost: pd.Series, regime: pd.Series) -> pd.Series:
     """Map entry cost to 0-100 against the absolute band for its regime."""
     out = pd.Series(float("nan"), index=cost.index, dtype=float)
-    for is_cross in (False, True):
-        mask = cross_border.astype(bool).eq(is_cross)
+    for name, (xs, ys) in _ENTRY_COST_ANCHORS.items():
+        mask = regime.eq(name)
         if not mask.any():
             continue
-        xs, ys = _ENTRY_COST_ANCHORS[is_cross]
         out.loc[mask] = np.interp(cost.loc[mask].to_numpy(dtype=float), xs, ys)
     return out
 
@@ -127,8 +167,10 @@ def _hold_quality_score(frame: pd.DataFrame) -> pd.Series:
     parts: list[tuple[pd.Series, float]] = []
 
     if "management_fee" in frame.columns:
-        fee_bp = pd.to_numeric(frame["management_fee"], errors="coerce") * 10000.0
-        parts.append((_interp_or_nan(fee_bp, *_FEE_BP_ANCHORS), _HOLD_WEIGHTS["fee"]))
+        fee = pd.to_numeric(frame["management_fee"], errors="coerce")
+        if "custody_fee" in frame.columns:
+            fee = fee.add(pd.to_numeric(frame["custody_fee"], errors="coerce").fillna(0.0))
+        parts.append((_interp_or_nan(fee * 10000.0, *_FEE_BP_ANCHORS), _HOLD_WEIGHTS["fee"]))
     size_col = "aum_proxy" if "aum_proxy" in frame.columns else ("aum" if "aum" in frame.columns else None)
     if size_col:
         size = pd.to_numeric(frame[size_col], errors="coerce")
@@ -171,9 +213,10 @@ def rank_wrappers(frame: pd.DataFrame, *, group_col: str = "exposure_id") -> pd.
     out = frame.copy()
     hold_score = _hold_quality_score(out)
 
-    cross_border = out["is_cross_border"] if "is_cross_border" in out.columns else pd.Series(False, index=out.index)
+    regime = premium_regime(out)
+    out["premium_regime"] = regime
     out["entry_cost_bp"] = entry_cost_bp(out).round(2)
-    out["buy_score"] = _entry_cost_score(out["entry_cost_bp"], cross_border).round(1)
+    out["buy_score"] = _entry_cost_score(out["entry_cost_bp"], regime).round(1)
     out["liquidity_score"] = (
         _liquidity_score(out["turnover"]).round(1)
         if "turnover" in out.columns
@@ -195,20 +238,14 @@ def rank_wrappers(frame: pd.DataFrame, *, group_col: str = "exposure_id") -> pd.
         if pd.isna(p):
             return "UNAVAILABLE"
         p = float(p)
-        is_cross = bool(row.get("is_cross_border", False))
-        if is_cross:
-            if p <= 0.0:
-                return "ATTRACTIVE"
-            if p <= 1.5:
-                return "FAIR"
-            if p <= 4.0:
-                return "EXPENSIVE"
-            return "AVOID"
-        if p <= -0.1:
+        attractive, fair, expensive = _ENTRY_STATUS_BANDS[
+            str(row.get("premium_regime") or "domestic")
+        ]
+        if p <= attractive:
             return "ATTRACTIVE"
-        if p <= 0.2:
+        if p <= fair:
             return "FAIR"
-        if p <= 1.0:
+        if p <= expensive:
             return "EXPENSIVE"
         return "AVOID"
 

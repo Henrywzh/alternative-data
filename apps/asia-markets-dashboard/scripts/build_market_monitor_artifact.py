@@ -205,6 +205,7 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     # also comes from Yahoo, and dating it as a Sina observation would report
     # a US session close as the CN/HK feed's freshness.
     sina_ids = list(exposures_by_price_source("sina"))
+    sina_hk_ids = list(exposures_by_price_source("sina_hk"))
     yahoo_ids = list(exposures_by_price_source("yfinance"))
     if not index_px.empty and "date" in index_px.columns:
         cn_index = index_px[index_px["exposure_id"].isin(sina_ids)]
@@ -264,6 +265,8 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         else pd.Series(dtype=str)
     )
     sina_actual_count = served[served.isin(sina_expected)].nunique()
+    sina_hk_count = served[served.isin(sina_hk_ids)].nunique()
+    sina_hk_rows = int(served.isin(sina_hk_ids).sum()) if len(served) else 0
     expected_count = len(EXPOSURES)
     actual_exposures = served.nunique()
     expected_wrappers = len(build_metadata_frame())
@@ -323,7 +326,14 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
             "notes": spot_notes,
         },
         {
-            "source": "Sina index daily (CN/HK)",
+            "source": "Sina HK index daily (Hang Seng / CSI Hong Kong)",
+            "status": "Healthy" if sina_hk_count >= len(sina_hk_ids) else "Degraded",
+            "latest_observation": sina_latest,
+            "records": sina_hk_rows,
+            "notes": f"Daily OHLCV for {sina_hk_count} of {len(sina_hk_ids)} Hong Kong exposures.",
+        },
+        {
+            "source": "Sina index daily (CN)",
             "status": sina_status,
             "latest_observation": sina_latest,
             "records": sina_records,

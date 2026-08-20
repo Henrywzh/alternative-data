@@ -1,0 +1,18 @@
+{
+  "type": "derived",
+  "run_scope": "full",
+  "dataset_name": "premium_history",
+  "run_id": "20260820T060419-3b45cf3b",
+  "created_at": "2026-08-20T06:07:07.254988+00:00",
+  "records": 12610,
+  "columns": [
+    "date",
+    "fund_id",
+    "ticker",
+    "premium_pct",
+    "spread_bp",
+    "market_price",
+    "basis"
+  ],
+  "sha256": "d73a2ae111fefaa98cfeec46cd44da55522b2e7c4898a0512e22baa84e2c95e1"
+}
