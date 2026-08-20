@@ -54,6 +54,7 @@ def _chart_series(
     *,
     years: int = CHART_HISTORY_YEARS,
     id_as: str | None = None,
+    keep: tuple[str, ...] = (),
 ) -> list[dict[str, Any]]:
     """Rows for a line chart: the latest ``years`` of ``date``/id/value only.
 
@@ -75,7 +76,9 @@ def _chart_series(
     windowed = history_window(frame, "date", years=years)
     if windowed.empty:
         return []
-    projected = windowed[["date", id_column, value_column]].sort_values(["date", id_column])
+    columns = ["date", id_column, value_column]
+    columns += [name for name in keep if name in windowed.columns and name not in columns]
+    projected = windowed[columns].sort_values(["date", id_column])
     if id_as and id_as != id_column:
         projected = projected.rename(columns={id_column: id_as})
     return _records(projected)
@@ -168,7 +171,10 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         "exposure_technicals": _records(technicals),
         "relative_regime": _records(regime),
         "wrapper_metrics": _records(wrappers),
-        "premium_history": _chart_series(premium_hist, "ticker", "premium_pct"),
+        # ``basis`` rides along because the series mixes two measurements:
+        # published NAV for history, IOPV for the days NAV has not caught up
+        # to. A chart that draws them as one line should be able to say so.
+        "premium_history": _chart_series(premium_hist, "ticker", "premium_pct", keep=("basis",)),
         "etf_price_daily_tail": _chart_series(etf_px, "fund_id", "close", id_as="ticker"),
         "index_price_daily_tail": _chart_series(index_px, "exposure_id", "close"),
     }

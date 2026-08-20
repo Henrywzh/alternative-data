@@ -2,8 +2,8 @@
   "type": "derived",
   "run_scope": "full",
   "dataset_name": "wrapper_metrics",
-  "run_id": "20260819T171253-52169c37",
-  "created_at": "2026-08-19T17:12:53.539374+00:00",
+  "run_id": "20260820T011958-1b2f823b",
+  "created_at": "2026-08-20T01:29:54.205407+00:00",
   "records": 23,
   "columns": [
     "exposure_id",
@@ -41,5 +41,5 @@
     "entry_status",
     "premium_caveat"
   ],
-  "sha256": "444cbc0ca74db4a9a422ccb1da6df96711de55fd564a0de578ab8464b3ba9cff"
+  "sha256": "32d6bb0135621ee382283a66eeff5624075e4b0206f309fa850fea3ff51a17d1"
 }

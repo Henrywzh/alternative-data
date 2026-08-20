@@ -9,6 +9,8 @@
       "dividend",
       "growth",
       "hstech",
+      "hsi",
+      "ndx",
       "sp500"
     ],
     "observed_exposures": [
@@ -17,28 +19,32 @@
       "csi500",
       "dividend",
       "growth",
+      "hsi",
       "hstech",
+      "ndx",
       "sp500"
     ],
     "missing_exposures": [],
     "rows_by_exposure": {
-      "csi1000": 485,
-      "csi300": 485,
-      "csi500": 485,
-      "dividend": 485,
-      "growth": 485,
-      "hstech": 491,
+      "csi1000": 484,
+      "csi300": 484,
+      "csi500": 484,
+      "dividend": 484,
+      "growth": 484,
+      "hsi": 490,
+      "hstech": 490,
+      "ndx": 501,
       "sp500": 501
     },
-    "first_date": "2024-08-19",
+    "first_date": "2024-08-20",
     "last_date": "2026-08-19",
     "requested_start_date": null,
     "fetch_errors": []
   },
   "dataset_name": "index_price_daily",
-  "run_id": "20260819T151941-4e35d646",
-  "created_at": "2026-08-19T15:19:41.129715+00:00",
-  "records": 3417,
+  "run_id": "20260820T013225-da43d491",
+  "created_at": "2026-08-20T01:33:00.678988+00:00",
+  "records": 4402,
   "columns": [
     "date",
     "exposure_id",
@@ -49,5 +55,5 @@
     "low",
     "volume"
   ],
-  "sha256": "7150ca23432a6e3a76e8141eafbec4567801577db8a1688df24b1e88c3310e18"
+  "sha256": "d3088aab9e751d6288fe1e814ef3bee779efbe82d8181901dc7668d92d62065d"
 }
