@@ -716,15 +716,30 @@ def test_every_exposure_declares_where_its_prices_come_from():
     """
     from market_monitor.config import EXPOSURES, exposures_by_price_source
 
-    sina = exposures_by_price_source("sina")
-    sina_hk = exposures_by_price_source("sina_hk")
-    yahoo = exposures_by_price_source("yfinance")
-    assert len(sina) + len(sina_hk) + len(yahoo) == len(EXPOSURES), (
-        "an exposure declares an unknown price_source"
+    # Enumerating the sources here meant the test had to be edited every time
+    # one was added, which is the same hand-maintenance this check exists to
+    # replace. Assert instead that every declared source is one the pipeline
+    # can actually route, and that the sources partition the universe.
+    from market_monitor.pipeline import ROUTABLE_PRICE_SOURCES
+
+    declared = {spec["price_source"] for spec in EXPOSURES}
+    assert declared <= ROUTABLE_PRICE_SOURCES, (
+        f"no fetch route for {sorted(declared - ROUTABLE_PRICE_SOURCES)}"
     )
-    assert set(sina).isdisjoint(yahoo)
+    covered = sum(len(exposures_by_price_source(source)) for source in declared)
+    assert covered == len(EXPOSURES), "an exposure declares an unknown price_source"
+
+    # No exposure may be claimed by two providers.
+    seen: set[str] = set()
+    for source in declared:
+        owned = set(exposures_by_price_source(source))
+        assert seen.isdisjoint(owned), "an exposure is claimed by two providers"
+        seen |= owned
+
     # The US indexes are the ones yfinance serves, and both need a ticker.
     from market_monitor.pipeline import YFINANCE_SYMBOLS
+
+    yahoo = exposures_by_price_source("yfinance")
 
     assert set(yahoo) == set(YFINANCE_SYMBOLS), "a yfinance exposure has no ticker, or vice versa"
 
@@ -1416,3 +1431,85 @@ def test_a_failed_fee_fetch_keeps_the_cached_fee(monkeypatch):
     schedule = pl._published_fee_schedule(pd.DataFrame([{"fund_id": "510300"}]))
 
     assert schedule["510300"]["management_fee"] == 0.0015
+
+
+def test_hk_internet_wrappers_track_the_index_they_are_filed_under():
+    """A cohort is defined by a shared index -- 513310 is what happens otherwise.
+
+    Hong Kong exposures cannot reach the ~0.98 an A-share pair does: the Hong
+    Kong session runs an hour past the A-share close, so the daily closes are
+    struck at different times. The bar is therefore the one the existing HK
+    exposures clear, not 1.0.
+    """
+    import glob
+
+    from market_monitor.config import exposure_by_id
+
+    index_files = sorted(glob.glob("data/normalized/market_monitor/index_price_daily/*/*.parquet"))
+    etf_files = sorted(glob.glob("data/normalized/market_monitor/etf_price_daily/*/*.parquet"))
+    if not index_files or not etf_files:
+        pytest.skip("no normalized market_monitor snapshot in this checkout")
+
+    index_px = pd.read_parquet(index_files[-1])
+    etf_px = pd.read_parquet(etf_files[-1])
+    if "hk_internet" not in set(index_px["exposure_id"]):
+        pytest.skip("hk_internet not in this snapshot")
+
+    assert exposure_by_id("hk_internet")["index_id"] == "931637"
+
+    index_returns = index_px[index_px["exposure_id"].eq("hk_internet")].set_index("date")["close"].pct_change()
+    for fund_id in ("159792", "513040"):
+        fund = etf_px[etf_px["fund_id"].astype(str).str.zfill(6).eq(fund_id)]
+        if fund.empty:
+            continue
+        fund_returns = fund.set_index("date")["close"].pct_change()
+        joined = pd.concat(
+            [index_returns.rename("i"), fund_returns.rename("e")], axis=1, join="inner"
+        ).dropna()
+        joined = joined[joined.index >= "2025-08-20"]
+        assert len(joined) > 100
+        assert joined["i"].corr(joined["e"]) > 0.90, f"{fund_id} does not track 931637"
+
+
+def test_a_new_price_source_must_have_a_fetch_route():
+    """Without a branch it falls through to the mainland Sina route."""
+    from market_monitor.pipeline import ROUTABLE_PRICE_SOURCES
+
+    assert {"sina", "sina_hk", "csindex", "yfinance"} <= ROUTABLE_PRICE_SOURCES
+
+
+def test_index_frames_stack_on_one_date_representation():
+    """Four price sources, nothing holding them to a common shape.
+
+    Three returned ``date`` as an ISO string and the fourth returned
+    datetimes; concatenated they made an object column of mixed str and
+    Timestamp, and the run died at the parquet write with "Expected bytes,
+    got a 'Timestamp'". Coercing at the join means a new source cannot
+    reintroduce it.
+    """
+    from market_monitor.pipeline import _stack_index_frames
+
+    stacked = _stack_index_frames(
+        {
+            "a": pd.DataFrame({"date": ["2026-08-03"], "close": [1.0]}),
+            "b": pd.DataFrame({"date": pd.to_datetime(["2026-08-04"]), "close": [2.0]}),
+        }
+    )
+
+    assert stacked["date"].tolist() == ["2026-08-03", "2026-08-04"]
+    assert all(isinstance(value, str) for value in stacked["date"])
+    # The failure was at the write, so prove the write works.
+    import io
+
+    stacked.to_parquet(io.BytesIO())
+
+
+def test_every_index_source_returns_the_same_date_type():
+    """A source whose date type drifts breaks the store, not its own fetch."""
+    import glob
+
+    files = sorted(glob.glob("data/normalized/market_monitor/index_price_daily/*/*.parquet"))
+    if not files:
+        pytest.skip("no normalized snapshot in this checkout")
+    frame = pd.read_parquet(files[-1])
+    assert all(isinstance(value, str) for value in frame["date"].head(50))

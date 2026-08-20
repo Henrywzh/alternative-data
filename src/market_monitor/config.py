@@ -166,6 +166,22 @@ EXPOSURES = (
         "risk_character": "Defensive",
         "index_id": "CSHKDIV",
     },
+    {
+        # 中证港股通互联网, taken from CSI itself. Verified against the cohort
+        # before being written down: the wrapper tracks it at 0.951 daily
+        # correlation, in line with Hang Seng Tech (0.949) and the Hang Seng
+        # (0.942) -- the ~5pp shortfall is the Hong Kong session running an
+        # hour past the A-share close, not a mismatched index.
+        "exposure_id": "hk_internet",
+        "price_source": "csindex",
+        "label": "HK Internet",
+        "label_zh": "港股通互联网",
+        "region": "HK",
+        "size": "Broad",
+        "style": "Growth",
+        "risk_character": "Offensive",
+        "index_id": "931637",
+    },
     # --- Benchmarks: relative-strength legs, not investable exposures ---
     # Verified live on 2026-08-20. The obvious alternatives are traps: Sina
     # answers 200 for 中证800成长 (000967) and 中证800价值 (000969) but stopped
