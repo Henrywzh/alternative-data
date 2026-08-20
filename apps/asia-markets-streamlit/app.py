@@ -3704,13 +3704,21 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
         else:
             render_market_leadership_chart(prices, label_by_exposure, language, window)
     if not technicals.empty:
-        show_cols = [c for c in ("label" if language == "en" else "label_zh", "rsi", "ma20_pct", "drawdown_60d", "avg_premium_30d") if c in technicals.columns]
-        if language == "zh" and "label_zh" not in show_cols and "label" in technicals.columns:
-            show_cols = ["label"] + [c for c in show_cols if c != "label"]
-        if show_cols:
-            display_tech = technicals.copy()
-            if language == "zh" and "label_zh" in display_tech.columns:
-                display_tech = display_tech.rename(columns={"label_zh": "label"})
+        # Resolve the label column first, then pick columns off the resolved
+        # frame. Picking first and renaming after asked for "label_zh" in a
+        # frame where the rename had just consumed it, so the Chinese page
+        # raised KeyError while the English one was fine.
+        display_tech = technicals.copy()
+        if language == "zh" and "label_zh" in display_tech.columns:
+            display_tech = display_tech.drop(columns=["label"], errors="ignore").rename(
+                columns={"label_zh": "label"}
+            )
+        show_cols = [
+            c
+            for c in ("label", "rsi", "ma20_pct", "drawdown_60d", "avg_premium_30d")
+            if c in display_tech.columns
+        ]
+        if "label" in show_cols:
             st.dataframe(display_tech[show_cols].sort_values("label"), hide_index=True, width="stretch")
 
     # --- Relative Regime ---
