@@ -3273,6 +3273,184 @@ def _market_etf_price_frame(datasets: dict[str, Any]) -> pd.DataFrame:
     return frame.dropna(subset=["_date", "close"]).sort_values("_date")
 
 
+def _market_pair_history_frame(datasets: dict[str, Any]) -> pd.DataFrame:
+    """Relative-pair ratio history from the artifact, typed and sorted."""
+    rows = datasets.get("relative_pair_history", [])
+    if not rows:
+        return pd.DataFrame()
+    frame = pd.DataFrame(rows)
+    if "date" not in frame.columns or "ratio" not in frame.columns:
+        return pd.DataFrame()
+    frame["_date"] = pd.to_datetime(frame["date"], errors="coerce")
+    for column in ("ratio", "ratio_ma", "zscore"):
+        if column in frame.columns:
+            frame[column] = pd.to_numeric(frame[column], errors="coerce")
+    return frame.dropna(subset=["_date", "ratio"]).sort_values("_date")
+
+
+def _pair_label(row: pd.Series, language: str) -> str:
+    if language == "zh":
+        zh = row.get("label_zh")
+        if pd.notna(zh) and str(zh).strip():
+            return str(zh)
+    return str(row.get("label", row.get("pair_id", "")))
+
+
+REGION_NAMES = {
+    "China": ("China A-shares", "A股"),
+    "US": ("United States", "美股"),
+    "Cross": ("Cross-region", "跨区域"),
+}
+
+
+def render_relative_regime(
+    summary: pd.DataFrame,
+    history: pd.DataFrame,
+    language: str,
+    history_window_name: str,
+) -> None:
+    """One pair at a time: the ratio, its 60D trend, and its z-score.
+
+    Replaces a bar chart of one z-score per pair. That chart could not say
+    whether -0.3 was the end of a year-long slide or the end of a bounce,
+    which is most of what a relative-strength reading is for.
+    """
+    frame = summary.copy()
+    frame["_label"] = frame.apply(lambda row: _pair_label(row, language), axis=1)
+    regions = [r for r in ("China", "US", "Cross") if r in set(frame.get("region", pd.Series(dtype=str)))]
+    if not regions:
+        regions = sorted(set(frame.get("region", pd.Series(dtype=str)).dropna()))
+
+    region_choice = st.radio(
+        tr(language, "Market", "市场"),
+        regions,
+        horizontal=True,
+        key="market_pair_region",
+        format_func=lambda r: tr(language, *REGION_NAMES.get(r, (r, r))),
+    )
+    cohort = frame[frame["region"].eq(region_choice)]
+    if cohort.empty:
+        return
+
+    # Scoreboard first: every pair in the region at a glance, then one chart.
+    columns = st.columns(min(4, len(cohort)))
+    for column, (_, row) in zip(columns, cohort.iterrows()):
+        zscore = row.get("zscore")
+        display = "—" if zscore is None or pd.isna(zscore) else f"{float(zscore):+.2f}"
+        trend = row.get("trend")
+        delta = None if trend in (None, "") or pd.isna(trend) else (
+            tr(language, "above 60D mean", "高于60日均值") if trend == "UP"
+            else tr(language, "below 60D mean", "低于60日均值")
+        )
+        column.metric(
+            row["_label"],
+            display,
+            delta,
+            delta_color="normal" if trend == "UP" else ("inverse" if trend == "DOWN" else "off"),
+            help=tr(language, "z-score of the ratio vs its trailing year", "比值相对过去一年的 z-score"),
+        )
+
+    selected_label = st.selectbox(
+        tr(language, "Pair", "配对"),
+        cohort["_label"].tolist(),
+        key="market_pair_select",
+    )
+    row = cohort[cohort["_label"].eq(selected_label)].iloc[0]
+    pair_id = str(row["pair_id"])
+    series = history[history["pair_id"].eq(pair_id)] if not history.empty else pd.DataFrame()
+    if series.empty:
+        st.info(tr(language, "No ratio history in the current snapshot.", "当前快照未包含该比值历史。"))
+        return
+
+    windowed, coverage = history_window(series, "date", history_window_name)
+    if windowed.empty:
+        return
+
+    has_z = "zscore" in windowed.columns and windowed["zscore"].notna().any()
+    rows_count = 2 if has_z else 1
+    fig = make_subplots(
+        rows=rows_count, cols=1, shared_xaxes=True, vertical_spacing=0.06,
+        row_heights=[0.68, 0.32] if has_z else [1.0],
+    )
+    numerator = tr(language, "numerator", "分子")
+    denominator = tr(language, "denominator", "分母")
+    fig.add_trace(
+        go.Scatter(
+            x=windowed["_date"], y=windowed["ratio"], mode="lines",
+            name=tr(language, "Ratio", "比值"), line=dict(width=1.8),
+            hovertemplate=tr(language, "Ratio", "比值") + ": %{y:.3f}<extra></extra>",
+        ),
+        row=1, col=1,
+    )
+    if "ratio_ma" in windowed.columns and windowed["ratio_ma"].notna().any():
+        fig.add_trace(
+            go.Scatter(
+                x=windowed["_date"], y=windowed["ratio_ma"], mode="lines",
+                name=tr(language, "60D mean", "60日均值"), line=dict(width=1.0),
+                hovertemplate=tr(language, "60D mean", "60日均值") + ": %{y:.3f}<extra></extra>",
+            ),
+            row=1, col=1,
+        )
+    fig.update_yaxes(title=tr(language, "Ratio (rebased)", "比值（归一）"), row=1, col=1)
+
+    if has_z:
+        fig.add_trace(
+            go.Scatter(
+                x=windowed["_date"], y=windowed["zscore"], mode="lines",
+                name="z", line=dict(width=1.4),
+                hovertemplate="z: %{y:+.2f}<extra></extra>",
+            ),
+            row=2, col=1,
+        )
+        fig.add_hrect(y0=1.0, y1=4.0, fillcolor="#10B981", opacity=0.06, line_width=0, row=2, col=1)
+        fig.add_hrect(y0=-4.0, y1=-1.0, fillcolor="#EF4444", opacity=0.06, line_width=0, row=2, col=1)
+        for level in (-1.0, 0.0, 1.0):
+            fig.add_hline(y=level, line_dash="dot", line_color="#D1D5DB", line_width=0.5, row=2, col=1)
+        fig.update_yaxes(title=tr(language, "z-score (1Y)", "z-score（1年）"), row=2, col=1)
+
+    tick_format = date_tick_format(windowed["_date"])
+    fig.update_xaxes(
+        title=None, tickformat=tick_format,
+        hoverformat=date_hover_format(windowed["_date"]),
+        showspikes=True, spikemode="across", spikesnap="cursor",
+        spikethickness=1, spikedash="dot", spikecolor="#9CA3AF",
+    )
+    fig.update_layout(hovermode="x unified", hoverlabel=dict(namelength=-1),
+                      spikedistance=-1, hoverdistance=100)
+
+    left = str(row.get("left", "")).replace("+", " + ")
+    right = str(row.get("right", "")).replace("+", " + ")
+    st.markdown(
+        f'<div class="am-chart-title">{escape(selected_label)} — '
+        f'{escape(left)} / {escape(right)}</div>',
+        unsafe_allow_html=True,
+    )
+    regime_text = str(row.get("regime_zh" if language == "zh" else "regime", ""))
+    st.caption(
+        " · ".join(
+            part for part in (
+                coverage,
+                regime_text,
+                tr(language, f"rising = {numerator} outperforming", f"上行 = {numerator}跑赢"),
+            ) if part
+        )
+    )
+    st.plotly_chart(
+        chart_theme(fig, "number", date_axis=True, height=440 if has_z else 320),
+        width="stretch",
+        config={"displaylogo": False, "responsive": True},
+    )
+
+    display = cohort.drop(columns=["_label"], errors="ignore")
+    if language == "zh" and "label_zh" in display.columns:
+        display = display.drop(columns=["label", "regime"], errors="ignore").rename(
+            columns={"label_zh": "label", "regime_zh": "regime"}
+        )
+    else:
+        display = display.drop(columns=["label_zh", "regime_zh"], errors="ignore")
+    st.dataframe(display, hide_index=True, width="stretch")
+
+
 def _market_premium_history_frame(datasets: dict[str, Any]) -> pd.DataFrame:
     """Daily premium history from the artifact."""
     rows = datasets.get("premium_history", [])
@@ -3845,23 +4023,22 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
             st.dataframe(display_tech[show_cols].sort_values("label"), hide_index=True, width="stretch")
 
     # --- Relative Regime ---
-    if regime:
+    pair_summary = pd.DataFrame(datasets.get("relative_pairs", []))
+    pair_history = _market_pair_history_frame(datasets)
+    if not pair_summary.empty:
+        section_heading(
+            language,
+            "Relative Regime",
+            "相对强弱",
+            "Two baskets, one ratio. The level is cumulative relative performance; the z-score places it against its own trailing year.",
+            "两组篮子，一个比值。曲线是累计相对表现；z-score 衡量它在自身过去一年中的位置。",
+        )
+        render_relative_regime(pair_summary, pair_history, language, window)
+    elif regime:
+        # Pre-pair artifacts still carry the old block; keep rendering it so a
+        # stale snapshot degrades to the previous view instead of a blank page.
         section_heading(language, "Relative Regime", "相对强弱", "Rolling 20D z-score of windowed spread; trend is 5D vs 20D.", "滚动20日z-score的区间价差；趋势为5日对20日。")
-        regime_frame = pd.DataFrame(regime)
-        if {"label", "spread_20d_zscore"} <= set(regime_frame.columns):
-            z_frame = regime_frame.dropna(subset=["spread_20d_zscore"]).copy()
-            if not z_frame.empty:
-                z_frame["_z"] = pd.to_numeric(z_frame["spread_20d_zscore"], errors="coerce")
-                fig = px.bar(z_frame.sort_values("_z"), x="_z", y="label", orientation="h", color_discrete_sequence=[PALETTE[0]])
-                fig.add_vline(x=0.0, line_color="#9CA3AF", line_width=1)
-                fig.update_xaxes(title=tr(language, "20D spread z-score", "20日价差 z-score"))
-                fig.update_yaxes(title=None)
-                st.plotly_chart(
-                    chart_theme(fig, "number", date_axis=False, height=max(200, 60 * len(z_frame))),
-                    width="stretch",
-                    config={"displaylogo": False, "responsive": True},
-                )
-        st.dataframe(regime_frame, hide_index=True, width="stretch")
+        st.dataframe(pd.DataFrame(regime), hide_index=True, width="stretch")
 
     # --- Per-index detail ---
     if not wrappers.empty or not prices.empty:

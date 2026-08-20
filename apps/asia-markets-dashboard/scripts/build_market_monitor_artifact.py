@@ -25,7 +25,13 @@ if str(ROOT) not in sys.path:
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-from src.market_monitor.config import DERIVED_DIR, EXPOSURES, NORMALIZED_DIR, exposures_by_price_source
+from src.market_monitor.config import (
+    DERIVED_DIR,
+    EXPOSURES,
+    NORMALIZED_DIR,
+    exposures_by_price_source,
+    investable_exposures,
+)
 from src.market_monitor.metadata import build_metadata_frame
 from src.market_monitor.storage import load_lineage_history, load_latest_with_lineage  # noqa: E402
 from history_policy import history_window  # noqa: E402
@@ -115,6 +121,8 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     wrappers, wrap_lineage = load_latest_with_lineage(DERIVED_DIR, "wrapper_metrics", scope="full")
     index_px, index_lineage = load_latest_with_lineage(NORMALIZED_DIR, "index_price_daily", scope="full")
     premium_hist, premium_lineage = load_latest_with_lineage(DERIVED_DIR, "premium_history", scope="full")
+    pairs, _pairs_lineage = load_latest_with_lineage(DERIVED_DIR, "relative_pairs", scope="full")
+    pair_hist, _pair_hist_lineage = load_latest_with_lineage(DERIVED_DIR, "relative_pair_history", scope="full")
     etf_px, etf_px_lineage = load_latest_with_lineage(NORMALIZED_DIR, "etf_price_daily", scope="full")
 
     # Add bilingual labels from config
@@ -167,6 +175,7 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     if not technicals.empty and "date" in technicals.columns:
         data_as_of = str(pd.to_datetime(technicals["date"], errors="coerce").max().date())
 
+    investable_ids = [spec["exposure_id"] for spec in investable_exposures()]
     datasets: dict[str, list[dict[str, Any]]] = {
         "exposure_technicals": _records(technicals),
         "relative_regime": _records(regime),
@@ -175,8 +184,21 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         # published NAV for history, IOPV for the days NAV has not caught up
         # to. A chart that draws them as one line should be able to say so.
         "premium_history": _chart_series(premium_hist, "ticker", "premium_pct", keep=("basis",)),
+        "relative_pairs": _records(pairs),
+        # The ratio is charted over the same two-year window as the prices;
+        # the five years behind it exist so the z-score has a full trailing
+        # year of baseline on the first day shown, not so all five are drawn.
+        "relative_pair_history": _chart_series(pair_hist, "pair_id", "ratio", keep=("ratio_ma", "zscore")),
         "etf_price_daily_tail": _chart_series(etf_px, "fund_id", "close", id_as="ticker"),
-        "index_price_daily_tail": _chart_series(index_px, "exposure_id", "close"),
+        # Investable exposures only. The benchmark legs are fetched and stored
+        # so the pair ratios can be computed, but the ratios themselves are
+        # what the page draws -- shipping XLU's daily closes to the browser
+        # would be half a megabyte nothing reads.
+        "index_price_daily_tail": _chart_series(
+            index_px[index_px["exposure_id"].isin(investable_ids)] if not index_px.empty else index_px,
+            "exposure_id",
+            "close",
+        ),
     }
     # Source-specific latest observations (do not share across sources).
     # Split on the declared price_source, not on "is it sp500" -- Nasdaq 100
@@ -232,13 +254,18 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     # for the two indexes it actually fetched.
     sina_expected = sina_ids
     yahoo_expected = yahoo_ids
-    sina_actual_count = (
-        technicals[technicals["exposure_id"].isin(sina_expected)]["exposure_id"].nunique()
-        if not technicals.empty and "exposure_id" in technicals.columns
-        else 0
+    # Delivery is counted from the price series, not from the technical cards.
+    # Benchmarks -- the relative-strength legs -- are fetched from the same
+    # providers but get no card, so counting cards would report a provider as
+    # Degraded for series it delivered in full.
+    served = (
+        index_px["exposure_id"].astype(str)
+        if not index_px.empty and "exposure_id" in index_px.columns
+        else pd.Series(dtype=str)
     )
+    sina_actual_count = served[served.isin(sina_expected)].nunique()
     expected_count = len(EXPOSURES)
-    actual_exposures = technicals["exposure_id"].nunique() if not technicals.empty and "exposure_id" in technicals.columns else 0
+    actual_exposures = served.nunique()
     expected_wrappers = len(build_metadata_frame())
     if not wrappers.empty and "market_price" in wrappers.columns and "premium_pct" in wrappers.columns:
         spot_observed = int((wrappers["market_price"].notna() & wrappers["premium_pct"].notna()).sum())
@@ -269,10 +296,17 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         else 0
     )
     yfinance_status = "Healthy" if sp500_ok else "Degraded"
-    yahoo_labels = ", ".join(
+    # Name the headline exposures and count the rest. Listing all thirteen
+    # produced a source-health row whose title ran to a full line of text.
+    _yahoo_named = [
         next((e["label"] for e in EXPOSURES if e["exposure_id"] == exposure_id), exposure_id)
         for exposure_id in yahoo_expected
-    )
+        if exposure_id in investable_ids
+    ]
+    _yahoo_extra = len(yahoo_expected) - len(_yahoo_named)
+    yahoo_labels = ", ".join(_yahoo_named)
+    if _yahoo_extra:
+        yahoo_labels += f" + {_yahoo_extra} relative-strength benchmarks"
     overall_healthy = (
         actual_exposures >= expected_count
         and spot_status == "Healthy"
