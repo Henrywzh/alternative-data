@@ -82,10 +82,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 MAIN_SECTIONS = (
     "Overview",
-    "OpenRouter Intelligence",
-    "OpenRouter Models",
-    "OpenRouter Compare",
-    "OpenRouter Workloads",
+    "OpenRouter",
     "Vercel AI",
     "OpenCode Agents",
     "Replicate Multimodal",
@@ -102,10 +99,7 @@ MAIN_SECTIONS = (
 
 SECTION_DESCRIPTIONS = {
     "Overview": "Cross-market pulse across AI usage, enterprise adoption, developer activity, model quality, and infrastructure.",
-    "OpenRouter Intelligence": "Tracks model and provider usage, estimated revenue, task leaders, market coverage, and catalog economics.",
-    "OpenRouter Models": "Explore OpenRouter companies and models by activity, pricing, context window, release date, capabilities, and public-app usage.",
-    "OpenRouter Compare": "Compare up to five model-origin companies across usage, requests, revenue, workload intensity, and realized price.",
-    "OpenRouter Workloads": "Tracks request context lengths, modality mix, and the public apps generating OpenRouter traffic.",
+    "OpenRouter": "Unified analytics for OpenRouter — revenue & ARR run-rates, token usage, model catalog, company comparison, and workload modalities.",
     "Vercel AI": "Tracks model and lab usage share across Vercel AI Gateway, with modality and metric-level rankings.",
     "OpenCode Agents": "Tracks developer demand for AI coding agents — model market share, token volume, geographic adoption, and session economics.",
     "Replicate Multimodal": "Tracks hosted model catalog and execution volume across image, video, audio, speech, and vision models on Replicate.",
@@ -122,10 +116,7 @@ SECTION_DESCRIPTIONS = {
 
 SECTION_DOMAIN_MAP = {
     "Overview": ("overview",),
-    "OpenRouter Intelligence": ("openrouter_intelligence", "compute_availability", "openrouter_official_market", "openrouter_derived"),
-    "OpenRouter Models": ("openrouter_model_explorer", "openrouter_catalog", "openrouter_derived"),
-    "OpenRouter Compare": ("openrouter_model_explorer", "openrouter_catalog", "openrouter_derived", "artificial_analysis"),
-    "OpenRouter Workloads": ("openrouter_workloads", "apps"),
+    "OpenRouter": ("openrouter_intelligence", "compute_availability", "openrouter_official_market", "openrouter_derived", "openrouter_model_explorer", "openrouter_catalog", "openrouter_workloads", "apps", "artificial_analysis"),
     "Vercel AI": ("vercel_ai",),
     "OpenCode Agents": ("opencode",),
     "Replicate Multimodal": ("replicate",),
@@ -184,7 +175,7 @@ def _clear_model_query_param() -> None:
 
 def _set_main_section(section: str) -> None:
     st.session_state["main_section"] = section
-    if section != "OpenRouter Models":
+    if section != "OpenRouter":
         _clear_model_query_param()
 
 
@@ -211,18 +202,18 @@ def select_main_section() -> str:
             unsafe_allow_html=True,
         )
         nav_button("Overview")
-        st.markdown('<div class="sidebar-group-label">AI Usage</div>', unsafe_allow_html=True)
-        for label in ("OpenRouter Intelligence", "OpenRouter Models", "OpenRouter Compare", "OpenRouter Workloads", "Vercel AI", "OpenCode Agents", "Replicate Multimodal"):
+        st.markdown('<div class="sidebar-group-label">AI Usage & Providers</div>', unsafe_allow_html=True)
+        for label in ("OpenRouter", "Vercel AI", "OpenCode Agents", "Replicate Multimodal"):
             nav_button(label)
-        st.markdown('<div class="sidebar-group-label">Adoption</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sidebar-group-label">Enterprise & Talent</div>', unsafe_allow_html=True)
         for label in ("Ramp", "Provider Adoption", "AI Hiring Demand"):
             nav_button(label)
-        st.markdown('<div class="sidebar-group-label">Analysis</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sidebar-group-label">Benchmarks & Quality</div>', unsafe_allow_html=True)
         nav_button("Artificial Analysis")
-        st.markdown('<div class="sidebar-group-label">Infrastructure</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sidebar-group-label">Infrastructure & Supply</div>', unsafe_allow_html=True)
         for label in ("Semiconductor Analysis", "Minerals"):
             nav_button(label)
-        st.markdown('<div class="sidebar-group-label">Signals</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sidebar-group-label">Market Signals & Monitoring</div>', unsafe_allow_html=True)
         for label in ("Google Trends Signal", "Provider Incidents"):
             nav_button(label)
 
@@ -289,12 +280,8 @@ def render_checks(checks: list[CheckResult]) -> None:
 
 SECTION_RENDERERS = {
     "Overview": overview.render,
+    "OpenRouter": getattr(openrouter, "render_unified", openrouter.render),
     "OpenRouter Intelligence": openrouter.render,
-    # Keep startup compatible with a Streamlit process that has briefly
-    # retained the pre-explorer module during a rolling redeploy.
-    "OpenRouter Models": getattr(openrouter, "render_models", openrouter.render),
-    "OpenRouter Compare": getattr(openrouter, "render_compare", openrouter.render),
-    "OpenRouter Workloads": getattr(openrouter, "render_workloads", openrouter.render),
     "Vercel AI": vercel_ai.render,
     "OpenCode Agents": opencode.render,
     "Replicate Multimodal": replicate.render,

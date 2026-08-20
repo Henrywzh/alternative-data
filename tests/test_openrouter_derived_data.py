@@ -108,14 +108,14 @@ def test_rank_capability_families_collapses_configurations_and_uses_asof_snapsho
 
     july_18 = ranked[ranked["usage_date"] == pd.Timestamp("2026-07-18")]
     assert len(july_18[july_18["family_id"] == "openai/gpt-5.6-sol"]) == 1
-    assert set(july_18["family_rank"]) == set(range(2, 12))
+    assert set(july_18["family_rank"]) == set(range(1, 11))
     assert july_18.loc[july_18["family_rank"].le(5), "capability_tier"].eq("sota").all()
     assert july_18.loc[july_18["family_rank"].between(6, 10), "capability_tier"].eq("frontier_contender").all()
     assert "future/model" not in set(ranked[ranked["usage_date"] == pd.Timestamp("2026-07-10")]["family_id"])
     assert "unmapped/model" not in set(july_18["family_id"])
     assert july_18.iloc[0]["benchmark_snapshot_date"] == pd.Timestamp("2026-07-17")
     assert july_18.iloc[0]["representative_aa_model_id"] == "claude"
-    assert july_18.iloc[0]["family_rank"] == 2
+    assert july_18.iloc[0]["family_rank"] == 1
 
 
 def test_rank_capability_families_does_not_rewind_when_latest_snapshot_is_future_only(tmp_path: Path) -> None:
@@ -262,7 +262,7 @@ def test_future_capability_entry_and_route_do_not_leak_backward(tmp_path: Path) 
     ) == frozenset({"openai/gpt-5.6-sol"})
 
 
-def test_unmapped_benchmark_leaders_leave_explicit_top_five_and_top_ten_rank_gaps() -> None:
+def test_unmapped_benchmark_leaders_are_excluded_without_rank_gaps() -> None:
     entries = tuple(
         CapabilityEntry(
             aa_model_id=f"mapped-{index}",
@@ -311,10 +311,7 @@ def test_unmapped_benchmark_leaders_leave_explicit_top_five_and_top_ten_rank_gap
     )
 
     ranks = set(ranked["family_rank"])
-    assert 1 not in ranks
-    assert 7 not in ranks
-    assert set(range(1, 6)) - ranks == {1}
-    assert set(range(6, 11)) - ranks == {7}
+    assert ranks == set(range(1, 11))
 
     pricing = pd.DataFrame(
         [
@@ -338,10 +335,10 @@ def test_unmapped_benchmark_leaders_leave_explicit_top_five_and_top_ten_rank_gap
     contenders = _price_metric(
         price_metrics, "frontier_contenders_median_list_price"
     )
-    assert sota["priced_family_count"] == 4
-    assert pd.isna(sota["value"])
-    assert contenders["priced_family_count"] == 4
-    assert pd.isna(contenders["value"])
+    assert sota["priced_family_count"] == 5
+    assert sota["value"] == pytest.approx(3.0)
+    assert contenders["priced_family_count"] == 5
+    assert contenders["value"] == pytest.approx(8.0)
 
 
 def test_workload_intensity_uses_matching_rows_and_rolling_ratio_of_sums() -> None:
@@ -724,7 +721,7 @@ def test_realized_sota_price_uses_each_activity_days_point_in_time_membership() 
     assert realized["observed_family_count"] == 3
 
 
-def test_sota_price_metrics_require_the_complete_rank_one_to_five_cohort() -> None:
+def test_sota_list_price_requires_complete_cohort_but_realized_accepts_three_families() -> None:
     partial_rankings = _price_rankings().loc[lambda frame: frame.family_rank.le(3)]
 
     result = compute_price_metrics(
@@ -740,7 +737,11 @@ def test_sota_price_metrics_require_the_complete_rank_one_to_five_cohort() -> No
     assert list_price["priced_family_count"] == 3
     assert pd.isna(list_price["value"])
     assert realized["expected_family_count"] == 5
-    assert pd.isna(realized["value"])
+    assert realized["observed_family_count"] == 3
+    assert realized["priced_family_count"] == 3
+    assert realized["value"] == pytest.approx(
+        realized["numerator"] / realized["denominator"] * 1_000_000
+    )
 
 
 def test_frontier_contender_price_requires_complete_ranks_six_to_ten() -> None:
