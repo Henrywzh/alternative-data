@@ -384,16 +384,25 @@ ETF_REGISTRY = (
         "underlying_timezone": "America/New_York",
     },
     {
+        # Replaces 513310, which was filed here as "景顺长城标普500ETF(QDII)"
+        # but is actually 中韩半导体ETF华泰柏瑞 -- a China/Korea semiconductor
+        # fund. It returned +271% over two years against the S&P 500's +38%,
+        # correlating 0.13 with the index it was supposed to track and 0.72
+        # with domestic growth. See reconcile_registry_names below.
+        # management_fee is unknown rather than guessed: the two akshare
+        # endpoints that carry it are both broken upstream, and a guessed fee
+        # is what put a semiconductor fund in this cohort. The hold score
+        # drops the component and renormalises the rest.
         "exposure_id": "sp500",
         "index_id": "SPX",
-        "fund_id": "513310",
-        "ticker": "513310.SH",
-        "fund_name": "景顺长城标普500ETF(QDII)",
-        "venue": "SH",
+        "fund_id": "159655",
+        "ticker": "159655.SZ",
+        "fund_name": "标普500ETF华夏",
+        "venue": "SZ",
         "currency": "CNY",
         "wrapper_type": "qdii",
-        "management_fee": 0.0075,
-        "inception_date": "2024-11-05",
+        "management_fee": None,
+        "inception_date": "2022-10-25",
         "aum": None,
         "is_qdii": True,
         "is_cross_border": True,
@@ -421,3 +430,64 @@ ETF_REGISTRY = (
 def build_metadata_frame() -> pd.DataFrame:
     """Return the ETF registry as a normalized frame."""
     return pd.DataFrame(ETF_REGISTRY, columns=WRAPPER_COLUMNS)
+
+
+# What the exchange's own name for a fund must contain for it to belong to an
+# exposure. The registry above is hand-maintained, so nothing stopped a
+# semiconductor ETF sitting in the S&P 500 cohort for as long as nobody
+# eyeballed a chart. Reconciling against the venue's naming is the check that
+# does not depend on anyone eyeballing anything.
+EXPOSURE_NAME_TOKENS: dict[str, tuple[str, ...]] = {
+    "csi300": ("沪深300",),
+    "csi500": ("中证500",),
+    "csi1000": ("中证1000",),
+    "dividend": ("红利",),
+    "growth": ("科创50", "科创板50"),
+    "hstech": ("恒生科技",),
+    "hsi": ("恒生",),
+    "ndx": ("纳指", "纳斯达克"),
+    "sp500": ("标普500",),
+}
+
+
+def reconcile_registry_names(
+    metadata: pd.DataFrame,
+    spot: pd.DataFrame,
+) -> list[dict[str, str]]:
+    """Registry rows whose exposure the venue's own fund name contradicts.
+
+    Empty means every wrapper's exchange name carries a token consistent with
+    the exposure it is filed under. A row the spot feed does not mention is
+    not a contradiction -- it is an absence -- and is left to coverage
+    reporting.
+    """
+    if metadata.empty or spot.empty or "fund_name" not in spot.columns:
+        return []
+    exchange_names = {
+        str(row.ticker).split(".")[0].zfill(6): str(row.fund_name)
+        for row in spot.itertuples()
+        if getattr(row, "ticker", None) is not None
+    }
+    problems: list[dict[str, str]] = []
+    for row in metadata.itertuples():
+        tokens = EXPOSURE_NAME_TOKENS.get(str(row.exposure_id))
+        if not tokens:
+            continue
+        exchange_name = exchange_names.get(str(row.fund_id).zfill(6))
+        if exchange_name is None:
+            continue
+        matched = any(token in exchange_name for token in tokens)
+        # 恒生科技 contains 恒生, so the broad Hang Seng cohort has to exclude
+        # the tech index explicitly or a tech wrapper would pass as broad.
+        if matched and str(row.exposure_id) == "hsi" and "恒生科技" in exchange_name:
+            matched = False
+        if not matched:
+            problems.append(
+                {
+                    "exposure_id": str(row.exposure_id),
+                    "fund_id": str(row.fund_id),
+                    "registry_name": str(row.fund_name),
+                    "exchange_name": exchange_name,
+                }
+            )
+    return problems

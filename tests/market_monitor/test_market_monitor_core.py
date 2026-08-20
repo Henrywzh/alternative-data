@@ -851,3 +851,193 @@ def test_etf_prices_key_on_the_same_id_as_wrapper_metrics():
     rows = builder._chart_series(prices, "fund_id", "close", id_as="ticker")
 
     assert {row["ticker"] for row in rows} == {"159919", "510300"}
+
+
+def test_registry_is_reconciled_against_the_exchanges_own_fund_name():
+    """513310 sat in the S&P 500 cohort as "景顺长城标普500ETF(QDII)".
+
+    It is 中韩半导体ETF华泰柏瑞, a China/Korea semiconductor fund: +271% over
+    two years against the index's +38%, correlating 0.13 with what it was
+    filed under. Nothing detected it because the universe is hand-typed and
+    the only check was someone looking at a chart.
+    """
+    from market_monitor.metadata import reconcile_registry_names
+
+    metadata = pd.DataFrame(
+        [
+            {"exposure_id": "sp500", "fund_id": "513500", "fund_name": "博时标普500ETF(QDII)"},
+            {"exposure_id": "sp500", "fund_id": "513310", "fund_name": "景顺长城标普500ETF(QDII)"},
+            {"exposure_id": "csi300", "fund_id": "510300", "fund_name": "华泰柏瑞沪深300ETF"},
+        ]
+    )
+    spot = pd.DataFrame(
+        [
+            {"ticker": "513500", "fund_name": "标普500ETF博时"},
+            {"ticker": "513310", "fund_name": "中韩半导体ETF华泰柏瑞"},
+            {"ticker": "510300", "fund_name": "沪深300ETF华泰柏瑞"},
+        ]
+    )
+
+    problems = reconcile_registry_names(metadata, spot)
+
+    assert [p["fund_id"] for p in problems] == ["513310"]
+    assert problems[0]["exchange_name"] == "中韩半导体ETF华泰柏瑞"
+    # Word order differs between our naming and the venue's; that is not a
+    # contradiction and must not be reported as one.
+    assert all(p["fund_id"] != "510300" for p in problems)
+
+
+def test_hang_seng_cohort_does_not_swallow_hang_seng_tech():
+    """恒生科技 contains 恒生, so the broad cohort needs the explicit exclusion."""
+    from market_monitor.metadata import reconcile_registry_names
+
+    metadata = pd.DataFrame(
+        [{"exposure_id": "hsi", "fund_id": "513180", "fund_name": "华夏恒生ETF"}]
+    )
+    spot = pd.DataFrame([{"ticker": "513180", "fund_name": "恒生科技ETF华夏"}])
+
+    assert reconcile_registry_names(metadata, spot)
+
+
+def test_every_exposure_has_a_name_token_to_reconcile_against():
+    """A new exposure without tokens would be silently exempt from the check."""
+    from market_monitor.config import EXPOSURES
+    from market_monitor.metadata import EXPOSURE_NAME_TOKENS
+
+    missing = [
+        spec["exposure_id"]
+        for spec in EXPOSURES
+        if spec["exposure_id"] not in EXPOSURE_NAME_TOKENS
+    ]
+    assert not missing, f"no fund-name token declared for {missing}"
+
+
+def test_shipped_registry_agrees_with_itself():
+    """Our own fund_name must carry the token of the exposure it is filed under."""
+    from market_monitor.metadata import EXPOSURE_NAME_TOKENS, build_metadata_frame
+
+    frame = build_metadata_frame()
+    wrong = [
+        (row.exposure_id, row.fund_id, row.fund_name)
+        for row in frame.itertuples()
+        if not any(token in str(row.fund_name) for token in EXPOSURE_NAME_TOKENS[row.exposure_id])
+    ]
+    assert not wrong, f"registry names contradict their exposure: {wrong}"
+
+
+def test_premium_from_nav_prices_the_wrapper_against_its_own_valuation():
+    from market_monitor.sources.eastmoney_nav import premium_from_nav
+
+    prices = pd.DataFrame(
+        [
+            {"date": "2026-08-17", "fund_id": "513500", "close": 2.748},
+            {"date": "2026-08-18", "fund_id": "513500", "close": 2.688},
+            # No NAV published for this day: an inner join must drop it rather
+            # than emit a gap in a series meant to be continuous.
+            {"date": "2026-08-19", "fund_id": "513500", "close": 2.642},
+        ]
+    )
+    nav = pd.DataFrame(
+        [
+            {"fund_id": "513500", "date": "2026-08-17", "nav": 2.4847},
+            {"fund_id": "513500", "date": "2026-08-18", "nav": 2.4683},
+        ]
+    )
+
+    out = premium_from_nav(prices, nav)
+
+    assert out["date"].tolist() == ["2026-08-17", "2026-08-18"]
+    assert out["premium_pct"].round(2).tolist() == [10.60, 8.90]
+    assert set(out["basis"]) == {"nav"}
+
+
+def test_premium_from_nav_refuses_a_non_positive_nav():
+    """A zero NAV would render as a -100% premium instead of as missing."""
+    from market_monitor.sources.eastmoney_nav import premium_from_nav
+
+    prices = pd.DataFrame([{"date": "2026-08-18", "fund_id": "513500", "close": 2.688}])
+    nav = pd.DataFrame([{"fund_id": "513500", "date": "2026-08-18", "nav": 0.0}])
+
+    assert premium_from_nav(prices, nav).empty
+
+
+def test_premium_history_prefers_nav_and_keeps_iopv_for_the_tail(tmp_path, monkeypatch):
+    """NAV is the fund's own valuation, so it wins where both describe a day.
+
+    IOPV still carries today and the extra session a QDII lags by, which NAV
+    has not published yet.
+    """
+    from market_monitor import pipeline as pl
+    from market_monitor.sources import eastmoney_nav
+
+    meta = pd.DataFrame(
+        [{"ticker": "513500.SH", "fund_id": "513500", "exposure_id": "sp500"}]
+    )
+    prices = pd.DataFrame(
+        [
+            {"date": "2026-08-17", "fund_id": "513500", "close": 2.748},
+            {"date": "2026-08-18", "fund_id": "513500", "close": 2.688},
+            {"date": "2026-08-19", "fund_id": "513500", "close": 2.642},
+        ]
+    )
+    spot = pd.DataFrame(
+        [{"ticker": "513500", "premium_pct": 99.0, "spread_bp": 3.8, "market_price": 2.642}]
+    )
+
+    monkeypatch.setattr(
+        eastmoney_nav,
+        "fetch_nav_history",
+        lambda fund_id, start, end, session=None, pause=0.0: pd.DataFrame(
+            [
+                {"fund_id": "513500", "date": "2026-08-17", "nav": 2.4847},
+                {"fund_id": "513500", "date": "2026-08-18", "nav": 2.4683},
+            ]
+        ),
+    )
+    monkeypatch.setattr(pl, "_premium_rows_from_raw_snapshots", lambda tracked: [])
+    monkeypatch.setattr(pl, "load_latest_derived", lambda name: None)
+
+    # The snapshot is taken on the 18th, a day NAV has also published, so the
+    # two measurements collide there on purpose.
+    same_day = pl._build_premium_history(meta, spot, "2026-08-18", prices=prices)
+    row = same_day.set_index("date").loc["2026-08-18"]
+    assert row["basis"] == "nav", "the fund's own valuation must win over IOPV"
+    assert round(float(row["premium_pct"]), 2) == 8.90
+
+    # Taken on the 19th, which NAV has not reached: IOPV holds the tail so the
+    # series still ends on the latest session.
+    tail = pl._build_premium_history(meta, spot, "2026-08-19", prices=prices)
+    by_date = tail.set_index("date")
+    assert sorted(by_date.index) == ["2026-08-17", "2026-08-18", "2026-08-19"]
+    assert by_date.loc["2026-08-19", "basis"] == "iopv"
+    assert by_date.loc["2026-08-18", "basis"] == "nav"
+
+
+def test_premium_history_only_refetches_the_nav_tail(monkeypatch):
+    """A full 2-year backfill is 25 pages per fund; do it once, not daily."""
+    from market_monitor import pipeline as pl
+    from market_monitor.sources import eastmoney_nav
+
+    meta = pd.DataFrame([{"ticker": "513500.SH", "fund_id": "513500"}])
+    prices = pd.DataFrame([{"date": "2026-08-18", "fund_id": "513500", "close": 2.688}])
+    previous = pd.DataFrame(
+        [
+            {"date": "2026-08-17", "ticker": "513500", "fund_id": "513500",
+             "premium_pct": 10.6, "spread_bp": float("nan"),
+             "market_price": float("nan"), "basis": "nav"},
+        ]
+    )
+
+    windows: list[str] = []
+
+    def _record(fund_id, start, end, session=None, pause=0.0):
+        windows.append(start)
+        return pd.DataFrame(columns=["fund_id", "date", "nav"])
+
+    monkeypatch.setattr(eastmoney_nav, "fetch_nav_history", _record)
+
+    pl._nav_premium_rows(meta, prices, previous)
+
+    assert windows, "the tail must still be refreshed"
+    # Ten days back from the newest stored NAV, not two years back.
+    assert windows[0] == "2026-08-07"

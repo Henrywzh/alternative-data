@@ -13,12 +13,13 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
+import requests
 
 from .config import EXPOSURES, DERIVED_DIR, NORMALIZED_DIR, RAW_DIR
-from .metadata import build_metadata_frame
+from .metadata import build_metadata_frame, reconcile_registry_names
 from .ranking import rank_wrappers
 from .relative_strength import build_relative_regime, compute_spread_metrics
-from .sources import akshare_etf, yfinance
+from .sources import akshare_etf, eastmoney_nav, yfinance
 from .storage import (
     load_latest_derived,
     load_latest_normalized,
@@ -50,7 +51,7 @@ def _iso_start() -> str:
     return (date.today() - timedelta(days=730)).strftime("%Y-%m-%d")
 
 
-PREMIUM_HISTORY_COLUMNS = ["date", "fund_id", "ticker", "premium_pct", "spread_bp", "market_price"]
+PREMIUM_HISTORY_COLUMNS = ["date", "fund_id", "ticker", "premium_pct", "spread_bp", "market_price", "basis"]
 
 
 def _premium_rows_from_raw_snapshots(tracked: set[str]) -> list[dict]:
@@ -101,7 +102,82 @@ def _premium_rows(spot: pd.DataFrame, observation_date: str) -> list[dict]:
     ]
 
 
-def _build_premium_history(meta: pd.DataFrame, spot: pd.DataFrame, observation_date: str) -> pd.DataFrame:
+# How far back a first run reconstructs premium from published NAV. Matches
+# the price window, so the premium series and the price series cover the same
+# ground instead of one silently ending earlier than the other.
+NAV_BACKFILL_DAYS = 730
+# Re-fetch a short tail on every run rather than only strictly-new dates: a
+# fund can publish a late or corrected NAV for a day already stored, and an
+# overlap picks the correction up.
+NAV_REFRESH_TAIL_DAYS = 10
+
+
+def _nav_premium_rows(
+    meta: pd.DataFrame,
+    prices: pd.DataFrame,
+    previous: pd.DataFrame | None,
+) -> list[dict]:
+    """Premium reconstructed from published NAV, for every tracked wrapper.
+
+    IOPV only ever yields today, so a snapshot-fed series grows one row per
+    run and a fresh deployment has a flat line. Published NAV goes back years,
+    so this recovers the whole history in one pass and then only tops up.
+    """
+    if prices is None or prices.empty or "fund_id" not in prices.columns:
+        return []
+
+    already: dict[str, str] = {}
+    if previous is not None and not previous.empty and "basis" in previous.columns:
+        nav_rows = previous[previous["basis"].eq("nav")]
+        if not nav_rows.empty:
+            already = nav_rows.groupby("ticker")["date"].max().astype(str).to_dict()
+
+    default_start = (date.today() - timedelta(days=NAV_BACKFILL_DAYS)).strftime("%Y-%m-%d")
+    end = date.today().strftime("%Y-%m-%d")
+    session = requests.Session()
+
+    rows: list[dict] = []
+    for record in meta.to_dict("records"):
+        fund_id = str(record["fund_id"]).zfill(6)
+        stored = already.get(fund_id)
+        if stored:
+            start = (
+                pd.Timestamp(stored) - pd.Timedelta(days=NAV_REFRESH_TAIL_DAYS)
+            ).strftime("%Y-%m-%d")
+        else:
+            start = default_start
+        try:
+            nav = eastmoney_nav.fetch_nav_history(fund_id, start, end, session=session)
+        except Exception as exc:  # noqa: BLE001 - one fund must not stop the run
+            print(f"  [market_monitor] nav fetch failed {fund_id}: {exc}")
+            continue
+        fund_prices = prices[prices["fund_id"].astype(str).str.zfill(6).eq(fund_id)]
+        premium = eastmoney_nav.premium_from_nav(fund_prices, nav)
+        if premium.empty and not fund_prices.empty and not stored:
+            # A fund that trades but returns no NAV at all is a fetch problem,
+            # not an absence. Left silent it shows up as one fund with a flat
+            # two-day line next to twenty-two with two years.
+            print(f"  [market_monitor] no NAV history resolved for {fund_id}")
+        for row in premium.to_dict("records"):
+            rows.append(
+                {
+                    "date": row["date"],
+                    "ticker": fund_id,
+                    "premium_pct": row["premium_pct"],
+                    "spread_bp": float("nan"),
+                    "market_price": float("nan"),
+                    "basis": "nav",
+                }
+            )
+    return rows
+
+
+def _build_premium_history(
+    meta: pd.DataFrame,
+    spot: pd.DataFrame,
+    observation_date: str,
+    prices: pd.DataFrame | None = None,
+) -> pd.DataFrame:
     """Accumulate a per-fund premium series across runs.
 
     The history is carried by the derived snapshot itself: each run loads the
@@ -123,6 +199,15 @@ def _build_premium_history(meta: pd.DataFrame, spot: pd.DataFrame, observation_d
     previous = load_latest_derived("premium_history")
     rows = _premium_rows_from_raw_snapshots(tracked)
     rows.extend(row for row in _premium_rows(spot, observation_date) if row["ticker"] in tracked)
+    for row in rows:
+        row.setdefault("basis", "iopv")
+
+    # NAV rows are appended after the IOPV rows so that, where both describe
+    # the same day, the fund's own end-of-day valuation wins the de-duplication
+    # below. IOPV still carries the days NAV has not published yet -- today,
+    # and the extra session a QDII lags by.
+    nav_rows = _nav_premium_rows(meta, prices, previous) if prices is not None else []
+    rows.extend(row for row in nav_rows if row["ticker"] in tracked)
 
     frames = [frame for frame in (previous, pd.DataFrame(rows)) if frame is not None and not frame.empty]
     if not frames:
@@ -130,6 +215,9 @@ def _build_premium_history(meta: pd.DataFrame, spot: pd.DataFrame, observation_d
     history = pd.concat(frames, ignore_index=True)
     history = history[[c for c in PREMIUM_HISTORY_COLUMNS if c in history.columns]]
     history["ticker"] = history["ticker"].astype(str).str.zfill(6)
+    if "basis" not in history.columns:
+        history["basis"] = "iopv"
+    history["basis"] = history["basis"].fillna("iopv")
     history["fund_id"] = history["ticker"].map(fund_map)
     # A fund that has left the tracked universe keeps its past observations out
     # of the series rather than sitting in it with a null fund_id.
@@ -217,6 +305,26 @@ def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, 
         print(f"  [market_monitor] etf spot fetch failed: {exc}")
         raw["etf_spot"] = pd.DataFrame()
         fetch_errors.append({"dataset": "etf_spot", "error": f"{type(exc).__name__}: {exc}"})
+
+    # --- Registry reconciliation ---
+    # The wrapper universe is hand-maintained, so the only thing that had been
+    # checking it against reality was someone looking at a chart. Compare it
+    # to the venue's own fund names on every run and report a contradiction
+    # the same way a failed fetch is reported, so it reaches Source Health.
+    for problem in reconcile_registry_names(meta, raw["etf_spot"]):
+        message = (
+            f"registry says {problem['fund_id']} is {problem['registry_name']} "
+            f"under {problem['exposure_id']}, exchange says {problem['exchange_name']}"
+        )
+        print(f"  [market_monitor] registry mismatch: {message}")
+        fetch_errors.append(
+            {
+                "dataset": "etf_spot",
+                "exposure_id": problem["exposure_id"],
+                "ticker": problem["fund_id"],
+                "error": f"RegistryMismatch: {message}",
+            }
+        )
 
     return raw
 
@@ -346,7 +454,7 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
 
     # Premium history, accumulated across runs (see _build_premium_history).
     premium_history = _build_premium_history(
-        meta, raw.get("etf_spot", pd.DataFrame()), as_of_date
+        meta, raw.get("etf_spot", pd.DataFrame()), as_of_date, prices=normalized_etf
     )
     results["premium_history"] = premium_history
 
