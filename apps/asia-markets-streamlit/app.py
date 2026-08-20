@@ -18,6 +18,7 @@ from typing import Any, Iterable
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import streamlit as st
 
 
@@ -976,9 +977,46 @@ def chart_theme(fig: Any, value_format: str = "number", date_axis: bool = True, 
     return fig
 
 
+def date_hover_format(dates: pd.Series) -> str:
+    """Tooltip date format for a series, chosen by its grain.
+
+    Keyed off the spacing between observations, not the total span. The old
+    rule dropped the day from the tooltip once a series ran longer than 550
+    days, which is backwards: axis *ticks* have to coarsen as the span grows
+    because they collide with each other, but a tooltip shows one point and
+    never collides. A daily series needs its day at any span -- which is why
+    two years of daily ETF prices hovered as a bare "Aug 2026".
+    """
+    ordered = pd.Series(pd.to_datetime(dates, errors="coerce")).dropna().drop_duplicates().sort_values()
+    if len(ordered) < 2:
+        return "%d %b %Y"
+    spacing = ordered.diff().dropna().median()
+    if spacing >= pd.Timedelta(days=350):
+        return "%Y"
+    if spacing >= pd.Timedelta(days=25):
+        return "%b %Y"
+    return "%d %b %Y"
+
+
+def date_tick_format(dates: pd.Series) -> str:
+    """Axis tick format: coarse enough not to collide, fine enough to place.
+
+    A short daily window labelled "%b %Y" repeats one month across every tick,
+    which is what the premium chart showed on its first two days of history.
+    """
+    ordered = pd.Series(pd.to_datetime(dates, errors="coerce")).dropna().sort_values()
+    if ordered.empty:
+        return "%b %Y"
+    span = ordered.max() - ordered.min()
+    if span <= pd.Timedelta(days=120):
+        return "%d %b"
+    if span <= pd.Timedelta(days=1100):
+        return "%b %Y"
+    return "%Y"
+
+
 def apply_line_hover(fig: Any, frame: pd.DataFrame, value_format: str) -> None:
-    span = frame["_date"].max() - frame["_date"].min()
-    x_format = "%d %b %Y" if span <= pd.Timedelta(days=550) else "%b %Y"
+    x_format = date_hover_format(frame["_date"])
     y_format = ".1%" if value_format == "percent" else ",.1f"
     for trace in fig.data:
         series_name = trace.name or "Value"
@@ -3423,8 +3461,12 @@ def render_market_index_detail(
     history_window_name: str,
     etf_prices: pd.DataFrame | None = None,
     premium_history: pd.DataFrame | None = None,
+    rsi_window: int = 14,
+    ma_window: int = 20,
+    rsi_upper: float = 70.0,
+    rsi_lower: float = 30.0,
 ) -> None:
-    """One index: price, all ETF wrappers on it, premium history, and RSI."""
+    """One index: price and RSI on a shared axis, its ETF wrappers, premiums."""
     series = prices[prices["exposure_id"].eq(exposure_id)].sort_values("_date").copy()
     windowed, coverage = history_window(series, "date", history_window_name)
 
@@ -3455,54 +3497,83 @@ def render_market_index_detail(
             display = "—" if value is None or pd.isna(value) else fmt.format(float(value))
             column.metric(tr(language, en, zh), display)
 
-    # --- Index price + MA ---
+    # --- Index price + RSI, one figure, one shared date axis ---
+    # Price and RSI used to be two figures. Reading "what was RSI on the day
+    # of that drawdown" then meant matching two x-axes by eye; on a shared
+    # axis with unified hover the crosshair answers it directly.
     if not windowed.empty:
-        plot = windowed[["_date", "close"]].copy()
-        plot["MA20"] = plot["close"].rolling(20).mean()
-        long_form = plot.melt(id_vars="_date", var_name="series", value_name="_value").dropna(subset=["_value"])
-        long_form["series"] = long_form["series"].map(
-            {
-                "close": tr(language, "Close", "收盘"),
-                "MA20": tr(language, "MA20", "20日均线"),
-            }
-        ).fillna(long_form["series"])
+        tick_format = date_tick_format(windowed["_date"])
+        hover_format = date_hover_format(windowed["_date"])
+
+        # RSI is computed on the full series and only then windowed, so the
+        # first plotted day already carries its warm-up rather than starting
+        # from an undefined average.
+        rsi_full = _compute_rsi_series(series.set_index("_date")["close"], window=rsi_window)
+        rsi = rsi_full.reindex(windowed["_date"]).dropna()
+        has_rsi = not rsi.empty
+
+        rows = 2 if has_rsi else 1
+        fig = make_subplots(
+            rows=rows,
+            cols=1,
+            shared_xaxes=True,
+            vertical_spacing=0.06,
+            row_heights=[0.72, 0.28] if has_rsi else [1.0],
+        )
+        ma_label = tr(language, f"MA{ma_window}", f"{ma_window}日均线")
+        ma = windowed.set_index("_date")["close"].rolling(ma_window).mean()
+        for name, values, width in (
+            (tr(language, "Close", "收盘"), windowed.set_index("_date")["close"], 1.8),
+            (ma_label, ma, 1.0),
+        ):
+            fig.add_trace(
+                go.Scatter(
+                    x=values.index,
+                    y=values.values,
+                    mode="lines",
+                    name=name,
+                    line=dict(width=width),
+                    hovertemplate=f"{name}: %{{y:,.2f}}<extra></extra>",
+                ),
+                row=1,
+                col=1,
+            )
+        fig.update_yaxes(title=tr(language, "Index level", "指数点位"), row=1, col=1)
+
+        if has_rsi:
+            fig.add_trace(
+                go.Scatter(
+                    x=rsi.index,
+                    y=rsi.values,
+                    mode="lines",
+                    name=f"RSI({rsi_window})",
+                    line=dict(width=1.4),
+                    hovertemplate=f"RSI({rsi_window}): %{{y:.1f}}<extra></extra>",
+                ),
+                row=2,
+                col=1,
+            )
+            fig.add_hrect(y0=rsi_upper, y1=100, fillcolor="#EF4444", opacity=0.06, line_width=0, row=2, col=1)
+            fig.add_hrect(y0=0, y1=rsi_lower, fillcolor="#10B981", opacity=0.06, line_width=0, row=2, col=1)
+            fig.add_hline(y=rsi_upper, line_dash="dot", line_color="#D1D5DB", line_width=0.5, row=2, col=1)
+            fig.add_hline(y=rsi_lower, line_dash="dot", line_color="#D1D5DB", line_width=0.5, row=2, col=1)
+            fig.update_yaxes(title="RSI", range=[0, 100], row=2, col=1)
+
+        fig.update_xaxes(title=None, tickformat=tick_format, row=rows, col=1)
+        fig.update_layout(hovermode="x unified", hoverlabel=dict(namelength=-1))
+        fig.update_xaxes(hoverformat=hover_format)
+
         st.markdown(
-            f'<div class="am-chart-title">{escape(label)} — {tr(language, "price", "价格")}</div>',
+            f'<div class="am-chart-title">{escape(label)} — '
+            f'{tr(language, "price and RSI", "价格与 RSI")}</div>',
             unsafe_allow_html=True,
         )
         st.caption(coverage)
-        fig = px.line(long_form, x="_date", y="_value", color="series", color_discrete_sequence=PALETTE)
-        fig.update_yaxes(title=tr(language, "Index level", "指数点位"))
-        fig.update_xaxes(title=None, tickformat="%b %Y")
-        apply_line_hover(fig, long_form, "number")
         st.plotly_chart(
-            chart_theme(fig, "number", date_axis=True, height=320),
+            chart_theme(fig, "number", date_axis=True, height=460 if has_rsi else 340),
             width="stretch",
             config={"displaylogo": False, "responsive": True},
         )
-
-    # --- RSI subgraph ---
-    if not series.empty and len(series) >= 15:
-        rsi = _compute_rsi_series(series.set_index("_date")["close"])
-        rsi = rsi.dropna()
-        if not rsi.empty:
-            st.markdown(
-                f'<div class="am-chart-title">{escape(label)} — {tr(language, "RSI (14)", "RSI (14)")}</div>',
-                unsafe_allow_html=True,
-            )
-            fig_rsi = go.Figure()
-            fig_rsi.add_trace(go.Scatter(x=rsi.index, y=rsi.values, mode="lines", name="RSI", line=dict(color=PALETTE[0], width=1.5)))
-            fig_rsi.add_hrect(y0=70, y1=100, fillcolor="#EF4444", opacity=0.06, line_width=0)
-            fig_rsi.add_hrect(y0=0, y1=30, fillcolor="#10B981", opacity=0.06, line_width=0)
-            fig_rsi.add_hline(y=70, line_dash="dot", line_color="#D1D5DB", line_width=0.5)
-            fig_rsi.add_hline(y=30, line_dash="dot", line_color="#D1D5DB", line_width=0.5)
-            fig_rsi.update_yaxes(title="RSI", range=[0, 100])
-            fig_rsi.update_xaxes(title=None, tickformat="%b %Y")
-            st.plotly_chart(
-                chart_theme(fig_rsi, "number", date_axis=True, height=180),
-                width="stretch",
-                config={"displaylogo": False, "responsive": True},
-            )
 
     # --- All ETF prices on this index (rebased to 100) ---
     cohort_tickers: list[str] = []
@@ -3541,7 +3612,8 @@ def render_market_index_detail(
                     )
                     fig_etf.add_hline(y=100.0, line_dash="dot", line_color="#9CA3AF", line_width=1)
                     fig_etf.update_yaxes(title=tr(language, "Rebased level", "归一水平"))
-                    fig_etf.update_xaxes(title=None, tickformat="%b %Y")
+                    fig_etf.update_xaxes(title=None, tickformat=date_tick_format(ep_al["_date"]))
+                    fig_etf.update_xaxes(hoverformat=date_hover_format(ep_al["_date"]))
                     apply_line_hover(fig_etf, ep_al, "number")
                     st.plotly_chart(
                         chart_theme(fig_etf, "number", date_axis=True, height=300),
@@ -3574,7 +3646,8 @@ def render_market_index_detail(
                 )
                 fig_ph.add_hline(y=0.0, line_dash="dot", line_color="#9CA3AF", line_width=1)
                 fig_ph.update_yaxes(title=tr(language, "Premium %", "溢价率 %"))
-                fig_ph.update_xaxes(title=None, tickformat="%b %Y")
+                fig_ph.update_xaxes(title=None, tickformat=date_tick_format(ph_windowed["_date"]))
+                fig_ph.update_xaxes(hoverformat=date_hover_format(ph_windowed["_date"]))
                 st.plotly_chart(
                     chart_theme(fig_ph, "number", date_axis=True, height=280),
                     width="stretch",
@@ -3762,6 +3835,32 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
                 key="market_index_select",
                 format_func=lambda e: f"{label_by_exposure.get(e, e)} ({wrapper_counts.get(e, 0)} ETF)",
             )
+            with st.expander(tr(language, "Indicator settings", "指标参数"), expanded=False):
+                setting_columns = st.columns(4)
+                rsi_window = setting_columns[0].number_input(
+                    tr(language, "RSI period", "RSI 周期"),
+                    min_value=2, max_value=100, value=14, step=1, key="market_rsi_window",
+                )
+                ma_window = setting_columns[1].number_input(
+                    tr(language, "MA period", "均线周期"),
+                    min_value=2, max_value=250, value=20, step=1, key="market_ma_window",
+                )
+                rsi_upper = setting_columns[2].number_input(
+                    tr(language, "Overbought", "超买线"),
+                    min_value=50.0, max_value=95.0, value=70.0, step=1.0, key="market_rsi_upper",
+                )
+                rsi_lower = setting_columns[3].number_input(
+                    tr(language, "Oversold", "超卖线"),
+                    min_value=5.0, max_value=50.0, value=30.0, step=1.0, key="market_rsi_lower",
+                )
+                st.caption(
+                    tr(
+                        language,
+                        "Wilder smoothing. The card above keeps the pipeline's RSI(14); "
+                        "these settings apply to the chart.",
+                        "Wilder 平滑。上方卡片仍为管线计算的 RSI(14)；此处参数仅作用于图表。",
+                    )
+                )
             render_market_index_detail(
                 selected,
                 label_by_exposure.get(selected, selected),
@@ -3772,6 +3871,10 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
                 window,
                 etf_prices=etf_prices,
                 premium_history=premium_history,
+                rsi_window=rsi_window,
+                ma_window=ma_window,
+                rsi_upper=rsi_upper,
+                rsi_lower=rsi_lower,
             )
 
 
