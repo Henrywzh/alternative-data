@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import math
+from pathlib import Path
 
 import pandas as pd
 import pytest
@@ -13,8 +14,22 @@ from src.common.backtest.metrics import compute_error_intervals, compute_metric_
 from src.common.backtest.vocabulary import canonicalize_unit
 
 
+METRICS_CSV = Path("data/registries/asia_backtest_metrics.csv")
+
+
 def _metrics() -> pd.DataFrame:
-    return pd.read_csv("data/registries/asia_backtest_metrics.csv")
+    """The built metric table, built here if no earlier test happened to.
+
+    data/registries is gitignored, so on a fresh checkout this file exists
+    only because some other test in this module called build_metrics() first.
+    Several tests read it without doing so, which made them pass or fail on
+    how pytest-xdist happened to distribute the module: adding tests anywhere
+    in the suite could flip them. A reader that guarantees its own input has
+    no such dependency.
+    """
+    if not METRICS_CSV.is_file():
+        build_metrics()
+    return pd.read_csv(METRICS_CSV)
 
 
 def _synthetic_row(
