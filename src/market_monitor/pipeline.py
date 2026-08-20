@@ -15,10 +15,15 @@ from typing import Any
 import pandas as pd
 import requests
 
-from .config import EXPOSURES, DERIVED_DIR, NORMALIZED_DIR, RAW_DIR
+from .config import EXPOSURES, DERIVED_DIR, NORMALIZED_DIR, RAW_DIR, investable_exposures
 from .metadata import build_metadata_frame, reconcile_registry_names
 from .ranking import rank_wrappers
-from .relative_strength import build_relative_regime, compute_spread_metrics
+from .relative_strength import (
+    build_pair_history,
+    build_pair_summary,
+    build_relative_regime,
+    compute_spread_metrics,
+)
 from .sources import akshare_etf, eastmoney_nav, yfinance
 from .storage import (
     load_latest_derived,
@@ -40,15 +45,34 @@ RUN_RETENTION = 5
 # yfinance ticker per exposure. Keyed off exposure_id rather than inlined in a
 # conditional so a new US index is a one-line addition beside its price_source
 # declaration instead of another branch to remember.
-YFINANCE_SYMBOLS = {"sp500": "^GSPC", "ndx": "^NDX"}
+# yfinance symbols are declared on the exposure itself; this map is derived so
+# that adding a US series means editing one place.
+YFINANCE_SYMBOLS = {
+    spec["exposure_id"]: spec.get("yf_symbol") or spec["index_id"]
+    for spec in EXPOSURES
+    if spec["price_source"] == "yfinance"
+}
+
+# Index history runs deeper than the ETF history on purpose. The relative
+# regime z-scores measure a ratio against its own trailing year, so a two-year
+# store yields only about one year of z-score -- the first year is spent
+# filling the baseline. Five years gives the pair charts a z-score over their
+# whole displayed window. Indices are a handful of thin series, so the extra
+# depth is cheap; ETF prices stay at two years.
+INDEX_HISTORY_DAYS = 1825
+ETF_HISTORY_DAYS = 730
 
 
 def _last_2y_start() -> str:
-    return (date.today() - timedelta(days=730)).strftime("%Y%m%d")
+    return (date.today() - timedelta(days=ETF_HISTORY_DAYS)).strftime("%Y%m%d")
+
+
+def _index_start() -> str:
+    return (date.today() - timedelta(days=INDEX_HISTORY_DAYS)).strftime("%Y%m%d")
 
 
 def _iso_start() -> str:
-    return (date.today() - timedelta(days=730)).strftime("%Y-%m-%d")
+    return (date.today() - timedelta(days=INDEX_HISTORY_DAYS)).strftime("%Y-%m-%d")
 
 
 PREMIUM_HISTORY_COLUMNS = ["date", "fund_id", "ticker", "premium_pct", "spread_bp", "market_price", "basis"]
@@ -229,7 +253,10 @@ def _build_premium_history(
 
 def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, ...] | None = None, etf_only: tuple[str, ...] | None = None) -> dict[str, Any]:
     """Call the source layers; return raw frames keyed by dataset name."""
-    start = start_date or _last_2y_start()
+    # Indices reach back five years for the z-score baseline; the ETF loop
+    # below keeps its own two-year window.
+    start = start_date or _index_start()
+    etf_start = start_date or _last_2y_start()
     raw: dict[str, Any] = {}
     # A source that fails used to be printed and nothing else, so an exposure
     # simply stopped appearing downstream with no record of why. Collected here
@@ -283,7 +310,7 @@ def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, 
         if etf_only and row["ticker"] not in etf_only:
             continue
         try:
-            frame = akshare_etf.fetch_etf_daily(row["ticker"], start_date=start)
+            frame = akshare_etf.fetch_etf_daily(row["ticker"], start_date=etf_start)
             if frame is not None and not frame.empty:
                 frame = frame.copy()
                 frame["fund_id"] = row["fund_id"]
@@ -402,8 +429,11 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
     results["etf_price_daily"] = normalized_etf
 
     # Derived: per-exposure technical snapshot (latest row).
+    # Investable exposures only: a benchmark exists to be one leg of a ratio,
+    # has no ETF wrapper behind it, and would show up on the ETF monitor as an
+    # index you cannot buy.
     tech_rows: list[dict[str, Any]] = []
-    for spec in EXPOSURES:
+    for spec in investable_exposures():
         exposure = spec["exposure_id"]
         if limit_exposures and exposure not in limit_exposures:
             continue
@@ -432,6 +462,12 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
                 name=exposure,
             )
     results["relative_regime"] = pd.DataFrame(build_relative_regime(close_by_exposure))
+    # The ratio behind each pair, not only today's z-score. A bar chart of one
+    # number cannot say whether -0.3 is the end of a year-long slide or the
+    # end of a bounce.
+    pair_history = build_pair_history(close_by_exposure)
+    results["relative_pair_history"] = pair_history
+    results["relative_pairs"] = build_pair_summary(close_by_exposure, pair_history)
 
     # Derived: wrapper metrics + ranking.
     wrapper = merge_premium(raw.get("etf_spot", pd.DataFrame()), meta)
@@ -470,12 +506,19 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
         run_info["relative_regime"] = save_derived("relative_regime", results["relative_regime"], metadata={"type": "derived", "run_scope": run_scope}, run_id=run_id) if not results["relative_regime"].empty else None
         run_info["wrapper_metrics"] = save_derived("wrapper_metrics", ranked, metadata={"type": "derived", "run_scope": run_scope}, run_id=run_id) if not ranked.empty else None
         run_info["premium_history"] = save_derived("premium_history", premium_history, metadata={"type": "derived", "run_scope": run_scope}, run_id=run_id) if not premium_history.empty else None
+        run_info["relative_pairs"] = save_derived("relative_pairs", results["relative_pairs"], metadata={"type": "derived", "run_scope": run_scope}, run_id=run_id) if not results["relative_pairs"].empty else None
+        run_info["relative_pair_history"] = save_derived("relative_pair_history", results["relative_pair_history"], metadata={"type": "derived", "run_scope": run_scope}, run_id=run_id) if not results["relative_pair_history"].empty else None
         results["_run"] = run_info
         # Bounded retention. Every run writes the complete history rather than
         # a delta, so old snapshots are pure duplication; see prune_runs.
         pruned: dict[str, list[str]] = {}
         for root, datasets in ((NORMALIZED_DIR, ("index_price_daily", "etf_price_daily")),
-                               (DERIVED_DIR, ("exposure_technicals", "relative_regime", "wrapper_metrics")),
+                               # premium_history was missing here, so the one
+                               # dataset that carries a full 11k-row series
+                               # kept every run it had ever written while the
+                               # small ones were capped at five.
+                               (DERIVED_DIR, ("exposure_technicals", "relative_regime", "wrapper_metrics",
+                                              "premium_history", "relative_pairs", "relative_pair_history")),
                                (RAW_DIR, ("index_close", "etf_close", "etf_spot"))):
             for dataset_name in datasets:
                 dropped = prune_runs(root, dataset_name, keep=RUN_RETENTION)

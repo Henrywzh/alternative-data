@@ -36,6 +36,12 @@ FUND_ID = "fund_id"
 # 501 rows of an index it does not serve -- the same mistake cd09fd40 fixed for
 # S&P 500, re-made by the next US index. A per-exposure declaration cannot
 # drift that way: a new index has to state where it comes from.
+# ``role`` separates the two kinds of series this pipeline carries.
+# "exposure" is something you can actually buy through a tracked ETF wrapper
+# and appears on the ETF monitor. "benchmark" exists only as one leg of a
+# relative-strength pair -- there is no wrapper cohort for it and it gets no
+# technical card -- but it is fetched, normalised and coverage-checked exactly
+# like an exposure, so a benchmark cannot silently stop updating.
 EXPOSURES = (
     {
         "exposure_id": "csi300",
@@ -126,6 +132,7 @@ EXPOSURES = (
         "style": "Tech / Growth",
         "risk_character": "Global core",
         "index_id": "NDX",
+        "yf_symbol": "^NDX",
     },
     {
         "exposure_id": "sp500",
@@ -137,6 +144,183 @@ EXPOSURES = (
         "style": "Broad",
         "risk_character": "Global core",
         "index_id": "SPX",
+        # index_id is the index's own name; yf_symbol is what the provider
+        # calls it. Deriving the provider symbol from index_id turned "SPX"
+        # into a delisted-ticker warning and an empty frame.
+        "yf_symbol": "^GSPC",
+    },
+    # --- Benchmarks: relative-strength legs, not investable exposures ---
+    # Verified live on 2026-08-20. The obvious alternatives are traps: Sina
+    # answers 200 for 中证800成长 (000967) and 中证800价值 (000969) but stopped
+    # updating them in 2016 and 2019, so a style pair built on them would have
+    # frozen without ever erroring.
+    {
+        "exposure_id": "chinext",
+        "role": "benchmark",
+        "price_source": "sina",
+        "label": "ChiNext",
+        "label_zh": "创业板指",
+        "region": "China",
+        "size": "Broad",
+        "style": "Growth",
+        "risk_character": "Offensive",
+        "index_id": "399006.SZ",
+    },
+    {
+        "exposure_id": "cn_infotech",
+        "role": "benchmark",
+        "price_source": "sina",
+        "label": "CN Info Tech",
+        "label_zh": "全指信息",
+        "region": "China",
+        "size": "Broad",
+        "style": "Sector",
+        "risk_character": "Offensive",
+        "index_id": "000993.SH",
+    },
+    {
+        "exposure_id": "cn_staples",
+        "role": "benchmark",
+        "price_source": "sina",
+        "label": "CN Consumer Staples",
+        "label_zh": "中证主要消费",
+        "region": "China",
+        "size": "Broad",
+        "style": "Sector",
+        "risk_character": "Defensive",
+        "index_id": "000932.SH",
+    },
+    {
+        "exposure_id": "us_broad",
+        "role": "benchmark",
+        "price_source": "yfinance",
+        "label": "S&P 500 (SPY)",
+        "label_zh": "标普500 (SPY)",
+        "region": "US",
+        "size": "Broad",
+        "style": "Broad",
+        "risk_character": "Core",
+        "index_id": "SPY",
+    },
+    {
+        "exposure_id": "us_equal_weight",
+        "role": "benchmark",
+        "price_source": "yfinance",
+        "label": "S&P 500 equal weight",
+        "label_zh": "标普500等权",
+        "region": "US",
+        "size": "Broad",
+        "style": "Broad",
+        "risk_character": "Breadth",
+        "index_id": "RSP",
+    },
+    {
+        "exposure_id": "us_small",
+        "role": "benchmark",
+        "price_source": "yfinance",
+        "label": "Russell 2000",
+        "label_zh": "罗素2000",
+        "region": "US",
+        "size": "Small",
+        "style": "Broad",
+        "risk_character": "Core",
+        "index_id": "IWM",
+    },
+    {
+        "exposure_id": "us_growth",
+        "role": "benchmark",
+        "price_source": "yfinance",
+        "label": "Russell 1000 Growth",
+        "label_zh": "罗素1000成长",
+        "region": "US",
+        "size": "Broad",
+        "style": "Growth",
+        "risk_character": "Growth",
+        "index_id": "IWF",
+    },
+    {
+        "exposure_id": "us_value",
+        "role": "benchmark",
+        "price_source": "yfinance",
+        "label": "Russell 1000 Value",
+        "label_zh": "罗素1000价值",
+        "region": "US",
+        "size": "Broad",
+        "style": "Value",
+        "risk_character": "Value",
+        "index_id": "IWD",
+    },
+    {
+        "exposure_id": "us_tech",
+        "role": "benchmark",
+        "price_source": "yfinance",
+        "label": "US Technology",
+        "label_zh": "美国科技",
+        "region": "US",
+        "size": "Broad",
+        "style": "Broad",
+        "risk_character": "Offensive",
+        "index_id": "XLK",
+    },
+    {
+        "exposure_id": "us_discretionary",
+        "role": "benchmark",
+        "price_source": "yfinance",
+        "label": "US Consumer Discretionary",
+        "label_zh": "美国可选消费",
+        "region": "US",
+        "size": "Broad",
+        "style": "Broad",
+        "risk_character": "Offensive",
+        "index_id": "XLY",
+    },
+    {
+        "exposure_id": "us_communication",
+        "role": "benchmark",
+        "price_source": "yfinance",
+        "label": "US Communication Services",
+        "label_zh": "美国通信服务",
+        "region": "US",
+        "size": "Broad",
+        "style": "Broad",
+        "risk_character": "Offensive",
+        "index_id": "XLC",
+    },
+    {
+        "exposure_id": "us_staples",
+        "role": "benchmark",
+        "price_source": "yfinance",
+        "label": "US Consumer Staples",
+        "label_zh": "美国日常消费",
+        "region": "US",
+        "size": "Broad",
+        "style": "Broad",
+        "risk_character": "Defensive",
+        "index_id": "XLP",
+    },
+    {
+        "exposure_id": "us_utilities",
+        "role": "benchmark",
+        "price_source": "yfinance",
+        "label": "US Utilities",
+        "label_zh": "美国公用事业",
+        "region": "US",
+        "size": "Broad",
+        "style": "Broad",
+        "risk_character": "Defensive",
+        "index_id": "XLU",
+    },
+    {
+        "exposure_id": "us_healthcare",
+        "role": "benchmark",
+        "price_source": "yfinance",
+        "label": "US Health Care",
+        "label_zh": "美国医疗保健",
+        "region": "US",
+        "size": "Broad",
+        "style": "Broad",
+        "risk_character": "Defensive",
+        "index_id": "XLV",
     },
 )
 
@@ -151,3 +335,13 @@ def exposure_by_id(exposure_id: str) -> dict:
 def exposures_by_price_source(source: str) -> tuple[str, ...]:
     """Exposure ids served by one provider, for routing and source health."""
     return tuple(spec["exposure_id"] for spec in EXPOSURES if spec["price_source"] == source)
+
+
+def exposure_role(spec: dict) -> str:
+    """"exposure" (investable, has ETF wrappers) or "benchmark" (pair leg only)."""
+    return str(spec.get("role", "exposure"))
+
+
+def investable_exposures() -> tuple[dict, ...]:
+    """The exposures the ETF monitor is about, in declaration order."""
+    return tuple(spec for spec in EXPOSURES if exposure_role(spec) == "exposure")
