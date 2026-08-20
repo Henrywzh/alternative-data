@@ -66,3 +66,52 @@ def merge_premium(
         lambda s: s - s.median() if s.notna().any() else s
     )
     return merged.sort_values(["exposure_id", "fund_id"]).reset_index(drop=True)
+
+
+def fill_premium_from_last_close(merged: pd.DataFrame, prices: pd.DataFrame) -> pd.DataFrame:
+    """Price a wrapper the live feed forgot to refresh, using its last close.
+
+    Eastmoney stamps every spot row with its own update time, and a fund the
+    feed has not touched since before the open comes back with an IOPV but no
+    last price -- 513100 国泰纳斯达克100ETF sat at 08:30 while its peers were
+    at 10:02. Premium then cannot be computed, the row reads UNAVAILABLE, and
+    a fund with 20.8bn under management drops to rank 99 over a stale quote.
+
+    The premium definition does not change: it is still market price against
+    IOPV. Only the price changes, from a live quote to the last one the market
+    actually printed, and ``premium_basis`` says which was used.
+    """
+    out = merged.copy()
+    if "premium_basis" not in out.columns:
+        out["premium_basis"] = pd.Series(
+            ["live" if pd.notna(value) else None for value in out.get("premium_pct", pd.Series(dtype=float))],
+            index=out.index,
+        )
+    if prices is None or prices.empty or "fund_id" not in prices.columns or "iopv" not in out.columns:
+        return out
+
+    latest_close = (
+        prices.sort_values("date")
+        .groupby(prices["fund_id"].astype(str).str.zfill(6))["close"]
+        .last()
+    )
+    keys = out["ticker"].astype(str).str.zfill(6) if "ticker" in out.columns else out["fund_id"].astype(str).str.zfill(6)
+    fallback_price = keys.map(latest_close)
+
+    iopv = pd.to_numeric(out["iopv"], errors="coerce")
+    premium = pd.to_numeric(out["premium_pct"], errors="coerce")
+    # Only rows the feed left unpriced, and only where there is something to
+    # price against. A missing IOPV is a genuine absence, not a stale quote.
+    recoverable = premium.isna() & iopv.gt(0) & fallback_price.notna()
+    if not recoverable.any():
+        return out
+
+    out.loc[recoverable, "market_price"] = fallback_price[recoverable]
+    out.loc[recoverable, "premium_pct"] = (
+        (fallback_price[recoverable] / iopv[recoverable] - 1.0) * 100.0
+    ).round(2)
+    out.loc[recoverable, "premium_basis"] = "last_close"
+    out["relative_premium_pct"] = out.groupby("exposure_id")["premium_pct"].transform(
+        lambda s: s - s.median() if s.notna().any() else s
+    )
+    return out
