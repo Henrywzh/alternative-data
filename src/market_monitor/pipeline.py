@@ -30,7 +30,7 @@ from .storage import (
     save_raw,
 )
 from .technicals import compute_technicals
-from .wrapper import merge_premium
+from .wrapper import fill_premium_from_last_close, merge_premium
 
 
 # How many immutable run snapshots to keep per dataset. Each one holds the
@@ -435,6 +435,9 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
 
     # Derived: wrapper metrics + ranking.
     wrapper = merge_premium(raw.get("etf_spot", pd.DataFrame()), meta)
+    # A fund the spot feed did not refresh today still has a last traded price
+    # in our own series; use it rather than dropping the row to UNAVAILABLE.
+    wrapper = fill_premium_from_last_close(wrapper, normalized_etf)
     # Guarantee the optional EM columns exist (they may be absent when the
     # spot endpoint is unavailable); missing values stay NaN on the dashboard.
     for optional in ("aum", "market_price", "iopv", "turnover", "premium_pct", "spread_bp"):

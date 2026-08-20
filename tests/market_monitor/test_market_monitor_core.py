@@ -1041,3 +1041,53 @@ def test_premium_history_only_refetches_the_nav_tail(monkeypatch):
     assert windows, "the tail must still be refreshed"
     # Ten days back from the newest stored NAV, not two years back.
     assert windows[0] == "2026-08-07"
+
+
+def test_a_stale_spot_quote_does_not_cost_a_fund_its_premium():
+    """513100 sat at 08:30 while its peers refreshed at 10:02.
+
+    Eastmoney stamps each row with its own update time; a fund it has not
+    touched since before the open returns an IOPV and no last price. That
+    dropped a 20.8bn wrapper to UNAVAILABLE and rank 99 over a stale quote.
+    """
+    from market_monitor.wrapper import fill_premium_from_last_close
+
+    merged = pd.DataFrame(
+        [
+            {"exposure_id": "ndx", "ticker": "513100", "fund_id": "513100",
+             "market_price": float("nan"), "iopv": 1.9903, "premium_pct": float("nan")},
+            {"exposure_id": "ndx", "ticker": "513300", "fund_id": "513300",
+             "market_price": 2.697, "iopv": 2.4681, "premium_pct": 9.27},
+        ]
+    )
+    prices = pd.DataFrame(
+        [
+            {"date": "2026-08-18", "fund_id": "513100", "close": 2.100},
+            {"date": "2026-08-19", "fund_id": "513100", "close": 2.185},
+            {"date": "2026-08-19", "fund_id": "513300", "close": 2.690},
+        ]
+    )
+
+    out = fill_premium_from_last_close(merged, prices).set_index("ticker")
+
+    # 2.185 / 1.9903 - 1 = 9.78%
+    assert round(float(out.loc["513100", "premium_pct"]), 2) == 9.78
+    assert out.loc["513100", "premium_basis"] == "last_close"
+    # A row the feed did price is left exactly as the feed priced it.
+    assert out.loc["513300", "premium_pct"] == 9.27
+    assert out.loc["513300", "premium_basis"] == "live"
+
+
+def test_a_missing_iopv_is_an_absence_not_a_stale_quote():
+    """Without an IOPV there is nothing to price against; stay unavailable."""
+    from market_monitor.wrapper import fill_premium_from_last_close
+
+    merged = pd.DataFrame(
+        [{"exposure_id": "ndx", "ticker": "513100", "fund_id": "513100",
+          "market_price": float("nan"), "iopv": float("nan"), "premium_pct": float("nan")}]
+    )
+    prices = pd.DataFrame([{"date": "2026-08-19", "fund_id": "513100", "close": 2.185}])
+
+    out = fill_premium_from_last_close(merged, prices)
+
+    assert pd.isna(out.loc[0, "premium_pct"])

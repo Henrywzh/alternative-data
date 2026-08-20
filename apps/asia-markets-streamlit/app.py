@@ -3561,7 +3561,21 @@ def render_market_index_detail(
 
         fig.update_xaxes(title=None, tickformat=tick_format, row=rows, col=1)
         fig.update_layout(hovermode="x unified", hoverlabel=dict(namelength=-1))
-        fig.update_xaxes(hoverformat=hover_format)
+        # One crosshair spanning both panels. "across" draws the spike over
+        # the whole plotting area rather than only the subplot under the
+        # cursor, so reading the RSI at a price move is one glance instead of
+        # matching two axes by eye. spikedistance=-1 keeps the line alive
+        # anywhere on the row, not only within snapping range of a point.
+        fig.update_xaxes(
+            hoverformat=hover_format,
+            showspikes=True,
+            spikemode="across",
+            spikesnap="cursor",
+            spikethickness=1,
+            spikedash="dot",
+            spikecolor="#9CA3AF",
+        )
+        fig.update_layout(spikedistance=-1, hoverdistance=100)
 
         st.markdown(
             f'<div class="am-chart-title">{escape(label)} — '
