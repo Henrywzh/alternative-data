@@ -8,6 +8,8 @@ from html import escape
 import pandas as pd
 import streamlit as st
 
+from src.research_control_tower.eligibility import listing_eligibility_reason
+
 from ..components.coverage_matrix import (
     coverage_legend_html,
     render_stage1_coverage_matrix,
@@ -534,7 +536,8 @@ def _selected_universe(snapshot: ControlTowerSnapshot, filters: EventFilters) ->
     if snapshot.listings.empty:
         listings = set()
     else:
-        point = snapshot.as_of_utc.tz_convert("UTC").tz_localize(None).normalize()
+        point = snapshot.now_utc.tz_convert("UTC").tz_localize(None).normalize()
+
         def active_interval(row: pd.Series) -> bool:
             try:
                 start = pd.Timestamp(row.get("active_from"))
@@ -548,15 +551,16 @@ def _selected_universe(snapshot: ControlTowerSnapshot, filters: EventFilters) ->
             return (pd.isna(start) or point >= start.normalize()) and (end is None or point < end.normalize())
 
         entity_frame = snapshot.entities.set_index("entity_id", drop=False) if not snapshot.entities.empty else pd.DataFrame()
-        collection_eligible = snapshot.listings["collection_eligible"].map(
-            lambda value: _text(value).lower() in {"true", "1", "yes"}
-        )
         listing_mask = (
             snapshot.listings["entity_id"].astype("string").isin(entities)
-            & snapshot.listings["listing_status"].astype("string").str.lower().eq("active")
-            & snapshot.listings["mapping_status"].astype("string").str.lower().eq("verified")
-            & collection_eligible
-            & snapshot.listings.apply(active_interval, axis=1)
+            & snapshot.listings.apply(
+                lambda row: listing_eligibility_reason(
+                    row,
+                    snapshot.now_utc,
+                )
+                is None,
+                axis=1,
+            )
         )
         if not entity_frame.empty and "active_status" in entity_frame.columns:
             entity_type = entity_frame.get(
