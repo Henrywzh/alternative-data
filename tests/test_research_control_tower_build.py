@@ -1538,6 +1538,59 @@ def test_consensus_mixed_eligible_and_ineligible_listings_preserves_eligible_row
     )
 
 
+def test_consensus_revision_referencing_listing_rejected_prior_snapshot_is_removed(
+    tmp_path, minimal_inputs
+):
+    consensus_dir = _write_task3_exports(tmp_path / "input" / "consensus")
+    snapshots_path = consensus_dir / "control_tower_consensus_snapshots.parquet"
+    snapshot_rows = pq.read_table(snapshots_path).to_pylist()
+    rejected_prior = dict(snapshot_rows[0])
+    rejected_prior.update(
+        {
+            "snapshot_id": "snap-ak-tcehy-prior",
+            "listing_id": "TCEHY_US",
+            "canonical_ticker": "TCEHY.US",
+            "raw_hash": hashlib.sha256(
+                b"task3-listing-rejected-prior-snapshot"
+            ).hexdigest(),
+        }
+    )
+    pq.write_table(
+        pa.Table.from_pylist(
+            [*snapshot_rows, rejected_prior],
+            schema=TASK3_SNAPSHOT_ARROW_SCHEMA,
+        ),
+        snapshots_path,
+    )
+    revisions_path = consensus_dir / "control_tower_consensus_revisions.parquet"
+    revision_rows = pq.read_table(revisions_path).to_pylist()
+    revision_rows[0]["prior_snapshot_id"] = "snap-ak-tcehy-prior"
+    pq.write_table(
+        pa.Table.from_pylist(
+            revision_rows,
+            schema=TASK3_REVISION_ARROW_SCHEMA,
+        ),
+        revisions_path,
+    )
+
+    config = replace(minimal_inputs, consensus_export_dir=consensus_dir)
+    manifest = build_control_tower_marts(config)
+    snapshots = pd.read_parquet(_published(config, "consensus_snapshots.parquet"))
+    revisions = pd.read_parquet(_published(config, "consensus_revisions.parquet"))
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    aggregate = health.loc[health["source_id"].eq("consensus_export")].iloc[0]
+
+    assert set(snapshots["snapshot_id"]) == {"snap-ak-1"}
+    assert revisions.empty
+    assert aggregate["status"] == "degraded"
+    assert "orphaned_consensus_revisions_removed" in aggregate["detail"]
+    assert any(
+        error["source_id"] == "consensus_export"
+        and error["code"] == "orphaned_consensus_revisions_removed"
+        for error in manifest.validation_errors
+    )
+
+
 def test_consensus_exact_duplicate_snapshot_ids_collapse_idempotently(
     tmp_path, minimal_inputs
 ):
@@ -1673,6 +1726,93 @@ def test_consensus_mixed_valid_and_divergent_duplicate_preserves_valid_provider_
     assert "duplicate_snapshot_id_divergent" in aggregate["detail"]
     assert yfinance["status"] == "available"
     assert "consensus_export" in manifest.degraded_inputs
+
+
+def test_consensus_exact_duplicate_revision_ids_collapse_idempotently(
+    tmp_path, minimal_inputs
+):
+    consensus_dir = _write_task3_exports(tmp_path / "input" / "consensus")
+    revisions_path = consensus_dir / "control_tower_consensus_revisions.parquet"
+    revision_rows = pq.read_table(revisions_path).to_pylist()
+    pq.write_table(
+        pa.Table.from_pylist(
+            [revision_rows[0], revision_rows[0]],
+            schema=TASK3_REVISION_ARROW_SCHEMA,
+        ),
+        revisions_path,
+    )
+
+    config = replace(minimal_inputs, consensus_export_dir=consensus_dir)
+    manifest = build_control_tower_marts(config)
+    revisions = pd.read_parquet(_published(config, "consensus_revisions.parquet"))
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    aggregate = health.loc[health["source_id"].eq("consensus_export")].iloc[0]
+
+    assert len(revisions) == 1
+    assert revisions.iloc[0]["revision_id"] == "rev-ak-1"
+    assert aggregate["status"] == "available"
+    assert "duplicate_revision_rows_collapsed=1" in aggregate["detail"]
+    assert "consensus_export" not in manifest.degraded_inputs
+
+
+def test_consensus_divergent_duplicate_revision_id_rejects_all_rows(
+    tmp_path, minimal_inputs
+):
+    consensus_dir = _write_task3_exports(tmp_path / "input" / "consensus")
+    revisions_path = consensus_dir / "control_tower_consensus_revisions.parquet"
+    revision_rows = pq.read_table(revisions_path).to_pylist()
+    divergent = dict(revision_rows[0])
+    divergent["revision_value"] = 0.25
+    pq.write_table(
+        pa.Table.from_pylist(
+            [revision_rows[0], divergent],
+            schema=TASK3_REVISION_ARROW_SCHEMA,
+        ),
+        revisions_path,
+    )
+
+    config = replace(minimal_inputs, consensus_export_dir=consensus_dir)
+    manifest = build_control_tower_marts(config)
+    snapshots = pd.read_parquet(_published(config, "consensus_snapshots.parquet"))
+    revisions = pd.read_parquet(_published(config, "consensus_revisions.parquet"))
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    aggregate = health.loc[health["source_id"].eq("consensus_export")].iloc[0]
+
+    assert set(snapshots["snapshot_id"]) == {"snap-ak-1"}
+    assert revisions.empty
+    assert aggregate["status"] == "degraded"
+    assert "duplicate_revision_id_divergent" in aggregate["detail"]
+    assert any(
+        error["source_id"] == "consensus_export"
+        and error["code"] == "duplicate_revision_id_divergent"
+        for error in manifest.validation_errors
+    )
+
+
+def test_consensus_blank_revision_id_is_rejected_without_inventing_id(
+    tmp_path, minimal_inputs
+):
+    consensus_dir = _write_task3_exports(
+        tmp_path / "input" / "consensus",
+        revision_overrides={"revision_id": ""},
+    )
+
+    config = replace(minimal_inputs, consensus_export_dir=consensus_dir)
+    manifest = build_control_tower_marts(config)
+    snapshots = pd.read_parquet(_published(config, "consensus_snapshots.parquet"))
+    revisions = pd.read_parquet(_published(config, "consensus_revisions.parquet"))
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    aggregate = health.loc[health["source_id"].eq("consensus_export")].iloc[0]
+
+    assert set(snapshots["snapshot_id"]) == {"snap-ak-1"}
+    assert revisions.empty
+    assert aggregate["status"] == "degraded"
+    assert "revision_id_missing" in aggregate["detail"]
+    assert any(
+        error["source_id"] == "consensus_export"
+        and error["code"] == "revision_id_missing"
+        for error in manifest.validation_errors
+    )
 
 
 def test_revision_prior_provider_without_sidecar_evidence_is_not_admitted(

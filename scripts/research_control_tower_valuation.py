@@ -7,7 +7,7 @@ import logging
 import math
 import sys
 from dataclasses import fields
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -138,6 +138,61 @@ def _finite_positive(value: Any) -> bool:
     except (TypeError, ValueError):
         return False
     return math.isfinite(numeric) and numeric > 0
+
+
+def _semantic_value_equal(left: Any, right: Any) -> bool:
+    """Compare scalar consensus payload values with null/timestamp semantics."""
+
+    try:
+        left_blank = bool(pd.isna(left))
+    except (TypeError, ValueError):
+        left_blank = False
+    try:
+        right_blank = bool(pd.isna(right))
+    except (TypeError, ValueError):
+        right_blank = False
+    if left_blank or right_blank:
+        return left_blank and right_blank
+    if isinstance(left, (pd.Timestamp, datetime, date)) or isinstance(
+        right, (pd.Timestamp, datetime, date)
+    ):
+        try:
+            return pd.Timestamp(left) == pd.Timestamp(right)
+        except (TypeError, ValueError):
+            pass
+    try:
+        result = left == right
+        if not hasattr(result, "__len__"):
+            return bool(result)
+    except (TypeError, ValueError):
+        pass
+    return str(left) == str(right)
+
+
+def _deduplicate_consensus_candidates(
+    frame: pd.DataFrame,
+) -> pd.DataFrame | None:
+    """Collapse exact snapshot duplicates or reject a divergent candidate set."""
+
+    working = frame.copy().reset_index(drop=True)
+    grouped: dict[str, list[int]] = {}
+    for index, value in working["snapshot_id"].items():
+        grouped.setdefault(str(value).strip(), []).append(index)
+
+    keep_indexes: list[int] = []
+    columns = list(working.columns)
+    for indexes in grouped.values():
+        first = working.iloc[indexes[0]]
+        if any(
+            any(
+                not _semantic_value_equal(first[column], working.iloc[index][column])
+                for column in columns
+            )
+            for index in indexes[1:]
+        ):
+            return None
+        keep_indexes.append(indexes[0])
+    return working.iloc[keep_indexes].reset_index(drop=True)
 
 
 def _accepted_consensus_providers(
@@ -308,6 +363,9 @@ def _latest_consensus_eps(
             candidates["fiscal_year"].eq(eligible_years.min())
         ]
     if candidates.empty:
+        return None
+    candidates = _deduplicate_consensus_candidates(candidates)
+    if candidates is None or candidates.empty:
         return None
     return candidates.sort_values(
         [
