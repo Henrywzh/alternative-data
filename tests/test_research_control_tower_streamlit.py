@@ -979,7 +979,7 @@ def test_task10_data_coverage_reports_presence_without_fabricating_linkage(
     assert "mart does not exist" not in rows["Earnings Actuals"].details.lower()
     assert rows["Consensus Data"].record_count == 2
     assert rows["Consensus Data"].linked_count == 2
-    assert rows["News & Filings"].linked_count == 1
+    assert rows["News & Filings"].linked_count == 2
     assert rows["Alternative Evidence / Events"].linked_count == 2
 
     unlinked_news = snapshot.news_filings.copy()
@@ -989,8 +989,12 @@ def test_task10_data_coverage_reports_presence_without_fabricating_linkage(
         "related_basket_ids",
     ):
         unlinked_news[column] = "[]"
+    unlinked_official = snapshot.official_filings.copy()
+    for column in ("entity_id", "listing_id"):
+        if column in unlinked_official.columns:
+            unlinked_official[column] = ""
     unlinked_summary = build_data_coverage_summary(
-        replace(snapshot, news_filings=unlinked_news)
+        replace(snapshot, news_filings=unlinked_news, official_filings=unlinked_official)
     )
     news_row = next(
         row for row in unlinked_summary.rows if row.category == "News & Filings"
@@ -2375,12 +2379,13 @@ def test_flight_deck_future_event_retains_next_catalyst_and_t_minus(generated_ro
 
 def test_flight_deck_boundary_exact_day_now_and_ended_window(generated_root: Path) -> None:
     from control_tower.components.flight_deck import build_flight_deck, flight_deck_html
+    from control_tower.components.timeline import is_active_catalyst
     from control_tower.models import EventFilters
 
     snapshot = _snapshot(generated_root)
     now = pd.Timestamp("2026-08-22T00:00:00Z")
 
-    # 1. Exact day event happening today (starts_at == ends_at on same day, starts_at == now) -> future/exact (T0d)
+    # 1. Exact instant event happening right now (starts_at == ends_at == now) -> active
     events_t0 = pd.DataFrame([
         {
             "event_id": "EV_TODAY",
@@ -2400,10 +2405,10 @@ def test_flight_deck_boundary_exact_day_now_and_ended_window(generated_root: Pat
         filters=EventFilters(horizon="30d", now_utc=now),
         viewer_timezone="Europe/London",
     )
-    assert deck_t0.catalyst_timing_state == "future"
+    assert deck_t0.catalyst_timing_state == "active"
     html_t0 = flight_deck_html(deck_t0)
-    assert "Next catalyst" in html_t0
-    assert "T0d" in html_t0
+    assert "Active catalyst" in html_t0
+    assert "Active window" in html_t0
 
     # 2. Window boundary: now exactly at ends_at -> active
     events_window = pd.DataFrame([
@@ -2431,7 +2436,7 @@ def test_flight_deck_boundary_exact_day_now_and_ended_window(generated_root: Pat
     assert "Active catalyst" in html_window
     assert "Active window" in html_window
 
-    # 3. Window beginning exactly now follows select_next_catalyst's start < now rule.
+    # 3. Window beginning exactly now (starts_at == now < ends_at) -> active
     events_window_start = pd.DataFrame([
         {
             "event_id": "EV_WINDOW_START",
@@ -2451,8 +2456,74 @@ def test_flight_deck_boundary_exact_day_now_and_ended_window(generated_root: Pat
         filters=EventFilters(horizon="30d", now_utc=now_window),
         viewer_timezone="Europe/London",
     )
-    assert deck_window_start.catalyst_timing_state == "future"
+    assert deck_window_start.catalyst_timing_state == "active"
     html_window_start = flight_deck_html(deck_window_start)
-    assert "Next catalyst" in html_window_start
-    assert "T0d" in html_window_start
-    assert "Active catalyst" not in html_window_start
+    assert "Active catalyst" in html_window_start
+    assert "Active window" in html_window_start
+
+    # 4. Instant event immediately after ends_at -> past (not selected as active or future)
+    now_past = pd.Timestamp("2026-08-22T00:00:01Z")
+    snapshot_past = replace(snapshot, events=events_t0, as_of_utc=now_past)
+    deck_past = build_flight_deck(
+        snapshot_past,
+        filters=EventFilters(horizon="30d", now_utc=now_past),
+        viewer_timezone="Europe/London",
+    )
+    assert deck_past.catalyst_timing_state == "none"
+    html_past = flight_deck_html(deck_past)
+    assert "No eligible catalyst" in html_past
+
+    # 5. Truly future event (now < starts_at) -> future
+    now_before = pd.Timestamp("2026-08-21T12:00:00Z")
+    snapshot_before = replace(snapshot, events=events_t0, as_of_utc=now_before)
+    deck_before = build_flight_deck(
+        snapshot_before,
+        filters=EventFilters(horizon="30d", now_utc=now_before),
+        viewer_timezone="Europe/London",
+    )
+    assert deck_before.catalyst_timing_state == "future"
+    html_before = flight_deck_html(deck_before)
+    assert "Next catalyst" in html_before
+    assert "T-1d" in html_before
+
+    # 6. Direct helper semantics verification
+    t_start = pd.Timestamp("2026-08-22T10:00:00Z")
+    t_end = pd.Timestamp("2026-08-23T10:00:00Z")
+    assert is_active_catalyst(t_start, t_end, t_start) is True
+    assert is_active_catalyst(t_start, t_end, t_end) is True
+    assert is_active_catalyst(t_start, t_end, pd.Timestamp("2026-08-22T15:00:00Z")) is True
+    assert is_active_catalyst(t_start, t_end, pd.Timestamp("2026-08-22T09:59:59Z")) is False
+    assert is_active_catalyst(t_start, t_end, pd.Timestamp("2026-08-23T10:00:01Z")) is False
+    assert is_active_catalyst(t_start, None, t_start) is True
+    assert is_active_catalyst(t_start, None, pd.Timestamp("2026-08-22T10:00:01Z")) is False
+    assert is_active_catalyst(None, t_end, t_start) is False
+
+
+def test_app_and_company_page_import_from_app_dir_without_pythonpath() -> None:
+    import os
+    import subprocess
+    import sys
+
+    repo_root = Path(__file__).resolve().parent.parent
+    app_dir = repo_root / "apps" / "research-control-tower"
+    clean_env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
+
+    # Test importing app from apps/research-control-tower directory
+    proc_app = subprocess.run(
+        [sys.executable, "-c", "import app; assert hasattr(app, 'main')"],
+        cwd=str(app_dir),
+        env=clean_env,
+        capture_output=True,
+        text=True,
+    )
+    assert proc_app.returncode == 0, f"Import from app_dir failed: {proc_app.stderr}"
+
+    # Test importing company page standalone from app_dir
+    proc_company = subprocess.run(
+        [sys.executable, "-c", "from control_tower.pages.company import render_company_page"],
+        cwd=str(app_dir),
+        env=clean_env,
+        capture_output=True,
+        text=True,
+    )
+    assert proc_company.returncode == 0, f"Import company page from app_dir failed: {proc_company.stderr}"

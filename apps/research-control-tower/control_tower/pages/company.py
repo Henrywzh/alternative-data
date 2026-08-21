@@ -5,11 +5,18 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import timedelta
 from html import escape
+from pathlib import Path
 import re
+import sys
 import unicodedata
 import json
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+# Ensure repository root is on sys.path when company.py is imported standalone
+_REPO_ROOT = Path(__file__).resolve().parents[4]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
 import pandas as pd
 import streamlit as st
@@ -18,7 +25,7 @@ from src.research_control_tower.eligibility import listing_eligibility_reason
 
 from ..filters import apply_event_filters
 from ..formatting import format_t_minus
-from ..components.timeline import format_event_window, select_next_catalyst
+from ..components.timeline import format_event_window, is_active_catalyst, select_next_catalyst
 from ..market_data import QUOTE_SNAPSHOT_COLUMNS, classify_quote_freshness, format_quote_age
 from ..models import ControlTowerSnapshot, EventFilters
 from ..components.filings_earnings import (
@@ -1623,7 +1630,7 @@ def _answer_first_summary_lines(
             end = start
         precision = _text(event.get("date_precision")) or "day"
         window_label = format_event_window(start, end, precision, "UTC")
-        is_active = start is not None and start <= snapshot.now_utc and end >= snapshot.now_utc
+        is_active = is_active_catalyst(event.get("starts_at"), event.get("ends_at"), snapshot.now_utc)
         catalyst_prefix = "Active catalyst" if is_active else "Upcoming catalyst"
         lines.append(
             f"{catalyst_prefix} · {_text(event.get('title')) or 'title unavailable'} · "
@@ -2018,7 +2025,7 @@ def _render_thesis_catalysts_tab(
                 end = start
 
             window_str = format_event_window(row.get("starts_at"), row.get("ends_at"), precision, viewer_timezone)
-            is_active = (start is not None and start <= snapshot.now_utc and end >= snapshot.now_utc)
+            is_active = is_active_catalyst(row.get("starts_at"), row.get("ends_at"), snapshot.now_utc)
             is_upcoming = (start is not None and start > snapshot.now_utc)
             status_label = "Active window" if is_active else ("Upcoming" if is_upcoming else "Observed / Past")
 

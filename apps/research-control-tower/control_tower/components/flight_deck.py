@@ -11,7 +11,12 @@ import streamlit as st
 
 from ..filters import apply_event_filters
 from ..models import ControlTowerSnapshot, EventFilters
-from .timeline import CatalystView, catalyst_view_for_event, select_next_catalyst
+from .timeline import (
+    CatalystView,
+    catalyst_view_for_event,
+    is_active_catalyst,
+    select_next_catalyst,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -108,8 +113,7 @@ def build_flight_deck(
     catalyst = catalyst_view_for_event(snapshot, row, now_utc=snapshot.now_utc, viewer_timezone=viewer_timezone) if row is not None else None
     timing_state: Literal["active", "future", "none"] = "none"
     if catalyst is not None:
-        effective_end = catalyst.ends_at or catalyst.starts_at
-        if catalyst.starts_at < snapshot.now_utc <= effective_end:
+        if is_active_catalyst(catalyst.starts_at, catalyst.ends_at, snapshot.now_utc):
             timing_state = "active"
         else:
             timing_state = "future"
