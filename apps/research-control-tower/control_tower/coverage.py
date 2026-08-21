@@ -73,6 +73,7 @@ COVERAGE_CATEGORY_LABELS: Mapping[str, str] = {
 _CATEGORY_SOURCE_KINDS: Mapping[str, frozenset[str]] = {
     "price_quotes": frozenset({"market", "quote", "market_data"}),
     "consensus": frozenset({"consensus", "consensus_provider"}),
+    "earnings_actuals": frozenset({"earnings"}),
     "filings_news": frozenset(
         {"filing", "news", "official_document_metadata"}
     ),
@@ -85,6 +86,7 @@ _CATEGORY_SOURCE_IDS: Mapping[str, frozenset[str]] = {
     "consensus": frozenset(
         {"consensus_export", "consensus_snapshots", "consensus_revisions"}
     ),
+    "earnings_actuals": frozenset({"earnings_actuals"}),
     "filings_news": frozenset(
         {"filings_sec_edgar", "news_official_ai_rss"}
     ),
@@ -116,6 +118,7 @@ _CONSENSUS_TS_COLUMNS = (
     "current_snapshot_at",
 )
 _FILINGS_TS_COLUMNS = ("published_at",)
+_EARNINGS_ACTUALS_TS_COLUMNS = ("filing_at", "published_at")
 _MACRO_TS_COLUMNS = ("release_at", "source_published_at")
 
 # Source-health display states that mean the provider is effectively absent:
@@ -669,6 +672,36 @@ def _consensus_rows_for_entity(
     return pd.concat(parts, ignore_index=True).drop_duplicates()
 
 
+def _earnings_actuals_rows_for_entity(
+    snapshot: ControlTowerSnapshot,
+    entity_id: str,
+    listing_ids: tuple[str, ...],
+    *,
+    listing_owner: Mapping[str, str],
+) -> pd.DataFrame:
+    """Match actuals to one Stage 1 entity and its active listings only."""
+
+    actuals = snapshot.earnings_actuals
+    if actuals.empty:
+        return actuals.iloc[0:0]
+
+    allowed_listings = set(listing_ids)
+    matched: list[bool] = []
+    for _, row in actuals.iterrows():
+        row_entity = _text(row.get("entity_id"))
+        row_listing = _text(row.get("listing_id"))
+        if row_listing:
+            owner = listing_owner.get(row_listing)
+            matched.append(
+                row_listing in allowed_listings
+                and owner == entity_id
+                and (not row_entity or row_entity == entity_id)
+            )
+        else:
+            matched.append(bool(row_entity) and row_entity == entity_id)
+    return actuals.loc[matched].copy()
+
+
 def _active_members_by_basket(
     snapshot: ControlTowerSnapshot,
     stage1_entity_ids: set[str],
@@ -969,6 +1002,66 @@ def _assess_time_sensitive_rows(
     return "available", "Source state and source-native freshness checks passed."
 
 
+def _earnings_artifact_status(snapshot: ControlTowerSnapshot) -> str:
+    """Return manifest/loader evidence for the optional actuals artifact."""
+
+    manifest = snapshot.manifest
+    if isinstance(manifest, Mapping):
+        artifacts = manifest.get("artifacts")
+        if isinstance(artifacts, Mapping):
+            record = artifacts.get("earnings_actuals.parquet")
+            if isinstance(record, Mapping):
+                status = _text(record.get("status")).lower()
+                if status:
+                    return status
+
+    # Repository load-state is the compatible fallback for manifests that do
+    # not carry per-artifact records. A degraded optional artifact can still
+    # contain real rows; it must be shown as impaired, never as absent.
+    optional = {_text(value).removesuffix(".parquet") for value in snapshot.missing_optional}
+    reasons = {
+        _text(key): _text(value).lower()
+        for key, value in snapshot.degraded_reasons.items()
+    }
+    if "earnings_actuals" in optional:
+        return reasons.get("earnings_actuals", "degraded") or "degraded"
+    return ""
+
+
+def _apply_earnings_artifact_evidence(
+    snapshot: ControlTowerSnapshot,
+    status: CoverageStatusCode,
+    detail: str,
+    *,
+    rows_exist: bool,
+) -> tuple[CoverageStatusCode, str]:
+    """Apply optional-artifact state without hiding rows or inventing health."""
+
+    artifact_status = _earnings_artifact_status(snapshot)
+    if not artifact_status:
+        return status, detail
+
+    adverse = artifact_status in (_UNAVAILABLE_SOURCE_STATES | {"partial"})
+    if adverse:
+        if rows_exist:
+            if status == "available":
+                status = "partial"
+            detail = (
+                f"{detail} The earnings_actuals.parquet artifact is "
+                f"{artifact_status}; rows are retained but coverage is impaired."
+            )
+        elif status != "not_applicable":
+            status = "unavailable"
+            detail = (
+                f"{detail} The earnings_actuals.parquet artifact is "
+                f"{artifact_status}."
+            )
+    elif artifact_status == "stale" and status in {"available", "no_records"}:
+        status = "stale"
+        detail = f"{detail} The earnings_actuals.parquet artifact is stale."
+    return status, detail
+
+
 def _listing_cell(
     snapshot: ControlTowerSnapshot,
     listing_id: str,
@@ -1122,17 +1215,78 @@ def _consensus_cell(
     )
 
 
-def _earnings_actuals_cell(entity_type: str) -> CoverageCell:
+def _earnings_actuals_cell(
+    snapshot: ControlTowerSnapshot,
+    entity_id: str,
+    listing_ids: tuple[str, ...],
+    *,
+    entity_type: str,
+    listing_owner: Mapping[str, str],
+    sources: _CategorySources,
+    now_utc: pd.Timestamp,
+) -> CoverageCell:
     if entity_type == "private":
         return CoverageCell(
             "earnings_actuals",
             "not_applicable",
             "Private entity; no public earnings-actuals concept.",
         )
+
+    rows = _earnings_actuals_rows_for_entity(
+        snapshot,
+        entity_id,
+        listing_ids,
+        listing_owner=listing_owner,
+    )
+    if not rows.empty:
+        status, source_detail = _assess_time_sensitive_rows(
+            rows,
+            sources=sources,
+            timestamp_columns=_EARNINGS_ACTUALS_TS_COLUMNS,
+            source_id_columns=("source_id",),
+            now_utc=now_utc,
+        )
+        status, source_detail = _apply_earnings_artifact_evidence(
+            snapshot,
+            status,
+            source_detail,
+            rows_exist=True,
+        )
+        if status != "available":
+            return CoverageCell(
+                "earnings_actuals",
+                status,
+                source_detail,
+                record_count=len(rows),
+            )
+        covered = _covered_listing_count(rows, listing_ids)
+        if listing_ids and covered < len(listing_ids):
+            return CoverageCell(
+                "earnings_actuals",
+                "partial",
+                f"Earnings-actuals rows cover {covered} of {len(listing_ids)} "
+                "active listings.",
+                record_count=len(rows),
+            )
+        return CoverageCell(
+            "earnings_actuals",
+            "available",
+            f"{len(rows)} earnings-actuals row(s) linked to this entity. "
+            f"{source_detail}",
+            record_count=len(rows),
+        )
+
+    status, detail = _empty_status(sources)
+    status, detail = _apply_earnings_artifact_evidence(
+        snapshot,
+        status,
+        detail,
+        rows_exist=False,
+    )
     return CoverageCell(
         "earnings_actuals",
-        "unavailable",
-        "No earnings-actuals artifact is part of the V1 data contract.",
+        status,
+        f"No earnings-actuals rows for this entity. {detail}",
     )
 
 
@@ -1363,7 +1517,15 @@ def build_stage1_coverage_matrix(
                 sources=sources["consensus"],
                 now_utc=now_utc,
             ),
-            _earnings_actuals_cell(entity_type),
+            _earnings_actuals_cell(
+                snapshot,
+                entity_id,
+                listing_ids,
+                entity_type=entity_type,
+                listing_owner=listing_owner,
+                sources=sources["earnings_actuals"],
+                now_utc=now_utc,
+            ),
             _filings_news_cell(
                 snapshot,
                 entity_id,
@@ -1609,7 +1771,14 @@ def build_data_coverage_summary(snapshot: ControlTowerSnapshot) -> DataCoverageS
     states = _source_health_states(snapshot)
     source_groups = {
         category: _category_sources(states, category)
-        for category in ("price_quotes", "consensus", "filings_news", "events", "macro")
+        for category in (
+            "price_quotes",
+            "consensus",
+            "earnings_actuals",
+            "filings_news",
+            "events",
+            "macro",
+        )
     }
 
     quote_snapshots = snapshot.quote_snapshots
@@ -1656,14 +1825,62 @@ def build_data_coverage_summary(snapshot: ControlTowerSnapshot) -> DataCoverageS
                 details=f"No price or market-bars artifact rows. {quote_detail}",
             )
         ]
-    rows.extend([
-        CoverageRow(
-            category="Earnings Actuals",
-            status="Unavailable",
-            status_code="unavailable",
-            details="No earnings-actuals mart is part of the current V1 data contract; event-level actual fields are separate.",
-        ),
-    ])
+    actuals = snapshot.earnings_actuals
+    actual_count = len(actuals) if not actuals.empty else 0
+    if actual_count:
+        linked_count = _linked_row_count(
+            snapshot,
+            actuals,
+            ("entity_id", "listing_id"),
+        )
+        status_code, source_detail = _assess_time_sensitive_rows(
+            actuals,
+            sources=source_groups["earnings_actuals"],
+            timestamp_columns=_EARNINGS_ACTUALS_TS_COLUMNS,
+            source_id_columns=("source_id",),
+            now_utc=snapshot.now_utc,
+        )
+        status_code, source_detail = _apply_earnings_artifact_evidence(
+            snapshot,
+            status_code,
+            source_detail,
+            rows_exist=True,
+        )
+        if status_code == "available" and linked_count != actual_count:
+            status_code = "partial"
+        rows.append(
+            CoverageRow(
+                category="Earnings Actuals",
+                status=COVERAGE_STATUS_LABELS[status_code],
+                status_code=status_code,
+                details=(
+                    f"{actual_count} earnings-actuals row"
+                    f"{'s' if actual_count != 1 else ''} present; "
+                    f"{linked_count} carry entity/listing identifiers that "
+                    f"resolve in the registry. {source_detail}"
+                ),
+                record_count=actual_count,
+                linked_count=linked_count,
+            )
+        )
+    else:
+        status_code, detail = _empty_status(
+            source_groups["earnings_actuals"]
+        )
+        status_code, detail = _apply_earnings_artifact_evidence(
+            snapshot,
+            status_code,
+            detail,
+            rows_exist=False,
+        )
+        rows.append(
+            CoverageRow(
+                category="Earnings Actuals",
+                status=COVERAGE_STATUS_LABELS[status_code],
+                status_code=status_code,
+                details=f"No earnings-actuals rows. {detail}",
+            )
+        )
 
     snapshots = snapshot.consensus_snapshots
     revisions = snapshot.consensus_revisions

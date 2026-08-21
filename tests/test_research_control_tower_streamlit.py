@@ -973,7 +973,10 @@ def test_task10_data_coverage_reports_presence_without_fabricating_linkage(
     summary = build_data_coverage_summary(snapshot)
     rows = {row.category: row for row in summary.rows}
     assert rows["Price / Market Bars"].status_code == "unavailable"
-    assert rows["Earnings Actuals"].status_code == "unavailable"
+    assert rows["Earnings Actuals"].status_code == "partial"
+    assert rows["Earnings Actuals"].record_count == 1
+    assert rows["Earnings Actuals"].linked_count == 1
+    assert "mart does not exist" not in rows["Earnings Actuals"].details.lower()
     assert rows["Consensus Data"].record_count == 2
     assert rows["Consensus Data"].linked_count == 2
     assert rows["News & Filings"].linked_count == 1
