@@ -649,11 +649,27 @@ def _scale_partial_week_values(
     provider_column: str,
     value_column: str,
     date_column: str,
+    partial_usage_date: pd.Timestamp | None = None,
 ) -> pd.DataFrame:
     if pivot_raw.empty:
         return pivot_raw
 
     pivot = pivot_raw.copy()
+    if partial_usage_date is not None:
+        # A few hours of the scrape day must not count as an observed day
+        # here: it would be scaled up as if it were a whole one, which drags
+        # the current week down by roughly the fraction of the day missing.
+        partial_day = pd.Timestamp(partial_usage_date).normalize()
+        partial_rows = modern_frame[date_column].dt.normalize() == partial_day
+        if partial_rows.any():
+            removed = modern_frame[partial_rows].pivot_table(
+                index=week_column, columns=provider_column, values=value_column, aggfunc="sum"
+            )
+            removed = removed.reindex(index=pivot.index, columns=pivot.columns).fillna(0)
+            pivot = pivot.sub(removed, fill_value=0)
+            modern_frame = modern_frame[~partial_rows]
+            if modern_frame.empty:
+                return pivot_raw
     days_per_week = (
         modern_frame.groupby([week_column, provider_column])[date_column]
         .nunique()
@@ -681,6 +697,17 @@ def _scale_partial_week_values(
                     observed_total = provider_first_rows[value_column].sum()
                     pivot.loc[first_week, provider] = observed_total + bridged_missing
 
+    # Which weekdays each provider-week actually observed, so a gap can be
+    # priced by the weight of the days missing rather than by their count.
+    observed_weekdays_by_key = (
+        modern_frame.assign(_dow=modern_frame[date_column].dt.weekday.astype(int))
+        .groupby([week_column, provider_column])["_dow"]
+        .apply(lambda values: set(values.tolist()))
+    )
+    weights_by_provider = _provider_dow_weights(
+        modern_frame, week_column, provider_column, value_column, date_column
+    )
+
     for week in pivot.index:
         for provider in pivot.columns:
             try:
@@ -695,8 +722,53 @@ def _scale_partial_week_values(
                     observed_total = provider_first_rows[value_column].sum()
                     if pivot.loc[week, provider] > observed_total:
                         continue
-                pivot.loc[week, provider] *= 7 / days_present
+                # Same day-of-week reasoning as _nowcast_latest_partial_period:
+                # scaling by 7/days_present prices a missing Sunday like a
+                # missing Tuesday, which inflates weekday-only weeks.
+                observed_weekdays = observed_weekdays_by_key.get((week, provider), set())
+                weights = weights_by_provider.get(provider, UNIFORM_DOW_WEIGHTS)
+                observed_weight = float(sum(weights[day] for day in observed_weekdays))
+                if observed_weight <= 0:
+                    continue
+                pivot.loc[week, provider] = pivot.loc[week, provider] / observed_weight
     return pivot.sort_index()
+
+
+def _provider_dow_weights(
+    modern_frame: pd.DataFrame,
+    week_column: str,
+    provider_column: str,
+    value_column: str,
+    date_column: str,
+) -> dict[str, pd.Series]:
+    """Per-provider share of a normal week by day of week.
+
+    Estimated from that provider's complete weeks only. Unlike the nowcast
+    path this uses the whole frame rather than history-to-date: these are
+    historical weeks being described, not forecast, so there is no lookahead
+    to avoid -- and one stable shape keeps the same week from being drawn
+    differently as data arrives.
+    """
+    frame = modern_frame.copy()
+    frame["_dow"] = frame[date_column].dt.weekday.astype(int)
+    weights: dict[str, pd.Series] = {}
+
+    for provider, provider_rows in frame.groupby(provider_column):
+        day_counts = provider_rows.groupby(week_column)["_dow"].nunique()
+        complete_weeks = day_counts[day_counts == 7].index
+        if len(complete_weeks) < DOW_PROFILE_MIN_WEEKS:
+            continue
+        recent = sorted(complete_weeks)[-DOW_PROFILE_LOOKBACK_WEEKS:]
+        shares: list[pd.Series] = []
+        for _, week_rows in provider_rows[provider_rows[week_column].isin(recent)].groupby(week_column):
+            by_dow = week_rows.groupby("_dow")[value_column].sum().reindex(range(7))
+            total = float(pd.to_numeric(by_dow, errors="coerce").fillna(0).sum())
+            if total > 0:
+                shares.append(by_dow.fillna(0) / total)
+        if len(shares) >= DOW_PROFILE_MIN_WEEKS:
+            weights[provider] = _normalize_dow_weights(pd.concat(shares, axis=1).median(axis=1))
+
+    return weights
 
 
 def _revenue_pivots_from_economics(economics: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -759,11 +831,132 @@ def _drop_first_valid_change_point(pivot_df: pd.DataFrame) -> pd.DataFrame:
     return cleaned
 
 
+# Day-of-week profile settings for partial-period nowcasting. OpenRouter
+# traffic is coding-heavy and markedly weekday-skewed, so extrapolating a
+# partial period by observed_days/expected_days -- which implicitly assumes
+# every day carries 1/7 of the week -- overstates a week cut off midweek and
+# understates one that already includes its weekend.
+DOW_PROFILE_LOOKBACK_WEEKS = 8
+DOW_PROFILE_MIN_WEEKS = 4
+# Keeps a single dead day (an outage, a zero-volume newcomer) from driving a
+# weight to zero and making that weekday's absence unrecoverable.
+DOW_WEIGHT_FLOOR = 0.02
+UNIFORM_DOW_WEIGHTS = pd.Series([1 / 7] * 7, index=range(7))
+
+
+def _normalize_dow_weights(weights: pd.Series) -> pd.Series:
+    weights = pd.to_numeric(weights, errors="coerce").reindex(range(7))
+    if weights.isna().any() or (weights <= 0).all():
+        return UNIFORM_DOW_WEIGHTS.copy()
+    weights = weights.fillna(0.0).clip(lower=DOW_WEIGHT_FLOOR)
+    total = float(weights.sum())
+    if total <= 0:
+        return UNIFORM_DOW_WEIGHTS.copy()
+    return weights / total
+
+
+def _dow_weight_profile(
+    daily: pd.DataFrame,
+    daily_dates: pd.Series,
+    before: pd.Timestamp,
+) -> tuple[dict[str, pd.Series], pd.Series]:
+    """Estimate each series' share of a normal week, by day of week.
+
+    Returns (per-column weights, pooled weights). Weights are the *median*
+    share a weekday takes of its week, so one holiday or outage week cannot
+    drag the profile. Only complete Monday-Sunday weeks strictly before
+    `before` are used, so the partial period being nowcast never contributes
+    to the profile that extrapolates it.
+
+    A column with too little history falls back to the pooled profile, and
+    pooled falls back to uniform -- which reproduces the old
+    observed_days/expected_days behaviour rather than inventing a shape.
+    """
+    complete = daily[daily_dates < before]
+    if complete.empty:
+        return {}, UNIFORM_DOW_WEIGHTS.copy()
+
+    dates = daily_dates[complete.index]
+    week_start = dates - pd.to_timedelta(dates.dt.weekday, unit="D")
+    frame = complete.copy()
+    frame["_week"] = week_start.dt.strftime("%Y-%m-%d")
+    frame["_dow"] = dates.dt.weekday.astype(int)
+
+    day_counts = frame.groupby("_week")["_dow"].nunique()
+    full_weeks = day_counts[day_counts == 7].index
+    if len(full_weeks) == 0:
+        return {}, UNIFORM_DOW_WEIGHTS.copy()
+    recent_weeks = sorted(full_weeks)[-DOW_PROFILE_LOOKBACK_WEEKS:]
+    frame = frame[frame["_week"].isin(recent_weeks)]
+
+    value_columns = [column for column in daily.columns if column in frame.columns]
+    per_column: dict[str, pd.Series] = {}
+    pooled_shares: list[pd.Series] = []
+
+    for _, week_rows in frame.groupby("_week"):
+        by_dow = week_rows.groupby("_dow")[value_columns].sum()
+        pooled_total = float(by_dow.sum().sum())
+        if pooled_total > 0:
+            pooled_shares.append((by_dow.sum(axis=1) / pooled_total).reindex(range(7)))
+
+    pooled = (
+        _normalize_dow_weights(pd.concat(pooled_shares, axis=1).median(axis=1))
+        if len(pooled_shares) >= DOW_PROFILE_MIN_WEEKS
+        else UNIFORM_DOW_WEIGHTS.copy()
+    )
+
+    # Per-series, because a coding-heavy model and a chat-heavy model have
+    # genuinely different weekend troughs; pooling would under-correct one
+    # and over-correct the other.
+    for column in value_columns:
+        column_shares: list[pd.Series] = []
+        for _, week_rows in frame.groupby("_week"):
+            by_dow = week_rows.groupby("_dow")[column].sum().reindex(range(7))
+            column_total = float(pd.to_numeric(by_dow, errors="coerce").fillna(0).sum())
+            if column_total > 0:
+                column_shares.append(by_dow.fillna(0) / column_total)
+        if len(column_shares) >= DOW_PROFILE_MIN_WEEKS:
+            per_column[column] = _normalize_dow_weights(pd.concat(column_shares, axis=1).median(axis=1))
+
+    return per_column, pooled
+
+
+def _period_completion_fraction(
+    weights: pd.Series,
+    observed_dates: pd.DatetimeIndex,
+    period_dates: pd.DatetimeIndex,
+) -> float:
+    """Share of the period's normal volume the observed days should carry."""
+    expected = float(sum(weights[int(day.weekday())] for day in period_dates))
+    if expected <= 0:
+        return 0.0
+    observed = float(sum(weights[int(day.weekday())] for day in observed_dates))
+    return observed / expected
+
+
 def _nowcast_latest_partial_period(
     period_pivot: pd.DataFrame,
     daily_pivot: pd.DataFrame,
     granularity: str,
+    partial_usage_date: pd.Timestamp | None = None,
 ) -> tuple[pd.DataFrame, set[str]]:
+    """Extrapolate the newest incomplete week/month using a day-of-week profile.
+
+    Each series is scaled by its own completion fraction -- the share of a
+    normal period its observed days carry -- rather than by a shared
+    observed_days/expected_days ratio. Two coupled biases motivate this:
+
+    * Day-of-week shape. Weekday-only observations extrapolated as if every
+      day were 1/7 of the week overstate the period.
+    * The trailing partial UTC day. Counting it as a whole observed day
+      inflates the denominator while it contributes a fraction of its volume,
+      which pulls the estimate down. `partial_usage_date` drops it from both
+      the observed total and the completion fraction; without it the day is
+      treated as complete, as before.
+
+    The two pull in opposite directions, so fixing either alone can look
+    worse than fixing neither.
+    """
     adjusted = period_pivot.copy()
     if adjusted.empty or daily_pivot.empty or granularity not in {"weekly", "monthly"}:
         return adjusted, set()
@@ -776,35 +969,71 @@ def _nowcast_latest_partial_period(
 
     daily = daily.loc[valid_mask].copy()
     daily_dates = pd.Series(daily_dates[valid_mask], index=daily.index)
+
+    if partial_usage_date is not None:
+        partial_day = pd.Timestamp(partial_usage_date).normalize()
+        finalized = daily_dates < partial_day
+        if finalized.any():
+            daily = daily.loc[finalized]
+            daily_dates = daily_dates.loc[finalized]
+
     latest_date = daily_dates.max()
     if pd.isna(latest_date):
         return adjusted, set()
 
     if granularity == "weekly":
         period_start = latest_date - pd.Timedelta(days=int(latest_date.weekday()))
+        period_end = period_start + pd.Timedelta(days=6)
         period_label = period_start.strftime("%Y-%m-%d")
-        period_mask = (daily_dates >= period_start) & (daily_dates < period_start + pd.Timedelta(days=7))
-        expected_days = 7
     else:
-        period_label = latest_date.strftime("%Y-%m")
-        period_mask = daily_dates.dt.strftime("%Y-%m") == period_label
-        expected_days = int(latest_date.days_in_month)
+        period_start = latest_date.replace(day=1)
+        period_end = period_start + pd.offsets.MonthEnd(0)
+        period_label = period_start.strftime("%Y-%m")
 
     if period_label not in adjusted.index:
         return adjusted, set()
 
-    observed_days = int(daily_dates[period_mask].dt.strftime("%Y-%m-%d").nunique())
-    if observed_days <= 0 or observed_days >= expected_days:
+    period_dates = pd.date_range(period_start, period_end, freq="D")
+    period_mask = (daily_dates >= period_start) & (daily_dates <= period_end)
+    observed_dates = pd.DatetimeIndex(sorted(daily_dates[period_mask].dt.normalize().unique()))
+    if len(observed_dates) == 0 or len(observed_dates) >= len(period_dates):
         return adjusted, set()
 
-    observed_total = float(daily.loc[period_mask].sum().sum())
-    existing_total = float(pd.to_numeric(adjusted.loc[period_label], errors="coerce").fillna(0).sum())
-    if observed_total <= 0 or existing_total <= 0:
-        return adjusted, set()
+    per_column_weights, pooled_weights = _dow_weight_profile(daily, daily_dates, period_start)
 
-    nowcast_total = observed_total * expected_days / observed_days
-    adjusted.loc[period_label] = adjusted.loc[period_label] * (nowcast_total / existing_total)
+    observed_rows = daily.loc[period_mask]
+    scaled_any = False
+    for column in adjusted.columns:
+        if column not in observed_rows.columns:
+            continue
+        observed_total = float(pd.to_numeric(observed_rows[column], errors="coerce").fillna(0).sum())
+        existing = float(pd.to_numeric(adjusted.at[period_label, column], errors="coerce"))
+        if observed_total <= 0 or not existing > 0:
+            continue
+        weights = per_column_weights.get(column, pooled_weights)
+        completion = _period_completion_fraction(weights, observed_dates, period_dates)
+        if completion <= 0:
+            continue
+        adjusted.at[period_label, column] = observed_total / completion
+        scaled_any = True
+
+    if not scaled_any:
+        return period_pivot.copy(), set()
     return adjusted, {period_label}
+
+
+def _nowcast_method_caption(partial_usage_date: pd.Timestamp | None) -> str:
+    base = (
+        "Nowcast weights each observed day by its typical share of a week, estimated per series from the median "
+        f"day-of-week profile of the last {DOW_PROFILE_LOOKBACK_WEEKS} complete weeks, so a weekday-only view is not "
+        "extrapolated as if weekends carried the same volume."
+    )
+    if partial_usage_date is None:
+        return base
+    return (
+        base
+        + f" The partial UTC day {pd.Timestamp(partial_usage_date).strftime('%Y-%m-%d')} is excluded from the estimate."
+    )
 
 
 def _cap_change_percent_for_display(pivot_df: pd.DataFrame) -> pd.DataFrame:
@@ -918,6 +1147,7 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
     pivot_tok_monthly_modern = pd.DataFrame()
     weekly_coverage = pd.DataFrame()
     monthly_coverage = pd.DataFrame()
+    partial_usage_date: pd.Timestamp | None = None
     if not provider_activity.empty:
         modern_tok = provider_activity.copy()
         modern_tok["usage_date_dt"] = pd.to_datetime(modern_tok["usage_date"], errors="coerce")
@@ -930,6 +1160,20 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
             lambda value: _derive_provider_name(f"{value}/model", None) if pd.notna(value) else "Unknown"
         )
         modern_tok["total_tokens"] = pd.to_numeric(modern_tok["total_tokens"], errors="coerce")
+
+        # The UTC day a scrape lands on is always incomplete in that scrape:
+        # 2026-08-19 was captured at 02:41 UTC and holds ~9% of a normal
+        # day's tokens. Everything that extrapolates or aggregates a period
+        # has to know which day that is, otherwise it reads a 3-hour day as
+        # a full one.
+        scrape_stamps = pd.to_datetime(modern_tok.get("scraped_at"), errors="coerce", utc=True)
+        latest_scrape = scrape_stamps.max() if scrape_stamps is not None else pd.NaT
+        if pd.notna(latest_scrape):
+            candidate = latest_scrape.tz_convert(None).normalize()
+            # Only when the scrape day is actually present -- when the feed
+            # lags a day or more, every day on hand is already final.
+            partial_usage_date = candidate if (modern_tok["usage_date_dt"].dt.normalize() == candidate).any() else None
+
         pivot_tok_daily = modern_tok.pivot_table(index="usage_date_str", columns="provider_label", values="total_tokens", aggfunc="sum").fillna(0).sort_index()
         pivot_tok_weekly_modern_raw = modern_tok.pivot_table(index="usage_week", columns="provider_label", values="total_tokens", aggfunc="sum").fillna(0)
         pivot_tok_weekly_modern = _scale_partial_week_values(
@@ -939,6 +1183,7 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
             "provider_label",
             "total_tokens",
             "usage_date_dt",
+            partial_usage_date=partial_usage_date,
         )
         pivot_tok_monthly_modern = modern_tok.pivot_table(index="usage_month", columns="provider_label", values="total_tokens", aggfunc="sum").fillna(0).sort_index()
         weekly_coverage = _period_coverage(modern_tok, "usage_week", "usage_date_str", 7)
@@ -1190,6 +1435,7 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
             "pivot_monthly": pivot_tok_monthly,
             "weekly_coverage": weekly_coverage,
             "monthly_coverage": monthly_coverage,
+            "partial_usage_date": partial_usage_date,
         },
     }
 
@@ -1215,32 +1461,12 @@ def compute_compute_availability_views(datasets: dict[str, DatasetLoadResult]) -
 
         if df.empty:
             views["models_latest"] = pd.DataFrame()
-            views["models_growth"] = pd.DataFrame()
+            views["catalog_size"] = pd.DataFrame()
             views["models_history_start"] = None
             views["models_history_end"] = None
             return views
 
         snapshot_groups = list(df.groupby("snapshot_ts", sort=True))
-
-        # Every recorded snapshot -- live-scraped or Wayback-backfilled -- is
-        # one atomic pull of the entire openrouter.ai/api/v1/models response,
-        # never a partial/incremental one: the live pipeline's
-        # validate_current_catalog() rejects (and never writes) a collapsed
-        # pull before it can reach this table, and the backfill script reads
-        # a single-shot JSON dump per archived capture. So each snapshot's
-        # own model_id set *is* the true catalog size as of that snapshot;
-        # no "is this a full snapshot" guessing is needed or correct here.
-        # (An earlier version of this used an 80%-of-max-snapshot-size
-        # heuristic to decide full vs. partial and accumulated the "partial"
-        # ones -- with backfilled history spanning catalog sizes from ~220 to
-        # 600+, most of the smaller, perfectly legitimate early snapshots
-        # fell under that threshold and got unioned instead of replaced,
-        # producing an artificial climb-then-cliff sawtooth that didn't
-        # exist in the underlying data.)
-        growth_rows: list[dict[str, object]] = [
-            {"snapshot_ts": snapshot_ts, "model_count": group["model_id"].nunique()}
-            for snapshot_ts, group in snapshot_groups
-        ]
 
         latest_ts = snapshot_groups[-1][0]
         latest_models = df[df["snapshot_ts"] == latest_ts].drop_duplicates(subset="model_id", keep="last").sort_values("model_id").reset_index(drop=True)
@@ -1248,22 +1474,61 @@ def compute_compute_availability_views(datasets: dict[str, DatasetLoadResult]) -
         # The historical table is change-only and therefore cannot remove a
         # model that disappeared from the upstream API.
         source_path = models_result.source_path
-        current_path = (
-            source_path.parent / "raw_openrouter_models_current.parquet"
-            if source_path is not None and source_path.is_absolute() else None
+        sidecar_root = (
+            source_path.parent
+            if source_path is not None and source_path.is_absolute()
+            else None
         )
+        current_path = sidecar_root / "raw_openrouter_models_current.parquet" if sidecar_root else None
         if current_path and current_path.exists():
             current_frame = pd.read_parquet(current_path)
             if not current_frame.empty and "model_id" in current_frame.columns:
                 latest_models = current_frame.drop_duplicates("model_id", keep="last").sort_values("model_id").reset_index(drop=True)
 
+        # Catalog size comes from the openrouter_catalog_size sidecar, never
+        # from counting rows in this table. raw_openrouter_models is
+        # change-only (StorageManager._filter_unchanged_openrouter_rows), so a
+        # live snapshot's distinct model_id count is "models that changed that
+        # day" -- roughly 140-180 against a ~550-model catalog. Counting it
+        # here produced a chart that read as a catalog collapse in August 2026
+        # when nothing had collapsed. (Wayback-backfilled snapshots *are* full
+        # dumps, so the old count happened to be right for them, which is why
+        # the artifact only appeared at the right edge once daily live runs
+        # began.)
+        size_path = sidecar_root / "openrouter_catalog_size.parquet" if sidecar_root else None
+        catalog_size = pd.DataFrame()
+        if size_path and size_path.exists():
+            catalog_size = pd.read_parquet(size_path)
+            catalog_size["snapshot_ts"] = pd.to_datetime(catalog_size["snapshot_ts"], errors="coerce", utc=True)
+            catalog_size = catalog_size.dropna(subset=["snapshot_ts"]).sort_values("snapshot_ts")
+            # The two capture sources overlap for a few days in mid-2026. Keep
+            # the live reading on those days: it is a direct measurement of the
+            # catalog, while the archived one is whatever the crawler happened
+            # to catch. Plotting both leaves a sawtooth between two sources
+            # that are only expected to agree to within a few hours of churn.
+            catalog_size["_day"] = catalog_size["snapshot_ts"].dt.strftime("%Y-%m-%d")
+            catalog_size["_prefer"] = (catalog_size["capture_source"] == "live_api").astype(int)
+            catalog_size = (
+                catalog_size.sort_values(["_day", "_prefer", "snapshot_ts"])
+                .drop_duplicates("_day", keep="last")
+                .drop(columns=["_day", "_prefer"])
+                .sort_values("snapshot_ts")
+                .reset_index(drop=True)
+            )
+        views["catalog_size"] = catalog_size
+
         views["models_latest"] = latest_models
-        views["models_growth"] = pd.DataFrame(growth_rows)
-        views["models_history_start"] = snapshot_groups[0][0]
-        views["models_history_end"] = latest_ts
+        # Bound the caption by the size series actually plotted, not by the
+        # change-log's span -- they no longer start and end together.
+        if not catalog_size.empty:
+            views["models_history_start"] = catalog_size["snapshot_ts"].min()
+            views["models_history_end"] = catalog_size["snapshot_ts"].max()
+        else:
+            views["models_history_start"] = snapshot_groups[0][0]
+            views["models_history_end"] = latest_ts
     else:
         views["models_latest"] = pd.DataFrame()
-        views["models_growth"] = pd.DataFrame()
+        views["catalog_size"] = pd.DataFrame()
         views["models_history_start"] = None
         views["models_history_end"] = None
 
@@ -4315,6 +4580,8 @@ def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrou
     pivot_rev_weekly  = regroup_provider_pivot_for_display(rev_data.get("pivot_rev_weekly", pd.DataFrame()), "weekly")
     pivot_rev_daily   = regroup_provider_pivot_for_display(rev_data.get("pivot_rev_daily", pd.DataFrame()), "daily")
 
+    partial_usage_date = tok_data.get("partial_usage_date")
+
     pivot_tok_daily   = regroup_provider_pivot_for_display(tok_data.get("pivot_daily", pd.DataFrame()), "daily")
     pivot_tok_weekly  = regroup_provider_pivot_for_display(tok_data.get("pivot_weekly", pd.DataFrame()), "weekly")
     pivot_tok_monthly = regroup_provider_pivot_for_display(tok_data.get("pivot_monthly", pd.DataFrame()), "monthly")
@@ -4441,6 +4708,7 @@ def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrou
                     pivot_df,
                     pivot_active_daily,
                     granularity,
+                    partial_usage_date=partial_usage_date,
                 )
             plot_df = _pivot_to_aggregate_change_percent(change_source, granularity, aggregate_label)
             if granularity in {"weekly", "monthly"}:
@@ -4501,8 +4769,14 @@ def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrou
             st.caption("Daily change uses total trailing 7-day average versus the prior total trailing 7-day average. Display is capped at -100% to +300% to keep tiny-base spikes readable.")
         elif is_change and granularity == "weekly":
             st.caption("Weekly change compares total volume with the previous weekly total. The first comparable point is hidden to avoid startup-base spikes; the latest incomplete week is nowcast from observed daily volume and marked (est.). Display is capped at -100% to +300%.")
+            st.caption(_nowcast_method_caption(partial_usage_date))
         elif is_change and granularity == "monthly":
             st.caption("Monthly change compares total volume with the previous monthly total. The first comparable point is hidden to avoid startup-base spikes; the latest incomplete month is nowcast from observed daily volume and marked (est.). Display is capped at -100% to +300%.")
+            st.caption(_nowcast_method_caption(partial_usage_date))
+        elif not is_share and granularity == "weekly":
+            # The absolute weekly series is scaled the same way, so it needs
+            # the same disclosure -- one convention, stated once per chart.
+            st.caption(_nowcast_method_caption(partial_usage_date))
         if extra_caption:
             st.caption(extra_caption)
 
@@ -5662,7 +5936,7 @@ def render_compute_evolution_section(compute_views: dict[str, object]) -> None:
     charts survived and were moved out of the now-deleted HW & Compute tab.
     """
     models_latest = compute_views.get("models_latest", pd.DataFrame())
-    models_growth = compute_views.get("models_growth", pd.DataFrame())
+    catalog_size = compute_views.get("catalog_size", pd.DataFrame())
     models_history_start = compute_views.get("models_history_start")
     models_history_end = compute_views.get("models_history_end")
 
@@ -5671,34 +5945,62 @@ def render_compute_evolution_section(compute_views: dict[str, object]) -> None:
 
     with row2_col1:
         st.markdown('<div class="section-subtitle">OpenRouter Model Catalog Growth</div>', unsafe_allow_html=True)
-        if not models_growth.empty:
+        if not catalog_size.empty:
+            text_output = catalog_size.dropna(subset=["model_count_text_output"])
+            all_modalities = catalog_size.dropna(subset=["model_count_all"])
+
             fig_growth = go.Figure()
+            # Text-output models is the only basis comparable across the whole
+            # history: the Wayback captures archived the bare models URL, whose
+            # default response omits models that cannot output text, while the
+            # live pipeline requests ?output_modalities=all. On the seven days
+            # where both sources observed the catalog, the two agree exactly on
+            # this basis (bar one same-day timing difference).
             fig_growth.add_trace(go.Scatter(
-                x=models_growth["snapshot_ts"],
-                y=models_growth["model_count"],
-                fill='tozeroy',
-                line=dict(color=ACCENT, width=3)
+                x=text_output["snapshot_ts"],
+                y=text_output["model_count_text_output"],
+                name="Text-output models",
+                fill="tozeroy",
+                line=dict(color=ACCENT, width=3),
+                hovertemplate="%{x|%Y-%m-%d}<br>%{y} text-output models<extra></extra>",
             ))
+            if not all_modalities.empty:
+                fig_growth.add_trace(go.Scatter(
+                    x=all_modalities["snapshot_ts"],
+                    y=all_modalities["model_count_all"],
+                    name="All output modalities",
+                    line=dict(color=YELLOW, width=2.5, dash="dash"),
+                    hovertemplate="%{x|%Y-%m-%d}<br>%{y} models, all modalities<extra></extra>",
+                ))
             fig_growth.update_layout(
                 title="Model Catalog Growth",
                 template="plotly_white",
                 height=350,
-                margin=dict(l=0, r=0, t=40, b=10)
+                legend=dict(orientation="h", y=-0.15),
+                margin=dict(l=0, r=0, t=40, b=40)
             )
             st.plotly_chart(fig_growth, width="stretch", theme=None)
+
             if models_history_start is not None and models_history_end is not None:
                 start_label = pd.Timestamp(models_history_start).strftime("%Y-%m-%d")
                 end_label = pd.Timestamp(models_history_end).strftime("%Y-%m-%d")
                 st.caption(
-                    f"History reflects the normalized OpenRouter catalog snapshots currently on disk ({start_label} to {end_label})."
+                    f"Catalog size at each capture, {start_label} to {end_label}. Counted from complete catalog "
+                    "responses, not from the change-only model history."
                 )
-            if len(models_growth) > 1:
-                drops = models_growth[models_growth["model_count"].diff() < 0]
-                if not drops.empty:
-                    st.caption(
-                        "Catalog history is change-only between full snapshots. A downward step indicates a full upstream "
-                        "catalog refresh removed stale carry-forward models; it should not be read as a precise daily deletion count."
-                    )
+            if not all_modalities.empty:
+                all_start = pd.Timestamp(all_modalities["snapshot_ts"].min()).strftime("%Y-%m-%d")
+                st.caption(
+                    "Text-output models is the comparable basis across the full history: archived captures record the "
+                    "default catalog response, which omits models that cannot output text. The all-modalities line "
+                    f"begins {all_start}, when the pipeline started requesting every output modality; the step there is "
+                    "a change in what we ask for, not a jump in what OpenRouter listed."
+                )
+        else:
+            st.info(
+                "Catalog size history unavailable. Run scripts/backfill_openrouter_catalog_size.py to rebuild it "
+                "from the archived captures and the committed current-catalog history."
+            )
 
     with row2_col2:
         st.markdown('<div class="section-subtitle">Context Window vs. Pricing Prompt</div>', unsafe_allow_html=True)
