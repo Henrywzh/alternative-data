@@ -114,6 +114,8 @@ def _app_text(app) -> str:
     parts: list[str] = []
     for markdown in app.markdown:
         parts.append(str(markdown.value))
+    for html in app.get("html"):
+        parts.append(str(html.proto.body))
     for caption in app.caption:
         parts.append(str(caption.value))
     for info in app.info:
@@ -1177,7 +1179,10 @@ def test_company_heading_anchors_update_dynamically_without_stale_entity_ids(tmp
     app = app.run()
     assert not app.exception
 
-    bytedance_headings = [str(m.value) for m in app.markdown if "<h" in str(m.value)]
+    # Verify headings are emitted as native html elements (bypassing markdown ID rewriting)
+    html_elements = app.get("html")
+    assert len(html_elements) > 0
+    bytedance_headings = [str(h.proto.body) for h in html_elements]
     assert any('id="company-view-bytedance"' in h for h in bytedance_headings)
     assert any('id="exec-summary-bytedance-all"' in h for h in bytedance_headings)
     assert any('id="price-history-bytedance"' in h for h in bytedance_headings)
@@ -1188,7 +1193,9 @@ def test_company_heading_anchors_update_dynamically_without_stale_entity_ids(tmp
     app = app.run()
     assert not app.exception
 
-    tencent_headings = [str(m.value) for m in app.markdown if "<h" in str(m.value)]
+    html_elements = app.get("html")
+    assert len(html_elements) > 0
+    tencent_headings = [str(h.proto.body) for h in html_elements]
     assert any('id="company-view-tencent"' in h for h in tencent_headings)
     assert any('id="exec-summary-tencent-0700-hk"' in h for h in tencent_headings)
     assert any('id="price-history-tencent"' in h for h in tencent_headings)

@@ -37,7 +37,7 @@ def _slugify(text: str) -> str:
 
 def _render_section_heading(level: int, title: str, anchor: str | None = None) -> None:
     anchor_id = anchor or _slugify(title)
-    st.markdown(f'<h{level} id="{escape(anchor_id)}">{escape(title)}</h{level}>', unsafe_allow_html=True)
+    st.html(f'<h{level} id="{escape(anchor_id)}">{escape(title)}</h{level}>')
 
 
 COMPANY_LISTING_COLUMNS = (
