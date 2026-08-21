@@ -16,6 +16,77 @@ import pandas as pd
 
 from .models import ControlTowerSnapshot
 
+try:
+    from src.research_control_tower.eligibility import listing_eligibility_reason
+except ImportError:
+    # Package layering fallback if src is not directly importable
+    def listing_eligibility_reason(row: object, as_of: object) -> str | None:
+        def _blank(val: object) -> bool:
+            if val is None or val is pd.NA or val is pd.NaT:
+                return True
+            try:
+                m = pd.isna(val)
+                if not hasattr(m, "__len__") and bool(m):
+                    return True
+            except (TypeError, ValueError):
+                pass
+            return not str(val).strip()
+
+        def _txt(val: object) -> str:
+            return "" if _blank(val) else str(val).strip()
+
+        def _bool(val: object) -> bool | None:
+            if _blank(val):
+                return None
+            if isinstance(val, bool):
+                return val
+            norm = _txt(val).casefold()
+            if norm in {"true", "1", "yes"}:
+                return True
+            if norm in {"false", "0", "no"}:
+                return False
+            return None
+
+        def _dt(val: object) -> pd.Timestamp | None:
+            if _blank(val):
+                return None
+            try:
+                parsed = pd.Timestamp(val)
+            except (TypeError, ValueError, OverflowError):
+                return None
+            if pd.isna(parsed):
+                return None
+            if parsed.tzinfo is not None:
+                parsed = parsed.tz_localize(None)
+            return parsed.normalize()
+
+        if not isinstance(row, Mapping):
+            return "row must be a mapping"
+        lid = _txt(row.get("listing_id"))
+        if not lid:
+            return "blank listing_id is entity-only, not a listing-scoped row"
+        if "mapping_status" not in row or _txt(row.get("mapping_status")).casefold() != "verified":
+            return f"mapping_status={_txt(row.get('mapping_status')) or '<blank>'}; requires verified"
+        if _bool(row.get("collection_eligible")) is not True:
+            return f"collection_eligible={_txt(row.get('collection_eligible')) or '<blank>'}; requires true"
+        if "listing_status" not in row or _txt(row.get("listing_status")).casefold() != "active":
+            return f"listing_status={_txt(row.get('listing_status')) or '<blank>'}; requires active"
+
+        as_of_ts = pd.Timestamp(as_of)
+        as_of_d = (
+            as_of_ts.tz_convert("UTC").tz_localize(None).normalize()
+            if as_of_ts.tzinfo is not None and as_of_ts.utcoffset() is not None
+            else as_of_ts.normalize()
+        )
+
+        af = _dt(row.get("active_from"))
+        at = _dt(row.get("active_to"))
+        if af is not None and af > as_of_d:
+            return f"active_from={af.date()} is after as_of={as_of_d.date()}"
+        if at is not None and as_of_d >= at:
+            return f"active_to={at.date()} is not after as_of={as_of_d.date()}"
+        return None
+
 CoverageStatusCode = Literal[
     "available",
     "partial",
@@ -75,7 +146,14 @@ _CATEGORY_SOURCE_KINDS: Mapping[str, frozenset[str]] = {
     "consensus": frozenset({"consensus", "consensus_provider"}),
     "earnings_actuals": frozenset({"earnings"}),
     "filings_news": frozenset(
-        {"filing", "news", "official_document_metadata"}
+        {
+            "filing",
+            "filings",
+            "news",
+            "official_document_metadata",
+            "official_filing",
+            "official_filings",
+        }
     ),
     "events": frozenset({"events", "registry"}),
     "macro": frozenset({"macro"}),
@@ -88,7 +166,17 @@ _CATEGORY_SOURCE_IDS: Mapping[str, frozenset[str]] = {
     ),
     "earnings_actuals": frozenset({"earnings_actuals"}),
     "filings_news": frozenset(
-        {"filings_sec_edgar", "news_official_ai_rss"}
+        {
+            "filings_sec_edgar",
+            "news_official_ai_rss",
+            "official_filings",
+            "official_filings_state",
+            "official_filings_v1",
+            "hkexnews",
+            "sec_edgar_submissions",
+            "issuer_ir",
+            "bytedance",
+        }
     ),
     "events": frozenset(
         {
@@ -117,7 +205,7 @@ _CONSENSUS_TS_COLUMNS = (
     "snapshot_at",
     "current_snapshot_at",
 )
-_FILINGS_TS_COLUMNS = ("published_at",)
+_FILINGS_TS_COLUMNS = ("published_at", "accepted_at")
 _EARNINGS_ACTUALS_TS_COLUMNS = ("filing_at", "published_at")
 _MACRO_TS_COLUMNS = ("release_at", "source_published_at")
 
@@ -297,6 +385,14 @@ class _CategorySources:
                     return source
                 if source.source_id.removeprefix("provider:") == text:
                     return source
+                if source.source_id == f"filings:{text}":
+                    return source
+                if source.source_id.removeprefix("filings:") == text:
+                    return source
+                if source.source_id == f"artifact:{text}":
+                    return source
+                if source.source_id.removeprefix("artifact:") == text:
+                    return source
             return None
         populated = tuple(
             source
@@ -418,6 +514,14 @@ def _matches_category_source(
             f"provider:{candidate}:"
         ):
             return True
+        if source_id.startswith(f"filings:{candidate}") or source_id.startswith(
+            f"provider:filings:{candidate}"
+        ):
+            return True
+    if category == "filings_news" and (
+        source_id.startswith("filings:") or source_id.startswith("provider:filings:")
+    ):
+        return True
     return source_kind in _CATEGORY_SOURCE_KINDS.get(category, frozenset())
 
 
@@ -580,10 +684,7 @@ def _active_listing_map(
     candidates: dict[str, set[str]] = {}
     for _, row in snapshot.listings.iterrows():
         payload = row.to_dict()
-        if (
-            _text(payload.get("listing_status")).lower() != "active"
-            or not _active_at_snapshot(payload, snapshot)
-        ):
+        if listing_eligibility_reason(payload, snapshot.now_utc) is not None:
             continue
         listing_id = _text(payload.get("listing_id"))
         entity_id = _text(payload.get("entity_id"))
@@ -739,6 +840,30 @@ def _resolve_relation_entities(
     for basket_id in _relation_values(row.get("related_basket_ids")):
         related.update(members_by_basket.get(basket_id, set()))
     return related
+
+
+def _official_filings_rows_for_entity(
+    snapshot: ControlTowerSnapshot,
+    entity_id: str,
+    *,
+    listing_owner: Mapping[str, str],
+) -> pd.DataFrame:
+    official = snapshot.official_filings
+    if official.empty:
+        return official.iloc[0:0]
+    matched: list[bool] = []
+    for _, row in official.iterrows():
+        row_entity = _text(row.get("entity_id"))
+        row_listing = _text(row.get("listing_id"))
+        if row_listing:
+            owner = listing_owner.get(row_listing)
+            matched.append(
+                owner == entity_id
+                and (not row_entity or row_entity == owner)
+            )
+        else:
+            matched.append(bool(row_entity) and row_entity == entity_id)
+    return official.loc[matched].copy()
 
 
 def _filings_rows_for_entity(
@@ -1300,19 +1425,35 @@ def _filings_news_cell(
     sources: _CategorySources,
     now_utc: pd.Timestamp,
 ) -> CoverageCell:
-    rows = _filings_rows_for_entity(
+    official_rows = _official_filings_rows_for_entity(
+        snapshot,
+        entity_id,
+        listing_owner=listing_owner,
+    )
+    news_rows = _filings_rows_for_entity(
         snapshot,
         entity_id,
         stage1_entity_ids=stage1_entity_ids,
         listing_owner=listing_owner,
         members_by_basket=members_by_basket,
     )
-    if not rows.empty:
+    official_count = len(official_rows)
+    news_count = len(news_rows)
+    total_count = official_count + news_count
+
+    if total_count > 0:
+        if official_count and news_count:
+            all_rows = pd.concat([official_rows, news_rows], ignore_index=True)
+        elif official_count:
+            all_rows = official_rows
+        else:
+            all_rows = news_rows
+
         source_status, source_detail = _assess_time_sensitive_rows(
-            rows,
+            all_rows,
             sources=sources,
             timestamp_columns=_FILINGS_TS_COLUMNS,
-            source_id_columns=("source_id",),
+            source_id_columns=("source_id", "publisher"),
             now_utc=now_utc,
         )
         if source_status != "available":
@@ -1320,22 +1461,40 @@ def _filings_news_cell(
                 "filings_news",
                 source_status,
                 source_detail,
-                record_count=len(rows),
+                record_count=total_count,
             )
         if _missing_geographies(snapshot, "filings_news"):
+            if official_count and news_count:
+                desc = f"{official_count} official filing(s) and {news_count} news item(s)"
+            elif official_count:
+                desc = f"{official_count} official filing(s)"
+            else:
+                desc = f"{news_count} filing/news item(s)"
             return CoverageCell(
                 "filings_news",
                 "partial",
-                f"{len(rows)} filing/news item(s) linked to this entity; the "
+                f"{desc} linked to this entity; the "
                 f"governing source records uncovered geographies.",
-                record_count=len(rows),
+                record_count=total_count,
+            )
+        if official_count and news_count:
+            details = (
+                f"{official_count} official filing(s) and {news_count} news item(s) "
+                f"linked to this entity. {source_detail}"
+            )
+        elif official_count:
+            details = (
+                f"{official_count} official filing(s) linked to this entity. {source_detail}"
+            )
+        else:
+            details = (
+                f"{news_count} filing/news item(s) linked to this entity. {source_detail}"
             )
         return CoverageCell(
             "filings_news",
             "available",
-            f"{len(rows)} filing/news item(s) linked to this entity. "
-            f"{source_detail}",
-            record_count=len(rows),
+            details,
+            record_count=total_count,
         )
     empty_status, empty_detail = _empty_status(sources)
     return CoverageCell(
@@ -1563,8 +1722,7 @@ def build_stage1_coverage_matrix(
                 candidate
                 for _, candidate in matches.iterrows()
                 if _text(candidate.get("entity_id")) == entity_id
-                and _text(candidate.get("listing_status")).lower() == "active"
-                and _active_at_snapshot(candidate.to_dict(), snapshot)
+                and listing_eligibility_reason(candidate.to_dict(), snapshot.now_utc) is None
             ]
             if not active_matches:
                 continue
@@ -1938,19 +2096,42 @@ def build_data_coverage_summary(snapshot: ControlTowerSnapshot) -> DataCoverageS
             )
         )
 
-    filings = snapshot.news_filings
-    filing_count = len(filings) if not filings.empty else 0
+    official_filings = snapshot.official_filings
+    news_filings = snapshot.news_filings
+    official_count = len(official_filings) if not official_filings.empty else 0
+    news_count = len(news_filings) if not news_filings.empty else 0
+    filing_count = official_count + news_count
     if filing_count:
-        linked_count = _linked_row_count(
-            snapshot,
-            filings,
-            ("related_entity_ids", "related_listing_ids", "related_basket_ids"),
+        official_linked = (
+            _linked_row_count(
+                snapshot, official_filings, ("entity_id", "listing_id")
+            )
+            if official_count
+            else 0
         )
+        news_linked = (
+            _linked_row_count(
+                snapshot,
+                news_filings,
+                ("related_entity_ids", "related_listing_ids", "related_basket_ids"),
+            )
+            if news_count
+            else 0
+        )
+        linked_count = official_linked + news_linked
+
+        if official_count and news_count:
+            all_filings = pd.concat([official_filings, news_filings], ignore_index=True)
+        elif official_count:
+            all_filings = official_filings
+        else:
+            all_filings = news_filings
+
         status_code, source_detail = _assess_time_sensitive_rows(
-            filings,
+            all_filings,
             sources=source_groups["filings_news"],
             timestamp_columns=_FILINGS_TS_COLUMNS,
-            source_id_columns=("source_id",),
+            source_id_columns=("source_id", "publisher"),
             now_utc=snapshot.now_utc,
         )
         missing_geographies = _missing_geographies(
