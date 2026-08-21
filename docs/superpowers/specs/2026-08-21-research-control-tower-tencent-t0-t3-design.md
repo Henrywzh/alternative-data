@@ -1,8 +1,8 @@
 # Research Control Tower — Tencent (0700.HK / TCEHY) T0–T3 Vertical Slice Design Spec
 
-**Date:** 2026-08-21  
+**Date:** 2026-08-21
 **Status:** Approved Design (Architecture boundaries, source hierarchy, and design principles explicitly approved by user in session discussion; implementation gated on written spec review per the plan)
-**Repository:** `alternative-data`  
+**Repository:** `alternative-data`
 **Target Entities:** `TENCENT` (`0700.HK` primary listing; `TCEHY` US OTC depositary receipt — depositary role/ratio/type gated and subject to official verification prior to active trading enablement)
 **Related Entities:** `BYTEDANCE` (private peer/competitor for benchmark comparison)
 **Parent Scope:** Research Control Tower Stage 1 Focus Universe + Fundamental/Tactical Thesis Workflow
