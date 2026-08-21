@@ -1,149 +1,322 @@
-"""Tests for Tencent IR historical financial disclosures collector and parser."""
+"""Contract and leakage tests for Tencent official historical financials."""
 
 from __future__ import annotations
 
+import hashlib
 import json
-from datetime import date
 from pathlib import Path
 
 import pandas as pd
 import pytest
 
 from scripts.research_control_tower_tencent_financials import (
-    METRIC_DEFINITIONS,
+    REQUIRED_CORE_METRICS,
+    SUPPORTED_METRIC_BASES,
+    TENCENT_EARNINGS_ACTUALS_COLUMNS,
     TENCENT_ENTITY_ID,
     TENCENT_LISTING_ID,
+    assess_core_quarter_coverage,
     load_tencent_disclosure_records,
     parse_and_collect_tencent_actuals,
     transform_tencent_disclosures_to_actuals,
+    validate_tencent_actuals,
 )
-from src.research_control_tower.build import EARNINGS_ACTUALS_COLUMNS, SOURCE_STATE_COLUMNS
+from src.research_control_tower.build import SOURCE_STATE_COLUMNS
 
 
-@pytest.fixture
-def sample_disclosures():
-    return [
-        {
-            "period_label": "1Q2026",
-            "period_start": "2026-01-01",
-            "period_end": "2026-03-31",
-            "filing_at": "2026-05-13T08:31:00+08:00",
-            "published_at": "2026-05-13T08:31:00+08:00",
-            "source_url": "https://static.www.tencent.com/uploads/2026/05/13/47382ae415a209fd161bc19a1f9b3704.pdf",
-            "document_title": "TENCENT ANNOUNCES 2026 FIRST QUARTER RESULTS",
-            "revenue_total": 196458.0,
-            "gross_profit": 111265.0,
-            "operating_profit_gaap": 67375.0,
-            "operating_profit_non_ifrs": 75627.0,
-            "net_profit_attributable_gaap": 58093.0,
-            "net_profit_attributable_non_ifrs": 67905.0,
-            "basic_eps_gaap": 6.431,
-            "diluted_eps_gaap": 6.302,
-            "basic_eps_non_ifrs": 7.517,
-            "diluted_eps_non_ifrs": 7.364,
-            "capex": 31936.0,
-            "fcf": 56700.0,
-        },
-        {
-            "period_label": "2Q2026",
-            "period_start": "2026-04-01",
-            "period_end": "2026-06-30",
-            "filing_at": "2026-08-12T20:00:00+08:00",
-            "published_at": "2026-08-12T20:00:00+08:00",
-            "source_url": "https://www.tencent.com/wp-content/uploads/2026/08/Tencent-Announces-2026-Second-Quarter-Results.pdf",
-            "document_title": "TENCENT ANNOUNCES 2026 SECOND QUARTER RESULTS",
-            "revenue_total": 204785.0,
-            "gross_profit": 118433.0,
-            "operating_profit_gaap": 67276.0,
-            "operating_profit_non_ifrs": 75636.0,
-            "net_profit_attributable_gaap": 56022.0,
-            "net_profit_attributable_non_ifrs": 68415.0,
-            "basic_eps_gaap": 6.207,
-            "diluted_eps_gaap": 6.104,
-            "basic_eps_non_ifrs": 7.581,
-            "diluted_eps_non_ifrs": 7.433,
-            "capex": 52784.0,
-            "fcf": -13800.0,
-        },
-    ]
+FIXTURE_DIR = Path(__file__).parent / "fixtures" / "tencent_ir"
+FIXTURE_PATH = FIXTURE_DIR / "tencent_disclosures_2021_2026.json"
+EXPECTED_HKEX_METADATA = {
+    "1Q2021": ("2021-05-20T08:30:00Z", "hkexnews:9771605", "2021052000308"),
+    "2Q2021": ("2021-08-18T08:36:00Z", "hkexnews:9898606", "2021081800391"),
+    "3Q2021": ("2021-11-10T08:36:00Z", "hkexnews:10007323", "2021111000481"),
+    "4Q2021": ("2022-03-23T08:31:00Z", "hkexnews:10168304", "2022032300430"),
+    "1Q2022": ("2022-05-18T08:30:00Z", "hkexnews:10264906", "2022051800271"),
+    "2Q2022": ("2022-08-17T08:30:00Z", "hkexnews:10389095", "2022081700319"),
+    "3Q2022": ("2022-11-16T08:40:00Z", "hkexnews:10508846", "2022111600375"),
+    "4Q2022": ("2023-03-22T08:33:00Z", "hkexnews:10640498", "2023032200281"),
+    "1Q2023": ("2023-05-17T08:30:00Z", "hkexnews:10739945", "2023051700239"),
+    "2Q2023": ("2023-08-16T08:38:00Z", "hkexnews:10854099", "2023081600440"),
+    "3Q2023": ("2023-11-15T08:30:00Z", "hkexnews:10969152", "2023111500283"),
+    "4Q2023": ("2024-03-20T08:39:00Z", "hkexnews:11106351", "2024032000508"),
+    "1Q2024": ("2024-05-14T08:30:00Z", "hkexnews:11210132", "2024051400293"),
+    "2Q2024": ("2024-08-14T08:30:00Z", "hkexnews:11321791", "2024081400282"),
+    "3Q2024": ("2024-11-13T08:30:00Z", "hkexnews:11439424", "2024111300327"),
+    "4Q2024": ("2025-03-19T08:30:00Z", "hkexnews:11576382", "2025031900336"),
+    "1Q2025": ("2025-05-14T08:31:00Z", "hkexnews:11673735", "2025051400273"),
+    "2Q2025": ("2025-08-13T08:30:00Z", "hkexnews:11793093", "2025081300261"),
+    "3Q2025": ("2025-11-13T08:30:00Z", "hkexnews:11914783", "2025111300286"),
+    "4Q2025": ("2026-03-18T08:30:00Z", "hkexnews:12056832", "2026031800388"),
+    "1Q2026": ("2026-05-13T08:31:00Z", "hkexnews:12157226", "2026051300334"),
+    "2Q2026": ("2026-08-12T08:31:00Z", "hkexnews:12280990", "2026081200296"),
+}
 
 
-def test_load_official_tencent_disclosures_fixture():
-    records = load_tencent_disclosure_records()
-    assert len(records) >= 12
-    assert len(records) == 22  # 2021Q1 through 2026Q2
-    labels = [r["period_label"] for r in records]
-    assert "1Q2021" in labels
-    assert "2Q2026" in labels
-    assert "1Q2026" in labels
-
-
-def test_transform_disclosures_preserves_accounting_tracks_and_provenance(sample_disclosures):
-    rows = transform_tencent_disclosures_to_actuals(
-        sample_disclosures, as_of_utc=pd.Timestamp("2026-08-21T12:00:00Z")
+def _record(period_label: str) -> dict[str, object]:
+    return next(
+        item
+        for item in load_tencent_disclosure_records(FIXTURE_PATH)
+        if item["period_label"] == period_label
     )
-    # 2 periods * 12 metrics = 24 rows
-    assert len(rows) == 24
+
+
+def test_fixture_uses_audited_hkex_metadata_and_real_document_ids():
+    records = load_tencent_disclosure_records(FIXTURE_PATH)
+
+    assert len(records) == 22
+    assert records[0]["period_label"] == "1Q2021"
+    assert records[-1]["period_label"] == "2Q2026"
+
+    older = _record("1Q2021")
+    assert older["accepted_at"] == "2021-05-20T08:30:00Z"
+    assert older["accession_no"] == "hkexnews:9771605"
+    assert older["source_document_id"] == "2021052000308"
+    assert older["source_url"].endswith("/2021/0520/2021052000308.pdf")
+
+    for label, (published_at, accession_no, document_id) in EXPECTED_HKEX_METADATA.items():
+        item = _record(label)
+        assert item["filing_at"] == published_at
+        assert item["published_at"] == published_at
+        assert item["accepted_at"] == published_at
+        assert item["accession_no"] == accession_no
+        assert item["source_document_id"] == document_id
+        assert item["source_url"].startswith("https://www1.hkexnews.hk/")
+        assert item["source_url"].endswith(f"/{document_id}.pdf")
+        assert item["timestamp_precision"] == "minute"
+        assert item["source_timezone"] == "Asia/Hong_Kong"
+
+
+@pytest.mark.parametrize(
+    ("document_id", "expected_sha256"),
+    [
+        (
+            "2021052000308",
+            "4d2fe2bf9e9ebf3de9e1a9f498f6b079fcbbdd2f128d5b392a926528a93806c7",
+        ),
+        (
+            "2026081200296",
+            "6ae9083e568a17ea49c796c5f6d15741a5ab720b0d98e8e97291292a29385119",
+        ),
+    ],
+)
+def test_archived_official_pdf_hashes_are_real(document_id, expected_sha256):
+    document = FIXTURE_DIR / "source_documents" / f"{document_id}.pdf"
+    assert document.read_bytes().startswith(b"%PDF")
+    assert hashlib.sha256(document.read_bytes()).hexdigest() == expected_sha256
+    fixture_row = next(
+        item
+        for item in load_tencent_disclosure_records(FIXTURE_PATH)
+        if item["source_document_id"] == document_id
+    )
+    assert fixture_row["source_document_sha256"] == expected_sha256
+
+
+def test_values_and_page_references_are_backed_by_archived_official_pdfs():
+    PdfReader = pytest.importorskip("pypdf").PdfReader
+    older_pdf = PdfReader(
+        FIXTURE_DIR / "source_documents" / "2021052000308.pdf"
+    )
+    older_page_one = older_pdf.pages[0].extract_text()
+    older_reconciliation = older_pdf.pages[13].extract_text()
+    assert "Revenues 135,303" in older_page_one
+    assert "Operating profit 56,273" in older_page_one
+    assert "– diluted 4.917" in older_page_one
+    assert "42,758" in older_reconciliation
+    assert (
+        _record("1Q2021")["source_page_refs"]["operating_profit_non_ifrs"]
+        == "PDF p. 14, Non-IFRS reconciliation, current three-month period column"
+    )
+
+    recent_pdf = PdfReader(
+        FIXTURE_DIR / "source_documents" / "2026081200296.pdf"
+    )
+    recent_page_one = recent_pdf.pages[0].extract_text()
+    recent_capex_page = recent_pdf.pages[11].extract_text()
+    recent_fcf_page = recent_pdf.pages[16].extract_text()
+    assert "Revenues 204,785" in recent_page_one
+    assert "Operating profit 67,276" in recent_page_one
+    assert "Non-IFRS operating profit 75,636" in recent_page_one
+    assert "52,784" in recent_capex_page
+    assert "free cash flow" in recent_fcf_page.lower()
+    assert "RMB13.8 billion" in recent_fcf_page
+
+
+def test_transform_has_enriched_exact_contract_and_unblended_tracks():
+    rows = transform_tencent_disclosures_to_actuals(
+        [_record("2Q2026")],
+        as_of_utc=pd.Timestamp("2026-08-21T12:00:00Z"),
+    )
     frame = pd.DataFrame(rows)
-    assert set(EARNINGS_ACTUALS_COLUMNS) == set(frame.columns)
 
-    # Verify 2Q26 verified figures
-    q2_26 = frame[frame["period_label"] == "2Q2026"].set_index("metric")
-    assert q2_26.loc["revenue_total", "reported_value"] == 204785.0 * 1e6
-    assert q2_26.loc["operating_profit", "reported_value"] == 67276.0 * 1e6
-    assert q2_26.loc["operating_profit_non_ifrs", "reported_value"] == 75636.0 * 1e6
-    assert q2_26.loc["net_profit_attributable", "reported_value"] == 56022.0 * 1e6
-    assert q2_26.loc["net_profit_attributable_non_ifrs", "reported_value"] == 68415.0 * 1e6
-    assert q2_26.loc["diluted_eps", "reported_value"] == 6.104
-    assert q2_26.loc["diluted_eps_non_ifrs", "reported_value"] == 7.433
-    assert q2_26.loc["capex", "reported_value"] == 52784.0 * 1e6
-    assert q2_26.loc["free_cash_flow", "reported_value"] == -13800.0 * 1e6
+    assert list(frame.columns) == TENCENT_EARNINGS_ACTUALS_COLUMNS
+    assert len(frame) == 9  # seven core track rows plus capex and FCF
+    assert set(frame["metric_basis"]) == {"GAAP_REPORTED", "NON_IFRS_MANAGEMENT"}
+    assert set(frame["accounting_basis"]) == {"IFRS", "Non-IFRS management measure"}
+    assert frame["source_document_sha256"].str.fullmatch(r"[0-9a-f]{64}").all()
+    assert frame["source_page_ref"].str.startswith("PDF p.").all()
+    assert set(frame["value_origin"]) == {"direct_quarterly_disclosure"}
+    assert set(frame["timestamp_precision"]) == {"minute"}
+    assert set(frame["accession_no"]) == {"hkexnews:12280990"}
+    assert set(frame["source_document_id"]) == {"2026081200296"}
 
-    # Verify 1Q26 verified figures
-    q1_26 = frame[frame["period_label"] == "1Q2026"].set_index("metric")
-    assert q1_26.loc["revenue_total", "reported_value"] == 196458.0 * 1e6
-    assert q1_26.loc["operating_profit_non_ifrs", "reported_value"] == 75627.0 * 1e6
-    assert q1_26.loc["free_cash_flow", "reported_value"] == 56700.0 * 1e6
+    q2 = frame.set_index(["metric", "metric_basis"])
+    assert q2.loc[("revenue_total", "GAAP_REPORTED"), "reported_value"] == 204785e6
+    assert q2.loc[("operating_profit", "GAAP_REPORTED"), "reported_value"] == 67276e6
+    assert q2.loc[("operating_profit", "NON_IFRS_MANAGEMENT"), "reported_value"] == 75636e6
+    assert q2.loc[("net_profit_attributable", "GAAP_REPORTED"), "reported_value"] == 56022e6
+    assert q2.loc[("net_profit_attributable", "NON_IFRS_MANAGEMENT"), "reported_value"] == 68415e6
+    assert q2.loc[("diluted_eps", "GAAP_REPORTED"), "reported_value"] == 6.104
+    assert q2.loc[("diluted_eps", "NON_IFRS_MANAGEMENT"), "reported_value"] == 7.433
+    assert q2.loc[("capex", "GAAP_REPORTED"), "reported_value"] == 52784e6
+    assert q2.loc[("free_cash_flow", "NON_IFRS_MANAGEMENT"), "reported_value"] == -13800e6
 
-    # Verify tracks are strictly segregated
-    assert "GAAP_REPORTED" in q2_26.loc["operating_profit", "accounting_basis"]
-    assert "NON_IFRS_MANAGEMENT" in q2_26.loc["operating_profit_non_ifrs", "accounting_basis"]
-    assert q2_26.loc["operating_profit", "accounting_basis"] != q2_26.loc["operating_profit_non_ifrs", "accounting_basis"]
+    for actual_id in frame["actual_id"]:
+        assert "12280990" in actual_id
+        assert "2Q2026" in actual_id
+        assert actual_id.endswith("_v1")
 
 
-def test_parse_and_collect_tencent_actuals_full_pipeline(tmp_path):
+def test_q4_values_are_direct_columns_not_fy_minus_nine_months():
+    rows = transform_tencent_disclosures_to_actuals(
+        [_record("4Q2025")],
+        as_of_utc=pd.Timestamp("2026-03-18T09:00:00Z"),
+    )
+    frame = pd.DataFrame(rows)
+
+    assert set(frame["value_origin"]) == {"direct_quarterly_disclosure"}
+    assert set(frame["derivation_method"]) == {"direct_q4_column_in_annual_results"}
+    assert set(frame["source_page_ref"]) == {
+        "PDF p. 1, Financial Performance Highlights, three months ended 31 December 2025"
+    }
+
+
+def test_as_of_excludes_future_disclosures_without_timestamp_leakage():
+    frame, state = parse_and_collect_tencent_actuals(
+        fixture_path=FIXTURE_PATH,
+        as_of_utc=pd.Timestamp("2022-06-01T00:00:00Z"),
+    )
+
+    assert set(frame["period_label"]) == {
+        "1Q2021",
+        "2Q2021",
+        "3Q2021",
+        "4Q2021",
+        "1Q2022",
+    }
+    assert "2Q2022" not in set(frame["period_label"])
+    cutoff = pd.Timestamp("2022-06-01T00:00:00Z")
+    for column in ("filing_at", "published_at", "accepted_at", "retrieved_at_utc"):
+        assert (frame[column] <= cutoff).all()
+    assert (frame["filing_at"] <= frame["retrieved_at_utc"]).all()
+    assert (frame["published_at"] <= frame["retrieved_at_utc"]).all()
+    assert (frame["accepted_at"] <= frame["retrieved_at_utc"]).all()
+    assert state.iloc[0]["status"] == "partial"
+    assert "5 complete core quarters" in state.iloc[0]["detail"]
+
+
+def test_2024_cutoff_does_not_emit_2025_or_2026_records():
+    frame, state = parse_and_collect_tencent_actuals(
+        fixture_path=FIXTURE_PATH,
+        as_of_utc=pd.Timestamp("2024-06-01T00:00:00Z"),
+    )
+
+    assert frame["period_end"].max() == pd.Timestamp("2024-03-31T00:00:00Z")
+    assert not frame["period_label"].str.contains("2025|2026").any()
+    assert state.iloc[0]["status"] == "available"
+    assert "13 complete core quarters" in state.iloc[0]["detail"]
+
+
+def test_core_coverage_requires_four_required_metrics_in_each_distinct_quarter():
+    full, _ = parse_and_collect_tencent_actuals(
+        fixture_path=FIXTURE_PATH,
+        as_of_utc=pd.Timestamp("2026-08-21T00:00:00Z"),
+    )
+    assert assess_core_quarter_coverage(full) == 22
+
+    removed_periods = {f"{q}Q{year}" for year in range(2021, 2024) for q in range(1, 5)}
+    incomplete = full[
+        ~(
+            full["metric"].eq("diluted_eps")
+            & full["metric_basis"].eq("GAAP_REPORTED")
+            & full["period_label"].isin(removed_periods)
+        )
+    ].copy()
+    assert len(incomplete) > 12
+    assert assess_core_quarter_coverage(incomplete) == 10
+    assert REQUIRED_CORE_METRICS == {
+        ("revenue_total", "GAAP_REPORTED"),
+        ("operating_profit", "GAAP_REPORTED"),
+        ("net_profit_attributable", "GAAP_REPORTED"),
+        ("diluted_eps", "GAAP_REPORTED"),
+    }
+
+
+def test_parser_coverage_gate_is_not_metric_row_count(tmp_path):
+    records = load_tencent_disclosure_records(FIXTURE_PATH)
+    for item in records[:12]:
+        item.pop("diluted_eps_gaap")
+    broken_fixture = tmp_path / "broken.json"
+    broken_fixture.write_text(json.dumps(records), encoding="utf-8")
+
+    frame, state = parse_and_collect_tencent_actuals(
+        fixture_path=broken_fixture,
+        as_of_utc=pd.Timestamp("2026-08-21T00:00:00Z"),
+    )
+    assert len(frame) > 12
+    assert state.iloc[0]["status"] == "partial"
+    assert "10 complete core quarters" in state.iloc[0]["detail"]
+
+
+def test_validation_rejects_wrong_schema_duplicate_and_nonfinite_values():
+    frame, _ = parse_and_collect_tencent_actuals(
+        fixture_path=FIXTURE_PATH,
+        as_of_utc=pd.Timestamp("2026-08-21T00:00:00Z"),
+    )
+
+    with pytest.raises(ValueError, match="exact schema"):
+        validate_tencent_actuals(frame.drop(columns=["metric_basis"]))
+
+    duplicate = pd.concat([frame, frame.iloc[[0]]], ignore_index=True)
+    with pytest.raises(ValueError, match="duplicate actual_id"):
+        validate_tencent_actuals(duplicate)
+
+    duplicate_natural_key = pd.concat([frame, frame.iloc[[0]]], ignore_index=True)
+    duplicate_natural_key.loc[len(duplicate_natural_key) - 1, "actual_id"] += "-other"
+    with pytest.raises(ValueError, match="duplicate natural keys"):
+        validate_tencent_actuals(duplicate_natural_key)
+
+    nonfinite = frame.copy()
+    nonfinite.loc[0, "reported_value"] = float("inf")
+    with pytest.raises(ValueError, match="finite"):
+        validate_tencent_actuals(nonfinite)
+
+    bad_basis = frame.copy()
+    bad_basis.loc[0, "metric_basis"] = "BLENDED"
+    with pytest.raises(ValueError, match="metric_basis"):
+        validate_tencent_actuals(bad_basis)
+
+
+def test_full_pipeline_writes_atomic_loadable_outputs(tmp_path):
     output = tmp_path / "actuals"
     frame, state = parse_and_collect_tencent_actuals(
+        fixture_path=FIXTURE_PATH,
         as_of_utc=pd.Timestamp("2026-08-21T12:00:00Z"),
         output_dir=output,
     )
-    assert len(frame) == 22 * 12  # 264 rows
-    assert list(frame.columns) == EARNINGS_ACTUALS_COLUMNS
+
+    assert list(frame.columns) == TENCENT_EARNINGS_ACTUALS_COLUMNS
     assert list(state.columns) == SOURCE_STATE_COLUMNS
-
-    # State validation
+    assert len(frame) == (22 * 7) + 4
     assert state.iloc[0]["status"] == "available"
-    assert state.iloc[0]["row_count"] == 264
-    assert state.iloc[0]["source_id"] == "earnings:tencent_ir_financials"
+    assert state.iloc[0]["row_count"] == len(frame)
+    assert not list(output.glob("*.tmp"))
 
-    # Parquet files written and loadable
-    assert (output / "tencent_earnings_actuals_v1.parquet").is_file()
-    assert (output / "tencent_earnings_actuals_state.parquet").is_file()
-
-    loaded_frame = pd.read_parquet(output / "tencent_earnings_actuals_v1.parquet")
-    assert len(loaded_frame) == 264
-    assert set(loaded_frame["entity_id"]) == {TENCENT_ENTITY_ID}
-    assert set(loaded_frame["listing_id"]) == {TENCENT_LISTING_ID}
-
-
-def test_no_fabricated_values_or_fake_dates_in_financials():
-    frame, _ = parse_and_collect_tencent_actuals()
-    # Check that every row has valid timestamps and non-null values
-    assert frame["filing_at"].notna().all()
-    assert frame["published_at"].notna().all()
-    assert frame["period_start"].notna().all()
-    assert frame["period_end"].notna().all()
-    assert frame["reported_value"].notna().all()
-    assert frame["source_url"].str.startswith("http").all()
-    assert frame["actual_id"].str.startswith("ACT_0700_").all()
-
+    actuals_path = output / "tencent_earnings_actuals_v1.parquet"
+    state_path = output / "tencent_earnings_actuals_state.parquet"
+    assert actuals_path.is_file()
+    assert state_path.is_file()
+    loaded = pd.read_parquet(actuals_path)
+    assert list(loaded.columns) == TENCENT_EARNINGS_ACTUALS_COLUMNS
+    assert set(loaded["entity_id"]) == {TENCENT_ENTITY_ID}
+    assert set(loaded["listing_id"]) == {TENCENT_LISTING_ID}
+    assert set(loaded["metric_basis"]).issubset(SUPPORTED_METRIC_BASES)
