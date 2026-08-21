@@ -59,11 +59,12 @@ Usage::
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 import hashlib
 import os
 from pathlib import Path
 import sys
+import tempfile
 from typing import Mapping, Sequence
 import uuid
 
@@ -232,7 +233,14 @@ def accumulate_snapshots(
 
     existing["__key"] = ["\x1f".join(snapshot_natural_key(row)) for _, row in existing.iterrows()]
     existing["__day"] = [str(_snapshot_day(row.get("snapshot_at"), run_date)) for _, row in existing.iterrows()]
-    merged = pd.concat([existing, new], ignore_index=True)
+    if existing.empty:
+        merged = new
+    elif new.empty:
+        merged = existing
+    else:
+        # Only concat when both sides carry data: pandas deprecates concat of
+        # empty/all-NA frames and the store is routinely empty on first run.
+        merged = pd.concat([existing, new], ignore_index=True)
     # Last-write-wins within (natural key, UTC day): after the concat the new
     # batch rows come last, so keep="last" replaces the same-day store row and
     # preserves every other vintage.
@@ -360,10 +368,14 @@ def combine_revision_export(
     """
 
     genuine = genuine.sort_values("current_snapshot_at", ascending=False, kind="mergesort")
-    return pd.concat(
-        [genuine[REVISION_COLUMNS], reconstructed[REVISION_COLUMNS]],
-        ignore_index=True,
-    )
+    parts = []
+    if not genuine.empty:
+        parts.append(genuine[REVISION_COLUMNS])
+    if not reconstructed.empty:
+        parts.append(reconstructed[REVISION_COLUMNS])
+    if not parts:
+        return pd.DataFrame({column: pd.Series(dtype="object") for column in REVISION_COLUMNS})
+    return pd.concat(parts, ignore_index=True)
 
 
 def snapshot_export_frame(store: pd.DataFrame) -> pd.DataFrame:
@@ -474,261 +486,6 @@ def _sibling_tickers(listings: pd.DataFrame) -> dict[str, tuple[str, ...]]:
     for entity, group in listings.groupby("entity_id"):
         out[str(entity)] = tuple(str(t) for t in group["canonical_ticker"])
     return out
-
-
-# ---------------------------------------------------------------------------
-# Batch 6/7: day-granular immutable snapshot store + genuine revisions
-# ---------------------------------------------------------------------------
-
-# Storage dedupe key (includes fiscal fields so different mappings coexist).
-NATURAL_KEY_COLUMNS = (
-    "provider",
-    "listing_id",
-    "metric",
-    "horizon",
-    "statistic",
-    "fiscal_period",
-    "fiscal_year",
-    "estimate_period_end",
-)
-
-# Revision chaining key (fixed provider estimate identity).  Deliberately
-# EXCLUDES fiscal_year/estimate_period_end: the sibling financial-data
-# mapping can improve over time, and chaining on mapped fields would split a
-# continuous estimate series into two buckets (null-keyed then mapped) and
-# silently break the revision chain (design-review condition 2).
-SERIES_IDENTITY_COLUMNS = (
-    "provider",
-    "listing_id",
-    "metric",
-    "horizon",
-    "statistic",
-)
-
-SNAPSHOT_STORE_COLUMNS = (
-    "snapshot_id",
-    "provider",
-    "entity_id",
-    "listing_id",
-    "financial_data_security_id",
-    "canonical_ticker",
-    "metric",
-    "fiscal_period",
-    "fiscal_year",
-    "estimate_period_end",
-    "horizon",
-    "snapshot_at",
-    "value",
-    "statistic",
-    "low_value",
-    "high_value",
-    "analyst_count",
-    "provider_contributor_count",
-    "currency",
-    "unit",
-    "accounting_basis",
-    "provider_asof",
-    "retrieved_at_utc",
-    "source_url",
-    "raw_hash",
-    "pit_class",
-    "source_run_id",
-    "calculation_origin",
-    "coverage_reason",
-)
-
-
-def _nk(value: object) -> str:
-    """Null-safe string form of a key component."""
-
-    if value is None:
-        return ""
-    try:
-        if pd.isna(value):
-            return ""
-    except (TypeError, ValueError):
-        pass
-    return str(value)
-
-
-def _natural_key(row: Mapping[str, object]) -> tuple[str, ...]:
-    return tuple(_nk(row.get(column)) for column in NATURAL_KEY_COLUMNS)
-
-
-def _series_identity(row: Mapping[str, object]) -> tuple[str, ...]:
-    return tuple(_nk(row.get(column)) for column in SERIES_IDENTITY_COLUMNS)
-
-
-def _utc_day(value: object) -> str:
-    ts = pd.Timestamp(value)
-    if ts.tzinfo is None:
-        ts = ts.tz_localize("UTC")
-    return ts.tz_convert("UTC").strftime("%Y-%m-%d")
-
-
-def _store_snapshot_id(key: tuple[str, ...], utc_day: str) -> str:
-    """Deterministic vintage id: stable across same-day re-runs, joinable."""
-
-    return _hash("vintage", *key, utc_day)
-
-
-def _empty_store_frame() -> pd.DataFrame:
-    return pd.DataFrame({column: pd.Series(dtype="object") for column in dict.fromkeys(SNAPSHOT_STORE_COLUMNS)})
-
-
-def load_store(store_path: Path) -> pd.DataFrame:
-    if not store_path.is_file():
-        return _empty_store_frame()
-    try:
-        frame = pd.read_parquet(store_path)
-    except Exception:
-        return _empty_store_frame()
-    columns = list(dict.fromkeys(SNAPSHOT_STORE_COLUMNS))
-    missing = [column for column in columns if column not in frame.columns]
-    if missing:
-        return _empty_store_frame()
-    return frame.loc[:, columns]
-
-
-def _atomic_write_parquet(frame: pd.DataFrame, path: Path) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
-    frame.to_parquet(temporary, index=False)
-    os.replace(temporary, path)
-
-
-def accumulate_snapshots(
-    store: pd.DataFrame,
-    new_rows: Sequence[Mapping[str, object]],
-) -> tuple[pd.DataFrame, dict[str, str]]:
-    """Merge captured snapshots into the day-granular immutable store.
-
-    Storage dedupe: one vintage per FULL natural key per UTC day (same-day
-    rerun replaces that key's row for the day; different days append).  Past
-    dates are never touched when the collector runs on a later date.
-    ``snapshot_id`` becomes the deterministic hash(natural key + UTC date).
-    """
-
-    working = _empty_store_frame() if store is None or store.empty else store.copy()
-    id_remap: dict[str, str] = {}
-    index: dict[tuple[tuple[str, ...], str], int] = {}
-    for position in range(len(working)):
-        row = working.iloc[position]
-        index[(_natural_key(row), _utc_day(row.get("snapshot_at")))] = position
-
-    for raw in new_rows:
-        row = {column: raw.get(column) for column in dict.fromkeys(SNAPSHOT_STORE_COLUMNS)}
-        key = _natural_key(row)
-        day = _utc_day(row.get("snapshot_at"))
-        new_id = _store_snapshot_id(key, day)
-        old_id = _nk(row.get("snapshot_id"))
-        if old_id and old_id != new_id:
-            id_remap[old_id] = new_id
-        row["snapshot_id"] = new_id
-        position = index.get((key, day))
-        if position is None:
-            index[(key, day)] = len(working)
-            if working.empty:
-                working = pd.DataFrame([row], columns=list(dict.fromkeys(SNAPSHOT_STORE_COLUMNS)))
-            else:
-                working = pd.concat(
-                    [working, pd.DataFrame([row], columns=list(working.columns))],
-                    ignore_index=True,
-                )
-        else:
-            for column in working.columns:
-                working.iat[position, working.columns.get_loc(column)] = row.get(column)
-
-    if working.empty:
-        return _empty_store_frame(), id_remap
-    working = working.sort_values(
-        ["listing_id", "provider", "metric", "horizon", "statistic", "snapshot_at"],
-        kind="mergesort",
-    ).reset_index(drop=True)
-    return working, id_remap
-
-
-def derive_genuine_revisions(store: pd.DataFrame) -> list[dict]:
-    """Derive PIT revisions from consecutive CAPTURED store vintages.
-
-    Chaining groups by the fixed 5-field series identity (provider, listing,
-    metric, horizon, statistic) -- NOT the mapped fiscal fields -- so a
-    mapping improvement never splits a revision chain.  Fiscal metadata on
-    each revision row comes from the newer (current) vintage.
-    """
-
-    revisions: list[dict] = []
-    if store is None or store.empty:
-        return revisions
-    working = store.copy()
-    working["_series"] = working.apply(lambda row: _series_identity(row), axis=1)
-    for _, group in working.groupby("_series", sort=False):
-        ordered = group.sort_values("snapshot_at", kind="mergesort")
-        rows = list(ordered.to_dict("records"))
-        for prior, current in zip(rows, rows[1:]):
-            prior_value = _f(prior.get("value"))
-            current_value = _f(current.get("value"))
-            if prior_value is None or current_value is None:
-                continue
-            current_at = pd.Timestamp(current["snapshot_at"])
-            prior_at = pd.Timestamp(prior["snapshot_at"])
-            prior_count = _i(prior.get("analyst_count"))
-            current_count = _i(current.get("analyst_count"))
-            revisions.append({
-                "revision_id": _hash(str(current["snapshot_id"]), str(prior["snapshot_id"])),
-                "snapshot_id": str(current["snapshot_id"]),
-                "provider": str(current["provider"]),
-                "prior_provider": str(prior["provider"]),
-                "entity_id": str(current.get("entity_id") or ""),
-                "listing_id": str(current.get("listing_id") or ""),
-                "financial_data_security_id": str(current.get("financial_data_security_id") or ""),
-                "canonical_ticker": str(current.get("canonical_ticker") or ""),
-                "metric": str(current["metric"]),
-                "fiscal_period": _nk(current.get("fiscal_period")),
-                "fiscal_year": current.get("fiscal_year"),
-                "estimate_period_end": current.get("estimate_period_end"),
-                "horizon": str(current["horizon"]),
-                "statistic": str(current.get("statistic") or "mean"),
-                "current_snapshot_at": current_at.to_pydatetime(),
-                "current_value": current_value,
-                "current_analyst_count": current_count,
-                "current_dispersion": None,
-                "lookback_days": int((current_at.normalize() - prior_at.normalize()).days),
-                "cutoff_at": prior_at.to_pydatetime(),
-                "prior_snapshot_id": str(prior["snapshot_id"]),
-                "prior_snapshot_at": prior_at.to_pydatetime(),
-                "prior_value": prior_value,
-                "prior_provider_asof": prior.get("provider_asof"),
-                "provider_asof": current.get("provider_asof"),
-                "retrieved_at_utc": current.get("retrieved_at_utc"),
-                "source_url": str(current.get("source_url") or ""),
-                "pit_class": "repository_captured",
-                "source_run_id": str(current.get("source_run_id") or ""),
-                "prior_analyst_count": prior_count,
-                "revision_value": current_value - prior_value,
-                "revision_pct": (
-                    (current_value - prior_value) / abs(prior_value) * 100.0
-                    if prior_value
-                    else None
-                ),
-                "analyst_count_change": (
-                    current_count - prior_count
-                    if current_count is not None and prior_count is not None
-                    else None
-                ),
-                "dispersion": None,
-                "alignment_status": "",
-            })
-    revisions.sort(
-        key=lambda row: (
-            str(row["listing_id"]),
-            str(row["provider"]),
-            str(row["metric"]),
-            str(row["horizon"]),
-            -pd.Timestamp(row["current_snapshot_at"]).value,
-        )
-    )
-    return revisions
 
 
 def collect_yfinance(
@@ -931,6 +688,7 @@ def _as_frame(frame: pd.DataFrame | Sequence[Mapping[str, object]], schema: pa.S
 
 def _write(frame: pd.DataFrame | Sequence[Mapping[str, object]], schema: pa.Schema, path: Path) -> int:
     frame = _as_frame(frame, schema)
+    path = Path(path)
     table = pa.Table.from_pandas(frame, schema=schema, preserve_index=False)
     path.parent.mkdir(parents=True, exist_ok=True)
     pq.write_table(table, path)
@@ -950,6 +708,7 @@ def _write_atomic(
     """
 
     frame = _as_frame(frame, schema)
+    path = Path(path)
     table = pa.Table.from_pandas(frame, schema=schema, preserve_index=False)
     path.parent.mkdir(parents=True, exist_ok=True)
     descriptor, tmp_path = tempfile.mkstemp(
@@ -998,26 +757,46 @@ def main(argv: list[str] | None = None) -> int:
     # Batch 7: merge the captured snapshots into the day-granular immutable
     # store, derive genuine revisions from consecutive captured vintages, and
     # export the FULL accumulated history (not just this run's rows).
-    store_path = args.output_dir / "store" / "snapshots_store.parquet"
-    store = load_store(store_path)
-    store, _id_remap = accumulate_snapshots(store, yf_snapshots + fd_snapshots)
-    _atomic_write_parquet(store, store_path)
-    genuine_revisions = derive_genuine_revisions(store)
+    snapshots = yf_snapshots + fd_snapshots
+    out = args.output_dir
+    store_path = out / STORE_DIRNAME / STORE_FILENAME
+    store = accumulate_snapshots(_read_store(store_path), snapshots, run_date=now.date())
+    n_store = len(store)
+    _write_atomic(store, TASK3_SNAPSHOT_ARROW_SCHEMA, store_path)
 
-    snapshots = store.to_dict("records")
-    revisions = genuine_revisions + yf_revisions
+    genuine_revisions = derive_genuine_revisions(store)
+    n_genuine = len(genuine_revisions)
+    n_recon = len(yf_revisions)
+    revisions = combine_revision_export(
+        genuine_revisions,
+        pd.DataFrame(yf_revisions, columns=REVISION_COLUMNS),
+    )
+    n_rev = len(revisions)
+
+    def _store_rows(provider: str) -> pd.DataFrame:
+        return store.loc[store["provider"].eq(provider)]
+
+    def _latest_at(provider: str) -> pd.Timestamp:
+        rows = _store_rows(provider)
+        if rows.empty:
+            return pd.Timestamp(now)
+        return pd.Timestamp(rows["snapshot_at"].max())
+
+    yf_store = _store_rows("yfinance")
+    ak_store = _store_rows("akshare")
+    n_yf_rev = int(revisions["provider"].eq("yfinance").sum())
+    n_ak_rev = int(revisions["provider"].eq("akshare").sum())
     health = [
         {
             "provider": "yfinance",
-            "status": "available" if yf_snapshots else "unavailable",
+            "status": "available" if not yf_store.empty else "unavailable",
             "reason": (
-                "; ".join(yf_notes)
-                or f"live analyst estimates collected; genuine_revisions={len(genuine_revisions)}; "
-                f"reconstructed={len(yf_revisions)}; store_vintages={len(store)}"
+                ("; ".join(yf_notes) or "live analyst estimates collected")
+                + f"; genuine_revisions={n_genuine}; reconstructed={n_recon}; store_vintages={n_store}"
             ),
-            "row_count": len(snapshots) + len(revisions),
-            "mapped_row_count": sum(1 for row in yf_snapshots if row["fiscal_year"] is not None),
-            "latest_snapshot_at": now,
+            "row_count": len(yf_store) + n_yf_rev,
+            "mapped_row_count": int(yf_store["fiscal_year"].notna().sum()),
+            "latest_snapshot_at": _latest_at("yfinance"),
             "as_of": now,
             "network_calls": calls,
             "source_license_class": YF_LICENSE,
@@ -1027,15 +806,11 @@ def main(argv: list[str] | None = None) -> int:
         },
         {
             "provider": "akshare",
-            "status": "available" if fd_snapshots else "unavailable",
-            "reason": (
-                "; ".join(fd_notes)
-                or f"akshare consensus export read from {FINANCIAL_DATA_ROOT.name}; "
-                f"store_vintages={len(store)}"
-            ),
-            "row_count": len(fd_snapshots),
-            "mapped_row_count": sum(1 for row in fd_snapshots if row["fiscal_year"] is not None),
-            "latest_snapshot_at": max((row["snapshot_at"] for row in fd_snapshots), default=now),
+            "status": "available" if not ak_store.empty else "unavailable",
+            "reason": "; ".join(fd_notes) or f"akshare consensus export read from {FINANCIAL_DATA_ROOT.name}",
+            "row_count": len(ak_store) + n_ak_rev,
+            "mapped_row_count": int(ak_store["fiscal_year"].notna().sum()),
+            "latest_snapshot_at": _latest_at("akshare"),
             "as_of": now,
             "network_calls": 0,
             "source_license_class": FD_LICENSE,
@@ -1045,14 +820,17 @@ def main(argv: list[str] | None = None) -> int:
         },
     ]
 
-    out = args.output_dir
-    n_snap = _write(snapshots, TASK3_SNAPSHOT_ARROW_SCHEMA, out / "control_tower_consensus_snapshots.parquet")
-    n_rev = _write(revisions, TASK3_REVISION_ARROW_SCHEMA, out / "control_tower_consensus_revisions.parquet")
+    n_snap = _write(
+        snapshot_export_frame(store),
+        TASK3_SNAPSHOT_ARROW_SCHEMA,
+        out / "control_tower_consensus_snapshots.parquet",
+    )
+    _write(revisions, TASK3_REVISION_ARROW_SCHEMA, out / "control_tower_consensus_revisions.parquet")
     n_health = _write(health, TASK3_HEALTH_ARROW_SCHEMA, out / "control_tower_consensus_source_health.parquet")
 
-    print(f"\nstore     : {len(store)} vintages -> {store_path}")
-    print(f"snapshots : {n_snap:>4d}  (full accumulated history)")
-    print(f"revisions : {n_rev:>4d}  (genuine {len(genuine_revisions)} repository_captured + {len(yf_revisions)} reconstructed)")
+    print(f"\nstore     : {n_store:>4d} vintages -> {store_path}")
+    print(f"snapshots : {n_snap:>4d}  (full accumulated store history)")
+    print(f"revisions : {n_rev:>4d}  (genuine {n_genuine} repository_captured, reconstructed {n_recon})")
     print(f"health    : {n_health:>4d}")
     aligned = sum(1 for row in snapshots if row["fiscal_year"] is not None)
     print(f"fiscal-period aligned: {aligned}/{len(snapshots)}")
