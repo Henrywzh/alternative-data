@@ -1,0 +1,1 @@
+estimate_id,version,supersedes_estimate_id,entity_id,listing_id,observation_type,author,metric,accounting_basis,metric_basis,fiscal_period,fiscal_year,value_low,value_high,value_mid,currency,unit,effective_asof,recorded_at_utc,rationale_notes,source_ref,source_url,pit_class,reviewed_at_utc,reviewed_by
