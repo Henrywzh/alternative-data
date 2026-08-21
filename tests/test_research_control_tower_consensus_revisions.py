@@ -606,10 +606,89 @@ def test_build_provider_health_rows_reports_stale_akshare_and_fresh_yfinance() -
     assert by_provider["yfinance"]["status"] == "available"
     assert by_provider["akshare"]["status"] == "stale"
     assert "older than as_of (freshness window 14d)" in by_provider["akshare"]["reason"]
-    assert "store_vintages=2" in by_provider["akshare"]["reason"]
+    assert "store_vintages=1" in by_provider["akshare"]["reason"]
 
     # Empty store -> both providers honestly unavailable.
     empty_health = collector.build_provider_health_rows(
         _empty_store(), revisions, now=now, yf_notes=[], fd_notes=[], calls=0
     )
     assert {row["status"] for row in empty_health} == {"unavailable"}
+
+
+def test_future_dated_provider_asof_fails_closed() -> None:
+    """Check (1) & (2): Future-dated provider_asof must fail closed in freshness status
+    and be excluded in collect_financial_data."""
+    now = pd.Timestamp("2026-08-01T00:00:00Z")
+    future_snap = _ak_snap(
+        snapshot_at=pd.Timestamp("2026-08-10T00:00:00Z"),
+        provider_asof=pd.Timestamp("2026-08-10T12:00:00Z"),
+    )
+    store = collector.accumulate_snapshots(_empty_store(), [future_snap], run_date=date(2026, 8, 10))
+    status, detail = collector._provider_freshness_status(store, 14, now)
+    assert status == "fail_closed_future_dated"
+    assert "in the future relative to as_of" in detail
+
+
+def test_collect_financial_data_excludes_future_dated_rows(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Sibling relay rows with snapshot_date or fetched_at later than now are excluded with notes."""
+    export_dir = tmp_path / "source=akshare" / "snapshot_date=2026-08-10"
+    export_dir.mkdir(parents=True)
+    export = pd.DataFrame(
+        [
+            {
+                "consensus_id": "c-future", "security_id": "sec-0700",
+                "ticker": "0700.HK", "snapshot_date": "2026-08-10",
+                "fiscal_year": 2026, "eps_avg": 28.0, "eps_low": 25.0,
+                "eps_high": 32.0, "horizon": None, "eps_currency": None,
+                "revenue_currency": None, "revenue_avg": None,
+                "fetched_at": pd.Timestamp("2026-08-10T12:00:00Z"),
+            }
+        ]
+    )
+    export.to_parquet(export_dir / "consensus-future.parquet")
+    monkeypatch.setattr(collector, "FD_CONSENSUS", tmp_path)
+    listings = pd.DataFrame(
+        [
+            {
+                "entity_id": "TENCENT", "listing_id": "0700_HK",
+                "canonical_ticker": "0700.HK",
+                "financial_data_security_id": "sec-0700",
+                "currency": "HKD", "listing_status": "active",
+            }
+        ]
+    )
+    mapping = pd.DataFrame()
+    now = pd.Timestamp("2026-08-01T00:00:00Z")
+    snapshots, notes = collector.collect_financial_data(listings, mapping, run_id="r1", now=now)
+    assert len(snapshots) == 0
+    assert any("excluded future-dated sibling row for 0700.HK" in n for n in notes)
+
+
+def test_same_day_multiple_rows_selects_newest_provider_asof() -> None:
+    """Check (3): Same-day multiple rows for one natural key must choose deterministic newest vintage
+    using provider_asof/retrieved_at_utc, not parquet/list ingestion order."""
+    row_earlier = _snap(
+        snapshot_at=pd.Timestamp("2026-08-01T10:00:00Z"),
+        provider_asof=pd.Timestamp("2026-08-01T08:00:00Z"),
+        retrieved_at_utc=pd.Timestamp("2026-08-01T08:00:00Z"),
+        value=10.0,
+    )
+    row_later = _snap(
+        snapshot_at=pd.Timestamp("2026-08-01T10:00:00Z"),
+        provider_asof=pd.Timestamp("2026-08-01T14:00:00Z"),
+        retrieved_at_utc=pd.Timestamp("2026-08-01T14:00:00Z"),
+        value=12.5,
+    )
+
+    # Ingestion order 1: [earlier, later]
+    store1 = collector.accumulate_snapshots(_empty_store(), [row_earlier, row_later], run_date=DAY1)
+    assert len(store1) == 1
+    assert store1.iloc[0]["value"] == pytest.approx(12.5)
+
+    # Ingestion order 2: [later, earlier] -> must still pick later!
+    store2 = collector.accumulate_snapshots(_empty_store(), [row_later, row_earlier], run_date=DAY1)
+    assert len(store2) == 1
+    assert store2.iloc[0]["value"] == pytest.approx(12.5)
