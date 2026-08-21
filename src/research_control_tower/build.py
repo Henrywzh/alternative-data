@@ -2152,6 +2152,114 @@ def _base_macro_frame(events: EventBundle) -> pd.DataFrame:
     return _with_columns(pd.DataFrame(_macro_event_rows(events.events)), MACRO_OUTPUT_COLUMNS)
 
 
+_MACRO_TIMESTAMP_COLUMNS = frozenset(
+    {
+        "observation_date",
+        "release_at",
+        "first_observed_at",
+        "source_published_at",
+        "retrieved_at_utc",
+        "realtime_start",
+        "realtime_end",
+    }
+)
+
+
+def _macro_identity_component(column: str, value: Any) -> str:
+    """Canonicalize one natural macro capture-key field."""
+
+    if _is_blank(value):
+        return ""
+    if column == "observation_date" or column in {"realtime_start", "realtime_end"}:
+        parsed = _timestamp(value, date_only=True)
+        return "" if pd.isna(parsed) else parsed.date().isoformat()
+    if column in _MACRO_TIMESTAMP_COLUMNS:
+        parsed = _timestamp(value)
+        return "" if pd.isna(parsed) else _iso(parsed)
+    return _text(value)
+
+
+def _macro_observation_identity(row: Mapping[str, Any]) -> str:
+    """Return a capture-preserving identity from the natural capture key.
+
+    Payload fields such as ``actual_value`` deliberately do not participate
+    in the ID.  If they differ for the same natural capture key,
+    ``_finalize_macro_frame`` rejects the group instead of minting two valid
+    IDs and hiding a source conflict.
+    """
+
+    natural_columns = (
+        "source_id",
+        "series_id",
+        "reference_period",
+        "observation_date",
+        "realtime_start",
+        "realtime_end",
+        "retrieved_at_utc",
+    )
+    parts = [
+        _macro_identity_component(column, row.get(column))
+        for column in natural_columns
+    ]
+    event_id = _text(row.get("event_id"))
+    if event_id:
+        parts.extend(("event_id", event_id))
+    return _stable_hash("macro_observation", *parts)
+
+
+def _finalize_macro_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    """Collapse exact captures and reject conflicting natural captures."""
+
+    if frame.empty:
+        return frame.reset_index(drop=True)
+    identity_columns = [
+        column for column in MACRO_OUTPUT_COLUMNS if column != "observation_id"
+    ]
+    working = frame.drop_duplicates(subset=identity_columns, keep="first").copy()
+    natural_groups: dict[tuple[str, ...], list[Any]] = {}
+    natural_columns = (
+        "source_id",
+        "series_id",
+        "reference_period",
+        "observation_date",
+        "realtime_start",
+        "realtime_end",
+        "retrieved_at_utc",
+    )
+    for index, row in working.iterrows():
+        natural_key = tuple(
+            _macro_identity_component(column, row.get(column))
+            for column in natural_columns
+        )
+        event_id = _text(row.get("event_id"))
+        if event_id:
+            natural_key = (*natural_key, "event_id", event_id)
+        natural_groups.setdefault(natural_key, []).append(index)
+    conflicting_groups = [
+        indexes for indexes in natural_groups.values() if len(indexes) > 1
+    ]
+    if conflicting_groups:
+        example = working.loc[conflicting_groups[0][0]]
+        raise BuildError(
+            "macro_observations natural capture conflict: "
+            f"source_id={_text(example.get('source_id'))};"
+            f"series_id={_text(example.get('series_id'))};"
+            f"reference_period={_text(example.get('reference_period'))};"
+            f"observation_date={_macro_identity_component('observation_date', example.get('observation_date'))};"
+            f"realtime_start={_text(example.get('realtime_start'))};"
+            f"retrieved_at_utc={_macro_identity_component('retrieved_at_utc', example.get('retrieved_at_utc'))}"
+        )
+    supplied_ids = working["observation_id"].map(_text)
+    duplicate_ids = supplied_ids.ne("") & supplied_ids.duplicated(keep=False)
+    for index, row in working.iterrows():
+        if not supplied_ids.loc[index] or duplicate_ids.loc[index]:
+            working.at[index, "observation_id"] = _macro_observation_identity(row)
+    final_ids = working["observation_id"].map(_text)
+    if final_ids.eq("").any() or final_ids.duplicated().any():
+        raise BuildError("macro_observations publication requires nonblank unique observation_id")
+    return working[MACRO_OUTPUT_COLUMNS].reset_index(drop=True)
+
+
 def _macro_row(
     *,
     source_id: str,
@@ -2176,8 +2284,8 @@ def _macro_row(
     realtime_start: Any = None,
     realtime_end: Any = None,
 ) -> dict[str, Any]:
-    return {
-        "observation_id": _stable_hash("macro", source_id, series_id, reference_period, observation_date),
+    row = {
+        "observation_id": "",
         "event_id": event_id,
         "source_id": source_id,
         "series_id": series_id,
@@ -2213,6 +2321,8 @@ def _macro_row(
             else None
         ),
     }
+    row["observation_id"] = _macro_observation_identity(row)
+    return row
 
 
 def _latest_timestamp(frame: pd.DataFrame, column: str) -> Any:
@@ -2832,7 +2942,7 @@ def _build_macro(
     rows.extend(ecb_rows)
     states.extend(ecb_states)
     degraded.extend(ecb_degraded)
-    frame = _with_columns(pd.DataFrame(rows), MACRO_OUTPUT_COLUMNS)
+    frame = _finalize_macro_frame(_with_columns(pd.DataFrame(rows), MACRO_OUTPUT_COLUMNS))
     return _sort_frame(frame, ["observation_id"]), states, sorted(set(degraded))
 
 
@@ -3008,38 +3118,136 @@ def _news_rows(
     return rows
 
 
+def _filing_identity_value(field: str, value: Any) -> str:
+    """Normalize a filing identity field without erasing real conflicts."""
+
+    if _is_blank(value):
+        return ""
+    if field == "file_date":
+        parsed = _timestamp(value, date_only=True)
+        return "" if pd.isna(parsed) else parsed.date().isoformat()
+    return re.sub(r"\s+", " ", _text(value)).casefold()
+
+
+def _filing_document_id(source_id: str, accession: str, filing_url: str) -> str:
+    """Return the stable physical-document identity for a SEC metadata row."""
+
+    return _stable_hash("filing_physical_document", source_id, accession, filing_url)
+
+
 def _filing_rows(
-    descriptor: LocalInput, frame: pd.DataFrame, registries: Any
+    descriptor: LocalInput,
+    frame: pd.DataFrame,
+    registries: Any,
+    *,
+    conflict_log: list[str] | None = None,
 ) -> list[dict[str, Any]]:
-    rows: list[dict[str, Any]] = []
-    for _, item in frame.iterrows():
-        accession = str(item.get("accession_no", ""))
-        company = str(item.get("company_name", ""))
-        form = str(item.get("form", ""))
+    """Materialize SEC rows once per ``(source, accession, URL)``.
+
+    SEC search exports can return the same physical document for multiple
+    query terms.  Those rows collapse only when their physical key matches;
+    a different URL remains a distinct document even when the accession is
+    the same.  Conflicting identity metadata rejects the whole group rather
+    than silently choosing one version.
+    """
+
+    conflicts = conflict_log if conflict_log is not None else []
+    grouped: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for position, (_, item) in enumerate(frame.iterrows()):
+        accession = _text(item.get("accession_no"))
+        filing_url = _text(item.get("filing_url"))
+        if not accession or not filing_url:
+            conflicts.append(
+                f"missing physical filing identity: source_id={descriptor.source_id};"
+                f" accession={accession or '<blank>'};url={filing_url or '<blank>'}"
+            )
+            continue
+        company = _text(item.get("company_name"))
+        form = _text(item.get("form"))
         entity_ids, listing_ids, basket_ids = _explicit_related_ids(item, registries)
-        rows.append(
-            {
-                "document_id": accession or _stable_hash("filing", descriptor.source_id, company, form, item.get("file_date")),
-                "document_type": "filing",
-                "source_id": descriptor.source_id,
-                "headline": " ".join(part for part in (company, form) if part and part != "nan"),
-                "publisher": "SEC",
-                "published_at": _timestamp(item.get("file_date"), date_only=True),
-                "first_observed_at": _timestamp(item.get("fetched_at")),
-                "source_url": item.get("filing_url", "") or descriptor.source_url or "",
-                "language": "en",
-                "related_entity_ids": _json_list(entity_ids),
-                "related_listing_ids": _json_list(listing_ids),
-                "related_basket_ids": _json_list(basket_ids),
-                "event_class": "sec_filing_metadata",
-                "importance": "",
-                "source_quality": _source_quality_class(descriptor, "filing"),
-                "pit_class": descriptor.pit_class,
-                "source_license_class": descriptor.license_class,
-                "content_hash_if_permitted": "",
-                "derived_summary_if_permitted": "",
-            }
+        candidate = {
+            "document_id": _filing_document_id(descriptor.source_id, accession, filing_url),
+            "document_type": "filing",
+            "source_id": descriptor.source_id,
+            "headline": " ".join(part for part in (company, form) if part),
+            "publisher": "SEC",
+            "published_at": _timestamp(item.get("file_date"), date_only=True),
+            "first_observed_at": _timestamp(item.get("fetched_at")),
+            "source_url": filing_url,
+            "language": "en",
+            "related_entity_ids": _json_list(entity_ids),
+            "related_listing_ids": _json_list(listing_ids),
+            "related_basket_ids": _json_list(basket_ids),
+            "event_class": "sec_filing_metadata",
+            "importance": "",
+            "source_quality": _source_quality_class(descriptor, "filing"),
+            "pit_class": descriptor.pit_class,
+            "source_license_class": descriptor.license_class,
+            "content_hash_if_permitted": "",
+            "derived_summary_if_permitted": "",
+            "_position": position,
+            "_identity": {
+                field: _filing_identity_value(field, item.get(field))
+                for field in ("cik", "company_name", "form", "file_date")
+            },
+        }
+        grouped.setdefault((accession, filing_url), []).append(candidate)
+
+    rows: list[dict[str, Any]] = []
+    for (accession, filing_url), candidates in grouped.items():
+        conflicting_fields = [
+            field
+            for field in ("cik", "company_name", "form", "file_date")
+            if len(
+                {
+                    candidate["_identity"][field]
+                    for candidate in candidates
+                    if candidate["_identity"][field]
+                }
+            )
+            > 1
+        ]
+        if conflicting_fields:
+            conflicts.append(
+                f"conflicting physical filing metadata: source_id={descriptor.source_id};"
+                f" accession={accession};url={filing_url};"
+                f" fields={','.join(conflicting_fields)}"
+            )
+            continue
+
+        observed = [
+            candidate["first_observed_at"]
+            for candidate in candidates
+            if not pd.isna(candidate["first_observed_at"])
+        ]
+        earliest = min(observed) if observed else pd.NaT
+        canonical = min(
+            candidates,
+            key=lambda candidate: (
+                pd.isna(candidate["first_observed_at"]),
+                candidate["first_observed_at"]
+                if not pd.isna(candidate["first_observed_at"])
+                else pd.Timestamp.max,
+                candidate["_position"],
+            ),
         )
+        row = {
+            key: value
+            for key, value in canonical.items()
+            if not key.startswith("_")
+        }
+        row["first_observed_at"] = earliest
+        for column in (
+            "related_entity_ids",
+            "related_listing_ids",
+            "related_basket_ids",
+        ):
+            row[column] = _json_list(
+                identifier
+                for candidate in candidates
+                for identifier in _split_ids(candidate[column])
+            )
+        rows.append(row)
     return rows
 
 
@@ -3130,10 +3338,33 @@ def _build_news_filings(
                 if state.status in {"unavailable", "degraded"}:
                     degraded.append(descriptor.source_id)
         else:
-            rows.extend(row_builder(descriptor, frame, registries))
+            filing_conflicts: list[str] = []
+            rows.extend(
+                row_builder(
+                    descriptor,
+                    frame,
+                    registries,
+                    conflict_log=filing_conflicts,
+                )
+            )
             _set_state_from_frame(state, frame, observed_column="file_date", retrieved_column="fetched_at")
             if "filing_url" in frame.columns and frame["filing_url"].notna().any():
                 state.source_url = str(frame["filing_url"].dropna().iloc[0])
+            if filing_conflicts:
+                state.status = "degraded"
+                for message in filing_conflicts[:8]:
+                    _append_state_error(
+                        state,
+                        code="filing_physical_document_conflict",
+                        message=message,
+                    )
+                if len(filing_conflicts) > 8:
+                    _append_state_error(
+                        state,
+                        code="filing_physical_document_conflict_summary",
+                        message=f"additional_conflicts={len(filing_conflicts) - 8}",
+                    )
+                degraded.append(descriptor.source_id)
         if schema_id is None:
             degraded.append(descriptor.source_id)
     if not news_inputs:
@@ -5345,6 +5576,18 @@ def _validate_output_frames(frames: Mapping[str, pd.DataFrame]) -> None:
 def _validate_publication_content(frames: Mapping[str, pd.DataFrame]) -> None:
     """Recheck canonical high-risk rows immediately before publication."""
 
+    for artifact, column in (
+        ("macro_observations.parquet", "observation_id"),
+        ("news_filings.parquet", "document_id"),
+    ):
+        frame = frames[artifact]
+        if frame.empty:
+            continue
+        values = frame[column].map(_text)
+        if values.eq("").any() or values.duplicated().any():
+            raise BuildError(
+                f"{artifact} publication requires nonblank unique {column}"
+            )
     valuation_issues = validate_valuation_snapshots_df(
         frames["valuation_snapshots.parquet"]
     )

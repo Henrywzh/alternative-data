@@ -55,6 +55,7 @@ from src.research_control_tower.build import (
     BuildConfig,
     BuildError,
     LocalInput,
+    _drop_orphaned_consensus_revisions,
     build_control_tower_marts,
     catalyst_eligibility,
     current_generation,
@@ -1198,8 +1199,24 @@ def test_vintaged_fred_observations_parquet_builds_without_schema_drift(
             {
                 "date": "2026-08-07",
                 "series_id": "NFCI",
+                "value": 0.1,
+                "fetched_at": "2026-08-08T04:34:37Z",
+                "realtime_start": "2026-08-01",
+                "realtime_end": "2026-08-08",
+            },
+            {
+                "date": "2026-08-07",
+                "series_id": "NFCI",
                 "value": 0.2,
                 "fetched_at": "2026-08-08T04:34:37Z",
+                "realtime_start": "2026-08-09",
+                "realtime_end": "9999-12-31",
+            },
+            {
+                "date": "2026-08-07",
+                "series_id": "NFCI",
+                "value": 0.2,
+                "fetched_at": "2026-08-09T04:34:37Z",
                 "realtime_start": "2026-08-09",
                 "realtime_end": "9999-12-31",
             },
@@ -1232,9 +1249,192 @@ def test_vintaged_fred_observations_parquet_builds_without_schema_drift(
     macro = pd.read_parquet(_published(config, "macro_observations.parquet"))
     fred = macro[macro["source_id"] == "fred_observations"]
 
-    assert len(fred) == 2
+    assert len(fred) == 3
     assert set(fred["realtime_start"].dropna()) == {"2026-08-01", "2026-08-09"}
+    assert fred["observation_id"].map(str).ne("").all()
+    assert fred["observation_id"].is_unique
+    assert set(fred["actual_value"]) == {"0.1", "0.2"}
     assert manifest.artifacts["macro_observations.parquet"]["status"] == "available"
+
+
+def test_macro_same_capture_key_with_different_payload_fails_closed(
+    tmp_path, minimal_inputs
+):
+    macro_root = tmp_path / "input" / "macro-conflict"
+    macro_root.mkdir(parents=True)
+    obs_path = macro_root / "fred_observations.parquet"
+    pd.DataFrame(
+        [
+            {
+                "date": "2026-08-07",
+                "series_id": "NFCI",
+                "value": 0.1,
+                "fetched_at": "2026-08-08T04:34:37Z",
+                "realtime_start": "2026-08-01",
+                "realtime_end": "9999-12-31",
+            },
+            {
+                "date": "2026-08-07",
+                "series_id": "NFCI",
+                "value": 0.2,
+                "fetched_at": "2026-08-08T04:34:37Z",
+                "realtime_start": "2026-08-01",
+                "realtime_end": "9999-12-31",
+            },
+        ]
+    ).to_parquet(obs_path, index=False)
+    meta_path = macro_root / "fred_series_meta.parquet"
+    pd.DataFrame(
+        [
+            {
+                "series_id": "NFCI",
+                "title": "Chicago Fed National Financial Conditions Index",
+                "frequency": "W",
+                "units": "Index",
+                "seasonal_adjustment": "NSA",
+                "observation_start": "1971-01-08",
+                "last_updated": "2026-08-05 07:37:42-05",
+                "fetched_at": "2026-08-08T04:34:37Z",
+            }
+        ]
+    ).to_parquet(meta_path, index=False)
+    config = replace(
+        minimal_inputs,
+        macro_inputs=(
+            _input("fred_observations", obs_path, FRED_OBSERVATIONS_SCHEMA_ID),
+            _input("fred_meta", meta_path, FRED_META_SCHEMA_ID),
+        ),
+    )
+
+    with pytest.raises(BuildError, match="natural capture conflict"):
+        build_control_tower_marts(config)
+
+
+def test_sec_physical_document_identity_collapses_queries_and_keeps_urls_distinct(
+    tmp_path, minimal_inputs
+):
+    filing_path = tmp_path / "sec-filings.parquet"
+    url_one = "https://www.sec.gov/Archives/edgar/data/1/fixture.htm"
+    url_two = "https://www.sec.gov/Archives/edgar/data/1/fixture-exhibit.htm"
+    rows = [
+        {
+            "query": "tencent",
+            "accession_no": "0000000001-26-000001",
+            "cik": "0000000001",
+            "company_name": "Tencent Holdings Limited",
+            "form": "6-K",
+            "file_date": "2026-08-10",
+            "filing_url": url_one,
+            "fetched_at": "2026-08-10T12:00:00Z",
+        },
+        {
+            "query": "cloud",
+            "accession_no": "0000000001-26-000001",
+            "cik": "0000000001",
+            "company_name": "Tencent Holdings Limited",
+            "form": "6-K",
+            "file_date": "2026-08-10",
+            "filing_url": url_one,
+            "fetched_at": "2026-08-09T12:00:00Z",
+        },
+        {
+            "query": "exhibit",
+            "accession_no": "0000000001-26-000001",
+            "cik": "0000000001",
+            "company_name": "Tencent Holdings Limited",
+            "form": "6-K",
+            "file_date": "2026-08-10",
+            "filing_url": url_two,
+            "fetched_at": "2026-08-11T12:00:00Z",
+        },
+        {
+            "query": "another",
+            "accession_no": "0000000001-26-000002",
+            "cik": "0000000001",
+            "company_name": "Tencent Holdings Limited",
+            "form": "6-K",
+            "file_date": "2026-08-11",
+            "filing_url": "https://www.sec.gov/Archives/edgar/data/1/second.htm",
+            "fetched_at": "2026-08-12T12:00:00Z",
+        },
+    ]
+    pd.DataFrame(rows).to_parquet(filing_path, index=False)
+    config = replace(
+        minimal_inputs,
+        filing_inputs=(_input("sec_edgar", filing_path, FILING_SCHEMA_ID),),
+    )
+
+    manifest = build_control_tower_marts(config)
+    output = pd.read_parquet(_published(config, "news_filings.parquet"))
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+
+    assert len(output) == 3
+    assert output["document_id"].notna().all()
+    assert output["document_id"].is_unique
+    assert not output["document_id"].isin(["0000000001-26-000001", "0000000001-26-000002"]).any()
+    assert output["source_url"].nunique() == 3
+    first = output.loc[output["source_url"].eq(url_one)].iloc[0]
+    assert first["first_observed_at"] == pd.Timestamp("2026-08-09T12:00:00Z")
+    assert health.loc[health["source_id"].eq("sec_edgar"), "status"].iloc[0] == "available"
+    assert manifest.artifacts["news_filings.parquet"]["row_count"] == 3
+
+
+def test_sec_physical_document_conflict_is_fail_closed_and_degraded(
+    tmp_path, minimal_inputs
+):
+    filing_path = tmp_path / "sec-conflict.parquet"
+    common = {
+        "query": "tencent",
+        "accession_no": "0000000001-26-000003",
+        "cik": "0000000001",
+        "company_name": "Tencent Holdings Limited",
+        "file_date": "2026-08-10",
+        "filing_url": "https://www.sec.gov/Archives/edgar/data/1/conflict.htm",
+        "fetched_at": "2026-08-10T12:00:00Z",
+    }
+    pd.DataFrame(
+        [
+            {**common, "form": "6-K"},
+            {**common, "query": "cloud", "form": "8-K"},
+        ]
+    ).to_parquet(filing_path, index=False)
+    config = replace(
+        minimal_inputs,
+        filing_inputs=(_input("sec_edgar", filing_path, FILING_SCHEMA_ID),),
+    )
+
+    manifest = build_control_tower_marts(config)
+    output = pd.read_parquet(_published(config, "news_filings.parquet"))
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+
+    assert output.empty
+    assert health.loc[health["source_id"].eq("sec_edgar"), "status"].iloc[0] == "degraded"
+    assert any(
+        error["source_id"] == "sec_edgar"
+        and error["code"] == "filing_physical_document_conflict"
+        for error in manifest.validation_errors
+    )
+
+
+def test_consensus_prior_snapshot_may_reference_historical_store_outside_bound(
+):
+    revision = {column: None for column in TASK3_REVISION_COLUMNS}
+    revision.update(
+        {
+            "revision_id": "revision-current-historical-prior",
+            "snapshot_id": "current-snapshot",
+            "prior_snapshot_id": "historical-store-snapshot",
+        }
+    )
+    kept, dropped = _drop_orphaned_consensus_revisions(
+        pd.DataFrame([revision], columns=TASK3_REVISION_COLUMNS),
+        valid_snapshot_ids={"current-snapshot"},
+        rejected_snapshot_ids=frozenset(),
+    )
+
+    assert dropped == 0
+    assert len(kept) == 1
+    assert kept.iloc[0]["prior_snapshot_id"] == "historical-store-snapshot"
 
 
 def test_empty_macro_optional_inputs_are_unavailable_and_degrade_build(
