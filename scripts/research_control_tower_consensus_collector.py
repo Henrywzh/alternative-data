@@ -297,9 +297,13 @@ def accumulate_snapshots(
         # Only concat when both sides carry data: pandas deprecates concat of
         # empty/all-NA frames and the store is routinely empty on first run.
         merged = pd.concat([existing, new], ignore_index=True)
-    # Last-write-wins within (natural key, UTC day): after the concat the new
-    # batch rows come last, so keep="last" replaces the same-day store row and
-    # preserves every other vintage.
+    # Last-write-wins within (natural key, UTC day): sort by provider_asof/retrieved_at_utc/snapshot_at
+    # so newest timestamp deterministically wins regardless of ingestion order.
+    merged = merged.sort_values(
+        ["provider_asof", "retrieved_at_utc", "snapshot_at"],
+        kind="mergesort",
+        na_position="first",
+    )
     merged = merged.drop_duplicates(subset=["__key", "__day"], keep="last")
     merged = merged.drop(columns=["__key", "__day"])
     merged = merged.sort_values(
@@ -862,6 +866,13 @@ def collect_financial_data(
         # The sibling's fetch timestamp is the true provider-as-of; the
         # snapshot date alone would understate freshness by a day.
         provider_asof = _as_utc(row.get("fetched_at")) or snapshot_at
+        now_utc = _as_utc(now) or pd.Timestamp.now(tz="UTC")
+        if snapshot_at > now_utc or provider_asof > now_utc:
+            notes.append(
+                f"excluded future-dated sibling row for {listing['canonical_ticker']} "
+                f"(snapshot_at={snapshot_at.isoformat()}, provider_asof={provider_asof.isoformat()}, as_of={now_utc.isoformat()})"
+            )
+            continue
         for metric, column in (("eps", "eps_avg"), ("revenue", "revenue_avg")):
             value = _f(row.get(column))
             if value is None:
@@ -983,7 +994,17 @@ def _provider_freshness_status(
     latest_ts = pd.Timestamp(latest)
     if pd.isna(latest_ts):
         return ("stale", "latest provider_asof unavailable; freshness cannot be established")
-    age_days = (pd.Timestamp(now) - latest_ts).days
+    now_ts = pd.Timestamp(now)
+    if now_ts.tzinfo is None and latest_ts.tzinfo is not None:
+        now_ts = now_ts.tz_localize("UTC")
+    elif now_ts.tzinfo is not None and latest_ts.tzinfo is None:
+        latest_ts = latest_ts.tz_localize("UTC")
+    if latest_ts > now_ts:
+        return (
+            "fail_closed_future_dated",
+            f"provider_asof {latest_ts.isoformat()} is in the future relative to as_of {now_ts.isoformat()}",
+        )
+    age_days = (now_ts - latest_ts).days
     if age_days > sla_days:
         return (
             "stale",
@@ -1019,9 +1040,6 @@ def build_provider_health_rows(
         "yfinance": "Yahoo Finance analyst estimates via yfinance; personal research use, no redistribution asserted",
         "akshare": "Sibling-repository export; collected by financial-data, not re-fetched here",
     }
-    n_genuine = int((revisions["pit_class"].eq("repository_captured")).sum()) if not revisions.empty else 0
-    n_recon = int((revisions["pit_class"].eq("reconstructed_sparse")).sum()) if not revisions.empty else 0
-    n_store = len(store)
     rows: list[dict[str, object]] = []
     for provider in ("yfinance", "akshare"):
         provider_store = store.loc[store["provider"].eq(provider)] if not store.empty else store.iloc[0:0]
@@ -1037,7 +1055,9 @@ def build_provider_health_rows(
         if not provider_store.empty and freshness:
             reason_parts.append(freshness)
         reason = "; ".join(reason_parts)
-        reason += f"; genuine_revisions={n_genuine}; reconstructed={n_recon}; store_vintages={n_store}"
+        prov_genuine = int((provider_revisions["pit_class"].eq("repository_captured")).sum()) if not provider_revisions.empty else 0
+        prov_recon = int((provider_revisions["pit_class"].eq("reconstructed_sparse")).sum()) if not provider_revisions.empty else 0
+        reason += f"; genuine_revisions={prov_genuine}; reconstructed={prov_recon}; store_vintages={len(provider_store)}"
         latest_snapshot_at = (
             pd.Timestamp(provider_store["snapshot_at"].max())
             if not provider_store.empty
