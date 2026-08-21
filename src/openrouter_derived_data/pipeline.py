@@ -9,6 +9,7 @@ from uuid import uuid4
 import pandas as pd
 
 from .identity import load_capability_map, rank_capability_families
+from .resolver import resolve_capability_map
 from .metrics import (
     DAILY_DATASET_ID,
     TOKEN_METRICS,
@@ -92,12 +93,24 @@ class OpenRouterDerivedPipeline:
         inputs = self._load_inputs()
         self._validate_inputs(inputs, today=target_day)
 
-        capability_map = load_capability_map(self.base_dir)
+        curated_map = load_capability_map(self.base_dir)
+        # Resolve what the curated map is silent about, so a frontier release
+        # does not have to wait for a hand-written entry before its family can
+        # enter the cohort. Curated assignments are never overridden.
+        capability_map, resolutions = resolve_capability_map(
+            curated_map, inputs["models"], inputs["pricing"]
+        )
+        resolution_status = {
+            resolution.aa_model_id: resolution.status
+            for resolution in resolutions
+            if resolution.resolved and resolution.aa_model_id not in curated_map.by_aa_model_id
+        }
         rankings = rank_capability_families(
             inputs["models"],
             inputs["economics"]["usage_date"],
             capability_map,
             backfill_latest_snapshot=True,
+            resolution_status=resolution_status,
         )
         workload_daily = compute_workload_intensity_daily(
             inputs["activity"], today=target_day

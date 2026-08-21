@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 import pandas as pd
 
@@ -157,6 +157,7 @@ def rank_capability_families(
     capability_map: CapabilityMap,
     *,
     backfill_latest_snapshot: bool = False,
+    resolution_status: Mapping[str, str] | None = None,
 ) -> pd.DataFrame:
     """Rank model families using strict or explicitly backfilled benchmark scores.
 
@@ -164,6 +165,12 @@ def rank_capability_families(
     before each usage date. Backfill mode uses the latest available snapshot
     for every usage date, while still enforcing each model's release date. The
     latter is a deliberately labeled current-score historical proxy.
+
+    ``resolution_status`` labels families the resolver supplied rather than a
+    human, keyed by aa_model_id. A curated assignment and a resolved one are
+    both exact, but only the curated one has been reviewed, so the published
+    rows keep them distinguishable and the drift guard can report which
+    top-N families are still running on an automatic match.
     """
     required_columns = {"as_of_date", "model_id", "model_name", "release_date", "intelligence_index"}
     missing_columns = required_columns - set(models.columns)
@@ -234,6 +241,11 @@ def rank_capability_families(
         eligible["model_match_status"] = eligible["_mapped"].map(
             {True: exact_status, False: "unmapped_no_activity_route"}
         )
+        if resolution_status:
+            resolved = eligible["model_id"].map(resolution_status)
+            eligible["model_match_status"] = eligible["model_match_status"].where(
+                ~(eligible["_mapped"] & resolved.notna()), resolved
+            )
         eligible["methodology_version"] = capability_map.methodology_version
         ranked_days.append(eligible[RANKING_COLUMNS])
     if not ranked_days:
