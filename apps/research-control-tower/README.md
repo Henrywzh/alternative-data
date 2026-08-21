@@ -36,13 +36,71 @@ The output is a publication, not a loose directory of interchangeable files:
 apps/research-control-tower/.generated/
 ├── CURRENT                         # one relative target, newline terminated
 └── generations/
-    └── <generation-id>/             # 15 Parquet marts + build_manifest.json
+    └── <generation-id>/             # 26 Parquet marts + build_manifest.json
 ```
 
 `CURRENT` must point to `generations/<generation-id>`. The generation manifest
 must agree with that pointer, its generation ID, artifact names, schemas,
 hashes, row counts and status. The app reads the generation selected by
 `CURRENT`; it does not discover the newest directory or merge generations.
+
+## Tencent input refresh and acceptance checks
+
+The Tencent actuals entry point is explicit and network-free. It never selects
+the repository fixture implicitly:
+
+```bash
+python scripts/research_control_tower_tencent_financials.py \
+  --disclosure-records-json tests/fixtures/tencent_ir/tencent_disclosures_2021_2026.json \
+  --output-dir data/normalized/research_control_tower \
+  --as-of-utc 2026-08-22T00:00:00Z \
+  --retrieved-at-utc 2026-08-22T00:00:00Z
+```
+
+The official HKEX corporate-actions collector uses the configured issuer
+identity and has no aggregate row cap unless `--max-rows-per-query` is passed:
+
+```bash
+python scripts/research_control_tower_corporate_actions.py \
+  --identity config/research_control_tower/official_source_identity.csv \
+  --output-dir data/normalized/research_control_tower \
+  --lookback-days 365
+```
+
+The valuation collector accepts only explicit local quote/consensus/FX inputs
+and writes both valuation outputs:
+
+```bash
+python scripts/research_control_tower_valuation.py \
+  --quotes data/normalized/research_control_tower/quote_snapshots_v1.parquet \
+  --consensus data/normalized/research_control_tower/consensus/control_tower_consensus_snapshots.parquet \
+  --consensus-health data/normalized/research_control_tower/consensus/control_tower_consensus_source_health.parquet \
+  --earnings-actuals data/normalized/research_control_tower/tencent_earnings_actuals_v1.parquet \
+  --fx-rates data/normalized/hk_transport/airline_fx_rates.parquet \
+  --internal-estimates config/research_control_tower/internal_estimates.csv \
+  --output-dir data/normalized/research_control_tower \
+  --as-of 2026-08-22T00:05:00Z --fiscal-period annual --fiscal-year 2026
+```
+
+Valuation and own-estimate outputs are built only from explicit, entitlement-
+valid local quote/consensus/FX inputs. If those inputs are absent or stale, the
+result remains typed unavailable/degraded; no valuation is invented.
+
+The wiring and bundle acceptance checks are:
+
+```bash
+pytest -q tests/test_research_control_tower_wiring.py \
+  tests/test_research_control_tower_tencent_financials.py
+python scripts/build_research_control_tower.py \
+  --output-dir .rct-staging/tencent-bundle \
+  --as-of-utc 2026-08-22T00:00:00Z \
+  --build-id rct-tencent-staging
+```
+
+The published generation contains exactly 27 artifacts: 26 typed Parquet
+artifacts plus `build_manifest.json`. The builder switches `CURRENT` only
+after its manifest, row-count and schema checks pass; run the privacy scan and
+repository-load checks on the staging generation before committing a publish.
 
 ## Run locally
 

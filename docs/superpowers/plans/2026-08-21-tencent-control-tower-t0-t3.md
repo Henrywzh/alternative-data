@@ -61,18 +61,31 @@ Unified pipeline for structured official sources (HKEX/yfinance/FRED/consensus);
 ## 5. Acceptance / verification commands
 
 ```bash
-cd /Users/henrywzh/Quant/alternative-data
-.venv/bin/pytest -q tests/test_research_control_tower_build.py tests/test_research_control_tower_registries.py \
-  tests/test_research_control_tower_events.py tests/test_research_control_tower_official_filings.py \
-  tests/test_research_control_tower_earnings_actuals.py tests/test_research_control_tower_consensus_revisions.py \
-  tests/test_research_control_tower_repository.py tests/test_research_control_tower_streamlit.py \
-  tests/test_research_control_tower_privacy.py tests/test_research_control_tower_coverage_states.py \
-  tests/test_research_control_tower_macro_sources.py tests/test_research_control_tower_market_data.py \
-  tests/test_research_control_tower_quote_collector.py tests/test_research_control_tower_news_collector.py
-.venv/bin/python scripts/build_research_control_tower.py          # staging build
-.venv/bin/python scripts/build_research_control_tower.py --publish
-.venv/bin/streamlit run apps/research-control-tower/app.py --server.headless true --server.port 8511
-# browser QA: Today / Unified Timeline / Tencent Company cockpit tabs / Source Health; light+dark; no console errors
+cd /private/tmp/rct-tencent-bundle-wiring-20260822
+python scripts/research_control_tower_tencent_financials.py \
+  --disclosure-records-json tests/fixtures/tencent_ir/tencent_disclosures_2021_2026.json \
+  --output-dir data/normalized/research_control_tower \
+  --as-of-utc 2026-08-22T00:00:00Z \
+  --retrieved-at-utc 2026-08-22T00:00:00Z
+python scripts/research_control_tower_corporate_actions.py \
+  --identity config/research_control_tower/official_source_identity.csv \
+  --output-dir data/normalized/research_control_tower --lookback-days 365
+pytest -q tests/test_research_control_tower_wiring.py \
+  tests/test_research_control_tower_tencent_financials.py \
+  tests/test_research_control_tower_build.py \
+  tests/test_research_control_tower_corporate_actions.py \
+  tests/test_research_control_tower_valuation.py \
+  tests/test_research_control_tower_repository.py \
+  tests/test_research_control_tower_privacy.py
+python -m compileall -q scripts src tests apps/research-control-tower/control_tower
+python scripts/build_research_control_tower.py \
+  --output-dir .rct-staging/rct-tencent-bundle-wiring-20260822 \
+  --as-of-utc 2026-08-22T00:05:00Z \
+  --build-id rct-tencent-bundle-wiring-20260822-staging
+# Inspect the staging manifest, row counts, source health, privacy scan and repository load.
+python scripts/build_research_control_tower.py \
+  --publish --as-of-utc 2026-08-22T00:05:00Z \
+  --build-id rct-tencent-bundle-wiring-20260822
 ```
 
 ## 6. Merge sequence

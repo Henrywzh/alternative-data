@@ -661,6 +661,28 @@ ARTIFACT_NAMES = (
     "build_manifest.json",
 )
 
+# The first published Control Tower contract predates the Tencent T0-T3
+# marts.  It is still an immutable, readable generation, so a new publisher
+# must be able to use it as lineage without treating its missing additive
+# artifacts as corruption.  This is an explicit compatibility contract, not
+# a permission to accept arbitrary partial generations.
+LEGACY_GENERATION_ARTIFACT_NAMES = tuple(
+    name
+    for name in ARTIFACT_NAMES
+    if name
+    not in {
+        "corporate_actions.parquet",
+        "valuation_snapshots.parquet",
+        "internal_estimates.parquet",
+        "thesis_claims.parquet",
+        "thesis_watch_questions.parquet",
+        "evidence_items.parquet",
+        "claim_evidence_links.parquet",
+    }
+)
+
+_LEGACY_EARNINGS_ACTUALS_COLUMNS = tuple(EARNINGS_ACTUALS_COLUMNS[:-8])
+
 OPTIONAL_ARTIFACT_NAMES = frozenset({
     "consensus_snapshots.parquet",
     "consensus_revisions.parquet",
@@ -4737,6 +4759,21 @@ def _generation_relative_path(generation_id: str) -> str:
     return f"{GENERATIONS_DIR_NAME}/{generation_id}"
 
 
+def _artifact_contract_for_generation(generation: Path) -> tuple[str, ...]:
+    present = {path.name for path in generation.iterdir()}
+    if present == set(ARTIFACT_NAMES):
+        return ARTIFACT_NAMES
+    if present == set(LEGACY_GENERATION_ARTIFACT_NAMES):
+        return LEGACY_GENERATION_ARTIFACT_NAMES
+    missing = sorted(set(ARTIFACT_NAMES) - present)
+    unexpected = sorted(present - set(ARTIFACT_NAMES))
+    raise BuildError(
+        "CURRENT target artifacts do not match a recognized contract"
+        + (f"; missing={','.join(missing)}" if missing else "")
+        + (f"; unexpected={','.join(unexpected)}" if unexpected else "")
+    )
+
+
 def _validate_current_pointer(output_dir: Path, pointer_value: str) -> Path:
     value = pointer_value.strip()
     pointer = PurePosixPath(value)
@@ -4754,20 +4791,7 @@ def _validate_current_pointer(output_dir: Path, pointer_value: str) -> Path:
     if not generation.is_dir():
         raise BuildError(f"CURRENT generation does not exist: {value}")
     entries = list(generation.iterdir())
-    present = {path.name for path in entries}
-    if present != set(ARTIFACT_NAMES):
-        # The count used to be written into this message by hand and had gone
-        # stale, so a mismatch reported a number that matched neither side and
-        # named nothing. Report the actual difference instead: adding an
-        # artifact to the contract makes every earlier generation fail here,
-        # and the reader needs to see which one to know that is why.
-        missing = sorted(set(ARTIFACT_NAMES) - present)
-        unexpected = sorted(present - set(ARTIFACT_NAMES))
-        raise BuildError(
-            "CURRENT target artifacts do not match the contract"
-            + (f"; missing={','.join(missing)}" if missing else "")
-            + (f"; unexpected={','.join(unexpected)}" if unexpected else "")
-        )
+    _artifact_contract_for_generation(generation)
     if any(path.is_symlink() or not path.is_file() for path in entries):
         raise BuildError("CURRENT target artifacts must be regular non-symlink files")
     return generation
@@ -4835,10 +4859,12 @@ def _validated_current_lineage(
     ):
         raise BuildError("CURRENT selected manifest degraded/validation fields are invalid")
     artifacts = payload.get("artifacts")
-    if not isinstance(artifacts, dict) or set(artifacts) != set(ARTIFACT_NAMES):
+    artifact_names = _artifact_contract_for_generation(generation)
+    if not isinstance(artifacts, dict) or set(artifacts) != set(artifact_names):
         raise BuildError("CURRENT selected manifest has an invalid artifact set")
     schemas = _arrow_schema()
-    for name in ARTIFACT_NAMES:
+    legacy_generation = artifact_names == LEGACY_GENERATION_ARTIFACT_NAMES
+    for name in artifact_names:
         record = artifacts.get(name)
         if not isinstance(record, dict):
             raise BuildError(f"CURRENT selected manifest is missing artifact record: {name}")
@@ -4871,7 +4897,11 @@ def _validated_current_lineage(
             raise BuildError(f"CURRENT selected manifest sha256 mismatch: {name}")
         if int(record.get("row_count", -1)) != pq.read_metadata(path).num_rows:
             raise BuildError(f"CURRENT selected manifest row_count mismatch: {name}")
-        if pq.read_schema(path) != schemas[name]:
+        table_schema = pq.read_schema(path)
+        if legacy_generation and name == "earnings_actuals.parquet":
+            if tuple(table_schema.names) != _LEGACY_EARNINGS_ACTUALS_COLUMNS:
+                raise BuildError(f"CURRENT selected manifest schema mismatch: {name}")
+        elif table_schema != schemas[name]:
             raise BuildError(f"CURRENT selected manifest schema mismatch: {name}")
     return _iso(built_at), generation_id
 
