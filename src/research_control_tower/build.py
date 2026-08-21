@@ -9,7 +9,8 @@ artifacts, with ``build_manifest.json`` written last.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+from datetime import date, datetime
 from email.utils import parsedate_to_datetime
 import hashlib
 import json
@@ -697,6 +698,7 @@ EARNINGS_ACTUALS_SCHEMA_ID = "earnings_actuals_v1"
 SOURCE_STATE_SCHEMA_ID = "source_state_v1"
 CORP_ACTIONS_SCHEMA_ID = "corporate_actions_v1"
 VALUATION_SNAPSHOTS_SCHEMA_ID = "valuation_snapshots_v2"
+VALUATION_SNAPSHOTS_LEGACY_SCHEMA_ID = "valuation_snapshots_v1"
 INTERNAL_ESTIMATES_SCHEMA_ID = "internal_estimates_v1"
 THESIS_CLAIMS_SCHEMA_ID = "thesis_claims_v1"
 THESIS_WATCH_QUESTIONS_SCHEMA_ID = "thesis_watch_questions_v1"
@@ -791,6 +793,7 @@ _SCHEMA_ALIASES = {
     CORP_ACTIONS_SCHEMA_ID: CORP_ACTIONS_SCHEMA_ID,
     "corporate_actions": CORP_ACTIONS_SCHEMA_ID,
     VALUATION_SNAPSHOTS_SCHEMA_ID: VALUATION_SNAPSHOTS_SCHEMA_ID,
+    VALUATION_SNAPSHOTS_LEGACY_SCHEMA_ID: VALUATION_SNAPSHOTS_SCHEMA_ID,
     "valuation_snapshots": VALUATION_SNAPSHOTS_SCHEMA_ID,
     INTERNAL_ESTIMATES_SCHEMA_ID: INTERNAL_ESTIMATES_SCHEMA_ID,
     "internal_estimates": INTERNAL_ESTIMATES_SCHEMA_ID,
@@ -874,6 +877,7 @@ SOURCE_FRESHNESS_THRESHOLDS = {
     EARNINGS_ACTUALS_SCHEMA_ID: pd.Timedelta(days=120),
     CORP_ACTIONS_SCHEMA_ID: pd.Timedelta(days=45),
     VALUATION_SNAPSHOTS_SCHEMA_ID: pd.Timedelta(days=45),
+    VALUATION_SNAPSHOTS_LEGACY_SCHEMA_ID: pd.Timedelta(days=45),
     INTERNAL_ESTIMATES_SCHEMA_ID: pd.Timedelta(days=365),
     SOURCE_STATE_SCHEMA_ID: pd.Timedelta(days=45),
 }
@@ -999,6 +1003,52 @@ SOURCE_TIME_COLUMNS = {
         "freshness": ("bar_date",),
         "retrieved": ("retrieved_at_utc",),
         "future": ("bar_date", "retrieved_at_utc"),
+    },
+    CORP_ACTIONS_SCHEMA_ID: {
+        "observed": ("published_at",),
+        "freshness": ("published_at",),
+        "retrieved": ("retrieved_at_utc",),
+        "future": ("published_at", "retrieved_at_utc"),
+    },
+    VALUATION_SNAPSHOTS_SCHEMA_ID: {
+        "observed": ("valuation_at",),
+        "freshness": ("valuation_at",),
+        "retrieved": ("retrieved_at_utc",),
+        "future": (
+            "valuation_date",
+            "valuation_at",
+            "numerator_at_utc",
+            "numerator_retrieved_at_utc",
+            "denominator_at_utc",
+            "denominator_provider_asof_utc",
+            "denominator_retrieved_at_utc",
+            "fx_snapshot_at_utc",
+            "fx_retrieved_at_utc",
+            "retrieved_at_utc",
+        ),
+    },
+    VALUATION_SNAPSHOTS_LEGACY_SCHEMA_ID: {
+        "observed": ("valuation_at",),
+        "freshness": ("valuation_at",),
+        "retrieved": ("retrieved_at_utc",),
+        "future": (
+            "valuation_date",
+            "valuation_at",
+            "numerator_at_utc",
+            "numerator_retrieved_at_utc",
+            "denominator_at_utc",
+            "denominator_provider_asof_utc",
+            "denominator_retrieved_at_utc",
+            "fx_snapshot_at_utc",
+            "fx_retrieved_at_utc",
+            "retrieved_at_utc",
+        ),
+    },
+    INTERNAL_ESTIMATES_SCHEMA_ID: {
+        "observed": ("effective_asof",),
+        "freshness": ("recorded_at_utc",),
+        "retrieved": ("recorded_at_utc",),
+        "future": ("effective_asof", "recorded_at_utc", "reviewed_at_utc"),
     },
 }
 
@@ -1671,6 +1721,67 @@ def _with_columns(frame: pd.DataFrame, columns: Sequence[str]) -> pd.DataFrame:
     return output[list(columns)]
 
 
+def _payload_values_equal(left: Any, right: Any) -> bool:
+    """Compare two payload cells without treating nulls or timestamps as drift."""
+
+    left_blank = _is_blank(left)
+    right_blank = _is_blank(right)
+    if left_blank or right_blank:
+        return left_blank and right_blank
+    if isinstance(left, (pd.Timestamp, datetime, date)) or isinstance(
+        right, (pd.Timestamp, datetime, date)
+    ):
+        try:
+            return pd.Timestamp(left) == pd.Timestamp(right)
+        except (TypeError, ValueError):
+            pass
+    try:
+        result = left == right
+        if not hasattr(result, "__len__"):
+            return bool(result)
+    except (TypeError, ValueError):
+        pass
+    return str(left) == str(right)
+
+
+def _full_payload_mismatches(
+    existing: Mapping[str, Any],
+    current: Mapping[str, Any],
+    columns: Sequence[str],
+) -> list[str]:
+    return [
+        column
+        for column in columns
+        if not _payload_values_equal(existing.get(column), current.get(column))
+    ]
+
+
+def _merge_row_by_id(
+    rows_by_id: dict[str, dict[str, Any]],
+    record: dict[str, Any],
+    *,
+    id_column: str,
+    payload_columns: Sequence[str],
+    label: str,
+    require_id: bool = False,
+) -> None:
+    identifier = str(record.get(id_column, "")).strip()
+    if not identifier:
+        if require_id:
+            raise BuildError(f"{label} row is missing required {id_column}")
+        return
+    existing = rows_by_id.get(identifier)
+    if existing is None:
+        rows_by_id[identifier] = record
+        return
+    mismatches = _full_payload_mismatches(existing, record, payload_columns)
+    if mismatches:
+        raise BuildError(
+            f"duplicate divergent {label} detected: {identifier} "
+            f"(differ on {mismatches})"
+        )
+
+
 def _task1_frames(registries: Any) -> dict[str, pd.DataFrame]:
     keys = {
         "entities": ["entity_id"],
@@ -2022,15 +2133,21 @@ def _load_optional(
 
 
 def _find_descriptor(inputs: Sequence[LocalInput], schema_id: str) -> LocalInput | None:
+    descriptors = _find_descriptors(inputs, schema_id)
+    return descriptors[0] if descriptors else None
+
+
+def _find_descriptors(inputs: Sequence[LocalInput], schema_id: str) -> list[LocalInput]:
     canonical = _normalise_schema_id(schema_id)
+    matches: list[LocalInput] = []
     for descriptor in inputs:
         try:
             descriptor_schema = _normalise_schema_id(descriptor.expected_schema)
         except BuildError:
             continue
         if descriptor_schema == canonical:
-            return descriptor
-    return None
+            matches.append(descriptor)
+    return matches
 
 
 def _fred_macro(
@@ -3056,22 +3173,13 @@ def _build_earnings_actuals(
                     )
                 for _, row in frame.iterrows():
                     rec = row.to_dict()
-                    aid = str(rec.get("actual_id", "")).strip()
-                    if not aid:
-                        continue
-                    if aid in combined_rows:
-                        existing = combined_rows[aid]
-                        # Verify exact consistency or fail closed
-                        mismatches = []
-                        for col in ("reported_value", "period_end", "metric", "entity_id"):
-                            if str(existing.get(col)) != str(rec.get(col)):
-                                mismatches.append(col)
-                        if mismatches:
-                            raise BuildError(
-                                f"duplicate divergent actual_id detected: {aid} (differ on {mismatches})"
-                            )
-                    else:
-                        combined_rows[aid] = rec
+                    _merge_row_by_id(
+                        combined_rows,
+                        rec,
+                        id_column="actual_id",
+                        payload_columns=EARNINGS_ACTUALS_COLUMNS,
+                        label="actual_id",
+                    )
     else:
         degraded.append("earnings_actuals")
 
@@ -3139,18 +3247,13 @@ def _build_corporate_actions(
                     )
                 for _, row in frame.iterrows():
                     rec = row.to_dict()
-                    aid = str(rec.get("action_id", "")).strip()
-                    if not aid:
-                        continue
-                    if aid in combined_rows:
-                        existing = combined_rows[aid]
-                        mismatches = [col for col in ("shares_affected", "execution_date", "listing_id") if str(existing.get(col)) != str(rec.get(col))]
-                        if mismatches:
-                            raise BuildError(
-                                f"duplicate divergent corporate action_id detected: {aid} (differ on {mismatches})"
-                            )
-                    else:
-                        combined_rows[aid] = rec
+                    _merge_row_by_id(
+                        combined_rows,
+                        rec,
+                        id_column="action_id",
+                        payload_columns=CORP_ACTIONS_COLUMNS,
+                        label="corporate action_id",
+                    )
     else:
         degraded.append("corporate_actions")
 
@@ -3179,42 +3282,60 @@ def _build_valuation_and_estimates(
     as_of_utc: pd.Timestamp,
 ) -> tuple[pd.DataFrame, pd.DataFrame, list[_SourceState], list[str]]:
     """Materialize valuation_snapshots and internal_estimates marts."""
-    val_descriptor = _find_descriptor(inputs, VALUATION_SNAPSHOTS_SCHEMA_ID)
-    est_descriptor = _find_descriptor(inputs, INTERNAL_ESTIMATES_SCHEMA_ID)
+    val_descriptors = _find_descriptors(inputs, VALUATION_SNAPSHOTS_SCHEMA_ID)
+    est_descriptors = _find_descriptors(inputs, INTERNAL_ESTIMATES_SCHEMA_ID)
     states: list[_SourceState] = []
     degraded: list[str] = []
-    val_rows: list[dict[str, Any]] = []
-    est_rows: list[dict[str, Any]] = []
+    val_rows: dict[str, dict[str, Any]] = {}
+    est_rows: dict[str, dict[str, Any]] = {}
 
-    if val_descriptor is not None:
-        state, frame, _schema_id = _load_optional(
-            val_descriptor, "valuation", as_of_utc=as_of_utc
-        )
-        states.append(state)
-        if frame is None:
-            degraded.append(val_descriptor.source_id)
-        else:
+    if val_descriptors:
+        for val_descriptor in val_descriptors:
+            state, frame, _schema_id = _load_optional(
+                val_descriptor, "valuation", as_of_utc=as_of_utc
+            )
+            states.append(state)
+            if frame is None:
+                degraded.append(val_descriptor.source_id)
+                continue
             frame = _with_columns(frame, VALUATION_SNAPSHOTS_COLUMNS)
-            val_rows = frame.to_dict("records")
+            for record in frame.to_dict("records"):
+                _merge_row_by_id(
+                    val_rows,
+                    record,
+                    id_column="valuation_id",
+                    payload_columns=VALUATION_SNAPSHOTS_COLUMNS,
+                    label="valuation_id",
+                    require_id=True,
+                )
     else:
         degraded.append("valuation_snapshots")
 
-    if est_descriptor is not None:
-        state, frame, _schema_id = _load_optional(
-            est_descriptor, "valuation", as_of_utc=as_of_utc
-        )
-        states.append(state)
-        if frame is None:
-            degraded.append(est_descriptor.source_id)
-        else:
+    if est_descriptors:
+        for est_descriptor in est_descriptors:
+            state, frame, _schema_id = _load_optional(
+                est_descriptor, "valuation", as_of_utc=as_of_utc
+            )
+            states.append(state)
+            if frame is None:
+                degraded.append(est_descriptor.source_id)
+                continue
             frame = _with_columns(frame, INTERNAL_ESTIMATES_COLUMNS)
-            est_rows = frame.to_dict("records")
+            for record in frame.to_dict("records"):
+                _merge_row_by_id(
+                    est_rows,
+                    record,
+                    id_column="estimate_id",
+                    payload_columns=INTERNAL_ESTIMATES_COLUMNS,
+                    label="estimate_id",
+                    require_id=True,
+                )
     else:
         degraded.append("internal_estimates")
 
-    val_out = _with_columns(pd.DataFrame(val_rows), VALUATION_SNAPSHOTS_COLUMNS)
+    val_out = _with_columns(pd.DataFrame(list(val_rows.values())), VALUATION_SNAPSHOTS_COLUMNS)
     val_out = _sort_frame(val_out, ["listing_id", "valuation_date", "metric_name"])
-    est_out = _with_columns(pd.DataFrame(est_rows), INTERNAL_ESTIMATES_COLUMNS)
+    est_out = _with_columns(pd.DataFrame(list(est_rows.values())), INTERNAL_ESTIMATES_COLUMNS)
     est_out = _sort_frame(est_out, ["entity_id", "metric", "effective_asof", "version"])
     return val_out, est_out, states, sorted(set(degraded))
 
@@ -3232,31 +3353,77 @@ def _build_thesis_and_evidence(
     states: list[_SourceState] = []
     degraded: list[str] = []
 
-    # Check if thesis seed files exist in config root
-    thesis_claims_file = config.registry_root / "thesis_claims.csv"
-    if thesis_claims_file.is_file():
+    # The thesis layer is one four-file bundle.  A partial bundle cannot be
+    # interpreted as an intentional empty layer, and its loader must not leak
+    # a raw FileNotFoundError through the publication boundary.
+    thesis_files = (
+        "thesis_claims.csv",
+        "thesis_watch_questions.csv",
+        "evidence_items.csv",
+        "claim_evidence_links.csv",
+    )
+    present_thesis_files = {
+        filename
+        for filename in thesis_files
+        if (config.registry_root / filename).is_file()
+    }
+    if not present_thesis_files:
+        degraded.append("thesis_claims")
+    elif present_thesis_files != set(thesis_files):
+        missing = sorted(set(thesis_files) - present_thesis_files)
+        raise BuildError(
+            "thesis seed bundle incomplete; missing files: " + ", ".join(missing)
+        )
+    else:
         from .thesis_seed import load_thesis_seed_bundle, validate_thesis_seed_bundle
-        bundle = load_thesis_seed_bundle(config.registry_root)
-        issues = validate_thesis_seed_bundle(bundle, registries, events, config.as_of_utc)
-        # Filter evidence items and links by as_of_utc (PIT causality)
-        ev_df = bundle.evidence_items.copy()
-        if not ev_df.empty:
-            obs = pd.to_datetime(ev_df["observed_at_utc"], errors="coerce", utc=True)
-            pub = pd.to_datetime(ev_df["published_at"], errors="coerce", utc=True)
-            valid_mask = (obs <= config.as_of_utc) & (pub <= config.as_of_utc)
-            ev_df = ev_df.loc[valid_mask].copy()
-        valid_ev_ids = set(ev_df["evidence_id"]) if not ev_df.empty else set()
-        links_df = bundle.claim_evidence_links.copy()
-        if not links_df.empty:
-            links_df = links_df.loc[links_df["evidence_id"].isin(valid_ev_ids)].copy()
+
+        try:
+            bundle = load_thesis_seed_bundle(config.registry_root)
+            # Future evidence is a valid seed row for a later generation, but
+            # it is unavailable to this as_of snapshot. Validate the eligible
+            # slice so structural/FK/schema issues still fail closed without
+            # treating honest future exclusion as a malformed seed.
+            ev_df = bundle.evidence_items.copy()
+            if not ev_df.empty:
+                obs = pd.to_datetime(
+                    ev_df["observed_at_utc"], errors="coerce", utc=True
+                )
+                pub = pd.to_datetime(
+                    ev_df["published_at"], errors="coerce", utc=True
+                )
+                valid_mask = (obs <= config.as_of_utc) & (pub <= config.as_of_utc)
+                ev_df = ev_df.loc[valid_mask].copy()
+            valid_ev_ids = set(ev_df["evidence_id"]) if not ev_df.empty else set()
+            links_df = bundle.claim_evidence_links.copy()
+            if not links_df.empty:
+                links_df = links_df.loc[
+                    links_df["evidence_id"].isin(valid_ev_ids)
+                ].copy()
+            validation_bundle = replace(
+                bundle,
+                evidence_items=ev_df,
+                claim_evidence_links=links_df,
+            )
+            issues = validate_thesis_seed_bundle(
+                validation_bundle, registries, events, config.as_of_utc
+            )
+        except (FileNotFoundError, OSError, ValueError, TypeError, KeyError) as exc:
+            raise BuildError(f"thesis seed bundle invalid: {exc}") from exc
+        error_issues = [issue for issue in issues if issue.severity == "error"]
+        if error_issues:
+            detail = "; ".join(
+                f"{issue.registry or 'thesis'}:{issue.code}"
+                + (f"[row={issue.row_index}]" if issue.row_index is not None else "")
+                for issue in error_issues
+            )
+            raise BuildError(f"thesis seed validation failed: {detail}")
+        if issues:
+            degraded.append("thesis_seed_validation")
 
         claims_out = _with_columns(bundle.thesis_claims, THESIS_CLAIMS_COLUMNS)
         questions_out = _with_columns(bundle.thesis_watch_questions, THESIS_WATCH_QUESTIONS_COLUMNS)
         evidence_out = _with_columns(ev_df, EVIDENCE_ITEMS_COLUMNS)
         links_out = _with_columns(links_df, CLAIM_EVIDENCE_LINKS_COLUMNS)
-    else:
-        degraded.append("thesis_claims")
-
     claims_out = _sort_frame(claims_out, ["claim_id"])
     questions_out = _sort_frame(questions_out, ["question_id"])
     evidence_out = _sort_frame(evidence_out, ["evidence_id"])

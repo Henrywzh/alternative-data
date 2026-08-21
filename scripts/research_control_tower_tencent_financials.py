@@ -212,6 +212,12 @@ def _utc_timestamp(value: Any, *, field: str) -> pd.Timestamp:
     return timestamp
 
 
+def _strict_bool(value: Any, *, field: str) -> bool:
+    if type(value) is not bool:
+        raise ValueError(f"{field} must be a strict boolean")
+    return value
+
+
 def _default_fixture_path() -> Path:
     candidates = (
         Path(__file__).resolve().parent.parent
@@ -340,6 +346,10 @@ def transform_tencent_disclosures_to_actuals(
             item.get("revision_reason", "initial_filing")
         ).strip()
         value_origin = str(item["value_origin"]).strip()
+        is_restatement = _strict_bool(
+            item.get("is_restatement", False),
+            field=f"{period_label}: is_restatement",
+        )
         source_page_refs = item.get("source_page_refs")
         if not isinstance(source_page_refs, Mapping):
             raise ValueError(f"{period_label}: source_page_refs must be a mapping")
@@ -418,7 +428,7 @@ def transform_tencent_disclosures_to_actuals(
                 "form": "RESULTS_ANNOUNCEMENT",
                 "xbrl_frame": "",
                 "revision_reason": revision_reason,
-                "is_restatement": bool(item.get("is_restatement", False)),
+                "is_restatement": is_restatement,
                 "source_id": "hkex:tencent_results",
                 "source_quality": SOURCE_QUALITY_OFFICIAL,
                 "pit_class": PIT_CLASS_OBSERVED,
@@ -613,6 +623,45 @@ def validate_tencent_actuals(frame: pd.DataFrame) -> None:
     )
     if not frame["actual_id"].eq(expected_actual_ids).all():
         raise ValueError("actual_id does not match the canonical natural key")
+
+    if not frame["is_restatement"].map(type).eq(bool).all():
+        raise ValueError("is_restatement must be a strict boolean")
+
+    chain_columns = [
+        "entity_id",
+        "listing_id",
+        "metric",
+        "metric_basis",
+        "period_label",
+    ]
+    for _chain_key, chain in frame.groupby(chain_columns, sort=False, dropna=False):
+        chain = chain.sort_values("version", kind="mergesort")
+        versions = [int(value) for value in chain["version"]]
+        expected_versions = list(range(1, len(versions) + 1))
+        if versions != expected_versions:
+            raise ValueError(
+                "restatement chain versions must be contiguous from 1"
+            )
+        first = chain.iloc[0]
+        if str(first["supersedes_actual_id"]).strip():
+            raise ValueError(
+                "version 1 supersedes_actual_id must be blank"
+            )
+        if bool(first["is_restatement"]):
+            raise ValueError("version 1 cannot be marked as a restatement")
+        previous = first
+        for _, current in chain.iloc[1:].iterrows():
+            supersedes = str(current["supersedes_actual_id"]).strip()
+            if supersedes != str(previous["actual_id"]).strip():
+                raise ValueError(
+                    "supersedes_actual_id must reference the immediately prior "
+                    "actual in the restatement chain"
+                )
+            if not bool(current["is_restatement"]):
+                raise ValueError(
+                    "restatement chain revisions must be marked as restatements"
+                )
+            previous = current
 
     document_consistency = frame.groupby("source_document_id").agg(
         {

@@ -38,7 +38,15 @@ def main() -> int:
     parser.add_argument("--as-of-utc", default=None)
     parser.add_argument("--retrieved-at-utc", default=None)
     parser.add_argument("--lookback-days", type=int, default=365)
-    parser.add_argument("--max-rows-per-query", type=int, default=120)
+    parser.add_argument(
+        "--max-rows-per-query",
+        type=int,
+        default=None,
+        help=(
+            "optional aggregate safety cap per issuer/title stream; default completes "
+            "all date windows and reports any explicit truncation"
+        ),
+    )
     parser.add_argument("--timeout", type=int, default=20)
     args = parser.parse_args()
 
