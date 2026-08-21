@@ -42,6 +42,8 @@ APPS_DATASET_IDS = (
 ACTIVITY_DATASET_IDS = ("openrouter_model_activity",)
 TASK_SPEND_DATASET_IDS = (TASK_SPEND_DATASET_ID,)
 SERVING_PROVIDER_DATASET_IDS = (CLOUD_INFRA_ACTIVITY_DATASET_ID,)
+# A daily sweep of ~100 third-party pages will always lose a few.
+SERVING_PROVIDER_MAX_FETCH_FAILURE_RATIO = 0.10
 
 
 @dataclass
@@ -375,16 +377,39 @@ class ServingProviderActivityPipeline(BasePipeline):
         )
 
     def _raise_fetch_failures(self) -> None:
+        """Fail closed on a broad outage, tolerate a single flaky page.
+
+        This walks ~100 third-party pages every day, so "any failure aborts
+        the run" resolves to "the run aborts regularly".  That is worse than
+        it sounds: this step runs inside the existing provider-activity
+        workflow, ahead of its commit step, so one unreachable provider page
+        also threw away the provider-activity data that had already been
+        fetched successfully in the same job.  Tolerated failures are recorded
+        in the run manifest so a provider quietly dropping out of the series
+        is still auditable, and validate_records() keeps the hard 80% catalog
+        coverage floor underneath this.
+        """
         failures = self.source.last_failures
+        self._tolerated_fetch_failures = []
         if not failures:
             return
+        catalog_size = len(self.source.provider_metadata) or len(failures)
+        failure_ratio = len(failures) / catalog_size
         sample = "; ".join(
             f"{failure.get('slug', 'unknown')}: {failure.get('error', 'request failed')}"
             for failure in failures[:3]
         )
-        raise ExtractionError(
-            f"Serving-provider fetch failed after retries for {len(failures)} "
-            f"provider(s); refusing a partial upsert. {sample}"
+        if failure_ratio > SERVING_PROVIDER_MAX_FETCH_FAILURE_RATIO:
+            raise ExtractionError(
+                f"Serving-provider fetch failed after retries for {len(failures)} "
+                f"of {catalog_size} provider(s) "
+                f"({failure_ratio:.0%} > {SERVING_PROVIDER_MAX_FETCH_FAILURE_RATIO:.0%} "
+                f"tolerance); refusing a partial upsert. {sample}"
+            )
+        self._tolerated_fetch_failures = list(failures)
+        print(
+            f"Warning: serving-provider fetch failed for {len(failures)} of "
+            f"{catalog_size} provider(s), within tolerance; continuing. {sample}"
         )
 
     def _build_manifest(
@@ -409,6 +434,13 @@ class ServingProviderActivityPipeline(BasePipeline):
                     item["slug"] for item in self.source.last_parse_omissions
                 ],
             }
+        tolerated = getattr(self, "_tolerated_fetch_failures", None)
+        if tolerated:
+            manifest.setdefault("source_health", {})
+            manifest["source_health"]["tolerated_fetch_failure_count"] = len(tolerated)
+            manifest["source_health"]["tolerated_fetch_failure_slugs"] = [
+                str(item.get("slug") or "") for item in tolerated
+            ]
         return manifest
 
     def _filter_for_mode(

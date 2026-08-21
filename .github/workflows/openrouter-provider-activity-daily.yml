@@ -42,11 +42,22 @@ jobs:
             tests/test_dashboard_data.py \
             tests/test_dashboard_smoke.py
 
+      # Offline unit tests cannot see an upstream page changing shape. Keep
+      # the live extraction canary that used to be this workflow's only
+      # validation step, rather than replacing it with the tests.
+      - name: Validate provider activity extraction
+        run: |
+          python -m openrouter_data.cli --base-dir . provider-activity-validate
+
       - name: Run provider activity daily update
         run: |
           python -m openrouter_data.cli --base-dir . provider-activity-daily-update
 
+      # The serving-provider sweep touches ~100 third-party pages. A bad day
+      # there must not discard the provider-activity data the previous step
+      # already fetched -- these steps sit ahead of the shared commit step.
       - name: Run serving-provider activity daily update
+        continue-on-error: true
         run: |
           python -m openrouter_data.cli --base-dir . serving-provider-activity-daily-update
 
@@ -66,6 +77,7 @@ jobs:
           python -m research_data.cli --base-dir . build-mart daily_provider_revenue_estimates --refresh
 
       - name: Rebuild serving-provider economics
+        continue-on-error: true
         env:
           DATA_SOURCE: local
         run: |
