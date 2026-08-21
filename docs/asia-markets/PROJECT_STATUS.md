@@ -1911,3 +1911,86 @@ Key findings:
   layer that exposes the residual's composition and its mean-reversion
   risk. A follow-up could model Mainland dev as a separate line with a
   mean-reversion scenario.
+
+### HKMA residential-mortgage series June regression audit (2026-08-21)
+
+Three dashboard series are recorded as stale at 2026-05 on main:
+hkma_credit_quality_history (228 rows), hkma_applications_history
+(114 rows) and hkma_mortgage_activity (114 rows), all 2016-12..2026-05.
+
+Audit result: June 2026 data was already in production and was
+regressed, not never-fetched:
+
+- The HKMA RMS API has served 2026-06 since at least 2026-08-12 (local
+  raw snapshot, 115 records). July is not published yet at source (RMS
+  lags roughly one month), so June is the correct current target.
+- CI committed June on 2026-08-12 (408b3539) and it survived through
+  96f68ae1 and fa0de6e0 (2026-08-17).
+- Local build f97e0672 (2026-08-20, refresh-Midland run) regressed all
+  three series to May. Cause: _load_hkma_with_fallback() returns any
+  non-empty local normalized cache without a freshness gate, and the
+  local data/normalized/hk_real_estate/hkma_residential_mortgage_survey/
+  vintages date from 2026-07-23 with May-only data (the ingestion
+  pipeline has not saved a newer vintage since).
+- The 2026-08-20 CI rebuild fetched June live but was discarded whole by
+  artifact-refresh-guard: the SHKP quarterly catalogue fetch failed from
+  CI (corporate page returned no PDF links), making shkp_quarterly_*
+  datasets regress, so the guard restored the entire previous artifact,
+  preserving the regressed May version. The guard also preserved the
+  crypto artifact the same day (btc_price_history 109->0, Binance 451
+  from CI IPs).
+- Verified 2026-08-21: the project fetcher currently returns 115 rows
+  with latest period 2026-06 from this machine.
+
+Fixes implemented 2026-08-21 (branch codex/hkma-freshness-fix):
+
+- _load_hkma_with_fallback() gates the normalized-cache short-circuit on
+  whether the cache can still be holding the newest PUBLISHED month,
+  rather than on a flat calendar age. A flat gate cannot work on this
+  series: observation_date is the first day of the observed month and
+  HKMA publishes ~25 days after that month ends, so a cache holding the
+  newest published month is already ~55 days old on the day it lands,
+  and the 45-day gate first written here rejected every HKMA cache that
+  has ever existed (it forced a live fetch on every build and only
+  looked like it worked). _monthly_cache_is_current() compares against
+  the next month's expected publication date instead, starting to
+  refetch 5 days early.
+- A live fetch that comes back SHORTER than the cache, or with an older
+  newest month, is now rejected as an upstream fault. Preferring the
+  cache unconditionally used to provide this for free; preferring a
+  fresh fetch means it has to be stated.
+- The cache is only rewritten when the fetch actually advanced it.
+  save_normalized_dataset() writes an immutable run directory per call,
+  so rewriting an unchanged vintage every build just accumulates
+  snapshots that load_latest_normalized() then has to scan.
+- The lineage source_url written with the cache now reuses
+  HKMA_PUBLIC_RMS_URL instead of a hand-copied URL that had a typo
+  ("bulletine") and the wrong path segment.
+- The HKMA curl fallback gained connect/read timeouts so a dead network
+  fails bounded instead of hanging.
+- artifact-refresh-guard gained findStaleDatasetRegressions(): a dataset
+  whose newest observation moves BACKWARDS across a refresh now
+  preserves the previous artifact, with reason "stale-dataset-
+  regression". The pre-existing empty-dataset check could not see this
+  incident at all -- every row count stayed healthy. Verified against
+  the real artifacts: replaying the June -> f97e0672 refresh flags all
+  six HKMA series, and the reverse direction plus all 26 committed
+  artifacts on origin/main report zero. Row-count regressions are
+  deliberately NOT flagged; shkp_quarterly_numeric_facts legitimately
+  churns row counts between builds (PDF text extraction) while its
+  newest period moves forward.
+- tests/test_hk_real_estate_hkma_freshness.py covers the incident
+  directly (stale cache + newer live data must yield the live data);
+  9 of its 10 cases fail against the pre-fix builder.
+
+Rebuild result, measured against origin/main (not the local main, which
+lags): six HKMA series advance 2026-05 -> 2026-06, including
+hkma_mortgage_rate_mix 342 -> 460 rows. One dataset moves the other way,
+shkp_quarterly_numeric_facts 55 -> 51 rows, latest period still
+2026-06-30 -- non-deterministic PDF text extraction, not a data loss
+from this fix, but it does ship with the merge.
+
+Still open: decide whether artifact-refresh-guard should merge
+per-dataset instead of reverting the whole artifact when one source
+fails; harden the SHKP quarterly fetch for CI IPs; make the SHKP
+quarterly fact extraction deterministic so its row count stops churning.
