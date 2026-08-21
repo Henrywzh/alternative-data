@@ -5,7 +5,6 @@
     "period_end": "2021-03-31",
     "filing_at": "2021-05-20T08:30:00Z",
     "published_at": "2021-05-20T08:30:00Z",
-    "accepted_at": "2021-05-20T08:30:00Z",
     "timestamp_precision": "minute",
     "source_timezone": "Asia/Hong_Kong",
     "accession_no": "hkexnews:9771605",
@@ -18,7 +17,6 @@
     "revision_reason": "initial_filing",
     "is_restatement": false,
     "value_origin": "direct_quarterly_disclosure",
-    "derivation_method": "as_reported_quarterly_table",
     "revenue_total": 135303,
     "operating_profit_gaap": 56273,
     "operating_profit_non_ifrs": 42758,
@@ -33,7 +31,10 @@
       "net_profit_attributable_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "net_profit_attributable_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "diluted_eps_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
-      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column"
+      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
+      "revenue_vas": "PDF p. 7, revenue by segment, current three-month period column",
+      "revenue_online_advertising": "PDF p. 7, revenue by segment, current three-month period column",
+      "revenue_fintech_business_services": "PDF p. 7, revenue by segment, current three-month period column"
     },
     "derivation_methods": {
       "revenue_total": "as_reported_quarterly_table",
@@ -42,8 +43,15 @@
       "net_profit_attributable_gaap": "as_reported_quarterly_table",
       "net_profit_attributable_non_ifrs": "as_reported_quarterly_table",
       "diluted_eps_gaap": "as_reported_quarterly_table",
-      "diluted_eps_non_ifrs": "as_reported_quarterly_table"
-    }
+      "diluted_eps_non_ifrs": "as_reported_quarterly_table",
+      "revenue_vas": "as_reported_quarterly_table",
+      "revenue_online_advertising": "as_reported_quarterly_table",
+      "revenue_fintech_business_services": "as_reported_quarterly_table"
+    },
+    "source_body_evidence": "archived_local_pdf",
+    "revenue_vas": 72443,
+    "revenue_online_advertising": 21820,
+    "revenue_fintech_business_services": 39028
   },
   {
     "period_label": "2Q2021",
@@ -51,7 +59,6 @@
     "period_end": "2021-06-30",
     "filing_at": "2021-08-18T08:36:00Z",
     "published_at": "2021-08-18T08:36:00Z",
-    "accepted_at": "2021-08-18T08:36:00Z",
     "timestamp_precision": "minute",
     "source_timezone": "Asia/Hong_Kong",
     "accession_no": "hkexnews:9898606",
@@ -64,7 +71,6 @@
     "revision_reason": "initial_filing",
     "is_restatement": false,
     "value_origin": "direct_quarterly_disclosure",
-    "derivation_method": "as_reported_quarterly_table",
     "revenue_total": 138259,
     "operating_profit_gaap": 52487,
     "operating_profit_non_ifrs": 42802,
@@ -79,7 +85,10 @@
       "net_profit_attributable_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "net_profit_attributable_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "diluted_eps_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
-      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column"
+      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
+      "revenue_vas": "PDF p. 7, revenue by segment, current three-month period column",
+      "revenue_online_advertising": "PDF p. 7, revenue by segment, current three-month period column",
+      "revenue_fintech_business_services": "PDF p. 7, revenue by segment, current three-month period column"
     },
     "derivation_methods": {
       "revenue_total": "as_reported_quarterly_table",
@@ -88,8 +97,15 @@
       "net_profit_attributable_gaap": "as_reported_quarterly_table",
       "net_profit_attributable_non_ifrs": "as_reported_quarterly_table",
       "diluted_eps_gaap": "as_reported_quarterly_table",
-      "diluted_eps_non_ifrs": "as_reported_quarterly_table"
-    }
+      "diluted_eps_non_ifrs": "as_reported_quarterly_table",
+      "revenue_vas": "as_reported_quarterly_table",
+      "revenue_online_advertising": "as_reported_quarterly_table",
+      "revenue_fintech_business_services": "as_reported_quarterly_table"
+    },
+    "source_body_evidence": "downloaded_sha256_verified_not_locally_archived",
+    "revenue_vas": 72013,
+    "revenue_online_advertising": 22833,
+    "revenue_fintech_business_services": 41892
   },
   {
     "period_label": "3Q2021",
@@ -97,7 +113,6 @@
     "period_end": "2021-09-30",
     "filing_at": "2021-11-10T08:36:00Z",
     "published_at": "2021-11-10T08:36:00Z",
-    "accepted_at": "2021-11-10T08:36:00Z",
     "timestamp_precision": "minute",
     "source_timezone": "Asia/Hong_Kong",
     "accession_no": "hkexnews:10007323",
@@ -110,7 +125,6 @@
     "revision_reason": "initial_filing",
     "is_restatement": false,
     "value_origin": "direct_quarterly_disclosure",
-    "derivation_method": "as_reported_quarterly_table",
     "revenue_total": 142368,
     "operating_profit_gaap": 53137,
     "operating_profit_non_ifrs": 40828,
@@ -125,7 +139,10 @@
       "net_profit_attributable_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "net_profit_attributable_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "diluted_eps_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
-      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column"
+      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
+      "revenue_vas": "PDF p. 7, revenue by segment, current three-month period column",
+      "revenue_online_advertising": "PDF p. 7, revenue by segment, current three-month period column",
+      "revenue_fintech_business_services": "PDF p. 7, revenue by segment, current three-month period column"
     },
     "derivation_methods": {
       "revenue_total": "as_reported_quarterly_table",
@@ -134,8 +151,15 @@
       "net_profit_attributable_gaap": "as_reported_quarterly_table",
       "net_profit_attributable_non_ifrs": "as_reported_quarterly_table",
       "diluted_eps_gaap": "as_reported_quarterly_table",
-      "diluted_eps_non_ifrs": "as_reported_quarterly_table"
-    }
+      "diluted_eps_non_ifrs": "as_reported_quarterly_table",
+      "revenue_vas": "as_reported_quarterly_table",
+      "revenue_online_advertising": "as_reported_quarterly_table",
+      "revenue_fintech_business_services": "as_reported_quarterly_table"
+    },
+    "source_body_evidence": "downloaded_sha256_verified_not_locally_archived",
+    "revenue_vas": 75203,
+    "revenue_online_advertising": 22495,
+    "revenue_fintech_business_services": 43317
   },
   {
     "period_label": "4Q2021",
@@ -143,7 +167,6 @@
     "period_end": "2021-12-31",
     "filing_at": "2022-03-23T08:31:00Z",
     "published_at": "2022-03-23T08:31:00Z",
-    "accepted_at": "2022-03-23T08:31:00Z",
     "timestamp_precision": "minute",
     "source_timezone": "Asia/Hong_Kong",
     "accession_no": "hkexnews:10168304",
@@ -156,7 +179,6 @@
     "revision_reason": "initial_filing",
     "is_restatement": false,
     "value_origin": "direct_quarterly_disclosure",
-    "derivation_method": "direct_q4_column_in_annual_results",
     "revenue_total": 144188,
     "operating_profit_gaap": 109723,
     "operating_profit_non_ifrs": 33151,
@@ -171,7 +193,10 @@
       "net_profit_attributable_gaap": "PDF p. 1, Financial Performance Highlights, three months ended 31 December 2021",
       "net_profit_attributable_non_ifrs": "PDF p. 1, Financial Performance Highlights, three months ended 31 December 2021",
       "diluted_eps_gaap": "PDF p. 1, Financial Performance Highlights, three months ended 31 December 2021",
-      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, three months ended 31 December 2021"
+      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, three months ended 31 December 2021",
+      "revenue_vas": "PDF p. 14, revenue by segment, three months ended 31 December 2021",
+      "revenue_online_advertising": "PDF p. 14, revenue by segment, three months ended 31 December 2021",
+      "revenue_fintech_business_services": "PDF p. 14, revenue by segment, three months ended 31 December 2021"
     },
     "derivation_methods": {
       "revenue_total": "direct_q4_column_in_annual_results",
@@ -180,8 +205,15 @@
       "net_profit_attributable_gaap": "direct_q4_column_in_annual_results",
       "net_profit_attributable_non_ifrs": "direct_q4_column_in_annual_results",
       "diluted_eps_gaap": "direct_q4_column_in_annual_results",
-      "diluted_eps_non_ifrs": "direct_q4_column_in_annual_results"
-    }
+      "diluted_eps_non_ifrs": "direct_q4_column_in_annual_results",
+      "revenue_vas": "direct_q4_column_in_annual_results",
+      "revenue_online_advertising": "direct_q4_column_in_annual_results",
+      "revenue_fintech_business_services": "direct_q4_column_in_annual_results"
+    },
+    "source_body_evidence": "downloaded_sha256_verified_not_locally_archived",
+    "revenue_vas": 71913,
+    "revenue_online_advertising": 21518,
+    "revenue_fintech_business_services": 47958
   },
   {
     "period_label": "1Q2022",
@@ -189,7 +221,6 @@
     "period_end": "2022-03-31",
     "filing_at": "2022-05-18T08:30:00Z",
     "published_at": "2022-05-18T08:30:00Z",
-    "accepted_at": "2022-05-18T08:30:00Z",
     "timestamp_precision": "minute",
     "source_timezone": "Asia/Hong_Kong",
     "accession_no": "hkexnews:10264906",
@@ -202,7 +233,6 @@
     "revision_reason": "initial_filing",
     "is_restatement": false,
     "value_origin": "direct_quarterly_disclosure",
-    "derivation_method": "as_reported_quarterly_table",
     "revenue_total": 135471,
     "operating_profit_gaap": 37217,
     "operating_profit_non_ifrs": 36538,
@@ -217,7 +247,10 @@
       "net_profit_attributable_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "net_profit_attributable_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "diluted_eps_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
-      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column"
+      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
+      "revenue_vas": "PDF p. 6, revenue by segment, current three-month period column",
+      "revenue_online_advertising": "PDF p. 6, revenue by segment, current three-month period column",
+      "revenue_fintech_business_services": "PDF p. 6, revenue by segment, current three-month period column"
     },
     "derivation_methods": {
       "revenue_total": "as_reported_quarterly_table",
@@ -226,8 +259,15 @@
       "net_profit_attributable_gaap": "as_reported_quarterly_table",
       "net_profit_attributable_non_ifrs": "as_reported_quarterly_table",
       "diluted_eps_gaap": "as_reported_quarterly_table",
-      "diluted_eps_non_ifrs": "as_reported_quarterly_table"
-    }
+      "diluted_eps_non_ifrs": "as_reported_quarterly_table",
+      "revenue_vas": "as_reported_quarterly_table",
+      "revenue_online_advertising": "as_reported_quarterly_table",
+      "revenue_fintech_business_services": "as_reported_quarterly_table"
+    },
+    "source_body_evidence": "downloaded_sha256_verified_not_locally_archived",
+    "revenue_vas": 72738,
+    "revenue_online_advertising": 17988,
+    "revenue_fintech_business_services": 42768
   },
   {
     "period_label": "2Q2022",
@@ -235,7 +275,6 @@
     "period_end": "2022-06-30",
     "filing_at": "2022-08-17T08:30:00Z",
     "published_at": "2022-08-17T08:30:00Z",
-    "accepted_at": "2022-08-17T08:30:00Z",
     "timestamp_precision": "minute",
     "source_timezone": "Asia/Hong_Kong",
     "accession_no": "hkexnews:10389095",
@@ -248,7 +287,6 @@
     "revision_reason": "initial_filing",
     "is_restatement": false,
     "value_origin": "direct_quarterly_disclosure",
-    "derivation_method": "as_reported_quarterly_table",
     "revenue_total": 134034,
     "operating_profit_gaap": 30067,
     "operating_profit_non_ifrs": 36667,
@@ -263,7 +301,10 @@
       "net_profit_attributable_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "net_profit_attributable_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "diluted_eps_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
-      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column"
+      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
+      "revenue_vas": "PDF p. 7, revenue by segment, current three-month period column",
+      "revenue_online_advertising": "PDF p. 7, revenue by segment, current three-month period column",
+      "revenue_fintech_business_services": "PDF p. 7, revenue by segment, current three-month period column"
     },
     "derivation_methods": {
       "revenue_total": "as_reported_quarterly_table",
@@ -272,8 +313,15 @@
       "net_profit_attributable_gaap": "as_reported_quarterly_table",
       "net_profit_attributable_non_ifrs": "as_reported_quarterly_table",
       "diluted_eps_gaap": "as_reported_quarterly_table",
-      "diluted_eps_non_ifrs": "as_reported_quarterly_table"
-    }
+      "diluted_eps_non_ifrs": "as_reported_quarterly_table",
+      "revenue_vas": "as_reported_quarterly_table",
+      "revenue_online_advertising": "as_reported_quarterly_table",
+      "revenue_fintech_business_services": "as_reported_quarterly_table"
+    },
+    "source_body_evidence": "downloaded_sha256_verified_not_locally_archived",
+    "revenue_vas": 71683,
+    "revenue_online_advertising": 18638,
+    "revenue_fintech_business_services": 42208
   },
   {
     "period_label": "3Q2022",
@@ -281,7 +329,6 @@
     "period_end": "2022-09-30",
     "filing_at": "2022-11-16T08:40:00Z",
     "published_at": "2022-11-16T08:40:00Z",
-    "accepted_at": "2022-11-16T08:40:00Z",
     "timestamp_precision": "minute",
     "source_timezone": "Asia/Hong_Kong",
     "accession_no": "hkexnews:10508846",
@@ -294,7 +341,6 @@
     "revision_reason": "initial_filing",
     "is_restatement": false,
     "value_origin": "direct_quarterly_disclosure",
-    "derivation_method": "as_reported_quarterly_table",
     "revenue_total": 140093,
     "operating_profit_gaap": 51593,
     "operating_profit_non_ifrs": 40907,
@@ -309,7 +355,10 @@
       "net_profit_attributable_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "net_profit_attributable_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "diluted_eps_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
-      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column"
+      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
+      "revenue_vas": "PDF p. 7, revenue by segment, current three-month period column",
+      "revenue_online_advertising": "PDF p. 7, revenue by segment, current three-month period column",
+      "revenue_fintech_business_services": "PDF p. 7, revenue by segment, current three-month period column"
     },
     "derivation_methods": {
       "revenue_total": "as_reported_quarterly_table",
@@ -318,8 +367,15 @@
       "net_profit_attributable_gaap": "as_reported_quarterly_table",
       "net_profit_attributable_non_ifrs": "as_reported_quarterly_table",
       "diluted_eps_gaap": "as_reported_quarterly_table",
-      "diluted_eps_non_ifrs": "as_reported_quarterly_table"
-    }
+      "diluted_eps_non_ifrs": "as_reported_quarterly_table",
+      "revenue_vas": "as_reported_quarterly_table",
+      "revenue_online_advertising": "as_reported_quarterly_table",
+      "revenue_fintech_business_services": "as_reported_quarterly_table"
+    },
+    "source_body_evidence": "downloaded_sha256_verified_not_locally_archived",
+    "revenue_vas": 72727,
+    "revenue_online_advertising": 21443,
+    "revenue_fintech_business_services": 44844
   },
   {
     "period_label": "4Q2022",
@@ -327,7 +383,6 @@
     "period_end": "2022-12-31",
     "filing_at": "2023-03-22T08:33:00Z",
     "published_at": "2023-03-22T08:33:00Z",
-    "accepted_at": "2023-03-22T08:33:00Z",
     "timestamp_precision": "minute",
     "source_timezone": "Asia/Hong_Kong",
     "accession_no": "hkexnews:10640498",
@@ -340,7 +395,6 @@
     "revision_reason": "initial_filing",
     "is_restatement": false,
     "value_origin": "direct_quarterly_disclosure",
-    "derivation_method": "direct_q4_column_in_annual_results",
     "revenue_total": 144954,
     "operating_profit_gaap": 116829,
     "operating_profit_non_ifrs": 39426,
@@ -355,7 +409,10 @@
       "net_profit_attributable_gaap": "PDF p. 1, Financial Performance Highlights, three months ended 31 December 2022",
       "net_profit_attributable_non_ifrs": "PDF p. 1, Financial Performance Highlights, three months ended 31 December 2022",
       "diluted_eps_gaap": "PDF p. 1, Financial Performance Highlights, three months ended 31 December 2022",
-      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, three months ended 31 December 2022"
+      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, three months ended 31 December 2022",
+      "revenue_vas": "PDF p. 14, revenue by segment, three months ended 31 December 2022",
+      "revenue_online_advertising": "PDF p. 14, revenue by segment, three months ended 31 December 2022",
+      "revenue_fintech_business_services": "PDF p. 14, revenue by segment, three months ended 31 December 2022"
     },
     "derivation_methods": {
       "revenue_total": "direct_q4_column_in_annual_results",
@@ -364,8 +421,15 @@
       "net_profit_attributable_gaap": "direct_q4_column_in_annual_results",
       "net_profit_attributable_non_ifrs": "direct_q4_column_in_annual_results",
       "diluted_eps_gaap": "direct_q4_column_in_annual_results",
-      "diluted_eps_non_ifrs": "direct_q4_column_in_annual_results"
-    }
+      "diluted_eps_non_ifrs": "direct_q4_column_in_annual_results",
+      "revenue_vas": "direct_q4_column_in_annual_results",
+      "revenue_online_advertising": "direct_q4_column_in_annual_results",
+      "revenue_fintech_business_services": "direct_q4_column_in_annual_results"
+    },
+    "source_body_evidence": "downloaded_sha256_verified_not_locally_archived",
+    "revenue_vas": 70417,
+    "revenue_online_advertising": 24660,
+    "revenue_fintech_business_services": 47244
   },
   {
     "period_label": "1Q2023",
@@ -373,7 +437,6 @@
     "period_end": "2023-03-31",
     "filing_at": "2023-05-17T08:30:00Z",
     "published_at": "2023-05-17T08:30:00Z",
-    "accepted_at": "2023-05-17T08:30:00Z",
     "timestamp_precision": "minute",
     "source_timezone": "Asia/Hong_Kong",
     "accession_no": "hkexnews:10739945",
@@ -386,7 +449,6 @@
     "revision_reason": "initial_filing",
     "is_restatement": false,
     "value_origin": "direct_quarterly_disclosure",
-    "derivation_method": "as_reported_quarterly_table",
     "revenue_total": 149986,
     "operating_profit_gaap": 40429,
     "operating_profit_non_ifrs": 48389,
@@ -401,7 +463,10 @@
       "net_profit_attributable_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "net_profit_attributable_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "diluted_eps_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
-      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column"
+      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
+      "revenue_vas": "PDF p. 6, revenue by segment, current three-month period column",
+      "revenue_online_advertising": "PDF p. 6, revenue by segment, current three-month period column",
+      "revenue_fintech_business_services": "PDF p. 6, revenue by segment, current three-month period column"
     },
     "derivation_methods": {
       "revenue_total": "as_reported_quarterly_table",
@@ -410,8 +475,15 @@
       "net_profit_attributable_gaap": "as_reported_quarterly_table",
       "net_profit_attributable_non_ifrs": "as_reported_quarterly_table",
       "diluted_eps_gaap": "as_reported_quarterly_table",
-      "diluted_eps_non_ifrs": "as_reported_quarterly_table"
-    }
+      "diluted_eps_non_ifrs": "as_reported_quarterly_table",
+      "revenue_vas": "as_reported_quarterly_table",
+      "revenue_online_advertising": "as_reported_quarterly_table",
+      "revenue_fintech_business_services": "as_reported_quarterly_table"
+    },
+    "source_body_evidence": "downloaded_sha256_verified_not_locally_archived",
+    "revenue_vas": 79337,
+    "revenue_online_advertising": 20964,
+    "revenue_fintech_business_services": 48701
   },
   {
     "period_label": "2Q2023",
@@ -419,7 +491,6 @@
     "period_end": "2023-06-30",
     "filing_at": "2023-08-16T08:38:00Z",
     "published_at": "2023-08-16T08:38:00Z",
-    "accepted_at": "2023-08-16T08:38:00Z",
     "timestamp_precision": "minute",
     "source_timezone": "Asia/Hong_Kong",
     "accession_no": "hkexnews:10854099",
@@ -432,7 +503,6 @@
     "revision_reason": "initial_filing",
     "is_restatement": false,
     "value_origin": "direct_quarterly_disclosure",
-    "derivation_method": "as_reported_quarterly_table",
     "revenue_total": 149208,
     "operating_profit_gaap": 40300,
     "operating_profit_non_ifrs": 50122,
@@ -447,7 +517,10 @@
       "net_profit_attributable_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "net_profit_attributable_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "diluted_eps_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
-      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column"
+      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
+      "revenue_vas": "PDF p. 6, revenue by segment, current three-month period column",
+      "revenue_online_advertising": "PDF p. 6, revenue by segment, current three-month period column",
+      "revenue_fintech_business_services": "PDF p. 6, revenue by segment, current three-month period column"
     },
     "derivation_methods": {
       "revenue_total": "as_reported_quarterly_table",
@@ -456,8 +529,15 @@
       "net_profit_attributable_gaap": "as_reported_quarterly_table",
       "net_profit_attributable_non_ifrs": "as_reported_quarterly_table",
       "diluted_eps_gaap": "as_reported_quarterly_table",
-      "diluted_eps_non_ifrs": "as_reported_quarterly_table"
-    }
+      "diluted_eps_non_ifrs": "as_reported_quarterly_table",
+      "revenue_vas": "as_reported_quarterly_table",
+      "revenue_online_advertising": "as_reported_quarterly_table",
+      "revenue_fintech_business_services": "as_reported_quarterly_table"
+    },
+    "source_body_evidence": "downloaded_sha256_verified_not_locally_archived",
+    "revenue_vas": 74211,
+    "revenue_online_advertising": 25003,
+    "revenue_fintech_business_services": 48635
   },
   {
     "period_label": "3Q2023",
@@ -465,7 +545,6 @@
     "period_end": "2023-09-30",
     "filing_at": "2023-11-15T08:30:00Z",
     "published_at": "2023-11-15T08:30:00Z",
-    "accepted_at": "2023-11-15T08:30:00Z",
     "timestamp_precision": "minute",
     "source_timezone": "Asia/Hong_Kong",
     "accession_no": "hkexnews:10969152",
@@ -478,7 +557,6 @@
     "revision_reason": "initial_filing",
     "is_restatement": false,
     "value_origin": "direct_quarterly_disclosure",
-    "derivation_method": "as_reported_quarterly_table",
     "revenue_total": 154625,
     "operating_profit_gaap": 48475,
     "operating_profit_non_ifrs": 55483,
@@ -493,7 +571,10 @@
       "net_profit_attributable_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "net_profit_attributable_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "diluted_eps_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
-      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column"
+      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
+      "revenue_vas": "PDF p. 6, revenue by segment, current three-month period column",
+      "revenue_online_advertising": "PDF p. 6, revenue by segment, current three-month period column",
+      "revenue_fintech_business_services": "PDF p. 6, revenue by segment, current three-month period column"
     },
     "derivation_methods": {
       "revenue_total": "as_reported_quarterly_table",
@@ -502,8 +583,15 @@
       "net_profit_attributable_gaap": "as_reported_quarterly_table",
       "net_profit_attributable_non_ifrs": "as_reported_quarterly_table",
       "diluted_eps_gaap": "as_reported_quarterly_table",
-      "diluted_eps_non_ifrs": "as_reported_quarterly_table"
-    }
+      "diluted_eps_non_ifrs": "as_reported_quarterly_table",
+      "revenue_vas": "as_reported_quarterly_table",
+      "revenue_online_advertising": "as_reported_quarterly_table",
+      "revenue_fintech_business_services": "as_reported_quarterly_table"
+    },
+    "source_body_evidence": "downloaded_sha256_verified_not_locally_archived",
+    "revenue_vas": 75748,
+    "revenue_online_advertising": 25721,
+    "revenue_fintech_business_services": 52048
   },
   {
     "period_label": "4Q2023",
@@ -511,7 +599,6 @@
     "period_end": "2023-12-31",
     "filing_at": "2024-03-20T08:39:00Z",
     "published_at": "2024-03-20T08:39:00Z",
-    "accepted_at": "2024-03-20T08:39:00Z",
     "timestamp_precision": "minute",
     "source_timezone": "Asia/Hong_Kong",
     "accession_no": "hkexnews:11106351",
@@ -524,7 +611,6 @@
     "revision_reason": "initial_filing",
     "is_restatement": false,
     "value_origin": "direct_quarterly_disclosure",
-    "derivation_method": "direct_q4_column_in_annual_results",
     "revenue_total": 155196,
     "operating_profit_gaap": 41401,
     "operating_profit_non_ifrs": 49135,
@@ -539,7 +625,10 @@
       "net_profit_attributable_gaap": "PDF p. 1, Financial Performance Highlights, three months ended 31 December 2023",
       "net_profit_attributable_non_ifrs": "PDF p. 1, Financial Performance Highlights, three months ended 31 December 2023",
       "diluted_eps_gaap": "PDF p. 1, Financial Performance Highlights, three months ended 31 December 2023",
-      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, three months ended 31 December 2023"
+      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, three months ended 31 December 2023",
+      "revenue_vas": "PDF p. 12, revenue by segment, three months ended 31 December 2023",
+      "revenue_online_advertising": "PDF p. 12, revenue by segment, three months ended 31 December 2023",
+      "revenue_fintech_business_services": "PDF p. 12, revenue by segment, three months ended 31 December 2023"
     },
     "derivation_methods": {
       "revenue_total": "direct_q4_column_in_annual_results",
@@ -548,8 +637,15 @@
       "net_profit_attributable_gaap": "direct_q4_column_in_annual_results",
       "net_profit_attributable_non_ifrs": "direct_q4_column_in_annual_results",
       "diluted_eps_gaap": "direct_q4_column_in_annual_results",
-      "diluted_eps_non_ifrs": "direct_q4_column_in_annual_results"
-    }
+      "diluted_eps_non_ifrs": "direct_q4_column_in_annual_results",
+      "revenue_vas": "direct_q4_column_in_annual_results",
+      "revenue_online_advertising": "direct_q4_column_in_annual_results",
+      "revenue_fintech_business_services": "direct_q4_column_in_annual_results"
+    },
+    "source_body_evidence": "downloaded_sha256_verified_not_locally_archived",
+    "revenue_vas": 69079,
+    "revenue_online_advertising": 29794,
+    "revenue_fintech_business_services": 54379
   },
   {
     "period_label": "1Q2024",
@@ -557,7 +653,6 @@
     "period_end": "2024-03-31",
     "filing_at": "2024-05-14T08:30:00Z",
     "published_at": "2024-05-14T08:30:00Z",
-    "accepted_at": "2024-05-14T08:30:00Z",
     "timestamp_precision": "minute",
     "source_timezone": "Asia/Hong_Kong",
     "accession_no": "hkexnews:11210132",
@@ -570,7 +665,6 @@
     "revision_reason": "initial_filing",
     "is_restatement": false,
     "value_origin": "direct_quarterly_disclosure",
-    "derivation_method": "as_reported_quarterly_table",
     "revenue_total": 159501,
     "operating_profit_gaap": 52556,
     "operating_profit_non_ifrs": 58619,
@@ -585,7 +679,10 @@
       "net_profit_attributable_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "net_profit_attributable_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "diluted_eps_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
-      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column"
+      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
+      "revenue_vas": "PDF p. 5, revenue by segment, current three-month period column",
+      "revenue_online_advertising": "PDF p. 5, revenue by segment, current three-month period column",
+      "revenue_fintech_business_services": "PDF p. 5, revenue by segment, current three-month period column"
     },
     "derivation_methods": {
       "revenue_total": "as_reported_quarterly_table",
@@ -594,8 +691,15 @@
       "net_profit_attributable_gaap": "as_reported_quarterly_table",
       "net_profit_attributable_non_ifrs": "as_reported_quarterly_table",
       "diluted_eps_gaap": "as_reported_quarterly_table",
-      "diluted_eps_non_ifrs": "as_reported_quarterly_table"
-    }
+      "diluted_eps_non_ifrs": "as_reported_quarterly_table",
+      "revenue_vas": "as_reported_quarterly_table",
+      "revenue_online_advertising": "as_reported_quarterly_table",
+      "revenue_fintech_business_services": "as_reported_quarterly_table"
+    },
+    "source_body_evidence": "downloaded_sha256_verified_not_locally_archived",
+    "revenue_vas": 78629,
+    "revenue_online_advertising": 26506,
+    "revenue_fintech_business_services": 52302
   },
   {
     "period_label": "2Q2024",
@@ -603,7 +707,6 @@
     "period_end": "2024-06-30",
     "filing_at": "2024-08-14T08:30:00Z",
     "published_at": "2024-08-14T08:30:00Z",
-    "accepted_at": "2024-08-14T08:30:00Z",
     "timestamp_precision": "minute",
     "source_timezone": "Asia/Hong_Kong",
     "accession_no": "hkexnews:11321791",
@@ -616,7 +719,6 @@
     "revision_reason": "initial_filing",
     "is_restatement": false,
     "value_origin": "direct_quarterly_disclosure",
-    "derivation_method": "as_reported_quarterly_table",
     "revenue_total": 161117,
     "operating_profit_gaap": 50732,
     "operating_profit_non_ifrs": 58443,
@@ -631,7 +733,10 @@
       "net_profit_attributable_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "net_profit_attributable_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "diluted_eps_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
-      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column"
+      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
+      "revenue_vas": "PDF p. 6, revenue by segment, current three-month period column",
+      "revenue_online_advertising": "PDF p. 6, revenue by segment, current three-month period column",
+      "revenue_fintech_business_services": "PDF p. 6, revenue by segment, current three-month period column"
     },
     "derivation_methods": {
       "revenue_total": "as_reported_quarterly_table",
@@ -640,8 +745,15 @@
       "net_profit_attributable_gaap": "as_reported_quarterly_table",
       "net_profit_attributable_non_ifrs": "as_reported_quarterly_table",
       "diluted_eps_gaap": "as_reported_quarterly_table",
-      "diluted_eps_non_ifrs": "as_reported_quarterly_table"
-    }
+      "diluted_eps_non_ifrs": "as_reported_quarterly_table",
+      "revenue_vas": "as_reported_quarterly_table",
+      "revenue_online_advertising": "as_reported_quarterly_table",
+      "revenue_fintech_business_services": "as_reported_quarterly_table"
+    },
+    "source_body_evidence": "downloaded_sha256_verified_not_locally_archived",
+    "revenue_vas": 78822,
+    "revenue_online_advertising": 29871,
+    "revenue_fintech_business_services": 50440
   },
   {
     "period_label": "3Q2024",
@@ -649,7 +761,6 @@
     "period_end": "2024-09-30",
     "filing_at": "2024-11-13T08:30:00Z",
     "published_at": "2024-11-13T08:30:00Z",
-    "accepted_at": "2024-11-13T08:30:00Z",
     "timestamp_precision": "minute",
     "source_timezone": "Asia/Hong_Kong",
     "accession_no": "hkexnews:11439424",
@@ -662,7 +773,6 @@
     "revision_reason": "initial_filing",
     "is_restatement": false,
     "value_origin": "direct_quarterly_disclosure",
-    "derivation_method": "as_reported_quarterly_table",
     "revenue_total": 167193,
     "operating_profit_gaap": 53333,
     "operating_profit_non_ifrs": 61274,
@@ -677,7 +787,10 @@
       "net_profit_attributable_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "net_profit_attributable_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "diluted_eps_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
-      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column"
+      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
+      "revenue_vas": "PDF p. 6, revenue by segment, current three-month period column",
+      "revenue_marketing_services": "PDF p. 6, revenue by segment, current three-month period column",
+      "revenue_fintech_business_services": "PDF p. 6, revenue by segment, current three-month period column"
     },
     "derivation_methods": {
       "revenue_total": "as_reported_quarterly_table",
@@ -686,8 +799,15 @@
       "net_profit_attributable_gaap": "as_reported_quarterly_table",
       "net_profit_attributable_non_ifrs": "as_reported_quarterly_table",
       "diluted_eps_gaap": "as_reported_quarterly_table",
-      "diluted_eps_non_ifrs": "as_reported_quarterly_table"
-    }
+      "diluted_eps_non_ifrs": "as_reported_quarterly_table",
+      "revenue_vas": "as_reported_quarterly_table",
+      "revenue_marketing_services": "as_reported_quarterly_table",
+      "revenue_fintech_business_services": "as_reported_quarterly_table"
+    },
+    "source_body_evidence": "downloaded_sha256_verified_not_locally_archived",
+    "revenue_vas": 82695,
+    "revenue_marketing_services": 29993,
+    "revenue_fintech_business_services": 53089
   },
   {
     "period_label": "4Q2024",
@@ -695,7 +815,6 @@
     "period_end": "2024-12-31",
     "filing_at": "2025-03-19T08:30:00Z",
     "published_at": "2025-03-19T08:30:00Z",
-    "accepted_at": "2025-03-19T08:30:00Z",
     "timestamp_precision": "minute",
     "source_timezone": "Asia/Hong_Kong",
     "accession_no": "hkexnews:11576382",
@@ -708,7 +827,6 @@
     "revision_reason": "initial_filing",
     "is_restatement": false,
     "value_origin": "direct_quarterly_disclosure",
-    "derivation_method": "direct_q4_column_in_annual_results",
     "revenue_total": 172446,
     "operating_profit_gaap": 51478,
     "operating_profit_non_ifrs": 59475,
@@ -723,7 +841,10 @@
       "net_profit_attributable_gaap": "PDF p. 1, Financial Performance Highlights, three months ended 31 December 2024",
       "net_profit_attributable_non_ifrs": "PDF p. 1, Financial Performance Highlights, three months ended 31 December 2024",
       "diluted_eps_gaap": "PDF p. 1, Financial Performance Highlights, three months ended 31 December 2024",
-      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, three months ended 31 December 2024"
+      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, three months ended 31 December 2024",
+      "revenue_vas": "PDF p. 11, revenue by segment, three months ended 31 December 2024",
+      "revenue_marketing_services": "PDF p. 11, revenue by segment, three months ended 31 December 2024",
+      "revenue_fintech_business_services": "PDF p. 11, revenue by segment, three months ended 31 December 2024"
     },
     "derivation_methods": {
       "revenue_total": "direct_q4_column_in_annual_results",
@@ -732,8 +853,15 @@
       "net_profit_attributable_gaap": "direct_q4_column_in_annual_results",
       "net_profit_attributable_non_ifrs": "direct_q4_column_in_annual_results",
       "diluted_eps_gaap": "direct_q4_column_in_annual_results",
-      "diluted_eps_non_ifrs": "direct_q4_column_in_annual_results"
-    }
+      "diluted_eps_non_ifrs": "direct_q4_column_in_annual_results",
+      "revenue_vas": "direct_q4_column_in_annual_results",
+      "revenue_marketing_services": "direct_q4_column_in_annual_results",
+      "revenue_fintech_business_services": "direct_q4_column_in_annual_results"
+    },
+    "source_body_evidence": "downloaded_sha256_verified_not_locally_archived",
+    "revenue_vas": 79022,
+    "revenue_marketing_services": 35004,
+    "revenue_fintech_business_services": 56125
   },
   {
     "period_label": "1Q2025",
@@ -741,7 +869,6 @@
     "period_end": "2025-03-31",
     "filing_at": "2025-05-14T08:31:00Z",
     "published_at": "2025-05-14T08:31:00Z",
-    "accepted_at": "2025-05-14T08:31:00Z",
     "timestamp_precision": "minute",
     "source_timezone": "Asia/Hong_Kong",
     "accession_no": "hkexnews:11673735",
@@ -754,7 +881,6 @@
     "revision_reason": "initial_filing",
     "is_restatement": false,
     "value_origin": "direct_quarterly_disclosure",
-    "derivation_method": "as_reported_quarterly_table",
     "revenue_total": 180022,
     "operating_profit_gaap": 57566,
     "operating_profit_non_ifrs": 69320,
@@ -769,7 +895,10 @@
       "net_profit_attributable_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "net_profit_attributable_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "diluted_eps_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
-      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column"
+      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
+      "revenue_vas": "PDF p. 5, revenue by segment, current three-month period column",
+      "revenue_marketing_services": "PDF p. 5, revenue by segment, current three-month period column",
+      "revenue_fintech_business_services": "PDF p. 5, revenue by segment, current three-month period column"
     },
     "derivation_methods": {
       "revenue_total": "as_reported_quarterly_table",
@@ -778,8 +907,15 @@
       "net_profit_attributable_gaap": "as_reported_quarterly_table",
       "net_profit_attributable_non_ifrs": "as_reported_quarterly_table",
       "diluted_eps_gaap": "as_reported_quarterly_table",
-      "diluted_eps_non_ifrs": "as_reported_quarterly_table"
-    }
+      "diluted_eps_non_ifrs": "as_reported_quarterly_table",
+      "revenue_vas": "as_reported_quarterly_table",
+      "revenue_marketing_services": "as_reported_quarterly_table",
+      "revenue_fintech_business_services": "as_reported_quarterly_table"
+    },
+    "source_body_evidence": "downloaded_sha256_verified_not_locally_archived",
+    "revenue_vas": 92133,
+    "revenue_marketing_services": 31853,
+    "revenue_fintech_business_services": 54907
   },
   {
     "period_label": "2Q2025",
@@ -787,7 +923,6 @@
     "period_end": "2025-06-30",
     "filing_at": "2025-08-13T08:30:00Z",
     "published_at": "2025-08-13T08:30:00Z",
-    "accepted_at": "2025-08-13T08:30:00Z",
     "timestamp_precision": "minute",
     "source_timezone": "Asia/Hong_Kong",
     "accession_no": "hkexnews:11793093",
@@ -800,7 +935,6 @@
     "revision_reason": "initial_filing",
     "is_restatement": false,
     "value_origin": "direct_quarterly_disclosure",
-    "derivation_method": "as_reported_quarterly_table",
     "revenue_total": 184504,
     "operating_profit_gaap": 60104,
     "operating_profit_non_ifrs": 69248,
@@ -815,7 +949,10 @@
       "net_profit_attributable_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "net_profit_attributable_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "diluted_eps_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
-      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column"
+      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
+      "revenue_vas": "PDF p. 6, revenue by segment, current three-month period column",
+      "revenue_marketing_services": "PDF p. 6, revenue by segment, current three-month period column",
+      "revenue_fintech_business_services": "PDF p. 6, revenue by segment, current three-month period column"
     },
     "derivation_methods": {
       "revenue_total": "as_reported_quarterly_table",
@@ -824,8 +961,15 @@
       "net_profit_attributable_gaap": "as_reported_quarterly_table",
       "net_profit_attributable_non_ifrs": "as_reported_quarterly_table",
       "diluted_eps_gaap": "as_reported_quarterly_table",
-      "diluted_eps_non_ifrs": "as_reported_quarterly_table"
-    }
+      "diluted_eps_non_ifrs": "as_reported_quarterly_table",
+      "revenue_vas": "as_reported_quarterly_table",
+      "revenue_marketing_services": "as_reported_quarterly_table",
+      "revenue_fintech_business_services": "as_reported_quarterly_table"
+    },
+    "source_body_evidence": "downloaded_sha256_verified_not_locally_archived",
+    "revenue_vas": 91368,
+    "revenue_marketing_services": 35762,
+    "revenue_fintech_business_services": 55536
   },
   {
     "period_label": "3Q2025",
@@ -833,7 +977,6 @@
     "period_end": "2025-09-30",
     "filing_at": "2025-11-13T08:30:00Z",
     "published_at": "2025-11-13T08:30:00Z",
-    "accepted_at": "2025-11-13T08:30:00Z",
     "timestamp_precision": "minute",
     "source_timezone": "Asia/Hong_Kong",
     "accession_no": "hkexnews:11914783",
@@ -846,7 +989,6 @@
     "revision_reason": "initial_filing",
     "is_restatement": false,
     "value_origin": "direct_quarterly_disclosure",
-    "derivation_method": "as_reported_quarterly_table",
     "revenue_total": 192869,
     "operating_profit_gaap": 63554,
     "operating_profit_non_ifrs": 72570,
@@ -861,7 +1003,10 @@
       "net_profit_attributable_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "net_profit_attributable_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "diluted_eps_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
-      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column"
+      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
+      "revenue_vas": "PDF p. 6, revenue by segment, current three-month period column",
+      "revenue_marketing_services": "PDF p. 6, revenue by segment, current three-month period column",
+      "revenue_fintech_business_services": "PDF p. 6, revenue by segment, current three-month period column"
     },
     "derivation_methods": {
       "revenue_total": "as_reported_quarterly_table",
@@ -870,8 +1015,15 @@
       "net_profit_attributable_gaap": "as_reported_quarterly_table",
       "net_profit_attributable_non_ifrs": "as_reported_quarterly_table",
       "diluted_eps_gaap": "as_reported_quarterly_table",
-      "diluted_eps_non_ifrs": "as_reported_quarterly_table"
-    }
+      "diluted_eps_non_ifrs": "as_reported_quarterly_table",
+      "revenue_vas": "as_reported_quarterly_table",
+      "revenue_marketing_services": "as_reported_quarterly_table",
+      "revenue_fintech_business_services": "as_reported_quarterly_table"
+    },
+    "source_body_evidence": "downloaded_sha256_verified_not_locally_archived",
+    "revenue_vas": 95860,
+    "revenue_marketing_services": 36242,
+    "revenue_fintech_business_services": 58174
   },
   {
     "period_label": "4Q2025",
@@ -879,7 +1031,6 @@
     "period_end": "2025-12-31",
     "filing_at": "2026-03-18T08:30:00Z",
     "published_at": "2026-03-18T08:30:00Z",
-    "accepted_at": "2026-03-18T08:30:00Z",
     "timestamp_precision": "minute",
     "source_timezone": "Asia/Hong_Kong",
     "accession_no": "hkexnews:12056832",
@@ -892,7 +1043,6 @@
     "revision_reason": "initial_filing",
     "is_restatement": false,
     "value_origin": "direct_quarterly_disclosure",
-    "derivation_method": "direct_q4_column_in_annual_results",
     "revenue_total": 194371,
     "operating_profit_gaap": 60338,
     "operating_profit_non_ifrs": 69518,
@@ -907,7 +1057,10 @@
       "net_profit_attributable_gaap": "PDF p. 1, Financial Performance Highlights, three months ended 31 December 2025",
       "net_profit_attributable_non_ifrs": "PDF p. 1, Financial Performance Highlights, three months ended 31 December 2025",
       "diluted_eps_gaap": "PDF p. 1, Financial Performance Highlights, three months ended 31 December 2025",
-      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, three months ended 31 December 2025"
+      "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, three months ended 31 December 2025",
+      "revenue_vas": "PDF p. 11, revenue by segment, three months ended 31 December 2025",
+      "revenue_marketing_services": "PDF p. 11, revenue by segment, three months ended 31 December 2025",
+      "revenue_fintech_business_services": "PDF p. 11, revenue by segment, three months ended 31 December 2025"
     },
     "derivation_methods": {
       "revenue_total": "direct_q4_column_in_annual_results",
@@ -916,8 +1069,15 @@
       "net_profit_attributable_gaap": "direct_q4_column_in_annual_results",
       "net_profit_attributable_non_ifrs": "direct_q4_column_in_annual_results",
       "diluted_eps_gaap": "direct_q4_column_in_annual_results",
-      "diluted_eps_non_ifrs": "direct_q4_column_in_annual_results"
-    }
+      "diluted_eps_non_ifrs": "direct_q4_column_in_annual_results",
+      "revenue_vas": "direct_q4_column_in_annual_results",
+      "revenue_marketing_services": "direct_q4_column_in_annual_results",
+      "revenue_fintech_business_services": "direct_q4_column_in_annual_results"
+    },
+    "source_body_evidence": "downloaded_sha256_verified_not_locally_archived",
+    "revenue_vas": 89920,
+    "revenue_marketing_services": 41116,
+    "revenue_fintech_business_services": 60818
   },
   {
     "period_label": "1Q2026",
@@ -925,7 +1085,6 @@
     "period_end": "2026-03-31",
     "filing_at": "2026-05-13T08:31:00Z",
     "published_at": "2026-05-13T08:31:00Z",
-    "accepted_at": "2026-05-13T08:31:00Z",
     "timestamp_precision": "minute",
     "source_timezone": "Asia/Hong_Kong",
     "accession_no": "hkexnews:12157226",
@@ -938,7 +1097,6 @@
     "revision_reason": "initial_filing",
     "is_restatement": false,
     "value_origin": "direct_quarterly_disclosure",
-    "derivation_method": "as_reported_quarterly_table",
     "revenue_total": 196458,
     "operating_profit_gaap": 67375,
     "operating_profit_non_ifrs": 75627,
@@ -955,7 +1113,10 @@
       "diluted_eps_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "capex": "PDF p. 11, Other Financial Information, capital expenditures",
-      "fcf": "PDF p. 15, management discussion, free cash flow"
+      "fcf": "PDF p. 15, management discussion, free cash flow",
+      "revenue_vas": "PDF p. 5, revenue by segment, current three-month period column",
+      "revenue_marketing_services": "PDF p. 5, revenue by segment, current three-month period column",
+      "revenue_fintech_business_services": "PDF p. 5, revenue by segment, current three-month period column"
     },
     "derivation_methods": {
       "revenue_total": "as_reported_quarterly_table",
@@ -966,10 +1127,17 @@
       "diluted_eps_gaap": "as_reported_quarterly_table",
       "diluted_eps_non_ifrs": "as_reported_quarterly_table",
       "capex": "as_reported_quarterly_table",
-      "fcf": "as_reported_management_measure"
+      "fcf": "as_reported_management_measure",
+      "revenue_vas": "as_reported_quarterly_table",
+      "revenue_marketing_services": "as_reported_quarterly_table",
+      "revenue_fintech_business_services": "as_reported_quarterly_table"
     },
     "capex": 31936,
-    "fcf": 56700
+    "fcf": 56700,
+    "source_body_evidence": "downloaded_sha256_verified_not_locally_archived",
+    "revenue_vas": 96110,
+    "revenue_marketing_services": 38171,
+    "revenue_fintech_business_services": 59885
   },
   {
     "period_label": "2Q2026",
@@ -977,7 +1145,6 @@
     "period_end": "2026-06-30",
     "filing_at": "2026-08-12T08:31:00Z",
     "published_at": "2026-08-12T08:31:00Z",
-    "accepted_at": "2026-08-12T08:31:00Z",
     "timestamp_precision": "minute",
     "source_timezone": "Asia/Hong_Kong",
     "accession_no": "hkexnews:12280990",
@@ -990,7 +1157,6 @@
     "revision_reason": "initial_filing",
     "is_restatement": false,
     "value_origin": "direct_quarterly_disclosure",
-    "derivation_method": "as_reported_quarterly_table",
     "revenue_total": 204785,
     "operating_profit_gaap": 67276,
     "operating_profit_non_ifrs": 75636,
@@ -1007,7 +1173,10 @@
       "diluted_eps_gaap": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "diluted_eps_non_ifrs": "PDF p. 1, Financial Performance Highlights, current three-month period column",
       "capex": "PDF p. 12, Other Financial Information, capital expenditures",
-      "fcf": "PDF p. 17, management discussion, free cash flow"
+      "fcf": "PDF p. 17, management discussion, free cash flow",
+      "revenue_vas": "PDF p. 6, revenue by segment, current three-month period column",
+      "revenue_marketing_services": "PDF p. 6, revenue by segment, current three-month period column",
+      "revenue_fintech_business_services": "PDF p. 6, revenue by segment, current three-month period column"
     },
     "derivation_methods": {
       "revenue_total": "as_reported_quarterly_table",
@@ -1018,9 +1187,16 @@
       "diluted_eps_gaap": "as_reported_quarterly_table",
       "diluted_eps_non_ifrs": "as_reported_quarterly_table",
       "capex": "as_reported_quarterly_table",
-      "fcf": "as_reported_management_measure"
+      "fcf": "as_reported_management_measure",
+      "revenue_vas": "as_reported_quarterly_table",
+      "revenue_marketing_services": "as_reported_quarterly_table",
+      "revenue_fintech_business_services": "as_reported_quarterly_table"
     },
     "capex": 52784,
-    "fcf": -13800
+    "fcf": -13800,
+    "source_body_evidence": "archived_local_pdf",
+    "revenue_vas": 98414,
+    "revenue_marketing_services": 43565,
+    "revenue_fintech_business_services": 60286
   }
 ]

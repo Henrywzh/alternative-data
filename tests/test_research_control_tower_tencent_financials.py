@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
+from copy import deepcopy
 from pathlib import Path
 
 import pandas as pd
+import pdfplumber
 import pytest
 
 from scripts.research_control_tower_tencent_financials import (
@@ -50,6 +53,21 @@ EXPECTED_HKEX_METADATA = {
     "1Q2026": ("2026-05-13T08:31:00Z", "hkexnews:12157226", "2026051300334"),
     "2Q2026": ("2026-08-12T08:31:00Z", "hkexnews:12280990", "2026081200296"),
 }
+AUDITED_VALUE_FIELDS = {
+    "revenue_total",
+    "operating_profit_gaap",
+    "operating_profit_non_ifrs",
+    "net_profit_attributable_gaap",
+    "net_profit_attributable_non_ifrs",
+    "diluted_eps_gaap",
+    "diluted_eps_non_ifrs",
+    "revenue_vas",
+    "revenue_online_advertising",
+    "revenue_marketing_services",
+    "revenue_fintech_business_services",
+    "capex",
+    "fcf",
+}
 
 
 def _record(period_label: str) -> dict[str, object]:
@@ -68,7 +86,7 @@ def test_fixture_uses_audited_hkex_metadata_and_real_document_ids():
     assert records[-1]["period_label"] == "2Q2026"
 
     older = _record("1Q2021")
-    assert older["accepted_at"] == "2021-05-20T08:30:00Z"
+    assert "accepted_at" not in older
     assert older["accession_no"] == "hkexnews:9771605"
     assert older["source_document_id"] == "2021052000308"
     assert older["source_url"].endswith("/2021/0520/2021052000308.pdf")
@@ -77,7 +95,7 @@ def test_fixture_uses_audited_hkex_metadata_and_real_document_ids():
         item = _record(label)
         assert item["filing_at"] == published_at
         assert item["published_at"] == published_at
-        assert item["accepted_at"] == published_at
+        assert "accepted_at" not in item
         assert item["accession_no"] == accession_no
         assert item["source_document_id"] == document_id
         assert item["source_url"].startswith("https://www1.hkexnews.hk/")
@@ -111,31 +129,79 @@ def test_archived_official_pdf_hashes_are_real(document_id, expected_sha256):
     assert fixture_row["source_document_sha256"] == expected_sha256
 
 
+def test_every_fixture_record_has_required_refs_hash_and_honest_evidence_scope():
+    records = load_tencent_disclosure_records(FIXTURE_PATH)
+    archived_document_ids = {
+        path.stem for path in (FIXTURE_DIR / "source_documents").glob("*.pdf")
+    }
+    assert archived_document_ids == {"2021052000308", "2026081200296"}
+
+    for item in records:
+        assert re.fullmatch(r"[0-9a-f]{64}", item["source_document_sha256"])
+        assert item["source_document_id"] in item["source_url"]
+        expected_scope = (
+            "archived_local_pdf"
+            if item["source_document_id"] in archived_document_ids
+            else "downloaded_sha256_verified_not_locally_archived"
+        )
+        assert item["source_body_evidence"] == expected_scope
+        present_value_fields = {
+            field for field in AUDITED_VALUE_FIELDS if item.get(field) is not None
+        }
+        assert {
+            "revenue_total",
+            "operating_profit_gaap",
+            "operating_profit_non_ifrs",
+            "net_profit_attributable_gaap",
+            "net_profit_attributable_non_ifrs",
+            "diluted_eps_gaap",
+            "diluted_eps_non_ifrs",
+            "revenue_vas",
+            "revenue_fintech_business_services",
+        }.issubset(present_value_fields)
+        assert (
+            ("revenue_online_advertising" in present_value_fields)
+            ^ ("revenue_marketing_services" in present_value_fields)
+        )
+        for source_field in present_value_fields:
+            if item.get(source_field) is None:
+                continue
+            assert item["source_page_refs"][source_field].startswith("PDF p.")
+            assert item["derivation_methods"][source_field]
+
+
 def test_values_and_page_references_are_backed_by_archived_official_pdfs():
-    PdfReader = pytest.importorskip("pypdf").PdfReader
-    older_pdf = PdfReader(
+    with pdfplumber.open(
         FIXTURE_DIR / "source_documents" / "2021052000308.pdf"
-    )
-    older_page_one = older_pdf.pages[0].extract_text()
-    older_reconciliation = older_pdf.pages[13].extract_text()
+    ) as older_pdf:
+        older_page_one = older_pdf.pages[0].extract_text()
+        older_reconciliation = older_pdf.pages[13].extract_text()
+        older_segments = older_pdf.pages[6].extract_text()
     assert "Revenues 135,303" in older_page_one
     assert "Operating profit 56,273" in older_page_one
     assert "– diluted 4.917" in older_page_one
     assert "42,758" in older_reconciliation
+    assert "VAS 72,443" in older_segments
+    assert "Online Advertising 21,820" in older_segments
+    assert "FinTech and Business Services 39,028" in older_segments
     assert (
         _record("1Q2021")["source_page_refs"]["operating_profit_non_ifrs"]
         == "PDF p. 14, Non-IFRS reconciliation, current three-month period column"
     )
 
-    recent_pdf = PdfReader(
+    with pdfplumber.open(
         FIXTURE_DIR / "source_documents" / "2026081200296.pdf"
-    )
-    recent_page_one = recent_pdf.pages[0].extract_text()
-    recent_capex_page = recent_pdf.pages[11].extract_text()
-    recent_fcf_page = recent_pdf.pages[16].extract_text()
+    ) as recent_pdf:
+        recent_page_one = recent_pdf.pages[0].extract_text()
+        recent_segments = recent_pdf.pages[5].extract_text()
+        recent_capex_page = recent_pdf.pages[11].extract_text()
+        recent_fcf_page = recent_pdf.pages[16].extract_text()
     assert "Revenues 204,785" in recent_page_one
     assert "Operating profit 67,276" in recent_page_one
     assert "Non-IFRS operating profit 75,636" in recent_page_one
+    assert "VAS 98,414" in recent_segments
+    assert "Marketing Services 43,565" in recent_segments
+    assert "FinTech and Business Services 60,286" in recent_segments
     assert "52,784" in recent_capex_page
     assert "free cash flow" in recent_fcf_page.lower()
     assert "RMB13.8 billion" in recent_fcf_page
@@ -145,11 +211,13 @@ def test_transform_has_enriched_exact_contract_and_unblended_tracks():
     rows = transform_tencent_disclosures_to_actuals(
         [_record("2Q2026")],
         as_of_utc=pd.Timestamp("2026-08-21T12:00:00Z"),
+        retrieved_at_utc=pd.Timestamp("2026-08-21T12:05:00Z"),
     )
     frame = pd.DataFrame(rows)
 
     assert list(frame.columns) == TENCENT_EARNINGS_ACTUALS_COLUMNS
-    assert len(frame) == 9  # seven core track rows plus capex and FCF
+    assert len(frame) == 12  # seven core tracks, three segments, capex and FCF
+    assert "accepted_at" not in frame.columns
     assert set(frame["metric_basis"]) == {"GAAP_REPORTED", "NON_IFRS_MANAGEMENT"}
     assert set(frame["accounting_basis"]) == {"IFRS", "Non-IFRS management measure"}
     assert frame["source_document_sha256"].str.fullmatch(r"[0-9a-f]{64}").all()
@@ -158,6 +226,10 @@ def test_transform_has_enriched_exact_contract_and_unblended_tracks():
     assert set(frame["timestamp_precision"]) == {"minute"}
     assert set(frame["accession_no"]) == {"hkexnews:12280990"}
     assert set(frame["source_document_id"]) == {"2026081200296"}
+    assert set(frame["source_quality"]) == {"official_body"}
+    assert set(frame["retrieved_at_utc"]) == {
+        pd.Timestamp("2026-08-21T12:05:00Z")
+    }
 
     q2 = frame.set_index(["metric", "metric_basis"])
     assert q2.loc[("revenue_total", "GAAP_REPORTED"), "reported_value"] == 204785e6
@@ -169,31 +241,128 @@ def test_transform_has_enriched_exact_contract_and_unblended_tracks():
     assert q2.loc[("diluted_eps", "NON_IFRS_MANAGEMENT"), "reported_value"] == 7.433
     assert q2.loc[("capex", "GAAP_REPORTED"), "reported_value"] == 52784e6
     assert q2.loc[("free_cash_flow", "NON_IFRS_MANAGEMENT"), "reported_value"] == -13800e6
+    assert q2.loc[("revenue_vas", "GAAP_REPORTED"), "reported_value"] == 98414e6
+    assert (
+        q2.loc[("revenue_marketing_services", "GAAP_REPORTED"), "reported_value"]
+        == 43565e6
+    )
+    assert (
+        q2.loc[
+            ("revenue_fintech_business_services", "GAAP_REPORTED"),
+            "reported_value",
+        ]
+        == 60286e6
+    )
 
     for actual_id in frame["actual_id"]:
-        assert "12280990" in actual_id
-        assert "2Q2026" in actual_id
-        assert actual_id.endswith("_v1")
+        assert re.fullmatch(r"ACT_0700_[0-9a-f]{64}", actual_id)
+
+
+def test_actual_id_changes_with_source_hash_publication_or_version_vintage():
+    baseline = _record("2Q2026")
+    variants = [baseline]
+
+    changed_hash = deepcopy(baseline)
+    changed_hash["source_document_sha256"] = "a" * 64
+    variants.append(changed_hash)
+
+    changed_publication = deepcopy(baseline)
+    changed_publication["filing_at"] = "2026-08-12T08:32:00Z"
+    changed_publication["published_at"] = "2026-08-12T08:32:00Z"
+    variants.append(changed_publication)
+
+    changed_version = deepcopy(baseline)
+    changed_version["version"] = 2
+    variants.append(changed_version)
+
+    revenue_ids = []
+    for item in variants:
+        rows = transform_tencent_disclosures_to_actuals(
+            [item],
+            as_of_utc=pd.Timestamp("2026-08-21T12:00:00Z"),
+            retrieved_at_utc=pd.Timestamp("2026-08-21T12:05:00Z"),
+        )
+        revenue_ids.append(
+            next(row["actual_id"] for row in rows if row["metric"] == "revenue_total")
+        )
+    assert len(set(revenue_ids)) == len(variants)
+
+
+def test_segment_metric_names_do_not_bridge_advertising_definition_change():
+    frame, _ = parse_and_collect_tencent_actuals(
+        fixture_path=FIXTURE_PATH,
+        as_of_utc=pd.Timestamp("2026-08-21T12:00:00Z"),
+        retrieved_at_utc=pd.Timestamp("2026-08-21T12:05:00Z"),
+    )
+    online = frame[frame["metric"].eq("revenue_online_advertising")]
+    marketing = frame[frame["metric"].eq("revenue_marketing_services")]
+    assert set(online["period_label"]) == {
+        "1Q2021",
+        "2Q2021",
+        "3Q2021",
+        "4Q2021",
+        "1Q2022",
+        "2Q2022",
+        "3Q2022",
+        "4Q2022",
+        "1Q2023",
+        "2Q2023",
+        "3Q2023",
+        "4Q2023",
+        "1Q2024",
+        "2Q2024",
+    }
+    assert set(marketing["period_label"]) == {
+        "3Q2024",
+        "4Q2024",
+        "1Q2025",
+        "2Q2025",
+        "3Q2025",
+        "4Q2025",
+        "1Q2026",
+        "2Q2026",
+    }
+    assert set(online["source_metric_label"]) == {"Online Advertising"}
+    assert set(marketing["source_metric_label"]) == {"Marketing Services"}
+    assert set(online["metric_basis"]) == {"GAAP_REPORTED"}
+    assert set(marketing["metric_basis"]) == {"GAAP_REPORTED"}
 
 
 def test_q4_values_are_direct_columns_not_fy_minus_nine_months():
     rows = transform_tencent_disclosures_to_actuals(
         [_record("4Q2025")],
         as_of_utc=pd.Timestamp("2026-03-18T09:00:00Z"),
+        retrieved_at_utc=pd.Timestamp("2026-08-21T12:00:00Z"),
     )
     frame = pd.DataFrame(rows)
 
     assert set(frame["value_origin"]) == {"direct_quarterly_disclosure"}
     assert set(frame["derivation_method"]) == {"direct_q4_column_in_annual_results"}
-    assert set(frame["source_page_ref"]) == {
+    core = frame[~frame["metric"].str.startswith("revenue_") | frame["metric"].eq("revenue_total")]
+    assert set(core["source_page_ref"]) == {
         "PDF p. 1, Financial Performance Highlights, three months ended 31 December 2025"
+    }
+    segments = frame[
+        frame["metric"].isin(
+            {
+                "revenue_vas",
+                "revenue_marketing_services",
+                "revenue_fintech_business_services",
+            }
+        )
+    ]
+    assert set(segments["source_page_ref"]) == {
+        "PDF p. 11, revenue by segment, three months ended 31 December 2025"
     }
 
 
 def test_as_of_excludes_future_disclosures_without_timestamp_leakage():
+    cutoff = pd.Timestamp("2022-06-01T00:00:00Z")
+    retrieval = pd.Timestamp("2026-08-21T12:00:00Z")
     frame, state = parse_and_collect_tencent_actuals(
         fixture_path=FIXTURE_PATH,
-        as_of_utc=pd.Timestamp("2022-06-01T00:00:00Z"),
+        as_of_utc=cutoff,
+        retrieved_at_utc=retrieval,
     )
 
     assert set(frame["period_label"]) == {
@@ -204,12 +373,12 @@ def test_as_of_excludes_future_disclosures_without_timestamp_leakage():
         "1Q2022",
     }
     assert "2Q2022" not in set(frame["period_label"])
-    cutoff = pd.Timestamp("2022-06-01T00:00:00Z")
-    for column in ("filing_at", "published_at", "accepted_at", "retrieved_at_utc"):
+    for column in ("filing_at", "published_at"):
         assert (frame[column] <= cutoff).all()
+    assert frame["retrieved_at_utc"].eq(retrieval).all()
+    assert state.iloc[0]["retrieved_at_utc"] == retrieval
     assert (frame["filing_at"] <= frame["retrieved_at_utc"]).all()
     assert (frame["published_at"] <= frame["retrieved_at_utc"]).all()
-    assert (frame["accepted_at"] <= frame["retrieved_at_utc"]).all()
     assert state.iloc[0]["status"] == "partial"
     assert "5 complete core quarters" in state.iloc[0]["detail"]
 
@@ -218,6 +387,7 @@ def test_2024_cutoff_does_not_emit_2025_or_2026_records():
     frame, state = parse_and_collect_tencent_actuals(
         fixture_path=FIXTURE_PATH,
         as_of_utc=pd.Timestamp("2024-06-01T00:00:00Z"),
+        retrieved_at_utc=pd.Timestamp("2026-08-21T12:00:00Z"),
     )
 
     assert frame["period_end"].max() == pd.Timestamp("2024-03-31T00:00:00Z")
@@ -226,10 +396,20 @@ def test_2024_cutoff_does_not_emit_2025_or_2026_records():
     assert "13 complete core quarters" in state.iloc[0]["detail"]
 
 
+def test_retrieval_clock_cannot_precede_visibility_cutoff():
+    with pytest.raises(ValueError, match="retrieved_at_utc must be on or after"):
+        parse_and_collect_tencent_actuals(
+            fixture_path=FIXTURE_PATH,
+            as_of_utc=pd.Timestamp("2026-08-21T12:00:00Z"),
+            retrieved_at_utc=pd.Timestamp("2026-08-20T12:00:00Z"),
+        )
+
+
 def test_core_coverage_requires_four_required_metrics_in_each_distinct_quarter():
     full, _ = parse_and_collect_tencent_actuals(
         fixture_path=FIXTURE_PATH,
         as_of_utc=pd.Timestamp("2026-08-21T00:00:00Z"),
+        retrieved_at_utc=pd.Timestamp("2026-08-21T12:00:00Z"),
     )
     assert assess_core_quarter_coverage(full) == 22
 
@@ -261,6 +441,7 @@ def test_parser_coverage_gate_is_not_metric_row_count(tmp_path):
     frame, state = parse_and_collect_tencent_actuals(
         fixture_path=broken_fixture,
         as_of_utc=pd.Timestamp("2026-08-21T00:00:00Z"),
+        retrieved_at_utc=pd.Timestamp("2026-08-21T12:00:00Z"),
     )
     assert len(frame) > 12
     assert state.iloc[0]["status"] == "partial"
@@ -271,6 +452,7 @@ def test_validation_rejects_wrong_schema_duplicate_and_nonfinite_values():
     frame, _ = parse_and_collect_tencent_actuals(
         fixture_path=FIXTURE_PATH,
         as_of_utc=pd.Timestamp("2026-08-21T00:00:00Z"),
+        retrieved_at_utc=pd.Timestamp("2026-08-21T12:00:00Z"),
     )
 
     with pytest.raises(ValueError, match="exact schema"):
@@ -301,12 +483,13 @@ def test_full_pipeline_writes_atomic_loadable_outputs(tmp_path):
     frame, state = parse_and_collect_tencent_actuals(
         fixture_path=FIXTURE_PATH,
         as_of_utc=pd.Timestamp("2026-08-21T12:00:00Z"),
+        retrieved_at_utc=pd.Timestamp("2026-08-21T12:05:00Z"),
         output_dir=output,
     )
 
     assert list(frame.columns) == TENCENT_EARNINGS_ACTUALS_COLUMNS
     assert list(state.columns) == SOURCE_STATE_COLUMNS
-    assert len(frame) == (22 * 7) + 4
+    assert len(frame) == (22 * 10) + 4
     assert state.iloc[0]["status"] == "available"
     assert state.iloc[0]["row_count"] == len(frame)
     assert not list(output.glob("*.tmp"))
