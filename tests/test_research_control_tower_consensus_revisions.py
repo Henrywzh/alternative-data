@@ -13,9 +13,10 @@ of genuine revisions over reconstructed cold-start rows.
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 import sys
+import types
 
 import pandas as pd
 import pyarrow.parquet as pq
@@ -613,6 +614,69 @@ def test_build_provider_health_rows_reports_stale_akshare_and_fresh_yfinance() -
         _empty_store(), revisions, now=now, yf_notes=[], fd_notes=[], calls=0
     )
     assert {row["status"] for row in empty_health} == {"unavailable"}
+
+
+def test_yfinance_without_provider_vintage_uses_explicit_collection_time_label(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class FakeTicker:
+        def __init__(self, _symbol: str) -> None:
+            pass
+
+        earnings_estimate = pd.DataFrame(
+            {
+                "avg": [28.0],
+                "low": [27.0],
+                "high": [29.0],
+                "numberOfAnalysts": [5],
+            },
+            index=["0q"],
+        )
+        revenue_estimate = pd.DataFrame()
+        eps_trend = pd.DataFrame()
+
+    monkeypatch.setitem(sys.modules, "yfinance", types.SimpleNamespace(Ticker=FakeTicker))
+    listings = pd.DataFrame(
+        [
+            {
+                "provider_symbol": "0700.HK",
+                "entity_id": "TENCENT",
+                "listing_id": "0700_HK",
+                "financial_data_security_id": "sec-0700",
+                "canonical_ticker": "0700.HK",
+                "currency": "HKD",
+            }
+        ]
+    )
+    now = datetime(2026, 8, 21, 12, 0, tzinfo=timezone.utc)
+    snapshots, revisions, calls, notes = collector.collect_yfinance(
+        listings,
+        pd.DataFrame(),
+        run_id="audit-run",
+        now=now,
+    )
+
+    assert calls == 3
+    assert notes == ["0700.HK: no revenue estimates returned"]
+    assert revisions == []
+    assert snapshots
+    assert snapshots[0]["provider_asof"] is None
+
+    store = pd.DataFrame(snapshots, columns=collector.STORE_COLUMNS)
+    empty_revisions = pd.DataFrame(
+        {column: pd.Series(dtype="object") for column in collector.REVISION_COLUMNS}
+    )
+    health = collector.build_provider_health_rows(
+        store,
+        empty_revisions,
+        now=now,
+        yf_notes=[],
+        fd_notes=[],
+        calls=calls,
+    )
+    yfinance_health = next(row for row in health if row["provider"] == "yfinance")
+    assert yfinance_health["status"] == "available"
+    assert "collection-time snapshot_at only" in yfinance_health["reason"]
 
 
 def test_future_dated_provider_asof_fails_closed() -> None:

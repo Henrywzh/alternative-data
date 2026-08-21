@@ -815,7 +815,11 @@ def collect_yfinance(
                     "currency": str(listing["currency"]),
                     "unit": unit,
                     "accounting_basis": "provider_reported_non_gaap_unverified",
-                    "provider_asof": now,
+                    # yfinance exposes a live estimate table but no provider
+                    # publication/vintage timestamp.  Collection time is
+                    # retrieval metadata only; never promote it to a
+                    # provider vintage.
+                    "provider_asof": None,
                     "retrieved_at_utc": now,
                     "source_url": YF_SOURCE_URL.format(symbol=symbol),
                     "raw_hash": _hash(value, row.get("low"), row.get("high"), row.get("numberOfAnalysts")),
@@ -1063,6 +1067,15 @@ def build_provider_health_rows(
         )
         status, freshness = _provider_freshness_status(provider_store, PROVIDER_FRESHNESS_SLA_DAYS[provider], now)
         reason_parts = [base]
+        if (
+            provider == "yfinance"
+            and not provider_store.empty
+            and provider_store["provider_asof"].dropna().empty
+        ):
+            reason_parts.append(
+                "provider vintage unavailable; freshness uses collection-time "
+                "snapshot_at only (not provider_asof)"
+            )
         if not provider_store.empty and freshness:
             reason_parts.append(freshness)
         reason = "; ".join(reason_parts)

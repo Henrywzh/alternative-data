@@ -512,30 +512,53 @@ def _corporate_action_rows(
     lookback_days: int,
     retrieved_at_utc: pd.Timestamp,
     timeout: int,
-    max_rows_per_query: int,
+    max_rows_per_query: int | None,
     body_fetcher: BodyFetcher | None = None,
     text_extractor: TextExtractor | None = None,
-) -> tuple[list[dict[str, Any]], dict[str, int]]:
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Fetch corporate-action announcements for one HKEX issuer.
 
     Returns (rows, counts) where counts carries collected, parsed, unparsed,
-    skipped and exceptions so the state sidecar stays honest about coverage.
+    skipped, exceptions, query counts, and explicit truncation state so the
+    source sidecar stays honest about coverage.
     """
+
+    if max_rows_per_query is not None and (
+        isinstance(max_rows_per_query, bool) or max_rows_per_query <= 0
+    ):
+        raise ValueError("max_rows_per_query must be a positive integer or None")
 
     resolved = _resolve_hkex_stock_id(session, ticker, timeout)
     if resolved is None:
-        return [], {"collected": 0, "parsed": 0, "unparsed": 0, "skipped": 0, "exceptions": 1}
+        return [], {
+            "collected": 0,
+            "parsed": 0,
+            "unparsed": 0,
+            "skipped": 0,
+            "exceptions": 1,
+            "raw_rows": 0,
+            "returned_rows": 0,
+            "query_count": 0,
+            "truncated": False,
+        }
     stock_id, bare_code = resolved
     fetch_body = body_fetcher or _default_body_fetcher(session, timeout)
     as_of_hk = as_of_utc.tz_convert(HKEX_TIMEZONE)
 
-    def query_title(title: str) -> list[dict[str, str]]:
+    def query_title(title: str) -> tuple[list[dict[str, str]], dict[str, Any]]:
         raw_rows: list[dict[str, str]] = []
+        query_count = 0
+        api_truncated = False
+        cap_truncated = False
         window = pd.Timedelta(days=31)
         cursor = as_of_hk.normalize()
         start_bound = (as_of_hk - pd.Timedelta(days=lookback_days)).normalize()
-        while cursor >= start_bound and len(raw_rows) < max_rows_per_query:
-            window_start = max(cursor - window, start_bound)
+
+        def request_window(
+            window_start: pd.Timestamp,
+            window_end: pd.Timestamp,
+        ) -> tuple[list[dict[str, str]], int, bool]:
+            nonlocal query_count
             params = {
                 "sortDir": "0",
                 "sortByOptions": "DateTime",
@@ -544,7 +567,7 @@ def _corporate_action_rows(
                 "stockId": stock_id,
                 "documentType": "-1",
                 "fromDate": window_start.strftime("%Y%m%d"),
-                "toDate": cursor.strftime("%Y%m%d"),
+                "toDate": window_end.strftime("%Y%m%d"),
                 "title": title,
                 "searchType": "1",
                 "t1code": "-2",
@@ -557,8 +580,10 @@ def _corporate_action_rows(
                 HKEXNEWS_TITLE_SEARCH_URL, params=params, headers=HKEXNEWS_HEADERS, timeout=timeout
             )
             response.raise_for_status()
+            query_count += 1
             payload = response.json()
             raw = json.loads(payload.get("result") or "[]")
+            filtered_rows: list[dict[str, str]] = []
             for row in raw:
                 raw_stock_code = _text(row.get("STOCK_CODE"))
                 codes = [
@@ -568,20 +593,76 @@ def _corporate_action_rows(
                 ]
                 if bare_code not in codes:
                     continue  # silent wrong-company guard, same adapter as official_filings
-                raw_rows.append(
+                filtered_rows.append(
                     {
                         key: _text(row.get(key))
                         for key in ("NEWS_ID", "TITLE", "LONG_TEXT", "SHORT_TEXT", "DATE_TIME", "FILE_LINK", "FILE_TYPE")
                     }
                 )
-            cursor = window_start - pd.Timedelta(days=1)
             time.sleep(HKEX_QUERY_INTERVAL_SECONDS)
-        return raw_rows[:max_rows_per_query]
 
-    ndd_rows = query_title(NDD_TITLE_QUERY)
-    dividend_rows = query_title(DIVIDEND_TITLE_QUERY)
+            # HKEX title search honors rowRange but ignores page. If a date
+            # window fills the server cap, split the window until each query
+            # is below the cap. A single calendar day that still fills the
+            # cap is explicitly reported as truncated.
+            if len(filtered_rows) >= 100 and window_start < window_end:
+                midpoint = window_start + pd.Timedelta(
+                    days=(window_end - window_start).days // 2
+                )
+                left, left_queries, left_truncated = request_window(
+                    window_start, midpoint
+                )
+                right, right_queries, right_truncated = request_window(
+                    midpoint + pd.Timedelta(days=1), window_end
+                )
+                return (
+                    left + right,
+                    left_queries + right_queries,
+                    left_truncated or right_truncated,
+                )
+            return filtered_rows, 1, len(filtered_rows) >= 100
+
+        while cursor >= start_bound:
+            window_start = max(cursor - window, start_bound)
+            window_rows, _window_queries, window_truncated = request_window(
+                window_start, cursor
+            )
+            raw_rows.extend(window_rows)
+            api_truncated = api_truncated or window_truncated
+            has_more_windows = window_start > start_bound
+            if max_rows_per_query is not None and len(raw_rows) >= max_rows_per_query:
+                # Reaching a caller-supplied cap is itself an incomplete
+                # coverage signal: even an exact-boundary count cannot prove
+                # that the provider had no additional rows.
+                cap_truncated = True
+                break
+            cursor = window_start - pd.Timedelta(days=1)
+        returned_rows = (
+            raw_rows[:max_rows_per_query]
+            if max_rows_per_query is not None
+            else raw_rows
+        )
+        return returned_rows, {
+            "raw_rows": len(raw_rows),
+            "returned_rows": len(returned_rows),
+            "query_count": query_count,
+            "truncated": api_truncated or cap_truncated,
+        }
+
+    ndd_rows, ndd_counts = query_title(NDD_TITLE_QUERY)
+    dividend_rows, dividend_counts = query_title(DIVIDEND_TITLE_QUERY)
     seen: set[str] = set()
-    counts = {"collected": 0, "parsed": 0, "unparsed": 0, "skipped": 0, "exceptions": 0}
+    counts: dict[str, Any] = {
+        "collected": 0,
+        "parsed": 0,
+        "unparsed": 0,
+        "skipped": 0,
+        "exceptions": 0,
+        "raw_rows": ndd_counts["raw_rows"] + dividend_counts["raw_rows"],
+        "returned_rows": ndd_counts["returned_rows"] + dividend_counts["returned_rows"],
+        "query_count": ndd_counts["query_count"] + dividend_counts["query_count"],
+        "truncated": bool(ndd_counts["truncated"] or dividend_counts["truncated"]),
+    }
     out: list[dict[str, Any]] = []
     for meta in ndd_rows + dividend_rows:
         news_id = meta["NEWS_ID"]
@@ -730,7 +811,7 @@ def collect_corporate_actions(
     retrieved_at_utc: pd.Timestamp | None = None,
     collection_clock: Callable[[], pd.Timestamp] | None = None,
     lookback_days: int = 365,
-    max_rows_per_query: int = 120,
+    max_rows_per_query: int | None = None,
     output_dir: Path | None = None,
     hkex_session: requests.Session | None = None,
     body_fetcher: BodyFetcher | None = None,
@@ -777,6 +858,11 @@ def collect_corporate_actions(
             f"cannot precede as_of_utc ({query_as_of.isoformat()})"
         )
 
+    if max_rows_per_query is not None and (
+        isinstance(max_rows_per_query, bool) or max_rows_per_query <= 0
+    ):
+        raise ValueError("max_rows_per_query must be a positive integer or None")
+
     session = hkex_session or requests.Session()
     hkex_identity = identity[identity["source_kind"].eq("hkex_code")].copy()
     rows: list[dict[str, Any]] = []
@@ -801,7 +887,17 @@ def collect_corporate_actions(
             }
         )
     else:
-        totals = {"collected": 0, "parsed": 0, "unparsed": 0, "skipped": 0, "exceptions": 0}
+        totals: dict[str, Any] = {
+            "collected": 0,
+            "parsed": 0,
+            "unparsed": 0,
+            "skipped": 0,
+            "exceptions": 0,
+            "raw_rows": 0,
+            "returned_rows": 0,
+            "query_count": 0,
+            "truncated": False,
+        }
         issuers = 0
         for _, item in hkex_identity.iterrows():
             try:
@@ -824,15 +920,20 @@ def collect_corporate_actions(
                 logger.warning("corporate-action collection failed for %s: %s", item.get("entity_id"), exc)
                 continue
             issuers += 1
-            for key in totals:
+            for key in ("collected", "parsed", "unparsed", "skipped", "exceptions", "raw_rows", "returned_rows", "query_count"):
                 totals[key] += counts.get(key, 0)
+            totals["truncated"] = bool(totals["truncated"] or counts.get("truncated", False))
             rows.extend(issuer_rows)
         detail = (
             f"hkexnews corporate-action title-search rows: collected={totals['collected']} "
             f"parsed={totals['parsed']} unparsed={totals['unparsed']} skipped={totals['skipped']} "
-            f"exceptions={totals['exceptions']} issuers={issuers}"
+            f"exceptions={totals['exceptions']} raw_rows={totals['raw_rows']} "
+            f"returned_rows={totals['returned_rows']} queries={totals['query_count']} "
+            f"truncated={'true' if totals['truncated'] else 'false'} issuers={issuers}"
         )
-        if totals["parsed"] > 0:
+        if totals["truncated"]:
+            status = "partial"
+        elif totals["parsed"] > 0:
             status = "partial" if (totals["unparsed"] > 0 or totals["exceptions"] > 0) else "available"
         elif totals["unparsed"] > 0:
             status = "partial"

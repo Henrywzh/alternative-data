@@ -478,6 +478,61 @@ def test_validation_rejects_wrong_schema_duplicate_and_nonfinite_values():
         validate_tencent_actuals(bad_basis)
 
 
+def test_restatement_boolean_is_strict_and_supersession_chain_is_validated(tmp_path):
+    first = deepcopy(_record("1Q2021"))
+    first["is_restatement"] = "false"
+    strict_fixture = tmp_path / "strict-bool.json"
+    strict_fixture.write_text(json.dumps([first]), encoding="utf-8")
+    with pytest.raises(ValueError, match="is_restatement must be a strict boolean"):
+        parse_and_collect_tencent_actuals(
+            fixture_path=strict_fixture,
+            as_of_utc=pd.Timestamp("2026-08-21T00:00:00Z"),
+            retrieved_at_utc=pd.Timestamp("2026-08-21T12:00:00Z"),
+        )
+
+    first = deepcopy(_record("1Q2021"))
+    second = deepcopy(first)
+    for record in (first, second):
+        for field in AUDITED_VALUE_FIELDS - {"revenue_total"}:
+            record.pop(field, None)
+        record["source_page_refs"] = {
+            "revenue_total": record["source_page_refs"]["revenue_total"]
+        }
+        record["derivation_methods"] = {
+            "revenue_total": record["derivation_methods"]["revenue_total"]
+        }
+    first["is_restatement"] = False
+    first_rows = transform_tencent_disclosures_to_actuals(
+        [first],
+        as_of_utc=pd.Timestamp("2026-08-21T00:00:00Z"),
+        retrieved_at_utc=pd.Timestamp("2026-08-21T12:00:00Z"),
+    )
+    assert len(first_rows) == 1
+
+    second.update(
+        {
+            "version": 2,
+            "is_restatement": True,
+            "supersedes_actual_id": "ACT_0700_invalid",
+            "filing_at": "2026-08-12T16:31:00Z",
+            "published_at": "2026-08-12T16:31:00Z",
+            "accession_no": "hkexnews:9999999999999",
+            "source_document_id": "9999999999999",
+            "source_document_sha256": "b" * 64,
+            "source_url": "https://www1.hkexnews.hk/listedco/listconews/sehk/2026/0812/9999999999999.pdf",
+            "revision_reason": "restatement_or_amended_filing",
+        }
+    )
+    chain_fixture = tmp_path / "bad-chain.json"
+    chain_fixture.write_text(json.dumps([first, second]), encoding="utf-8")
+    with pytest.raises(ValueError, match="supersedes_actual_id"):
+        parse_and_collect_tencent_actuals(
+            fixture_path=chain_fixture,
+            as_of_utc=pd.Timestamp("2026-08-21T00:00:00Z"),
+            retrieved_at_utc=pd.Timestamp("2026-08-21T12:00:00Z"),
+        )
+
+
 def test_full_pipeline_writes_atomic_loadable_outputs(tmp_path):
     output = tmp_path / "actuals"
     frame, state = parse_and_collect_tencent_actuals(

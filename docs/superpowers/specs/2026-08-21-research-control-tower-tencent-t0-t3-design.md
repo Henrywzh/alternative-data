@@ -282,13 +282,13 @@ Outputs the full existing event-ledger column set from `src/research_control_tow
 * **`thesis_claims.parquet`**:
   * `claim_id` (string, PK), `entity_id` (string, FK), `thesis_title` (string), `claim_text` (string).
   * `invalidation_rule` (string): Explicit deterministic rule authored by human analyst.
-  * `status` (string): `"active"`, `"falsified"`, `"confirmed"`, `"archived"` (Updated by human analyst only).
+  * `status` (string): `"draft"`, `"active"`, `"falsified"`, `"confirmed"`, `"archived"` (Updated by human analyst only; `draft` is the no-fake-review seed state).
   * `last_reviewed_at_utc` (timestamp), `reviewed_by` (string).
 * **`thesis_watch_questions.parquet`**:
   * `question_id` (string, PK), `claim_id` (string, FK), `entity_id` (string, FK).
   * `question` (string), `question_type` (string), `priority` (string).
 * **`evidence_items.parquet`**:
-  * `evidence_id` (string, PK), `source_type` (string: `"filing"`, `"consensus_revision"`, `"corporate_action"`).
+  * `evidence_id` (string, PK), `source_type` (string: `"filing"`, `"consensus_revision"`, `"corporate_action"`, `"source_observation"`, `"market_quote"`, `"internal_research"`).
   * `source_id_ref` (string), `published_at` (string), `summary_text` (string), `observed_at_utc` (timestamp).
 * **`claim_evidence_links.parquet`**:
   * `link_id` (string, PK), `claim_id` (string, FK), `evidence_id` (string, FK).

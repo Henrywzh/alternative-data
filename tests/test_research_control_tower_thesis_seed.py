@@ -9,7 +9,9 @@ import pytest
 from src.research_control_tower.events import load_event_bundle, validate_event_bundle
 from src.research_control_tower.registries import load_registry_bundle
 from src.research_control_tower.thesis_seed import (
+    EVIDENCE_SOURCE_TYPES,
     PIT_CLASSES,
+    THESIS_STATUSES,
     ThesisSeedBundle,
     count_active_conflicts,
     get_claim_evidence,
@@ -109,6 +111,24 @@ def test_pit_vocabulary_matches_approved_flat_contract():
         "reconstructed_sparse",
         "current_vintage",
         "not_pit",
+    }
+
+
+def test_thesis_and_evidence_enum_contract_matches_approved_seed_schema():
+    assert THESIS_STATUSES == {
+        "draft",
+        "active",
+        "falsified",
+        "confirmed",
+        "archived",
+    }
+    assert EVIDENCE_SOURCE_TYPES == {
+        "filing",
+        "consensus_revision",
+        "corporate_action",
+        "source_observation",
+        "market_quote",
+        "internal_research",
     }
 
 

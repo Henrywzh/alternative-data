@@ -17,6 +17,8 @@ import pytest
 
 from src.research_control_tower.build import (
     ARTIFACT_NAMES,
+    CORP_ACTIONS_COLUMNS,
+    CORP_ACTIONS_SCHEMA_ID,
     EARNINGS_ACTUALS_COLUMNS,
     EARNINGS_ACTUALS_SCHEMA_ID,
     EARNINGS_CALENDAR_COLUMNS,
@@ -27,6 +29,8 @@ from src.research_control_tower.build import (
     ECB_FX_SCHEMA_ID,
     FRED_META_SCHEMA_ID,
     FRED_OBSERVATIONS_SCHEMA_ID,
+    INTERNAL_ESTIMATES_COLUMNS,
+    INTERNAL_ESTIMATES_SCHEMA_ID,
     MACRO_COLLECTOR_SCHEMA_ID,
     MACRO_EVENTS_SCHEMA_ID,
     MACRO_OBSERVATIONS_SCHEMA_ID,
@@ -41,9 +45,12 @@ from src.research_control_tower.build import (
     QUOTE_SNAPSHOT_SCHEMA_ID,
     SOURCE_STATE_COLUMNS,
     SOURCE_STATE_SCHEMA_ID,
+    SOURCE_TIME_COLUMNS,
     TAIWAN_REVENUE_SCHEMA_ID,
     TASK3_REVISION_COLUMNS,
     TASK3_SNAPSHOT_COLUMNS,
+    VALUATION_SNAPSHOTS_COLUMNS,
+    VALUATION_SNAPSHOTS_SCHEMA_ID,
     BuildConfig,
     BuildError,
     LocalInput,
@@ -189,6 +196,71 @@ def _input(
         expected_schema=schema,
         license_class=license_class,
     )
+
+
+def _audit_source_row(schema_id: str, timestamp: str) -> dict[str, object]:
+    if schema_id == CORP_ACTIONS_SCHEMA_ID:
+        row = {column: None for column in CORP_ACTIONS_COLUMNS}
+        row.update(
+            {
+                "action_id": "audit-corporate-action-1",
+                "version": 1,
+                "entity_id": "TENCENT",
+                "listing_id": "0700_HK",
+                "canonical_ticker": "0700.HK",
+                "action_type": "buyback_execution",
+                "filing_date": "2026-08-12",
+                "execution_date": "2026-08-12",
+                "published_at": timestamp,
+                "retrieved_at_utc": timestamp,
+                "source_document_id": "audit-doc-1",
+                "source_url": "https://example.test/audit-doc-1",
+                "document_format": "pdf",
+                "source_quality": "official_body",
+                "pit_class": "snapshot_from_live_source",
+                "source_license_class": "official_public_metadata",
+                "registry_version": "v1",
+            }
+        )
+        return row
+    if schema_id == VALUATION_SNAPSHOTS_SCHEMA_ID:
+        row = {column: None for column in VALUATION_SNAPSHOTS_COLUMNS}
+        row.update(
+            {
+                "valuation_id": "audit-valuation-1",
+                "listing_id": "0700_HK",
+                "valuation_date": "2026-08-12",
+                "valuation_at": timestamp,
+                "metric_name": "forward_pe",
+                "source_id": "audit-valuation",
+                "source_url": "https://example.test/audit-valuation",
+                "retrieved_at_utc": timestamp,
+                "pit_class": "snapshot_from_live_source",
+                "coverage_reason": "audit fixture",
+            }
+        )
+        return row
+    if schema_id == INTERNAL_ESTIMATES_SCHEMA_ID:
+        row = {column: None for column in INTERNAL_ESTIMATES_COLUMNS}
+        row.update(
+            {
+                "estimate_id": "audit-estimate-1",
+                "version": 1,
+                "supersedes_estimate_id": "",
+                "entity_id": "TENCENT",
+                "listing_id": "0700_HK",
+                "observation_type": "internal_estimate",
+                "author": "audit-fixture",
+                "metric": "revenue_total",
+                "fiscal_period": "FY2026",
+                "fiscal_year": 2026,
+                "effective_asof": timestamp[:10],
+                "recorded_at_utc": timestamp,
+                "pit_class": "not_pit",
+            }
+        )
+        return row
+    raise AssertionError(f"unsupported audit fixture schema: {schema_id}")
 
 
 def _sha256(path: Path) -> str:
@@ -455,7 +527,7 @@ def test_build_writes_stable_artifact_set(tmp_path, minimal_inputs):
         "registry:baskets": 7,
         "registry:entities": 71,
         "registry:indices": 12,
-        "registry:listings": 80,
+        "registry:listings": 81,
     }
     manifest_json = json.loads(_published(minimal_inputs, "build_manifest.json").read_text())
     assert manifest_json["network_policy"] == "forbidden"
@@ -466,6 +538,220 @@ def test_build_writes_stable_artifact_set(tmp_path, minimal_inputs):
     assert manifest_json["previous_build_at"] is None
 
 
+def test_invalid_thesis_seed_fails_closed_before_publication(tmp_path, minimal_inputs):
+    claims_path = minimal_inputs.registry_root / "thesis_claims.csv"
+    claims = pd.read_csv(claims_path, dtype="string", keep_default_na=False)
+    claims.loc[0, "entity_id"] = "ORPHAN_ENTITY"
+    claims.to_csv(claims_path, index=False)
+
+    with pytest.raises(BuildError, match="thesis seed validation"):
+        build_control_tower_marts(minimal_inputs)
+
+    assert not minimal_inputs.output_dir.joinpath("CURRENT").exists()
+
+
+def test_incomplete_thesis_seed_bundle_is_a_controlled_build_error(
+    tmp_path, minimal_inputs
+):
+    (minimal_inputs.registry_root / "claim_evidence_links.csv").unlink()
+
+    with pytest.raises(BuildError, match="thesis seed bundle incomplete"):
+        build_control_tower_marts(minimal_inputs)
+
+    assert not minimal_inputs.output_dir.joinpath("CURRENT").exists()
+
+
+@pytest.mark.parametrize(
+    ("schema_id", "config_field", "artifact_name"),
+    [
+        (CORP_ACTIONS_SCHEMA_ID, "corporate_actions_inputs", "corporate_actions.parquet"),
+        (VALUATION_SNAPSHOTS_SCHEMA_ID, "valuation_inputs", "valuation_snapshots.parquet"),
+        (INTERNAL_ESTIMATES_SCHEMA_ID, "valuation_inputs", "internal_estimates.parquet"),
+    ],
+)
+def test_audit_source_time_policies_quarantine_future_and_flag_stale_rows(
+    tmp_path,
+    minimal_inputs,
+    schema_id,
+    config_field,
+    artifact_name,
+):
+    assert schema_id in SOURCE_TIME_COLUMNS
+    source_dir = tmp_path / schema_id
+    source_dir.mkdir()
+
+    def run(timestamp: str, suffix: str):
+        path = source_dir / f"{suffix}.parquet"
+        pd.DataFrame(
+            [_audit_source_row(schema_id, timestamp)],
+            columns=(
+                CORP_ACTIONS_COLUMNS
+                if schema_id == CORP_ACTIONS_SCHEMA_ID
+                else VALUATION_SNAPSHOTS_COLUMNS
+                if schema_id == VALUATION_SNAPSHOTS_SCHEMA_ID
+                else INTERNAL_ESTIMATES_COLUMNS
+            ),
+        ).to_parquet(path, index=False)
+        descriptor = _input(f"{schema_id}:{suffix}", path, schema_id)
+        config = replace(
+            minimal_inputs,
+            output_dir=tmp_path / f"output-{suffix}",
+            **{config_field: (descriptor,)},
+        )
+        build_control_tower_marts(config)
+        health = pd.read_parquet(_published(config, "source_health.parquet"))
+        source_health = health.loc[health["source_id"].eq(descriptor.source_id)].iloc[0]
+        output = pd.read_parquet(_published(config, artifact_name))
+        return source_health, output
+
+    future_health, future_output = run("2026-08-14T00:00:00Z", "future")
+    assert future_health["status"] == "degraded"
+    assert "future_row_beyond_as_of" in future_health["detail"]
+    assert future_output.empty
+
+    stale_health, stale_output = run("2025-01-01T00:00:00Z", "stale")
+    assert stale_health["status"] == "degraded"
+    assert "stale_source" in stale_health["detail"]
+    assert len(stale_output) == 1
+
+
+def test_builder_merges_all_valuation_and_internal_descriptors(tmp_path, minimal_inputs):
+    valuation_paths = []
+    for suffix, valuation_id in (("one", "valuation-one"), ("two", "valuation-two")):
+        path = tmp_path / f"valuation-{suffix}.parquet"
+        row = _audit_source_row(VALUATION_SNAPSHOTS_SCHEMA_ID, "2026-08-12T00:00:00Z")
+        row["valuation_id"] = valuation_id
+        pd.DataFrame([row], columns=VALUATION_SNAPSHOTS_COLUMNS).to_parquet(
+            path, index=False
+        )
+        valuation_paths.append(path)
+
+    estimate_paths = []
+    for suffix, estimate_id in (("one", "estimate-one"), ("two", "estimate-two")):
+        path = tmp_path / f"estimate-{suffix}.parquet"
+        row = _audit_source_row(INTERNAL_ESTIMATES_SCHEMA_ID, "2026-08-12T00:00:00Z")
+        row["estimate_id"] = estimate_id
+        pd.DataFrame([row], columns=INTERNAL_ESTIMATES_COLUMNS).to_parquet(
+            path, index=False
+        )
+        estimate_paths.append(path)
+
+    config = replace(
+        minimal_inputs,
+        valuation_inputs=tuple(
+            [
+                _input(f"valuation-{idx}", path, VALUATION_SNAPSHOTS_SCHEMA_ID)
+                for idx, path in enumerate(valuation_paths)
+            ]
+            + [
+                _input(f"estimate-{idx}", path, INTERNAL_ESTIMATES_SCHEMA_ID)
+                for idx, path in enumerate(estimate_paths)
+            ]
+        ),
+    )
+    build_control_tower_marts(config)
+
+    valuations = pd.read_parquet(_published(config, "valuation_snapshots.parquet"))
+    estimates = pd.read_parquet(_published(config, "internal_estimates.parquet"))
+    assert set(valuations["valuation_id"]) == {"valuation-one", "valuation-two"}
+    assert set(estimates["estimate_id"]) == {"estimate-one", "estimate-two"}
+
+
+@pytest.mark.parametrize(
+    ("schema_id", "id_column", "changed_column"),
+    [
+        (VALUATION_SNAPSHOTS_SCHEMA_ID, "valuation_id", "coverage_reason"),
+        (INTERNAL_ESTIMATES_SCHEMA_ID, "estimate_id", "rationale_notes"),
+    ],
+)
+def test_builder_rejects_divergent_valuation_descriptor_collisions(
+    tmp_path, minimal_inputs, schema_id, id_column, changed_column
+):
+    columns = (
+        VALUATION_SNAPSHOTS_COLUMNS
+        if schema_id == VALUATION_SNAPSHOTS_SCHEMA_ID
+        else INTERNAL_ESTIMATES_COLUMNS
+    )
+    first = _audit_source_row(schema_id, "2026-08-12T00:00:00Z")
+    second = dict(first)
+    second[changed_column] = "divergent descriptor payload"
+    first_path = tmp_path / f"{schema_id}-first.parquet"
+    second_path = tmp_path / f"{schema_id}-second.parquet"
+    pd.DataFrame([first], columns=columns).to_parquet(first_path, index=False)
+    pd.DataFrame([second], columns=columns).to_parquet(second_path, index=False)
+
+    config = replace(
+        minimal_inputs,
+        valuation_inputs=(
+            _input(f"{schema_id}-first", first_path, schema_id),
+            _input(f"{schema_id}-second", second_path, schema_id),
+        ),
+    )
+    with pytest.raises(BuildError, match="duplicate divergent"):
+        build_control_tower_marts(config)
+
+
+@pytest.mark.parametrize("kind", ["earnings", "corporate_actions"])
+def test_duplicate_ids_use_full_payload_collision_checks(tmp_path, minimal_inputs, kind):
+    if kind == "earnings":
+        source_dir = tmp_path / "earnings"
+        source_dir.mkdir(parents=True, exist_ok=True)
+        source_path, _state_path = _write_earnings_inputs(source_dir)
+        frame = pd.read_parquet(source_path)
+        schema_id = EARNINGS_ACTUALS_SCHEMA_ID
+        config_field = "earnings_inputs"
+        frame.loc[0, "source_note"] = "divergent payload"
+    else:
+        source_dir = tmp_path / "corporate"
+        source_dir.mkdir(parents=True, exist_ok=True)
+        row = _audit_source_row(CORP_ACTIONS_SCHEMA_ID, "2026-08-12T00:00:00Z")
+        frame = pd.DataFrame([row], columns=CORP_ACTIONS_COLUMNS)
+        schema_id = CORP_ACTIONS_SCHEMA_ID
+        config_field = "corporate_actions_inputs"
+        frame.loc[0, "source_note"] = "divergent payload"
+
+    exact_path = source_dir / "exact.parquet"
+    divergent_path = source_dir / "divergent.parquet"
+    original = pd.read_parquet(source_path) if kind == "earnings" else pd.DataFrame(
+        [_audit_source_row(CORP_ACTIONS_SCHEMA_ID, "2026-08-12T00:00:00Z")],
+        columns=CORP_ACTIONS_COLUMNS,
+    )
+    original.to_parquet(exact_path, index=False)
+    frame.to_parquet(divergent_path, index=False)
+
+    exact_config = replace(
+        minimal_inputs,
+        output_dir=tmp_path / f"{kind}-exact-output",
+        **{
+            config_field: (
+                _input(f"{kind}-exact-a", exact_path, schema_id),
+                _input(f"{kind}-exact-b", exact_path, schema_id),
+            )
+        },
+    )
+    build_control_tower_marts(exact_config)
+    exact_output = pd.read_parquet(
+        _published(
+            exact_config,
+            "earnings_actuals.parquet"
+            if kind == "earnings"
+            else "corporate_actions.parquet",
+        )
+    )
+    assert len(exact_output) == len(original)
+
+    divergent_config = replace(
+        minimal_inputs,
+        output_dir=tmp_path / f"{kind}-divergent-output",
+        **{
+            config_field: (
+                _input(f"{kind}-divergent-a", exact_path, schema_id),
+                _input(f"{kind}-divergent-b", divergent_path, schema_id),
+            )
+        },
+    )
+    with pytest.raises(BuildError, match="duplicate divergent"):
+        build_control_tower_marts(divergent_config)
 def test_two_builds_persist_selected_current_lineage_and_today_delta(
     tmp_path, minimal_inputs, monkeypatch
 ):

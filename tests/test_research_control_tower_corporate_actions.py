@@ -114,6 +114,35 @@ class _FakeHkexSession:
         return _FakeResponse({"result": json.dumps(payload)})
 
 
+class _WindowedHkexSession(_FakeHkexSession):
+    """Return only rows inside the requested title-search date window."""
+
+    def __init__(self, rows):
+        super().__init__(ndd_rows=rows)
+
+    def get(self, url, *, params=None, headers=None, timeout=None):
+        self.calls.append((url, dict(params or {})))
+        if url.endswith("prefix.do"):
+            return _FakeResponse(
+                {"more": "1", "stockInfo": [{"stockId": self.stock_id, "code": "00700", "name": "TENCENT"}]},
+                jsonp=True,
+            )
+        title = (params or {}).get("title")
+        if title != "Next Day Disclosure Return":
+            payload = []
+        else:
+            start = pd.Timestamp((params or {}).get("fromDate"))
+            end = pd.Timestamp((params or {}).get("toDate"))
+            payload = [
+                row
+                for row in self.ndd_rows
+                if start
+                <= pd.to_datetime(row["DATE_TIME"].split(" ", 1)[0], dayfirst=True)
+                <= end
+            ]
+        return _FakeResponse({"result": json.dumps(payload)})
+
+
 def _fake_body_fetcher(payload_by_suffix: dict[str, bytes]):
     def fetch(url: str) -> bytes | None:
         for suffix, payload in payload_by_suffix.items():
@@ -352,6 +381,54 @@ def test_collector_end_to_end_buyback_dividend_skip_and_guard(tmp_path):
     assert state_row["retrieved_at_utc"] == pd.Timestamp("2026-08-16T12:00:00Z")
     assert (tmp_path / "out" / "corporate_actions_v1.parquet").is_file()
     assert (tmp_path / "out" / "corporate_actions_state.parquet").is_file()
+
+
+def test_365_day_tencent_collection_completes_beyond_legacy_120_row_cap(tmp_path):
+    rows = []
+    start = pd.Timestamp("2025-08-20")
+    for index in range(121):
+        day = start + pd.Timedelta(days=index)
+        rows.append(
+            _hkex_row(
+                news_id=f"audit-{index:03d}",
+                title="Next Day Disclosure Return - Changes in issued shares and share buybacks",
+                date_time=day.strftime("%d/%m/%Y") + " 17:00",
+                file_link=f"/listedco/listconews/sehk/{day:%Y}/{day:%m%d}/audit-{index:03d}.pdf",
+                long_text="Next Day Disclosure Returns - [Share Buyback]",
+            )
+        )
+    session = _WindowedHkexSession(rows)
+
+    frame, state = collect_corporate_actions(
+        _identity_frame(),
+        as_of_utc=pd.Timestamp("2026-08-16T12:00:00Z"),
+        retrieved_at_utc=pd.Timestamp("2026-08-16T12:00:00Z"),
+        lookback_days=365,
+        output_dir=tmp_path / "complete",
+        hkex_session=session,
+        body_fetcher=lambda _url: None,
+        timeout=5,
+    )
+
+    assert len(frame) == 121
+    detail = state.iloc[0]["detail"]
+    assert "raw_rows=121" in detail
+    assert "truncated=false" in detail
+    assert state.iloc[0]["status"] == "partial"
+
+    capped_frame, capped_state = collect_corporate_actions(
+        _identity_frame(),
+        as_of_utc=pd.Timestamp("2026-08-16T12:00:00Z"),
+        retrieved_at_utc=pd.Timestamp("2026-08-16T12:00:00Z"),
+        lookback_days=365,
+        max_rows_per_query=120,
+        hkex_session=_WindowedHkexSession(rows),
+        body_fetcher=lambda _url: None,
+        timeout=5,
+    )
+    assert len(capped_frame) == 120
+    assert "truncated=true" in capped_state.iloc[0]["detail"]
+    assert capped_state.iloc[0]["status"] == "partial"
 
 
 def test_parquet_roundtrip_preserves_nullable_schema(tmp_path):
