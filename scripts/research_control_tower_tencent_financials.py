@@ -7,9 +7,9 @@ discarding the canonical basis, source-document, and value-origin fields.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
-import re
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -29,7 +29,7 @@ TENCENT_REPORTING_CURRENCY = "CNY"
 
 PIT_CLASS_OBSERVED = "snapshot_from_live_source"
 LICENSE_CLASS = "official_public_metadata"
-SOURCE_QUALITY_OFFICIAL = "official_metadata"
+SOURCE_QUALITY_OFFICIAL = "official_body"
 REGISTRY_VERSION = "v1"
 MINIMUM_COMPLETE_CORE_QUARTERS = 12
 
@@ -66,8 +66,6 @@ def _enriched_columns() -> list[str]:
         columns.append(column)
         if column == "metric":
             columns.extend(["source_metric_label", "metric_basis"])
-        elif column == "published_at":
-            columns.append("accepted_at")
         elif column == "accession_no":
             columns.extend(
                 [
@@ -171,6 +169,38 @@ METRIC_DEFINITIONS = (
         "Non-IFRS management measure",
         "CNY",
     ),
+    MetricDefinition(
+        "revenue_vas",
+        "revenue_vas",
+        "VAS",
+        "GAAP_REPORTED",
+        "IFRS",
+        "CNY",
+    ),
+    MetricDefinition(
+        "revenue_online_advertising",
+        "revenue_online_advertising",
+        "Online Advertising",
+        "GAAP_REPORTED",
+        "IFRS",
+        "CNY",
+    ),
+    MetricDefinition(
+        "revenue_marketing_services",
+        "revenue_marketing_services",
+        "Marketing Services",
+        "GAAP_REPORTED",
+        "IFRS",
+        "CNY",
+    ),
+    MetricDefinition(
+        "revenue_fintech_business_services",
+        "revenue_fintech_business_services",
+        "FinTech and Business Services",
+        "GAAP_REPORTED",
+        "IFRS",
+        "CNY",
+    ),
 )
 
 
@@ -220,44 +250,72 @@ def load_tencent_disclosure_records(
 
 def _actual_id(
     *,
+    entity_id: str,
     accession_no: str,
     metric: str,
+    accounting_basis: str,
     metric_basis: str,
     period_label: str,
+    value_origin: str,
     version: int,
+    revision_reason: str,
+    source_document_id: str,
+    source_document_sha256: str,
+    published_at: pd.Timestamp,
 ) -> str:
-    accession_id = accession_no.split(":", maxsplit=1)[-1]
-    components = (
-        "ACT",
-        "0700",
-        accession_id,
-        period_label,
-        metric,
-        metric_basis,
-        f"v{version}",
-    )
-    return "_".join(re.sub(r"[^A-Za-z0-9]+", "-", part).strip("-") for part in components)
+    payload = {
+        "accounting_basis": accounting_basis,
+        "accession_no": accession_no,
+        "entity_id": entity_id,
+        "metric": metric,
+        "metric_basis": metric_basis,
+        "period_label": period_label,
+        "published_at": published_at.isoformat(),
+        "revision_reason": revision_reason,
+        "source_document_id": source_document_id,
+        "source_document_sha256": source_document_sha256,
+        "value_origin": value_origin,
+        "version": version,
+    }
+    digest = hashlib.sha256(
+        json.dumps(
+            payload,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    return f"ACT_0700_{digest}"
 
 
 def _disclosure_timestamps(
     item: Mapping[str, Any],
-) -> tuple[pd.Timestamp, pd.Timestamp, pd.Timestamp]:
+) -> tuple[pd.Timestamp, pd.Timestamp]:
     filing_at = _utc_timestamp(item["filing_at"], field="filing_at")
     published_at = _utc_timestamp(item["published_at"], field="published_at")
-    accepted_at = _utc_timestamp(item["accepted_at"], field="accepted_at")
-    return filing_at, published_at, accepted_at
+    return filing_at, published_at
 
 
 def transform_tencent_disclosures_to_actuals(
     disclosures: Sequence[Mapping[str, Any]],
     *,
     as_of_utc: pd.Timestamp | None = None,
+    retrieved_at_utc: pd.Timestamp | None = None,
 ) -> list[dict[str, Any]]:
     """Transform only disclosures that were public by ``as_of_utc``."""
     retrieved_at = _utc_timestamp(
-        pd.Timestamp.now(tz="UTC") if as_of_utc is None else as_of_utc,
+        (
+            pd.Timestamp.now(tz="UTC")
+            if retrieved_at_utc is None
+            else retrieved_at_utc
+        ),
+        field="retrieved_at_utc",
+    )
+    visibility_cutoff = _utc_timestamp(
+        retrieved_at if as_of_utc is None else as_of_utc,
         field="as_of_utc",
     )
+    if retrieved_at < visibility_cutoff:
+        raise ValueError("retrieved_at_utc must be on or after as_of_utc")
     rows: list[dict[str, Any]] = []
 
     sorted_disclosures = sorted(
@@ -268,9 +326,9 @@ def transform_tencent_disclosures_to_actuals(
         ),
     )
     for item in sorted_disclosures:
-        filing_at, published_at, accepted_at = _disclosure_timestamps(item)
-        disclosure_public_at = max(filing_at, published_at, accepted_at)
-        if disclosure_public_at > retrieved_at:
+        filing_at, published_at = _disclosure_timestamps(item)
+        disclosure_public_at = max(filing_at, published_at)
+        if disclosure_public_at > visibility_cutoff:
             continue
 
         period_label = str(item["period_label"]).strip()
@@ -281,6 +339,10 @@ def transform_tencent_disclosures_to_actuals(
         source_document_sha256 = str(item["source_document_sha256"]).strip().lower()
         source_url = str(item["source_url"]).strip()
         version = int(item.get("version", 1))
+        revision_reason = str(
+            item.get("revision_reason", "initial_filing")
+        ).strip()
+        value_origin = str(item["value_origin"]).strip()
         source_page_refs = item.get("source_page_refs")
         if not isinstance(source_page_refs, Mapping):
             raise ValueError(f"{period_label}: source_page_refs must be a mapping")
@@ -309,11 +371,18 @@ def transform_tencent_disclosures_to_actuals(
                 normalization_note = "scaled_from_millions_rmb_as_reported"
 
             actual_id = _actual_id(
+                entity_id=TENCENT_ENTITY_ID,
                 accession_no=accession_no,
                 metric=definition.metric,
+                accounting_basis=definition.accounting_basis,
                 metric_basis=definition.metric_basis,
                 period_label=period_label,
+                value_origin=value_origin,
                 version=version,
+                revision_reason=revision_reason,
+                source_document_id=source_document_id,
+                source_document_sha256=source_document_sha256,
+                published_at=published_at,
             )
             row = {
                 "actual_id": actual_id,
@@ -338,23 +407,20 @@ def transform_tencent_disclosures_to_actuals(
                 "accounting_basis": definition.accounting_basis,
                 "filing_at": filing_at,
                 "published_at": published_at,
-                "accepted_at": accepted_at,
                 "retrieved_at_utc": retrieved_at,
                 "source_url": source_url,
                 "accession_no": accession_no,
                 "source_document_id": source_document_id,
                 "source_document_sha256": source_document_sha256,
                 "source_page_ref": source_page_ref,
-                "value_origin": str(item["value_origin"]).strip(),
+                "value_origin": value_origin,
                 "derivation_method": str(
                     derivation_methods.get(definition.source_field, "")
                 ).strip(),
                 "timestamp_precision": str(item["timestamp_precision"]).strip(),
                 "form": "RESULTS_ANNOUNCEMENT",
                 "xbrl_frame": "",
-                "revision_reason": str(
-                    item.get("revision_reason", "initial_filing")
-                ).strip(),
+                "revision_reason": revision_reason,
                 "is_restatement": bool(item.get("is_restatement", False)),
                 "source_id": "hkex:tencent_results",
                 "source_quality": SOURCE_QUALITY_OFFICIAL,
@@ -363,7 +429,8 @@ def transform_tencent_disclosures_to_actuals(
                 "source_note": (
                     f"{str(item['document_title']).strip()}; "
                     "HKEX publication timestamp converted from Asia/Hong_Kong "
-                    "metadata to UTC; current-period values only"
+                    "metadata to UTC; current-period values only; "
+                    f"source_body_evidence={str(item['source_body_evidence']).strip()}"
                 ),
                 "registry_version": REGISTRY_VERSION,
             }
@@ -434,7 +501,6 @@ def validate_tencent_actuals(frame: pd.DataFrame) -> None:
         "period_end",
         "filing_at",
         "published_at",
-        "accepted_at",
         "retrieved_at_utc",
     )
     if frame[list(timestamp_columns)].isna().any().any():
@@ -443,7 +509,7 @@ def validate_tencent_actuals(frame: pd.DataFrame) -> None:
         raise ValueError("Tencent actuals contain invalid period bounds")
     if (frame["period_end"] > frame["filing_at"]).any():
         raise ValueError("Tencent actuals contain periods ending after filing")
-    for source_time in ("filing_at", "published_at", "accepted_at"):
+    for source_time in ("filing_at", "published_at"):
         if (frame[source_time] > frame["retrieved_at_utc"]).any():
             raise ValueError(
                 f"Tencent actuals violate {source_time}/retrieved_at causality"
@@ -452,6 +518,31 @@ def validate_tencent_actuals(frame: pd.DataFrame) -> None:
     metric_bases = set(frame["metric_basis"])
     if not metric_bases.issubset(TENCENT_OFFICIAL_METRIC_BASES):
         raise ValueError(f"unsupported metric_basis values: {sorted(metric_bases)}")
+    metric_contract = {
+        (definition.metric, definition.metric_basis): definition.source_metric_label
+        for definition in METRIC_DEFINITIONS
+    }
+    observed_metric_pairs = set(
+        zip(frame["metric"], frame["metric_basis"], strict=True)
+    )
+    if not observed_metric_pairs.issubset(metric_contract):
+        raise ValueError("unsupported canonical metric/metric_basis pair")
+    expected_labels = frame.apply(
+        lambda row: metric_contract[(row["metric"], row["metric_basis"])],
+        axis=1,
+    )
+    if not frame["source_metric_label"].eq(expected_labels).all():
+        raise ValueError("source_metric_label does not match canonical metric")
+    for _, period_rows in frame.groupby("period_label", sort=False):
+        period_metrics = set(period_rows["metric"])
+        if {
+            "revenue_online_advertising",
+            "revenue_marketing_services",
+        }.issubset(period_metrics):
+            raise ValueError(
+                "Online Advertising and Marketing Services must not be bridged "
+                "within one disclosed period"
+            )
     if not set(frame["pit_class"]).issubset(SUPPORTED_PIT_CLASSES):
         raise ValueError("unsupported pit_class values")
     if not set(frame["value_origin"]).issubset(SUPPORTED_VALUE_ORIGINS):
@@ -497,6 +588,8 @@ def validate_tencent_actuals(frame: pd.DataFrame) -> None:
         raise ValueError("source_page_ref must be present")
     if not frame["timestamp_precision"].eq("minute").all():
         raise ValueError("unsupported timestamp_precision")
+    if not frame["source_quality"].eq(SOURCE_QUALITY_OFFICIAL).all():
+        raise ValueError("PDF-extracted values must use source_quality=official_body")
     if not frame["period_label"].str.fullmatch(r"[1-4]Q20\d{2}").all():
         raise ValueError("invalid period_label")
 
@@ -506,11 +599,18 @@ def validate_tencent_actuals(frame: pd.DataFrame) -> None:
         raise ValueError("version must be a positive integer")
     expected_actual_ids = frame.apply(
         lambda row: _actual_id(
+            entity_id=row["entity_id"],
             accession_no=row["accession_no"],
             metric=row["metric"],
+            accounting_basis=row["accounting_basis"],
             metric_basis=row["metric_basis"],
             period_label=row["period_label"],
+            value_origin=row["value_origin"],
             version=int(row["version"]),
+            revision_reason=row["revision_reason"],
+            source_document_id=row["source_document_id"],
+            source_document_sha256=row["source_document_sha256"],
+            published_at=row["published_at"],
         ),
         axis=1,
     )
@@ -570,17 +670,29 @@ def parse_and_collect_tencent_actuals(
     fixture_path: Path | None = None,
     *,
     as_of_utc: pd.Timestamp | None = None,
+    retrieved_at_utc: pd.Timestamp | None = None,
     output_dir: Path | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Collect Tencent actuals as known at ``as_of_utc`` and their source state."""
-    fetched_at = _utc_timestamp(
-        pd.Timestamp.now(tz="UTC") if as_of_utc is None else as_of_utc,
+    collection_clock = _utc_timestamp(
+        (
+            pd.Timestamp.now(tz="UTC")
+            if retrieved_at_utc is None
+            else retrieved_at_utc
+        ),
+        field="retrieved_at_utc",
+    )
+    visibility_cutoff = _utc_timestamp(
+        collection_clock if as_of_utc is None else as_of_utc,
         field="as_of_utc",
     )
+    if collection_clock < visibility_cutoff:
+        raise ValueError("retrieved_at_utc must be on or after as_of_utc")
     disclosures = load_tencent_disclosure_records(fixture_path)
     rows = transform_tencent_disclosures_to_actuals(
         disclosures,
-        as_of_utc=fetched_at,
+        as_of_utc=visibility_cutoff,
+        retrieved_at_utc=collection_clock,
     )
     frame = pd.DataFrame(rows, columns=TENCENT_EARNINGS_ACTUALS_COLUMNS)
     timestamp_columns = (
@@ -588,7 +700,6 @@ def parse_and_collect_tencent_actuals(
         "period_end",
         "filing_at",
         "published_at",
-        "accepted_at",
         "retrieved_at_utc",
     )
     for column in timestamp_columns:
@@ -631,7 +742,7 @@ def parse_and_collect_tencent_actuals(
         "first_observation_at": first_observation,
         "latest_observation_at": latest_observation,
         "source_latest_at": latest_observation,
-        "retrieved_at_utc": fetched_at,
+        "retrieved_at_utc": collection_clock,
         "source_url": "https://www1.hkexnews.hk/search/titlesearch.xhtml?lang=en",
         "pit_class": PIT_CLASS_OBSERVED,
         "source_license_class": LICENSE_CLASS,
