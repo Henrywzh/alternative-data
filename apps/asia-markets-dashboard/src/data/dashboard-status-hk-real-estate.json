@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-08-07T20:29:48.028404Z",
-  "snapshot_id": "86dd35261061c42f",
-  "data_as_of": "2026-08-03",
-  "overall_status": "Healthy",
-  "live_sources": 11,
+  "generated_at": "2026-08-21T03:05:25.754249Z",
+  "snapshot_id": "60136b64965c17c5",
+  "data_as_of": "2026-08-17",
+  "overall_status": "Degraded",
+  "live_sources": 24,
   "planned_sources": 1,
   "provisional_series": 2,
   "sources": [
@@ -12,9 +12,9 @@
       "dataset": "Centaline CCL",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-02",
-      "records": 1701,
-      "freshness": "5d old",
+      "latest_observation": "2026-08-09",
+      "records": 1702,
+      "freshness": "12d old",
       "notes": "Latest observation is published without a provisional flag."
     },
     {
@@ -22,8 +22,8 @@
       "dataset": "Midland MHPI",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-03",
-      "records": 543,
+      "latest_observation": "2026-08-17",
+      "records": 545,
       "freshness": "4d old",
       "notes": "Latest observation is published without a provisional flag."
     },
@@ -32,8 +32,8 @@
       "dataset": "Midland Confidence Index",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-03",
-      "records": 445,
+      "latest_observation": "2026-08-17",
+      "records": 447,
       "freshness": "4d old",
       "notes": "Latest observation is published without a provisional flag."
     },
@@ -44,7 +44,7 @@
       "status": "Healthy",
       "latest_observation": "2026-06-01",
       "records": 402,
-      "freshness": "67d old",
+      "freshness": "81d old",
       "notes": "Latest observation is provisional."
     },
     {
@@ -54,17 +54,27 @@
       "status": "Healthy",
       "latest_observation": "2026-06-01",
       "records": 402,
-      "freshness": "67d old",
+      "freshness": "81d old",
       "notes": "Latest observation is provisional."
+    },
+    {
+      "source": "HKMA Residential Mortgage Survey",
+      "dataset": "HKMA residential mortgage survey",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-06-01",
+      "records": 115,
+      "freshness": "81d old",
+      "notes": "Official monthly residential mortgage survey; the source may revise the latest month."
     },
     {
       "source": "Centaline CCI — Residential Price Index",
       "dataset": "Centaline CCI monthly",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-05-01",
-      "records": 389,
-      "freshness": "98d old",
+      "latest_observation": "2026-06-01",
+      "records": 390,
+      "freshness": "81d old",
       "notes": "Normalized residential price index; CCI is not a sentiment measure."
     },
     {
@@ -72,9 +82,9 @@
       "dataset": "Centaline CRI monthly",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-06-01",
-      "records": 354,
-      "freshness": "67d old",
+      "latest_observation": "2026-07-01",
+      "records": 709,
+      "freshness": "51d old",
       "notes": "Normalized residential rental index; rental-yield history is a companion dataset."
     },
     {
@@ -82,8 +92,8 @@
       "dataset": "Centaline CSI weekly",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-03",
-      "records": 1118,
+      "latest_observation": "2026-08-17",
+      "records": 1122,
       "freshness": "4d old",
       "notes": "Normalized sentiment history; not a transaction or price series."
     },
@@ -92,9 +102,9 @@
       "dataset": "RVD office rental monthly",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-05-01",
-      "records": 1604,
-      "freshness": "98d old",
+      "latest_observation": "2026-06-01",
+      "records": 1608,
+      "freshness": "81d old",
       "notes": "Official grade-level rental index; provisional flags are retained."
     },
     {
@@ -102,10 +112,130 @@
       "dataset": "RVD retail monthly",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-05-01",
-      "records": 802,
-      "freshness": "98d old",
+      "latest_observation": "2026-06-01",
+      "records": 804,
+      "freshness": "81d old",
       "notes": "Official retail rental/price indices; provisional flags are retained."
+    },
+    {
+      "source": "SHKP Quarterly — issuer project and commercial events",
+      "dataset": "SHKP Quarterly property events",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-06-30",
+      "records": 244,
+      "freshness": "52d old",
+      "notes": "Issuer headline events; property relevance and project aliases are heuristic."
+    },
+    {
+      "source": "SHKP Quarterly — issuer project and commercial events",
+      "dataset": "SHKP Quarterly numeric facts",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-06-30",
+      "records": 51,
+      "freshness": "52d old",
+      "notes": "Bounded PDF text extraction of explicit units/areas/rates/milestones; not revenue or ownership."
+    },
+    {
+      "source": "SHKP — Hong Kong commercial asset observation master",
+      "dataset": "SHKP Hong Kong commercial asset master",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-08-16",
+      "records": 132,
+      "freshness": "5d old",
+      "notes": "Current/annual-report/pipeline asset observations; no asset-level rent or NOI is inferred."
+    },
+    {
+      "source": "C&SD — Monthly Retail Sales Control",
+      "dataset": "C&SD retail sales control",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-06-01",
+      "records": 13050,
+      "freshness": "81d old",
+      "notes": "Economy-wide retail value/volume indices; not SHKP tenant sales."
+    },
+    {
+      "source": "Culture, Sports and Tourism Bureau — Hotel occupancy / room-rate controls",
+      "dataset": "Tourism hotel occupancy",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-05-01",
+      "records": 180,
+      "freshness": "112d old",
+      "notes": "Rolling five-year hotel-category occupancy; not SHKP hotel occupancy."
+    },
+    {
+      "source": "Culture, Sports and Tourism Bureau — Hotel occupancy / room-rate controls",
+      "dataset": "Tourism hotel achieved room rate",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-05-01",
+      "records": 180,
+      "freshness": "112d old",
+      "notes": "Rolling five-year industry average room rate; not SHKP ADR."
+    },
+    {
+      "source": "Culture, Sports and Tourism Bureau — Hotel occupancy / room-rate controls",
+      "dataset": "Tourism hotel room supply",
+      "type": "Catalog",
+      "status": "Stale",
+      "latest_observation": "2024-06-01",
+      "records": 148,
+      "freshness": "811d old",
+      "notes": "The public file currently ends at 2024-06; retained as a stale catalog/control input until the publisher updates it."
+    },
+    {
+      "source": "Rating and Valuation Department — Commercial stock / vacancy / completions",
+      "dataset": "RVD office vacancy annual",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2025-12-31",
+      "records": 328,
+      "freshness": "233d old",
+      "notes": "Historical year-end grade-level office vacancy; market control only."
+    },
+    {
+      "source": "Rating and Valuation Department — Commercial stock / vacancy / completions",
+      "dataset": "RVD commercial stock/vacancy district",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2024-12-31",
+      "records": 118,
+      "freshness": "598d old",
+      "notes": "Latest annual district snapshot; source does not provide a monthly history here."
+    },
+    {
+      "source": "Rating and Valuation Department — Commercial stock / vacancy / completions",
+      "dataset": "RVD commercial forecast completions",
+      "type": "Catalog",
+      "status": "Catalog",
+      "latest_observation": "2026-12-31",
+      "records": 45,
+      "freshness": "forecast +132d",
+      "notes": "Latest annual district forecast snapshot; future-dated by design and not SHKP pipeline."
+    },
+    {
+      "source": "SHKP — Hong Kong business financial bridge",
+      "dataset": "SHKP HK business financial bridge",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-08-01",
+      "records": 274,
+      "freshness": "Research snapshot",
+      "notes": "Official group/segment facts, HK recurring portfolio facts, selected 0016.HK actuals, consensus and PIT diagnostics; no project-level HK revenue split is inferred."
+    },
+    {
+      "source": "SHKP — Sales / handover / revenue timing bridge",
+      "dataset": "SHKP sales / handover / revenue timing bridge",
+      "type": "Measure",
+      "status": "Research",
+      "latest_observation": "2026-08-01",
+      "records": 237,
+      "freshness": "Normalized snapshot",
+      "notes": "Gross SRPE activity aligned to handover evidence and planned windows; no phase-level revenue allocation."
     },
     {
       "source": "Sales of First-hand Residential Properties Electronic Platform (SRPE)",
@@ -113,9 +243,9 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "2026-08-01",
-      "records": 2643,
+      "records": 4196,
       "freshness": "Published snapshot",
-      "notes": "56 candidate phases; raw contract activity only. Ownership intervals remain blocked."
+      "notes": "63 candidate phases; raw contract activity only. Ownership intervals remain blocked."
     },
     {
       "source": "28Hse",
@@ -123,7 +253,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "—",
-      "records": 1100,
+      "records": 1102,
       "freshness": "Live at build time",
       "notes": "28Hse EPI / ERI Historical Index; see the chart/table above."
     },
@@ -188,5 +318,5 @@
       "notes": "The dashboard currently covers six explicit pilot phases; broader developer and phase coverage still requires registry expansion and backfill."
     }
   ],
-  "attachment_filename": "hk-real-estate-dashboard-2026-08-07.html"
+  "attachment_filename": "hk-real-estate-dashboard-2026-08-21.html"
 }

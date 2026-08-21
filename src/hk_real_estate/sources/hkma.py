@@ -25,7 +25,15 @@ def fetch_hkma_residential_mortgage_survey() -> pd.DataFrame:
         
     if not raw_json:
         try:
-            cmd = ["curl", "-s", f"{HKMA_PUBLIC_RMS_URL}?pagesize=1000"]
+            # Without a bound the fallback can hang indefinitely when the
+            # API stalls at the network layer (confirmed: requests times out
+            # at 10s, then curl blocks for minutes with no --max-time).
+            cmd = [
+                "curl", "-s",
+                "--connect-timeout", "10",
+                "--max-time", "25",
+                f"{HKMA_PUBLIC_RMS_URL}?pagesize=1000",
+            ]
             out = subprocess.check_output(cmd, text=True)
             raw_json = json.loads(out)
         except Exception as e:
