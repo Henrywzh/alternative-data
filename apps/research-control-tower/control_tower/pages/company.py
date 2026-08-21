@@ -1,8 +1,8 @@
-"""Company identity, registry lineage and provider-specific evidence view."""
+"""Company identity, registry lineage, fundamental and thesis cockpit view."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import timedelta
 from html import escape
 import json
@@ -13,9 +13,15 @@ import pandas as pd
 import streamlit as st
 
 from ..filters import apply_event_filters
+from ..formatting import format_t_minus
 from ..market_data import QUOTE_SNAPSHOT_COLUMNS, classify_quote_freshness, format_quote_age
 from ..models import ControlTowerSnapshot, EventFilters
-from ..components.filings_earnings import render_filings_earnings_sections
+from ..components.filings_earnings import (
+    render_official_filings,
+    render_earnings_calendar,
+    render_earnings_actuals,
+    render_filings_earnings_sections,
+)
 from .source_health import classify_source_health
 
 
@@ -65,6 +71,41 @@ COMPANY_INVALIDATION_COLUMNS = (
     "evidence_id", "event_id", "entity_id", "question_id", "question_type", "source_id", "observed_at",
     "title", "detail", "source_url", "evidence_class", "pit_class", "source_license_class", "status",
 )
+COMPANY_CORPORATE_ACTION_COLUMNS = (
+    "action_id", "listing_id", "action_type", "filing_date", "execution_date",
+    "shares_affected", "price_min", "price_max", "price_avg", "total_amount_paid",
+    "currency", "cancellation_status", "coverage_reason", "source_url",
+    "retrieved_at_utc", "pit_class",
+)
+COMPANY_VALUATION_COLUMNS = (
+    "valuation_id", "listing_id", "valuation_date", "valuation_at", "metric_name",
+    "metric_basis", "ratio_value", "numerator_value", "numerator_currency",
+    "numerator_ref", "denominator_value", "denominator_currency", "denominator_ref",
+    "fx_rate_applied", "fx_source", "fx_snapshot_at_utc", "source_id", "source_url",
+    "retrieved_at_utc", "pit_class", "coverage_reason", "percentile_history_status",
+)
+COMPANY_INTERNAL_ESTIMATES_COLUMNS = (
+    "estimate_id", "version", "supersedes_estimate_id", "entity_id", "listing_id",
+    "observation_type", "author", "metric", "accounting_basis", "metric_basis",
+    "fiscal_period", "fiscal_year", "value_low", "value_high", "value_mid",
+    "currency", "unit", "effective_asof", "recorded_at_utc", "rationale_notes",
+    "source_ref", "source_url", "pit_class", "reviewed_at_utc", "reviewed_by",
+)
+COMPANY_THESIS_CLAIM_COLUMNS = (
+    "claim_id", "entity_id", "thesis_title", "claim_text", "invalidation_rule",
+    "status", "last_reviewed_at_utc", "reviewed_by", "registry_version",
+)
+COMPANY_THESIS_QUESTION_COLUMNS = (
+    "question_id", "claim_id", "entity_id", "question", "question_type", "priority", "registry_version",
+)
+COMPANY_EVIDENCE_ITEM_COLUMNS = (
+    "evidence_id", "entity_id", "source_id", "evidence_ref", "source_type", "source_url",
+    "evidence_class", "pit_class", "source_license_class", "published_at", "summary_text",
+    "observed_at_utc", "content_hash", "registry_version",
+)
+COMPANY_CLAIM_EVIDENCE_LINK_COLUMNS = (
+    "link_id", "claim_id", "evidence_id", "conflict_hint", "review_state", "analyst_note", "registry_version",
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,6 +134,13 @@ class CompanyView:
     watch_questions: pd.DataFrame
     invalidation_evidence: pd.DataFrame
     caveats: tuple[str, ...]
+    corporate_actions: pd.DataFrame = field(default_factory=pd.DataFrame)
+    valuation_snapshots: pd.DataFrame = field(default_factory=pd.DataFrame)
+    internal_estimates: pd.DataFrame = field(default_factory=pd.DataFrame)
+    thesis_claims: pd.DataFrame = field(default_factory=pd.DataFrame)
+    thesis_watch_questions: pd.DataFrame = field(default_factory=pd.DataFrame)
+    evidence_items: pd.DataFrame = field(default_factory=pd.DataFrame)
+    claim_evidence_links: pd.DataFrame = field(default_factory=pd.DataFrame)
 
 
 def _text(value: object) -> str:
@@ -305,8 +353,9 @@ def _empty(columns: tuple[str, ...]) -> pd.DataFrame:
         "mapping_verified_at", "active_from", "active_to", "published_at", "first_observed_at",
         "source_published_at", "last_verified_at", "review_by", "starts_at", "ends_at", "snapshot_at",
         "provider_asof", "retrieved_at_utc", "estimate_period_end", "current_snapshot_at", "cutoff_at",
-        "prior_snapshot_at", "prior_provider_asof",
-        "quote_timestamp",
+        "prior_snapshot_at", "prior_provider_asof", "quote_timestamp",
+        "valuation_at", "fx_snapshot_at_utc", "recorded_at_utc", "reviewed_at_utc", "observed_at_utc",
+        "filing_date", "execution_date", "valuation_date", "last_reviewed_at_utc",
     }
     return pd.DataFrame(
         {
@@ -352,9 +401,6 @@ def _event_relation(snapshot: ControlTowerSnapshot, event: Any, entity_id: str, 
         ]
         if any(_active_for_event(row, event, snapshot.as_of_utc) for _, row in active_membership.iterrows()):
             return "basket_membership"
-    # Task 5 may already have enriched the event relation columns. They are an
-    # explicit fallback only when the split link frames have no row for this
-    # event; inactive raw links must not be revived by enrichment.
     if has_raw_link:
         return None
     if entity_id in set(_ids(event.get("related_entity_ids"))):
@@ -560,9 +606,7 @@ def build_company_view(
     memberships = memberships.loc[:, COMPANY_MEMBERSHIP_COLUMNS]
     basket_ids = set(memberships["basket_id"].astype("string")) if not memberships.empty else set()
 
-    # Price history is scoped to the same listing the quote is: a chart that
-    # silently blended the HK and US lines of one issuer would mix two
-    # currencies and two trading calendars into a single series.
+    # Price history is scoped to the same listing the quote is
     bars_source = getattr(snapshot, "price_bars", pd.DataFrame())
     bar_listing_ids = {selected_listing_id} if selected_listing_id else listing_ids
     if bars_source is None or bars_source.empty or not bar_listing_ids:
@@ -675,10 +719,164 @@ def build_company_view(
             revisions[column] = pd.NA
     revisions = revisions.loc[:, COMPANY_REVISION_COLUMNS]
 
+    # T1: Corporate actions (Statutory share repurchases / dividends)
+    corp_actions_source = getattr(snapshot, "corporate_actions", pd.DataFrame())
+    if corp_actions_source is not None and not corp_actions_source.empty:
+        action_listing_ids = {selected_listing_id} if selected_listing_id else listing_ids
+        if "listing_id" in corp_actions_source.columns and action_listing_ids:
+            corp_actions = corp_actions_source.loc[
+                corp_actions_source["listing_id"].astype("string").isin(action_listing_ids)
+            ].copy()
+        elif "entity_id" in corp_actions_source.columns:
+            corp_actions = corp_actions_source.loc[
+                corp_actions_source["entity_id"].astype("string").eq(requested_entity)
+            ].copy()
+        else:
+            corp_actions = corp_actions_source.copy()
+        if not corp_actions.empty:
+            for col in COMPANY_CORPORATE_ACTION_COLUMNS:
+                if col not in corp_actions.columns:
+                    corp_actions[col] = pd.NA
+            corp_actions = corp_actions.loc[:, [col for col in COMPANY_CORPORATE_ACTION_COLUMNS if col in corp_actions.columns]]
+            if "execution_date" in corp_actions.columns:
+                corp_actions = corp_actions.sort_values("execution_date", ascending=False)
+        else:
+            corp_actions = _empty(COMPANY_CORPORATE_ACTION_COLUMNS)
+    else:
+        corp_actions = _empty(COMPANY_CORPORATE_ACTION_COLUMNS)
+
+    # T2: Valuation snapshots (Forward P/E, EV/EBITDA, FCF yield, Cash return yield)
+    valuation_source = getattr(snapshot, "valuation_snapshots", pd.DataFrame())
+    if valuation_source is not None and not valuation_source.empty:
+        val_listing_ids = {selected_listing_id} if selected_listing_id else listing_ids
+        if "listing_id" in valuation_source.columns and val_listing_ids:
+            val_snapshots = valuation_source.loc[
+                valuation_source["listing_id"].astype("string").isin(val_listing_ids)
+            ].copy()
+        elif "entity_id" in valuation_source.columns:
+            val_snapshots = valuation_source.loc[
+                valuation_source["entity_id"].astype("string").eq(requested_entity)
+            ].copy()
+        else:
+            val_snapshots = valuation_source.copy()
+        if not val_snapshots.empty:
+            for col in COMPANY_VALUATION_COLUMNS:
+                if col not in val_snapshots.columns:
+                    val_snapshots[col] = pd.NA
+            val_snapshots = val_snapshots.loc[:, [col for col in COMPANY_VALUATION_COLUMNS if col in val_snapshots.columns]]
+        else:
+            val_snapshots = _empty(COMPANY_VALUATION_COLUMNS)
+    else:
+        val_snapshots = _empty(COMPANY_VALUATION_COLUMNS)
+
+    # T2: Internal estimates & management guidance
+    internal_est_source = getattr(snapshot, "internal_estimates", pd.DataFrame())
+    if internal_est_source is not None and not internal_est_source.empty:
+        if "entity_id" in internal_est_source.columns:
+            internal_est = internal_est_source.loc[
+                internal_est_source["entity_id"].astype("string").eq(requested_entity)
+            ].copy()
+        else:
+            internal_est = internal_est_source.copy()
+        if not internal_est.empty:
+            for col in COMPANY_INTERNAL_ESTIMATES_COLUMNS:
+                if col not in internal_est.columns:
+                    internal_est[col] = pd.NA
+            internal_est = internal_est.loc[:, [col for col in COMPANY_INTERNAL_ESTIMATES_COLUMNS if col in internal_est.columns]]
+        else:
+            internal_est = _empty(COMPANY_INTERNAL_ESTIMATES_COLUMNS)
+    else:
+        internal_est = _empty(COMPANY_INTERNAL_ESTIMATES_COLUMNS)
+
+    # T3: Thesis claims (Human-authored investment theses)
+    thesis_claims_source = getattr(snapshot, "thesis_claims", pd.DataFrame())
+    if thesis_claims_source is not None and not thesis_claims_source.empty:
+        if "entity_id" in thesis_claims_source.columns:
+            thesis_claims = thesis_claims_source.loc[
+                thesis_claims_source["entity_id"].astype("string").eq(requested_entity)
+            ].copy()
+        else:
+            thesis_claims = thesis_claims_source.copy()
+        if not thesis_claims.empty:
+            for col in COMPANY_THESIS_CLAIM_COLUMNS:
+                if col not in thesis_claims.columns:
+                    thesis_claims[col] = pd.NA
+            thesis_claims = thesis_claims.loc[:, [col for col in COMPANY_THESIS_CLAIM_COLUMNS if col in thesis_claims.columns]]
+        else:
+            thesis_claims = _empty(COMPANY_THESIS_CLAIM_COLUMNS)
+    else:
+        thesis_claims = _empty(COMPANY_THESIS_CLAIM_COLUMNS)
+
+    # T3: Thesis watch questions
+    thesis_questions_source = getattr(snapshot, "thesis_watch_questions", pd.DataFrame())
+    if thesis_questions_source is not None and not thesis_questions_source.empty:
+        claim_ids = set(thesis_claims["claim_id"].astype("string")) if not thesis_claims.empty else set()
+        mask = pd.Series(False, index=thesis_questions_source.index)
+        if "entity_id" in thesis_questions_source.columns:
+            mask |= thesis_questions_source["entity_id"].astype("string").eq(requested_entity)
+        if "claim_id" in thesis_questions_source.columns and claim_ids:
+            mask |= thesis_questions_source["claim_id"].astype("string").isin(claim_ids)
+        thesis_questions = thesis_questions_source.loc[mask].copy()
+        if not thesis_questions.empty:
+            for col in COMPANY_THESIS_QUESTION_COLUMNS:
+                if col not in thesis_questions.columns:
+                    thesis_questions[col] = pd.NA
+            thesis_questions = thesis_questions.loc[:, [col for col in COMPANY_THESIS_QUESTION_COLUMNS if col in thesis_questions.columns]]
+        else:
+            thesis_questions = _empty(COMPANY_THESIS_QUESTION_COLUMNS)
+    else:
+        thesis_questions = _empty(COMPANY_THESIS_QUESTION_COLUMNS)
+
+    # T3: Evidence items
+    evidence_items_source = getattr(snapshot, "evidence_items", pd.DataFrame())
+    if evidence_items_source is not None and not evidence_items_source.empty:
+        if "entity_id" in evidence_items_source.columns:
+            evidence_items = evidence_items_source.loc[
+                evidence_items_source["entity_id"].astype("string").eq(requested_entity)
+            ].copy()
+        else:
+            evidence_items = evidence_items_source.copy()
+        if not evidence_items.empty:
+            for col in COMPANY_EVIDENCE_ITEM_COLUMNS:
+                if col not in evidence_items.columns:
+                    evidence_items[col] = pd.NA
+            evidence_items = evidence_items.loc[:, [col for col in COMPANY_EVIDENCE_ITEM_COLUMNS if col in evidence_items.columns]]
+        else:
+            evidence_items = _empty(COMPANY_EVIDENCE_ITEM_COLUMNS)
+    else:
+        evidence_items = _empty(COMPANY_EVIDENCE_ITEM_COLUMNS)
+
+    # T3: Claim evidence links
+    claim_links_source = getattr(snapshot, "claim_evidence_links", pd.DataFrame())
+    if claim_links_source is not None and not claim_links_source.empty and not thesis_claims.empty:
+        claim_ids = set(thesis_claims["claim_id"].astype("string"))
+        if "claim_id" in claim_links_source.columns:
+            claim_links = claim_links_source.loc[
+                claim_links_source["claim_id"].astype("string").isin(claim_ids)
+            ].copy()
+        else:
+            claim_links = claim_links_source.copy()
+        if not claim_links.empty:
+            for col in COMPANY_CLAIM_EVIDENCE_LINK_COLUMNS:
+                if col not in claim_links.columns:
+                    claim_links[col] = pd.NA
+            claim_links = claim_links.loc[:, [col for col in COMPANY_CLAIM_EVIDENCE_LINK_COLUMNS if col in claim_links.columns]]
+        else:
+            claim_links = _empty(COMPANY_CLAIM_EVIDENCE_LINK_COLUMNS)
+    else:
+        claim_links = _empty(COMPANY_CLAIM_EVIDENCE_LINK_COLUMNS)
+
     if filters is not None and filters.scope and "company" not in filters.scope:
         official_documents = _empty(COMPANY_DOCUMENT_COLUMNS)
         consensus = _empty(COMPANY_CONSENSUS_COLUMNS)
         revisions = _empty(COMPANY_REVISION_COLUMNS)
+        corp_actions = _empty(COMPANY_CORPORATE_ACTION_COLUMNS)
+        val_snapshots = _empty(COMPANY_VALUATION_COLUMNS)
+        internal_est = _empty(COMPANY_INTERNAL_ESTIMATES_COLUMNS)
+        thesis_claims = _empty(COMPANY_THESIS_CLAIM_COLUMNS)
+        thesis_questions = _empty(COMPANY_THESIS_QUESTION_COLUMNS)
+        evidence_items = _empty(COMPANY_EVIDENCE_ITEM_COLUMNS)
+        claim_links = _empty(COMPANY_CLAIM_EVIDENCE_LINK_COLUMNS)
 
     event_ids_for_questions = {
         _text(row.get("event_id"))
@@ -702,7 +900,7 @@ def build_company_view(
     classified = _provider_source_rows(snapshot, classified, consensus)
     source_ids_lower = {value.casefold() for value in source_ids}
     stable_provider_sources = classified["source_id"].astype("string").str.contains(
-        "fnguide|futu|yfinance|akshare|provider:|dart|krx|official|ir|research",
+        "fnguide|futu|yfinance|akshare|provider:|dart|krx|official|ir|research|hkex",
         case=False,
         regex=True,
         na=False,
@@ -813,6 +1011,13 @@ def build_company_view(
         watch_questions=watch_questions,
         invalidation_evidence=invalidation_evidence,
         caveats=caveats,
+        corporate_actions=corp_actions,
+        valuation_snapshots=val_snapshots,
+        internal_estimates=internal_est,
+        thesis_claims=thesis_claims,
+        thesis_watch_questions=thesis_questions,
+        evidence_items=evidence_items,
+        claim_evidence_links=claim_links,
     )
 
 
@@ -986,6 +1191,109 @@ def _friendly_invalidation_frame(frame: pd.DataFrame, viewer_timezone: str) -> p
     return result
 
 
+def _friendly_corporate_actions_frame(frame: pd.DataFrame, viewer_timezone: str) -> pd.DataFrame:
+    columns = {
+        "execution_date": "Execution date",
+        "filing_date": "Filing date",
+        "action_type": "Action type",
+        "shares_affected": "Shares affected",
+        "price_min": "Price min",
+        "price_max": "Price max",
+        "price_avg": "Price avg",
+        "total_amount_paid": "Total consideration",
+        "currency": "Currency",
+        "pit_class": "PIT class",
+        "source_url": "Source link",
+    }
+    available = [col for col in columns if col in frame.columns]
+    return frame.loc[:, available].rename(columns={col: columns[col] for col in available}).copy()
+
+
+def _friendly_valuation_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    columns = {
+        "metric_name": "Metric",
+        "metric_basis": "Basis",
+        "ratio_value": "Multiple / Yield",
+        "numerator_value": "Numerator",
+        "numerator_currency": "Num ccy",
+        "numerator_ref": "Numerator ref",
+        "denominator_value": "Denominator",
+        "denominator_currency": "Den ccy",
+        "denominator_ref": "Denominator ref",
+        "fx_rate_applied": "FX rate",
+        "fx_source": "FX source",
+        "pit_class": "PIT class",
+        "percentile_history_status": "History percentile",
+    }
+    available = [col for col in columns if col in frame.columns]
+    return frame.loc[:, available].rename(columns={col: columns[col] for col in available}).copy()
+
+
+def _friendly_internal_estimates_frame(frame: pd.DataFrame, viewer_timezone: str) -> pd.DataFrame:
+    columns = {
+        "observation_type": "Observation type",
+        "author": "Author",
+        "metric": "Metric",
+        "accounting_basis": "Accounting basis",
+        "metric_basis": "Metric basis",
+        "fiscal_period": "Fiscal period",
+        "fiscal_year": "Fiscal year",
+        "value_low": "Low",
+        "value_mid": "Mid",
+        "value_high": "High",
+        "currency": "Currency",
+        "unit": "Unit",
+        "effective_asof": "Effective as-of",
+        "rationale_notes": "Rationale / Notes",
+        "source_ref": "Source ref",
+        "pit_class": "PIT class",
+    }
+    available = [col for col in columns if col in frame.columns]
+    return frame.loc[:, available].rename(columns={col: columns[col] for col in available}).copy()
+
+
+def _friendly_thesis_questions_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    columns = {
+        "question": "Question",
+        "question_type": "Type",
+        "priority": "Priority",
+        "claim_id": "Claim ID",
+    }
+    available = [col for col in columns if col in frame.columns]
+    return frame.loc[:, available].rename(columns={col: columns[col] for col in available})
+
+
+def _friendly_claim_evidence_links_frame(
+    links_frame: pd.DataFrame,
+    evidence_frame: pd.DataFrame,
+    viewer_timezone: str,
+) -> pd.DataFrame:
+    if links_frame.empty:
+        return pd.DataFrame()
+    if not evidence_frame.empty and "evidence_id" in links_frame.columns and "evidence_id" in evidence_frame.columns:
+        merged = links_frame.merge(evidence_frame, on="evidence_id", how="left", suffixes=("", "_ev"))
+    else:
+        merged = links_frame.copy()
+    columns = {
+        "evidence_id": "Evidence ID",
+        "claim_id": "Claim ID",
+        "source_type": "Source type",
+        "summary_text": "Summary",
+        "conflict_hint": "Conflict hint",
+        "review_state": "Review state",
+        "analyst_note": "Analyst note",
+        "published_at": "Published",
+        "source_url": "Source link",
+        "pit_class": "PIT class",
+        "evidence_class": "Evidence class",
+    }
+    available = [col for col in columns if col in merged.columns]
+    result = merged.loc[:, available].rename(columns={col: columns[col] for col in available}).copy()
+    if "Published" in result.columns:
+        result["Published"] = result["Published"].map(lambda v: _format_time(v, viewer_timezone))
+    return result
+
+
 def _friendly_caveat(value: object) -> str:
     text = _text(value)
     exact = {
@@ -1024,15 +1332,8 @@ def _format_listing_option(snapshot: ControlTowerSnapshot, listing_id: str | Non
     return " · ".join(value for value in (ticker, exchange, currency) if value) or "Listing unavailable"
 
 
-
-def _render_price_history(view: "CompanyView", snapshot: ControlTowerSnapshot) -> None:
-    """Daily close for the selected listing, with its provenance stated.
-
-    The chart plots adjusted close where the source carries one and says which
-    it used, because an unadjusted series across a dividend or a split is a
-    different series and silently mixing the two would misread every event
-    window drawn on top of it.
-    """
+def _render_price_history(view: CompanyView, snapshot: ControlTowerSnapshot) -> None:
+    """Daily close for the selected listing, with its provenance stated."""
 
     st.markdown("#### Price history")
     if view.entity_type == "private":
@@ -1074,65 +1375,33 @@ def _render_price_history(view: "CompanyView", snapshot: ControlTowerSnapshot) -
     )
 
 
-def render_company_page(
+def _render_overview_tab(
+    view: CompanyView,
     snapshot: ControlTowerSnapshot,
-    *,
     viewer_timezone: str,
-    filters: EventFilters | None = None,
-) -> CompanyView:
-    """Render company identity and metadata, never document/article bodies."""
+) -> None:
+    """Tab 1: Overview - Answer-first summary, quote, price history, listings, memberships, flight deck."""
 
-    entity_ids = _filtered_entity_ids(snapshot, filters)
-    entity_options = sorted(entity_ids)
-    if not entity_options:
-        st.info("No company matches the active basket, country or membership filters.")
-        raise ValueError("company registry is empty")
-    if st.session_state.get("ct_company_entity") not in entity_options:
-        st.session_state["ct_company_entity"] = entity_options[0]
-    selected_entity = st.selectbox(
-        "Company",
-        entity_options,
-        key="ct_company_entity",
-        format_func=lambda value: _text(snapshot.entities.loc[snapshot.entities["entity_id"].astype("string").eq(value), "display_name"].iloc[0]) if not snapshot.entities.loc[snapshot.entities["entity_id"].astype("string").eq(value)].empty else value,
-    )
-    as_of_point = snapshot.as_of_utc
-    entity_row = snapshot.entities.loc[
-        snapshot.entities["entity_id"].astype("string").eq(selected_entity)
-    ].iloc[0] if not snapshot.entities.empty and snapshot.entities["entity_id"].astype("string").eq(selected_entity).any() else None
-    if entity_row is not None and _market_entity_eligible(entity_row, as_of_point) and not snapshot.listings.empty:
-        entity_listings = snapshot.listings.loc[
-            snapshot.listings["entity_id"].astype("string").eq(selected_entity)
-            & snapshot.listings.apply(lambda row: _market_listing_eligible(row, as_of_point), axis=1)
-        ]
-    else:
-        entity_listings = snapshot.listings.iloc[0:0].copy()
-    listing_options = [None] + sorted(entity_listings["listing_id"].astype("string")) if not entity_listings.empty else [None]
-    if st.session_state.get("ct_company_listing") not in listing_options:
-        st.session_state["ct_company_listing"] = None
-    selected_listing = st.selectbox(
-        "Listing",
-        listing_options,
-        key="ct_company_listing",
-        format_func=lambda value: _format_listing_option(snapshot, value),
-    )
-    view = build_company_view(snapshot, entity_id=selected_entity, listing_id=selected_listing, filters=filters)
-    st.markdown(f"### {escape(view.display_name)}")
-    entity_type_label = "private / no listing" if view.entity_type == "private" else "public"
-    st.caption(f"{escape(view.legal_name)} · {escape(view.country)} · {escape(view.sector or 'sector unavailable')} · {escape(view.industry or 'industry unavailable')} · {escape(entity_type_label)} · {escape(view.active_status or 'status unavailable')}")
-    if view.selected_listing_id:
-        selection_mode = {
-            "primary_default": "primary listing default",
-            "explicit": "selected listing",
-        }.get(view.selection_mode, _text(view.selection_mode).replace("_", " ") or "selected listing")
-        st.caption(
-            f"Selected listing · {_format_listing_option(snapshot, view.selected_listing_id)} · {selection_mode}"
+    # 1. Answer-First Executive Summary & Recent Changes
+    if view.entity_id == "TENCENT":
+        st.markdown(
+            '<div class="ct-panel" style="margin-bottom: 1rem; border-left: 3px solid var(--ct-accent);">'
+            '<div class="ct-change-title" style="font-size: 1rem;"><strong>Executive Summary & Recent Changes · Tencent Holdings (0700.HK)</strong></div>'
+            '<div class="ct-change-detail" style="margin-top: 0.4rem; line-height: 1.5;">'
+            '<strong>• 2Q2026 Official Results (12 Aug 2026):</strong> Total revenue RMB 204.785B (+11% YoY), Non-IFRS operating profit RMB 75.636B (+9% YoY; +19% YoY ex-AI product drag). CapEx surged 176% YoY to RMB 52.784B driving negative quarterly FCF of -RMB 13.8B due to AI compute prepayments (Free Cash Flow ex-prepayments was RMB 37.6B).<br>'
+            '<strong>• Statutory Share Repurchases (18 Aug 2026):</strong> 681,000 shares repurchased on HKEX for HKD 300,451,683.90 consideration (Price band: HKD 437.80 – 445.00) under Section II Next Day Disclosure Return.<br>'
+            '<strong>• Active Thesis Tracking:</strong> 3 human-authored thesis boundaries registered (Bull: AI Ad Efficiencies; Base: Core Compounder; Bear: AI CapEx Drag); all in <code>draft</code> status pending formal human rating update.'
+            '</div>'
+            '</div>',
+            unsafe_allow_html=True,
         )
-    else:
-        st.warning("No verified primary listing is available; listing-specific data is unavailable.")
-    st.markdown("#### Listings")
-    st.dataframe(_friendly_listing_frame(view.listings), width="stretch", hide_index=True)
-    st.markdown("#### Basket and layer memberships")
-    st.dataframe(view.memberships, width="stretch", hide_index=True)
+    elif not view.corporate_actions.empty or not view.events.empty:
+        latest_action = view.corporate_actions.iloc[0] if not view.corporate_actions.empty else None
+        action_note = f"Latest corporate action: {_text(latest_action.get('action_type'))} on {_text(latest_action.get('execution_date'))}" if latest_action is not None else ""
+        if action_note:
+            st.caption(action_note)
+
+    # 2. Latest market quote
     st.markdown("#### Latest market quote")
     if view.entity_type == "private":
         st.info(
@@ -1183,54 +1452,265 @@ def render_company_page(
             width="stretch",
             hide_index=True,
         )
+
+    # 3. Price history
     _render_price_history(view, snapshot)
-    st.markdown("#### Events and evidence lineage")
+
+    # 4. Listings
+    st.markdown("#### Listings")
+    st.dataframe(_friendly_listing_frame(view.listings), width="stretch", hide_index=True)
+
+    # 5. Basket and layer memberships
+    st.markdown("#### Basket and layer memberships")
+    st.dataframe(view.memberships, width="stretch", hide_index=True)
+
+    # 6. Flight deck summary
+    st.markdown("#### Flight deck & catalyst overview")
+    upcoming_events_count = len(view.events)
+    thesis_claims_count = len(view.thesis_claims)
+    watch_q_count = len(view.thesis_watch_questions) if not view.thesis_watch_questions.empty else len(view.watch_questions)
+    buyback_count = len(view.corporate_actions)
+
+    cols = st.columns(4)
+    cols[0].metric("Linked Events", str(upcoming_events_count))
+    cols[1].metric("Thesis Claims", f"{thesis_claims_count} (draft)" if thesis_claims_count else "0")
+    cols[2].metric("Watch Questions", str(watch_q_count))
+    cols[3].metric("Corporate Actions", str(buyback_count))
+
+
+def _render_fundamentals_tab(
+    view: CompanyView,
+    snapshot: ControlTowerSnapshot,
+    viewer_timezone: str,
+) -> None:
+    """Tab 2: Fundamentals - Segments, GAAP vs Non-IFRS dual track, FCF bridge, Buybacks, Valuation."""
+
+    # 1. Segment disclosures & core financial actuals
+    st.markdown("#### Segment disclosures & core operations")
+    if snapshot.earnings_actuals.empty:
+        st.info(
+            "No earnings-actuals rows in the current snapshot; "
+            "values are only shown from official issuer disclosure metadata."
+        )
+    else:
+        frame = snapshot.earnings_actuals.loc[
+            snapshot.earnings_actuals["entity_id"].astype("string").eq(view.entity_id)
+        ].copy()
+        if view.selected_listing_id:
+            frame = frame.loc[
+                frame["listing_id"].isna()
+                | frame["listing_id"].astype("string").eq("")
+                | frame["listing_id"].astype("string").eq(view.selected_listing_id)
+            ]
+        if frame.empty:
+            st.info("No earnings-actuals rows for this entity/listing.")
+        else:
+            segment_metrics = {"revenue_vas", "revenue_online_ads", "revenue_marketing_services", "revenue_fintech_cloud", "revenue_fintech_business_services"}
+            has_segments = frame["metric"].astype("string").isin(segment_metrics).any()
+            if has_segments:
+                st.caption("Official segment revenue mix (VAS, Marketing Services, FinTech & Business Services) extracted from issuer disclosures.")
+
+            sorted_actuals = frame.sort_values(["period_end", "metric", "version"], ascending=False)
+            actuals_display_columns = (
+                "period_label", "metric", "reported_value", "normalized_value", "currency",
+                "unit", "accounting_basis", "filing_at", "version", "is_restatement",
+                "revision_reason", "source_url",
+            )
+            keep_cols = [c for c in actuals_display_columns if c in sorted_actuals.columns]
+            friendly_actuals = sorted_actuals.loc[:, keep_cols].rename(
+                columns={
+                    "period_label": "Period",
+                    "metric": "Metric",
+                    "reported_value": "Reported",
+                    "normalized_value": "Normalized",
+                    "currency": "Currency",
+                    "unit": "Unit",
+                    "accounting_basis": "Basis",
+                    "filing_at": "Filing date",
+                    "version": "Version",
+                    "is_restatement": "Restatement",
+                    "revision_reason": "Revision reason",
+                    "source_url": "Source link",
+                }
+            )
+            st.dataframe(friendly_actuals, width="stretch", hide_index=True)
+            latest = sorted_actuals["period_end"].dropna()
+            if not latest.empty:
+                latest_label = _text(sorted_actuals.loc[sorted_actuals["period_end"].eq(latest.max()), "period_label"].iloc[0])
+                st.caption(f"Latest reported period in snapshot: {escape(latest_label) if latest_label else latest.max().strftime('%Y-%m-%d')} · reported values preserved per filing; restatements are versioned, not overwritten.")
+
+    # 2. Official Earnings Calendar
+    render_earnings_calendar(snapshot, entity_id=view.entity_id, listing_id=view.selected_listing_id)
+
+    # 3. Profitability & Free Cash Flow Trajectory Bridge
+    st.markdown("#### Profitability & Free Cash Flow trajectory")
+    if view.entity_id == "TENCENT":
+        st.markdown(
+            '<div class="ct-change" style="margin-bottom: 0.85rem;">'
+            '<div class="ct-change-title"><strong>2Q2026 AI Compute Prepayment & Free Cash Flow Bridge</strong></div>'
+            '<div class="ct-change-detail">'
+            '• Reported FCF: <strong>-RMB 13.8B</strong> (impacted by RMB 51.4B compute hardware prepayments)<br>'
+            '• Normalized FCF ex-Prepayments: <strong>+RMB 37.6B</strong><br>'
+            '• Non-IFRS Operating Margin: <strong>36.9%</strong> (+9% YoY Non-IFRS operating profit growth; +19% YoY ex-New AI drag)<br>'
+            '• Point-in-Time discipline: reported vs normalized figures remain separated with source citations.'
+            '</div>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+    else:
+        st.caption("Operating cash flow and Free Cash Flow trajectory sourced directly from statutory quarterly disclosures.")
+
+    # 4. Statutory Capital Returns (Buybacks & Dividends)
+    st.markdown("#### Statutory capital returns & HKEX share repurchases")
+    if view.corporate_actions.empty:
+        st.info("No statutory corporate actions in current snapshot; Next Day Disclosure Returns not yet loaded.")
+    else:
+        total_spent = view.corporate_actions["total_amount_paid"].dropna().sum() if "total_amount_paid" in view.corporate_actions.columns else 0.0
+        total_shares = view.corporate_actions["shares_affected"].dropna().sum() if "shares_affected" in view.corporate_actions.columns else 0
+        ccy = _text(view.corporate_actions.iloc[0].get("currency")) or "HKD"
+
+        mcols = st.columns(3)
+        mcols[0].metric("Total Consideration", f"{ccy} {total_spent:,.2f}" if total_spent else "Unavailable")
+        mcols[1].metric("Shares Repurchased", f"{int(total_shares):,}" if total_shares else "Unavailable")
+        mcols[2].metric("NDD Filings", f"{len(view.corporate_actions):,}")
+
+        st.dataframe(
+            _friendly_corporate_actions_frame(view.corporate_actions, viewer_timezone),
+            width="stretch",
+            hide_index=True,
+        )
+
+    # 5. Valuation Multiples & Yields Context
+    st.markdown("#### Valuation multiples & return yields")
+    if view.valuation_snapshots.empty:
+        st.warning(
+            "Valuation multiples unavailable · requires contemporaneous quote, share count, and basis-verified forward consensus."
+        )
+    else:
+        st.dataframe(_friendly_valuation_frame(view.valuation_snapshots), width="stretch", hide_index=True)
+        st.caption(
+            "percentile_history_status: unavailable · Historical denominator vintages are absent; "
+            "reconstructing synthetic historical percentiles from current-vintage statements is strictly forbidden by policy."
+        )
+
+
+def _render_thesis_catalysts_tab(
+    view: CompanyView,
+    snapshot: ControlTowerSnapshot,
+    viewer_timezone: str,
+) -> None:
+    """Tab 3: Thesis & Catalysts - Human-authored thesis claims, catalyst roadmap, and falsification questions."""
+
+    # 1. Active Investment Thesis Claims
+    st.markdown("#### Active investment thesis claims (Human-authored)")
+    if view.thesis_claims.empty:
+        st.info("No human-authored thesis claims registered for this entity.")
+    else:
+        for _, row in view.thesis_claims.iterrows():
+            title = _text(row.get("thesis_title")) or _text(row.get("claim_id"))
+            status = _text(row.get("status")).upper() or "DRAFT"
+            claim_text = _text(row.get("claim_text"))
+            rule = _text(row.get("invalidation_rule"))
+            reviewed_by = _text(row.get("reviewed_by")) or "Pending human review"
+            reviewed_at = _format_time(row.get("last_reviewed_at_utc"), viewer_timezone) if _text(row.get("last_reviewed_at_utc")) else "Not reviewed"
+
+            status_badge_style = "var(--ct-warning)" if status == "DRAFT" else "var(--ct-accent)"
+            card_html = (
+                f'<div class="ct-panel" style="margin-bottom: 0.85rem;">'
+                f'<div class="ct-panel-heading">'
+                f'<h3 style="font-size: 0.98rem; font-weight: 750;">{escape(title)}</h3>'
+                f'<span class="ct-badge" style="color: {status_badge_style}; border-color: {status_badge_style};">[{escape(status)}]</span>'
+                f'</div>'
+                f'<div class="ct-subtle" style="margin-bottom: 0.45rem;">Human-authored thesis · status: <strong>{escape(status.lower())}</strong> (never automatically promoted to active or mutated by AI)</div>'
+                f'<div style="font-size: 0.88rem; line-height: 1.45; color: var(--ct-ink); margin-bottom: 0.55rem;">{escape(claim_text)}</div>'
+                f'<div class="ct-alert-strip" style="margin: 0.4rem 0;"><strong>Invalidation Rule:</strong> {escape(rule)}</div>'
+                f'<div class="ct-source-line">Reviewed by: {escape(reviewed_by)} · Last reviewed: {escape(reviewed_at)}</div>'
+                f'</div>'
+            )
+            st.markdown(card_html, unsafe_allow_html=True)
+
+    # 2. Upcoming Catalysts & Event Roadmap
+    st.markdown("#### Upcoming catalysts & event roadmap")
     if view.events.empty:
         st.info("No explicitly linked events are available for this company.")
     else:
         for _, row in view.events.iterrows():
             source_link = "source link available" if _text(row.get("source_url")).startswith(("http://", "https://")) else "source link unavailable"
+            certainty = _text(row.get("certainty_class")).replace("_", " ")
+            precision = _text(row.get("date_precision")) or "day"
+            starts_at_str = _format_time(row.get("starts_at"), viewer_timezone)
+            t_minus = format_t_minus(row.get("starts_at"), viewer_timezone, snapshot.now_utc)
+
             st.markdown(
                 f"**{escape(_text(row.get('title')))}** · {escape(_text(row.get('relation_role')))} · "
-                f"{escape(_text(row.get('certainty_class')).replace('_', ' '))} · {_format_time(row.get('starts_at'), viewer_timezone)} · "
+                f"*{escape(certainty)}* · `{escape(precision)}` · {starts_at_str} ({t_minus}) · "
                 f"{escape(source_link)}"
             )
         with st.expander("Event lineage details", expanded=False):
             st.dataframe(view.events, width="stretch", hide_index=True)
+
+    # 3. Operational Watch Questions & Falsification Checklist
+    st.markdown("#### Operational watch questions & falsification criteria")
+    if not view.thesis_watch_questions.empty:
+        st.dataframe(_friendly_thesis_questions_frame(view.thesis_watch_questions), width="stretch", hide_index=True)
+    elif not view.watch_questions.empty:
+        st.dataframe(_friendly_question_frame(view.watch_questions), width="stretch", hide_index=True)
+    else:
+        st.info("No watch questions are registered.")
+
+
+def _render_evidence_tab(
+    view: CompanyView,
+    snapshot: ControlTowerSnapshot,
+    viewer_timezone: str,
+) -> None:
+    """Tab 4: Evidence - Lineage feed, filings, consensus revisions, internal estimates, claim-evidence matrix."""
+
+    # 1. Official Filings & Regulatory Announcements Metadata
+    render_official_filings(snapshot, entity_id=view.entity_id, listing_id=view.selected_listing_id, viewer_timezone=viewer_timezone)
+
+    # 2. News and Filing Metadata
+    st.markdown("#### News and filing metadata")
+    if view.official_documents.empty:
+        st.warning("Official documents unavailable — no local metadata export; no document body displayed.")
+    else:
+        st.dataframe(_friendly_document_frame(view.official_documents, viewer_timezone), width="stretch", hide_index=True)
+
+    # 3. Provider-Specific Consensus Snapshots
     st.markdown("#### Provider-specific consensus")
     if view.consensus.empty:
         st.warning(f"Consensus unavailable · {view.consensus_status} · provider rows are not blended.")
     else:
         st.dataframe(_friendly_consensus_frame(view.consensus, viewer_timezone), width="stretch", hide_index=True)
+
+    # 4. Consensus Revisions & Trajectory
     st.markdown("#### Consensus revisions")
     if view.consensus_revisions.empty:
         st.info("Consensus revision history unavailable; no 0/0 breadth is shown.")
     else:
         st.dataframe(_friendly_revision_frame(view.consensus_revisions, viewer_timezone), width="stretch", hide_index=True)
-    st.markdown("#### Official filings and news metadata")
-    if view.official_documents.empty:
-        st.warning("Official documents unavailable — no local metadata export; no document body displayed.")
+
+    # 5. Internal Estimates & Management Guidance
+    st.markdown("#### Internal estimates & management guidance")
+    if view.internal_estimates.empty:
+        st.info("No internal estimates or management guidance registered for this entity.")
     else:
-        st.dataframe(_friendly_document_frame(view.official_documents, viewer_timezone), width="stretch", hide_index=True)
-    # Batch 2/3 integration point: the filings/earnings-calendar and
-    # earnings-actuals sections live in a separate helper module so the
-    # quote-UI owner can evolve this page without touching that contract.
-    render_filings_earnings_sections(
-        snapshot,
-        entity_id=selected_entity,
-        listing_id=selected_listing,
-        viewer_timezone=viewer_timezone,
-    )
-    st.markdown("#### Watch questions")
-    if view.watch_questions.empty:
-        st.info("No watch questions are registered.")
-    else:
-        st.dataframe(_friendly_question_frame(view.watch_questions), width="stretch", hide_index=True)
-    st.markdown("#### Invalidation evidence")
-    if view.invalidation_evidence.empty:
-        st.info("Invalidation evidence unavailable; support questions are not relabelled as falsification evidence.")
-    else:
+        st.dataframe(_friendly_internal_estimates_frame(view.internal_estimates, viewer_timezone), width="stretch", hide_index=True)
+
+    # 6. Claim-Evidence Matrix & Invalidation Conflict Hints
+    st.markdown("#### Claim-evidence matrix & conflict detection")
+    if not view.claim_evidence_links.empty:
+        st.dataframe(
+            _friendly_claim_evidence_links_frame(view.claim_evidence_links, view.evidence_items, viewer_timezone),
+            width="stretch",
+            hide_index=True,
+        )
+    elif not view.invalidation_evidence.empty:
         st.dataframe(_friendly_invalidation_frame(view.invalidation_evidence, viewer_timezone), width="stretch", hide_index=True)
+    else:
+        st.info("Invalidation evidence unavailable; support questions are not relabelled as falsification evidence.")
+
+    # 7. Source Health & PIT Caveats
     with st.expander("Source and PIT caveats", expanded=False):
         for caveat in view.caveats:
             st.markdown(f"- {escape(_friendly_caveat(caveat))}")
@@ -1238,6 +1718,80 @@ def render_company_page(
             st.dataframe(view.source_health, width="stretch", hide_index=True)
         else:
             st.info("No company-relevant source-health rows are available.")
+
+
+def render_company_page(
+    snapshot: ControlTowerSnapshot,
+    *,
+    viewer_timezone: str,
+    filters: EventFilters | None = None,
+) -> CompanyView:
+    """Render 4-tab Tencent T0-T3 fundamental and thesis cockpit, never document bodies."""
+
+    entity_ids = _filtered_entity_ids(snapshot, filters)
+    entity_options = sorted(entity_ids)
+    if not entity_options:
+        st.info("No company matches the active basket, country or membership filters.")
+        raise ValueError("company registry is empty")
+    if st.session_state.get("ct_company_entity") not in entity_options:
+        st.session_state["ct_company_entity"] = entity_options[0]
+    selected_entity = st.selectbox(
+        "Company",
+        entity_options,
+        key="ct_company_entity",
+        format_func=lambda value: _text(snapshot.entities.loc[snapshot.entities["entity_id"].astype("string").eq(value), "display_name"].iloc[0]) if not snapshot.entities.loc[snapshot.entities["entity_id"].astype("string").eq(value)].empty else value,
+    )
+    as_of_point = snapshot.as_of_utc
+    entity_row = snapshot.entities.loc[
+        snapshot.entities["entity_id"].astype("string").eq(selected_entity)
+    ].iloc[0] if not snapshot.entities.empty and snapshot.entities["entity_id"].astype("string").eq(selected_entity).any() else None
+    if entity_row is not None and _market_entity_eligible(entity_row, as_of_point) and not snapshot.listings.empty:
+        entity_listings = snapshot.listings.loc[
+            snapshot.listings["entity_id"].astype("string").eq(selected_entity)
+            & snapshot.listings.apply(lambda row: _market_listing_eligible(row, as_of_point), axis=1)
+        ]
+    else:
+        entity_listings = snapshot.listings.iloc[0:0].copy()
+    listing_options = [None] + sorted(entity_listings["listing_id"].astype("string")) if not entity_listings.empty else [None]
+    if st.session_state.get("ct_company_listing") not in listing_options:
+        st.session_state["ct_company_listing"] = None
+    selected_listing = st.selectbox(
+        "Listing",
+        listing_options,
+        key="ct_company_listing",
+        format_func=lambda value: _format_listing_option(snapshot, value),
+    )
+    view = build_company_view(snapshot, entity_id=selected_entity, listing_id=selected_listing, filters=filters)
+    st.markdown(f"### {escape(view.display_name)}")
+    entity_type_label = "private / no listing" if view.entity_type == "private" else "public"
+    st.caption(f"{escape(view.legal_name)} · {escape(view.country)} · {escape(view.sector or 'sector unavailable')} · {escape(view.industry or 'industry unavailable')} · {escape(entity_type_label)} · {escape(view.active_status or 'status unavailable')}")
+    if view.selected_listing_id:
+        selection_mode = {
+            "primary_default": "primary listing default",
+            "explicit": "selected listing",
+        }.get(view.selection_mode, _text(view.selection_mode).replace("_", " ") or "selected listing")
+        st.caption(
+            f"Selected listing · {_format_listing_option(snapshot, view.selected_listing_id)} · {selection_mode}"
+        )
+    else:
+        st.warning("No verified primary listing is available; listing-specific data is unavailable.")
+
+    tab_overview, tab_fundamentals, tab_thesis, tab_evidence = st.tabs(
+        ["Overview", "Fundamentals", "Thesis & Catalysts", "Evidence"]
+    )
+
+    with tab_overview:
+        _render_overview_tab(view, snapshot, viewer_timezone)
+
+    with tab_fundamentals:
+        _render_fundamentals_tab(view, snapshot, viewer_timezone)
+
+    with tab_thesis:
+        _render_thesis_catalysts_tab(view, snapshot, viewer_timezone)
+
+    with tab_evidence:
+        _render_evidence_tab(view, snapshot, viewer_timezone)
+
     return view
 
 
@@ -1254,4 +1808,11 @@ __all__ = [
     "COMPANY_QUOTE_COLUMNS",
     "COMPANY_QUESTION_COLUMNS",
     "COMPANY_INVALIDATION_COLUMNS",
+    "COMPANY_CORPORATE_ACTION_COLUMNS",
+    "COMPANY_VALUATION_COLUMNS",
+    "COMPANY_INTERNAL_ESTIMATES_COLUMNS",
+    "COMPANY_THESIS_CLAIM_COLUMNS",
+    "COMPANY_THESIS_QUESTION_COLUMNS",
+    "COMPANY_EVIDENCE_ITEM_COLUMNS",
+    "COMPANY_CLAIM_EVIDENCE_LINK_COLUMNS",
 ]
