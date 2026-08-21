@@ -16,6 +16,7 @@ from src.research_control_tower.eligibility import listing_eligibility_reason
 
 from ..filters import apply_event_filters
 from ..formatting import format_t_minus
+from ..components.timeline import format_event_window, select_next_catalyst
 from ..market_data import QUOTE_SNAPSHOT_COLUMNS, classify_quote_freshness, format_quote_age
 from ..models import ControlTowerSnapshot, EventFilters
 from ..components.filings_earnings import (
@@ -1580,22 +1581,25 @@ def _answer_first_summary_lines(
             f"{'; '.join(facts)} · source: {_summary_source(valuations.iloc[0])}"
         )
 
-    upcoming = view.events.copy()
-    if not upcoming.empty and "starts_at" in upcoming.columns:
-        starts_at = pd.to_datetime(upcoming["starts_at"], errors="coerce", utc=True)
-        upcoming = upcoming.loc[starts_at.ge(snapshot.now_utc)].copy()
-        if not upcoming.empty:
-            upcoming = upcoming.assign(_summary_starts_at=starts_at.loc[upcoming.index])
-            upcoming = upcoming.sort_values("_summary_starts_at", na_position="last")
-    if upcoming.empty:
+    event = select_next_catalyst(view.events, snapshot.now_utc)
+    if event is None:
         lines.append("Upcoming catalyst unavailable · no future linked event rows.")
     else:
-        event = upcoming.iloc[0]
+        start = pd.to_datetime(event.get("starts_at"), errors="coerce", utc=True)
+        end = pd.to_datetime(event.get("ends_at"), errors="coerce", utc=True)
+        if pd.isna(start):
+            start = None
+        if pd.isna(end):
+            end = start
+        precision = _text(event.get("date_precision")) or "day"
+        window_label = format_event_window(start, end, precision, "UTC")
+        is_active = start is not None and start <= snapshot.now_utc and end >= snapshot.now_utc
+        catalyst_prefix = "Active catalyst" if is_active else "Upcoming catalyst"
         lines.append(
-            f"Upcoming catalyst · {_text(event.get('title')) or 'title unavailable'} · "
-            f"{_summary_date(event.get('starts_at')) or 'date unavailable'} · "
+            f"{catalyst_prefix} · {_text(event.get('title')) or 'title unavailable'} · "
+            f"{window_label or 'date unavailable'} · "
             f"{_text(event.get('certainty_class')).replace('_', ' ') or 'certainty unavailable'} · "
-            f"{_text(event.get('date_precision')) or 'precision unavailable'} · "
+            f"{precision or 'precision unavailable'} · "
             f"source: {_summary_source(event)}"
         )
 
@@ -1965,21 +1969,36 @@ def _render_thesis_catalysts_tab(
             )
             st.markdown(card_html, unsafe_allow_html=True)
 
-    # 2. Upcoming Catalysts & Event Roadmap
-    st.markdown("#### Upcoming catalysts & event roadmap")
+    # 2. Active & Upcoming Catalysts Roadmap
+    st.markdown("#### Active & upcoming catalysts")
     if view.events.empty:
         st.info("No explicitly linked events are available for this company.")
     else:
         for _, row in view.events.iterrows():
             source_link = "source link available" if _text(row.get("source_url")).startswith(("http://", "https://")) else "source link unavailable"
             certainty = _text(row.get("certainty_class")).replace("_", " ")
-            precision = _text(row.get("date_precision")) or "day"
-            starts_at_str = _format_time(row.get("starts_at"), viewer_timezone)
-            t_minus = format_t_minus(row.get("starts_at"), viewer_timezone, snapshot.now_utc)
+            precision = str(row.get("date_precision") or "day").lower()
+            start = pd.to_datetime(row.get("starts_at"), errors="coerce", utc=True)
+            end = pd.to_datetime(row.get("ends_at"), errors="coerce", utc=True)
+            if pd.isna(start):
+                start = None
+            if pd.isna(end):
+                end = start
+
+            window_str = format_event_window(row.get("starts_at"), row.get("ends_at"), precision, viewer_timezone)
+            is_active = (start is not None and start <= snapshot.now_utc and end >= snapshot.now_utc)
+            is_upcoming = (start is not None and start > snapshot.now_utc)
+            status_label = "Active window" if is_active else ("Upcoming" if is_upcoming else "Observed / Past")
+
+            if precision in ("day", "exact", "hour", "minute"):
+                t_minus = format_t_minus(row.get("starts_at"), viewer_timezone, snapshot.now_utc)
+                timing_str = f"{window_str} ({t_minus})"
+            else:
+                timing_str = f"{window_str} · {status_label}"
 
             st.markdown(
                 f"**{escape(_text(row.get('title')))}** · {escape(_text(row.get('relation_role')))} · "
-                f"*{escape(certainty)}* · `{escape(precision)}` · {starts_at_str} ({t_minus}) · "
+                f"*{escape(certainty)}* · `{escape(precision)}` · {timing_str} · "
                 f"{escape(source_link)}"
             )
         with st.expander("Event lineage details", expanded=False):

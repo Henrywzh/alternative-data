@@ -40,6 +40,7 @@ from control_tower.pages.company import (
     render_company_page,
 )
 from control_tower.config import ARTIFACT_COLUMNS, SCHEMA_VERSION
+from control_tower.components import get_control_tower_css
 
 
 _DATE_COLUMNS = {
@@ -1083,7 +1084,7 @@ def test_company_page_renders_four_tabs_cleanly_via_apptest(tmp_path: Path, monk
 
     # 7. Thesis & Catalysts section
     assert "Thesis claims (Human-authored)" in text
-    assert "Upcoming catalysts & event roadmap" in text
+    assert "Active & upcoming catalysts" in text
     assert "Operational watch questions & falsification criteria" in text
 
     # 8. Evidence section
@@ -1138,3 +1139,19 @@ def test_company_view_preserves_strict_no_network_isolation() -> None:
         socket.socket = orig_socket
 
     assert view.quote_status == "available"
+
+
+def test_dark_theme_css_tokens_and_components() -> None:
+    css = get_control_tower_css("Dark")
+    assert '.stTabs [data-baseweb="tab-list"]' in css
+    assert '--gdg-bg-cell: #161b22' in css
+    assert '[data-baseweb="select"] > div' in css
+
+
+def test_company_catalyst_date_precision_and_active_status_rendering() -> None:
+    snapshot = _make_tencent_snapshot()
+    view = build_company_view(snapshot, entity_id="TENCENT")
+    summary = "\n".join(_answer_first_summary_lines(view, snapshot))
+    assert "Tencent 3Q2026 Results Window" in summary
+    assert "Nov 2026" in summary
+    assert "Upcoming catalyst" in summary
