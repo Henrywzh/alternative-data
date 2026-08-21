@@ -44,7 +44,7 @@ from src.hk_real_estate.sources.commercial_controls import (
     fetch_tourism_hotel_occupancy_category,
     fetch_tourism_hotel_rooms_category,
 )
-from src.hk_real_estate.sources.hkma import fetch_hkma_residential_mortgage_survey
+from src.hk_real_estate.sources.hkma import HKMA_PUBLIC_RMS_URL, fetch_hkma_residential_mortgage_survey
 from src.common.cnsd_mdt import fetch_cnsd_table
 from src.hk_real_estate.storage import load_latest_normalized, save_normalized_dataset
 from src.hk_real_estate.sources.epi import fetch_28hse_epi_eri
@@ -4014,36 +4014,122 @@ def _load_hkma_from_committed_artifact() -> pd.DataFrame:
     return _mark_artifact_fallback(frame, "last committed artifact")
 
 
+HKMA_PUBLICATION_LAG_DAYS = 25
+HKMA_PUBLICATION_MARGIN_DAYS = 5
+
+def _naive_timestamp(value: pd.Timestamp) -> pd.Timestamp:
+    return (value.tz_localize(None) if value.tzinfo else value).normalize()
+
+
+def _monthly_cache_is_current(
+    latest_observation: pd.Timestamp,
+    *,
+    publication_lag_days: int,
+    margin_days: int,
+    now: pd.Timestamp | None = None,
+) -> bool:
+    """Whether a monthly cache can still be holding the newest published month.
+
+    ``observation_date`` on these series is the FIRST day of the observed
+    month, and the source publishes a month roughly ``publication_lag_days``
+    after that month has ended.  Measuring plain calendar age against a flat
+    day threshold therefore never works here: a cache holding the newest
+    published month is already ~55 days "old" on the very day it is published,
+    so any threshold small enough to catch a genuinely stale vintage also
+    rejects a perfectly current one (a 45-day gate rejects every HKMA cache
+    that has ever existed).  Compare against when the NEXT month is due
+    instead, and start refetching ``margin_days`` early so an early
+    publication is still picked up.
+    """
+    reference = pd.Timestamp.now().normalize() if now is None else _naive_timestamp(now)
+    next_period_start = _naive_timestamp(latest_observation).replace(day=1) + pd.DateOffset(months=1)
+    # The next period ends the day before the period after it starts, so its
+    # publication is due one further month on, plus the source's own lag.
+    next_publication_due = (
+        next_period_start
+        + pd.DateOffset(months=1)
+        + pd.Timedelta(days=publication_lag_days)
+    )
+    return reference < next_publication_due - pd.Timedelta(days=margin_days)
+
+
+def _hkma_fetch_regresses_history(fetched: pd.DataFrame, cached: pd.DataFrame) -> bool:
+    """Whether a live fetch would shorten the history the cache already holds.
+
+    The old code preferred the cache unconditionally, so a truncated upstream
+    response could not overwrite good history.  Now that a fresh fetch wins by
+    default, that protection has to be restated explicitly: a response with
+    fewer rows or an older newest month is an upstream fault (pagination
+    change, partial outage), not a correction.
+    """
+    if cached.empty or fetched.empty:
+        return False
+    if len(fetched) < len(cached):
+        return True
+    fetched_latest = _extract_latest_date(fetched)
+    cached_latest = _extract_latest_date(cached)
+    if fetched_latest is None or cached_latest is None:
+        return False
+    return _naive_timestamp(fetched_latest) < _naive_timestamp(cached_latest)
+
+
+def _hkma_cache_needs_rewrite(fetched: pd.DataFrame, cached: pd.DataFrame) -> bool:
+    """Whether the fetch actually advanced the cache.
+
+    ``save_normalized_dataset`` writes an immutable run directory per call, so
+    rewriting an unchanged vintage on every build just accumulates identical
+    snapshots that ``load_latest_normalized`` then has to scan.
+    """
+    if cached.empty:
+        return True
+    if len(fetched) != len(cached):
+        return True
+    fetched_latest = _extract_latest_date(fetched)
+    cached_latest = _extract_latest_date(cached)
+    if fetched_latest is None or cached_latest is None:
+        return True
+    return _naive_timestamp(fetched_latest) != _naive_timestamp(cached_latest)
+
+
 def _load_hkma_with_fallback() -> pd.DataFrame:
     """Load HKMA history without allowing an empty fetch to erase history."""
     normalized = load_latest_normalized("hkma_residential_mortgage_survey")
-    # A non-empty cache is only authoritative while it is fresh.  HKMA
-    # publishes monthly with roughly a one-month lag, so a cache older than
-    # FRESHNESS_MAX_DAYS must not silently shadow the live API -- that is
-    # exactly how a stale local vintage regressed production from June back
-    # to May (audit 2026-08-21).
+    # A non-empty cache is only authoritative while it can still be holding
+    # the newest published month.  Serving any non-empty vintage unconditionally
+    # is exactly how a 2026-07-23 May-only cache regressed production from June
+    # back to May (audit 2026-08-21).
     if not normalized.empty:
         latest_date = _extract_latest_date(normalized)
-        if latest_date is not None:
-            latest_naive = latest_date.tz_localize(None) if latest_date.tzinfo else latest_date
-            now = pd.Timestamp.now().normalize()
-            if (now - latest_naive.normalize()).days <= FRESHNESS_MAX_DAYS:
-                return _canonicalize_hkma_frame(normalized)
+        if latest_date is not None and _monthly_cache_is_current(
+            latest_date,
+            publication_lag_days=HKMA_PUBLICATION_LAG_DAYS,
+            margin_days=HKMA_PUBLICATION_MARGIN_DAYS,
+        ):
+            return _canonicalize_hkma_frame(normalized)
 
     fetched = _safe_fetch("HKMA residential mortgage survey", fetch_hkma_residential_mortgage_survey)
     if not fetched.empty:
         fetched = _canonicalize_hkma_frame(fetched)
-        # Persist the refreshed history so the next build (local or CI)
-        # starts from this vintage instead of re-serving the stale one.
-        try:
-            save_normalized_dataset(
-                "hkma_residential_mortgage_survey",
-                fetched,
-                source_url="https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletine/residential-mortgage-survey/residential-mortgage-survey",
-                lineage_metadata={"written_by": "build_hk_real_estate_artifact._load_hkma_with_fallback"},
+        cached = _canonicalize_hkma_frame(normalized) if not normalized.empty else normalized
+        if _hkma_fetch_regresses_history(fetched, cached):
+            print(
+                "  [hk_real_estate] HKMA fetch returned a shorter history than the local cache "
+                f"({len(fetched)} vs {len(cached)} rows); keeping the cached vintage.",
+                file=sys.stderr,
             )
-        except Exception as error:  # cache refresh is best-effort, never fatal
-            print(f"  [hk_real_estate] HKMA normalized cache refresh failed (non-fatal): {error}", file=sys.stderr)
+            return cached
+        if _hkma_cache_needs_rewrite(fetched, cached):
+            # Persist the refreshed history so the next build (local or CI)
+            # starts from this vintage instead of re-serving the stale one.
+            try:
+                save_normalized_dataset(
+                    "hkma_residential_mortgage_survey",
+                    fetched,
+                    source_url=HKMA_PUBLIC_RMS_URL,
+                    lineage_metadata={"written_by": "build_hk_real_estate_artifact._load_hkma_with_fallback"},
+                )
+            except Exception as error:  # cache refresh is best-effort, never fatal
+                print(f"  [hk_real_estate] HKMA normalized cache refresh failed (non-fatal): {error}", file=sys.stderr)
         return fetched
     # Live fetch failed; a stale cache is still better than nothing.
     if not normalized.empty:
