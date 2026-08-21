@@ -13,13 +13,14 @@ replacement for the operating manual or generated source-status JSON.
   see `REPO_BRIDGE.md` for the shared contract.
 - Research Control Tower V1 is a local/private, read-only publication. The
   current immutable `CURRENT` generation is
-  `rct-tencent-t0-t3-reviewed-20260822-fd230c6242e237ee` and contains 27 files
+  `rct-tencent-integrity-reviewed-20260822-ce1914e9bdd11ac8` and contains 27 files
   (26 Parquet artifacts plus `build_manifest.json`). Its status is `degraded`.
   The published counts are: entities 71, listings 81, events 21, consensus
   56 snapshots and 112 revisions, valuation 0, official filings 403
-  (Tencent 173), news 2,299, earnings actuals 224, calendar 10, corporate
+  (Tencent 173), news 1,897, earnings actuals 224, calendar 10, corporate
   actions 203, quotes 7, price bars 8,598, macro observations 56,847 and
-  source health 44. `TCEHY_US` is registry-only with unresolved mapping and
+  source health 44. Macro IDs preserve vintage/capture keys and SEC generic
+  filing IDs preserve physical source/accession/URL identity. `TCEHY_US` is registry-only with unresolved mapping and
   `collection_eligible=false`; it remains only in the published listings
   registry and is absent from collected fact marts and active coverage.
   Tencent's only active eligible listing is `0700_HK`. This remains

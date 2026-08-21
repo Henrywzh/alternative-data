@@ -1326,6 +1326,8 @@ def test_sec_physical_document_identity_collapses_queries_and_keeps_urls_distinc
             "file_date": "2026-08-10",
             "filing_url": url_one,
             "fetched_at": "2026-08-10T12:00:00Z",
+            "related_entity_ids": "TENCENT",
+            "related_listing_ids": "0700_HK",
         },
         {
             "query": "cloud",
@@ -1336,6 +1338,8 @@ def test_sec_physical_document_identity_collapses_queries_and_keeps_urls_distinc
             "file_date": "2026-08-10",
             "filing_url": url_one,
             "fetched_at": "2026-08-09T12:00:00Z",
+            "related_entity_ids": "BAIDU",
+            "related_listing_ids": "9888_HK",
         },
         {
             "query": "exhibit",
@@ -1375,6 +1379,8 @@ def test_sec_physical_document_identity_collapses_queries_and_keeps_urls_distinc
     assert output["source_url"].nunique() == 3
     first = output.loc[output["source_url"].eq(url_one)].iloc[0]
     assert first["first_observed_at"] == pd.Timestamp("2026-08-09T12:00:00Z")
+    assert set(json.loads(first["related_entity_ids"])) == {"TENCENT", "BAIDU"}
+    assert set(json.loads(first["related_listing_ids"])) == {"0700_HK", "9888_HK"}
     assert health.loc[health["source_id"].eq("sec_edgar"), "status"].iloc[0] == "available"
     assert manifest.artifacts["news_filings.parquet"]["row_count"] == 3
 
