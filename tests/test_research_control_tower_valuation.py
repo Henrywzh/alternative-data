@@ -84,7 +84,7 @@ def _consensus(**overrides: object) -> dict[str, object]:
         "provider_contributor_count": 25,
         "currency": "CNY",
         "unit": "currency_per_share",
-        "accounting_basis": "provider_reported_non_gaap_unverified",
+        "accounting_basis": "NON_IFRS_MANAGEMENT",
         "provider_asof": pd.Timestamp("2026-08-20T09:00:00Z"),
         "retrieved_at_utc": pd.Timestamp("2026-08-20T10:05:00Z"),
         "source_url": CONSENSUS_URL,
@@ -143,8 +143,8 @@ def _valuation_input(**overrides: object) -> ValuationInput:
         "listing_id": "0700_HK",
         "valuation_at": AS_OF.to_pydatetime(),
         "metric_name": "forward_pe",
-        "accounting_basis": "provider_reported_non_gaap_unverified",
-        "metric_basis": "PROVIDER_UNVERIFIED",
+        "accounting_basis": "NON_IFRS_MANAGEMENT",
+        "metric_basis": "NON_IFRS_MANAGEMENT",
         "numerator_value": 375.0,
         "numerator_currency": "HKD",
         "numerator_ref": "quote-1",
@@ -195,14 +195,47 @@ def test_real_quote_and_consensus_contract_produce_forward_pe() -> None:
     assert row["numerator_ref"] == "quote-0700-20260821"
     assert row["numerator_value"] == 375.0
     assert row["denominator_ref"] == "consensus-0700-eps-2026"
-    assert row["accounting_basis"] == "provider_reported_non_gaap_unverified"
-    assert row["metric_basis"] == "PROVIDER_UNVERIFIED"
+    assert row["accounting_basis"] == "NON_IFRS_MANAGEMENT"
+    assert row["metric_basis"] == "NON_IFRS_MANAGEMENT"
     assert row["fx_base_currency"] == "CNY"
     assert row["fx_quote_currency"] == "HKD"
     assert row["fx_rate_applied"] == pytest.approx(7.8 / 7.0)
     assert row["ratio_value"] == pytest.approx(375.0 / (28.0 * 7.8 / 7.0))
     assert row["percentile_history_status"] == "unavailable"
     assert not validate_valuation_snapshots_df(result)
+
+
+def test_provider_unverified_consensus_is_typed_empty_and_never_valued() -> None:
+    result = compute_tencent_valuation_snapshots(
+        pd.DataFrame([_quote()]),
+        pd.DataFrame(
+            [_consensus(accounting_basis="provider_reported_non_gaap_unverified")]
+        ),
+        consensus_health_df=_consensus_health(),
+        fx_rates_df=_fx_rows(),
+        as_of_utc=AS_OF,
+        fiscal_year=2026,
+    )
+
+    assert result.empty
+    assert list(result.columns) == VALUATION_SNAPSHOTS_COLUMNS
+
+    with pytest.raises(ValueError, match="valuation metric basis"):
+        build_valuation_snapshot_row(
+            _valuation_input(
+                accounting_basis="provider_reported_non_gaap_unverified",
+                metric_basis="PROVIDER_UNVERIFIED",
+            )
+        )
+
+    valid_row = build_valuation_snapshot_row(_valuation_input())
+    tampered = frame_from_rows([valid_row], VALUATION_SNAPSHOTS_ARROW_SCHEMA)
+    tampered.loc[0, "accounting_basis"] = "provider_reported_non_gaap_unverified"
+    tampered.loc[0, "metric_basis"] = "PROVIDER_UNVERIFIED"
+    assert any(
+        "valuation metric basis" in issue
+        for issue in validate_valuation_snapshots_df(tampered)
+    )
 
 
 def test_selection_uses_fiscal_mapping_and_statistic_not_horizon() -> None:

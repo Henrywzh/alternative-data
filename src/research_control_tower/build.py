@@ -3841,6 +3841,87 @@ def _consensus_entitlement_usable(item: Mapping[str, Any]) -> bool:
     )
 
 
+def _deduplicate_consensus_snapshots(
+    frame: pd.DataFrame,
+) -> tuple[pd.DataFrame, frozenset[str], int, int]:
+    """Enforce the consensus snapshot primary-key contract.
+
+    A repeated ``snapshot_id`` is safe to collapse only when every published
+    payload field is semantically equal. If any field differs, every row for
+    that ID is rejected: choosing one would silently guess which provider
+    vintage or period is authoritative. Blank IDs are rejected as invalid
+    primary keys; no replacement ID is invented.
+
+    Returns ``(clean_frame, rejected_ids, collapsed_rows, blank_id_rows)``.
+    ``rejected_ids`` contains only nonblank IDs so it can be used to remove
+    revisions that reference a rejected snapshot.
+    """
+
+    if frame is None or frame.empty:
+        return _task3_empty(TASK3_SNAPSHOT_COLUMNS), frozenset(), 0, 0
+
+    working = frame[TASK3_SNAPSHOT_COLUMNS].copy().reset_index(drop=True)
+    grouped: dict[str, list[int]] = {}
+    blank_id_rows = 0
+    for index, row in working.iterrows():
+        snapshot_id = _text(row.get("snapshot_id"))
+        if not snapshot_id:
+            blank_id_rows += 1
+            continue
+        grouped.setdefault(snapshot_id, []).append(index)
+
+    keep_indexes: list[int] = []
+    rejected_ids: set[str] = set()
+    collapsed_rows = 0
+    for snapshot_id, indexes in grouped.items():
+        first = working.iloc[indexes[0]].to_dict()
+        divergent = any(
+            _full_payload_mismatches(
+                first,
+                working.iloc[index].to_dict(),
+                TASK3_SNAPSHOT_COLUMNS,
+            )
+            for index in indexes[1:]
+        )
+        if divergent:
+            rejected_ids.add(snapshot_id)
+            continue
+        keep_indexes.append(indexes[0])
+        collapsed_rows += len(indexes) - 1
+
+    clean = working.iloc[keep_indexes].reset_index(drop=True)
+    return clean, frozenset(rejected_ids), collapsed_rows, blank_id_rows
+
+
+def _drop_orphaned_consensus_revisions(
+    revisions: pd.DataFrame,
+    *,
+    valid_snapshot_ids: set[str],
+    rejected_snapshot_ids: frozenset[str],
+) -> tuple[pd.DataFrame, int]:
+    """Remove revisions whose current/rejected snapshot reference is unusable.
+
+    ``prior_snapshot_id`` may be blank for a reconstructed cold-start revision,
+    and an older prior ID may legitimately be outside a bounded export. A
+    nonblank prior ID is removed when it names a snapshot rejected by this
+    build; current IDs must always resolve to a snapshot that will publish.
+    """
+
+    if revisions is None or revisions.empty:
+        return _task3_empty(TASK3_REVISION_COLUMNS), 0
+
+    working = revisions[TASK3_REVISION_COLUMNS].copy()
+    current_ids = working["snapshot_id"].map(_text)
+    prior_ids = working["prior_snapshot_id"].map(_text)
+    orphaned = (
+        current_ids.eq("")
+        | ~current_ids.isin(valid_snapshot_ids)
+        | prior_ids.isin(rejected_snapshot_ids)
+    )
+    kept = working.loc[~orphaned].reset_index(drop=True)
+    return kept, int(orphaned.sum())
+
+
 def _build_consensus(
     config: BuildConfig,
     registries: Any,
@@ -3988,6 +4069,49 @@ def _build_consensus(
     )
     if listing_detail:
         state.detail = f"{state.detail}; {listing_detail}"
+    snapshots, rejected_snapshot_ids, collapsed_rows, blank_id_rows = (
+        _deduplicate_consensus_snapshots(snapshots)
+    )
+    if collapsed_rows:
+        state.detail = (
+            f"{state.detail}; " if state.detail else ""
+        ) + f"duplicate_snapshot_rows_collapsed={collapsed_rows}"
+    if rejected_snapshot_ids:
+        _append_state_error(
+            state,
+            code="duplicate_snapshot_id_divergent",
+            message=(
+                f"rejected all rows for {len(rejected_snapshot_ids)} divergent "
+                "snapshot_id value(s): "
+                + ",".join(sorted(rejected_snapshot_ids)[:8])
+            ),
+        )
+    if blank_id_rows:
+        _append_state_error(
+            state,
+            code="snapshot_id_missing",
+            message=f"dropped {blank_id_rows} consensus snapshot row(s) with blank snapshot_id",
+        )
+    if rejected_snapshot_ids or blank_id_rows:
+        state.status = "degraded"
+    snapshots_ids_after_integrity = {
+        _text(value) for value in snapshots["snapshot_id"].tolist()
+    }
+    revisions, orphaned_revision_rows = _drop_orphaned_consensus_revisions(
+        revisions,
+        valid_snapshot_ids=snapshots_ids_after_integrity,
+        rejected_snapshot_ids=rejected_snapshot_ids,
+    )
+    if orphaned_revision_rows:
+        state.status = "degraded"
+        _append_state_error(
+            state,
+            code="orphaned_consensus_revisions_removed",
+            message=(
+                f"dropped {orphaned_revision_rows} revision row(s) whose current "
+                "or rejected snapshot reference is not publishable"
+            ),
+        )
     policy_error_count = len(state.errors)
     for frame in (snapshots, revisions):
         if not frame.empty:
@@ -4152,6 +4276,9 @@ def _build_consensus(
             int(item["row_count"]) if not _is_blank(item["row_count"]) else 0
         )
         states.append(provider_state)
+    snapshot_ids_before_provider_filter = {
+        _text(value) for value in snapshots["snapshot_id"].tolist()
+    }
     if provider_policy_failed:
         state.status = "degraded"
         degraded.append("consensus_export")
@@ -4169,6 +4296,31 @@ def _build_consensus(
             ~revisions["provider"].isin(failed_providers)
             & ~revisions["prior_provider"].isin(failed_providers)
         ].copy()
+    provider_removed_snapshot_ids = frozenset(
+        snapshot_ids_before_provider_filter
+        - {_text(value) for value in snapshots["snapshot_id"].tolist()}
+    )
+    snapshots_ids_after_provider_filter = {
+        _text(value) for value in snapshots["snapshot_id"].tolist()
+    }
+    revisions, provider_orphaned_revision_rows = _drop_orphaned_consensus_revisions(
+        revisions,
+        valid_snapshot_ids=snapshots_ids_after_provider_filter,
+        rejected_snapshot_ids=frozenset(
+            {*rejected_snapshot_ids, *provider_removed_snapshot_ids}
+        ),
+    )
+    if provider_orphaned_revision_rows:
+        state.status = "degraded"
+        _append_state_error(
+            state,
+            code="orphaned_consensus_revisions_removed",
+            message=(
+                f"dropped {provider_orphaned_revision_rows} revision row(s) after "
+                "provider-policy snapshot filtering"
+            ),
+        )
+    state.row_count = len(snapshots) + len(revisions)
     if usable_provider_count == 0:
         state.status = "unavailable"
         _append_state_error(

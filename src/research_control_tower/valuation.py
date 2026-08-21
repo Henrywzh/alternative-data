@@ -28,6 +28,12 @@ SUPPORTED_VALUATION_METRICS = frozenset(
 SUPPORTED_METRIC_BASES = frozenset(
     {"GAAP_REPORTED", "NON_IFRS_MANAGEMENT", "PROVIDER_UNVERIFIED"}
 )
+# ``PROVIDER_UNVERIFIED`` is retained above because the same canonical label
+# is useful for uncertainty context in consensus/internal-estimate inputs.  It
+# is deliberately not admissible in the valuation_snapshots contract.
+SUPPORTED_VALUATION_METRIC_BASES = frozenset(
+    {"GAAP_REPORTED", "NON_IFRS_MANAGEMENT"}
+)
 SUPPORTED_OBSERVATION_TYPES = frozenset(
     {"management_guidance", "internal_estimate"}
 )
@@ -337,8 +343,17 @@ def build_valuation_snapshot_row(inp: ValuationInput) -> dict[str, Any]:
 
     if inp.metric_name not in SUPPORTED_VALUATION_METRICS:
         raise ValueError(f"unsupported metric_name: {inp.metric_name!r}")
-    if inp.metric_basis not in SUPPORTED_METRIC_BASES:
-        raise ValueError(f"unsupported metric_basis: {inp.metric_basis!r}")
+    if inp.metric_basis not in SUPPORTED_VALUATION_METRIC_BASES:
+        raise ValueError(
+            "valuation metric basis must be GAAP_REPORTED or "
+            f"NON_IFRS_MANAGEMENT; got {inp.metric_basis!r}"
+        )
+    canonical_basis = canonicalize_metric_basis(inp.accounting_basis)
+    if canonical_basis != inp.metric_basis:
+        raise ValueError(
+            "valuation metric basis does not match accounting_basis: "
+            f"{inp.metric_basis!r} != {canonical_basis!r}"
+        )
     if inp.pit_class not in SUPPORTED_PIT_CLASSES:
         raise ValueError(f"unsupported pit_class: {inp.pit_class!r}")
     if inp.numerator_pit_class not in SUPPORTED_PIT_CLASSES:
@@ -794,6 +809,7 @@ __all__ = [
     "INTERNAL_ESTIMATES_COLUMNS",
     "INTERNAL_ESTIMATES_SCHEMA_ID",
     "SUPPORTED_METRIC_BASES",
+    "SUPPORTED_VALUATION_METRIC_BASES",
     "SUPPORTED_OBSERVATION_TYPES",
     "SUPPORTED_PIT_CLASSES",
     "SUPPORTED_VALUATION_METRICS",

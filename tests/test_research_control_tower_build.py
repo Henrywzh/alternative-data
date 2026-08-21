@@ -234,7 +234,7 @@ def _audit_source_row(schema_id: str, timestamp: str) -> dict[str, object]:
                 "valuation_at": timestamp,
                 "metric_name": "forward_pe",
                 "accounting_basis": "NON_IFRS_MANAGEMENT",
-                "metric_basis": "PROVIDER_UNVERIFIED",
+                "metric_basis": "NON_IFRS_MANAGEMENT",
                 "ratio_value": 16.2,
                 "numerator_value": 441.2,
                 "numerator_currency": "HKD",
@@ -1536,6 +1536,143 @@ def test_consensus_mixed_eligible_and_ineligible_listings_preserves_eligible_row
         and "TCEHY_US" in error["message"]
         for error in manifest.validation_errors
     )
+
+
+def test_consensus_exact_duplicate_snapshot_ids_collapse_idempotently(
+    tmp_path, minimal_inputs
+):
+    consensus_dir = _write_task3_exports(tmp_path / "input" / "consensus")
+    snapshots_path = consensus_dir / "control_tower_consensus_snapshots.parquet"
+    snapshot_rows = pq.read_table(snapshots_path).to_pylist()
+    pq.write_table(
+        pa.Table.from_pylist(
+            [snapshot_rows[0], snapshot_rows[0]],
+            schema=TASK3_SNAPSHOT_ARROW_SCHEMA,
+        ),
+        snapshots_path,
+    )
+
+    config = replace(minimal_inputs, consensus_export_dir=consensus_dir)
+    manifest = build_control_tower_marts(config)
+    snapshots = pd.read_parquet(_published(config, "consensus_snapshots.parquet"))
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    aggregate = health.loc[health["source_id"].eq("consensus_export")].iloc[0]
+
+    assert len(snapshots) == 1
+    assert snapshots.iloc[0]["snapshot_id"] == "snap-ak-1"
+    assert aggregate["status"] == "available"
+    assert "duplicate_snapshot_rows_collapsed=1" in aggregate["detail"]
+    assert "consensus_export" not in manifest.degraded_inputs
+
+
+def test_consensus_divergent_duplicate_snapshot_id_rejects_all_rows_and_revisions(
+    tmp_path, minimal_inputs
+):
+    consensus_dir = _write_task3_exports(tmp_path / "input" / "consensus")
+    snapshots_path = consensus_dir / "control_tower_consensus_snapshots.parquet"
+    snapshot_rows = pq.read_table(snapshots_path).to_pylist()
+    divergent = dict(snapshot_rows[0])
+    divergent["value"] = 2.5
+    divergent["raw_hash"] = hashlib.sha256(b"divergent-snapshot").hexdigest()
+    pq.write_table(
+        pa.Table.from_pylist(
+            [snapshot_rows[0], divergent],
+            schema=TASK3_SNAPSHOT_ARROW_SCHEMA,
+        ),
+        snapshots_path,
+    )
+
+    config = replace(minimal_inputs, consensus_export_dir=consensus_dir)
+    manifest = build_control_tower_marts(config)
+    snapshots = pd.read_parquet(_published(config, "consensus_snapshots.parquet"))
+    revisions = pd.read_parquet(_published(config, "consensus_revisions.parquet"))
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    aggregate = health.loc[health["source_id"].eq("consensus_export")].iloc[0]
+
+    assert snapshots.empty
+    assert revisions.empty
+    assert aggregate["status"] == "unavailable"
+    assert "duplicate_snapshot_id_divergent" in aggregate["detail"]
+    assert any(
+        error["source_id"] == "consensus_export"
+        and error["code"] == "duplicate_snapshot_id_divergent"
+        for error in manifest.validation_errors
+    )
+
+
+def test_consensus_mixed_valid_and_divergent_duplicate_preserves_valid_provider_rows(
+    tmp_path, minimal_inputs
+):
+    consensus_dir = _write_task3_exports(tmp_path / "input" / "consensus")
+    snapshots_path = consensus_dir / "control_tower_consensus_snapshots.parquet"
+    snapshot_rows = pq.read_table(snapshots_path).to_pylist()
+    divergent = dict(snapshot_rows[0])
+    divergent["value"] = 2.5
+    divergent["raw_hash"] = hashlib.sha256(b"divergent-akshare-snapshot").hexdigest()
+    valid_yfinance = dict(snapshot_rows[0])
+    valid_yfinance.update(
+        {
+            "snapshot_id": "snap-yf-1",
+            "provider": "yfinance",
+            "value": 2.1,
+            "raw_hash": hashlib.sha256(b"valid-yfinance-snapshot").hexdigest(),
+            "source_run_id": "yfinance-fixture-run",
+        }
+    )
+    pq.write_table(
+        pa.Table.from_pylist(
+            [snapshot_rows[0], divergent, valid_yfinance],
+            schema=TASK3_SNAPSHOT_ARROW_SCHEMA,
+        ),
+        snapshots_path,
+    )
+    revisions_path = consensus_dir / "control_tower_consensus_revisions.parquet"
+    revision_rows = pq.read_table(revisions_path).to_pylist()
+    revision_with_rejected_prior = dict(revision_rows[0])
+    revision_with_rejected_prior.update(
+        {
+            "revision_id": "rev-yf-rejected-prior",
+            "snapshot_id": "snap-yf-1",
+            "provider": "yfinance",
+            "prior_provider": "akshare",
+            "prior_snapshot_id": "snap-ak-1",
+        }
+    )
+    pq.write_table(
+        pa.Table.from_pylist(
+            [*revision_rows, revision_with_rejected_prior],
+            schema=TASK3_REVISION_ARROW_SCHEMA,
+        ),
+        revisions_path,
+    )
+    health_path = consensus_dir / "control_tower_consensus_source_health.parquet"
+    health_rows = pq.read_table(health_path).to_pylist()
+    health_rows.append(
+        {
+            **health_rows[0],
+            "provider": "yfinance",
+            "reason": "synthetic valid yfinance provider sidecar",
+        }
+    )
+    pq.write_table(
+        pa.Table.from_pylist(health_rows, schema=TASK3_HEALTH_ARROW_SCHEMA),
+        health_path,
+    )
+
+    config = replace(minimal_inputs, consensus_export_dir=consensus_dir)
+    manifest = build_control_tower_marts(config)
+    snapshots = pd.read_parquet(_published(config, "consensus_snapshots.parquet"))
+    revisions = pd.read_parquet(_published(config, "consensus_revisions.parquet"))
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    aggregate = health.loc[health["source_id"].eq("consensus_export")].iloc[0]
+    yfinance = health.loc[health["source_id"].eq("consensus:yfinance")].iloc[0]
+
+    assert set(snapshots["snapshot_id"]) == {"snap-yf-1"}
+    assert revisions.empty
+    assert aggregate["status"] == "degraded"
+    assert "duplicate_snapshot_id_divergent" in aggregate["detail"]
+    assert yfinance["status"] == "available"
+    assert "consensus_export" in manifest.degraded_inputs
 
 
 def test_revision_prior_provider_without_sidecar_evidence_is_not_admitted(
