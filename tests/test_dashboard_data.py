@@ -55,6 +55,9 @@ from dashboard.sections.openrouter import (
     _estimator_coverage_summary,
     _latest_provider_market_coverage,
     _drop_first_valid_change_point,
+    _latest_partial_period_window,
+    _make_change_line_chart,
+    _nowcast_error_interval,
     _nowcast_latest_partial_period,
     _scale_partial_week_values,
     _pivot_to_aggregate_change_percent,
@@ -4650,6 +4653,79 @@ def test_partial_week_scaling_prices_missing_days_by_day_of_week() -> None:
     # Mon-Wed carry 300 of a 600-token week. Scaling by 7/3 would report 700.
     assert scaled.loc["2026-06-01", "OpenAI"] == pytest.approx(600.0, rel=0.02)
     assert scaled.loc["2026-05-25", "OpenAI"] == pytest.approx(600.0)
+
+
+def test_partial_period_window_ignores_a_complete_period() -> None:
+    daily = _weekday_skewed_daily(weeks=9)
+
+    assert _latest_partial_period_window(daily, "weekly") is None
+
+
+def test_partial_period_window_reports_only_finalized_days() -> None:
+    history = _weekday_skewed_daily(weeks=8)
+    partial = pd.DataFrame({"OpenAI": [100.0, 100.0, 9.0]}, index=["2026-06-01", "2026-06-02", "2026-06-03"])
+    daily = pd.concat([history, partial])
+
+    window = _latest_partial_period_window(daily, "weekly", pd.Timestamp("2026-06-03"))
+
+    assert window is not None
+    assert window.period_label == "2026-06-01"
+    # Wednesday is the scrape day, so the window extrapolates from Mon-Tue.
+    assert [day.strftime("%Y-%m-%d") for day in window.observed_dates] == ["2026-06-01", "2026-06-02"]
+    assert len(window.period_dates) == 7
+
+
+def test_nowcast_error_interval_widens_when_less_of_the_week_is_observed() -> None:
+    # The wobble has to be within the week, not a whole-week rescale: a week
+    # that is uniformly 15% bigger has the same shape, and the estimator
+    # would be exact on it with no error to measure at all.
+    dates = pd.date_range("2026-01-05", periods=20 * 7, freq="D")
+    values = []
+    for index, day in enumerate(dates):
+        base = 50.0 if day.weekday() >= 5 else 100.0
+        wobble = 0.20 * (((index % 5) - 2) / 2)
+        values.append(base * (1.0 + wobble))
+    daily = pd.DataFrame({"OpenAI": values}, index=dates.strftime("%Y-%m-%d"))
+    daily_dates = pd.Series(pd.to_datetime(daily.index), index=daily.index)
+    before = pd.Timestamp("2026-05-25")
+
+    two_days = _nowcast_error_interval(daily, daily_dates, {0, 1}, before)
+    six_days = _nowcast_error_interval(daily, daily_dates, {0, 1, 2, 3, 4, 5}, before)
+
+    assert two_days is not None and six_days is not None
+    assert two_days[0] < 0 < two_days[1]
+    # More of the week observed means less left to guess at.
+    assert (two_days[1] - two_days[0]) > (six_days[1] - six_days[0])
+
+
+def test_nowcast_error_interval_withheld_without_enough_replayable_weeks() -> None:
+    daily = _weekday_skewed_daily(weeks=3)
+    daily_dates = pd.Series(pd.to_datetime(daily.index), index=daily.index)
+
+    assert _nowcast_error_interval(daily, daily_dates, {0, 1}, pd.Timestamp("2026-04-27")) is None
+
+
+def test_nowcast_error_interval_withheld_for_a_complete_week() -> None:
+    daily = _weekday_skewed_daily(weeks=10)
+    daily_dates = pd.Series(pd.to_datetime(daily.index), index=daily.index)
+
+    assert _nowcast_error_interval(daily, daily_dates, set(range(7)), pd.Timestamp("2026-06-08")) is None
+
+
+def test_change_line_chart_puts_an_interval_only_on_the_estimated_point() -> None:
+    plot_df = pd.DataFrame(
+        {"Total Tokens": [4.0, 9.0, 15.2]},
+        index=["2026-08-03", "2026-08-10", "2026-08-17 (est.)"],
+    )
+
+    fig = _make_change_line_chart(
+        plot_df, ["#2563EB"], x_title="Usage Week", y_title="Change (%)",
+        error_bars={"2026-08-17 (est.)": (10.2, 10.2)},
+    )
+
+    error_y = fig.data[0].error_y
+    assert list(error_y.array) == [0.0, 0.0, 10.2]
+    assert list(error_y.arrayminus) == [0.0, 0.0, 10.2]
 
 
 def test_cap_change_percent_for_display_preserves_readable_momentum_range() -> None:
