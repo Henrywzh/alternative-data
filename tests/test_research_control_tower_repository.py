@@ -152,6 +152,60 @@ def _columns() -> dict[str, list[str]]:
             "retrieved_at_utc", "source_url", "accession_no", "form", "xbrl_frame",
             "revision_reason", "is_restatement", "source_id", "source_quality",
             "pit_class", "source_license_class", "source_note", "registry_version",
+            "source_metric_label", "metric_basis", "source_document_id",
+            "source_document_sha256", "source_page_ref", "value_origin",
+            "derivation_method", "timestamp_precision",
+        ],
+        "corporate_actions.parquet": [
+            "action_id", "version", "entity_id", "listing_id", "canonical_ticker",
+            "action_type", "filing_date", "execution_date", "published_at",
+            "shares_affected", "price_min", "price_max", "price_avg",
+            "total_amount_paid", "currency", "shares_for_cancellation",
+            "shares_for_treasury", "cancellation_status", "mandate_resolution_date",
+            "mandate_authorised_shares", "mandate_cumulative_repurchased_shares",
+            "coverage_reason", "source_url", "source_document_id", "document_format",
+            "source_note", "retrieved_at_utc", "source_timezone", "date_precision",
+            "source_quality", "pit_class", "source_license_class", "registry_version",
+        ],
+        "valuation_snapshots.parquet": [
+            "valuation_id", "listing_id", "valuation_date", "valuation_at",
+            "metric_name", "accounting_basis", "metric_basis", "ratio_value",
+            "numerator_value", "numerator_currency", "numerator_ref",
+            "numerator_source_id", "numerator_source_url", "numerator_pit_class",
+            "numerator_at_utc", "numerator_retrieved_at_utc", "denominator_value",
+            "denominator_currency", "denominator_ref", "denominator_source_id",
+            "denominator_source_url", "denominator_pit_class", "denominator_at_utc",
+            "denominator_provider_asof_utc", "denominator_retrieved_at_utc",
+            "fx_rate_applied", "fx_base_currency", "fx_quote_currency", "fx_source",
+            "fx_source_url", "fx_snapshot_at_utc", "fx_retrieved_at_utc", "source_id",
+            "source_url", "retrieved_at_utc", "pit_class", "coverage_reason",
+            "percentile_history_status",
+        ],
+        "internal_estimates.parquet": [
+            "estimate_id", "version", "supersedes_estimate_id", "entity_id",
+            "listing_id", "observation_type", "author", "metric", "accounting_basis",
+            "metric_basis", "fiscal_period", "fiscal_year", "value_low", "value_high",
+            "value_mid", "currency", "unit", "effective_asof", "recorded_at_utc",
+            "rationale_notes", "source_ref", "source_url", "pit_class",
+            "reviewed_at_utc", "reviewed_by",
+        ],
+        "thesis_claims.parquet": [
+            "claim_id", "entity_id", "thesis_title", "claim_text", "invalidation_rule",
+            "status", "last_reviewed_at_utc", "reviewed_by", "registry_version",
+        ],
+        "thesis_watch_questions.parquet": [
+            "question_id", "claim_id", "entity_id", "question", "question_type",
+            "priority", "registry_version",
+        ],
+        "evidence_items.parquet": [
+            "evidence_id", "entity_id", "source_id", "evidence_ref", "source_type",
+            "source_url", "evidence_class", "pit_class", "source_license_class",
+            "published_at", "summary_text", "observed_at_utc", "content_hash",
+            "registry_version",
+        ],
+        "claim_evidence_links.parquet": [
+            "link_id", "claim_id", "evidence_id", "conflict_hint", "review_state",
+            "analyst_note", "registry_version",
         ],
         "source_health.parquet": [
             "source_id", "input_path", "source_kind", "status", "required",
@@ -398,6 +452,13 @@ def _write_bundle(root: Path) -> None:
     frames["official_filings.parquet"] = _frame("official_filings.parquet", [])
     frames["earnings_calendar.parquet"] = _frame("earnings_calendar.parquet", [])
     frames["earnings_actuals.parquet"] = _frame("earnings_actuals.parquet", [])
+    frames["corporate_actions.parquet"] = _frame("corporate_actions.parquet", [])
+    frames["valuation_snapshots.parquet"] = _frame("valuation_snapshots.parquet", [])
+    frames["internal_estimates.parquet"] = _frame("internal_estimates.parquet", [])
+    frames["thesis_claims.parquet"] = _frame("thesis_claims.parquet", [])
+    frames["thesis_watch_questions.parquet"] = _frame("thesis_watch_questions.parquet", [])
+    frames["evidence_items.parquet"] = _frame("evidence_items.parquet", [])
+    frames["claim_evidence_links.parquet"] = _frame("claim_evidence_links.parquet", [])
     frames["source_health.parquet"] = _frame("source_health.parquet", [
         {"source_id": "fixture", "input_path": "fixture", "source_kind": "fixture", "status": "available", "required": True, "row_count": 1, "schema_version": "fixture_v1", "detail": "fixture"},
         {"source_id": "consensus", "input_path": "", "source_kind": "consensus", "status": "unavailable", "required": False, "row_count": 0, "schema_version": "fixture_v1", "detail": "optional fixture"},

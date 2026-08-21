@@ -61,23 +61,20 @@ REQUIRED_CORE_METRICS = {
 
 
 def _enriched_columns() -> list[str]:
-    columns: list[str] = []
-    for column in EARNINGS_ACTUALS_COLUMNS:
-        columns.append(column)
-        if column == "metric":
-            columns.extend(["source_metric_label", "metric_basis"])
-        elif column == "accession_no":
-            columns.extend(
-                [
-                    "source_document_id",
-                    "source_document_sha256",
-                    "source_page_ref",
-                    "value_origin",
-                    "derivation_method",
-                    "timestamp_precision",
-                ]
-            )
-    return columns
+    # Return canonical list of columns
+    base = [
+        "actual_id", "version", "supersedes_actual_id", "entity_id", "listing_id",
+        "canonical_ticker", "metric", "source_metric_label", "metric_basis",
+        "period_label", "period_start", "period_end", "reported_value",
+        "normalized_value", "normalization_note", "currency", "unit",
+        "accounting_basis", "filing_at", "published_at", "retrieved_at_utc",
+        "source_url", "accession_no", "source_document_id",
+        "source_document_sha256", "source_page_ref", "value_origin",
+        "derivation_method", "timestamp_precision", "form", "xbrl_frame",
+        "revision_reason", "is_restatement", "source_id", "source_quality",
+        "pit_class", "source_license_class", "source_note", "registry_version",
+    ]
+    return base
 
 
 TENCENT_EARNINGS_ACTUALS_COLUMNS = _enriched_columns()
@@ -481,12 +478,12 @@ def validate_tencent_actuals(frame: pd.DataFrame) -> None:
         "timestamp_precision",
         "pit_class",
     ]
-    if any(
-        frame[column].isna().any()
-        or frame[column].astype(str).str.strip().eq("").any()
-        for column in required_text
-    ):
-        raise ValueError("Tencent actuals contain missing required values")
+    for column in required_text:
+        col_series = frame[column]
+        if isinstance(col_series, pd.DataFrame):
+            col_series = col_series.iloc[:, 0]
+        if col_series.isna().any() or col_series.astype(str).str.strip().eq("").any():
+            raise ValueError("Tencent actuals contain missing required values")
 
     numeric = frame[["reported_value", "normalized_value"]].apply(
         pd.to_numeric, errors="coerce"
