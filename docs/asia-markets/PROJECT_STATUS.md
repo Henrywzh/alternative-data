@@ -17,7 +17,8 @@ replacement for the operating manual or generated source-status JSON.
   (26 Parquet artifacts plus `build_manifest.json`). Its status is `degraded`.
   The published counts are: entities 71, listings 81, events 21, consensus
   56 snapshots and 112 revisions, valuation 0, official filings 403
-  (Tencent 173), news 1,897, earnings actuals 224, calendar 10, corporate
+  (Tencent 173), generic SEC filing metadata 1,897, generic news 0,
+  earnings actuals 224, calendar 10, corporate
   actions 203, quotes 7, price bars 8,598, macro observations 56,847 and
   source health 44. Macro IDs preserve vintage/capture keys and SEC generic
   filing IDs preserve physical source/accession/URL identity. `TCEHY_US` is registry-only with unresolved mapping and
