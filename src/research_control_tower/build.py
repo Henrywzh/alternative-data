@@ -576,6 +576,14 @@ EARNINGS_ACTUALS_COLUMNS = [
     "source_license_class",
     "source_note",
     "registry_version",
+    "source_metric_label",
+    "metric_basis",
+    "source_document_id",
+    "source_document_sha256",
+    "source_page_ref",
+    "value_origin",
+    "derivation_method",
+    "timestamp_precision",
 ]
 
 # Per-source collection-state sidecar written by the Batch 2/3 collectors.
@@ -641,6 +649,13 @@ ARTIFACT_NAMES = (
     "official_filings.parquet",
     "earnings_calendar.parquet",
     "earnings_actuals.parquet",
+    "corporate_actions.parquet",
+    "valuation_snapshots.parquet",
+    "internal_estimates.parquet",
+    "thesis_claims.parquet",
+    "thesis_watch_questions.parquet",
+    "evidence_items.parquet",
+    "claim_evidence_links.parquet",
     "source_health.parquet",
     "build_manifest.json",
 )
@@ -654,6 +669,13 @@ OPTIONAL_ARTIFACT_NAMES = frozenset({
     "official_filings.parquet",
     "earnings_calendar.parquet",
     "earnings_actuals.parquet",
+    "corporate_actions.parquet",
+    "valuation_snapshots.parquet",
+    "internal_estimates.parquet",
+    "thesis_claims.parquet",
+    "thesis_watch_questions.parquet",
+    "evidence_items.parquet",
+    "claim_evidence_links.parquet",
 })
 
 FRED_OBSERVATIONS_SCHEMA_ID = "fred_observations_v1"
@@ -673,6 +695,71 @@ PRICE_BARS_SCHEMA_ID = "price_bars_v1"
 OFFICIAL_FILINGS_SCHEMA_ID = "official_filings_v1"
 EARNINGS_ACTUALS_SCHEMA_ID = "earnings_actuals_v1"
 SOURCE_STATE_SCHEMA_ID = "source_state_v1"
+CORP_ACTIONS_SCHEMA_ID = "corporate_actions_v1"
+VALUATION_SNAPSHOTS_SCHEMA_ID = "valuation_snapshots_v2"
+INTERNAL_ESTIMATES_SCHEMA_ID = "internal_estimates_v1"
+THESIS_CLAIMS_SCHEMA_ID = "thesis_claims_v1"
+THESIS_WATCH_QUESTIONS_SCHEMA_ID = "thesis_watch_questions_v1"
+EVIDENCE_ITEMS_SCHEMA_ID = "evidence_items_v1"
+CLAIM_EVIDENCE_LINKS_SCHEMA_ID = "claim_evidence_links_v1"
+
+CORP_ACTIONS_COLUMNS = [
+    "action_id", "version", "entity_id", "listing_id", "canonical_ticker",
+    "action_type", "filing_date", "execution_date", "published_at",
+    "shares_affected", "price_min", "price_max", "price_avg",
+    "total_amount_paid", "currency", "shares_for_cancellation",
+    "shares_for_treasury", "cancellation_status", "mandate_resolution_date",
+    "mandate_authorised_shares", "mandate_cumulative_repurchased_shares",
+    "coverage_reason", "source_url", "source_document_id", "document_format",
+    "source_note", "retrieved_at_utc", "source_timezone", "date_precision",
+    "source_quality", "pit_class", "source_license_class", "registry_version",
+]
+
+VALUATION_SNAPSHOTS_COLUMNS = [
+    "valuation_id", "listing_id", "valuation_date", "valuation_at",
+    "metric_name", "accounting_basis", "metric_basis", "ratio_value",
+    "numerator_value", "numerator_currency", "numerator_ref",
+    "numerator_source_id", "numerator_source_url", "numerator_pit_class",
+    "numerator_at_utc", "numerator_retrieved_at_utc", "denominator_value",
+    "denominator_currency", "denominator_ref", "denominator_source_id",
+    "denominator_source_url", "denominator_pit_class", "denominator_at_utc",
+    "denominator_provider_asof_utc", "denominator_retrieved_at_utc",
+    "fx_rate_applied", "fx_base_currency", "fx_quote_currency", "fx_source",
+    "fx_source_url", "fx_snapshot_at_utc", "fx_retrieved_at_utc", "source_id",
+    "source_url", "retrieved_at_utc", "pit_class", "coverage_reason",
+    "percentile_history_status",
+]
+
+INTERNAL_ESTIMATES_COLUMNS = [
+    "estimate_id", "version", "supersedes_estimate_id", "entity_id",
+    "listing_id", "observation_type", "author", "metric", "accounting_basis",
+    "metric_basis", "fiscal_period", "fiscal_year", "value_low", "value_high",
+    "value_mid", "currency", "unit", "effective_asof", "recorded_at_utc",
+    "rationale_notes", "source_ref", "source_url", "pit_class",
+    "reviewed_at_utc", "reviewed_by",
+]
+
+THESIS_CLAIMS_COLUMNS = [
+    "claim_id", "entity_id", "thesis_title", "claim_text", "invalidation_rule",
+    "status", "last_reviewed_at_utc", "reviewed_by", "registry_version",
+]
+
+THESIS_WATCH_QUESTIONS_COLUMNS = [
+    "question_id", "claim_id", "entity_id", "question", "question_type",
+    "priority", "registry_version",
+]
+
+EVIDENCE_ITEMS_COLUMNS = [
+    "evidence_id", "entity_id", "source_id", "evidence_ref", "source_type",
+    "source_url", "evidence_class", "pit_class", "source_license_class",
+    "published_at", "summary_text", "observed_at_utc", "content_hash",
+    "registry_version",
+]
+
+CLAIM_EVIDENCE_LINKS_COLUMNS = [
+    "link_id", "claim_id", "evidence_id", "conflict_hint", "review_state",
+    "analyst_note", "registry_version",
+]
 
 _SCHEMA_ALIASES = {
     FRED_OBSERVATIONS_SCHEMA_ID: FRED_OBSERVATIONS_SCHEMA_ID,
@@ -701,6 +788,20 @@ _SCHEMA_ALIASES = {
     OFFICIAL_FILINGS_SCHEMA_ID: OFFICIAL_FILINGS_SCHEMA_ID,
     "official_filings": OFFICIAL_FILINGS_SCHEMA_ID,
     EARNINGS_ACTUALS_SCHEMA_ID: EARNINGS_ACTUALS_SCHEMA_ID,
+    CORP_ACTIONS_SCHEMA_ID: CORP_ACTIONS_SCHEMA_ID,
+    "corporate_actions": CORP_ACTIONS_SCHEMA_ID,
+    VALUATION_SNAPSHOTS_SCHEMA_ID: VALUATION_SNAPSHOTS_SCHEMA_ID,
+    "valuation_snapshots": VALUATION_SNAPSHOTS_SCHEMA_ID,
+    INTERNAL_ESTIMATES_SCHEMA_ID: INTERNAL_ESTIMATES_SCHEMA_ID,
+    "internal_estimates": INTERNAL_ESTIMATES_SCHEMA_ID,
+    THESIS_CLAIMS_SCHEMA_ID: THESIS_CLAIMS_SCHEMA_ID,
+    "thesis_claims": THESIS_CLAIMS_SCHEMA_ID,
+    THESIS_WATCH_QUESTIONS_SCHEMA_ID: THESIS_WATCH_QUESTIONS_SCHEMA_ID,
+    "thesis_watch_questions": THESIS_WATCH_QUESTIONS_SCHEMA_ID,
+    EVIDENCE_ITEMS_SCHEMA_ID: EVIDENCE_ITEMS_SCHEMA_ID,
+    "evidence_items": EVIDENCE_ITEMS_SCHEMA_ID,
+    CLAIM_EVIDENCE_LINKS_SCHEMA_ID: CLAIM_EVIDENCE_LINKS_SCHEMA_ID,
+    "claim_evidence_links": CLAIM_EVIDENCE_LINKS_SCHEMA_ID,
     "earnings_actuals": EARNINGS_ACTUALS_SCHEMA_ID,
     SOURCE_STATE_SCHEMA_ID: SOURCE_STATE_SCHEMA_ID,
     "source_state": SOURCE_STATE_SCHEMA_ID,
@@ -737,6 +838,10 @@ _EXPECTED_OPTIONAL_SOURCES = (
     ("official_filings_state", "official_filing", SOURCE_STATE_SCHEMA_ID, ""),
     ("earnings_actuals", "earnings", EARNINGS_ACTUALS_SCHEMA_ID, "CN,HK,US"),
     ("earnings_actuals_state", "earnings", SOURCE_STATE_SCHEMA_ID, ""),
+    ("corporate_actions", "corporate_actions", CORP_ACTIONS_SCHEMA_ID, "CN,HK"),
+    ("corporate_actions_state", "corporate_actions", SOURCE_STATE_SCHEMA_ID, ""),
+    ("valuation_snapshots", "valuation", VALUATION_SNAPSHOTS_SCHEMA_ID, "CN,HK"),
+    ("internal_estimates", "valuation", INTERNAL_ESTIMATES_SCHEMA_ID, ""),
 )
 
 # These are explicit source-specific freshness windows for current-vintage
@@ -767,6 +872,9 @@ SOURCE_FRESHNESS_THRESHOLDS = {
     # artifact and a degraded health row.
     OFFICIAL_FILINGS_SCHEMA_ID: pd.Timedelta(days=45),
     EARNINGS_ACTUALS_SCHEMA_ID: pd.Timedelta(days=120),
+    CORP_ACTIONS_SCHEMA_ID: pd.Timedelta(days=45),
+    VALUATION_SNAPSHOTS_SCHEMA_ID: pd.Timedelta(days=45),
+    INTERNAL_ESTIMATES_SCHEMA_ID: pd.Timedelta(days=365),
     SOURCE_STATE_SCHEMA_ID: pd.Timedelta(days=45),
 }
 
@@ -993,6 +1101,8 @@ class BuildConfig:
     earnings_inputs: tuple[LocalInput, ...] = ()
     quote_inputs: tuple[LocalInput, ...] = ()
     price_bar_inputs: tuple[LocalInput, ...] = ()
+    corporate_actions_inputs: tuple[LocalInput, ...] = ()
+    valuation_inputs: tuple[LocalInput, ...] = ()
     consensus_export_dir: Path | None = None
     schema_version: str = SCHEMA_VERSION
     allow_degraded_optional: bool = True
@@ -1020,6 +1130,9 @@ class BuildConfig:
             *self.official_filing_inputs,
             *self.earnings_inputs,
             *self.quote_inputs,
+            *self.price_bar_inputs,
+            *self.corporate_actions_inputs,
+            *self.valuation_inputs,
         )
         source_ids = [descriptor.source_id for descriptor in descriptors]
         if len(source_ids) != len(set(source_ids)):
@@ -1196,6 +1309,13 @@ _OPTIONAL_COLUMNS = {
     },
     OFFICIAL_FILINGS_SCHEMA_ID: set(OFFICIAL_FILINGS_COLUMNS),
     EARNINGS_ACTUALS_SCHEMA_ID: set(EARNINGS_ACTUALS_COLUMNS),
+    CORP_ACTIONS_SCHEMA_ID: set(CORP_ACTIONS_COLUMNS),
+    VALUATION_SNAPSHOTS_SCHEMA_ID: set(VALUATION_SNAPSHOTS_COLUMNS),
+    INTERNAL_ESTIMATES_SCHEMA_ID: set(INTERNAL_ESTIMATES_COLUMNS),
+    THESIS_CLAIMS_SCHEMA_ID: set(THESIS_CLAIMS_COLUMNS),
+    THESIS_WATCH_QUESTIONS_SCHEMA_ID: set(THESIS_WATCH_QUESTIONS_COLUMNS),
+    EVIDENCE_ITEMS_SCHEMA_ID: set(EVIDENCE_ITEMS_COLUMNS),
+    CLAIM_EVIDENCE_LINKS_SCHEMA_ID: set(CLAIM_EVIDENCE_LINKS_COLUMNS),
     SOURCE_STATE_SCHEMA_ID: set(SOURCE_STATE_COLUMNS),
     QUOTE_SNAPSHOT_SCHEMA_ID: set(QUOTE_SNAPSHOT_COLUMNS),
     PRICE_BARS_SCHEMA_ID: set(PRICE_BARS_COLUMNS),
@@ -1587,6 +1707,11 @@ def _validate_required_bundles(config: BuildConfig) -> tuple[Any, EventBundle]:
         events = load_event_bundle(config.event_root)
         for name, columns in _EVENT_INPUT_COLUMNS.items():
             _validate_exact_columns(getattr(events, name), columns, f"{name} event input")
+        tencent_event_file = config.event_root / "tencent_events.csv"
+        if tencent_event_file.is_file():
+            from .thesis_seed import load_tencent_event_seed_bundle, merge_event_bundles
+            tencent_events = load_tencent_event_seed_bundle(config.event_root)
+            events = merge_event_bundles(events, tencent_events)
         event_issues = validate_event_bundle(events, registries, config.as_of_utc)
     except (FileNotFoundError, ValueError, TypeError) as exc:
         raise BuildError(f"required event input invalid: {exc}") from exc
@@ -1606,6 +1731,9 @@ def _validate_required_optional_inputs(config: BuildConfig) -> None:
         ("official_filing", config.official_filing_inputs),
         ("earnings", config.earnings_inputs),
         ("market", config.quote_inputs),
+        ("market", config.price_bar_inputs),
+        ("corporate_actions", config.corporate_actions_inputs),
+        ("valuation", config.valuation_inputs),
     ):
         for descriptor in descriptors:
             if not descriptor.required:
@@ -2889,55 +3017,251 @@ def _build_earnings_actuals(
     *,
     as_of_utc: pd.Timestamp,
 ) -> tuple[pd.DataFrame, list[_SourceState], list[str]]:
-    """Materialize the versioned earnings-actuals mart from Batch 3 inputs."""
+    """Materialize the versioned earnings-actuals mart from all earnings inputs."""
 
-    actuals_descriptor = _find_descriptor(inputs, EARNINGS_ACTUALS_SCHEMA_ID)
-    state_descriptor = _find_descriptor(inputs, SOURCE_STATE_SCHEMA_ID)
+    actuals_descriptors = [
+        descriptor
+        for descriptor in inputs
+        if _normalise_schema_id(descriptor.expected_schema) == EARNINGS_ACTUALS_SCHEMA_ID
+    ]
+    state_descriptors = [
+        descriptor
+        for descriptor in inputs
+        if _normalise_schema_id(descriptor.expected_schema) == SOURCE_STATE_SCHEMA_ID
+    ]
     states: list[_SourceState] = []
     degraded: list[str] = []
-    rows: list[dict[str, Any]] = []
+    combined_rows: dict[str, dict[str, Any]] = {}
 
-    if actuals_descriptor is not None:
-        state, frame, _schema_id = _load_optional(
-            actuals_descriptor, "earnings", as_of_utc=as_of_utc
-        )
-        states.append(state)
-        if frame is None:
-            degraded.append(actuals_descriptor.source_id)
-        else:
-            frame = _with_columns(frame, EARNINGS_ACTUALS_COLUMNS)
-            frame, dropped = _resolve_official_relations(frame, registries)
-            if dropped:
-                state.row_count = len(frame)
-                state.detail = (
-                    f"{state.detail}; " if state.detail else ""
-                ) + f"dropped_unresolved_relations={dropped}"
-                _append_state_error(
-                    state,
-                    code="unresolved_relations",
-                    message=f"dropped {dropped} rows with unknown entity/listing ids",
-                )
-            rows = frame.to_dict("records")
+    if actuals_descriptors:
+        for descriptor in actuals_descriptors:
+            state, frame, _schema_id = _load_optional(
+                descriptor, "earnings", as_of_utc=as_of_utc
+            )
+            states.append(state)
+            if frame is None:
+                degraded.append(descriptor.source_id)
+            else:
+                frame = _with_columns(frame, EARNINGS_ACTUALS_COLUMNS)
+                frame, dropped = _resolve_official_relations(frame, registries)
+                if dropped:
+                    state.row_count = len(frame)
+                    state.detail = (
+                        f"{state.detail}; " if state.detail else ""
+                    ) + f"dropped_unresolved_relations={dropped}"
+                    _append_state_error(
+                        state,
+                        code="unresolved_relations",
+                        message=f"dropped {dropped} rows with unknown entity/listing ids",
+                    )
+                for _, row in frame.iterrows():
+                    rec = row.to_dict()
+                    aid = str(rec.get("actual_id", "")).strip()
+                    if not aid:
+                        continue
+                    if aid in combined_rows:
+                        existing = combined_rows[aid]
+                        # Verify exact consistency or fail closed
+                        mismatches = []
+                        for col in ("reported_value", "period_end", "metric", "entity_id"):
+                            if str(existing.get(col)) != str(rec.get(col)):
+                                mismatches.append(col)
+                        if mismatches:
+                            raise BuildError(
+                                f"duplicate divergent actual_id detected: {aid} (differ on {mismatches})"
+                            )
+                    else:
+                        combined_rows[aid] = rec
     else:
         degraded.append("earnings_actuals")
 
-    if state_descriptor is not None:
-        state, state_frame, _schema_id = _load_optional(
-            state_descriptor, "earnings", as_of_utc=as_of_utc
-        )
-        states.append(state)
-        if state_frame is None:
-            degraded.append(state_descriptor.source_id)
-        else:
-            states.extend(_sidecar_states(_with_columns(state_frame, SOURCE_STATE_COLUMNS)))
+    if state_descriptors:
+        for descriptor in state_descriptors:
+            state, state_frame, _schema_id = _load_optional(
+                descriptor, "earnings", as_of_utc=as_of_utc
+            )
+            states.append(state)
+            if state_frame is None:
+                degraded.append(descriptor.source_id)
+            else:
+                states.extend(_sidecar_states(_with_columns(state_frame, SOURCE_STATE_COLUMNS)))
     else:
         degraded.append("earnings_actuals_state")
 
-    actuals_out = _with_columns(pd.DataFrame(rows), EARNINGS_ACTUALS_COLUMNS)
+    actuals_out = _with_columns(pd.DataFrame(list(combined_rows.values())), EARNINGS_ACTUALS_COLUMNS)
     actuals_out = _sort_frame(
         actuals_out, ["entity_id", "metric", "period_end", "version"]
     )
     return actuals_out, states, sorted(set(degraded))
+
+
+def _build_corporate_actions(
+    registries: Any,
+    inputs: Sequence[LocalInput],
+    *,
+    as_of_utc: pd.Timestamp,
+) -> tuple[pd.DataFrame, list[_SourceState], list[str]]:
+    """Materialize the versioned corporate-actions mart."""
+    action_descriptors = [
+        descriptor
+        for descriptor in inputs
+        if _normalise_schema_id(descriptor.expected_schema) == CORP_ACTIONS_SCHEMA_ID
+    ]
+    state_descriptors = [
+        descriptor
+        for descriptor in inputs
+        if _normalise_schema_id(descriptor.expected_schema) == SOURCE_STATE_SCHEMA_ID
+    ]
+    states: list[_SourceState] = []
+    degraded: list[str] = []
+    combined_rows: dict[str, dict[str, Any]] = {}
+
+    if action_descriptors:
+        for descriptor in action_descriptors:
+            state, frame, _schema_id = _load_optional(
+                descriptor, "corporate_actions", as_of_utc=as_of_utc
+            )
+            states.append(state)
+            if frame is None:
+                degraded.append(descriptor.source_id)
+            else:
+                frame = _with_columns(frame, CORP_ACTIONS_COLUMNS)
+                frame, dropped = _resolve_official_relations(frame, registries)
+                if dropped:
+                    state.row_count = len(frame)
+                    state.detail = (
+                        f"{state.detail}; " if state.detail else ""
+                    ) + f"dropped_unresolved_relations={dropped}"
+                    _append_state_error(
+                        state,
+                        code="unresolved_relations",
+                        message=f"dropped {dropped} rows with unknown entity/listing ids",
+                    )
+                for _, row in frame.iterrows():
+                    rec = row.to_dict()
+                    aid = str(rec.get("action_id", "")).strip()
+                    if not aid:
+                        continue
+                    if aid in combined_rows:
+                        existing = combined_rows[aid]
+                        mismatches = [col for col in ("shares_affected", "execution_date", "listing_id") if str(existing.get(col)) != str(rec.get(col))]
+                        if mismatches:
+                            raise BuildError(
+                                f"duplicate divergent corporate action_id detected: {aid} (differ on {mismatches})"
+                            )
+                    else:
+                        combined_rows[aid] = rec
+    else:
+        degraded.append("corporate_actions")
+
+    if state_descriptors:
+        for descriptor in state_descriptors:
+            state, state_frame, _schema_id = _load_optional(
+                descriptor, "corporate_actions", as_of_utc=as_of_utc
+            )
+            states.append(state)
+            if state_frame is None:
+                degraded.append(descriptor.source_id)
+            else:
+                states.extend(_sidecar_states(_with_columns(state_frame, SOURCE_STATE_COLUMNS)))
+    else:
+        degraded.append("corporate_actions_state")
+
+    actions_out = _with_columns(pd.DataFrame(list(combined_rows.values())), CORP_ACTIONS_COLUMNS)
+    actions_out = _sort_frame(actions_out, ["listing_id", "execution_date", "action_type", "action_id"])
+    return actions_out, states, sorted(set(degraded))
+
+
+def _build_valuation_and_estimates(
+    registries: Any,
+    inputs: Sequence[LocalInput],
+    *,
+    as_of_utc: pd.Timestamp,
+) -> tuple[pd.DataFrame, pd.DataFrame, list[_SourceState], list[str]]:
+    """Materialize valuation_snapshots and internal_estimates marts."""
+    val_descriptor = _find_descriptor(inputs, VALUATION_SNAPSHOTS_SCHEMA_ID)
+    est_descriptor = _find_descriptor(inputs, INTERNAL_ESTIMATES_SCHEMA_ID)
+    states: list[_SourceState] = []
+    degraded: list[str] = []
+    val_rows: list[dict[str, Any]] = []
+    est_rows: list[dict[str, Any]] = []
+
+    if val_descriptor is not None:
+        state, frame, _schema_id = _load_optional(
+            val_descriptor, "valuation", as_of_utc=as_of_utc
+        )
+        states.append(state)
+        if frame is None:
+            degraded.append(val_descriptor.source_id)
+        else:
+            frame = _with_columns(frame, VALUATION_SNAPSHOTS_COLUMNS)
+            val_rows = frame.to_dict("records")
+    else:
+        degraded.append("valuation_snapshots")
+
+    if est_descriptor is not None:
+        state, frame, _schema_id = _load_optional(
+            est_descriptor, "valuation", as_of_utc=as_of_utc
+        )
+        states.append(state)
+        if frame is None:
+            degraded.append(est_descriptor.source_id)
+        else:
+            frame = _with_columns(frame, INTERNAL_ESTIMATES_COLUMNS)
+            est_rows = frame.to_dict("records")
+    else:
+        degraded.append("internal_estimates")
+
+    val_out = _with_columns(pd.DataFrame(val_rows), VALUATION_SNAPSHOTS_COLUMNS)
+    val_out = _sort_frame(val_out, ["listing_id", "valuation_date", "metric_name"])
+    est_out = _with_columns(pd.DataFrame(est_rows), INTERNAL_ESTIMATES_COLUMNS)
+    est_out = _sort_frame(est_out, ["entity_id", "metric", "effective_asof", "version"])
+    return val_out, est_out, states, sorted(set(degraded))
+
+
+def _build_thesis_and_evidence(
+    config: BuildConfig,
+    registries: Any,
+    events: EventBundle,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, list[_SourceState], list[str]]:
+    """Load, validate and materialize thesis & evidence marts from config directory."""
+    claims_out = _with_columns(pd.DataFrame(), THESIS_CLAIMS_COLUMNS)
+    questions_out = _with_columns(pd.DataFrame(), THESIS_WATCH_QUESTIONS_COLUMNS)
+    evidence_out = _with_columns(pd.DataFrame(), EVIDENCE_ITEMS_COLUMNS)
+    links_out = _with_columns(pd.DataFrame(), CLAIM_EVIDENCE_LINKS_COLUMNS)
+    states: list[_SourceState] = []
+    degraded: list[str] = []
+
+    # Check if thesis seed files exist in config root
+    thesis_claims_file = config.registry_root / "thesis_claims.csv"
+    if thesis_claims_file.is_file():
+        from .thesis_seed import load_thesis_seed_bundle, validate_thesis_seed_bundle
+        bundle = load_thesis_seed_bundle(config.registry_root)
+        issues = validate_thesis_seed_bundle(bundle, registries, events, config.as_of_utc)
+        # Filter evidence items and links by as_of_utc (PIT causality)
+        ev_df = bundle.evidence_items.copy()
+        if not ev_df.empty:
+            obs = pd.to_datetime(ev_df["observed_at_utc"], errors="coerce", utc=True)
+            pub = pd.to_datetime(ev_df["published_at"], errors="coerce", utc=True)
+            valid_mask = (obs <= config.as_of_utc) & (pub <= config.as_of_utc)
+            ev_df = ev_df.loc[valid_mask].copy()
+        valid_ev_ids = set(ev_df["evidence_id"]) if not ev_df.empty else set()
+        links_df = bundle.claim_evidence_links.copy()
+        if not links_df.empty:
+            links_df = links_df.loc[links_df["evidence_id"].isin(valid_ev_ids)].copy()
+
+        claims_out = _with_columns(bundle.thesis_claims, THESIS_CLAIMS_COLUMNS)
+        questions_out = _with_columns(bundle.thesis_watch_questions, THESIS_WATCH_QUESTIONS_COLUMNS)
+        evidence_out = _with_columns(ev_df, EVIDENCE_ITEMS_COLUMNS)
+        links_out = _with_columns(links_df, CLAIM_EVIDENCE_LINKS_COLUMNS)
+    else:
+        degraded.append("thesis_claims")
+
+    claims_out = _sort_frame(claims_out, ["claim_id"])
+    questions_out = _sort_frame(questions_out, ["question_id"])
+    evidence_out = _sort_frame(evidence_out, ["evidence_id"])
+    links_out = _sort_frame(links_out, ["link_id"])
+    return claims_out, questions_out, evidence_out, links_out, states, sorted(set(degraded))
 
 
 def _task3_empty(columns: Sequence[str]) -> pd.DataFrame:
@@ -3833,6 +4157,7 @@ def _unconfigured_optional_ids(config: BuildConfig) -> list[str]:
     configured_by_kind: dict[str, set[str]] = {
         "macro": set(), "news": set(), "filing": set(),
         "official_filing": set(), "earnings": set(), "market": set(),
+        "corporate_actions": set(), "valuation": set(),
     }
     for source_kind, descriptors in (
         ("macro", config.macro_inputs),
@@ -3841,6 +4166,9 @@ def _unconfigured_optional_ids(config: BuildConfig) -> list[str]:
         ("official_filing", config.official_filing_inputs),
         ("earnings", config.earnings_inputs),
         ("market", config.quote_inputs),
+        ("market", config.price_bar_inputs),
+        ("corporate_actions", config.corporate_actions_inputs),
+        ("valuation", config.valuation_inputs),
     ):
         for descriptor in descriptors:
             try:
@@ -3994,6 +4322,78 @@ def _arrow_schema() -> dict[str, pa.Schema]:
             "is_restatement": pa.bool_(),
         },
     )
+    corporate_actions_schema = fields(
+        CORP_ACTIONS_COLUMNS,
+        {
+            "version": pa.int64(),
+            "published_at": timestamp,
+            "retrieved_at_utc": timestamp,
+            "shares_affected": pa.int64(),
+            "price_min": pa.float64(),
+            "price_max": pa.float64(),
+            "price_avg": pa.float64(),
+            "total_amount_paid": pa.float64(),
+            "shares_for_cancellation": pa.int64(),
+            "shares_for_treasury": pa.int64(),
+            "mandate_authorised_shares": pa.int64(),
+            "mandate_cumulative_repurchased_shares": pa.int64(),
+        },
+    )
+    valuation_snapshots_schema = fields(
+        VALUATION_SNAPSHOTS_COLUMNS,
+        {
+            "valuation_date": date_type,
+            "valuation_at": timestamp,
+            "ratio_value": pa.float64(),
+            "numerator_value": pa.float64(),
+            "numerator_at_utc": timestamp,
+            "numerator_retrieved_at_utc": timestamp,
+            "denominator_value": pa.float64(),
+            "denominator_at_utc": timestamp,
+            "denominator_provider_asof_utc": timestamp,
+            "denominator_retrieved_at_utc": timestamp,
+            "fx_rate_applied": pa.float64(),
+            "fx_snapshot_at_utc": timestamp,
+            "fx_retrieved_at_utc": timestamp,
+            "retrieved_at_utc": timestamp,
+        },
+    )
+    internal_estimates_schema = fields(
+        INTERNAL_ESTIMATES_COLUMNS,
+        {
+            "version": pa.int64(),
+            "fiscal_year": pa.int64(),
+            "value_low": pa.float64(),
+            "value_high": pa.float64(),
+            "value_mid": pa.float64(),
+            "effective_asof": date_type,
+            "recorded_at_utc": timestamp,
+            "reviewed_at_utc": timestamp,
+        },
+    )
+    thesis_claims_schema = fields(
+        THESIS_CLAIMS_COLUMNS,
+        {
+            "last_reviewed_at_utc": timestamp,
+        },
+    )
+    thesis_watch_questions_schema = fields(
+        THESIS_WATCH_QUESTIONS_COLUMNS,
+        {},
+    )
+    evidence_items_schema = fields(
+        EVIDENCE_ITEMS_COLUMNS,
+        {
+            "observed_at_utc": timestamp,
+            "published_at": timestamp,
+        },
+    )
+    claim_evidence_links_schema = fields(
+        CLAIM_EVIDENCE_LINKS_COLUMNS,
+        {
+            "conflict_hint": pa.bool_(),
+        },
+    )
     health_schema = fields(
         SOURCE_HEALTH_COLUMNS,
         {
@@ -4020,6 +4420,13 @@ def _arrow_schema() -> dict[str, pa.Schema]:
         "official_filings.parquet": official_filings_schema,
         "earnings_calendar.parquet": earnings_calendar_schema,
         "earnings_actuals.parquet": earnings_actuals_schema,
+        "corporate_actions.parquet": corporate_actions_schema,
+        "valuation_snapshots.parquet": valuation_snapshots_schema,
+        "internal_estimates.parquet": internal_estimates_schema,
+        "thesis_claims.parquet": thesis_claims_schema,
+        "thesis_watch_questions.parquet": thesis_watch_questions_schema,
+        "evidence_items.parquet": evidence_items_schema,
+        "claim_evidence_links.parquet": claim_evidence_links_schema,
         "source_health.parquet": health_schema,
     }
 
@@ -4347,15 +4754,16 @@ def _make_manifest(
         source_ids = source_ids_by_artifact.get(name, ())
         # This required mart reports source states; those row-level states do
         # not describe the availability of the successfully validated mart.
-        status = (
-            "available"
-            if name == "source_health.parquet"
-            else _artifact_status(
+        if name == "source_health.parquet":
+            status = "available"
+        elif name in {"thesis_claims.parquet", "thesis_watch_questions.parquet", "evidence_items.parquet", "claim_evidence_links.parquet"}:
+            status = "available" if len(frame) > 0 else "unavailable"
+        else:
+            status = _artifact_status(
                 source_ids,
                 states_by_id,
                 usable_statuses=_ARTIFACT_USABLE_STATUSES.get(name, STRICT_USABLE_STATUSES),
             )
-        )
         artifacts[name] = _artifact_record(
             staging / name,
             name=name,
@@ -4503,6 +4911,21 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
         config.earnings_inputs,
         as_of_utc=config.as_of_utc,
     )
+    actions_frame, actions_states, actions_degraded = _build_corporate_actions(
+        registries,
+        config.corporate_actions_inputs,
+        as_of_utc=config.as_of_utc,
+    )
+    val_frame, est_frame, val_states, val_degraded = _build_valuation_and_estimates(
+        registries,
+        config.valuation_inputs,
+        as_of_utc=config.as_of_utc,
+    )
+    claims_frame, twq_frame, evid_frame, links_frame, thesis_states, thesis_degraded = _build_thesis_and_evidence(
+        config,
+        registries,
+        events,
+    )
     input_fingerprints.update(consensus_fingerprints)
     input_fingerprints.update(quote_fingerprints)
     frames["macro_observations.parquet"] = macro_frame
@@ -4514,6 +4937,13 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
     frames["official_filings.parquet"] = official_filings_frame
     frames["earnings_calendar.parquet"] = calendar_frame
     frames["earnings_actuals.parquet"] = actuals_frame
+    frames["corporate_actions.parquet"] = actions_frame
+    frames["valuation_snapshots.parquet"] = val_frame
+    frames["internal_estimates.parquet"] = est_frame
+    frames["thesis_claims.parquet"] = claims_frame
+    frames["thesis_watch_questions.parquet"] = twq_frame
+    frames["evidence_items.parquet"] = evid_frame
+    frames["claim_evidence_links.parquet"] = links_frame
 
     required_row_counts = {
         "registry:entities": len(registry_frames["entities"]),
@@ -4538,6 +4968,9 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
             *news_states,
             *official_states,
             *actuals_states,
+            *actions_states,
+            *val_states,
+            *thesis_states,
         ],
     )
     for state in optional_states:
@@ -4555,6 +4988,9 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
         *news_degraded,
         *official_degraded,
         *actuals_degraded,
+        *actions_degraded,
+        *val_degraded,
+        *thesis_degraded,
         *_unconfigured_optional_ids(config),
     ]
     non_contributing = CONTRIBUTING_STATUSES | {"not_applicable"}
@@ -4593,6 +5029,13 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
         "official_filings.parquet": [state.source_id for state in official_states],
         "earnings_calendar.parquet": [state.source_id for state in official_states],
         "earnings_actuals.parquet": [state.source_id for state in actuals_states],
+        "corporate_actions.parquet": [state.source_id for state in actions_states],
+        "valuation_snapshots.parquet": [state.source_id for state in val_states],
+        "internal_estimates.parquet": [state.source_id for state in val_states],
+        "thesis_claims.parquet": ["thesis:claims"],
+        "thesis_watch_questions.parquet": ["thesis:watch_questions"],
+        "evidence_items.parquet": ["thesis:evidence_items"],
+        "claim_evidence_links.parquet": ["thesis:claim_evidence_links"],
         "source_health.parquet": [state.source_id for state in [*required_states, *optional_states]],
     }
     _validate_output_frames(frames)

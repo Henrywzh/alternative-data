@@ -425,6 +425,13 @@ def test_build_writes_stable_artifact_set(tmp_path, minimal_inputs):
         "official_filings.parquet",
         "earnings_calendar.parquet",
         "earnings_actuals.parquet",
+        "corporate_actions.parquet",
+        "valuation_snapshots.parquet",
+        "internal_estimates.parquet",
+        "thesis_claims.parquet",
+        "thesis_watch_questions.parquet",
+        "evidence_items.parquet",
+        "claim_evidence_links.parquet",
         "source_health.parquet",
         "build_manifest.json",
     }
@@ -441,9 +448,9 @@ def test_build_writes_stable_artifact_set(tmp_path, minimal_inputs):
     health = pd.read_parquet(_published(minimal_inputs, "source_health.parquet"))
     required_health = health[health["required"]]
     assert dict(zip(required_health["source_id"], required_health["row_count"])) == {
-        "events:event_links": 33,
-        "events:event_watch_questions": 10,
-        "events:events": 15,
+        "events:event_links": 52,
+        "events:event_watch_questions": 20,
+        "events:events": 21,
         "registry:basket_memberships": 97,
         "registry:baskets": 7,
         "registry:entities": 71,

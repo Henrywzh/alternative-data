@@ -81,6 +81,13 @@ class ControlTowerSnapshot:
     # force every existing construction site to supply one. An empty frame is
     # the honest value when a bundle predates the price-bar mart.
     price_bars: pd.DataFrame = field(default_factory=pd.DataFrame)
+    corporate_actions: pd.DataFrame = field(default_factory=pd.DataFrame)
+    valuation_snapshots: pd.DataFrame = field(default_factory=pd.DataFrame)
+    internal_estimates: pd.DataFrame = field(default_factory=pd.DataFrame)
+    thesis_claims: pd.DataFrame = field(default_factory=pd.DataFrame)
+    thesis_watch_questions: pd.DataFrame = field(default_factory=pd.DataFrame)
+    evidence_items: pd.DataFrame = field(default_factory=pd.DataFrame)
+    claim_evidence_links: pd.DataFrame = field(default_factory=pd.DataFrame)
 
     @property
     def now_utc(self) -> pd.Timestamp:

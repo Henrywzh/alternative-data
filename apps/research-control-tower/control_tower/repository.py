@@ -45,22 +45,27 @@ def _empty_frame(name: str) -> pd.DataFrame:
         "observation_version", "fiscal_year", "analyst_count",
         "provider_contributor_count", "lookback_days", "current_analyst_count",
         "prior_analyst_count", "analyst_count_change", "row_count", "version",
+        "shares_affected", "shares_for_cancellation", "shares_for_treasury",
+        "mandate_authorised_shares", "mandate_cumulative_repurchased_shares",
     }
     floats = {
         "confidence", "value", "low_value", "high_value", "current_value",
         "current_dispersion", "prior_value", "revision_value", "revision_pct",
         "dispersion", "last_price", "bid", "ask", "day_change_pct", "volume",
         "reported_value", "normalized_value",
+        "price_min", "price_max", "price_avg", "total_amount_paid",
+        "ratio_value", "numerator_value", "denominator_value", "fx_rate_applied",
+        "value_low", "value_high", "value_mid",
     }
     booleans = {
         "collection_eligible", "primary_listing", "automated", "is_provisional",
-        "required", "is_restatement", "query_attempted",
+        "required", "is_restatement", "query_attempted", "conflict_hint",
     }
     dates = {
         "active_from", "active_to", "mapping_verified_at", "review_by",
         "observation_date", "estimate_period_end", "scheduled_date",
         "reporting_period_start", "reporting_period_end", "period_start",
-        "period_end", "event_date",
+        "period_end", "event_date", "valuation_date", "effective_asof",
     }
     timestamps = {
         "starts_at", "ends_at", "source_published_at", "first_observed_at",
@@ -69,6 +74,10 @@ def _empty_frame(name: str) -> pd.DataFrame:
         "prior_snapshot_at", "published_at", "first_observed_at",
         "first_observation_at", "latest_observation_at", "source_latest_at",
         "quote_timestamp", "accepted_at", "filing_at", "completed_at",
+        "valuation_at", "numerator_at_utc", "numerator_retrieved_at_utc",
+        "denominator_at_utc", "denominator_provider_asof_utc", "denominator_retrieved_at_utc",
+        "fx_snapshot_at_utc", "fx_retrieved_at_utc", "recorded_at_utc", "reviewed_at_utc",
+        "last_reviewed_at_utc", "observed_at_utc",
     }
     data: dict[str, pd.Series] = {}
     for column in columns:
@@ -217,6 +226,41 @@ def _expected_types(name: str) -> dict[str, str]:
             "ask": "float",
             "day_change_pct": "float",
             "volume": "float",
+        })
+    if name == "corporate_actions.parquet":
+        result.update({
+            "version": "integer", "published_at": "timestamp", "retrieved_at_utc": "timestamp",
+            "shares_affected": "integer", "shares_for_cancellation": "integer", "shares_for_treasury": "integer",
+            "mandate_authorised_shares": "integer", "mandate_cumulative_repurchased_shares": "integer",
+            "price_min": "float", "price_max": "float", "price_avg": "float", "total_amount_paid": "float",
+        })
+    if name == "valuation_snapshots.parquet":
+        result.update({
+            "valuation_date": "date", "valuation_at": "timestamp",
+            "numerator_at_utc": "timestamp", "numerator_retrieved_at_utc": "timestamp",
+            "denominator_at_utc": "timestamp", "denominator_provider_asof_utc": "timestamp",
+            "denominator_retrieved_at_utc": "timestamp", "fx_snapshot_at_utc": "timestamp",
+            "fx_retrieved_at_utc": "timestamp", "retrieved_at_utc": "timestamp",
+            "ratio_value": "float", "numerator_value": "float", "denominator_value": "float", "fx_rate_applied": "float",
+        })
+    if name == "internal_estimates.parquet":
+        result.update({
+            "version": "integer", "fiscal_year": "integer", "effective_asof": "date",
+            "recorded_at_utc": "timestamp", "reviewed_at_utc": "timestamp",
+            "value_low": "float", "value_high": "float", "value_mid": "float",
+        })
+    if name == "thesis_claims.parquet":
+        result.update({
+            "last_reviewed_at_utc": "timestamp",
+        })
+    if name == "evidence_items.parquet":
+        result.update({
+            "observed_at_utc": "timestamp",
+            "published_at": "timestamp",
+        })
+    if name == "claim_evidence_links.parquet":
+        result.update({
+            "conflict_hint": "boolean",
         })
     if name == "source_health.parquet":
         result.update({
@@ -788,6 +832,13 @@ class ControlTowerRepository:
             official_filings=loaded["official_filings.parquet"],
             earnings_calendar=loaded["earnings_calendar.parquet"],
             earnings_actuals=loaded["earnings_actuals.parquet"],
+            corporate_actions=loaded["corporate_actions.parquet"],
+            valuation_snapshots=loaded["valuation_snapshots.parquet"],
+            internal_estimates=loaded["internal_estimates.parquet"],
+            thesis_claims=loaded["thesis_claims.parquet"],
+            thesis_watch_questions=loaded["thesis_watch_questions.parquet"],
+            evidence_items=loaded["evidence_items.parquet"],
+            claim_evidence_links=loaded["claim_evidence_links.parquet"],
             source_health=source_health,
             manifest=manifest,
             status=status,
