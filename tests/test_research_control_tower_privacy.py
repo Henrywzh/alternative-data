@@ -1209,6 +1209,8 @@ def _app_text(app) -> str:
             value = getattr(item, "value", "")
             if isinstance(value, str):
                 pieces.append(value)
+    for html in app.get("html"):
+        pieces.append(str(html.proto.body))
     return "\n".join(pieces)
 
 
