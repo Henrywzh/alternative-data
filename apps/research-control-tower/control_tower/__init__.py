@@ -1,5 +1,13 @@
 """Control Tower V1's local read, filter, and formatting API."""
 
+from pathlib import Path
+import sys
+
+# Ensure repository root is on sys.path deterministically before importing modules that depend on src
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
 from .config import artifact_fingerprint
 from .coverage import (
     COVERAGE_STATUS_DESCRIPTIONS,
