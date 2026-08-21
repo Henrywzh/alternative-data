@@ -300,6 +300,36 @@ def _make_tencent_snapshot() -> ExtendedSnapshot:
             "registry_version": "v1",
         },
         {
+            "event_id": "EV_BASKET_ONLY_MACRO",
+            "event_key": "EV_BASKET_ONLY_MACRO",
+            "observation_version": 1,
+            "scope": "basket",
+            "event_type": "macro_release",
+            "title": "China Internet Industry Regulatory Review",
+            "description": "Sector-wide industry review checkpoint.",
+            "status": "scheduled",
+            "certainty_class": "thesis_checkpoint",
+            "importance": "high",
+            "confidence": 0.9,
+            "date_precision": "quarter",
+            "starts_at": pd.Timestamp("2026-12-01T00:00:00Z"),
+            "ends_at": pd.Timestamp("2026-12-31T23:59:59Z"),
+            "source_timezone": "Asia/Shanghai",
+            "source_id": "research:internal",
+            "source_url": "",
+            "source_published_at": None,
+            "first_observed_at": pd.Timestamp("2026-08-18T12:00:00Z"),
+            "last_verified_at": pd.Timestamp("2026-08-18T12:00:00Z"),
+            "review_by": None,
+            "supersedes_event_id": None,
+            "evidence_class": "internal_research",
+            "evidence_ref": "internal:checkpoint",
+            "related_entity_ids": (),
+            "related_listing_ids": (),
+            "related_basket_ids": ("RESEARCH_STAGE_1_CHINA_INTERNET",),
+            "registry_version": "v1",
+        },
+        {
             "event_id": "EV_TENCENT_3Q2026_WINDOW",
             "event_key": "EV_TENCENT_3Q2026_WINDOW",
             "observation_version": 1,
@@ -340,6 +370,7 @@ def _make_tencent_snapshot() -> ExtendedSnapshot:
     event_basket_links = pd.DataFrame([
         {"event_id": "EV_TENCENT_2Q2026_RESULTS", "target_type": "basket", "target_id": "RESEARCH_STAGE_1_CHINA_INTERNET", "link_role": "primary", "automated": True, "active_from": "2026-01-01", "active_to": None, "link_note": "", "registry_version": "v1"},
         {"event_id": "EV_TENCENT_3Q2026_WINDOW", "target_type": "basket", "target_id": "RESEARCH_STAGE_1_CHINA_INTERNET", "link_role": "primary", "automated": True, "active_from": "2026-01-01", "active_to": None, "link_note": "", "registry_version": "v1"},
+        {"event_id": "EV_BASKET_ONLY_MACRO", "target_type": "basket", "target_id": "RESEARCH_STAGE_1_CHINA_INTERNET", "link_role": "primary", "automated": True, "active_from": "2026-01-01", "active_to": None, "link_note": "", "registry_version": "v1"},
     ])
 
     event_watch_questions = pd.DataFrame([
@@ -1204,3 +1235,22 @@ def test_company_heading_anchors_update_dynamically_without_stale_entity_ids(tmp
     # Verify NO stale ByteDance heading IDs or text remain in the Tencent view
     for h in tencent_headings:
         assert "bytedance" not in h.lower()
+
+
+def test_event_relation_precedence_explicit_links_isolate_company_events() -> None:
+    snapshot = _make_tencent_snapshot()
+    
+    # 1. Tencent has explicit link -> appears in Tencent view
+    view_tencent = build_company_view(snapshot, entity_id="TENCENT")
+    tencent_event_ids = set(view_tencent.events["event_id"])
+    assert "EV_TENCENT_2Q2026_RESULTS" in tencent_event_ids
+    assert "EV_TENCENT_3Q2026_WINDOW" in tencent_event_ids
+    assert "EV_BASKET_ONLY_MACRO" in tencent_event_ids
+    
+    # 2. ByteDance is in same basket RESEARCH_STAGE_1_CHINA_INTERNET, but not an explicit target
+    # -> Must NOT see Tencent-specific events, but DOES see basket-only events
+    view_bytedance = build_company_view(snapshot, entity_id="BYTEDANCE")
+    bytedance_event_ids = set(view_bytedance.events["event_id"])
+    assert "EV_TENCENT_2Q2026_RESULTS" not in bytedance_event_ids
+    assert "EV_TENCENT_3Q2026_WINDOW" not in bytedance_event_ids
+    assert "EV_BASKET_ONLY_MACRO" in bytedance_event_ids

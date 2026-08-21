@@ -419,19 +419,28 @@ def _event_relation(snapshot: ControlTowerSnapshot, event: Any, entity_id: str, 
     event_id = _text(event.get("event_id"))
     entity_links = snapshot.event_entity_links.loc[snapshot.event_entity_links["event_id"].astype("string").eq(event_id)] if not snapshot.event_entity_links.empty else snapshot.event_entity_links
     basket_links = snapshot.event_basket_links.loc[snapshot.event_basket_links["event_id"].astype("string").eq(event_id)] if not snapshot.event_basket_links.empty else snapshot.event_basket_links
+    
+    # 1. Check for active explicit entity/listing links for this event
+    has_active_explicit_links = False
     roles: set[str] = set()
-    has_raw_link = not entity_links.empty or not basket_links.empty
     for _, link in entity_links.iterrows():
         if not _link_active(link, event, snapshot.as_of_utc):
             continue
+        has_active_explicit_links = True
         target_type = _text(link.get("target_type")).lower()
         target_id = _text(link.get("target_id"))
         if target_type == "entity" and target_id == entity_id:
             roles.add("entity")
         elif target_type == "listing" and target_id in listing_ids:
             roles.add("listing")
-    if roles:
-        return "entity" if "entity" in roles else "listing"
+    if has_active_explicit_links:
+        # Fail-closed precedence: when any active explicit entity/listing links exist,
+        # only those explicit targets define Company-page relation; basket links must not broaden to other companies.
+        if roles:
+            return "entity" if "entity" in roles else "listing"
+        return None
+
+    # 2. Check basket links for basket-only events (no active explicit entity/listing links)
     for _, link in basket_links.iterrows():
         if not _link_active(link, event, snapshot.as_of_utc):
             continue
@@ -444,12 +453,21 @@ def _event_relation(snapshot: ControlTowerSnapshot, event: Any, entity_id: str, 
         ]
         if any(_active_for_event(row, event, snapshot.as_of_utc) for _, row in active_membership.iterrows()):
             return "basket_membership"
+
+    # 3. If raw links existed in the tables, do not fall back to denormalized fields
+    has_raw_link = not entity_links.empty or not basket_links.empty
     if has_raw_link:
         return None
-    if entity_id in set(_ids(event.get("related_entity_ids"))):
-        return "entity"
-    if listing_ids.intersection(set(_ids(event.get("related_listing_ids")))):
-        return "listing"
+
+    # 4. Fallback to denormalized related_* only when no raw links exist in tables
+    related_entities = set(_ids(event.get("related_entity_ids")))
+    related_listings = set(_ids(event.get("related_listing_ids")))
+    if related_entities or related_listings:
+        if entity_id in related_entities:
+            return "entity"
+        if listing_ids.intersection(related_listings):
+            return "listing"
+        return None
     return None
 
 
