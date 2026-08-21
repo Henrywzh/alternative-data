@@ -5,18 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import timedelta
 from html import escape
-from pathlib import Path
 import re
-import sys
 import unicodedata
 import json
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
-
-# Ensure repository root is on sys.path when company.py is imported standalone
-_REPO_ROOT = Path(__file__).resolve().parents[4]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
 
 import pandas as pd
 import streamlit as st
