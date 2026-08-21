@@ -16,76 +16,7 @@ import pandas as pd
 
 from .models import ControlTowerSnapshot
 
-try:
-    from src.research_control_tower.eligibility import listing_eligibility_reason
-except ImportError:
-    # Package layering fallback if src is not directly importable
-    def listing_eligibility_reason(row: object, as_of: object) -> str | None:
-        def _blank(val: object) -> bool:
-            if val is None or val is pd.NA or val is pd.NaT:
-                return True
-            try:
-                m = pd.isna(val)
-                if not hasattr(m, "__len__") and bool(m):
-                    return True
-            except (TypeError, ValueError):
-                pass
-            return not str(val).strip()
-
-        def _txt(val: object) -> str:
-            return "" if _blank(val) else str(val).strip()
-
-        def _bool(val: object) -> bool | None:
-            if _blank(val):
-                return None
-            if isinstance(val, bool):
-                return val
-            norm = _txt(val).casefold()
-            if norm in {"true", "1", "yes"}:
-                return True
-            if norm in {"false", "0", "no"}:
-                return False
-            return None
-
-        def _dt(val: object) -> pd.Timestamp | None:
-            if _blank(val):
-                return None
-            try:
-                parsed = pd.Timestamp(val)
-            except (TypeError, ValueError, OverflowError):
-                return None
-            if pd.isna(parsed):
-                return None
-            if parsed.tzinfo is not None:
-                parsed = parsed.tz_localize(None)
-            return parsed.normalize()
-
-        if not isinstance(row, Mapping):
-            return "row must be a mapping"
-        lid = _txt(row.get("listing_id"))
-        if not lid:
-            return "blank listing_id is entity-only, not a listing-scoped row"
-        if "mapping_status" not in row or _txt(row.get("mapping_status")).casefold() != "verified":
-            return f"mapping_status={_txt(row.get('mapping_status')) or '<blank>'}; requires verified"
-        if _bool(row.get("collection_eligible")) is not True:
-            return f"collection_eligible={_txt(row.get('collection_eligible')) or '<blank>'}; requires true"
-        if "listing_status" not in row or _txt(row.get("listing_status")).casefold() != "active":
-            return f"listing_status={_txt(row.get('listing_status')) or '<blank>'}; requires active"
-
-        as_of_ts = pd.Timestamp(as_of)
-        as_of_d = (
-            as_of_ts.tz_convert("UTC").tz_localize(None).normalize()
-            if as_of_ts.tzinfo is not None and as_of_ts.utcoffset() is not None
-            else as_of_ts.normalize()
-        )
-
-        af = _dt(row.get("active_from"))
-        at = _dt(row.get("active_to"))
-        if af is not None and af > as_of_d:
-            return f"active_from={af.date()} is after as_of={as_of_d.date()}"
-        if at is not None and as_of_d >= at:
-            return f"active_to={at.date()} is not after as_of={as_of_d.date()}"
-        return None
+from src.research_control_tower.eligibility import listing_eligibility_reason
 
 CoverageStatusCode = Literal[
     "available",
