@@ -245,7 +245,11 @@ Maintains full isolation from third-party consensus.
 * `reviewed_at_utc` (timestamp, nullable), `reviewed_by` (string, nullable).
 
 #### `consensus_revisions.parquet`
-* `revision_id` (string, PK): `hash(current_snapshot_id + prior_snapshot_id)`.
+* `revision_id` (string, PK): for a genuine captured revision,
+  `hash(prior_snapshot_id + current_snapshot_id)`; for a reconstructed
+  cold-start display row with no prior snapshot,
+  `hash(current_snapshot_id + lookback_days)`. The two cases retain distinct
+  `pit_class` values and must not be blended.
 * `snapshot_id` (string, FK), `prior_snapshot_id` (string, FK).
 * `provider` (string): Standard provider identifier.
 * `provider_series_id` (string): Stable series identity pairing the two snapshots.
