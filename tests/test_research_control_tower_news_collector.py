@@ -22,12 +22,14 @@ from src.research_control_tower.build import (
     _news_event_class,
 )
 from src.research_control_tower.news_collector import (
+    FetchResult,
     NEWS_INPUT_COLUMNS,
     NEWS_STATUS_SCHEMA,
     FINNHUB_SPEC,
     NewsCollectionResult,
     NewsProbeEvidence,
     collect_news,
+    collect_official_ir_allowlist,
     _row,
     _utc,
     news_status_path,
@@ -68,6 +70,9 @@ def _listings() -> pd.DataFrame:
                 "financial_data_security_id": "sec-0700",
                 "mapping_status": "verified",
                 "collection_eligible": True,
+                "listing_status": "active",
+                "active_from": "2026-01-01",
+                "active_to": "",
             },
             {
                 "listing_id": "9988_HK",
@@ -76,6 +81,9 @@ def _listings() -> pd.DataFrame:
                 "financial_data_security_id": "sec-9988",
                 "mapping_status": "verified",
                 "collection_eligible": True,
+                "listing_status": "active",
+                "active_from": "2026-01-01",
+                "active_to": "",
             },
             {
                 "listing_id": "BABA_US",
@@ -84,6 +92,20 @@ def _listings() -> pd.DataFrame:
                 "financial_data_security_id": "sec-baba",
                 "mapping_status": "verified",
                 "collection_eligible": True,
+                "listing_status": "active",
+                "active_from": "2026-01-01",
+                "active_to": "",
+            },
+            {
+                "listing_id": "TCEHY_US",
+                "entity_id": "TENCENT",
+                "canonical_ticker": "TCEHY.US",
+                "financial_data_security_id": "sec-tcehy",
+                "mapping_status": "unresolved",
+                "collection_eligible": False,
+                "listing_status": "active",
+                "active_from": "2026-01-01",
+                "active_to": "",
             },
         ]
     )
@@ -313,3 +335,124 @@ def test_collect_news_unavailable_without_key(tmp_path: Path) -> None:
     assert result.frame.empty
     sidecar = json.loads(news_status_path(written["news_finnhub"]).read_text(encoding="utf-8"))
     assert sidecar["aggregate_status"] == "unavailable"
+
+
+@pytest.mark.parametrize("provider", ["finnhub", "marketaux", "fmp"])
+def test_provider_news_gate_rejects_tcehy_but_queries_0700(
+    tmp_path: Path,
+    provider: str,
+) -> None:
+    queried_symbols: list[str] = []
+    calls = 0
+
+    def fake_fetch(url: str, *, params=None, **_kwargs) -> FetchResult:
+        nonlocal calls
+        calls += 1
+        params = dict(params or {})
+        if provider == "finnhub":
+            symbol = str(params.get("symbol", ""))
+            payload = [{
+                "headline": "Tencent update",
+                "url": "https://example.test/tencent",
+                "datetime": 1787097600,
+            }]
+        elif provider == "marketaux":
+            symbol = str(params.get("symbols", ""))
+            payload = {"data": [{
+                "title": "Tencent update",
+                "url": "https://example.test/tencent",
+                "published_at": "2026-08-18T00:00:00Z",
+            }]}
+        else:
+            symbol = str(params.get("tickers", ""))
+            payload = [{
+                "title": "Tencent update",
+                "url": "https://example.test/tencent",
+                "date": "2026-08-18T00:00:00Z",
+            }]
+        if symbol:
+            queried_symbols.append(symbol)
+        is_probe = calls == 1
+        body = "{}" if is_probe and provider == "marketaux" else "[]" if is_probe else json.dumps(payload)
+        return FetchResult(
+            url=url,
+            status_code=200,
+            content_type="application/json",
+            text=body,
+            ok=True,
+        )
+
+    written, results = collect_news(
+        tmp_path,
+        providers=(provider,),
+        api_keys={provider: "test-key"},
+        download_fn=fake_fetch,
+        listings=_listings(),
+        entities=_entities(),
+        aliases=_aliases(),
+        as_of_utc=pd.Timestamp("2026-08-19T00:00:00Z"),
+        now_utc=pd.Timestamp("2026-08-19T00:00:00Z"),
+    )
+
+    assert written
+    result = results[0]
+    assert result.frame.shape[0] == 1
+    assert "0700.HK" in queried_symbols
+    assert all("TCEHY" not in symbol for symbol in queried_symbols)
+    tcehy_diagnostics = [item for item in result.diagnostics if item.listing_id == "TCEHY_US"]
+    assert tcehy_diagnostics
+    assert tcehy_diagnostics[0].status == "not_verified"
+    assert "mapping_status=unresolved" in tcehy_diagnostics[0].reason
+    sidecar = json.loads(news_status_path(next(iter(written.values()))).read_text(encoding="utf-8"))
+    assert any(item["listing_id"] == "TCEHY_US" for item in sidecar["diagnostics"])
+
+
+def test_official_ir_gate_rejects_tcehy_but_retains_0700() -> None:
+    allowlist = pd.DataFrame(
+        [
+            {
+                "entity_id": "TENCENT",
+                "listing_id": "0700_HK",
+                "canonical_ticker": "0700.HK",
+                "feed_url": "https://example.test/0700.xml",
+            },
+            {
+                "entity_id": "TENCENT",
+                "listing_id": "TCEHY_US",
+                "canonical_ticker": "TCEHY.US",
+                "feed_url": "https://example.test/tcehy.xml",
+            },
+        ]
+    )
+    fetched: list[str] = []
+
+    def fake_fetch(url: str, **_kwargs) -> FetchResult:
+        fetched.append(url)
+        return FetchResult(
+            url=url,
+            status_code=200,
+            content_type="application/rss+xml",
+            text=(
+                "<?xml version='1.0'?><rss><channel><item>"
+                "<title>Tencent update</title><link>https://example.test/tencent</link>"
+                "<pubDate>Tue, 18 Aug 2026 00:00:00 GMT</pubDate>"
+                "</item></channel></rss>"
+            ),
+            ok=True,
+        )
+
+    result = collect_official_ir_allowlist(
+        allowlist,
+        fetch=fake_fetch,
+        listings=_listings(),
+        as_of_utc=pd.Timestamp("2026-08-19T00:00:00Z"),
+        lookback_days=45,
+        timeout=1.0,
+    )
+
+    assert result.frame.shape[0] == 1
+    assert fetched == ["https://example.test/0700.xml"]
+    tcehy_diagnostics = [item for item in result.diagnostics if item.listing_id == "TCEHY_US"]
+    assert tcehy_diagnostics
+    assert tcehy_diagnostics[0].status == "not_verified"
+    assert "mapping_status=unresolved" in tcehy_diagnostics[0].reason

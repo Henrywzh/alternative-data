@@ -260,6 +260,9 @@ COLLECTOR_COMMANDS = {
     "quote_snapshots": (
         "python scripts/research_control_tower_quote_collector.py "
         "--listings config/research_control_tower/listings.csv "
+        "--entities config/research_control_tower/entities.csv "
+        "--baskets config/research_control_tower/baskets.csv "
+        "--basket-memberships config/research_control_tower/basket_memberships.csv "
         f"--output {COLLECTOR_DIR.relative_to(REPO_ROOT)}/quote_snapshots_v1.parquet"
     ),
     "valuation_snapshots": (
