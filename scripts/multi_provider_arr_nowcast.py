@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Calculate multi-provider OpenRouter ARR and August nowcasts.
+"""Calculate multi-provider OpenRouter ARR and latest-month nowcasts.
 
 The primary source is ``daily_provider_revenue_estimates.parquet``. Complete
 calendar months use ``(month revenue / calendar days) * 365``. The latest source
@@ -13,8 +13,8 @@ this script calculates four independent provider nowcasts:
 
 Method 3's interval uses the pooled residual standard error from the latest
 seven days around separate weekday and weekend means. That residual SE is
-propagated to the nine remaining weekdays and four remaining weekend days in
-August 2026, then multiplied by 12 with the rest of the projected month.
+propagated to the remaining weekdays and weekend days in the latest calendar
+month, then multiplied by 12 with the rest of the projected month.
 
 Usage::
 
@@ -26,7 +26,7 @@ Usage::
 from __future__ import annotations
 
 import argparse
-import calendar
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -38,6 +38,19 @@ from matplotlib.ticker import FuncFormatter
 
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+
+from openrouter_arr_nowcast import (
+    build_monthly_history as _build_monthly_history,
+    calculate_nowcasts as _calculate_nowcasts,
+    calculate_pacing as _calculate_pacing,
+    latest_month_window,
+    month_is_complete as _month_is_complete,
+    pacing_periods,
+    prepare_target_daily,
+)
+
+
 RELATIVE_SOURCE = Path("data/normalized/marts/daily_provider_revenue_estimates.parquet")
 DEFAULT_SOURCE = ROOT / RELATIVE_SOURCE
 FALLBACK_SOURCE = Path.home() / "Quant" / "alternative-data" / RELATIVE_SOURCE
@@ -90,7 +103,7 @@ class Nowcast:
     m3_high: float
     m4: float
     latest_7_daily_avg: float
-    projected_august_revenue_m3: float
+    projected_latest_revenue_m3: float
     weekday_avg: float
     weekend_avg: float
 
@@ -116,50 +129,27 @@ def load_target_daily(source: Path) -> tuple[pd.DataFrame, pd.Timestamp]:
     """Load and aggregate target-provider revenue to one provider/day row."""
 
     raw = pd.read_parquet(source)
-    required = {"usage_date", "estimated_revenue"}
-    missing = required - set(raw.columns)
-    if missing:
-        raise ValueError(f"Source is missing required columns: {sorted(missing)}")
-
-    provider_col = "entity_id" if "entity_id" in raw.columns else "provider_slug"
+    # ``provider_slug`` is the canonical company identity used by the
+    # dashboard (for example, it combines ``meta`` and ``meta-llama``).
+    # ``entity_id`` can retain legacy aliases and would undercount those labs.
+    provider_col = "provider_slug" if "provider_slug" in raw.columns else "entity_id"
     if provider_col not in raw.columns:
         raise ValueError("Source has neither entity_id nor provider_slug")
 
-    raw["usage_date"] = pd.to_datetime(raw["usage_date"], errors="coerce").dt.normalize()
-    raw["estimated_revenue"] = pd.to_numeric(raw["estimated_revenue"], errors="coerce")
-    max_date = raw["usage_date"].max()
-    if pd.isna(max_date):
-        raise ValueError("usage_date contains no valid dates")
-
-    target = raw[
-        raw[provider_col].astype("string").str.casefold().isin(TARGETS)
-        & raw["usage_date"].notna()
-        & raw["estimated_revenue"].notna()
-    ].copy()
-    target = target.rename(columns={provider_col: "provider"})
-    target["provider"] = target["provider"].astype(str).str.casefold()
-
-    found = set(target["provider"].unique())
+    daily, max_date = prepare_target_daily(
+        raw, provider_column=provider_col, targets=TARGETS
+    )
+    found = set(daily["provider"].unique())
     absent = set(TARGETS) - found
     if absent:
         raise ValueError(f"Target providers absent from source: {sorted(absent)}")
-
-    daily = (
-        target.groupby(["provider", "usage_date"], as_index=False)["estimated_revenue"]
-        .sum()
-        .sort_values(["provider", "usage_date"])
-        .reset_index(drop=True)
-    )
     return daily, max_date
 
 
 def month_is_complete(dates: Iterable[pd.Timestamp], period: pd.Period) -> bool:
     """Check that every calendar day in a month is present."""
 
-    expected = pd.DatetimeIndex(
-        pd.date_range(period.start_time, period.end_time.normalize(), freq="D")
-    )
-    return pd.DatetimeIndex(dates).sort_values().equals(expected.sort_values())
+    return _month_is_complete(dates, period)
 
 
 def build_monthly_history(
@@ -167,127 +157,47 @@ def build_monthly_history(
 ) -> tuple[pd.DataFrame, pd.Period]:
     """Build complete-month revenue and ARR history for every provider."""
 
-    latest_period = max_date.to_period("M")
-    retained = daily[daily["usage_date"] < max_date].copy()
-    retained["month"] = retained["usage_date"].dt.to_period("M")
-
-    rows: list[dict[str, object]] = []
-    for (provider, period), group in retained.groupby(["provider", "month"]):
-        days_in_month = calendar.monthrange(period.year, period.month)[1]
-        observed_days = group["usage_date"].nunique()
-        complete = month_is_complete(group["usage_date"], period)
-        revenue = float(group["estimated_revenue"].sum())
-        rows.append(
-            {
-                "provider": provider,
-                "display_name": TARGETS[provider],
-                "month": period,
-                "month_label": str(period),
-                "revenue": revenue,
-                "observed_days": int(observed_days),
-                "days_in_month": days_in_month,
-                "complete": complete,
-                "arr": revenue / days_in_month * 365.0 if complete else np.nan,
-            }
-        )
-
-    history = pd.DataFrame(rows)
+    history, latest_period = _build_monthly_history(daily, max_date, TARGETS)
     if history.empty:
         raise ValueError("No historical observations before the latest source date")
     return history, latest_period
 
 
 def calculate_pacing(
-    daily: pd.DataFrame, history: pd.DataFrame, latest_period: pd.Period
+    daily: pd.DataFrame,
+    history: pd.DataFrame,
+    latest_period: pd.Period,
+    max_date: pd.Timestamp | None = None,
 ) -> pd.DataFrame:
-    """Calculate provider-specific first-18-day pacing ratios for Feb-Jul 2026."""
+    """Calculate pacing from the six calendar months before the latest month."""
 
-    year = latest_period.year
-    pacing_months = [pd.Period(f"{year}-{month:02d}") for month in range(2, 8)]
-    complete_history = history[history["complete"] & history["month"].isin(pacing_months)]
-    retained = daily[daily["usage_date"] < daily["usage_date"].max()].copy()
-    retained["month"] = retained["usage_date"].dt.to_period("M")
-
-    records: list[dict[str, object]] = []
-    for provider in TARGETS:
-        provider_history = complete_history[complete_history["provider"].eq(provider)]
-        ratios: list[float] = []
-        detail: list[str] = []
-        for period in pacing_months:
-            month_data = retained[
-                retained["provider"].eq(provider) & retained["month"].eq(period)
-            ]
-            if not provider_history["month"].eq(period).any():
-                detail.append(f"{period}: incomplete")
-                continue
-            first_18 = float(
-                month_data.loc[month_data["usage_date"].dt.day <= 18, "estimated_revenue"].sum()
-            )
-            total = float(month_data["estimated_revenue"].sum())
-            if total <= 0:
-                detail.append(f"{period}: zero revenue")
-                continue
-            ratios.append(first_18 / total)
-            detail.append(f"{period}: {first_18 / total:.3f}")
-
-        values = np.asarray(ratios, dtype=float)
-        n = len(values)
-        if n == 0 or np.all(values == 0):
-            mean, std, se, ci_low, ci_high = 0.55, 0.10, 0.05, 0.35, 0.75
-            detail.append("fallback estimate used (insufficient history)")
-        else:
-            mean = float(values.mean())
-            std = float(values.std(ddof=1)) if n > 1 else 0.10
-            se = std / np.sqrt(n) if n > 1 else 0.05
-            ci_low = max(mean - Z_95 * se if n > 1 else mean * 0.7, 0.15)
-            ci_high = min(mean + Z_95 * se if n > 1 else mean * 1.3, 0.95)
-        records.append(
-            {
-                "provider": provider,
-                "display_name": TARGETS[provider],
-                "n": n,
-                "mean": mean,
-                "std": std,
-                "se": se,
-                "ci_low": ci_low,
-                "ci_high": ci_high,
-                "detail": "; ".join(detail),
-            }
-        )
-
-    return pd.DataFrame(records).set_index("provider")
+    source_latest_date = pd.Timestamp(
+        max_date if max_date is not None else daily["usage_date"].max()
+    ).normalize()
+    observed_days = max(
+        (source_latest_date - latest_period.start_time.normalize()).days, 1
+    )
+    return _calculate_pacing(
+        daily,
+        history,
+        latest_period,
+        source_latest_date,
+        TARGETS,
+        observed_days=observed_days,
+    )
 
 
-def validate_aug_window(
+def validate_latest_window(
     daily: pd.DataFrame, max_date: pd.Timestamp
 ) -> tuple[pd.Period, pd.DatetimeIndex, pd.DatetimeIndex]:
     """Return latest month, observed MTD days, and remaining calendar days."""
 
-    latest_period = max_date.to_period("M")
-    if latest_period.start_time.year != 2026 or latest_period.month != 8:
-        # The calculations remain dynamic; this explicit warning aids operational use.
-        print(
-            f"Warning: source latest month is {latest_period}, not August 2026; "
-            "day counts are derived from the source."
-        )
+    return latest_month_window(daily, max_date, TARGETS)
 
-    observed_end = max_date - pd.Timedelta(days=1)
-    observed_dates = pd.date_range(latest_period.start_time, observed_end, freq="D")
-    remaining_dates = pd.date_range(
-        observed_end + pd.Timedelta(days=1), latest_period.end_time.normalize(), freq="D"
-    )
 
-    for provider in TARGETS:
-        provider_dates = pd.DatetimeIndex(
-            daily.loc[daily["provider"].eq(provider), "usage_date"]
-        ).normalize()
-        missing_observed = observed_dates.difference(provider_dates)
-        if not missing_observed.empty:
-            raise ValueError(
-                f"{provider} is missing latest-month complete days: "
-                f"{[date.date().isoformat() for date in missing_observed]}"
-            )
-    return latest_period, observed_dates, remaining_dates
+# Keep the old helper name for callers that imported it, while making the
+# implementation and labels month-agnostic.
+validate_aug_window = validate_latest_window
 
 
 def calculate_nowcasts(
@@ -297,77 +207,31 @@ def calculate_nowcasts(
 ) -> tuple[list[Nowcast], pd.DatetimeIndex, pd.DatetimeIndex]:
     """Calculate all four latest-month nowcasts independently by provider."""
 
-    latest_period, observed_dates, remaining_dates = validate_aug_window(daily, max_date)
-    latest_7_dates = observed_dates[-7:]
-    remaining_weekday_count = sum(date.weekday() < 5 for date in remaining_dates)
-    remaining_weekend_count = sum(date.weekday() >= 5 for date in remaining_dates)
-    observed_days = len(observed_dates)
-
-    results: list[Nowcast] = []
-    for provider, display_name in TARGETS.items():
-        provider_daily = daily[daily["provider"].eq(provider)].set_index("usage_date")
-        mtd_revenue = float(provider_daily.loc[observed_dates, "estimated_revenue"].sum())
-        latest_7 = provider_daily.loc[latest_7_dates, "estimated_revenue"].astype(float)
-        weekday_values = latest_7[latest_7.index.weekday < 5].to_numpy(dtype=float)
-        weekend_values = latest_7[latest_7.index.weekday >= 5].to_numpy(dtype=float)
-        if len(weekday_values) < 2 or len(weekend_values) < 2:
-            raise ValueError(
-                f"Latest 7-day window for {provider} lacks both weekday and weekend replicates"
-            )
-
-        weekday_avg = float(weekday_values.mean())
-        weekend_avg = float(weekend_values.mean())
-        projected_revenue = mtd_revenue + (
-            remaining_weekday_count * weekday_avg
-            + remaining_weekend_count * weekend_avg
+    history, latest_period = build_monthly_history(daily, max_date)
+    shared_results, observed_dates, remaining_dates, _ = _calculate_nowcasts(
+        daily, max_date, pacing, history, TARGETS
+    )
+    results = [
+        Nowcast(
+            provider=item.provider,
+            display_name=item.display_name,
+            mtd_revenue=item.mtd_revenue,
+            observed_days=item.observed_days,
+            m1=item.m1_arr,
+            m2=item.m2_arr,
+            m2_low=item.m2_low,
+            m2_high=item.m2_high,
+            m3=item.m3_arr,
+            m3_low=item.m3_low,
+            m3_high=item.m3_high,
+            m4=item.m4_arr,
+            latest_7_daily_avg=item.latest_7_daily_avg,
+            projected_latest_revenue_m3=item.projected_latest_revenue_m3,
+            weekday_avg=item.weekday_avg,
+            weekend_avg=item.weekend_avg,
         )
-
-        # Pooled residual SE around the two day-type means. Two group means use
-        # two degrees of freedom, leaving five in this seven-day window.
-        residuals = np.concatenate(
-            [weekday_values - weekday_avg, weekend_values - weekend_avg]
-        )
-        residual_df = len(latest_7) - 2
-        residual_se = float(np.sqrt(np.square(residuals).sum() / residual_df))
-        weekday_mean_se = residual_se / np.sqrt(len(weekday_values))
-        weekend_mean_se = residual_se / np.sqrt(len(weekend_values))
-        projected_revenue_se = np.sqrt(
-            (remaining_weekday_count * weekday_mean_se) ** 2
-            + (remaining_weekend_count * weekend_mean_se) ** 2
-        )
-        projected_low = projected_revenue - Z_95 * projected_revenue_se
-        projected_high = projected_revenue + Z_95 * projected_revenue_se
-
-        pace = pacing.loc[provider]
-        pace_mean = float(pace["mean"])
-        pace_low = float(pace["ci_low"])
-        pace_high = float(pace["ci_high"])
-        m2 = mtd_revenue / pace_mean * 12.0
-        m2_low = mtd_revenue / pace_high * 12.0
-        m2_high = mtd_revenue / pace_low * 12.0
-
-        latest_7_avg = float(latest_7.mean())
-        results.append(
-            Nowcast(
-                provider=provider,
-                display_name=display_name,
-                mtd_revenue=mtd_revenue,
-                observed_days=observed_days,
-                m1=mtd_revenue / observed_days * 365.0,
-                m2=m2,
-                m2_low=m2_low,
-                m2_high=m2_high,
-                m3=projected_revenue * 12.0,
-                m3_low=max(0.0, projected_low * 12.0),
-                m3_high=projected_high * 12.0,
-                m4=latest_7_avg * 365.0,
-                latest_7_daily_avg=latest_7_avg,
-                projected_august_revenue_m3=projected_revenue,
-                weekday_avg=weekday_avg,
-                weekend_avg=weekend_avg,
-            )
-        )
-
+        for item in shared_results
+    ]
     return results, observed_dates, remaining_dates
 
 
@@ -406,8 +270,13 @@ def print_history(history: pd.DataFrame, latest_period: pd.Period) -> None:
     print(output.to_string(float_format=lambda value: f"{value:,.1f}", na_rep="—"))
 
 
-def print_pacing(pacing: pd.DataFrame) -> None:
-    print("\n2) HISTORICAL 18-DAY PACING RATIOS — FEB–JUL 2026")
+def print_pacing(pacing: pd.DataFrame, latest_period: pd.Period | None = None) -> None:
+    if latest_period is None:
+        pacing_label = "historical calendar-month pacing"
+    else:
+        periods = pacing_periods(latest_period)
+        pacing_label = f"{periods[0]}–{periods[-1]} pacing"
+    print(f"\n2) HISTORICAL PACING RATIOS — {pacing_label}")
     rows = []
     for provider, row in pacing.iterrows():
         rows.append(
@@ -429,30 +298,34 @@ def print_nowcasts(
     latest_period: pd.Period,
     nowcasts: list[Nowcast],
 ) -> pd.DataFrame:
-    july = history[
-        history["complete"] & history["month"].eq(latest_period - 1)
+    latest_label = latest_period.strftime("%B %Y")
+    prior_period = latest_period - 1
+    prior_label = prior_period.strftime("%B %Y")
+    prior = history[
+        history["complete"] & history["month"].eq(prior_period)
     ].set_index("provider")["arr"]
 
     print(
-        f"\n3) JULY ARR VS AUGUST {latest_period.year} NOWCASTS (ARR, $M)\n"
-        "M1=Simple MTD | M2=18-day pacing | M3=weekday/weekend completion | "
+        f"\n3) {prior_label.upper()} ARR VS {latest_label.upper()} NOWCASTS (ARR, $M)\n"
+        f"M1=Simple MTD | M2={nowcasts[0].observed_days if nowcasts else 'latest'}-day pacing | "
+        "M3=weekday/weekend completion | "
         "M4=latest 7-day run-rate"
     )
     rows = []
     for item in nowcasts:
-        july_arr = float(july.get(item.provider, 0.0))
+        prior_arr = float(prior.get(item.provider, 0.0))
         rows.append(
             {
                 "Provider": item.display_name,
-                "July": dollars_m(july_arr) if july_arr > 0 else "—",
+                f"{prior_label} Complete ARR": dollars_m(prior_arr) if prior_arr > 0 else "—",
                 "M1": dollars_m(item.m1),
                 "M2": dollars_m(item.m2),
                 "M2 (95% CI)": range_m(item.m2_low, item.m2_high),
                 "M3": dollars_m(item.m3),
                 "M3 (95% CI)": range_m(item.m3_low, item.m3_high),
                 "M4": dollars_m(item.m4),
-                "M3 vs July": percent(item.m3 / july_arr - 1.0) if july_arr > 0 else "N/A",
-                "M4 vs July": percent(item.m4 / july_arr - 1.0) if july_arr > 0 else "N/A",
+                f"M3 vs {prior_label}": percent(item.m3 / prior_arr - 1.0) if prior_arr > 0 else "N/A",
+                f"M4 vs {prior_label}": percent(item.m4 / prior_arr - 1.0) if prior_arr > 0 else "N/A",
             }
         )
     table = pd.DataFrame(rows)
@@ -460,7 +333,9 @@ def print_nowcasts(
     return table
 
 
-def print_market_share(nowcasts: list[Nowcast]) -> pd.DataFrame:
+def print_market_share(
+    nowcasts: list[Nowcast], latest_period: pd.Period | None = None
+) -> pd.DataFrame:
     frame = pd.DataFrame([item.__dict__ for item in nowcasts])
     m3_total = frame["m3"].sum()
     m4_total = frame["m4"].sum()
@@ -468,7 +343,8 @@ def print_market_share(nowcasts: list[Nowcast]) -> pd.DataFrame:
     frame["m4_share"] = frame["m4"] / m4_total
     frame = frame.sort_values("m4", ascending=False)
 
-    print("\n4) AUGUST MARKET SHARE WITHIN THE 10 TARGET PROVIDERS")
+    period_label = latest_period.strftime("%B %Y") if latest_period is not None else "latest month"
+    print(f"\n4) {period_label.upper()} MARKET SHARE WITHIN THE TARGET PROVIDERS")
     rows = []
     for rank, item in enumerate(frame.itertuples(index=False), start=1):
         rows.append(
@@ -540,7 +416,7 @@ def comparison_chart(
     ax.invert_yaxis()
     ax.set_xlabel("Annualized ARR ($M)")
     ax.set_title(
-        "August 2026 ARR Nowcasts by Provider",
+        f"{as_of.strftime('%B %Y')} ARR Nowcasts by Provider",
         loc="left",
         fontsize=18,
         fontweight="bold",
@@ -635,10 +511,12 @@ def trajectory_chart(
             label=TARGETS[provider],
         )
 
-    august_x = as_of.to_period("M").to_timestamp()
+    latest_period = as_of.to_period("M")
+    latest_label = latest_period.strftime("%B %Y")
+    latest_x = latest_period.to_timestamp()
     top_frame = frame.set_index("provider").loc[top_providers]
     ax.errorbar(
-        [august_x] * len(top_frame),
+        [latest_x] * len(top_frame),
         top_frame["m3"] / 1e6,
         yerr=(
             (top_frame["m3"] - top_frame["m3_low"]) / 1e6,
@@ -651,10 +529,10 @@ def trajectory_chart(
         ecolor="#111827",
         elinewidth=1.2,
         capsize=3,
-        label="August M3 nowcast (95% CI)",
+        label=f"{latest_label} M3 nowcast (95% CI)",
     )
     ax.scatter(
-        [august_x] * len(top_frame),
+        [latest_x] * len(top_frame),
         top_frame["m4"] / 1e6,
         marker="D",
         s=42,
@@ -662,11 +540,11 @@ def trajectory_chart(
         edgecolor="white",
         linewidth=0.8,
         zorder=5,
-        label="August M4 run-rate",
+        label=f"{latest_label} M4 run-rate",
     )
 
     ax.set_title(
-        "Monthly ARR Trajectories and August 2026 Nowcasts — Top 6 Providers",
+        f"Monthly ARR Trajectories and {latest_label} Nowcasts — Top 6 Providers",
         loc="left",
         fontsize=18,
         fontweight="bold",
@@ -675,7 +553,7 @@ def trajectory_chart(
     ax.text(
         0,
         1.012,
-        "Complete months annualized ×365; August uses independent M3 weekday/weekend completion and M4 latest-7-day run-rate.",
+        f"Complete months annualized ×365; {latest_label} uses independent M3 weekday/weekend completion and M4 latest-7-day run-rate.",
         transform=ax.transAxes,
         fontsize=9.5,
         color="#4b5563",
@@ -712,7 +590,7 @@ def main() -> None:
     source = resolve_source(args.source)
     daily, max_date = load_target_daily(source)
     history, latest_period = build_monthly_history(daily, max_date)
-    pacing = calculate_pacing(daily, history, latest_period)
+    pacing = calculate_pacing(daily, history, latest_period, max_date)
     nowcasts, observed_dates, remaining_dates = calculate_nowcasts(daily, max_date, pacing)
     as_of = observed_dates[-1]
     remaining_weekdays = sum(date.weekday() < 5 for date in remaining_dates)
@@ -732,9 +610,9 @@ def main() -> None:
     )
 
     print_history(history, latest_period)
-    print_pacing(pacing)
+    print_pacing(pacing, latest_period)
     print_nowcasts(history, latest_period, nowcasts)
-    shares = print_market_share(nowcasts)
+    shares = print_market_share(nowcasts, latest_period)
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     comparison_path = args.output_dir / "multi_provider_arr_comparison.png"

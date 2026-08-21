@@ -7,8 +7,10 @@ import pandas as pd
 
 from openrouter_revenue import (
     CONSERVATIVE_ECONOMICS_COLUMNS,
+    SERVING_PROVIDER_ECONOMICS_COLUMNS,
     build_conservative_provider_economics,
     build_provider_revenue_estimates,
+    build_serving_provider_economics,
 )
 from supplement_pricing import supplement_pricing_df
 from .clean import clean_model_id, mean_of_available, percentile_rank, to_datetime
@@ -32,6 +34,12 @@ MART_REGISTRY: dict[str, dict[str, str | None]] = {
     "daily_provider_revenue_estimates": {
         "label": "Daily Provider Revenue Estimates",
         "domain": "research",
+        "primary_date_column": "usage_date",
+        "metric_column": "estimated_revenue",
+    },
+    "daily_cloud_infra_economics": {
+        "label": "Daily Serving-Provider Economics",
+        "domain": "openrouter_derived",
         "primary_date_column": "usage_date",
         "metric_column": "estimated_revenue",
     },
@@ -169,6 +177,23 @@ def compute_daily_provider_revenue_estimates(
     return output[DAILY_PROVIDER_REVENUE_ESTIMATES_COLUMNS].reset_index(drop=True)
 
 
+def compute_daily_cloud_infra_economics(
+    base_dir: str | Path | None = None,
+) -> pd.DataFrame:
+    """Compute route-level serving-provider economics from canonical datasets."""
+
+    activity = load_dataset("cloud_infra_daily_activity", base_dir=base_dir)
+    pricing = load_dataset("raw_openrouter_models", base_dir=base_dir)
+    model_activity = load_dataset("openrouter_model_activity", base_dir=base_dir)
+    if activity.empty:
+        return pd.DataFrame(columns=SERVING_PROVIDER_ECONOMICS_COLUMNS)
+    return build_serving_provider_economics(
+        activity,
+        pricing,
+        model_activity=model_activity,
+    )
+
+
 def compute_frontier_model_registry(base_dir: str | Path | None = None) -> pd.DataFrame:
     benchmarks = load_dataset("llm_benchmarks", base_dir=base_dir)
     pricing_history = load_dataset("raw_openrouter_models", base_dir=base_dir)
@@ -302,10 +327,27 @@ def build_daily_provider_revenue_estimates(
     return write_mart("daily_provider_revenue_estimates", computed, base_dir=base_dir)
 
 
+def build_daily_cloud_infra_economics(
+    base_dir: str | Path | None = None,
+    refresh: bool = False,
+) -> pd.DataFrame:
+    if not refresh:
+        existing = read_mart("daily_cloud_infra_economics", base_dir=base_dir)
+        if not existing.empty:
+            return existing
+    computed = compute_daily_cloud_infra_economics(base_dir=base_dir)
+    # This mart is fully derived from the canonical activity store, whose own
+    # ingestion layer already performs history-preserving natural-key upserts.
+    # Rewriting the mart prevents legacy or fabricated rows from surviving a
+    # corrected pricing/identity implementation.
+    return write_mart("daily_cloud_infra_economics", computed, base_dir=base_dir)
+
+
 def build_all_marts(base_dir: str | Path | None = None, refresh: bool = False) -> dict[str, pd.DataFrame]:
     return {
         "weekly_openrouter_usage": build_weekly_openrouter_usage(base_dir=base_dir, refresh=refresh),
         "daily_provider_economics": build_daily_provider_economics(base_dir=base_dir, refresh=refresh),
         "daily_provider_revenue_estimates": build_daily_provider_revenue_estimates(base_dir=base_dir, refresh=refresh),
+        "daily_cloud_infra_economics": build_daily_cloud_infra_economics(base_dir=base_dir, refresh=refresh),
         "frontier_model_registry": build_frontier_model_registry(base_dir=base_dir, refresh=refresh),
     }

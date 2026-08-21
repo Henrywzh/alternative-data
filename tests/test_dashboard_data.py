@@ -1056,13 +1056,13 @@ def test_openrouter_derived_registry_uses_compact_mart_projection() -> None:
         "openrouter_usage_economics_daily",
         "daily_provider_economics",
         "daily_provider_revenue_estimates",
+        "cloud_infra_daily_activity",
+        "daily_cloud_infra_economics",
         "openrouter_workload_intensity_models",
     ]
     assert len(OPENROUTER_LOAD_COLUMNS["openrouter_usage_economics_daily"]) < 30
     assert len(OPENROUTER_LOAD_COLUMNS["openrouter_workload_intensity_models"]) < 25
-    assert "openrouter_derived" in section_domains("OpenRouter Intelligence")
-    assert "openrouter_derived" in section_domains("OpenRouter Models")
-    assert "openrouter_derived" not in section_domains("OpenRouter Workloads")
+    assert "openrouter_derived" in section_domains("OpenRouter")
 
 
 def test_openrouter_derived_marts_load_only_compact_projected_schemas(
@@ -1133,14 +1133,60 @@ def test_openrouter_derived_marts_load_only_compact_projected_schemas(
             "estimated_revenue": 0.0042,
             "pricing_join_status": "as_recorded_pricing",
         },
+        "cloud_infra_daily_activity": {
+            "dataset_id": "cloud_infra_daily_activity",
+            "source_url": "fixture://serving-provider",
+            "source_run_id": "serving-provider-run",
+            "scraped_at": "2026-07-18T00:00:00Z",
+            "usage_date": "2026-07-17",
+            "serving_provider": "coreweave",
+            "serving_provider_name": "CoreWeave",
+            "serving_provider_type": "independent_inference",
+            "model_origin_company": "OpenAI",
+            "model_permaslug": "openai/gpt-test",
+            "total_tokens": 1200.0,
+            "is_first_party_route": False,
+            "is_complete_day": True,
+            "include_in_default_kpis": True,
+            "observation_status": "complete",
+        },
+        "daily_cloud_infra_economics": {
+            "usage_date": "2026-07-17",
+            "serving_provider": "coreweave",
+            "serving_provider_name": "CoreWeave",
+            "serving_provider_type": "independent_inference",
+            "model_origin_company": "OpenAI",
+            "model_permaslug": "openai/gpt-test",
+            "total_tokens": 1200.0,
+            "estimated_revenue": 0.0042,
+            "pricing_join_status": "matched_asof",
+            "pricing_coverage_status": "priced",
+            "has_pricing": True,
+            "priced_tokens": 1200.0,
+            "unpriced_tokens": 0.0,
+            "is_first_party_route": False,
+            "is_complete_day": True,
+            "include_in_default_kpis": True,
+            "observation_status": "complete",
+        },
     }
     remote_payloads: dict[str, bytes] = {}
     for dataset_id, row in rows.items():
         frame = pd.DataFrame([{**row, "unused_raw_payload": "x" * 10_000}])
-        path = mart_root / f"{dataset_id}.parquet"
+        root = (
+            tmp_path / "data" / "normalized" / "openrouter"
+            if dataset_id == "cloud_infra_daily_activity"
+            else mart_root
+        )
+        root.mkdir(parents=True, exist_ok=True)
+        path = root / f"{dataset_id}.parquet"
         frame.to_parquet(path, index=False)
         remote_payloads[
-            f"data/normalized/marts/{dataset_id}.parquet"
+            (
+                f"data/normalized/openrouter/{dataset_id}.parquet"
+                if dataset_id == "cloud_infra_daily_activity"
+                else f"data/normalized/marts/{dataset_id}.parquet"
+            )
         ] = path.read_bytes()
 
     local = load_domain_datasets("openrouter_derived", base_dir=tmp_path)
@@ -1150,7 +1196,12 @@ def test_openrouter_derived_marts_load_only_compact_projected_schemas(
         assert list(result.frame.columns) == OPENROUTER_LOAD_COLUMNS[dataset_id]
         assert result.missing_columns == []
         assert "unused_raw_payload" not in result.frame.columns
-        assert result.source_path == mart_root / f"{dataset_id}.parquet"
+        expected_root = (
+            tmp_path / "data" / "normalized" / "openrouter"
+            if dataset_id == "cloud_infra_daily_activity"
+            else mart_root
+        )
+        assert result.source_path == expected_root / f"{dataset_id}.parquet"
 
     fetched_paths: list[str] = []
 
@@ -1172,6 +1223,8 @@ def test_openrouter_derived_marts_load_only_compact_projected_schemas(
         "data/normalized/marts/openrouter_usage_economics_daily.parquet",
         "data/normalized/marts/daily_provider_economics.parquet",
         "data/normalized/marts/daily_provider_revenue_estimates.parquet",
+        "data/normalized/openrouter/cloud_infra_daily_activity.parquet",
+        "data/normalized/marts/daily_cloud_infra_economics.parquet",
         "data/normalized/marts/openrouter_workload_intensity_models.parquet",
     }
     assert all("data/raw/" not in path for path in fetched_paths)
@@ -1365,13 +1418,11 @@ def test_load_latest_manifest_can_skip_raw_manifest_scan_when_datasets_provided(
 
 def test_section_domains_loads_only_selected_dashboard_inputs() -> None:
     assert section_domains("Overview") == ("overview",)
-    assert section_domains("OpenRouter Intelligence") == (
-        "openrouter_intelligence", "compute_availability", "openrouter_official_market", "openrouter_derived",
+    assert section_domains("OpenRouter") == (
+        "openrouter_intelligence", "compute_availability", "openrouter_official_market",
+        "openrouter_derived", "openrouter_model_explorer", "openrouter_catalog",
+        "openrouter_workloads", "apps", "artificial_analysis",
     )
-    assert section_domains("OpenRouter Models") == (
-        "openrouter_model_explorer", "openrouter_catalog", "openrouter_derived",
-    )
-    assert section_domains("OpenRouter Workloads") == ("openrouter_workloads", "apps")
     assert section_domains("Provider Adoption") == ("provider_adoption",)
     assert section_domains("Artificial Analysis") == ("artificial_analysis",)
     assert section_domains("Semiconductor Analysis") == (

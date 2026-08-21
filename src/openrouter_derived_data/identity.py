@@ -207,14 +207,11 @@ def rank_capability_families(
             )
         )
         eligible["_mapped"] = eligible["model_id"].isin(effective_entries)
-        # Rank only curated families, and filter them before assigning
-        # ranks, so family_rank is always contiguous (1..N) over mapped
-        # families. Ranking unmapped benchmark leaders first and dropping
-        # them afterwards left rank holes that broke downstream tier-cohort
-        # completeness guards.
-        eligible = eligible.loc[eligible["_mapped"]].copy()
-        if eligible.empty:
-            continue
+        # Preserve the benchmark's true point-in-time ordering.  An unmapped
+        # leader is a coverage gap, not permission to promote a lower-ranked
+        # curated family into the SOTA cohort.  Unmapped rows intentionally
+        # remain in the ranking with a sentinel family id; downstream route
+        # joins cannot match them and therefore expose partial coverage.
         eligible = eligible.sort_values(
             ["family_id", "intelligence_index", "release_date", "model_id"],
             ascending=[True, False, False, True],
@@ -229,10 +226,13 @@ def rank_capability_families(
         eligible["benchmark_snapshot_date"] = benchmark_snapshot_date
         eligible["representative_aa_model_id"] = eligible["model_id"]
         eligible["representative_model_name"] = eligible["model_name"]
-        eligible["model_match_status"] = (
+        exact_status = (
             "backfilled_current_score_exact_match"
             if backfill_latest_snapshot
             else "exact_curated_match"
+        )
+        eligible["model_match_status"] = eligible["_mapped"].map(
+            {True: exact_status, False: "unmapped_no_activity_route"}
         )
         eligible["methodology_version"] = capability_map.methodology_version
         ranked_days.append(eligible[RANKING_COLUMNS])

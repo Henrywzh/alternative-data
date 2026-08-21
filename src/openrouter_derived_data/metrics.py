@@ -1006,6 +1006,12 @@ def _realized_sota_row(
     # historical SOTA observations for dated, preview, and fast routes after
     # those routes are retired from the current catalog.
     priced_count = paid.loc[paid["denominator"].gt(0), "family_id"].nunique()
+    expected_families: set[str] = set()
+    for family_ids in coverage.get(
+        "expected_family_ids", pd.Series(dtype="object")
+    ).dropna():
+        expected_families.update(family_ids)
+    expected_count = max(5, len(expected_families))
     historical_fill_used = bool(
         coverage.get("historical_fill_used", pd.Series(dtype=bool))
         .fillna(False)
@@ -1015,6 +1021,7 @@ def _realized_sota_row(
     # the window, compute from the available families instead of forcing a
     # missing value whenever the full five-family cohort is not complete.
     guarded = observed_count >= 3 and priced_count >= 3
+    partial_true_cohort = observed_count < expected_count
     row.update(
         {
             "value": numerator / denominator * 1_000_000
@@ -1028,7 +1035,7 @@ def _realized_sota_row(
             "pricing_snapshot_date": _latest_date(
                 coverage["pricing_snapshot_date"]
             ),
-            "expected_family_count": 5,
+            "expected_family_count": expected_count,
             "priced_family_count": priced_count,
             "observed_family_count": observed_count,
             "observed_model_count": len(observed_models),
@@ -1038,7 +1045,9 @@ def _realized_sota_row(
                 "excluded_unpriced_tokens"
             ].sum(),
             "pricing_join_status": (
-                "sota_route_historical_fill"
+                "partial_true_sota_route_coverage"
+                if partial_true_cohort
+                else "sota_route_historical_fill"
                 if historical_fill_used
                 else "strict_asof_pricing"
             ),
@@ -1125,6 +1134,9 @@ def _prepare_sota_daily(
         coverage_rows.append(
             {
                 "usage_date": activity_date,
+                "expected_family_ids": frozenset(
+                    daily_rankings["family_id"].dropna().astype(str)
+                ),
                 "excluded_free_tokens": free["total_tokens"].sum(),
                 "excluded_unpriced_tokens": unpriced["total_tokens"].sum(),
                 "pricing_snapshot_date": contributing_prices[
@@ -1152,6 +1164,7 @@ def _prepare_sota_daily(
         coverage_rows,
         columns=[
             "usage_date",
+            "expected_family_ids",
             "excluded_free_tokens",
             "excluded_unpriced_tokens",
             "pricing_snapshot_date",

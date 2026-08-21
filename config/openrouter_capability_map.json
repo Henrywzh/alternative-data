@@ -1,5 +1,5 @@
 {
-  "methodology_version": "openrouter-derived-v2-backfilled-aa-score",
+  "methodology_version": "openrouter-derived-v3-true-aa-rank-partial-coverage",
   "models": [
     {
       "aa_model_id": "90e078f2-051b-4c63-8919-76618971cb3f",
