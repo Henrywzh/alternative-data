@@ -975,6 +975,28 @@ def _list_price_row(
     return row
 
 
+def _sota_pricing_join_status(
+    *,
+    partial_true_cohort: bool,
+    historical_fill_used: bool,
+) -> str:
+    """Report both SOTA caveats, not whichever one is checked first.
+
+    Partial cohort coverage and historical price fill are independent
+    conditions.  Chaining them as a single conditional expression silently
+    dropped the historical-fill signal on any day that was also partially
+    covered, so a consumer filtering for "sota_route_historical_fill" would
+    not see those days at all.
+    """
+    if partial_true_cohort and historical_fill_used:
+        return "partial_true_sota_route_coverage_historical_fill"
+    if partial_true_cohort:
+        return "partial_true_sota_route_coverage"
+    if historical_fill_used:
+        return "sota_route_historical_fill"
+    return "strict_asof_pricing"
+
+
 def _realized_sota_row(
     usage_date: pd.Timestamp,
     current_rankings: pd.DataFrame,
@@ -987,9 +1009,7 @@ def _realized_sota_row(
     row = _base_daily_row(
         usage_date, "realized_sota_price", "sota", provenance
     )
-    current_rankings, complete_current_cohort = _tier_cohort(
-        current_rankings, "sota"
-    )
+    current_rankings, _ = _tier_cohort(current_rankings, "sota")
     window_start = usage_date - pd.Timedelta(days=6)
     paid = daily_sota.loc[
         daily_sota["usage_date"].between(window_start, usage_date)
@@ -1008,16 +1028,22 @@ def _realized_sota_row(
     # historical SOTA observations for dated, preview, and fast routes after
     # those routes are retired from the current catalog.
     priced_count = paid.loc[paid["denominator"].gt(0), "family_id"].nunique()
+    expected_families: set[str] = set()
+    for family_ids in coverage.get(
+        "expected_family_ids", pd.Series(dtype="object")
+    ).dropna():
+        expected_families.update(family_ids)
+    expected_count = max(5, len(expected_families))
     historical_fill_used = bool(
         coverage.get("historical_fill_used", pd.Series(dtype=bool))
         .fillna(False)
         .any()
     )
-    guarded = (
-        complete_current_cohort
-        and observed_count >= 3
-        and priced_count >= 3
-    )
+    # Grace floor: with at least three observed and three priced families in
+    # the window, compute from the available families instead of forcing a
+    # missing value whenever the full five-family cohort is not complete.
+    guarded = observed_count >= 3 and priced_count >= 3
+    partial_true_cohort = observed_count < expected_count
     row.update(
         {
             "value": numerator / denominator * 1_000_000
@@ -1031,7 +1057,7 @@ def _realized_sota_row(
             "pricing_snapshot_date": _latest_date(
                 coverage["pricing_snapshot_date"]
             ),
-            "expected_family_count": 5,
+            "expected_family_count": expected_count,
             "priced_family_count": priced_count,
             "observed_family_count": observed_count,
             "observed_model_count": len(observed_models),
@@ -1040,10 +1066,9 @@ def _realized_sota_row(
             "excluded_unpriced_tokens": coverage[
                 "excluded_unpriced_tokens"
             ].sum(),
-            "pricing_join_status": (
-                "sota_route_historical_fill"
-                if historical_fill_used
-                else "strict_asof_pricing"
+            "pricing_join_status": _sota_pricing_join_status(
+                partial_true_cohort=partial_true_cohort,
+                historical_fill_used=historical_fill_used,
             ),
             "methodology_version": capability_map.methodology_version,
         }
@@ -1060,10 +1085,14 @@ def _prepare_sota_daily(
     paid_days: list[pd.DataFrame] = []
     coverage_rows: list[dict[str, object]] = []
     for activity_date, activity_day in economics.groupby("usage_date"):
-        daily_rankings, complete_cohort = _tier_cohort(
+        daily_rankings, _ = _tier_cohort(
             rankings.loc[rankings["usage_date"].eq(activity_date)], "sota"
         )
-        if not complete_cohort:
+        # Keep any day with at least three ranked SOTA families instead of
+        # skipping it whenever the five-family cohort is not complete. The
+        # realized row's own coverage guard decides whether the day's data
+        # supports a published value.
+        if daily_rankings["family_id"].nunique() < 3:
             continue
         daily_routes = _routes_for_rankings(
             daily_rankings, capability_map, activity_date
@@ -1124,6 +1153,9 @@ def _prepare_sota_daily(
         coverage_rows.append(
             {
                 "usage_date": activity_date,
+                "expected_family_ids": frozenset(
+                    daily_rankings["family_id"].dropna().astype(str)
+                ),
                 "excluded_free_tokens": free["total_tokens"].sum(),
                 "excluded_unpriced_tokens": unpriced["total_tokens"].sum(),
                 "pricing_snapshot_date": contributing_prices[
@@ -1151,6 +1183,7 @@ def _prepare_sota_daily(
         coverage_rows,
         columns=[
             "usage_date",
+            "expected_family_ids",
             "excluded_free_tokens",
             "excluded_unpriced_tokens",
             "pricing_snapshot_date",

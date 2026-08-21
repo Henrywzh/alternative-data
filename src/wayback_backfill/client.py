@@ -11,6 +11,7 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass
+from datetime import date, timedelta
 from urllib.parse import quote
 
 import requests
@@ -29,6 +30,79 @@ class Capture:
     @property
     def capture_date(self) -> str:
         return f"{self.timestamp[0:4]}-{self.timestamp[4:6]}-{self.timestamp[6:8]}"
+
+
+@dataclass(frozen=True)
+class CaptureCoveragePlan:
+    """Minimal archived captures and any target ranges they cannot cover."""
+
+    selected: tuple[Capture, ...]
+    uncovered_ranges: tuple[tuple[str, str], ...]
+
+
+def plan_rolling_window_captures(
+    captures: list[Capture],
+    *,
+    start_date: date,
+    end_date: date,
+    window_days: int = 91,
+) -> CaptureCoveragePlan:
+    """Greedily choose the fewest captures that cover a rolling chart history.
+
+    Each archived page is treated as an interval ending on its capture date and
+    spanning ``window_days`` calendar days.  The returned gap ranges make
+    incomplete Wayback coverage explicit instead of silently presenting a
+    discontinuous backfill as complete.
+    """
+    if end_date < start_date:
+        raise ValueError("end_date must be on or after start_date")
+    if window_days < 1:
+        raise ValueError("window_days must be positive")
+
+    intervals: list[tuple[date, date, Capture]] = []
+    for capture in captures:
+        try:
+            captured_on = date.fromisoformat(capture.capture_date)
+        except ValueError:
+            continue
+        intervals.append(
+            (
+                captured_on - timedelta(days=window_days - 1),
+                captured_on,
+                capture,
+            )
+        )
+    intervals.sort(key=lambda item: (item[0], item[1], item[2].timestamp))
+
+    selected: list[Capture] = []
+    gaps: list[tuple[str, str]] = []
+    cursor = start_date
+    while cursor <= end_date:
+        covering = [
+            interval
+            for interval in intervals
+            if interval[0] <= cursor <= interval[1]
+        ]
+        if covering:
+            best = max(covering, key=lambda item: (item[1], item[2].timestamp))
+            if not selected or selected[-1].timestamp != best[2].timestamp:
+                selected.append(best[2])
+            cursor = best[1] + timedelta(days=1)
+            continue
+
+        future_starts = [interval[0] for interval in intervals if interval[0] > cursor]
+        if not future_starts:
+            gaps.append((cursor.isoformat(), end_date.isoformat()))
+            break
+        next_start = min(future_starts)
+        gap_end = min(end_date, next_start - timedelta(days=1))
+        gaps.append((cursor.isoformat(), gap_end.isoformat()))
+        cursor = next_start
+
+    return CaptureCoveragePlan(
+        selected=tuple(sorted(selected, key=lambda capture: capture.timestamp)),
+        uncovered_ranges=tuple(gaps),
+    )
 
 
 class WaybackClient:

@@ -29,8 +29,7 @@ def test_dashboard_overview_renders_real_chart_and_lineage_table(monkeypatch) ->
     assert len(app.get("plotly_chart")) >= 5
     assert len(app.dataframe) >= 2
     assert "Artificial Analysis" in [button.label for button in app.button]
-    assert "OpenRouter Intelligence" in [button.label for button in app.button]
-    assert "OpenRouter Workloads" in [button.label for button in app.button]
+    assert "OpenRouter" in [button.label for button in app.button]
     assert all("pulse-signal-card" not in str(markdown.value) for markdown in app.markdown)
     assert any("not an other-provider bucket" in str(caption.value) for caption in app.caption)
     rendered_markdown = "\n".join(str(markdown.value) for markdown in app.markdown)
@@ -51,7 +50,7 @@ def test_sidebar_highlight_updates_with_selected_page(monkeypatch) -> None:
     assert vercel.proto.type == "primary"
 
 
-def test_model_deep_link_is_removed_outside_openrouter_models(monkeypatch) -> None:
+def test_model_deep_link_is_removed_outside_unified_openrouter(monkeypatch) -> None:
     monkeypatch.setenv("DATA_SOURCE", "local")
     app = AppTest.from_file(APP_PATH, default_timeout=90)
     app.query_params["model"] = "xiaomi/mimo-v2.5"
@@ -62,27 +61,25 @@ def test_model_deep_link_is_removed_outside_openrouter_models(monkeypatch) -> No
     assert "model" not in app.query_params
 
 
-def test_openrouter_intelligence_hides_official_market_panel(monkeypatch) -> None:
+def test_model_deep_link_is_preserved_on_unified_openrouter(monkeypatch) -> None:
     monkeypatch.setenv("DATA_SOURCE", "local")
     app = AppTest.from_file(APP_PATH, default_timeout=120)
-    app.session_state["main_section"] = "OpenRouter Intelligence"
+    app.session_state["main_section"] = "OpenRouter"
+    app.query_params["model"] = "xiaomi/mimo-v2.5"
 
     app.run()
 
     assert not app.exception
-    rendered_markdown = "\n".join(str(markdown.value) for markdown in app.markdown)
-    assert "Tracks model and provider usage" in rendered_markdown
-    assert "Official Daily Market Volume" not in rendered_markdown
-    assert "Context Length Usage" not in rendered_markdown
-    assert "Modality Rankings" not in rendered_markdown
-    assert "App Rankings & Trends" not in rendered_markdown
-    assert any("‘Other’ is not the missing-provider gap" in str(caption.value) for caption in app.caption)
+    assert app.query_params["model"] in (
+        "xiaomi/mimo-v2.5",
+        ["xiaomi/mimo-v2.5"],
+    )
 
 
-def test_openrouter_workloads_contains_context_modality_and_apps(monkeypatch) -> None:
+def test_unified_openrouter_contains_model_compare_and_workload_panels(monkeypatch) -> None:
     monkeypatch.setenv("DATA_SOURCE", "local")
     app = AppTest.from_file(APP_PATH, default_timeout=120)
-    app.session_state["main_section"] = "OpenRouter Workloads"
+    app.session_state["main_section"] = "OpenRouter"
 
     app.run()
 
@@ -91,7 +88,7 @@ def test_openrouter_workloads_contains_context_modality_and_apps(monkeypatch) ->
     assert "Context Length Usage" in rendered_markdown
     assert "Modality Rankings" in rendered_markdown
     assert "App Rankings & Trends" in rendered_markdown
-    assert "Provider Revenue &amp; Token Volume" not in rendered_markdown
+    assert "Provider Revenue &amp; Token Volume" in rendered_markdown
 
 
 def test_provider_incident_section_renders_live_history_and_coverage(monkeypatch) -> None:

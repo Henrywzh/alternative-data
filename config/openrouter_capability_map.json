@@ -1,5 +1,5 @@
 {
-  "methodology_version": "openrouter-derived-v2-backfilled-aa-score",
+  "methodology_version": "openrouter-derived-v3-true-aa-rank-partial-coverage",
   "models": [
     {
       "aa_model_id": "90e078f2-051b-4c63-8919-76618971cb3f",
@@ -291,6 +291,30 @@
       "family_id": "qwen/qwen3.8-max",
       "effective_from": "2026-08-03",
       "openrouter_routes": [{"model_id": "qwen/qwen3.8-max-20260803", "effective_from": "2026-08-04"}]
+    },
+    {
+      "aa_model_id": "c8adc5cf-fd5a-407b-af51-dc3bede3e49c",
+      "family_id": "x-ai/grok-4.6",
+      "effective_from": "2026-08-12",
+      "openrouter_routes": [{"model_id": "x-ai/grok-4.6-20260810", "effective_from": "2026-08-12"}]
+    },
+    {
+      "aa_model_id": "cd684ea4-b475-4269-b001-d469d06d8a7a",
+      "family_id": "z-ai/glm-5.3",
+      "effective_from": "2026-08-18",
+      "openrouter_routes": [{"model_id": "z-ai/glm-5.3-20260816", "effective_from": "2026-08-18"}]
+    },
+    {
+      "aa_model_id": "8df710d3-9dae-4498-9b4e-9818238e6f31",
+      "family_id": "qwen/qwen3.8-2.4t-a95b",
+      "effective_from": "2026-08-12",
+      "openrouter_routes": [{"model_id": "qwen/qwen3.8-2.4t-a95b-20260812", "effective_from": "2026-08-12"}]
+    },
+    {
+      "aa_model_id": "04ee6719-0327-463b-a1a1-70a6a78254f9",
+      "family_id": "meta/muse-spark-1.2",
+      "effective_from": "2026-08-05",
+      "openrouter_routes": [{"model_id": "meta/muse-spark-1.2-20260805", "effective_from": "2026-08-05"}]
     }
   ]
 }
