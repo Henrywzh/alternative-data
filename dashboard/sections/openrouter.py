@@ -4,6 +4,7 @@ import inspect
 import json
 import re
 import sys
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
@@ -935,6 +936,78 @@ def _period_completion_fraction(
     return observed / expected
 
 
+@dataclass(frozen=True)
+class _PartialPeriodWindow:
+    """The newest incomplete week/month, and the finalized days inside it."""
+
+    daily: pd.DataFrame
+    daily_dates: pd.Series
+    period_start: pd.Timestamp
+    period_label: str
+    period_dates: pd.DatetimeIndex
+    observed_dates: pd.DatetimeIndex
+    period_mask: pd.Series
+
+
+def _latest_partial_period_window(
+    daily_pivot: pd.DataFrame,
+    granularity: str,
+    partial_usage_date: pd.Timestamp | None = None,
+) -> _PartialPeriodWindow | None:
+    """Locate the newest incomplete period. None when there isn't one.
+
+    Shared by the estimator and by its error interval so the two can never
+    disagree about which days are being extrapolated from.
+    """
+    if daily_pivot.empty or granularity not in {"weekly", "monthly"}:
+        return None
+
+    daily = daily_pivot.apply(pd.to_numeric, errors="coerce").copy()
+    daily_dates = pd.to_datetime(daily.index, errors="coerce")
+    valid_mask = pd.Series(daily_dates.notna(), index=daily.index)
+    if not valid_mask.any():
+        return None
+
+    daily = daily.loc[valid_mask].copy()
+    daily_dates = pd.Series(daily_dates[valid_mask], index=daily.index)
+
+    if partial_usage_date is not None:
+        partial_day = pd.Timestamp(partial_usage_date).normalize()
+        finalized = daily_dates < partial_day
+        if finalized.any():
+            daily = daily.loc[finalized]
+            daily_dates = daily_dates.loc[finalized]
+
+    latest_date = daily_dates.max()
+    if pd.isna(latest_date):
+        return None
+
+    if granularity == "weekly":
+        period_start = latest_date - pd.Timedelta(days=int(latest_date.weekday()))
+        period_end = period_start + pd.Timedelta(days=6)
+        period_label = period_start.strftime("%Y-%m-%d")
+    else:
+        period_start = latest_date.replace(day=1)
+        period_end = period_start + pd.offsets.MonthEnd(0)
+        period_label = period_start.strftime("%Y-%m")
+
+    period_dates = pd.date_range(period_start, period_end, freq="D")
+    period_mask = (daily_dates >= period_start) & (daily_dates <= period_end)
+    observed_dates = pd.DatetimeIndex(sorted(daily_dates[period_mask].dt.normalize().unique()))
+    if len(observed_dates) == 0 or len(observed_dates) >= len(period_dates):
+        return None
+
+    return _PartialPeriodWindow(
+        daily=daily,
+        daily_dates=daily_dates,
+        period_start=period_start,
+        period_label=period_label,
+        period_dates=period_dates,
+        observed_dates=observed_dates,
+        period_mask=period_mask,
+    )
+
+
 def _nowcast_latest_partial_period(
     period_pivot: pd.DataFrame,
     daily_pivot: pd.DataFrame,
@@ -959,46 +1032,17 @@ def _nowcast_latest_partial_period(
     worse than fixing neither.
     """
     adjusted = period_pivot.copy()
-    if adjusted.empty or daily_pivot.empty or granularity not in {"weekly", "monthly"}:
+    window = _latest_partial_period_window(daily_pivot, granularity, partial_usage_date)
+    if window is None or adjusted.empty or window.period_label not in adjusted.index:
         return adjusted, set()
 
-    daily = daily_pivot.apply(pd.to_numeric, errors="coerce").copy()
-    daily_dates = pd.to_datetime(daily.index, errors="coerce")
-    valid_mask = pd.Series(daily_dates.notna(), index=daily.index)
-    if not valid_mask.any():
-        return adjusted, set()
-
-    daily = daily.loc[valid_mask].copy()
-    daily_dates = pd.Series(daily_dates[valid_mask], index=daily.index)
-
-    if partial_usage_date is not None:
-        partial_day = pd.Timestamp(partial_usage_date).normalize()
-        finalized = daily_dates < partial_day
-        if finalized.any():
-            daily = daily.loc[finalized]
-            daily_dates = daily_dates.loc[finalized]
-
-    latest_date = daily_dates.max()
-    if pd.isna(latest_date):
-        return adjusted, set()
-
-    if granularity == "weekly":
-        period_start = latest_date - pd.Timedelta(days=int(latest_date.weekday()))
-        period_end = period_start + pd.Timedelta(days=6)
-        period_label = period_start.strftime("%Y-%m-%d")
-    else:
-        period_start = latest_date.replace(day=1)
-        period_end = period_start + pd.offsets.MonthEnd(0)
-        period_label = period_start.strftime("%Y-%m")
-
-    if period_label not in adjusted.index:
-        return adjusted, set()
-
-    period_dates = pd.date_range(period_start, period_end, freq="D")
-    period_mask = (daily_dates >= period_start) & (daily_dates <= period_end)
-    observed_dates = pd.DatetimeIndex(sorted(daily_dates[period_mask].dt.normalize().unique()))
-    if len(observed_dates) == 0 or len(observed_dates) >= len(period_dates):
-        return adjusted, set()
+    daily = window.daily
+    daily_dates = window.daily_dates
+    period_start = window.period_start
+    period_label = window.period_label
+    period_dates = window.period_dates
+    observed_dates = window.observed_dates
+    period_mask = window.period_mask
 
     per_column_weights, pooled_weights = _dow_weight_profile(daily, daily_dates, period_start)
 
@@ -1021,6 +1065,79 @@ def _nowcast_latest_partial_period(
     if not scaled_any:
         return period_pivot.copy(), set()
     return adjusted, {period_label}
+
+
+# Below this many replayable past periods the error spread is noise, so no
+# interval is offered rather than a falsely precise one.
+NOWCAST_INTERVAL_MIN_SAMPLES = 6
+NOWCAST_INTERVAL_LOW_PCT = 10
+NOWCAST_INTERVAL_HIGH_PCT = 90
+
+
+def _nowcast_error_interval(
+    daily: pd.DataFrame,
+    daily_dates: pd.Series,
+    observed_weekdays: set[int],
+    before: pd.Timestamp,
+) -> tuple[float, float] | None:
+    """How wrong this estimator has been, replayed on past complete weeks.
+
+    Each past complete week is re-estimated from the same weekdays the
+    current period has observed, so the spread answers "how much does this
+    estimator miss by *at this point in the week*" rather than on average.
+    Returns (p10, p90) as multiplicative errors, e.g. (-0.06, +0.07).
+    """
+    if not observed_weekdays or len(observed_weekdays) >= 7:
+        return None
+
+    history = daily[daily_dates < before]
+    if history.empty:
+        return None
+    dates = daily_dates[history.index]
+    weeks = (dates - pd.to_timedelta(dates.dt.weekday, unit="D")).dt.strftime("%Y-%m-%d")
+
+    errors: list[float] = []
+    for week_start, week_rows in history.groupby(weeks):
+        week_dates = daily_dates[week_rows.index]
+        if week_dates.dt.weekday.nunique() < 7:
+            continue
+        actual = float(week_rows.apply(pd.to_numeric, errors="coerce").fillna(0).to_numpy().sum())
+        if actual <= 0:
+            continue
+        observed_rows = week_rows[week_dates.dt.weekday.isin(observed_weekdays)]
+        observed_total = float(observed_rows.apply(pd.to_numeric, errors="coerce").fillna(0).to_numpy().sum())
+        if observed_total <= 0:
+            continue
+        # Replay with the profile that was available before this week, not
+        # the one fitted with it -- otherwise the spread flatters itself.
+        _, pooled = _dow_weight_profile(daily, daily_dates, pd.Timestamp(week_start))
+        completion = float(sum(pooled[day] for day in observed_weekdays))
+        if completion <= 0:
+            continue
+        errors.append((observed_total / completion - actual) / actual)
+
+    if len(errors) < NOWCAST_INTERVAL_MIN_SAMPLES:
+        return None
+    series = pd.Series(errors)
+    return (
+        float(series.quantile(NOWCAST_INTERVAL_LOW_PCT / 100)),
+        float(series.quantile(NOWCAST_INTERVAL_HIGH_PCT / 100)),
+    )
+
+
+def _latest_partial_period_error_interval(
+    daily_pivot: pd.DataFrame,
+    granularity: str,
+    partial_usage_date: pd.Timestamp | None = None,
+) -> tuple[float, float] | None:
+    """(p10, p90) multiplicative error for the estimate now on screen."""
+    window = _latest_partial_period_window(daily_pivot, granularity, partial_usage_date)
+    if window is None or granularity != "weekly":
+        # Monthly would have a handful of replayable periods at most, far
+        # too few to quote a quantile from.
+        return None
+    observed_weekdays = {int(day.weekday()) for day in window.observed_dates}
+    return _nowcast_error_interval(window.daily, window.daily_dates, observed_weekdays, window.period_start)
 
 
 def _nowcast_method_caption(partial_usage_date: pd.Timestamp | None) -> str:
@@ -1048,15 +1165,25 @@ def _make_change_line_chart(
     colors: list[str],
     x_title: str,
     y_title: str,
+    error_bars: dict[str, tuple[float, float]] | None = None,
 ) -> go.Figure:
     fig = go.Figure()
     for i, col in enumerate(pivot_df.columns):
+        error_y = None
+        if error_bars:
+            # Only the estimated point carries an interval; every finalized
+            # point is measured, so its bar is zero-length and invisible.
+            minus = [error_bars.get(str(label), (0.0, 0.0))[0] for label in pivot_df.index]
+            plus = [error_bars.get(str(label), (0.0, 0.0))[1] for label in pivot_df.index]
+            if any(value > 0 for value in minus + plus):
+                error_y = dict(type="data", symmetric=False, array=plus, arrayminus=minus, thickness=1.5, width=6)
         fig.add_trace(
             go.Scatter(
                 x=pivot_df.index,
                 y=pivot_df[col],
                 name=str(col),
                 mode="lines+markers",
+                error_y=error_y,
                 line=dict(width=2.5, color=colors[i % len(colors)]),
                 connectgaps=False,
                 hovertemplate=f"<b>{col}</b><br>%{{x}}<br>%{{y:+.1f}}%<extra></extra>",
@@ -1186,7 +1313,16 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
             "usage_date_dt",
             partial_usage_date=partial_usage_date,
         )
-        pivot_tok_monthly_modern = modern_tok.pivot_table(index="usage_month", columns="provider_label", values="total_tokens", aggfunc="sum").fillna(0).sort_index()
+        # Month-to-date sums finalized days only, for the same reason the
+        # weekly scaler does: a total that mixes whole days with a three-hour
+        # one is not a total of anything. The sliver is visible on the daily
+        # chart, marked, rather than folded in here.
+        finalized_tok = (
+            modern_tok[modern_tok["usage_date_dt"].dt.normalize() != pd.Timestamp(partial_usage_date).normalize()]
+            if partial_usage_date is not None
+            else modern_tok
+        )
+        pivot_tok_monthly_modern = finalized_tok.pivot_table(index="usage_month", columns="provider_label", values="total_tokens", aggfunc="sum").fillna(0).sort_index()
         weekly_coverage = _period_coverage(modern_tok, "usage_week", "usage_date_str", 7)
         monthly_expected = modern_tok.assign(
             expected_days=modern_tok["usage_date_dt"].dt.days_in_month
@@ -4696,11 +4832,23 @@ def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrou
             st.info(f"No {date_title.lower()} data available.")
             return
         today_month = datetime.now().strftime("%Y-%m")
+        partial_day_label = (
+            pd.Timestamp(partial_usage_date).strftime("%Y-%m-%d") if partial_usage_date is not None else None
+        )
+        # The scrape day is real data, just incomplete, so the daily chart
+        # shows it rather than hiding it -- a dropped day reads as "no data
+        # yet" and invites mistaking the last finalized day for today. It is
+        # labelled instead, and kept out of every aggregate below.
+        show_partial_day = granularity == "daily" and partial_day_label in {str(d) for d in pivot_df.index}
         display_index = [
-            f"{d} (MTD)" if date_title == "Usage Month" and str(d) == today_month else d
+            f"{d} (MTD)"
+            if date_title == "Usage Month" and str(d) == today_month
+            else (f"{d} (partial)" if show_partial_day and str(d) == partial_day_label else d)
             for d in pivot_df.index
         ]
         estimate_periods: set[str] = set()
+        error_bars: dict[str, tuple[float, float]] = {}
+        interval_caption: str | None = None
         if is_change:
             aggregate_label = "Total Revenue" if is_revenue else "Total Tokens"
             change_source = pivot_df
@@ -4711,6 +4859,15 @@ def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrou
                     granularity,
                     partial_usage_date=partial_usage_date,
                 )
+            elif show_partial_day:
+                # Daily change is a trailing seven-day mean, and the partial
+                # day is the newest point, so it sits in exactly one window
+                # -- the last one. That is enough to invent a decline at the
+                # right edge (a real -4.3% appeared this way against a
+                # genuinely rising week). Later windows never see it: the
+                # next scrape finalizes the day. Drop it from the rolling
+                # input and let the series end one point early.
+                change_source = pivot_df.drop(index=partial_day_label)
             plot_df = _pivot_to_aggregate_change_percent(change_source, granularity, aggregate_label)
             if granularity in {"weekly", "monthly"}:
                 plot_df = _drop_first_valid_change_point(plot_df)
@@ -4720,11 +4877,44 @@ def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrou
         else:
             plot_df = pivot_df
         if is_change and not plot_df.empty:
+            # Label from plot_df's own index: it can be shorter than
+            # pivot_df's when a partial day was dropped from the rolling
+            # input, and zipping the two would misalign every label after
+            # the gap.
+            label_by_period = {str(original): label for original, label in zip(pivot_df.index, display_index, strict=False)}
+            estimated_labels = {
+                str(period): f"{label_by_period.get(str(period), period)} (est.)"
+                for period in plot_df.index
+                if str(period) in estimate_periods
+            }
             plot_df = plot_df.copy()
             plot_df.index = [
-                f"{label} (est.)" if str(original) in estimate_periods else label
-                for original, label in zip(pivot_df.index, display_index, strict=False)
+                estimated_labels.get(str(period), label_by_period.get(str(period), period))
+                for period in plot_df.index
             ]
+
+            # Put the estimator's own track record on the estimated point.
+            # The interval is multiplicative on the level, so on a change
+            # axis it scales with (change + 100) -- the estimated level
+            # expressed against the prior period at 100.
+            interval = _latest_partial_period_error_interval(pivot_active_daily, granularity, partial_usage_date)
+            if interval and estimated_labels:
+                low, high = interval
+                for label in estimated_labels.values():
+                    if label not in plot_df.index:
+                        continue
+                    value = pd.to_numeric(plot_df.loc[label], errors="coerce").dropna()
+                    if value.empty:
+                        continue
+                    base = float(value.iloc[0]) + 100.0
+                    if base <= 0:
+                        continue
+                    error_bars[label] = (abs(low) * base, abs(high) * base)
+                interval_caption = (
+                    f"Shaded range on the estimate is p{NOWCAST_INTERVAL_LOW_PCT}-p{NOWCAST_INTERVAL_HIGH_PCT} of this "
+                    f"estimator's error when replayed on past complete weeks at the same point in the week "
+                    f"({low:+.1%} to {high:+.1%})."
+                )
         if is_revenue:
             if is_change:
                 y_title = "Revenue Change (%)"
@@ -4748,6 +4938,7 @@ def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrou
                     MODEL_COLORS,
                     x_title=date_title,
                     y_title=y_title,
+                    error_bars=error_bars,
                 ),
                 width="stretch",
                 theme=None,
@@ -4768,9 +4959,22 @@ def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrou
             )
         if is_change and granularity == "daily":
             st.caption("Daily change uses total trailing 7-day average versus the prior total trailing 7-day average. Display is capped at -100% to +300% to keep tiny-base spikes readable.")
+            if show_partial_day:
+                st.caption(
+                    f"The partial UTC day {partial_day_label} is left out of the trailing average -- including it "
+                    "invents a decline in the newest point -- so this series ends one day short of the volume chart."
+                )
+        elif show_partial_day:
+            st.caption(
+                f"{partial_day_label} is marked (partial): it is the UTC day the scrape landed on, so it holds only the "
+                "hours before the scrape and is not comparable with the finalized days beside it. It is excluded from "
+                "weekly and monthly totals."
+            )
         elif is_change and granularity == "weekly":
             st.caption("Weekly change compares total volume with the previous weekly total. The first comparable point is hidden to avoid startup-base spikes; the latest incomplete week is nowcast from observed daily volume and marked (est.). Display is capped at -100% to +300%.")
             st.caption(_nowcast_method_caption(partial_usage_date))
+            if interval_caption:
+                st.caption(interval_caption)
         elif is_change and granularity == "monthly":
             st.caption("Monthly change compares total volume with the previous monthly total. The first comparable point is hidden to avoid startup-base spikes; the latest incomplete month is nowcast from observed daily volume and marked (est.). Display is capped at -100% to +300%.")
             st.caption(_nowcast_method_caption(partial_usage_date))
