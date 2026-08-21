@@ -2059,7 +2059,7 @@ def _render_evidence_tab(
     # 2. News and Filing Metadata
     _render_section_heading(4, "News and filing metadata", f"news-filing-metadata-{_slugify(view.entity_id)}")
     if view.official_documents.empty:
-        st.warning("Official documents unavailable — no local metadata export; no document body displayed.")
+        st.warning("No registry-linked generic news/filing metadata rows are available for the selected company/listing; official filing metadata is rendered separately above and document bodies are not displayed.")
     else:
         st.dataframe(_friendly_document_frame(view.official_documents, viewer_timezone), width="stretch", hide_index=True)
 
