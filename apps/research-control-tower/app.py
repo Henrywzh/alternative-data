@@ -4,16 +4,6 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-import sys
-
-# Ensure repository root and app root are on sys.path deterministically before
-# importing control_tower modules that depend on 'src' or sibling packages.
-APP_ROOT = Path(__file__).resolve().parent
-REPO_ROOT = APP_ROOT.parent.parent
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-if str(APP_ROOT) not in sys.path:
-    sys.path.insert(0, str(APP_ROOT))
 
 import pandas as pd
 import streamlit as st
@@ -33,6 +23,7 @@ from control_tower.config import (
 )
 
 
+APP_ROOT = Path(__file__).resolve().parent
 DEFAULT_ARTIFACT_ROOT = APP_ROOT / ".generated"
 PAGE_LABELS = ("Today", "Unified Timeline", "AI Bottlenecks", "Company", "Source Health")
 HORIZON_OPTIONS = ("7d", "30d", "90d", "long_range", "all")
