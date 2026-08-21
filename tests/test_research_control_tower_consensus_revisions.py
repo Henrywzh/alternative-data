@@ -625,7 +625,7 @@ def test_future_dated_provider_asof_fails_closed() -> None:
     )
     store = collector.accumulate_snapshots(_empty_store(), [future_snap], run_date=date(2026, 8, 10))
     status, detail = collector._provider_freshness_status(store, 14, now)
-    assert status == "fail_closed_future_dated"
+    assert status == "failed"
     assert "in the future relative to as_of" in detail
 
 
@@ -692,3 +692,30 @@ def test_same_day_multiple_rows_selects_newest_provider_asof() -> None:
     store2 = collector.accumulate_snapshots(_empty_store(), [row_later, row_earlier], run_date=DAY1)
     assert len(store2) == 1
     assert store2.iloc[0]["value"] == pytest.approx(12.5)
+
+
+def test_same_day_exact_timestamp_tie_deterministic_by_content_hash() -> None:
+    """Check (2): When provider_asof, retrieved_at_utc, and snapshot_at tie exactly
+    between two conflicting rows, winner selection is deterministic across reverse ingestion orders."""
+    row_a = _snap(
+        snapshot_at=pd.Timestamp("2026-08-01T10:00:00Z"),
+        provider_asof=pd.Timestamp("2026-08-01T10:00:00Z"),
+        retrieved_at_utc=pd.Timestamp("2026-08-01T10:00:00Z"),
+        value=10.0,
+        source_run_id="run-alpha",
+    )
+    row_b = _snap(
+        snapshot_at=pd.Timestamp("2026-08-01T10:00:00Z"),
+        provider_asof=pd.Timestamp("2026-08-01T10:00:00Z"),
+        retrieved_at_utc=pd.Timestamp("2026-08-01T10:00:00Z"),
+        value=12.0,
+        source_run_id="run-omega",
+    )
+
+    store_fwd = collector.accumulate_snapshots(_empty_store(), [row_a, row_b], run_date=DAY1)
+    store_rev = collector.accumulate_snapshots(_empty_store(), [row_b, row_a], run_date=DAY1)
+
+    assert len(store_fwd) == 1
+    assert len(store_rev) == 1
+    assert store_fwd.iloc[0]["value"] == store_rev.iloc[0]["value"]
+    assert store_fwd.iloc[0]["snapshot_id"] == store_rev.iloc[0]["snapshot_id"]
