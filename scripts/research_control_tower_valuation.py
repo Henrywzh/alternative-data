@@ -76,9 +76,17 @@ CONSENSUS_HEALTH_REQUIRED_COLUMNS = frozenset(
         "mapped_row_count",
         "latest_snapshot_at",
         "as_of",
+        "source_license_class",
         "entitlement_status",
+        "entitlement_evidence",
         "entitlement_ref",
     }
+)
+CONSENSUS_ALLOWED_LOCAL_LICENSES = frozenset(
+    {"local_private_research", "research_use_only", "private_research"}
+)
+CONSENSUS_ALLOWED_ENTITLEMENT_STATUSES = frozenset(
+    {"terms_unverified", "permitted_local_private"}
 )
 FX_REQUIRED_COLUMNS = frozenset(
     {
@@ -169,12 +177,22 @@ def _accepted_consensus_providers(
         health["mapped_row_count"], errors="coerce"
     )
     status = health["status"].fillna("").astype(str).str.strip().str.casefold()
+    source_license_class = (
+        health["source_license_class"]
+        .fillna("")
+        .astype(str)
+        .str.strip()
+        .str.casefold()
+    )
     entitlement_status = (
         health["entitlement_status"]
         .fillna("")
         .astype(str)
         .str.strip()
         .str.casefold()
+    )
+    entitlement_evidence = (
+        health["entitlement_evidence"].fillna("").astype(str).str.strip()
     )
     entitlement_ref = (
         health["entitlement_ref"].fillna("").astype(str).str.strip()
@@ -190,10 +208,10 @@ def _accepted_consensus_providers(
         & health["health_as_of"].le(as_of)
         & health["latest_snapshot_at"].le(as_of)
         & (as_of - health["latest_snapshot_at"]).le(maximum_age)
-        & entitlement_status.isin(
-            {"terms_unverified", "permitted_local_private"}
-        )
-        & entitlement_ref.str.startswith("task3-provider-policy:")
+        & source_license_class.isin(CONSENSUS_ALLOWED_LOCAL_LICENSES)
+        & entitlement_status.isin(CONSENSUS_ALLOWED_ENTITLEMENT_STATUSES)
+        & entitlement_evidence.ne("")
+        & entitlement_ref.ne("")
     ]
     return frozenset(usable["provider_key"])
 
