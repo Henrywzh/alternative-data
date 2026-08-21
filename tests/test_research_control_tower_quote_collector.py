@@ -287,6 +287,39 @@ def test_private_entity_bytedance_is_excluded_from_query() -> None:
     assert private_diags[0].status == "excluded_private"
 
 
+def test_shared_listing_gate_rejects_tcehy_but_retains_0700() -> None:
+    tcehy = _sample_listings().iloc[[2]].copy()
+    tcehy.loc[:, "listing_id"] = "TCEHY_US"
+    tcehy.loc[:, "canonical_ticker"] = "TCEHY.US"
+    tcehy.loc[:, "native_ticker"] = "TCEHY"
+    tcehy.loc[:, "vendor_tickers"] = "yfinance:TCEHY"
+    tcehy.loc[:, "mapping_status"] = "unresolved"
+    tcehy.loc[:, "collection_eligible"] = False
+    listings = pd.concat([_sample_listings(), tcehy], ignore_index=True)
+
+    queried_symbols: list[str] = []
+
+    def download(symbols, **kwargs):
+        queried_symbols.extend(symbols)
+        return _fake_dual_download(symbols, **kwargs)
+
+    result = collect_yfinance_quotes(
+        listings,
+        as_of_utc="2026-08-13T12:00:00Z",
+        now_utc="2026-08-13T12:00:00Z",
+        download_fn=download,
+        stage1_only=False,
+    )
+
+    assert "0700_HK" in set(result.frame["listing_id"])
+    assert "TCEHY_US" not in set(result.frame["listing_id"])
+    assert all("TCEHY" not in symbol for symbol in queried_symbols)
+    tcehy_diagnostics = [item for item in result.symbol_diagnostics if item.listing_id == "TCEHY_US"]
+    assert tcehy_diagnostics
+    assert tcehy_diagnostics[0].status == "invalid_listing"
+    assert "mapping_status=unresolved" in tcehy_diagnostics[0].reason
+
+
 def test_realtime_latency_claim_is_rejected() -> None:
     with pytest.raises(ValueError, match="latency_class cannot be 'realtime'"):
         collect_yfinance_quotes(_sample_listings(), latency_class="realtime")

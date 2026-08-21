@@ -19,6 +19,7 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 
 from .build import QUOTE_SNAPSHOT_COLUMNS
+from .eligibility import filter_eligible_listings
 from .registries import REQUIRED_COLUMNS
 
 
@@ -65,6 +66,19 @@ class QuoteCollectionResult:
     symbol_diagnostics: tuple[QuoteDiagnostic, ...]
     issues: tuple[str, ...] = ()
     expected_listing_count: int = 0
+
+
+def _eligibility_diagnostic_status(reason: str) -> Literal["invalid_listing", "inactive"]:
+    """Keep interval/status rejections distinct in the existing quote contract."""
+
+    normalized = reason.casefold()
+    if (
+        "listing_status=" in normalized
+        or "active_from=" in normalized and "after as_of" in normalized
+        or "active_to=" in normalized and "not after as_of" in normalized
+    ):
+        return "inactive"
+    return "invalid_listing"
 
 
 def _empty_quote_frame() -> pd.DataFrame:
@@ -128,14 +142,6 @@ def _blank(value: object) -> bool:
 
 def _text(value: object) -> str:
     return "" if _blank(value) else str(value).strip()
-
-
-def _truthy(value: object) -> bool:
-    if _blank(value):
-        return False
-    if isinstance(value, bool):
-        return value
-    return str(value).strip().lower() in {"true", "1", "yes"}
 
 
 def _exchange_timezone(exchange: object) -> ZoneInfo:
@@ -466,8 +472,21 @@ def collect_yfinance_quotes(
     as_of_date = as_of.tz_localize(None).normalize()
     diagnostics: list[QuoteDiagnostic] = []
 
-    # 1. Filter listings by active status, mapping status, collection eligibility, and active interval.
-    eligible = listings.copy()
+    # 1. Apply the shared registry gate before any provider-facing work.  This
+    # is deliberately the only listing predicate used here: it parses boolean
+    # values strictly, requires a verified mapping, and enforces the
+    # half-open [active_from, active_to) interval.
+    eligible, rejected = filter_eligible_listings(listings, as_of)
+    for item in rejected:
+        diagnostics.append(
+            QuoteDiagnostic(
+                symbol="",
+                listing_id=_text(item.get("listing_id")),
+                entity_id=_text(item.get("entity_id")),
+                status=_eligibility_diagnostic_status(_text(item.get("reason"))),
+                reason=f"Listing rejected by shared eligibility gate: {_text(item.get('reason'))}",
+            )
+        )
 
     def _interval_active(row: Any) -> bool:
         start = _date(row.get("active_from"))
@@ -494,7 +513,7 @@ def collect_yfinance_quotes(
         stage1_entity_ids = set(membership_rows["entity_id"].astype("string")) if not basket_rows.empty else set()
 
     eligible_rows: list[dict[str, Any]] = []
-    for _, row in listings.iterrows():
+    for _, row in eligible.iterrows():
         listing_id = _text(row.get("listing_id"))
         entity_id = _text(row.get("entity_id"))
         if stage1_only and entity_id not in (stage1_entity_ids or set()):
@@ -527,23 +546,7 @@ def collect_yfinance_quotes(
                     )
                 )
                 continue
-        if _text(row.get("listing_status")).lower() != "active" or not _interval_active(row):
-            diagnostics.append(
-                QuoteDiagnostic(
-                    symbol="",
-                    listing_id=listing_id,
-                    entity_id=entity_id,
-                    status="inactive",
-                    reason="Listing is archived, inactive, or outside its active interval",
-                )
-            )
-            continue
-        if (
-            not _truthy(row.get("collection_eligible"))
-            or _text(row.get("mapping_status")).lower() != "verified"
-            or _blank(row.get("canonical_ticker"))
-            or _blank(row.get("currency"))
-        ):
+        if _blank(row.get("canonical_ticker")) or _blank(row.get("currency")):
             diagnostics.append(
                 QuoteDiagnostic(
                     symbol="",

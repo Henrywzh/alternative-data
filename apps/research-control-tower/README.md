@@ -14,12 +14,15 @@ cross-market collection service.
 Run from the repository root with every build input explicit:
 
 ```bash
+RCT_AS_OF_UTC="${RCT_AS_OF_UTC:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
+RCT_BUILD_ID="${RCT_BUILD_ID:-local-$(date -u +%Y%m%dT%H%M%SZ)}"
+
 python -m src.research_control_tower.cli build \
   --registry-root config/research_control_tower \
   --event-root config/research_control_tower \
   --output-dir apps/research-control-tower/.generated \
-  --as-of-utc 2026-08-13T12:00:00Z \
-  --build-id task8-local-20260813
+  --as-of-utc "$RCT_AS_OF_UTC" \
+  --build-id "$RCT_BUILD_ID"
 ```
 
 The build is local and network-forbidden. The required inputs are the
@@ -50,11 +53,13 @@ The Tencent actuals entry point is explicit and network-free. It never selects
 the repository fixture implicitly:
 
 ```bash
+RCT_AS_OF_UTC="${RCT_AS_OF_UTC:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
+
 python scripts/research_control_tower_tencent_financials.py \
   --disclosure-records-json tests/fixtures/tencent_ir/tencent_disclosures_2021_2026.json \
   --output-dir data/normalized/research_control_tower \
-  --as-of-utc 2026-08-22T00:00:00Z \
-  --retrieved-at-utc 2026-08-22T00:00:00Z
+  --as-of-utc "$RCT_AS_OF_UTC" \
+  --retrieved-at-utc "$RCT_AS_OF_UTC"
 ```
 
 The official HKEX corporate-actions collector uses the configured issuer
@@ -89,12 +94,15 @@ result remains typed unavailable/degraded; no valuation is invented.
 The wiring and bundle acceptance checks are:
 
 ```bash
+RCT_AS_OF_UTC="${RCT_AS_OF_UTC:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
+RCT_BUILD_ID="${RCT_BUILD_ID:-rct-staging-$(date -u +%Y%m%dT%H%M%SZ)}"
+
 pytest -q tests/test_research_control_tower_wiring.py \
   tests/test_research_control_tower_tencent_financials.py
 python scripts/build_research_control_tower.py \
   --output-dir .rct-staging/tencent-bundle \
-  --as-of-utc 2026-08-22T00:00:00Z \
-  --build-id rct-tencent-staging
+  --as-of-utc "$RCT_AS_OF_UTC" \
+  --build-id "$RCT_BUILD_ID"
 ```
 
 The published generation contains exactly 27 artifacts: 26 typed Parquet
@@ -128,14 +136,20 @@ real-time entitlement or bid/ask coverage:
 ```bash
 python scripts/research_control_tower_quote_collector.py \
   --listings config/research_control_tower/listings.csv \
+  --entities config/research_control_tower/entities.csv \
+  --baskets config/research_control_tower/baskets.csv \
+  --basket-memberships config/research_control_tower/basket_memberships.csv \
   --output /tmp/control-tower-quotes.parquet
+
+RCT_AS_OF_UTC="${RCT_AS_OF_UTC:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
+RCT_BUILD_ID="${RCT_BUILD_ID:-quote-refresh-$(date -u +%Y%m%dT%H%M%SZ)}"
 
 python -m src.research_control_tower.cli build \
   --registry-root config/research_control_tower \
   --event-root config/research_control_tower \
   --output-dir apps/research-control-tower/.generated \
-  --as-of-utc 2026-08-13T12:00:00Z \
-  --build-id quote-refresh-20260813T1200Z \
+  --as-of-utc "$RCT_AS_OF_UTC" \
+  --build-id "$RCT_BUILD_ID" \
   --quote-input 'market:yfinance|/tmp/control-tower-quotes.parquet|parquet|quote_snapshots_v1'
 ```
 
