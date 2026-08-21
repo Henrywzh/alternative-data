@@ -1,0 +1,143 @@
+FF304
+Next Day Disclosure Return
+(Equity issuer - changes in issued share capital and/or share buybacks)
+Instrument: Equity issuer Status: New Submission
+Name of Issuer: Tencent Holdings Limited
+Date Submitted: 18 January 2024
+Section I must be completed by a listed issuer where there has been a change in its issued share capital which is discloseable pursuant to rule 13.25A of the Main Board Rules (the “Main Board
+Listing Rules”) / rule 17.27A of the GEM Rules (the “GEM Listing Rules”) Governing the Listing of Securities on The Stock Exchange of Hong Kong Limited (the “Exchange”)
+Section I
+1. Class of shares Ordinary shares Type of shares Not applicable Listed on SEHK (Note 11) Yes
+Stock code (if listed) 00700 Description
+Multi-counter stock code 80700 RMB Description
+Issued shares as a %
+Closing market price per % discount(-)/
+of existing number of
+Issues of shares Issue price per share share of the immediately premium of issue
+No. of shares issued shares before
+(Notes 6 and 7) (Notes 1 and 7) preceding business day price to market price
+relevant share issue
+(Note 5) (Note 7)
+(Notes 4, 6 and 7)
+Opening balance as at (Note 2) 17 January 2024 9,452,393,365
+Repurchase of shares (or other securities) but not
+1). 1,740,000 % %
+cancelled
+Date of changes 08 January 2024
+Repurchase of shares (or other securities) but not
+2). 1,760,000 % %
+cancelled
+Date of changes 09 January 2024
+Repurchase of shares (or other securities) but not
+3). 1,790,000 % %
+cancelled
+Date of changes 10 January 2024
+Repurchase of shares (or other securities) but not
+4). 1,740,000 % %
+cancelled
+Page 1 of 5 v1.2.5
+
+FF304
+Date of changes 11 January 2024
+Repurchase of shares (or other securities) but not
+5). 1,730,000 % %
+cancelled
+Date of changes 12 January 2024
+Repurchase of shares (or other securities) but not
+6). 1,730,000 % %
+cancelled
+Date of changes 15 January 2024
+Repurchase of shares (or other securities) but not
+7). 2,830,000 % %
+cancelled
+Date of changes 16 January 2024
+Repurchase of shares (or other securities) but not
+8). 3,650,000 % %
+cancelled
+Date of changes 17 January 2024
+Repurchase of shares (or other securities) but not
+9). 3,640,000 0.03858 % %
+cancelled
+Date of changes 18 January 2024
+Closing balance as at (Note 8) 18 January 2024 9,452,393,365
+Page 2 of 5 v1.2.5
+
+FF304
+We hereby confirm to the best knowledge, information and belief that, in relation to each issue of securities as set out in Section I, it has been duly authorised by the board of directors of the
+listed issuer and, insofar as applicable:
+(Note 9)
+(i) all the securities of each class are in all respects identical (Note 10).
+Notes to Section I:
+1. Where shares have been issued at more than one issue price per share, a weighted average issue price per share should be given.
+2. Please insert the closing balance date of the last Next Day Disclosure Return published pursuant to Main Board Rule 13.25A / GEM Rule 17.27A or Monthly Return pursuant to Main
+Board Rule 13.25B / GEM Rule 17.27B, whichever is the later.
+3. Please set out all changes in issued share capital requiring disclosure pursuant to Main Board Rule 13.25A / GEM Rule 17.27A together with the relevant dates of issue. Each category
+will need to be disclosed individually with sufficient information to enable the user to identify the relevant category in the listed issuer's Monthly Return. For example, multiple issues of
+shares as a result of multiple exercises of share options under the same share option scheme or of multiple conversions under the same convertible note must be aggregated and
+disclosed as one category. However, if the issues resulted from exercises of share options under 2 share option schemes or conversions of 2 convertible notes, these must be disclosed
+as 2 separate categories.
+4. The percentage change in the number of issued shares of listed issuer is to be calculated by reference to the listed issuer's total number of shares in issue (excluding for such purpose
+any shares repurchased or redeemed but not yet cancelled) as it was immediately before the earliest relevant event which has not been disclosed in a Monthly Return or Next Day
+Disclosure Return.
+5. Where trading in the shares of the listed issuer has been suspended, “closing market price per share of the immediately preceding business day” should be construed as “closing market
+price per share of the business day on which the shares were last traded”.
+6. In the context of a repurchase of shares:
+“issues of shares” should be construed as “repurchases of shares”; and
+■
+“issued shares as a % of existing number of shares before relevant share issue” should be construed as “repurchased shares as a % of existing number of shares before
+■
+relevant share repurchase”.
+7. In the context of a redemption of shares:
+“issues of shares” should be construed as “redemptions of shares”;
+■
+“issued shares as a % of existing number of shares before relevant share issue” should be construed as “redeemed shares as a % of existing number of shares before relevant
+■
+share redemption”; and
+“issue price per share” should be construed as “redemption price per share”.
+■
+8. The closing balance date is the date of the last relevant event being disclosed.
+9. Items (i) to (viii) are suggested forms of confirmation which may be amended to meet individual cases.
+Page 3 of 5 v1.2.5
+
+FF304
+10. “Identical” means in this context:
+the securities are of the same nominal value with the same amount called up or paid up;
+■
+they are entitled to dividend/interest at the same rate and for the same period, so that at the next ensuing distribution, the dividend/interest payable per unit will amount to
+■
+exactly the same sum (gross and net); and
+they carry the same rights as to unrestricted transfer, attendance and voting at meetings and rank pari passu in all other respects.
+■
+11. SEHK refers to Stock Exchange of Hong Kong.
+Page 4 of 5 v1.2.5
+
+FF304
+Section II must also be completed by a listed issuer where it has made a repurchase of shares which is discloseable under Main Board Rule 10.06(4)(a) / GEM Rule 13.13(1).
+The issuer has Purchase report or additional information for issuer whose primary listing is on the Exchange
+Section II
+1. Class of shares Ordinary shares Type of shares Not applicable Listed on SEHK (Note) Yes
+Stock code (if listed) 00700 Description
+Multi-counter stock code 80700 RMB Description
+A. Purchase report
+Number of securities Method of purchase Price per share or highest price
+Trading date Lowest price paid $ Total paid $
+purchased (Note) paid $
+1). 18 January 2024 3,640,000On the Exchange HKD 278.8HKD 271.2HKD 1,002,506,232
+Total number of securities
+3,640,000 Total paid $ HKD 1,002,506,232
+purchased
+B. Additional information for issuer whose primary listing is on the Exchange
+1). Number of such securities purchased on the Exchange in the year to date (since ordinary resolution) (a) 169,202,600
+2). % of number of shares in issue at time ordinary resolution passed acquired on the Exchange since date of resolution 1.76474 %
+( (a) x 100 )/ Number of shares in issue
+We hereby confirm that the repurchases set out in A above which were made on the Exchange were made in accordance with the Main Board Listing Rules / GEM Listing Rules and that there
+have been no material changes to the particulars contained in the Explanatory Statement dated 06 April 2023 which has been filed with the Exchange. We also confirm that any purchases set
+out in A above which were made on another stock exchange were made in accordance with the domestic rules applying to purchases made on that other exchange.
+Note to Section II: Please state whether on the Exchange, on another stock exchange (stating the name of the exchange), by private arrangement or by general offer.
+Lau Suk Yi
+Submitted by:
+(Name)
+Secretary
+Title:
+(Director, Secretary or other Duly Authorised Officer)
+Page 5 of 5 v1.2.5
