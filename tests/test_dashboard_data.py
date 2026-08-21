@@ -56,6 +56,7 @@ from dashboard.sections.openrouter import (
     _latest_provider_market_coverage,
     _drop_first_valid_change_point,
     _nowcast_latest_partial_period,
+    _scale_partial_week_values,
     _pivot_to_aggregate_change_percent,
     _pivot_to_change_percent,
     _pivot_to_share_percent,
@@ -4190,7 +4191,7 @@ def test_compute_openrouter_views_keeps_sunday_market_share_when_no_monday_snaps
     assert views["top_models"]["source_by_week"]["2026-04-13"] == "market_share"
 
 
-def test_compute_availability_views_treat_every_snapshot_as_complete() -> None:
+def test_compute_availability_views_read_catalog_size_from_the_sidecar(tmp_path: Path) -> None:
     rows: list[dict] = []
 
     for model_id in [f"model-{idx}" for idx in range(1, 6)]:
@@ -4253,22 +4254,43 @@ def test_compute_availability_views_treat_every_snapshot_as_complete() -> None:
         )
     }
 
-    views = compute_compute_availability_views(datasets)
-    models_growth = views["models_growth"]
+    views = compute_compute_availability_views.__wrapped__(datasets)
     models_latest = views["models_latest"]
 
-    # Every snapshot is one atomic pull of the whole upstream catalog, never
-    # a genuine partial/delta scrape (the live pipeline rejects a collapsed
-    # pull before it's ever written here, and the Wayback backfill reads a
-    # single-shot JSON dump per capture) -- so each snapshot's own model_id
-    # count is the true catalog size as of that snapshot, with no
-    # accumulation across snapshots. The 2026-01-16 snapshot here only has 2
-    # rows (model-3, model-6): that's its own real count, not "5 carried
-    # forward plus 1 new".
-    assert models_growth["model_count"].tolist() == [5, 2, 4]
+    # raw_openrouter_models is change-only, so a snapshot's row count is
+    # "models that changed", not the catalog. The 2026-01-16 snapshot here
+    # holds 2 rows (model-3, model-6) against a catalog of 6 -- counting it
+    # would report a catalog that collapsed by two thirds overnight. With no
+    # size sidecar on disk the view reports nothing rather than that.
+    assert views["catalog_size"].empty
     assert set(models_latest["model_id"]) == {"model-1", "model-2", "model-3", "model-4"}
     latest_model_3 = models_latest[models_latest["model_id"] == "model-3"].iloc[0]
     assert latest_model_3["pricing_prompt"] == 0.004
+
+    # With the sidecar present, the plotted series is the recorded catalog
+    # size and is unaffected by how many rows each change-only snapshot has.
+    normalized_root = tmp_path / "compute_availability"
+    normalized_root.mkdir(parents=True)
+    pd.DataFrame(
+        {
+            "snapshot_ts": ["2026-01-15T00:00:00Z", "2026-01-16T00:00:00Z", "2026-01-17T00:00:00Z"],
+            "source_run_id": ["run-1", "run-2", "run-3"],
+            "capture_source": ["live_api", "live_api", "live_api"],
+            "model_count_all": [520, 521, 524],
+            "model_count_text_output": [400, 401, 403],
+            "provider_count": [76, 76, 77],
+        }
+    ).to_parquet(normalized_root / "openrouter_catalog_size.parquet", index=False)
+
+    datasets["raw_openrouter_models"] = replace(
+        datasets["raw_openrouter_models"],
+        source_path=normalized_root / "raw_openrouter_models.csv",
+    )
+    views = compute_compute_availability_views.__wrapped__(datasets)
+
+    catalog_size = views["catalog_size"]
+    assert catalog_size["model_count_all"].tolist() == [520, 521, 524]
+    assert catalog_size["model_count_text_output"].tolist() == [400, 401, 403]
     assert str(views["models_history_start"]).startswith("2026-01-15")
     assert str(views["models_history_end"]).startswith("2026-01-17")
 
@@ -4417,7 +4439,7 @@ def test_nowcast_latest_partial_week_scales_from_daily_observations() -> None:
     nowcast, estimates = _nowcast_latest_partial_period(weekly, daily, "weekly")
 
     assert estimates == {"2026-06-29"}
-    assert nowcast.loc["2026-06-29", "OpenAI"] == 700.0
+    assert nowcast.loc["2026-06-29", "OpenAI"] == pytest.approx(700.0)
 
 
 def test_nowcast_latest_partial_month_scales_from_daily_observations() -> None:
@@ -4433,7 +4455,150 @@ def test_nowcast_latest_partial_month_scales_from_daily_observations() -> None:
     nowcast, estimates = _nowcast_latest_partial_period(monthly, daily, "monthly")
 
     assert estimates == {"2026-07"}
-    assert nowcast.loc["2026-07", "OpenAI"] == 3100.0
+    assert nowcast.loc["2026-07", "OpenAI"] == pytest.approx(3100.0)
+
+
+def _weekday_skewed_daily(weeks: int, start: str = "2026-04-06", weekday: float = 100.0, weekend: float = 50.0) -> pd.DataFrame:
+    """Complete weeks whose weekends run at half a weekday's volume."""
+    dates = pd.date_range(start, periods=weeks * 7, freq="D")
+    values = [weekend if day.weekday() >= 5 else weekday for day in dates]
+    return pd.DataFrame({"OpenAI": values}, index=dates.strftime("%Y-%m-%d"))
+
+
+def test_nowcast_weights_observed_days_by_their_share_of_a_normal_week() -> None:
+    history = _weekday_skewed_daily(weeks=8)
+    # Monday-Wednesday of the next week: three weekdays, no weekend.
+    partial = pd.DataFrame(
+        {"OpenAI": [100.0, 100.0, 100.0]},
+        index=["2026-06-01", "2026-06-02", "2026-06-03"],
+    )
+    daily = pd.concat([history, partial])
+    weekly = pd.DataFrame({"OpenAI": [600.0, 300.0]}, index=["2026-05-25", "2026-06-01"])
+
+    nowcast, estimates = _nowcast_latest_partial_period(weekly, daily, "weekly")
+
+    assert estimates == {"2026-06-01"}
+    # A week of this shape totals 600 (5 x 100 + 2 x 50), and Mon-Wed carry
+    # 300 of it. The flat observed_days rule would report 300 x 7/3 = 700.
+    assert nowcast.loc["2026-06-01", "OpenAI"] == pytest.approx(600.0, rel=0.02)
+
+
+def test_nowcast_does_not_overstate_a_week_already_holding_its_weekend() -> None:
+    history = _weekday_skewed_daily(weeks=8)
+    # Monday through Sunday minus the final Friday: the weekend is already in.
+    partial = pd.DataFrame(
+        {"OpenAI": [100.0, 100.0, 100.0, 100.0, 50.0, 50.0]},
+        index=["2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-06", "2026-06-07"],
+    )
+    daily = pd.concat([history, partial])
+    weekly = pd.DataFrame({"OpenAI": [600.0, 500.0]}, index=["2026-05-25", "2026-06-01"])
+
+    nowcast, _ = _nowcast_latest_partial_period(weekly, daily, "weekly")
+
+    # Only a Friday is missing, so the estimate adds roughly one weekday.
+    # The flat rule would inflate this to 500 x 7/6 = 583.
+    assert nowcast.loc["2026-06-01", "OpenAI"] == pytest.approx(600.0, rel=0.02)
+
+
+def test_nowcast_excludes_the_partial_utc_day_from_the_estimate() -> None:
+    history = _weekday_skewed_daily(weeks=8)
+    # Wednesday holds three hours of traffic because that is when the scrape ran.
+    partial = pd.DataFrame(
+        {"OpenAI": [100.0, 100.0, 12.0]},
+        index=["2026-06-01", "2026-06-02", "2026-06-03"],
+    )
+    daily = pd.concat([history, partial])
+    weekly = pd.DataFrame({"OpenAI": [600.0, 212.0]}, index=["2026-05-25", "2026-06-01"])
+
+    with_partial, _ = _nowcast_latest_partial_period(weekly, daily, "weekly")
+    without_partial, estimates = _nowcast_latest_partial_period(
+        weekly, daily, "weekly", partial_usage_date=pd.Timestamp("2026-06-03")
+    )
+
+    assert estimates == {"2026-06-01"}
+    # Dropping the three-hour day leaves Mon-Tue, which carry 200 of a 600
+    # week. Counting it as a whole day instead drags the estimate down.
+    assert without_partial.loc["2026-06-01", "OpenAI"] == pytest.approx(600.0, rel=0.02)
+    assert with_partial.loc["2026-06-01", "OpenAI"] < without_partial.loc["2026-06-01", "OpenAI"]
+
+
+def test_nowcast_uses_a_separate_day_of_week_profile_per_series() -> None:
+    dates = pd.date_range("2026-04-06", periods=8 * 7, freq="D")
+    history = pd.DataFrame(
+        {
+            # Coding-heavy: weekends collapse. Chat-heavy: flat all week.
+            "Coding": [20.0 if day.weekday() >= 5 else 100.0 for day in dates],
+            "Chat": [100.0] * len(dates),
+        },
+        index=dates.strftime("%Y-%m-%d"),
+    )
+    partial = pd.DataFrame(
+        {"Coding": [100.0, 100.0, 100.0], "Chat": [100.0, 100.0, 100.0]},
+        index=["2026-06-01", "2026-06-02", "2026-06-03"],
+    )
+    daily = pd.concat([history, partial])
+    weekly = pd.DataFrame(
+        {"Coding": [540.0, 300.0], "Chat": [700.0, 300.0]},
+        index=["2026-05-25", "2026-06-01"],
+    )
+
+    nowcast, _ = _nowcast_latest_partial_period(weekly, daily, "weekly")
+
+    # Pooling one profile across both would have to compromise between them.
+    assert nowcast.loc["2026-06-01", "Coding"] == pytest.approx(540.0, rel=0.02)
+    assert nowcast.loc["2026-06-01", "Chat"] == pytest.approx(700.0, rel=0.02)
+
+
+def test_nowcast_falls_back_to_flat_scaling_without_enough_complete_weeks() -> None:
+    history = _weekday_skewed_daily(weeks=2)
+    partial = pd.DataFrame({"OpenAI": [100.0, 100.0]}, index=["2026-04-20", "2026-04-21"])
+    daily = pd.concat([history, partial])
+    weekly = pd.DataFrame({"OpenAI": [600.0, 200.0]}, index=["2026-04-13", "2026-04-20"])
+
+    nowcast, estimates = _nowcast_latest_partial_period(weekly, daily, "weekly")
+
+    # Two weeks is below the profile's minimum, so this reverts to the flat
+    # observed_days rule rather than fitting a shape to almost no history.
+    assert estimates == {"2026-04-20"}
+    assert nowcast.loc["2026-04-20", "OpenAI"] == pytest.approx(700.0)
+
+
+def test_nowcast_leaves_a_complete_period_untouched() -> None:
+    history = _weekday_skewed_daily(weeks=9)
+    weekly = pd.DataFrame({"OpenAI": [600.0, 600.0]}, index=["2026-05-25", "2026-06-01"])
+
+    nowcast, estimates = _nowcast_latest_partial_period(weekly, history, "weekly")
+
+    assert estimates == set()
+    assert nowcast.loc["2026-06-01", "OpenAI"] == 600.0
+
+
+def test_partial_week_scaling_prices_missing_days_by_day_of_week() -> None:
+    # Eight complete weeks at 100/weekday and 50/weekend, then a ninth week
+    # observed Monday to Wednesday only.
+    dates = list(pd.date_range("2026-04-06", periods=8 * 7, freq="D"))
+    dates += list(pd.date_range("2026-06-01", periods=3, freq="D"))
+    frame = pd.DataFrame(
+        {
+            "usage_date_dt": dates,
+            "provider_label": ["OpenAI"] * len(dates),
+            "total_tokens": [50.0 if day.weekday() >= 5 else 100.0 for day in dates],
+        }
+    )
+    frame["usage_week"] = (
+        frame["usage_date_dt"] - pd.to_timedelta(frame["usage_date_dt"].dt.weekday, unit="D")
+    ).dt.strftime("%Y-%m-%d")
+    pivot_raw = frame.pivot_table(
+        index="usage_week", columns="provider_label", values="total_tokens", aggfunc="sum"
+    ).fillna(0)
+
+    scaled = _scale_partial_week_values(
+        frame, pivot_raw, "usage_week", "provider_label", "total_tokens", "usage_date_dt"
+    )
+
+    # Mon-Wed carry 300 of a 600-token week. Scaling by 7/3 would report 700.
+    assert scaled.loc["2026-06-01", "OpenAI"] == pytest.approx(600.0, rel=0.02)
+    assert scaled.loc["2026-05-25", "OpenAI"] == pytest.approx(600.0)
 
 
 def test_cap_change_percent_for_display_preserves_readable_momentum_range() -> None:

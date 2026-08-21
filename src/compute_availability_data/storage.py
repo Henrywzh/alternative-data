@@ -98,6 +98,31 @@ OPENROUTER_CHANGE_COLUMNS = [
     }
 ]
 
+CATALOG_SIZE_DATASET = "openrouter_catalog_size"
+
+# Catalog size cannot be derived from raw_openrouter_models: that table is
+# change-only (see _filter_unchanged_openrouter_rows), so a live snapshot's
+# row count is "models that changed today", not the catalog. This tiny
+# sidecar records the true size at the one moment we hold the complete
+# response -- the incoming frame, before change filtering.
+#
+# Two counts, because the two capture sources see different catalogs. The
+# live pipeline requests ?output_modalities=all; Wayback archived the bare
+# URL, whose default response only includes models that can output text. The
+# text-output count is therefore the only level-comparable series across the
+# whole history; model_count_all exists for live captures only.
+CATALOG_SIZE_COLUMNS = [
+    "snapshot_ts",
+    "source_run_id",
+    "capture_source",
+    "model_count_all",
+    "model_count_text_output",
+    "provider_count",
+]
+
+CAPTURE_SOURCE_LIVE = "live_api"
+CAPTURE_SOURCE_WAYBACK = "wayback_archive"
+
 # The live catalog has run 336-524 models across every genuinely healthy
 # fetch on record. 100 (the original floor) was low enough that a badly
 # degraded-but-nonempty response -- observed in production between
@@ -200,6 +225,101 @@ class StorageManager:
                     f"{previous_providers} to {incoming_providers}; current catalog was preserved"
                 )
 
+    def load_catalog_size(self) -> pd.DataFrame:
+        path = self.normalized_root / f"{CATALOG_SIZE_DATASET}.parquet"
+        if not path.exists():
+            return pd.DataFrame(columns=CATALOG_SIZE_COLUMNS)
+        frame = pd.read_parquet(path)
+        for column in CATALOG_SIZE_COLUMNS:
+            if column not in frame.columns:
+                frame[column] = pd.NA
+        return frame[CATALOG_SIZE_COLUMNS]
+
+    def record_catalog_size(
+        self,
+        frame: pd.DataFrame,
+        *,
+        capture_source: str = CAPTURE_SOURCE_LIVE,
+    ) -> pd.DataFrame:
+        """Record the catalog size of one complete, unfiltered catalog response.
+
+        `frame` must be a full catalog pull, not a change-filtered batch --
+        this is the only point in the write path where the whole response is
+        still in hand.
+        """
+        rows = self._catalog_size_rows(frame, capture_source=capture_source)
+        return self.append_catalog_size(rows)
+
+    def append_catalog_size(self, rows: pd.DataFrame) -> pd.DataFrame:
+        existing = self.load_catalog_size()
+        if rows.empty:
+            return existing
+        merged = pd.concat([existing, rows], ignore_index=True) if not existing.empty else rows.copy()
+        merged = merged.drop_duplicates(subset=["snapshot_ts", "capture_source"], keep="last")
+        merged = merged.sort_values("snapshot_ts").reset_index(drop=True)
+        merged = merged[CATALOG_SIZE_COLUMNS]
+
+        parquet_path = self.normalized_root / f"{CATALOG_SIZE_DATASET}.parquet"
+        temp_path = parquet_path.with_suffix(".tmp")
+        merged.to_parquet(temp_path, index=False)
+        temp_path.replace(parquet_path)
+        merged.to_csv(self.normalized_root / f"{CATALOG_SIZE_DATASET}.csv", index=False)
+        return merged
+
+    @staticmethod
+    def _catalog_size_rows(frame: pd.DataFrame, *, capture_source: str) -> pd.DataFrame:
+        if frame.empty or "model_id" not in frame.columns:
+            return pd.DataFrame(columns=CATALOG_SIZE_COLUMNS)
+
+        rows: list[dict[str, Any]] = []
+        for snapshot_ts, group in frame.groupby("snapshot_ts", sort=True):
+            models = group.drop_duplicates("model_id")
+            all_count = int(models["model_id"].nunique())
+            text_count = StorageManager._text_output_model_count(models)
+            rows.append(
+                {
+                    "snapshot_ts": str(snapshot_ts),
+                    "source_run_id": str(group["source_run_id"].iloc[0]) if "source_run_id" in group else None,
+                    "capture_source": capture_source,
+                    # A Wayback capture of the bare URL never contained the
+                    # non-text-output models in the first place, so its total
+                    # is a text-output count and there is no all-modality
+                    # figure to report for it.
+                    "model_count_all": all_count if capture_source == CAPTURE_SOURCE_LIVE else pd.NA,
+                    "model_count_text_output": text_count if capture_source == CAPTURE_SOURCE_LIVE else all_count,
+                    "provider_count": int(models["provider_prefix"].dropna().astype(str).nunique())
+                    if "provider_prefix" in models
+                    else pd.NA,
+                }
+            )
+        return pd.DataFrame(rows, columns=CATALOG_SIZE_COLUMNS)
+
+    @staticmethod
+    def _text_output_model_count(frame: pd.DataFrame) -> int:
+        """Count models the bare (no ?output_modalities=all) endpoint would return.
+
+        That default response carries every model whose output modalities
+        include text. A row with no parsable output_modalities predates the
+        field and was text-only, so it counts.
+        """
+        if "output_modalities_json" not in frame.columns:
+            return int(frame["model_id"].nunique())
+        count = 0
+        for value in frame["output_modalities_json"]:
+            if value is None or pd.isna(value):
+                count += 1
+                continue
+            try:
+                modalities = json.loads(str(value))
+            except (json.JSONDecodeError, TypeError):
+                count += 1
+                continue
+            if not isinstance(modalities, list) or not modalities:
+                count += 1
+            elif any(str(item).lower() == "text" for item in modalities):
+                count += 1
+        return count
+
     def upsert_dataset(self, dataset_id: str, records: Iterable[DatasetRecord]) -> pd.DataFrame:
         incoming = pd.DataFrame([record.to_dict() for record in records], columns=DATASET_COLUMNS)
         if incoming.empty:
@@ -218,6 +338,7 @@ class StorageManager:
             temp_path = current_path.with_suffix(".tmp")
             current.to_parquet(temp_path, index=False)
             temp_path.replace(current_path)
+            self.record_catalog_size(incoming, capture_source=CAPTURE_SOURCE_LIVE)
         existing = self._coerce_types(existing) if not existing.empty else existing
         if dataset_id == "raw_openrouter_models":
             incoming = self._filter_unchanged_openrouter_rows(existing, incoming)
