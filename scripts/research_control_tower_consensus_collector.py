@@ -102,6 +102,9 @@ from research_control_tower.build import (  # noqa: E402
     TASK3_REVISION_ARROW_SCHEMA,
     TASK3_SNAPSHOT_ARROW_SCHEMA,
 )
+from research_control_tower.eligibility import (  # noqa: E402
+    filter_eligible_listings,
+)
 
 FINANCIAL_DATA_ROOT = Path.home() / "Desktop" / "Quant" / "financial-data"
 FD_DUCKDB = FINANCIAL_DATA_ROOT / "data" / "databases" / "hk_financials.duckdb"
@@ -304,7 +307,7 @@ def accumulate_snapshots(
         "value", "statistic", "low_value", "high_value",
         "analyst_count", "provider_contributor_count", "currency", "unit",
         "accounting_basis", "fiscal_period", "fiscal_year", "estimate_period_end",
-        "source_url", "raw_hash", "calculation_origin", "coverage_reason",
+        "source_url", "raw_hash", "source_run_id", "calculation_origin", "coverage_reason",
     )
     merged["__content_hash"] = [
         _hash(*(row.get(col) for col in content_fields))
@@ -762,11 +765,17 @@ def collect_yfinance(
 ) -> tuple[list[dict], list[dict], int, list[str]]:
     import yfinance as yf
 
+    eligible_listings, rejected = filter_eligible_listings(listings, now)
+    eligibility_notes = [
+        f"{item['listing_id'] or '<blank>'}: listing eligibility rejected ({item['reason']})"
+        for item in rejected
+    ]
+    listings = eligible_listings
     siblings = _sibling_tickers(listings)
     snapshots: list[dict] = []
     revisions: list[dict] = []
     calls = 0
-    notes: list[str] = []
+    notes: list[str] = list(eligibility_notes)
 
     for _, listing in listings.iterrows():
         symbol = str(listing["provider_symbol"])
@@ -863,14 +872,20 @@ def collect_financial_data(
     now: datetime,
 ) -> tuple[list[dict], list[str]]:
     """Read the akshare consensus already collected by the sibling repository."""
+    eligible_listings, rejected = filter_eligible_listings(listings, now)
+    eligibility_notes = [
+        f"{item['listing_id'] or '<blank>'}: listing eligibility rejected ({item['reason']})"
+        for item in rejected
+    ]
+    listings = eligible_listings
     files = sorted(FD_CONSENSUS.glob("source=akshare/**/*.parquet")) if FD_CONSENSUS.is_dir() else []
     if not files:
-        return [], [f"no akshare consensus snapshot under {FD_CONSENSUS}"]
+        return [], [f"no akshare consensus snapshot under {FD_CONSENSUS}", *eligibility_notes]
     frame = pd.concat([pd.read_parquet(path) for path in files], ignore_index=True)
     siblings = _sibling_tickers(listings)
     by_ticker = {str(row["canonical_ticker"]): row for _, row in listings.iterrows()}
     snapshots: list[dict] = []
-    notes: list[str] = []
+    notes: list[str] = list(eligibility_notes)
     for _, row in frame.iterrows():
         listing = by_ticker.get(str(row.get("ticker")))
         if listing is None:
@@ -1036,6 +1051,7 @@ def build_provider_health_rows(
     yf_notes: Sequence[str],
     fd_notes: Sequence[str],
     calls: int,
+    eligibility_notes: Sequence[str] = (),
 ) -> list[dict[str, object]]:
     """Health sidecar rows with availability AND freshness semantics.
 
@@ -1049,7 +1065,10 @@ def build_provider_health_rows(
         "yfinance": "live analyst estimates collected",
         "akshare": f"akshare consensus export read from {FINANCIAL_DATA_ROOT.name}",
     }
-    notes = {"yfinance": yf_notes, "akshare": fd_notes}
+    notes = {
+        "yfinance": [*eligibility_notes, *yf_notes],
+        "akshare": [*eligibility_notes, *fd_notes],
+    }
     licenses = {"yfinance": YF_LICENSE, "akshare": FD_LICENSE}
     evidence = {
         "yfinance": "Yahoo Finance analyst estimates via yfinance; personal research use, no redistribution asserted",
@@ -1115,7 +1134,11 @@ def main(argv: list[str] | None = None) -> int:
     run_id = f"consensus-{uuid.uuid4()}"
 
     listings = pd.read_csv(args.listings, keep_default_na=False)
-    listings = listings.loc[listings["listing_status"].astype(str).str.strip().eq("active")]
+    listings, rejected = filter_eligible_listings(listings, now)
+    eligibility_notes = [
+        f"{item['listing_id'] or '<blank>'}: listing eligibility rejected ({item['reason']})"
+        for item in rejected
+    ]
     if args.basket:
         memberships = pd.read_csv(args.listings.parent / "basket_memberships.csv", keep_default_na=False)
         members = set(memberships.loc[memberships["basket_id"].eq(args.basket), "entity_id"])
@@ -1157,6 +1180,7 @@ def main(argv: list[str] | None = None) -> int:
         yf_notes=yf_notes,
         fd_notes=fd_notes,
         calls=calls,
+        eligibility_notes=eligibility_notes,
     )
 
     n_snap = _write(

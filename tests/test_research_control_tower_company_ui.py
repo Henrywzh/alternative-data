@@ -233,12 +233,12 @@ def _make_tencent_snapshot() -> ExtendedSnapshot:
             "exchange": "OTC",
             "native_ticker": "TCEHY",
             "canonical_ticker": "TCEHY.US",
-            "financial_data_security_id": "sec-tcehy",
+            "financial_data_security_id": "",
             "financial_data_issuer_group_id": "grp-tencent",
-            "mapping_status": "verified",
-            "mapping_verified_at": "2026-08-21",
-            "mapping_source_url": "https://www.otcmarkets.com",
-            "collection_eligible": True,
+            "mapping_status": "unresolved",
+            "mapping_verified_at": "",
+            "mapping_source_url": "",
+            "collection_eligible": False,
             "listing_role": "depositary_receipt",
             "vendor_tickers": "yfinance:TCEHY",
             "currency": "USD",
@@ -853,6 +853,71 @@ def test_company_view_loads_tencent_t0_t3_additive_marts() -> None:
     link = view.claim_evidence_links.iloc[0]
     assert bool(link["conflict_hint"]) is False
     assert link["review_state"] == "pending_review"
+
+
+def test_company_view_uses_one_listing_scope_and_keeps_entity_only_estimates_separate() -> None:
+    snapshot = _make_tencent_snapshot()
+    consensus = pd.DataFrame([
+        {"entity_id": "TENCENT", "listing_id": "TCEHY_US", "provider": "yfinance"},
+    ])
+    revisions = pd.DataFrame([
+        {"entity_id": "TENCENT", "listing_id": "TCEHY_US", "provider": "yfinance"},
+    ])
+    quotes = snapshot.quote_snapshots.copy()
+    quote_row = quotes.iloc[0].copy()
+    quote_row["listing_id"] = "TCEHY_US"
+    quote_row["canonical_ticker"] = "TCEHY.US"
+    quote_row["provider_symbol"] = "TCEHY"
+    quotes = pd.concat([quotes, pd.DataFrame([quote_row])], ignore_index=True)
+    bars = snapshot.price_bars.copy()
+    bar_row = bars.iloc[0].copy()
+    bar_row["listing_id"] = "TCEHY_US"
+    bar_row["canonical_ticker"] = "TCEHY.US"
+    bars = pd.concat([bars, pd.DataFrame([bar_row])], ignore_index=True)
+    actions = snapshot.corporate_actions.copy()
+    action_row = actions.iloc[0].copy()
+    action_row["listing_id"] = "TCEHY_US"
+    actions = pd.concat([actions, pd.DataFrame([action_row])], ignore_index=True)
+    valuations = snapshot.valuation_snapshots.copy()
+    valuation_row = valuations.iloc[0].copy()
+    valuation_row["listing_id"] = "TCEHY_US"
+    valuations = pd.concat([valuations, pd.DataFrame([valuation_row])], ignore_index=True)
+    estimates = snapshot.internal_estimates.copy()
+    estimate_row = estimates.iloc[0].copy()
+    estimate_row["listing_id"] = "TCEHY_US"
+    entity_only = estimate_row.copy()
+    entity_only["estimate_id"] = "est-entity-only"
+    entity_only["listing_id"] = ""
+    estimates = pd.concat([estimates, pd.DataFrame([estimate_row, entity_only])], ignore_index=True)
+
+    view = build_company_view(
+        replace(
+            snapshot,
+            consensus_snapshots=consensus,
+            consensus_revisions=revisions,
+            quote_snapshots=quotes,
+            price_bars=bars,
+            corporate_actions=actions,
+            valuation_snapshots=valuations,
+            internal_estimates=estimates,
+        ),
+        entity_id="TENCENT",
+    )
+
+    assert view.scope_listing_id == view.selected_listing_id == "0700_HK"
+    assert set(view.listings["listing_id"]) == {"0700_HK"}
+    for frame in (
+        view.consensus,
+        view.consensus_revisions,
+        view.quote_snapshots,
+        view.price_bars,
+        view.corporate_actions,
+        view.valuation_snapshots,
+    ):
+        if "listing_id" in frame.columns:
+            assert set(frame["listing_id"].dropna().astype(str)) <= {"0700_HK", ""}
+    assert set(view.internal_estimates["listing_id"].fillna("").astype(str)) <= {"0700_HK", ""}
+    assert "est-entity-only" in set(view.internal_estimates["estimate_id"])
 
 
 def test_answer_first_summary_derives_selected_snapshot_facts() -> None:

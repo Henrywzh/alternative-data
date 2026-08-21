@@ -585,8 +585,6 @@ def test_consensus_contract_is_populated_and_typed_empty(generated_root: Path) -
         "source_url", "pit_class", "source_run_id",
     } <= set(populated.consensus_revisions.columns)
 
-    for name in ("consensus_snapshots.parquet", "consensus_revisions.parquet"):
-        (generated_root / name).unlink()
     _rewrite_manifest(
         generated_root,
         lambda manifest: (
@@ -639,22 +637,16 @@ def test_direct_manifest_json_is_supported(generated_root: Path) -> None:
     assert len(snapshot.entities) == 2
 
 
-def test_legacy_direct_root_ignores_unrelated_entries(generated_root: Path) -> None:
-    from control_tower.config import ARTIFACT_NAMES, artifact_fingerprint
-    from control_tower.repository import ControlTowerRepository
+def test_direct_root_rejects_unrelated_entries(generated_root: Path) -> None:
+    from control_tower.config import ArtifactResolutionError, resolve_artifact_root
 
     (generated_root / "unrelated.txt").write_text("not an artifact", encoding="utf-8")
     unrelated_directory = generated_root / "other-run"
     unrelated_directory.mkdir()
     (unrelated_directory / "events.parquet").write_bytes(b"not selected")
 
-    snapshot = ControlTowerRepository(generated_root).load_snapshot()
-    fingerprint_names = {item[0] for item in artifact_fingerprint(generated_root)}
-
-    assert len(snapshot.entities) == 2
-    assert fingerprint_names == set(ARTIFACT_NAMES)
-    assert "unrelated.txt" not in fingerprint_names
-    assert "other-run/events.parquet" not in fingerprint_names
+    with pytest.raises(ArtifactResolutionError, match="exact current or legacy contract"):
+        resolve_artifact_root(generated_root)
 
 
 def test_publication_current_resolves_exact_generation_and_invalidates_fingerprint(
@@ -811,8 +803,8 @@ def test_publication_current_must_not_be_a_symlink(generated_root: Path, tmp_pat
         resolve_artifact_root(publication)
 
 
-def test_optional_artifact_missing_enters_degraded_mode(generated_root: Path) -> None:
-    from control_tower.repository import ControlTowerRepository
+def test_partial_optional_generation_is_rejected(generated_root: Path) -> None:
+    from control_tower.repository import ControlTowerRepository, ControlTowerStartupError
 
     (generated_root / "consensus_revisions.parquet").unlink()
     _rewrite_manifest(
@@ -821,14 +813,8 @@ def test_optional_artifact_missing_enters_degraded_mode(generated_root: Path) ->
             {"status": "unavailable", "sha256": None, "byte_size": 0, "row_count": 0}
         ) or manifest.update({"status": "degraded", "degraded_inputs": ["consensus_revisions"]}),
     )
-    snapshot = ControlTowerRepository(generated_root).load_snapshot()
-    assert snapshot.status == "degraded"
-    assert "consensus_revisions" in snapshot.missing_optional
-    assert snapshot.consensus_revisions.empty
-    assert snapshot.degraded_reasons["consensus_revisions"] == "missing"
-    assert not snapshot.source_health["source_id"].astype("string").str.startswith(
-        "artifact:"
-    ).any()
+    with pytest.raises(ControlTowerStartupError, match="exact current or legacy contract"):
+        ControlTowerRepository(generated_root).load_snapshot()
 
 
 def test_legacy_earnings_schema_is_accepted_but_arbitrary_schema_is_rejected(
@@ -899,8 +885,8 @@ def test_legacy_earnings_schema_is_accepted_but_arbitrary_schema_is_rejected(
     assert degraded.degraded_reasons["earnings_actuals"] == "schema_mismatch"
 
 
-def test_legacy_generation_without_quote_artifact_loads_as_degraded(tmp_path: Path) -> None:
-    from control_tower.repository import ControlTowerRepository
+def test_partial_legacy_generation_without_quote_artifact_is_rejected(tmp_path: Path) -> None:
+    from control_tower.repository import ControlTowerRepository, ControlTowerStartupError
 
     root = tmp_path / "legacy-bundle"
     _write_bundle(root)
@@ -912,12 +898,8 @@ def test_legacy_generation_without_quote_artifact_loads_as_degraded(tmp_path: Pa
     manifest["degraded_inputs"] = ["quote_snapshots"]
     _write_manifest(root, manifest)
 
-    snapshot = ControlTowerRepository(root).load_snapshot()
-
-    assert snapshot.status == "degraded"
-    assert "quote_snapshots" in snapshot.missing_optional
-    assert snapshot.quote_snapshots.empty
-    assert snapshot.degraded_reasons["quote_snapshots"] == "missing"
+    with pytest.raises(ControlTowerStartupError, match="exact current or legacy contract"):
+        ControlTowerRepository(root).load_snapshot()
 
 
 @pytest.mark.parametrize(

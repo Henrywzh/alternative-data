@@ -232,13 +232,49 @@ def _audit_source_row(schema_id: str, timestamp: str) -> dict[str, object]:
                 "valuation_date": "2026-08-12",
                 "valuation_at": timestamp,
                 "metric_name": "forward_pe",
+                "accounting_basis": "NON_IFRS_MANAGEMENT",
+                "metric_basis": "PROVIDER_UNVERIFIED",
+                "ratio_value": 16.2,
+                "numerator_value": 441.2,
+                "numerator_currency": "HKD",
+                "numerator_ref": "quote:audit-1",
+                "numerator_source_id": "audit-quote",
+                "numerator_source_url": "https://example.test/audit-quote",
+                "numerator_pit_class": "snapshot_from_delayed_source",
+                "numerator_at_utc": timestamp,
+                "numerator_retrieved_at_utc": timestamp,
+                "denominator_value": 27.2,
+                "denominator_currency": "HKD",
+                "denominator_ref": "consensus:audit-1",
+                "denominator_source_id": "audit-consensus",
+                "denominator_source_url": "https://example.test/audit-consensus",
+                "denominator_pit_class": "snapshot_from_delayed_source",
+                "denominator_at_utc": timestamp,
+                "denominator_provider_asof_utc": timestamp,
+                "denominator_retrieved_at_utc": timestamp,
                 "source_id": "audit-valuation",
                 "source_url": "https://example.test/audit-valuation",
                 "retrieved_at_utc": timestamp,
                 "pit_class": "snapshot_from_live_source",
                 "coverage_reason": "audit fixture",
+                "percentile_history_status": "unavailable",
             }
         )
+        from src.research_control_tower.valuation import (
+            ValuationInput,
+            build_valuation_snapshot_row,
+        )
+
+        canonical = build_valuation_snapshot_row(
+            ValuationInput(
+                **{
+                    field: row[field]
+                    for field in ValuationInput.__dataclass_fields__
+                    if field in row
+                }
+            )
+        )
+        row.update(canonical)
         return row
     if schema_id == INTERNAL_ESTIMATES_SCHEMA_ID:
         row = {column: None for column in INTERNAL_ESTIMATES_COLUMNS}
@@ -252,10 +288,16 @@ def _audit_source_row(schema_id: str, timestamp: str) -> dict[str, object]:
                 "observation_type": "internal_estimate",
                 "author": "audit-fixture",
                 "metric": "revenue_total",
+                "accounting_basis": "NON_IFRS_MANAGEMENT",
+                "metric_basis": "NON_IFRS_MANAGEMENT",
                 "fiscal_period": "FY2026",
                 "fiscal_year": 2026,
+                "value_mid": 1.0,
+                "currency": "HKD",
+                "unit": "million",
                 "effective_asof": timestamp[:10],
                 "recorded_at_utc": timestamp,
+                "source_ref": "internal:audit-estimate-1",
                 "pit_class": "not_pit",
             }
         )
@@ -288,10 +330,10 @@ def _write_task3_exports(
     snapshot_row = {
             "snapshot_id": "snap-ak-1",
             "provider": "akshare",
-            "entity_id": "NVIDIA",
-            "listing_id": "NVDA_US",
-            "financial_data_security_id": "security-nvda",
-            "canonical_ticker": "NVDA.US",
+            "entity_id": "TENCENT",
+            "listing_id": "0700_HK",
+            "financial_data_security_id": "sec-0700",
+            "canonical_ticker": "0700.HK",
             "metric": "eps",
             "fiscal_period": "FY2026",
             "fiscal_year": 2026,
@@ -325,10 +367,10 @@ def _write_task3_exports(
         "snapshot_id": "snap-ak-1",
         "provider": "akshare",
         "prior_provider": "akshare",
-        "entity_id": "NVIDIA",
-        "listing_id": "NVDA_US",
-        "financial_data_security_id": "security-nvda",
-        "canonical_ticker": "NVDA.US",
+        "entity_id": "TENCENT",
+        "listing_id": "0700_HK",
+        "financial_data_security_id": "sec-0700",
+        "canonical_ticker": "0700.HK",
         "metric": "eps",
         "fiscal_period": "FY2026",
         "fiscal_year": 2026,
@@ -550,6 +592,20 @@ def test_invalid_thesis_seed_fails_closed_before_publication(tmp_path, minimal_i
     assert not minimal_inputs.output_dir.joinpath("CURRENT").exists()
 
 
+def test_malformed_thesis_timestamp_is_validated_before_as_of_filter(
+    tmp_path, minimal_inputs
+):
+    evidence_path = minimal_inputs.registry_root / "evidence_items.csv"
+    evidence = pd.read_csv(evidence_path, dtype="string", keep_default_na=False)
+    evidence.loc[0, "observed_at_utc"] = "not-a-timestamp"
+    evidence.to_csv(evidence_path, index=False)
+
+    with pytest.raises(BuildError, match="invalid_observed_at_utc_timestamp"):
+        build_control_tower_marts(minimal_inputs)
+
+    assert not minimal_inputs.output_dir.joinpath("CURRENT").exists()
+
+
 def test_incomplete_thesis_seed_bundle_is_a_controlled_build_error(
     tmp_path, minimal_inputs
 ):
@@ -620,7 +676,20 @@ def test_builder_merges_all_valuation_and_internal_descriptors(tmp_path, minimal
     for suffix, valuation_id in (("one", "valuation-one"), ("two", "valuation-two")):
         path = tmp_path / f"valuation-{suffix}.parquet"
         row = _audit_source_row(VALUATION_SNAPSHOTS_SCHEMA_ID, "2026-08-12T00:00:00Z")
-        row["valuation_id"] = valuation_id
+        row["numerator_ref"] = f"quote:{suffix}"
+        from src.research_control_tower.valuation import ValuationInput, build_valuation_snapshot_row
+        row.update(
+            build_valuation_snapshot_row(
+                ValuationInput(
+                    **{
+                        field: row[field]
+                        for field in ValuationInput.__dataclass_fields__
+                        if field in row
+                    }
+                )
+            )
+        )
+        assert row["valuation_id"]
         pd.DataFrame([row], columns=VALUATION_SNAPSHOTS_COLUMNS).to_parquet(
             path, index=False
         )
@@ -653,7 +722,8 @@ def test_builder_merges_all_valuation_and_internal_descriptors(tmp_path, minimal
 
     valuations = pd.read_parquet(_published(config, "valuation_snapshots.parquet"))
     estimates = pd.read_parquet(_published(config, "internal_estimates.parquet"))
-    assert set(valuations["valuation_id"]) == {"valuation-one", "valuation-two"}
+    assert len(valuations) == 2
+    assert valuations["valuation_id"].notna().all()
     assert set(estimates["estimate_id"]) == {"estimate-one", "estimate-two"}
 
 
@@ -739,6 +809,10 @@ def test_duplicate_ids_use_full_payload_collision_checks(tmp_path, minimal_input
         )
     )
     assert len(exact_output) == len(original)
+    if kind == "corporate_actions":
+        assert exact_output["version"].notna().all()
+        assert set(exact_output["version"].astype(int)) == {1}
+        assert pd.api.types.is_integer_dtype(exact_output["version"])
 
     divergent_config = replace(
         minimal_inputs,

@@ -12,6 +12,8 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import pandas as pd
 import streamlit as st
 
+from src.research_control_tower.eligibility import listing_eligibility_reason
+
 from ..filters import apply_event_filters
 from ..formatting import format_t_minus
 from ..market_data import QUOTE_SNAPSHOT_COLUMNS, classify_quote_freshness, format_quote_age
@@ -142,6 +144,12 @@ class CompanyView:
     evidence_items: pd.DataFrame = field(default_factory=pd.DataFrame)
     claim_evidence_links: pd.DataFrame = field(default_factory=pd.DataFrame)
 
+    @property
+    def scope_listing_id(self) -> str | None:
+        """The one listing scope applied to every listing-scoped mart."""
+
+        return self.selected_listing_id
+
 
 def _text(value: object) -> str:
     if value is None or value is pd.NA:
@@ -218,12 +226,34 @@ def _market_entity_eligible(row: Any, as_of: pd.Timestamp) -> bool:
 
 
 def _market_listing_eligible(row: Any, as_of: pd.Timestamp) -> bool:
-    return (
-        _text(row.get("listing_status")).lower() == "active"
-        and _text(row.get("mapping_status")).lower() == "verified"
-        and _text(row.get("collection_eligible")).lower() in {"true", "1", "yes"}
-        and _active(row, as_of)
-    )
+    return listing_eligibility_reason(row, as_of) is None
+
+
+def _scope_listing_rows(
+    frame: pd.DataFrame,
+    *,
+    entity_id: str,
+    scope_listing_id: str | None,
+    include_entity_only: bool = True,
+) -> pd.DataFrame:
+    """Apply one selected-listing scope without leaking another listing."""
+
+    if frame is None or frame.empty:
+        return frame.copy() if frame is not None else pd.DataFrame()
+    scoped = frame.copy()
+    if "entity_id" in scoped.columns:
+        scoped = scoped.loc[scoped["entity_id"].astype("string").eq(entity_id)]
+    if "listing_id" not in scoped.columns:
+        return scoped.copy()
+    listing = scoped["listing_id"].map(_text)
+    entity_only = listing.eq("")
+    if scope_listing_id:
+        mask = listing.eq(scope_listing_id)
+        if include_entity_only:
+            mask |= entity_only
+    else:
+        mask = entity_only if include_entity_only else pd.Series(False, index=scoped.index)
+    return scoped.loc[mask].copy()
 
 
 def _vendor_symbols(row: Any) -> tuple[str, ...]:
@@ -608,23 +638,24 @@ def build_company_view(
 
     # Price history is scoped to the same listing the quote is
     bars_source = getattr(snapshot, "price_bars", pd.DataFrame())
-    bar_listing_ids = {selected_listing_id} if selected_listing_id else listing_ids
-    if bars_source is None or bars_source.empty or not bar_listing_ids:
+    if bars_source is None or bars_source.empty or not selected_listing_id:
         price_bars = pd.DataFrame(columns=["bar_date", "close", "adj_close", "volume", "listing_id", "currency", "source_id"])
     else:
-        price_bars = bars_source.loc[
-            bars_source["listing_id"].astype("string").isin(bar_listing_ids)
-        ].copy()
+        price_bars = _scope_listing_rows(
+            bars_source,
+            entity_id=requested_entity,
+            scope_listing_id=selected_listing_id,
+            include_entity_only=False,
+        )
         if not price_bars.empty:
             price_bars = price_bars.sort_values("bar_date")
 
     quote_source = snapshot.quote_snapshots
-    quote_listing_ids = {selected_listing_id} if selected_listing_id else listing_ids
-    if quote_source.empty or not quote_listing_ids:
+    if quote_source.empty or not selected_listing_id:
         quote_snapshots = _empty(COMPANY_QUOTE_COLUMNS)
     else:
         quote_snapshots = quote_source.loc[
-            quote_source["listing_id"].astype("string").isin(quote_listing_ids)
+            quote_source["listing_id"].astype("string").eq(selected_listing_id)
         ].copy()
         if not quote_snapshots.empty:
             listing_by_id = active_listings.set_index("listing_id", drop=False).to_dict("index")
@@ -701,18 +732,24 @@ def build_company_view(
             official_documents[column] = pd.NA
     official_documents = official_documents.loc[:, COMPANY_DOCUMENT_COLUMNS]
 
-    consensus = snapshot.consensus_snapshots.loc[snapshot.consensus_snapshots["entity_id"].astype("string").eq(requested_entity)].copy() if not snapshot.consensus_snapshots.empty else snapshot.consensus_snapshots.copy()
-    if listing_id is not None and not consensus.empty:
-        consensus = consensus.loc[consensus["listing_id"].astype("string").eq(_text(listing_id))]
+    consensus = _scope_listing_rows(
+        snapshot.consensus_snapshots,
+        entity_id=requested_entity,
+        scope_listing_id=selected_listing_id,
+        include_entity_only=True,
+    )
     consensus = consensus.loc[:, [column for column in COMPANY_CONSENSUS_COLUMNS if column in consensus.columns]].copy() if not consensus.empty else _empty(COMPANY_CONSENSUS_COLUMNS)
     for column in COMPANY_CONSENSUS_COLUMNS:
         if column not in consensus.columns:
             consensus[column] = pd.NA
     consensus = consensus.loc[:, COMPANY_CONSENSUS_COLUMNS]
 
-    revisions = snapshot.consensus_revisions.loc[snapshot.consensus_revisions["entity_id"].astype("string").eq(requested_entity)].copy() if not snapshot.consensus_revisions.empty else snapshot.consensus_revisions.copy()
-    if listing_id is not None and not revisions.empty:
-        revisions = revisions.loc[revisions["listing_id"].astype("string").eq(_text(listing_id))]
+    revisions = _scope_listing_rows(
+        snapshot.consensus_revisions,
+        entity_id=requested_entity,
+        scope_listing_id=selected_listing_id,
+        include_entity_only=True,
+    )
     revisions = revisions.loc[:, [column for column in COMPANY_REVISION_COLUMNS if column in revisions.columns]].copy() if not revisions.empty else _empty(COMPANY_REVISION_COLUMNS)
     for column in COMPANY_REVISION_COLUMNS:
         if column not in revisions.columns:
@@ -722,17 +759,12 @@ def build_company_view(
     # T1: Corporate actions (Statutory share repurchases / dividends)
     corp_actions_source = getattr(snapshot, "corporate_actions", pd.DataFrame())
     if corp_actions_source is not None and not corp_actions_source.empty:
-        action_listing_ids = {selected_listing_id} if selected_listing_id else listing_ids
-        if "listing_id" in corp_actions_source.columns and action_listing_ids:
-            corp_actions = corp_actions_source.loc[
-                corp_actions_source["listing_id"].astype("string").isin(action_listing_ids)
-            ].copy()
-        elif "entity_id" in corp_actions_source.columns:
-            corp_actions = corp_actions_source.loc[
-                corp_actions_source["entity_id"].astype("string").eq(requested_entity)
-            ].copy()
-        else:
-            corp_actions = corp_actions_source.copy()
+        corp_actions = _scope_listing_rows(
+            corp_actions_source,
+            entity_id=requested_entity,
+            scope_listing_id=selected_listing_id,
+            include_entity_only=True,
+        )
         if not corp_actions.empty:
             for col in COMPANY_CORPORATE_ACTION_COLUMNS:
                 if col not in corp_actions.columns:
@@ -748,17 +780,12 @@ def build_company_view(
     # T2: Valuation snapshots (Forward P/E, EV/EBITDA, FCF yield, Cash return yield)
     valuation_source = getattr(snapshot, "valuation_snapshots", pd.DataFrame())
     if valuation_source is not None and not valuation_source.empty:
-        val_listing_ids = {selected_listing_id} if selected_listing_id else listing_ids
-        if "listing_id" in valuation_source.columns and val_listing_ids:
-            val_snapshots = valuation_source.loc[
-                valuation_source["listing_id"].astype("string").isin(val_listing_ids)
-            ].copy()
-        elif "entity_id" in valuation_source.columns:
-            val_snapshots = valuation_source.loc[
-                valuation_source["entity_id"].astype("string").eq(requested_entity)
-            ].copy()
-        else:
-            val_snapshots = valuation_source.copy()
+        val_snapshots = _scope_listing_rows(
+            valuation_source,
+            entity_id=requested_entity,
+            scope_listing_id=selected_listing_id,
+            include_entity_only=True,
+        )
         if not val_snapshots.empty:
             for col in COMPANY_VALUATION_COLUMNS:
                 if col not in val_snapshots.columns:
@@ -772,12 +799,12 @@ def build_company_view(
     # T2: Internal estimates & management guidance
     internal_est_source = getattr(snapshot, "internal_estimates", pd.DataFrame())
     if internal_est_source is not None and not internal_est_source.empty:
-        if "entity_id" in internal_est_source.columns:
-            internal_est = internal_est_source.loc[
-                internal_est_source["entity_id"].astype("string").eq(requested_entity)
-            ].copy()
-        else:
-            internal_est = internal_est_source.copy()
+        internal_est = _scope_listing_rows(
+            internal_est_source,
+            entity_id=requested_entity,
+            scope_listing_id=selected_listing_id,
+            include_entity_only=True,
+        )
         if not internal_est.empty:
             for col in COMPANY_INTERNAL_ESTIMATES_COLUMNS:
                 if col not in internal_est.columns:
@@ -2004,7 +2031,27 @@ def _render_evidence_tab(
     if view.internal_estimates.empty:
         st.info("No internal estimates or management guidance registered for this entity.")
     else:
-        st.dataframe(_friendly_internal_estimates_frame(view.internal_estimates, viewer_timezone), width="stretch", hide_index=True)
+        listing_ids = view.internal_estimates.get(
+            "listing_id", pd.Series("", index=view.internal_estimates.index, dtype="string")
+        ).map(_text)
+        listing_rows = view.internal_estimates.loc[listing_ids.ne("")]
+        entity_rows = view.internal_estimates.loc[listing_ids.eq("")]
+        if not listing_rows.empty:
+            st.caption("Selected listing scope")
+            st.dataframe(
+                _friendly_internal_estimates_frame(listing_rows, viewer_timezone),
+                width="stretch",
+                hide_index=True,
+            )
+        if not entity_rows.empty:
+            st.caption(
+                "Entity scope · listing-independent estimates; these rows are not assigned to any listing."
+            )
+            st.dataframe(
+                _friendly_internal_estimates_frame(entity_rows, viewer_timezone),
+                width="stretch",
+                hide_index=True,
+            )
 
     # 6. Claim-Evidence Matrix & Invalidation Conflict Hints
     st.markdown("#### Claim-evidence matrix & conflict detection")

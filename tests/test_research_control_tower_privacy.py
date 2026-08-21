@@ -1734,7 +1734,7 @@ def test_legacy_earnings_schema_allowlist_is_exact() -> None:
     )
 
 
-def test_legacy_artifact_allowlist_rejects_unrecognised_subsets(
+def test_partial_artifact_generation_is_rejected(
     tmp_path: Path,
 ) -> None:
     helpers = _load_streamlit_helpers()
@@ -1745,9 +1745,10 @@ def test_legacy_artifact_allowlist_rejects_unrecognised_subsets(
     )
     (publication / "generations" / "gen-001" / "price_bars.parquet").unlink()
 
-    rule_ids = {finding.rule_id for finding in scan_generated_bundle(publication)}
-    assert "missing_bundle_file" in rule_ids
-    assert "manifest_artifact_allowlist_mismatch" in rule_ids
+    from control_tower.config import ArtifactResolutionError
+
+    with pytest.raises(ArtifactResolutionError, match="exact current or legacy contract"):
+        scan_generated_bundle(publication)
 
 
 def test_privacy_fixtures_use_final_health_entitlement_contract(

@@ -79,7 +79,7 @@ python scripts/research_control_tower_valuation.py \
   --fx-rates data/normalized/hk_transport/airline_fx_rates.parquet \
   --internal-estimates config/research_control_tower/internal_estimates.csv \
   --output-dir data/normalized/research_control_tower \
-  --as-of 2026-08-22T00:05:00Z --fiscal-period annual --fiscal-year 2026
+  --as-of "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --fiscal-period annual --fiscal-year 2026
 ```
 
 Valuation and own-estimate outputs are built only from explicit, entitlement-

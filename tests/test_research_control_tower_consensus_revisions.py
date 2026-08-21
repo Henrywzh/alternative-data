@@ -421,6 +421,8 @@ def test_akshare_three_fiscal_year_rows_map_and_keep_distinct_stable_ids(
                 "canonical_ticker": "0700.HK",
                 "financial_data_security_id": "sec-0700",
                 "currency": "HKD", "listing_status": "active",
+                "mapping_status": "verified", "collection_eligible": True,
+                "active_from": "2004-06-16", "active_to": "",
             }
         ]
     )
@@ -645,6 +647,8 @@ def test_yfinance_without_provider_vintage_uses_explicit_collection_time_label(
                 "financial_data_security_id": "sec-0700",
                 "canonical_ticker": "0700.HK",
                 "currency": "HKD",
+                "mapping_status": "verified", "collection_eligible": True,
+                "listing_status": "active", "active_from": "2004-06-16", "active_to": "",
             }
         ]
     )
@@ -721,6 +725,8 @@ def test_collect_financial_data_excludes_future_dated_rows(
                 "canonical_ticker": "0700.HK",
                 "financial_data_security_id": "sec-0700",
                 "currency": "HKD", "listing_status": "active",
+                "mapping_status": "verified", "collection_eligible": True,
+                "active_from": "2004-06-16", "active_to": "",
             }
         ]
     )
