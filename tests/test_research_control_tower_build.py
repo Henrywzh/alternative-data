@@ -6,6 +6,7 @@ import os
 from dataclasses import replace
 from datetime import date
 from pathlib import Path
+import re
 import shutil
 import socket
 import subprocess
@@ -727,10 +728,44 @@ def test_builder_merges_all_valuation_and_internal_descriptors(tmp_path, minimal
     assert set(estimates["estimate_id"]) == {"estimate-one", "estimate-two"}
 
 
+@pytest.mark.parametrize("forged_field", ["valuation_id", "ratio_value"])
+def test_builder_quarantines_noncanonical_valuation_rows_at_publication_boundary(
+    tmp_path, minimal_inputs, forged_field
+):
+    path = tmp_path / f"forged-{forged_field}.parquet"
+    row = _audit_source_row(VALUATION_SNAPSHOTS_SCHEMA_ID, "2026-08-12T00:00:00Z")
+    row[forged_field] = (
+        "forged-valuation-id" if forged_field == "valuation_id" else 999.0
+    )
+    pd.DataFrame([row], columns=VALUATION_SNAPSHOTS_COLUMNS).to_parquet(
+        path, index=False
+    )
+    config = replace(
+        minimal_inputs,
+        valuation_inputs=(_input("valuation-forged", path, VALUATION_SNAPSHOTS_SCHEMA_ID),),
+    )
+
+    manifest = build_control_tower_marts(config)
+    output = pd.read_parquet(_published(config, "valuation_snapshots.parquet"))
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    source = health.loc[health["source_id"].eq("valuation-forged")].iloc[0]
+
+    assert output.empty
+    assert list(output.columns) == VALUATION_SNAPSHOTS_COLUMNS
+    assert source["status"] == "degraded"
+    assert "canonical rebuild mismatch" in str(source["detail"])
+    assert any(
+        error["source_id"] == "valuation-forged"
+        and error["code"] == "semantic_validation_failed"
+        and "canonical rebuild mismatch" in error["message"]
+        for error in manifest.validation_errors
+    )
+    assert "valuation-forged" in manifest.degraded_inputs
+
+
 @pytest.mark.parametrize(
     ("schema_id", "id_column", "changed_column"),
     [
-        (VALUATION_SNAPSHOTS_SCHEMA_ID, "valuation_id", "coverage_reason"),
         (INTERNAL_ESTIMATES_SCHEMA_ID, "estimate_id", "rationale_notes"),
     ],
 )
@@ -1451,6 +1486,58 @@ def test_provider_health_sidecar_keeps_accepted_provider_rows_separate(
     assert provider["entitlement_ref"] == "fixture-policy:local-private-research-v1"
 
 
+def test_consensus_mixed_eligible_and_ineligible_listings_preserves_eligible_rows(
+    tmp_path, minimal_inputs
+):
+    consensus_dir = _write_task3_exports(tmp_path / "input" / "consensus")
+    snapshots_path = consensus_dir / "control_tower_consensus_snapshots.parquet"
+    snapshot_rows = pq.read_table(snapshots_path).to_pylist()
+    rejected_row = dict(snapshot_rows[0])
+    rejected_row.update(
+        {
+            "snapshot_id": "snap-ak-tcehy",
+            "listing_id": "TCEHY_US",
+            "canonical_ticker": "TCEHY.US",
+            "raw_hash": hashlib.sha256(b"task3-ineligible-tcehy-row").hexdigest(),
+        }
+    )
+    pq.write_table(
+        pa.Table.from_pylist(
+            [*snapshot_rows, rejected_row],
+            schema=TASK3_SNAPSHOT_ARROW_SCHEMA,
+        ),
+        snapshots_path,
+    )
+    health_path = consensus_dir / "control_tower_consensus_source_health.parquet"
+    health_rows = pq.read_table(health_path).to_pylist()
+    health_rows[0]["row_count"] = 2
+    health_rows[0]["mapped_row_count"] = 2
+    pq.write_table(
+        pa.Table.from_pylist(health_rows, schema=TASK3_HEALTH_ARROW_SCHEMA),
+        health_path,
+    )
+
+    config = replace(minimal_inputs, consensus_export_dir=consensus_dir)
+    manifest = build_control_tower_marts(config)
+    snapshots = pd.read_parquet(_published(config, "consensus_snapshots.parquet"))
+    revisions = pd.read_parquet(_published(config, "consensus_revisions.parquet"))
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    aggregate = health.loc[health["source_id"].eq("consensus_export")].iloc[0]
+    provider = health.loc[health["source_id"].eq("consensus:akshare")].iloc[0]
+
+    assert set(snapshots["listing_id"]) == {"0700_HK"}
+    assert set(revisions["listing_id"]) == {"0700_HK"}
+    assert aggregate["status"] == "degraded"
+    assert "TCEHY_US" in str(aggregate["detail"])
+    assert provider["status"] == "available"
+    assert any(
+        error["source_id"] == "consensus_export"
+        and error["code"] == "listing_scope_rows_rejected"
+        and "TCEHY_US" in error["message"]
+        for error in manifest.validation_errors
+    )
+
+
 def test_revision_prior_provider_without_sidecar_evidence_is_not_admitted(
     tmp_path, minimal_inputs
 ):
@@ -1860,12 +1947,105 @@ def test_quote_status_sidecar_propagates_partial_diagnostics_and_quote_age(
     assert manifest.status == "degraded"
     assert manifest.artifacts["quote_snapshots.parquet"]["status"] == "degraded"
     assert "market:yfinance" in manifest.degraded_inputs
-    assert str(sidecar_path) in manifest.input_fingerprints
+    assert str(sidecar_path) not in manifest.input_fingerprints
+    assert any(
+        key.startswith("inputs/market-yfinance/status-quotes.status.json-")
+        for key in manifest.input_fingerprints
+    )
     assert quote_health["status"] == "partial"
     assert quote_health["source_latest_at"] == pd.Timestamp("2026-08-13T11:59:00Z")
     assert quote_health["retrieved_at_utc"] == pd.Timestamp("2026-08-13T12:00:00Z")
     assert "collector_status=partial" in str(quote_health["detail"])
     assert "diagnostic_statuses=no_records:1" in str(quote_health["detail"])
+
+
+def test_published_lineage_is_portable_and_same_basename_inputs_do_not_collide(
+    tmp_path, minimal_inputs
+):
+    from src.research_control_tower.valuation import (
+        ValuationInput,
+        build_valuation_snapshot_row,
+    )
+
+    input_a = tmp_path / "external-a" / "same-name.parquet"
+    input_b = tmp_path / "external-b" / "same-name.parquet"
+    input_a.parent.mkdir(parents=True)
+    input_b.parent.mkdir(parents=True)
+
+    rows = []
+    for ref, path in (("quote:external-a", input_a), ("quote:external-b", input_b)):
+        row = _audit_source_row(VALUATION_SNAPSHOTS_SCHEMA_ID, "2026-08-12T00:00:00Z")
+        row["numerator_ref"] = ref
+        row.update(
+            build_valuation_snapshot_row(
+                ValuationInput(
+                    **{
+                        field: row[field]
+                        for field in ValuationInput.__dataclass_fields__
+                        if field in row
+                    }
+                )
+            )
+        )
+        pd.DataFrame([row], columns=VALUATION_SNAPSHOTS_COLUMNS).to_parquet(
+            path, index=False
+        )
+        rows.append((ref, path))
+
+    config = replace(
+        minimal_inputs,
+        valuation_inputs=tuple(
+            _input(f"valuation-{suffix}", path, VALUATION_SNAPSHOTS_SCHEMA_ID)
+            for suffix, (_, path) in zip(("a", "b"), rows)
+        ),
+    )
+    first = build_control_tower_marts(config)
+    manifest = _manifest(config)
+    generation = current_generation(config.output_dir)
+    fingerprints = manifest["input_fingerprints"]
+    valuation_labels = [
+        key for key in fingerprints if key.startswith("inputs/valuation-")
+    ]
+    health = pd.read_parquet(generation / "source_health.parquet")
+    health_labels = health.loc[
+        health["source_id"].isin({"valuation-a", "valuation-b"}), "input_path"
+    ].tolist()
+
+    assert first.generation_id == manifest["generation_id"]
+    assert len(valuation_labels) == 2
+    assert len(set(valuation_labels)) == 2
+    assert len(set(health_labels)) == 2
+    forbidden = (b"/private/tmp", b"/Users")
+    for artifact in generation.iterdir():
+        if not artifact.is_file():
+            continue
+        payload = artifact.read_bytes()
+        assert not any(token in payload for token in forbidden), artifact.name
+        assert re.search(rb"(?<![A-Za-z0-9])[A-Za-z]:[\\\\/]", payload) is None, artifact.name
+
+    second_config = replace(config, output_dir=tmp_path / "publication-two")
+    second = build_control_tower_marts(second_config)
+    assert second.generation_id == first.generation_id
+    assert second.input_fingerprints == first.input_fingerprints
+
+
+def test_published_optional_diagnostics_redact_missing_input_paths(
+    tmp_path, minimal_inputs
+):
+    missing = tmp_path / "external-secret-root" / "missing-news.parquet"
+    config = replace(
+        minimal_inputs,
+        news_inputs=(_input("missing-news", missing, NEWS_SCHEMA_ID),),
+    )
+    build_control_tower_marts(config)
+    generation = current_generation(config.output_dir)
+    for artifact in generation.iterdir():
+        if not artifact.is_file():
+            continue
+        payload = artifact.read_bytes()
+        assert b"/private/tmp" not in payload, artifact.name
+        assert b"/Users" not in payload, artifact.name
+        assert re.search(rb"(?<![A-Za-z0-9])[A-Za-z]:[\\\\/]", payload) is None, artifact.name
 
 
 def test_empty_quote_output_is_unavailable_without_execution_evidence(tmp_path, minimal_inputs):

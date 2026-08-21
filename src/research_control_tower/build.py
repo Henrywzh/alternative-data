@@ -1279,14 +1279,19 @@ class _SourceState:
     source_latest_at: Any = pd.NaT
     retrieved_at_utc: Any = pd.NaT
     input_sha256: str | None = None
+    input_label: str = ""
     missing_geographies: str = ""
     detail: str = ""
     errors: list[dict[str, Any]] = field(default_factory=list)
 
     def health_row(self) -> dict[str, Any]:
+        label = self.input_label or _portable_input_label(
+            self.path,
+            source_id=self.source_id,
+        )
         return {
             "source_id": self.source_id,
-            "input_path": str(self.path) if self.path is not None else "",
+            "input_path": label,
             "source_kind": self.source_kind,
             "status": self.status,
             "required": self.required,
@@ -1305,7 +1310,7 @@ class _SourceState:
             "input_sha256": self.input_sha256 or "",
             "schema_version": self.schema_version,
             "missing_geographies": self.missing_geographies,
-            "detail": self.detail,
+            "detail": _redact_runtime_paths(self.detail, self.path, label),
         }
 
 
@@ -1542,6 +1547,55 @@ def _stable_hash(*parts: Any) -> str:
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
 
+def _portable_token(value: Any, *, fallback: str = "input") -> str:
+    """Return a path-safe logical token without exposing local directories."""
+
+    token = re.sub(r"[^A-Za-z0-9._-]+", "-", _text(value)).strip(".-")
+    return token or fallback
+
+
+def _portable_input_label(
+    path: Path | None,
+    *,
+    source_id: str = "",
+    role: str = "data",
+    content_hash: str | None = None,
+) -> str:
+    """Return a deterministic, host-independent label for an input path.
+
+    The runtime retains the real path in memory, but published lineage uses
+    only the source namespace, role, basename, and (when available) a short
+    content digest.  This keeps labels useful and collision-resistant without
+    leaking parent directories or build-machine details.
+    """
+
+    if path is None:
+        return ""
+    basename = _portable_token(Path(path).name, fallback="input")
+    namespace = _portable_token(source_id, fallback="source")
+    role_token = _portable_token(role, fallback="data")
+    digest_token = ""
+    if content_hash:
+        digest_token = f"-{_portable_token(content_hash[:12], fallback='hash')}"
+    return f"inputs/{namespace}/{role_token}-{basename}{digest_token}"
+
+
+def _redact_runtime_paths(value: Any, path: Path | None, label: str) -> str:
+    """Remove a source state's local path from text written to artifacts."""
+
+    text = "" if value is None else str(value)
+    if path is None or not text:
+        return text
+    candidates = {str(path)}
+    try:
+        candidates.add(str(path.resolve(strict=False)))
+    except OSError:
+        pass
+    for candidate in sorted((item for item in candidates if item), key=len, reverse=True):
+        text = text.replace(candidate, label)
+    return text
+
+
 def _file_hash(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -1601,6 +1655,11 @@ def _append_state_error(
     message: str,
     severity: str = "warning",
 ) -> None:
+    label = state.input_label or _portable_input_label(
+        state.path,
+        source_id=state.source_id,
+    )
+    message = _redact_runtime_paths(message, state.path, label)
     error = {
         "source_id": state.source_id,
         "code": code,
@@ -1852,16 +1911,10 @@ def _semantic_input_issues(frame: pd.DataFrame, schema_id: str) -> list[str]:
             columns=("ratio_value", "numerator_value", "denominator_value", "fx_rate_applied"),
             kind="float",
         ))
-        valuation_issues = validate_valuation_snapshots_df(frame)
-        # The builder's publication contract requires a non-null PK and
-        # auditable lineage/causality.  It does not rewrite a source's
-        # deterministic valuation ID or derived ratio at this boundary;
-        # descriptor collision handling below owns that merge contract.
-        issues.extend(
-            issue
-            for issue in valuation_issues
-            if "canonical rebuild mismatch" not in issue
-        )
+        # A valuation row is only admissible when its deterministic primary
+        # key and derived ratio agree with the canonical rebuild.  Silently
+        # dropping these issues would publish forged valuation metadata.
+        issues.extend(validate_valuation_snapshots_df(frame))
     elif schema_id == INTERNAL_ESTIMATES_SCHEMA_ID:
         issues.extend(_semantic_scalar_issues(
             frame,
@@ -2187,6 +2240,19 @@ def _optional_state(descriptor: LocalInput, source_kind: str, schema_id: str) ->
         license_class=descriptor.license_class,
         cadence=descriptor.cadence,
         source_url=descriptor.source_url,
+        input_label=_portable_input_label(
+            Path(descriptor.path),
+            source_id=descriptor.source_id,
+        ),
+    )
+
+
+def _refresh_input_label(state: _SourceState, *, role: str = "data") -> None:
+    state.input_label = _portable_input_label(
+        state.path,
+        source_id=state.source_id,
+        role=role,
+        content_hash=state.input_sha256,
     )
 
 
@@ -2248,6 +2314,7 @@ def _load_optional(
         )
         if Path(descriptor.path).is_file():
             state.input_sha256 = _file_hash(Path(descriptor.path))
+            _refresh_input_label(state)
         if descriptor.required:
             raise BuildError(
                 f"required optional input uses unsupported schema: {descriptor.expected_schema}"
@@ -2262,6 +2329,7 @@ def _load_optional(
             raise BuildError(f"required optional input missing: {descriptor.path}")
         return state, None, None
     state.input_sha256 = _file_hash(Path(descriptor.path))
+    _refresh_input_label(state)
     try:
         frame = _read_local_input(descriptor)
         _validate_optional_columns(frame, schema_id, descriptor.source_id)
@@ -3796,6 +3864,11 @@ def _build_consensus(
             entitlement_evidence="No populated rows are admitted without Task 3 provider-health evidence",
             entitlement_ref="task3-provider-policy:sidecar-required-v1",
             detail="optional_task3_export_directory_missing",
+            input_label=_portable_input_label(
+                directory,
+                source_id="consensus_export",
+                role="directory",
+            ),
         )
         states.append(state)
         degraded.append("consensus_export")
@@ -3806,7 +3879,11 @@ def _build_consensus(
         "health": "control_tower_consensus_source_health.parquet",
     }
     paths = {key: directory / name for key, name in names.items()}
-    missing = [str(path) for path in paths.values() if not path.is_file()]
+    missing = [
+        _portable_input_label(path, source_id="consensus_export", role=key)
+        for key, path in paths.items()
+        if not path.is_file()
+    ]
     state = _SourceState(
         source_id="consensus_export",
         source_kind="consensus",
@@ -3821,6 +3898,11 @@ def _build_consensus(
             "rows; no redistribution rights are asserted"
         ),
         entitlement_ref="task3-provider-policy:sidecar-required-v1",
+        input_label=_portable_input_label(
+            directory,
+            source_id="consensus_export",
+            role="directory",
+        ),
     )
     if missing:
         state.status = "unavailable"
@@ -3871,8 +3953,18 @@ def _build_consensus(
     listing_rejections = [*snapshot_rejected, *revision_rejected]
     if listing_rejections:
         _record_listing_scope_rejections(state, listing_rejections, legacy_code="listing_scope_rows_rejected")
-    for path in paths.values():
-        fingerprints[str(path)] = _file_hash(path)
+    listing_detail = state.detail
+    path_hashes = {key: _file_hash(path) for key, path in paths.items()}
+    path_labels = {
+        key: _portable_input_label(
+            path,
+            source_id="consensus_export",
+            role=key,
+            content_hash=path_hashes[key],
+        )
+        for key, path in paths.items()
+    }
+    fingerprints.update({path_labels[key]: path_hashes[key] for key in paths})
     state.status = "degraded" if listing_rejections else "available"
     state.row_count = len(snapshots) + len(revisions)
     state.first_observation_at = _first_timestamp(snapshots, "snapshot_at")
@@ -3880,7 +3972,13 @@ def _build_consensus(
     state.source_latest_at = _latest_timestamp(snapshots, "provider_asof")
     state.retrieved_at_utc = _latest_timestamp(snapshots, "retrieved_at_utc")
     state.input_sha256 = _composite_input_hash(
-        {path.name: fingerprints[str(path)] for path in paths.values()}
+        {paths[key].name: path_hashes[key] for key in paths}
+    )
+    state.input_label = _portable_input_label(
+        directory,
+        source_id="consensus_export",
+        role="bundle",
+        content_hash=state.input_sha256,
     )
     state.detail = (
         "composite_sha256=sha256(sorted(filename\\x1ffile_sha256_pairs));"
@@ -3888,6 +3986,9 @@ def _build_consensus(
         "control_tower_consensus_revisions.parquet,"
         "control_tower_consensus_source_health.parquet"
     )
+    if listing_detail:
+        state.detail = f"{state.detail}; {listing_detail}"
+    policy_error_count = len(state.errors)
     for frame in (snapshots, revisions):
         if not frame.empty:
             _apply_source_policy(
@@ -3919,7 +4020,10 @@ def _build_consensus(
         ),
         default=pd.NaT,
     )
-    if state.status != "available":
+    # Listing-scope rejection is row-local: it degrades the aggregate source
+    # and records diagnostics, but must not discard eligible rows.  Freshness
+    # and other source-policy failures remain fail-closed for the whole export.
+    if len(state.errors) > policy_error_count:
         states.append(state)
         degraded.append("consensus_export")
         return (
@@ -4001,7 +4105,8 @@ def _build_consensus(
             detail=str(item["reason"]),
         )
         provider_state.status = "available"
-        provider_state.input_sha256 = fingerprints[str(paths["health"])]
+        provider_state.input_sha256 = path_hashes["health"]
+        provider_state.input_label = path_labels["health"]
         _apply_source_policy(
             provider_state,
             item.to_frame().T,
@@ -4375,11 +4480,19 @@ def _build_quote_snapshots(
 
         status_payload, status_error = _read_quote_status(status_path)
         if status_path.is_file():
-            fingerprints[str(status_path)] = _file_hash(status_path)
+            status_hash = _file_hash(status_path)
+            status_label = _portable_input_label(
+                status_path,
+                source_id=descriptor.source_id,
+                role="status",
+                content_hash=status_hash,
+            )
+            fingerprints[status_label] = status_hash
             if state.input_sha256:
                 state.input_sha256 = _composite_input_hash(
-                    {"data": state.input_sha256, "status": fingerprints[str(status_path)]}
+                    {"data": state.input_sha256, "status": status_hash}
                 )
+                _refresh_input_label(state)
         if status_error:
             state.status = "degraded"
             _append_state_error(state, code="quote_status_sidecar_invalid", message=status_error)
@@ -4558,6 +4671,7 @@ def _expected_health_states(config: BuildConfig, existing: Sequence[_SourceState
             state.detail = f"unsupported_optional_schema:{descriptor.expected_schema}"
             if Path(descriptor.path).is_file():
                 state.input_sha256 = _file_hash(Path(descriptor.path))
+                _refresh_input_label(state)
             states.append(state)
             continue
         state = _optional_state(descriptor, source_kind, schema_id)
@@ -4570,6 +4684,7 @@ def _expected_health_states(config: BuildConfig, existing: Sequence[_SourceState
             state.row_count = source_state.row_count
             state.input_sha256 = source_state.input_sha256
             state.detail = source_state.detail
+            _refresh_input_label(state)
         states.append(state)
 
     for source_id, kind, schema_id, geography in _EXPECTED_OPTIONAL_SOURCES:
@@ -4600,6 +4715,7 @@ def _expected_health_states(config: BuildConfig, existing: Sequence[_SourceState
             state.status = "available" if any(item.source_id == descriptor.source_id and item.status == "available" for item in existing) else "degraded"
             state.row_count = next((item.row_count for item in existing if item.source_id == descriptor.source_id), 0)
             state.input_sha256 = next((item.input_sha256 for item in existing if item.source_id == descriptor.source_id), None)
+            _refresh_input_label(state)
             states.append(state)
         else:
             state = _SourceState(
@@ -4682,9 +4798,15 @@ def _required_health(config: BuildConfig) -> tuple[list[_SourceState], dict[str,
             if not path.is_file():
                 raise BuildError(f"required input missing: {path}")
             digest = _file_hash(path)
-            fingerprints[str(path)] = digest
+            source_id = f"{root_kind}:{logical_name}"
+            label = _portable_input_label(
+                path,
+                source_id=source_id,
+                content_hash=digest,
+            )
+            fingerprints[label] = digest
             state = _SourceState(
-                source_id=f"{root_kind}:{logical_name}",
+                source_id=source_id,
                 source_kind=root_kind,
                 path=path,
                 schema_version=f"{root_kind}_v1",
@@ -4692,6 +4814,7 @@ def _required_health(config: BuildConfig) -> tuple[list[_SourceState], dict[str,
                 pit_class="snapshot_from_live_source",
                 license_class="internal_research",
                 input_sha256=digest,
+                input_label=label,
                 status="available",
                 detail="validated_required_bundle",
             )
@@ -4969,6 +5092,19 @@ def _validate_output_frames(frames: Mapping[str, pd.DataFrame]) -> None:
             continue
         if list(frame.columns) != list(schemas[name].names):
             raise BuildError(f"output schema drift for {name}")
+
+
+def _validate_publication_content(frames: Mapping[str, pd.DataFrame]) -> None:
+    """Recheck canonical high-risk rows immediately before publication."""
+
+    valuation_issues = validate_valuation_snapshots_df(
+        frames["valuation_snapshots.parquet"]
+    )
+    if valuation_issues:
+        raise BuildError(
+            "valuation_snapshots publication validation failed: "
+            + "; ".join(valuation_issues[:8])
+        )
 
 
 def _validate_written_generation(
@@ -5478,7 +5614,9 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
     for state in optional_states:
         if state.path is not None and state.path.is_file() and state.input_sha256 is None:
             state.input_sha256 = _file_hash(state.path)
-            input_fingerprints[str(state.path)] = state.input_sha256
+        if state.path is not None and state.path.is_file() and state.input_sha256 is not None:
+            _refresh_input_label(state)
+            input_fingerprints[state.input_label] = state.input_sha256
     health_frame = _health_frame(optional_states, required_states)
     frames["source_health.parquet"] = health_frame
 
@@ -5511,6 +5649,7 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
         "source_health.parquet": [state.source_id for state in [*required_states, *optional_states]],
     }
     _validate_output_frames(frames)
+    _validate_publication_content(frames)
 
     output_dir = config.output_dir
     output_dir.parent.mkdir(parents=True, exist_ok=True)
@@ -5531,12 +5670,36 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
     staging_root = Path(tempfile.mkdtemp(prefix=".research-control-tower-", dir=str(output_dir)))
     staging = staging_root / "generation"
     staging.mkdir()
-    validation_errors = [
-        error
-        for state in [*required_states, *optional_states]
-        for error in state.errors
-    ]
     all_source_states = [*required_states, *optional_states]
+    validation_errors: list[dict[str, Any]] = []
+    for state in all_source_states:
+        label = state.input_label or _portable_input_label(
+            state.path,
+            source_id=state.source_id,
+        )
+        for error in state.errors:
+            published_error = dict(error)
+            message = published_error.get("message", "")
+            for other_state in sorted(
+                all_source_states,
+                key=lambda item: len(str(item.path)) if item.path is not None else 0,
+                reverse=True,
+            ):
+                other_label = other_state.input_label or _portable_input_label(
+                    other_state.path,
+                    source_id=other_state.source_id,
+                )
+                message = _redact_runtime_paths(
+                    message,
+                    other_state.path,
+                    other_label,
+                )
+            published_error["message"] = _redact_runtime_paths(
+                message,
+                state.path,
+                label,
+            )
+            validation_errors.append(published_error)
     try:
         schemas = _arrow_schema()
         for name, frame in frames.items():
