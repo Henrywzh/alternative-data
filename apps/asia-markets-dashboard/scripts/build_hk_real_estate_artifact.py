@@ -46,7 +46,7 @@ from src.hk_real_estate.sources.commercial_controls import (
 )
 from src.hk_real_estate.sources.hkma import fetch_hkma_residential_mortgage_survey
 from src.common.cnsd_mdt import fetch_cnsd_table
-from src.hk_real_estate.storage import load_latest_normalized
+from src.hk_real_estate.storage import load_latest_normalized, save_normalized_dataset
 from src.hk_real_estate.sources.epi import fetch_28hse_epi_eri
 from src.hk_real_estate.sources.hse28 import fetch_28hse_new_projects, fetch_28hse_transaction_pilot
 from src.hk_real_estate.sources.shkp import fetch_shkp_corporate_documents, fetch_shkp_property_catalog
@@ -4017,11 +4017,37 @@ def _load_hkma_from_committed_artifact() -> pd.DataFrame:
 def _load_hkma_with_fallback() -> pd.DataFrame:
     """Load HKMA history without allowing an empty fetch to erase history."""
     normalized = load_latest_normalized("hkma_residential_mortgage_survey")
+    # A non-empty cache is only authoritative while it is fresh.  HKMA
+    # publishes monthly with roughly a one-month lag, so a cache older than
+    # FRESHNESS_MAX_DAYS must not silently shadow the live API -- that is
+    # exactly how a stale local vintage regressed production from June back
+    # to May (audit 2026-08-21).
     if not normalized.empty:
-        return _canonicalize_hkma_frame(normalized)
+        latest_date = _extract_latest_date(normalized)
+        if latest_date is not None:
+            latest_naive = latest_date.tz_localize(None) if latest_date.tzinfo else latest_date
+            now = pd.Timestamp.now().normalize()
+            if (now - latest_naive.normalize()).days <= FRESHNESS_MAX_DAYS:
+                return _canonicalize_hkma_frame(normalized)
+
     fetched = _safe_fetch("HKMA residential mortgage survey", fetch_hkma_residential_mortgage_survey)
     if not fetched.empty:
-        return _canonicalize_hkma_frame(fetched)
+        fetched = _canonicalize_hkma_frame(fetched)
+        # Persist the refreshed history so the next build (local or CI)
+        # starts from this vintage instead of re-serving the stale one.
+        try:
+            save_normalized_dataset(
+                "hkma_residential_mortgage_survey",
+                fetched,
+                source_url="https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletine/residential-mortgage-survey/residential-mortgage-survey",
+                lineage_metadata={"written_by": "build_hk_real_estate_artifact._load_hkma_with_fallback"},
+            )
+        except Exception as error:  # cache refresh is best-effort, never fatal
+            print(f"  [hk_real_estate] HKMA normalized cache refresh failed (non-fatal): {error}", file=sys.stderr)
+        return fetched
+    # Live fetch failed; a stale cache is still better than nothing.
+    if not normalized.empty:
+        return _canonicalize_hkma_frame(normalized)
     fallback = _load_hkma_from_committed_artifact()
     if not fallback.empty:
         print(
