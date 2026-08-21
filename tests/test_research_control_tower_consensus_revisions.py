@@ -3,9 +3,12 @@
 These tests exercise the collector's pure/injectable functions directly with
 injected fake snapshot rows -- no live network. They cover the append-only
 store, the genuine (``repository_captured``) revision derivation, the
-same-day-rerun dedupe policy, zero-denominator handling, honest empty output,
-physical schema conformance, and the coexistence/ordering of genuine vs
-reconstructed revisions in the export.
+same-day-rerun dedupe policy, stable natural keys that exclude derived
+mapping labels, AkShare per-fiscal-year series identity (the 0700.HK
+three-fiscal-year collision regression), honest provider freshness health,
+snapshot/revision current-value consistency, zero-denominator handling,
+honest empty output, physical schema conformance, and the strict precedence
+of genuine revisions over reconstructed cold-start rows.
 """
 
 from __future__ import annotations
@@ -34,6 +37,42 @@ from research_control_tower.build import (  # noqa: E402
 DAY1 = date(2026, 8, 1)
 DAY2 = date(2026, 8, 2)
 
+
+def _ak_snap(**overrides: object) -> dict:
+    """A fake akshare-relayed snapshot, shaped like the collector row."""
+    row = {
+        "snapshot_id": "run-scoped-ak",
+        "provider": "akshare",
+        "entity_id": "TENCENT",
+        "listing_id": "0700_HK",
+        "financial_data_security_id": "sec-0700",
+        "canonical_ticker": "0700.HK",
+        "metric": "eps",
+        "fiscal_period": "annual",
+        "fiscal_year": 2026,
+        "estimate_period_end": date(2026, 12, 31),
+        "horizon": "",
+        "snapshot_at": pd.Timestamp("2026-07-26T00:00:00Z"),
+        "value": 27.188,
+        "statistic": "mean",
+        "low_value": 23.93,
+        "high_value": 31.15,
+        "analyst_count": None,
+        "provider_contributor_count": None,
+        "currency": "HKD",
+        "unit": "currency_per_share",
+        "accounting_basis": "provider_reported_non_gaap_unverified",
+        "provider_asof": pd.Timestamp("2026-07-26T16:17:49Z"),
+        "retrieved_at_utc": pd.Timestamp("2026-08-19T00:18:35Z"),
+        "source_url": "https://www.akshare.xyz/",
+        "raw_hash": "raw-ak",
+        "pit_class": "snapshot_from_delayed_source",
+        "source_run_id": "consensus-run-1",
+        "calculation_origin": "sibling_repository_export",
+        "coverage_reason": "",
+    }
+    row.update(overrides)
+    return row
 
 def _snap(**overrides: object) -> dict:
     """A fake captured snapshot shaped like the collector's row dicts."""
@@ -292,7 +331,7 @@ def test_appended_store_preserves_schema_and_reverts_deterministically(tmp_path:
     assert list(first["current_snapshot_at"]) == list(second["current_snapshot_at"])
 
 
-def test_genuine_sorted_first_and_reconstructed_preserved() -> None:
+def test_reconstructed_covered_chain_suppressed_by_genuine() -> None:
     day1 = _snap(snapshot_at=pd.Timestamp("2026-08-01T10:00:00Z"), value=3.00)
     day2 = _snap(snapshot_at=pd.Timestamp("2026-08-02T10:00:00Z"), value=3.10)
     store = collector.accumulate_snapshots(
@@ -307,12 +346,270 @@ def test_genuine_sorted_first_and_reconstructed_preserved() -> None:
     )
 
     combined = collector.combine_revision_export(genuine, reconstructed)
-    assert len(combined) == 3
     pit_classes = list(combined["pit_class"])
     assert pit_classes.count("repository_captured") == 1
-    assert pit_classes.count("reconstructed_sparse") == 2
-    # Genuine rows are all before reconstructed rows; reconstructed stay as-is.
+    # Strict precedence: the reconstructed rows for the covered chain are
+    # suppressed and the genuine row is emitted first; nothing is blended.
+    assert len(combined) == 1
+    assert combined.iloc[0]["pit_class"] == "repository_captured"
+
+
+def test_akshare_three_fiscal_year_rows_map_and_keep_distinct_stable_ids(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Regression: the sibling akshare export holds one row per fiscal year
+    (0700.HK FY2026/FY2027/FY2028, ``horizon=None``), and all three must
+    survive with distinct, deterministic snapshot ids and correct period
+    mapping. The historical bug emitted one shared run-scoped snapshot_id
+    and the store label-keyed dedupe collapsed the series to a single row."""
+
+    export_dir = tmp_path / "source=akshare" / "snapshot_date=2026-07-26"
+    export_dir.mkdir(parents=True)
+    export = pd.DataFrame(
+        [
+            {
+                "consensus_id": "c-2026", "security_id": "sec-0700",
+                "ticker": "0700.HK", "snapshot_date": "2026-07-26",
+                "fiscal_year": 2026, "eps_avg": 27.188, "eps_low": 23.93,
+                "eps_high": 31.15, "horizon": None, "eps_currency": None,
+                "revenue_currency": None, "revenue_avg": None,
+                "fetched_at": pd.Timestamp("2026-07-26T16:17:49Z"),
+            },
+            {
+                "consensus_id": "c-2027", "security_id": "sec-0700",
+                "ticker": "0700.HK", "snapshot_date": "2026-07-26",
+                "fiscal_year": 2027, "eps_avg": 30.02755, "eps_low": 25.912,
+                "eps_high": 34.69, "horizon": None, "eps_currency": None,
+                "revenue_currency": None, "revenue_avg": None,
+                "fetched_at": pd.Timestamp("2026-07-26T16:17:49Z"),
+            },
+            {
+                "consensus_id": "c-2028", "security_id": "sec-0700",
+                "ticker": "0700.HK", "snapshot_date": "2026-07-26",
+                "fiscal_year": 2028, "eps_avg": 33.197824, "eps_low": 29.058,
+                "eps_high": 38.98, "horizon": None, "eps_currency": None,
+                "revenue_currency": None, "revenue_avg": None,
+                "fetched_at": pd.Timestamp("2026-07-26T16:17:49Z"),
+            },
+        ]
+    )
+    export.to_parquet(export_dir / "consensus-akshare-test.parquet")
+    monkeypatch.setattr(collector, "FD_CONSENSUS", tmp_path)
+
+    mapping = pd.DataFrame(
+        [
+            {
+                "ticker": "0700.HK", "metric": "eps", "source_horizon": "0y",
+                "mapped_fiscal_year": 2026, "mapped_period_end": pd.Timestamp("2026-12-31"),
+                "alignment_quality": "estimated", "confidence": "high",
+                "period_kind": "annual",
+            },
+            {
+                "ticker": "0700.HK", "metric": "eps", "source_horizon": "+1y",
+                "mapped_fiscal_year": 2027, "mapped_period_end": pd.Timestamp("2027-12-31"),
+                "alignment_quality": "estimated", "confidence": "high",
+                "period_kind": "annual",
+            },
+        ]
+    )
+    listings = pd.DataFrame(
+        [
+            {
+                "entity_id": "TENCENT", "listing_id": "0700_HK",
+                "canonical_ticker": "0700.HK",
+                "financial_data_security_id": "sec-0700",
+                "currency": "HKD", "listing_status": "active",
+            }
+        ]
+    )
+
+    snapshots, notes = collector.collect_financial_data(
+        listings, mapping, run_id="consensus-test", now=pd.Timestamp("2026-08-19T00:18:35Z")
+    )
+    assert not notes
+    assert len(snapshots) == 3
+    assert len({snap["snapshot_id"] for snap in snapshots}) == 3
+    assert sorted(snap["fiscal_year"] for snap in snapshots) == [2026, 2027, 2028]
+    ends = sorted(snap["estimate_period_end"] for snap in snapshots)
+    assert ends == [date(2026, 12, 31), date(2027, 12, 31), date(2028, 12, 31)]
+    assert all(
+        "period end derived from issuer annual calendar" in snap["coverage_reason"]
+        for snap in snapshots
+    )
+
+    # The store must keep all three vintages with deterministic distinct ids.
+    store = collector.accumulate_snapshots(_empty_store(), snapshots, run_date=date(2026, 7, 26))
+    assert len(store) == 3
+    assert store["snapshot_id"].nunique() == 3
+    store2 = collector.accumulate_snapshots(store, snapshots, run_date=date(2026, 7, 26))
+    assert len(store2) == 3
+    assert set(store2["snapshot_id"]) == set(store["snapshot_id"])
+
+
+def test_fiscal_mapping_label_change_does_not_break_revision_chain() -> None:
+    """Spec rule: fiscal-period mapping labels never enter the chaining key.
+    A corrected mapping (day two relabels the same horizon to a later fiscal
+    year) must not split one series into two chains."""
+
+    day1 = _snap(
+        snapshot_at=pd.Timestamp("2026-08-01T10:00:00Z"),
+        value=7.20, fiscal_year=2026,
+        estimate_period_end=date(2026, 9, 30),
+    )
+    day2 = _snap(
+        snapshot_at=pd.Timestamp("2026-08-02T10:00:00Z"),
+        value=7.35, fiscal_year=2027,  # mapping correction, same source series
+        estimate_period_end=date(2027, 9, 30),
+        source_run_id="consensus-run-2",
+    )
+
+    store = collector.accumulate_snapshots(_empty_store(), [day1], run_date=DAY1)
+    store = collector.accumulate_snapshots(store, [day2], run_date=DAY2)
+    assert len(store) == 2
+
+    revisions = collector.derive_genuine_revisions(store)
+    assert len(revisions) == 1  # relabeling must not break the pair
+    rev = revisions.iloc[0]
+    assert rev["prior_value"] == pytest.approx(7.20)
+    assert rev["current_value"] == pytest.approx(7.35)
+    assert rev["fiscal_year"] == 2027  # descriptive label follows the newer vintage
+
+
+def test_reconstructed_revision_matches_snapshot_identity_and_value() -> None:
+    """The reconstructed eps_trend revision must reference the snapshot's
+    stable id and expose the snapshot's own mean value as ``current_value``,
+    so the revisions mart and the snapshots mart cannot diverge."""
+
+    snap = _snap(
+        snapshot_at=pd.Timestamp("2026-08-02T10:00:00Z"),
+        value=3.15, analyst_count=32,
+    )
+    snap["snapshot_id"] = collector.stable_snapshot_id(snap, date(2026, 8, 2))
+
+    revision = collector._reconstructed_revision_row(
+        snap,
+        prior_value=3.00,
+        lookback_days=7,
+        now=pd.Timestamp("2026-08-02T10:00:00Z"),
+        alignment_status="estimated_confidence_high",
+    )
+    assert revision["snapshot_id"] == snap["snapshot_id"]
+    assert revision["provider"] == "yfinance"
+    assert revision["current_value"] == pytest.approx(3.15)
+    assert revision["prior_value"] == pytest.approx(3.00)
+    assert revision["revision_value"] == pytest.approx(0.15)
+    assert revision["lookback_days"] == 7
+    assert revision["current_analyst_count"] == 32
+    assert revision["pit_class"] == "reconstructed_sparse"
+    assert revision["prior_snapshot_id"] == ""
+    assert revision["alignment_status"] == "estimated_confidence_high"
+    assert revision["current_snapshot_at"] == snap["snapshot_at"]
+
+
+def test_combine_revision_export_precedence_suppresses_covered_reconstructed_chains() -> None:
+    """Strict precedence: reconstructed cold-start rows for a chain that
+    already has genuine repository_captured history are suppressed; rows for
+    uncovered chains survive to give the panel a cold start. The two classes
+    are never blended or deduped against each other."""
+
+    day1 = _snap(snapshot_at=pd.Timestamp("2026-08-01T10:00:00Z"), value=3.00)
+    day2 = _snap(snapshot_at=pd.Timestamp("2026-08-02T10:00:00Z"), value=3.10)
+    store = collector.accumulate_snapshots(
+        collector.accumulate_snapshots(_empty_store(), [day1], run_date=DAY1),
+        [day2],
+        run_date=DAY2,
+    )
+    genuine = collector.derive_genuine_revisions(store)
+    covered = _reconstructed(revision_id="recon-covered")
+    uncovered = _reconstructed(
+        revision_id="recon-uncovered",
+        horizon="+1q",
+        fiscal_period="quarterly",
+        estimate_period_end=date(2027, 6, 30),
+    )
+    reconstructed = pd.DataFrame([covered, uncovered], columns=collector.REVISION_COLUMNS)
+
+    combined = collector.combine_revision_export(genuine, reconstructed)
+    assert len(combined) == 2
+    pit_classes = list(combined["pit_class"])
+    assert pit_classes.count("repository_captured") == 1
+    assert pit_classes.count("reconstructed_sparse") == 1
     assert pit_classes.index("repository_captured") < pit_classes.index("reconstructed_sparse")
     recon_rows = combined.loc[combined["pit_class"].eq("reconstructed_sparse")]
-    assert list(recon_rows["revision_id"]) == ["recon-a", "recon-b"]
-    assert recon_rows["revision_pct"].tolist() == [5.0, 5.0]  # unchanged, labeled sparse
+    assert list(recon_rows["revision_id"]) == ["recon-uncovered"]
+    assert list(recon_rows["horizon"]) == ["+1q"]  # untouched, labeled sparse
+
+
+def test_provider_health_flags_stale_provider_asof() -> None:
+    """Health semantics: a populated provider whose latest provider_asof is
+    outside its freshness window is reported ``stale``, never ``available``
+    (regression: the akshare relay was 24d old yet flagged available)."""
+
+    store = collector.accumulate_snapshots(
+        _empty_store(),
+        [_ak_snap(
+            snapshot_at=pd.Timestamp("2026-07-26T00:00:00Z"),
+            provider_asof=pd.Timestamp("2026-07-26T16:17:49Z"),
+        )],
+        run_date=date(2026, 7, 26),
+    )
+    now = pd.Timestamp("2026-08-19T00:00:00Z")
+    sla_days = collector.PROVIDER_FRESHNESS_SLA_DAYS["akshare"]
+    status, detail = collector._provider_freshness_status(store, sla_days, now)
+    assert status == "stale"
+    assert "provider_asof" in detail
+    assert f"{sla_days}d" in detail
+
+    fresh = collector.accumulate_snapshots(
+        _empty_store(),
+        [_ak_snap(
+            snapshot_at=pd.Timestamp("2026-08-19T00:00:00Z"),
+            provider_asof=pd.Timestamp("2026-08-19T00:00:00Z"),
+        )],
+        run_date=date(2026, 8, 19),
+    )
+    status, detail = collector._provider_freshness_status(fresh, sla_days, now)
+    assert status == "available"
+
+
+def test_build_provider_health_rows_reports_stale_akshare_and_fresh_yfinance() -> None:
+    """The health sidecar must distinguish a stale relayed provider from a
+    fresh live provider and keep empty providers honest."""
+
+    stale_ak = _ak_snap(
+        snapshot_at=pd.Timestamp("2026-07-26T00:00:00Z"),
+        provider_asof=pd.Timestamp("2026-07-26T16:17:49Z"),
+    )
+    fresh_yf = _snap(
+        provider="yfinance",
+        entity_id="TENCENT",
+        listing_id="0700_HK",
+        canonical_ticker="0700.HK",
+        financial_data_security_id="sec-0700",
+        snapshot_at=pd.Timestamp("2026-08-19T00:18:35Z"),
+        provider_asof=pd.Timestamp("2026-08-19T00:18:35Z"),
+        retrieved_at_utc=pd.Timestamp("2026-08-19T00:18:35Z"),
+        value=29.11,
+    )
+    store = collector.accumulate_snapshots(
+        _empty_store(), [stale_ak, fresh_yf], run_date=date(2026, 8, 19)
+    )
+    revisions = pd.DataFrame({column: pd.Series(dtype="object") for column in collector.REVISION_COLUMNS})
+    now = pd.Timestamp("2026-08-19T00:30:00Z")
+
+    health = collector.build_provider_health_rows(
+        store, revisions, now=now, yf_notes=[], fd_notes=[], calls=3
+    )
+    by_provider = {row["provider"]: row for row in health}
+    assert set(by_provider) == {"yfinance", "akshare"}
+    assert by_provider["yfinance"]["status"] == "available"
+    assert by_provider["akshare"]["status"] == "stale"
+    assert "older than as_of (freshness window 14d)" in by_provider["akshare"]["reason"]
+    assert "store_vintages=2" in by_provider["akshare"]["reason"]
+
+    # Empty store -> both providers honestly unavailable.
+    empty_health = collector.build_provider_health_rows(
+        _empty_store(), revisions, now=now, yf_notes=[], fd_notes=[], calls=0
+    )
+    assert {row["status"] for row in empty_health} == {"unavailable"}
