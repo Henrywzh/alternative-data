@@ -660,3 +660,59 @@ def test_atomic_write_leaves_no_temp_files(tmp_path):
     # Ensure no leftover temporary files in out_dir
     tmp_files = list(out_dir.glob("*.tmp"))
     assert tmp_files == []
+
+
+def test_causal_clock_violation_raises_value_error():
+    """retrieved_at_utc < as_of_utc claims impossible pre-cognition and must fail closed."""
+    future_as_of = pd.Timestamp("2026-08-30T00:00:00Z")
+    past_retrieved = pd.Timestamp("2026-08-21T12:00:00Z")
+    with pytest.raises(ValueError, match="causal clock violation"):
+        collect_corporate_actions(
+            _identity_frame(),
+            as_of_utc=future_as_of,
+            retrieved_at_utc=past_retrieved,
+        )
+
+
+def test_source_status_partial_when_parsed_coexists_with_unparsed_or_exceptions():
+    """Status is partial when parsed rows coexist with unparsed or exceptions; skips do not degrade."""
+    # 1. Parsed + unparsed -> partial
+    ndd_rows = [
+        _hkex_row(
+            news_id="11713183",
+            title="Next Day Disclosure Return - Changes in issued shares and share buybacks",
+            date_time="13/06/2025 17:56",
+            file_link="/listedco/listconews/sehk/2025/0613/2025061300897.pdf",
+            long_text="Next Day Disclosure Returns - [Share Buyback]",
+        ),
+        _hkex_row(
+            news_id="11713184",
+            title="Next Day Disclosure Return - Changes in issued shares and share buybacks",
+            date_time="14/06/2025 17:56",
+            file_link="/listedco/listconews/sehk/2025/0614/2025061400898.pdf",
+            long_text="Next Day Disclosure Returns - [Share Buyback]",
+        ),
+        # Deliberate non-corporate skip
+        _hkex_row(
+            news_id="11700000",
+            title="Next Day Disclosure Return (Directors'/Chief Executive's Interests)",
+            date_time="12/06/2025 16:30",
+            file_link="/listedco/listconews/sehk/2025/0612/2025061200000.pdf",
+            long_text="Next Day Disclosure Returns - [Directors'/Chief Executive's Interests]",
+        ),
+    ]
+    session = _FakeHkexSession(ndd_rows=ndd_rows)
+    # Only 00897 succeeds; 00898 returns None (unparsed fetch failure)
+    fetcher = _fake_body_fetcher({"2025061300897.pdf": _fixture_text(FF305_FIXTURE).encode("utf-8")})
+    _frame, state = collect_corporate_actions(
+        _identity_frame(),
+        as_of_utc=pd.Timestamp("2026-08-16T12:00:00Z"),
+        hkex_session=session,
+        body_fetcher=fetcher,
+        text_extractor=lambda payload, fmt: payload.decode("utf-8"),
+        timeout=5,
+    )
+    assert state["status"].iloc[0] == "partial"
+    assert "parsed=1" in state["detail"].iloc[0]
+    assert "unparsed=1" in state["detail"].iloc[0]
+    assert "skipped=1" in state["detail"].iloc[0]

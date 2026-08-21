@@ -165,7 +165,7 @@ Covers 2021Q1 to latest verifiable quarter; **≥12 quarters is the target for t
 
 #### `corporate_actions.parquet` (Statutory Buybacks & Dividends)
 Captures verifiable fields from official statutory filings; unverified or derived fields remain nullable with documented coverage reasons.
-* `action_id` (string, PK): `hash(listing_id + filing_date + execution_date + action_type)`.
+* `action_id` (string, PK): deterministic primary key `hash(listing_id + filing_date + execution_date + action_type + source_document_id + row_discriminator)`. Incorporates `source_document_id` (HKEX NEWS_ID) and stable `row_discriminator` (row_no / index) to guarantee collision freedom when multiple filings occur on the same day or a single filing contains multiple transaction rows on the same execution date.
 * `listing_id` (string, FK): `"0700_HK"`.
 * `action_type` (string): `"buyback_execution"`, `"cash_dividend"`, `"distribution_in_specie"`.
 * `filing_date` (string): Statutory disclosure date (ISO).
