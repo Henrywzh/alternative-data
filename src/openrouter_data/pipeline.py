@@ -9,11 +9,16 @@ from uuid import uuid4
 
 import pandas as pd
 
+from openrouter_data.exceptions import ExtractionError
 from openrouter_data.models import DatasetRecord, RunContext, Snapshot
 from openrouter_data.sources.apps import AppsSource
 from openrouter_data.sources.activity import ACTIVITY_PROVIDER_SLUGS, ActivitySource
 from openrouter_data.sources.base import SourceExtractor
 from openrouter_data.sources.provider_activity import ProviderActivitySource, PROVIDER_SLUGS, PROVIDER_ACTIVITY_DATASET_ID
+from openrouter_data.sources.serving_provider_activity import (
+    CLOUD_INFRA_ACTIVITY_DATASET_ID,
+    ServingProviderActivitySource,
+)
 from openrouter_data.sources.rankings import CONTEXT_LENGTH_DATASET_ID, MODALITY_RANKINGS_DATASET_ID, RankingsSource
 from openrouter_data.sources.task_spend import TASK_SPEND_DATASET_ID, TaskSpendSource
 from openrouter_data.storage import StorageManager
@@ -36,6 +41,9 @@ APPS_DATASET_IDS = (
 )
 ACTIVITY_DATASET_IDS = ("openrouter_model_activity",)
 TASK_SPEND_DATASET_IDS = (TASK_SPEND_DATASET_ID,)
+SERVING_PROVIDER_DATASET_IDS = (CLOUD_INFRA_ACTIVITY_DATASET_ID,)
+# A daily sweep of ~100 third-party pages will always lose a few.
+SERVING_PROVIDER_MAX_FETCH_FAILURE_RATIO = 0.10
 
 
 @dataclass
@@ -70,6 +78,7 @@ class BasePipeline:
 
         try:
             extracted = self.source.extract(snapshots, context)
+            self._validate_extracted(context, extracted)
             filtered = self._filter_for_mode(mode, extracted)
             datasets_written = {}
             for dataset_id in self.dataset_ids:
@@ -90,6 +99,15 @@ class BasePipeline:
             manifest["error"] = str(exc)
             self.storage.write_raw_run(context.run_id, snapshots, manifest)
             raise
+
+    def _validate_extracted(
+        self,
+        context: RunContext,
+        extracted: dict[str, list[DatasetRecord]],
+    ) -> None:
+        """Hook for pipelines whose source must fail closed before upserting."""
+
+        return None
 
     def _upsert_dataset(self, dataset_id: str, records: list[DatasetRecord]) -> pd.DataFrame:
         return self.storage.upsert_dataset(dataset_id, records)
@@ -317,6 +335,120 @@ class TaskSpendPipeline(BasePipeline):
         extracted: dict[str, list[DatasetRecord]],
     ) -> dict[str, list[DatasetRecord]]:
         if mode != "task-spend-daily-update":
+            raise ValueError(f"Unsupported mode: {mode}")
+        return extracted
+
+
+class ServingProviderActivityPipeline(BasePipeline):
+    dataset_ids = SERVING_PROVIDER_DATASET_IDS
+
+    def __init__(self, base_dir: Path) -> None:
+        super().__init__(base_dir, ServingProviderActivitySource())
+
+    def run_daily_update(self) -> PipelineResult:
+        return self._execute(mode="serving-provider-activity-daily-update")
+
+    def validate(self) -> dict[str, Any]:
+        context = self._create_context(run_id="validate-serving-provider-activity")
+        snapshots = self.source.fetch_snapshots()
+        self._raise_fetch_failures()
+        extracted = self.source.extract(snapshots, context)
+        self._raise_fetch_failures()
+        records = extracted.get(CLOUD_INFRA_ACTIVITY_DATASET_ID, [])
+        return self.source.validate_records(
+            records,
+            scraped_at=context.scraped_at,
+            expected_provider_count=len(self.source.provider_metadata),
+            parse_omissions=self.source.last_parse_omissions,
+        )
+
+    def _validate_extracted(
+        self,
+        context: RunContext,
+        extracted: dict[str, list[DatasetRecord]],
+    ) -> None:
+        self._raise_fetch_failures()
+        records = extracted.get(CLOUD_INFRA_ACTIVITY_DATASET_ID, [])
+        self._serving_provider_health = self.source.validate_records(
+            records,
+            scraped_at=context.scraped_at,
+            expected_provider_count=len(self.source.provider_metadata),
+            parse_omissions=self.source.last_parse_omissions,
+        )
+
+    def _raise_fetch_failures(self) -> None:
+        """Fail closed on a broad outage, tolerate a single flaky page.
+
+        This walks ~100 third-party pages every day, so "any failure aborts
+        the run" resolves to "the run aborts regularly".  That is worse than
+        it sounds: this step runs inside the existing provider-activity
+        workflow, ahead of its commit step, so one unreachable provider page
+        also threw away the provider-activity data that had already been
+        fetched successfully in the same job.  Tolerated failures are recorded
+        in the run manifest so a provider quietly dropping out of the series
+        is still auditable, and validate_records() keeps the hard 80% catalog
+        coverage floor underneath this.
+        """
+        failures = self.source.last_failures
+        self._tolerated_fetch_failures = []
+        if not failures:
+            return
+        catalog_size = len(self.source.provider_metadata) or len(failures)
+        failure_ratio = len(failures) / catalog_size
+        sample = "; ".join(
+            f"{failure.get('slug', 'unknown')}: {failure.get('error', 'request failed')}"
+            for failure in failures[:3]
+        )
+        if failure_ratio > SERVING_PROVIDER_MAX_FETCH_FAILURE_RATIO:
+            raise ExtractionError(
+                f"Serving-provider fetch failed after retries for {len(failures)} "
+                f"of {catalog_size} provider(s) "
+                f"({failure_ratio:.0%} > {SERVING_PROVIDER_MAX_FETCH_FAILURE_RATIO:.0%} "
+                f"tolerance); refusing a partial upsert. {sample}"
+            )
+        self._tolerated_fetch_failures = list(failures)
+        print(
+            f"Warning: serving-provider fetch failed for {len(failures)} of "
+            f"{catalog_size} provider(s), within tolerance; continuing. {sample}"
+        )
+
+    def _build_manifest(
+        self,
+        *,
+        mode: str,
+        context: RunContext,
+        extracted: dict[str, list[DatasetRecord]],
+    ) -> dict[str, Any]:
+        manifest = super()._build_manifest(
+            mode=mode,
+            context=context,
+            extracted=extracted,
+        )
+        health = getattr(self, "_serving_provider_health", None)
+        if health:
+            manifest["source_health"] = health
+        elif self.source.last_parse_omissions:
+            manifest["source_health"] = {
+                "parse_omission_count": len(self.source.last_parse_omissions),
+                "parse_omission_slugs": [
+                    item["slug"] for item in self.source.last_parse_omissions
+                ],
+            }
+        tolerated = getattr(self, "_tolerated_fetch_failures", None)
+        if tolerated:
+            manifest.setdefault("source_health", {})
+            manifest["source_health"]["tolerated_fetch_failure_count"] = len(tolerated)
+            manifest["source_health"]["tolerated_fetch_failure_slugs"] = [
+                str(item.get("slug") or "") for item in tolerated
+            ]
+        return manifest
+
+    def _filter_for_mode(
+        self,
+        mode: str,
+        extracted: dict[str, list[DatasetRecord]],
+    ) -> dict[str, list[DatasetRecord]]:
+        if mode != "serving-provider-activity-daily-update":
             raise ValueError(f"Unsupported mode: {mode}")
         return extracted
 

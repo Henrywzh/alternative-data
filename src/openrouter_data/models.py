@@ -52,6 +52,20 @@ class DatasetRecord:
     task_share_of_total: float | None = None
     model_share: float | None = None
     delta_pp: float | None = None
+    # Serving-provider activity fields.  They are optional so legacy
+    # OpenRouter datasets remain append-compatible with the shared record type.
+    provider_slug: str | None = None
+    provider_name: str | None = None
+    serving_provider: str | None = None
+    serving_provider_name: str | None = None
+    serving_provider_type: str | None = None
+    model_origin_company: str | None = None
+    is_first_party_route: bool | None = None
+    is_complete_day: bool | None = None
+    include_in_default_kpis: bool | None = None
+    observation_status: str | None = None
+    headquarters: str | None = None
+    datacenters: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

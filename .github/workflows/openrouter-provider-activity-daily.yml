@@ -33,6 +33,18 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e .[dev]
 
+      - name: Test provider pipelines
+        run: |
+          python -m pytest -q \
+            tests/test_openrouter_activity_pipeline.py \
+            tests/test_openrouter_serving_provider.py \
+            tests/test_research_data.py \
+            tests/test_dashboard_data.py \
+            tests/test_dashboard_smoke.py
+
+      # Offline unit tests cannot see an upstream page changing shape. Keep
+      # the live extraction canary that used to be this workflow's only
+      # validation step, rather than replacing it with the tests.
       - name: Validate provider activity extraction
         run: |
           python -m openrouter_data.cli --base-dir . provider-activity-validate
@@ -40,6 +52,14 @@ jobs:
       - name: Run provider activity daily update
         run: |
           python -m openrouter_data.cli --base-dir . provider-activity-daily-update
+
+      # The serving-provider sweep touches ~100 third-party pages. A bad day
+      # there must not discard the provider-activity data the previous step
+      # already fetched -- these steps sit ahead of the shared commit step.
+      - name: Run serving-provider activity daily update
+        continue-on-error: true
+        run: |
+          python -m openrouter_data.cli --base-dir . serving-provider-activity-daily-update
 
       - name: Rebuild daily provider economics
         env:
@@ -55,6 +75,13 @@ jobs:
           DATA_SOURCE: local
         run: |
           python -m research_data.cli --base-dir . build-mart daily_provider_revenue_estimates --refresh
+
+      - name: Rebuild serving-provider economics
+        continue-on-error: true
+        env:
+          DATA_SOURCE: local
+        run: |
+          python -m research_data.cli --base-dir . build-mart daily_cloud_infra_economics --refresh
 
       - name: Refresh overview signals from provider activity
         run: |
@@ -74,8 +101,10 @@ jobs:
         run: |
           if git diff --quiet -- \
             data/normalized/openrouter/provider_daily_activity.parquet \
+            data/normalized/openrouter/cloud_infra_daily_activity.parquet \
             data/normalized/marts/daily_provider_economics.parquet \
             data/normalized/marts/daily_provider_revenue_estimates.parquet \
+            data/normalized/marts/daily_cloud_infra_economics.parquet \
             data/normalized/overview/overview_signal_series.parquet; then
             echo "No provider activity or economics changes to commit"
             exit 0
@@ -84,8 +113,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/normalized/openrouter/provider_daily_activity.parquet
+          git add data/normalized/openrouter/cloud_infra_daily_activity.parquet
           git add data/normalized/marts/daily_provider_economics.parquet
           git add data/normalized/marts/daily_provider_revenue_estimates.parquet
+          git add data/normalized/marts/daily_cloud_infra_economics.parquet
           git add data/normalized/overview/overview_signal_series.parquet
           git commit -m "chore: update provider activity and economics data [$(date -u +%Y-%m-%d)]"
 
@@ -105,7 +136,9 @@ jobs:
           name: provider-daily-activity
           path: |
             data/normalized/openrouter/provider_daily_activity.parquet
+            data/normalized/openrouter/cloud_infra_daily_activity.parquet
             data/normalized/marts/daily_provider_economics.parquet
             data/normalized/marts/daily_provider_revenue_estimates.parquet
+            data/normalized/marts/daily_cloud_infra_economics.parquet
             data/normalized/overview/overview_signal_series.parquet
           if-no-files-found: warn
