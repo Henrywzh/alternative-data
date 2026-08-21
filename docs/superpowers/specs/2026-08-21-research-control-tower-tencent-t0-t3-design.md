@@ -208,7 +208,7 @@ Captures verifiable fields from official statutory filings; unverified or derive
 
 #### `valuation_snapshots.parquet` (Additive Valuation Mart)
 Captures forward multiples, FCF yield, and shareholder return yields with auditable numerator/denominator inputs.
-* `valuation_id` (string, PK): `hash(listing_id + valuation_at + metric_name + metric_basis + numerator_ref + denominator_ref)` — includes the timing and both inputs so same-day collisions (e.g. two denominator vintages) cannot occur.
+* `valuation_id` (string, PK): SHA-256 (truncated to 32 hexadecimal characters) over canonical JSON containing (a) the natural key `listing_id + valuation_at + metric_name + metric_basis + numerator_ref + denominator_ref` and (b) the complete canonical valuation row except `valuation_id`. The lineage payload therefore binds the values, currencies, accounting basis, source/reference fields, PIT classes, FX metadata, observation/provider/retrieval timestamps, coverage state, and derived ratio/date. This prevents same-day input collisions and makes post-build lineage tampering detectable.
 * `listing_id` (string, FK): `"0700_HK"`.
 * `valuation_date` (string): ISO date (day bucket).
 * `valuation_at` (timestamp[us, tz=UTC]): point-in-time computation timestamp; part of the PK.

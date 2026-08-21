@@ -129,7 +129,7 @@ def _consensus_health(**overrides: object) -> pd.DataFrame:
         "latest_snapshot_at": pd.Timestamp("2026-08-20T10:00:00Z"),
         "as_of": pd.Timestamp("2026-08-21T08:00:00Z"),
         "network_calls": 3,
-        "source_license_class": "provider_public",
+        "source_license_class": "local_private_research",
         "entitlement_status": "terms_unverified",
         "entitlement_evidence": "Personal research use.",
         "entitlement_ref": "task3-provider-policy:sidecar-required-v1",
@@ -348,6 +348,57 @@ def test_consensus_health_is_required_and_rejects_stale_or_degraded_provider() -
             fiscal_year=2026,
         )
         assert result.empty
+
+
+@pytest.mark.parametrize(
+    ("health_overrides", "accepted"),
+    [
+        ({"source_license_class": "local_private_research"}, True),
+        (
+            {
+                "source_license_class": "research_use_only",
+                "entitlement_status": "permitted_local_private",
+            },
+            True,
+        ),
+        ({"source_license_class": "private_research"}, True),
+        ({"source_license_class": "provider_public"}, False),
+        ({"entitlement_status": "active"}, False),
+        ({"entitlement_evidence": ""}, False),
+        ({"entitlement_ref": ""}, False),
+    ],
+)
+def test_consensus_health_entitlement_matches_build_policy(
+    health_overrides: dict[str, object], accepted: bool
+) -> None:
+    result = compute_tencent_valuation_snapshots(
+        pd.DataFrame([_quote()]),
+        pd.DataFrame([_consensus()]),
+        consensus_health_df=_consensus_health(**health_overrides),
+        fx_rates_df=_fx_rows(),
+        as_of_utc=AS_OF,
+        fiscal_year=2026,
+    )
+    assert (not result.empty) is accepted
+
+
+@pytest.mark.parametrize(
+    "missing_column",
+    ["source_license_class", "entitlement_evidence"],
+)
+def test_consensus_health_requires_build_entitlement_columns(
+    missing_column: str,
+) -> None:
+    health = _consensus_health().drop(columns=[missing_column])
+    with pytest.raises(ValueError, match=missing_column):
+        compute_tencent_valuation_snapshots(
+            pd.DataFrame([_quote()]),
+            pd.DataFrame([_consensus()]),
+            consensus_health_df=health,
+            fx_rates_df=_fx_rows(),
+            as_of_utc=AS_OF,
+            fiscal_year=2026,
+        )
 
 
 @pytest.mark.parametrize(
