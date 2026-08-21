@@ -9,6 +9,7 @@ from .catalog import catalog
 from .clean import to_filter_list
 from .loaders import load_dataset, load_domain
 from .marts import (
+    build_daily_cloud_infra_economics,
     build_daily_provider_economics,
     build_frontier_model_registry,
     build_weekly_openrouter_usage,

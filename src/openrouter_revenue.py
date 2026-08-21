@@ -6,6 +6,10 @@ import numpy as np
 import pandas as pd
 
 from pricing_model_aliases import canonical_provider_slug, clean_slug, derive_provider_prefix, generate_candidate_aliases
+from openrouter_data.serving_provider import (
+    flag_latest_likely_incomplete_day,
+    route_metadata,
+)
 
 
 NO_SPLIT_PROMPT_SHARE = 0.977
@@ -28,6 +32,38 @@ CONSERVATIVE_ECONOMICS_COLUMNS = [
     "has_pricing",
     "has_split_tokens",
     "split_source",
+]
+SERVING_PROVIDER_ECONOMICS_COLUMNS = [
+    "usage_date",
+    "serving_provider",
+    "serving_provider_name",
+    "serving_provider_type",
+    "provider_slug",
+    "provider_name",
+    "model_origin_company",
+    "model_permaslug",
+    "total_tokens",
+    "prompt_tokens",
+    "completion_tokens",
+    "reasoning_tokens",
+    "estimated_revenue",
+    "pricing_snapshot_ts",
+    "pricing_prompt",
+    "pricing_completion",
+    "pricing_join_status",
+    "pricing_coverage_status",
+    "revenue_method",
+    "has_pricing",
+    "has_split_tokens",
+    "split_source",
+    "priced_tokens",
+    "unpriced_tokens",
+    "is_first_party_route",
+    "is_complete_day",
+    "include_in_default_kpis",
+    "observation_status",
+    "headquarters",
+    "datacenters",
 ]
 
 # Historical OpenRouter activity predates the first complete pricing snapshots
@@ -990,6 +1026,184 @@ def build_conservative_provider_economics(
     )
     return output[CONSERVATIVE_ECONOMICS_COLUMNS].sort_values(
         ["usage_date", "provider_slug", "model_permaslug"]
+    ).reset_index(drop=True)
+
+
+def build_serving_provider_economics(
+    provider_activity: pd.DataFrame,
+    pricing: pd.DataFrame,
+    *,
+    model_activity: pd.DataFrame | None = None,
+    scraped_at: object | None = None,
+) -> pd.DataFrame:
+    """Build route-level serving-provider economics with explicit coverage.
+
+    Pricing is intentionally delegated to the conservative route-matching
+    implementation above.  It uses observed/as-of route prices and explicitly
+    labelled historical route fills; it never falls back to provider/global
+    medians.  Free routes are zero revenue, while unresolved routes remain
+    ``NaN`` and are excluded from priced-token coverage.
+    """
+
+    if provider_activity.empty:
+        return pd.DataFrame(columns=SERVING_PROVIDER_ECONOMICS_COLUMNS)
+
+    activity = provider_activity.copy()
+    legacy_provider = activity.get(
+        "entity_id", pd.Series(pd.NA, index=activity.index)
+    ).fillna(
+        activity.get("provider_slug", pd.Series(pd.NA, index=activity.index))
+    )
+    legacy_provider_name = activity.get(
+        "entity_name", pd.Series(pd.NA, index=activity.index)
+    ).fillna(
+        activity.get("provider_name", pd.Series(pd.NA, index=activity.index))
+    )
+    if "serving_provider" not in activity.columns:
+        activity["serving_provider"] = legacy_provider
+    else:
+        activity["serving_provider"] = activity["serving_provider"].fillna(
+            legacy_provider
+        )
+    if "serving_provider_name" not in activity.columns:
+        activity["serving_provider_name"] = legacy_provider_name
+    else:
+        activity["serving_provider_name"] = activity[
+            "serving_provider_name"
+        ].fillna(legacy_provider_name)
+    activity["serving_provider"] = activity["serving_provider"].astype("string").str.strip().str.casefold()
+    # The conservative economics builder canonicalizes ``provider_slug`` for
+    # model-owner views.  A serving-provider mart must preserve raw endpoint
+    # identity (for example, simultaneous ``meta`` and ``meta-llama`` routes).
+    # Use a collision-free internal join key, then restore the public
+    # canonical provider alias after route metadata is attached.
+    activity["_serving_provider_join_key"] = (
+        "serving-provider::" + activity["serving_provider"]
+    )
+    activity["entity_id"] = activity["_serving_provider_join_key"]
+    activity["entity_name"] = activity["serving_provider_name"]
+
+    # Fill route identity on legacy activity rows before the conservative
+    # pricing join. The row's serving provider, not its model prefix, is the
+    # provider slug used by the utility's output.
+    route_fields = activity.apply(
+        lambda row: route_metadata(row.get("model_permaslug"), row.get("serving_provider")),
+        axis=1,
+        result_type="expand",
+    )
+    for column in ["model_origin_company", "serving_provider_type", "is_first_party_route"]:
+        if column not in activity.columns:
+            activity[column] = route_fields[column]
+        elif column == "is_first_party_route":
+            activity[column] = activity[column].astype("boolean").fillna(
+                route_fields[column].astype("boolean")
+            )
+        else:
+            activity[column] = activity[column].astype("string").fillna(
+                route_fields[column].astype("string")
+            )
+    for column, default in (
+        ("is_complete_day", pd.NA),
+        ("include_in_default_kpis", pd.NA),
+        ("observation_status", pd.NA),
+        ("headquarters", pd.NA),
+        ("datacenters", pd.NA),
+    ):
+        if column not in activity.columns:
+            activity[column] = default
+
+    economics = build_conservative_provider_economics(
+        activity,
+        pricing,
+        model_activity=model_activity,
+    )
+    if economics.empty:
+        return pd.DataFrame(columns=SERVING_PROVIDER_ECONOMICS_COLUMNS)
+
+    route_metadata_frame = activity.copy()
+    route_metadata_frame["usage_date"] = pd.to_datetime(
+        route_metadata_frame["usage_date"], errors="coerce"
+    ).dt.strftime("%Y-%m-%d")
+    route_metadata_frame["provider_slug"] = route_metadata_frame[
+        "_serving_provider_join_key"
+    ]
+    route_metadata_frame = route_metadata_frame[
+        [
+            "usage_date",
+            "provider_slug",
+            "model_permaslug",
+            "serving_provider",
+            "serving_provider_name",
+            "serving_provider_type",
+            "model_origin_company",
+            "is_first_party_route",
+            "is_complete_day",
+            "include_in_default_kpis",
+            "observation_status",
+            "headquarters",
+            "datacenters",
+        ]
+    ].drop_duplicates(["usage_date", "provider_slug", "model_permaslug"], keep="last")
+    output = economics.merge(
+        route_metadata_frame,
+        on=["usage_date", "provider_slug", "model_permaslug"],
+        how="left",
+        suffixes=("", "_activity"),
+    )
+    for column in [
+        "serving_provider",
+        "serving_provider_name",
+        "serving_provider_type",
+        "model_origin_company",
+        "is_first_party_route",
+        "is_complete_day",
+        "include_in_default_kpis",
+        "observation_status",
+        "headquarters",
+        "datacenters",
+    ]:
+        activity_column = f"{column}_activity"
+        if activity_column in output.columns:
+            if column not in output.columns:
+                output[column] = output[activity_column]
+            else:
+                output[column] = output[column].where(output[column].notna(), output[activity_column])
+            output = output.drop(columns=[activity_column])
+
+    output = flag_latest_likely_incomplete_day(
+        output,
+        scraped_at=scraped_at,
+        group_columns=["serving_provider"],
+    )
+    output["pricing_coverage_status"] = np.where(
+        output["pricing_join_status"].eq("free_model_zero_revenue"),
+        "free_zero_revenue",
+        np.where(output["has_pricing"].fillna(False), "priced", "unpriced"),
+    )
+    total_tokens = pd.to_numeric(output["total_tokens"], errors="coerce")
+    has_pricing = output["has_pricing"].fillna(False).astype(bool)
+    output["priced_tokens"] = total_tokens.where(has_pricing, 0.0)
+    output["unpriced_tokens"] = total_tokens.where(~has_pricing, 0.0)
+    output["serving_provider"] = output["serving_provider"].fillna(output["provider_slug"])
+    output["serving_provider_name"] = output["serving_provider_name"].fillna(output["provider_name"])
+    output["provider_slug"] = output["serving_provider"].map(canonical_provider_slug)
+    output["provider_name"] = output["serving_provider_name"]
+    output["serving_provider_type"] = output["serving_provider_type"].fillna(
+        output["serving_provider"].map(lambda value: route_metadata(None, value)["serving_provider_type"])
+    )
+    output["include_in_default_kpis"] = (
+        output["include_in_default_kpis"].astype("boolean").fillna(True).astype(bool)
+    )
+    output["is_complete_day"] = (
+        output["is_complete_day"].astype("boolean").fillna(True).astype(bool)
+    )
+    output["is_first_party_route"] = (
+        output["is_first_party_route"].astype("boolean").fillna(False).astype(bool)
+    )
+    output["observation_status"] = output["observation_status"].fillna("complete")
+    output = output.reindex(columns=SERVING_PROVIDER_ECONOMICS_COLUMNS)
+    return output.sort_values(
+        ["usage_date", "serving_provider", "model_permaslug"], na_position="last"
     ).reset_index(drop=True)
 
 

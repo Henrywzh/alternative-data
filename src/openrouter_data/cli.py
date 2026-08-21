@@ -3,7 +3,14 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from openrouter_data.pipeline import ActivityPipeline, AppsPipeline, ProviderActivityPipeline, RankingsPipeline, TaskSpendPipeline
+from openrouter_data.pipeline import (
+    ActivityPipeline,
+    AppsPipeline,
+    ProviderActivityPipeline,
+    RankingsPipeline,
+    ServingProviderActivityPipeline,
+    TaskSpendPipeline,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -45,6 +52,14 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser(
         "provider-activity-validate",
         help="Validate live provider activity extraction and fail on likely OpenRouter HTML drift",
+    )
+    subparsers.add_parser(
+        "serving-provider-activity-daily-update",
+        help="Fetch serving-provider activity charts and incrementally upsert route history",
+    )
+    subparsers.add_parser(
+        "serving-provider-activity-validate",
+        help="Validate serving-provider activity extraction without writing datasets",
     )
 
     apps_validate = subparsers.add_parser("apps-validate", help="Validate live app extraction or parse fixture HTML")
@@ -141,6 +156,17 @@ def main() -> None:
                 f"{stats['first_date']}..{stats['latest_date']}, "
                 f"{stats['total_tokens']:.0f} tokens"
             )
+        return
+
+    if args.command == "serving-provider-activity-daily-update":
+        pipeline = ServingProviderActivityPipeline(base_dir)
+        _print_result(pipeline.run_daily_update())
+        return
+
+    if args.command == "serving-provider-activity-validate":
+        pipeline = ServingProviderActivityPipeline(base_dir)
+        summary = pipeline.validate()
+        print(summary)
         return
 
     parser.error(f"Unknown command: {args.command}")

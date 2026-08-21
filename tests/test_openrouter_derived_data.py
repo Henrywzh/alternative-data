@@ -108,14 +108,19 @@ def test_rank_capability_families_collapses_configurations_and_uses_asof_snapsho
 
     july_18 = ranked[ranked["usage_date"] == pd.Timestamp("2026-07-18")]
     assert len(july_18[july_18["family_id"] == "openai/gpt-5.6-sol"]) == 1
-    assert set(july_18["family_rank"]) == set(range(1, 11))
+    assert set(july_18["family_rank"]) == set(range(1, 12))
     assert july_18.loc[july_18["family_rank"].le(5), "capability_tier"].eq("sota").all()
     assert july_18.loc[july_18["family_rank"].between(6, 10), "capability_tier"].eq("frontier_contender").all()
     assert "future/model" not in set(ranked[ranked["usage_date"] == pd.Timestamp("2026-07-10")]["family_id"])
-    assert "unmapped/model" not in set(july_18["family_id"])
+    unmapped = july_18[july_18["representative_aa_model_id"].eq("unmapped")].iloc[0]
+    assert unmapped["family_rank"] == 1
+    assert unmapped["capability_tier"] == "sota"
+    assert unmapped["model_match_status"] == "unmapped_no_activity_route"
     assert july_18.iloc[0]["benchmark_snapshot_date"] == pd.Timestamp("2026-07-17")
-    assert july_18.iloc[0]["representative_aa_model_id"] == "claude"
-    assert july_18.iloc[0]["family_rank"] == 1
+    claude = july_18[july_18["representative_aa_model_id"].eq("claude")].iloc[0]
+    assert claude["family_rank"] == 2
+    assert july_18.loc[july_18["representative_aa_model_id"].eq("glm"), "family_rank"].item() == 5
+    assert july_18.loc[july_18["representative_aa_model_id"].eq("family-6"), "family_rank"].item() == 6
 
 
 def test_rank_capability_families_does_not_rewind_when_latest_snapshot_is_future_only(tmp_path: Path) -> None:
@@ -160,7 +165,12 @@ def test_rank_capability_families_backfills_latest_scores_after_release(tmp_path
     )
 
     assert set(ranked["usage_date"].astype(str)) == {"2026-07-10", "2026-07-18"}
-    assert ranked["model_match_status"].eq("backfilled_current_score_exact_match").all()
+    assert ranked.loc[
+        ranked["representative_aa_model_id"].ne("unmapped"), "model_match_status"
+    ].eq("backfilled_current_score_exact_match").all()
+    assert ranked.loc[
+        ranked["representative_aa_model_id"].eq("unmapped"), "model_match_status"
+    ].eq("unmapped_no_activity_route").all()
     assert ranked["benchmark_snapshot_date"].astype(str).eq("2026-07-17").all()
 
 
@@ -262,7 +272,7 @@ def test_future_capability_entry_and_route_do_not_leak_backward(tmp_path: Path) 
     ) == frozenset({"openai/gpt-5.6-sol"})
 
 
-def test_unmapped_benchmark_leaders_are_excluded_without_rank_gaps() -> None:
+def test_unmapped_benchmark_leaders_preserve_true_ranks_without_promoting_lower_models() -> None:
     entries = tuple(
         CapabilityEntry(
             aa_model_id=f"mapped-{index}",
@@ -311,7 +321,16 @@ def test_unmapped_benchmark_leaders_are_excluded_without_rank_gaps() -> None:
     )
 
     ranks = set(ranked["family_rank"])
-    assert ranks == set(range(1, 11))
+    assert ranks == set(range(1, 13))
+    assert ranked.loc[
+        ranked["representative_aa_model_id"].eq("unmapped-top"), "family_rank"
+    ].item() == 1
+    assert ranked.loc[
+        ranked["representative_aa_model_id"].eq("mapped-1"), "family_rank"
+    ].item() == 2
+    assert ranked.loc[
+        ranked["representative_aa_model_id"].eq("mapped-5"), "family_rank"
+    ].item() == 6
 
     pricing = pd.DataFrame(
         [
@@ -335,10 +354,10 @@ def test_unmapped_benchmark_leaders_are_excluded_without_rank_gaps() -> None:
     contenders = _price_metric(
         price_metrics, "frontier_contenders_median_list_price"
     )
-    assert sota["priced_family_count"] == 5
-    assert sota["value"] == pytest.approx(3.0)
-    assert contenders["priced_family_count"] == 5
-    assert contenders["value"] == pytest.approx(8.0)
+    assert sota["priced_family_count"] == 4
+    assert sota["value"] == pytest.approx(2.5)
+    assert contenders["priced_family_count"] == 4
+    assert contenders["value"] == pytest.approx(6.5)
 
 
 def test_workload_intensity_uses_matching_rows_and_rolling_ratio_of_sums() -> None:
@@ -719,6 +738,8 @@ def test_realized_sota_price_uses_each_activity_days_point_in_time_membership() 
     assert realized["numerator"] == pytest.approx(0.0006)
     assert realized["denominator"] == pytest.approx(300.0)
     assert realized["observed_family_count"] == 3
+    assert realized["expected_family_count"] == 6
+    assert realized["pricing_join_status"] == "partial_true_sota_route_coverage"
 
 
 def test_sota_list_price_requires_complete_cohort_but_realized_accepts_three_families() -> None:

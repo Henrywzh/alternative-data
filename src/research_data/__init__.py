@@ -1,5 +1,6 @@
 from .api import (
     build_daily_provider_economics,
+    build_daily_cloud_infra_economics,
     build_frontier_model_registry,
     build_weekly_openrouter_usage,
     catalog,
@@ -14,6 +15,7 @@ from .api import (
 
 __all__ = [
     "build_daily_provider_economics",
+    "build_daily_cloud_infra_economics",
     "build_frontier_model_registry",
     "build_weekly_openrouter_usage",
     "catalog",

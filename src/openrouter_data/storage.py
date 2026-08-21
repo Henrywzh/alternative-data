@@ -28,10 +28,11 @@ NATURAL_KEYS: dict[str, list[str]] = {
     # provider.  Keep provider identity in the grain so same-day buckets do
     # not overwrite one another during the upsert.
     "provider_daily_activity": ["usage_date", "entity_id", "model_permaslug"],
+    "cloud_infra_daily_activity": ["usage_date", "serving_provider", "model_permaslug"],
     "openrouter_task_spend": ["snapshot_date", "period", "window_days", "category_slug", "model_permaslug"],
 }
 
-DATASET_COLUMNS = [
+BASE_DATASET_COLUMNS = [
     "dataset_id",
     "source_url",
     "source_run_id",
@@ -78,6 +79,36 @@ DATASET_COLUMNS = [
     "model_share",
     "delta_pp",
 ]
+SERVING_PROVIDER_COLUMNS = [
+    "provider_slug",
+    "provider_name",
+    "serving_provider",
+    "serving_provider_name",
+    "serving_provider_type",
+    "model_origin_company",
+    "is_first_party_route",
+    "is_complete_day",
+    "include_in_default_kpis",
+    "observation_status",
+    "headquarters",
+    "datacenters",
+]
+# Serving-provider activity has a deliberately narrow physical schema.  Do not
+# materialize unrelated rankings/apps columns as all-null fields: that widens
+# the highest-growth dataset for no analytical benefit.
+SERVING_PROVIDER_DATASET_COLUMNS = [
+    "dataset_id",
+    "source_url",
+    "source_run_id",
+    "scraped_at",
+    "usage_date",
+    "model_permaslug",
+    "entity_id",
+    "entity_name",
+    "total_tokens",
+    *SERVING_PROVIDER_COLUMNS,
+]
+DATASET_COLUMNS = [*BASE_DATASET_COLUMNS, *SERVING_PROVIDER_COLUMNS]
 
 NUMERIC_COLUMNS = [
     "metric_value",
@@ -94,7 +125,14 @@ NUMERIC_COLUMNS = [
     "model_share",
     "delta_pp",
 ]
-BOOL_COLUMNS = ["group_by_origin", "is_private", "is_hidden"]
+BOOL_COLUMNS = [
+    "group_by_origin",
+    "is_private",
+    "is_hidden",
+    "is_first_party_route",
+    "is_complete_day",
+    "include_in_default_kpis",
+]
 TEXT_COLUMNS = [
     column
     for column in DATASET_COLUMNS
@@ -114,9 +152,10 @@ SORT_KEYS: dict[str, list[str]] = {
     "apps_trending_snapshots": ["snapshot_date", "rank", "origin_url"],
     "openrouter_model_activity": ["usage_date", "model_permaslug", "category_slug"],
     "provider_daily_activity": ["usage_date", "entity_id", "model_permaslug"],
+    "cloud_infra_daily_activity": ["usage_date", "serving_provider", "model_permaslug"],
     "openrouter_task_spend": ["snapshot_date", "period", "category_slug", "rank", "model_permaslug"],
 }
-PARQUET_ONLY_DATASETS = {"provider_daily_activity", "openrouter_model_activity"}
+PARQUET_ONLY_DATASETS = {"provider_daily_activity", "openrouter_model_activity", "cloud_infra_daily_activity"}
 RETENTION_DAYS = {
     # Daily model detail can add thousands of category rows per run. A rolling
     # six-month window keeps the Streamlit load useful without unbounded growth.
@@ -154,11 +193,20 @@ class StorageManager:
         elif csv_path.exists():
             dataframe = pd.read_csv(csv_path)
         else:
-            return pd.DataFrame(columns=DATASET_COLUMNS)
-        for column in DATASET_COLUMNS:
+            return pd.DataFrame(columns=self._dataset_columns(dataset_id))
+        dataset_columns = self._dataset_columns(dataset_id)
+        for column in dataset_columns:
             if column not in dataframe.columns:
                 dataframe[column] = pd.NA
-        return dataframe[DATASET_COLUMNS]
+        if dataset_id == "cloud_infra_daily_activity":
+            # Migrate the one-off extractor's provider aliases in memory before
+            # natural-key matching, so its historical rows are never lost when
+            # the incremental pipeline writes the new schema.
+            dataframe["serving_provider"] = dataframe["serving_provider"].fillna(dataframe["provider_slug"])
+            dataframe["serving_provider_name"] = dataframe["serving_provider_name"].fillna(
+                dataframe["provider_name"]
+            )
+        return dataframe[dataset_columns]
 
     def upsert_dataset(
         self,
@@ -167,9 +215,18 @@ class StorageManager:
         *,
         replace_partitions: list[str] | None = None,
     ) -> pd.DataFrame:
-        incoming = pd.DataFrame([record.to_dict() for record in records], columns=DATASET_COLUMNS)
+        dataset_columns = self._dataset_columns(dataset_id)
+        incoming = pd.DataFrame(
+            [record.to_dict() for record in records],
+            columns=dataset_columns,
+        )
         if incoming.empty:
             raise ValidationError(f"Dataset {dataset_id} has no incoming records")
+        if dataset_id == "cloud_infra_daily_activity":
+            incoming["serving_provider"] = incoming["serving_provider"].fillna(incoming["provider_slug"])
+            incoming["serving_provider_name"] = incoming["serving_provider_name"].fillna(
+                incoming["provider_name"]
+            )
         existing = self.load_dataset(dataset_id)
         if not existing.empty and replace_partitions:
             missing = [column for column in replace_partitions if column not in incoming.columns]
@@ -224,10 +281,17 @@ class StorageManager:
             return
         dated["_archive_year"] = years[years.notna()].astype(int).to_numpy()
         self.archive_root.mkdir(parents=True, exist_ok=True)
+        dataset_columns = self._dataset_columns(dataset_id)
         for year, group in dated.groupby("_archive_year"):
             path = self.archive_root / f"{dataset_id}_{int(year)}.parquet"
-            archived = pd.read_parquet(path) if path.exists() else pd.DataFrame(columns=DATASET_COLUMNS)
-            incoming = group.drop(columns="_archive_year").reindex(columns=DATASET_COLUMNS)
+            archived = (
+                pd.read_parquet(path)
+                if path.exists()
+                else pd.DataFrame(columns=dataset_columns)
+            )
+            incoming = group.drop(columns="_archive_year").reindex(
+                columns=dataset_columns
+            )
             combined = pd.concat([archived, incoming], ignore_index=True) if not archived.empty else incoming.copy()
             combined = self._coerce_types(combined)
             combined = combined.drop_duplicates(subset=NATURAL_KEYS[dataset_id], keep="last")
@@ -239,15 +303,27 @@ class StorageManager:
     @staticmethod
     def _coerce_types(dataframe: pd.DataFrame) -> pd.DataFrame:
         for column in NUMERIC_COLUMNS:
+            if column not in dataframe:
+                continue
             dataframe[column] = pd.to_numeric(dataframe[column], errors="coerce")
         for column in BOOL_COLUMNS:
+            if column not in dataframe:
+                continue
             dataframe[column] = dataframe[column].map(
                 lambda value: value
                 if pd.isna(value) or isinstance(value, bool)
                 else str(value).strip().lower() == "true"
             )
         for column in TEXT_COLUMNS:
+            if column not in dataframe:
+                continue
             dataframe[column] = dataframe[column].astype("string")
-        if dataframe["rank"].notna().any():
+        if "rank" in dataframe and dataframe["rank"].notna().any():
             dataframe["rank"] = dataframe["rank"].astype("Int64")
         return dataframe
+
+    @staticmethod
+    def _dataset_columns(dataset_id: str) -> list[str]:
+        if dataset_id == "cloud_infra_daily_activity":
+            return SERVING_PROVIDER_DATASET_COLUMNS
+        return BASE_DATASET_COLUMNS

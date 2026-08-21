@@ -281,7 +281,6 @@ def render_checks(checks: list[CheckResult]) -> None:
 SECTION_RENDERERS = {
     "Overview": overview.render,
     "OpenRouter": getattr(openrouter, "render_unified", openrouter.render),
-    "OpenRouter Intelligence": openrouter.render,
     "Vercel AI": vercel_ai.render,
     "OpenCode Agents": opencode.render,
     "Replicate Multimodal": replicate.render,
@@ -306,7 +305,7 @@ def main() -> None:
     inject_css()
 
     selected_section = select_main_section()
-    if selected_section != "OpenRouter Models":
+    if selected_section != "OpenRouter":
         _clear_model_query_param()
     selected_domains = section_domains(selected_section)
 
