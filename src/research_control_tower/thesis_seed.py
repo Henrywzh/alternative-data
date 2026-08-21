@@ -57,8 +57,13 @@ THESIS_REQUIRED_COLUMNS = {
     },
     "evidence_items": {
         "evidence_id",
+        "entity_id",
+        "source_id",
         "source_type",
-        "source_id_ref",
+        "source_url",
+        "evidence_class",
+        "pit_class",
+        "source_license_class",
         "published_at",
         "summary_text",
         "observed_at_utc",
@@ -75,7 +80,7 @@ THESIS_REQUIRED_COLUMNS = {
     },
 }
 
-THESIS_STATUSES = frozenset({"active", "falsified", "confirmed", "archived"})
+THESIS_STATUSES = frozenset({"draft", "active", "falsified", "confirmed", "archived"})
 QUESTION_TYPES = frozenset({"support", "falsification", "tracking"})
 QUESTION_PRIORITIES = frozenset({"1", "2", "3"})
 EVIDENCE_SOURCE_TYPES = frozenset(
@@ -86,6 +91,29 @@ EVIDENCE_SOURCE_TYPES = frozenset(
         "source_observation",
         "market_quote",
         "internal_research",
+    }
+)
+EVIDENCE_CLASSES = frozenset(
+    {
+        "official_external",
+        "source_observation",
+        "internal_research",
+    }
+)
+PIT_CLASSES = frozenset(
+    {
+        "point_in_time",
+        "restated",
+        "provisional",
+    }
+)
+SOURCE_LICENSE_CLASSES = frozenset(
+    {
+        "public_regulatory_filing",
+        "public_statutory_disclosure",
+        "public_domain",
+        "proprietary_internal",
+        "commercial_licensed",
     }
 )
 LINK_REVIEW_STATES = frozenset({"pending_review", "acknowledged", "dismissed"})
@@ -214,7 +242,12 @@ def load_thesis_seed_bundle(config_root: Path) -> ThesisSeedBundle:
         name: _read_thesis_csv(root / filename, name)
         for name, filename in THESIS_SEED_FILES.items()
     }
-    return ThesisSeedBundle(**frames)
+    return ThesisSeedBundle(
+        thesis_claims=frames["thesis_claims"],
+        thesis_watch_questions=frames["thesis_watch_questions"],
+        evidence_items=frames["evidence_items"],
+        claim_evidence_links=frames["claim_evidence_links"],
+    )
 
 
 def load_tencent_event_seed_bundle(config_root: Path) -> EventBundle:
@@ -224,24 +257,78 @@ def load_tencent_event_seed_bundle(config_root: Path) -> EventBundle:
         name: _read_event_csv(root / filename, name)
         for name, filename in TENCENT_EVENT_SEED_FILES.items()
     }
-    return EventBundle(**frames)
+    return EventBundle(
+        events=frames["events"],
+        event_links=frames["event_links"],
+        event_watch_questions=frames["event_watch_questions"],
+    )
 
 
 def merge_event_bundles(base: EventBundle, addition: EventBundle) -> EventBundle:
-    """Merge two event bundles deterministically without in-place mutation."""
+    """Merge two event bundles deterministically and fail closed on duplicate natural keys."""
+    # Check for duplicate event_id collisions between base and addition
+    base_event_ids = set(base.events["event_id"].dropna())
+    addition_event_ids = set(addition.events["event_id"].dropna())
+    event_id_collision = base_event_ids & addition_event_ids
+    if event_id_collision:
+        raise ValueError(
+            f"Cannot merge event bundles: duplicate event_id collision {sorted(event_id_collision)!r}"
+        )
+
+    # Check for duplicate event observation key collisions (event_key, first_observed_at, observation_version)
+    def _obs_keys(df: pd.DataFrame) -> set[tuple]:
+        if df.empty:
+            return set()
+        keys = set()
+        for _, r in df.iterrows():
+            keys.add((str(r.get("event_key", "")), str(r.get("first_observed_at", "")), str(r.get("observation_version", ""))))
+        return keys
+
+    obs_collision = _obs_keys(base.events) & _obs_keys(addition.events)
+    if obs_collision:
+        raise ValueError(
+            f"Cannot merge event bundles: duplicate event observation key collision {sorted(obs_collision)!r}"
+        )
+
+    # Check for duplicate event_links natural key (event_id, target_type, target_id, link_role)
+    def _link_keys(df: pd.DataFrame) -> set[tuple]:
+        if df.empty:
+            return set()
+        keys = set()
+        for _, r in df.iterrows():
+            keys.add((str(r.get("event_id", "")), str(r.get("target_type", "")), str(r.get("target_id", "")), str(r.get("link_role", ""))))
+        return keys
+
+    link_collision = _link_keys(base.event_links) & _link_keys(addition.event_links)
+    if link_collision:
+        raise ValueError(
+            f"Cannot merge event bundles: duplicate event link key collision {sorted(link_collision)!r}"
+        )
+
+    # Check for duplicate event_watch_questions natural key (event_id, question_id)
+    def _question_keys(df: pd.DataFrame) -> set[tuple]:
+        if df.empty:
+            return set()
+        keys = set()
+        for _, r in df.iterrows():
+            keys.add((str(r.get("event_id", "")), str(r.get("question_id", ""))))
+        return keys
+
+    question_collision = _question_keys(base.event_watch_questions) & _question_keys(addition.event_watch_questions)
+    if question_collision:
+        raise ValueError(
+            f"Cannot merge event bundles: duplicate event watch question key collision {sorted(question_collision)!r}"
+        )
+
     merged_events = pd.concat([base.events, addition.events], ignore_index=True)
     merged_links = pd.concat([base.event_links, addition.event_links], ignore_index=True)
     merged_questions = pd.concat(
         [base.event_watch_questions, addition.event_watch_questions], ignore_index=True
     )
     return EventBundle(
-        events=merged_events.drop_duplicates("event_id", keep="first"),
-        event_links=merged_links.drop_duplicates(
-            ["event_id", "target_type", "target_id", "link_role"], keep="first"
-        ),
-        event_watch_questions=merged_questions.drop_duplicates(
-            ["event_id", "question_id"], keep="first"
-        ),
+        events=merged_events,
+        event_links=merged_links,
+        event_watch_questions=merged_questions,
     )
 
 
@@ -333,11 +420,13 @@ def validate_thesis_seed_bundle(
         )
 
     # 1. Required columns check
-    for name, cols in THESIS_REQUIRED_COLUMNS.items():
-        frame = getattr(thesis, name)
-        # Non-blank required columns (analyst_note is optional)
-        non_optional_cols = set(cols) - {"analyst_note"}
-        issues.extend(_required_value_issues(frame, name, non_optional_cols))
+    # Non-optional columns:
+    # thesis_claims: last_reviewed_at_utc and reviewed_by are optional when status is draft
+    # claim_evidence_links: analyst_note is optional
+    issues.extend(_required_value_issues(thesis.thesis_claims, "thesis_claims", {"claim_id", "entity_id", "thesis_title", "claim_text", "invalidation_rule", "status", "registry_version"}))
+    issues.extend(_required_value_issues(thesis.thesis_watch_questions, "thesis_watch_questions", THESIS_REQUIRED_COLUMNS["thesis_watch_questions"]))
+    issues.extend(_required_value_issues(thesis.evidence_items, "evidence_items", THESIS_REQUIRED_COLUMNS["evidence_items"]))
+    issues.extend(_required_value_issues(thesis.claim_evidence_links, "claim_evidence_links", {"link_id", "claim_id", "evidence_id", "conflict_hint", "review_state", "registry_version"}))
 
     # 2. PK duplicate and identifier checks
     issues.extend(_duplicate_issues(thesis.thesis_claims, "thesis_claims", ["claim_id"], "duplicate_claim_id"))
@@ -353,7 +442,7 @@ def validate_thesis_seed_bundle(
     issues.extend(_duplicate_issues(thesis.claim_evidence_links, "claim_evidence_links", ["claim_id", "evidence_id"], "duplicate_claim_evidence_link"))
     issues.extend(_identifier_issues(thesis.claim_evidence_links, "claim_evidence_links", "link_id"))
 
-    # 3. Foreign key integrity
+    # 3. Foreign key integrity and semantic checks
     known_entities = set(registries.entities.get("entity_id", pd.Series(dtype="string")).dropna())
     known_claims = set(thesis.thesis_claims.get("claim_id", pd.Series(dtype="string")).dropna())
     known_evidence = set(thesis.evidence_items.get("evidence_id", pd.Series(dtype="string")).dropna())
@@ -382,15 +471,46 @@ def validate_thesis_seed_bundle(
                 )
             )
         last_reviewed = _as_timestamp(row.get("last_reviewed_at_utc"))
-        if last_reviewed is not None and not _is_timezone_aware(last_reviewed):
-            issues.append(
-                _issue(
-                    "last_reviewed_at_utc_not_timezone_aware",
-                    f"thesis_claims row {row_index} last_reviewed_at_utc must be timezone-aware",
-                    "thesis_claims",
-                    int(row_index),
+        if last_reviewed is not None:
+            if not _is_timezone_aware(last_reviewed):
+                issues.append(
+                    _issue(
+                        "last_reviewed_at_utc_not_timezone_aware",
+                        f"thesis_claims row {row_index} last_reviewed_at_utc must be timezone-aware",
+                        "thesis_claims",
+                        int(row_index),
+                    )
                 )
-            )
+            elif now is not None and _is_timezone_aware(now) and last_reviewed > now:
+                issues.append(
+                    _issue(
+                        "last_reviewed_at_in_future",
+                        f"thesis_claims row {row_index} last_reviewed_at_utc is in the future",
+                        "thesis_claims",
+                        int(row_index),
+                    )
+                )
+
+        # If status is not draft, reviewed_by and last_reviewed_at_utc are required
+        if status in {"active", "falsified", "confirmed", "archived"}:
+            if _blank(row.get("reviewed_by")):
+                issues.append(
+                    _issue(
+                        "missing_reviewed_by",
+                        f"thesis_claims row {row_index} with status={status!r} requires human reviewed_by",
+                        "thesis_claims",
+                        int(row_index),
+                    )
+                )
+            if _blank(row.get("last_reviewed_at_utc")):
+                issues.append(
+                    _issue(
+                        "missing_last_reviewed_at_utc",
+                        f"thesis_claims row {row_index} with status={status!r} requires last_reviewed_at_utc",
+                        "thesis_claims",
+                        int(row_index),
+                    )
+                )
 
     for row_index, row in thesis.thesis_watch_questions.iterrows():
         claim_id = row.get("claim_id")
@@ -446,6 +566,16 @@ def validate_thesis_seed_bundle(
             )
 
     for row_index, row in thesis.evidence_items.iterrows():
+        entity_id = row.get("entity_id")
+        if not _blank(entity_id) and entity_id not in known_entities:
+            issues.append(
+                _issue(
+                    "orphan_evidence_entity_id",
+                    f"evidence_items row {row_index} references unknown entity_id={entity_id!r}",
+                    "evidence_items",
+                    int(row_index),
+                )
+            )
         source_type = str(row.get("source_type", "")).strip().lower()
         if source_type not in EVIDENCE_SOURCE_TYPES:
             issues.append(
@@ -456,26 +586,91 @@ def validate_thesis_seed_bundle(
                     int(row_index),
                 )
             )
+        evidence_class = str(row.get("evidence_class", "")).strip().lower()
+        if evidence_class not in EVIDENCE_CLASSES:
+            issues.append(
+                _issue(
+                    "invalid_evidence_class",
+                    f"evidence_items row {row_index} has invalid evidence_class={evidence_class!r}",
+                    "evidence_items",
+                    int(row_index),
+                )
+            )
+        pit_class = str(row.get("pit_class", "")).strip().lower()
+        if pit_class not in PIT_CLASSES:
+            issues.append(
+                _issue(
+                    "invalid_pit_class",
+                    f"evidence_items row {row_index} has invalid pit_class={pit_class!r}",
+                    "evidence_items",
+                    int(row_index),
+                )
+            )
+        license_class = str(row.get("source_license_class", "")).strip().lower()
+        if license_class not in SOURCE_LICENSE_CLASSES:
+            issues.append(
+                _issue(
+                    "invalid_source_license_class",
+                    f"evidence_items row {row_index} has invalid source_license_class={license_class!r}",
+                    "evidence_items",
+                    int(row_index),
+                )
+            )
         observed_at = _as_timestamp(row.get("observed_at_utc"))
-        if observed_at is not None and not _is_timezone_aware(observed_at):
-            issues.append(
-                _issue(
-                    "observed_at_utc_not_timezone_aware",
-                    f"evidence_items row {row_index} observed_at_utc must be timezone-aware",
-                    "evidence_items",
-                    int(row_index),
-                )
-            )
         published_at = _as_timestamp(row.get("published_at"))
-        if published_at is not None and not _is_timezone_aware(published_at):
-            issues.append(
-                _issue(
-                    "published_at_not_timezone_aware",
-                    f"evidence_items row {row_index} published_at must be timezone-aware",
-                    "evidence_items",
-                    int(row_index),
+        if observed_at is not None:
+            if not _is_timezone_aware(observed_at):
+                issues.append(
+                    _issue(
+                        "observed_at_utc_not_timezone_aware",
+                        f"evidence_items row {row_index} observed_at_utc must be timezone-aware",
+                        "evidence_items",
+                        int(row_index),
+                    )
                 )
-            )
+            elif now is not None and _is_timezone_aware(now) and observed_at > now:
+                issues.append(
+                    _issue(
+                        "observed_at_utc_in_future",
+                        f"evidence_items row {row_index} observed_at_utc is in the future",
+                        "evidence_items",
+                        int(row_index),
+                    )
+                )
+        if published_at is not None:
+            if not _is_timezone_aware(published_at):
+                issues.append(
+                    _issue(
+                        "published_at_not_timezone_aware",
+                        f"evidence_items row {row_index} published_at must be timezone-aware",
+                        "evidence_items",
+                        int(row_index),
+                    )
+                )
+            elif now is not None and _is_timezone_aware(now) and published_at > now:
+                issues.append(
+                    _issue(
+                        "published_at_in_future",
+                        f"evidence_items row {row_index} published_at is in the future",
+                        "evidence_items",
+                        int(row_index),
+                    )
+                )
+        if (
+            observed_at is not None
+            and published_at is not None
+            and _is_timezone_aware(observed_at)
+            and _is_timezone_aware(published_at)
+        ):
+            if observed_at < published_at:
+                issues.append(
+                    _issue(
+                        "observed_at_before_published_at",
+                        f"evidence_items row {row_index} observed_at_utc ({observed_at}) is before published_at ({published_at})",
+                        "evidence_items",
+                        int(row_index),
+                    )
+                )
 
     for row_index, row in thesis.claim_evidence_links.iterrows():
         claim_id = row.get("claim_id")
