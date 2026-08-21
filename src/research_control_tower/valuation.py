@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import math
 import os
 import tempfile
@@ -247,18 +248,49 @@ def compute_valuation_id(
     metric_basis: str,
     numerator_ref: str,
     denominator_ref: str,
+    *,
+    lineage_payload: Mapping[str, Any] | None = None,
 ) -> str:
-    raw = "|".join(
-        (
-            listing_id,
-            valuation_at_iso,
-            metric_name,
-            metric_basis,
-            numerator_ref,
-            denominator_ref,
-        )
+    natural_key = (
+        listing_id,
+        valuation_at_iso,
+        metric_name,
+        metric_basis,
+        numerator_ref,
+        denominator_ref,
+    )
+    raw = json.dumps(
+        {
+            "natural_key": natural_key,
+            "lineage": _json_canonical(lineage_payload or {}),
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
     )
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:32]
+
+
+def _json_canonical(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return {
+            str(key): _json_canonical(item)
+            for key, item in sorted(value.items(), key=lambda pair: str(pair[0]))
+        }
+    if isinstance(value, (list, tuple)):
+        return [_json_canonical(item) for item in value]
+    if isinstance(value, (datetime, pd.Timestamp)):
+        timestamp = pd.Timestamp(value)
+        if pd.isna(timestamp) or timestamp.tzinfo is None:
+            raise ValueError("lineage timestamps must be timezone-aware")
+        return timestamp.tz_convert("UTC").isoformat()
+    if hasattr(value, "isoformat") and not isinstance(value, str):
+        return value.isoformat()
+    if value is None or (not isinstance(value, (list, tuple, dict)) and pd.isna(value)):
+        return None
+    if isinstance(value, float):
+        return _finite(value, "lineage numeric value")
+    return value
 
 
 @dataclass(frozen=True)
@@ -403,6 +435,8 @@ def build_valuation_snapshot_row(inp: ValuationInput) -> dict[str, Any]:
         fx_retrieved = _utc(inp.fx_retrieved_at_utc, "fx_retrieved_at_utc")
         if fx_snapshot > valuation_at or fx_retrieved > valuation_at:
             raise ValueError("FX vintage must not exceed valuation_at")
+        if fx_snapshot > fx_retrieved:
+            raise ValueError("FX observation must not exceed source retrieval")
     else:
         provided = (
             inp.fx_rate_applied,
@@ -423,16 +457,7 @@ def build_valuation_snapshot_row(inp: ValuationInput) -> dict[str, Any]:
         ratio_value = converted_denominator / numerator * 100.0
     ratio_value = _finite(ratio_value, "ratio_value", positive=True)
 
-    valuation_id = compute_valuation_id(
-        inp.listing_id,
-        valuation_at.isoformat(),
-        inp.metric_name,
-        inp.metric_basis,
-        inp.numerator_ref,
-        inp.denominator_ref,
-    )
-    return {
-        "valuation_id": valuation_id,
+    canonical_row = {
         "listing_id": inp.listing_id,
         "valuation_date": valuation_at.date(),
         "valuation_at": valuation_at,
@@ -473,6 +498,46 @@ def build_valuation_snapshot_row(inp: ValuationInput) -> dict[str, Any]:
         ),
         "percentile_history_status": "unavailable",
     }
+    valuation_id = compute_valuation_id(
+        inp.listing_id,
+        valuation_at.isoformat(),
+        inp.metric_name,
+        inp.metric_basis,
+        inp.numerator_ref,
+        inp.denominator_ref,
+        lineage_payload=canonical_row,
+    )
+    return {
+        "valuation_id": valuation_id,
+        **canonical_row,
+    }
+
+
+def _canonical_field_equal(field: str, actual: Any, expected: Any) -> bool:
+    arrow_type = VALUATION_SNAPSHOTS_ARROW_SCHEMA.field(field).type
+    actual_null = actual is None or bool(pd.isna(actual))
+    expected_null = expected is None or bool(pd.isna(expected))
+    if actual_null or expected_null:
+        return actual_null and expected_null
+    if pa.types.is_timestamp(arrow_type):
+        actual_ts = pd.Timestamp(actual)
+        expected_ts = pd.Timestamp(expected)
+        if actual_ts.tzinfo is None or expected_ts.tzinfo is None:
+            return False
+        return actual_ts.tz_convert("UTC") == expected_ts.tz_convert("UTC")
+    if pa.types.is_date(arrow_type):
+        return pd.Timestamp(actual).date() == pd.Timestamp(expected).date()
+    if pa.types.is_floating(arrow_type):
+        try:
+            return math.isclose(
+                float(actual),
+                float(expected),
+                rel_tol=1e-12,
+                abs_tol=0.0,
+            )
+        except (TypeError, ValueError):
+            return False
+    return actual == expected
 
 
 def validate_valuation_snapshots_df(frame: pd.DataFrame) -> list[str]:
@@ -491,15 +556,15 @@ def validate_valuation_snapshots_df(frame: pd.DataFrame) -> list[str]:
                 if field in row.index
             }
             rebuilt = build_valuation_snapshot_row(ValuationInput(**kwargs))
-            if not math.isclose(
-                float(row["ratio_value"]),
-                float(rebuilt["ratio_value"]),
-                rel_tol=1e-12,
-                abs_tol=0.0,
-            ):
-                raise ValueError("ratio_value does not match audited inputs")
-            if row["valuation_id"] != rebuilt["valuation_id"]:
-                raise ValueError("valuation_id does not match natural key")
+            mismatches = [
+                field
+                for field in VALUATION_SNAPSHOTS_COLUMNS
+                if not _canonical_field_equal(field, row[field], rebuilt[field])
+            ]
+            if mismatches:
+                raise ValueError(
+                    "canonical rebuild mismatch: " + ", ".join(mismatches)
+                )
         except (TypeError, ValueError) as exc:
             issues.append(f"row {index}: {exc}")
     return issues
