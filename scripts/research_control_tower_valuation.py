@@ -21,6 +21,7 @@ import pyarrow as pa
 from src.research_control_tower.valuation import (
     INTERNAL_ESTIMATES_ARROW_SCHEMA,
     SUPPORTED_PIT_CLASSES,
+    SUPPORTED_VALUATION_METRIC_BASES,
     VALUATION_SNAPSHOTS_ARROW_SCHEMA,
     ValuationInput,
     build_valuation_snapshot_row,
@@ -544,13 +545,18 @@ def compute_tencent_valuation_snapshots(
         return empty_frame(VALUATION_SNAPSHOTS_ARROW_SCHEMA)
 
     accounting_basis = str(consensus["accounting_basis"]).strip()
+    metric_basis = canonicalize_metric_basis(accounting_basis)
+    if metric_basis not in SUPPORTED_VALUATION_METRIC_BASES:
+        # Consensus rows may be retained as uncertainty context, but an
+        # unverified accounting basis is never promoted into valuation.
+        return empty_frame(VALUATION_SNAPSHOTS_ARROW_SCHEMA)
     pit_class = str(consensus["pit_class"]).strip()
     input_row = ValuationInput(
         listing_id="0700_HK",
         valuation_at=as_of.to_pydatetime(),
         metric_name="forward_pe",
         accounting_basis=accounting_basis,
-        metric_basis=canonicalize_metric_basis(accounting_basis),
+        metric_basis=metric_basis,
         numerator_value=float(quote["last_price"]),
         numerator_currency=numerator_currency,
         numerator_ref=str(quote["quote_id"]),
