@@ -6,6 +6,7 @@ import os
 from dataclasses import replace
 from datetime import date
 from pathlib import Path
+import re
 import shutil
 import socket
 import subprocess
@@ -17,6 +18,8 @@ import pytest
 
 from src.research_control_tower.build import (
     ARTIFACT_NAMES,
+    CORP_ACTIONS_COLUMNS,
+    CORP_ACTIONS_SCHEMA_ID,
     EARNINGS_ACTUALS_COLUMNS,
     EARNINGS_ACTUALS_SCHEMA_ID,
     EARNINGS_CALENDAR_COLUMNS,
@@ -27,6 +30,8 @@ from src.research_control_tower.build import (
     ECB_FX_SCHEMA_ID,
     FRED_META_SCHEMA_ID,
     FRED_OBSERVATIONS_SCHEMA_ID,
+    INTERNAL_ESTIMATES_COLUMNS,
+    INTERNAL_ESTIMATES_SCHEMA_ID,
     MACRO_COLLECTOR_SCHEMA_ID,
     MACRO_EVENTS_SCHEMA_ID,
     MACRO_OBSERVATIONS_SCHEMA_ID,
@@ -41,12 +46,16 @@ from src.research_control_tower.build import (
     QUOTE_SNAPSHOT_SCHEMA_ID,
     SOURCE_STATE_COLUMNS,
     SOURCE_STATE_SCHEMA_ID,
+    SOURCE_TIME_COLUMNS,
     TAIWAN_REVENUE_SCHEMA_ID,
     TASK3_REVISION_COLUMNS,
     TASK3_SNAPSHOT_COLUMNS,
+    VALUATION_SNAPSHOTS_COLUMNS,
+    VALUATION_SNAPSHOTS_SCHEMA_ID,
     BuildConfig,
     BuildError,
     LocalInput,
+    _drop_orphaned_consensus_revisions,
     build_control_tower_marts,
     catalyst_eligibility,
     current_generation,
@@ -191,6 +200,113 @@ def _input(
     )
 
 
+def _audit_source_row(schema_id: str, timestamp: str) -> dict[str, object]:
+    if schema_id == CORP_ACTIONS_SCHEMA_ID:
+        row = {column: None for column in CORP_ACTIONS_COLUMNS}
+        row.update(
+            {
+                "action_id": "audit-corporate-action-1",
+                "version": 1,
+                "entity_id": "TENCENT",
+                "listing_id": "0700_HK",
+                "canonical_ticker": "0700.HK",
+                "action_type": "buyback_execution",
+                "filing_date": "2026-08-12",
+                "execution_date": "2026-08-12",
+                "published_at": timestamp,
+                "retrieved_at_utc": timestamp,
+                "source_document_id": "audit-doc-1",
+                "source_url": "https://example.test/audit-doc-1",
+                "document_format": "pdf",
+                "source_quality": "official_body",
+                "pit_class": "snapshot_from_live_source",
+                "source_license_class": "official_public_metadata",
+                "registry_version": "v1",
+            }
+        )
+        return row
+    if schema_id == VALUATION_SNAPSHOTS_SCHEMA_ID:
+        row = {column: None for column in VALUATION_SNAPSHOTS_COLUMNS}
+        row.update(
+            {
+                "valuation_id": "audit-valuation-1",
+                "listing_id": "0700_HK",
+                "valuation_date": "2026-08-12",
+                "valuation_at": timestamp,
+                "metric_name": "forward_pe",
+                "accounting_basis": "NON_IFRS_MANAGEMENT",
+                "metric_basis": "NON_IFRS_MANAGEMENT",
+                "ratio_value": 16.2,
+                "numerator_value": 441.2,
+                "numerator_currency": "HKD",
+                "numerator_ref": "quote:audit-1",
+                "numerator_source_id": "audit-quote",
+                "numerator_source_url": "https://example.test/audit-quote",
+                "numerator_pit_class": "snapshot_from_delayed_source",
+                "numerator_at_utc": timestamp,
+                "numerator_retrieved_at_utc": timestamp,
+                "denominator_value": 27.2,
+                "denominator_currency": "HKD",
+                "denominator_ref": "consensus:audit-1",
+                "denominator_source_id": "audit-consensus",
+                "denominator_source_url": "https://example.test/audit-consensus",
+                "denominator_pit_class": "snapshot_from_delayed_source",
+                "denominator_at_utc": timestamp,
+                "denominator_provider_asof_utc": timestamp,
+                "denominator_retrieved_at_utc": timestamp,
+                "source_id": "audit-valuation",
+                "source_url": "https://example.test/audit-valuation",
+                "retrieved_at_utc": timestamp,
+                "pit_class": "snapshot_from_live_source",
+                "coverage_reason": "audit fixture",
+                "percentile_history_status": "unavailable",
+            }
+        )
+        from src.research_control_tower.valuation import (
+            ValuationInput,
+            build_valuation_snapshot_row,
+        )
+
+        canonical = build_valuation_snapshot_row(
+            ValuationInput(
+                **{
+                    field: row[field]
+                    for field in ValuationInput.__dataclass_fields__
+                    if field in row
+                }
+            )
+        )
+        row.update(canonical)
+        return row
+    if schema_id == INTERNAL_ESTIMATES_SCHEMA_ID:
+        row = {column: None for column in INTERNAL_ESTIMATES_COLUMNS}
+        row.update(
+            {
+                "estimate_id": "audit-estimate-1",
+                "version": 1,
+                "supersedes_estimate_id": "",
+                "entity_id": "TENCENT",
+                "listing_id": "0700_HK",
+                "observation_type": "internal_estimate",
+                "author": "audit-fixture",
+                "metric": "revenue_total",
+                "accounting_basis": "NON_IFRS_MANAGEMENT",
+                "metric_basis": "NON_IFRS_MANAGEMENT",
+                "fiscal_period": "FY2026",
+                "fiscal_year": 2026,
+                "value_mid": 1.0,
+                "currency": "HKD",
+                "unit": "million",
+                "effective_asof": timestamp[:10],
+                "recorded_at_utc": timestamp,
+                "source_ref": "internal:audit-estimate-1",
+                "pit_class": "not_pit",
+            }
+        )
+        return row
+    raise AssertionError(f"unsupported audit fixture schema: {schema_id}")
+
+
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -216,10 +332,10 @@ def _write_task3_exports(
     snapshot_row = {
             "snapshot_id": "snap-ak-1",
             "provider": "akshare",
-            "entity_id": "NVIDIA",
-            "listing_id": "NVDA_US",
-            "financial_data_security_id": "security-nvda",
-            "canonical_ticker": "NVDA.US",
+            "entity_id": "TENCENT",
+            "listing_id": "0700_HK",
+            "financial_data_security_id": "sec-0700",
+            "canonical_ticker": "0700.HK",
             "metric": "eps",
             "fiscal_period": "FY2026",
             "fiscal_year": 2026,
@@ -253,10 +369,10 @@ def _write_task3_exports(
         "snapshot_id": "snap-ak-1",
         "provider": "akshare",
         "prior_provider": "akshare",
-        "entity_id": "NVIDIA",
-        "listing_id": "NVDA_US",
-        "financial_data_security_id": "security-nvda",
-        "canonical_ticker": "NVDA.US",
+        "entity_id": "TENCENT",
+        "listing_id": "0700_HK",
+        "financial_data_security_id": "sec-0700",
+        "canonical_ticker": "0700.HK",
         "metric": "eps",
         "fiscal_period": "FY2026",
         "fiscal_year": 2026,
@@ -425,6 +541,13 @@ def test_build_writes_stable_artifact_set(tmp_path, minimal_inputs):
         "official_filings.parquet",
         "earnings_calendar.parquet",
         "earnings_actuals.parquet",
+        "corporate_actions.parquet",
+        "valuation_snapshots.parquet",
+        "internal_estimates.parquet",
+        "thesis_claims.parquet",
+        "thesis_watch_questions.parquet",
+        "evidence_items.parquet",
+        "claim_evidence_links.parquet",
         "source_health.parquet",
         "build_manifest.json",
     }
@@ -441,14 +564,14 @@ def test_build_writes_stable_artifact_set(tmp_path, minimal_inputs):
     health = pd.read_parquet(_published(minimal_inputs, "source_health.parquet"))
     required_health = health[health["required"]]
     assert dict(zip(required_health["source_id"], required_health["row_count"])) == {
-        "events:event_links": 33,
-        "events:event_watch_questions": 10,
-        "events:events": 15,
+        "events:event_links": 52,
+        "events:event_watch_questions": 20,
+        "events:events": 21,
         "registry:basket_memberships": 97,
         "registry:baskets": 7,
         "registry:entities": 71,
         "registry:indices": 12,
-        "registry:listings": 80,
+        "registry:listings": 81,
     }
     manifest_json = json.loads(_published(minimal_inputs, "build_manifest.json").read_text())
     assert manifest_json["network_policy"] == "forbidden"
@@ -459,6 +582,286 @@ def test_build_writes_stable_artifact_set(tmp_path, minimal_inputs):
     assert manifest_json["previous_build_at"] is None
 
 
+def test_invalid_thesis_seed_fails_closed_before_publication(tmp_path, minimal_inputs):
+    claims_path = minimal_inputs.registry_root / "thesis_claims.csv"
+    claims = pd.read_csv(claims_path, dtype="string", keep_default_na=False)
+    claims.loc[0, "entity_id"] = "ORPHAN_ENTITY"
+    claims.to_csv(claims_path, index=False)
+
+    with pytest.raises(BuildError, match="thesis seed validation"):
+        build_control_tower_marts(minimal_inputs)
+
+    assert not minimal_inputs.output_dir.joinpath("CURRENT").exists()
+
+
+def test_malformed_thesis_timestamp_is_validated_before_as_of_filter(
+    tmp_path, minimal_inputs
+):
+    evidence_path = minimal_inputs.registry_root / "evidence_items.csv"
+    evidence = pd.read_csv(evidence_path, dtype="string", keep_default_na=False)
+    evidence.loc[0, "observed_at_utc"] = "not-a-timestamp"
+    evidence.to_csv(evidence_path, index=False)
+
+    with pytest.raises(BuildError, match="invalid_observed_at_utc_timestamp"):
+        build_control_tower_marts(minimal_inputs)
+
+    assert not minimal_inputs.output_dir.joinpath("CURRENT").exists()
+
+
+def test_incomplete_thesis_seed_bundle_is_a_controlled_build_error(
+    tmp_path, minimal_inputs
+):
+    (minimal_inputs.registry_root / "claim_evidence_links.csv").unlink()
+
+    with pytest.raises(BuildError, match="thesis seed bundle incomplete"):
+        build_control_tower_marts(minimal_inputs)
+
+    assert not minimal_inputs.output_dir.joinpath("CURRENT").exists()
+
+
+@pytest.mark.parametrize(
+    ("schema_id", "config_field", "artifact_name"),
+    [
+        (CORP_ACTIONS_SCHEMA_ID, "corporate_actions_inputs", "corporate_actions.parquet"),
+        (VALUATION_SNAPSHOTS_SCHEMA_ID, "valuation_inputs", "valuation_snapshots.parquet"),
+        (INTERNAL_ESTIMATES_SCHEMA_ID, "valuation_inputs", "internal_estimates.parquet"),
+    ],
+)
+def test_audit_source_time_policies_quarantine_future_and_flag_stale_rows(
+    tmp_path,
+    minimal_inputs,
+    schema_id,
+    config_field,
+    artifact_name,
+):
+    assert schema_id in SOURCE_TIME_COLUMNS
+    source_dir = tmp_path / schema_id
+    source_dir.mkdir()
+
+    def run(timestamp: str, suffix: str):
+        path = source_dir / f"{suffix}.parquet"
+        pd.DataFrame(
+            [_audit_source_row(schema_id, timestamp)],
+            columns=(
+                CORP_ACTIONS_COLUMNS
+                if schema_id == CORP_ACTIONS_SCHEMA_ID
+                else VALUATION_SNAPSHOTS_COLUMNS
+                if schema_id == VALUATION_SNAPSHOTS_SCHEMA_ID
+                else INTERNAL_ESTIMATES_COLUMNS
+            ),
+        ).to_parquet(path, index=False)
+        descriptor = _input(f"{schema_id}:{suffix}", path, schema_id)
+        config = replace(
+            minimal_inputs,
+            output_dir=tmp_path / f"output-{suffix}",
+            **{config_field: (descriptor,)},
+        )
+        build_control_tower_marts(config)
+        health = pd.read_parquet(_published(config, "source_health.parquet"))
+        source_health = health.loc[health["source_id"].eq(descriptor.source_id)].iloc[0]
+        output = pd.read_parquet(_published(config, artifact_name))
+        return source_health, output
+
+    future_health, future_output = run("2026-08-14T00:00:00Z", "future")
+    assert future_health["status"] == "degraded"
+    assert "future_row_beyond_as_of" in future_health["detail"]
+    assert future_output.empty
+
+    stale_health, stale_output = run("2025-01-01T00:00:00Z", "stale")
+    assert stale_health["status"] == "degraded"
+    assert "stale_source" in stale_health["detail"]
+    assert len(stale_output) == 1
+
+
+def test_builder_merges_all_valuation_and_internal_descriptors(tmp_path, minimal_inputs):
+    valuation_paths = []
+    for suffix, valuation_id in (("one", "valuation-one"), ("two", "valuation-two")):
+        path = tmp_path / f"valuation-{suffix}.parquet"
+        row = _audit_source_row(VALUATION_SNAPSHOTS_SCHEMA_ID, "2026-08-12T00:00:00Z")
+        row["numerator_ref"] = f"quote:{suffix}"
+        from src.research_control_tower.valuation import ValuationInput, build_valuation_snapshot_row
+        row.update(
+            build_valuation_snapshot_row(
+                ValuationInput(
+                    **{
+                        field: row[field]
+                        for field in ValuationInput.__dataclass_fields__
+                        if field in row
+                    }
+                )
+            )
+        )
+        assert row["valuation_id"]
+        pd.DataFrame([row], columns=VALUATION_SNAPSHOTS_COLUMNS).to_parquet(
+            path, index=False
+        )
+        valuation_paths.append(path)
+
+    estimate_paths = []
+    for suffix, estimate_id in (("one", "estimate-one"), ("two", "estimate-two")):
+        path = tmp_path / f"estimate-{suffix}.parquet"
+        row = _audit_source_row(INTERNAL_ESTIMATES_SCHEMA_ID, "2026-08-12T00:00:00Z")
+        row["estimate_id"] = estimate_id
+        pd.DataFrame([row], columns=INTERNAL_ESTIMATES_COLUMNS).to_parquet(
+            path, index=False
+        )
+        estimate_paths.append(path)
+
+    config = replace(
+        minimal_inputs,
+        valuation_inputs=tuple(
+            [
+                _input(f"valuation-{idx}", path, VALUATION_SNAPSHOTS_SCHEMA_ID)
+                for idx, path in enumerate(valuation_paths)
+            ]
+            + [
+                _input(f"estimate-{idx}", path, INTERNAL_ESTIMATES_SCHEMA_ID)
+                for idx, path in enumerate(estimate_paths)
+            ]
+        ),
+    )
+    build_control_tower_marts(config)
+
+    valuations = pd.read_parquet(_published(config, "valuation_snapshots.parquet"))
+    estimates = pd.read_parquet(_published(config, "internal_estimates.parquet"))
+    assert len(valuations) == 2
+    assert valuations["valuation_id"].notna().all()
+    assert set(estimates["estimate_id"]) == {"estimate-one", "estimate-two"}
+
+
+@pytest.mark.parametrize("forged_field", ["valuation_id", "ratio_value"])
+def test_builder_quarantines_noncanonical_valuation_rows_at_publication_boundary(
+    tmp_path, minimal_inputs, forged_field
+):
+    path = tmp_path / f"forged-{forged_field}.parquet"
+    row = _audit_source_row(VALUATION_SNAPSHOTS_SCHEMA_ID, "2026-08-12T00:00:00Z")
+    row[forged_field] = (
+        "forged-valuation-id" if forged_field == "valuation_id" else 999.0
+    )
+    pd.DataFrame([row], columns=VALUATION_SNAPSHOTS_COLUMNS).to_parquet(
+        path, index=False
+    )
+    config = replace(
+        minimal_inputs,
+        valuation_inputs=(_input("valuation-forged", path, VALUATION_SNAPSHOTS_SCHEMA_ID),),
+    )
+
+    manifest = build_control_tower_marts(config)
+    output = pd.read_parquet(_published(config, "valuation_snapshots.parquet"))
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    source = health.loc[health["source_id"].eq("valuation-forged")].iloc[0]
+
+    assert output.empty
+    assert list(output.columns) == VALUATION_SNAPSHOTS_COLUMNS
+    assert source["status"] == "degraded"
+    assert "canonical rebuild mismatch" in str(source["detail"])
+    assert any(
+        error["source_id"] == "valuation-forged"
+        and error["code"] == "semantic_validation_failed"
+        and "canonical rebuild mismatch" in error["message"]
+        for error in manifest.validation_errors
+    )
+    assert "valuation-forged" in manifest.degraded_inputs
+
+
+@pytest.mark.parametrize(
+    ("schema_id", "id_column", "changed_column"),
+    [
+        (INTERNAL_ESTIMATES_SCHEMA_ID, "estimate_id", "rationale_notes"),
+    ],
+)
+def test_builder_rejects_divergent_valuation_descriptor_collisions(
+    tmp_path, minimal_inputs, schema_id, id_column, changed_column
+):
+    columns = (
+        VALUATION_SNAPSHOTS_COLUMNS
+        if schema_id == VALUATION_SNAPSHOTS_SCHEMA_ID
+        else INTERNAL_ESTIMATES_COLUMNS
+    )
+    first = _audit_source_row(schema_id, "2026-08-12T00:00:00Z")
+    second = dict(first)
+    second[changed_column] = "divergent descriptor payload"
+    first_path = tmp_path / f"{schema_id}-first.parquet"
+    second_path = tmp_path / f"{schema_id}-second.parquet"
+    pd.DataFrame([first], columns=columns).to_parquet(first_path, index=False)
+    pd.DataFrame([second], columns=columns).to_parquet(second_path, index=False)
+
+    config = replace(
+        minimal_inputs,
+        valuation_inputs=(
+            _input(f"{schema_id}-first", first_path, schema_id),
+            _input(f"{schema_id}-second", second_path, schema_id),
+        ),
+    )
+    with pytest.raises(BuildError, match="duplicate divergent"):
+        build_control_tower_marts(config)
+
+
+@pytest.mark.parametrize("kind", ["earnings", "corporate_actions"])
+def test_duplicate_ids_use_full_payload_collision_checks(tmp_path, minimal_inputs, kind):
+    if kind == "earnings":
+        source_dir = tmp_path / "earnings"
+        source_dir.mkdir(parents=True, exist_ok=True)
+        source_path, _state_path = _write_earnings_inputs(source_dir)
+        frame = pd.read_parquet(source_path)
+        schema_id = EARNINGS_ACTUALS_SCHEMA_ID
+        config_field = "earnings_inputs"
+        frame.loc[0, "source_note"] = "divergent payload"
+    else:
+        source_dir = tmp_path / "corporate"
+        source_dir.mkdir(parents=True, exist_ok=True)
+        row = _audit_source_row(CORP_ACTIONS_SCHEMA_ID, "2026-08-12T00:00:00Z")
+        frame = pd.DataFrame([row], columns=CORP_ACTIONS_COLUMNS)
+        schema_id = CORP_ACTIONS_SCHEMA_ID
+        config_field = "corporate_actions_inputs"
+        frame.loc[0, "source_note"] = "divergent payload"
+
+    exact_path = source_dir / "exact.parquet"
+    divergent_path = source_dir / "divergent.parquet"
+    original = pd.read_parquet(source_path) if kind == "earnings" else pd.DataFrame(
+        [_audit_source_row(CORP_ACTIONS_SCHEMA_ID, "2026-08-12T00:00:00Z")],
+        columns=CORP_ACTIONS_COLUMNS,
+    )
+    original.to_parquet(exact_path, index=False)
+    frame.to_parquet(divergent_path, index=False)
+
+    exact_config = replace(
+        minimal_inputs,
+        output_dir=tmp_path / f"{kind}-exact-output",
+        **{
+            config_field: (
+                _input(f"{kind}-exact-a", exact_path, schema_id),
+                _input(f"{kind}-exact-b", exact_path, schema_id),
+            )
+        },
+    )
+    build_control_tower_marts(exact_config)
+    exact_output = pd.read_parquet(
+        _published(
+            exact_config,
+            "earnings_actuals.parquet"
+            if kind == "earnings"
+            else "corporate_actions.parquet",
+        )
+    )
+    assert len(exact_output) == len(original)
+    if kind == "corporate_actions":
+        assert exact_output["version"].notna().all()
+        assert set(exact_output["version"].astype(int)) == {1}
+        assert pd.api.types.is_integer_dtype(exact_output["version"])
+
+    divergent_config = replace(
+        minimal_inputs,
+        output_dir=tmp_path / f"{kind}-divergent-output",
+        **{
+            config_field: (
+                _input(f"{kind}-divergent-a", exact_path, schema_id),
+                _input(f"{kind}-divergent-b", divergent_path, schema_id),
+            )
+        },
+    )
+    with pytest.raises(BuildError, match="duplicate divergent"):
+        build_control_tower_marts(divergent_config)
 def test_two_builds_persist_selected_current_lineage_and_today_delta(
     tmp_path, minimal_inputs, monkeypatch
 ):
@@ -796,8 +1199,24 @@ def test_vintaged_fred_observations_parquet_builds_without_schema_drift(
             {
                 "date": "2026-08-07",
                 "series_id": "NFCI",
+                "value": 0.1,
+                "fetched_at": "2026-08-08T04:34:37Z",
+                "realtime_start": "2026-08-01",
+                "realtime_end": "2026-08-08",
+            },
+            {
+                "date": "2026-08-07",
+                "series_id": "NFCI",
                 "value": 0.2,
                 "fetched_at": "2026-08-08T04:34:37Z",
+                "realtime_start": "2026-08-09",
+                "realtime_end": "9999-12-31",
+            },
+            {
+                "date": "2026-08-07",
+                "series_id": "NFCI",
+                "value": 0.2,
+                "fetched_at": "2026-08-09T04:34:37Z",
                 "realtime_start": "2026-08-09",
                 "realtime_end": "9999-12-31",
             },
@@ -830,9 +1249,198 @@ def test_vintaged_fred_observations_parquet_builds_without_schema_drift(
     macro = pd.read_parquet(_published(config, "macro_observations.parquet"))
     fred = macro[macro["source_id"] == "fred_observations"]
 
-    assert len(fred) == 2
+    assert len(fred) == 3
     assert set(fred["realtime_start"].dropna()) == {"2026-08-01", "2026-08-09"}
+    assert fred["observation_id"].map(str).ne("").all()
+    assert fred["observation_id"].is_unique
+    assert set(fred["actual_value"]) == {"0.1", "0.2"}
     assert manifest.artifacts["macro_observations.parquet"]["status"] == "available"
+
+
+def test_macro_same_capture_key_with_different_payload_fails_closed(
+    tmp_path, minimal_inputs
+):
+    macro_root = tmp_path / "input" / "macro-conflict"
+    macro_root.mkdir(parents=True)
+    obs_path = macro_root / "fred_observations.parquet"
+    pd.DataFrame(
+        [
+            {
+                "date": "2026-08-07",
+                "series_id": "NFCI",
+                "value": 0.1,
+                "fetched_at": "2026-08-08T04:34:37Z",
+                "realtime_start": "2026-08-01",
+                "realtime_end": "9999-12-31",
+            },
+            {
+                "date": "2026-08-07",
+                "series_id": "NFCI",
+                "value": 0.2,
+                "fetched_at": "2026-08-08T04:34:37Z",
+                "realtime_start": "2026-08-01",
+                "realtime_end": "9999-12-31",
+            },
+        ]
+    ).to_parquet(obs_path, index=False)
+    meta_path = macro_root / "fred_series_meta.parquet"
+    pd.DataFrame(
+        [
+            {
+                "series_id": "NFCI",
+                "title": "Chicago Fed National Financial Conditions Index",
+                "frequency": "W",
+                "units": "Index",
+                "seasonal_adjustment": "NSA",
+                "observation_start": "1971-01-08",
+                "last_updated": "2026-08-05 07:37:42-05",
+                "fetched_at": "2026-08-08T04:34:37Z",
+            }
+        ]
+    ).to_parquet(meta_path, index=False)
+    config = replace(
+        minimal_inputs,
+        macro_inputs=(
+            _input("fred_observations", obs_path, FRED_OBSERVATIONS_SCHEMA_ID),
+            _input("fred_meta", meta_path, FRED_META_SCHEMA_ID),
+        ),
+    )
+
+    with pytest.raises(BuildError, match="natural capture conflict"):
+        build_control_tower_marts(config)
+
+
+def test_sec_physical_document_identity_collapses_queries_and_keeps_urls_distinct(
+    tmp_path, minimal_inputs
+):
+    filing_path = tmp_path / "sec-filings.parquet"
+    url_one = "https://www.sec.gov/Archives/edgar/data/1/fixture.htm"
+    url_two = "https://www.sec.gov/Archives/edgar/data/1/fixture-exhibit.htm"
+    rows = [
+        {
+            "query": "tencent",
+            "accession_no": "0000000001-26-000001",
+            "cik": "0000000001",
+            "company_name": "Tencent Holdings Limited",
+            "form": "6-K",
+            "file_date": "2026-08-10",
+            "filing_url": url_one,
+            "fetched_at": "2026-08-10T12:00:00Z",
+            "related_entity_ids": "TENCENT",
+            "related_listing_ids": "0700_HK",
+        },
+        {
+            "query": "cloud",
+            "accession_no": "0000000001-26-000001",
+            "cik": "0000000001",
+            "company_name": "Tencent Holdings Limited",
+            "form": "6-K",
+            "file_date": "2026-08-10",
+            "filing_url": url_one,
+            "fetched_at": "2026-08-09T12:00:00Z",
+            "related_entity_ids": "BAIDU",
+            "related_listing_ids": "9888_HK",
+        },
+        {
+            "query": "exhibit",
+            "accession_no": "0000000001-26-000001",
+            "cik": "0000000001",
+            "company_name": "Tencent Holdings Limited",
+            "form": "6-K",
+            "file_date": "2026-08-10",
+            "filing_url": url_two,
+            "fetched_at": "2026-08-11T12:00:00Z",
+        },
+        {
+            "query": "another",
+            "accession_no": "0000000001-26-000002",
+            "cik": "0000000001",
+            "company_name": "Tencent Holdings Limited",
+            "form": "6-K",
+            "file_date": "2026-08-11",
+            "filing_url": "https://www.sec.gov/Archives/edgar/data/1/second.htm",
+            "fetched_at": "2026-08-12T12:00:00Z",
+        },
+    ]
+    pd.DataFrame(rows).to_parquet(filing_path, index=False)
+    config = replace(
+        minimal_inputs,
+        filing_inputs=(_input("sec_edgar", filing_path, FILING_SCHEMA_ID),),
+    )
+
+    manifest = build_control_tower_marts(config)
+    output = pd.read_parquet(_published(config, "news_filings.parquet"))
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+
+    assert len(output) == 3
+    assert output["document_id"].notna().all()
+    assert output["document_id"].is_unique
+    assert not output["document_id"].isin(["0000000001-26-000001", "0000000001-26-000002"]).any()
+    assert output["source_url"].nunique() == 3
+    first = output.loc[output["source_url"].eq(url_one)].iloc[0]
+    assert first["first_observed_at"] == pd.Timestamp("2026-08-09T12:00:00Z")
+    assert set(json.loads(first["related_entity_ids"])) == {"TENCENT", "BAIDU"}
+    assert set(json.loads(first["related_listing_ids"])) == {"0700_HK", "9888_HK"}
+    assert health.loc[health["source_id"].eq("sec_edgar"), "status"].iloc[0] == "available"
+    assert manifest.artifacts["news_filings.parquet"]["row_count"] == 3
+
+
+def test_sec_physical_document_conflict_is_fail_closed_and_degraded(
+    tmp_path, minimal_inputs
+):
+    filing_path = tmp_path / "sec-conflict.parquet"
+    common = {
+        "query": "tencent",
+        "accession_no": "0000000001-26-000003",
+        "cik": "0000000001",
+        "company_name": "Tencent Holdings Limited",
+        "file_date": "2026-08-10",
+        "filing_url": "https://www.sec.gov/Archives/edgar/data/1/conflict.htm",
+        "fetched_at": "2026-08-10T12:00:00Z",
+    }
+    pd.DataFrame(
+        [
+            {**common, "form": "6-K"},
+            {**common, "query": "cloud", "form": "8-K"},
+        ]
+    ).to_parquet(filing_path, index=False)
+    config = replace(
+        minimal_inputs,
+        filing_inputs=(_input("sec_edgar", filing_path, FILING_SCHEMA_ID),),
+    )
+
+    manifest = build_control_tower_marts(config)
+    output = pd.read_parquet(_published(config, "news_filings.parquet"))
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+
+    assert output.empty
+    assert health.loc[health["source_id"].eq("sec_edgar"), "status"].iloc[0] == "degraded"
+    assert any(
+        error["source_id"] == "sec_edgar"
+        and error["code"] == "filing_physical_document_conflict"
+        for error in manifest.validation_errors
+    )
+
+
+def test_consensus_prior_snapshot_may_reference_historical_store_outside_bound(
+):
+    revision = {column: None for column in TASK3_REVISION_COLUMNS}
+    revision.update(
+        {
+            "revision_id": "revision-current-historical-prior",
+            "snapshot_id": "current-snapshot",
+            "prior_snapshot_id": "historical-store-snapshot",
+        }
+    )
+    kept, dropped = _drop_orphaned_consensus_revisions(
+        pd.DataFrame([revision], columns=TASK3_REVISION_COLUMNS),
+        valid_snapshot_ids={"current-snapshot"},
+        rejected_snapshot_ids=frozenset(),
+    )
+
+    assert dropped == 0
+    assert len(kept) == 1
+    assert kept.iloc[0]["prior_snapshot_id"] == "historical-store-snapshot"
 
 
 def test_empty_macro_optional_inputs_are_unavailable_and_degrade_build(
@@ -1082,6 +1690,335 @@ def test_provider_health_sidecar_keeps_accepted_provider_rows_separate(
     assert provider["entitlement_status"] == "terms_unverified"
     assert provider["entitlement_evidence"]
     assert provider["entitlement_ref"] == "fixture-policy:local-private-research-v1"
+
+
+def test_consensus_mixed_eligible_and_ineligible_listings_preserves_eligible_rows(
+    tmp_path, minimal_inputs
+):
+    consensus_dir = _write_task3_exports(tmp_path / "input" / "consensus")
+    snapshots_path = consensus_dir / "control_tower_consensus_snapshots.parquet"
+    snapshot_rows = pq.read_table(snapshots_path).to_pylist()
+    rejected_row = dict(snapshot_rows[0])
+    rejected_row.update(
+        {
+            "snapshot_id": "snap-ak-tcehy",
+            "listing_id": "TCEHY_US",
+            "canonical_ticker": "TCEHY.US",
+            "raw_hash": hashlib.sha256(b"task3-ineligible-tcehy-row").hexdigest(),
+        }
+    )
+    pq.write_table(
+        pa.Table.from_pylist(
+            [*snapshot_rows, rejected_row],
+            schema=TASK3_SNAPSHOT_ARROW_SCHEMA,
+        ),
+        snapshots_path,
+    )
+    health_path = consensus_dir / "control_tower_consensus_source_health.parquet"
+    health_rows = pq.read_table(health_path).to_pylist()
+    health_rows[0]["row_count"] = 2
+    health_rows[0]["mapped_row_count"] = 2
+    pq.write_table(
+        pa.Table.from_pylist(health_rows, schema=TASK3_HEALTH_ARROW_SCHEMA),
+        health_path,
+    )
+
+    config = replace(minimal_inputs, consensus_export_dir=consensus_dir)
+    manifest = build_control_tower_marts(config)
+    snapshots = pd.read_parquet(_published(config, "consensus_snapshots.parquet"))
+    revisions = pd.read_parquet(_published(config, "consensus_revisions.parquet"))
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    aggregate = health.loc[health["source_id"].eq("consensus_export")].iloc[0]
+    provider = health.loc[health["source_id"].eq("consensus:akshare")].iloc[0]
+
+    assert set(snapshots["listing_id"]) == {"0700_HK"}
+    assert set(revisions["listing_id"]) == {"0700_HK"}
+    assert aggregate["status"] == "degraded"
+    assert "TCEHY_US" in str(aggregate["detail"])
+    assert provider["status"] == "available"
+    assert any(
+        error["source_id"] == "consensus_export"
+        and error["code"] == "listing_scope_rows_rejected"
+        and "TCEHY_US" in error["message"]
+        for error in manifest.validation_errors
+    )
+
+
+def test_consensus_revision_referencing_listing_rejected_prior_snapshot_is_removed(
+    tmp_path, minimal_inputs
+):
+    consensus_dir = _write_task3_exports(tmp_path / "input" / "consensus")
+    snapshots_path = consensus_dir / "control_tower_consensus_snapshots.parquet"
+    snapshot_rows = pq.read_table(snapshots_path).to_pylist()
+    rejected_prior = dict(snapshot_rows[0])
+    rejected_prior.update(
+        {
+            "snapshot_id": "snap-ak-tcehy-prior",
+            "listing_id": "TCEHY_US",
+            "canonical_ticker": "TCEHY.US",
+            "raw_hash": hashlib.sha256(
+                b"task3-listing-rejected-prior-snapshot"
+            ).hexdigest(),
+        }
+    )
+    pq.write_table(
+        pa.Table.from_pylist(
+            [*snapshot_rows, rejected_prior],
+            schema=TASK3_SNAPSHOT_ARROW_SCHEMA,
+        ),
+        snapshots_path,
+    )
+    revisions_path = consensus_dir / "control_tower_consensus_revisions.parquet"
+    revision_rows = pq.read_table(revisions_path).to_pylist()
+    revision_rows[0]["prior_snapshot_id"] = "snap-ak-tcehy-prior"
+    pq.write_table(
+        pa.Table.from_pylist(
+            revision_rows,
+            schema=TASK3_REVISION_ARROW_SCHEMA,
+        ),
+        revisions_path,
+    )
+
+    config = replace(minimal_inputs, consensus_export_dir=consensus_dir)
+    manifest = build_control_tower_marts(config)
+    snapshots = pd.read_parquet(_published(config, "consensus_snapshots.parquet"))
+    revisions = pd.read_parquet(_published(config, "consensus_revisions.parquet"))
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    aggregate = health.loc[health["source_id"].eq("consensus_export")].iloc[0]
+
+    assert set(snapshots["snapshot_id"]) == {"snap-ak-1"}
+    assert revisions.empty
+    assert aggregate["status"] == "degraded"
+    assert "orphaned_consensus_revisions_removed" in aggregate["detail"]
+    assert any(
+        error["source_id"] == "consensus_export"
+        and error["code"] == "orphaned_consensus_revisions_removed"
+        for error in manifest.validation_errors
+    )
+
+
+def test_consensus_exact_duplicate_snapshot_ids_collapse_idempotently(
+    tmp_path, minimal_inputs
+):
+    consensus_dir = _write_task3_exports(tmp_path / "input" / "consensus")
+    snapshots_path = consensus_dir / "control_tower_consensus_snapshots.parquet"
+    snapshot_rows = pq.read_table(snapshots_path).to_pylist()
+    pq.write_table(
+        pa.Table.from_pylist(
+            [snapshot_rows[0], snapshot_rows[0]],
+            schema=TASK3_SNAPSHOT_ARROW_SCHEMA,
+        ),
+        snapshots_path,
+    )
+
+    config = replace(minimal_inputs, consensus_export_dir=consensus_dir)
+    manifest = build_control_tower_marts(config)
+    snapshots = pd.read_parquet(_published(config, "consensus_snapshots.parquet"))
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    aggregate = health.loc[health["source_id"].eq("consensus_export")].iloc[0]
+
+    assert len(snapshots) == 1
+    assert snapshots.iloc[0]["snapshot_id"] == "snap-ak-1"
+    assert aggregate["status"] == "available"
+    assert "duplicate_snapshot_rows_collapsed=1" in aggregate["detail"]
+    assert "consensus_export" not in manifest.degraded_inputs
+
+
+def test_consensus_divergent_duplicate_snapshot_id_rejects_all_rows_and_revisions(
+    tmp_path, minimal_inputs
+):
+    consensus_dir = _write_task3_exports(tmp_path / "input" / "consensus")
+    snapshots_path = consensus_dir / "control_tower_consensus_snapshots.parquet"
+    snapshot_rows = pq.read_table(snapshots_path).to_pylist()
+    divergent = dict(snapshot_rows[0])
+    divergent["value"] = 2.5
+    divergent["raw_hash"] = hashlib.sha256(b"divergent-snapshot").hexdigest()
+    pq.write_table(
+        pa.Table.from_pylist(
+            [snapshot_rows[0], divergent],
+            schema=TASK3_SNAPSHOT_ARROW_SCHEMA,
+        ),
+        snapshots_path,
+    )
+
+    config = replace(minimal_inputs, consensus_export_dir=consensus_dir)
+    manifest = build_control_tower_marts(config)
+    snapshots = pd.read_parquet(_published(config, "consensus_snapshots.parquet"))
+    revisions = pd.read_parquet(_published(config, "consensus_revisions.parquet"))
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    aggregate = health.loc[health["source_id"].eq("consensus_export")].iloc[0]
+
+    assert snapshots.empty
+    assert revisions.empty
+    assert aggregate["status"] == "unavailable"
+    assert "duplicate_snapshot_id_divergent" in aggregate["detail"]
+    assert any(
+        error["source_id"] == "consensus_export"
+        and error["code"] == "duplicate_snapshot_id_divergent"
+        for error in manifest.validation_errors
+    )
+
+
+def test_consensus_mixed_valid_and_divergent_duplicate_preserves_valid_provider_rows(
+    tmp_path, minimal_inputs
+):
+    consensus_dir = _write_task3_exports(tmp_path / "input" / "consensus")
+    snapshots_path = consensus_dir / "control_tower_consensus_snapshots.parquet"
+    snapshot_rows = pq.read_table(snapshots_path).to_pylist()
+    divergent = dict(snapshot_rows[0])
+    divergent["value"] = 2.5
+    divergent["raw_hash"] = hashlib.sha256(b"divergent-akshare-snapshot").hexdigest()
+    valid_yfinance = dict(snapshot_rows[0])
+    valid_yfinance.update(
+        {
+            "snapshot_id": "snap-yf-1",
+            "provider": "yfinance",
+            "value": 2.1,
+            "raw_hash": hashlib.sha256(b"valid-yfinance-snapshot").hexdigest(),
+            "source_run_id": "yfinance-fixture-run",
+        }
+    )
+    pq.write_table(
+        pa.Table.from_pylist(
+            [snapshot_rows[0], divergent, valid_yfinance],
+            schema=TASK3_SNAPSHOT_ARROW_SCHEMA,
+        ),
+        snapshots_path,
+    )
+    revisions_path = consensus_dir / "control_tower_consensus_revisions.parquet"
+    revision_rows = pq.read_table(revisions_path).to_pylist()
+    revision_with_rejected_prior = dict(revision_rows[0])
+    revision_with_rejected_prior.update(
+        {
+            "revision_id": "rev-yf-rejected-prior",
+            "snapshot_id": "snap-yf-1",
+            "provider": "yfinance",
+            "prior_provider": "akshare",
+            "prior_snapshot_id": "snap-ak-1",
+        }
+    )
+    pq.write_table(
+        pa.Table.from_pylist(
+            [*revision_rows, revision_with_rejected_prior],
+            schema=TASK3_REVISION_ARROW_SCHEMA,
+        ),
+        revisions_path,
+    )
+    health_path = consensus_dir / "control_tower_consensus_source_health.parquet"
+    health_rows = pq.read_table(health_path).to_pylist()
+    health_rows.append(
+        {
+            **health_rows[0],
+            "provider": "yfinance",
+            "reason": "synthetic valid yfinance provider sidecar",
+        }
+    )
+    pq.write_table(
+        pa.Table.from_pylist(health_rows, schema=TASK3_HEALTH_ARROW_SCHEMA),
+        health_path,
+    )
+
+    config = replace(minimal_inputs, consensus_export_dir=consensus_dir)
+    manifest = build_control_tower_marts(config)
+    snapshots = pd.read_parquet(_published(config, "consensus_snapshots.parquet"))
+    revisions = pd.read_parquet(_published(config, "consensus_revisions.parquet"))
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    aggregate = health.loc[health["source_id"].eq("consensus_export")].iloc[0]
+    yfinance = health.loc[health["source_id"].eq("consensus:yfinance")].iloc[0]
+
+    assert set(snapshots["snapshot_id"]) == {"snap-yf-1"}
+    assert revisions.empty
+    assert aggregate["status"] == "degraded"
+    assert "duplicate_snapshot_id_divergent" in aggregate["detail"]
+    assert yfinance["status"] == "available"
+    assert "consensus_export" in manifest.degraded_inputs
+
+
+def test_consensus_exact_duplicate_revision_ids_collapse_idempotently(
+    tmp_path, minimal_inputs
+):
+    consensus_dir = _write_task3_exports(tmp_path / "input" / "consensus")
+    revisions_path = consensus_dir / "control_tower_consensus_revisions.parquet"
+    revision_rows = pq.read_table(revisions_path).to_pylist()
+    pq.write_table(
+        pa.Table.from_pylist(
+            [revision_rows[0], revision_rows[0]],
+            schema=TASK3_REVISION_ARROW_SCHEMA,
+        ),
+        revisions_path,
+    )
+
+    config = replace(minimal_inputs, consensus_export_dir=consensus_dir)
+    manifest = build_control_tower_marts(config)
+    revisions = pd.read_parquet(_published(config, "consensus_revisions.parquet"))
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    aggregate = health.loc[health["source_id"].eq("consensus_export")].iloc[0]
+
+    assert len(revisions) == 1
+    assert revisions.iloc[0]["revision_id"] == "rev-ak-1"
+    assert aggregate["status"] == "available"
+    assert "duplicate_revision_rows_collapsed=1" in aggregate["detail"]
+    assert "consensus_export" not in manifest.degraded_inputs
+
+
+def test_consensus_divergent_duplicate_revision_id_rejects_all_rows(
+    tmp_path, minimal_inputs
+):
+    consensus_dir = _write_task3_exports(tmp_path / "input" / "consensus")
+    revisions_path = consensus_dir / "control_tower_consensus_revisions.parquet"
+    revision_rows = pq.read_table(revisions_path).to_pylist()
+    divergent = dict(revision_rows[0])
+    divergent["revision_value"] = 0.25
+    pq.write_table(
+        pa.Table.from_pylist(
+            [revision_rows[0], divergent],
+            schema=TASK3_REVISION_ARROW_SCHEMA,
+        ),
+        revisions_path,
+    )
+
+    config = replace(minimal_inputs, consensus_export_dir=consensus_dir)
+    manifest = build_control_tower_marts(config)
+    snapshots = pd.read_parquet(_published(config, "consensus_snapshots.parquet"))
+    revisions = pd.read_parquet(_published(config, "consensus_revisions.parquet"))
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    aggregate = health.loc[health["source_id"].eq("consensus_export")].iloc[0]
+
+    assert set(snapshots["snapshot_id"]) == {"snap-ak-1"}
+    assert revisions.empty
+    assert aggregate["status"] == "degraded"
+    assert "duplicate_revision_id_divergent" in aggregate["detail"]
+    assert any(
+        error["source_id"] == "consensus_export"
+        and error["code"] == "duplicate_revision_id_divergent"
+        for error in manifest.validation_errors
+    )
+
+
+def test_consensus_blank_revision_id_is_rejected_without_inventing_id(
+    tmp_path, minimal_inputs
+):
+    consensus_dir = _write_task3_exports(
+        tmp_path / "input" / "consensus",
+        revision_overrides={"revision_id": ""},
+    )
+
+    config = replace(minimal_inputs, consensus_export_dir=consensus_dir)
+    manifest = build_control_tower_marts(config)
+    snapshots = pd.read_parquet(_published(config, "consensus_snapshots.parquet"))
+    revisions = pd.read_parquet(_published(config, "consensus_revisions.parquet"))
+    health = pd.read_parquet(_published(config, "source_health.parquet"))
+    aggregate = health.loc[health["source_id"].eq("consensus_export")].iloc[0]
+
+    assert set(snapshots["snapshot_id"]) == {"snap-ak-1"}
+    assert revisions.empty
+    assert aggregate["status"] == "degraded"
+    assert "revision_id_missing" in aggregate["detail"]
+    assert any(
+        error["source_id"] == "consensus_export"
+        and error["code"] == "revision_id_missing"
+        for error in manifest.validation_errors
+    )
 
 
 def test_revision_prior_provider_without_sidecar_evidence_is_not_admitted(
@@ -1493,12 +2430,105 @@ def test_quote_status_sidecar_propagates_partial_diagnostics_and_quote_age(
     assert manifest.status == "degraded"
     assert manifest.artifacts["quote_snapshots.parquet"]["status"] == "degraded"
     assert "market:yfinance" in manifest.degraded_inputs
-    assert str(sidecar_path) in manifest.input_fingerprints
+    assert str(sidecar_path) not in manifest.input_fingerprints
+    assert any(
+        key.startswith("inputs/market-yfinance/status-quotes.status.json-")
+        for key in manifest.input_fingerprints
+    )
     assert quote_health["status"] == "partial"
     assert quote_health["source_latest_at"] == pd.Timestamp("2026-08-13T11:59:00Z")
     assert quote_health["retrieved_at_utc"] == pd.Timestamp("2026-08-13T12:00:00Z")
     assert "collector_status=partial" in str(quote_health["detail"])
     assert "diagnostic_statuses=no_records:1" in str(quote_health["detail"])
+
+
+def test_published_lineage_is_portable_and_same_basename_inputs_do_not_collide(
+    tmp_path, minimal_inputs
+):
+    from src.research_control_tower.valuation import (
+        ValuationInput,
+        build_valuation_snapshot_row,
+    )
+
+    input_a = tmp_path / "external-a" / "same-name.parquet"
+    input_b = tmp_path / "external-b" / "same-name.parquet"
+    input_a.parent.mkdir(parents=True)
+    input_b.parent.mkdir(parents=True)
+
+    rows = []
+    for ref, path in (("quote:external-a", input_a), ("quote:external-b", input_b)):
+        row = _audit_source_row(VALUATION_SNAPSHOTS_SCHEMA_ID, "2026-08-12T00:00:00Z")
+        row["numerator_ref"] = ref
+        row.update(
+            build_valuation_snapshot_row(
+                ValuationInput(
+                    **{
+                        field: row[field]
+                        for field in ValuationInput.__dataclass_fields__
+                        if field in row
+                    }
+                )
+            )
+        )
+        pd.DataFrame([row], columns=VALUATION_SNAPSHOTS_COLUMNS).to_parquet(
+            path, index=False
+        )
+        rows.append((ref, path))
+
+    config = replace(
+        minimal_inputs,
+        valuation_inputs=tuple(
+            _input(f"valuation-{suffix}", path, VALUATION_SNAPSHOTS_SCHEMA_ID)
+            for suffix, (_, path) in zip(("a", "b"), rows)
+        ),
+    )
+    first = build_control_tower_marts(config)
+    manifest = _manifest(config)
+    generation = current_generation(config.output_dir)
+    fingerprints = manifest["input_fingerprints"]
+    valuation_labels = [
+        key for key in fingerprints if key.startswith("inputs/valuation-")
+    ]
+    health = pd.read_parquet(generation / "source_health.parquet")
+    health_labels = health.loc[
+        health["source_id"].isin({"valuation-a", "valuation-b"}), "input_path"
+    ].tolist()
+
+    assert first.generation_id == manifest["generation_id"]
+    assert len(valuation_labels) == 2
+    assert len(set(valuation_labels)) == 2
+    assert len(set(health_labels)) == 2
+    forbidden = (b"/private/tmp", b"/Users")
+    for artifact in generation.iterdir():
+        if not artifact.is_file():
+            continue
+        payload = artifact.read_bytes()
+        assert not any(token in payload for token in forbidden), artifact.name
+        assert re.search(rb"(?<![A-Za-z0-9])[A-Za-z]:[\\\\/]", payload) is None, artifact.name
+
+    second_config = replace(config, output_dir=tmp_path / "publication-two")
+    second = build_control_tower_marts(second_config)
+    assert second.generation_id == first.generation_id
+    assert second.input_fingerprints == first.input_fingerprints
+
+
+def test_published_optional_diagnostics_redact_missing_input_paths(
+    tmp_path, minimal_inputs
+):
+    missing = tmp_path / "external-secret-root" / "missing-news.parquet"
+    config = replace(
+        minimal_inputs,
+        news_inputs=(_input("missing-news", missing, NEWS_SCHEMA_ID),),
+    )
+    build_control_tower_marts(config)
+    generation = current_generation(config.output_dir)
+    for artifact in generation.iterdir():
+        if not artifact.is_file():
+            continue
+        payload = artifact.read_bytes()
+        assert b"/private/tmp" not in payload, artifact.name
+        assert b"/Users" not in payload, artifact.name
+        assert re.search(rb"(?<![A-Za-z0-9])[A-Za-z]:[\\\\/]", payload) is None, artifact.name
 
 
 def test_empty_quote_output_is_unavailable_without_execution_evidence(tmp_path, minimal_inputs):

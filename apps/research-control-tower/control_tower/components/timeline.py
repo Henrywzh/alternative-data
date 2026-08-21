@@ -127,6 +127,22 @@ def format_event_window(
     return f"{start_label} → {end_label}"
 
 
+def is_active_catalyst(
+    starts_at: object,
+    ends_at: object,
+    now_utc: object,
+) -> bool:
+    """Check if an event is currently active: starts_at <= now_utc <= (ends_at or starts_at)."""
+    start = _utc(starts_at)
+    if start is None:
+        return False
+    now = _utc(now_utc)
+    if now is None:
+        return False
+    end = _utc(ends_at) or start
+    return start <= now <= end
+
+
 def _importance(value: object) -> str | None:
     text = _text(value).lower()
     return text if text in _IMPORTANCE_ORDER else None
@@ -298,7 +314,7 @@ def select_next_catalyst(events: pd.DataFrame, now_utc: pd.Timestamp) -> pd.Seri
         end = _utc(row.get("ends_at")) or start
         if end < now:
             continue
-        active = start < now <= end
+        active = is_active_catalyst(start, end, now)
         importance = _IMPORTANCE_ORDER.get(_text(row.get("importance")).lower(), 3)
         certainty = _CERTAINTY_ORDER.get(_text(row.get("certainty_class")).lower(), 9)
         key = (importance, certainty, 0 if active else 1, start, _text(row.get("event_id")), position)
@@ -391,6 +407,7 @@ __all__ = [
     "catalyst_view_for_event",
     "format_event_window",
     "group_timeline_events",
+    "is_active_catalyst",
     "render_catalyst",
     "resolve_ticker_chips",
     "select_next_catalyst",

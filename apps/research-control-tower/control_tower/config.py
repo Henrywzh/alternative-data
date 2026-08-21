@@ -37,6 +37,13 @@ ARTIFACT_NAMES: Final[tuple[str, ...]] = (
     "official_filings.parquet",
     "earnings_calendar.parquet",
     "earnings_actuals.parquet",
+    "corporate_actions.parquet",
+    "valuation_snapshots.parquet",
+    "internal_estimates.parquet",
+    "thesis_claims.parquet",
+    "thesis_watch_questions.parquet",
+    "evidence_items.parquet",
+    "claim_evidence_links.parquet",
     "source_health.parquet",
     "build_manifest.json",
 )
@@ -49,6 +56,33 @@ LEGACY_DATA_ARTIFACT_NAMES: Final[tuple[str, ...]] = tuple(
     name for name in DATA_ARTIFACT_NAMES if name != "quote_snapshots.parquet"
 )
 
+# The published generation selected by the current production pointer was
+# built before the Tencent T0-T3 additive marts were integrated.  It is a
+# supported, immutable read contract; do not broaden this tuple to arbitrary
+# subsets of the current artifact set.  A future legacy shape gets its own
+# explicitly versioned tuple instead.
+LEGACY_GENERATION_DATA_ARTIFACT_NAMES: Final[tuple[str, ...]] = (
+    "entities.parquet",
+    "listings.parquet",
+    "baskets.parquet",
+    "basket_memberships.parquet",
+    "indices.parquet",
+    "events.parquet",
+    "event_entity_links.parquet",
+    "event_basket_links.parquet",
+    "event_watch_questions.parquet",
+    "macro_observations.parquet",
+    "consensus_snapshots.parquet",
+    "consensus_revisions.parquet",
+    "quote_snapshots.parquet",
+    "price_bars.parquet",
+    "news_filings.parquet",
+    "official_filings.parquet",
+    "earnings_calendar.parquet",
+    "earnings_actuals.parquet",
+    "source_health.parquet",
+)
+
 OPTIONAL_ARTIFACT_NAMES: Final[tuple[str, ...]] = (
     "consensus_snapshots.parquet",
     "consensus_revisions.parquet",
@@ -58,6 +92,13 @@ OPTIONAL_ARTIFACT_NAMES: Final[tuple[str, ...]] = (
     "official_filings.parquet",
     "earnings_calendar.parquet",
     "earnings_actuals.parquet",
+    "corporate_actions.parquet",
+    "valuation_snapshots.parquet",
+    "internal_estimates.parquet",
+    "thesis_claims.parquet",
+    "thesis_watch_questions.parquet",
+    "evidence_items.parquet",
+    "claim_evidence_links.parquet",
 )
 
 REQUIRED_ARTIFACT_NAMES: Final[tuple[str, ...]] = tuple(
@@ -195,6 +236,60 @@ ARTIFACT_COLUMNS: Final[dict[str, tuple[str, ...]]] = {
         "retrieved_at_utc", "source_url", "accession_no", "form", "xbrl_frame",
         "revision_reason", "is_restatement", "source_id", "source_quality",
         "pit_class", "source_license_class", "source_note", "registry_version",
+        "source_metric_label", "metric_basis", "source_document_id",
+        "source_document_sha256", "source_page_ref", "value_origin",
+        "derivation_method", "timestamp_precision",
+    ),
+    "corporate_actions.parquet": (
+        "action_id", "version", "entity_id", "listing_id", "canonical_ticker",
+        "action_type", "filing_date", "execution_date", "published_at",
+        "shares_affected", "price_min", "price_max", "price_avg",
+        "total_amount_paid", "currency", "shares_for_cancellation",
+        "shares_for_treasury", "cancellation_status", "mandate_resolution_date",
+        "mandate_authorised_shares", "mandate_cumulative_repurchased_shares",
+        "coverage_reason", "source_url", "source_document_id", "document_format",
+        "source_note", "retrieved_at_utc", "source_timezone", "date_precision",
+        "source_quality", "pit_class", "source_license_class", "registry_version",
+    ),
+    "valuation_snapshots.parquet": (
+        "valuation_id", "listing_id", "valuation_date", "valuation_at",
+        "metric_name", "accounting_basis", "metric_basis", "ratio_value",
+        "numerator_value", "numerator_currency", "numerator_ref",
+        "numerator_source_id", "numerator_source_url", "numerator_pit_class",
+        "numerator_at_utc", "numerator_retrieved_at_utc", "denominator_value",
+        "denominator_currency", "denominator_ref", "denominator_source_id",
+        "denominator_source_url", "denominator_pit_class", "denominator_at_utc",
+        "denominator_provider_asof_utc", "denominator_retrieved_at_utc",
+        "fx_rate_applied", "fx_base_currency", "fx_quote_currency", "fx_source",
+        "fx_source_url", "fx_snapshot_at_utc", "fx_retrieved_at_utc", "source_id",
+        "source_url", "retrieved_at_utc", "pit_class", "coverage_reason",
+        "percentile_history_status",
+    ),
+    "internal_estimates.parquet": (
+        "estimate_id", "version", "supersedes_estimate_id", "entity_id",
+        "listing_id", "observation_type", "author", "metric", "accounting_basis",
+        "metric_basis", "fiscal_period", "fiscal_year", "value_low", "value_high",
+        "value_mid", "currency", "unit", "effective_asof", "recorded_at_utc",
+        "rationale_notes", "source_ref", "source_url", "pit_class",
+        "reviewed_at_utc", "reviewed_by",
+    ),
+    "thesis_claims.parquet": (
+        "claim_id", "entity_id", "thesis_title", "claim_text", "invalidation_rule",
+        "status", "last_reviewed_at_utc", "reviewed_by", "registry_version",
+    ),
+    "thesis_watch_questions.parquet": (
+        "question_id", "claim_id", "entity_id", "question", "question_type",
+        "priority", "registry_version",
+    ),
+    "evidence_items.parquet": (
+        "evidence_id", "entity_id", "source_id", "evidence_ref", "source_type",
+        "source_url", "evidence_class", "pit_class", "source_license_class",
+        "published_at", "summary_text", "observed_at_utc", "content_hash",
+        "registry_version",
+    ),
+    "claim_evidence_links.parquet": (
+        "link_id", "claim_id", "evidence_id", "conflict_hint", "review_state",
+        "analyst_note", "registry_version",
     ),
     "source_health.parquet": (
         "source_id", "input_path", "source_kind", "status", "required",
@@ -205,6 +300,19 @@ ARTIFACT_COLUMNS: Final[dict[str, tuple[str, ...]]] = {
         "missing_geographies", "detail",
     ),
 }
+
+# Exact schema emitted before the Tencent lineage extension.  Legacy rows are
+# loaded honestly with these columns; the reader does not fabricate the
+# newer lineage fields and new builds continue to use ARTIFACT_COLUMNS above.
+LEGACY_EARNINGS_ACTUALS_COLUMNS: Final[tuple[str, ...]] = (
+    "actual_id", "version", "supersedes_actual_id", "entity_id", "listing_id",
+    "canonical_ticker", "metric", "period_label", "period_start", "period_end",
+    "reported_value", "normalized_value", "normalization_note", "currency", "unit",
+    "accounting_basis", "filing_at", "published_at", "retrieved_at_utc", "source_url",
+    "accession_no", "form", "xbrl_frame", "revision_reason", "is_restatement",
+    "source_id", "source_quality", "pit_class", "source_license_class", "source_note",
+    "registry_version",
+)
 
 EVENT_OPTIONAL_COLUMNS: Final[tuple[str, ...]] = ("importance",)
 
@@ -288,14 +396,27 @@ def _manifest_in_directory(directory: Path, publication_root: Path) -> tuple[str
 
 
 def _validate_generation_contents(directory: Path, manifest_name: str, publication_root: Path) -> None:
-    expected = set(DATA_ARTIFACT_NAMES) | {manifest_name}
-    legacy_expected = set(LEGACY_DATA_ARTIFACT_NAMES) | {manifest_name}
     actual = {entry.name for entry in directory.iterdir()}
-    if actual != expected and actual != legacy_expected:
-        missing = sorted(expected - actual)
-        extra = sorted(actual - expected)
-        detail = f"missing {missing[0]}" if missing else f"unexpected {extra[0]}"
-        raise ArtifactResolutionError(f"generation directory has {detail}")
+    current_expected = set(DATA_ARTIFACT_NAMES) | {manifest_name}
+    legacy_expected = set(LEGACY_GENERATION_DATA_ARTIFACT_NAMES) | {manifest_name}
+    if actual != current_expected and actual != legacy_expected:
+        missing_current = sorted(current_expected - actual)
+        missing_legacy = sorted(legacy_expected - actual)
+        extra_current = sorted(actual - current_expected)
+        detail = "generation directory does not match an exact current or legacy contract"
+        if missing_current:
+            detail += "; missing=" + ",".join(
+                f"artifact '{name}'" for name in missing_current[:4]
+            )
+        if extra_current:
+            detail += "; unexpected=" + ",".join(
+                f"entry '{name}'" for name in extra_current[:4]
+            )
+        if not missing_current and missing_legacy:
+            detail += "; legacy_missing=" + ",".join(
+                f"artifact '{name}'" for name in missing_legacy[:4]
+            )
+        raise ArtifactResolutionError(detail)
     for entry in directory.iterdir():
         if entry.is_symlink():
             raise ArtifactResolutionError(f"generation entry '{entry.name}' must not be a symlink")
@@ -310,9 +431,9 @@ def resolve_artifact_root(artifact_root: Path) -> ArtifactResolution:
     path. Path traversal, absolute targets, missing targets, extra generation
     files, and symlink escapes are rejected before any Parquet is read.
 
-    A legacy direct root may contain unrelated entries for compatibility.
-    They are never selected: direct reads remain restricted to the fixed data
-    artifact names and one recognized manifest filename.
+    Direct roots and CURRENT-selected generations must each match one exact
+    versioned artifact contract: the full current set or the explicitly
+    versioned legacy generation set.
     """
 
     supplied_root = Path(artifact_root)
@@ -360,10 +481,7 @@ def resolve_artifact_root(artifact_root: Path) -> ArtifactResolution:
         )
 
     manifest_name, manifest_path = _manifest_in_directory(root, root)
-    for filename in DATA_ARTIFACT_NAMES:
-        path = root / filename
-        if path.exists() or path.is_symlink():
-            _safe_file(path, root, filename)
+    _validate_generation_contents(root, manifest_name, root)
     return ArtifactResolution(
         artifact_root=root,
         manifest_path=manifest_path,
@@ -474,6 +592,8 @@ __all__ = [
     "ArtifactResolutionError",
     "DATA_ARTIFACT_NAMES",
     "LEGACY_DATA_ARTIFACT_NAMES",
+    "LEGACY_EARNINGS_ACTUALS_COLUMNS",
+    "LEGACY_GENERATION_DATA_ARTIFACT_NAMES",
     "EVENT_OPTIONAL_COLUMNS",
     "MANIFEST_FILENAMES",
     "NETWORK_POLICY",

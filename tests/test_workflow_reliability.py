@@ -82,7 +82,9 @@ def test_fred_workflow_accepts_the_existing_semiconductor_fred_secret() -> None:
 
 
 _DERIVED_BUILD_COMMAND = "openrouter-derived-data --base-dir . build"
-_DERIVED_TEST_COMMAND = "python -m pytest -q tests/test_openrouter_derived_data.py"
+_DERIVED_TEST_COMMAND = """python -m pytest -q \\
+  tests/test_openrouter_derived_data.py \\
+  tests/test_openrouter_capability_resolver.py"""
 _EXTERNAL_DATA_TOKENS = (
     "curl",
     "wget",
@@ -124,6 +126,19 @@ for attempt in 1 2 3; do
   sleep $((attempt * 5))
 done
 exit 1"""
+_DRIFT_GUARD_RUN = """\
+openrouter-derived-data --base-dir . guard --top-n 10 --json > guard.json"""
+_DRIFT_ISSUE_RUN = """\
+gh issue list --state open --search "capability-map-drift in:title" \\
+  --json number --jq '.[0].number' > issue.txt || true
+if [ ! -s issue.txt ] || [ "$(cat issue.txt)" = "null" ]; then
+  gh issue create --title "capability-map-drift" \\
+    --label "data-quality" \\
+    --body "The daily capability guard reported unresolved top-10 models. Details follow as comments."
+fi
+gh issue comment "$(gh issue list --state open --search 'capability-map-drift in:title' --json number --jq '.[0].number')" \\
+  --body "$(printf 'Capability guard, %s\\n\\n```json\\n%s\\n```\\n' "$(date -u +%Y-%m-%d)" "$(cat guard.json)")"
+"""
 
 
 def _normalize_run_body(run: str) -> str:
@@ -158,11 +173,23 @@ _APPROVED_DERIVED_STEPS = [
     },
     {
         "name": "Run derived-mart quality tests",
-        "run": _DERIVED_TEST_COMMAND,
+        "run": _normalize_run_body(_DERIVED_TEST_COMMAND),
     },
     {
         "name": "Commit compact derived marts",
         "run": _normalize_run_body(_COMMIT_DERIVED_MARTS_RUN),
+    },
+    {
+        "continue-on-error": "true",
+        "id": "guard",
+        "name": "Capability drift guard",
+        "run": _normalize_run_body(_DRIFT_GUARD_RUN),
+    },
+    {
+        "env": {"GH_TOKEN": "${{ secrets.GITHUB_TOKEN }}"},
+        "if": "steps.guard.outcome == 'failure'",
+        "name": "Open or update capability-map-drift issue",
+        "run": _normalize_run_body(_DRIFT_ISSUE_RUN),
     },
 ]
 
@@ -220,12 +247,17 @@ def _assert_openrouter_derived_workflow_contract(workflow: dict[str, object]) ->
         ), f"external data or network command found in {step.get('name')!r}"
 
 
-def test_openrouter_derived_workflow_is_bounded_and_no_network() -> None:
+def test_openrouter_derived_workflow_is_bounded_and_no_custom_secrets() -> None:
     workflow_path = WORKFLOWS / "openrouter-derived-daily.yml"
     workflow_text = workflow_path.read_text(encoding="utf-8")
     workflow = _openrouter_derived_workflow()
 
-    assert "secrets." not in workflow_text
+    # The built-in GITHUB_TOKEN is allowed for repo-scoped issue notifications;
+    # any other secret would imply an external credential (and network access).
+    for line in workflow_text.splitlines():
+        if "secrets." not in line:
+            continue
+        assert "${{ secrets.GITHUB_TOKEN }}" in line, f"unexpected secret usage: {line}"
     _assert_openrouter_derived_workflow_contract(workflow)
 
 

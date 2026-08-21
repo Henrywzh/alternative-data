@@ -14,12 +14,15 @@ cross-market collection service.
 Run from the repository root with every build input explicit:
 
 ```bash
+RCT_AS_OF_UTC="${RCT_AS_OF_UTC:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
+RCT_BUILD_ID="${RCT_BUILD_ID:-local-$(date -u +%Y%m%dT%H%M%SZ)}"
+
 python -m src.research_control_tower.cli build \
   --registry-root config/research_control_tower \
   --event-root config/research_control_tower \
   --output-dir apps/research-control-tower/.generated \
-  --as-of-utc 2026-08-13T12:00:00Z \
-  --build-id task8-local-20260813
+  --as-of-utc "$RCT_AS_OF_UTC" \
+  --build-id "$RCT_BUILD_ID"
 ```
 
 The build is local and network-forbidden. The required inputs are the
@@ -36,13 +39,76 @@ The output is a publication, not a loose directory of interchangeable files:
 apps/research-control-tower/.generated/
 ├── CURRENT                         # one relative target, newline terminated
 └── generations/
-    └── <generation-id>/             # 15 Parquet marts + build_manifest.json
+    └── <generation-id>/             # 26 Parquet marts + build_manifest.json
 ```
 
 `CURRENT` must point to `generations/<generation-id>`. The generation manifest
 must agree with that pointer, its generation ID, artifact names, schemas,
 hashes, row counts and status. The app reads the generation selected by
 `CURRENT`; it does not discover the newest directory or merge generations.
+
+## Tencent input refresh and acceptance checks
+
+The Tencent actuals entry point is explicit and network-free. It never selects
+the repository fixture implicitly:
+
+```bash
+RCT_AS_OF_UTC="${RCT_AS_OF_UTC:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
+
+python scripts/research_control_tower_tencent_financials.py \
+  --disclosure-records-json tests/fixtures/tencent_ir/tencent_disclosures_2021_2026.json \
+  --output-dir data/normalized/research_control_tower \
+  --as-of-utc "$RCT_AS_OF_UTC" \
+  --retrieved-at-utc "$RCT_AS_OF_UTC"
+```
+
+The official HKEX corporate-actions collector uses the configured issuer
+identity and has no aggregate row cap unless `--max-rows-per-query` is passed:
+
+```bash
+python scripts/research_control_tower_corporate_actions.py \
+  --identity config/research_control_tower/official_source_identity.csv \
+  --output-dir data/normalized/research_control_tower \
+  --lookback-days 365
+```
+
+The valuation collector accepts only explicit local quote/consensus/FX inputs
+and writes both valuation outputs:
+
+```bash
+python scripts/research_control_tower_valuation.py \
+  --quotes data/normalized/research_control_tower/quote_snapshots_v1.parquet \
+  --consensus data/normalized/research_control_tower/consensus/control_tower_consensus_snapshots.parquet \
+  --consensus-health data/normalized/research_control_tower/consensus/control_tower_consensus_source_health.parquet \
+  --earnings-actuals data/normalized/research_control_tower/tencent_earnings_actuals_v1.parquet \
+  --fx-rates data/normalized/hk_transport/airline_fx_rates.parquet \
+  --internal-estimates config/research_control_tower/internal_estimates.csv \
+  --output-dir data/normalized/research_control_tower \
+  --as-of "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --fiscal-period annual --fiscal-year 2026
+```
+
+Valuation and own-estimate outputs are built only from explicit, entitlement-
+valid local quote/consensus/FX inputs. If those inputs are absent or stale, the
+result remains typed unavailable/degraded; no valuation is invented.
+
+The wiring and bundle acceptance checks are:
+
+```bash
+RCT_AS_OF_UTC="${RCT_AS_OF_UTC:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
+RCT_BUILD_ID="${RCT_BUILD_ID:-rct-staging-$(date -u +%Y%m%dT%H%M%SZ)}"
+
+pytest -q tests/test_research_control_tower_wiring.py \
+  tests/test_research_control_tower_tencent_financials.py
+python scripts/build_research_control_tower.py \
+  --output-dir .rct-staging/tencent-bundle \
+  --as-of-utc "$RCT_AS_OF_UTC" \
+  --build-id "$RCT_BUILD_ID"
+```
+
+The published generation contains exactly 27 artifacts: 26 typed Parquet
+artifacts plus `build_manifest.json`. The builder switches `CURRENT` only
+after its manifest, row-count and schema checks pass; run the privacy scan and
+repository-load checks on the staging generation before committing a publish.
 
 ## Run locally
 
@@ -70,14 +136,20 @@ real-time entitlement or bid/ask coverage:
 ```bash
 python scripts/research_control_tower_quote_collector.py \
   --listings config/research_control_tower/listings.csv \
+  --entities config/research_control_tower/entities.csv \
+  --baskets config/research_control_tower/baskets.csv \
+  --basket-memberships config/research_control_tower/basket_memberships.csv \
   --output /tmp/control-tower-quotes.parquet
+
+RCT_AS_OF_UTC="${RCT_AS_OF_UTC:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
+RCT_BUILD_ID="${RCT_BUILD_ID:-quote-refresh-$(date -u +%Y%m%dT%H%M%SZ)}"
 
 python -m src.research_control_tower.cli build \
   --registry-root config/research_control_tower \
   --event-root config/research_control_tower \
   --output-dir apps/research-control-tower/.generated \
-  --as-of-utc 2026-08-13T12:00:00Z \
-  --build-id quote-refresh-20260813T1200Z \
+  --as-of-utc "$RCT_AS_OF_UTC" \
+  --build-id "$RCT_BUILD_ID" \
   --quote-input 'market:yfinance|/tmp/control-tower-quotes.parquet|parquet|quote_snapshots_v1'
 ```
 

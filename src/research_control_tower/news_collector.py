@@ -40,6 +40,7 @@ import xml.etree.ElementTree as ET
 
 import pandas as pd
 
+from .eligibility import filter_eligible_listings
 from .registries import resolve_news_entities
 
 
@@ -314,24 +315,101 @@ def _provider_symbol(listing: Mapping[str, Any], provider: str) -> str:
     return ""
 
 
-def resolve_provider_symbols(listings: pd.DataFrame, provider: str) -> list[tuple[str, str, str]]:
-    """Verified, collection-eligible listings -> (entity_id, listing_id, symbol)."""
+def _resolve_provider_symbols_with_diagnostics(
+    listings: pd.DataFrame | None,
+    provider: str,
+    *,
+    as_of_utc: object,
+) -> tuple[list[tuple[str, str, str]], list[NewsDiagnostic]]:
+    """Resolve provider symbols through the shared registry eligibility gate."""
 
+    source_id = PROVIDER_SOURCE_IDS.get(provider, f"news_{provider}")
     if listings is None or listings.empty:
-        return []
+        return [], [
+            NewsDiagnostic(
+                source_id=source_id,
+                entity_id="",
+                listing_id="",
+                symbol="",
+                status="not_verified",
+                reason="listing registry is missing or empty; provider query was blocked",
+            )
+        ]
+
+    eligible, rejected = filter_eligible_listings(listings, as_of_utc)
+    diagnostics = [
+        NewsDiagnostic(
+            source_id=source_id,
+            entity_id=_text(item.get("entity_id")),
+            listing_id=_text(item.get("listing_id")),
+            symbol="",
+            status="not_verified",
+            reason=f"Listing rejected by shared eligibility gate: {_text(item.get('reason'))}",
+        )
+        for item in rejected
+    ]
     resolved: list[tuple[str, str, str]] = []
-    for _, row in listings.iterrows():
-        if str(row.get("mapping_status") or "").strip().lower() != "verified":
-            continue
-        if not bool(row.get("collection_eligible")):
-            continue
+    for _, row in eligible.iterrows():
         entity_id = _text(row.get("entity_id"))
         listing_id = _text(row.get("listing_id"))
         symbol = _provider_symbol(row, provider)
-        if entity_id and listing_id and symbol:
-            resolved.append((entity_id, listing_id, symbol))
-    # Deterministic order.
-    return sorted(resolved, key=lambda item: (item[1], item[2], item[0]))
+        if not entity_id or not listing_id or not symbol:
+            diagnostics.append(
+                NewsDiagnostic(
+                    source_id=source_id,
+                    entity_id=entity_id,
+                    listing_id=listing_id,
+                    symbol=symbol,
+                    status="not_verified",
+                    reason="eligible listing has no complete provider symbol mapping",
+                )
+            )
+            continue
+        resolved.append((entity_id, listing_id, symbol))
+    return sorted(resolved, key=lambda item: (item[1], item[2], item[0])), diagnostics
+
+
+def resolve_provider_symbols(
+    listings: pd.DataFrame,
+    provider: str,
+    *,
+    as_of_utc: object | None = None,
+) -> list[tuple[str, str, str]]:
+    """Return provider symbols from listing rows passing shared eligibility."""
+
+    reference = _now_utc() if as_of_utc is None else as_of_utc
+    resolved, _diagnostics = _resolve_provider_symbols_with_diagnostics(
+        listings,
+        provider,
+        as_of_utc=reference,
+    )
+    return resolved
+
+
+def _merge_listing_diagnostics(
+    result: NewsCollectionResult,
+    listing_diagnostics: Sequence[NewsDiagnostic],
+) -> NewsCollectionResult:
+    """Preserve provider results while recording every blocked listing target."""
+
+    if not listing_diagnostics:
+        return result
+    diagnostics = (*listing_diagnostics, *result.diagnostics)
+    rejected = sum(1 for item in listing_diagnostics if item.status == "not_verified")
+    issues = (
+        *result.issues,
+        f"listing eligibility rejected {rejected} provider target(s)",
+    )
+    return NewsCollectionResult(
+        source_id=result.source_id,
+        provider=result.provider,
+        frame=result.frame,
+        aggregate_status=_aggregate_status(len(result.frame), diagnostics),
+        probe=result.probe,
+        diagnostics=diagnostics,
+        issues=issues,
+        resolved_rows=result.resolved_rows,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -724,6 +802,7 @@ def collect_official_ir_allowlist(
     *,
     fetch: ProviderFetch,
     as_of_utc: pd.Timestamp | None = None,
+    listings: pd.DataFrame | None = None,
     lookback_days: int,
     timeout: float,
 ) -> NewsCollectionResult:
@@ -739,6 +818,51 @@ def collect_official_ir_allowlist(
     run_id = _run_id("official_ir_allowlist", now_utc)
     rows: list[dict[str, Any]] = []
     diagnostics: list[NewsDiagnostic] = []
+    if listings is None or listings.empty:
+        eligible_listing_ids: set[str] = set()
+        eligible_listing_mapping: dict[str, tuple[str, str]] = {}
+        for _, row in allowlist.iterrows():
+            diagnostics.append(
+                NewsDiagnostic(
+                    source_id=source_id,
+                    entity_id=_text(row.get("entity_id")),
+                    listing_id=_text(row.get("listing_id")),
+                    symbol=_text(row.get("canonical_ticker")),
+                    status="not_verified",
+                    reason="listing registry is missing or empty; official IR feed query was blocked",
+                )
+            )
+    else:
+        eligible_listings, listing_rejections = filter_eligible_listings(listings, now_utc)
+        eligible_listing_mapping = {
+            _text(row.get("listing_id")): (
+                _text(row.get("entity_id")),
+                _text(row.get("canonical_ticker")),
+            )
+            for _, row in eligible_listings.iterrows()
+            if _text(row.get("listing_id"))
+        }
+        eligible_listing_ids = set(eligible_listing_mapping)
+        rejection_by_listing = {
+            _text(item.get("listing_id")): _text(item.get("reason"))
+            for item in listing_rejections
+        }
+        for _, row in allowlist.iterrows():
+            listing_id = _text(row.get("listing_id"))
+            if listing_id not in eligible_listing_ids:
+                diagnostics.append(
+                    NewsDiagnostic(
+                        source_id=source_id,
+                        entity_id=_text(row.get("entity_id")),
+                        listing_id=listing_id,
+                        symbol=_text(row.get("canonical_ticker")),
+                        status="not_verified",
+                        reason=(
+                            "official IR feed listing rejected by shared eligibility gate: "
+                            f"{rejection_by_listing.get(listing_id, 'listing_id is not present in the registry')}"
+                        ),
+                    )
+                )
     verified_feeds = 0
     cutoff = now_utc - pd.Timedelta(days=lookback_days)
     aggregate_probe = NewsProbeEvidence(
@@ -757,6 +881,24 @@ def collect_official_ir_allowlist(
         entity_id = _text(row.get("entity_id"))
         listing_id = _text(row.get("listing_id"))
         canonical_ticker = _text(row.get("canonical_ticker"))
+        if listing_id not in eligible_listing_ids:
+            continue
+        expected_entity_id, expected_canonical_ticker = eligible_listing_mapping[listing_id]
+        if (entity_id, canonical_ticker) != (expected_entity_id, expected_canonical_ticker):
+            diagnostics.append(
+                NewsDiagnostic(
+                    source_id=source_id,
+                    entity_id=entity_id,
+                    listing_id=listing_id,
+                    symbol=canonical_ticker or feed_url,
+                    status="not_verified",
+                    reason=(
+                        "official IR allowlist identity does not match the verified listing registry: "
+                        f"expected entity_id={expected_entity_id}, canonical_ticker={expected_canonical_ticker}"
+                    ),
+                )
+            )
+            continue
         try:
             result = fetch(feed_url, timeout=timeout)
         except Exception as exc:
@@ -972,6 +1114,7 @@ def collect_news(
                     ir_allowlist,
                     fetch=fetch,
                     as_of_utc=reference_as_of,
+                    listings=listings,
                     lookback_days=lookback_days,
                     timeout=timeout_seconds,
                 )
@@ -982,9 +1125,14 @@ def collect_news(
                 now_utc=reference_utc,
                 timeout=timeout_seconds,
             )
+            symbols, listing_diagnostics = _resolve_provider_symbols_with_diagnostics(
+                listings,
+                "finnhub",
+                as_of_utc=reference_as_of,
+            )
             result = collect_structured_news(
                 FINNHUB_SPEC,
-                resolve_provider_symbols(listings, "finnhub") if listings is not None else [],
+                symbols,
                 api_key=keys.get("finnhub"),
                 fetch=fetch,
                 probe=probe,
@@ -993,6 +1141,7 @@ def collect_news(
                 max_rows_per_symbol=max_rows_per_symbol,
                 timeout=timeout_seconds,
             )
+            result = _merge_listing_diagnostics(result, listing_diagnostics)
         elif provider == "marketaux":
             probe = probe_marketaux(
                 keys.get("marketaux"),
@@ -1000,9 +1149,14 @@ def collect_news(
                 now_utc=reference_utc,
                 timeout=timeout_seconds,
             )
+            symbols, listing_diagnostics = _resolve_provider_symbols_with_diagnostics(
+                listings,
+                "marketaux",
+                as_of_utc=reference_as_of,
+            )
             result = collect_structured_news(
                 MARKETAUX_SPEC,
-                resolve_provider_symbols(listings, "marketaux") if listings is not None else [],
+                symbols,
                 api_key=keys.get("marketaux"),
                 fetch=fetch,
                 probe=probe,
@@ -1011,6 +1165,7 @@ def collect_news(
                 max_rows_per_symbol=max_rows_per_symbol,
                 timeout=timeout_seconds,
             )
+            result = _merge_listing_diagnostics(result, listing_diagnostics)
         else:  # fmp
             probe = probe_fmp(
                 keys.get("fmp"),
@@ -1018,9 +1173,14 @@ def collect_news(
                 now_utc=reference_utc,
                 timeout=timeout_seconds,
             )
+            symbols, listing_diagnostics = _resolve_provider_symbols_with_diagnostics(
+                listings,
+                "fmp",
+                as_of_utc=reference_as_of,
+            )
             result = collect_structured_news(
                 FMP_SPEC,
-                resolve_provider_symbols(listings, "fmp") if listings is not None else [],
+                symbols,
                 api_key=keys.get("fmp"),
                 fetch=fetch,
                 probe=probe,
@@ -1029,6 +1189,7 @@ def collect_news(
                 max_rows_per_symbol=max_rows_per_symbol,
                 timeout=timeout_seconds,
             )
+            result = _merge_listing_diagnostics(result, listing_diagnostics)
 
         result = _attach_entity_resolution(result, entities, listings, aliases)
         written[source_id] = write_news_input(result.frame, output_path, result=result)

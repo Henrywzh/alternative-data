@@ -76,13 +76,13 @@ def _entities() -> pd.DataFrame:
 
 def _listings() -> pd.DataFrame:
     rows = [
-        {"listing_id": "0700_HK", "entity_id": "TENCENT", "canonical_ticker": "0700.HK", "listing_status": "active"},
-        {"listing_id": "1024_HK", "entity_id": "KUAISHOU", "canonical_ticker": "1024.HK", "listing_status": "active"},
-        {"listing_id": "9626_HK", "entity_id": "BILIBILI", "canonical_ticker": "9626.HK", "listing_status": "active"},
-        {"listing_id": "9888_HK", "entity_id": "BAIDU", "canonical_ticker": "9888.HK", "listing_status": "active"},
-        {"listing_id": "9988_HK", "entity_id": "ALIBABA", "canonical_ticker": "9988.HK", "listing_status": "active"},
-        {"listing_id": "BABA_US", "entity_id": "ALIBABA", "canonical_ticker": "BABA.US", "listing_status": "active"},
-        {"listing_id": "BIDU_US", "entity_id": "BAIDU", "canonical_ticker": "BIDU.US", "listing_status": "active"},
+        {"listing_id": "0700_HK", "entity_id": "TENCENT", "canonical_ticker": "0700.HK", "mapping_status": "verified", "collection_eligible": True, "listing_status": "active"},
+        {"listing_id": "1024_HK", "entity_id": "KUAISHOU", "canonical_ticker": "1024.HK", "mapping_status": "verified", "collection_eligible": True, "listing_status": "active"},
+        {"listing_id": "9626_HK", "entity_id": "BILIBILI", "canonical_ticker": "9626.HK", "mapping_status": "verified", "collection_eligible": True, "listing_status": "active"},
+        {"listing_id": "9888_HK", "entity_id": "BAIDU", "canonical_ticker": "9888.HK", "mapping_status": "verified", "collection_eligible": True, "listing_status": "active"},
+        {"listing_id": "9988_HK", "entity_id": "ALIBABA", "canonical_ticker": "9988.HK", "mapping_status": "verified", "collection_eligible": True, "listing_status": "active"},
+        {"listing_id": "BABA_US", "entity_id": "ALIBABA", "canonical_ticker": "BABA.US", "mapping_status": "verified", "collection_eligible": True, "listing_status": "active"},
+        {"listing_id": "BIDU_US", "entity_id": "BAIDU", "canonical_ticker": "BIDU.US", "mapping_status": "verified", "collection_eligible": True, "listing_status": "active"},
     ]
     return pd.DataFrame(rows)
 
@@ -121,6 +121,24 @@ def _health(**overrides: dict[str, object]) -> pd.DataFrame:
             "status": "unavailable",
             "row_count": 0,
             "entitlement_status": "terms_unverified",
+            "query_attempted": False,
+            "execution_status": None,
+            "completed_at": None,
+        },
+        {
+            "source_id": "earnings_actuals",
+            "source_kind": "earnings",
+            "status": "unavailable",
+            "row_count": 0,
+            "query_attempted": False,
+            "execution_status": None,
+            "completed_at": None,
+        },
+        {
+            "source_id": "earnings:tencent_hkex_financials",
+            "source_kind": "earnings",
+            "status": "unavailable",
+            "row_count": 0,
             "query_attempted": False,
             "execution_status": None,
             "completed_at": None,
@@ -173,9 +191,23 @@ def _health(**overrides: dict[str, object]) -> pd.DataFrame:
         },
     ]
     for source_id, values in overrides.items():
+        found = False
         for row in rows:
             if row["source_id"] == source_id:
                 row.update(values)
+                found = True
+        if not found:
+            entry = {
+                "source_id": source_id,
+                "source_kind": "official_filing",
+                "status": "available",
+                "row_count": 0,
+                "query_attempted": True,
+                "execution_status": "completed",
+                "completed_at": FRESH,
+            }
+            entry.update(values)
+            rows.append(entry)
     return pd.DataFrame(rows)
 
 
@@ -184,7 +216,9 @@ def _snapshot(
     quotes: pd.DataFrame | None = None,
     consensus_snapshots: pd.DataFrame | None = None,
     consensus_revisions: pd.DataFrame | None = None,
+    earnings_actuals: pd.DataFrame | None = None,
     news_filings: pd.DataFrame | None = None,
+    official_filings: pd.DataFrame | None = None,
     events: pd.DataFrame | None = None,
     macro_observations: pd.DataFrame | None = None,
     health: pd.DataFrame | None = None,
@@ -245,13 +279,18 @@ def _snapshot(
                 )
             )
         ),
-        official_filings=frame(
-            (
-                "document_id",
-                "entity_id",
-                "listing_id",
-                "published_at",
-                "accepted_at",
+        official_filings=(
+            official_filings
+            if official_filings is not None
+            else frame(
+                (
+                    "document_id",
+                    "entity_id",
+                    "listing_id",
+                    "published_at",
+                    "accepted_at",
+                    "source_id",
+                )
             )
         ),
         earnings_calendar=frame(
@@ -263,13 +302,20 @@ def _snapshot(
                 "period_end",
             )
         ),
-        earnings_actuals=frame(
-            (
-                "actual_id",
-                "entity_id",
-                "listing_id",
-                "metric",
-                "period_end",
+        earnings_actuals=(
+            earnings_actuals
+            if earnings_actuals is not None
+            else frame(
+                (
+                    "actual_id",
+                    "entity_id",
+                    "listing_id",
+                    "metric",
+                    "period_end",
+                    "filing_at",
+                    "published_at",
+                    "source_id",
+                )
             )
         ),
         source_health=health if health is not None else _health(),
@@ -314,6 +360,26 @@ def _consensus(
         "listing_id": listing_id,
         "provider_asof": provider_asof,
         "snapshot_at": provider_asof,
+    }
+
+
+def _actual(
+    actual_id: str,
+    entity_id: str,
+    listing_id: str,
+    *,
+    source_id: str = "earnings:tencent_hkex_financials",
+    timestamp: str = FRESH,
+) -> dict[str, object]:
+    return {
+        "actual_id": actual_id,
+        "entity_id": entity_id,
+        "listing_id": listing_id,
+        "metric": "revenue",
+        "period_end": "2026-06-30",
+        "filing_at": timestamp,
+        "published_at": timestamp,
+        "source_id": source_id,
     }
 
 
@@ -587,6 +653,118 @@ def test_consensus_status_transitions() -> None:
         for row in build_data_coverage_summary(empty_connected).rows
     }
     assert summary["Consensus Data"].status_code == "no_records"
+
+
+def test_earnings_actuals_rows_are_counted_and_scoped_under_degraded_evidence() -> None:
+    from dataclasses import replace
+
+    from control_tower.coverage import build_data_coverage_summary
+
+    actuals = pd.DataFrame(
+        [
+            _actual("ACT-1", "TENCENT", "0700_HK"),
+            _actual("ACT-2", "TENCENT", "0700_HK", timestamp="2026-08-12T08:31:00Z"),
+        ]
+    )
+    health = _health(
+        earnings_actuals={
+            "status": "degraded",
+            "row_count": 0,
+            "detail": "schema drift in legacy generic mart",
+        },
+        **{
+            "earnings:tencent_hkex_financials": {
+                "status": "available",
+                "row_count": 2,
+                "source_latest_at": FRESH,
+                "cadence": "quarterly",
+                "query_attempted": True,
+                "execution_status": "completed",
+                "completed_at": FRESH,
+            }
+        },
+    )
+    snapshot = replace(
+        _snapshot(earnings_actuals=actuals, health=health),
+        manifest={
+            "build_id": "coverage-earnings-degraded",
+            "status": "degraded",
+            "artifacts": {
+                "earnings_actuals.parquet": {
+                    "status": "degraded",
+                    "row_count": 2,
+                }
+            },
+        },
+        status="degraded",
+        missing_optional=("earnings_actuals.parquet",),
+    )
+
+    summary = {
+        row.category: row for row in build_data_coverage_summary(snapshot).rows
+    }
+    earnings_summary = summary["Earnings Actuals"]
+    assert earnings_summary.record_count == 2
+    assert earnings_summary.linked_count == 2
+    assert earnings_summary.status_code == "partial"
+    assert "mart does not exist" not in earnings_summary.details.lower()
+    assert "no earnings-actuals mart" not in earnings_summary.details.lower()
+
+    matrix = _matrix(snapshot)
+    tencent = matrix.entity_cell("TENCENT", "earnings_actuals")
+    assert tencent.record_count == 2
+    assert tencent.status_code == "partial"
+    assert matrix.entity_cell("ALIBABA", "earnings_actuals").record_count == 0
+    assert matrix.status_of("BYTEDANCE", "earnings_actuals") == "not_applicable"
+
+
+def test_earnings_actuals_empty_entity_distinguishes_no_records_from_unavailable() -> None:
+    from dataclasses import replace
+
+    from control_tower.coverage import build_data_coverage_summary
+
+    completed_empty = _health(
+        earnings_actuals={
+            "status": "available",
+            "row_count": 0,
+            "query_attempted": True,
+            "execution_status": "completed",
+            "completed_at": FRESH,
+        },
+        **{
+            "earnings:tencent_hkex_financials": {
+                "status": "available",
+                "row_count": 0,
+                "query_attempted": True,
+                "execution_status": "completed",
+                "completed_at": FRESH,
+            }
+        },
+    )
+    no_records_snapshot = replace(
+        _snapshot(health=completed_empty),
+        manifest={
+            "build_id": "coverage-earnings-empty",
+            "status": "success",
+            "artifacts": {
+                "earnings_actuals.parquet": {
+                    "status": "available",
+                    "row_count": 0,
+                }
+            },
+        },
+    )
+    matrix = _matrix(no_records_snapshot)
+    assert matrix.status_of("ALIBABA", "earnings_actuals") == "no_records"
+    summary = {
+        row.category: row
+        for row in build_data_coverage_summary(no_records_snapshot).rows
+    }
+    assert summary["Earnings Actuals"].status_code == "no_records"
+    assert summary["Earnings Actuals"].record_count == 0
+
+    unavailable = _matrix(_snapshot())
+    assert unavailable.status_of("ALIBABA", "earnings_actuals") == "unavailable"
 
 
 def test_filings_news_status_transitions() -> None:
@@ -1658,6 +1836,8 @@ def test_ambiguous_listing_is_unlinked_and_cannot_make_global_quotes_available()
                         "listing_id": "9988_HK",
                         "entity_id": "TENCENT",
                         "canonical_ticker": "9988.HK",
+                        "mapping_status": "verified",
+                        "collection_eligible": True,
                         "listing_status": "active",
                     }
                 ]
@@ -1753,3 +1933,288 @@ def test_filings_missing_geographies_are_partial_in_matrix_and_summary() -> None
     assert matrix.status_of("ALIBABA", "filings_news") == "partial"
     assert summary["News & Filings"].status_code == "partial"
     assert "uncovered geographies" in summary["News & Filings"].details.lower()
+
+
+def _official_filing(
+    document_id: str,
+    entity_id: str,
+    listing_id: str = "",
+    *,
+    source_id: str = "filings:hkexnews",
+    timestamp: str = FRESH,
+) -> dict[str, object]:
+    return {
+        "document_id": document_id,
+        "entity_id": entity_id,
+        "listing_id": listing_id,
+        "document_type": "filing",
+        "event_class": "general",
+        "headline": f"Official filing {document_id}",
+        "publisher": "HKEX",
+        "published_at": timestamp,
+        "accepted_at": timestamp,
+        "source_id": source_id,
+    }
+
+
+def test_official_only_filings_coverage_for_tencent() -> None:
+    from control_tower.coverage import build_data_coverage_summary
+
+    official = pd.DataFrame(
+        [
+            _official_filing(f"DOC-{i}", "TENCENT", "0700_HK", source_id="filings:hkexnews")
+            for i in range(173)
+        ]
+    )
+    health = _health(
+        **{
+            "filings:hkexnews": {
+                "source_kind": "official_filing",
+                "status": "available",
+                "row_count": 173,
+                "source_latest_at": FRESH,
+                "cadence": "event_driven",
+                "query_attempted": True,
+                "execution_status": "completed",
+                "completed_at": FRESH,
+            },
+            "filings_sec_edgar": {
+                "source_kind": "filing",
+                "status": "available",
+                "row_count": 0,
+                "cadence": "event_driven",
+                "missing_geographies": "",
+                "query_attempted": True,
+                "execution_status": "completed",
+                "completed_at": FRESH,
+            },
+            "news_official_ai_rss": {
+                "source_kind": "news",
+                "status": "available",
+                "row_count": 0,
+                "cadence": "event_driven",
+                "query_attempted": True,
+                "execution_status": "completed",
+                "completed_at": FRESH,
+            },
+        }
+    )
+    unlinked_news = pd.DataFrame(
+        [
+            {
+                "document_id": "GENERIC_UNLINKED",
+                "source_id": "filings_sec_edgar",
+                "related_entity_ids": (),
+                "related_listing_ids": (),
+                "related_basket_ids": (),
+                "published_at": FRESH,
+            }
+        ]
+    )
+    snapshot = _snapshot(official_filings=official, news_filings=unlinked_news, health=health)
+    matrix = _matrix(snapshot)
+
+    tencent_cell = matrix.entity_cell("TENCENT", "filings_news")
+    assert tencent_cell.status_code == "available"
+    assert tencent_cell.record_count == 173
+    assert "173 official filing(s) linked to this entity" in tencent_cell.details
+
+    # Alibaba has no official filings and unlinked generic news is not attributed
+    baba_cell = matrix.entity_cell("ALIBABA", "filings_news")
+    assert baba_cell.status_code == "no_records"
+    assert baba_cell.record_count == 0
+
+    summary = {
+        row.category: row for row in build_data_coverage_summary(snapshot).rows
+    }
+    filings_summary = summary["News & Filings"]
+    assert filings_summary.record_count == 174  # 173 official + 1 generic
+    assert filings_summary.linked_count == 173  # 173 official linked, generic unlinked
+
+
+def test_mixed_official_and_generic_filings_behavior() -> None:
+    official = pd.DataFrame(
+        [
+            _official_filing("DOC-SEC-1", "ALIBABA", "9988_HK", source_id="filings:sec_edgar_submissions"),
+            _official_filing("DOC-SEC-2", "ALIBABA", "BABA_US", source_id="filings:sec_edgar_submissions"),
+        ]
+    )
+    generic = pd.DataFrame(
+        [
+            {
+                "document_id": "NEWS-1",
+                "source_id": "news_official_ai_rss",
+                "related_entity_ids": ("ALIBABA",),
+                "related_listing_ids": (),
+                "related_basket_ids": (),
+                "published_at": FRESH,
+            },
+            {
+                "document_id": "NEWS-UNLINKED",
+                "source_id": "news_official_ai_rss",
+                "related_entity_ids": (),
+                "related_listing_ids": (),
+                "related_basket_ids": (),
+                "published_at": FRESH,
+            },
+        ]
+    )
+    health = _health(
+        **{
+            "filings_sec_edgar": {
+                "source_kind": "filing",
+                "status": "available",
+                "row_count": 0,
+                "cadence": "event_driven",
+                "missing_geographies": "",
+                "query_attempted": True,
+                "execution_status": "completed",
+                "completed_at": FRESH,
+            },
+            "filings:sec_edgar_submissions": {
+                "source_kind": "official_filing",
+                "status": "available",
+                "row_count": 2,
+                "source_latest_at": FRESH,
+                "cadence": "event_driven",
+                "query_attempted": True,
+                "execution_status": "completed",
+                "completed_at": FRESH,
+            },
+            "news_official_ai_rss": {
+                "source_kind": "news",
+                "status": "available",
+                "row_count": 2,
+                "source_latest_at": FRESH,
+                "cadence": "event_driven",
+                "query_attempted": True,
+                "execution_status": "completed",
+                "completed_at": FRESH,
+            },
+        }
+    )
+    snapshot = _snapshot(official_filings=official, news_filings=generic, health=health)
+    matrix = _matrix(snapshot)
+
+    baba_cell = matrix.entity_cell("ALIBABA", "filings_news")
+    assert baba_cell.status_code == "available"
+    assert baba_cell.record_count == 3  # 2 official + 1 linked news
+    assert "2 official filing(s) and 1 news item(s) linked to this entity" in baba_cell.details
+
+
+def test_tcehy_excluded_from_active_listings_while_0700_hk_remains() -> None:
+    from dataclasses import replace
+
+    snapshot = _snapshot()
+    listings = snapshot.listings.copy()
+    # Append unverified/ineligible TCEHY_US listing
+    listings = pd.concat(
+        [
+            listings,
+            pd.DataFrame(
+                [
+                    {
+                        "listing_id": "TCEHY_US",
+                        "entity_id": "TENCENT",
+                        "canonical_ticker": "TCEHY.US",
+                        "mapping_status": "unresolved",
+                        "collection_eligible": False,
+                        "listing_status": "active",
+                        "active_from": "2026-01-01",
+                        "active_to": None,
+                    }
+                ]
+            ),
+        ],
+        ignore_index=True,
+    )
+    matrix = _matrix(replace(snapshot, listings=listings))
+
+    tencent_row = next(row for row in matrix.entity_rows if row.entity_id == "TENCENT")
+    assert tencent_row.listing_count == 1
+    assert tencent_row.listing_ids == ("0700_HK",)
+
+    listing_ids = {row.listing_id for row in matrix.listing_rows}
+    assert "0700_HK" in listing_ids
+    assert "TCEHY_US" not in listing_ids
+    assert len(matrix.listing_rows) == 7
+
+
+def test_summary_linkage_excludes_ineligible_listing_but_keeps_entity_only_filing() -> None:
+    from dataclasses import replace
+
+    from control_tower.coverage import build_data_coverage_summary
+
+    snapshot = _snapshot(
+        official_filings=pd.DataFrame(
+            [_official_filing("DOC-ENTITY", "TENCENT")]
+        ),
+        news_filings=pd.DataFrame(
+            [
+                {
+                    "document_id": "NEWS-TCEHY",
+                    "source_id": "news_official_ai_rss",
+                    "related_entity_ids": (),
+                    "related_listing_ids": ("TCEHY_US",),
+                    "related_basket_ids": (),
+                    "published_at": FRESH,
+                }
+            ]
+        ),
+        health=_health(
+            **{
+                "filings:hkexnews": {
+                    "source_kind": "official_filing",
+                    "status": "available",
+                    "row_count": 1,
+                    "source_latest_at": FRESH,
+                    "cadence": "event_driven",
+                    "query_attempted": True,
+                    "execution_status": "completed",
+                    "completed_at": FRESH,
+                },
+                "news_official_ai_rss": {
+                    "source_kind": "news",
+                    "status": "available",
+                    "row_count": 1,
+                    "source_latest_at": FRESH,
+                    "cadence": "event_driven",
+                    "query_attempted": True,
+                    "execution_status": "completed",
+                    "completed_at": FRESH,
+                },
+            }
+        ),
+    )
+    listings = pd.concat(
+        [
+            snapshot.listings,
+            pd.DataFrame(
+                [
+                    {
+                        "listing_id": "TCEHY_US",
+                        "entity_id": "TENCENT",
+                        "canonical_ticker": "TCEHY.US",
+                        "mapping_status": "unresolved",
+                        "collection_eligible": False,
+                        "listing_status": "active",
+                        "active_from": "2026-01-01",
+                        "active_to": None,
+                    }
+                ]
+            ),
+        ],
+        ignore_index=True,
+    )
+
+    summary = {
+        row.category: row
+        for row in build_data_coverage_summary(
+            replace(snapshot, listings=listings)
+        ).rows
+    }
+
+    filings = summary["News & Filings"]
+    assert filings.record_count == 2
+    assert filings.linked_count == 1
+    assert filings.status_code == "partial"

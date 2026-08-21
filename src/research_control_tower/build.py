@@ -9,11 +9,13 @@ artifacts, with ``build_manifest.json`` written last.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+from datetime import date, datetime
 from email.utils import parsedate_to_datetime
 import hashlib
 import json
 import math
+from numbers import Real
 import os
 from pathlib import Path
 from pathlib import PurePosixPath
@@ -34,6 +36,10 @@ from .events import (
     load_event_bundle,
     validate_event_bundle,
 )
+from .eligibility import (
+    filter_listing_scoped_rows,
+    listing_eligibility_reason,
+)
 from .macro import MACRO_EVENT_COLUMNS, MACRO_OBSERVATION_COLUMNS
 from .registries import (
     NEWS_ENTITY_ALIAS_FILENAME,
@@ -42,6 +48,10 @@ from .registries import (
     load_registry_bundle,
     resolve_news_entities,
     validate_registry_bundle,
+)
+from .valuation import (
+    validate_internal_estimates_df,
+    validate_valuation_snapshots_df,
 )
 
 
@@ -576,6 +586,14 @@ EARNINGS_ACTUALS_COLUMNS = [
     "source_license_class",
     "source_note",
     "registry_version",
+    "source_metric_label",
+    "metric_basis",
+    "source_document_id",
+    "source_document_sha256",
+    "source_page_ref",
+    "value_origin",
+    "derivation_method",
+    "timestamp_precision",
 ]
 
 # Per-source collection-state sidecar written by the Batch 2/3 collectors.
@@ -641,9 +659,38 @@ ARTIFACT_NAMES = (
     "official_filings.parquet",
     "earnings_calendar.parquet",
     "earnings_actuals.parquet",
+    "corporate_actions.parquet",
+    "valuation_snapshots.parquet",
+    "internal_estimates.parquet",
+    "thesis_claims.parquet",
+    "thesis_watch_questions.parquet",
+    "evidence_items.parquet",
+    "claim_evidence_links.parquet",
     "source_health.parquet",
     "build_manifest.json",
 )
+
+# The first published Control Tower contract predates the Tencent T0-T3
+# marts.  It is still an immutable, readable generation, so a new publisher
+# must be able to use it as lineage without treating its missing additive
+# artifacts as corruption.  This is an explicit compatibility contract, not
+# a permission to accept arbitrary partial generations.
+LEGACY_GENERATION_ARTIFACT_NAMES = tuple(
+    name
+    for name in ARTIFACT_NAMES
+    if name
+    not in {
+        "corporate_actions.parquet",
+        "valuation_snapshots.parquet",
+        "internal_estimates.parquet",
+        "thesis_claims.parquet",
+        "thesis_watch_questions.parquet",
+        "evidence_items.parquet",
+        "claim_evidence_links.parquet",
+    }
+)
+
+_LEGACY_EARNINGS_ACTUALS_COLUMNS = tuple(EARNINGS_ACTUALS_COLUMNS[:-8])
 
 OPTIONAL_ARTIFACT_NAMES = frozenset({
     "consensus_snapshots.parquet",
@@ -654,6 +701,13 @@ OPTIONAL_ARTIFACT_NAMES = frozenset({
     "official_filings.parquet",
     "earnings_calendar.parquet",
     "earnings_actuals.parquet",
+    "corporate_actions.parquet",
+    "valuation_snapshots.parquet",
+    "internal_estimates.parquet",
+    "thesis_claims.parquet",
+    "thesis_watch_questions.parquet",
+    "evidence_items.parquet",
+    "claim_evidence_links.parquet",
 })
 
 FRED_OBSERVATIONS_SCHEMA_ID = "fred_observations_v1"
@@ -673,6 +727,72 @@ PRICE_BARS_SCHEMA_ID = "price_bars_v1"
 OFFICIAL_FILINGS_SCHEMA_ID = "official_filings_v1"
 EARNINGS_ACTUALS_SCHEMA_ID = "earnings_actuals_v1"
 SOURCE_STATE_SCHEMA_ID = "source_state_v1"
+CORP_ACTIONS_SCHEMA_ID = "corporate_actions_v1"
+VALUATION_SNAPSHOTS_SCHEMA_ID = "valuation_snapshots_v2"
+VALUATION_SNAPSHOTS_LEGACY_SCHEMA_ID = "valuation_snapshots_v1"
+INTERNAL_ESTIMATES_SCHEMA_ID = "internal_estimates_v1"
+THESIS_CLAIMS_SCHEMA_ID = "thesis_claims_v1"
+THESIS_WATCH_QUESTIONS_SCHEMA_ID = "thesis_watch_questions_v1"
+EVIDENCE_ITEMS_SCHEMA_ID = "evidence_items_v1"
+CLAIM_EVIDENCE_LINKS_SCHEMA_ID = "claim_evidence_links_v1"
+
+CORP_ACTIONS_COLUMNS = [
+    "action_id", "version", "entity_id", "listing_id", "canonical_ticker",
+    "action_type", "filing_date", "execution_date", "published_at",
+    "shares_affected", "price_min", "price_max", "price_avg",
+    "total_amount_paid", "currency", "shares_for_cancellation",
+    "shares_for_treasury", "cancellation_status", "mandate_resolution_date",
+    "mandate_authorised_shares", "mandate_cumulative_repurchased_shares",
+    "coverage_reason", "source_url", "source_document_id", "document_format",
+    "source_note", "retrieved_at_utc", "source_timezone", "date_precision",
+    "source_quality", "pit_class", "source_license_class", "registry_version",
+]
+
+VALUATION_SNAPSHOTS_COLUMNS = [
+    "valuation_id", "listing_id", "valuation_date", "valuation_at",
+    "metric_name", "accounting_basis", "metric_basis", "ratio_value",
+    "numerator_value", "numerator_currency", "numerator_ref",
+    "numerator_source_id", "numerator_source_url", "numerator_pit_class",
+    "numerator_at_utc", "numerator_retrieved_at_utc", "denominator_value",
+    "denominator_currency", "denominator_ref", "denominator_source_id",
+    "denominator_source_url", "denominator_pit_class", "denominator_at_utc",
+    "denominator_provider_asof_utc", "denominator_retrieved_at_utc",
+    "fx_rate_applied", "fx_base_currency", "fx_quote_currency", "fx_source",
+    "fx_source_url", "fx_snapshot_at_utc", "fx_retrieved_at_utc", "source_id",
+    "source_url", "retrieved_at_utc", "pit_class", "coverage_reason",
+    "percentile_history_status",
+]
+
+INTERNAL_ESTIMATES_COLUMNS = [
+    "estimate_id", "version", "supersedes_estimate_id", "entity_id",
+    "listing_id", "observation_type", "author", "metric", "accounting_basis",
+    "metric_basis", "fiscal_period", "fiscal_year", "value_low", "value_high",
+    "value_mid", "currency", "unit", "effective_asof", "recorded_at_utc",
+    "rationale_notes", "source_ref", "source_url", "pit_class",
+    "reviewed_at_utc", "reviewed_by",
+]
+
+THESIS_CLAIMS_COLUMNS = [
+    "claim_id", "entity_id", "thesis_title", "claim_text", "invalidation_rule",
+    "status", "last_reviewed_at_utc", "reviewed_by", "registry_version",
+]
+
+THESIS_WATCH_QUESTIONS_COLUMNS = [
+    "question_id", "claim_id", "entity_id", "question", "question_type",
+    "priority", "registry_version",
+]
+
+EVIDENCE_ITEMS_COLUMNS = [
+    "evidence_id", "entity_id", "source_id", "evidence_ref", "source_type",
+    "source_url", "evidence_class", "pit_class", "source_license_class",
+    "published_at", "summary_text", "observed_at_utc", "content_hash",
+    "registry_version",
+]
+
+CLAIM_EVIDENCE_LINKS_COLUMNS = [
+    "link_id", "claim_id", "evidence_id", "conflict_hint", "review_state",
+    "analyst_note", "registry_version",
+]
 
 _SCHEMA_ALIASES = {
     FRED_OBSERVATIONS_SCHEMA_ID: FRED_OBSERVATIONS_SCHEMA_ID,
@@ -701,6 +821,21 @@ _SCHEMA_ALIASES = {
     OFFICIAL_FILINGS_SCHEMA_ID: OFFICIAL_FILINGS_SCHEMA_ID,
     "official_filings": OFFICIAL_FILINGS_SCHEMA_ID,
     EARNINGS_ACTUALS_SCHEMA_ID: EARNINGS_ACTUALS_SCHEMA_ID,
+    CORP_ACTIONS_SCHEMA_ID: CORP_ACTIONS_SCHEMA_ID,
+    "corporate_actions": CORP_ACTIONS_SCHEMA_ID,
+    VALUATION_SNAPSHOTS_SCHEMA_ID: VALUATION_SNAPSHOTS_SCHEMA_ID,
+    VALUATION_SNAPSHOTS_LEGACY_SCHEMA_ID: VALUATION_SNAPSHOTS_SCHEMA_ID,
+    "valuation_snapshots": VALUATION_SNAPSHOTS_SCHEMA_ID,
+    INTERNAL_ESTIMATES_SCHEMA_ID: INTERNAL_ESTIMATES_SCHEMA_ID,
+    "internal_estimates": INTERNAL_ESTIMATES_SCHEMA_ID,
+    THESIS_CLAIMS_SCHEMA_ID: THESIS_CLAIMS_SCHEMA_ID,
+    "thesis_claims": THESIS_CLAIMS_SCHEMA_ID,
+    THESIS_WATCH_QUESTIONS_SCHEMA_ID: THESIS_WATCH_QUESTIONS_SCHEMA_ID,
+    "thesis_watch_questions": THESIS_WATCH_QUESTIONS_SCHEMA_ID,
+    EVIDENCE_ITEMS_SCHEMA_ID: EVIDENCE_ITEMS_SCHEMA_ID,
+    "evidence_items": EVIDENCE_ITEMS_SCHEMA_ID,
+    CLAIM_EVIDENCE_LINKS_SCHEMA_ID: CLAIM_EVIDENCE_LINKS_SCHEMA_ID,
+    "claim_evidence_links": CLAIM_EVIDENCE_LINKS_SCHEMA_ID,
     "earnings_actuals": EARNINGS_ACTUALS_SCHEMA_ID,
     SOURCE_STATE_SCHEMA_ID: SOURCE_STATE_SCHEMA_ID,
     "source_state": SOURCE_STATE_SCHEMA_ID,
@@ -737,6 +872,10 @@ _EXPECTED_OPTIONAL_SOURCES = (
     ("official_filings_state", "official_filing", SOURCE_STATE_SCHEMA_ID, ""),
     ("earnings_actuals", "earnings", EARNINGS_ACTUALS_SCHEMA_ID, "CN,HK,US"),
     ("earnings_actuals_state", "earnings", SOURCE_STATE_SCHEMA_ID, ""),
+    ("corporate_actions", "corporate_actions", CORP_ACTIONS_SCHEMA_ID, "CN,HK"),
+    ("corporate_actions_state", "corporate_actions", SOURCE_STATE_SCHEMA_ID, ""),
+    ("valuation_snapshots", "valuation", VALUATION_SNAPSHOTS_SCHEMA_ID, "CN,HK"),
+    ("internal_estimates", "valuation", INTERNAL_ESTIMATES_SCHEMA_ID, ""),
 )
 
 # These are explicit source-specific freshness windows for current-vintage
@@ -767,6 +906,10 @@ SOURCE_FRESHNESS_THRESHOLDS = {
     # artifact and a degraded health row.
     OFFICIAL_FILINGS_SCHEMA_ID: pd.Timedelta(days=45),
     EARNINGS_ACTUALS_SCHEMA_ID: pd.Timedelta(days=120),
+    CORP_ACTIONS_SCHEMA_ID: pd.Timedelta(days=45),
+    VALUATION_SNAPSHOTS_SCHEMA_ID: pd.Timedelta(days=45),
+    VALUATION_SNAPSHOTS_LEGACY_SCHEMA_ID: pd.Timedelta(days=45),
+    INTERNAL_ESTIMATES_SCHEMA_ID: pd.Timedelta(days=365),
     SOURCE_STATE_SCHEMA_ID: pd.Timedelta(days=45),
 }
 
@@ -892,6 +1035,52 @@ SOURCE_TIME_COLUMNS = {
         "retrieved": ("retrieved_at_utc",),
         "future": ("bar_date", "retrieved_at_utc"),
     },
+    CORP_ACTIONS_SCHEMA_ID: {
+        "observed": ("published_at",),
+        "freshness": ("published_at",),
+        "retrieved": ("retrieved_at_utc",),
+        "future": ("published_at", "retrieved_at_utc"),
+    },
+    VALUATION_SNAPSHOTS_SCHEMA_ID: {
+        "observed": ("valuation_at",),
+        "freshness": ("valuation_at",),
+        "retrieved": ("retrieved_at_utc",),
+        "future": (
+            "valuation_date",
+            "valuation_at",
+            "numerator_at_utc",
+            "numerator_retrieved_at_utc",
+            "denominator_at_utc",
+            "denominator_provider_asof_utc",
+            "denominator_retrieved_at_utc",
+            "fx_snapshot_at_utc",
+            "fx_retrieved_at_utc",
+            "retrieved_at_utc",
+        ),
+    },
+    VALUATION_SNAPSHOTS_LEGACY_SCHEMA_ID: {
+        "observed": ("valuation_at",),
+        "freshness": ("valuation_at",),
+        "retrieved": ("retrieved_at_utc",),
+        "future": (
+            "valuation_date",
+            "valuation_at",
+            "numerator_at_utc",
+            "numerator_retrieved_at_utc",
+            "denominator_at_utc",
+            "denominator_provider_asof_utc",
+            "denominator_retrieved_at_utc",
+            "fx_snapshot_at_utc",
+            "fx_retrieved_at_utc",
+            "retrieved_at_utc",
+        ),
+    },
+    INTERNAL_ESTIMATES_SCHEMA_ID: {
+        "observed": ("effective_asof",),
+        "freshness": ("recorded_at_utc",),
+        "retrieved": ("recorded_at_utc",),
+        "future": ("effective_asof", "recorded_at_utc", "reviewed_at_utc"),
+    },
 }
 
 QUALITY_CLASSES = frozenset({"official", "official_metadata", "discovery", "entitled", "unknown"})
@@ -993,6 +1182,8 @@ class BuildConfig:
     earnings_inputs: tuple[LocalInput, ...] = ()
     quote_inputs: tuple[LocalInput, ...] = ()
     price_bar_inputs: tuple[LocalInput, ...] = ()
+    corporate_actions_inputs: tuple[LocalInput, ...] = ()
+    valuation_inputs: tuple[LocalInput, ...] = ()
     consensus_export_dir: Path | None = None
     schema_version: str = SCHEMA_VERSION
     allow_degraded_optional: bool = True
@@ -1020,6 +1211,9 @@ class BuildConfig:
             *self.official_filing_inputs,
             *self.earnings_inputs,
             *self.quote_inputs,
+            *self.price_bar_inputs,
+            *self.corporate_actions_inputs,
+            *self.valuation_inputs,
         )
         source_ids = [descriptor.source_id for descriptor in descriptors]
         if len(source_ids) != len(set(source_ids)):
@@ -1085,14 +1279,19 @@ class _SourceState:
     source_latest_at: Any = pd.NaT
     retrieved_at_utc: Any = pd.NaT
     input_sha256: str | None = None
+    input_label: str = ""
     missing_geographies: str = ""
     detail: str = ""
     errors: list[dict[str, Any]] = field(default_factory=list)
 
     def health_row(self) -> dict[str, Any]:
+        label = self.input_label or _portable_input_label(
+            self.path,
+            source_id=self.source_id,
+        )
         return {
             "source_id": self.source_id,
-            "input_path": str(self.path) if self.path is not None else "",
+            "input_path": label,
             "source_kind": self.source_kind,
             "status": self.status,
             "required": self.required,
@@ -1111,7 +1310,7 @@ class _SourceState:
             "input_sha256": self.input_sha256 or "",
             "schema_version": self.schema_version,
             "missing_geographies": self.missing_geographies,
-            "detail": self.detail,
+            "detail": _redact_runtime_paths(self.detail, self.path, label),
         }
 
 
@@ -1191,11 +1390,21 @@ _OPTIONAL_COLUMNS = {
         "file_date",
         "filing_url",
         "fetched_at",
+        "related_entity_ids",
+        "related_listing_ids",
+        "related_basket_ids",
         "filing_content",
         "body_text",
     },
     OFFICIAL_FILINGS_SCHEMA_ID: set(OFFICIAL_FILINGS_COLUMNS),
     EARNINGS_ACTUALS_SCHEMA_ID: set(EARNINGS_ACTUALS_COLUMNS),
+    CORP_ACTIONS_SCHEMA_ID: set(CORP_ACTIONS_COLUMNS),
+    VALUATION_SNAPSHOTS_SCHEMA_ID: set(VALUATION_SNAPSHOTS_COLUMNS),
+    INTERNAL_ESTIMATES_SCHEMA_ID: set(INTERNAL_ESTIMATES_COLUMNS),
+    THESIS_CLAIMS_SCHEMA_ID: set(THESIS_CLAIMS_COLUMNS),
+    THESIS_WATCH_QUESTIONS_SCHEMA_ID: set(THESIS_WATCH_QUESTIONS_COLUMNS),
+    EVIDENCE_ITEMS_SCHEMA_ID: set(EVIDENCE_ITEMS_COLUMNS),
+    CLAIM_EVIDENCE_LINKS_SCHEMA_ID: set(CLAIM_EVIDENCE_LINKS_COLUMNS),
     SOURCE_STATE_SCHEMA_ID: set(SOURCE_STATE_COLUMNS),
     QUOTE_SNAPSHOT_SCHEMA_ID: set(QUOTE_SNAPSHOT_COLUMNS),
     PRICE_BARS_SCHEMA_ID: set(PRICE_BARS_COLUMNS),
@@ -1281,6 +1490,11 @@ _REQUIRED_OPTIONAL_COLUMNS = {
 _REQUIRED_OPTIONAL_COLUMNS[NEWS_SCHEMA_ID] -= {"description", "body_text"}
 _REQUIRED_OPTIONAL_COLUMNS[NEWS_SCHEMA_ID] -= {"content_hash"}
 _REQUIRED_OPTIONAL_COLUMNS[FILING_SCHEMA_ID] -= {"filing_content", "body_text"}
+_REQUIRED_OPTIONAL_COLUMNS[FILING_SCHEMA_ID] -= {
+    "related_entity_ids",
+    "related_listing_ids",
+    "related_basket_ids",
+}
 _REQUIRED_OPTIONAL_COLUMNS[FRED_OBSERVATIONS_SCHEMA_ID] -= {"realtime_start", "realtime_end"}
 
 
@@ -1339,6 +1553,55 @@ def _source_local_date(value: Any, timezone_name: Any) -> pd.Timestamp | pd.NaT:
 def _stable_hash(*parts: Any) -> str:
     encoded = "\x1f".join("" if part is None else str(part) for part in parts)
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
+def _portable_token(value: Any, *, fallback: str = "input") -> str:
+    """Return a path-safe logical token without exposing local directories."""
+
+    token = re.sub(r"[^A-Za-z0-9._-]+", "-", _text(value)).strip(".-")
+    return token or fallback
+
+
+def _portable_input_label(
+    path: Path | None,
+    *,
+    source_id: str = "",
+    role: str = "data",
+    content_hash: str | None = None,
+) -> str:
+    """Return a deterministic, host-independent label for an input path.
+
+    The runtime retains the real path in memory, but published lineage uses
+    only the source namespace, role, basename, and (when available) a short
+    content digest.  This keeps labels useful and collision-resistant without
+    leaking parent directories or build-machine details.
+    """
+
+    if path is None:
+        return ""
+    basename = _portable_token(Path(path).name, fallback="input")
+    namespace = _portable_token(source_id, fallback="source")
+    role_token = _portable_token(role, fallback="data")
+    digest_token = ""
+    if content_hash:
+        digest_token = f"-{_portable_token(content_hash[:12], fallback='hash')}"
+    return f"inputs/{namespace}/{role_token}-{basename}{digest_token}"
+
+
+def _redact_runtime_paths(value: Any, path: Path | None, label: str) -> str:
+    """Remove a source state's local path from text written to artifacts."""
+
+    text = "" if value is None else str(value)
+    if path is None or not text:
+        return text
+    candidates = {str(path)}
+    try:
+        candidates.add(str(path.resolve(strict=False)))
+    except OSError:
+        pass
+    for candidate in sorted((item for item in candidates if item), key=len, reverse=True):
+        text = text.replace(candidate, label)
+    return text
 
 
 def _file_hash(path: Path) -> str:
@@ -1400,6 +1663,11 @@ def _append_state_error(
     message: str,
     severity: str = "warning",
 ) -> None:
+    label = state.input_label or _portable_input_label(
+        state.path,
+        source_id=state.source_id,
+    )
+    message = _redact_runtime_paths(message, state.path, label)
     error = {
         "source_id": state.source_id,
         "code": code,
@@ -1534,6 +1802,144 @@ def _validate_optional_columns(frame: pd.DataFrame, schema_id: str, label: str) 
         raise BuildError(f"{label} schema drift: {'; '.join(detail)}")
 
 
+def _raw_value_is_blank(value: Any) -> bool:
+    return _is_blank(value)
+
+
+def _semantic_scalar_issues(
+    frame: pd.DataFrame,
+    *,
+    columns: Sequence[str],
+    kind: str,
+) -> list[str]:
+    issues: list[str] = []
+    for column in columns:
+        if column not in frame.columns:
+            continue
+        for index, value in frame[column].items():
+            if _raw_value_is_blank(value):
+                continue
+            invalid = False
+            if kind == "timestamp":
+                invalid = (
+                    isinstance(value, (bool, Real))
+                    or pd.isna(_timestamp(value))
+                )
+            elif kind == "date":
+                invalid = (
+                    isinstance(value, (bool, Real))
+                    or pd.isna(_timestamp(value, date_only=True))
+                )
+            elif kind == "float":
+                try:
+                    invalid = isinstance(value, bool) or not math.isfinite(float(value))
+                except (TypeError, ValueError, OverflowError):
+                    invalid = True
+            elif kind == "integer":
+                try:
+                    numeric = float(value)
+                    invalid = (
+                        isinstance(value, bool)
+                        or not math.isfinite(numeric)
+                        or not numeric.is_integer()
+                    )
+                except (TypeError, ValueError, OverflowError):
+                    invalid = True
+            if invalid:
+                issues.append(f"row {index}: {column} has an invalid nonblank {kind} value={value!r}")
+    return issues
+
+
+def _semantic_input_issues(frame: pd.DataFrame, schema_id: str) -> list[str]:
+    """Validate high-risk optional rows before policy parsing/coercion."""
+
+    if frame.empty:
+        return []
+    issues: list[str] = []
+    if schema_id == CORP_ACTIONS_SCHEMA_ID:
+        issues.extend(_semantic_scalar_issues(
+            frame,
+            columns=("published_at", "retrieved_at_utc"),
+            kind="timestamp",
+        ))
+        issues.extend(_semantic_scalar_issues(
+            frame,
+            columns=("filing_date", "execution_date", "mandate_resolution_date"),
+            kind="date",
+        ))
+        issues.extend(_semantic_scalar_issues(
+            frame,
+            columns=(
+                "version", "shares_affected", "shares_for_cancellation", "shares_for_treasury",
+                "mandate_authorised_shares", "mandate_cumulative_repurchased_shares",
+            ),
+            kind="integer",
+        ))
+        issues.extend(_semantic_scalar_issues(
+            frame,
+            columns=("price_min", "price_max", "price_avg", "total_amount_paid"),
+            kind="float",
+        ))
+        required = (
+            "action_id", "entity_id", "action_type", "source_url", "source_document_id",
+            "retrieved_at_utc", "source_quality", "pit_class", "source_license_class",
+            "registry_version", "version",
+        )
+        for column in required:
+            if column not in frame.columns:
+                continue
+            missing = frame[column].map(_raw_value_is_blank)
+            if missing.any():
+                issues.append(f"{column} is mandatory for corporate_actions (rows={list(frame.index[missing])[:5]})")
+        for index, row in frame.iterrows():
+            published = _timestamp(row.get("published_at"))
+            retrieved = _timestamp(row.get("retrieved_at_utc"))
+            if not pd.isna(published) and not pd.isna(retrieved) and published > retrieved:
+                issues.append(f"row {index}: published_at must not exceed retrieved_at_utc")
+            if not _raw_value_is_blank(row.get("version")):
+                try:
+                    if int(float(row.get("version"))) != 1 or float(row.get("version")).is_integer() is False:
+                        issues.append(f"row {index}: version must be integer 1")
+                except (TypeError, ValueError, OverflowError):
+                    pass
+    elif schema_id == VALUATION_SNAPSHOTS_SCHEMA_ID:
+        issues.extend(_semantic_scalar_issues(
+            frame,
+            columns=(
+                "valuation_at", "numerator_at_utc", "numerator_retrieved_at_utc",
+                "denominator_at_utc", "denominator_provider_asof_utc",
+                "denominator_retrieved_at_utc", "fx_snapshot_at_utc", "fx_retrieved_at_utc",
+                "retrieved_at_utc",
+            ),
+            kind="timestamp",
+        ))
+        issues.extend(_semantic_scalar_issues(frame, columns=("valuation_date",), kind="date"))
+        issues.extend(_semantic_scalar_issues(
+            frame,
+            columns=("ratio_value", "numerator_value", "denominator_value", "fx_rate_applied"),
+            kind="float",
+        ))
+        # A valuation row is only admissible when its deterministic primary
+        # key and derived ratio agree with the canonical rebuild.  Silently
+        # dropping these issues would publish forged valuation metadata.
+        issues.extend(validate_valuation_snapshots_df(frame))
+    elif schema_id == INTERNAL_ESTIMATES_SCHEMA_ID:
+        issues.extend(_semantic_scalar_issues(
+            frame,
+            columns=("recorded_at_utc", "reviewed_at_utc"),
+            kind="timestamp",
+        ))
+        issues.extend(_semantic_scalar_issues(frame, columns=("effective_asof",), kind="date"))
+        issues.extend(_semantic_scalar_issues(frame, columns=("version", "fiscal_year"), kind="integer"))
+        issues.extend(_semantic_scalar_issues(
+            frame,
+            columns=("value_low", "value_high", "value_mid"),
+            kind="float",
+        ))
+        issues.extend(validate_internal_estimates_df(frame))
+    return sorted(set(str(issue) for issue in issues))
+
+
 def _sort_frame(frame: pd.DataFrame, keys: Sequence[str]) -> pd.DataFrame:
     if frame.empty:
         return frame.reset_index(drop=True)
@@ -1549,6 +1955,67 @@ def _with_columns(frame: pd.DataFrame, columns: Sequence[str]) -> pd.DataFrame:
         if column not in output.columns:
             output[column] = pd.NA
     return output[list(columns)]
+
+
+def _payload_values_equal(left: Any, right: Any) -> bool:
+    """Compare two payload cells without treating nulls or timestamps as drift."""
+
+    left_blank = _is_blank(left)
+    right_blank = _is_blank(right)
+    if left_blank or right_blank:
+        return left_blank and right_blank
+    if isinstance(left, (pd.Timestamp, datetime, date)) or isinstance(
+        right, (pd.Timestamp, datetime, date)
+    ):
+        try:
+            return pd.Timestamp(left) == pd.Timestamp(right)
+        except (TypeError, ValueError):
+            pass
+    try:
+        result = left == right
+        if not hasattr(result, "__len__"):
+            return bool(result)
+    except (TypeError, ValueError):
+        pass
+    return str(left) == str(right)
+
+
+def _full_payload_mismatches(
+    existing: Mapping[str, Any],
+    current: Mapping[str, Any],
+    columns: Sequence[str],
+) -> list[str]:
+    return [
+        column
+        for column in columns
+        if not _payload_values_equal(existing.get(column), current.get(column))
+    ]
+
+
+def _merge_row_by_id(
+    rows_by_id: dict[str, dict[str, Any]],
+    record: dict[str, Any],
+    *,
+    id_column: str,
+    payload_columns: Sequence[str],
+    label: str,
+    require_id: bool = False,
+) -> None:
+    identifier = str(record.get(id_column, "")).strip()
+    if not identifier:
+        if require_id:
+            raise BuildError(f"{label} row is missing required {id_column}")
+        return
+    existing = rows_by_id.get(identifier)
+    if existing is None:
+        rows_by_id[identifier] = record
+        return
+    mismatches = _full_payload_mismatches(existing, record, payload_columns)
+    if mismatches:
+        raise BuildError(
+            f"duplicate divergent {label} detected: {identifier} "
+            f"(differ on {mismatches})"
+        )
 
 
 def _task1_frames(registries: Any) -> dict[str, pd.DataFrame]:
@@ -1587,6 +2054,11 @@ def _validate_required_bundles(config: BuildConfig) -> tuple[Any, EventBundle]:
         events = load_event_bundle(config.event_root)
         for name, columns in _EVENT_INPUT_COLUMNS.items():
             _validate_exact_columns(getattr(events, name), columns, f"{name} event input")
+        tencent_event_file = config.event_root / "tencent_events.csv"
+        if tencent_event_file.is_file():
+            from .thesis_seed import load_tencent_event_seed_bundle, merge_event_bundles
+            tencent_events = load_tencent_event_seed_bundle(config.event_root)
+            events = merge_event_bundles(events, tencent_events)
         event_issues = validate_event_bundle(events, registries, config.as_of_utc)
     except (FileNotFoundError, ValueError, TypeError) as exc:
         raise BuildError(f"required event input invalid: {exc}") from exc
@@ -1606,6 +2078,9 @@ def _validate_required_optional_inputs(config: BuildConfig) -> None:
         ("official_filing", config.official_filing_inputs),
         ("earnings", config.earnings_inputs),
         ("market", config.quote_inputs),
+        ("market", config.price_bar_inputs),
+        ("corporate_actions", config.corporate_actions_inputs),
+        ("valuation", config.valuation_inputs),
     ):
         for descriptor in descriptors:
             if not descriptor.required:
@@ -1685,6 +2160,114 @@ def _base_macro_frame(events: EventBundle) -> pd.DataFrame:
     return _with_columns(pd.DataFrame(_macro_event_rows(events.events)), MACRO_OUTPUT_COLUMNS)
 
 
+_MACRO_TIMESTAMP_COLUMNS = frozenset(
+    {
+        "observation_date",
+        "release_at",
+        "first_observed_at",
+        "source_published_at",
+        "retrieved_at_utc",
+        "realtime_start",
+        "realtime_end",
+    }
+)
+
+
+def _macro_identity_component(column: str, value: Any) -> str:
+    """Canonicalize one natural macro capture-key field."""
+
+    if _is_blank(value):
+        return ""
+    if column == "observation_date" or column in {"realtime_start", "realtime_end"}:
+        parsed = _timestamp(value, date_only=True)
+        return "" if pd.isna(parsed) else parsed.date().isoformat()
+    if column in _MACRO_TIMESTAMP_COLUMNS:
+        parsed = _timestamp(value)
+        return "" if pd.isna(parsed) else _iso(parsed)
+    return _text(value)
+
+
+def _macro_observation_identity(row: Mapping[str, Any]) -> str:
+    """Return a capture-preserving identity from the natural capture key.
+
+    Payload fields such as ``actual_value`` deliberately do not participate
+    in the ID.  If they differ for the same natural capture key,
+    ``_finalize_macro_frame`` rejects the group instead of minting two valid
+    IDs and hiding a source conflict.
+    """
+
+    natural_columns = (
+        "source_id",
+        "series_id",
+        "reference_period",
+        "observation_date",
+        "realtime_start",
+        "realtime_end",
+        "retrieved_at_utc",
+    )
+    parts = [
+        _macro_identity_component(column, row.get(column))
+        for column in natural_columns
+    ]
+    event_id = _text(row.get("event_id"))
+    if event_id:
+        parts.extend(("event_id", event_id))
+    return _stable_hash("macro_observation", *parts)
+
+
+def _finalize_macro_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    """Collapse exact captures and reject conflicting natural captures."""
+
+    if frame.empty:
+        return frame.reset_index(drop=True)
+    identity_columns = [
+        column for column in MACRO_OUTPUT_COLUMNS if column != "observation_id"
+    ]
+    working = frame.drop_duplicates(subset=identity_columns, keep="first").copy()
+    natural_groups: dict[tuple[str, ...], list[Any]] = {}
+    natural_columns = (
+        "source_id",
+        "series_id",
+        "reference_period",
+        "observation_date",
+        "realtime_start",
+        "realtime_end",
+        "retrieved_at_utc",
+    )
+    for index, row in working.iterrows():
+        natural_key = tuple(
+            _macro_identity_component(column, row.get(column))
+            for column in natural_columns
+        )
+        event_id = _text(row.get("event_id"))
+        if event_id:
+            natural_key = (*natural_key, "event_id", event_id)
+        natural_groups.setdefault(natural_key, []).append(index)
+    conflicting_groups = [
+        indexes for indexes in natural_groups.values() if len(indexes) > 1
+    ]
+    if conflicting_groups:
+        example = working.loc[conflicting_groups[0][0]]
+        raise BuildError(
+            "macro_observations natural capture conflict: "
+            f"source_id={_text(example.get('source_id'))};"
+            f"series_id={_text(example.get('series_id'))};"
+            f"reference_period={_text(example.get('reference_period'))};"
+            f"observation_date={_macro_identity_component('observation_date', example.get('observation_date'))};"
+            f"realtime_start={_text(example.get('realtime_start'))};"
+            f"retrieved_at_utc={_macro_identity_component('retrieved_at_utc', example.get('retrieved_at_utc'))}"
+        )
+    supplied_ids = working["observation_id"].map(_text)
+    duplicate_ids = supplied_ids.ne("") & supplied_ids.duplicated(keep=False)
+    for index, row in working.iterrows():
+        if not supplied_ids.loc[index] or duplicate_ids.loc[index]:
+            working.at[index, "observation_id"] = _macro_observation_identity(row)
+    final_ids = working["observation_id"].map(_text)
+    if final_ids.eq("").any() or final_ids.duplicated().any():
+        raise BuildError("macro_observations publication requires nonblank unique observation_id")
+    return working[MACRO_OUTPUT_COLUMNS].reset_index(drop=True)
+
+
 def _macro_row(
     *,
     source_id: str,
@@ -1709,8 +2292,8 @@ def _macro_row(
     realtime_start: Any = None,
     realtime_end: Any = None,
 ) -> dict[str, Any]:
-    return {
-        "observation_id": _stable_hash("macro", source_id, series_id, reference_period, observation_date),
+    row = {
+        "observation_id": "",
         "event_id": event_id,
         "source_id": source_id,
         "series_id": series_id,
@@ -1746,6 +2329,8 @@ def _macro_row(
             else None
         ),
     }
+    row["observation_id"] = _macro_observation_identity(row)
+    return row
 
 
 def _latest_timestamp(frame: pd.DataFrame, column: str) -> Any:
@@ -1773,6 +2358,19 @@ def _optional_state(descriptor: LocalInput, source_kind: str, schema_id: str) ->
         license_class=descriptor.license_class,
         cadence=descriptor.cadence,
         source_url=descriptor.source_url,
+        input_label=_portable_input_label(
+            Path(descriptor.path),
+            source_id=descriptor.source_id,
+        ),
+    )
+
+
+def _refresh_input_label(state: _SourceState, *, role: str = "data") -> None:
+    state.input_label = _portable_input_label(
+        state.path,
+        source_id=state.source_id,
+        role=role,
+        content_hash=state.input_sha256,
     )
 
 
@@ -1834,6 +2432,7 @@ def _load_optional(
         )
         if Path(descriptor.path).is_file():
             state.input_sha256 = _file_hash(Path(descriptor.path))
+            _refresh_input_label(state)
         if descriptor.required:
             raise BuildError(
                 f"required optional input uses unsupported schema: {descriptor.expected_schema}"
@@ -1848,6 +2447,7 @@ def _load_optional(
             raise BuildError(f"required optional input missing: {descriptor.path}")
         return state, None, None
     state.input_sha256 = _file_hash(Path(descriptor.path))
+    _refresh_input_label(state)
     try:
         frame = _read_local_input(descriptor)
         _validate_optional_columns(frame, schema_id, descriptor.source_id)
@@ -1857,6 +2457,41 @@ def _load_optional(
         _append_state_error(state, code="input_validation_failed", message=str(exc))
         if descriptor.required:
             raise BuildError(f"required optional input invalid: {descriptor.path}: {exc}") from exc
+        return state, None, schema_id
+    if schema_id == CORP_ACTIONS_SCHEMA_ID and {
+        "version", "registry_version"
+    } <= set(frame.columns):
+        legacy_version = frame["version"].map(_text).eq("v1")
+        legacy_registry = frame["registry_version"].map(_text).eq("v1")
+        legacy_mask = legacy_version & legacy_registry
+        if legacy_mask.any():
+            # The parent wiring bundle was written before the independent
+            # integer action version was introduced and put registry_version
+            # into version.  Migrate only this exact, self-identifying legacy
+            # shape; arbitrary non-numeric versions still fail below.
+            frame = frame.copy()
+            # CSV inputs may be read with pandas' Arrow-backed StringDtype;
+            # widen only this compatibility column before replacing the
+            # legacy text with the independent integer action version.
+            frame["version"] = frame["version"].astype(object)
+            frame.loc[legacy_mask, "version"] = 1
+            migrated = int(legacy_mask.sum())
+            state.detail = (
+                f"{state.detail}; " if state.detail else ""
+            ) + f"legacy_corporate_action_version_migrated={migrated}"
+    semantic_issues = _semantic_input_issues(frame, schema_id)
+    if semantic_issues:
+        detail = "; ".join(semantic_issues[:8])
+        state.status = "degraded"
+        state.detail = f"optional_semantic_validation_failed:{detail}"
+        _append_state_error(
+            state,
+            code="semantic_validation_failed",
+            message=detail,
+            severity="error" if descriptor.required else "warning",
+        )
+        if descriptor.required:
+            raise BuildError(f"required optional input semantic validation failed: {descriptor.path}: {detail}")
         return state, None, schema_id
     _apply_source_policy(
         state,
@@ -1894,15 +2529,21 @@ def _load_optional(
 
 
 def _find_descriptor(inputs: Sequence[LocalInput], schema_id: str) -> LocalInput | None:
+    descriptors = _find_descriptors(inputs, schema_id)
+    return descriptors[0] if descriptors else None
+
+
+def _find_descriptors(inputs: Sequence[LocalInput], schema_id: str) -> list[LocalInput]:
     canonical = _normalise_schema_id(schema_id)
+    matches: list[LocalInput] = []
     for descriptor in inputs:
         try:
             descriptor_schema = _normalise_schema_id(descriptor.expected_schema)
         except BuildError:
             continue
         if descriptor_schema == canonical:
-            return descriptor
-    return None
+            matches.append(descriptor)
+    return matches
 
 
 def _fred_macro(
@@ -2309,7 +2950,7 @@ def _build_macro(
     rows.extend(ecb_rows)
     states.extend(ecb_states)
     degraded.extend(ecb_degraded)
-    frame = _with_columns(pd.DataFrame(rows), MACRO_OUTPUT_COLUMNS)
+    frame = _finalize_macro_frame(_with_columns(pd.DataFrame(rows), MACRO_OUTPUT_COLUMNS))
     return _sort_frame(frame, ["observation_id"]), states, sorted(set(degraded))
 
 
@@ -2346,8 +2987,15 @@ def _unresolved_geographies(registries: Any) -> str:
     return ",".join(sorted({str(value) for value in countries if not _is_blank(value)}))
 
 
-def _explicit_related_ids(row: Mapping[str, Any], registries: Any) -> tuple[list[str], list[str], list[str]]:
-    listing_by_ticker, entity_by_listing, baskets_by_entity = _verified_crosswalk(registries)
+def _explicit_related_ids(
+    row: Mapping[str, Any],
+    registries: Any,
+    *,
+    crosswalk: tuple[dict[str, str], dict[str, str], dict[str, set[str]]] | None = None,
+) -> tuple[list[str], list[str], list[str]]:
+    listing_by_ticker, entity_by_listing, baskets_by_entity = (
+        crosswalk if crosswalk is not None else _verified_crosswalk(registries)
+    )
     mapped_entities = set(entity_by_listing.values())
     listing_ids: set[str] = set()
     entity_ids: set[str] = set()
@@ -2485,38 +3133,141 @@ def _news_rows(
     return rows
 
 
+def _filing_identity_value(field: str, value: Any) -> str:
+    """Normalize a filing identity field without erasing real conflicts."""
+
+    if _is_blank(value):
+        return ""
+    if field == "file_date":
+        parsed = _timestamp(value, date_only=True)
+        return "" if pd.isna(parsed) else parsed.date().isoformat()
+    return re.sub(r"\s+", " ", _text(value)).casefold()
+
+
+def _filing_document_id(source_id: str, accession: str, filing_url: str) -> str:
+    """Return the stable physical-document identity for a SEC metadata row."""
+
+    return _stable_hash("filing_physical_document", source_id, accession, filing_url)
+
+
 def _filing_rows(
-    descriptor: LocalInput, frame: pd.DataFrame, registries: Any
+    descriptor: LocalInput,
+    frame: pd.DataFrame,
+    registries: Any,
+    *,
+    conflict_log: list[str] | None = None,
 ) -> list[dict[str, Any]]:
-    rows: list[dict[str, Any]] = []
-    for _, item in frame.iterrows():
-        accession = str(item.get("accession_no", ""))
-        company = str(item.get("company_name", ""))
-        form = str(item.get("form", ""))
-        entity_ids, listing_ids, basket_ids = _explicit_related_ids(item, registries)
-        rows.append(
-            {
-                "document_id": accession or _stable_hash("filing", descriptor.source_id, company, form, item.get("file_date")),
-                "document_type": "filing",
-                "source_id": descriptor.source_id,
-                "headline": " ".join(part for part in (company, form) if part and part != "nan"),
-                "publisher": "SEC",
-                "published_at": _timestamp(item.get("file_date"), date_only=True),
-                "first_observed_at": _timestamp(item.get("fetched_at")),
-                "source_url": item.get("filing_url", "") or descriptor.source_url or "",
-                "language": "en",
-                "related_entity_ids": _json_list(entity_ids),
-                "related_listing_ids": _json_list(listing_ids),
-                "related_basket_ids": _json_list(basket_ids),
-                "event_class": "sec_filing_metadata",
-                "importance": "",
-                "source_quality": _source_quality_class(descriptor, "filing"),
-                "pit_class": descriptor.pit_class,
-                "source_license_class": descriptor.license_class,
-                "content_hash_if_permitted": "",
-                "derived_summary_if_permitted": "",
-            }
+    """Materialize SEC rows once per ``(source, accession, URL)``.
+
+    SEC search exports can return the same physical document for multiple
+    query terms.  Those rows collapse only when their physical key matches;
+    a different URL remains a distinct document even when the accession is
+    the same.  Conflicting identity metadata rejects the whole group rather
+    than silently choosing one version.
+    """
+
+    conflicts = conflict_log if conflict_log is not None else []
+    grouped: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    crosswalk = _verified_crosswalk(registries)
+    for position, (_, item) in enumerate(frame.iterrows()):
+        accession = _text(item.get("accession_no"))
+        filing_url = _text(item.get("filing_url"))
+        if not accession or not filing_url:
+            conflicts.append(
+                f"missing physical filing identity: source_id={descriptor.source_id};"
+                f" accession={accession or '<blank>'};url={filing_url or '<blank>'}"
+            )
+            continue
+        company = _text(item.get("company_name"))
+        form = _text(item.get("form"))
+        entity_ids, listing_ids, basket_ids = _explicit_related_ids(
+            item,
+            registries,
+            crosswalk=crosswalk,
         )
+        candidate = {
+            "document_id": _filing_document_id(descriptor.source_id, accession, filing_url),
+            "document_type": "filing",
+            "source_id": descriptor.source_id,
+            "headline": " ".join(part for part in (company, form) if part),
+            "publisher": "SEC",
+            "published_at": _timestamp(item.get("file_date"), date_only=True),
+            "first_observed_at": _timestamp(item.get("fetched_at")),
+            "source_url": filing_url,
+            "language": "en",
+            "related_entity_ids": _json_list(entity_ids),
+            "related_listing_ids": _json_list(listing_ids),
+            "related_basket_ids": _json_list(basket_ids),
+            "event_class": "sec_filing_metadata",
+            "importance": "",
+            "source_quality": _source_quality_class(descriptor, "filing"),
+            "pit_class": descriptor.pit_class,
+            "source_license_class": descriptor.license_class,
+            "content_hash_if_permitted": "",
+            "derived_summary_if_permitted": "",
+            "_position": position,
+            "_identity": {
+                field: _filing_identity_value(field, item.get(field))
+                for field in ("cik", "company_name", "form", "file_date")
+            },
+        }
+        grouped.setdefault((accession, filing_url), []).append(candidate)
+
+    rows: list[dict[str, Any]] = []
+    for (accession, filing_url), candidates in grouped.items():
+        conflicting_fields = [
+            field
+            for field in ("cik", "company_name", "form", "file_date")
+            if len(
+                {
+                    candidate["_identity"][field]
+                    for candidate in candidates
+                    if candidate["_identity"][field]
+                }
+            )
+            > 1
+        ]
+        if conflicting_fields:
+            conflicts.append(
+                f"conflicting physical filing metadata: source_id={descriptor.source_id};"
+                f" accession={accession};url={filing_url};"
+                f" fields={','.join(conflicting_fields)}"
+            )
+            continue
+
+        observed = [
+            candidate["first_observed_at"]
+            for candidate in candidates
+            if not pd.isna(candidate["first_observed_at"])
+        ]
+        earliest = min(observed) if observed else pd.NaT
+        canonical = min(
+            candidates,
+            key=lambda candidate: (
+                pd.isna(candidate["first_observed_at"]),
+                candidate["first_observed_at"]
+                if not pd.isna(candidate["first_observed_at"])
+                else pd.Timestamp.max,
+                candidate["_position"],
+            ),
+        )
+        row = {
+            key: value
+            for key, value in canonical.items()
+            if not key.startswith("_")
+        }
+        row["first_observed_at"] = earliest
+        for column in (
+            "related_entity_ids",
+            "related_listing_ids",
+            "related_basket_ids",
+        ):
+            row[column] = _json_list(
+                identifier
+                for candidate in candidates
+                for identifier in _split_ids(candidate[column])
+            )
+        rows.append(row)
     return rows
 
 
@@ -2607,10 +3358,33 @@ def _build_news_filings(
                 if state.status in {"unavailable", "degraded"}:
                     degraded.append(descriptor.source_id)
         else:
-            rows.extend(row_builder(descriptor, frame, registries))
+            filing_conflicts: list[str] = []
+            rows.extend(
+                row_builder(
+                    descriptor,
+                    frame,
+                    registries,
+                    conflict_log=filing_conflicts,
+                )
+            )
             _set_state_from_frame(state, frame, observed_column="file_date", retrieved_column="fetched_at")
             if "filing_url" in frame.columns and frame["filing_url"].notna().any():
                 state.source_url = str(frame["filing_url"].dropna().iloc[0])
+            if filing_conflicts:
+                state.status = "degraded"
+                for message in filing_conflicts[:8]:
+                    _append_state_error(
+                        state,
+                        code="filing_physical_document_conflict",
+                        message=message,
+                    )
+                if len(filing_conflicts) > 8:
+                    _append_state_error(
+                        state,
+                        code="filing_physical_document_conflict_summary",
+                        message=f"additional_conflicts={len(filing_conflicts) - 8}",
+                    )
+                degraded.append(descriptor.source_id)
         if schema_id is None:
             degraded.append(descriptor.source_id)
     if not news_inputs:
@@ -2695,7 +3469,9 @@ def _sidecar_states(frame: pd.DataFrame) -> list[_SourceState]:
 def _resolve_official_relations(
     frame: pd.DataFrame,
     registries: Any,
-) -> tuple[pd.DataFrame, int]:
+    *,
+    as_of_utc: pd.Timestamp,
+) -> tuple[pd.DataFrame, list[dict[str, object]]]:
     """Keep only rows whose entity/listing relations resolve in the registry.
 
     Unknown or mismatched rows are dropped with a counted note rather than
@@ -2703,7 +3479,6 @@ def _resolve_official_relations(
     """
 
     known_entities = set(registries.entities["entity_id"].astype("string"))
-    known_listings = set(registries.listings["listing_id"].astype("string"))
     listing_entities = dict(
         zip(
             registries.listings["listing_id"].astype("string"),
@@ -2716,22 +3491,65 @@ def _resolve_official_relations(
             registries.listings["canonical_ticker"].astype("string"),
         )
     )
+    scoped, rejected = filter_listing_scoped_rows(
+        frame,
+        registries.listings,
+        as_of_utc,
+        preserve_entity_only=True,
+    )
+    for index, item in frame.loc[~frame.index.isin(scoped.index)].iterrows():
+        if not any(item.get("row_index") == index for item in rejected):
+            rejected.append({
+                "row_index": index,
+                "listing_id": _text(item.get("listing_id")),
+                "entity_id": _text(item.get("entity_id")),
+                "reason": "listing scope row rejected",
+            })
     kept: list[dict[str, Any]] = []
-    dropped = 0
-    for _, item in frame.iterrows():
+    for index, item in scoped.iterrows():
         entity = str(item.get("entity_id") or "").strip()
         listing = str(item.get("listing_id") or "").strip()
         if (
             entity not in known_entities
-            or listing not in known_listings
-            or listing_entities.get(listing) != entity
+            or (listing and listing_entities.get(listing) != entity)
         ):
-            dropped += 1
+            rejected.append(
+                {
+                    "row_index": index,
+                    "listing_id": listing,
+                    "entity_id": entity,
+                    "reason": "unknown entity_id or listing/entity ownership mismatch",
+                }
+            )
             continue
         row = dict(item)
-        row["canonical_ticker"] = canonical_by_listing.get(listing, row.get("canonical_ticker", ""))
+        if listing:
+            row["canonical_ticker"] = canonical_by_listing.get(listing, row.get("canonical_ticker", ""))
         kept.append(row)
-    return pd.DataFrame(kept), dropped
+    return pd.DataFrame(kept), rejected
+
+
+def _record_listing_scope_rejections(
+    state: _SourceState,
+    rejected: Sequence[Mapping[str, object]],
+    *,
+    legacy_code: str = "unresolved_relations",
+) -> None:
+    if not rejected:
+        return
+    state.status = "degraded"
+    details = [
+        f"row={item.get('row_index')};listing_id={item.get('listing_id') or '<blank>'};reason={item.get('reason')}"
+        for item in rejected[:5]
+    ]
+    state.detail = (
+        f"{state.detail}; " if state.detail else ""
+    ) + f"dropped_unresolved_relations={len(rejected)};listing_scope_rejections=" + " | ".join(details)
+    _append_state_error(
+        state,
+        code=legacy_code,
+        message=f"dropped {len(rejected)} rows; " + " | ".join(details),
+    )
 
 
 def _calendar_event_type(period_label: Any, period_start: Any, period_end: Any) -> str:
@@ -2850,17 +3668,12 @@ def _build_official_filings(
             degraded.append(filings_descriptor.source_id)
         else:
             frame = _with_columns(frame, OFFICIAL_FILINGS_COLUMNS)
-            frame, dropped = _resolve_official_relations(frame, registries)
-            if dropped:
+            frame, rejected = _resolve_official_relations(
+                frame, registries, as_of_utc=as_of_utc
+            )
+            if rejected:
                 state.row_count = len(frame)
-                state.detail = (
-                    f"{state.detail}; " if state.detail else ""
-                ) + f"dropped_unresolved_relations={dropped}"
-                _append_state_error(
-                    state,
-                    code="unresolved_relations",
-                    message=f"dropped {dropped} rows with unknown entity/listing ids",
-                )
+                _record_listing_scope_rejections(state, rejected)
             rows = frame.to_dict("records")
     else:
         degraded.append("official_filings")
@@ -2889,55 +3702,334 @@ def _build_earnings_actuals(
     *,
     as_of_utc: pd.Timestamp,
 ) -> tuple[pd.DataFrame, list[_SourceState], list[str]]:
-    """Materialize the versioned earnings-actuals mart from Batch 3 inputs."""
+    """Materialize the versioned earnings-actuals mart from all earnings inputs."""
 
-    actuals_descriptor = _find_descriptor(inputs, EARNINGS_ACTUALS_SCHEMA_ID)
-    state_descriptor = _find_descriptor(inputs, SOURCE_STATE_SCHEMA_ID)
+    actuals_descriptors = [
+        descriptor
+        for descriptor in inputs
+        if _normalise_schema_id(descriptor.expected_schema) == EARNINGS_ACTUALS_SCHEMA_ID
+    ]
+    state_descriptors = [
+        descriptor
+        for descriptor in inputs
+        if _normalise_schema_id(descriptor.expected_schema) == SOURCE_STATE_SCHEMA_ID
+    ]
     states: list[_SourceState] = []
     degraded: list[str] = []
-    rows: list[dict[str, Any]] = []
+    combined_rows: dict[str, dict[str, Any]] = {}
 
-    if actuals_descriptor is not None:
-        state, frame, _schema_id = _load_optional(
-            actuals_descriptor, "earnings", as_of_utc=as_of_utc
-        )
-        states.append(state)
-        if frame is None:
-            degraded.append(actuals_descriptor.source_id)
-        else:
-            frame = _with_columns(frame, EARNINGS_ACTUALS_COLUMNS)
-            frame, dropped = _resolve_official_relations(frame, registries)
-            if dropped:
-                state.row_count = len(frame)
-                state.detail = (
-                    f"{state.detail}; " if state.detail else ""
-                ) + f"dropped_unresolved_relations={dropped}"
-                _append_state_error(
-                    state,
-                    code="unresolved_relations",
-                    message=f"dropped {dropped} rows with unknown entity/listing ids",
+    if actuals_descriptors:
+        for descriptor in actuals_descriptors:
+            state, frame, _schema_id = _load_optional(
+                descriptor, "earnings", as_of_utc=as_of_utc
+            )
+            states.append(state)
+            if frame is None:
+                degraded.append(descriptor.source_id)
+            else:
+                frame = _with_columns(frame, EARNINGS_ACTUALS_COLUMNS)
+                frame, rejected = _resolve_official_relations(
+                    frame, registries, as_of_utc=as_of_utc
                 )
-            rows = frame.to_dict("records")
+                if rejected:
+                    state.row_count = len(frame)
+                    _record_listing_scope_rejections(state, rejected)
+                for _, row in frame.iterrows():
+                    rec = row.to_dict()
+                    _merge_row_by_id(
+                        combined_rows,
+                        rec,
+                        id_column="actual_id",
+                        payload_columns=EARNINGS_ACTUALS_COLUMNS,
+                        label="actual_id",
+                    )
     else:
         degraded.append("earnings_actuals")
 
-    if state_descriptor is not None:
-        state, state_frame, _schema_id = _load_optional(
-            state_descriptor, "earnings", as_of_utc=as_of_utc
-        )
-        states.append(state)
-        if state_frame is None:
-            degraded.append(state_descriptor.source_id)
-        else:
-            states.extend(_sidecar_states(_with_columns(state_frame, SOURCE_STATE_COLUMNS)))
+    if state_descriptors:
+        for descriptor in state_descriptors:
+            state, state_frame, _schema_id = _load_optional(
+                descriptor, "earnings", as_of_utc=as_of_utc
+            )
+            states.append(state)
+            if state_frame is None:
+                degraded.append(descriptor.source_id)
+            else:
+                states.extend(_sidecar_states(_with_columns(state_frame, SOURCE_STATE_COLUMNS)))
     else:
         degraded.append("earnings_actuals_state")
 
-    actuals_out = _with_columns(pd.DataFrame(rows), EARNINGS_ACTUALS_COLUMNS)
+    actuals_out = _with_columns(pd.DataFrame(list(combined_rows.values())), EARNINGS_ACTUALS_COLUMNS)
     actuals_out = _sort_frame(
         actuals_out, ["entity_id", "metric", "period_end", "version"]
     )
     return actuals_out, states, sorted(set(degraded))
+
+
+def _build_corporate_actions(
+    registries: Any,
+    inputs: Sequence[LocalInput],
+    *,
+    as_of_utc: pd.Timestamp,
+) -> tuple[pd.DataFrame, list[_SourceState], list[str]]:
+    """Materialize the versioned corporate-actions mart."""
+    action_descriptors = [
+        descriptor
+        for descriptor in inputs
+        if _normalise_schema_id(descriptor.expected_schema) == CORP_ACTIONS_SCHEMA_ID
+    ]
+    state_descriptors = [
+        descriptor
+        for descriptor in inputs
+        if _normalise_schema_id(descriptor.expected_schema) == SOURCE_STATE_SCHEMA_ID
+    ]
+    states: list[_SourceState] = []
+    degraded: list[str] = []
+    combined_rows: dict[str, dict[str, Any]] = {}
+
+    if action_descriptors:
+        for descriptor in action_descriptors:
+            state, frame, _schema_id = _load_optional(
+                descriptor, "corporate_actions", as_of_utc=as_of_utc
+            )
+            states.append(state)
+            if frame is None:
+                degraded.append(descriptor.source_id)
+            else:
+                frame = _with_columns(frame, CORP_ACTIONS_COLUMNS)
+                frame, rejected = _resolve_official_relations(
+                    frame, registries, as_of_utc=as_of_utc
+                )
+                if rejected:
+                    state.row_count = len(frame)
+                    _record_listing_scope_rejections(state, rejected)
+                for _, row in frame.iterrows():
+                    rec = row.to_dict()
+                    _merge_row_by_id(
+                        combined_rows,
+                        rec,
+                        id_column="action_id",
+                        payload_columns=CORP_ACTIONS_COLUMNS,
+                        label="corporate action_id",
+                    )
+    else:
+        degraded.append("corporate_actions")
+
+    if state_descriptors:
+        for descriptor in state_descriptors:
+            state, state_frame, _schema_id = _load_optional(
+                descriptor, "corporate_actions", as_of_utc=as_of_utc
+            )
+            states.append(state)
+            if state_frame is None:
+                degraded.append(descriptor.source_id)
+            else:
+                states.extend(_sidecar_states(_with_columns(state_frame, SOURCE_STATE_COLUMNS)))
+    else:
+        degraded.append("corporate_actions_state")
+
+    actions_out = _with_columns(pd.DataFrame(list(combined_rows.values())), CORP_ACTIONS_COLUMNS)
+    actions_out = _sort_frame(actions_out, ["listing_id", "execution_date", "action_type", "action_id"])
+    return actions_out, states, sorted(set(degraded))
+
+
+def _build_valuation_and_estimates(
+    registries: Any,
+    inputs: Sequence[LocalInput],
+    *,
+    as_of_utc: pd.Timestamp,
+) -> tuple[pd.DataFrame, pd.DataFrame, list[_SourceState], list[str]]:
+    """Materialize valuation_snapshots and internal_estimates marts."""
+    val_descriptors = _find_descriptors(inputs, VALUATION_SNAPSHOTS_SCHEMA_ID)
+    est_descriptors = _find_descriptors(inputs, INTERNAL_ESTIMATES_SCHEMA_ID)
+    states: list[_SourceState] = []
+    degraded: list[str] = []
+    val_rows: dict[str, dict[str, Any]] = {}
+    est_rows: dict[str, dict[str, Any]] = {}
+
+    if val_descriptors:
+        for val_descriptor in val_descriptors:
+            state, frame, _schema_id = _load_optional(
+                val_descriptor, "valuation", as_of_utc=as_of_utc
+            )
+            states.append(state)
+            if frame is None:
+                degraded.append(val_descriptor.source_id)
+                continue
+            frame = _with_columns(frame, VALUATION_SNAPSHOTS_COLUMNS)
+            frame, rejected = filter_listing_scoped_rows(
+                frame,
+                registries.listings,
+                as_of_utc,
+                preserve_entity_only=True,
+            )
+            if rejected:
+                _record_listing_scope_rejections(
+                    state,
+                    rejected,
+                    legacy_code="listing_scope_rows_rejected",
+                )
+            for record in frame.to_dict("records"):
+                _merge_row_by_id(
+                    val_rows,
+                    record,
+                    id_column="valuation_id",
+                    payload_columns=VALUATION_SNAPSHOTS_COLUMNS,
+                    label="valuation_id",
+                    require_id=True,
+                )
+    else:
+        degraded.append("valuation_snapshots")
+
+    if est_descriptors:
+        for est_descriptor in est_descriptors:
+            state, frame, _schema_id = _load_optional(
+                est_descriptor, "valuation", as_of_utc=as_of_utc
+            )
+            states.append(state)
+            if frame is None:
+                degraded.append(est_descriptor.source_id)
+                continue
+            frame = _with_columns(frame, INTERNAL_ESTIMATES_COLUMNS)
+            frame, rejected = filter_listing_scoped_rows(
+                frame,
+                registries.listings,
+                as_of_utc,
+                preserve_entity_only=True,
+            )
+            if rejected:
+                _record_listing_scope_rejections(
+                    state,
+                    rejected,
+                    legacy_code="listing_scope_rows_rejected",
+                )
+            for record in frame.to_dict("records"):
+                _merge_row_by_id(
+                    est_rows,
+                    record,
+                    id_column="estimate_id",
+                    payload_columns=INTERNAL_ESTIMATES_COLUMNS,
+                    label="estimate_id",
+                    require_id=True,
+                )
+    else:
+        degraded.append("internal_estimates")
+
+    val_out = _with_columns(pd.DataFrame(list(val_rows.values())), VALUATION_SNAPSHOTS_COLUMNS)
+    val_out = _sort_frame(val_out, ["listing_id", "valuation_date", "metric_name"])
+    est_out = _with_columns(pd.DataFrame(list(est_rows.values())), INTERNAL_ESTIMATES_COLUMNS)
+    est_out = _sort_frame(est_out, ["entity_id", "metric", "effective_asof", "version"])
+    return val_out, est_out, states, sorted(set(degraded))
+
+
+def _build_thesis_and_evidence(
+    config: BuildConfig,
+    registries: Any,
+    events: EventBundle,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, list[_SourceState], list[str]]:
+    """Load, validate and materialize thesis & evidence marts from config directory."""
+    claims_out = _with_columns(pd.DataFrame(), THESIS_CLAIMS_COLUMNS)
+    questions_out = _with_columns(pd.DataFrame(), THESIS_WATCH_QUESTIONS_COLUMNS)
+    evidence_out = _with_columns(pd.DataFrame(), EVIDENCE_ITEMS_COLUMNS)
+    links_out = _with_columns(pd.DataFrame(), CLAIM_EVIDENCE_LINKS_COLUMNS)
+    states: list[_SourceState] = []
+    degraded: list[str] = []
+
+    # The thesis layer is one four-file bundle.  A partial bundle cannot be
+    # interpreted as an intentional empty layer, and its loader must not leak
+    # a raw FileNotFoundError through the publication boundary.
+    thesis_files = (
+        "thesis_claims.csv",
+        "thesis_watch_questions.csv",
+        "evidence_items.csv",
+        "claim_evidence_links.csv",
+    )
+    present_thesis_files = {
+        filename
+        for filename in thesis_files
+        if (config.registry_root / filename).is_file()
+    }
+    if not present_thesis_files:
+        degraded.append("thesis_claims")
+    elif present_thesis_files != set(thesis_files):
+        missing = sorted(set(thesis_files) - present_thesis_files)
+        raise BuildError(
+            "thesis seed bundle incomplete; missing files: " + ", ".join(missing)
+        )
+    else:
+        from .thesis_seed import load_thesis_seed_bundle, validate_thesis_seed_bundle
+
+        try:
+            bundle = load_thesis_seed_bundle(config.registry_root)
+            # Run a structural/semantic preflight over the complete raw seed
+            # bundle before selecting the as-of slice.  A malformed nonblank
+            # timestamp must be an error, not NaT that disappears in the
+            # future-row filter.  Use the maximum representable UTC time only
+            # to suppress legitimate future-date errors during this pass.
+            preflight_issues = validate_thesis_seed_bundle(
+                bundle,
+                registries,
+                events,
+                pd.Timestamp.max.tz_localize("UTC"),
+            )
+            preflight_errors = [issue for issue in preflight_issues if issue.severity == "error"]
+            if preflight_errors:
+                detail = "; ".join(
+                    f"{issue.registry or 'thesis'}:{issue.code}"
+                    + (f"[row={issue.row_index}]" if issue.row_index is not None else "")
+                    for issue in preflight_errors
+                )
+                raise BuildError(f"thesis seed validation failed: {detail}")
+            # Future evidence is a valid seed row for a later generation, but
+            # it is unavailable to this as_of snapshot. Validate the eligible
+            # slice so structural/FK/schema issues still fail closed without
+            # treating honest future exclusion as a malformed seed.
+            ev_df = bundle.evidence_items.copy()
+            if not ev_df.empty:
+                obs = pd.to_datetime(
+                    ev_df["observed_at_utc"], errors="coerce", utc=True
+                )
+                pub = pd.to_datetime(
+                    ev_df["published_at"], errors="coerce", utc=True
+                )
+                valid_mask = (obs <= config.as_of_utc) & (pub <= config.as_of_utc)
+                ev_df = ev_df.loc[valid_mask].copy()
+            valid_ev_ids = set(ev_df["evidence_id"]) if not ev_df.empty else set()
+            links_df = bundle.claim_evidence_links.copy()
+            if not links_df.empty:
+                links_df = links_df.loc[
+                    links_df["evidence_id"].isin(valid_ev_ids)
+                ].copy()
+            validation_bundle = replace(
+                bundle,
+                evidence_items=ev_df,
+                claim_evidence_links=links_df,
+            )
+            issues = validate_thesis_seed_bundle(
+                validation_bundle, registries, events, config.as_of_utc
+            )
+        except (FileNotFoundError, OSError, ValueError, TypeError, KeyError) as exc:
+            raise BuildError(f"thesis seed bundle invalid: {exc}") from exc
+        error_issues = [issue for issue in issues if issue.severity == "error"]
+        if error_issues:
+            detail = "; ".join(
+                f"{issue.registry or 'thesis'}:{issue.code}"
+                + (f"[row={issue.row_index}]" if issue.row_index is not None else "")
+                for issue in error_issues
+            )
+            raise BuildError(f"thesis seed validation failed: {detail}")
+        if issues:
+            degraded.append("thesis_seed_validation")
+
+        claims_out = _with_columns(bundle.thesis_claims, THESIS_CLAIMS_COLUMNS)
+        questions_out = _with_columns(bundle.thesis_watch_questions, THESIS_WATCH_QUESTIONS_COLUMNS)
+        evidence_out = _with_columns(ev_df, EVIDENCE_ITEMS_COLUMNS)
+        links_out = _with_columns(links_df, CLAIM_EVIDENCE_LINKS_COLUMNS)
+    claims_out = _sort_frame(claims_out, ["claim_id"])
+    questions_out = _sort_frame(questions_out, ["question_id"])
+    evidence_out = _sort_frame(evidence_out, ["evidence_id"])
+    links_out = _sort_frame(links_out, ["link_id"])
+    return claims_out, questions_out, evidence_out, links_out, states, sorted(set(degraded))
 
 
 def _task3_empty(columns: Sequence[str]) -> pd.DataFrame:
@@ -3000,8 +4092,138 @@ def _consensus_entitlement_usable(item: Mapping[str, Any]) -> bool:
     )
 
 
+def _deduplicate_consensus_snapshots(
+    frame: pd.DataFrame,
+) -> tuple[pd.DataFrame, frozenset[str], int, int]:
+    """Enforce the consensus snapshot primary-key contract.
+
+    A repeated ``snapshot_id`` is safe to collapse only when every published
+    payload field is semantically equal. If any field differs, every row for
+    that ID is rejected: choosing one would silently guess which provider
+    vintage or period is authoritative. Blank IDs are rejected as invalid
+    primary keys; no replacement ID is invented.
+
+    Returns ``(clean_frame, rejected_ids, collapsed_rows, blank_id_rows)``.
+    ``rejected_ids`` contains only nonblank IDs so it can be used to remove
+    revisions that reference a rejected snapshot.
+    """
+
+    if frame is None or frame.empty:
+        return _task3_empty(TASK3_SNAPSHOT_COLUMNS), frozenset(), 0, 0
+
+    working = frame[TASK3_SNAPSHOT_COLUMNS].copy().reset_index(drop=True)
+    grouped: dict[str, list[int]] = {}
+    blank_id_rows = 0
+    for index, row in working.iterrows():
+        snapshot_id = _text(row.get("snapshot_id"))
+        if not snapshot_id:
+            blank_id_rows += 1
+            continue
+        grouped.setdefault(snapshot_id, []).append(index)
+
+    keep_indexes: list[int] = []
+    rejected_ids: set[str] = set()
+    collapsed_rows = 0
+    for snapshot_id, indexes in grouped.items():
+        first = working.iloc[indexes[0]].to_dict()
+        divergent = any(
+            _full_payload_mismatches(
+                first,
+                working.iloc[index].to_dict(),
+                TASK3_SNAPSHOT_COLUMNS,
+            )
+            for index in indexes[1:]
+        )
+        if divergent:
+            rejected_ids.add(snapshot_id)
+            continue
+        keep_indexes.append(indexes[0])
+        collapsed_rows += len(indexes) - 1
+
+    clean = working.iloc[keep_indexes].reset_index(drop=True)
+    return clean, frozenset(rejected_ids), collapsed_rows, blank_id_rows
+
+
+def _deduplicate_consensus_revisions(
+    frame: pd.DataFrame,
+) -> tuple[pd.DataFrame, frozenset[str], int, int]:
+    """Enforce the consensus revision primary-key contract.
+
+    Repeated ``revision_id`` rows collapse only when every published payload
+    field is semantically equal. Divergent rows sharing an ID are all
+    rejected, and blank IDs are rejected without inventing replacements.
+
+    Returns ``(clean_frame, rejected_ids, collapsed_rows, blank_id_rows)``.
+    """
+
+    if frame is None or frame.empty:
+        return _task3_empty(TASK3_REVISION_COLUMNS), frozenset(), 0, 0
+
+    working = frame[TASK3_REVISION_COLUMNS].copy().reset_index(drop=True)
+    grouped: dict[str, list[int]] = {}
+    blank_id_rows = 0
+    for index, row in working.iterrows():
+        revision_id = _text(row.get("revision_id"))
+        if not revision_id:
+            blank_id_rows += 1
+            continue
+        grouped.setdefault(revision_id, []).append(index)
+
+    keep_indexes: list[int] = []
+    rejected_ids: set[str] = set()
+    collapsed_rows = 0
+    for revision_id, indexes in grouped.items():
+        first = working.iloc[indexes[0]].to_dict()
+        divergent = any(
+            _full_payload_mismatches(
+                first,
+                working.iloc[index].to_dict(),
+                TASK3_REVISION_COLUMNS,
+            )
+            for index in indexes[1:]
+        )
+        if divergent:
+            rejected_ids.add(revision_id)
+            continue
+        keep_indexes.append(indexes[0])
+        collapsed_rows += len(indexes) - 1
+
+    clean = working.iloc[keep_indexes].reset_index(drop=True)
+    return clean, frozenset(rejected_ids), collapsed_rows, blank_id_rows
+
+
+def _drop_orphaned_consensus_revisions(
+    revisions: pd.DataFrame,
+    *,
+    valid_snapshot_ids: set[str],
+    rejected_snapshot_ids: frozenset[str],
+) -> tuple[pd.DataFrame, int]:
+    """Remove revisions whose current/rejected snapshot reference is unusable.
+
+    ``prior_snapshot_id`` may be blank for a reconstructed cold-start revision,
+    and an older prior ID may legitimately be outside a bounded export. A
+    nonblank prior ID is removed when it names a snapshot rejected by this
+    build; current IDs must always resolve to a snapshot that will publish.
+    """
+
+    if revisions is None or revisions.empty:
+        return _task3_empty(TASK3_REVISION_COLUMNS), 0
+
+    working = revisions[TASK3_REVISION_COLUMNS].copy()
+    current_ids = working["snapshot_id"].map(_text)
+    prior_ids = working["prior_snapshot_id"].map(_text)
+    orphaned = (
+        current_ids.eq("")
+        | ~current_ids.isin(valid_snapshot_ids)
+        | prior_ids.isin(rejected_snapshot_ids)
+    )
+    kept = working.loc[~orphaned].reset_index(drop=True)
+    return kept, int(orphaned.sum())
+
+
 def _build_consensus(
     config: BuildConfig,
+    registries: Any,
 ) -> tuple[pd.DataFrame, pd.DataFrame, list[_SourceState], list[str], dict[str, str]]:
     snapshots = _task3_empty(TASK3_SNAPSHOT_COLUMNS)
     revisions = _task3_empty(TASK3_REVISION_COLUMNS)
@@ -3022,6 +4244,11 @@ def _build_consensus(
             entitlement_evidence="No populated rows are admitted without Task 3 provider-health evidence",
             entitlement_ref="task3-provider-policy:sidecar-required-v1",
             detail="optional_task3_export_directory_missing",
+            input_label=_portable_input_label(
+                directory,
+                source_id="consensus_export",
+                role="directory",
+            ),
         )
         states.append(state)
         degraded.append("consensus_export")
@@ -3032,7 +4259,11 @@ def _build_consensus(
         "health": "control_tower_consensus_source_health.parquet",
     }
     paths = {key: directory / name for key, name in names.items()}
-    missing = [str(path) for path in paths.values() if not path.is_file()]
+    missing = [
+        _portable_input_label(path, source_id="consensus_export", role=key)
+        for key, path in paths.items()
+        if not path.is_file()
+    ]
     state = _SourceState(
         source_id="consensus_export",
         source_kind="consensus",
@@ -3047,6 +4278,11 @@ def _build_consensus(
             "rows; no redistribution rights are asserted"
         ),
         entitlement_ref="task3-provider-policy:sidecar-required-v1",
+        input_label=_portable_input_label(
+            directory,
+            source_id="consensus_export",
+            role="directory",
+        ),
     )
     if missing:
         state.status = "unavailable"
@@ -3082,16 +4318,58 @@ def _build_consensus(
         states.append(state)
         degraded.append("consensus_export")
         return _task3_empty(TASK3_SNAPSHOT_COLUMNS), _task3_empty(TASK3_REVISION_COLUMNS), states, degraded, fingerprints
-    for path in paths.values():
-        fingerprints[str(path)] = _file_hash(path)
-    state.status = "available"
+    snapshot_ids_by_row_index = {
+        index: _text(value)
+        for index, value in snapshots["snapshot_id"].items()
+    }
+    snapshots, snapshot_rejected = filter_listing_scoped_rows(
+        snapshots,
+        registries.listings,
+        config.as_of_utc,
+        preserve_entity_only=True,
+    )
+    revisions, revision_rejected = filter_listing_scoped_rows(
+        revisions,
+        registries.listings,
+        config.as_of_utc,
+        preserve_entity_only=True,
+    )
+    listing_rejected_snapshot_ids = frozenset(
+        snapshot_id
+        for item in snapshot_rejected
+        if (
+            snapshot_id := snapshot_ids_by_row_index.get(item.get("row_index"), "")
+        )
+    )
+    listing_rejections = [*snapshot_rejected, *revision_rejected]
+    if listing_rejections:
+        _record_listing_scope_rejections(state, listing_rejections, legacy_code="listing_scope_rows_rejected")
+    listing_detail = state.detail
+    path_hashes = {key: _file_hash(path) for key, path in paths.items()}
+    path_labels = {
+        key: _portable_input_label(
+            path,
+            source_id="consensus_export",
+            role=key,
+            content_hash=path_hashes[key],
+        )
+        for key, path in paths.items()
+    }
+    fingerprints.update({path_labels[key]: path_hashes[key] for key in paths})
+    state.status = "degraded" if listing_rejections else "available"
     state.row_count = len(snapshots) + len(revisions)
     state.first_observation_at = _first_timestamp(snapshots, "snapshot_at")
     state.latest_observation_at = _latest_timestamp(snapshots, "snapshot_at")
     state.source_latest_at = _latest_timestamp(snapshots, "provider_asof")
     state.retrieved_at_utc = _latest_timestamp(snapshots, "retrieved_at_utc")
     state.input_sha256 = _composite_input_hash(
-        {path.name: fingerprints[str(path)] for path in paths.values()}
+        {paths[key].name: path_hashes[key] for key in paths}
+    )
+    state.input_label = _portable_input_label(
+        directory,
+        source_id="consensus_export",
+        role="bundle",
+        content_hash=state.input_sha256,
     )
     state.detail = (
         "composite_sha256=sha256(sorted(filename\\x1ffile_sha256_pairs));"
@@ -3099,6 +4377,89 @@ def _build_consensus(
         "control_tower_consensus_revisions.parquet,"
         "control_tower_consensus_source_health.parquet"
     )
+    if listing_detail:
+        state.detail = f"{state.detail}; {listing_detail}"
+    snapshots, duplicate_rejected_snapshot_ids, collapsed_rows, blank_id_rows = (
+        _deduplicate_consensus_snapshots(snapshots)
+    )
+    if collapsed_rows:
+        state.detail = (
+            f"{state.detail}; " if state.detail else ""
+        ) + f"duplicate_snapshot_rows_collapsed={collapsed_rows}"
+    if duplicate_rejected_snapshot_ids:
+        _append_state_error(
+            state,
+            code="duplicate_snapshot_id_divergent",
+            message=(
+                f"rejected all rows for {len(duplicate_rejected_snapshot_ids)} divergent "
+                "snapshot_id value(s): "
+                + ",".join(sorted(duplicate_rejected_snapshot_ids)[:8])
+            ),
+        )
+    if blank_id_rows:
+        _append_state_error(
+            state,
+            code="snapshot_id_missing",
+            message=f"dropped {blank_id_rows} consensus snapshot row(s) with blank snapshot_id",
+        )
+    if duplicate_rejected_snapshot_ids or blank_id_rows:
+        state.status = "degraded"
+    (
+        revisions,
+        rejected_revision_ids,
+        collapsed_revision_rows,
+        blank_revision_id_rows,
+    ) = _deduplicate_consensus_revisions(revisions)
+    if collapsed_revision_rows:
+        state.detail = (
+            f"{state.detail}; " if state.detail else ""
+        ) + f"duplicate_revision_rows_collapsed={collapsed_revision_rows}"
+    if rejected_revision_ids:
+        _append_state_error(
+            state,
+            code="duplicate_revision_id_divergent",
+            message=(
+                f"rejected all rows for {len(rejected_revision_ids)} divergent "
+                "revision_id value(s): "
+                + ",".join(sorted(rejected_revision_ids)[:8])
+            ),
+        )
+    if blank_revision_id_rows:
+        _append_state_error(
+            state,
+            code="revision_id_missing",
+            message=(
+                f"dropped {blank_revision_id_rows} consensus revision row(s) "
+                "with blank revision_id"
+            ),
+        )
+    if rejected_revision_ids or blank_revision_id_rows:
+        state.status = "degraded"
+    rejected_snapshot_ids = frozenset(
+        {
+            *listing_rejected_snapshot_ids,
+            *duplicate_rejected_snapshot_ids,
+        }
+    )
+    snapshots_ids_after_integrity = {
+        _text(value) for value in snapshots["snapshot_id"].tolist()
+    }
+    revisions, orphaned_revision_rows = _drop_orphaned_consensus_revisions(
+        revisions,
+        valid_snapshot_ids=snapshots_ids_after_integrity,
+        rejected_snapshot_ids=rejected_snapshot_ids,
+    )
+    if orphaned_revision_rows:
+        state.status = "degraded"
+        _append_state_error(
+            state,
+            code="orphaned_consensus_revisions_removed",
+            message=(
+                f"dropped {orphaned_revision_rows} revision row(s) whose current "
+                "or rejected snapshot reference is not publishable"
+            ),
+        )
+    policy_error_count = len(state.errors)
     for frame in (snapshots, revisions):
         if not frame.empty:
             _apply_source_policy(
@@ -3130,7 +4491,10 @@ def _build_consensus(
         ),
         default=pd.NaT,
     )
-    if state.status != "available":
+    # Listing-scope rejection is row-local: it degrades the aggregate source
+    # and records diagnostics, but must not discard eligible rows.  Freshness
+    # and other source-policy failures remain fail-closed for the whole export.
+    if len(state.errors) > policy_error_count:
         states.append(state)
         degraded.append("consensus_export")
         return (
@@ -3212,7 +4576,8 @@ def _build_consensus(
             detail=str(item["reason"]),
         )
         provider_state.status = "available"
-        provider_state.input_sha256 = fingerprints[str(paths["health"])]
+        provider_state.input_sha256 = path_hashes["health"]
+        provider_state.input_label = path_labels["health"]
         _apply_source_policy(
             provider_state,
             item.to_frame().T,
@@ -3258,6 +4623,9 @@ def _build_consensus(
             int(item["row_count"]) if not _is_blank(item["row_count"]) else 0
         )
         states.append(provider_state)
+    snapshot_ids_before_provider_filter = {
+        _text(value) for value in snapshots["snapshot_id"].tolist()
+    }
     if provider_policy_failed:
         state.status = "degraded"
         degraded.append("consensus_export")
@@ -3275,6 +4643,31 @@ def _build_consensus(
             ~revisions["provider"].isin(failed_providers)
             & ~revisions["prior_provider"].isin(failed_providers)
         ].copy()
+    provider_removed_snapshot_ids = frozenset(
+        snapshot_ids_before_provider_filter
+        - {_text(value) for value in snapshots["snapshot_id"].tolist()}
+    )
+    snapshots_ids_after_provider_filter = {
+        _text(value) for value in snapshots["snapshot_id"].tolist()
+    }
+    revisions, provider_orphaned_revision_rows = _drop_orphaned_consensus_revisions(
+        revisions,
+        valid_snapshot_ids=snapshots_ids_after_provider_filter,
+        rejected_snapshot_ids=frozenset(
+            {*rejected_snapshot_ids, *provider_removed_snapshot_ids}
+        ),
+    )
+    if provider_orphaned_revision_rows:
+        state.status = "degraded"
+        _append_state_error(
+            state,
+            code="orphaned_consensus_revisions_removed",
+            message=(
+                f"dropped {provider_orphaned_revision_rows} revision row(s) after "
+                "provider-policy snapshot filtering"
+            ),
+        )
+    state.row_count = len(snapshots) + len(revisions)
     if usable_provider_count == 0:
         state.status = "unavailable"
         _append_state_error(
@@ -3344,6 +4737,9 @@ def _quote_row_rejection(
 ) -> str | None:
     if listing is None:
         return "unknown listing_id; registry truth is required"
+    listing_scope_reason = listing_eligibility_reason(listing, as_of_utc)
+    if listing_scope_reason:
+        return listing_scope_reason
     if entity is None:
         return "listing references an unknown entity_id"
     entity_type = _text(entity.get("entity_type")).lower()
@@ -3355,12 +4751,6 @@ def _quote_row_rejection(
         return "entity is outside its active interval"
     if _text(listing.get("listing_status")).lower() != "active":
         return "listing is archived or inactive"
-    if not _quote_interval_active(listing, as_of_utc):
-        return "listing is future or outside its active interval"
-    if not _quote_bool(listing.get("collection_eligible")):
-        return "listing is not collection eligible"
-    if _text(listing.get("mapping_status")).lower() != "verified":
-        return "listing mapping is not verified"
 
     supplied_ticker = _text(item.get("canonical_ticker"))
     registry_ticker = _text(listing.get("canonical_ticker"))
@@ -3524,15 +4914,17 @@ def _build_price_bars(
     state, frame, _ = _load_optional(descriptor, "market", as_of_utc=as_of_utc)
     if frame is None:
         return empty, [state], ["price_bars"]
-    listings = registries.listings
-    known = set(listings["listing_id"].astype(str)) if not listings.empty else set()
-    mapped = frame.loc[frame["listing_id"].astype(str).isin(known)].copy()
-    dropped = len(frame) - len(mapped)
-    if dropped:
-        _append_state_error(
+    mapped, rejected = filter_listing_scoped_rows(
+        frame,
+        registries.listings,
+        as_of_utc,
+        preserve_entity_only=True,
+    )
+    if rejected:
+        _record_listing_scope_rejections(
             state,
-            code="unmapped_listing_rows_dropped",
-            message=f"rows={dropped};reason=listing_id not in the registry",
+            rejected,
+            legacy_code="unmapped_listing_rows_dropped",
         )
     _set_state_from_frame(state, mapped, observed_column="bar_date", retrieved_column="retrieved_at_utc")
     state.row_count = len(mapped)
@@ -3587,11 +4979,19 @@ def _build_quote_snapshots(
 
         status_payload, status_error = _read_quote_status(status_path)
         if status_path.is_file():
-            fingerprints[str(status_path)] = _file_hash(status_path)
+            status_hash = _file_hash(status_path)
+            status_label = _portable_input_label(
+                status_path,
+                source_id=descriptor.source_id,
+                role="status",
+                content_hash=status_hash,
+            )
+            fingerprints[status_label] = status_hash
             if state.input_sha256:
                 state.input_sha256 = _composite_input_hash(
-                    {"data": state.input_sha256, "status": fingerprints[str(status_path)]}
+                    {"data": state.input_sha256, "status": status_hash}
                 )
+                _refresh_input_label(state)
         if status_error:
             state.status = "degraded"
             _append_state_error(state, code="quote_status_sidecar_invalid", message=status_error)
@@ -3770,6 +5170,7 @@ def _expected_health_states(config: BuildConfig, existing: Sequence[_SourceState
             state.detail = f"unsupported_optional_schema:{descriptor.expected_schema}"
             if Path(descriptor.path).is_file():
                 state.input_sha256 = _file_hash(Path(descriptor.path))
+                _refresh_input_label(state)
             states.append(state)
             continue
         state = _optional_state(descriptor, source_kind, schema_id)
@@ -3782,6 +5183,7 @@ def _expected_health_states(config: BuildConfig, existing: Sequence[_SourceState
             state.row_count = source_state.row_count
             state.input_sha256 = source_state.input_sha256
             state.detail = source_state.detail
+            _refresh_input_label(state)
         states.append(state)
 
     for source_id, kind, schema_id, geography in _EXPECTED_OPTIONAL_SOURCES:
@@ -3812,6 +5214,7 @@ def _expected_health_states(config: BuildConfig, existing: Sequence[_SourceState
             state.status = "available" if any(item.source_id == descriptor.source_id and item.status == "available" for item in existing) else "degraded"
             state.row_count = next((item.row_count for item in existing if item.source_id == descriptor.source_id), 0)
             state.input_sha256 = next((item.input_sha256 for item in existing if item.source_id == descriptor.source_id), None)
+            _refresh_input_label(state)
             states.append(state)
         else:
             state = _SourceState(
@@ -3833,6 +5236,7 @@ def _unconfigured_optional_ids(config: BuildConfig) -> list[str]:
     configured_by_kind: dict[str, set[str]] = {
         "macro": set(), "news": set(), "filing": set(),
         "official_filing": set(), "earnings": set(), "market": set(),
+        "corporate_actions": set(), "valuation": set(),
     }
     for source_kind, descriptors in (
         ("macro", config.macro_inputs),
@@ -3841,6 +5245,9 @@ def _unconfigured_optional_ids(config: BuildConfig) -> list[str]:
         ("official_filing", config.official_filing_inputs),
         ("earnings", config.earnings_inputs),
         ("market", config.quote_inputs),
+        ("market", config.price_bar_inputs),
+        ("corporate_actions", config.corporate_actions_inputs),
+        ("valuation", config.valuation_inputs),
     ):
         for descriptor in descriptors:
             try:
@@ -3890,9 +5297,15 @@ def _required_health(config: BuildConfig) -> tuple[list[_SourceState], dict[str,
             if not path.is_file():
                 raise BuildError(f"required input missing: {path}")
             digest = _file_hash(path)
-            fingerprints[str(path)] = digest
+            source_id = f"{root_kind}:{logical_name}"
+            label = _portable_input_label(
+                path,
+                source_id=source_id,
+                content_hash=digest,
+            )
+            fingerprints[label] = digest
             state = _SourceState(
-                source_id=f"{root_kind}:{logical_name}",
+                source_id=source_id,
                 source_kind=root_kind,
                 path=path,
                 schema_version=f"{root_kind}_v1",
@@ -3900,6 +5313,7 @@ def _required_health(config: BuildConfig) -> tuple[list[_SourceState], dict[str,
                 pit_class="snapshot_from_live_source",
                 license_class="internal_research",
                 input_sha256=digest,
+                input_label=label,
                 status="available",
                 detail="validated_required_bundle",
             )
@@ -3994,6 +5408,78 @@ def _arrow_schema() -> dict[str, pa.Schema]:
             "is_restatement": pa.bool_(),
         },
     )
+    corporate_actions_schema = fields(
+        CORP_ACTIONS_COLUMNS,
+        {
+            "version": pa.int64(),
+            "published_at": timestamp,
+            "retrieved_at_utc": timestamp,
+            "shares_affected": pa.int64(),
+            "price_min": pa.float64(),
+            "price_max": pa.float64(),
+            "price_avg": pa.float64(),
+            "total_amount_paid": pa.float64(),
+            "shares_for_cancellation": pa.int64(),
+            "shares_for_treasury": pa.int64(),
+            "mandate_authorised_shares": pa.int64(),
+            "mandate_cumulative_repurchased_shares": pa.int64(),
+        },
+    )
+    valuation_snapshots_schema = fields(
+        VALUATION_SNAPSHOTS_COLUMNS,
+        {
+            "valuation_date": date_type,
+            "valuation_at": timestamp,
+            "ratio_value": pa.float64(),
+            "numerator_value": pa.float64(),
+            "numerator_at_utc": timestamp,
+            "numerator_retrieved_at_utc": timestamp,
+            "denominator_value": pa.float64(),
+            "denominator_at_utc": timestamp,
+            "denominator_provider_asof_utc": timestamp,
+            "denominator_retrieved_at_utc": timestamp,
+            "fx_rate_applied": pa.float64(),
+            "fx_snapshot_at_utc": timestamp,
+            "fx_retrieved_at_utc": timestamp,
+            "retrieved_at_utc": timestamp,
+        },
+    )
+    internal_estimates_schema = fields(
+        INTERNAL_ESTIMATES_COLUMNS,
+        {
+            "version": pa.int64(),
+            "fiscal_year": pa.int64(),
+            "value_low": pa.float64(),
+            "value_high": pa.float64(),
+            "value_mid": pa.float64(),
+            "effective_asof": date_type,
+            "recorded_at_utc": timestamp,
+            "reviewed_at_utc": timestamp,
+        },
+    )
+    thesis_claims_schema = fields(
+        THESIS_CLAIMS_COLUMNS,
+        {
+            "last_reviewed_at_utc": timestamp,
+        },
+    )
+    thesis_watch_questions_schema = fields(
+        THESIS_WATCH_QUESTIONS_COLUMNS,
+        {},
+    )
+    evidence_items_schema = fields(
+        EVIDENCE_ITEMS_COLUMNS,
+        {
+            "observed_at_utc": timestamp,
+            "published_at": timestamp,
+        },
+    )
+    claim_evidence_links_schema = fields(
+        CLAIM_EVIDENCE_LINKS_COLUMNS,
+        {
+            "conflict_hint": pa.bool_(),
+        },
+    )
     health_schema = fields(
         SOURCE_HEALTH_COLUMNS,
         {
@@ -4020,6 +5506,13 @@ def _arrow_schema() -> dict[str, pa.Schema]:
         "official_filings.parquet": official_filings_schema,
         "earnings_calendar.parquet": earnings_calendar_schema,
         "earnings_actuals.parquet": earnings_actuals_schema,
+        "corporate_actions.parquet": corporate_actions_schema,
+        "valuation_snapshots.parquet": valuation_snapshots_schema,
+        "internal_estimates.parquet": internal_estimates_schema,
+        "thesis_claims.parquet": thesis_claims_schema,
+        "thesis_watch_questions.parquet": thesis_watch_questions_schema,
+        "evidence_items.parquet": evidence_items_schema,
+        "claim_evidence_links.parquet": claim_evidence_links_schema,
         "source_health.parquet": health_schema,
     }
 
@@ -4100,6 +5593,31 @@ def _validate_output_frames(frames: Mapping[str, pd.DataFrame]) -> None:
             raise BuildError(f"output schema drift for {name}")
 
 
+def _validate_publication_content(frames: Mapping[str, pd.DataFrame]) -> None:
+    """Recheck canonical high-risk rows immediately before publication."""
+
+    for artifact, column in (
+        ("macro_observations.parquet", "observation_id"),
+        ("news_filings.parquet", "document_id"),
+    ):
+        frame = frames[artifact]
+        if frame.empty:
+            continue
+        values = frame[column].map(_text)
+        if values.eq("").any() or values.duplicated().any():
+            raise BuildError(
+                f"{artifact} publication requires nonblank unique {column}"
+            )
+    valuation_issues = validate_valuation_snapshots_df(
+        frames["valuation_snapshots.parquet"]
+    )
+    if valuation_issues:
+        raise BuildError(
+            "valuation_snapshots publication validation failed: "
+            + "; ".join(valuation_issues[:8])
+        )
+
+
 def _validate_written_generation(
     generation: Path,
     manifest: BuildManifest,
@@ -4163,6 +5681,21 @@ def _generation_relative_path(generation_id: str) -> str:
     return f"{GENERATIONS_DIR_NAME}/{generation_id}"
 
 
+def _artifact_contract_for_generation(generation: Path) -> tuple[str, ...]:
+    present = {path.name for path in generation.iterdir()}
+    if present == set(ARTIFACT_NAMES):
+        return ARTIFACT_NAMES
+    if present == set(LEGACY_GENERATION_ARTIFACT_NAMES):
+        return LEGACY_GENERATION_ARTIFACT_NAMES
+    missing = sorted(set(ARTIFACT_NAMES) - present)
+    unexpected = sorted(present - set(ARTIFACT_NAMES))
+    raise BuildError(
+        "CURRENT target artifacts do not match a recognized contract"
+        + (f"; missing={','.join(missing)}" if missing else "")
+        + (f"; unexpected={','.join(unexpected)}" if unexpected else "")
+    )
+
+
 def _validate_current_pointer(output_dir: Path, pointer_value: str) -> Path:
     value = pointer_value.strip()
     pointer = PurePosixPath(value)
@@ -4180,20 +5713,7 @@ def _validate_current_pointer(output_dir: Path, pointer_value: str) -> Path:
     if not generation.is_dir():
         raise BuildError(f"CURRENT generation does not exist: {value}")
     entries = list(generation.iterdir())
-    present = {path.name for path in entries}
-    if present != set(ARTIFACT_NAMES):
-        # The count used to be written into this message by hand and had gone
-        # stale, so a mismatch reported a number that matched neither side and
-        # named nothing. Report the actual difference instead: adding an
-        # artifact to the contract makes every earlier generation fail here,
-        # and the reader needs to see which one to know that is why.
-        missing = sorted(set(ARTIFACT_NAMES) - present)
-        unexpected = sorted(present - set(ARTIFACT_NAMES))
-        raise BuildError(
-            "CURRENT target artifacts do not match the contract"
-            + (f"; missing={','.join(missing)}" if missing else "")
-            + (f"; unexpected={','.join(unexpected)}" if unexpected else "")
-        )
+    _artifact_contract_for_generation(generation)
     if any(path.is_symlink() or not path.is_file() for path in entries):
         raise BuildError("CURRENT target artifacts must be regular non-symlink files")
     return generation
@@ -4261,10 +5781,12 @@ def _validated_current_lineage(
     ):
         raise BuildError("CURRENT selected manifest degraded/validation fields are invalid")
     artifacts = payload.get("artifacts")
-    if not isinstance(artifacts, dict) or set(artifacts) != set(ARTIFACT_NAMES):
+    artifact_names = _artifact_contract_for_generation(generation)
+    if not isinstance(artifacts, dict) or set(artifacts) != set(artifact_names):
         raise BuildError("CURRENT selected manifest has an invalid artifact set")
     schemas = _arrow_schema()
-    for name in ARTIFACT_NAMES:
+    legacy_generation = artifact_names == LEGACY_GENERATION_ARTIFACT_NAMES
+    for name in artifact_names:
         record = artifacts.get(name)
         if not isinstance(record, dict):
             raise BuildError(f"CURRENT selected manifest is missing artifact record: {name}")
@@ -4297,7 +5819,11 @@ def _validated_current_lineage(
             raise BuildError(f"CURRENT selected manifest sha256 mismatch: {name}")
         if int(record.get("row_count", -1)) != pq.read_metadata(path).num_rows:
             raise BuildError(f"CURRENT selected manifest row_count mismatch: {name}")
-        if pq.read_schema(path) != schemas[name]:
+        table_schema = pq.read_schema(path)
+        if legacy_generation and name == "earnings_actuals.parquet":
+            if tuple(table_schema.names) != _LEGACY_EARNINGS_ACTUALS_COLUMNS:
+                raise BuildError(f"CURRENT selected manifest schema mismatch: {name}")
+        elif table_schema != schemas[name]:
             raise BuildError(f"CURRENT selected manifest schema mismatch: {name}")
     return _iso(built_at), generation_id
 
@@ -4347,15 +5873,16 @@ def _make_manifest(
         source_ids = source_ids_by_artifact.get(name, ())
         # This required mart reports source states; those row-level states do
         # not describe the availability of the successfully validated mart.
-        status = (
-            "available"
-            if name == "source_health.parquet"
-            else _artifact_status(
+        if name == "source_health.parquet":
+            status = "available"
+        elif name in {"thesis_claims.parquet", "thesis_watch_questions.parquet", "evidence_items.parquet", "claim_evidence_links.parquet"}:
+            status = "available" if len(frame) > 0 else "unavailable"
+        else:
+            status = _artifact_status(
                 source_ids,
                 states_by_id,
                 usable_statuses=_ARTIFACT_USABLE_STATUSES.get(name, STRICT_USABLE_STATUSES),
             )
-        )
         artifacts[name] = _artifact_record(
             staging / name,
             name=name,
@@ -4469,7 +5996,7 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
     macro_frame, macro_states, macro_degraded = _build_macro(
         events, registries, config.macro_inputs, as_of_utc=config.as_of_utc
     )
-    consensus_snapshots, consensus_revisions, consensus_states, consensus_degraded, consensus_fingerprints = _build_consensus(config)
+    consensus_snapshots, consensus_revisions, consensus_states, consensus_degraded, consensus_fingerprints = _build_consensus(config, registries)
     quote_frame, quote_states, quote_degraded, quote_fingerprints = _build_quote_snapshots(
         registries,
         config.quote_inputs,
@@ -4503,6 +6030,21 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
         config.earnings_inputs,
         as_of_utc=config.as_of_utc,
     )
+    actions_frame, actions_states, actions_degraded = _build_corporate_actions(
+        registries,
+        config.corporate_actions_inputs,
+        as_of_utc=config.as_of_utc,
+    )
+    val_frame, est_frame, val_states, val_degraded = _build_valuation_and_estimates(
+        registries,
+        config.valuation_inputs,
+        as_of_utc=config.as_of_utc,
+    )
+    claims_frame, twq_frame, evid_frame, links_frame, thesis_states, thesis_degraded = _build_thesis_and_evidence(
+        config,
+        registries,
+        events,
+    )
     input_fingerprints.update(consensus_fingerprints)
     input_fingerprints.update(quote_fingerprints)
     frames["macro_observations.parquet"] = macro_frame
@@ -4514,6 +6056,13 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
     frames["official_filings.parquet"] = official_filings_frame
     frames["earnings_calendar.parquet"] = calendar_frame
     frames["earnings_actuals.parquet"] = actuals_frame
+    frames["corporate_actions.parquet"] = actions_frame
+    frames["valuation_snapshots.parquet"] = val_frame
+    frames["internal_estimates.parquet"] = est_frame
+    frames["thesis_claims.parquet"] = claims_frame
+    frames["thesis_watch_questions.parquet"] = twq_frame
+    frames["evidence_items.parquet"] = evid_frame
+    frames["claim_evidence_links.parquet"] = links_frame
 
     required_row_counts = {
         "registry:entities": len(registry_frames["entities"]),
@@ -4538,6 +6087,9 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
             *news_states,
             *official_states,
             *actuals_states,
+            *actions_states,
+            *val_states,
+            *thesis_states,
         ],
     )
     for state in optional_states:
@@ -4555,6 +6107,9 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
         *news_degraded,
         *official_degraded,
         *actuals_degraded,
+        *actions_degraded,
+        *val_degraded,
+        *thesis_degraded,
         *_unconfigured_optional_ids(config),
     ]
     non_contributing = CONTRIBUTING_STATUSES | {"not_applicable"}
@@ -4570,7 +6125,9 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
     for state in optional_states:
         if state.path is not None and state.path.is_file() and state.input_sha256 is None:
             state.input_sha256 = _file_hash(state.path)
-            input_fingerprints[str(state.path)] = state.input_sha256
+        if state.path is not None and state.path.is_file() and state.input_sha256 is not None:
+            _refresh_input_label(state)
+            input_fingerprints[state.input_label] = state.input_sha256
     health_frame = _health_frame(optional_states, required_states)
     frames["source_health.parquet"] = health_frame
 
@@ -4593,9 +6150,17 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
         "official_filings.parquet": [state.source_id for state in official_states],
         "earnings_calendar.parquet": [state.source_id for state in official_states],
         "earnings_actuals.parquet": [state.source_id for state in actuals_states],
+        "corporate_actions.parquet": [state.source_id for state in actions_states],
+        "valuation_snapshots.parquet": [state.source_id for state in val_states],
+        "internal_estimates.parquet": [state.source_id for state in val_states],
+        "thesis_claims.parquet": ["thesis:claims"],
+        "thesis_watch_questions.parquet": ["thesis:watch_questions"],
+        "evidence_items.parquet": ["thesis:evidence_items"],
+        "claim_evidence_links.parquet": ["thesis:claim_evidence_links"],
         "source_health.parquet": [state.source_id for state in [*required_states, *optional_states]],
     }
     _validate_output_frames(frames)
+    _validate_publication_content(frames)
 
     output_dir = config.output_dir
     output_dir.parent.mkdir(parents=True, exist_ok=True)
@@ -4616,12 +6181,36 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
     staging_root = Path(tempfile.mkdtemp(prefix=".research-control-tower-", dir=str(output_dir)))
     staging = staging_root / "generation"
     staging.mkdir()
-    validation_errors = [
-        error
-        for state in [*required_states, *optional_states]
-        for error in state.errors
-    ]
     all_source_states = [*required_states, *optional_states]
+    validation_errors: list[dict[str, Any]] = []
+    for state in all_source_states:
+        label = state.input_label or _portable_input_label(
+            state.path,
+            source_id=state.source_id,
+        )
+        for error in state.errors:
+            published_error = dict(error)
+            message = published_error.get("message", "")
+            for other_state in sorted(
+                all_source_states,
+                key=lambda item: len(str(item.path)) if item.path is not None else 0,
+                reverse=True,
+            ):
+                other_label = other_state.input_label or _portable_input_label(
+                    other_state.path,
+                    source_id=other_state.source_id,
+                )
+                message = _redact_runtime_paths(
+                    message,
+                    other_state.path,
+                    other_label,
+                )
+            published_error["message"] = _redact_runtime_paths(
+                message,
+                state.path,
+                label,
+            )
+            validation_errors.append(published_error)
     try:
         schemas = _arrow_schema()
         for name, frame in frames.items():

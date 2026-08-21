@@ -1,0 +1,7 @@
+question_id,claim_id,entity_id,question,question_type,priority,registry_version
+TENCENT_TWQ_AIM_GROWTH,TENCENT_THESIS_BULL_AI_ADS,TENCENT,Does Marketing Services / Online Advertising maintain YoY revenue growth >= 15% with expanding gross margins?,support,1,v1
+TENCENT_TWQ_FCF_INFLECTION,TENCENT_THESIS_BULL_AI_ADS,TENCENT,Does quarterly Free Cash Flow inflect back to positive territory in 2H2026 as initial compute hardware prepayments settle?,falsification,1,v1
+TENCENT_TWQ_NON_IFRS_OP_FLOOR,TENCENT_THESIS_BASE_COMPOUNDER,TENCENT,Does Non-IFRS operating profit maintain positive YoY growth (>= 8%) despite new AI product operating drag?,falsification,1,v1
+TENCENT_TWQ_BUYBACK_CADENCE,TENCENT_THESIS_BASE_COMPOUNDER,TENCENT,Do statutory HKEX Next-Day Disclosure returns demonstrate continuous daily share repurchase cadence post-earnings blackout?,support,2,v1
+TENCENT_TWQ_CAPEX_CEILING,TENCENT_THESIS_BEAR_CAPEX_TRAP,TENCENT,Does quarterly capital expenditure exceed RMB65.0B without corresponding acceleration in enterprise cloud or AI revenue?,support,1,v1
+TENCENT_TWQ_GAME_PIPELINE_RECEIPTS,TENCENT_THESIS_BEAR_CAPEX_TRAP,TENCENT,Are domestic evergreen game gross receipts decelerating below 5% YoY or losing market share to competing domestic releases?,support,2,v1

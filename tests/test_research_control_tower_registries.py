@@ -381,6 +381,32 @@ def test_one_entity_can_have_multiple_listings(registry_root):
     assert {"2330_TW", "TSM_US"} <= set(tsmc["listing_id"])
 
 
+def test_tcehy_us_is_gated_unresolved_depositary_row(registry_root):
+    bundle = load_registry_bundle(registry_root)
+    row = bundle.listings.loc[
+        bundle.listings["listing_id"].eq("TCEHY_US")
+    ]
+
+    assert len(row) == 1
+    listing = row.iloc[0]
+    assert listing["entity_id"] == "TENCENT"
+    assert listing["listing_role"] == "depositary_receipt"
+    assert listing["mapping_status"] == "unresolved"
+    assert listing["collection_eligible"] is False or listing["collection_eligible"] == False
+    assert listing["canonical_ticker"] == ""
+    assert listing["financial_data_security_id"] == ""
+    assert listing["financial_data_issuer_group_id"] == ""
+    assert listing["mapping_verified_at"] is pd.NaT or pd.isna(listing["mapping_verified_at"])
+    assert listing["mapping_source_url"] == ""
+
+    issues = validate_registry_bundle(bundle)
+    assert not [
+        issue
+        for issue in issues
+        if issue.severity == "error" and issue.row_index == row.index[0]
+    ]
+
+
 @pytest.mark.parametrize(
     ("registry_name", "key"),
     [

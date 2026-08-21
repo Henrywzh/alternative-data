@@ -47,6 +47,7 @@ from research_control_tower.build import (  # noqa: E402
     PRICE_BARS_ARROW_SCHEMA,
     PRICE_BARS_COLUMNS,
 )
+from research_control_tower.eligibility import filter_eligible_listings  # noqa: E402
 
 FINANCIAL_DATA_BARS = (
     Path.home() / "Desktop" / "Quant" / "financial-data"
@@ -60,6 +61,17 @@ PIT_CLASS = "current_vintage"
 
 def _bar_id(listing_id: str, interval: str, day: object) -> str:
     return hashlib.sha256(f"{listing_id}\x1f{interval}\x1f{day}".encode("utf-8")).hexdigest()
+
+
+def _active_interval_mask(frame: pd.DataFrame, as_of: datetime) -> pd.Series:
+    """Apply the registry's half-open active interval to basket rows."""
+
+    if frame.empty or not {"active_from", "active_to"}.issubset(frame.columns):
+        return pd.Series(False, index=frame.index, dtype=bool)
+    reference_date = pd.Timestamp(as_of).tz_convert("UTC").tz_localize(None).normalize()
+    starts = pd.to_datetime(frame["active_from"], format="%Y-%m-%d", errors="coerce")
+    ends = pd.to_datetime(frame["active_to"], format="%Y-%m-%d", errors="coerce")
+    return starts.notna() & starts.le(reference_date) & (ends.isna() | (reference_date < ends))
 
 
 def _rows_from_financial_data(listings: pd.DataFrame, cutoff: pd.Timestamp, now: datetime) -> tuple[list[dict], list[str]]:
@@ -181,10 +193,31 @@ def main(argv: list[str] | None = None) -> int:
     cutoff = pd.Timestamp(now) - pd.DateOffset(years=args.years)
 
     listings = pd.read_csv(args.listings, keep_default_na=False)
-    listings = listings.loc[listings["listing_status"].astype(str).str.strip().eq("active")]
+    listings, rejected = filter_eligible_listings(listings, now)
+    eligibility_notes = [
+        "listing rejected by shared eligibility gate: "
+        f"listing_id={item.get('listing_id') or '<blank>'} "
+        f"entity_id={item.get('entity_id') or '<blank>'} "
+        f"reason={item.get('reason')}"
+        for item in rejected
+    ]
     if args.basket:
         memberships = pd.read_csv(args.listings.parent / "basket_memberships.csv", keep_default_na=False)
-        members = set(memberships.loc[memberships["basket_id"].eq(args.basket), "entity_id"])
+        baskets_path = args.listings.parent / "baskets.csv"
+        baskets = pd.read_csv(baskets_path, keep_default_na=False) if baskets_path.is_file() else pd.DataFrame()
+        active_basket = baskets.loc[
+            baskets.get("basket_id", pd.Series(dtype="object")).eq(args.basket)
+            & _active_interval_mask(baskets, now)
+        ]
+        active_memberships = memberships.loc[
+            memberships.get("basket_id", pd.Series(dtype="object")).eq(args.basket)
+            & _active_interval_mask(memberships, now)
+        ]
+        if active_basket.empty:
+            eligibility_notes.append(
+                f"basket rejected by shared active interval gate: basket_id={args.basket}"
+            )
+        members = set(active_memberships.get("entity_id", pd.Series(dtype="object"))) if not active_basket.empty else set()
         listings = listings.loc[listings["entity_id"].isin(members)]
 
     hk = listings.loc[listings["canonical_ticker"].astype(str).str.endswith(".HK")]
@@ -205,7 +238,7 @@ def main(argv: list[str] | None = None) -> int:
     if not frame.empty:
         span = frame.groupby("canonical_ticker")["bar_date"].agg(["size", "min", "max"])
         print(span.to_string())
-    for note in fd_notes + yf_notes:
+    for note in eligibility_notes + fd_notes + yf_notes:
         print(f"  {note}")
     print(f"\noutput: {args.output}")
     return 0

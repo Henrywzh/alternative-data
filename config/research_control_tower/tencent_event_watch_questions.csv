@@ -1,0 +1,11 @@
+event_id,question_id,question,question_type,priority,registry_version
+TENCENT_3Q_2026_RESULTS_RESEARCH_WINDOW,TENCENT_EVQ_3Q_1,Does Tencent report 3Q 2026 revenue and Non-IFRS operating profit growth demonstrating operational resilience?,support,1,v1
+TENCENT_3Q_2026_RESULTS_RESEARCH_WINDOW,TENCENT_EVQ_3Q_2,Does 3Q 2026 Free Cash Flow demonstrate recovery from negative 2Q26 levels?,falsification,1,v1
+TENCENT_AI_CAPEX_FCF_INFLECTION_CHECKPOINT,TENCENT_EVQ_FCF_1,Does quarterly Free Cash Flow inflect back to positive in 2H2026 as compute infrastructure prepayments are absorbed?,support,1,v1
+TENCENT_AI_CAPEX_FCF_INFLECTION_CHECKPOINT,TENCENT_EVQ_FCF_2,Does quarterly CapEx rise without corresponding operating or cash-flow benefits?,falsification,1,v1
+TENCENT_AIM_AD_TECH_EXPANSION_CHECKPOINT,TENCENT_EVQ_AIM_1,Does Marketing Services / Online Advertising revenue growth remain durable as AIM+ ad tech and Video Accounts inventory expand?,support,1,v1
+TENCENT_AIM_AD_TECH_EXPANSION_CHECKPOINT,TENCENT_EVQ_AIM_2,Does advertising gross margin compress under higher GPU inference serving costs?,falsification,2,v1
+TENCENT_NPPA_GAME_APPROVAL_CADENCE_CHECKPOINT,TENCENT_EVQ_NPPA_1,Does the NPPA maintain a steady regular cadence of domestic and imported game publishing licenses (ISBNs)?,support,1,v1
+TENCENT_NPPA_GAME_APPROVAL_CADENCE_CHECKPOINT,TENCENT_EVQ_NPPA_2,Are key Tencent pipeline titles receiving required regulatory approvals without policy delays?,support,2,v1
+TENCENT_BUYBACK_CADENCE_CHECKPOINT,TENCENT_EVQ_BUYBACK_1,Do daily statutory Next-Day Disclosure filings show steady repurchase volume without extended non-statutory pauses?,support,1,v1
+TENCENT_BUYBACK_CADENCE_CHECKPOINT,TENCENT_EVQ_BUYBACK_2,Does daily repurchase execution maintain a regular pace across active post-blackout trading windows?,support,2,v1

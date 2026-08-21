@@ -113,7 +113,7 @@ REPO_SOURCES: tuple[tuple[str, str, str, str, str, str, str, str], ...] = (
 )
 
 # Produced by the Control Tower's own network-reaching collectors.  Absent
-# until those are run; see --help output for the commands.
+# until those are run; see the missing-source report for the exact commands.
 COLLECTOR_SOURCES: tuple[tuple[str, str, str, str, str, str, str, str], ...] = (
     (
         "official_filing", "official_filings",
@@ -140,7 +140,7 @@ COLLECTOR_SOURCES: tuple[tuple[str, str, str, str, str, str, str, str], ...] = (
         "quarterly", "",
     ),
     (
-        "market", "price_bars",
+        "price_bar", "price_bars",
         "data/normalized/research_control_tower/price_bars_v1.parquet",
         "price_bars_v1", "current_vintage", "personal_use_terms_unverified",
         "daily", "https://finance.yahoo.com/",
@@ -151,7 +151,63 @@ COLLECTOR_SOURCES: tuple[tuple[str, str, str, str, str, str, str, str], ...] = (
         "quote_snapshots_v1", "snapshot_from_delayed_source", "personal_use_terms_unverified",
         "intraday", "https://finance.yahoo.com/",
     ),
+    (
+        "corporate_actions", "corporate_actions",
+        "data/normalized/research_control_tower/corporate_actions_v1.parquet",
+        "corporate_actions_v1", "snapshot_from_live_source", "official_public_metadata",
+        "daily", "https://www1.hkexnews.hk/search/titlesearch.xhtml?lang=en",
+    ),
+    (
+        "corporate_actions", "corporate_actions_state",
+        "data/normalized/research_control_tower/corporate_actions_state.parquet",
+        "source_state_v1", "current_vintage", "official_public_metadata",
+        "daily", "",
+    ),
+    (
+        # This is intentionally additive to the generic earnings collector.
+        # The Tencent parser has a richer source-document/page lineage contract
+        # but remains consumable by the shared earnings_actuals_v1 adapter.
+        "earnings", "tencent_earnings_actuals",
+        "data/normalized/research_control_tower/tencent_earnings_actuals_v1.parquet",
+        "earnings_actuals_v1", "snapshot_from_live_source", "official_public_metadata",
+        "quarterly", "https://www1.hkexnews.hk/search/titlesearch.xhtml?lang=en",
+    ),
+    (
+        "earnings", "tencent_earnings_actuals_state",
+        "data/normalized/research_control_tower/tencent_earnings_actuals_state.parquet",
+        "source_state_v1", "current_vintage", "official_public_metadata",
+        "quarterly", "",
+    ),
+    (
+        "valuation", "valuation_snapshots",
+        "data/normalized/research_control_tower/valuation_snapshots.parquet",
+        "valuation_snapshots_v2", "snapshot_from_delayed_source", "local_private_research",
+        "daily", "",
+    ),
+    (
+        "valuation", "internal_estimates",
+        "data/normalized/research_control_tower/internal_estimates.parquet",
+        "internal_estimates_v1", "not_pit", "local_private_research",
+        "quarterly", "",
+    ),
 )
+
+
+def _validate_source_catalog() -> None:
+    source_ids = [row[1] for row in (*REPO_SOURCES, *COLLECTOR_SOURCES)]
+    duplicates = sorted(
+        source_id
+        for source_id in set(source_ids)
+        if source_ids.count(source_id) > 1
+    )
+    if duplicates:
+        raise ValueError(
+            "source_id values in the Research Control Tower source catalog "
+            f"must be unique: {duplicates}"
+        )
+
+
+_validate_source_catalog()
 
 COLLECTOR_COMMANDS = {
     "official_filings": (
@@ -164,6 +220,35 @@ COLLECTOR_COMMANDS = {
         "--identity config/research_control_tower/official_source_identity.csv "
         f"--output-dir {COLLECTOR_DIR.relative_to(REPO_ROOT)}"
     ),
+    "earnings_actuals_state": (
+        "python scripts/research_control_tower_earnings_actuals.py "
+        "--identity config/research_control_tower/official_source_identity.csv "
+        f"--output-dir {COLLECTOR_DIR.relative_to(REPO_ROOT)}"
+    ),
+    "tencent_earnings_actuals": (
+        "python scripts/research_control_tower_tencent_financials.py "
+        "--disclosure-records-json "
+        "tests/fixtures/tencent_ir/tencent_disclosures_2021_2026.json "
+        f"--output-dir {COLLECTOR_DIR.relative_to(REPO_ROOT)}"
+    ),
+    "tencent_earnings_actuals_state": (
+        "python scripts/research_control_tower_tencent_financials.py "
+        "--disclosure-records-json "
+        "tests/fixtures/tencent_ir/tencent_disclosures_2021_2026.json "
+        f"--output-dir {COLLECTOR_DIR.relative_to(REPO_ROOT)}"
+    ),
+    "corporate_actions": (
+        "python scripts/research_control_tower_corporate_actions.py "
+        "--identity config/research_control_tower/official_source_identity.csv "
+        f"--output-dir {COLLECTOR_DIR.relative_to(REPO_ROOT)} "
+        "--lookback-days 365"
+    ),
+    "corporate_actions_state": (
+        "python scripts/research_control_tower_corporate_actions.py "
+        "--identity config/research_control_tower/official_source_identity.csv "
+        f"--output-dir {COLLECTOR_DIR.relative_to(REPO_ROOT)} "
+        "--lookback-days 365"
+    ),
     "consensus_export": (
         "python scripts/research_control_tower_consensus_collector.py "
         "--basket RESEARCH_STAGE_1_CHINA_INTERNET"
@@ -175,7 +260,34 @@ COLLECTOR_COMMANDS = {
     "quote_snapshots": (
         "python scripts/research_control_tower_quote_collector.py "
         "--listings config/research_control_tower/listings.csv "
+        "--entities config/research_control_tower/entities.csv "
+        "--baskets config/research_control_tower/baskets.csv "
+        "--basket-memberships config/research_control_tower/basket_memberships.csv "
         f"--output {COLLECTOR_DIR.relative_to(REPO_ROOT)}/quote_snapshots_v1.parquet"
+    ),
+    "valuation_snapshots": (
+        "python scripts/research_control_tower_valuation.py "
+        f"--quotes {COLLECTOR_DIR.relative_to(REPO_ROOT)}/quote_snapshots_v1.parquet "
+        f"--consensus {CONSENSUS_DIR.relative_to(REPO_ROOT)}/control_tower_consensus_snapshots.parquet "
+        f"--consensus-health {CONSENSUS_DIR.relative_to(REPO_ROOT)}/control_tower_consensus_source_health.parquet "
+        f"--earnings-actuals {COLLECTOR_DIR.relative_to(REPO_ROOT)}/tencent_earnings_actuals_v1.parquet "
+        "--fx-rates data/normalized/hk_transport/airline_fx_rates.parquet "
+        f"--output-dir {COLLECTOR_DIR.relative_to(REPO_ROOT)} "
+        '--as-of "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '
+        "--fiscal-period annual --fiscal-year 2026 --statistic mean "
+        "--internal-estimates config/research_control_tower/internal_estimates.csv"
+    ),
+    "internal_estimates": (
+        "python scripts/research_control_tower_valuation.py "
+        f"--quotes {COLLECTOR_DIR.relative_to(REPO_ROOT)}/quote_snapshots_v1.parquet "
+        f"--consensus {CONSENSUS_DIR.relative_to(REPO_ROOT)}/control_tower_consensus_snapshots.parquet "
+        f"--consensus-health {CONSENSUS_DIR.relative_to(REPO_ROOT)}/control_tower_consensus_source_health.parquet "
+        f"--earnings-actuals {COLLECTOR_DIR.relative_to(REPO_ROOT)}/tencent_earnings_actuals_v1.parquet "
+        "--fx-rates data/normalized/hk_transport/airline_fx_rates.parquet "
+        f"--output-dir {COLLECTOR_DIR.relative_to(REPO_ROOT)} "
+        '--as-of "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '
+        "--fiscal-period annual --fiscal-year 2026 --statistic mean "
+        "--internal-estimates config/research_control_tower/internal_estimates.csv"
     ),
 }
 
@@ -198,7 +310,9 @@ def _collect_inputs(verbose: bool = True) -> tuple[dict[str, list[LocalInput]], 
     by_kind: dict[str, list[LocalInput]] = {
         "macro": [], "news": [], "filing": [],
         "official_filing": [], "earnings": [], "market": [], "price_bar": [],
+        "corporate_actions": [], "valuation": [],
     }
+    _validate_source_catalog()
     missing: list[str] = []
     for row in REPO_SOURCES + COLLECTOR_SOURCES:
         kind, descriptor = _descriptor(row)
@@ -259,8 +373,10 @@ def main(argv: list[str] | None = None) -> int:
         filing_inputs=tuple(by_kind["filing"]),
         official_filing_inputs=tuple(by_kind["official_filing"]),
         earnings_inputs=tuple(by_kind["earnings"]),
-        quote_inputs=tuple(d for d in by_kind["market"] if d.source_id != "price_bars"),
-        price_bar_inputs=tuple(d for d in by_kind["market"] if d.source_id == "price_bars"),
+        quote_inputs=tuple(by_kind["market"]),
+        price_bar_inputs=tuple(by_kind["price_bar"]),
+        corporate_actions_inputs=tuple(by_kind["corporate_actions"]),
+        valuation_inputs=tuple(by_kind["valuation"]),
     )
     manifest = build_control_tower_marts(config)
 

@@ -16,6 +16,8 @@ import pandas as pd
 
 from .models import ControlTowerSnapshot
 
+from src.research_control_tower.eligibility import listing_eligibility_reason
+
 CoverageStatusCode = Literal[
     "available",
     "partial",
@@ -73,8 +75,16 @@ COVERAGE_CATEGORY_LABELS: Mapping[str, str] = {
 _CATEGORY_SOURCE_KINDS: Mapping[str, frozenset[str]] = {
     "price_quotes": frozenset({"market", "quote", "market_data"}),
     "consensus": frozenset({"consensus", "consensus_provider"}),
+    "earnings_actuals": frozenset({"earnings"}),
     "filings_news": frozenset(
-        {"filing", "news", "official_document_metadata"}
+        {
+            "filing",
+            "filings",
+            "news",
+            "official_document_metadata",
+            "official_filing",
+            "official_filings",
+        }
     ),
     "events": frozenset({"events", "registry"}),
     "macro": frozenset({"macro"}),
@@ -85,8 +95,19 @@ _CATEGORY_SOURCE_IDS: Mapping[str, frozenset[str]] = {
     "consensus": frozenset(
         {"consensus_export", "consensus_snapshots", "consensus_revisions"}
     ),
+    "earnings_actuals": frozenset({"earnings_actuals"}),
     "filings_news": frozenset(
-        {"filings_sec_edgar", "news_official_ai_rss"}
+        {
+            "filings_sec_edgar",
+            "news_official_ai_rss",
+            "official_filings",
+            "official_filings_state",
+            "official_filings_v1",
+            "hkexnews",
+            "sec_edgar_submissions",
+            "issuer_ir",
+            "bytedance",
+        }
     ),
     "events": frozenset(
         {
@@ -115,7 +136,8 @@ _CONSENSUS_TS_COLUMNS = (
     "snapshot_at",
     "current_snapshot_at",
 )
-_FILINGS_TS_COLUMNS = ("published_at",)
+_FILINGS_TS_COLUMNS = ("published_at", "accepted_at")
+_EARNINGS_ACTUALS_TS_COLUMNS = ("filing_at", "published_at")
 _MACRO_TS_COLUMNS = ("release_at", "source_published_at")
 
 # Source-health display states that mean the provider is effectively absent:
@@ -294,6 +316,14 @@ class _CategorySources:
                     return source
                 if source.source_id.removeprefix("provider:") == text:
                     return source
+                if source.source_id == f"filings:{text}":
+                    return source
+                if source.source_id.removeprefix("filings:") == text:
+                    return source
+                if source.source_id == f"artifact:{text}":
+                    return source
+                if source.source_id.removeprefix("artifact:") == text:
+                    return source
             return None
         populated = tuple(
             source
@@ -401,8 +431,10 @@ def _matches_category_source(
 ) -> bool:
     """Match a source-health row to a coverage category.
 
-    Matches canonical ids, repository synthetic ids ("artifact:<stem>") and
-    prefixed provider ids such as "provider:yfinance", plus source kinds.
+    Matches canonical ids and prefixed provider ids such as
+    "provider:yfinance", plus source kinds. Optional artifact gaps remain in
+    the snapshot's degradation metadata rather than becoming source-health
+    rows and inflating source counts.
     """
 
     canonical = _CATEGORY_SOURCE_IDS.get(category, frozenset())
@@ -413,6 +445,14 @@ def _matches_category_source(
             f"provider:{candidate}:"
         ):
             return True
+        if source_id.startswith(f"filings:{candidate}") or source_id.startswith(
+            f"provider:filings:{candidate}"
+        ):
+            return True
+    if category == "filings_news" and (
+        source_id.startswith("filings:") or source_id.startswith("provider:filings:")
+    ):
+        return True
     return source_kind in _CATEGORY_SOURCE_KINDS.get(category, frozenset())
 
 
@@ -575,10 +615,7 @@ def _active_listing_map(
     candidates: dict[str, set[str]] = {}
     for _, row in snapshot.listings.iterrows():
         payload = row.to_dict()
-        if (
-            _text(payload.get("listing_status")).lower() != "active"
-            or not _active_at_snapshot(payload, snapshot)
-        ):
+        if listing_eligibility_reason(payload, snapshot.now_utc) is not None:
             continue
         listing_id = _text(payload.get("listing_id"))
         entity_id = _text(payload.get("entity_id"))
@@ -667,6 +704,36 @@ def _consensus_rows_for_entity(
     return pd.concat(parts, ignore_index=True).drop_duplicates()
 
 
+def _earnings_actuals_rows_for_entity(
+    snapshot: ControlTowerSnapshot,
+    entity_id: str,
+    listing_ids: tuple[str, ...],
+    *,
+    listing_owner: Mapping[str, str],
+) -> pd.DataFrame:
+    """Match actuals to one Stage 1 entity and its active listings only."""
+
+    actuals = snapshot.earnings_actuals
+    if actuals.empty:
+        return actuals.iloc[0:0]
+
+    allowed_listings = set(listing_ids)
+    matched: list[bool] = []
+    for _, row in actuals.iterrows():
+        row_entity = _text(row.get("entity_id"))
+        row_listing = _text(row.get("listing_id"))
+        if row_listing:
+            owner = listing_owner.get(row_listing)
+            matched.append(
+                row_listing in allowed_listings
+                and owner == entity_id
+                and (not row_entity or row_entity == entity_id)
+            )
+        else:
+            matched.append(bool(row_entity) and row_entity == entity_id)
+    return actuals.loc[matched].copy()
+
+
 def _active_members_by_basket(
     snapshot: ControlTowerSnapshot,
     stage1_entity_ids: set[str],
@@ -704,6 +771,30 @@ def _resolve_relation_entities(
     for basket_id in _relation_values(row.get("related_basket_ids")):
         related.update(members_by_basket.get(basket_id, set()))
     return related
+
+
+def _official_filings_rows_for_entity(
+    snapshot: ControlTowerSnapshot,
+    entity_id: str,
+    *,
+    listing_owner: Mapping[str, str],
+) -> pd.DataFrame:
+    official = snapshot.official_filings
+    if official.empty:
+        return official.iloc[0:0]
+    matched: list[bool] = []
+    for _, row in official.iterrows():
+        row_entity = _text(row.get("entity_id"))
+        row_listing = _text(row.get("listing_id"))
+        if row_listing:
+            owner = listing_owner.get(row_listing)
+            matched.append(
+                owner == entity_id
+                and (not row_entity or row_entity == owner)
+            )
+        else:
+            matched.append(bool(row_entity) and row_entity == entity_id)
+    return official.loc[matched].copy()
 
 
 def _filings_rows_for_entity(
@@ -967,6 +1058,66 @@ def _assess_time_sensitive_rows(
     return "available", "Source state and source-native freshness checks passed."
 
 
+def _earnings_artifact_status(snapshot: ControlTowerSnapshot) -> str:
+    """Return manifest/loader evidence for the optional actuals artifact."""
+
+    manifest = snapshot.manifest
+    if isinstance(manifest, Mapping):
+        artifacts = manifest.get("artifacts")
+        if isinstance(artifacts, Mapping):
+            record = artifacts.get("earnings_actuals.parquet")
+            if isinstance(record, Mapping):
+                status = _text(record.get("status")).lower()
+                if status:
+                    return status
+
+    # Repository load-state is the compatible fallback for manifests that do
+    # not carry per-artifact records. A degraded optional artifact can still
+    # contain real rows; it must be shown as impaired, never as absent.
+    optional = {_text(value).removesuffix(".parquet") for value in snapshot.missing_optional}
+    reasons = {
+        _text(key): _text(value).lower()
+        for key, value in snapshot.degraded_reasons.items()
+    }
+    if "earnings_actuals" in optional:
+        return reasons.get("earnings_actuals", "degraded") or "degraded"
+    return ""
+
+
+def _apply_earnings_artifact_evidence(
+    snapshot: ControlTowerSnapshot,
+    status: CoverageStatusCode,
+    detail: str,
+    *,
+    rows_exist: bool,
+) -> tuple[CoverageStatusCode, str]:
+    """Apply optional-artifact state without hiding rows or inventing health."""
+
+    artifact_status = _earnings_artifact_status(snapshot)
+    if not artifact_status:
+        return status, detail
+
+    adverse = artifact_status in (_UNAVAILABLE_SOURCE_STATES | {"partial"})
+    if adverse:
+        if rows_exist:
+            if status == "available":
+                status = "partial"
+            detail = (
+                f"{detail} The earnings_actuals.parquet artifact is "
+                f"{artifact_status}; rows are retained but coverage is impaired."
+            )
+        elif status != "not_applicable":
+            status = "unavailable"
+            detail = (
+                f"{detail} The earnings_actuals.parquet artifact is "
+                f"{artifact_status}."
+            )
+    elif artifact_status == "stale" and status in {"available", "no_records"}:
+        status = "stale"
+        detail = f"{detail} The earnings_actuals.parquet artifact is stale."
+    return status, detail
+
+
 def _listing_cell(
     snapshot: ControlTowerSnapshot,
     listing_id: str,
@@ -1120,17 +1271,78 @@ def _consensus_cell(
     )
 
 
-def _earnings_actuals_cell(entity_type: str) -> CoverageCell:
+def _earnings_actuals_cell(
+    snapshot: ControlTowerSnapshot,
+    entity_id: str,
+    listing_ids: tuple[str, ...],
+    *,
+    entity_type: str,
+    listing_owner: Mapping[str, str],
+    sources: _CategorySources,
+    now_utc: pd.Timestamp,
+) -> CoverageCell:
     if entity_type == "private":
         return CoverageCell(
             "earnings_actuals",
             "not_applicable",
             "Private entity; no public earnings-actuals concept.",
         )
+
+    rows = _earnings_actuals_rows_for_entity(
+        snapshot,
+        entity_id,
+        listing_ids,
+        listing_owner=listing_owner,
+    )
+    if not rows.empty:
+        status, source_detail = _assess_time_sensitive_rows(
+            rows,
+            sources=sources,
+            timestamp_columns=_EARNINGS_ACTUALS_TS_COLUMNS,
+            source_id_columns=("source_id",),
+            now_utc=now_utc,
+        )
+        status, source_detail = _apply_earnings_artifact_evidence(
+            snapshot,
+            status,
+            source_detail,
+            rows_exist=True,
+        )
+        if status != "available":
+            return CoverageCell(
+                "earnings_actuals",
+                status,
+                source_detail,
+                record_count=len(rows),
+            )
+        covered = _covered_listing_count(rows, listing_ids)
+        if listing_ids and covered < len(listing_ids):
+            return CoverageCell(
+                "earnings_actuals",
+                "partial",
+                f"Earnings-actuals rows cover {covered} of {len(listing_ids)} "
+                "active listings.",
+                record_count=len(rows),
+            )
+        return CoverageCell(
+            "earnings_actuals",
+            "available",
+            f"{len(rows)} earnings-actuals row(s) linked to this entity. "
+            f"{source_detail}",
+            record_count=len(rows),
+        )
+
+    status, detail = _empty_status(sources)
+    status, detail = _apply_earnings_artifact_evidence(
+        snapshot,
+        status,
+        detail,
+        rows_exist=False,
+    )
     return CoverageCell(
         "earnings_actuals",
-        "unavailable",
-        "No earnings-actuals artifact is part of the V1 data contract.",
+        status,
+        f"No earnings-actuals rows for this entity. {detail}",
     )
 
 
@@ -1144,19 +1356,35 @@ def _filings_news_cell(
     sources: _CategorySources,
     now_utc: pd.Timestamp,
 ) -> CoverageCell:
-    rows = _filings_rows_for_entity(
+    official_rows = _official_filings_rows_for_entity(
+        snapshot,
+        entity_id,
+        listing_owner=listing_owner,
+    )
+    news_rows = _filings_rows_for_entity(
         snapshot,
         entity_id,
         stage1_entity_ids=stage1_entity_ids,
         listing_owner=listing_owner,
         members_by_basket=members_by_basket,
     )
-    if not rows.empty:
+    official_count = len(official_rows)
+    news_count = len(news_rows)
+    total_count = official_count + news_count
+
+    if total_count > 0:
+        if official_count and news_count:
+            all_rows = pd.concat([official_rows, news_rows], ignore_index=True)
+        elif official_count:
+            all_rows = official_rows
+        else:
+            all_rows = news_rows
+
         source_status, source_detail = _assess_time_sensitive_rows(
-            rows,
+            all_rows,
             sources=sources,
             timestamp_columns=_FILINGS_TS_COLUMNS,
-            source_id_columns=("source_id",),
+            source_id_columns=("source_id", "publisher"),
             now_utc=now_utc,
         )
         if source_status != "available":
@@ -1164,22 +1392,40 @@ def _filings_news_cell(
                 "filings_news",
                 source_status,
                 source_detail,
-                record_count=len(rows),
+                record_count=total_count,
             )
         if _missing_geographies(snapshot, "filings_news"):
+            if official_count and news_count:
+                desc = f"{official_count} official filing(s) and {news_count} news item(s)"
+            elif official_count:
+                desc = f"{official_count} official filing(s)"
+            else:
+                desc = f"{news_count} filing/news item(s)"
             return CoverageCell(
                 "filings_news",
                 "partial",
-                f"{len(rows)} filing/news item(s) linked to this entity; the "
+                f"{desc} linked to this entity; the "
                 f"governing source records uncovered geographies.",
-                record_count=len(rows),
+                record_count=total_count,
+            )
+        if official_count and news_count:
+            details = (
+                f"{official_count} official filing(s) and {news_count} news item(s) "
+                f"linked to this entity. {source_detail}"
+            )
+        elif official_count:
+            details = (
+                f"{official_count} official filing(s) linked to this entity. {source_detail}"
+            )
+        else:
+            details = (
+                f"{news_count} filing/news item(s) linked to this entity. {source_detail}"
             )
         return CoverageCell(
             "filings_news",
             "available",
-            f"{len(rows)} filing/news item(s) linked to this entity. "
-            f"{source_detail}",
-            record_count=len(rows),
+            details,
+            record_count=total_count,
         )
     empty_status, empty_detail = _empty_status(sources)
     return CoverageCell(
@@ -1361,7 +1607,15 @@ def build_stage1_coverage_matrix(
                 sources=sources["consensus"],
                 now_utc=now_utc,
             ),
-            _earnings_actuals_cell(entity_type),
+            _earnings_actuals_cell(
+                snapshot,
+                entity_id,
+                listing_ids,
+                entity_type=entity_type,
+                listing_owner=listing_owner,
+                sources=sources["earnings_actuals"],
+                now_utc=now_utc,
+            ),
             _filings_news_cell(
                 snapshot,
                 entity_id,
@@ -1399,8 +1653,7 @@ def build_stage1_coverage_matrix(
                 candidate
                 for _, candidate in matches.iterrows()
                 if _text(candidate.get("entity_id")) == entity_id
-                and _text(candidate.get("listing_status")).lower() == "active"
-                and _active_at_snapshot(candidate.to_dict(), snapshot)
+                and listing_eligibility_reason(candidate.to_dict(), snapshot.now_utc) is None
             ]
             if not active_matches:
                 continue
@@ -1477,9 +1730,13 @@ def _is_non_empty_relation(value: object) -> bool:
 
 def _unambiguous_listing_owners(
     listings: pd.DataFrame,
+    *,
+    as_of: pd.Timestamp,
 ) -> dict[str, str]:
     owner_candidates: dict[str, set[str]] = {}
     for _, listing in listings.iterrows():
+        if listing_eligibility_reason(listing, as_of) is not None:
+            continue
         listing_id = _text(listing.get("listing_id"))
         entity_id = _text(listing.get("entity_id"))
         if listing_id and entity_id:
@@ -1507,7 +1764,12 @@ def _registry_id_sets(
 
     return (
         ids(snapshot.entities, "entity_id"),
-        set(_unambiguous_listing_owners(snapshot.listings)),
+        set(
+            _unambiguous_listing_owners(
+                snapshot.listings,
+                as_of=snapshot.now_utc,
+            )
+        ),
         ids(snapshot.baskets, "basket_id"),
     )
 
@@ -1527,7 +1789,10 @@ def _linked_row_count(
         return 0
     entity_ids, listing_ids, basket_ids = _registry_id_sets(snapshot)
     if {"entity_id", "listing_id"} <= set(columns):
-        listing_owner = _unambiguous_listing_owners(snapshot.listings)
+        listing_owner = _unambiguous_listing_owners(
+            snapshot.listings,
+            as_of=snapshot.now_utc,
+        )
         return sum(
             (
                 bool(_text(row.get("listing_id")))
@@ -1607,7 +1872,14 @@ def build_data_coverage_summary(snapshot: ControlTowerSnapshot) -> DataCoverageS
     states = _source_health_states(snapshot)
     source_groups = {
         category: _category_sources(states, category)
-        for category in ("price_quotes", "consensus", "filings_news", "events", "macro")
+        for category in (
+            "price_quotes",
+            "consensus",
+            "earnings_actuals",
+            "filings_news",
+            "events",
+            "macro",
+        )
     }
 
     quote_snapshots = snapshot.quote_snapshots
@@ -1654,14 +1926,62 @@ def build_data_coverage_summary(snapshot: ControlTowerSnapshot) -> DataCoverageS
                 details=f"No price or market-bars artifact rows. {quote_detail}",
             )
         ]
-    rows.extend([
-        CoverageRow(
-            category="Earnings Actuals",
-            status="Unavailable",
-            status_code="unavailable",
-            details="No earnings-actuals mart is part of the current V1 data contract; event-level actual fields are separate.",
-        ),
-    ])
+    actuals = snapshot.earnings_actuals
+    actual_count = len(actuals) if not actuals.empty else 0
+    if actual_count:
+        linked_count = _linked_row_count(
+            snapshot,
+            actuals,
+            ("entity_id", "listing_id"),
+        )
+        status_code, source_detail = _assess_time_sensitive_rows(
+            actuals,
+            sources=source_groups["earnings_actuals"],
+            timestamp_columns=_EARNINGS_ACTUALS_TS_COLUMNS,
+            source_id_columns=("source_id",),
+            now_utc=snapshot.now_utc,
+        )
+        status_code, source_detail = _apply_earnings_artifact_evidence(
+            snapshot,
+            status_code,
+            source_detail,
+            rows_exist=True,
+        )
+        if status_code == "available" and linked_count != actual_count:
+            status_code = "partial"
+        rows.append(
+            CoverageRow(
+                category="Earnings Actuals",
+                status=COVERAGE_STATUS_LABELS[status_code],
+                status_code=status_code,
+                details=(
+                    f"{actual_count} earnings-actuals row"
+                    f"{'s' if actual_count != 1 else ''} present; "
+                    f"{linked_count} carry entity/listing identifiers that "
+                    f"resolve in the registry. {source_detail}"
+                ),
+                record_count=actual_count,
+                linked_count=linked_count,
+            )
+        )
+    else:
+        status_code, detail = _empty_status(
+            source_groups["earnings_actuals"]
+        )
+        status_code, detail = _apply_earnings_artifact_evidence(
+            snapshot,
+            status_code,
+            detail,
+            rows_exist=False,
+        )
+        rows.append(
+            CoverageRow(
+                category="Earnings Actuals",
+                status=COVERAGE_STATUS_LABELS[status_code],
+                status_code=status_code,
+                details=f"No earnings-actuals rows. {detail}",
+            )
+        )
 
     snapshots = snapshot.consensus_snapshots
     revisions = snapshot.consensus_revisions
@@ -1719,19 +2039,42 @@ def build_data_coverage_summary(snapshot: ControlTowerSnapshot) -> DataCoverageS
             )
         )
 
-    filings = snapshot.news_filings
-    filing_count = len(filings) if not filings.empty else 0
+    official_filings = snapshot.official_filings
+    news_filings = snapshot.news_filings
+    official_count = len(official_filings) if not official_filings.empty else 0
+    news_count = len(news_filings) if not news_filings.empty else 0
+    filing_count = official_count + news_count
     if filing_count:
-        linked_count = _linked_row_count(
-            snapshot,
-            filings,
-            ("related_entity_ids", "related_listing_ids", "related_basket_ids"),
+        official_linked = (
+            _linked_row_count(
+                snapshot, official_filings, ("entity_id", "listing_id")
+            )
+            if official_count
+            else 0
         )
+        news_linked = (
+            _linked_row_count(
+                snapshot,
+                news_filings,
+                ("related_entity_ids", "related_listing_ids", "related_basket_ids"),
+            )
+            if news_count
+            else 0
+        )
+        linked_count = official_linked + news_linked
+
+        if official_count and news_count:
+            all_filings = pd.concat([official_filings, news_filings], ignore_index=True)
+        elif official_count:
+            all_filings = official_filings
+        else:
+            all_filings = news_filings
+
         status_code, source_detail = _assess_time_sensitive_rows(
-            filings,
+            all_filings,
             sources=source_groups["filings_news"],
             timestamp_columns=_FILINGS_TS_COLUMNS,
-            source_id_columns=("source_id",),
+            source_id_columns=("source_id", "publisher"),
             now_utc=snapshot.now_utc,
         )
         missing_geographies = _missing_geographies(

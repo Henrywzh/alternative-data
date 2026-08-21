@@ -805,8 +805,6 @@ def test_task4_consensus_columns_and_repository_typed_empty_contract(generated_r
         manifest["artifacts"]["consensus_revisions.parquet"].update({"status": "unavailable", "sha256": None, "row_count": 0, "byte_size": 0}),
         manifest.update({"status": "degraded", "degraded_inputs": ["consensus_snapshots", "consensus_revisions"]}),
     ))
-    (generated_root / "consensus_snapshots.parquet").unlink()
-    (generated_root / "consensus_revisions.parquet").unlink()
     snapshot = ControlTowerRepository(generated_root).load_snapshot()
     assert snapshot.consensus_snapshots.empty and len(snapshot.consensus_snapshots.columns) == 29
     assert snapshot.consensus_revisions.empty and len(snapshot.consensus_revisions.columns) == 35
@@ -975,10 +973,13 @@ def test_task10_data_coverage_reports_presence_without_fabricating_linkage(
     summary = build_data_coverage_summary(snapshot)
     rows = {row.category: row for row in summary.rows}
     assert rows["Price / Market Bars"].status_code == "unavailable"
-    assert rows["Earnings Actuals"].status_code == "unavailable"
+    assert rows["Earnings Actuals"].status_code == "partial"
+    assert rows["Earnings Actuals"].record_count == 1
+    assert rows["Earnings Actuals"].linked_count == 1
+    assert "mart does not exist" not in rows["Earnings Actuals"].details.lower()
     assert rows["Consensus Data"].record_count == 2
     assert rows["Consensus Data"].linked_count == 2
-    assert rows["News & Filings"].linked_count == 1
+    assert rows["News & Filings"].linked_count == 2
     assert rows["Alternative Evidence / Events"].linked_count == 2
 
     unlinked_news = snapshot.news_filings.copy()
@@ -988,8 +989,12 @@ def test_task10_data_coverage_reports_presence_without_fabricating_linkage(
         "related_basket_ids",
     ):
         unlinked_news[column] = "[]"
+    unlinked_official = snapshot.official_filings.copy()
+    for column in ("entity_id", "listing_id"):
+        if column in unlinked_official.columns:
+            unlinked_official[column] = ""
     unlinked_summary = build_data_coverage_summary(
-        replace(snapshot, news_filings=unlinked_news)
+        replace(snapshot, news_filings=unlinked_news, official_filings=unlinked_official)
     )
     news_row = next(
         row for row in unlinked_summary.rows if row.category == "News & Filings"
@@ -1028,7 +1033,6 @@ def test_initial_app_mode_and_optional_degraded_mode(generated_root: Path, monke
 
     degraded_root = generated_root.parent / "degraded"
     shutil.copytree(generated_root, degraded_root)
-    (degraded_root / "news_filings.parquet").unlink()
     _rewrite_manifest(degraded_root, lambda manifest: (
         manifest["artifacts"]["news_filings.parquet"].update({"status": "unavailable", "sha256": None, "row_count": 0, "byte_size": 0}),
         manifest.update({"status": "degraded", "degraded_inputs": ["news_filings"]}),
@@ -1210,6 +1214,9 @@ def _production_task7_generation_or_skip() -> Path:
     from control_tower.config import (
         ARTIFACT_COLUMNS,
         DATA_ARTIFACT_NAMES,
+        LEGACY_EARNINGS_ACTUALS_COLUMNS,
+        LEGACY_DATA_ARTIFACT_NAMES,
+        LEGACY_GENERATION_DATA_ARTIFACT_NAMES,
         resolve_artifact_root,
     )
 
@@ -1230,12 +1237,30 @@ def _production_task7_generation_or_skip() -> Path:
         PRODUCTION_TASK7_PUBLICATION / "generations"
     ).resolve(strict=True)
 
-    for name in DATA_ARTIFACT_NAMES:
-        if not (resolution.artifact_root / name).exists():
-            assert name == "quote_snapshots.parquet"
-            continue
+    actual_data_artifact_names = {
+        name
+        for name in DATA_ARTIFACT_NAMES
+        if (resolution.artifact_root / name).exists()
+    }
+    accepted_artifact_sets = (
+        set(DATA_ARTIFACT_NAMES),
+        set(LEGACY_DATA_ARTIFACT_NAMES),
+        set(LEGACY_GENERATION_DATA_ARTIFACT_NAMES),
+    )
+    assert actual_data_artifact_names in accepted_artifact_sets, (
+        f"CURRENT publication {resolution.current_target} has an unsupported "
+        f"artifact set: {sorted(actual_data_artifact_names)!r}"
+    )
+
+    for name in sorted(actual_data_artifact_names):
         actual_columns = tuple(pq.read_schema(resolution.artifact_root / name).names)
-        assert actual_columns in (ARTIFACT_COLUMNS[name], ARTIFACT_COLUMNS[name][:20] + (ARTIFACT_COLUMNS[name][-1],)), (
+        accepted_columns = {
+            ARTIFACT_COLUMNS[name],
+            ARTIFACT_COLUMNS[name][:20] + (ARTIFACT_COLUMNS[name][-1],),
+        }
+        if name == "earnings_actuals.parquet":
+            accepted_columns.add(LEGACY_EARNINGS_ACTUALS_COLUMNS)
+        assert actual_columns in accepted_columns, (
             f"CURRENT publication {resolution.current_target} has non-final "
             f"{name} schema: {actual_columns!r}"
         )
@@ -1369,7 +1394,7 @@ def test_task7_synthetic_populated_acceptance_uses_stable_sk_hynix_ids(tmp_path:
     assert set(default_view.listings["listing_id"]) == {"000660_KR", "000660_US"}
     assert not default_view.official_documents.empty
     assert set(default_view.consensus["provider"]) == {"yfinance"}
-    assert set(default_view.consensus["listing_id"]) == {"000660_KR", "000660_US"}
+    assert set(default_view.consensus["listing_id"]) == {"000660_KR"}
     assert not default_view.consensus_revisions.empty
     assert not default_view.watch_questions.empty
     assert default_view.invalidation_evidence.empty
@@ -2219,6 +2244,46 @@ def test_today_page_renders_quote_snapshots_and_filters_by_universe(
     assert "Stage 1 market quotes (delayed)" not in _app_text(app)
 
 
+def test_today_selected_universe_uses_shared_listing_eligibility(
+    generated_root: Path,
+) -> None:
+    from control_tower.models import EventFilters
+    from control_tower.pages.today import _selected_universe
+
+    snapshot = _snapshot(generated_root)
+    listings = pd.concat(
+        [
+            snapshot.listings,
+            pd.DataFrame(
+                [
+                    {
+                        "listing_id": "TCEHY_US",
+                        "entity_id": "E1",
+                        "canonical_ticker": "TCEHY.US",
+                        "mapping_status": "unresolved",
+                        "collection_eligible": False,
+                        "listing_status": "active",
+                        "active_from": "2026-01-01",
+                        "active_to": None,
+                    }
+                ]
+            ),
+        ],
+        ignore_index=True,
+    )
+    snapshot = replace(snapshot, listings=listings)
+
+    entities, listing_ids, baskets = _selected_universe(
+        snapshot,
+        EventFilters(),
+    )
+
+    assert entities == {"E1", "E2"}
+    assert listing_ids == {"L1", "L2"}
+    assert "TCEHY_US" not in listing_ids
+    assert baskets == set()
+
+
 def test_today_page_marks_bytedance_only_universe_not_applicable(
     generated_root: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -2285,3 +2350,220 @@ def test_today_page_marks_bytedance_only_universe_not_applicable(
     assert "Market quotes not applicable" in rendered
     assert "Not applicable" in rendered
     assert "USD 123.45" not in rendered
+
+def test_flight_deck_active_window_presents_as_active_catalyst(generated_root: Path) -> None:
+    from control_tower.components.flight_deck import build_flight_deck, flight_deck_html
+    from control_tower.models import EventFilters
+
+    snapshot = _snapshot(generated_root)
+    now = pd.Timestamp("2026-08-22T00:06:00Z")
+    active_events = pd.DataFrame([
+        {
+            "event_id": "AI_ADVANCED_PACKAGING_WINDOW",
+            "event_type": "thesis_checkpoint",
+            "title": "Advanced packaging adoption window",
+            "status": "active",
+            "certainty_class": "thesis_checkpoint",
+            "importance": "high",
+            "starts_at": "2026-06-30T16:00:00Z",
+            "ends_at": "2027-06-30T15:59:59Z",
+            "date_precision": "year",
+        }
+    ])
+    active_snapshot = replace(snapshot, events=active_events, as_of_utc=now)
+    deck = build_flight_deck(
+        active_snapshot,
+        filters=EventFilters(horizon="30d", now_utc=now),
+        viewer_timezone="Europe/London",
+    )
+    assert deck.catalyst_timing_state == "active"
+    html = flight_deck_html(deck)
+    assert "Active catalyst" in html
+    assert "Active window" in html
+    assert "T+53d" not in html
+    assert "Next catalyst" not in html
+
+
+def test_flight_deck_future_event_retains_next_catalyst_and_t_minus(generated_root: Path) -> None:
+    from control_tower.components.flight_deck import build_flight_deck, flight_deck_html
+    from control_tower.models import EventFilters
+
+    snapshot = _snapshot(generated_root)
+    now = pd.Timestamp("2026-08-22T00:06:00Z")
+    future_events = pd.DataFrame([
+        {
+            "event_id": "EV_FUTURE",
+            "event_type": "earnings",
+            "title": "Future earnings release",
+            "status": "scheduled",
+            "certainty_class": "hard",
+            "importance": "high",
+            "starts_at": "2026-08-29T00:00:00Z",
+            "ends_at": "2026-08-29T00:00:00Z",
+            "date_precision": "day",
+        }
+    ])
+    future_snapshot = replace(snapshot, events=future_events, as_of_utc=now)
+    deck = build_flight_deck(
+        future_snapshot,
+        filters=EventFilters(horizon="30d", now_utc=now),
+        viewer_timezone="Europe/London",
+    )
+    assert deck.catalyst_timing_state == "future"
+    html = flight_deck_html(deck)
+    assert "Next catalyst" in html
+    assert "T-7d" in html
+    assert "Active catalyst" not in html
+    assert "Active window" not in html
+
+
+def test_flight_deck_boundary_exact_day_now_and_ended_window(generated_root: Path) -> None:
+    from control_tower.components.flight_deck import build_flight_deck, flight_deck_html
+    from control_tower.components.timeline import is_active_catalyst
+    from control_tower.models import EventFilters
+
+    snapshot = _snapshot(generated_root)
+    now = pd.Timestamp("2026-08-22T00:00:00Z")
+
+    # 1. Exact instant event happening right now (starts_at == ends_at == now) -> active
+    events_t0 = pd.DataFrame([
+        {
+            "event_id": "EV_TODAY",
+            "event_type": "earnings",
+            "title": "Today exact earnings",
+            "status": "scheduled",
+            "certainty_class": "hard",
+            "importance": "high",
+            "starts_at": "2026-08-22T00:00:00Z",
+            "ends_at": "2026-08-22T00:00:00Z",
+            "date_precision": "day",
+        }
+    ])
+    snapshot_t0 = replace(snapshot, events=events_t0, as_of_utc=now)
+    deck_t0 = build_flight_deck(
+        snapshot_t0,
+        filters=EventFilters(horizon="30d", now_utc=now),
+        viewer_timezone="Europe/London",
+    )
+    assert deck_t0.catalyst_timing_state == "active"
+    html_t0 = flight_deck_html(deck_t0)
+    assert "Active catalyst" in html_t0
+    assert "Active window" in html_t0
+
+    # 2. Window boundary: now exactly at ends_at -> active
+    events_window = pd.DataFrame([
+        {
+            "event_id": "EV_WINDOW_END",
+            "event_type": "thesis_checkpoint",
+            "title": "Ending window",
+            "status": "active",
+            "certainty_class": "thesis_checkpoint",
+            "importance": "high",
+            "starts_at": "2026-08-01T00:00:00Z",
+            "ends_at": "2026-08-22T10:00:00Z",
+            "date_precision": "day",
+        }
+    ])
+    now_window = pd.Timestamp("2026-08-22T10:00:00Z")
+    snapshot_window = replace(snapshot, events=events_window, as_of_utc=now_window)
+    deck_window = build_flight_deck(
+        snapshot_window,
+        filters=EventFilters(horizon="30d", now_utc=now_window),
+        viewer_timezone="Europe/London",
+    )
+    assert deck_window.catalyst_timing_state == "active"
+    html_window = flight_deck_html(deck_window)
+    assert "Active catalyst" in html_window
+    assert "Active window" in html_window
+
+    # 3. Window beginning exactly now (starts_at == now < ends_at) -> active
+    events_window_start = pd.DataFrame([
+        {
+            "event_id": "EV_WINDOW_START",
+            "event_type": "thesis_checkpoint",
+            "title": "Starting window",
+            "status": "active",
+            "certainty_class": "thesis_checkpoint",
+            "importance": "high",
+            "starts_at": "2026-08-22T10:00:00Z",
+            "ends_at": "2026-08-23T10:00:00Z",
+            "date_precision": "day",
+        }
+    ])
+    snapshot_window_start = replace(snapshot, events=events_window_start, as_of_utc=now_window)
+    deck_window_start = build_flight_deck(
+        snapshot_window_start,
+        filters=EventFilters(horizon="30d", now_utc=now_window),
+        viewer_timezone="Europe/London",
+    )
+    assert deck_window_start.catalyst_timing_state == "active"
+    html_window_start = flight_deck_html(deck_window_start)
+    assert "Active catalyst" in html_window_start
+    assert "Active window" in html_window_start
+
+    # 4. Instant event immediately after ends_at -> past (not selected as active or future)
+    now_past = pd.Timestamp("2026-08-22T00:00:01Z")
+    snapshot_past = replace(snapshot, events=events_t0, as_of_utc=now_past)
+    deck_past = build_flight_deck(
+        snapshot_past,
+        filters=EventFilters(horizon="30d", now_utc=now_past),
+        viewer_timezone="Europe/London",
+    )
+    assert deck_past.catalyst_timing_state == "none"
+    html_past = flight_deck_html(deck_past)
+    assert "No eligible catalyst" in html_past
+
+    # 5. Truly future event (now < starts_at) -> future
+    now_before = pd.Timestamp("2026-08-21T12:00:00Z")
+    snapshot_before = replace(snapshot, events=events_t0, as_of_utc=now_before)
+    deck_before = build_flight_deck(
+        snapshot_before,
+        filters=EventFilters(horizon="30d", now_utc=now_before),
+        viewer_timezone="Europe/London",
+    )
+    assert deck_before.catalyst_timing_state == "future"
+    html_before = flight_deck_html(deck_before)
+    assert "Next catalyst" in html_before
+    assert "T-1d" in html_before
+
+    # 6. Direct helper semantics verification
+    t_start = pd.Timestamp("2026-08-22T10:00:00Z")
+    t_end = pd.Timestamp("2026-08-23T10:00:00Z")
+    assert is_active_catalyst(t_start, t_end, t_start) is True
+    assert is_active_catalyst(t_start, t_end, t_end) is True
+    assert is_active_catalyst(t_start, t_end, pd.Timestamp("2026-08-22T15:00:00Z")) is True
+    assert is_active_catalyst(t_start, t_end, pd.Timestamp("2026-08-22T09:59:59Z")) is False
+    assert is_active_catalyst(t_start, t_end, pd.Timestamp("2026-08-23T10:00:01Z")) is False
+    assert is_active_catalyst(t_start, None, t_start) is True
+    assert is_active_catalyst(t_start, None, pd.Timestamp("2026-08-22T10:00:01Z")) is False
+    assert is_active_catalyst(None, t_end, t_start) is False
+
+
+def test_app_and_company_page_import_from_app_dir_without_pythonpath() -> None:
+    import os
+    import subprocess
+    import sys
+
+    repo_root = Path(__file__).resolve().parent.parent
+    app_dir = repo_root / "apps" / "research-control-tower"
+    clean_env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
+
+    # Test importing app from apps/research-control-tower directory
+    proc_app = subprocess.run(
+        [sys.executable, "-c", "import app; assert hasattr(app, 'main')"],
+        cwd=str(app_dir),
+        env=clean_env,
+        capture_output=True,
+        text=True,
+    )
+    assert proc_app.returncode == 0, f"Import from app_dir failed: {proc_app.stderr}"
+
+    # Test importing company page standalone from app_dir
+    proc_company = subprocess.run(
+        [sys.executable, "-c", "from control_tower.pages.company import render_company_page"],
+        cwd=str(app_dir),
+        env=clean_env,
+        capture_output=True,
+        text=True,
+    )
+    assert proc_company.returncode == 0, f"Import company page from app_dir failed: {proc_company.stderr}"

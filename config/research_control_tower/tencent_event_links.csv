@@ -1,0 +1,20 @@
+event_id,target_type,target_id,link_role,automated,active_from,active_to,link_note,registry_version
+TENCENT_2Q_2026_RESULTS_OBSERVATION,entity,TENCENT,primary,false,2026-01-01,,Official 2Q 2026 earnings observation attaches to Tencent entity.,v1
+TENCENT_2Q_2026_RESULTS_OBSERVATION,listing,0700_HK,automated,true,2026-01-01,,Eligible HKEX primary listing selected by mapping gate.,v1
+TENCENT_2Q_2026_RESULTS_OBSERVATION,basket,HK_INTERNET,affected,false,2026-01-01,,Platform earnings read-through for Hong Kong internet basket.,v1
+TENCENT_2Q_2026_RESULTS_OBSERVATION,basket,RESEARCH_STAGE_1_CHINA_INTERNET,affected,false,2026-01-01,,Stage 1 China Internet anchor results observation.,v1
+TENCENT_3Q_2026_RESULTS_RESEARCH_WINDOW,entity,TENCENT,primary,false,2026-01-01,,3Q results research window attaches to Tencent entity.,v1
+TENCENT_3Q_2026_RESULTS_RESEARCH_WINDOW,listing,0700_HK,automated,true,2026-01-01,,Eligible HKEX primary listing selected by mapping gate.,v1
+TENCENT_3Q_2026_RESULTS_RESEARCH_WINDOW,basket,HK_INTERNET,affected,false,2026-01-01,,Research catalyst window for HK internet basket.,v1
+TENCENT_AI_CAPEX_FCF_INFLECTION_CHECKPOINT,entity,TENCENT,primary,false,2026-01-01,,AI capex and FCF inflection checkpoint attaches to Tencent.,v1
+TENCENT_AI_CAPEX_FCF_INFLECTION_CHECKPOINT,listing,0700_HK,automated,true,2026-01-01,,Eligible HKEX primary listing selected by mapping gate.,v1
+TENCENT_AI_CAPEX_FCF_INFLECTION_CHECKPOINT,basket,AI_BOTTLENECKS_GLOBAL,affected,false,2026-01-01,,China hyperscaler capex and compute demand read-through.,v1
+TENCENT_AIM_AD_TECH_EXPANSION_CHECKPOINT,entity,TENCENT,primary,false,2026-01-01,,AIM+ ad efficiency checkpoint attaches to Tencent.,v1
+TENCENT_AIM_AD_TECH_EXPANSION_CHECKPOINT,listing,0700_HK,automated,true,2026-01-01,,Eligible HKEX primary listing selected by mapping gate.,v1
+TENCENT_AIM_AD_TECH_EXPANSION_CHECKPOINT,basket,HK_INTERNET,affected,false,2026-01-01,,AI ad monetization read-through for internet basket.,v1
+TENCENT_NPPA_GAME_APPROVAL_CADENCE_CHECKPOINT,entity,TENCENT,primary,false,2026-01-01,,NPPA game approval cadence checkpoint attaches to Tencent.,v1
+TENCENT_NPPA_GAME_APPROVAL_CADENCE_CHECKPOINT,listing,0700_HK,automated,true,2026-01-01,,Eligible HKEX primary listing selected by mapping gate.,v1
+TENCENT_NPPA_GAME_APPROVAL_CADENCE_CHECKPOINT,basket,RESEARCH_STAGE_1_CHINA_INTERNET,affected,false,2026-01-01,,Game pipeline regulatory checkpoint for China internet basket.,v1
+TENCENT_BUYBACK_CADENCE_CHECKPOINT,entity,TENCENT,primary,false,2026-01-01,,Statutory buyback execution checkpoint attaches to Tencent.,v1
+TENCENT_BUYBACK_CADENCE_CHECKPOINT,listing,0700_HK,automated,true,2026-01-01,,Eligible HKEX primary listing selected by mapping gate.,v1
+TENCENT_BUYBACK_CADENCE_CHECKPOINT,basket,HK_INTERNET,affected,false,2026-01-01,,Capital return read-through for HK internet basket.,v1

@@ -32,22 +32,40 @@ are labelled ``reconstructed_sparse`` and the UI badges them as such. From the
 first run onward the snapshots accumulate into genuine point-in-time history;
 the reconstruction only exists to give the panel a cold start.
 
+
 Batch 7 accumulation semantics (day-granular immutability):
 
 * Every run appends its captured snapshots to an append-only store at
   ``<output-dir>/store/snapshots_store.parquet``.
-* The natural key is (provider, listing_id, metric, horizon, statistic,
-  fiscal_period, fiscal_year, estimate_period_end), keyed null-safely.
-* One vintage per natural key per UTC calendar day. A same-day rerun for the
-  same key REPLACES that day's row (last-write-wins within the day), which
-  makes scheduled daily collection idempotent; different days always append.
-  Intra-day value changes are intentionally not retained — the cadence is
-  daily, and ``snapshot_id`` is a deterministic hash of the natural key plus
-  the UTC date so re-runs produce stable, joinable ids.
-* Genuine revisions are derived from consecutive store vintages per natural
-  key and carry ``pit_class="repository_captured"``. Reconstructed
-  eps_trend rows remain as a labelled cold-start fallback; the two coexist
-  and are never blended or deduped against each other.
+* The natural key / revision chaining key is
+  ``(provider_series_id, listing_id, metric, horizon, statistic)``, keyed
+  null-safely. Derived fiscal-period mapping labels (``fiscal_period``,
+  ``fiscal_year``, ``estimate_period_end``) NEVER enter the key, so a
+  corrected period mapping cannot break a revision chain (design spec:
+  mapping labels never enter the chaining key). ``provider_series_id``
+  is a stable per-provider series identity: ``yfinance:<ticker>:<metric>``
+  for live estimates and ``akshare:<ticker>:<metric>:fiscal_year:<FY>``
+  for the sibling relay, whose export carries one row per source fiscal
+  year and no relative horizon — the source-reported fiscal year is the
+  only stable series discriminator there.
+* One vintage per natural key per UTC calendar day. A same-day rerun for
+  the same key REPLACES that day's row (last-write-wins within the day),
+  which makes scheduled daily collection idempotent; different days
+  always append. Intra-day value changes are intentionally not retained —
+  the cadence is daily, and ``snapshot_id`` is a deterministic hash of
+  the natural key plus the UTC date so re-runs produce stable, joinable
+  ids.
+* Genuine revisions are derived from consecutive store vintages per
+  natural key and carry ``pit_class="repository_captured"``.
+  Reconstructed eps_trend rows remain as a labelled cold-start fallback;
+  strict precedence applies — a chain with captured history suppresses
+  its reconstructed rows — and the two classes are never blended or
+  deduped against each other.
+* Provider health is honest about freshness: a provider whose latest
+  captured ``provider_asof`` falls outside its freshness window is
+  reported ``stale`` (never ``available``), and an empty provider is
+  ``unavailable``.
+
 
 Usage::
 
@@ -84,6 +102,9 @@ from research_control_tower.build import (  # noqa: E402
     TASK3_REVISION_ARROW_SCHEMA,
     TASK3_SNAPSHOT_ARROW_SCHEMA,
 )
+from research_control_tower.eligibility import (  # noqa: E402
+    filter_eligible_listings,
+)
 
 FINANCIAL_DATA_ROOT = Path.home() / "Desktop" / "Quant" / "financial-data"
 FD_DUCKDB = FINANCIAL_DATA_ROOT / "data" / "databases" / "hk_financials.duckdb"
@@ -102,6 +123,13 @@ FD_LICENSE = "local_private_research"
 # yfinance reports estimates by relative horizon only.
 HORIZONS = ("0q", "+1q", "0y", "+1y")
 LOOKBACKS = {"7daysAgo": 7, "30daysAgo": 30, "60daysAgo": 60, "90daysAgo": 90}
+
+# Provider freshness windows (calendar days) for the health sidecar. The
+# akshare relay is a delayed sibling-repository snapshot; 14 days matches
+# the repository-wide ``task3_consensus_export_v1`` freshness threshold in
+# ``src/research_control_tower/build.py``. yfinance estimates are collected
+# live each run, so a 2-day window keeps health honest across weekends.
+PROVIDER_FRESHNESS_SLA_DAYS = {"yfinance": 2, "akshare": 14}
 
 STORE_DIRNAME = "store"
 STORE_FILENAME = "snapshots_store.parquet"
@@ -122,6 +150,20 @@ def _f(value: object) -> float | None:
 def _i(value: object) -> int | None:
     out = _f(value)
     return None if out is None else int(out)
+
+
+def _as_utc(value: object) -> pd.Timestamp | None:
+    """Coerce a provider timestamp to UTC, or None when missing/invalid."""
+
+    try:
+        ts = pd.Timestamp(value)
+    except (TypeError, ValueError):
+        return None
+    if pd.isna(ts):
+        return None
+    if ts.tzinfo is None:
+        return ts.tz_localize("UTC")
+    return ts.tz_convert("UTC")
 
 
 STORE_COLUMNS = list(TASK3_SNAPSHOT_ARROW_SCHEMA.names)
@@ -147,24 +189,41 @@ def _key_part(value: object) -> str:
     return str(value)
 
 
-def snapshot_natural_key(row: Mapping[str, object]) -> tuple[str, ...]:
-    """The store's natural key for a snapshot row or mapping.
+def _provider_series_id(row: Mapping[str, object]) -> str:
+    """Stable per-provider series identity, never a derived mapping label.
 
-    ``(provider, listing_id, metric, horizon, statistic, fiscal_period,
-    fiscal_year, estimate_period_end)`` with NULL-safe parts (see
-    :func:`_key_part`). Unaligned rows (null fiscal year / estimate period end)
-    therefore key consistently with empty strings rather than NaN.
+    yfinance: ``yfinance:<ticker>:<metric>`` (symbol + field). akshare:
+    ``akshare:<ticker>:<metric>:fiscal_year:<FY>`` — the sibling export
+    carries one row per source-reported fiscal year and no relative
+    horizon, so the source fiscal year is the only stable discriminator
+    between the rows. A corrected period mapping therefore never changes
+    the identity of an existing series.
+    """
+
+    provider = _key_part(row.get("provider"))
+    ticker = _key_part(row.get("canonical_ticker"))
+    metric = _key_part(row.get("metric"))
+    if provider == "akshare":
+        return "\x1f".join((provider, ticker, metric, "fiscal_year", _key_part(row.get("fiscal_year"))))
+    return "\x1f".join((provider, ticker, metric))
+
+
+def snapshot_natural_key(row: Mapping[str, object]) -> tuple[str, ...]:
+    """The store natural key / revision chaining key for a snapshot row.
+
+    ``(provider_series_id, listing_id, metric, horizon, statistic)`` with
+    NULL-safe parts (see :func:`_key_part`). Derived fiscal-period mapping
+    labels (``fiscal_period`` / ``fiscal_year`` / ``estimate_period_end``)
+    are deliberately excluded: the design spec keys vintage pairing on the
+    stable series identity, and mapping changes must never split a chain.
     """
 
     return (
-        _key_part(row.get("provider")),
+        _provider_series_id(row),
         _key_part(row.get("listing_id")),
         _key_part(row.get("metric")),
         _key_part(row.get("horizon")),
         _key_part(row.get("statistic")),
-        _key_part(row.get("fiscal_period")),
-        _key_part(row.get("fiscal_year")),
-        _key_part(row.get("estimate_period_end")),
     )
 
 
@@ -241,11 +300,26 @@ def accumulate_snapshots(
         # Only concat when both sides carry data: pandas deprecates concat of
         # empty/all-NA frames and the store is routinely empty on first run.
         merged = pd.concat([existing, new], ignore_index=True)
-    # Last-write-wins within (natural key, UTC day): after the concat the new
-    # batch rows come last, so keep="last" replaces the same-day store row and
-    # preserves every other vintage.
+    # Last-write-wins within (natural key, UTC day): sort by provider_asof/retrieved_at_utc/snapshot_at,
+    # and break exact timestamp ties deterministically by content hash so winner selection is completely
+    # input-order-independent and ignores random run-ids.
+    content_fields = (
+        "value", "statistic", "low_value", "high_value",
+        "analyst_count", "provider_contributor_count", "currency", "unit",
+        "accounting_basis", "fiscal_period", "fiscal_year", "estimate_period_end",
+        "source_url", "raw_hash", "source_run_id", "calculation_origin", "coverage_reason",
+    )
+    merged["__content_hash"] = [
+        _hash(*(row.get(col) for col in content_fields))
+        for _, row in merged.iterrows()
+    ]
+    merged = merged.sort_values(
+        ["provider_asof", "retrieved_at_utc", "snapshot_at", "__content_hash"],
+        kind="mergesort",
+        na_position="first",
+    )
     merged = merged.drop_duplicates(subset=["__key", "__day"], keep="last")
-    merged = merged.drop(columns=["__key", "__day"])
+    merged = merged.drop(columns=["__key", "__day", "__content_hash"])
     merged = merged.sort_values(
         ["snapshot_at", "provider", "listing_id", "metric", "horizon", "statistic"],
         kind="mergesort",
@@ -355,19 +429,120 @@ def derive_genuine_revisions(store: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=REVISION_COLUMNS)
 
 
+def _revision_chain_key(row: Mapping[str, object]) -> tuple[str, ...]:
+    """The series chain a revision row belongs to.
+
+    Matches the snapshot natural key: ``(provider_series_id, listing_id,
+    metric, horizon, statistic)`` with NULL-safe parts, so a reconstructed
+    row can be checked against the same chain a genuine revision covers.
+    """
+
+    return (
+        _provider_series_id(row),
+        _key_part(row.get("listing_id")),
+        _key_part(row.get("metric")),
+        _key_part(row.get("horizon")),
+        _key_part(row.get("statistic")),
+    )
+
+
+def _reconstructed_revision_row(
+    snapshot: Mapping[str, object],
+    *,
+    prior_value: object,
+    lookback_days: int,
+    now: datetime,
+    alignment_status: str,
+) -> dict[str, object]:
+    """One yfinance eps_trend reconstructed revision, consistent with its snapshot.
+
+    The snapshots mart and the revisions mart must agree on the current
+    figure: ``current_value`` is the snapshot's own ``value`` (the mean the
+    snapshots export shows) and ``snapshot_id`` is the snapshot's stable id,
+    so a rerun can never desynchronize the two marts. The prior side comes
+    from the provider's retrospective restatement and stays
+    ``reconstructed_sparse`` -- cold-start context only, never PIT.
+    """
+
+    current_value = _f(snapshot.get("value"))
+    prior = _f(prior_value)
+    revision_value: float | None = (
+        None if current_value is None or prior is None else current_value - prior
+    )
+    revision_pct: float | None = (
+        revision_value / abs(prior)
+        if revision_value is not None and prior not in (None, 0)
+        else None
+    )
+    cutoff = (pd.Timestamp(now) - pd.Timedelta(days=lookback_days)).to_pydatetime()
+    return {
+        "revision_id": _hash(snapshot.get("snapshot_id"), lookback_days),
+        "snapshot_id": str(snapshot.get("snapshot_id")),
+        "provider": "yfinance",
+        "prior_provider": "yfinance",
+        "entity_id": str(snapshot.get("entity_id")),
+        "listing_id": str(snapshot.get("listing_id")),
+        "financial_data_security_id": str(snapshot.get("financial_data_security_id") or ""),
+        "canonical_ticker": str(snapshot.get("canonical_ticker")),
+        "metric": "eps",
+        "fiscal_period": _key_part(snapshot.get("fiscal_period")),
+        "fiscal_year": _i(snapshot.get("fiscal_year")),
+        "estimate_period_end": snapshot.get("estimate_period_end"),
+        "horizon": _key_part(snapshot.get("horizon")),
+        "statistic": _key_part(snapshot.get("statistic")),
+        "current_snapshot_at": snapshot.get("snapshot_at"),
+        "current_value": current_value,
+        "current_analyst_count": _i(snapshot.get("analyst_count")),
+        "current_dispersion": None,
+        "lookback_days": lookback_days,
+        "cutoff_at": cutoff,
+        "prior_snapshot_id": "",
+        "prior_snapshot_at": cutoff,
+        "prior_value": prior,
+        "prior_provider_asof": cutoff,
+        "provider_asof": snapshot.get("provider_asof"),
+        "retrieved_at_utc": snapshot.get("retrieved_at_utc"),
+        "source_url": str(snapshot.get("source_url")),
+        "pit_class": "reconstructed_sparse",
+        "source_run_id": str(snapshot.get("source_run_id")),
+        "prior_analyst_count": None,
+        "revision_value": revision_value,
+        "revision_pct": revision_pct,
+        "analyst_count_change": None,
+        "dispersion": None,
+        "alignment_status": str(alignment_status),
+    }
+
+
 def combine_revision_export(
     genuine: pd.DataFrame,
     reconstructed: pd.DataFrame,
 ) -> pd.DataFrame:
     """Combine genuine and reconstructed revisions for export.
 
-    Ordering: genuine first (most recent ``current_snapshot_at`` first), then
-    the reconstructed rows in their original order. The two classes are never
-    blended or deduped against each other -- they coexist, distinctly labelled
-    by ``pit_class``.
+    Strict precedence: reconstructed rows for a chain that already carries
+    genuine ``repository_captured`` history are suppressed (cold-start
+    display only), while rows for uncovered chains survive to give the
+    panel a cold start. Remaining ordering: genuine first (most recent
+    ``current_snapshot_at`` first), then the surviving reconstructed rows in
+    their original order. The two classes are never blended or deduped
+    against each other -- suppressed rows are removed, surviving rows keep
+    their labels and order.
     """
 
     genuine = genuine.sort_values("current_snapshot_at", ascending=False, kind="mergesort")
+    if not reconstructed.empty and not genuine.empty:
+        covered = {
+            "\x1f".join(_revision_chain_key(row))
+            for _, row in genuine.iterrows()
+        }
+        keys = [
+            "\x1f".join(_revision_chain_key(row))
+            for _, row in reconstructed.iterrows()
+        ]
+        reconstructed = reconstructed.loc[
+            [key not in covered for key in keys]
+        ].copy()
     parts = []
     if not genuine.empty:
         parts.append(genuine[REVISION_COLUMNS])
@@ -409,7 +584,7 @@ def load_period_mapping() -> pd.DataFrame:
         frame = con.execute(
             """
             select ticker, metric, source_horizon, mapped_fiscal_year, mapped_period_end,
-                   alignment_quality, confidence
+                   alignment_quality, confidence, period_kind
             from consensus_period_mapping
             """
         ).df()
@@ -480,6 +655,99 @@ def _alignment(
     }
 
 
+def _fiscal_year_end_anchor(
+    mapping: pd.DataFrame,
+    ticker: str,
+    sibling_tickers: tuple[str, ...] = (),
+) -> dict[str, object]:
+    """Issuer fiscal year-end (month, day) from the mapping's annual anchors.
+
+    The mapping keys yfinance horizons, but the fiscal calendar belongs to
+    the issuer: the most common (month, day) among ``period_kind="annual"``
+    mapped period ends (e.g. 0700.HK -> 12-31, 9988.HK -> 03-31) is the
+    calendar used to turn an akshare source fiscal year into a period end.
+    Returns ``{}`` when the mapping carries no usable annual anchor.
+    """
+
+    if mapping is None or mapping.empty or "period_kind" not in mapping.columns:
+        return {}
+    counts: dict[tuple[int, int], int] = {}
+    confidences: dict[tuple[int, int], list[str]] = {}
+    borrowed_from = ""
+    for candidate in (ticker, *[other for other in sibling_tickers if other != ticker]):
+        rows = mapping.loc[mapping["ticker"].eq(candidate)]
+        annual = rows.loc[rows["period_kind"].eq("annual")]
+        for _, row in annual.iterrows():
+            end = row.get("mapped_period_end")
+            if end is None or pd.isna(end):
+                continue
+            ts = pd.Timestamp(end)
+            if pd.isna(ts):
+                continue
+            key = (ts.month, ts.day)
+            counts[key] = counts.get(key, 0) + 1
+            confidences.setdefault(key, []).append(str(row.get("confidence") or "unknown"))
+            if candidate != ticker:
+                borrowed_from = candidate
+    if not counts:
+        return {}
+    (month, day), _ = max(counts.items(), key=lambda item: item[1])
+    order = {"high": 2, "medium": 1, "low": 0}
+    confidence = max(confidences[(month, day)], key=lambda c: order.get(c, -1))
+    return {"month": month, "day": day, "confidence": confidence, "borrowed_from": borrowed_from}
+
+
+def _align_akshare(
+    mapping: pd.DataFrame,
+    ticker: str,
+    metric: str,
+    source_fiscal_year: int | None,
+    sibling_tickers: tuple[str, ...] = (),
+) -> dict[str, object]:
+    """Period alignment for an akshare relay row.
+
+    The sibling export reports one row per source fiscal year with no
+    relative horizon, so the source-reported ``fiscal_year`` is the period
+    identity. When the issuer's annual calendar is derivable, a period end
+    is derived from it; otherwise the fiscal year is kept and the period
+    end stays null (never guessed).
+    """
+
+    if source_fiscal_year is None:
+        return {
+            "fiscal_year": None,
+            "estimate_period_end": None,
+            "alignment_status": "unaligned_no_source_fiscal_year",
+            "coverage_reason": "akshare export row carries no fiscal year",
+        }
+    anchor = _fiscal_year_end_anchor(mapping, ticker, sibling_tickers)
+    if not anchor:
+        return {
+            "fiscal_year": source_fiscal_year,
+            "estimate_period_end": None,
+            "alignment_status": "source_fiscal_year_no_calendar",
+            "coverage_reason": "fiscal year from akshare export; no issuer annual calendar in consensus_period_mapping to derive a period end",
+        }
+    try:
+        period_end = date(source_fiscal_year, int(anchor["month"]), int(anchor["day"]))
+    except ValueError:
+        period_end = None
+    status = "source_fiscal_year_calendared_confidence_" + str(anchor["confidence"])
+    borrowed = str(anchor.get("borrowed_from") or "")
+    if borrowed:
+        status = status + "_via_" + borrowed
+    return {
+        "fiscal_year": source_fiscal_year,
+        "estimate_period_end": period_end,
+        "alignment_status": status,
+        "coverage_reason": (
+            "fiscal year from akshare export; period end derived from issuer annual calendar"
+            + (" via same-issuer listing " + borrowed if borrowed else "")
+            + (": " + period_end.isoformat() if period_end is not None else ": unavailable")
+        ),
+    }
+
+
 def _sibling_tickers(listings: pd.DataFrame) -> dict[str, tuple[str, ...]]:
     """entity_id -> every canonical ticker that issuer lists under."""
     out: dict[str, tuple[str, ...]] = {}
@@ -497,11 +765,17 @@ def collect_yfinance(
 ) -> tuple[list[dict], list[dict], int, list[str]]:
     import yfinance as yf
 
+    eligible_listings, rejected = filter_eligible_listings(listings, now)
+    eligibility_notes = [
+        f"{item['listing_id'] or '<blank>'}: listing eligibility rejected ({item['reason']})"
+        for item in rejected
+    ]
+    listings = eligible_listings
     siblings = _sibling_tickers(listings)
     snapshots: list[dict] = []
     revisions: list[dict] = []
     calls = 0
-    notes: list[str] = []
+    notes: list[str] = list(eligibility_notes)
 
     for _, listing in listings.iterrows():
         symbol = str(listing["provider_symbol"])
@@ -527,9 +801,9 @@ def collect_yfinance(
                 if value is None:
                     continue
                 align = _alignment(mapping, str(listing["canonical_ticker"]), metric, horizon, siblings.get(str(listing["entity_id"]), ()))
-                snapshot_id = _hash(run_id, "yfinance", listing["listing_id"], metric, horizon)
-                snapshots.append({
-                    "snapshot_id": snapshot_id,
+                analyst_count = _i(row.get("numberOfAnalysts"))
+                snapshot = {
+                    "snapshot_id": "",  # stable id computed below
                     "provider": "yfinance",
                     "entity_id": str(listing["entity_id"]),
                     "listing_id": str(listing["listing_id"]),
@@ -545,12 +819,16 @@ def collect_yfinance(
                     "statistic": "mean",
                     "low_value": _f(row.get("low")),
                     "high_value": _f(row.get("high")),
-                    "analyst_count": _i(row.get("numberOfAnalysts")),
-                    "provider_contributor_count": _i(row.get("numberOfAnalysts")),
+                    "analyst_count": analyst_count,
+                    "provider_contributor_count": analyst_count,
                     "currency": str(listing["currency"]),
                     "unit": unit,
                     "accounting_basis": "provider_reported_non_gaap_unverified",
-                    "provider_asof": now,
+                    # yfinance exposes a live estimate table but no provider
+                    # publication/vintage timestamp.  Collection time is
+                    # retrieval metadata only; never promote it to a
+                    # provider vintage.
+                    "provider_asof": None,
                     "retrieved_at_utc": now,
                     "source_url": YF_SOURCE_URL.format(symbol=symbol),
                     "raw_hash": _hash(value, row.get("low"), row.get("high"), row.get("numberOfAnalysts")),
@@ -558,7 +836,9 @@ def collect_yfinance(
                     "source_run_id": run_id,
                     "calculation_origin": "provider_published_consensus",
                     "coverage_reason": str(align["coverage_reason"]),
-                })
+                }
+                snapshot["snapshot_id"] = stable_snapshot_id(snapshot, now.date())
+                snapshots.append(snapshot)
 
                 # Revisions only exist for EPS: eps_trend is the one table that
                 # restates the consensus at earlier dates.
@@ -572,46 +852,15 @@ def collect_yfinance(
                     prior = _f(trend_row.get(column))
                     if prior is None:
                         continue
-                    cutoff = (pd.Timestamp(now) - pd.Timedelta(days=lookback)).to_pydatetime()
-                    revisions.append({
-                        "revision_id": _hash(snapshot_id, lookback),
-                        "snapshot_id": snapshot_id,
-                        "provider": "yfinance",
-                        "prior_provider": "yfinance",
-                        "entity_id": str(listing["entity_id"]),
-                        "listing_id": str(listing["listing_id"]),
-                        "financial_data_security_id": str(listing["financial_data_security_id"] or ""),
-                        "canonical_ticker": str(listing["canonical_ticker"]),
-                        "metric": "eps",
-                        "fiscal_period": "quarterly" if horizon.endswith("q") else "annual",
-                        "fiscal_year": align["fiscal_year"],
-                        "estimate_period_end": align["estimate_period_end"],
-                        "horizon": horizon,
-                        "statistic": "mean",
-                        "current_snapshot_at": now,
-                        "current_value": current,
-                        "current_analyst_count": _i(frame.loc[horizon].get("numberOfAnalysts")),
-                        "current_dispersion": None,
-                        "lookback_days": lookback,
-                        "cutoff_at": cutoff,
-                        "prior_snapshot_id": "",
-                        "prior_snapshot_at": cutoff,
-                        "prior_value": prior,
-                        "prior_provider_asof": cutoff,
-                        "provider_asof": now,
-                        "retrieved_at_utc": now,
-                        "source_url": YF_SOURCE_URL.format(symbol=symbol),
-                        # The prior value is the provider restating history, not
-                        # a vintage captured at the time. Never call it PIT.
-                        "pit_class": "reconstructed_sparse",
-                        "source_run_id": run_id,
-                        "prior_analyst_count": None,
-                        "revision_value": current - prior,
-                        "revision_pct": ((current - prior) / abs(prior) * 100.0) if prior else None,
-                        "analyst_count_change": None,
-                        "dispersion": None,
-                        "alignment_status": str(align["alignment_status"]),
-                    })
+                    revisions.append(
+                        _reconstructed_revision_row(
+                            snapshot,
+                            prior_value=prior,
+                            lookback_days=lookback,
+                            now=now,
+                            alignment_status=str(align["alignment_status"]),
+                        )
+                    )
     return snapshots, revisions, calls, notes
 
 
@@ -623,29 +872,51 @@ def collect_financial_data(
     now: datetime,
 ) -> tuple[list[dict], list[str]]:
     """Read the akshare consensus already collected by the sibling repository."""
+    eligible_listings, rejected = filter_eligible_listings(listings, now)
+    eligibility_notes = [
+        f"{item['listing_id'] or '<blank>'}: listing eligibility rejected ({item['reason']})"
+        for item in rejected
+    ]
+    listings = eligible_listings
     files = sorted(FD_CONSENSUS.glob("source=akshare/**/*.parquet")) if FD_CONSENSUS.is_dir() else []
     if not files:
-        return [], [f"no akshare consensus snapshot under {FD_CONSENSUS}"]
+        return [], [f"no akshare consensus snapshot under {FD_CONSENSUS}", *eligibility_notes]
     frame = pd.concat([pd.read_parquet(path) for path in files], ignore_index=True)
     siblings = _sibling_tickers(listings)
     by_ticker = {str(row["canonical_ticker"]): row for _, row in listings.iterrows()}
     snapshots: list[dict] = []
-    notes: list[str] = []
+    notes: list[str] = list(eligibility_notes)
     for _, row in frame.iterrows():
         listing = by_ticker.get(str(row.get("ticker")))
         if listing is None:
             continue
-        snapshot_at = pd.Timestamp(row.get("snapshot_date"))
-        if snapshot_at.tzinfo is None:
-            snapshot_at = snapshot_at.tz_localize("UTC")
+        snapshot_at = _as_utc(row.get("snapshot_date"))
+        if snapshot_at is None:
+            continue
+        # The sibling's fetch timestamp is the true provider-as-of; the
+        # snapshot date alone would understate freshness by a day.
+        provider_asof = _as_utc(row.get("fetched_at")) or snapshot_at
+        now_utc = _as_utc(now) or pd.Timestamp.now(tz="UTC")
+        if snapshot_at > now_utc or provider_asof > now_utc:
+            notes.append(
+                f"excluded future-dated sibling row for {listing['canonical_ticker']} "
+                f"(snapshot_at={snapshot_at.isoformat()}, provider_asof={provider_asof.isoformat()}, as_of={now_utc.isoformat()})"
+            )
+            continue
         for metric, column in (("eps", "eps_avg"), ("revenue", "revenue_avg")):
             value = _f(row.get(column))
             if value is None:
                 continue
             horizon = str(row.get("horizon") or "")
-            align = _alignment(mapping, str(listing["canonical_ticker"]), metric, horizon, siblings.get(str(listing["entity_id"]), ()))
-            snapshots.append({
-                "snapshot_id": _hash(run_id, "akshare", listing["listing_id"], metric, horizon, snapshot_at),
+            align = _align_akshare(
+                mapping,
+                str(listing["canonical_ticker"]),
+                metric,
+                _i(row.get("fiscal_year")),
+                siblings.get(str(listing["entity_id"]), ()),
+            )
+            snapshot = {
+                "snapshot_id": "",  # stable id computed below
                 "provider": "akshare",
                 "entity_id": str(listing["entity_id"]),
                 "listing_id": str(listing["listing_id"]),
@@ -666,7 +937,7 @@ def collect_financial_data(
                 "currency": str(row.get(f"{metric}_currency") or listing["currency"]),
                 "unit": "currency_per_share" if metric == "eps" else "currency",
                 "accounting_basis": "provider_reported_non_gaap_unverified",
-                "provider_asof": snapshot_at.to_pydatetime(),
+                "provider_asof": provider_asof.to_pydatetime(),
                 "retrieved_at_utc": now,
                 "source_url": "https://www.akshare.xyz/",
                 "raw_hash": _hash(row.get("consensus_id"), value),
@@ -674,7 +945,9 @@ def collect_financial_data(
                 "source_run_id": run_id,
                 "calculation_origin": "sibling_repository_export",
                 "coverage_reason": str(align["coverage_reason"]),
-            })
+            }
+            snapshot["snapshot_id"] = stable_snapshot_id(snapshot, snapshot_at.date())
+            snapshots.append(snapshot)
     if not snapshots:
         notes.append("akshare consensus export held no rows for the configured listings")
     return snapshots, notes
@@ -727,6 +1000,129 @@ def _write_atomic(
     return len(frame)
 
 
+def _provider_freshness_status(
+    provider_rows: pd.DataFrame,
+    sla_days: int,
+    now: datetime,
+) -> tuple[str, str]:
+    """Honest freshness status for one provider's store rows.
+
+    ``available`` while the newest captured ``provider_asof`` sits inside
+    the provider's freshness window; ``stale`` when it falls outside (the
+    rows are still exported, but health must never call them available);
+    ``unavailable`` for an empty input (callers handle the empty-store
+    branch, this helper keeps the wording consistent).
+    """
+
+    if provider_rows is None or provider_rows.empty:
+        return ("unavailable", "no vintages in store")
+    asof_values = provider_rows["provider_asof"].dropna()
+    if asof_values.empty:
+        latest = provider_rows["snapshot_at"].dropna().max()
+    else:
+        latest = asof_values.max()
+    latest_ts = pd.Timestamp(latest)
+    if pd.isna(latest_ts):
+        return ("stale", "latest provider_asof unavailable; freshness cannot be established")
+    now_ts = pd.Timestamp(now)
+    if now_ts.tzinfo is None and latest_ts.tzinfo is not None:
+        now_ts = now_ts.tz_localize("UTC")
+    elif now_ts.tzinfo is not None and latest_ts.tzinfo is None:
+        latest_ts = latest_ts.tz_localize("UTC")
+    if latest_ts > now_ts:
+        return (
+            "failed",
+            f"provider_asof {latest_ts.isoformat()} is in the future relative to as_of {now_ts.isoformat()}",
+        )
+    age_days = (now_ts - latest_ts).days
+    if age_days > sla_days:
+        return (
+            "stale",
+            f"provider_asof {latest_ts.isoformat()} is {age_days}d older than as_of (freshness window {sla_days}d)",
+        )
+    return ("available", "")
+
+
+def build_provider_health_rows(
+    store: pd.DataFrame,
+    revisions: pd.DataFrame,
+    *,
+    now: datetime,
+    yf_notes: Sequence[str],
+    fd_notes: Sequence[str],
+    calls: int,
+    eligibility_notes: Sequence[str] = (),
+) -> list[dict[str, object]]:
+    """Health sidecar rows with availability AND freshness semantics.
+
+    A provider whose latest captured ``provider_asof`` is outside its
+    freshness window is reported ``stale`` (never ``available``); an empty
+    provider is ``unavailable``. Run counters are appended to every reason
+    so the source page can explain both the data and the derivation.
+    """
+
+    defaults = {
+        "yfinance": "live analyst estimates collected",
+        "akshare": f"akshare consensus export read from {FINANCIAL_DATA_ROOT.name}",
+    }
+    notes = {
+        "yfinance": [*eligibility_notes, *yf_notes],
+        "akshare": [*eligibility_notes, *fd_notes],
+    }
+    licenses = {"yfinance": YF_LICENSE, "akshare": FD_LICENSE}
+    evidence = {
+        "yfinance": "Yahoo Finance analyst estimates via yfinance; personal research use, no redistribution asserted",
+        "akshare": "Sibling-repository export; collected by financial-data, not re-fetched here",
+    }
+    rows: list[dict[str, object]] = []
+    for provider in ("yfinance", "akshare"):
+        provider_store = store.loc[store["provider"].eq(provider)] if not store.empty else store.iloc[0:0]
+        provider_revisions = revisions.loc[revisions["provider"].eq(provider)] if not revisions.empty else revisions.iloc[0:0]
+        provider_notes = [str(note) for note in (notes[provider] or ())]
+        base = (
+            "; ".join(provider_notes)
+            if provider_notes
+            else "no vintages in store" if provider_store.empty else defaults[provider]
+        )
+        status, freshness = _provider_freshness_status(provider_store, PROVIDER_FRESHNESS_SLA_DAYS[provider], now)
+        reason_parts = [base]
+        if (
+            provider == "yfinance"
+            and not provider_store.empty
+            and provider_store["provider_asof"].dropna().empty
+        ):
+            reason_parts.append(
+                "provider vintage unavailable; freshness uses collection-time "
+                "snapshot_at only (not provider_asof)"
+            )
+        if not provider_store.empty and freshness:
+            reason_parts.append(freshness)
+        reason = "; ".join(reason_parts)
+        prov_genuine = int((provider_revisions["pit_class"].eq("repository_captured")).sum()) if not provider_revisions.empty else 0
+        prov_recon = int((provider_revisions["pit_class"].eq("reconstructed_sparse")).sum()) if not provider_revisions.empty else 0
+        reason += f"; genuine_revisions={prov_genuine}; reconstructed={prov_recon}; store_vintages={len(provider_store)}"
+        latest_snapshot_at = (
+            pd.Timestamp(provider_store["snapshot_at"].max())
+            if not provider_store.empty
+            else (_as_utc(now) or pd.Timestamp.now(tz="UTC"))
+        )
+        rows.append({
+            "provider": provider,
+            "status": status,
+            "reason": reason,
+            "row_count": len(provider_store) + len(provider_revisions),
+            "mapped_row_count": int(provider_store["fiscal_year"].notna().sum()) if not provider_store.empty else 0,
+            "latest_snapshot_at": latest_snapshot_at,
+            "as_of": now,
+            "network_calls": calls if provider == "yfinance" else 0,
+            "source_license_class": licenses[provider],
+            "entitlement_status": "terms_unverified",
+            "entitlement_evidence": evidence[provider],
+            "entitlement_ref": "task3-provider-policy:sidecar-required-v1",
+        })
+    return rows
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--listings", type=Path, default=REPO_ROOT / "config/research_control_tower/listings.csv")
@@ -738,7 +1134,11 @@ def main(argv: list[str] | None = None) -> int:
     run_id = f"consensus-{uuid.uuid4()}"
 
     listings = pd.read_csv(args.listings, keep_default_na=False)
-    listings = listings.loc[listings["listing_status"].astype(str).str.strip().eq("active")]
+    listings, rejected = filter_eligible_listings(listings, now)
+    eligibility_notes = [
+        f"{item['listing_id'] or '<blank>'}: listing eligibility rejected ({item['reason']})"
+        for item in rejected
+    ]
     if args.basket:
         memberships = pd.read_csv(args.listings.parent / "basket_memberships.csv", keep_default_na=False)
         members = set(memberships.loc[memberships["basket_id"].eq(args.basket), "entity_id"])
@@ -773,52 +1173,15 @@ def main(argv: list[str] | None = None) -> int:
     )
     n_rev = len(revisions)
 
-    def _store_rows(provider: str) -> pd.DataFrame:
-        return store.loc[store["provider"].eq(provider)]
-
-    def _latest_at(provider: str) -> pd.Timestamp:
-        rows = _store_rows(provider)
-        if rows.empty:
-            return pd.Timestamp(now)
-        return pd.Timestamp(rows["snapshot_at"].max())
-
-    yf_store = _store_rows("yfinance")
-    ak_store = _store_rows("akshare")
-    n_yf_rev = int(revisions["provider"].eq("yfinance").sum())
-    n_ak_rev = int(revisions["provider"].eq("akshare").sum())
-    health = [
-        {
-            "provider": "yfinance",
-            "status": "available" if not yf_store.empty else "unavailable",
-            "reason": (
-                ("; ".join(yf_notes) or "live analyst estimates collected")
-                + f"; genuine_revisions={n_genuine}; reconstructed={n_recon}; store_vintages={n_store}"
-            ),
-            "row_count": len(yf_store) + n_yf_rev,
-            "mapped_row_count": int(yf_store["fiscal_year"].notna().sum()),
-            "latest_snapshot_at": _latest_at("yfinance"),
-            "as_of": now,
-            "network_calls": calls,
-            "source_license_class": YF_LICENSE,
-            "entitlement_status": "terms_unverified",
-            "entitlement_evidence": "Yahoo Finance analyst estimates via yfinance; personal research use, no redistribution asserted",
-            "entitlement_ref": "task3-provider-policy:sidecar-required-v1",
-        },
-        {
-            "provider": "akshare",
-            "status": "available" if not ak_store.empty else "unavailable",
-            "reason": "; ".join(fd_notes) or f"akshare consensus export read from {FINANCIAL_DATA_ROOT.name}",
-            "row_count": len(ak_store) + n_ak_rev,
-            "mapped_row_count": int(ak_store["fiscal_year"].notna().sum()),
-            "latest_snapshot_at": _latest_at("akshare"),
-            "as_of": now,
-            "network_calls": 0,
-            "source_license_class": FD_LICENSE,
-            "entitlement_status": "terms_unverified",
-            "entitlement_evidence": "Sibling-repository export; collected by financial-data, not re-fetched here",
-            "entitlement_ref": "task3-provider-policy:sidecar-required-v1",
-        },
-    ]
+    health = build_provider_health_rows(
+        store,
+        revisions,
+        now=now,
+        yf_notes=yf_notes,
+        fd_notes=fd_notes,
+        calls=calls,
+        eligibility_notes=eligibility_notes,
+    )
 
     n_snap = _write(
         snapshot_export_frame(store),

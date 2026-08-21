@@ -16,6 +16,7 @@ from .config import (
     ARTIFACT_NAMES,
     ArtifactResolutionError,
     EVENT_OPTIONAL_COLUMNS,
+    LEGACY_EARNINGS_ACTUALS_COLUMNS,
     OPTIONAL_ARTIFACT_NAMES,
     REQUIRED_ARTIFACT_NAMES,
     SCHEMA_VERSION,
@@ -45,22 +46,27 @@ def _empty_frame(name: str) -> pd.DataFrame:
         "observation_version", "fiscal_year", "analyst_count",
         "provider_contributor_count", "lookback_days", "current_analyst_count",
         "prior_analyst_count", "analyst_count_change", "row_count", "version",
+        "shares_affected", "shares_for_cancellation", "shares_for_treasury",
+        "mandate_authorised_shares", "mandate_cumulative_repurchased_shares",
     }
     floats = {
         "confidence", "value", "low_value", "high_value", "current_value",
         "current_dispersion", "prior_value", "revision_value", "revision_pct",
         "dispersion", "last_price", "bid", "ask", "day_change_pct", "volume",
         "reported_value", "normalized_value",
+        "price_min", "price_max", "price_avg", "total_amount_paid",
+        "ratio_value", "numerator_value", "denominator_value", "fx_rate_applied",
+        "value_low", "value_high", "value_mid",
     }
     booleans = {
         "collection_eligible", "primary_listing", "automated", "is_provisional",
-        "required", "is_restatement", "query_attempted",
+        "required", "is_restatement", "query_attempted", "conflict_hint",
     }
     dates = {
         "active_from", "active_to", "mapping_verified_at", "review_by",
         "observation_date", "estimate_period_end", "scheduled_date",
         "reporting_period_start", "reporting_period_end", "period_start",
-        "period_end", "event_date",
+        "period_end", "event_date", "valuation_date", "effective_asof",
     }
     timestamps = {
         "starts_at", "ends_at", "source_published_at", "first_observed_at",
@@ -69,6 +75,10 @@ def _empty_frame(name: str) -> pd.DataFrame:
         "prior_snapshot_at", "published_at", "first_observed_at",
         "first_observation_at", "latest_observation_at", "source_latest_at",
         "quote_timestamp", "accepted_at", "filing_at", "completed_at",
+        "valuation_at", "numerator_at_utc", "numerator_retrieved_at_utc",
+        "denominator_at_utc", "denominator_provider_asof_utc", "denominator_retrieved_at_utc",
+        "fx_snapshot_at_utc", "fx_retrieved_at_utc", "recorded_at_utc", "reviewed_at_utc",
+        "last_reviewed_at_utc", "observed_at_utc",
     }
     data: dict[str, pd.Series] = {}
     for column in columns:
@@ -218,6 +228,41 @@ def _expected_types(name: str) -> dict[str, str]:
             "day_change_pct": "float",
             "volume": "float",
         })
+    if name == "corporate_actions.parquet":
+        result.update({
+            "version": "integer", "published_at": "timestamp", "retrieved_at_utc": "timestamp",
+            "shares_affected": "integer", "shares_for_cancellation": "integer", "shares_for_treasury": "integer",
+            "mandate_authorised_shares": "integer", "mandate_cumulative_repurchased_shares": "integer",
+            "price_min": "float", "price_max": "float", "price_avg": "float", "total_amount_paid": "float",
+        })
+    if name == "valuation_snapshots.parquet":
+        result.update({
+            "valuation_date": "date", "valuation_at": "timestamp",
+            "numerator_at_utc": "timestamp", "numerator_retrieved_at_utc": "timestamp",
+            "denominator_at_utc": "timestamp", "denominator_provider_asof_utc": "timestamp",
+            "denominator_retrieved_at_utc": "timestamp", "fx_snapshot_at_utc": "timestamp",
+            "fx_retrieved_at_utc": "timestamp", "retrieved_at_utc": "timestamp",
+            "ratio_value": "float", "numerator_value": "float", "denominator_value": "float", "fx_rate_applied": "float",
+        })
+    if name == "internal_estimates.parquet":
+        result.update({
+            "version": "integer", "fiscal_year": "integer", "effective_asof": "date",
+            "recorded_at_utc": "timestamp", "reviewed_at_utc": "timestamp",
+            "value_low": "float", "value_high": "float", "value_mid": "float",
+        })
+    if name == "thesis_claims.parquet":
+        result.update({
+            "last_reviewed_at_utc": "timestamp",
+        })
+    if name == "evidence_items.parquet":
+        result.update({
+            "observed_at_utc": "timestamp",
+            "published_at": "timestamp",
+        })
+    if name == "claim_evidence_links.parquet":
+        result.update({
+            "conflict_hint": "boolean",
+        })
     if name == "source_health.parquet":
         result.update({
             "required": "boolean", "row_count": "integer",
@@ -245,12 +290,20 @@ def _validate_parquet_schema(name: str, table: pa.Table) -> None:
             f"expected columns {expected!r} with optional trailing execution "
             f"columns {list(SOURCE_HEALTH_EXECUTION_COLUMNS)!r}, got {actual!r}"
         )
+    elif name == "earnings_actuals.parquet" and tuple(actual) not in {
+        tuple(expected),
+        LEGACY_EARNINGS_ACTUALS_COLUMNS,
+    }:
+        raise ValueError(
+            f"expected columns {expected!r} or legacy columns "
+            f"{list(LEGACY_EARNINGS_ACTUALS_COLUMNS)!r}, got {actual!r}"
+        )
     elif name == "macro_observations.parquet":
         without_vintage = [column for column in actual if column not in ("realtime_start", "realtime_end")]
         expected_base = [column for column in expected if column not in ("realtime_start", "realtime_end")]
         if without_vintage != expected_base:
             raise ValueError(f"expected columns {expected!r}, got {actual!r}")
-    elif name != "source_health.parquet" and actual != expected:
+    elif name not in {"source_health.parquet", "earnings_actuals.parquet"} and actual != expected:
         raise ValueError(f"expected columns {expected!r}, got {actual!r}")
     types = _expected_types(name)
     if "importance" in actual:
@@ -269,7 +322,9 @@ def _read_frame(name: str, path: Path) -> pd.DataFrame:
     _validate_parquet_schema(name, table)
     frame = table.to_pandas()
     expected = list(ARTIFACT_COLUMNS[name])
-    if name == "events.parquet" and "importance" in frame.columns:
+    if name == "earnings_actuals.parquet" and tuple(frame.columns) == LEGACY_EARNINGS_ACTUALS_COLUMNS:
+        expected = list(LEGACY_EARNINGS_ACTUALS_COLUMNS)
+    elif name == "events.parquet" and "importance" in frame.columns:
         expected = list(frame.columns)
     elif name == "source_health.parquet" and set(
         SOURCE_HEALTH_EXECUTION_COLUMNS
@@ -572,35 +627,6 @@ def _enrich_events(
     ) if column not in result.columns]])
 
 
-def _health_reason_row(name: str, reason: str) -> dict[str, Any]:
-    return {
-        "source_id": f"artifact:{Path(name).stem}",
-        "input_path": name,
-        "source_kind": "artifact",
-        "status": "unavailable" if reason in {"missing", "corrupt", "schema_mismatch"} else "degraded",
-        "required": False,
-        "row_count": 0,
-        "query_attempted": False,
-        "execution_status": "",
-        "completed_at": pd.NaT,
-        "first_observation_at": pd.NaT,
-        "latest_observation_at": pd.NaT,
-        "source_latest_at": pd.NaT,
-        "retrieved_at_utc": pd.NaT,
-        "cadence": "",
-        "source_url": "",
-        "pit_class": "",
-        "source_license_class": "",
-        "entitlement_status": "",
-        "entitlement_evidence": "",
-        "entitlement_ref": "",
-        "input_sha256": "",
-        "schema_version": SCHEMA_VERSION,
-        "missing_geographies": "",
-        "detail": f"artifact={name}; reason={reason}",
-    }
-
-
 class ControlTowerRepository:
     """Load one explicit local Control Tower artifact root.
 
@@ -649,7 +675,6 @@ class ControlTowerRepository:
         loaded: dict[str, pd.DataFrame] = {}
         missing_optional: set[str] = set()
         degraded_reasons: dict[str, str] = {}
-        synthetic_health: list[dict[str, Any]] = []
 
         for name in ARTIFACT_NAMES:
             if name == "build_manifest.json":
@@ -665,7 +690,6 @@ class ControlTowerRepository:
                 missing_optional.add(stem)
                 degraded_reasons[stem] = "schema_mismatch"
                 loaded[name] = _empty_frame(name)
-                synthetic_health.append(_health_reason_row(name, "schema_mismatch"))
                 continue
             if not path.is_file():
                 if required:
@@ -675,14 +699,12 @@ class ControlTowerRepository:
                 reason = "missing" if record.get("status") in {"degraded", "unavailable"} else "manifest_mismatch"
                 degraded_reasons[stem] = reason
                 loaded[name] = _empty_frame(name)
-                synthetic_health.append(_health_reason_row(name, reason))
                 continue
             if not required and record.get("status") == "unavailable":
                 stem = Path(name).stem
                 missing_optional.add(stem)
                 degraded_reasons[stem] = "unavailable"
                 loaded[name] = _empty_frame(name)
-                synthetic_health.append(_health_reason_row(name, "unavailable"))
                 continue
             if not required and record.get("status") == "degraded":
                 # A degraded optional artifact holds real rows that passed
@@ -696,7 +718,6 @@ class ControlTowerRepository:
                 stem = Path(name).stem
                 missing_optional.add(stem)
                 degraded_reasons[stem] = "degraded"
-                synthetic_health.append(_health_reason_row(name, "degraded"))
                 # fall through to the normal integrity-checked load
             try:
                 expected_hash = record.get("sha256")
@@ -724,7 +745,6 @@ class ControlTowerRepository:
                 missing_optional.add(stem)
                 degraded_reasons[stem] = reason
                 loaded[name] = _empty_frame(name)
-                synthetic_health.append(_health_reason_row(name, reason))
                 continue
             loaded[name] = frame
 
@@ -762,8 +782,6 @@ class ControlTowerRepository:
         )
 
         source_health = loaded["source_health.parquet"].copy(deep=True)
-        if synthetic_health:
-            source_health = pd.concat([source_health, pd.DataFrame(synthetic_health)], ignore_index=True)
 
         built_at = _timestamp(manifest["built_at_utc"], "built_at_utc")
         as_of = _timestamp(manifest["as_of_utc"], "as_of_utc")
@@ -788,6 +806,13 @@ class ControlTowerRepository:
             official_filings=loaded["official_filings.parquet"],
             earnings_calendar=loaded["earnings_calendar.parquet"],
             earnings_actuals=loaded["earnings_actuals.parquet"],
+            corporate_actions=loaded["corporate_actions.parquet"],
+            valuation_snapshots=loaded["valuation_snapshots.parquet"],
+            internal_estimates=loaded["internal_estimates.parquet"],
+            thesis_claims=loaded["thesis_claims.parquet"],
+            thesis_watch_questions=loaded["thesis_watch_questions.parquet"],
+            evidence_items=loaded["evidence_items.parquet"],
+            claim_evidence_links=loaded["claim_evidence_links.parquet"],
             source_health=source_health,
             manifest=manifest,
             status=status,

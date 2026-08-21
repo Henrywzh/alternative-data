@@ -662,9 +662,17 @@ def _walk_arrow_field(
 
 
 def _schema_is_allowlisted(name: str, columns: list[str]) -> bool:
-    from control_tower.config import ARTIFACT_COLUMNS
+    from control_tower.config import (
+        ARTIFACT_COLUMNS,
+        LEGACY_EARNINGS_ACTUALS_COLUMNS,
+    )
 
     expected = list(ARTIFACT_COLUMNS[name])
+    if name == "earnings_actuals.parquet":
+        return tuple(columns) in {
+            tuple(expected),
+            LEGACY_EARNINGS_ACTUALS_COLUMNS,
+        }
     if name == "events.parquet":
         without_optional = [column for column in columns if column != "importance"]
         return (
@@ -1007,15 +1015,22 @@ def scan_generated_bundle(root: Path) -> list[PrivacyFinding]:
     """Scan the exact artifact set selected by the production app resolver."""
 
     from control_tower.config import (
-        ARTIFACT_NAMES,
         DATA_ARTIFACT_NAMES,
+        LEGACY_GENERATION_DATA_ARTIFACT_NAMES,
         resolve_artifact_root,
     )
 
     resolution = resolve_artifact_root(Path(root))
     active = resolution.artifact_root
-    expected_files = set(DATA_ARTIFACT_NAMES) | {resolution.manifest_name}
     actual_files = {entry.name for entry in active.iterdir()}
+    actual_data_files = actual_files - {resolution.manifest_name}
+    if actual_data_files == set(LEGACY_GENERATION_DATA_ARTIFACT_NAMES):
+        accepted_data_artifact_names = LEGACY_GENERATION_DATA_ARTIFACT_NAMES
+    else:
+        accepted_data_artifact_names = DATA_ARTIFACT_NAMES
+    expected_files = set(accepted_data_artifact_names) | {
+        resolution.manifest_name
+    }
     findings: list[PrivacyFinding] = []
 
     for name in sorted(actual_files - expected_files):
@@ -1053,11 +1068,9 @@ def scan_generated_bundle(root: Path) -> list[PrivacyFinding]:
 
     if isinstance(manifest, dict):
         manifest_artifacts = manifest.get("artifacts")
-        allowed_manifest_records = set(ARTIFACT_NAMES)
-        if resolution.manifest_name == "manifest.json":
-            allowed_manifest_records = (
-                set(DATA_ARTIFACT_NAMES) | {"manifest.json"}
-            )
+        allowed_manifest_records = set(accepted_data_artifact_names) | {
+            resolution.manifest_name
+        }
         if (
             not isinstance(manifest_artifacts, dict)
             or set(manifest_artifacts) != allowed_manifest_records
@@ -1105,7 +1118,7 @@ def scan_generated_bundle(root: Path) -> list[PrivacyFinding]:
             continue
         expected_name = (
             path.name
-            if path.name in DATA_ARTIFACT_NAMES
+            if path.name in accepted_data_artifact_names
             else None
         )
         _scan_path(
@@ -1196,6 +1209,8 @@ def _app_text(app) -> str:
             value = getattr(item, "value", "")
             if isinstance(value, str):
                 pieces.append(value)
+    for html in app.get("html"):
+        pieces.append(str(html.proto.body))
     return "\n".join(pieces)
 
 
@@ -1706,6 +1721,36 @@ def test_generated_bundle_uses_production_current_contract(
         match="safe relative path",
     ):
         scan_generated_bundle(unsafe)
+
+
+def test_legacy_earnings_schema_allowlist_is_exact() -> None:
+    from control_tower.config import LEGACY_EARNINGS_ACTUALS_COLUMNS
+
+    legacy = list(LEGACY_EARNINGS_ACTUALS_COLUMNS)
+    assert _schema_is_allowlisted("earnings_actuals.parquet", legacy)
+    assert not _schema_is_allowlisted(
+        "earnings_actuals.parquet", legacy[:-1]
+    )
+    assert not _schema_is_allowlisted(
+        "earnings_actuals.parquet", [*legacy, "unexpected_lineage"]
+    )
+
+
+def test_partial_artifact_generation_is_rejected(
+    tmp_path: Path,
+) -> None:
+    helpers = _load_streamlit_helpers()
+    publication = _publish_fixture(
+        tmp_path / "publication",
+        "gen-001",
+        helpers._write_bundle,
+    )
+    (publication / "generations" / "gen-001" / "price_bars.parquet").unlink()
+
+    from control_tower.config import ArtifactResolutionError
+
+    with pytest.raises(ArtifactResolutionError, match="exact current or legacy contract"):
+        scan_generated_bundle(publication)
 
 
 def test_privacy_fixtures_use_final_health_entitlement_contract(

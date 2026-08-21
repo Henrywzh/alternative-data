@@ -152,6 +152,60 @@ def _columns() -> dict[str, list[str]]:
             "retrieved_at_utc", "source_url", "accession_no", "form", "xbrl_frame",
             "revision_reason", "is_restatement", "source_id", "source_quality",
             "pit_class", "source_license_class", "source_note", "registry_version",
+            "source_metric_label", "metric_basis", "source_document_id",
+            "source_document_sha256", "source_page_ref", "value_origin",
+            "derivation_method", "timestamp_precision",
+        ],
+        "corporate_actions.parquet": [
+            "action_id", "version", "entity_id", "listing_id", "canonical_ticker",
+            "action_type", "filing_date", "execution_date", "published_at",
+            "shares_affected", "price_min", "price_max", "price_avg",
+            "total_amount_paid", "currency", "shares_for_cancellation",
+            "shares_for_treasury", "cancellation_status", "mandate_resolution_date",
+            "mandate_authorised_shares", "mandate_cumulative_repurchased_shares",
+            "coverage_reason", "source_url", "source_document_id", "document_format",
+            "source_note", "retrieved_at_utc", "source_timezone", "date_precision",
+            "source_quality", "pit_class", "source_license_class", "registry_version",
+        ],
+        "valuation_snapshots.parquet": [
+            "valuation_id", "listing_id", "valuation_date", "valuation_at",
+            "metric_name", "accounting_basis", "metric_basis", "ratio_value",
+            "numerator_value", "numerator_currency", "numerator_ref",
+            "numerator_source_id", "numerator_source_url", "numerator_pit_class",
+            "numerator_at_utc", "numerator_retrieved_at_utc", "denominator_value",
+            "denominator_currency", "denominator_ref", "denominator_source_id",
+            "denominator_source_url", "denominator_pit_class", "denominator_at_utc",
+            "denominator_provider_asof_utc", "denominator_retrieved_at_utc",
+            "fx_rate_applied", "fx_base_currency", "fx_quote_currency", "fx_source",
+            "fx_source_url", "fx_snapshot_at_utc", "fx_retrieved_at_utc", "source_id",
+            "source_url", "retrieved_at_utc", "pit_class", "coverage_reason",
+            "percentile_history_status",
+        ],
+        "internal_estimates.parquet": [
+            "estimate_id", "version", "supersedes_estimate_id", "entity_id",
+            "listing_id", "observation_type", "author", "metric", "accounting_basis",
+            "metric_basis", "fiscal_period", "fiscal_year", "value_low", "value_high",
+            "value_mid", "currency", "unit", "effective_asof", "recorded_at_utc",
+            "rationale_notes", "source_ref", "source_url", "pit_class",
+            "reviewed_at_utc", "reviewed_by",
+        ],
+        "thesis_claims.parquet": [
+            "claim_id", "entity_id", "thesis_title", "claim_text", "invalidation_rule",
+            "status", "last_reviewed_at_utc", "reviewed_by", "registry_version",
+        ],
+        "thesis_watch_questions.parquet": [
+            "question_id", "claim_id", "entity_id", "question", "question_type",
+            "priority", "registry_version",
+        ],
+        "evidence_items.parquet": [
+            "evidence_id", "entity_id", "source_id", "evidence_ref", "source_type",
+            "source_url", "evidence_class", "pit_class", "source_license_class",
+            "published_at", "summary_text", "observed_at_utc", "content_hash",
+            "registry_version",
+        ],
+        "claim_evidence_links.parquet": [
+            "link_id", "claim_id", "evidence_id", "conflict_hint", "review_state",
+            "analyst_note", "registry_version",
         ],
         "source_health.parquet": [
             "source_id", "input_path", "source_kind", "status", "required",
@@ -398,6 +452,13 @@ def _write_bundle(root: Path) -> None:
     frames["official_filings.parquet"] = _frame("official_filings.parquet", [])
     frames["earnings_calendar.parquet"] = _frame("earnings_calendar.parquet", [])
     frames["earnings_actuals.parquet"] = _frame("earnings_actuals.parquet", [])
+    frames["corporate_actions.parquet"] = _frame("corporate_actions.parquet", [])
+    frames["valuation_snapshots.parquet"] = _frame("valuation_snapshots.parquet", [])
+    frames["internal_estimates.parquet"] = _frame("internal_estimates.parquet", [])
+    frames["thesis_claims.parquet"] = _frame("thesis_claims.parquet", [])
+    frames["thesis_watch_questions.parquet"] = _frame("thesis_watch_questions.parquet", [])
+    frames["evidence_items.parquet"] = _frame("evidence_items.parquet", [])
+    frames["claim_evidence_links.parquet"] = _frame("claim_evidence_links.parquet", [])
     frames["source_health.parquet"] = _frame("source_health.parquet", [
         {"source_id": "fixture", "input_path": "fixture", "source_kind": "fixture", "status": "available", "required": True, "row_count": 1, "schema_version": "fixture_v1", "detail": "fixture"},
         {"source_id": "consensus", "input_path": "", "source_kind": "consensus", "status": "unavailable", "required": False, "row_count": 0, "schema_version": "fixture_v1", "detail": "optional fixture"},
@@ -524,8 +585,6 @@ def test_consensus_contract_is_populated_and_typed_empty(generated_root: Path) -
         "source_url", "pit_class", "source_run_id",
     } <= set(populated.consensus_revisions.columns)
 
-    for name in ("consensus_snapshots.parquet", "consensus_revisions.parquet"):
-        (generated_root / name).unlink()
     _rewrite_manifest(
         generated_root,
         lambda manifest: (
@@ -578,22 +637,16 @@ def test_direct_manifest_json_is_supported(generated_root: Path) -> None:
     assert len(snapshot.entities) == 2
 
 
-def test_legacy_direct_root_ignores_unrelated_entries(generated_root: Path) -> None:
-    from control_tower.config import ARTIFACT_NAMES, artifact_fingerprint
-    from control_tower.repository import ControlTowerRepository
+def test_direct_root_rejects_unrelated_entries(generated_root: Path) -> None:
+    from control_tower.config import ArtifactResolutionError, resolve_artifact_root
 
     (generated_root / "unrelated.txt").write_text("not an artifact", encoding="utf-8")
     unrelated_directory = generated_root / "other-run"
     unrelated_directory.mkdir()
     (unrelated_directory / "events.parquet").write_bytes(b"not selected")
 
-    snapshot = ControlTowerRepository(generated_root).load_snapshot()
-    fingerprint_names = {item[0] for item in artifact_fingerprint(generated_root)}
-
-    assert len(snapshot.entities) == 2
-    assert fingerprint_names == set(ARTIFACT_NAMES)
-    assert "unrelated.txt" not in fingerprint_names
-    assert "other-run/events.parquet" not in fingerprint_names
+    with pytest.raises(ArtifactResolutionError, match="exact current or legacy contract"):
+        resolve_artifact_root(generated_root)
 
 
 def test_publication_current_resolves_exact_generation_and_invalidates_fingerprint(
@@ -750,8 +803,8 @@ def test_publication_current_must_not_be_a_symlink(generated_root: Path, tmp_pat
         resolve_artifact_root(publication)
 
 
-def test_optional_artifact_missing_enters_degraded_mode(generated_root: Path) -> None:
-    from control_tower.repository import ControlTowerRepository
+def test_partial_optional_generation_is_rejected(generated_root: Path) -> None:
+    from control_tower.repository import ControlTowerRepository, ControlTowerStartupError
 
     (generated_root / "consensus_revisions.parquet").unlink()
     _rewrite_manifest(
@@ -760,15 +813,80 @@ def test_optional_artifact_missing_enters_degraded_mode(generated_root: Path) ->
             {"status": "unavailable", "sha256": None, "byte_size": 0, "row_count": 0}
         ) or manifest.update({"status": "degraded", "degraded_inputs": ["consensus_revisions"]}),
     )
-    snapshot = ControlTowerRepository(generated_root).load_snapshot()
-    assert snapshot.status == "degraded"
-    assert "consensus_revisions" in snapshot.missing_optional
-    assert snapshot.consensus_revisions.empty
-    assert snapshot.degraded_reasons["consensus_revisions"] == "missing"
+    with pytest.raises(ControlTowerStartupError, match="exact current or legacy contract"):
+        ControlTowerRepository(generated_root).load_snapshot()
 
 
-def test_legacy_generation_without_quote_artifact_loads_as_degraded(tmp_path: Path) -> None:
+def test_legacy_earnings_schema_is_accepted_but_arbitrary_schema_is_rejected(
+    generated_root: Path,
+) -> None:
+    from control_tower.config import (
+        LEGACY_EARNINGS_ACTUALS_COLUMNS,
+        ARTIFACT_COLUMNS,
+    )
     from control_tower.repository import ControlTowerRepository
+
+    full_frame = _frame(
+        "earnings_actuals.parquet",
+        [{
+            "actual_id": "LEGACY-ACTUAL",
+            "version": 1,
+            "entity_id": "E1",
+            "listing_id": "L1",
+            "canonical_ticker": "ONE",
+            "metric": "revenue_total",
+            "period_label": "2026Q2",
+            "period_end": "2026-06-30",
+            "reported_value": 10.0,
+            "normalized_value": 10.0,
+            "currency": "USD",
+            "unit": "USD",
+            "accounting_basis": "GAAP",
+            "filing_at": "2026-08-13T11:00:00Z",
+            "published_at": "2026-08-13T11:00:00Z",
+            "retrieved_at_utc": "2026-08-13T11:30:00Z",
+            "source_url": "https://example.test/legacy-actual",
+            "source_id": "fixture",
+            "source_quality": "official_metadata",
+            "pit_class": "snapshot_from_live_source",
+            "source_license_class": "official_public_metadata",
+            "source_note": "legacy fixture",
+            "registry_version": "v1",
+        }],
+    )
+    full_table = pa.Table.from_pandas(
+        _typed_frame("earnings_actuals.parquet", full_frame),
+        schema=_fixture_schema("earnings_actuals.parquet"),
+        preserve_index=False,
+        safe=False,
+    )
+    legacy_table = full_table.select(list(LEGACY_EARNINGS_ACTUALS_COLUMNS))
+    pq.write_table(legacy_table, generated_root / "earnings_actuals.parquet")
+    _write_manifest(generated_root, _manifest_for(generated_root))
+
+    snapshot = ControlTowerRepository(generated_root).load_snapshot()
+    assert len(snapshot.earnings_actuals) == 1
+    assert tuple(snapshot.earnings_actuals.columns) == LEGACY_EARNINGS_ACTUALS_COLUMNS
+    assert "source_metric_label" not in snapshot.earnings_actuals.columns
+    assert tuple(ARTIFACT_COLUMNS["earnings_actuals.parquet"])[-8:] == (
+        "source_metric_label", "metric_basis", "source_document_id",
+        "source_document_sha256", "source_page_ref", "value_origin",
+        "derivation_method", "timestamp_precision",
+    )
+
+    malformed_table = legacy_table.append_column(
+        "unexpected_lineage", pa.array(["malformed"])
+    )
+    pq.write_table(malformed_table, generated_root / "earnings_actuals.parquet")
+    _write_manifest(generated_root, _manifest_for(generated_root))
+
+    degraded = ControlTowerRepository(generated_root).load_snapshot()
+    assert degraded.earnings_actuals.empty
+    assert degraded.degraded_reasons["earnings_actuals"] == "schema_mismatch"
+
+
+def test_partial_legacy_generation_without_quote_artifact_is_rejected(tmp_path: Path) -> None:
+    from control_tower.repository import ControlTowerRepository, ControlTowerStartupError
 
     root = tmp_path / "legacy-bundle"
     _write_bundle(root)
@@ -780,12 +898,8 @@ def test_legacy_generation_without_quote_artifact_loads_as_degraded(tmp_path: Pa
     manifest["degraded_inputs"] = ["quote_snapshots"]
     _write_manifest(root, manifest)
 
-    snapshot = ControlTowerRepository(root).load_snapshot()
-
-    assert snapshot.status == "degraded"
-    assert "quote_snapshots" in snapshot.missing_optional
-    assert snapshot.quote_snapshots.empty
-    assert snapshot.degraded_reasons["quote_snapshots"] == "missing"
+    with pytest.raises(ControlTowerStartupError, match="exact current or legacy contract"):
+        ControlTowerRepository(root).load_snapshot()
 
 
 @pytest.mark.parametrize(
