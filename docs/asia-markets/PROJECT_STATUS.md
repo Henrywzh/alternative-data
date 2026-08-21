@@ -20,10 +20,11 @@ replacement for the operating manual or generated source-status JSON.
   (Tencent 173), news 2,299, earnings actuals 224, calendar 10, corporate
   actions 203, quotes 7, price bars 8,598, macro observations 56,847 and
   source health 44. `TCEHY_US` is registry-only with unresolved mapping and
-  `collection_eligible=false`; it is absent from published marts and coverage.
-  Tencent's only active listing is `0700_HK`. This remains local/private and
-  read-only: provider entitlements and some source health are degraded, and
-  valuation is fail-closed and unavailable.
+  `collection_eligible=false`; it remains only in the published listings
+  registry and is absent from collected fact marts and active coverage.
+  Tencent's only active eligible listing is `0700_HK`. This remains
+  local/private and read-only: provider entitlements and some source health
+  are degraded, and valuation is fail-closed and unavailable.
 - Live sector roster: 10 sectors; see `apps/asia-markets-dashboard/sectors.json`.
 - Unified KPI backtest engine (2026-08-12): Steps 1–6 complete, with the MTR
   chronological practical-OOS track added afterward. Step 1
