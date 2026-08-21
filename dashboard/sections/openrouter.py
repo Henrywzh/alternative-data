@@ -949,6 +949,67 @@ class _PartialPeriodWindow:
     period_mask: pd.Series
 
 
+# A partial day holds only the hours before the scrape, so it lands far
+# under its weekday's usual level. Half is well below the softest genuine
+# day-over-day move on record and well above the ~9-11% a few hours produce.
+PARTIAL_DAY_MAX_SHARE_OF_TYPICAL = 0.5
+PARTIAL_DAY_MIN_COMPARABLE_WEEKS = 3
+
+
+def _detect_partial_usage_date(
+    frame: pd.DataFrame,
+    date_column: str,
+    value_column: str,
+    scraped_at_column: str = "scraped_at",
+) -> pd.Timestamp | None:
+    """Which UTC day, if any, holds only part of its traffic.
+
+    Prefers the scrape timestamp -- the day a scrape lands on is by
+    definition incomplete in it. But that metadata cannot be trusted blindly:
+    this feed currently carries no scraped_at at all on its newest rows, and
+    the stale maximum pointed at a finalized day in the middle of the series,
+    which would have marked a complete day partial and nowcast the wrong week
+    entirely.
+
+    So the timestamp is used only when it is at least as new as the data it
+    claims to describe. Otherwise fall back to the signature itself: the
+    newest day, and only the newest day, coming in far under what that
+    weekday normally carries.
+    """
+    if frame.empty or date_column not in frame.columns:
+        return None
+
+    dates = pd.to_datetime(frame[date_column], errors="coerce").dt.normalize()
+    values = pd.to_numeric(frame.get(value_column), errors="coerce")
+    daily_totals = values.groupby(dates).sum().sort_index()
+    daily_totals = daily_totals[daily_totals.index.notna()]
+    if daily_totals.empty:
+        return None
+    latest_day = daily_totals.index.max()
+
+    stamps = pd.to_datetime(frame.get(scraped_at_column), errors="coerce", utc=True)
+    latest_scrape = stamps.max() if stamps is not None else pd.NaT
+    if pd.notna(latest_scrape):
+        scrape_day = latest_scrape.tz_convert(None).normalize()
+        if scrape_day >= latest_day:
+            # Fresh metadata: the scrape day is partial when it is present,
+            # and when the feed lags a day every day on hand is final.
+            return scrape_day if scrape_day == latest_day else None
+
+    # Compare against the same weekday, not the days either side of it, so a
+    # normal weekend trough is never mistaken for a truncated day.
+    same_weekday = daily_totals[daily_totals.index.weekday == latest_day.weekday()]
+    prior = same_weekday[same_weekday.index < latest_day].tail(4)
+    if len(prior) < PARTIAL_DAY_MIN_COMPARABLE_WEEKS:
+        return None
+    typical = float(prior.median())
+    if typical <= 0:
+        return None
+    if float(daily_totals.loc[latest_day]) < PARTIAL_DAY_MAX_SHARE_OF_TYPICAL * typical:
+        return latest_day
+    return None
+
+
 def _latest_partial_period_window(
     daily_pivot: pd.DataFrame,
     granularity: str,
@@ -1294,13 +1355,7 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
         # day's tokens. Everything that extrapolates or aggregates a period
         # has to know which day that is, otherwise it reads a 3-hour day as
         # a full one.
-        scrape_stamps = pd.to_datetime(modern_tok.get("scraped_at"), errors="coerce", utc=True)
-        latest_scrape = scrape_stamps.max() if scrape_stamps is not None else pd.NaT
-        if pd.notna(latest_scrape):
-            candidate = latest_scrape.tz_convert(None).normalize()
-            # Only when the scrape day is actually present -- when the feed
-            # lags a day or more, every day on hand is already final.
-            partial_usage_date = candidate if (modern_tok["usage_date_dt"].dt.normalize() == candidate).any() else None
+        partial_usage_date = _detect_partial_usage_date(modern_tok, "usage_date_dt", "total_tokens")
 
         pivot_tok_daily = modern_tok.pivot_table(index="usage_date_str", columns="provider_label", values="total_tokens", aggfunc="sum").fillna(0).sort_index()
         pivot_tok_weekly_modern_raw = modern_tok.pivot_table(index="usage_week", columns="provider_label", values="total_tokens", aggfunc="sum").fillna(0)

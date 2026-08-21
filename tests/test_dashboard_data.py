@@ -55,6 +55,7 @@ from dashboard.sections.openrouter import (
     _estimator_coverage_summary,
     _latest_provider_market_coverage,
     _drop_first_valid_change_point,
+    _detect_partial_usage_date,
     _latest_partial_period_window,
     _make_change_line_chart,
     _nowcast_error_interval,
@@ -4653,6 +4654,62 @@ def test_partial_week_scaling_prices_missing_days_by_day_of_week() -> None:
     # Mon-Wed carry 300 of a 600-token week. Scaling by 7/3 would report 700.
     assert scaled.loc["2026-06-01", "OpenAI"] == pytest.approx(600.0, rel=0.02)
     assert scaled.loc["2026-05-25", "OpenAI"] == pytest.approx(600.0)
+
+
+def _usage_frame(days: int, *, last_value: float | None = None, scraped_at: str | None = None) -> pd.DataFrame:
+    dates = pd.date_range("2026-06-01", periods=days, freq="D")
+    values = [50.0 if day.weekday() >= 5 else 100.0 for day in dates]
+    if last_value is not None:
+        values[-1] = last_value
+    frame = pd.DataFrame({"usage_date_dt": dates, "total_tokens": values})
+    frame["scraped_at"] = scraped_at
+    return frame
+
+
+def test_detect_partial_day_trusts_a_scrape_stamp_newer_than_the_data() -> None:
+    frame = _usage_frame(28, last_value=9.0, scraped_at="2026-06-28T02:41:00Z")
+
+    assert _detect_partial_usage_date(frame, "usage_date_dt", "total_tokens") == pd.Timestamp("2026-06-28")
+
+
+def test_detect_partial_day_reports_none_when_the_feed_lags_a_day() -> None:
+    # Scraped today, but the newest usage day is yesterday: everything on
+    # hand is already final.
+    frame = _usage_frame(28, scraped_at="2026-06-29T02:41:00Z")
+
+    assert _detect_partial_usage_date(frame, "usage_date_dt", "total_tokens") is None
+
+
+def test_detect_partial_day_ignores_a_scrape_stamp_older_than_the_data() -> None:
+    # This is the live failure mode: the newest rows carry no scraped_at, so
+    # the maximum points at a finalized day in the middle of the series.
+    # Trusting it marks a complete day partial and nowcasts the wrong week.
+    frame = _usage_frame(28, last_value=9.0)
+    frame.loc[frame["usage_date_dt"] > pd.Timestamp("2026-06-10"), "scraped_at"] = None
+    frame.loc[frame["usage_date_dt"] <= pd.Timestamp("2026-06-10"), "scraped_at"] = "2026-06-10T12:00:00Z"
+
+    assert _detect_partial_usage_date(frame, "usage_date_dt", "total_tokens") == pd.Timestamp("2026-06-28")
+
+
+def test_detect_partial_day_falls_back_to_the_signature_without_any_stamp() -> None:
+    frame = _usage_frame(28, last_value=9.0)
+
+    assert _detect_partial_usage_date(frame, "usage_date_dt", "total_tokens") == pd.Timestamp("2026-06-28")
+
+
+def test_detect_partial_day_does_not_flag_a_normal_weekend_trough() -> None:
+    # 2026-06-28 is a Sunday at its usual half-of-a-weekday level. Comparing
+    # against the days beside it would call that truncated; comparing against
+    # other Sundays does not.
+    frame = _usage_frame(28)
+
+    assert _detect_partial_usage_date(frame, "usage_date_dt", "total_tokens") is None
+
+
+def test_detect_partial_day_withheld_without_comparable_weekdays() -> None:
+    frame = _usage_frame(10, last_value=9.0)
+
+    assert _detect_partial_usage_date(frame, "usage_date_dt", "total_tokens") is None
 
 
 def test_partial_period_window_ignores_a_complete_period() -> None:
