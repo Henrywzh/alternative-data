@@ -355,10 +355,15 @@ def test_serving_provider_dataset_uses_narrow_physical_schema(tmp_path) -> None:
     assert "app_id" not in columns
 
 
-def test_serving_provider_pipeline_refuses_fetch_failures(tmp_path) -> None:
+def _catalog(size: int) -> dict[str, dict[str, str]]:
+    return {f"provider-{index}": {"slug": f"provider-{index}"} for index in range(size)}
+
+
+def test_serving_provider_pipeline_refuses_a_broad_fetch_outage(tmp_path) -> None:
     pipeline = ServingProviderActivityPipeline(tmp_path)
+    pipeline.source.provider_metadata = _catalog(100)
     pipeline.source.last_failures = [
-        {"slug": "coreweave", "error": "503 after retries"}
+        {"slug": f"provider-{index}", "error": "503 after retries"} for index in range(20)
     ]
     context = RunContext(
         run_id="failed-fetch",
@@ -370,6 +375,48 @@ def test_serving_provider_pipeline_refuses_fetch_failures(tmp_path) -> None:
             context,
             {"cloud_infra_daily_activity": []},
         )
+
+
+def test_serving_provider_pipeline_tolerates_a_single_flaky_page(tmp_path) -> None:
+    """One unreachable page out of ~100 must not abort the shared daily job.
+
+    This step runs ahead of the workflow's commit step, so aborting here also
+    discarded the provider-activity data fetched earlier in the same job.
+    """
+    pipeline = ServingProviderActivityPipeline(tmp_path)
+    pipeline.source.provider_metadata = _catalog(100)
+    pipeline.source.last_failures = [{"slug": "coreweave", "error": "503 after retries"}]
+    context = RunContext(
+        run_id="flaky-fetch",
+        scraped_at=pd.Timestamp("2026-08-21T00:00:00Z").to_pydatetime(),
+    )
+
+    pipeline._raise_fetch_failures()
+
+    assert pipeline._tolerated_fetch_failures == [
+        {"slug": "coreweave", "error": "503 after retries"}
+    ]
+
+
+def test_tolerated_fetch_failures_stay_visible_in_the_manifest(tmp_path) -> None:
+    """A provider dropping out of the series has to remain auditable."""
+    pipeline = ServingProviderActivityPipeline(tmp_path)
+    pipeline.source.provider_metadata = _catalog(100)
+    pipeline.source.last_failures = [{"slug": "coreweave", "error": "503 after retries"}]
+    pipeline._raise_fetch_failures()
+    context = RunContext(
+        run_id="manifest-tolerated",
+        scraped_at=pd.Timestamp("2026-08-21T00:00:00Z").to_pydatetime(),
+    )
+
+    manifest = pipeline._build_manifest(
+        mode="serving-provider-activity-daily-update",
+        context=context,
+        extracted={},
+    )
+
+    assert manifest["source_health"]["tolerated_fetch_failure_count"] == 1
+    assert manifest["source_health"]["tolerated_fetch_failure_slugs"] == ["coreweave"]
 
 
 def test_serving_provider_source_records_chart_parse_omissions() -> None:

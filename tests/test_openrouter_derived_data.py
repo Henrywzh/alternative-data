@@ -1265,3 +1265,31 @@ def test_project_registers_openrouter_derived_data_cli() -> None:
     assert project["project"]["scripts"]["openrouter-derived-data"] == (
         "openrouter_derived_data.cli:main"
     )
+
+
+def test_sota_status_reports_partial_coverage_and_historical_fill_together() -> None:
+    """Both caveats are independent; reporting one must not hide the other.
+
+    Chained as a single conditional expression, a partially covered day
+    silently dropped its historical-fill marker, so a consumer filtering for
+    "sota_route_historical_fill" never saw those days.
+    """
+    from openrouter_derived_data.metrics import _sota_pricing_join_status
+
+    assert (
+        _sota_pricing_join_status(partial_true_cohort=False, historical_fill_used=False)
+        == "strict_asof_pricing"
+    )
+    assert (
+        _sota_pricing_join_status(partial_true_cohort=False, historical_fill_used=True)
+        == "sota_route_historical_fill"
+    )
+    assert (
+        _sota_pricing_join_status(partial_true_cohort=True, historical_fill_used=False)
+        == "partial_true_sota_route_coverage"
+    )
+    status = _sota_pricing_join_status(
+        partial_true_cohort=True, historical_fill_used=True
+    )
+    assert "partial_true_sota_route_coverage" in status
+    assert "historical_fill" in status

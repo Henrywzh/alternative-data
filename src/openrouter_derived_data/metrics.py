@@ -975,6 +975,28 @@ def _list_price_row(
     return row
 
 
+def _sota_pricing_join_status(
+    *,
+    partial_true_cohort: bool,
+    historical_fill_used: bool,
+) -> str:
+    """Report both SOTA caveats, not whichever one is checked first.
+
+    Partial cohort coverage and historical price fill are independent
+    conditions.  Chaining them as a single conditional expression silently
+    dropped the historical-fill signal on any day that was also partially
+    covered, so a consumer filtering for "sota_route_historical_fill" would
+    not see those days at all.
+    """
+    if partial_true_cohort and historical_fill_used:
+        return "partial_true_sota_route_coverage_historical_fill"
+    if partial_true_cohort:
+        return "partial_true_sota_route_coverage"
+    if historical_fill_used:
+        return "sota_route_historical_fill"
+    return "strict_asof_pricing"
+
+
 def _realized_sota_row(
     usage_date: pd.Timestamp,
     current_rankings: pd.DataFrame,
@@ -1044,12 +1066,9 @@ def _realized_sota_row(
             "excluded_unpriced_tokens": coverage[
                 "excluded_unpriced_tokens"
             ].sum(),
-            "pricing_join_status": (
-                "partial_true_sota_route_coverage"
-                if partial_true_cohort
-                else "sota_route_historical_fill"
-                if historical_fill_used
-                else "strict_asof_pricing"
+            "pricing_join_status": _sota_pricing_join_status(
+                partial_true_cohort=partial_true_cohort,
+                historical_fill_used=historical_fill_used,
             ),
             "methodology_version": capability_map.methodology_version,
         }
