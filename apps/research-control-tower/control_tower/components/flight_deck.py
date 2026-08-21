@@ -30,6 +30,7 @@ class FlightDeckViewModel:
     evidence: BreadthMetric
     revisions: BreadthMetric
     next_catalyst: CatalystView | None
+    catalyst_timing_state: Literal["active", "future", "none"]
     snapshot_state: Literal["delta", "initial_snapshot"]
     repository_status: Literal["success", "degraded"]
 
@@ -105,12 +106,20 @@ def build_flight_deck(
     filtered = apply_event_filters(snapshot.events, filters)
     row = select_next_catalyst(filtered, snapshot.now_utc)
     catalyst = catalyst_view_for_event(snapshot, row, now_utc=snapshot.now_utc, viewer_timezone=viewer_timezone) if row is not None else None
+    timing_state: Literal["active", "future", "none"] = "none"
+    if catalyst is not None:
+        effective_end = catalyst.ends_at or catalyst.starts_at
+        if catalyst.starts_at < snapshot.now_utc <= effective_end:
+            timing_state = "active"
+        else:
+            timing_state = "future"
     return FlightDeckViewModel(
         universe_label=_universe_label(snapshot, filters),
         horizon_label=_horizon_label(filters.horizon),
         evidence=_evidence_metric(filtered),
         revisions=_revision_metric(snapshot, filters),
         next_catalyst=catalyst,
+        catalyst_timing_state=timing_state,
         snapshot_state="delta" if snapshot.previous_build_at is not None else "initial_snapshot",
         repository_status=snapshot.status,
     )
@@ -131,11 +140,14 @@ def flight_deck_html(model: FlightDeckViewModel) -> str:
     if catalyst is None:
         catalyst_html = '<div class="ct-flight-slot ct-flight-slot--catalyst"><div class="ct-metric-label">Next catalyst</div><div class="ct-metric-value">No eligible catalyst</div><div class="ct-metric-detail">No eligible catalyst in the selected horizon</div></div>'
     else:
+        is_active = model.catalyst_timing_state == "active"
+        metric_label = "Active catalyst" if is_active else "Next catalyst"
+        timing_text = "Active window" if is_active else catalyst.t_minus
         catalyst_html = (
             '<div class="ct-flight-slot ct-flight-slot--catalyst">'
-            '<div class="ct-metric-label">Next catalyst</div>'
+            f'<div class="ct-metric-label">{escape(metric_label)}</div>'
             f'<div class="ct-metric-value">{escape(catalyst.title)}</div>'
-            f'<div class="ct-metric-detail">{escape(catalyst.display_window)} · {escape(catalyst.t_minus)} · {escape(catalyst.certainty_class.title() or "Unclassified")} · Importance · {escape(catalyst.importance or "unclassified")}</div>'
+            f'<div class="ct-metric-detail">{escape(catalyst.display_window)} · {escape(timing_text)} · {escape(catalyst.certainty_class.title() or "Unclassified")} · Importance · {escape(catalyst.importance or "unclassified")}</div>'
             '</div>'
         )
     universe = f'<div class="ct-flight-slot"><div class="ct-metric-label">Universe</div><div class="ct-metric-value">{escape(model.universe_label)}</div><div class="ct-metric-detail">{escape(model.snapshot_state.replace("_", " ").title())} · {escape(model.repository_status)}</div></div>'
