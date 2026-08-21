@@ -528,7 +528,6 @@ def _corporate_action_rows(
     stock_id, bare_code = resolved
     fetch_body = body_fetcher or _default_body_fetcher(session, timeout)
     as_of_hk = as_of_utc.tz_convert(HKEX_TIMEZONE)
-    start_bound_utc = as_of_utc - pd.Timedelta(days=lookback_days)
 
     def query_title(title: str) -> list[dict[str, str]]:
         raw_rows: list[dict[str, str]] = []
@@ -626,7 +625,7 @@ def _corporate_action_rows(
             "coverage_reason": "",
             "source_url": source_url,
             "source_document_id": source_doc_id,
-           "document_format": meta["FILE_TYPE"].lower() if meta["FILE_TYPE"] else "unknown",
+            "document_format": meta["FILE_TYPE"].lower() if meta["FILE_TYPE"] else "unknown",
             "source_note": note or "",
             "retrieved_at_utc": retrieved_at_utc,
             "source_timezone": HKEX_TIMEZONE,
@@ -772,6 +771,12 @@ def collect_corporate_actions(
     else:
         query_as_of = retrieval_time
 
+    if retrieval_time < query_as_of:
+        raise ValueError(
+            f"causal clock violation: retrieved_at_utc ({retrieval_time.isoformat()}) "
+            f"cannot precede as_of_utc ({query_as_of.isoformat()})"
+        )
+
     session = hkex_session or requests.Session()
     hkex_identity = identity[identity["source_kind"].eq("hkex_code")].copy()
     rows: list[dict[str, Any]] = []
@@ -827,15 +832,14 @@ def collect_corporate_actions(
             f"parsed={totals['parsed']} unparsed={totals['unparsed']} skipped={totals['skipped']} "
             f"exceptions={totals['exceptions']} issuers={issuers}"
         )
-        status = (
-            "available"
-            if totals["parsed"]
-            else (
-                "partial"
-                if totals["collected"]
-                else ("unavailable" if totals["exceptions"] else "no_records")
-            )
-        )
+        if totals["parsed"] > 0:
+            status = "partial" if (totals["unparsed"] > 0 or totals["exceptions"] > 0) else "available"
+        elif totals["unparsed"] > 0:
+            status = "partial"
+        elif totals["exceptions"] > 0:
+            status = "unavailable"
+        else:
+            status = "no_records"
         parsed_published = [
             r["published_at"]
             for r in rows
