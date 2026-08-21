@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 from copy import deepcopy
 from pathlib import Path
+import subprocess
+import sys
 
 import pandas as pd
 import pdfplumber
@@ -20,6 +23,7 @@ from scripts.research_control_tower_tencent_financials import (
     TENCENT_LISTING_ID,
     assess_core_quarter_coverage,
     load_tencent_disclosure_records,
+    main as tencent_financials_main,
     parse_and_collect_tencent_actuals,
     transform_tencent_disclosures_to_actuals,
     validate_tencent_actuals,
@@ -558,3 +562,69 @@ def test_full_pipeline_writes_atomic_loadable_outputs(tmp_path):
     assert set(loaded["entity_id"]) == {TENCENT_ENTITY_ID}
     assert set(loaded["listing_id"]) == {TENCENT_LISTING_ID}
     assert set(loaded["metric_basis"]).issubset(SUPPORTED_METRIC_BASES)
+
+
+def test_cli_requires_explicit_disclosure_records_path(tmp_path):
+    with pytest.raises(SystemExit) as exc_info:
+        tencent_financials_main(["--output-dir", str(tmp_path)])
+
+    assert exc_info.value.code == 2
+
+
+def test_cli_writes_standardized_outputs_from_explicit_json_without_network(tmp_path):
+    output = tmp_path / "cli-output"
+
+    result = tencent_financials_main(
+        [
+            "--disclosure-records-json",
+            str(FIXTURE_PATH),
+            "--output-dir",
+            str(output),
+            "--as-of-utc",
+            "2026-08-22T00:00:00Z",
+            "--retrieved-at-utc",
+            "2026-08-22T00:05:00Z",
+        ]
+    )
+
+    assert result == 0
+    actuals = pd.read_parquet(output / "tencent_earnings_actuals_v1.parquet")
+    state = pd.read_parquet(output / "tencent_earnings_actuals_state.parquet")
+    assert list(actuals.columns) == TENCENT_EARNINGS_ACTUALS_COLUMNS
+    assert list(state.columns) == SOURCE_STATE_COLUMNS
+    assert len(actuals) == (22 * 10) + 4
+    assert state.loc[0, "status"] == "available"
+    assert state.loc[0, "retrieved_at_utc"] == pd.Timestamp(
+        "2026-08-22T00:05:00Z"
+    )
+    assert not list(output.glob("*.tmp"))
+
+
+def test_cli_script_runs_directly_from_repository_root_without_pythonpath(tmp_path):
+    output = tmp_path / "direct-cli-output"
+    script = Path(__file__).parents[1] / "scripts" / "research_control_tower_tencent_financials.py"
+    environment = os.environ.copy()
+    environment.pop("PYTHONPATH", None)
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            "--disclosure-records-json",
+            str(FIXTURE_PATH),
+            "--output-dir",
+            str(output),
+            "--as-of-utc",
+            "2026-08-22T00:00:00Z",
+            "--retrieved-at-utc",
+            "2026-08-22T00:05:00Z",
+        ],
+        cwd=Path(__file__).parents[1],
+        env=environment,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert (output / "tencent_earnings_actuals_v1.parquet").is_file()
+    assert (output / "tencent_earnings_actuals_state.parquet").is_file()

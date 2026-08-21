@@ -7,15 +7,21 @@ discarding the canonical basis, source-document, and value-origin fields.
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import os
+import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 import pandas as pd
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 from src.research_control_tower.build import (
     EARNINGS_ACTUALS_COLUMNS,
@@ -218,30 +224,11 @@ def _strict_bool(value: Any, *, field: str) -> bool:
     return value
 
 
-def _default_fixture_path() -> Path:
-    candidates = (
-        Path(__file__).resolve().parent.parent
-        / "tests"
-        / "fixtures"
-        / "tencent_ir"
-        / "tencent_disclosures_2021_2026.json",
-        Path.cwd()
-        / "tests"
-        / "fixtures"
-        / "tencent_ir"
-        / "tencent_disclosures_2021_2026.json",
-    )
-    for candidate in candidates:
-        if candidate.is_file():
-            return candidate
-    raise FileNotFoundError("Tencent disclosures fixture is not installed")
-
-
 def load_tencent_disclosure_records(
-    fixture_path: Path | None = None,
+    fixture_path: Path,
 ) -> list[dict[str, Any]]:
-    """Load the audited, source-backed disclosure index."""
-    path = _default_fixture_path() if fixture_path is None else Path(fixture_path)
+    """Load an explicitly supplied audited, source-backed disclosure index."""
+    path = Path(fixture_path)
     if not path.is_file():
         raise FileNotFoundError(f"Tencent disclosures fixture not found: {path}")
     with path.open("r", encoding="utf-8") as handle:
@@ -821,6 +808,68 @@ def parse_and_collect_tencent_actuals(
     return frame, state_frame
 
 
+def main(argv: Sequence[str] | None = None) -> int:
+    """Write Tencent's two normalized input files from an explicit JSON file.
+
+    This entry point is intentionally network-free.  The disclosure JSON is a
+    caller-owned, audited extraction; no repository test fixture is selected
+    implicitly in production.
+    """
+    parser = argparse.ArgumentParser(
+        description=(
+            "Build Tencent earnings actuals from an explicit disclosure-record "
+            "JSON file; no network calls are made"
+        )
+    )
+    parser.add_argument(
+        "--disclosure-records-json",
+        "--disclosures-json",
+        "--fixture",
+        dest="disclosure_records_json",
+        type=Path,
+        required=True,
+        metavar="PATH",
+        help="explicit JSON list of audited Tencent disclosure records",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        required=True,
+        metavar="DIR",
+        help="directory for tencent_earnings_actuals_v1.parquet and its state sidecar",
+    )
+    parser.add_argument(
+        "--as-of-utc",
+        default=None,
+        help="visibility cutoff; defaults to the retrieved timestamp",
+    )
+    parser.add_argument(
+        "--retrieved-at-utc",
+        default=None,
+        help="retrieval timestamp; defaults to the current UTC time",
+    )
+    args = parser.parse_args(argv)
+
+    as_of_utc = pd.Timestamp(args.as_of_utc) if args.as_of_utc else None
+    retrieved_at_utc = (
+        pd.Timestamp(args.retrieved_at_utc)
+        if args.retrieved_at_utc
+        else None
+    )
+    frame, state = parse_and_collect_tencent_actuals(
+        args.disclosure_records_json,
+        as_of_utc=as_of_utc,
+        retrieved_at_utc=retrieved_at_utc,
+        output_dir=args.output_dir,
+    )
+    print(
+        f"wrote {len(frame)} Tencent earnings actual rows and "
+        f"{len(state)} source-state rows to {args.output_dir} "
+        f"(status={state.iloc[0]['status']})"
+    )
+    return 0
+
+
 __all__ = [
     "METRIC_DEFINITIONS",
     "REQUIRED_CORE_METRICS",
@@ -830,7 +879,12 @@ __all__ = [
     "TENCENT_LISTING_ID",
     "assess_core_quarter_coverage",
     "load_tencent_disclosure_records",
+    "main",
     "parse_and_collect_tencent_actuals",
     "transform_tencent_disclosures_to_actuals",
     "validate_tencent_actuals",
 ]
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
