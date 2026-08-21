@@ -126,6 +126,24 @@ def _health(**overrides: dict[str, object]) -> pd.DataFrame:
             "completed_at": None,
         },
         {
+            "source_id": "earnings_actuals",
+            "source_kind": "earnings",
+            "status": "unavailable",
+            "row_count": 0,
+            "query_attempted": False,
+            "execution_status": None,
+            "completed_at": None,
+        },
+        {
+            "source_id": "earnings:tencent_hkex_financials",
+            "source_kind": "earnings",
+            "status": "unavailable",
+            "row_count": 0,
+            "query_attempted": False,
+            "execution_status": None,
+            "completed_at": None,
+        },
+        {
             "source_id": "filings_sec_edgar",
             "source_kind": "filing",
             "status": "unavailable",
@@ -184,6 +202,7 @@ def _snapshot(
     quotes: pd.DataFrame | None = None,
     consensus_snapshots: pd.DataFrame | None = None,
     consensus_revisions: pd.DataFrame | None = None,
+    earnings_actuals: pd.DataFrame | None = None,
     news_filings: pd.DataFrame | None = None,
     events: pd.DataFrame | None = None,
     macro_observations: pd.DataFrame | None = None,
@@ -263,13 +282,20 @@ def _snapshot(
                 "period_end",
             )
         ),
-        earnings_actuals=frame(
-            (
-                "actual_id",
-                "entity_id",
-                "listing_id",
-                "metric",
-                "period_end",
+        earnings_actuals=(
+            earnings_actuals
+            if earnings_actuals is not None
+            else frame(
+                (
+                    "actual_id",
+                    "entity_id",
+                    "listing_id",
+                    "metric",
+                    "period_end",
+                    "filing_at",
+                    "published_at",
+                    "source_id",
+                )
             )
         ),
         source_health=health if health is not None else _health(),
@@ -314,6 +340,26 @@ def _consensus(
         "listing_id": listing_id,
         "provider_asof": provider_asof,
         "snapshot_at": provider_asof,
+    }
+
+
+def _actual(
+    actual_id: str,
+    entity_id: str,
+    listing_id: str,
+    *,
+    source_id: str = "earnings:tencent_hkex_financials",
+    timestamp: str = FRESH,
+) -> dict[str, object]:
+    return {
+        "actual_id": actual_id,
+        "entity_id": entity_id,
+        "listing_id": listing_id,
+        "metric": "revenue",
+        "period_end": "2026-06-30",
+        "filing_at": timestamp,
+        "published_at": timestamp,
+        "source_id": source_id,
     }
 
 
@@ -587,6 +633,118 @@ def test_consensus_status_transitions() -> None:
         for row in build_data_coverage_summary(empty_connected).rows
     }
     assert summary["Consensus Data"].status_code == "no_records"
+
+
+def test_earnings_actuals_rows_are_counted_and_scoped_under_degraded_evidence() -> None:
+    from dataclasses import replace
+
+    from control_tower.coverage import build_data_coverage_summary
+
+    actuals = pd.DataFrame(
+        [
+            _actual("ACT-1", "TENCENT", "0700_HK"),
+            _actual("ACT-2", "TENCENT", "0700_HK", timestamp="2026-08-12T08:31:00Z"),
+        ]
+    )
+    health = _health(
+        earnings_actuals={
+            "status": "degraded",
+            "row_count": 0,
+            "detail": "schema drift in legacy generic mart",
+        },
+        **{
+            "earnings:tencent_hkex_financials": {
+                "status": "available",
+                "row_count": 2,
+                "source_latest_at": FRESH,
+                "cadence": "quarterly",
+                "query_attempted": True,
+                "execution_status": "completed",
+                "completed_at": FRESH,
+            }
+        },
+    )
+    snapshot = replace(
+        _snapshot(earnings_actuals=actuals, health=health),
+        manifest={
+            "build_id": "coverage-earnings-degraded",
+            "status": "degraded",
+            "artifacts": {
+                "earnings_actuals.parquet": {
+                    "status": "degraded",
+                    "row_count": 2,
+                }
+            },
+        },
+        status="degraded",
+        missing_optional=("earnings_actuals.parquet",),
+    )
+
+    summary = {
+        row.category: row for row in build_data_coverage_summary(snapshot).rows
+    }
+    earnings_summary = summary["Earnings Actuals"]
+    assert earnings_summary.record_count == 2
+    assert earnings_summary.linked_count == 2
+    assert earnings_summary.status_code == "partial"
+    assert "mart does not exist" not in earnings_summary.details.lower()
+    assert "no earnings-actuals mart" not in earnings_summary.details.lower()
+
+    matrix = _matrix(snapshot)
+    tencent = matrix.entity_cell("TENCENT", "earnings_actuals")
+    assert tencent.record_count == 2
+    assert tencent.status_code == "partial"
+    assert matrix.entity_cell("ALIBABA", "earnings_actuals").record_count == 0
+    assert matrix.status_of("BYTEDANCE", "earnings_actuals") == "not_applicable"
+
+
+def test_earnings_actuals_empty_entity_distinguishes_no_records_from_unavailable() -> None:
+    from dataclasses import replace
+
+    from control_tower.coverage import build_data_coverage_summary
+
+    completed_empty = _health(
+        earnings_actuals={
+            "status": "available",
+            "row_count": 0,
+            "query_attempted": True,
+            "execution_status": "completed",
+            "completed_at": FRESH,
+        },
+        **{
+            "earnings:tencent_hkex_financials": {
+                "status": "available",
+                "row_count": 0,
+                "query_attempted": True,
+                "execution_status": "completed",
+                "completed_at": FRESH,
+            }
+        },
+    )
+    no_records_snapshot = replace(
+        _snapshot(health=completed_empty),
+        manifest={
+            "build_id": "coverage-earnings-empty",
+            "status": "success",
+            "artifacts": {
+                "earnings_actuals.parquet": {
+                    "status": "available",
+                    "row_count": 0,
+                }
+            },
+        },
+    )
+    matrix = _matrix(no_records_snapshot)
+    assert matrix.status_of("ALIBABA", "earnings_actuals") == "no_records"
+    summary = {
+        row.category: row
+        for row in build_data_coverage_summary(no_records_snapshot).rows
+    }
+    assert summary["Earnings Actuals"].status_code == "no_records"
+    assert summary["Earnings Actuals"].record_count == 0
+
+    unavailable = _matrix(_snapshot())
+    assert unavailable.status_of("ALIBABA", "earnings_actuals") == "unavailable"
 
 
 def test_filings_news_status_transitions() -> None:
