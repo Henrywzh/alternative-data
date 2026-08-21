@@ -1,7 +1,7 @@
 # Research Control Tower — Tencent T0–T3 Implementation Plan
 
 **Date:** 2026-08-21
-**Status:** DESIGN REVIEW GATE — 等待用户对 design spec 的书面审查（written spec review）；gate 通过前不实施任何代码
+**Status:** APPROVED / IMPLEMENTATION IN PROGRESS — Design spec and architecture boundaries approved by user on 2026-08-21
 **Repo:** `alternative-data`（integration branch `codex/tencent-control-tower-t0-t3`）
 **Worktree:** 本计划与 spec/TODO 的契约收尾在专用 worktree `/private/tmp/rct-tencent-t0-t3-20260821` 完成（未提交、未推送）；不触碰 root shared worktree 工作副本
 **Design spec:** `docs/superpowers/specs/2026-08-21-research-control-tower-tencent-t0-t3-design.md`
