@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import timedelta
 from html import escape
+import re
+import unicodedata
 import json
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -26,6 +28,16 @@ from ..components.filings_earnings import (
     render_filings_earnings_sections,
 )
 from .source_health import classify_source_health
+
+def _slugify(text: str) -> str:
+    norm = unicodedata.normalize("NFKD", text)
+    norm = re.sub(r"[^\w\s-]", "", norm).strip().lower()
+    return re.sub(r"[-_\s]+", "-", norm)
+
+
+def _render_section_heading(level: int, title: str, anchor: str | None = None) -> None:
+    anchor_id = anchor or _slugify(title)
+    st.markdown(f'<h{level} id="{escape(anchor_id)}">{escape(title)}</h{level}>', unsafe_allow_html=True)
 
 
 COMPANY_LISTING_COLUMNS = (
@@ -1654,7 +1666,9 @@ def _render_answer_first_summary(
         for value in ("Executive summary & recent changes", view.display_name, listing_label)
         if value
     )
-    st.markdown(f"#### {escape(heading)}")
+    entity_slug = _slugify(view.entity_id)
+    listing_slug = _slugify(view.selected_listing_id) if view.selected_listing_id else "all"
+    _render_section_heading(4, heading, f"exec-summary-{entity_slug}-{listing_slug}")
     for line in _answer_first_summary_lines(view, snapshot):
         st.markdown(f"- {escape(line)}")
     st.caption(
@@ -1665,7 +1679,7 @@ def _render_answer_first_summary(
 def _render_price_history(view: CompanyView, snapshot: ControlTowerSnapshot) -> None:
     """Daily close for the selected listing, with its provenance stated."""
 
-    st.markdown("#### Price history")
+    _render_section_heading(4, "Price history", f"price-history-{_slugify(view.entity_id)}")
     if view.entity_type == "private":
         st.info(
             f"Not applicable · {_text(view.display_name)} is a private company with no public listing; "
@@ -1716,7 +1730,7 @@ def _render_overview_tab(
     _render_answer_first_summary(view, snapshot)
 
     # 2. Latest market quote
-    st.markdown("#### Latest market quote")
+    _render_section_heading(4, "Latest market quote", f"latest-quote-{_slugify(view.entity_id)}")
     if view.entity_type == "private":
         st.info(
             f"Not applicable · {_text(view.display_name)} is a private company with no public market listing; "
@@ -1771,15 +1785,15 @@ def _render_overview_tab(
     _render_price_history(view, snapshot)
 
     # 4. Listings
-    st.markdown("#### Listings")
+    _render_section_heading(4, "Listings", f"listings-{_slugify(view.entity_id)}")
     st.dataframe(_friendly_listing_frame(view.listings), width="stretch", hide_index=True)
 
     # 5. Basket and layer memberships
-    st.markdown("#### Basket and layer memberships")
+    _render_section_heading(4, "Basket and layer memberships", f"memberships-{_slugify(view.entity_id)}")
     st.dataframe(view.memberships, width="stretch", hide_index=True)
 
     # 6. Flight deck summary
-    st.markdown("#### Flight deck & catalyst overview")
+    _render_section_heading(4, "Flight deck & catalyst overview", f"flight-deck-{_slugify(view.entity_id)}")
     upcoming_events_count = len(view.events)
     thesis_claims_count = len(view.thesis_claims)
     watch_q_count = len(view.thesis_watch_questions) if not view.thesis_watch_questions.empty else len(view.watch_questions)
@@ -1800,7 +1814,7 @@ def _render_fundamentals_tab(
     """Tab 2: Fundamentals - Segments, GAAP vs Non-IFRS dual track, FCF bridge, Buybacks, Valuation."""
 
     # 1. Segment disclosures & core financial actuals
-    st.markdown("#### Segment disclosures & core operations")
+    _render_section_heading(4, "Segment disclosures & core operations", f"segment-disclosures-{_slugify(view.entity_id)}")
     frame = _company_earnings_actuals(snapshot, view)
     if frame.empty:
         st.info(
@@ -1846,7 +1860,7 @@ def _render_fundamentals_tab(
     render_earnings_calendar(snapshot, entity_id=view.entity_id, listing_id=view.selected_listing_id)
 
     # 3. Profitability & Free Cash Flow trajectory
-    st.markdown("#### Profitability & Free Cash Flow trajectory")
+    _render_section_heading(4, "Profitability & Free Cash Flow trajectory", f"fcf-trajectory-{_slugify(view.entity_id)}")
     trajectory = _latest_actual_rows(frame)
     if not trajectory.empty:
         metric_names = trajectory.get(
@@ -1898,7 +1912,7 @@ def _render_fundamentals_tab(
         )
 
     # 4. Statutory capital returns and corporate actions
-    st.markdown("#### Statutory capital returns & corporate actions")
+    _render_section_heading(4, "Statutory capital returns & corporate actions", f"corporate-actions-{_slugify(view.entity_id)}")
     if view.corporate_actions.empty:
         st.info("No statutory corporate-action rows for the selected listing in the current snapshot.")
     else:
@@ -1921,7 +1935,7 @@ def _render_fundamentals_tab(
         )
 
     # 5. Valuation Multiples & Yields Context
-    st.markdown("#### Valuation multiples & return yields")
+    _render_section_heading(4, "Valuation multiples & return yields", f"valuation-multiples-{_slugify(view.entity_id)}")
     if view.valuation_snapshots.empty:
         st.warning(
             "Valuation multiples unavailable · requires contemporaneous quote, share count, and basis-verified forward consensus."
@@ -1942,7 +1956,7 @@ def _render_thesis_catalysts_tab(
     """Tab 3: Thesis & Catalysts - Human-authored thesis claims, catalyst roadmap, and falsification questions."""
 
     # 1. Active Investment Thesis Claims
-    st.markdown("#### Thesis claims (Human-authored)")
+    _render_section_heading(4, "Thesis claims (Human-authored)", f"thesis-claims-{_slugify(view.entity_id)}")
     if view.thesis_claims.empty:
         st.info("No human-authored thesis claims registered for this entity.")
     else:
@@ -1970,7 +1984,7 @@ def _render_thesis_catalysts_tab(
             st.markdown(card_html, unsafe_allow_html=True)
 
     # 2. Active & Upcoming Catalysts Roadmap
-    st.markdown("#### Active & upcoming catalysts")
+    _render_section_heading(4, "Active & upcoming catalysts", f"catalysts-{_slugify(view.entity_id)}")
     if view.events.empty:
         st.info("No explicitly linked events are available for this company.")
     else:
@@ -2005,7 +2019,7 @@ def _render_thesis_catalysts_tab(
             st.dataframe(view.events, width="stretch", hide_index=True)
 
     # 3. Operational Watch Questions & Falsification Checklist
-    st.markdown("#### Operational watch questions & falsification criteria")
+    _render_section_heading(4, "Operational watch questions & falsification criteria", f"watch-questions-{_slugify(view.entity_id)}")
     if not view.thesis_watch_questions.empty:
         st.dataframe(_friendly_thesis_questions_frame(view.thesis_watch_questions), width="stretch", hide_index=True)
     elif not view.watch_questions.empty:
@@ -2025,28 +2039,28 @@ def _render_evidence_tab(
     render_official_filings(snapshot, entity_id=view.entity_id, listing_id=view.selected_listing_id, viewer_timezone=viewer_timezone)
 
     # 2. News and Filing Metadata
-    st.markdown("#### News and filing metadata")
+    _render_section_heading(4, "News and filing metadata", f"news-filing-metadata-{_slugify(view.entity_id)}")
     if view.official_documents.empty:
         st.warning("Official documents unavailable — no local metadata export; no document body displayed.")
     else:
         st.dataframe(_friendly_document_frame(view.official_documents, viewer_timezone), width="stretch", hide_index=True)
 
     # 3. Provider-Specific Consensus Snapshots
-    st.markdown("#### Provider-specific consensus")
+    _render_section_heading(4, "Provider-specific consensus", f"provider-consensus-{_slugify(view.entity_id)}")
     if view.consensus.empty:
         st.warning(f"Consensus unavailable · {view.consensus_status} · provider rows are not blended.")
     else:
         st.dataframe(_friendly_consensus_frame(view.consensus, viewer_timezone), width="stretch", hide_index=True)
 
     # 4. Consensus Revisions & Trajectory
-    st.markdown("#### Consensus revisions")
+    _render_section_heading(4, "Consensus revisions", f"consensus-revisions-{_slugify(view.entity_id)}")
     if view.consensus_revisions.empty:
         st.info("Consensus revision history unavailable; no 0/0 breadth is shown.")
     else:
         st.dataframe(_friendly_revision_frame(view.consensus_revisions, viewer_timezone), width="stretch", hide_index=True)
 
     # 5. Internal Estimates & Management Guidance
-    st.markdown("#### Internal estimates & management guidance")
+    _render_section_heading(4, "Internal estimates & management guidance", f"internal-estimates-{_slugify(view.entity_id)}")
     if view.internal_estimates.empty:
         st.info("No internal estimates or management guidance registered for this entity.")
     else:
@@ -2073,7 +2087,7 @@ def _render_evidence_tab(
             )
 
     # 6. Claim-Evidence Matrix & Invalidation Conflict Hints
-    st.markdown("#### Claim-evidence matrix & conflict detection")
+    _render_section_heading(4, "Claim-evidence matrix & conflict detection", f"claim-evidence-matrix-{_slugify(view.entity_id)}")
     if not view.claim_evidence_links.empty:
         st.dataframe(
             _friendly_claim_evidence_links_frame(view.claim_evidence_links, view.evidence_items, viewer_timezone),
@@ -2137,7 +2151,7 @@ def render_company_page(
         format_func=lambda value: _format_listing_option(snapshot, value),
     )
     view = build_company_view(snapshot, entity_id=selected_entity, listing_id=selected_listing, filters=filters)
-    st.markdown(f"### {escape(view.display_name)}")
+    _render_section_heading(3, view.display_name, f"company-view-{_slugify(view.entity_id)}")
     entity_type_label = "private / no listing" if view.entity_type == "private" else "public"
     st.caption(f"{escape(view.legal_name)} · {escape(view.country)} · {escape(view.sector or 'sector unavailable')} · {escape(view.industry or 'industry unavailable')} · {escape(entity_type_label)} · {escape(view.active_status or 'status unavailable')}")
     if view.selected_listing_id:

@@ -1078,14 +1078,14 @@ def test_company_page_renders_four_tabs_cleanly_via_apptest(tmp_path: Path, monk
     assert "Price history" in text
 
     # 6. Fundamentals section
-    assert "Segment disclosures & core operations" in text
-    assert "Profitability & Free Cash Flow trajectory" in text
+    assert "Segment disclosures &amp; core operations" in text or "Segment disclosures & core operations" in text
+    assert "Profitability &amp; Free Cash Flow trajectory" in text or "Profitability & Free Cash Flow trajectory" in text
     assert "Reported and normalized values remain distinct" in text
 
     # 7. Thesis & Catalysts section
     assert "Thesis claims (Human-authored)" in text
-    assert "Active & upcoming catalysts" in text
-    assert "Operational watch questions & falsification criteria" in text
+    assert "Active &amp; upcoming catalysts" in text or "Active & upcoming catalysts" in text
+    assert "Operational watch questions &amp; falsification criteria" in text or "Operational watch questions & falsification criteria" in text
 
     # 8. Evidence section
     assert "Official filings and announcements metadata" in text
@@ -1155,3 +1155,45 @@ def test_company_catalyst_date_precision_and_active_status_rendering() -> None:
     assert "Tencent 3Q2026 Results Window" in summary
     assert "Nov 2026" in summary
     assert "Upcoming catalyst" in summary
+
+
+def test_company_heading_anchors_update_dynamically_without_stale_entity_ids(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from streamlit.testing.v1 import AppTest
+    import streamlit as st
+
+    root = tmp_path / "dynamic-anchors-apptest"
+    snapshot = _make_tencent_snapshot()
+    _write_test_bundle(root, snapshot)
+
+    monkeypatch.setenv("CONTROL_TOWER_ARTIFACT_ROOT", str(root))
+    st.cache_data.clear()
+
+    app = AppTest.from_file(str(APP_PATH), default_timeout=30).run()
+    assert not app.exception
+
+    # 1. Select ByteDance (private entity in snapshot)
+    app.session_state["ct_page"] = "Company"
+    app.session_state["ct_company_entity"] = "BYTEDANCE"
+    app = app.run()
+    assert not app.exception
+
+    bytedance_headings = [str(m.value) for m in app.markdown if "<h" in str(m.value)]
+    assert any('id="company-view-bytedance"' in h for h in bytedance_headings)
+    assert any('id="exec-summary-bytedance-all"' in h for h in bytedance_headings)
+    assert any('id="price-history-bytedance"' in h for h in bytedance_headings)
+    assert any('id="fcf-trajectory-bytedance"' in h for h in bytedance_headings)
+
+    # 2. Switch to Tencent
+    app.session_state["ct_company_entity"] = "TENCENT"
+    app = app.run()
+    assert not app.exception
+
+    tencent_headings = [str(m.value) for m in app.markdown if "<h" in str(m.value)]
+    assert any('id="company-view-tencent"' in h for h in tencent_headings)
+    assert any('id="exec-summary-tencent-0700-hk"' in h for h in tencent_headings)
+    assert any('id="price-history-tencent"' in h for h in tencent_headings)
+    assert any('id="fcf-trajectory-tencent"' in h for h in tencent_headings)
+
+    # Verify NO stale ByteDance heading IDs or text remain in the Tencent view
+    for h in tencent_headings:
+        assert "bytedance" not in h.lower()
