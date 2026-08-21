@@ -59,6 +59,7 @@ THESIS_REQUIRED_COLUMNS = {
         "evidence_id",
         "entity_id",
         "source_id",
+        "evidence_ref",
         "source_type",
         "source_url",
         "evidence_class",
@@ -67,6 +68,7 @@ THESIS_REQUIRED_COLUMNS = {
         "published_at",
         "summary_text",
         "observed_at_utc",
+        "content_hash",
         "registry_version",
     },
     "claim_evidence_links": {
@@ -102,20 +104,23 @@ EVIDENCE_CLASSES = frozenset(
 )
 PIT_CLASSES = frozenset(
     {
-        "point_in_time",
-        "restated",
-        "provisional",
+        "snapshot_from_live_source",
+        "snapshot_from_delayed_source",
+        "repository_captured",
+        "true_pit",
+        "dated_public_broker_report",
+        "reconstructed_sparse",
+        "current_vintage",
+        "not_pit",
     }
 )
-SOURCE_LICENSE_CLASSES = frozenset(
-    {
-        "public_regulatory_filing",
-        "public_statutory_disclosure",
-        "public_domain",
-        "proprietary_internal",
-        "commercial_licensed",
-    }
-)
+SOURCE_LICENSE_CLASSES = frozenset({"official_public_metadata"})
+EVIDENCE_SOURCE_LINEAGE = {
+    "hkexnews": {
+        "evidence_ref_prefix": "hkexnews:",
+        "source_url_prefix": "https://www1.hkexnews.hk/",
+    },
+}
 LINK_REVIEW_STATES = frozenset({"pending_review", "acknowledged", "dismissed"})
 SUPPORTED_ID = re.compile(r"^[A-Z0-9]+(?:_[A-Z0-9]+)*$")
 
@@ -425,7 +430,13 @@ def validate_thesis_seed_bundle(
     # claim_evidence_links: analyst_note is optional
     issues.extend(_required_value_issues(thesis.thesis_claims, "thesis_claims", {"claim_id", "entity_id", "thesis_title", "claim_text", "invalidation_rule", "status", "registry_version"}))
     issues.extend(_required_value_issues(thesis.thesis_watch_questions, "thesis_watch_questions", THESIS_REQUIRED_COLUMNS["thesis_watch_questions"]))
-    issues.extend(_required_value_issues(thesis.evidence_items, "evidence_items", THESIS_REQUIRED_COLUMNS["evidence_items"]))
+    issues.extend(
+        _required_value_issues(
+            thesis.evidence_items,
+            "evidence_items",
+            THESIS_REQUIRED_COLUMNS["evidence_items"] - {"content_hash"},
+        )
+    )
     issues.extend(_required_value_issues(thesis.claim_evidence_links, "claim_evidence_links", {"link_id", "claim_id", "evidence_id", "conflict_hint", "review_state", "registry_version"}))
 
     # 2. PK duplicate and identifier checks
@@ -586,6 +597,31 @@ def validate_thesis_seed_bundle(
                     int(row_index),
                 )
             )
+        source_id = str(row.get("source_id", "")).strip().lower()
+        source_lineage = EVIDENCE_SOURCE_LINEAGE.get(source_id)
+        if source_lineage is not None:
+            evidence_ref = str(row.get("evidence_ref", "")).strip()
+            source_url = str(row.get("source_url", "")).strip()
+            if not evidence_ref.startswith(
+                source_lineage["evidence_ref_prefix"]
+            ):
+                issues.append(
+                    _issue(
+                        "invalid_evidence_ref_for_source",
+                        f"evidence_items row {row_index} evidence_ref does not match source_id={source_id!r}",
+                        "evidence_items",
+                        int(row_index),
+                    )
+                )
+            if not source_url.startswith(source_lineage["source_url_prefix"]):
+                issues.append(
+                    _issue(
+                        "invalid_source_url_for_source",
+                        f"evidence_items row {row_index} source_url does not match source_id={source_id!r}",
+                        "evidence_items",
+                        int(row_index),
+                    )
+                )
         evidence_class = str(row.get("evidence_class", "")).strip().lower()
         if evidence_class not in EVIDENCE_CLASSES:
             issues.append(
