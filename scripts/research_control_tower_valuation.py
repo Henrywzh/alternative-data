@@ -1,140 +1,563 @@
-"""Offline collector and calculator for valuation snapshots and internal estimates.
-
-Generates valuation_snapshots and internal_estimates data marts for Research Control Tower.
-Follows strict fail-closed validation, offline deterministic execution, and currency alignment logging.
-"""
+"""Build auditable valuation and internal-estimate parquet outputs offline."""
 
 from __future__ import annotations
 
 import argparse
 import logging
+import math
 import sys
-from datetime import datetime, timezone
+from dataclasses import fields
+from datetime import datetime
 from pathlib import Path
-from typing import Sequence
+from typing import Any, Sequence
 
-# Ensure project root is in sys.path
-project_root = Path(__file__).resolve().parent.parent
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 import pandas as pd
+import pyarrow as pa
 
 from src.research_control_tower.valuation import (
-    INTERNAL_ESTIMATES_COLUMNS,
-    VALUATION_SNAPSHOTS_COLUMNS,
+    INTERNAL_ESTIMATES_ARROW_SCHEMA,
+    SUPPORTED_PIT_CLASSES,
+    VALUATION_SNAPSHOTS_ARROW_SCHEMA,
     ValuationInput,
     build_valuation_snapshot_row,
+    canonicalize_metric_basis,
+    empty_frame,
+    frame_from_rows,
     load_internal_estimates_csv,
     validate_internal_estimates_df,
     validate_valuation_snapshots_df,
+    write_parquet_atomic,
 )
 
 
 logger = logging.getLogger(__name__)
 
+QUOTE_REQUIRED_COLUMNS = frozenset(
+    {
+        "quote_id",
+        "listing_id",
+        "quote_timestamp",
+        "retrieved_at_utc",
+        "last_price",
+        "currency",
+        "source_id",
+        "source_url",
+        "pit_class",
+    }
+)
+CONSENSUS_REQUIRED_COLUMNS = frozenset(
+    {
+        "snapshot_id",
+        "provider",
+        "listing_id",
+        "metric",
+        "fiscal_period",
+        "fiscal_year",
+        "snapshot_at",
+        "provider_asof",
+        "retrieved_at_utc",
+        "value",
+        "statistic",
+        "currency",
+        "unit",
+        "accounting_basis",
+        "source_url",
+        "pit_class",
+    }
+)
+FX_REQUIRED_COLUMNS = frozenset(
+    {
+        "observation_date",
+        "base_currency",
+        "quote_currency",
+        "value",
+        "retrieved_at",
+        "source_name",
+        "source_url",
+    }
+)
+
+
+def _read_frame(path: Path | None) -> pd.DataFrame | None:
+    if path is None:
+        return None
+    if not path.exists():
+        raise FileNotFoundError(path)
+    if path.suffix.lower() in {".parquet", ".pq"}:
+        return pd.read_parquet(path)
+    if path.suffix.lower() == ".csv":
+        return pd.read_csv(path)
+    raise ValueError(f"unsupported local input format: {path}")
+
+
+def _as_utc_series(frame: pd.DataFrame, column: str) -> pd.Series:
+    parsed: list[pd.Timestamp | pd.NaT] = []
+    for value in frame[column]:
+        try:
+            timestamp = pd.Timestamp(value)
+        except (TypeError, ValueError):
+            timestamp = pd.NaT
+        parsed.append(
+            pd.NaT
+            if pd.isna(timestamp) or timestamp.tzinfo is None
+            else timestamp.tz_convert("UTC")
+        )
+    return pd.Series(
+        pd.to_datetime(parsed, utc=True, errors="coerce"),
+        index=frame.index,
+    )
+
+
+def _finite_positive(value: Any) -> bool:
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return False
+    return math.isfinite(numeric) and numeric > 0
+
+
+def _latest_quote(
+    frame: pd.DataFrame | None, *, listing_id: str, as_of: pd.Timestamp
+) -> pd.Series | None:
+    if frame is None or frame.empty or not QUOTE_REQUIRED_COLUMNS.issubset(frame.columns):
+        return None
+    candidates = frame.loc[frame["listing_id"].eq(listing_id)].copy()
+    candidates["quote_timestamp"] = _as_utc_series(candidates, "quote_timestamp")
+    candidates["retrieved_at_utc"] = _as_utc_series(
+        candidates, "retrieved_at_utc"
+    )
+    candidates["last_price"] = pd.to_numeric(
+        candidates["last_price"], errors="coerce"
+    )
+    candidates = candidates.loc[
+        candidates["quote_timestamp"].notna()
+        & candidates["retrieved_at_utc"].notna()
+        & candidates["quote_timestamp"].le(as_of)
+        & candidates["retrieved_at_utc"].le(as_of)
+        & candidates["last_price"].map(_finite_positive)
+        & candidates["quote_id"].fillna("").astype(str).str.strip().ne("")
+        & candidates["currency"].fillna("").astype(str).str.strip().ne("")
+        & candidates["source_id"].fillna("").astype(str).str.strip().ne("")
+        & candidates["source_url"].fillna("").astype(str).str.strip().ne("")
+        & candidates["pit_class"].isin(SUPPORTED_PIT_CLASSES)
+        & candidates["quote_timestamp"].le(candidates["retrieved_at_utc"])
+    ]
+    if candidates.empty:
+        return None
+    return candidates.sort_values(
+        ["quote_timestamp", "retrieved_at_utc", "quote_id"],
+        kind="mergesort",
+    ).iloc[-1]
+
+
+def _latest_consensus_eps(
+    frame: pd.DataFrame | None,
+    *,
+    listing_id: str,
+    as_of: pd.Timestamp,
+    fiscal_period: str,
+    fiscal_year: int | None,
+    statistic: str,
+) -> pd.Series | None:
+    if (
+        frame is None
+        or frame.empty
+        or not CONSENSUS_REQUIRED_COLUMNS.issubset(frame.columns)
+    ):
+        return None
+    candidates = frame.loc[
+        frame["listing_id"].eq(listing_id)
+        & frame["metric"].eq("eps")
+        & frame["fiscal_period"].eq(fiscal_period)
+        & frame["statistic"].eq(statistic)
+        & frame["unit"].eq("currency_per_share")
+    ].copy()
+    candidates["fiscal_year"] = pd.to_numeric(
+        candidates["fiscal_year"], errors="coerce"
+    )
+    for column in ("snapshot_at", "provider_asof", "retrieved_at_utc"):
+        candidates[column] = _as_utc_series(candidates, column)
+    candidates["value"] = pd.to_numeric(candidates["value"], errors="coerce")
+    candidates = candidates.loc[
+        candidates["snapshot_at"].notna()
+        & candidates["provider_asof"].notna()
+        & candidates["retrieved_at_utc"].notna()
+        & candidates["snapshot_at"].le(as_of)
+        & candidates["provider_asof"].le(as_of)
+        & candidates["retrieved_at_utc"].le(as_of)
+        & candidates["value"].map(_finite_positive)
+        & candidates["snapshot_id"].fillna("").astype(str).str.strip().ne("")
+        & candidates["accounting_basis"].fillna("").astype(str).str.strip().ne("")
+        & candidates["currency"].fillna("").astype(str).str.strip().ne("")
+        & candidates["provider"].fillna("").astype(str).str.strip().ne("")
+        & candidates["source_url"].fillna("").astype(str).str.strip().ne("")
+        & candidates["pit_class"].isin(SUPPORTED_PIT_CLASSES)
+        & candidates["snapshot_at"].le(candidates["retrieved_at_utc"])
+        & candidates["provider_asof"].le(candidates["retrieved_at_utc"])
+    ]
+    if fiscal_year is not None:
+        candidates = candidates.loc[candidates["fiscal_year"].eq(fiscal_year)]
+    else:
+        eligible_years = candidates.loc[
+            candidates["fiscal_year"].ge(as_of.year), "fiscal_year"
+        ]
+        if eligible_years.empty:
+            return None
+        candidates = candidates.loc[
+            candidates["fiscal_year"].eq(eligible_years.min())
+        ]
+    if candidates.empty:
+        return None
+    return candidates.sort_values(
+        [
+            "fiscal_year",
+            "snapshot_at",
+            "provider_asof",
+            "retrieved_at_utc",
+            "snapshot_id",
+        ],
+        kind="mergesort",
+    ).iloc[-1]
+
+
+def _prepare_fx(frame: pd.DataFrame | None, as_of: pd.Timestamp) -> pd.DataFrame:
+    if frame is None or frame.empty or not FX_REQUIRED_COLUMNS.issubset(frame.columns):
+        return pd.DataFrame()
+    prepared = frame.copy()
+    prepared["base_currency"] = (
+        prepared["base_currency"].fillna("").astype(str).str.strip().str.upper()
+    )
+    prepared["quote_currency"] = (
+        prepared["quote_currency"].fillna("").astype(str).str.strip().str.upper()
+    )
+    prepared["observation_at"] = pd.to_datetime(
+        prepared["observation_date"], utc=True, errors="coerce"
+    )
+    prepared["retrieved_at_utc"] = _as_utc_series(prepared, "retrieved_at")
+    prepared["value"] = pd.to_numeric(prepared["value"], errors="coerce")
+    return prepared.loc[
+        prepared["observation_at"].notna()
+        & prepared["retrieved_at_utc"].notna()
+        & prepared["observation_at"].le(as_of)
+        & prepared["retrieved_at_utc"].le(as_of)
+        & prepared["value"].map(_finite_positive)
+        & prepared["base_currency"].ne("")
+        & prepared["quote_currency"].ne("")
+        & prepared["source_name"].fillna("").astype(str).str.strip().ne("")
+        & prepared["source_url"].fillna("").astype(str).str.strip().ne("")
+        & prepared["observation_at"].le(prepared["retrieved_at_utc"])
+    ].copy()
+
+
+def _fx_result(
+    *,
+    factor: float,
+    denominator_currency: str,
+    numerator_currency: str,
+    rows: Sequence[pd.Series],
+    label: str,
+) -> dict[str, Any]:
+    snapshot = max(pd.Timestamp(row["observation_at"]) for row in rows)
+    retrieved = max(pd.Timestamp(row["retrieved_at_utc"]) for row in rows)
+    source_names = sorted({str(row["source_name"]).strip() for row in rows})
+    source_urls = sorted({str(row["source_url"]).strip() for row in rows})
+    return {
+        "fx_rate_applied": factor,
+        "fx_base_currency": denominator_currency,
+        "fx_quote_currency": numerator_currency,
+        "fx_source": f"{label}:{'+'.join(source_names)}",
+        "fx_source_url": ";".join(source_urls),
+        "fx_snapshot_at_utc": snapshot.to_pydatetime(),
+        "fx_retrieved_at_utc": retrieved.to_pydatetime(),
+    }
+
+
+def resolve_fx_factor(
+    frame: pd.DataFrame | None,
+    *,
+    denominator_currency: str,
+    numerator_currency: str,
+    as_of: pd.Timestamp,
+) -> dict[str, Any] | None:
+    """Resolve denominator-to-numerator FX, including same-day cross rates."""
+
+    denominator = denominator_currency.strip().upper()
+    numerator = numerator_currency.strip().upper()
+    if denominator == numerator:
+        return {}
+    prepared = _prepare_fx(frame, as_of)
+    if prepared.empty:
+        return None
+
+    direct = prepared.loc[
+        prepared["base_currency"].eq(denominator)
+        & prepared["quote_currency"].eq(numerator)
+    ]
+    if not direct.empty:
+        row = direct.sort_values(
+            ["observation_at", "retrieved_at_utc"], kind="mergesort"
+        ).iloc[-1]
+        return _fx_result(
+            factor=float(row["value"]),
+            denominator_currency=denominator,
+            numerator_currency=numerator,
+            rows=[row],
+            label=f"{denominator}_TO_{numerator}",
+        )
+
+    reverse = prepared.loc[
+        prepared["base_currency"].eq(numerator)
+        & prepared["quote_currency"].eq(denominator)
+    ]
+    if not reverse.empty:
+        row = reverse.sort_values(
+            ["observation_at", "retrieved_at_utc"], kind="mergesort"
+        ).iloc[-1]
+        return _fx_result(
+            factor=1.0 / float(row["value"]),
+            denominator_currency=denominator,
+            numerator_currency=numerator,
+            rows=[row],
+            label=f"{denominator}_TO_{numerator}_INVERSE",
+        )
+
+    denominator_legs = prepared.loc[
+        prepared["quote_currency"].eq(denominator)
+    ].copy()
+    numerator_legs = prepared.loc[prepared["quote_currency"].eq(numerator)].copy()
+    if denominator_legs.empty or numerator_legs.empty:
+        return None
+    joined = denominator_legs.merge(
+        numerator_legs,
+        on=["base_currency", "observation_at"],
+        suffixes=("_den", "_num"),
+    )
+    if joined.empty:
+        return None
+    joined["retrieved_max"] = joined[
+        ["retrieved_at_utc_den", "retrieved_at_utc_num"]
+    ].max(axis=1)
+    selected = joined.sort_values(
+        ["observation_at", "retrieved_max", "base_currency"], kind="mergesort"
+    ).iloc[-1]
+    denominator_row = pd.Series(
+        {
+            "observation_at": selected["observation_at"],
+            "retrieved_at_utc": selected["retrieved_at_utc_den"],
+            "source_name": selected["source_name_den"],
+            "source_url": selected["source_url_den"],
+        }
+    )
+    numerator_row = pd.Series(
+        {
+            "observation_at": selected["observation_at"],
+            "retrieved_at_utc": selected["retrieved_at_utc_num"],
+            "source_name": selected["source_name_num"],
+            "source_url": selected["source_url_num"],
+        }
+    )
+    factor = float(selected["value_num"]) / float(selected["value_den"])
+    return _fx_result(
+        factor=factor,
+        denominator_currency=denominator,
+        numerator_currency=numerator,
+        rows=[denominator_row, numerator_row],
+        label=(
+            f"{denominator}_TO_{numerator}_VIA_{selected['base_currency']}"
+        ),
+    )
+
 
 def compute_tencent_valuation_snapshots(
     quote_snapshots_df: pd.DataFrame | None,
     consensus_snapshots_df: pd.DataFrame | None,
-    earnings_actuals_df: pd.DataFrame | None,
+    earnings_actuals_df: pd.DataFrame | None = None,
     fx_rates_df: pd.DataFrame | None = None,
-    as_of_utc: datetime | None = None,
+    as_of_utc: datetime | str | pd.Timestamp | None = None,
+    *,
+    fiscal_period: str = "annual",
+    fiscal_year: int | None = None,
+    statistic: str = "mean",
 ) -> pd.DataFrame:
-    """Compute valuation snapshots for Tencent (0700_HK) only when verified inputs exist.
+    """Compute Tencent forward P/E from causal quote, EPS, and FX vintages."""
 
-    If inputs are missing or unverified, returns an empty DataFrame with standard columns.
-    Never fabricates or hardcodes multiples without local source records.
-    """
-    rows: list[dict] = []
-    current_asof = as_of_utc or datetime.now(timezone.utc)
+    del earnings_actuals_df
+    if as_of_utc is None:
+        raise ValueError("as_of_utc is required for deterministic PIT selection")
+    as_of = pd.Timestamp(as_of_utc)
+    if as_of.tzinfo is None:
+        raise ValueError("as_of_utc must be timezone-aware")
+    as_of = as_of.tz_convert("UTC")
+    quote = _latest_quote(
+        quote_snapshots_df, listing_id="0700_HK", as_of=as_of
+    )
+    consensus = _latest_consensus_eps(
+        consensus_snapshots_df,
+        listing_id="0700_HK",
+        as_of=as_of,
+        fiscal_period=fiscal_period,
+        fiscal_year=fiscal_year,
+        statistic=statistic,
+    )
+    if quote is None or consensus is None:
+        return empty_frame(VALUATION_SNAPSHOTS_ARROW_SCHEMA)
 
-    if quote_snapshots_df is None or quote_snapshots_df.empty:
-        return pd.DataFrame(columns=VALUATION_SNAPSHOTS_COLUMNS)
+    numerator_currency = str(quote["currency"]).strip().upper()
+    denominator_currency = str(consensus["currency"]).strip().upper()
+    fx = resolve_fx_factor(
+        fx_rates_df,
+        denominator_currency=denominator_currency,
+        numerator_currency=numerator_currency,
+        as_of=as_of,
+    )
+    if fx is None:
+        return empty_frame(VALUATION_SNAPSHOTS_ARROW_SCHEMA)
 
-    # Filter for 0700_HK quote
-    t_quotes = quote_snapshots_df[quote_snapshots_df["listing_id"] == "0700_HK"]
-    if t_quotes.empty:
-        return pd.DataFrame(columns=VALUATION_SNAPSHOTS_COLUMNS)
-
-    latest_quote = t_quotes.sort_values(by="retrieved_at_utc", ascending=False).iloc[0]
-    price = latest_quote.get("price")
-    quote_ref = latest_quote.get("quote_snapshot_id", "quote:0700_HK_latest")
-    quote_curr = str(latest_quote.get("currency", "HKD")).upper().strip()
-
-    # If we have valid consensus EPS for FY1 (e.g. FY26E)
-    if consensus_snapshots_df is not None and not consensus_snapshots_df.empty:
-        t_cons = consensus_snapshots_df[
-            (consensus_snapshots_df["listing_id"] == "0700_HK")
-            & (consensus_snapshots_df["metric"] == "diluted_eps")
-            & (consensus_snapshots_df["horizon"].isin(["FY1", "FY26"]))
-        ]
-        if not t_cons.empty:
-            cons_row = t_cons.sort_values(by="retrieved_at_utc", ascending=False).iloc[0]
-            eps_val = cons_row.get("value")
-            eps_curr = str(cons_row.get("currency", "CNY")).upper().strip()
-            snap_ref = cons_row.get("snapshot_id", "cons:0700_HK_eps")
-            basis = cons_row.get("metric_basis", "NON_IFRS_MANAGEMENT")
-
-            if price and eps_val and eps_val > 0:
-                fx_rate = None
-                fx_src = None
-                fx_ts = None
-                if quote_curr != eps_curr:
-                    # If currency conversion needed, must be explicitly provided
-                    pass
-                
-                if quote_curr == eps_curr or (fx_rate is not None and fx_src is not None):
-                    inp = ValuationInput(
-                        listing_id="0700_HK",
-                        valuation_at=current_asof,
-                        metric_name="forward_pe",
-                        metric_basis=basis,
-                        numerator_value=float(price),
-                        numerator_currency=quote_curr,
-                        numerator_ref=str(quote_ref),
-                        denominator_value=float(eps_val),
-                        denominator_currency=eps_curr,
-                        denominator_ref=str(snap_ref),
-                        fx_rate_applied=fx_rate,
-                        fx_source=fx_src,
-                        fx_snapshot_at_utc=fx_ts,
-                        source_id="valuation_collector",
-                        pit_class="snapshot_from_delayed_source",
-                        percentile_history_status="unavailable",
-                    )
-                    rows.append(build_valuation_snapshot_row(inp))
-
-    if not rows:
-        return pd.DataFrame(columns=VALUATION_SNAPSHOTS_COLUMNS)
-
-    df = pd.DataFrame(rows)
-    issues = validate_valuation_snapshots_df(df)
+    accounting_basis = str(consensus["accounting_basis"]).strip()
+    pit_class = str(consensus["pit_class"]).strip()
+    input_row = ValuationInput(
+        listing_id="0700_HK",
+        valuation_at=as_of.to_pydatetime(),
+        metric_name="forward_pe",
+        accounting_basis=accounting_basis,
+        metric_basis=canonicalize_metric_basis(accounting_basis),
+        numerator_value=float(quote["last_price"]),
+        numerator_currency=numerator_currency,
+        numerator_ref=str(quote["quote_id"]),
+        numerator_source_id=str(quote["source_id"]),
+        numerator_source_url=str(quote["source_url"]),
+        numerator_pit_class=str(quote["pit_class"]),
+        numerator_at_utc=pd.Timestamp(quote["quote_timestamp"]).to_pydatetime(),
+        numerator_retrieved_at_utc=pd.Timestamp(
+            quote["retrieved_at_utc"]
+        ).to_pydatetime(),
+        denominator_value=float(consensus["value"]),
+        denominator_currency=denominator_currency,
+        denominator_ref=str(consensus["snapshot_id"]),
+        denominator_source_id=f"consensus:{consensus['provider']}",
+        denominator_source_url=str(consensus["source_url"]),
+        denominator_pit_class=pit_class,
+        denominator_at_utc=pd.Timestamp(consensus["snapshot_at"]).to_pydatetime(),
+        denominator_provider_asof_utc=pd.Timestamp(
+            consensus["provider_asof"]
+        ).to_pydatetime(),
+        denominator_retrieved_at_utc=pd.Timestamp(
+            consensus["retrieved_at_utc"]
+        ).to_pydatetime(),
+        source_url=str(consensus["source_url"]),
+        retrieved_at_utc=as_of.to_pydatetime(),
+        pit_class="repository_captured",
+        **fx,
+    )
+    row = build_valuation_snapshot_row(input_row)
+    result = frame_from_rows([row], VALUATION_SNAPSHOTS_ARROW_SCHEMA)
+    issues = validate_valuation_snapshots_df(result)
     if issues:
-        raise ValueError(f"Generated valuation snapshots failed validation: {issues}")
-    return df
+        raise ValueError(f"valuation output validation failed: {issues}")
+    return result
+
+
+def build_explicit_valuation_inputs(frame: pd.DataFrame | None) -> pd.DataFrame:
+    """Build any supported metric from fully explicit, audited local inputs."""
+
+    if frame is None or frame.empty:
+        return empty_frame(VALUATION_SNAPSHOTS_ARROW_SCHEMA)
+    expected = [field.name for field in fields(ValuationInput)]
+    if list(frame.columns) != expected:
+        raise ValueError("valuation inputs have invalid exact schema")
+    rows = [
+        build_valuation_snapshot_row(ValuationInput(**row))
+        for row in frame.to_dict("records")
+    ]
+    return frame_from_rows(rows, VALUATION_SNAPSHOTS_ARROW_SCHEMA)
+
+
+def _combine_valuations(*frames: pd.DataFrame) -> pd.DataFrame:
+    nonempty = [frame for frame in frames if not frame.empty]
+    if not nonempty:
+        return empty_frame(VALUATION_SNAPSHOTS_ARROW_SCHEMA)
+    combined = pd.concat(nonempty, ignore_index=True)
+    combined = combined.sort_values("valuation_id", kind="mergesort")
+    combined = combined.drop_duplicates("valuation_id", keep="last")
+    return pa.Table.from_pandas(
+        combined,
+        schema=VALUATION_SNAPSHOTS_ARROW_SCHEMA,
+        preserve_index=False,
+    ).to_pandas()
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Collect and build valuation and internal estimates marts")
-    parser.add_argument("--config-dir", type=Path, default=Path("config/research_control_tower"))
-    parser.add_argument("--output-dir", type=Path, default=Path("data/research_control_tower"))
+    parser = argparse.ArgumentParser(
+        description="Build local valuation_snapshots and internal_estimates marts"
+    )
+    parser.add_argument("--quotes", type=Path)
+    parser.add_argument("--consensus", type=Path)
+    parser.add_argument("--earnings-actuals", type=Path)
+    parser.add_argument("--fx-rates", type=Path)
+    parser.add_argument("--valuation-inputs", type=Path)
+    parser.add_argument(
+        "--internal-estimates",
+        type=Path,
+        default=Path("config/research_control_tower/internal_estimates.csv"),
+    )
+    parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--as-of", required=True)
+    parser.add_argument("--fiscal-period", default="annual")
+    parser.add_argument("--fiscal-year", type=int)
+    parser.add_argument("--statistic", default="mean")
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO)
-    logger.info("Loading internal estimates from %s", args.config_dir)
+    as_of = pd.Timestamp(args.as_of)
+    if as_of.tzinfo is None:
+        parser.error("--as-of must include a timezone")
 
-    est_csv = args.config_dir / "internal_estimates.csv"
-    est_df = load_internal_estimates_csv(est_csv)
-    est_issues = validate_internal_estimates_df(est_df)
-    if est_issues:
-        logger.error("Internal estimates validation failed: %s", est_issues)
-        return 1
+    quotes = _read_frame(args.quotes)
+    consensus = _read_frame(args.consensus)
+    earnings = _read_frame(args.earnings_actuals)
+    fx_rates = _read_frame(args.fx_rates)
+    explicit_inputs = _read_frame(args.valuation_inputs)
+    internal_estimates = load_internal_estimates_csv(args.internal_estimates)
+    internal_issues = validate_internal_estimates_df(internal_estimates)
+    if internal_issues:
+        raise ValueError(f"internal estimates validation failed: {internal_issues}")
 
-    logger.info("Internal estimates validated successfully. Total rows: %d", len(est_df))
+    derived = compute_tencent_valuation_snapshots(
+        quotes,
+        consensus,
+        earnings,
+        fx_rates,
+        as_of,
+        fiscal_period=args.fiscal_period,
+        fiscal_year=args.fiscal_year,
+        statistic=args.statistic,
+    )
+    explicit = build_explicit_valuation_inputs(explicit_inputs)
+    valuations = _combine_valuations(derived, explicit)
+    valuation_issues = validate_valuation_snapshots_df(valuations)
+    if valuation_issues:
+        raise ValueError(f"valuation validation failed: {valuation_issues}")
+
+    valuation_path = args.output_dir / "valuation_snapshots.parquet"
+    estimates_path = args.output_dir / "internal_estimates.parquet"
+    write_parquet_atomic(
+        valuations, VALUATION_SNAPSHOTS_ARROW_SCHEMA, valuation_path
+    )
+    write_parquet_atomic(
+        internal_estimates, INTERNAL_ESTIMATES_ARROW_SCHEMA, estimates_path
+    )
+    logger.info(
+        "wrote valuation_snapshots=%d internal_estimates=%d to %s",
+        len(valuations),
+        len(internal_estimates),
+        args.output_dir,
+    )
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
