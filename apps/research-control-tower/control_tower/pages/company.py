@@ -1332,6 +1332,305 @@ def _format_listing_option(snapshot: ControlTowerSnapshot, listing_id: str | Non
     return " · ".join(value for value in (ticker, exchange, currency) if value) or "Listing unavailable"
 
 
+def _company_earnings_actuals(
+    snapshot: ControlTowerSnapshot,
+    view: CompanyView,
+) -> pd.DataFrame:
+    """Return earnings rows scoped to the selected entity and listing."""
+
+    source = getattr(snapshot, "earnings_actuals", pd.DataFrame())
+    if source is None or source.empty or "entity_id" not in source.columns:
+        return pd.DataFrame()
+    frame = source.loc[source["entity_id"].astype("string").eq(view.entity_id)].copy()
+    if view.selected_listing_id and "listing_id" in frame.columns:
+        listing = frame["listing_id"]
+        frame = frame.loc[
+            listing.isna()
+            | listing.astype("string").eq("")
+            | listing.astype("string").eq(view.selected_listing_id)
+        ]
+    return frame
+
+
+def _latest_actual_rows(frame: pd.DataFrame) -> pd.DataFrame:
+    """Select the latest reported period without inventing a period fallback."""
+
+    if frame.empty:
+        return frame.copy()
+    latest = frame.copy()
+    if "period_end" in latest.columns:
+        period_end = pd.to_datetime(latest["period_end"], errors="coerce")
+        if period_end.notna().any():
+            latest = latest.loc[period_end.eq(period_end.max())].copy()
+    sort_columns = [
+        column
+        for column in ("filing_at", "version", "metric", "accounting_basis")
+        if column in latest.columns
+    ]
+    if sort_columns:
+        latest = latest.sort_values(sort_columns, ascending=False, na_position="last")
+    dedupe_columns = [
+        column for column in ("metric", "accounting_basis") if column in latest.columns
+    ]
+    if dedupe_columns:
+        latest = latest.drop_duplicates(dedupe_columns, keep="first")
+    return latest
+
+
+def _format_number(value: object, *, decimals: int = 2) -> str:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return ""
+    if pd.isna(number):
+        return ""
+    if number.is_integer():
+        return f"{int(number):,}"
+    return f"{number:,.{decimals}f}".rstrip("0").rstrip(".")
+
+
+def _format_actual_value(row: Any) -> str:
+    value = row.get("reported_value")
+    if not _text(value):
+        value = row.get("normalized_value")
+    number = _format_number(value)
+    if not number:
+        return "value unavailable"
+    currency = _text(row.get("currency"))
+    unit = _text(row.get("unit"))
+    if unit.casefold() in {"percent", "percentage", "%"}:
+        return f"{number}%"
+    components = [currency, number]
+    if unit and unit.casefold() != currency.casefold():
+        components.append(unit)
+    return " ".join(component for component in components if component)
+
+
+def _summary_date(value: object) -> str:
+    parsed = _date(value)
+    return parsed.strftime("%Y-%m-%d") if parsed is not None else ""
+
+
+def _summary_source(row: Any) -> str:
+    source_id = _text(row.get("source_id")) or _text(row.get("provider"))
+    source_url = _text(row.get("source_url"))
+    if source_id and source_url:
+        return f"{source_id} · {source_url}"
+    if source_id:
+        return source_id
+    if source_url:
+        return source_url
+    return "provenance unavailable"
+
+
+def _answer_first_summary_lines(
+    view: CompanyView,
+    snapshot: ControlTowerSnapshot,
+) -> tuple[str, ...]:
+    """Build compact answer-first facts exclusively from selected snapshot rows."""
+
+    lines: list[str] = []
+
+    actuals = _latest_actual_rows(_company_earnings_actuals(snapshot, view))
+    if actuals.empty:
+        lines.append("Latest fundamentals unavailable · no earnings-actuals rows for this entity/listing.")
+    else:
+        priorities = {
+            "revenue_total": 0,
+            "operating_profit": 1,
+            "net_profit_attributable": 2,
+            "free_cash_flow": 3,
+            "capital_expenditure": 4,
+        }
+        ordered = actuals.assign(
+            _summary_priority=actuals.get(
+                "metric", pd.Series("", index=actuals.index, dtype="string")
+            ).map(lambda value: priorities.get(_text(value), len(priorities)))
+        ).sort_values(["_summary_priority", "metric"], na_position="last")
+        facts: list[str] = []
+        for _, row in ordered.head(4).iterrows():
+            metric = _text(row.get("metric")).replace("_", " ").strip().title()
+            basis = _text(row.get("accounting_basis"))
+            fact = f"{metric or 'Metric unavailable'}: {_format_actual_value(row)}"
+            if basis:
+                fact += f" ({basis})"
+            facts.append(fact)
+        representative = ordered.iloc[0]
+        period = _text(representative.get("period_label")) or _summary_date(
+            representative.get("period_end")
+        )
+        filed = _summary_date(representative.get("filing_at"))
+        context = " · ".join(
+            value for value in (period, f"filed {filed}" if filed else "") if value
+        )
+        lines.append(
+            f"Latest fundamentals · {context or 'period unavailable'} · "
+            f"{'; '.join(facts)} · source: {_summary_source(representative)}"
+        )
+
+    if view.corporate_actions.empty:
+        lines.append("Recent corporate action unavailable · no selected-listing rows.")
+    else:
+        actions = view.corporate_actions.copy()
+        sort_column = next(
+            (
+                column
+                for column in ("execution_date", "filing_date", "retrieved_at_utc")
+                if column in actions.columns and actions[column].notna().any()
+            ),
+            None,
+        )
+        if sort_column:
+            actions = actions.sort_values(sort_column, ascending=False, na_position="last")
+        action = actions.iloc[0]
+        action_type = _text(action.get("action_type")).replace("_", " ").strip().title()
+        action_date = _summary_date(action.get("execution_date"))
+        if not action_date:
+            action_date = _summary_date(action.get("filing_date"))
+        shares = _format_number(action.get("shares_affected"), decimals=0)
+        amount = _format_number(action.get("total_amount_paid"))
+        currency = _text(action.get("currency"))
+        details = [
+            action_type or "Action type unavailable",
+            action_date or "date unavailable",
+        ]
+        if shares:
+            details.append(f"{shares} shares")
+        if amount:
+            details.append(" ".join(value for value in (currency, amount) if value))
+        lines.append(
+            f"Recent corporate action · {' · '.join(details)} · "
+            f"source: {_summary_source(action)}"
+        )
+
+    if view.consensus.empty:
+        lines.append("Expectation context unavailable · no provider consensus rows.")
+    else:
+        consensus = view.consensus.copy()
+        if "snapshot_at" in consensus.columns and consensus["snapshot_at"].notna().any():
+            consensus = consensus.sort_values("snapshot_at", ascending=False, na_position="last")
+        row = consensus.iloc[0]
+        metric = _text(row.get("metric")).replace("_", " ").strip().title()
+        value = _format_number(row.get("value"))
+        currency = _text(row.get("currency"))
+        unit = _text(row.get("unit"))
+        estimate = " ".join(part for part in (currency, value, unit) if part)
+        lines.append(
+            f"Expectation context · {metric or 'metric unavailable'}: "
+            f"{estimate or 'value unavailable'} · "
+            f"{_text(row.get('horizon')) or 'horizon unavailable'} · "
+            f"source: {_summary_source(row)}"
+        )
+
+    if view.valuation_snapshots.empty:
+        lines.append("Valuation context unavailable · no selected-listing valuation rows.")
+    else:
+        valuations = view.valuation_snapshots.copy()
+        sort_column = next(
+            (
+                column
+                for column in ("valuation_at", "valuation_date", "retrieved_at_utc")
+                if column in valuations.columns and valuations[column].notna().any()
+            ),
+            None,
+        )
+        if sort_column:
+            valuations = valuations.sort_values(sort_column, ascending=False, na_position="last")
+        latest_date = _summary_date(valuations.iloc[0].get("valuation_at"))
+        if not latest_date:
+            latest_date = _summary_date(valuations.iloc[0].get("valuation_date"))
+        facts = []
+        for _, row in valuations.head(3).iterrows():
+            metric = _text(row.get("metric_name")).replace("_", " ").strip().title()
+            ratio = _format_number(row.get("ratio_value"))
+            basis = _text(row.get("metric_basis"))
+            fact = f"{metric or 'Metric unavailable'}: {ratio or 'value unavailable'}"
+            if basis:
+                fact += f" ({basis})"
+            facts.append(fact)
+        lines.append(
+            f"Valuation context · {latest_date or 'date unavailable'} · "
+            f"{'; '.join(facts)} · source: {_summary_source(valuations.iloc[0])}"
+        )
+
+    upcoming = view.events.copy()
+    if not upcoming.empty and "starts_at" in upcoming.columns:
+        starts_at = pd.to_datetime(upcoming["starts_at"], errors="coerce", utc=True)
+        upcoming = upcoming.loc[starts_at.ge(snapshot.now_utc)].copy()
+        if not upcoming.empty:
+            upcoming = upcoming.assign(_summary_starts_at=starts_at.loc[upcoming.index])
+            upcoming = upcoming.sort_values("_summary_starts_at", na_position="last")
+    if upcoming.empty:
+        lines.append("Upcoming catalyst unavailable · no future linked event rows.")
+    else:
+        event = upcoming.iloc[0]
+        lines.append(
+            f"Upcoming catalyst · {_text(event.get('title')) or 'title unavailable'} · "
+            f"{_summary_date(event.get('starts_at')) or 'date unavailable'} · "
+            f"{_text(event.get('certainty_class')).replace('_', ' ') or 'certainty unavailable'} · "
+            f"{_text(event.get('date_precision')) or 'precision unavailable'} · "
+            f"source: {_summary_source(event)}"
+        )
+
+    if view.thesis_claims.empty:
+        lines.append("Thesis registry unavailable · no thesis-claim rows.")
+    else:
+        statuses = (
+            view.thesis_claims.get(
+                "status", pd.Series("", index=view.thesis_claims.index, dtype="string")
+            )
+            .map(lambda value: _text(value).lower() or "status unavailable")
+            .value_counts()
+        )
+        status_text = ", ".join(
+            f"{status}: {int(count)}" for status, count in sorted(statuses.items())
+        )
+        lines.append(
+            f"Thesis registry · {len(view.thesis_claims)} claim rows · "
+            f"{status_text or 'status unavailable'}."
+        )
+
+    if view.evidence_items.empty:
+        lines.append("Evidence lineage unavailable · no evidence-item rows.")
+    else:
+        evidence = view.evidence_items.copy()
+        if "published_at" in evidence.columns and evidence["published_at"].notna().any():
+            evidence = evidence.sort_values("published_at", ascending=False, na_position="last")
+        row = evidence.iloc[0]
+        lines.append(
+            f"Evidence lineage · {len(evidence)} evidence rows · "
+            f"latest class: {_text(row.get('evidence_class')) or 'unavailable'} · "
+            f"published: {_summary_date(row.get('published_at')) or 'unavailable'} · "
+            f"source: {_summary_source(row)}"
+        )
+
+    return tuple(lines)
+
+
+def _render_answer_first_summary(
+    view: CompanyView,
+    snapshot: ControlTowerSnapshot,
+) -> None:
+    listing_label = ""
+    if view.selected_listing_id and not view.listings.empty:
+        selected = view.listings.loc[
+            view.listings["listing_id"].astype("string").eq(view.selected_listing_id)
+        ]
+        if not selected.empty:
+            listing_label = _text(selected.iloc[0].get("canonical_ticker"))
+    heading = " · ".join(
+        value
+        for value in ("Executive summary & recent changes", view.display_name, listing_label)
+        if value
+    )
+    st.markdown(f"#### {escape(heading)}")
+    for line in _answer_first_summary_lines(view, snapshot):
+        st.markdown(f"- {escape(line)}")
+    st.caption(
+        "All displayed facts come from the selected local snapshot rows; unavailable marts stay unavailable."
+    )
+
+
 def _render_price_history(view: CompanyView, snapshot: ControlTowerSnapshot) -> None:
     """Daily close for the selected listing, with its provenance stated."""
 
@@ -1382,24 +1681,8 @@ def _render_overview_tab(
 ) -> None:
     """Tab 1: Overview - Answer-first summary, quote, price history, listings, memberships, flight deck."""
 
-    # 1. Answer-First Executive Summary & Recent Changes
-    if view.entity_id == "TENCENT":
-        st.markdown(
-            '<div class="ct-panel" style="margin-bottom: 1rem; border-left: 3px solid var(--ct-accent);">'
-            '<div class="ct-change-title" style="font-size: 1rem;"><strong>Executive Summary & Recent Changes · Tencent Holdings (0700.HK)</strong></div>'
-            '<div class="ct-change-detail" style="margin-top: 0.4rem; line-height: 1.5;">'
-            '<strong>• 2Q2026 Official Results (12 Aug 2026):</strong> Total revenue RMB 204.785B (+11% YoY), Non-IFRS operating profit RMB 75.636B (+9% YoY; +19% YoY ex-AI product drag). CapEx surged 176% YoY to RMB 52.784B driving negative quarterly FCF of -RMB 13.8B due to AI compute prepayments (Free Cash Flow ex-prepayments was RMB 37.6B).<br>'
-            '<strong>• Statutory Share Repurchases (18 Aug 2026):</strong> 681,000 shares repurchased on HKEX for HKD 300,451,683.90 consideration (Price band: HKD 437.80 – 445.00) under Section II Next Day Disclosure Return.<br>'
-            '<strong>• Active Thesis Tracking:</strong> 3 human-authored thesis boundaries registered (Bull: AI Ad Efficiencies; Base: Core Compounder; Bear: AI CapEx Drag); all in <code>draft</code> status pending formal human rating update.'
-            '</div>'
-            '</div>',
-            unsafe_allow_html=True,
-        )
-    elif not view.corporate_actions.empty or not view.events.empty:
-        latest_action = view.corporate_actions.iloc[0] if not view.corporate_actions.empty else None
-        action_note = f"Latest corporate action: {_text(latest_action.get('action_type'))} on {_text(latest_action.get('execution_date'))}" if latest_action is not None else ""
-        if action_note:
-            st.caption(action_note)
+    # 1. Answer-first summary from the selected snapshot rows
+    _render_answer_first_summary(view, snapshot)
 
     # 2. Latest market quote
     st.markdown("#### Latest market quote")
@@ -1469,13 +1752,13 @@ def _render_overview_tab(
     upcoming_events_count = len(view.events)
     thesis_claims_count = len(view.thesis_claims)
     watch_q_count = len(view.thesis_watch_questions) if not view.thesis_watch_questions.empty else len(view.watch_questions)
-    buyback_count = len(view.corporate_actions)
+    corporate_action_count = len(view.corporate_actions)
 
     cols = st.columns(4)
     cols[0].metric("Linked Events", str(upcoming_events_count))
-    cols[1].metric("Thesis Claims", f"{thesis_claims_count} (draft)" if thesis_claims_count else "0")
+    cols[1].metric("Thesis Claims", str(thesis_claims_count))
     cols[2].metric("Watch Questions", str(watch_q_count))
-    cols[3].metric("Corporate Actions", str(buyback_count))
+    cols[3].metric("Corporate Actions", str(corporate_action_count))
 
 
 def _render_fundamentals_tab(
@@ -1487,37 +1770,81 @@ def _render_fundamentals_tab(
 
     # 1. Segment disclosures & core financial actuals
     st.markdown("#### Segment disclosures & core operations")
-    if snapshot.earnings_actuals.empty:
+    frame = _company_earnings_actuals(snapshot, view)
+    if frame.empty:
         st.info(
-            "No earnings-actuals rows in the current snapshot; "
+            "No earnings-actuals rows for this entity/listing in the current snapshot; "
             "values are only shown from official issuer disclosure metadata."
         )
     else:
-        frame = snapshot.earnings_actuals.loc[
-            snapshot.earnings_actuals["entity_id"].astype("string").eq(view.entity_id)
-        ].copy()
-        if view.selected_listing_id:
-            frame = frame.loc[
-                frame["listing_id"].isna()
-                | frame["listing_id"].astype("string").eq("")
-                | frame["listing_id"].astype("string").eq(view.selected_listing_id)
-            ]
-        if frame.empty:
-            st.info("No earnings-actuals rows for this entity/listing.")
-        else:
-            segment_metrics = {"revenue_vas", "revenue_online_ads", "revenue_marketing_services", "revenue_fintech_cloud", "revenue_fintech_business_services"}
-            has_segments = frame["metric"].astype("string").isin(segment_metrics).any()
-            if has_segments:
-                st.caption("Official segment revenue mix (VAS, Marketing Services, FinTech & Business Services) extracted from issuer disclosures.")
+        metrics = frame.get("metric", pd.Series("", index=frame.index, dtype="string")).astype("string")
+        has_segments = metrics.str.startswith("revenue_") & ~metrics.eq("revenue_total")
+        if has_segments.any():
+            st.caption("Official segment revenue rows extracted from issuer disclosures.")
 
-            sorted_actuals = frame.sort_values(["period_end", "metric", "version"], ascending=False)
-            actuals_display_columns = (
-                "period_label", "metric", "reported_value", "normalized_value", "currency",
-                "unit", "accounting_basis", "filing_at", "version", "is_restatement",
-                "revision_reason", "source_url",
+        sorted_actuals = frame.sort_values(["period_end", "metric", "version"], ascending=False)
+        actuals_display_columns = (
+            "period_label", "metric", "reported_value", "normalized_value", "currency",
+            "unit", "accounting_basis", "filing_at", "version", "is_restatement",
+            "revision_reason", "source_url",
+        )
+        keep_cols = [c for c in actuals_display_columns if c in sorted_actuals.columns]
+        friendly_actuals = sorted_actuals.loc[:, keep_cols].rename(
+            columns={
+                "period_label": "Period",
+                "metric": "Metric",
+                "reported_value": "Reported",
+                "normalized_value": "Normalized",
+                "currency": "Currency",
+                "unit": "Unit",
+                "accounting_basis": "Basis",
+                "filing_at": "Filing date",
+                "version": "Version",
+                "is_restatement": "Restatement",
+                "revision_reason": "Revision reason",
+                "source_url": "Source link",
+            }
+        )
+        st.dataframe(friendly_actuals, width="stretch", hide_index=True)
+        latest = sorted_actuals["period_end"].dropna()
+        if not latest.empty:
+            latest_label = _text(sorted_actuals.loc[sorted_actuals["period_end"].eq(latest.max()), "period_label"].iloc[0])
+            st.caption(f"Latest reported period in snapshot: {escape(latest_label) if latest_label else latest.max().strftime('%Y-%m-%d')} · reported values preserved per filing; restatements are versioned, not overwritten.")
+
+    # 2. Official Earnings Calendar
+    render_earnings_calendar(snapshot, entity_id=view.entity_id, listing_id=view.selected_listing_id)
+
+    # 3. Profitability & Free Cash Flow trajectory
+    st.markdown("#### Profitability & Free Cash Flow trajectory")
+    trajectory = _latest_actual_rows(frame)
+    if not trajectory.empty:
+        metric_names = trajectory.get(
+            "metric", pd.Series("", index=trajectory.index, dtype="string")
+        ).astype("string").str.lower()
+        trajectory = trajectory.loc[
+            metric_names.str.contains(
+                r"free_cash_flow|cash_flow|prepayment|capital_expenditure|capex|operating_margin|operating_profit",
+                regex=True,
+                na=False,
             )
-            keep_cols = [c for c in actuals_display_columns if c in sorted_actuals.columns]
-            friendly_actuals = sorted_actuals.loc[:, keep_cols].rename(
+        ]
+    if trajectory.empty:
+        st.info(
+            "Profitability and Free Cash Flow metrics unavailable · no matching "
+            "earnings-actuals rows for the latest reported period."
+        )
+    else:
+        display_columns = [
+            column
+            for column in (
+                "period_label", "metric", "reported_value", "normalized_value",
+                "currency", "unit", "accounting_basis", "filing_at", "source_id",
+                "source_url", "pit_class",
+            )
+            if column in trajectory.columns
+        ]
+        st.dataframe(
+            trajectory.loc[:, display_columns].rename(
                 columns={
                     "period_label": "Period",
                     "metric": "Metric",
@@ -1527,52 +1854,34 @@ def _render_fundamentals_tab(
                     "unit": "Unit",
                     "accounting_basis": "Basis",
                     "filing_at": "Filing date",
-                    "version": "Version",
-                    "is_restatement": "Restatement",
-                    "revision_reason": "Revision reason",
+                    "source_id": "Source",
                     "source_url": "Source link",
+                    "pit_class": "PIT class",
                 }
-            )
-            st.dataframe(friendly_actuals, width="stretch", hide_index=True)
-            latest = sorted_actuals["period_end"].dropna()
-            if not latest.empty:
-                latest_label = _text(sorted_actuals.loc[sorted_actuals["period_end"].eq(latest.max()), "period_label"].iloc[0])
-                st.caption(f"Latest reported period in snapshot: {escape(latest_label) if latest_label else latest.max().strftime('%Y-%m-%d')} · reported values preserved per filing; restatements are versioned, not overwritten.")
-
-    # 2. Official Earnings Calendar
-    render_earnings_calendar(snapshot, entity_id=view.entity_id, listing_id=view.selected_listing_id)
-
-    # 3. Profitability & Free Cash Flow Trajectory Bridge
-    st.markdown("#### Profitability & Free Cash Flow trajectory")
-    if view.entity_id == "TENCENT":
-        st.markdown(
-            '<div class="ct-change" style="margin-bottom: 0.85rem;">'
-            '<div class="ct-change-title"><strong>2Q2026 AI Compute Prepayment & Free Cash Flow Bridge</strong></div>'
-            '<div class="ct-change-detail">'
-            '• Reported FCF: <strong>-RMB 13.8B</strong> (impacted by RMB 51.4B compute hardware prepayments)<br>'
-            '• Normalized FCF ex-Prepayments: <strong>+RMB 37.6B</strong><br>'
-            '• Non-IFRS Operating Margin: <strong>36.9%</strong> (+9% YoY Non-IFRS operating profit growth; +19% YoY ex-New AI drag)<br>'
-            '• Point-in-Time discipline: reported vs normalized figures remain separated with source citations.'
-            '</div>'
-            '</div>',
-            unsafe_allow_html=True,
+            ),
+            width="stretch",
+            hide_index=True,
         )
-    else:
-        st.caption("Operating cash flow and Free Cash Flow trajectory sourced directly from statutory quarterly disclosures.")
+        st.caption(
+            "Reported and normalized values remain distinct and retain their row-level provenance."
+        )
 
-    # 4. Statutory Capital Returns (Buybacks & Dividends)
-    st.markdown("#### Statutory capital returns & HKEX share repurchases")
+    # 4. Statutory capital returns and corporate actions
+    st.markdown("#### Statutory capital returns & corporate actions")
     if view.corporate_actions.empty:
-        st.info("No statutory corporate actions in current snapshot; Next Day Disclosure Returns not yet loaded.")
+        st.info("No statutory corporate-action rows for the selected listing in the current snapshot.")
     else:
         total_spent = view.corporate_actions["total_amount_paid"].dropna().sum() if "total_amount_paid" in view.corporate_actions.columns else 0.0
         total_shares = view.corporate_actions["shares_affected"].dropna().sum() if "shares_affected" in view.corporate_actions.columns else 0
-        ccy = _text(view.corporate_actions.iloc[0].get("currency")) or "HKD"
+        ccy = _text(view.corporate_actions.iloc[0].get("currency"))
 
         mcols = st.columns(3)
-        mcols[0].metric("Total Consideration", f"{ccy} {total_spent:,.2f}" if total_spent else "Unavailable")
+        mcols[0].metric(
+            "Total Consideration",
+            f"{ccy} {total_spent:,.2f}".strip() if total_spent and ccy else "Unavailable",
+        )
         mcols[1].metric("Shares Repurchased", f"{int(total_shares):,}" if total_shares else "Unavailable")
-        mcols[2].metric("NDD Filings", f"{len(view.corporate_actions):,}")
+        mcols[2].metric("Corporate Action Rows", f"{len(view.corporate_actions):,}")
 
         st.dataframe(
             _friendly_corporate_actions_frame(view.corporate_actions, viewer_timezone),
@@ -1602,17 +1911,17 @@ def _render_thesis_catalysts_tab(
     """Tab 3: Thesis & Catalysts - Human-authored thesis claims, catalyst roadmap, and falsification questions."""
 
     # 1. Active Investment Thesis Claims
-    st.markdown("#### Active investment thesis claims (Human-authored)")
+    st.markdown("#### Thesis claims (Human-authored)")
     if view.thesis_claims.empty:
         st.info("No human-authored thesis claims registered for this entity.")
     else:
         for _, row in view.thesis_claims.iterrows():
             title = _text(row.get("thesis_title")) or _text(row.get("claim_id"))
-            status = _text(row.get("status")).upper() or "DRAFT"
+            status = _text(row.get("status")).upper() or "STATUS UNAVAILABLE"
             claim_text = _text(row.get("claim_text"))
             rule = _text(row.get("invalidation_rule"))
-            reviewed_by = _text(row.get("reviewed_by")) or "Pending human review"
-            reviewed_at = _format_time(row.get("last_reviewed_at_utc"), viewer_timezone) if _text(row.get("last_reviewed_at_utc")) else "Not reviewed"
+            reviewed_by = _text(row.get("reviewed_by")) or "Not recorded"
+            reviewed_at = _format_time(row.get("last_reviewed_at_utc"), viewer_timezone) if _text(row.get("last_reviewed_at_utc")) else "Not recorded"
 
             status_badge_style = "var(--ct-warning)" if status == "DRAFT" else "var(--ct-accent)"
             card_html = (
@@ -1726,7 +2035,7 @@ def render_company_page(
     viewer_timezone: str,
     filters: EventFilters | None = None,
 ) -> CompanyView:
-    """Render 4-tab Tencent T0-T3 fundamental and thesis cockpit, never document bodies."""
+    """Render a four-tab company fundamental and thesis cockpit, never document bodies."""
 
     entity_ids = _filtered_entity_ids(snapshot, filters)
     entity_options = sorted(entity_ids)

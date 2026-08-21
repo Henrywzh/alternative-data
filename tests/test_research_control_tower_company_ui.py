@@ -1,8 +1,8 @@
-"""Deterministic, no-network UI tests for Tencent T0-T3 Company-page cockpit."""
+"""Deterministic, no-network tests for the four-tab Company-page cockpit."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 import hashlib
 import json
 from pathlib import Path
@@ -35,6 +35,7 @@ from control_tower.pages.company import (
     COMPANY_THESIS_QUESTION_COLUMNS,
     COMPANY_VALUATION_COLUMNS,
     CompanyView,
+    _answer_first_summary_lines,
     build_company_view,
     render_company_page,
 )
@@ -261,7 +262,7 @@ def _make_tencent_snapshot() -> ExtendedSnapshot:
     ])
 
     indices = pd.DataFrame([
-        {"index_id": "HSI", "region": "HK", "display_name": "Hang Seng Index", "official_code": "HSI", "official_code_namespace": "HKEX", "official_code_provider": "HSI", "provider_symbol": "^HSI", "provider_symbol_namespace": "yahoo", "provider_symbol_provider": "yfinance", "provider": "yfinance", "currency": "HKD", "active_from": "1969-11-24", "active_to": None, "registry_version": "v1", "source_url": "", "source_or_research_note": ""} 
+        {"index_id": "HSI", "region": "HK", "display_name": "Hang Seng Index", "official_code": "HSI", "official_code_namespace": "HKEX", "official_code_provider": "HSI", "provider_symbol": "^HSI", "provider_symbol_namespace": "yahoo", "provider_symbol_provider": "yfinance", "provider": "yfinance", "currency": "HKD", "active_from": "1969-11-24", "active_to": None, "registry_version": "v1", "source_url": "", "source_or_research_note": ""}
     ])
 
     events = pd.DataFrame([
@@ -459,6 +460,42 @@ def _make_tencent_snapshot() -> ExtendedSnapshot:
             "registry_version": "v1",
         },
     ])
+    actual_template = earnings_actuals.iloc[0].to_dict()
+    for actual_id, metric, value, basis, note in (
+        (
+            "act-tencent-2026q2-fcf",
+            "free_cash_flow",
+            -13_800.0,
+            "reported",
+            "Reported Free Cash Flow in CNY millions",
+        ),
+        (
+            "act-tencent-2026q2-compute-prepayments",
+            "compute_hardware_prepayments",
+            51_400.0,
+            "reported",
+            "Compute hardware prepayments in CNY millions",
+        ),
+        (
+            "act-tencent-2026q2-fcf-ex-prepayments",
+            "free_cash_flow_ex_prepayments",
+            37_600.0,
+            "management_adjusted",
+            "Free Cash Flow excluding compute hardware prepayments in CNY millions",
+        ),
+    ):
+        row = actual_template.copy()
+        row.update(
+            {
+                "actual_id": actual_id,
+                "metric": metric,
+                "reported_value": value,
+                "normalized_value": value,
+                "normalization_note": note,
+                "accounting_basis": basis,
+            }
+        )
+        earnings_actuals.loc[len(earnings_actuals)] = row
 
     corporate_actions = pd.DataFrame([
         {
@@ -818,6 +855,66 @@ def test_company_view_loads_tencent_t0_t3_additive_marts() -> None:
     assert link["review_state"] == "pending_review"
 
 
+def test_answer_first_summary_derives_selected_snapshot_facts() -> None:
+    snapshot = _make_tencent_snapshot()
+    view = build_company_view(snapshot, entity_id="TENCENT")
+
+    summary = "\n".join(_answer_first_summary_lines(view, snapshot))
+
+    assert "Latest fundamentals · 2026Q2" in summary
+    assert "Revenue Total: CNY 204,785 million (IFRS)" in summary
+    assert "Free Cash Flow: CNY -13,800 million (reported)" in summary
+    assert "681,000 shares" in summary
+    assert "HKD 300,451,683.9" in summary
+    assert "Forward Pe: 16.2 (NON_IFRS_MANAGEMENT)" in summary
+    assert "Tencent 3Q2026 Results Window" in summary
+    assert "Thesis registry · 2 claim rows · draft: 2" in summary
+    assert "Evidence lineage · 1 evidence rows" in summary
+    assert "filings:hkexnews" in summary
+
+
+def test_answer_first_summary_has_no_company_fact_fallbacks_when_marts_are_empty() -> None:
+    snapshot = _make_tencent_snapshot()
+    empty_snapshot = replace(
+        snapshot,
+        events=snapshot.events.iloc[0:0].copy(),
+        event_entity_links=snapshot.event_entity_links.iloc[0:0].copy(),
+        event_basket_links=snapshot.event_basket_links.iloc[0:0].copy(),
+        earnings_actuals=snapshot.earnings_actuals.iloc[0:0].copy(),
+        consensus_snapshots=snapshot.consensus_snapshots.iloc[0:0].copy(),
+        corporate_actions=snapshot.corporate_actions.iloc[0:0].copy(),
+        valuation_snapshots=snapshot.valuation_snapshots.iloc[0:0].copy(),
+        thesis_claims=snapshot.thesis_claims.iloc[0:0].copy(),
+        thesis_watch_questions=snapshot.thesis_watch_questions.iloc[0:0].copy(),
+        evidence_items=snapshot.evidence_items.iloc[0:0].copy(),
+        claim_evidence_links=snapshot.claim_evidence_links.iloc[0:0].copy(),
+    )
+    view = build_company_view(empty_snapshot, entity_id="TENCENT")
+
+    summary = "\n".join(_answer_first_summary_lines(view, empty_snapshot))
+
+    assert "Latest fundamentals unavailable" in summary
+    assert "Recent corporate action unavailable" in summary
+    assert "Expectation context unavailable" in summary
+    assert "Valuation context unavailable" in summary
+    assert "Upcoming catalyst unavailable" in summary
+    assert "Thesis registry unavailable" in summary
+    assert "Evidence lineage unavailable" in summary
+    for forbidden in (
+        "2Q2026",
+        "204,785",
+        "75,636",
+        "13,800",
+        "37,600",
+        "51,400",
+        "681,000",
+        "300,451,683",
+        "AI Ad Efficiencies",
+        "Core Gaming & Advertising Compounder",
+    ):
+        assert forbidden not in summary
+
+
 def test_company_view_supports_old_snapshots_safely() -> None:
     """Verify backward compatibility when optional T0-T3 fields are absent."""
     base = _make_tencent_snapshot()
@@ -869,7 +966,7 @@ def test_company_view_supports_old_snapshots_safely() -> None:
 
 
 def test_company_page_renders_four_tabs_cleanly_via_apptest(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """AppTest rendering verification of the 4 tabs and Tencent answer-first cockpit."""
+    """AppTest rendering verification of the four tabs and row-derived summary."""
     from streamlit.testing.v1 import AppTest
     import streamlit as st
 
@@ -899,11 +996,12 @@ def test_company_page_renders_four_tabs_cleanly_via_apptest(tmp_path: Path, monk
     assert "Thesis & Catalysts" in text
     assert "Evidence" in text
 
-    # 3. Answer-first executive summary
-    assert "Executive Summary & Recent Changes · Tencent Holdings (0700.HK)" in text
-    assert "2Q2026 Official Results" in text
-    assert "RMB 204.785B" in text
-    assert "HKD 300,451,683.90" in text
+    # 3. Answer-first executive summary from bundle rows
+    assert "Executive summary &amp; recent changes · Tencent Holdings · 0700.HK" in text
+    assert "Latest fundamentals · 2026Q2" in text
+    assert "Revenue Total: CNY 204,785 million (IFRS)" in text
+    assert "Free Cash Flow: CNY -13,800 million (reported)" in text
+    assert "Recent corporate action unavailable" in text
 
     # 4. Market quote display
     assert "HKD 441.20" in text
@@ -915,12 +1013,11 @@ def test_company_page_renders_four_tabs_cleanly_via_apptest(tmp_path: Path, monk
 
     # 6. Fundamentals section
     assert "Segment disclosures & core operations" in text
-    assert "2Q2026 AI Compute Prepayment & Free Cash Flow Bridge" in text
-    assert "Normalized FCF ex-Prepayments:" in text
-    assert "RMB 37.6B" in text
+    assert "Profitability & Free Cash Flow trajectory" in text
+    assert "Reported and normalized values remain distinct" in text
 
     # 7. Thesis & Catalysts section
-    assert "Active investment thesis claims (Human-authored)" in text
+    assert "Thesis claims (Human-authored)" in text
     assert "Upcoming catalysts & event roadmap" in text
     assert "Operational watch questions & falsification criteria" in text
 
