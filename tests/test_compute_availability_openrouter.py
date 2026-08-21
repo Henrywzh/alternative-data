@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pandas as pd
+
 from compute_availability_data.models import DatasetRecord, Snapshot
 from compute_availability_data.sources.openrouter import OpenRouterSource
 from compute_availability_data.storage import StorageManager
@@ -340,3 +342,94 @@ def test_current_catalog_rejects_partial_response_and_preserves_previous_file(tm
     after = storage.load_current_catalog()
     assert len(after) == len(before) == 400
     assert set(after["model_id"]) == set(before["model_id"])
+
+
+def _catalog_records(
+    run_id: str,
+    snapshot_ts: str,
+    *,
+    count: int = 400,
+    non_text_output: int = 0,
+) -> list[DatasetRecord]:
+    records = []
+    for index in range(count):
+        modalities = ["image"] if index < non_text_output else ["text"]
+        records.append(
+            DatasetRecord(
+                dataset_id="raw_openrouter_models",
+                source_url="fixture://models",
+                source_run_id=run_id,
+                scraped_at=snapshot_ts,
+                snapshot_ts=snapshot_ts,
+                model_id=f"provider-{index % 20}/model-{index}",
+                canonical_slug=f"provider-{index % 20}/model-{index}",
+                provider_prefix=f"provider-{index % 20}",
+                output_modalities_json=json.dumps(modalities),
+            )
+        )
+    return records
+
+
+def test_catalog_size_counts_the_full_response_not_the_change_filtered_rows(tmp_path: Path) -> None:
+    storage = StorageManager(tmp_path)
+
+    storage.upsert_dataset("raw_openrouter_models", _catalog_records("run-1", "2026-08-17T00:00:00Z"))
+    # Identical catalog: every row is change-filtered out of the history, but
+    # the catalog is still 400 models. This is the exact failure the sidecar
+    # exists to prevent -- counting history rows would report 0 here.
+    storage.upsert_dataset("raw_openrouter_models", _catalog_records("run-2", "2026-08-18T00:00:00Z"))
+
+    sizes = storage.load_catalog_size()
+    assert list(sizes["snapshot_ts"]) == ["2026-08-17T00:00:00Z", "2026-08-18T00:00:00Z"]
+    assert list(sizes["model_count_all"]) == [400, 400]
+    assert set(sizes["capture_source"]) == {"live_api"}
+    assert list(sizes["provider_count"]) == [20, 20]
+
+    history = storage.load_dataset("raw_openrouter_models")
+    assert history["snapshot_ts"].nunique() == 1
+
+
+def test_catalog_size_separates_text_output_models_from_the_full_catalog(tmp_path: Path) -> None:
+    storage = StorageManager(tmp_path)
+    storage.upsert_dataset(
+        "raw_openrouter_models",
+        _catalog_records("run-1", "2026-08-18T00:00:00Z", count=400, non_text_output=60),
+    )
+
+    row = storage.load_catalog_size().iloc[0]
+    assert row["model_count_all"] == 400
+    # The archived captures only ever saw the text-output subset, so that is
+    # the basis the two capture sources can be compared on.
+    assert row["model_count_text_output"] == 340
+
+
+def test_catalog_size_records_archived_captures_on_the_text_output_basis(tmp_path: Path) -> None:
+    storage = StorageManager(tmp_path)
+    archived = pd.DataFrame(
+        [record.to_dict() for record in _catalog_records("wayback-20260101000000-abcd1234", "2026-01-01T00:00:00Z", count=220)]
+    )
+
+    storage.record_catalog_size(archived, capture_source="wayback_archive")
+
+    row = storage.load_catalog_size().iloc[0]
+    assert row["capture_source"] == "wayback_archive"
+    assert row["model_count_text_output"] == 220
+    # No all-modality figure exists for a capture of the default response.
+    assert pd.isna(row["model_count_all"])
+
+
+def test_catalog_size_is_not_written_when_the_catalog_is_rejected(tmp_path: Path) -> None:
+    storage = StorageManager(tmp_path)
+    storage.upsert_dataset("raw_openrouter_models", _catalog_records("run-1", "2026-08-17T00:00:00Z"))
+
+    collapsed = _catalog_records("run-2", "2026-08-18T00:00:00Z", count=5)
+    try:
+        storage.upsert_dataset("raw_openrouter_models", collapsed)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("collapsed catalog response must be rejected")
+
+    sizes = storage.load_catalog_size()
+    assert list(sizes["snapshot_ts"]) == ["2026-08-17T00:00:00Z"]
+    assert sizes.iloc[0]["model_count_all"] == 400
