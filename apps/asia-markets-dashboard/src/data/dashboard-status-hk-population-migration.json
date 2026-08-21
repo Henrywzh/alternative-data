@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-20T07:06:41.943214Z",
+  "generated_at": "2026-08-21T07:07:57.066153Z",
   "snapshot_id": "94caf13b92032af0",
   "data_as_of": "2026-08-19",
   "overall_status": "Healthy",
@@ -67,5 +67,5 @@
       "notes": "Monthly visitor arrivals by nationality/region since 2004, a geographic companion/cross-check to ImmD's cross-border passenger data."
     }
   ],
-  "attachment_filename": "hk-population-migration-dashboard-2026-08-20.html"
+  "attachment_filename": "hk-population-migration-dashboard-2026-08-21.html"
 }
