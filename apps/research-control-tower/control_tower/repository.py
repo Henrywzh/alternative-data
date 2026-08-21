@@ -16,6 +16,7 @@ from .config import (
     ARTIFACT_NAMES,
     ArtifactResolutionError,
     EVENT_OPTIONAL_COLUMNS,
+    LEGACY_EARNINGS_ACTUALS_COLUMNS,
     OPTIONAL_ARTIFACT_NAMES,
     REQUIRED_ARTIFACT_NAMES,
     SCHEMA_VERSION,
@@ -289,12 +290,20 @@ def _validate_parquet_schema(name: str, table: pa.Table) -> None:
             f"expected columns {expected!r} with optional trailing execution "
             f"columns {list(SOURCE_HEALTH_EXECUTION_COLUMNS)!r}, got {actual!r}"
         )
+    elif name == "earnings_actuals.parquet" and tuple(actual) not in {
+        tuple(expected),
+        LEGACY_EARNINGS_ACTUALS_COLUMNS,
+    }:
+        raise ValueError(
+            f"expected columns {expected!r} or legacy columns "
+            f"{list(LEGACY_EARNINGS_ACTUALS_COLUMNS)!r}, got {actual!r}"
+        )
     elif name == "macro_observations.parquet":
         without_vintage = [column for column in actual if column not in ("realtime_start", "realtime_end")]
         expected_base = [column for column in expected if column not in ("realtime_start", "realtime_end")]
         if without_vintage != expected_base:
             raise ValueError(f"expected columns {expected!r}, got {actual!r}")
-    elif name != "source_health.parquet" and actual != expected:
+    elif name not in {"source_health.parquet", "earnings_actuals.parquet"} and actual != expected:
         raise ValueError(f"expected columns {expected!r}, got {actual!r}")
     types = _expected_types(name)
     if "importance" in actual:
@@ -313,7 +322,9 @@ def _read_frame(name: str, path: Path) -> pd.DataFrame:
     _validate_parquet_schema(name, table)
     frame = table.to_pandas()
     expected = list(ARTIFACT_COLUMNS[name])
-    if name == "events.parquet" and "importance" in frame.columns:
+    if name == "earnings_actuals.parquet" and tuple(frame.columns) == LEGACY_EARNINGS_ACTUALS_COLUMNS:
+        expected = list(LEGACY_EARNINGS_ACTUALS_COLUMNS)
+    elif name == "events.parquet" and "importance" in frame.columns:
         expected = list(frame.columns)
     elif name == "source_health.parquet" and set(
         SOURCE_HEALTH_EXECUTION_COLUMNS
@@ -616,35 +627,6 @@ def _enrich_events(
     ) if column not in result.columns]])
 
 
-def _health_reason_row(name: str, reason: str) -> dict[str, Any]:
-    return {
-        "source_id": f"artifact:{Path(name).stem}",
-        "input_path": name,
-        "source_kind": "artifact",
-        "status": "unavailable" if reason in {"missing", "corrupt", "schema_mismatch"} else "degraded",
-        "required": False,
-        "row_count": 0,
-        "query_attempted": False,
-        "execution_status": "",
-        "completed_at": pd.NaT,
-        "first_observation_at": pd.NaT,
-        "latest_observation_at": pd.NaT,
-        "source_latest_at": pd.NaT,
-        "retrieved_at_utc": pd.NaT,
-        "cadence": "",
-        "source_url": "",
-        "pit_class": "",
-        "source_license_class": "",
-        "entitlement_status": "",
-        "entitlement_evidence": "",
-        "entitlement_ref": "",
-        "input_sha256": "",
-        "schema_version": SCHEMA_VERSION,
-        "missing_geographies": "",
-        "detail": f"artifact={name}; reason={reason}",
-    }
-
-
 class ControlTowerRepository:
     """Load one explicit local Control Tower artifact root.
 
@@ -693,7 +675,6 @@ class ControlTowerRepository:
         loaded: dict[str, pd.DataFrame] = {}
         missing_optional: set[str] = set()
         degraded_reasons: dict[str, str] = {}
-        synthetic_health: list[dict[str, Any]] = []
 
         for name in ARTIFACT_NAMES:
             if name == "build_manifest.json":
@@ -709,7 +690,6 @@ class ControlTowerRepository:
                 missing_optional.add(stem)
                 degraded_reasons[stem] = "schema_mismatch"
                 loaded[name] = _empty_frame(name)
-                synthetic_health.append(_health_reason_row(name, "schema_mismatch"))
                 continue
             if not path.is_file():
                 if required:
@@ -719,14 +699,12 @@ class ControlTowerRepository:
                 reason = "missing" if record.get("status") in {"degraded", "unavailable"} else "manifest_mismatch"
                 degraded_reasons[stem] = reason
                 loaded[name] = _empty_frame(name)
-                synthetic_health.append(_health_reason_row(name, reason))
                 continue
             if not required and record.get("status") == "unavailable":
                 stem = Path(name).stem
                 missing_optional.add(stem)
                 degraded_reasons[stem] = "unavailable"
                 loaded[name] = _empty_frame(name)
-                synthetic_health.append(_health_reason_row(name, "unavailable"))
                 continue
             if not required and record.get("status") == "degraded":
                 # A degraded optional artifact holds real rows that passed
@@ -740,7 +718,6 @@ class ControlTowerRepository:
                 stem = Path(name).stem
                 missing_optional.add(stem)
                 degraded_reasons[stem] = "degraded"
-                synthetic_health.append(_health_reason_row(name, "degraded"))
                 # fall through to the normal integrity-checked load
             try:
                 expected_hash = record.get("sha256")
@@ -768,7 +745,6 @@ class ControlTowerRepository:
                 missing_optional.add(stem)
                 degraded_reasons[stem] = reason
                 loaded[name] = _empty_frame(name)
-                synthetic_health.append(_health_reason_row(name, reason))
                 continue
             loaded[name] = frame
 
@@ -806,8 +782,6 @@ class ControlTowerRepository:
         )
 
         source_health = loaded["source_health.parquet"].copy(deep=True)
-        if synthetic_health:
-            source_health = pd.concat([source_health, pd.DataFrame(synthetic_health)], ignore_index=True)
 
         built_at = _timestamp(manifest["built_at_utc"], "built_at_utc")
         as_of = _timestamp(manifest["as_of_utc"], "as_of_utc")

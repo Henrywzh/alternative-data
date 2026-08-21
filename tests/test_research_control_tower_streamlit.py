@@ -1210,6 +1210,9 @@ def _production_task7_generation_or_skip() -> Path:
     from control_tower.config import (
         ARTIFACT_COLUMNS,
         DATA_ARTIFACT_NAMES,
+        LEGACY_EARNINGS_ACTUALS_COLUMNS,
+        LEGACY_DATA_ARTIFACT_NAMES,
+        LEGACY_GENERATION_DATA_ARTIFACT_NAMES,
         resolve_artifact_root,
     )
 
@@ -1230,12 +1233,30 @@ def _production_task7_generation_or_skip() -> Path:
         PRODUCTION_TASK7_PUBLICATION / "generations"
     ).resolve(strict=True)
 
-    for name in DATA_ARTIFACT_NAMES:
-        if not (resolution.artifact_root / name).exists():
-            assert name == "quote_snapshots.parquet"
-            continue
+    actual_data_artifact_names = {
+        name
+        for name in DATA_ARTIFACT_NAMES
+        if (resolution.artifact_root / name).exists()
+    }
+    accepted_artifact_sets = (
+        set(DATA_ARTIFACT_NAMES),
+        set(LEGACY_DATA_ARTIFACT_NAMES),
+        set(LEGACY_GENERATION_DATA_ARTIFACT_NAMES),
+    )
+    assert actual_data_artifact_names in accepted_artifact_sets, (
+        f"CURRENT publication {resolution.current_target} has an unsupported "
+        f"artifact set: {sorted(actual_data_artifact_names)!r}"
+    )
+
+    for name in sorted(actual_data_artifact_names):
         actual_columns = tuple(pq.read_schema(resolution.artifact_root / name).names)
-        assert actual_columns in (ARTIFACT_COLUMNS[name], ARTIFACT_COLUMNS[name][:20] + (ARTIFACT_COLUMNS[name][-1],)), (
+        accepted_columns = {
+            ARTIFACT_COLUMNS[name],
+            ARTIFACT_COLUMNS[name][:20] + (ARTIFACT_COLUMNS[name][-1],),
+        }
+        if name == "earnings_actuals.parquet":
+            accepted_columns.add(LEGACY_EARNINGS_ACTUALS_COLUMNS)
+        assert actual_columns in accepted_columns, (
             f"CURRENT publication {resolution.current_target} has non-final "
             f"{name} schema: {actual_columns!r}"
         )
