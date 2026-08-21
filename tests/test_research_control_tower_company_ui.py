@@ -1239,14 +1239,14 @@ def test_company_heading_anchors_update_dynamically_without_stale_entity_ids(tmp
 
 def test_event_relation_precedence_explicit_links_isolate_company_events() -> None:
     snapshot = _make_tencent_snapshot()
-    
+
     # 1. Tencent has explicit link -> appears in Tencent view
     view_tencent = build_company_view(snapshot, entity_id="TENCENT")
     tencent_event_ids = set(view_tencent.events["event_id"])
     assert "EV_TENCENT_2Q2026_RESULTS" in tencent_event_ids
     assert "EV_TENCENT_3Q2026_WINDOW" in tencent_event_ids
     assert "EV_BASKET_ONLY_MACRO" in tencent_event_ids
-    
+
     # 2. ByteDance is in same basket RESEARCH_STAGE_1_CHINA_INTERNET, but not an explicit target
     # -> Must NOT see Tencent-specific events, but DOES see basket-only events
     view_bytedance = build_company_view(snapshot, entity_id="BYTEDANCE")

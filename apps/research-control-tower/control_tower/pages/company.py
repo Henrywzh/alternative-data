@@ -419,7 +419,7 @@ def _event_relation(snapshot: ControlTowerSnapshot, event: Any, entity_id: str, 
     event_id = _text(event.get("event_id"))
     entity_links = snapshot.event_entity_links.loc[snapshot.event_entity_links["event_id"].astype("string").eq(event_id)] if not snapshot.event_entity_links.empty else snapshot.event_entity_links
     basket_links = snapshot.event_basket_links.loc[snapshot.event_basket_links["event_id"].astype("string").eq(event_id)] if not snapshot.event_basket_links.empty else snapshot.event_basket_links
-    
+
     # 1. Check for active explicit entity/listing links for this event
     has_active_explicit_links = False
     roles: set[str] = set()
