@@ -9,6 +9,7 @@ import pytest
 from src.research_control_tower.events import load_event_bundle, validate_event_bundle
 from src.research_control_tower.registries import load_registry_bundle
 from src.research_control_tower.thesis_seed import (
+    PIT_CLASSES,
     ThesisSeedBundle,
     count_active_conflicts,
     get_claim_evidence,
@@ -67,6 +68,22 @@ def test_live_thesis_seed_bundle_loads_cleanly(thesis_bundle: ThesisSeedBundle):
     assert "evidence_class" in thesis_bundle.evidence_items.columns
     assert "pit_class" in thesis_bundle.evidence_items.columns
     assert "source_license_class" in thesis_bundle.evidence_items.columns
+    assert set(thesis_bundle.evidence_items.columns) == {
+        "evidence_id",
+        "entity_id",
+        "source_id",
+        "evidence_ref",
+        "source_type",
+        "source_url",
+        "evidence_class",
+        "pit_class",
+        "source_license_class",
+        "published_at",
+        "summary_text",
+        "observed_at_utc",
+        "content_hash",
+        "registry_version",
+    }
 
     # Check 1Q26 and 2Q26 evidence accuracy
     ev_1q = thesis_bundle.evidence_items[thesis_bundle.evidence_items["evidence_id"] == "EVID_TENCENT_1Q2026_RESULTS_FILING"]
@@ -80,6 +97,69 @@ def test_live_thesis_seed_bundle_loads_cleanly(thesis_bundle: ThesisSeedBundle):
     # All review states are pending_review and conflict_hint is false
     assert (thesis_bundle.claim_evidence_links["review_state"] == "pending_review").all()
     assert not thesis_bundle.claim_evidence_links["conflict_hint"].fillna(False).any()
+
+
+def test_pit_vocabulary_matches_approved_flat_contract():
+    assert PIT_CLASSES == {
+        "snapshot_from_live_source",
+        "snapshot_from_delayed_source",
+        "repository_captured",
+        "true_pit",
+        "dated_public_broker_report",
+        "reconstructed_sparse",
+        "current_vintage",
+        "not_pit",
+    }
+
+
+def test_evidence_rows_match_current_official_filings_metadata(
+    thesis_bundle: ThesisSeedBundle,
+):
+    evidence = thesis_bundle.evidence_items.set_index("evidence_id")
+    observed_at = pd.Timestamp("2026-08-18T15:27:59.560743Z")
+    expected = {
+        "EVID_TENCENT_2Q2026_RESULTS_FILING": {
+            "evidence_ref": "hkexnews:12280990",
+            "published_at": pd.Timestamp("2026-08-12T08:31:00Z"),
+            "source_url": "https://www1.hkexnews.hk/listedco/listconews/sehk/2026/0812/2026081200296.pdf",
+        },
+        "EVID_TENCENT_1Q2026_RESULTS_FILING": {
+            "evidence_ref": "hkexnews:12157226",
+            "published_at": pd.Timestamp("2026-05-13T08:31:00Z"),
+            "source_url": "https://www1.hkexnews.hk/listedco/listconews/sehk/2026/0513/2026051300334.pdf",
+        },
+        "EVID_TENCENT_FY2025_ANNUAL_RESULTS": {
+            "evidence_ref": "hkexnews:12056832",
+            "published_at": pd.Timestamp("2026-03-18T08:30:00Z"),
+            "source_url": "https://www1.hkexnews.hk/listedco/listconews/sehk/2026/0318/2026031800388.pdf",
+        },
+        "EVID_TENCENT_NDD_BUYBACKS_AUG2026": {
+            "evidence_ref": "hkexnews:12288789",
+            "published_at": pd.Timestamp("2026-08-18T09:48:00Z"),
+            "source_url": "https://www1.hkexnews.hk/listedco/listconews/sehk/2026/0818/2026081801120.pdf",
+        },
+    }
+
+    for evidence_id, row_expected in expected.items():
+        row = evidence.loc[evidence_id]
+        assert row["source_id"] == "hkexnews"
+        assert row["evidence_ref"] == row_expected["evidence_ref"]
+        assert row["source_url"] == row_expected["source_url"]
+        assert row["published_at"] == row_expected["published_at"]
+        assert row["observed_at_utc"] == observed_at
+        assert row["pit_class"] == "snapshot_from_live_source"
+        assert row["source_license_class"] == "official_public_metadata"
+        assert row["content_hash"] == ""
+
+    ndd_summary = evidence.loc[
+        "EVID_TENCENT_NDD_BUYBACKS_AUG2026", "summary_text"
+    ]
+    assert "681,000 shares" in ndd_summary
+    assert "HKD445.0" in ndd_summary
+    assert "HKD437.8" in ndd_summary
+    assert "HKD300,451,683.9" in ndd_summary
+    assert "2.6M" not in ndd_summary
+    assert "1.2B" not in ndd_summary
 
 
 def test_live_thesis_seed_bundle_validation_passes(
@@ -229,6 +309,46 @@ def test_validation_rejects_evidence_temporal_violations(
     assert any(issue.code == "observed_at_utc_in_future" for issue in issues2)
 
 
+def test_validation_rejects_unsupported_pit_class(
+    thesis_bundle: ThesisSeedBundle,
+    registries,
+    events,
+):
+    broken_evidence = thesis_bundle.evidence_items.copy()
+    broken_evidence.loc[0, "pit_class"] = "point_in_time"
+    broken_bundle = replace(thesis_bundle, evidence_items=broken_evidence)
+
+    issues = validate_thesis_seed_bundle(
+        broken_bundle,
+        registries,
+        events,
+        pd.Timestamp("2026-08-21T00:00:00Z"),
+    )
+
+    assert any(issue.code == "invalid_pit_class" for issue in issues)
+
+
+def test_validation_rejects_mismatched_source_lineage(
+    thesis_bundle: ThesisSeedBundle,
+    registries,
+    events,
+):
+    broken_evidence = thesis_bundle.evidence_items.copy()
+    broken_evidence.loc[0, "evidence_ref"] = "tencent_ir:unregistered"
+    broken_evidence.loc[0, "source_url"] = "https://www.tencent.com/unregistered.pdf"
+    broken_bundle = replace(thesis_bundle, evidence_items=broken_evidence)
+
+    issues = validate_thesis_seed_bundle(
+        broken_bundle,
+        registries,
+        events,
+        pd.Timestamp("2026-08-21T00:00:00Z"),
+    )
+
+    assert any(issue.code == "invalid_evidence_ref_for_source" for issue in issues)
+    assert any(issue.code == "invalid_source_url_for_source" for issue in issues)
+
+
 def test_merge_event_bundles_fails_closed_on_duplicate_keys(config_root: Path, events):
     tencent_events = load_tencent_event_seed_bundle(config_root)
 
@@ -282,3 +402,32 @@ def test_tencent_event_seed_bundle_loads_and_validates(config_root: Path, regist
     )
     question_event_ids = set(tencent_events.event_watch_questions["event_id"])
     assert checkpoint_ids <= question_event_ids
+
+    hard_day = tencent_events.events.loc[
+        tencent_events.events["event_id"].eq(
+            "TENCENT_2Q_2026_RESULTS_OBSERVATION"
+        )
+    ].iloc[0]
+    assert hard_day["date_precision"] == "day"
+    assert pd.isna(hard_day["ends_at"])
+    assert hard_day["source_id"] == "hkexnews"
+    assert hard_day["source_published_at"] == pd.Timestamp(
+        "2026-08-12T08:31:00Z"
+    )
+    assert hard_day["first_observed_at"] == pd.Timestamp(
+        "2026-08-18T15:27:59.560743Z"
+    )
+    assert hard_day["last_verified_at"] == pd.Timestamp(
+        "2026-08-18T15:27:59.560743Z"
+    )
+    assert hard_day["source_url"] == (
+        "https://www1.hkexnews.hk/listedco/listconews/sehk/"
+        "2026/0812/2026081200296.pdf"
+    )
+
+    event_question_text = " ".join(
+        tencent_events.event_watch_questions["question"].astype("string")
+    )
+    assert "RMB65" not in event_question_text
+    assert ">=15%" not in event_question_text
+    assert "55%" not in event_question_text
