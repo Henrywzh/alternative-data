@@ -1,7 +1,7 @@
 # Research Control Tower — Tencent (0700.HK / TCEHY) T0–T3 Vertical Slice Design Spec
 
 **Date:** 2026-08-21
-**Status:** Approved Design (Architecture boundaries, source hierarchy, and design principles explicitly approved by user in session discussion; implementation gated on written spec review per the plan)
+**Status:** Approved Design; T0–T3 implemented and integrity-reviewed in the published vertical-slice contract
 **Repository:** `alternative-data`
 **Target Entities:** `TENCENT` (`0700.HK` primary listing; `TCEHY` US OTC depositary receipt — depositary role/ratio/type gated and subject to official verification prior to active trading enablement)
 **Related Entities:** `BYTEDANCE` (private peer/competitor for benchmark comparison)
@@ -253,6 +253,14 @@ Maintains full isolation from third-party consensus.
 * `current_value` (float64), `prior_value` (float64), `revision_value` (float64), `revision_pct` (float64).
 * `lookback_days` (int32): Dynamic calendar day delta between snapshot dates.
 * `pit_class` (string): `"repository_captured"` (valid for momentum signals) or `"reconstructed_sparse"` (cold-start display only).
+
+Publication FK semantics are deliberately asymmetric for bounded exports:
+`snapshot_id` must resolve to a snapshot in the current published consensus
+mart. A nonblank `prior_snapshot_id` is an FK into the historical consensus
+store and may legitimately fall outside the bounded publication. If that
+prior ID is explicitly rejected by the current build, the revision is
+dropped. A reconstructed cold-start revision may leave `prior_snapshot_id`
+blank.
 
 ---
 

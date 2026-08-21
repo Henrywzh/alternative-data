@@ -1390,6 +1390,9 @@ _OPTIONAL_COLUMNS = {
         "file_date",
         "filing_url",
         "fetched_at",
+        "related_entity_ids",
+        "related_listing_ids",
+        "related_basket_ids",
         "filing_content",
         "body_text",
     },
@@ -1487,6 +1490,11 @@ _REQUIRED_OPTIONAL_COLUMNS = {
 _REQUIRED_OPTIONAL_COLUMNS[NEWS_SCHEMA_ID] -= {"description", "body_text"}
 _REQUIRED_OPTIONAL_COLUMNS[NEWS_SCHEMA_ID] -= {"content_hash"}
 _REQUIRED_OPTIONAL_COLUMNS[FILING_SCHEMA_ID] -= {"filing_content", "body_text"}
+_REQUIRED_OPTIONAL_COLUMNS[FILING_SCHEMA_ID] -= {
+    "related_entity_ids",
+    "related_listing_ids",
+    "related_basket_ids",
+}
 _REQUIRED_OPTIONAL_COLUMNS[FRED_OBSERVATIONS_SCHEMA_ID] -= {"realtime_start", "realtime_end"}
 
 
@@ -2979,8 +2987,15 @@ def _unresolved_geographies(registries: Any) -> str:
     return ",".join(sorted({str(value) for value in countries if not _is_blank(value)}))
 
 
-def _explicit_related_ids(row: Mapping[str, Any], registries: Any) -> tuple[list[str], list[str], list[str]]:
-    listing_by_ticker, entity_by_listing, baskets_by_entity = _verified_crosswalk(registries)
+def _explicit_related_ids(
+    row: Mapping[str, Any],
+    registries: Any,
+    *,
+    crosswalk: tuple[dict[str, str], dict[str, str], dict[str, set[str]]] | None = None,
+) -> tuple[list[str], list[str], list[str]]:
+    listing_by_ticker, entity_by_listing, baskets_by_entity = (
+        crosswalk if crosswalk is not None else _verified_crosswalk(registries)
+    )
     mapped_entities = set(entity_by_listing.values())
     listing_ids: set[str] = set()
     entity_ids: set[str] = set()
@@ -3153,6 +3168,7 @@ def _filing_rows(
 
     conflicts = conflict_log if conflict_log is not None else []
     grouped: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    crosswalk = _verified_crosswalk(registries)
     for position, (_, item) in enumerate(frame.iterrows()):
         accession = _text(item.get("accession_no"))
         filing_url = _text(item.get("filing_url"))
@@ -3164,7 +3180,11 @@ def _filing_rows(
             continue
         company = _text(item.get("company_name"))
         form = _text(item.get("form"))
-        entity_ids, listing_ids, basket_ids = _explicit_related_ids(item, registries)
+        entity_ids, listing_ids, basket_ids = _explicit_related_ids(
+            item,
+            registries,
+            crosswalk=crosswalk,
+        )
         candidate = {
             "document_id": _filing_document_id(descriptor.source_id, accession, filing_url),
             "document_type": "filing",

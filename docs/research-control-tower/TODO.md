@@ -3,7 +3,14 @@
 > Tencent T0–T3 实施期间的 Backlog。T0–T3 本身以
 > `docs/superpowers/specs/2026-08-21-research-control-tower-tencent-t0-t3-design.md` 与
 > `docs/superpowers/plans/2026-08-21-tencent-control-tower-t0-t3.md` 为准。
-> 计划状态：DESIGN REVIEW GATE — 用户书面 spec review 通过前不实施。
+> 计划状态：T0–T3 已实施并完成 integrity review；当前 `CURRENT` 指向完整
+> 的 Tencent vertical-slice generation。
+
+## T0–T3 已完成
+
+- [x] T0–T3 vertical slice、统一 source wiring 与 fail-closed publication contract 已实施并审查。
+- [x] Macro vintage/capture identity、SEC physical-document identity、bounded consensus prior FK 已加入 focused tests。
+- [x] `PROJECT_STATUS.md`、`DATA_CATALOG.md` 与当前 generation/counts 已同步。
 
 ## T4+（不阻塞 T0–T3 完成）
 
@@ -18,10 +25,8 @@
 - [ ] 新闻层接线：Finnhub/Marketaux/FMP key 就绪后启用（Batch 5 代码已合）
 - [ ] Stage 1.5（Cathay/MTR/SHKP/Midland）复用同一管线解锁
 - [ ] 部署前 licensing/privacy 审计 + Streamlit Cloud 灰度
-- [ ] 文档同步：PROJECT_STATUS / DATA_CATALOG / REPO_BRIDGE 更新
 
 ## Known debt（实现过程中顺手修）
 
 - [ ] quote_snapshots SLA 应感知 latency_class（delayed 不适用 5 分钟阈值）
 - [ ] price_bars 5y vendor replay 的 pit_class 语义（建议 vendor_historical_replay）
-- [ ] PROJECT_STATUS RCT 段已过时（仍写 08-14 generation、consensus typed-empty）
