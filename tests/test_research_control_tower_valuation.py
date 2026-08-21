@@ -238,6 +238,51 @@ def test_provider_unverified_consensus_is_typed_empty_and_never_valued() -> None
     )
 
 
+def test_direct_valuation_collapses_exact_duplicate_consensus_but_rejects_divergence() -> None:
+    consensus = _consensus()
+    exact = compute_tencent_valuation_snapshots(
+        pd.DataFrame([_quote()]),
+        pd.DataFrame([consensus, dict(consensus)]),
+        consensus_health_df=_consensus_health(),
+        fx_rates_df=_fx_rows(),
+        as_of_utc=AS_OF,
+        fiscal_year=2026,
+    )
+    assert len(exact) == 1
+    assert exact.iloc[0]["denominator_ref"] == consensus["snapshot_id"]
+
+    divergent = dict(consensus)
+    divergent["value"] = 31.0
+    rejected = compute_tencent_valuation_snapshots(
+        pd.DataFrame([_quote()]),
+        pd.DataFrame([consensus, divergent]),
+        consensus_health_df=_consensus_health(),
+        fx_rates_df=_fx_rows(),
+        as_of_utc=AS_OF,
+        fiscal_year=2026,
+    )
+    assert rejected.empty
+    assert list(rejected.columns) == VALUATION_SNAPSHOTS_COLUMNS
+
+    irrelevant = _consensus(
+        snapshot_id="irrelevant-2027",
+        fiscal_year=2027,
+        value=40.0,
+    )
+    irrelevant_divergent = dict(irrelevant)
+    irrelevant_divergent["value"] = 41.0
+    unaffected = compute_tencent_valuation_snapshots(
+        pd.DataFrame([_quote()]),
+        pd.DataFrame([consensus, irrelevant, irrelevant_divergent]),
+        consensus_health_df=_consensus_health(),
+        fx_rates_df=_fx_rows(),
+        as_of_utc=AS_OF,
+        fiscal_year=2026,
+    )
+    assert len(unaffected) == 1
+    assert unaffected.iloc[0]["denominator_ref"] == consensus["snapshot_id"]
+
+
 def test_selection_uses_fiscal_mapping_and_statistic_not_horizon() -> None:
     consensus = pd.DataFrame(
         [

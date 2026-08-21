@@ -3893,6 +3893,54 @@ def _deduplicate_consensus_snapshots(
     return clean, frozenset(rejected_ids), collapsed_rows, blank_id_rows
 
 
+def _deduplicate_consensus_revisions(
+    frame: pd.DataFrame,
+) -> tuple[pd.DataFrame, frozenset[str], int, int]:
+    """Enforce the consensus revision primary-key contract.
+
+    Repeated ``revision_id`` rows collapse only when every published payload
+    field is semantically equal. Divergent rows sharing an ID are all
+    rejected, and blank IDs are rejected without inventing replacements.
+
+    Returns ``(clean_frame, rejected_ids, collapsed_rows, blank_id_rows)``.
+    """
+
+    if frame is None or frame.empty:
+        return _task3_empty(TASK3_REVISION_COLUMNS), frozenset(), 0, 0
+
+    working = frame[TASK3_REVISION_COLUMNS].copy().reset_index(drop=True)
+    grouped: dict[str, list[int]] = {}
+    blank_id_rows = 0
+    for index, row in working.iterrows():
+        revision_id = _text(row.get("revision_id"))
+        if not revision_id:
+            blank_id_rows += 1
+            continue
+        grouped.setdefault(revision_id, []).append(index)
+
+    keep_indexes: list[int] = []
+    rejected_ids: set[str] = set()
+    collapsed_rows = 0
+    for revision_id, indexes in grouped.items():
+        first = working.iloc[indexes[0]].to_dict()
+        divergent = any(
+            _full_payload_mismatches(
+                first,
+                working.iloc[index].to_dict(),
+                TASK3_REVISION_COLUMNS,
+            )
+            for index in indexes[1:]
+        )
+        if divergent:
+            rejected_ids.add(revision_id)
+            continue
+        keep_indexes.append(indexes[0])
+        collapsed_rows += len(indexes) - 1
+
+    clean = working.iloc[keep_indexes].reset_index(drop=True)
+    return clean, frozenset(rejected_ids), collapsed_rows, blank_id_rows
+
+
 def _drop_orphaned_consensus_revisions(
     revisions: pd.DataFrame,
     *,
@@ -4019,6 +4067,10 @@ def _build_consensus(
         states.append(state)
         degraded.append("consensus_export")
         return _task3_empty(TASK3_SNAPSHOT_COLUMNS), _task3_empty(TASK3_REVISION_COLUMNS), states, degraded, fingerprints
+    snapshot_ids_by_row_index = {
+        index: _text(value)
+        for index, value in snapshots["snapshot_id"].items()
+    }
     snapshots, snapshot_rejected = filter_listing_scoped_rows(
         snapshots,
         registries.listings,
@@ -4030,6 +4082,13 @@ def _build_consensus(
         registries.listings,
         config.as_of_utc,
         preserve_entity_only=True,
+    )
+    listing_rejected_snapshot_ids = frozenset(
+        snapshot_id
+        for item in snapshot_rejected
+        if (
+            snapshot_id := snapshot_ids_by_row_index.get(item.get("row_index"), "")
+        )
     )
     listing_rejections = [*snapshot_rejected, *revision_rejected]
     if listing_rejections:
@@ -4069,21 +4128,21 @@ def _build_consensus(
     )
     if listing_detail:
         state.detail = f"{state.detail}; {listing_detail}"
-    snapshots, rejected_snapshot_ids, collapsed_rows, blank_id_rows = (
+    snapshots, duplicate_rejected_snapshot_ids, collapsed_rows, blank_id_rows = (
         _deduplicate_consensus_snapshots(snapshots)
     )
     if collapsed_rows:
         state.detail = (
             f"{state.detail}; " if state.detail else ""
         ) + f"duplicate_snapshot_rows_collapsed={collapsed_rows}"
-    if rejected_snapshot_ids:
+    if duplicate_rejected_snapshot_ids:
         _append_state_error(
             state,
             code="duplicate_snapshot_id_divergent",
             message=(
-                f"rejected all rows for {len(rejected_snapshot_ids)} divergent "
+                f"rejected all rows for {len(duplicate_rejected_snapshot_ids)} divergent "
                 "snapshot_id value(s): "
-                + ",".join(sorted(rejected_snapshot_ids)[:8])
+                + ",".join(sorted(duplicate_rejected_snapshot_ids)[:8])
             ),
         )
     if blank_id_rows:
@@ -4092,8 +4151,45 @@ def _build_consensus(
             code="snapshot_id_missing",
             message=f"dropped {blank_id_rows} consensus snapshot row(s) with blank snapshot_id",
         )
-    if rejected_snapshot_ids or blank_id_rows:
+    if duplicate_rejected_snapshot_ids or blank_id_rows:
         state.status = "degraded"
+    (
+        revisions,
+        rejected_revision_ids,
+        collapsed_revision_rows,
+        blank_revision_id_rows,
+    ) = _deduplicate_consensus_revisions(revisions)
+    if collapsed_revision_rows:
+        state.detail = (
+            f"{state.detail}; " if state.detail else ""
+        ) + f"duplicate_revision_rows_collapsed={collapsed_revision_rows}"
+    if rejected_revision_ids:
+        _append_state_error(
+            state,
+            code="duplicate_revision_id_divergent",
+            message=(
+                f"rejected all rows for {len(rejected_revision_ids)} divergent "
+                "revision_id value(s): "
+                + ",".join(sorted(rejected_revision_ids)[:8])
+            ),
+        )
+    if blank_revision_id_rows:
+        _append_state_error(
+            state,
+            code="revision_id_missing",
+            message=(
+                f"dropped {blank_revision_id_rows} consensus revision row(s) "
+                "with blank revision_id"
+            ),
+        )
+    if rejected_revision_ids or blank_revision_id_rows:
+        state.status = "degraded"
+    rejected_snapshot_ids = frozenset(
+        {
+            *listing_rejected_snapshot_ids,
+            *duplicate_rejected_snapshot_ids,
+        }
+    )
     snapshots_ids_after_integrity = {
         _text(value) for value in snapshots["snapshot_id"].tolist()
     }
