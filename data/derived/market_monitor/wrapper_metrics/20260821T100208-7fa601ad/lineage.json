@@ -2,9 +2,9 @@
   "type": "derived",
   "run_scope": "full",
   "dataset_name": "wrapper_metrics",
-  "run_id": "20260820T020437-0fe3b16e",
-  "created_at": "2026-08-20T02:05:05.183126+00:00",
-  "records": 23,
+  "run_id": "20260821T100208-7fa601ad",
+  "created_at": "2026-08-21T10:02:16.133487+00:00",
+  "records": 29,
   "columns": [
     "exposure_id",
     "index_id",
@@ -15,6 +15,8 @@
     "currency",
     "wrapper_type",
     "management_fee",
+    "custody_fee",
+    "premium_regime",
     "inception_date",
     "is_qdii",
     "is_cross_border",
@@ -42,5 +44,5 @@
     "entry_status",
     "premium_caveat"
   ],
-  "sha256": "5a8db84f6abbe09045b52e22273992316ab62960dd33e633ef9d747274ea24ac"
+  "sha256": "399d43c4dfc1db37b25bc19722a6bf497713e864598c71282008e7f01aa26c16"
 }
