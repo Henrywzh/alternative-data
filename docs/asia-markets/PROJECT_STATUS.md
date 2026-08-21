@@ -13,17 +13,17 @@ replacement for the operating manual or generated source-status JSON.
   see `REPO_BRIDGE.md` for the shared contract.
 - Research Control Tower V1 is a local/private, read-only publication. The
   current immutable `CURRENT` generation is
-  `task8-post-strictness-final-evidence-20260814-a256b41d9e01d991`. The final
-  focused Control Tower suite passed with 185 passed and 0 skipped; the
-  privacy suite passed with 12 passed and 0 skipped, with zero findings in the
-  active-bundle scan. The financial-data exporter suite passed with 20 tests,
-  and the full financial-data suite passed with 404 tests. Real browser QA
-  passed for all five pages at 1440x900, 1280x800, 768x1024 and 390x844, with
-  loopback-only resources and no console errors. Current Source Health has 21
-  sources: 14 available, 4 unavailable and 3 degraded. Consensus is
-  intentionally typed-empty/degraded because the real export was stale at the
-  build cutoff. This remains local/private only; it makes no hosting,
-  deployment or public-redistribution readiness claim.
+  `rct-tencent-t0-t3-reviewed-20260822-fd230c6242e237ee` and contains 27 files
+  (26 Parquet artifacts plus `build_manifest.json`). Its status is `degraded`.
+  The published counts are: entities 71, listings 81, events 21, consensus
+  56 snapshots and 112 revisions, valuation 0, official filings 403
+  (Tencent 173), news 2,299, earnings actuals 224, calendar 10, corporate
+  actions 203, quotes 7, price bars 8,598, macro observations 56,847 and
+  source health 44. `TCEHY_US` is registry-only with unresolved mapping and
+  `collection_eligible=false`; it is absent from published marts and coverage.
+  Tencent's only active listing is `0700_HK`. This remains local/private and
+  read-only: provider entitlements and some source health are degraded, and
+  valuation is fail-closed and unavailable.
 - Live sector roster: 10 sectors; see `apps/asia-markets-dashboard/sectors.json`.
 - Unified KPI backtest engine (2026-08-12): Steps 1–6 complete, with the MTR
   chronological practical-OOS track added afterward. Step 1
