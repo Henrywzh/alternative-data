@@ -69,6 +69,17 @@ CONSENSUS_REQUIRED_COLUMNS = frozenset(
         "pit_class",
     }
 )
+CONSENSUS_HEALTH_REQUIRED_COLUMNS = frozenset(
+    {
+        "provider",
+        "status",
+        "mapped_row_count",
+        "latest_snapshot_at",
+        "as_of",
+        "entitlement_status",
+        "entitlement_ref",
+    }
+)
 FX_REQUIRED_COLUMNS = frozenset(
     {
         "observation_date",
@@ -118,6 +129,73 @@ def _finite_positive(value: Any) -> bool:
     except (TypeError, ValueError):
         return False
     return math.isfinite(numeric) and numeric > 0
+
+
+def _accepted_consensus_providers(
+    frame: pd.DataFrame,
+    *,
+    as_of: pd.Timestamp,
+    max_age_days: int,
+) -> frozenset[str]:
+    """Return providers admitted by the Task 3 provider-policy sidecar."""
+
+    if max_age_days < 0:
+        raise ValueError("max_consensus_age_days must be non-negative")
+    missing = CONSENSUS_HEALTH_REQUIRED_COLUMNS.difference(frame.columns)
+    if missing:
+        raise ValueError(
+            "consensus health has invalid schema; missing "
+            + ", ".join(sorted(missing))
+        )
+    health = frame.copy()
+    health["provider_key"] = (
+        health["provider"].fillna("").astype(str).str.strip().str.casefold()
+    )
+    duplicate_providers = health.loc[
+        health["provider_key"].ne("")
+        & health["provider_key"].duplicated(keep=False),
+        "provider_key",
+    ]
+    if not duplicate_providers.empty:
+        raise ValueError(
+            "consensus health has duplicate providers: "
+            + ", ".join(sorted(set(duplicate_providers)))
+        )
+    health["latest_snapshot_at"] = _as_utc_series(
+        health, "latest_snapshot_at"
+    )
+    health["health_as_of"] = _as_utc_series(health, "as_of")
+    health["mapped_row_count"] = pd.to_numeric(
+        health["mapped_row_count"], errors="coerce"
+    )
+    status = health["status"].fillna("").astype(str).str.strip().str.casefold()
+    entitlement_status = (
+        health["entitlement_status"]
+        .fillna("")
+        .astype(str)
+        .str.strip()
+        .str.casefold()
+    )
+    entitlement_ref = (
+        health["entitlement_ref"].fillna("").astype(str).str.strip()
+    )
+    maximum_age = pd.Timedelta(days=max_age_days)
+    usable = health.loc[
+        health["provider_key"].ne("")
+        & status.eq("available")
+        & health["mapped_row_count"].gt(0)
+        & health["latest_snapshot_at"].notna()
+        & health["health_as_of"].notna()
+        & health["latest_snapshot_at"].le(health["health_as_of"])
+        & health["health_as_of"].le(as_of)
+        & health["latest_snapshot_at"].le(as_of)
+        & (as_of - health["latest_snapshot_at"]).le(maximum_age)
+        & entitlement_status.isin(
+            {"terms_unverified", "permitted_local_private"}
+        )
+        & entitlement_ref.str.startswith("task3-provider-policy:")
+    ]
+    return frozenset(usable["provider_key"])
 
 
 def _latest_quote(
@@ -379,11 +457,18 @@ def compute_tencent_valuation_snapshots(
     fx_rates_df: pd.DataFrame | None = None,
     as_of_utc: datetime | str | pd.Timestamp | None = None,
     *,
+    consensus_health_df: pd.DataFrame | None = None,
+    max_consensus_age_days: int = 14,
     fiscal_period: str = "annual",
     fiscal_year: int | None = None,
     statistic: str = "mean",
 ) -> pd.DataFrame:
-    """Compute Tencent forward P/E from causal quote, EPS, and FX vintages."""
+    """Compute Tencent forward P/E from causal quote, EPS, and FX vintages.
+
+    Automated consensus must be accompanied by its Task 3 provider-policy
+    health sidecar. Raw normalized exports are never selected without an
+    available, non-stale, entitlement-admitted provider row.
+    """
 
     del earnings_actuals_df
     if as_of_utc is None:
@@ -392,11 +477,34 @@ def compute_tencent_valuation_snapshots(
     if as_of.tzinfo is None:
         raise ValueError("as_of_utc must be timezone-aware")
     as_of = as_of.tz_convert("UTC")
+    filtered_consensus = consensus_snapshots_df
+    if consensus_snapshots_df is not None and not consensus_snapshots_df.empty:
+        if consensus_health_df is None:
+            raise ValueError(
+                "consensus health is required for automated valuation derivation"
+            )
+        accepted_providers = _accepted_consensus_providers(
+            consensus_health_df,
+            as_of=as_of,
+            max_age_days=max_consensus_age_days,
+        )
+        provider_keys = (
+            consensus_snapshots_df["provider"]
+            .fillna("")
+            .astype(str)
+            .str.strip()
+            .str.casefold()
+            if "provider" in consensus_snapshots_df.columns
+            else pd.Series("", index=consensus_snapshots_df.index)
+        )
+        filtered_consensus = consensus_snapshots_df.loc[
+            provider_keys.isin(accepted_providers)
+        ].copy()
     quote = _latest_quote(
         quote_snapshots_df, listing_id="0700_HK", as_of=as_of
     )
     consensus = _latest_consensus_eps(
-        consensus_snapshots_df,
+        filtered_consensus,
         listing_id="0700_HK",
         as_of=as_of,
         fiscal_period=fiscal_period,
@@ -481,8 +589,15 @@ def _combine_valuations(*frames: pd.DataFrame) -> pd.DataFrame:
     if not nonempty:
         return empty_frame(VALUATION_SNAPSHOTS_ARROW_SCHEMA)
     combined = pd.concat(nonempty, ignore_index=True)
+    duplicate_ids = combined.loc[
+        combined["valuation_id"].duplicated(keep=False), "valuation_id"
+    ]
+    if not duplicate_ids.empty:
+        raise ValueError(
+            "duplicate valuation_id values: "
+            + ", ".join(sorted(set(duplicate_ids.astype(str))))
+        )
     combined = combined.sort_values("valuation_id", kind="mergesort")
-    combined = combined.drop_duplicates("valuation_id", keep="last")
     return pa.Table.from_pandas(
         combined,
         schema=VALUATION_SNAPSHOTS_ARROW_SCHEMA,
@@ -496,6 +611,20 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     parser.add_argument("--quotes", type=Path)
     parser.add_argument("--consensus", type=Path)
+    parser.add_argument(
+        "--consensus-health",
+        type=Path,
+        help=(
+            "Task 3 provider-policy health sidecar required whenever "
+            "--consensus is populated"
+        ),
+    )
+    parser.add_argument(
+        "--max-consensus-age-days",
+        type=int,
+        default=14,
+        help="Maximum age of the admitted provider's latest snapshot",
+    )
     parser.add_argument("--earnings-actuals", type=Path)
     parser.add_argument("--fx-rates", type=Path)
     parser.add_argument("--valuation-inputs", type=Path)
@@ -518,6 +647,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     quotes = _read_frame(args.quotes)
     consensus = _read_frame(args.consensus)
+    consensus_health = _read_frame(args.consensus_health)
     earnings = _read_frame(args.earnings_actuals)
     fx_rates = _read_frame(args.fx_rates)
     explicit_inputs = _read_frame(args.valuation_inputs)
@@ -532,6 +662,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         earnings,
         fx_rates,
         as_of,
+        consensus_health_df=consensus_health,
+        max_consensus_age_days=args.max_consensus_age_days,
         fiscal_period=args.fiscal_period,
         fiscal_year=args.fiscal_year,
         statistic=args.statistic,

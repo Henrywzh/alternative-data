@@ -9,6 +9,7 @@ import pyarrow.parquet as pq
 import pytest
 
 from scripts.research_control_tower_valuation import (
+    _combine_valuations,
     build_explicit_valuation_inputs,
     compute_tencent_valuation_snapshots,
     main,
@@ -118,6 +119,25 @@ def _fx_rows() -> pd.DataFrame:
     )
 
 
+def _consensus_health(**overrides: object) -> pd.DataFrame:
+    row: dict[str, object] = {
+        "provider": "yfinance",
+        "status": "available",
+        "reason": "provider-policy-filtered fixture",
+        "row_count": 8,
+        "mapped_row_count": 8,
+        "latest_snapshot_at": pd.Timestamp("2026-08-20T10:00:00Z"),
+        "as_of": pd.Timestamp("2026-08-21T08:00:00Z"),
+        "network_calls": 3,
+        "source_license_class": "provider_public",
+        "entitlement_status": "terms_unverified",
+        "entitlement_evidence": "Personal research use.",
+        "entitlement_ref": "task3-provider-policy:sidecar-required-v1",
+    }
+    row.update(overrides)
+    return pd.DataFrame([row])
+
+
 def _valuation_input(**overrides: object) -> ValuationInput:
     values: dict[str, object] = {
         "listing_id": "0700_HK",
@@ -163,6 +183,7 @@ def test_real_quote_and_consensus_contract_produce_forward_pe() -> None:
     result = compute_tencent_valuation_snapshots(
         pd.DataFrame([_quote()]),
         pd.DataFrame([_consensus()]),
+        consensus_health_df=_consensus_health(),
         fx_rates_df=_fx_rows(),
         as_of_utc=AS_OF,
         fiscal_year=2026,
@@ -208,6 +229,7 @@ def test_selection_uses_fiscal_mapping_and_statistic_not_horizon() -> None:
     result = compute_tencent_valuation_snapshots(
         pd.DataFrame([_quote()]),
         consensus,
+        consensus_health_df=_consensus_health(),
         fx_rates_df=_fx_rows(),
         as_of_utc=AS_OF,
         fiscal_period="annual",
@@ -244,6 +266,7 @@ def test_future_quote_consensus_and_fx_vintages_are_excluded() -> None:
     result = compute_tencent_valuation_snapshots(
         quotes,
         consensus,
+        consensus_health_df=_consensus_health(),
         fx_rates_df=_fx_rows(),
         as_of_utc=AS_OF,
         fiscal_year=2026,
@@ -260,6 +283,7 @@ def test_future_quote_consensus_and_fx_vintages_are_excluded() -> None:
     unavailable = compute_tencent_valuation_snapshots(
         pd.DataFrame([_quote()]),
         pd.DataFrame([_consensus()]),
+        consensus_health_df=_consensus_health(),
         fx_rates_df=future_fx,
         as_of_utc=AS_OF,
         fiscal_year=2026,
@@ -271,6 +295,7 @@ def test_missing_fx_returns_typed_empty_instead_of_fabrication() -> None:
     result = compute_tencent_valuation_snapshots(
         pd.DataFrame([_quote()]),
         pd.DataFrame([_consensus()]),
+        consensus_health_df=_consensus_health(),
         fx_rates_df=None,
         as_of_utc=AS_OF,
         fiscal_year=2026,
@@ -290,11 +315,39 @@ def test_naive_source_timestamps_are_not_assumed_to_be_utc() -> None:
             ]
         ),
         pd.DataFrame([_consensus()]),
+        consensus_health_df=_consensus_health(),
         fx_rates_df=_fx_rows(),
         as_of_utc=AS_OF,
         fiscal_year=2026,
     )
     assert result.empty
+
+
+def test_consensus_health_is_required_and_rejects_stale_or_degraded_provider() -> None:
+    with pytest.raises(ValueError, match="consensus health"):
+        compute_tencent_valuation_snapshots(
+            pd.DataFrame([_quote()]),
+            pd.DataFrame([_consensus()]),
+            fx_rates_df=_fx_rows(),
+            as_of_utc=AS_OF,
+            fiscal_year=2026,
+        )
+
+    for health in (
+        _consensus_health(status="degraded"),
+        _consensus_health(
+            latest_snapshot_at=pd.Timestamp("2026-07-01T10:00:00Z")
+        ),
+    ):
+        result = compute_tencent_valuation_snapshots(
+            pd.DataFrame([_quote()]),
+            pd.DataFrame([_consensus()]),
+            consensus_health_df=health,
+            fx_rates_df=_fx_rows(),
+            as_of_utc=AS_OF,
+            fiscal_year=2026,
+        )
+        assert result.empty
 
 
 @pytest.mark.parametrize(
@@ -386,6 +439,26 @@ def test_fx_direction_and_causality_are_enforced() -> None:
         )
 
 
+def test_fx_observation_must_not_postdate_fx_retrieval() -> None:
+    with pytest.raises(ValueError, match="FX observation"):
+        build_valuation_snapshot_row(
+            _valuation_input(
+                denominator_currency="CNY",
+                fx_rate_applied=7.8 / 7.0,
+                fx_base_currency="CNY",
+                fx_quote_currency="HKD",
+                fx_source="ECB",
+                fx_source_url=FX_URL,
+                fx_snapshot_at_utc=pd.Timestamp(
+                    "2026-08-21T08:00:00Z"
+                ).to_pydatetime(),
+                fx_retrieved_at_utc=pd.Timestamp(
+                    "2026-08-21T07:00:00Z"
+                ).to_pydatetime(),
+            )
+        )
+
+
 def test_source_observation_must_not_postdate_source_retrieval() -> None:
     with pytest.raises(ValueError, match="numerator observation"):
         build_valuation_snapshot_row(
@@ -421,6 +494,38 @@ def test_basis_canonicalization_never_promotes_unverified_provider_label() -> No
         "NON_IFRS_MANAGEMENT"
     )
     assert canonicalize_metric_basis("IFRS as reported") == "GAAP_REPORTED"
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("valuation_date", pd.Timestamp("2026-08-20").date()),
+        ("numerator_source_url", "https://tampered.example/quote"),
+        ("numerator_currency", "USD"),
+        ("numerator_at_utc", pd.Timestamp("2026-08-21T07:00:00Z")),
+        ("denominator_ref", "tampered-consensus-id"),
+        ("source_url", "https://tampered.example/calculation"),
+    ],
+)
+def test_validator_rejects_tampered_canonical_fields(
+    field: str, value: object
+) -> None:
+    row = build_valuation_snapshot_row(_valuation_input())
+    frame = frame_from_rows([row], VALUATION_SNAPSHOTS_ARROW_SCHEMA)
+    frame.loc[0, field] = value
+    issues = validate_valuation_snapshots_df(frame)
+    assert issues
+
+
+def test_combining_duplicate_valuation_ids_fails_closed() -> None:
+    row = build_valuation_snapshot_row(_valuation_input())
+    first = frame_from_rows([row], VALUATION_SNAPSHOTS_ARROW_SCHEMA)
+    divergent = first.copy()
+    divergent.loc[0, "ratio_value"] = float(first.loc[0, "ratio_value"]) + 1.0
+    with pytest.raises(ValueError, match="duplicate valuation_id"):
+        _combine_valuations(first, divergent)
+    with pytest.raises(ValueError, match="duplicate valuation_id"):
+        _combine_valuations(first, first.copy())
 
 
 def _internal_rows() -> pd.DataFrame:
@@ -528,11 +633,13 @@ def test_cli_atomically_writes_populated_outputs_with_exact_arrow_schema(
 ) -> None:
     quotes_path = tmp_path / "quotes.parquet"
     consensus_path = tmp_path / "consensus.parquet"
+    consensus_health_path = tmp_path / "consensus-health.parquet"
     fx_path = tmp_path / "fx.parquet"
     estimates_path = tmp_path / "internal_estimates.csv"
     output_dir = tmp_path / "out"
     pd.DataFrame([_quote()]).to_parquet(quotes_path, index=False)
     pd.DataFrame([_consensus()]).to_parquet(consensus_path, index=False)
+    _consensus_health().to_parquet(consensus_health_path, index=False)
     _fx_rows().to_parquet(fx_path, index=False)
     estimates_path.write_text(
         ",".join(INTERNAL_ESTIMATES_COLUMNS) + "\n", encoding="utf-8"
@@ -545,6 +652,8 @@ def test_cli_atomically_writes_populated_outputs_with_exact_arrow_schema(
                 str(quotes_path),
                 "--consensus",
                 str(consensus_path),
+                "--consensus-health",
+                str(consensus_health_path),
                 "--fx-rates",
                 str(fx_path),
                 "--internal-estimates",
