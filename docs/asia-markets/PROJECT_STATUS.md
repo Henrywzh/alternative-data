@@ -1911,3 +1911,45 @@ Key findings:
   layer that exposes the residual's composition and its mean-reversion
   risk. A follow-up could model Mainland dev as a separate line with a
   mean-reversion scenario.
+
+### HKMA residential-mortgage series June regression audit (2026-08-21)
+
+Three dashboard series are recorded as stale at 2026-05 on main:
+hkma_credit_quality_history (228 rows), hkma_applications_history
+(114 rows) and hkma_mortgage_activity (114 rows), all 2016-12..2026-05.
+
+Audit result: June 2026 data was already in production and was
+regressed, not never-fetched:
+
+- The HKMA RMS API has served 2026-06 since at least 2026-08-12 (local
+  raw snapshot, 115 records). July is not published yet at source (RMS
+  lags roughly one month), so June is the correct current target.
+- CI committed June on 2026-08-12 (408b3539) and it survived through
+  96f68ae1 and fa0de6e0 (2026-08-17).
+- Local build f97e0672 (2026-08-20, refresh-Midland run) regressed all
+  three series to May. Cause: _load_hkma_with_fallback() returns any
+  non-empty local normalized cache without a freshness gate, and the
+  local data/normalized/hk_real_estate/hkma_residential_mortgage_survey/
+  vintages date from 2026-07-23 with May-only data (the ingestion
+  pipeline has not saved a newer vintage since).
+- The 2026-08-20 CI rebuild fetched June live but was discarded whole by
+  artifact-refresh-guard: the SHKP quarterly catalogue fetch failed from
+  CI (corporate page returned no PDF links), making shkp_quarterly_*
+  datasets regress, so the guard restored the entire previous artifact,
+  preserving the regressed May version. The guard also preserved the
+  crypto artifact the same day (btc_price_history 109->0, Binance 451
+  from CI IPs).
+- Verified 2026-08-21: the project fetcher currently returns 115 rows
+  with latest period 2026-06 from this machine.
+
+Fixes implemented 2026-08-21 (branch codex/hkma-freshness-fix):
+_load_hkma_with_fallback() now gates the normalized-cache short-circuit
+on a 45-day freshness check and rewrites the cache after a successful
+live fetch (best-effort); the HKMA curl fallback gained connect/read
+timeouts so a dead network fails bounded instead of hanging. June was
+restored by rebuilding: all three series now run 2016-12..2026-06
+(115/230 rows), and the refresh guard reports zero empty-dataset
+regressions against the previous main artifact. Still open: decide
+whether artifact-refresh-guard should merge per-dataset instead of
+reverting the whole artifact when one source fails; harden the SHKP
+quarterly fetch for CI IPs.
