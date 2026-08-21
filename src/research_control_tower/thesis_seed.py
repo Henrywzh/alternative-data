@@ -15,6 +15,7 @@ from pathlib import Path
 import re
 from typing import Iterable
 
+import numpy as np
 import pandas as pd
 
 from .contracts import RegistryBundle, ValidationIssue
@@ -438,6 +439,40 @@ def validate_thesis_seed_bundle(
         )
     )
     issues.extend(_required_value_issues(thesis.claim_evidence_links, "claim_evidence_links", {"link_id", "claim_id", "evidence_id", "conflict_hint", "review_state", "registry_version"}))
+
+    # Validate raw nonblank temporal/boolean values before any as-of slice can
+    # turn malformed text into NaT and accidentally make it look like a future
+    # row that was honestly excluded.
+    for registry_name, frame in (
+        ("thesis_claims", thesis.thesis_claims),
+        ("evidence_items", thesis.evidence_items),
+    ):
+        for column in TIMESTAMP_COLUMNS.get(registry_name, ()):
+            if column not in frame.columns:
+                continue
+            for row_index, value in frame[column].items():
+                if not _blank(value) and _as_timestamp(value) is None:
+                    issues.append(
+                        _issue(
+                            f"invalid_{column}_timestamp",
+                            f"{registry_name} row {row_index} has invalid nonblank {column}={value!r}",
+                            registry_name,
+                            int(row_index),
+                        )
+                    )
+    conflict_values = thesis.claim_evidence_links.get(
+        "conflict_hint", pd.Series(dtype="object")
+    )
+    for row_index, value in conflict_values.items():
+        if not _blank(value) and not isinstance(value, (bool, np.bool_)):
+            issues.append(
+                _issue(
+                    "invalid_conflict_hint_boolean",
+                    f"claim_evidence_links row {row_index} has invalid nonblank conflict_hint={value!r}",
+                    "claim_evidence_links",
+                    int(row_index),
+                )
+            )
 
     # 2. PK duplicate and identifier checks
     issues.extend(_duplicate_issues(thesis.thesis_claims, "thesis_claims", ["claim_id"], "duplicate_claim_id"))

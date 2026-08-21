@@ -15,6 +15,7 @@ from email.utils import parsedate_to_datetime
 import hashlib
 import json
 import math
+from numbers import Real
 import os
 from pathlib import Path
 from pathlib import PurePosixPath
@@ -35,6 +36,10 @@ from .events import (
     load_event_bundle,
     validate_event_bundle,
 )
+from .eligibility import (
+    filter_listing_scoped_rows,
+    listing_eligibility_reason,
+)
 from .macro import MACRO_EVENT_COLUMNS, MACRO_OBSERVATION_COLUMNS
 from .registries import (
     NEWS_ENTITY_ALIAS_FILENAME,
@@ -43,6 +48,10 @@ from .registries import (
     load_registry_bundle,
     resolve_news_entities,
     validate_registry_bundle,
+)
+from .valuation import (
+    validate_internal_estimates_df,
+    validate_valuation_snapshots_df,
 )
 
 
@@ -1726,6 +1735,150 @@ def _validate_optional_columns(frame: pd.DataFrame, schema_id: str, label: str) 
         raise BuildError(f"{label} schema drift: {'; '.join(detail)}")
 
 
+def _raw_value_is_blank(value: Any) -> bool:
+    return _is_blank(value)
+
+
+def _semantic_scalar_issues(
+    frame: pd.DataFrame,
+    *,
+    columns: Sequence[str],
+    kind: str,
+) -> list[str]:
+    issues: list[str] = []
+    for column in columns:
+        if column not in frame.columns:
+            continue
+        for index, value in frame[column].items():
+            if _raw_value_is_blank(value):
+                continue
+            invalid = False
+            if kind == "timestamp":
+                invalid = (
+                    isinstance(value, (bool, Real))
+                    or pd.isna(_timestamp(value))
+                )
+            elif kind == "date":
+                invalid = (
+                    isinstance(value, (bool, Real))
+                    or pd.isna(_timestamp(value, date_only=True))
+                )
+            elif kind == "float":
+                try:
+                    invalid = isinstance(value, bool) or not math.isfinite(float(value))
+                except (TypeError, ValueError, OverflowError):
+                    invalid = True
+            elif kind == "integer":
+                try:
+                    numeric = float(value)
+                    invalid = (
+                        isinstance(value, bool)
+                        or not math.isfinite(numeric)
+                        or not numeric.is_integer()
+                    )
+                except (TypeError, ValueError, OverflowError):
+                    invalid = True
+            if invalid:
+                issues.append(f"row {index}: {column} has an invalid nonblank {kind} value={value!r}")
+    return issues
+
+
+def _semantic_input_issues(frame: pd.DataFrame, schema_id: str) -> list[str]:
+    """Validate high-risk optional rows before policy parsing/coercion."""
+
+    if frame.empty:
+        return []
+    issues: list[str] = []
+    if schema_id == CORP_ACTIONS_SCHEMA_ID:
+        issues.extend(_semantic_scalar_issues(
+            frame,
+            columns=("published_at", "retrieved_at_utc"),
+            kind="timestamp",
+        ))
+        issues.extend(_semantic_scalar_issues(
+            frame,
+            columns=("filing_date", "execution_date", "mandate_resolution_date"),
+            kind="date",
+        ))
+        issues.extend(_semantic_scalar_issues(
+            frame,
+            columns=(
+                "version", "shares_affected", "shares_for_cancellation", "shares_for_treasury",
+                "mandate_authorised_shares", "mandate_cumulative_repurchased_shares",
+            ),
+            kind="integer",
+        ))
+        issues.extend(_semantic_scalar_issues(
+            frame,
+            columns=("price_min", "price_max", "price_avg", "total_amount_paid"),
+            kind="float",
+        ))
+        required = (
+            "action_id", "entity_id", "action_type", "source_url", "source_document_id",
+            "retrieved_at_utc", "source_quality", "pit_class", "source_license_class",
+            "registry_version", "version",
+        )
+        for column in required:
+            if column not in frame.columns:
+                continue
+            missing = frame[column].map(_raw_value_is_blank)
+            if missing.any():
+                issues.append(f"{column} is mandatory for corporate_actions (rows={list(frame.index[missing])[:5]})")
+        for index, row in frame.iterrows():
+            published = _timestamp(row.get("published_at"))
+            retrieved = _timestamp(row.get("retrieved_at_utc"))
+            if not pd.isna(published) and not pd.isna(retrieved) and published > retrieved:
+                issues.append(f"row {index}: published_at must not exceed retrieved_at_utc")
+            if not _raw_value_is_blank(row.get("version")):
+                try:
+                    if int(float(row.get("version"))) != 1 or float(row.get("version")).is_integer() is False:
+                        issues.append(f"row {index}: version must be integer 1")
+                except (TypeError, ValueError, OverflowError):
+                    pass
+    elif schema_id == VALUATION_SNAPSHOTS_SCHEMA_ID:
+        issues.extend(_semantic_scalar_issues(
+            frame,
+            columns=(
+                "valuation_at", "numerator_at_utc", "numerator_retrieved_at_utc",
+                "denominator_at_utc", "denominator_provider_asof_utc",
+                "denominator_retrieved_at_utc", "fx_snapshot_at_utc", "fx_retrieved_at_utc",
+                "retrieved_at_utc",
+            ),
+            kind="timestamp",
+        ))
+        issues.extend(_semantic_scalar_issues(frame, columns=("valuation_date",), kind="date"))
+        issues.extend(_semantic_scalar_issues(
+            frame,
+            columns=("ratio_value", "numerator_value", "denominator_value", "fx_rate_applied"),
+            kind="float",
+        ))
+        valuation_issues = validate_valuation_snapshots_df(frame)
+        # The builder's publication contract requires a non-null PK and
+        # auditable lineage/causality.  It does not rewrite a source's
+        # deterministic valuation ID or derived ratio at this boundary;
+        # descriptor collision handling below owns that merge contract.
+        issues.extend(
+            issue
+            for issue in valuation_issues
+            if "canonical rebuild mismatch" not in issue
+        )
+    elif schema_id == INTERNAL_ESTIMATES_SCHEMA_ID:
+        issues.extend(_semantic_scalar_issues(
+            frame,
+            columns=("recorded_at_utc", "reviewed_at_utc"),
+            kind="timestamp",
+        ))
+        issues.extend(_semantic_scalar_issues(frame, columns=("effective_asof",), kind="date"))
+        issues.extend(_semantic_scalar_issues(frame, columns=("version", "fiscal_year"), kind="integer"))
+        issues.extend(_semantic_scalar_issues(
+            frame,
+            columns=("value_low", "value_high", "value_mid"),
+            kind="float",
+        ))
+        issues.extend(validate_internal_estimates_df(frame))
+    return sorted(set(str(issue) for issue in issues))
+
+
 def _sort_frame(frame: pd.DataFrame, keys: Sequence[str]) -> pd.DataFrame:
     if frame.empty:
         return frame.reset_index(drop=True)
@@ -2118,6 +2271,41 @@ def _load_optional(
         _append_state_error(state, code="input_validation_failed", message=str(exc))
         if descriptor.required:
             raise BuildError(f"required optional input invalid: {descriptor.path}: {exc}") from exc
+        return state, None, schema_id
+    if schema_id == CORP_ACTIONS_SCHEMA_ID and {
+        "version", "registry_version"
+    } <= set(frame.columns):
+        legacy_version = frame["version"].map(_text).eq("v1")
+        legacy_registry = frame["registry_version"].map(_text).eq("v1")
+        legacy_mask = legacy_version & legacy_registry
+        if legacy_mask.any():
+            # The parent wiring bundle was written before the independent
+            # integer action version was introduced and put registry_version
+            # into version.  Migrate only this exact, self-identifying legacy
+            # shape; arbitrary non-numeric versions still fail below.
+            frame = frame.copy()
+            # CSV inputs may be read with pandas' Arrow-backed StringDtype;
+            # widen only this compatibility column before replacing the
+            # legacy text with the independent integer action version.
+            frame["version"] = frame["version"].astype(object)
+            frame.loc[legacy_mask, "version"] = 1
+            migrated = int(legacy_mask.sum())
+            state.detail = (
+                f"{state.detail}; " if state.detail else ""
+            ) + f"legacy_corporate_action_version_migrated={migrated}"
+    semantic_issues = _semantic_input_issues(frame, schema_id)
+    if semantic_issues:
+        detail = "; ".join(semantic_issues[:8])
+        state.status = "degraded"
+        state.detail = f"optional_semantic_validation_failed:{detail}"
+        _append_state_error(
+            state,
+            code="semantic_validation_failed",
+            message=detail,
+            severity="error" if descriptor.required else "warning",
+        )
+        if descriptor.required:
+            raise BuildError(f"required optional input semantic validation failed: {descriptor.path}: {detail}")
         return state, None, schema_id
     _apply_source_policy(
         state,
@@ -2962,7 +3150,9 @@ def _sidecar_states(frame: pd.DataFrame) -> list[_SourceState]:
 def _resolve_official_relations(
     frame: pd.DataFrame,
     registries: Any,
-) -> tuple[pd.DataFrame, int]:
+    *,
+    as_of_utc: pd.Timestamp,
+) -> tuple[pd.DataFrame, list[dict[str, object]]]:
     """Keep only rows whose entity/listing relations resolve in the registry.
 
     Unknown or mismatched rows are dropped with a counted note rather than
@@ -2970,7 +3160,6 @@ def _resolve_official_relations(
     """
 
     known_entities = set(registries.entities["entity_id"].astype("string"))
-    known_listings = set(registries.listings["listing_id"].astype("string"))
     listing_entities = dict(
         zip(
             registries.listings["listing_id"].astype("string"),
@@ -2983,22 +3172,65 @@ def _resolve_official_relations(
             registries.listings["canonical_ticker"].astype("string"),
         )
     )
+    scoped, rejected = filter_listing_scoped_rows(
+        frame,
+        registries.listings,
+        as_of_utc,
+        preserve_entity_only=True,
+    )
+    for index, item in frame.loc[~frame.index.isin(scoped.index)].iterrows():
+        if not any(item.get("row_index") == index for item in rejected):
+            rejected.append({
+                "row_index": index,
+                "listing_id": _text(item.get("listing_id")),
+                "entity_id": _text(item.get("entity_id")),
+                "reason": "listing scope row rejected",
+            })
     kept: list[dict[str, Any]] = []
-    dropped = 0
-    for _, item in frame.iterrows():
+    for index, item in scoped.iterrows():
         entity = str(item.get("entity_id") or "").strip()
         listing = str(item.get("listing_id") or "").strip()
         if (
             entity not in known_entities
-            or listing not in known_listings
-            or listing_entities.get(listing) != entity
+            or (listing and listing_entities.get(listing) != entity)
         ):
-            dropped += 1
+            rejected.append(
+                {
+                    "row_index": index,
+                    "listing_id": listing,
+                    "entity_id": entity,
+                    "reason": "unknown entity_id or listing/entity ownership mismatch",
+                }
+            )
             continue
         row = dict(item)
-        row["canonical_ticker"] = canonical_by_listing.get(listing, row.get("canonical_ticker", ""))
+        if listing:
+            row["canonical_ticker"] = canonical_by_listing.get(listing, row.get("canonical_ticker", ""))
         kept.append(row)
-    return pd.DataFrame(kept), dropped
+    return pd.DataFrame(kept), rejected
+
+
+def _record_listing_scope_rejections(
+    state: _SourceState,
+    rejected: Sequence[Mapping[str, object]],
+    *,
+    legacy_code: str = "unresolved_relations",
+) -> None:
+    if not rejected:
+        return
+    state.status = "degraded"
+    details = [
+        f"row={item.get('row_index')};listing_id={item.get('listing_id') or '<blank>'};reason={item.get('reason')}"
+        for item in rejected[:5]
+    ]
+    state.detail = (
+        f"{state.detail}; " if state.detail else ""
+    ) + f"dropped_unresolved_relations={len(rejected)};listing_scope_rejections=" + " | ".join(details)
+    _append_state_error(
+        state,
+        code=legacy_code,
+        message=f"dropped {len(rejected)} rows; " + " | ".join(details),
+    )
 
 
 def _calendar_event_type(period_label: Any, period_start: Any, period_end: Any) -> str:
@@ -3117,17 +3349,12 @@ def _build_official_filings(
             degraded.append(filings_descriptor.source_id)
         else:
             frame = _with_columns(frame, OFFICIAL_FILINGS_COLUMNS)
-            frame, dropped = _resolve_official_relations(frame, registries)
-            if dropped:
+            frame, rejected = _resolve_official_relations(
+                frame, registries, as_of_utc=as_of_utc
+            )
+            if rejected:
                 state.row_count = len(frame)
-                state.detail = (
-                    f"{state.detail}; " if state.detail else ""
-                ) + f"dropped_unresolved_relations={dropped}"
-                _append_state_error(
-                    state,
-                    code="unresolved_relations",
-                    message=f"dropped {dropped} rows with unknown entity/listing ids",
-                )
+                _record_listing_scope_rejections(state, rejected)
             rows = frame.to_dict("records")
     else:
         degraded.append("official_filings")
@@ -3182,17 +3409,12 @@ def _build_earnings_actuals(
                 degraded.append(descriptor.source_id)
             else:
                 frame = _with_columns(frame, EARNINGS_ACTUALS_COLUMNS)
-                frame, dropped = _resolve_official_relations(frame, registries)
-                if dropped:
+                frame, rejected = _resolve_official_relations(
+                    frame, registries, as_of_utc=as_of_utc
+                )
+                if rejected:
                     state.row_count = len(frame)
-                    state.detail = (
-                        f"{state.detail}; " if state.detail else ""
-                    ) + f"dropped_unresolved_relations={dropped}"
-                    _append_state_error(
-                        state,
-                        code="unresolved_relations",
-                        message=f"dropped {dropped} rows with unknown entity/listing ids",
-                    )
+                    _record_listing_scope_rejections(state, rejected)
                 for _, row in frame.iterrows():
                     rec = row.to_dict()
                     _merge_row_by_id(
@@ -3256,17 +3478,12 @@ def _build_corporate_actions(
                 degraded.append(descriptor.source_id)
             else:
                 frame = _with_columns(frame, CORP_ACTIONS_COLUMNS)
-                frame, dropped = _resolve_official_relations(frame, registries)
-                if dropped:
+                frame, rejected = _resolve_official_relations(
+                    frame, registries, as_of_utc=as_of_utc
+                )
+                if rejected:
                     state.row_count = len(frame)
-                    state.detail = (
-                        f"{state.detail}; " if state.detail else ""
-                    ) + f"dropped_unresolved_relations={dropped}"
-                    _append_state_error(
-                        state,
-                        code="unresolved_relations",
-                        message=f"dropped {dropped} rows with unknown entity/listing ids",
-                    )
+                    _record_listing_scope_rejections(state, rejected)
                 for _, row in frame.iterrows():
                     rec = row.to_dict()
                     _merge_row_by_id(
@@ -3321,6 +3538,18 @@ def _build_valuation_and_estimates(
                 degraded.append(val_descriptor.source_id)
                 continue
             frame = _with_columns(frame, VALUATION_SNAPSHOTS_COLUMNS)
+            frame, rejected = filter_listing_scoped_rows(
+                frame,
+                registries.listings,
+                as_of_utc,
+                preserve_entity_only=True,
+            )
+            if rejected:
+                _record_listing_scope_rejections(
+                    state,
+                    rejected,
+                    legacy_code="listing_scope_rows_rejected",
+                )
             for record in frame.to_dict("records"):
                 _merge_row_by_id(
                     val_rows,
@@ -3343,6 +3572,18 @@ def _build_valuation_and_estimates(
                 degraded.append(est_descriptor.source_id)
                 continue
             frame = _with_columns(frame, INTERNAL_ESTIMATES_COLUMNS)
+            frame, rejected = filter_listing_scoped_rows(
+                frame,
+                registries.listings,
+                as_of_utc,
+                preserve_entity_only=True,
+            )
+            if rejected:
+                _record_listing_scope_rejections(
+                    state,
+                    rejected,
+                    legacy_code="listing_scope_rows_rejected",
+                )
             for record in frame.to_dict("records"):
                 _merge_row_by_id(
                     est_rows,
@@ -3401,6 +3642,25 @@ def _build_thesis_and_evidence(
 
         try:
             bundle = load_thesis_seed_bundle(config.registry_root)
+            # Run a structural/semantic preflight over the complete raw seed
+            # bundle before selecting the as-of slice.  A malformed nonblank
+            # timestamp must be an error, not NaT that disappears in the
+            # future-row filter.  Use the maximum representable UTC time only
+            # to suppress legitimate future-date errors during this pass.
+            preflight_issues = validate_thesis_seed_bundle(
+                bundle,
+                registries,
+                events,
+                pd.Timestamp.max.tz_localize("UTC"),
+            )
+            preflight_errors = [issue for issue in preflight_issues if issue.severity == "error"]
+            if preflight_errors:
+                detail = "; ".join(
+                    f"{issue.registry or 'thesis'}:{issue.code}"
+                    + (f"[row={issue.row_index}]" if issue.row_index is not None else "")
+                    for issue in preflight_errors
+                )
+                raise BuildError(f"thesis seed validation failed: {detail}")
             # Future evidence is a valid seed row for a later generation, but
             # it is unavailable to this as_of snapshot. Validate the eligible
             # slice so structural/FK/schema issues still fail closed without
@@ -3515,6 +3775,7 @@ def _consensus_entitlement_usable(item: Mapping[str, Any]) -> bool:
 
 def _build_consensus(
     config: BuildConfig,
+    registries: Any,
 ) -> tuple[pd.DataFrame, pd.DataFrame, list[_SourceState], list[str], dict[str, str]]:
     snapshots = _task3_empty(TASK3_SNAPSHOT_COLUMNS)
     revisions = _task3_empty(TASK3_REVISION_COLUMNS)
@@ -3595,9 +3856,24 @@ def _build_consensus(
         states.append(state)
         degraded.append("consensus_export")
         return _task3_empty(TASK3_SNAPSHOT_COLUMNS), _task3_empty(TASK3_REVISION_COLUMNS), states, degraded, fingerprints
+    snapshots, snapshot_rejected = filter_listing_scoped_rows(
+        snapshots,
+        registries.listings,
+        config.as_of_utc,
+        preserve_entity_only=True,
+    )
+    revisions, revision_rejected = filter_listing_scoped_rows(
+        revisions,
+        registries.listings,
+        config.as_of_utc,
+        preserve_entity_only=True,
+    )
+    listing_rejections = [*snapshot_rejected, *revision_rejected]
+    if listing_rejections:
+        _record_listing_scope_rejections(state, listing_rejections, legacy_code="listing_scope_rows_rejected")
     for path in paths.values():
         fingerprints[str(path)] = _file_hash(path)
-    state.status = "available"
+    state.status = "degraded" if listing_rejections else "available"
     state.row_count = len(snapshots) + len(revisions)
     state.first_observation_at = _first_timestamp(snapshots, "snapshot_at")
     state.latest_observation_at = _latest_timestamp(snapshots, "snapshot_at")
@@ -3857,6 +4133,9 @@ def _quote_row_rejection(
 ) -> str | None:
     if listing is None:
         return "unknown listing_id; registry truth is required"
+    listing_scope_reason = listing_eligibility_reason(listing, as_of_utc)
+    if listing_scope_reason:
+        return listing_scope_reason
     if entity is None:
         return "listing references an unknown entity_id"
     entity_type = _text(entity.get("entity_type")).lower()
@@ -3868,12 +4147,6 @@ def _quote_row_rejection(
         return "entity is outside its active interval"
     if _text(listing.get("listing_status")).lower() != "active":
         return "listing is archived or inactive"
-    if not _quote_interval_active(listing, as_of_utc):
-        return "listing is future or outside its active interval"
-    if not _quote_bool(listing.get("collection_eligible")):
-        return "listing is not collection eligible"
-    if _text(listing.get("mapping_status")).lower() != "verified":
-        return "listing mapping is not verified"
 
     supplied_ticker = _text(item.get("canonical_ticker"))
     registry_ticker = _text(listing.get("canonical_ticker"))
@@ -4037,15 +4310,17 @@ def _build_price_bars(
     state, frame, _ = _load_optional(descriptor, "market", as_of_utc=as_of_utc)
     if frame is None:
         return empty, [state], ["price_bars"]
-    listings = registries.listings
-    known = set(listings["listing_id"].astype(str)) if not listings.empty else set()
-    mapped = frame.loc[frame["listing_id"].astype(str).isin(known)].copy()
-    dropped = len(frame) - len(mapped)
-    if dropped:
-        _append_state_error(
+    mapped, rejected = filter_listing_scoped_rows(
+        frame,
+        registries.listings,
+        as_of_utc,
+        preserve_entity_only=True,
+    )
+    if rejected:
+        _record_listing_scope_rejections(
             state,
-            code="unmapped_listing_rows_dropped",
-            message=f"rows={dropped};reason=listing_id not in the registry",
+            rejected,
+            legacy_code="unmapped_listing_rows_dropped",
         )
     _set_state_from_frame(state, mapped, observed_column="bar_date", retrieved_column="retrieved_at_utc")
     state.row_count = len(mapped)
@@ -5074,7 +5349,7 @@ def build_control_tower_marts(config: BuildConfig) -> BuildManifest:
     macro_frame, macro_states, macro_degraded = _build_macro(
         events, registries, config.macro_inputs, as_of_utc=config.as_of_utc
     )
-    consensus_snapshots, consensus_revisions, consensus_states, consensus_degraded, consensus_fingerprints = _build_consensus(config)
+    consensus_snapshots, consensus_revisions, consensus_states, consensus_degraded, consensus_fingerprints = _build_consensus(config, registries)
     quote_frame, quote_states, quote_degraded, quote_fingerprints = _build_quote_snapshots(
         registries,
         config.quote_inputs,

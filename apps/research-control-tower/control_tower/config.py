@@ -396,16 +396,27 @@ def _manifest_in_directory(directory: Path, publication_root: Path) -> tuple[str
 
 
 def _validate_generation_contents(directory: Path, manifest_name: str, publication_root: Path) -> None:
-    expected = set(DATA_ARTIFACT_NAMES) | {manifest_name}
-    legacy_expected = set(LEGACY_DATA_ARTIFACT_NAMES) | {manifest_name}
-    required_expected = set(REQUIRED_ARTIFACT_NAMES) | {manifest_name}
     actual = {entry.name for entry in directory.iterdir()}
-    extra = sorted(actual - expected)
-    if extra:
-        raise ArtifactResolutionError(f"generation directory has unexpected {extra[0]}")
-    if not (required_expected <= actual):
-        missing = sorted(required_expected - actual)
-        raise ArtifactResolutionError(f"generation directory has missing {missing[0]}")
+    current_expected = set(DATA_ARTIFACT_NAMES) | {manifest_name}
+    legacy_expected = set(LEGACY_GENERATION_DATA_ARTIFACT_NAMES) | {manifest_name}
+    if actual != current_expected and actual != legacy_expected:
+        missing_current = sorted(current_expected - actual)
+        missing_legacy = sorted(legacy_expected - actual)
+        extra_current = sorted(actual - current_expected)
+        detail = "generation directory does not match an exact current or legacy contract"
+        if missing_current:
+            detail += "; missing=" + ",".join(
+                f"artifact '{name}'" for name in missing_current[:4]
+            )
+        if extra_current:
+            detail += "; unexpected=" + ",".join(
+                f"entry '{name}'" for name in extra_current[:4]
+            )
+        if not missing_current and missing_legacy:
+            detail += "; legacy_missing=" + ",".join(
+                f"artifact '{name}'" for name in missing_legacy[:4]
+            )
+        raise ArtifactResolutionError(detail)
     for entry in directory.iterdir():
         if entry.is_symlink():
             raise ArtifactResolutionError(f"generation entry '{entry.name}' must not be a symlink")
@@ -420,9 +431,9 @@ def resolve_artifact_root(artifact_root: Path) -> ArtifactResolution:
     path. Path traversal, absolute targets, missing targets, extra generation
     files, and symlink escapes are rejected before any Parquet is read.
 
-    A legacy direct root may contain unrelated entries for compatibility.
-    They are never selected: direct reads remain restricted to the fixed data
-    artifact names and one recognized manifest filename.
+    Direct roots and CURRENT-selected generations must each match one exact
+    versioned artifact contract: the full current set or the explicitly
+    versioned legacy generation set.
     """
 
     supplied_root = Path(artifact_root)
@@ -470,10 +481,7 @@ def resolve_artifact_root(artifact_root: Path) -> ArtifactResolution:
         )
 
     manifest_name, manifest_path = _manifest_in_directory(root, root)
-    for filename in DATA_ARTIFACT_NAMES:
-        path = root / filename
-        if path.exists() or path.is_symlink():
-            _safe_file(path, root, filename)
+    _validate_generation_contents(root, manifest_name, root)
     return ArtifactResolution(
         artifact_root=root,
         manifest_path=manifest_path,

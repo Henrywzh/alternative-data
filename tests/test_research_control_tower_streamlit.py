@@ -805,8 +805,6 @@ def test_task4_consensus_columns_and_repository_typed_empty_contract(generated_r
         manifest["artifacts"]["consensus_revisions.parquet"].update({"status": "unavailable", "sha256": None, "row_count": 0, "byte_size": 0}),
         manifest.update({"status": "degraded", "degraded_inputs": ["consensus_snapshots", "consensus_revisions"]}),
     ))
-    (generated_root / "consensus_snapshots.parquet").unlink()
-    (generated_root / "consensus_revisions.parquet").unlink()
     snapshot = ControlTowerRepository(generated_root).load_snapshot()
     assert snapshot.consensus_snapshots.empty and len(snapshot.consensus_snapshots.columns) == 29
     assert snapshot.consensus_revisions.empty and len(snapshot.consensus_revisions.columns) == 35
@@ -1028,7 +1026,6 @@ def test_initial_app_mode_and_optional_degraded_mode(generated_root: Path, monke
 
     degraded_root = generated_root.parent / "degraded"
     shutil.copytree(generated_root, degraded_root)
-    (degraded_root / "news_filings.parquet").unlink()
     _rewrite_manifest(degraded_root, lambda manifest: (
         manifest["artifacts"]["news_filings.parquet"].update({"status": "unavailable", "sha256": None, "row_count": 0, "byte_size": 0}),
         manifest.update({"status": "degraded", "degraded_inputs": ["news_filings"]}),
@@ -1390,7 +1387,7 @@ def test_task7_synthetic_populated_acceptance_uses_stable_sk_hynix_ids(tmp_path:
     assert set(default_view.listings["listing_id"]) == {"000660_KR", "000660_US"}
     assert not default_view.official_documents.empty
     assert set(default_view.consensus["provider"]) == {"yfinance"}
-    assert set(default_view.consensus["listing_id"]) == {"000660_KR", "000660_US"}
+    assert set(default_view.consensus["listing_id"]) == {"000660_KR"}
     assert not default_view.consensus_revisions.empty
     assert not default_view.watch_questions.empty
     assert default_view.invalidation_evidence.empty

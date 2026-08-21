@@ -83,6 +83,7 @@ PIT_CLASS = "snapshot_from_live_source"
 LICENSE_CLASS = "official_public_metadata"
 REGISTRY_VERSION = "v1"
 SCHEMA_VERSION = "v1"
+VERSION = 1
 
 # Title-search queries; the servlet title parameter performs a substring
 # match on announcement titles (verified against live HKEXnews for Tencent).
@@ -139,6 +140,7 @@ CORP_ACTIONS_COLUMNS = [
 
 INT_COLUMNS = frozenset(
     {
+        "version",
         "shares_affected",
         "shares_for_cancellation",
         "shares_for_treasury",
@@ -489,6 +491,14 @@ BodyFetcher = Callable[[str], bytes | None]
 TextExtractor = Callable[[bytes, str], str]
 
 
+def _validate_lookback_days(lookback_days: object) -> int:
+    if isinstance(lookback_days, bool) or not isinstance(lookback_days, int):
+        raise ValueError("lookback_days must be a non-negative integer")
+    if lookback_days < 0:
+        raise ValueError("lookback_days must be a non-negative integer")
+    return lookback_days
+
+
 def _default_body_fetcher(session: requests.Session, timeout: int) -> BodyFetcher:
     def fetch(url: str) -> bytes | None:
         try:
@@ -523,6 +533,7 @@ def _corporate_action_rows(
     source sidecar stays honest about coverage.
     """
 
+    _validate_lookback_days(lookback_days)
     if max_rows_per_query is not None and (
         isinstance(max_rows_per_query, bool) or max_rows_per_query <= 0
     ):
@@ -683,7 +694,7 @@ def _corporate_action_rows(
         source_url = f"{HKEXNEWS_BODY_URL_PREFIX}{file_link}" if file_link.startswith("/") else file_link
         source_doc_id = news_id if news_id else file_link
         base = {
-            "version": SCHEMA_VERSION,
+            "version": VERSION,
             "entity_id": entity_id,
             "listing_id": listing_id,
             "canonical_ticker": canonical_ticker,
@@ -852,6 +863,8 @@ def collect_corporate_actions(
     else:
         query_as_of = retrieval_time
 
+    _validate_lookback_days(lookback_days)
+
     if retrieval_time < query_as_of:
         raise ValueError(
             f"causal clock violation: retrieved_at_utc ({retrieval_time.isoformat()}) "
@@ -982,6 +995,10 @@ def collect_corporate_actions(
         state_frame[column] = pd.to_datetime(state_frame[column], errors="coerce", utc=True)
 
     # Fail closed on duplicate primary keys before write
+    if not frame.empty and not frame["version"].eq(VERSION).all():
+        raise ValueError("corporate action version must be integer 1")
+    if not frame.empty and not frame["registry_version"].eq(REGISTRY_VERSION).all():
+        raise ValueError("corporate action registry_version must be 'v1'")
     if not frame["action_id"].is_unique:
         duplicates = frame[frame["action_id"].duplicated(keep=False)]["action_id"].tolist()
         raise ValueError(
@@ -1001,6 +1018,8 @@ def collect_corporate_actions(
 
 __all__ = [
     "CORP_ACTIONS_COLUMNS",
+    "REGISTRY_VERSION",
+    "VERSION",
     "BodyFetcher",
     "TextExtractor",
     "classify_action_type",

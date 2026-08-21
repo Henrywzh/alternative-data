@@ -352,6 +352,8 @@ def test_collector_end_to_end_buyback_dividend_skip_and_guard(tmp_path):
     assert buyback["pit_class"] == "snapshot_from_live_source"
     assert buyback["source_license_class"] == "official_public_metadata"
     assert buyback["registry_version"] == "v1"
+    assert buyback["version"] == 1
+    assert pd.api.types.is_integer_dtype(frame["version"])
     assert buyback["action_id"] == _action_id("0700_HK", "2025-06-13", "2025-06-13", "buyback_execution", "11713183", 1)
 
     dividend = frame.iloc[1]
@@ -429,6 +431,45 @@ def test_365_day_tencent_collection_completes_beyond_legacy_120_row_cap(tmp_path
     assert len(capped_frame) == 120
     assert "truncated=true" in capped_state.iloc[0]["detail"]
     assert capped_state.iloc[0]["status"] == "partial"
+
+
+def test_single_day_row_range_boundary_is_explicitly_truncated(tmp_path):
+    rows = [
+        _hkex_row(
+            news_id=f"same-day-{index:03d}",
+            title="Next Day Disclosure Return - Changes in issued shares and share buybacks",
+            date_time="13/06/2025 17:00",
+            file_link=f"/listedco/listconews/sehk/2025/0613/same-day-{index:03d}.pdf",
+            long_text="Next Day Disclosure Returns - [Share Buyback]",
+        )
+        for index in range(100)
+    ]
+    frame, state = collect_corporate_actions(
+        _identity_frame(),
+        as_of_utc=pd.Timestamp("2025-06-13T12:00:00Z"),
+        retrieved_at_utc=pd.Timestamp("2025-06-13T12:00:00Z"),
+        lookback_days=0,
+        output_dir=tmp_path / "single-day-boundary",
+        hkex_session=_WindowedHkexSession(rows),
+        body_fetcher=lambda _url: None,
+        timeout=5,
+    )
+
+    assert len(frame) == 100
+    assert "raw_rows=100" in state.iloc[0]["detail"]
+    assert "truncated=true" in state.iloc[0]["detail"]
+    assert state.iloc[0]["status"] == "partial"
+
+
+@pytest.mark.parametrize("lookback_days", [-1, 1.5, True, "1"])
+def test_lookback_days_must_be_a_non_negative_integer(lookback_days, tmp_path):
+    with pytest.raises(ValueError, match="non-negative integer"):
+        collect_corporate_actions(
+            _identity_frame(),
+            as_of_utc=pd.Timestamp("2026-08-16T12:00:00Z"),
+            lookback_days=lookback_days,
+            output_dir=tmp_path / f"invalid-{str(lookback_days).replace('.', '_')}",
+        )
 
 
 def test_parquet_roundtrip_preserves_nullable_schema(tmp_path):

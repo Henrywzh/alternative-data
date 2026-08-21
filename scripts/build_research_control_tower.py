@@ -270,7 +270,7 @@ COLLECTOR_COMMANDS = {
         f"--earnings-actuals {COLLECTOR_DIR.relative_to(REPO_ROOT)}/tencent_earnings_actuals_v1.parquet "
         "--fx-rates data/normalized/hk_transport/airline_fx_rates.parquet "
         f"--output-dir {COLLECTOR_DIR.relative_to(REPO_ROOT)} "
-        "--as-of 2026-08-22T00:00:00Z "
+        '--as-of "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '
         "--fiscal-period annual --fiscal-year 2026 --statistic mean "
         "--internal-estimates config/research_control_tower/internal_estimates.csv"
     ),
@@ -282,7 +282,7 @@ COLLECTOR_COMMANDS = {
         f"--earnings-actuals {COLLECTOR_DIR.relative_to(REPO_ROOT)}/tencent_earnings_actuals_v1.parquet "
         "--fx-rates data/normalized/hk_transport/airline_fx_rates.parquet "
         f"--output-dir {COLLECTOR_DIR.relative_to(REPO_ROOT)} "
-        "--as-of 2026-08-22T00:00:00Z "
+        '--as-of "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '
         "--fiscal-period annual --fiscal-year 2026 --statistic mean "
         "--internal-estimates config/research_control_tower/internal_estimates.csv"
     ),

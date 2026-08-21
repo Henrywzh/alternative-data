@@ -585,7 +585,6 @@ def validate_internal_estimates_df(frame: pd.DataFrame) -> list[str]:
         prefix = f"row {index}: "
         for field in (
             "entity_id",
-            "listing_id",
             "author",
             "metric",
             "accounting_basis",
@@ -616,14 +615,23 @@ def validate_internal_estimates_df(frame: pd.DataFrame) -> list[str]:
             )
 
         try:
-            version = int(row["version"])
+            raw_version = row["version"]
+            if isinstance(raw_version, bool):
+                raise ValueError
+            version_float = float(raw_version)
+            if not math.isfinite(version_float) or not version_float.is_integer():
+                raise ValueError
+            version = int(version_float)
             if version < 1:
                 raise ValueError
         except (TypeError, ValueError):
             issues.append(prefix + "version must be a positive integer")
             version = 0
         try:
-            fiscal_year = int(row["fiscal_year"])
+            fiscal_year_float = float(row["fiscal_year"])
+            if not math.isfinite(fiscal_year_float) or not fiscal_year_float.is_integer():
+                raise ValueError
+            fiscal_year = int(fiscal_year_float)
             if fiscal_year < 1900:
                 raise ValueError
         except (TypeError, ValueError):
