@@ -297,15 +297,26 @@ def accumulate_snapshots(
         # Only concat when both sides carry data: pandas deprecates concat of
         # empty/all-NA frames and the store is routinely empty on first run.
         merged = pd.concat([existing, new], ignore_index=True)
-    # Last-write-wins within (natural key, UTC day): sort by provider_asof/retrieved_at_utc/snapshot_at
-    # so newest timestamp deterministically wins regardless of ingestion order.
+    # Last-write-wins within (natural key, UTC day): sort by provider_asof/retrieved_at_utc/snapshot_at,
+    # and break exact timestamp ties deterministically by content hash so winner selection is completely
+    # input-order-independent and ignores random run-ids.
+    content_fields = (
+        "value", "statistic", "low_value", "high_value",
+        "analyst_count", "provider_contributor_count", "currency", "unit",
+        "accounting_basis", "fiscal_period", "fiscal_year", "estimate_period_end",
+        "source_url", "raw_hash", "calculation_origin", "coverage_reason",
+    )
+    merged["__content_hash"] = [
+        _hash(*(row.get(col) for col in content_fields))
+        for _, row in merged.iterrows()
+    ]
     merged = merged.sort_values(
-        ["provider_asof", "retrieved_at_utc", "snapshot_at"],
+        ["provider_asof", "retrieved_at_utc", "snapshot_at", "__content_hash"],
         kind="mergesort",
         na_position="first",
     )
     merged = merged.drop_duplicates(subset=["__key", "__day"], keep="last")
-    merged = merged.drop(columns=["__key", "__day"])
+    merged = merged.drop(columns=["__key", "__day", "__content_hash"])
     merged = merged.sort_values(
         ["snapshot_at", "provider", "listing_id", "metric", "horizon", "statistic"],
         kind="mergesort",
@@ -1001,7 +1012,7 @@ def _provider_freshness_status(
         latest_ts = latest_ts.tz_localize("UTC")
     if latest_ts > now_ts:
         return (
-            "fail_closed_future_dated",
+            "failed",
             f"provider_asof {latest_ts.isoformat()} is in the future relative to as_of {now_ts.isoformat()}",
         )
     age_days = (now_ts - latest_ts).days
