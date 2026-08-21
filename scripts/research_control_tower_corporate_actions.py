@@ -36,6 +36,7 @@ def main() -> int:
     parser.add_argument("--identity", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--as-of-utc", default=None)
+    parser.add_argument("--retrieved-at-utc", default=None)
     parser.add_argument("--lookback-days", type=int, default=365)
     parser.add_argument("--max-rows-per-query", type=int, default=120)
     parser.add_argument("--timeout", type=int, default=20)
@@ -43,9 +44,11 @@ def main() -> int:
 
     identity = load_source_identity(args.identity)
     as_of = pd.Timestamp(args.as_of_utc) if args.as_of_utc else None
+    retrieved_at = pd.Timestamp(args.retrieved_at_utc) if args.retrieved_at_utc else None
     frame, state = collect_corporate_actions(
         identity,
         as_of_utc=as_of,
+        retrieved_at_utc=retrieved_at,
         lookback_days=args.lookback_days,
         max_rows_per_query=args.max_rows_per_query,
         output_dir=args.output_dir,

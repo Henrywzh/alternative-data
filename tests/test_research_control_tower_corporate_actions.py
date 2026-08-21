@@ -283,6 +283,7 @@ def test_collector_end_to_end_buyback_dividend_skip_and_guard(tmp_path):
     frame, state = collect_corporate_actions(
         _identity_frame(),
         as_of_utc=pd.Timestamp("2026-08-16T12:00:00Z"),
+        retrieved_at_utc=pd.Timestamp("2026-08-16T12:00:00Z"),
         lookback_days=400,
         output_dir=tmp_path / "out",
         hkex_session=session,
@@ -322,7 +323,7 @@ def test_collector_end_to_end_buyback_dividend_skip_and_guard(tmp_path):
     assert buyback["pit_class"] == "snapshot_from_live_source"
     assert buyback["source_license_class"] == "official_public_metadata"
     assert buyback["registry_version"] == "v1"
-    assert buyback["action_id"] == _action_id("0700_HK", "2025-06-13", "2025-06-13", "buyback_execution")
+    assert buyback["action_id"] == _action_id("0700_HK", "2025-06-13", "2025-06-13", "buyback_execution", "11713183", 1)
 
     dividend = frame.iloc[1]
     assert dividend["action_type"] == "cash_dividend"
@@ -335,7 +336,7 @@ def test_collector_end_to_end_buyback_dividend_skip_and_guard(tmp_path):
     assert pd.isna(dividend["total_amount_paid"])
     assert "deferred to a specialised dividend parser" in dividend["coverage_reason"]
     assert dividend["source_quality"] == "official_metadata"
-    assert dividend["action_id"] == _action_id("0700_HK", "2025-03-19", "", "cash_dividend")
+    assert dividend["action_id"] == _action_id("0700_HK", "2025-03-19", "", "cash_dividend", "11576458", 1)
 
     # Directors' interests row skipped; wrong-company row dropped by guard.
     state_row = state.iloc[0]
@@ -345,6 +346,10 @@ def test_collector_end_to_end_buyback_dividend_skip_and_guard(tmp_path):
     assert "parsed=1" in state_row["detail"]
     assert "skipped=1" in state_row["detail"]
     assert state_row["row_count"] == 2
+    assert state_row["first_observation_at"] == pd.Timestamp("2025-03-19T08:35:00Z")
+    assert state_row["latest_observation_at"] == pd.Timestamp("2025-06-13T09:56:00Z")
+    assert state_row["source_latest_at"] == pd.Timestamp("2025-06-13T09:56:00Z")
+    assert state_row["retrieved_at_utc"] == pd.Timestamp("2026-08-16T12:00:00Z")
     assert (tmp_path / "out" / "corporate_actions_v1.parquet").is_file()
     assert (tmp_path / "out" / "corporate_actions_state.parquet").is_file()
 
@@ -506,3 +511,152 @@ def test_ff305_round_trip_matches_official_filing_values():
     assert row["total_paid"] == 500_382_813.6
     assert parsed.shares_for_cancellation == row["shares"]
     assert parsed.shares_for_treasury == 0
+
+
+def test_collection_clock_and_as_of_utc_separation(tmp_path):
+    """A historical query cutoff must never fabricate a historical retrieval timestamp."""
+    session = _FakeHkexSession(ndd_rows=_default_ndd_rows()[:1])
+    fetcher = _fake_body_fetcher(
+        {"2025061300897.pdf": _fixture_text(FF305_FIXTURE).encode("utf-8")}
+    )
+    historical_cutoff = pd.Timestamp("2025-06-30T00:00:00Z")
+    true_retrieval_clock = pd.Timestamp("2026-08-21T14:30:00Z")
+
+    frame, state = collect_corporate_actions(
+        _identity_frame(),
+        as_of_utc=historical_cutoff,
+        retrieved_at_utc=true_retrieval_clock,
+        output_dir=tmp_path / "out",
+        hkex_session=session,
+        body_fetcher=fetcher,
+        text_extractor=lambda payload, fmt: payload.decode("utf-8"),
+        timeout=5,
+    )
+    assert len(frame) == 1
+    # Row retrieved_at_utc is the actual collection time, not the query cutoff.
+    assert frame["retrieved_at_utc"].iloc[0] == true_retrieval_clock
+    assert state["retrieved_at_utc"].iloc[0] == true_retrieval_clock
+    # Observation timestamps honestly reflect the data.
+    assert state["first_observation_at"].iloc[0] == pd.Timestamp("2025-06-13T09:56:00Z")
+    assert state["latest_observation_at"].iloc[0] == pd.Timestamp("2025-06-13T09:56:00Z")
+
+
+def test_intraday_and_future_published_at_discarded():
+    """Rows published after as_of_utc (including same calendar day future times) must be discarded."""
+    # Three rows:
+    # 1. 13/06/2025 16:30 HKT = 08:30 UTC (before cutoff -> KEPT)
+    # 2. 13/06/2025 17:56 HKT = 09:56 UTC (after cutoff on same day -> DISCARDED)
+    # 3. 14/06/2025 09:00 HKT = 01:00 UTC next day (after cutoff -> DISCARDED)
+    ndd_rows = [
+        _hkex_row(
+            news_id="11700001",
+            title="Next Day Disclosure Return - Changes in issued shares and share buybacks",
+            date_time="13/06/2025 16:30",
+            file_link="/listedco/listconews/sehk/2025/0613/2025061300001.pdf",
+            long_text="Next Day Disclosure Returns - [Share Buyback]",
+        ),
+        _hkex_row(
+            news_id="11700002",
+            title="Next Day Disclosure Return - Changes in issued shares and share buybacks",
+            date_time="13/06/2025 17:56",
+            file_link="/listedco/listconews/sehk/2025/0613/2025061300002.pdf",
+            long_text="Next Day Disclosure Returns - [Share Buyback]",
+        ),
+        _hkex_row(
+            news_id="11700003",
+            title="Next Day Disclosure Return - Changes in issued shares and share buybacks",
+            date_time="14/06/2025 09:00",
+            file_link="/listedco/listconews/sehk/2025/0614/2025061400003.pdf",
+            long_text="Next Day Disclosure Returns - [Share Buyback]",
+        ),
+    ]
+    session = _FakeHkexSession(ndd_rows=ndd_rows)
+    fetcher = _fake_body_fetcher(
+        {"2025061300001.pdf": _fixture_text(FF305_FIXTURE).encode("utf-8")}
+    )
+    # Cutoff at 09:00 UTC on 2025-06-13
+    frame, state = collect_corporate_actions(
+        _identity_frame(),
+        as_of_utc=pd.Timestamp("2025-06-13T09:00:00Z"),
+        hkex_session=session,
+        body_fetcher=fetcher,
+        text_extractor=lambda payload, fmt: payload.decode("utf-8"),
+        timeout=5,
+    )
+    # Only the 08:30 UTC row is kept.
+    assert len(frame) == 1
+    assert frame["source_document_id"].iloc[0] == "11700001"
+    assert frame["published_at"].iloc[0] == pd.Timestamp("2025-06-13T08:30:00Z")
+    assert state["row_count"].iloc[0] == 1
+    assert state["latest_observation_at"].iloc[0] == pd.Timestamp("2025-06-13T08:30:00Z")
+
+
+def test_action_id_collision_freedom_on_same_execution_date():
+    """Multi-row filings with same execution date produce distinct, deterministic action_ids."""
+    body = (
+        "FF305\nNext Day Disclosure Return\n"
+        "Name of Issuer: Tencent Holdings Limited\n"
+        "Date Submitted: 13 June 2025\n"
+        "Section II\nA. Repurchase report\n"
+        "1). 13 June 2025 500,000On the Exchange HKD 510HKD 505HKD 253,750,000\n"
+        "2). 13 June 2025 482,000another stock exchange HKD 512HKD 508HKD 246,632,813.6\n"
+    )
+    session = _FakeHkexSession(ndd_rows=_default_ndd_rows()[:1])
+    fetcher = _fake_body_fetcher({"2025061300897.pdf": body.encode("utf-8")})
+    frame, _state = collect_corporate_actions(
+        _identity_frame(),
+        as_of_utc=pd.Timestamp("2026-08-16T12:00:00Z"),
+        hkex_session=session,
+        body_fetcher=fetcher,
+        text_extractor=lambda payload, fmt: payload.decode("utf-8"),
+        timeout=5,
+    )
+    assert len(frame) == 2
+    # Both rows share the same execution date (2025-06-13).
+    assert frame["execution_date"].iloc[0] == "2025-06-13"
+    assert frame["execution_date"].iloc[1] == "2025-06-13"
+    # But their action_ids must NOT collide!
+    assert frame["action_id"].iloc[0] != frame["action_id"].iloc[1]
+    assert frame["action_id"].is_unique
+
+
+def test_duplicate_action_id_fails_closed(monkeypatch):
+    """If action_id generation ever collides, collect_corporate_actions must fail closed."""
+    session = _FakeHkexSession(ndd_rows=_default_ndd_rows()[:1], dividend_rows=_default_dividend_rows())
+    fetcher = _fake_body_fetcher(
+        {"2025061300897.pdf": _fixture_text(FF305_FIXTURE).encode("utf-8")}
+    )
+    # Force collision by monkeypatching _action_id to return a constant
+    monkeypatch.setattr(corporate_actions, "_action_id", lambda *args, **kwargs: "ca:constant_hash")
+    with pytest.raises(ValueError, match="duplicate action_id detected"):
+        collect_corporate_actions(
+            _identity_frame(),
+            as_of_utc=pd.Timestamp("2026-08-16T12:00:00Z"),
+            hkex_session=session,
+            body_fetcher=fetcher,
+            text_extractor=lambda payload, fmt: payload.decode("utf-8"),
+            timeout=5,
+        )
+
+
+def test_atomic_write_leaves_no_temp_files(tmp_path):
+    """Atomic parquet write writes the expected files without leftover .tmp files."""
+    session = _FakeHkexSession(ndd_rows=_default_ndd_rows()[:1])
+    fetcher = _fake_body_fetcher(
+        {"2025061300897.pdf": _fixture_text(FF305_FIXTURE).encode("utf-8")}
+    )
+    out_dir = tmp_path / "atomic_out"
+    frame, state = collect_corporate_actions(
+        _identity_frame(),
+        as_of_utc=pd.Timestamp("2026-08-16T12:00:00Z"),
+        output_dir=out_dir,
+        hkex_session=session,
+        body_fetcher=fetcher,
+        text_extractor=lambda payload, fmt: payload.decode("utf-8"),
+        timeout=5,
+    )
+    assert (out_dir / "corporate_actions_v1.parquet").is_file()
+    assert (out_dir / "corporate_actions_state.parquet").is_file()
+    # Ensure no leftover temporary files in out_dir
+    tmp_files = list(out_dir.glob("*.tmp"))
+    assert tmp_files == []

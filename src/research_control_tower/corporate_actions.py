@@ -46,6 +46,7 @@ import hashlib
 import io
 import json
 import logging
+import os
 import re
 import time
 from dataclasses import dataclass, field
@@ -207,14 +208,27 @@ def _parse_hkex_datetime(value: object) -> pd.Timestamp | pd.NaT:
     return pd.Timestamp(local).tz_convert("UTC")
 
 
-def _action_id(listing_id: str, filing_date: str, execution_date: str, action_type: str) -> str:
+def _action_id(
+    listing_id: str,
+    filing_date: str,
+    execution_date: str,
+    action_type: str,
+    source_document_id: str = "",
+    row_discriminator: str | int = "",
+) -> str:
     """Deterministic primary key per the T1 design contract.
 
-    hash(listing_id + filing_date + execution_date + action_type); missing
-    execution dates (metadata-only rows) contribute an empty component.
+    Canonical 4-tuple key: hash(listing_id|filing_date|execution_date|action_type).
+    When source_document_id or row_discriminator is provided, it is appended to
+    guarantee collision-free IDs across multiple filings on the same day or
+    multiple tranches/rows within the same filing on the same execution date.
     """
 
-    key = f"{listing_id}|{filing_date}|{execution_date}|{action_type}"
+    parts = [listing_id, filing_date, execution_date, action_type]
+    if source_document_id or row_discriminator != "":
+        parts.append(str(source_document_id))
+        parts.append(str(row_discriminator))
+    key = "|".join(parts)
     return "ca:" + hashlib.sha1(key.encode("utf-8")).hexdigest()[:24]
 
 
@@ -496,7 +510,7 @@ def _corporate_action_rows(
     canonical_ticker: str,
     as_of_utc: pd.Timestamp,
     lookback_days: int,
-    fetched_at: pd.Timestamp,
+    retrieved_at_utc: pd.Timestamp,
     timeout: int,
     max_rows_per_query: int,
     body_fetcher: BodyFetcher | None = None,
@@ -513,13 +527,15 @@ def _corporate_action_rows(
         return [], {"collected": 0, "parsed": 0, "unparsed": 0, "skipped": 0, "exceptions": 1}
     stock_id, bare_code = resolved
     fetch_body = body_fetcher or _default_body_fetcher(session, timeout)
+    as_of_hk = as_of_utc.tz_convert(HKEX_TIMEZONE)
+    start_bound_utc = as_of_utc - pd.Timedelta(days=lookback_days)
 
     def query_title(title: str) -> list[dict[str, str]]:
         raw_rows: list[dict[str, str]] = []
         window = pd.Timedelta(days=31)
-        cursor = as_of_utc.normalize()
-        start_bound = cursor - pd.Timedelta(days=lookback_days)
-        while cursor > start_bound and len(raw_rows) < max_rows_per_query:
+        cursor = as_of_hk.normalize()
+        start_bound = (as_of_hk - pd.Timedelta(days=lookback_days)).normalize()
+        while cursor >= start_bound and len(raw_rows) < max_rows_per_query:
             window_start = max(cursor - window, start_bound)
             params = {
                 "sortDir": "0",
@@ -572,15 +588,20 @@ def _corporate_action_rows(
         news_id = meta["NEWS_ID"]
         if news_id in seen:
             continue
+        published = _parse_hkex_datetime(meta["DATE_TIME"])
+        # Point-in-time guard: explicitly discard rows published after as_of_utc
+        # (including intraday same-calendar-day publications).
+        if not pd.isna(published) and published > as_of_utc:
+            continue
         seen.add(news_id)
         counts["collected"] += 1
         action_type, note = classify_action_type(
             title=meta["TITLE"], long_text=meta["LONG_TEXT"], short_text=meta["SHORT_TEXT"]
         )
-        published = _parse_hkex_datetime(meta["DATE_TIME"])
         filing_date = "" if pd.isna(published) else published.strftime("%Y-%m-%d")
         file_link = meta["FILE_LINK"]
         source_url = f"{HKEXNEWS_BODY_URL_PREFIX}{file_link}" if file_link.startswith("/") else file_link
+        source_doc_id = news_id if news_id else file_link
         base = {
             "version": SCHEMA_VERSION,
             "entity_id": entity_id,
@@ -604,10 +625,10 @@ def _corporate_action_rows(
             "mandate_cumulative_repurchased_shares": None,
             "coverage_reason": "",
             "source_url": source_url,
-            "source_document_id": news_id if news_id else file_link,
-            "document_format": meta["FILE_TYPE"].lower() if meta["FILE_TYPE"] else "unknown",
+            "source_document_id": source_doc_id,
+           "document_format": meta["FILE_TYPE"].lower() if meta["FILE_TYPE"] else "unknown",
             "source_note": note or "",
-            "retrieved_at_utc": fetched_at,
+            "retrieved_at_utc": retrieved_at_utc,
             "source_timezone": HKEX_TIMEZONE,
             "date_precision": "minute" if not pd.isna(published) else "day",
             "source_quality": "official_metadata",
@@ -627,7 +648,7 @@ def _corporate_action_rows(
                 "dividend/distribution amount, shares and dates are not extractable from the "
                 "announcement title; body parsing is deferred to a specialised dividend parser (T4+)"
             )
-            base["action_id"] = _action_id(listing_id, filing_date, "", action_type)
+            base["action_id"] = _action_id(listing_id, filing_date, "", action_type, source_doc_id, 1)
             out.append(base)
             continue
 
@@ -635,7 +656,7 @@ def _corporate_action_rows(
         if payload is None:
             counts["unparsed"] += 1
             base["coverage_reason"] = "NDD body fetch failed; metadata only (numeric fields null)"
-            base["action_id"] = _action_id(listing_id, filing_date, "", action_type)
+            base["action_id"] = _action_id(listing_id, filing_date, "", action_type, source_doc_id, 1)
             out.append(base)
             continue
         text = (text_extractor or extract_document_text)(payload, base["document_format"])
@@ -643,12 +664,12 @@ def _corporate_action_rows(
         if not parsed.rows:
             counts["unparsed"] += 1
             base["coverage_reason"] = "; ".join(parsed.parse_errors) or "NDD body parsing failed; metadata only"
-            base["action_id"] = _action_id(listing_id, filing_date, "", action_type)
+            base["action_id"] = _action_id(listing_id, filing_date, "", action_type, source_doc_id, 1)
             out.append(base)
             continue
         counts["parsed"] += 1
         multiple_rows = len(parsed.rows) > 1
-        for row in parsed.rows:
+        for idx, row in enumerate(parsed.rows):
             action = dict(base)
             execution_date = row["trading_date"] or ""
             action["execution_date"] = execution_date
@@ -675,15 +696,40 @@ def _corporate_action_rows(
                 f"NDD form {parsed.form}; {len(parsed.rows)} repurchase row(s); "
                 f"submitted {parsed.date_submitted or 'unknown'}"
             )
-            action["action_id"] = _action_id(listing_id, action["filing_date"], execution_date, action_type)
+            row_discriminator = row.get("row_no") if row.get("row_no") is not None else (idx + 1)
+            action["action_id"] = _action_id(
+                listing_id,
+                action["filing_date"],
+                execution_date,
+                action_type,
+                source_doc_id,
+                row_discriminator,
+            )
             out.append(action)
     return out, counts
+
+
+def _atomic_write_parquet(frame: pd.DataFrame, target_path: Path) -> None:
+    """Write DataFrame to parquet atomically via temporary file and rename."""
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = target_path.with_name(f".{target_path.name}.{os.getpid()}.{time.time_ns()}.tmp")
+    try:
+        frame.to_parquet(temp_path, index=False)
+        temp_path.replace(target_path)
+    finally:
+        if temp_path.exists():
+            try:
+                temp_path.unlink()
+            except OSError:
+                pass
 
 
 def collect_corporate_actions(
     identity: pd.DataFrame,
     *,
     as_of_utc: pd.Timestamp | None = None,
+    retrieved_at_utc: pd.Timestamp | None = None,
+    collection_clock: Callable[[], pd.Timestamp] | None = None,
     lookback_days: int = 365,
     max_rows_per_query: int = 120,
     output_dir: Path | None = None,
@@ -701,36 +747,53 @@ def collect_corporate_actions(
     fields.
     """
 
-    fetched_at = _now_utc() if as_of_utc is None else pd.Timestamp(as_of_utc).tz_convert("UTC")
+    if retrieved_at_utc is not None:
+        retrieval_time = (
+            pd.Timestamp(retrieved_at_utc).tz_convert("UTC")
+            if pd.Timestamp(retrieved_at_utc).tzinfo is not None
+            else pd.Timestamp(retrieved_at_utc).tz_localize("UTC")
+        )
+    elif collection_clock is not None:
+        clock_val = collection_clock()
+        retrieval_time = (
+            pd.Timestamp(clock_val).tz_convert("UTC")
+            if pd.Timestamp(clock_val).tzinfo is not None
+            else pd.Timestamp(clock_val).tz_localize("UTC")
+        )
+    else:
+        retrieval_time = _now_utc()
+
+    if as_of_utc is not None:
+        query_as_of = (
+            pd.Timestamp(as_of_utc).tz_convert("UTC")
+            if pd.Timestamp(as_of_utc).tzinfo is not None
+            else pd.Timestamp(as_of_utc).tz_localize("UTC")
+        )
+    else:
+        query_as_of = retrieval_time
+
     session = hkex_session or requests.Session()
     hkex_identity = identity[identity["source_kind"].eq("hkex_code")].copy()
     rows: list[dict[str, Any]] = []
     state_rows: list[dict[str, Any]] = []
 
-    def _state_row(status: str, detail: str, row_count: int) -> dict[str, Any]:
-        return {
-            "source_id": "corporate_actions:hkexnews",
-            "source_kind": "corporate_action",
-            "status": status,
-            "detail": detail,
-            "row_count": row_count,
-            "first_observation_at": pd.NaT,
-            "latest_observation_at": pd.NaT,
-            "source_latest_at": pd.NaT,
-            "retrieved_at_utc": fetched_at,
-            "source_url": "https://www1.hkexnews.hk/search/titlesearch.xhtml?lang=en",
-            "pit_class": PIT_CLASS,
-            "source_license_class": LICENSE_CLASS,
-            "cadence": "daily",
-        }
-
     if hkex_identity.empty:
         state_rows.append(
-            _state_row(
-                "no_records",
-                "no hkex_code identity rows configured for corporate-action collection",
-                0,
-            )
+            {
+                "source_id": "corporate_actions:hkexnews",
+                "source_kind": "corporate_action",
+                "status": "no_records",
+                "detail": "no hkex_code identity rows configured for corporate-action collection",
+                "row_count": 0,
+                "first_observation_at": pd.NaT,
+                "latest_observation_at": pd.NaT,
+                "source_latest_at": pd.NaT,
+                "retrieved_at_utc": retrieval_time,
+                "source_url": "https://www1.hkexnews.hk/search/titlesearch.xhtml?lang=en",
+                "pit_class": PIT_CLASS,
+                "source_license_class": LICENSE_CLASS,
+                "cadence": "daily",
+            }
         )
     else:
         totals = {"collected": 0, "parsed": 0, "unparsed": 0, "skipped": 0, "exceptions": 0}
@@ -743,9 +806,9 @@ def collect_corporate_actions(
                     entity_id=_text(item.get("entity_id")),
                     listing_id=_text(item.get("listing_id")),
                     canonical_ticker=_text(item.get("canonical_ticker")),
-                    as_of_utc=fetched_at,
+                    as_of_utc=query_as_of,
                     lookback_days=lookback_days,
-                    fetched_at=fetched_at,
+                    retrieved_at_utc=retrieval_time,
                     timeout=timeout,
                     max_rows_per_query=max_rows_per_query,
                     body_fetcher=body_fetcher,
@@ -773,7 +836,32 @@ def collect_corporate_actions(
                 else ("unavailable" if totals["exceptions"] else "no_records")
             )
         )
-        state_rows.append(_state_row(status, detail, len(rows)))
+        parsed_published = [
+            r["published_at"]
+            for r in rows
+            if "published_at" in r and not pd.isna(r["published_at"])
+        ]
+        first_obs = min(parsed_published) if parsed_published else pd.NaT
+        latest_obs = max(parsed_published) if parsed_published else pd.NaT
+        source_latest = max(parsed_published) if parsed_published else pd.NaT
+
+        state_rows.append(
+            {
+                "source_id": "corporate_actions:hkexnews",
+                "source_kind": "corporate_action",
+                "status": status,
+                "detail": detail,
+                "row_count": len(rows),
+                "first_observation_at": first_obs,
+                "latest_observation_at": latest_obs,
+                "source_latest_at": source_latest,
+                "retrieved_at_utc": retrieval_time,
+                "source_url": "https://www1.hkexnews.hk/search/titlesearch.xhtml?lang=en",
+                "pit_class": PIT_CLASS,
+                "source_license_class": LICENSE_CLASS,
+                "cadence": "daily",
+            }
+        )
 
     frame = pd.DataFrame(rows, columns=CORP_ACTIONS_COLUMNS)
     state_frame = pd.DataFrame(state_rows, columns=SOURCE_STATE_COLUMNS)
@@ -787,10 +875,22 @@ def collect_corporate_actions(
         frame[column] = frame[column].fillna("").astype("string")
     for column in ("first_observation_at", "latest_observation_at", "source_latest_at", "retrieved_at_utc"):
         state_frame[column] = pd.to_datetime(state_frame[column], errors="coerce", utc=True)
+
+    # Fail closed on duplicate primary keys before write
+    if not frame["action_id"].is_unique:
+        duplicates = frame[frame["action_id"].duplicated(keep=False)]["action_id"].tolist()
+        raise ValueError(
+            f"duplicate action_id detected in corporate actions ({len(duplicates)} occurrences): {duplicates[:10]}"
+        )
+    if not state_frame["source_id"].is_unique:
+        duplicates = state_frame[state_frame["source_id"].duplicated(keep=False)]["source_id"].tolist()
+        raise ValueError(
+            f"duplicate source_id detected in corporate_actions_state ({len(duplicates)} occurrences): {duplicates[:10]}"
+        )
+
     if output_dir is not None:
-        output_dir.mkdir(parents=True, exist_ok=True)
-        frame.to_parquet(output_dir / "corporate_actions_v1.parquet", index=False)
-        state_frame.to_parquet(output_dir / "corporate_actions_state.parquet", index=False)
+        _atomic_write_parquet(frame, output_dir / "corporate_actions_v1.parquet")
+        _atomic_write_parquet(state_frame, output_dir / "corporate_actions_state.parquet")
     return frame, state_frame
 
 
