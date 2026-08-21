@@ -29,6 +29,167 @@ CONFIG_ROOT = REPO_ROOT / "config" / "research_control_tower"
 AS_OF = pd.Timestamp("2026-08-22T00:00:00Z")
 
 
+def _snap(**overrides: object) -> dict[str, object]:
+    """Return a captured consensus snapshot without importing another test."""
+    row: dict[str, object] = {
+        "snapshot_id": "run-scoped-id",
+        "provider": "yfinance",
+        "entity_id": "ALIBABA",
+        "listing_id": "9988_HK",
+        "financial_data_security_id": "sec-9988",
+        "canonical_ticker": "9988.HK",
+        "metric": "eps",
+        "fiscal_period": "quarterly",
+        "fiscal_year": 2027,
+        "estimate_period_end": pd.Timestamp("2027-03-31").date(),
+        "horizon": "0q",
+        "snapshot_at": pd.Timestamp("2026-08-01T10:00:00Z"),
+        "value": 3.00,
+        "statistic": "mean",
+        "low_value": 2.80,
+        "high_value": 3.20,
+        "analyst_count": 30,
+        "provider_contributor_count": 30,
+        "currency": "HKD",
+        "unit": "currency_per_share",
+        "accounting_basis": "provider_reported_non_gaap_unverified",
+        "provider_asof": pd.Timestamp("2026-08-01T10:00:00Z"),
+        "retrieved_at_utc": pd.Timestamp("2026-08-01T10:00:00Z"),
+        "source_url": "https://finance.yahoo.com/quote/9988.HK/analysis",
+        "raw_hash": "raw-hash",
+        "pit_class": "snapshot_from_live_source",
+        "source_run_id": "consensus-run-1",
+        "calculation_origin": "provider_published_consensus",
+        "coverage_reason": "",
+    }
+    row.update(overrides)
+    return row
+
+
+def _empty_store() -> pd.DataFrame:
+    """Return an empty consensus store using the collector's own columns."""
+    import research_control_tower_consensus_collector as collector
+
+    return pd.DataFrame({column: pd.Series(dtype="object") for column in collector.STORE_COLUMNS})
+
+
+def _audit_source_row(schema_id: str, timestamp: str) -> dict[str, object]:
+    """Return the small valid optional-row fixtures used by these tests."""
+    from src.research_control_tower.build import (
+        CORP_ACTIONS_COLUMNS,
+        INTERNAL_ESTIMATES_COLUMNS,
+        VALUATION_SNAPSHOTS_COLUMNS,
+        CORP_ACTIONS_SCHEMA_ID,
+        INTERNAL_ESTIMATES_SCHEMA_ID,
+        VALUATION_SNAPSHOTS_SCHEMA_ID,
+    )
+
+    if schema_id == CORP_ACTIONS_SCHEMA_ID:
+        row = {column: None for column in CORP_ACTIONS_COLUMNS}
+        row.update(
+            {
+                "action_id": "audit-corporate-action-1",
+                "version": 1,
+                "entity_id": "TENCENT",
+                "listing_id": "0700_HK",
+                "canonical_ticker": "0700.HK",
+                "action_type": "buyback_execution",
+                "filing_date": "2026-08-12",
+                "execution_date": "2026-08-12",
+                "published_at": timestamp,
+                "retrieved_at_utc": timestamp,
+                "source_document_id": "audit-doc-1",
+                "source_url": "https://example.test/audit-doc-1",
+                "document_format": "pdf",
+                "source_quality": "official_body",
+                "pit_class": "snapshot_from_live_source",
+                "source_license_class": "official_public_metadata",
+                "registry_version": "v1",
+            }
+        )
+        return row
+    if schema_id == VALUATION_SNAPSHOTS_SCHEMA_ID:
+        row = {column: None for column in VALUATION_SNAPSHOTS_COLUMNS}
+        row.update(
+            {
+                "valuation_id": "audit-valuation-1",
+                "listing_id": "0700_HK",
+                "valuation_date": "2026-08-12",
+                "valuation_at": timestamp,
+                "metric_name": "forward_pe",
+                "accounting_basis": "NON_IFRS_MANAGEMENT",
+                "metric_basis": "NON_IFRS_MANAGEMENT",
+                "ratio_value": 16.2,
+                "numerator_value": 441.2,
+                "numerator_currency": "HKD",
+                "numerator_ref": "quote:audit-1",
+                "numerator_source_id": "audit-quote",
+                "numerator_source_url": "https://example.test/audit-quote",
+                "numerator_pit_class": "snapshot_from_delayed_source",
+                "numerator_at_utc": timestamp,
+                "numerator_retrieved_at_utc": timestamp,
+                "denominator_value": 27.2,
+                "denominator_currency": "HKD",
+                "denominator_ref": "consensus:audit-1",
+                "denominator_source_id": "audit-consensus",
+                "denominator_source_url": "https://example.test/audit-consensus",
+                "denominator_pit_class": "snapshot_from_delayed_source",
+                "denominator_at_utc": timestamp,
+                "denominator_provider_asof_utc": timestamp,
+                "denominator_retrieved_at_utc": timestamp,
+                "source_id": "audit-valuation",
+                "source_url": "https://example.test/audit-valuation",
+                "retrieved_at_utc": timestamp,
+                "pit_class": "snapshot_from_live_source",
+                "coverage_reason": "audit fixture",
+                "percentile_history_status": "unavailable",
+            }
+        )
+        from src.research_control_tower.valuation import (
+            ValuationInput,
+            build_valuation_snapshot_row,
+        )
+
+        canonical = build_valuation_snapshot_row(
+            ValuationInput(
+                **{
+                    field: row[field]
+                    for field in ValuationInput.__dataclass_fields__
+                    if field in row
+                }
+            )
+        )
+        row.update(canonical)
+        return row
+    if schema_id == INTERNAL_ESTIMATES_SCHEMA_ID:
+        row = {column: None for column in INTERNAL_ESTIMATES_COLUMNS}
+        row.update(
+            {
+                "estimate_id": "audit-estimate-1",
+                "version": 1,
+                "supersedes_estimate_id": "",
+                "entity_id": "TENCENT",
+                "listing_id": "0700_HK",
+                "observation_type": "internal_estimate",
+                "author": "audit-fixture",
+                "metric": "revenue_total",
+                "accounting_basis": "NON_IFRS_MANAGEMENT",
+                "metric_basis": "NON_IFRS_MANAGEMENT",
+                "fiscal_period": "FY2026",
+                "fiscal_year": 2026,
+                "value_mid": 1.0,
+                "currency": "HKD",
+                "unit": "million",
+                "effective_asof": timestamp[:10],
+                "recorded_at_utc": timestamp,
+                "source_ref": "internal:audit-estimate-1",
+                "pit_class": "not_pit",
+            }
+        )
+        return row
+    raise AssertionError(f"unsupported audit fixture schema: {schema_id}")
+
+
 def _listing(
     listing_id: str,
     *,
@@ -169,8 +330,6 @@ def test_consensus_tie_break_includes_source_run_id_and_is_reverse_order_stable(
         "value": 3.0,
         "source_run_id": "run-omega",
     }
-    from tests.test_research_control_tower_consensus_revisions import _snap, _empty_store
-
     first = _snap(**first)
     second = _snap(**second)
     forward = collector.accumulate_snapshots(_empty_store(), [first, second], date(2026, 8, 1))
@@ -192,8 +351,6 @@ def test_corporate_action_version_is_integer_and_registry_version_is_text() -> N
 
 def test_legacy_corporate_action_version_is_migrated_before_arrow_coercion(tmp_path: Path) -> None:
     from src.research_control_tower.build import CORP_ACTIONS_SCHEMA_ID, LocalInput, _load_optional
-    from tests.test_research_control_tower_build import _audit_source_row
-
     row = _audit_source_row(CORP_ACTIONS_SCHEMA_ID, "2026-08-12T00:00:00Z")
     row["version"] = "v1"
     path = tmp_path / "legacy-corporate-actions.csv"
@@ -237,8 +394,6 @@ def test_high_risk_optional_rows_fail_closed_before_policy_or_arrow_coercion(
     value: object,
 ) -> None:
     from src.research_control_tower.build import LocalInput, _load_optional
-    from tests.test_research_control_tower_build import _audit_source_row
-
     row = _audit_source_row(schema_id, "2026-08-12T00:00:00Z")
     row[field] = value
     path = tmp_path / f"{schema_id}-{field}.csv"
