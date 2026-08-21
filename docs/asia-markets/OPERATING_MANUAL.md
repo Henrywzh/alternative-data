@@ -9,7 +9,9 @@ or the related `src/hk_*` pipelines.
 Asia Markets is a source-backed Hong Kong-first market-monitoring project. It
 combines research notes, normalized data pipelines, published artifacts, a
 public static/interactive dashboard hosted on Cloudflare Pages and a private
-Streamlit research terminal.
+Streamlit research terminal. The Index & ETF Allocation Monitor is currently
+a Streamlit-native research-terminal feature; it is deliberately outside the
+Cloudflare public sector roster.
 
 The dashboard is not an investment-advice product. Do not add rankings,
 forecasts or recommendations unless the user explicitly asks for a separate
@@ -34,13 +36,15 @@ At the beginning of a task:
 
 1. Read this manual.
 2. Read `PROJECT_STATUS.md` and `DATA_CATALOG.md`.
-3. Read `STREAMLIT_PARITY_PROTOCOL.md` before changing Cloudflare artifacts,
+3. Read `MARKET_MONITOR_STREAMLIT.md` before changing the Index & ETF
+   Allocation Monitor, its pipeline, artifact or Streamlit page.
+4. Read `STREAMLIT_PARITY_PROTOCOL.md` before changing Cloudflare artifacts,
    dashboard builders, source contracts or sector wiring. The non-blocking
    GitHub Action automatically reminds agents when a structural Cloudflare
    change needs a Streamlit decision; routine value-only refreshes stay quiet.
-4. Inspect `apps/asia-markets-dashboard/sectors.json` before changing the
+5. Inspect `apps/asia-markets-dashboard/sectors.json` before changing the
    sector roster.
-5. Run `git status --short` and preserve existing user work. Do not reset,
+6. Run `git status --short` and preserve existing user work. Do not reset,
    discard or overwrite unrelated changes.
 
 The repository root `AGENTS.md` and `CLAUDE.md` point here for Codex,
@@ -85,7 +89,7 @@ source/API/scraper
   -> Cloudflare Pages
 ```
 
-The private Streamlit V1 flow is intentionally thinner:
+The private Streamlit flow is intentionally thinner:
 
 ```text
 existing .generated/<sector>-artifact.json
@@ -93,10 +97,25 @@ existing .generated/<sector>-artifact.json
   -> Plotly charts, KPI cards, tables and source-health views
 ```
 
-The current Streamlit V1 connects only `hk-labour-market` and
-`hk-population-migration`. It must not fetch from external sources during page
-navigation or create a second copy of the source pipelines. Other markets,
-company explorer and cross-market comparison are future scope.
+The current Streamlit app includes the overview, market monitor, labour,
+population, transport, real-estate, aerospace, crypto, Data Explorer and
+Source Health pages. It must not fetch from external sources during page
+navigation or create a second copy of the source pipelines. The Index & ETF
+Allocation Monitor is read from `market-monitor-artifact*.json` and is not
+added to `sectors.json` or `package-dashboard.mjs` in V1. Company explorer and
+broader portfolio workflows remain future scope.
+
+The market-monitor-specific flow is:
+
+```text
+src/market_monitor sources
+  -> data/normalized/market_monitor + data/derived/market_monitor
+  -> apps/asia-markets-dashboard/.generated/market-monitor-artifact*.json
+  -> apps/asia-markets-streamlit/app.py
+```
+
+This shared artifact is a read contract only. It does not make the monitor a
+Cloudflare page or authorize adding it to the public sector roster.
 
 Important files:
 
@@ -133,6 +152,9 @@ The live roster is defined in `sectors.json` and currently includes:
 Planned sectors are intentionally non-clickable research placeholders. Do not
 turn a planned theme into a live dashboard merely because a document exists.
 Require a real, validated dataset and a working artifact builder.
+
+The Streamlit-only market monitor is a separate product surface and is not a
+Cloudflare sector entry.
 
 ## 5. Data rules
 
