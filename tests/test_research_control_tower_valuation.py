@@ -1,278 +1,603 @@
-"""Tests for valuation snapshots and internal estimates data contracts and transforms.
-
-Validates Gate T2 requirements:
-- valuation_snapshots schema, primary keys, and calculations
-- forward_pe, ev_ebitda, fcf_yield, shareholder_cash_return_yield
-- Full auditability of numerator/denominator vintages, currency conversions, and FX logging
-- Percentile history unavailable without historical denominator vintages
-- Full isolation between provider consensus and internal estimates / management guidance
-- Deterministic error handling and fail-closed validation
-"""
+"""Regression tests for auditable Control Tower T2 valuation foundations."""
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
+import pyarrow.parquet as pq
 import pytest
 
+from scripts.research_control_tower_valuation import (
+    build_explicit_valuation_inputs,
+    compute_tencent_valuation_snapshots,
+    main,
+)
 from src.research_control_tower.valuation import (
+    INTERNAL_ESTIMATES_ARROW_SCHEMA,
     INTERNAL_ESTIMATES_COLUMNS,
-    SUPPORTED_METRIC_BASES,
-    SUPPORTED_OBSERVATION_TYPES,
-    SUPPORTED_VALUATION_METRICS,
-    SUPPORTED_VALUATION_PIT_CLASSES,
+    VALUATION_SNAPSHOTS_ARROW_SCHEMA,
     VALUATION_SNAPSHOTS_COLUMNS,
     ValuationInput,
     build_valuation_snapshot_row,
-    compute_valuation_id,
+    canonicalize_metric_basis,
+    empty_frame,
+    frame_from_rows,
     load_internal_estimates_csv,
     validate_internal_estimates_df,
     validate_valuation_snapshots_df,
 )
 
 
-def test_constants_and_vocabularies():
-    """Verify supported enums and columns conform strictly to design spec."""
-    assert "forward_pe" in SUPPORTED_VALUATION_METRICS
-    assert "ev_ebitda" in SUPPORTED_VALUATION_METRICS
-    assert "fcf_yield" in SUPPORTED_VALUATION_METRICS
-    assert "shareholder_cash_return_yield" in SUPPORTED_VALUATION_METRICS
-
-    assert "GAAP_REPORTED" in SUPPORTED_METRIC_BASES
-    assert "NON_IFRS_MANAGEMENT" in SUPPORTED_METRIC_BASES
-    assert "PROVIDER_UNVERIFIED" in SUPPORTED_METRIC_BASES
-
-    assert "management_guidance" in SUPPORTED_OBSERVATION_TYPES
-    assert "internal_estimate" in SUPPORTED_OBSERVATION_TYPES
-
-    assert "snapshot_from_delayed_source" in SUPPORTED_VALUATION_PIT_CLASSES
-    assert "true_pit" in SUPPORTED_VALUATION_PIT_CLASSES
-
-    assert "valuation_id" in VALUATION_SNAPSHOTS_COLUMNS
-    assert "percentile_history_status" in VALUATION_SNAPSHOTS_COLUMNS
-    assert "estimate_id" in INTERNAL_ESTIMATES_COLUMNS
+AS_OF = pd.Timestamp("2026-08-21T12:00:00Z")
+QUOTE_URL = "https://finance.yahoo.com/quote/0700.HK"
+CONSENSUS_URL = "https://finance.yahoo.com/quote/0700.HK/analysis"
+FX_URL = "https://data-api.ecb.europa.eu/service/data/fixture"
 
 
-def test_build_forward_pe_same_currency():
-    """Test Forward P/E calculation when price and EPS share the same currency."""
-    now = datetime(2026, 8, 21, 12, 0, 0, tzinfo=timezone.utc)
-    inp = ValuationInput(
-        listing_id="0700_HK",
-        valuation_at=now,
-        metric_name="forward_pe",
-        metric_basis="NON_IFRS_MANAGEMENT",
-        numerator_value=380.0,
-        numerator_currency="HKD",
-        numerator_ref="quote:0700_HK_20260821",
-        denominator_value=25.0,
-        denominator_currency="HKD",
-        denominator_ref="consensus:0700_HK_fy26e_eps",
-        source_id="valuation_engine",
-        percentile_history_status="unavailable",
+def _quote(**overrides: object) -> dict[str, object]:
+    row: dict[str, object] = {
+        "quote_id": "quote-0700-20260821",
+        "listing_id": "0700_HK",
+        "canonical_ticker": "0700.HK",
+        "provider_symbol": "0700.HK",
+        "quote_timestamp": pd.Timestamp("2026-08-21T08:00:00Z"),
+        "retrieved_at_utc": pd.Timestamp("2026-08-21T08:05:00Z"),
+        "last_price": 375.0,
+        "bid": 374.8,
+        "ask": 375.2,
+        "day_change_pct": 1.0,
+        "volume": 1_000_000.0,
+        "currency": "HKD",
+        "market_status": "closed",
+        "latency_class": "delayed",
+        "source_id": "quote:yfinance",
+        "source_url": QUOTE_URL,
+        "pit_class": "snapshot_from_delayed_source",
+        "source_license_class": "provider_public",
+        "registry_version": "v1",
+    }
+    row.update(overrides)
+    return row
+
+
+def _consensus(**overrides: object) -> dict[str, object]:
+    row: dict[str, object] = {
+        "snapshot_id": "consensus-0700-eps-2026",
+        "provider": "yfinance",
+        "entity_id": "TENCENT",
+        "listing_id": "0700_HK",
+        "financial_data_security_id": "sec-0700",
+        "canonical_ticker": "0700.HK",
+        "metric": "eps",
+        "fiscal_period": "annual",
+        "fiscal_year": 2026,
+        "estimate_period_end": pd.Timestamp("2026-12-31").date(),
+        "horizon": "0y",
+        "snapshot_at": pd.Timestamp("2026-08-20T10:00:00Z"),
+        "value": 28.0,
+        "statistic": "mean",
+        "low_value": 27.0,
+        "high_value": 29.0,
+        "analyst_count": 25,
+        "provider_contributor_count": 25,
+        "currency": "CNY",
+        "unit": "currency_per_share",
+        "accounting_basis": "provider_reported_non_gaap_unverified",
+        "provider_asof": pd.Timestamp("2026-08-20T09:00:00Z"),
+        "retrieved_at_utc": pd.Timestamp("2026-08-20T10:05:00Z"),
+        "source_url": CONSENSUS_URL,
+        "raw_hash": "hash",
+        "pit_class": "snapshot_from_delayed_source",
+        "source_run_id": "run-1",
+        "calculation_origin": "provider_published_consensus",
+        "coverage_reason": "",
+    }
+    row.update(overrides)
+    return row
+
+
+def _fx_rows() -> pd.DataFrame:
+    common = {
+        "dataset_id": "airline_fx_rates",
+        "frequency": "daily",
+        "observation_date": "2026-08-20",
+        "base_currency": "USD",
+        "unit": "quote currency per USD",
+        "source_release_date": None,
+        "retrieved_at": "2026-08-21T07:00:00Z",
+        "source_name": "ECB",
+        "source_url": FX_URL,
+        "source_reference_currency": "EUR",
+    }
+    return pd.DataFrame(
+        [
+            {**common, "pair": "USD_CNY", "quote_currency": "CNY", "value": 7.0},
+            {**common, "pair": "USD_HKD", "quote_currency": "HKD", "value": 7.8},
+        ]
     )
-    row = build_valuation_snapshot_row(inp)
-    assert row["ratio_value"] == pytest.approx(380.0 / 25.0)  # 15.2
-    assert row["numerator_value"] == 380.0
-    assert row["denominator_value"] == 25.0
-    assert row["fx_rate_applied"] is None
+
+
+def _valuation_input(**overrides: object) -> ValuationInput:
+    values: dict[str, object] = {
+        "listing_id": "0700_HK",
+        "valuation_at": AS_OF.to_pydatetime(),
+        "metric_name": "forward_pe",
+        "accounting_basis": "provider_reported_non_gaap_unverified",
+        "metric_basis": "PROVIDER_UNVERIFIED",
+        "numerator_value": 375.0,
+        "numerator_currency": "HKD",
+        "numerator_ref": "quote-1",
+        "numerator_source_id": "quote:yfinance",
+        "numerator_source_url": QUOTE_URL,
+        "numerator_pit_class": "snapshot_from_delayed_source",
+        "numerator_at_utc": pd.Timestamp(
+            "2026-08-21T08:00:00Z"
+        ).to_pydatetime(),
+        "numerator_retrieved_at_utc": pd.Timestamp(
+            "2026-08-21T08:05:00Z"
+        ).to_pydatetime(),
+        "denominator_value": 30.0,
+        "denominator_currency": "HKD",
+        "denominator_ref": "consensus-1",
+        "denominator_source_id": "consensus:yfinance",
+        "denominator_source_url": CONSENSUS_URL,
+        "denominator_pit_class": "snapshot_from_delayed_source",
+        "denominator_at_utc": pd.Timestamp(
+            "2026-08-20T10:00:00Z"
+        ).to_pydatetime(),
+        "denominator_provider_asof_utc": pd.Timestamp(
+            "2026-08-20T09:00:00Z"
+        ).to_pydatetime(),
+        "denominator_retrieved_at_utc": pd.Timestamp(
+            "2026-08-20T10:05:00Z"
+        ).to_pydatetime(),
+        "source_url": CONSENSUS_URL,
+        "retrieved_at_utc": AS_OF.to_pydatetime(),
+    }
+    values.update(overrides)
+    return ValuationInput(**values)
+
+
+def test_real_quote_and_consensus_contract_produce_forward_pe() -> None:
+    result = compute_tencent_valuation_snapshots(
+        pd.DataFrame([_quote()]),
+        pd.DataFrame([_consensus()]),
+        fx_rates_df=_fx_rows(),
+        as_of_utc=AS_OF,
+        fiscal_year=2026,
+    )
+
+    assert list(result.columns) == VALUATION_SNAPSHOTS_COLUMNS
+    assert len(result) == 1
+    row = result.iloc[0]
+    assert row["numerator_ref"] == "quote-0700-20260821"
+    assert row["numerator_value"] == 375.0
+    assert row["denominator_ref"] == "consensus-0700-eps-2026"
+    assert row["accounting_basis"] == "provider_reported_non_gaap_unverified"
+    assert row["metric_basis"] == "PROVIDER_UNVERIFIED"
+    assert row["fx_base_currency"] == "CNY"
+    assert row["fx_quote_currency"] == "HKD"
+    assert row["fx_rate_applied"] == pytest.approx(7.8 / 7.0)
+    assert row["ratio_value"] == pytest.approx(375.0 / (28.0 * 7.8 / 7.0))
     assert row["percentile_history_status"] == "unavailable"
-
-    df = pd.DataFrame([row])
-    issues = validate_valuation_snapshots_df(df)
-    assert not issues
+    assert not validate_valuation_snapshots_df(result)
 
 
-def test_build_forward_pe_with_fx_conversion():
-    """Test Forward P/E calculation with explicit FX conversion and audit log."""
-    now = datetime(2026, 8, 21, 12, 0, 0, tzinfo=timezone.utc)
-    fx_time = datetime(2026, 8, 21, 10, 0, 0, tzinfo=timezone.utc)
-    # Price is 375.0 HKD, EPS is 28.0 CNY. FX rate: 1 CNY = 1.08 HKD.
-    # Converted EPS = 28.0 * 1.08 = 30.24 HKD.
-    # P/E = 375.0 / 30.24 = 12.40079
-    inp = ValuationInput(
-        listing_id="0700_HK",
-        valuation_at=now,
-        metric_name="forward_pe",
-        metric_basis="NON_IFRS_MANAGEMENT",
-        numerator_value=375.0,
-        numerator_currency="HKD",
-        numerator_ref="quote:0700_HK_20260821",
-        denominator_value=28.0,
-        denominator_currency="CNY",
-        denominator_ref="consensus:0700_HK_fy26e_eps",
-        fx_rate_applied=1.08,
-        fx_source="ecb_fx:CNY_HKD_20260821",
-        fx_snapshot_at_utc=fx_time,
-        source_id="valuation_engine",
-        percentile_history_status="unavailable",
+def test_selection_uses_fiscal_mapping_and_statistic_not_horizon() -> None:
+    consensus = pd.DataFrame(
+        [
+            _consensus(
+                snapshot_id="wrong-stat",
+                statistic="median",
+                value=99.0,
+            ),
+            _consensus(
+                snapshot_id="wrong-year",
+                fiscal_year=2027,
+                horizon="+1y",
+                value=50.0,
+            ),
+            _consensus(
+                snapshot_id="selected",
+                horizon="provider-specific-label",
+                value=28.0,
+            ),
+        ]
     )
-    row = build_valuation_snapshot_row(inp)
-    assert row["ratio_value"] == pytest.approx(375.0 / (28.0 * 1.08))
-    assert row["fx_rate_applied"] == 1.08
-    assert row["fx_source"] == "ecb_fx:CNY_HKD_20260821"
-    assert row["fx_snapshot_at_utc"] == fx_time
-
-    df = pd.DataFrame([row])
-    issues = validate_valuation_snapshots_df(df)
-    assert not issues
-
-
-def test_fcf_yield_and_shareholder_cash_return_yield():
-    """Test yield metrics calculations where ratio = denominator / numerator."""
-    now = datetime(2026, 8, 21, 12, 0, 0, tzinfo=timezone.utc)
-    # Market Cap / EV = 3,500,000M HKD, FCF = 175,000M HKD -> Yield = 5%
-    inp_fcf = ValuationInput(
-        listing_id="0700_HK",
-        valuation_at=now,
-        metric_name="fcf_yield",
-        metric_basis="NON_IFRS_MANAGEMENT",
-        numerator_value=3500000.0,
-        numerator_currency="HKD",
-        numerator_ref="mcap:0700_HK_20260821",
-        denominator_value=175000.0,
-        denominator_currency="HKD",
-        denominator_ref="actual:0700_HK_ttm_fcf",
-        source_id="valuation_engine",
-        percentile_history_status="unavailable",
+    result = compute_tencent_valuation_snapshots(
+        pd.DataFrame([_quote()]),
+        consensus,
+        fx_rates_df=_fx_rows(),
+        as_of_utc=AS_OF,
+        fiscal_period="annual",
+        fiscal_year=2026,
+        statistic="mean",
     )
-    row_fcf = build_valuation_snapshot_row(inp_fcf)
-    assert row_fcf["ratio_value"] == pytest.approx(0.05)
+    assert result.iloc[0]["denominator_ref"] == "selected"
 
-    # Shareholder cash return yield (Dividends + Buybacks / Market Cap)
-    inp_sh = ValuationInput(
-        listing_id="0700_HK",
-        valuation_at=now,
-        metric_name="shareholder_cash_return_yield",
-        metric_basis="GAAP_REPORTED",
-        numerator_value=3500000.0,
-        numerator_currency="HKD",
-        numerator_ref="mcap:0700_HK_20260821",
-        denominator_value=140000.0,
-        denominator_currency="HKD",
-        denominator_ref="corp_actions:0700_HK_ttm_cash_return",
-        source_id="valuation_engine",
-        percentile_history_status="unavailable",
+
+def test_future_quote_consensus_and_fx_vintages_are_excluded() -> None:
+    quotes = pd.DataFrame(
+        [
+            _quote(quote_id="causal", last_price=375.0),
+            _quote(
+                quote_id="future",
+                quote_timestamp=pd.Timestamp("2026-08-22T08:00:00Z"),
+                retrieved_at_utc=pd.Timestamp("2026-08-22T08:05:00Z"),
+                last_price=999.0,
+            ),
+        ]
     )
-    row_sh = build_valuation_snapshot_row(inp_sh)
-    assert row_sh["ratio_value"] == pytest.approx(0.04)
+    consensus = pd.DataFrame(
+        [
+            _consensus(snapshot_id="causal", value=28.0),
+            _consensus(
+                snapshot_id="future",
+                snapshot_at=pd.Timestamp("2026-08-22T10:00:00Z"),
+                provider_asof=pd.Timestamp("2026-08-22T09:00:00Z"),
+                retrieved_at_utc=pd.Timestamp("2026-08-22T10:05:00Z"),
+                value=99.0,
+            ),
+        ]
+    )
+    result = compute_tencent_valuation_snapshots(
+        quotes,
+        consensus,
+        fx_rates_df=_fx_rows(),
+        as_of_utc=AS_OF,
+        fiscal_year=2026,
+    )
+    assert result.iloc[0]["numerator_ref"] == "causal"
+    assert result.iloc[0]["denominator_ref"] == "causal"
+    assert result.iloc[0]["numerator_at_utc"] <= AS_OF
+    assert result.iloc[0]["denominator_at_utc"] <= AS_OF
+    assert result.iloc[0]["denominator_provider_asof_utc"] <= AS_OF
+    assert result.iloc[0]["fx_snapshot_at_utc"] <= AS_OF
+
+    future_fx = _fx_rows()
+    future_fx["retrieved_at"] = "2026-08-22T07:00:00Z"
+    unavailable = compute_tencent_valuation_snapshots(
+        pd.DataFrame([_quote()]),
+        pd.DataFrame([_consensus()]),
+        fx_rates_df=future_fx,
+        as_of_utc=AS_OF,
+        fiscal_year=2026,
+    )
+    assert unavailable.empty
 
 
-def test_fail_closed_on_missing_fx_or_currency_mismatch():
-    """Validation must fail if currencies differ without valid FX parameters."""
-    now = datetime(2026, 8, 21, 12, 0, 0, tzinfo=timezone.utc)
-    with pytest.raises(ValueError, match="Currencies differ"):
+def test_missing_fx_returns_typed_empty_instead_of_fabrication() -> None:
+    result = compute_tencent_valuation_snapshots(
+        pd.DataFrame([_quote()]),
+        pd.DataFrame([_consensus()]),
+        fx_rates_df=None,
+        as_of_utc=AS_OF,
+        fiscal_year=2026,
+    )
+    assert result.empty
+    assert list(result.columns) == VALUATION_SNAPSHOTS_COLUMNS
+
+
+def test_naive_source_timestamps_are_not_assumed_to_be_utc() -> None:
+    result = compute_tencent_valuation_snapshots(
+        pd.DataFrame(
+            [
+                _quote(
+                    quote_timestamp="2026-08-21 08:00:00",
+                    retrieved_at_utc="2026-08-21 08:05:00",
+                )
+            ]
+        ),
+        pd.DataFrame([_consensus()]),
+        fx_rates_df=_fx_rows(),
+        as_of_utc=AS_OF,
+        fiscal_year=2026,
+    )
+    assert result.empty
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("numerator_value", 0.0, "numerator_value must be positive"),
+        ("numerator_value", float("inf"), "numerator_value must be finite"),
+        ("denominator_value", 0.0, "denominator_value must be positive"),
+        ("denominator_value", -1.0, "denominator_value must be positive"),
+        ("denominator_value", float("nan"), "denominator_value must be finite"),
+    ],
+)
+def test_nonpositive_or_nonfinite_inputs_are_unavailable(
+    field: str, value: float, message: str
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        build_valuation_snapshot_row(_valuation_input(**{field: value}))
+
+
+def test_all_supported_metrics_have_positive_audited_calculations() -> None:
+    expected = {
+        "forward_pe": 375.0 / 30.0,
+        "ev_ebitda": 375.0 / 30.0,
+        "fcf_yield": 30.0 / 375.0 * 100.0,
+        "shareholder_cash_return_yield": 30.0 / 375.0 * 100.0,
+    }
+    for metric_name, ratio in expected.items():
+        row = build_valuation_snapshot_row(
+            _valuation_input(metric_name=metric_name)
+        )
+        assert row["ratio_value"] == pytest.approx(ratio)
+        arrow_round_trip = frame_from_rows(
+            [row], VALUATION_SNAPSHOTS_ARROW_SCHEMA
+        )
+        assert not validate_valuation_snapshots_df(arrow_round_trip)
+
+
+def test_explicit_local_inputs_support_non_pe_metrics() -> None:
+    explicit = pd.DataFrame(
+        [
+            vars(
+                _valuation_input(
+                    metric_name="ev_ebitda",
+                    numerator_value=3_500.0,
+                    denominator_value=350.0,
+                )
+            )
+        ]
+    )
+    result = build_explicit_valuation_inputs(explicit)
+    assert result.iloc[0]["metric_name"] == "ev_ebitda"
+    assert result.iloc[0]["ratio_value"] == pytest.approx(10.0)
+
+
+def test_fx_direction_and_causality_are_enforced() -> None:
+    with pytest.raises(ValueError, match="denominator-to-numerator"):
         build_valuation_snapshot_row(
-            ValuationInput(
-                listing_id="0700_HK",
-                valuation_at=now,
-                metric_name="forward_pe",
-                metric_basis="NON_IFRS_MANAGEMENT",
-                numerator_value=380.0,
-                numerator_currency="HKD",
-                numerator_ref="quote:0700_HK",
-                denominator_value=25.0,
-                denominator_currency="CNY",  # mismatch without fx_rate_applied
-                denominator_ref="consensus:0700_HK_eps",
+            _valuation_input(
+                denominator_currency="CNY",
+                fx_rate_applied=7.8 / 7.0,
+                fx_base_currency="HKD",
+                fx_quote_currency="CNY",
+                fx_source="ECB",
+                fx_source_url=FX_URL,
+                fx_snapshot_at_utc=pd.Timestamp(
+                    "2026-08-20T00:00:00Z"
+                ).to_pydatetime(),
+                fx_retrieved_at_utc=pd.Timestamp(
+                    "2026-08-21T07:00:00Z"
+                ).to_pydatetime(),
+            )
+        )
+    with pytest.raises(ValueError, match="FX vintage"):
+        build_valuation_snapshot_row(
+            _valuation_input(
+                denominator_currency="CNY",
+                fx_rate_applied=7.8 / 7.0,
+                fx_base_currency="CNY",
+                fx_quote_currency="HKD",
+                fx_source="ECB",
+                fx_source_url=FX_URL,
+                fx_snapshot_at_utc=pd.Timestamp(
+                    "2026-08-22T00:00:00Z"
+                ).to_pydatetime(),
+                fx_retrieved_at_utc=pd.Timestamp(
+                    "2026-08-22T07:00:00Z"
+                ).to_pydatetime(),
             )
         )
 
 
-def test_fail_closed_on_invalid_percentile_or_unsupported_metrics():
-    """Validator must reject invalid metric names or non-unavailable percentile status."""
-    now = datetime(2026, 8, 21, 12, 0, 0, tzinfo=timezone.utc)
-    with pytest.raises(ValueError, match="Unsupported metric_name"):
+def test_source_observation_must_not_postdate_source_retrieval() -> None:
+    with pytest.raises(ValueError, match="numerator observation"):
         build_valuation_snapshot_row(
-            ValuationInput(
-                listing_id="0700_HK",
-                valuation_at=now,
-                metric_name="ps_ratio",  # not supported in core contract
-                metric_basis="GAAP_REPORTED",
-                numerator_value=380.0,
-                numerator_currency="HKD",
-                numerator_ref="q1",
-                denominator_value=25.0,
-                denominator_currency="HKD",
-                denominator_ref="d1",
+            _valuation_input(
+                numerator_at_utc=pd.Timestamp(
+                    "2026-08-21T09:00:00Z"
+                ).to_pydatetime(),
+                numerator_retrieved_at_utc=pd.Timestamp(
+                    "2026-08-21T08:00:00Z"
+                ).to_pydatetime(),
+            )
+        )
+    with pytest.raises(ValueError, match="denominator observation/provider-as-of"):
+        build_valuation_snapshot_row(
+            _valuation_input(
+                denominator_provider_asof_utc=pd.Timestamp(
+                    "2026-08-20T11:00:00Z"
+                ).to_pydatetime(),
+                denominator_retrieved_at_utc=pd.Timestamp(
+                    "2026-08-20T10:00:00Z"
+                ).to_pydatetime(),
             )
         )
 
-    # Test validator flagging percentile status
-    valid_row = build_valuation_snapshot_row(
-        ValuationInput(
-            listing_id="0700_HK",
-            valuation_at=now,
-            metric_name="forward_pe",
-            metric_basis="GAAP_REPORTED",
-            numerator_value=380.0,
-            numerator_currency="HKD",
-            numerator_ref="q1",
-            denominator_value=25.0,
-            denominator_currency="HKD",
-            denominator_ref="d1",
-        )
+
+def test_basis_canonicalization_never_promotes_unverified_provider_label() -> None:
+    assert (
+        canonicalize_metric_basis("provider_reported_non_gaap_unverified")
+        == "PROVIDER_UNVERIFIED"
     )
-    df_invalid_percentile = pd.DataFrame([valid_row])
-    df_invalid_percentile["percentile_history_status"] = "available"  # illegal without vintage history
-    issues = validate_valuation_snapshots_df(df_invalid_percentile)
-    assert any("percentile_history_status must be 'unavailable'" in msg for msg in issues)
+    assert canonicalize_metric_basis(None) == "PROVIDER_UNVERIFIED"
+    assert canonicalize_metric_basis("NON_IFRS_MANAGEMENT") == (
+        "NON_IFRS_MANAGEMENT"
+    )
+    assert canonicalize_metric_basis("IFRS as reported") == "GAAP_REPORTED"
 
 
-def test_internal_estimates_loading_and_validation(tmp_path: Path):
-    """Test internal estimates CSV loading, schema validation, and isolation from consensus."""
-    csv_file = tmp_path / "internal_estimates.csv"
-    csv_content = """estimate_id,version,supersedes_estimate_id,entity_id,listing_id,observation_type,author,metric,accounting_basis,metric_basis,fiscal_period,fiscal_year,value_low,value_high,value_mid,currency,unit,effective_asof,recorded_at_utc,rationale_notes,source_ref,source_url,pit_class,reviewed_at_utc,reviewed_by
-EST_001,1,,TENCENT,0700_HK,management_guidance,company_management,shareholder_cash_return,IFRS,NON_IFRS_MANAGEMENT,FY2026,2026,100000000000,,100000000000,HKD,count,2026-03-20,2026-03-20T10:00:00Z,Management FY26 buyback commitment >=100B HKD,tencent_fy25_results_call,,snapshot_from_live_source,2026-03-21T00:00:00Z,analyst_1
-EST_002,1,,TENCENT,0700_HK,internal_estimate,research_analyst,operating_profit,IFRS,NON_IFRS_MANAGEMENT,FY2026,2026,260000000000,280000000000,270000000000,CNY,count,2026-08-20,2026-08-20T15:00:00Z,Internal model base case,model_v2_6,,not_pit,2026-08-20T16:00:00Z,lead_pm
-"""
-    csv_file.write_text(csv_content, encoding="utf-8")
-
-    df = load_internal_estimates_csv(csv_file)
-    assert len(df) == 2
-    assert list(df.columns) == INTERNAL_ESTIMATES_COLUMNS
-    assert df.iloc[0]["observation_type"] == "management_guidance"
-    assert df.iloc[1]["observation_type"] == "internal_estimate"
-    assert df.iloc[0]["pit_class"] == "snapshot_from_live_source"
-    assert df.iloc[1]["pit_class"] == "not_pit"
-
-    issues = validate_internal_estimates_df(df)
-    assert not issues
-
-
-def test_internal_estimates_fail_closed_on_invalid_data():
-    """Test that invalid observation_type or missing values trigger validation errors."""
-    bad_df = pd.DataFrame([
+def _internal_rows() -> pd.DataFrame:
+    rows = [
         {
-            "estimate_id": "EST_BAD",
-            "version": "1",
+            "estimate_id": "EST-1",
+            "version": 1,
             "supersedes_estimate_id": None,
             "entity_id": "TENCENT",
             "listing_id": "0700_HK",
-            "observation_type": "third_party_consensus",  # ILLEGAL: must stay separate from consensus!
-            "author": "analyst",
-            "metric": "revenue",
-            "accounting_basis": "IFRS",
-            "metric_basis": "GAAP_REPORTED",
-            "fiscal_period": "FY26",
+            "observation_type": "internal_estimate",
+            "author": "research_analyst",
+            "metric": "operating_profit",
+            "accounting_basis": "NON_IFRS_MANAGEMENT",
+            "metric_basis": "NON_IFRS_MANAGEMENT",
+            "fiscal_period": "FY2026",
             "fiscal_year": 2026,
-            "value_low": None,
-            "value_high": None,
-            "value_mid": None,  # All values null is illegal
+            "value_low": 260.0,
+            "value_high": 280.0,
+            "value_mid": 270.0,
             "currency": "CNY",
-            "unit": "count",
-            "effective_asof": "2026-08-21",
-            "recorded_at_utc": "2026-08-21T00:00:00Z",
-            "rationale_notes": "test",
-            "source_ref": "",  # Empty source ref is illegal
+            "unit": "CNY_billion",
+            "effective_asof": pd.Timestamp("2026-08-20").date(),
+            "recorded_at_utc": pd.Timestamp("2026-08-20T15:00:00Z"),
+            "rationale_notes": "Internal model.",
+            "source_ref": "model-v1",
             "source_url": None,
             "pit_class": "not_pit",
             "reviewed_at_utc": None,
             "reviewed_by": None,
-        }
-    ])
-    issues = validate_internal_estimates_df(bad_df)
-    assert any("invalid observation_type" in msg for msg in issues)
-    assert any("at least one of value_low, value_high, value_mid must be provided" in msg for msg in issues)
-    assert any("source_ref must not be empty" in msg for msg in issues)
+        },
+        {
+            "estimate_id": "EST-2",
+            "version": 2,
+            "supersedes_estimate_id": "EST-1",
+            "entity_id": "TENCENT",
+            "listing_id": "0700_HK",
+            "observation_type": "internal_estimate",
+            "author": "research_analyst",
+            "metric": "operating_profit",
+            "accounting_basis": "NON_IFRS_MANAGEMENT",
+            "metric_basis": "NON_IFRS_MANAGEMENT",
+            "fiscal_period": "FY2026",
+            "fiscal_year": 2026,
+            "value_low": 265.0,
+            "value_high": 285.0,
+            "value_mid": 275.0,
+            "currency": "CNY",
+            "unit": "CNY_billion",
+            "effective_asof": pd.Timestamp("2026-08-21").date(),
+            "recorded_at_utc": pd.Timestamp("2026-08-21T15:00:00Z"),
+            "rationale_notes": "Internal model revision.",
+            "source_ref": "model-v2",
+            "source_url": None,
+            "pit_class": "not_pit",
+            "reviewed_at_utc": pd.Timestamp("2026-08-21T16:00:00Z"),
+            "reviewed_by": "lead_pm",
+        },
+    ]
+    return pd.DataFrame(rows, columns=INTERNAL_ESTIMATES_COLUMNS)
 
+
+def test_internal_estimates_exact_schema_version_order_and_review_contract() -> None:
+    valid = _internal_rows()
+    assert not validate_internal_estimates_df(valid)
+
+    invalid = valid.copy()
+    invalid.loc[1, "value_low"] = 290.0
+    invalid.loc[1, "reviewed_by"] = None
+    invalid.loc[1, "pit_class"] = "snapshot_from_live_source"
+    issues = validate_internal_estimates_df(invalid)
+    assert any("value_low must be <= value_mid" in issue for issue in issues)
+    assert any("both be set or both be null" in issue for issue in issues)
+    assert any("internal_estimate pit_class must be not_pit" in issue for issue in issues)
+
+    wrong_schema = valid.drop(columns=["source_ref"])
+    assert validate_internal_estimates_df(wrong_schema) == [
+        "internal_estimates has invalid exact schema"
+    ]
+
+
+def test_internal_estimate_loader_rejects_schema_drift(tmp_path: Path) -> None:
+    path = tmp_path / "internal_estimates.csv"
+    path.write_text("estimate_id,unexpected\nEST-1,x\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="invalid exact schema"):
+        load_internal_estimates_csv(path)
+
+
+def test_internal_estimate_loader_does_not_assume_timezone(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "internal_estimates.csv"
+    row = _internal_rows().iloc[0].copy()
+    row["recorded_at_utc"] = "2026-08-20 15:00:00"
+    pd.DataFrame([row], columns=INTERNAL_ESTIMATES_COLUMNS).to_csv(
+        path, index=False
+    )
+    loaded = load_internal_estimates_csv(path)
+    issues = validate_internal_estimates_df(loaded)
+    assert any("effective_asof/recorded_at_utc is invalid" in issue for issue in issues)
+
+
+def test_cli_atomically_writes_populated_outputs_with_exact_arrow_schema(
+    tmp_path: Path,
+) -> None:
+    quotes_path = tmp_path / "quotes.parquet"
+    consensus_path = tmp_path / "consensus.parquet"
+    fx_path = tmp_path / "fx.parquet"
+    estimates_path = tmp_path / "internal_estimates.csv"
+    output_dir = tmp_path / "out"
+    pd.DataFrame([_quote()]).to_parquet(quotes_path, index=False)
+    pd.DataFrame([_consensus()]).to_parquet(consensus_path, index=False)
+    _fx_rows().to_parquet(fx_path, index=False)
+    estimates_path.write_text(
+        ",".join(INTERNAL_ESTIMATES_COLUMNS) + "\n", encoding="utf-8"
+    )
+
+    assert (
+        main(
+            [
+                "--quotes",
+                str(quotes_path),
+                "--consensus",
+                str(consensus_path),
+                "--fx-rates",
+                str(fx_path),
+                "--internal-estimates",
+                str(estimates_path),
+                "--output-dir",
+                str(output_dir),
+                "--as-of",
+                AS_OF.isoformat(),
+                "--fiscal-year",
+                "2026",
+            ]
+        )
+        == 0
+    )
+    valuation_path = output_dir / "valuation_snapshots.parquet"
+    internal_path = output_dir / "internal_estimates.parquet"
+    assert valuation_path.exists()
+    assert internal_path.exists()
+    assert pq.read_schema(valuation_path).equals(VALUATION_SNAPSHOTS_ARROW_SCHEMA)
+    assert pq.read_schema(internal_path).equals(INTERNAL_ESTIMATES_ARROW_SCHEMA)
+    assert len(pd.read_parquet(valuation_path)) == 1
+    assert pd.read_parquet(internal_path).empty
+    assert not list(output_dir.glob(".*.tmp"))
+
+
+def test_cli_writes_typed_empty_outputs_when_sources_are_unavailable(
+    tmp_path: Path,
+) -> None:
+    output_dir = tmp_path / "empty-out"
+    missing_estimates = tmp_path / "missing.csv"
+    assert (
+        main(
+            [
+                "--internal-estimates",
+                str(missing_estimates),
+                "--output-dir",
+                str(output_dir),
+                "--as-of",
+                AS_OF.isoformat(),
+            ]
+        )
+        == 0
+    )
+    valuation_path = output_dir / "valuation_snapshots.parquet"
+    internal_path = output_dir / "internal_estimates.parquet"
+    assert pq.read_schema(valuation_path).equals(VALUATION_SNAPSHOTS_ARROW_SCHEMA)
+    assert pq.read_schema(internal_path).equals(INTERNAL_ESTIMATES_ARROW_SCHEMA)
+    assert pd.read_parquet(valuation_path).empty
+    assert pd.read_parquet(internal_path).empty
+
+
+def test_arrow_empty_frames_keep_exact_columns() -> None:
+    valuations = empty_frame(VALUATION_SNAPSHOTS_ARROW_SCHEMA)
+    estimates = empty_frame(INTERNAL_ESTIMATES_ARROW_SCHEMA)
+    assert list(valuations.columns) == VALUATION_SNAPSHOTS_COLUMNS
+    assert list(estimates.columns) == INTERNAL_ESTIMATES_COLUMNS
