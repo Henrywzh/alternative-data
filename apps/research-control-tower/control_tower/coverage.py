@@ -1730,9 +1730,13 @@ def _is_non_empty_relation(value: object) -> bool:
 
 def _unambiguous_listing_owners(
     listings: pd.DataFrame,
+    *,
+    as_of: pd.Timestamp,
 ) -> dict[str, str]:
     owner_candidates: dict[str, set[str]] = {}
     for _, listing in listings.iterrows():
+        if listing_eligibility_reason(listing, as_of) is not None:
+            continue
         listing_id = _text(listing.get("listing_id"))
         entity_id = _text(listing.get("entity_id"))
         if listing_id and entity_id:
@@ -1760,7 +1764,12 @@ def _registry_id_sets(
 
     return (
         ids(snapshot.entities, "entity_id"),
-        set(_unambiguous_listing_owners(snapshot.listings)),
+        set(
+            _unambiguous_listing_owners(
+                snapshot.listings,
+                as_of=snapshot.now_utc,
+            )
+        ),
         ids(snapshot.baskets, "basket_id"),
     )
 
@@ -1780,7 +1789,10 @@ def _linked_row_count(
         return 0
     entity_ids, listing_ids, basket_ids = _registry_id_sets(snapshot)
     if {"entity_id", "listing_id"} <= set(columns):
-        listing_owner = _unambiguous_listing_owners(snapshot.listings)
+        listing_owner = _unambiguous_listing_owners(
+            snapshot.listings,
+            as_of=snapshot.now_utc,
+        )
         return sum(
             (
                 bool(_text(row.get("listing_id")))

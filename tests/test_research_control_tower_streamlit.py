@@ -2244,6 +2244,46 @@ def test_today_page_renders_quote_snapshots_and_filters_by_universe(
     assert "Stage 1 market quotes (delayed)" not in _app_text(app)
 
 
+def test_today_selected_universe_uses_shared_listing_eligibility(
+    generated_root: Path,
+) -> None:
+    from control_tower.models import EventFilters
+    from control_tower.pages.today import _selected_universe
+
+    snapshot = _snapshot(generated_root)
+    listings = pd.concat(
+        [
+            snapshot.listings,
+            pd.DataFrame(
+                [
+                    {
+                        "listing_id": "TCEHY_US",
+                        "entity_id": "E1",
+                        "canonical_ticker": "TCEHY.US",
+                        "mapping_status": "unresolved",
+                        "collection_eligible": False,
+                        "listing_status": "active",
+                        "active_from": "2026-01-01",
+                        "active_to": None,
+                    }
+                ]
+            ),
+        ],
+        ignore_index=True,
+    )
+    snapshot = replace(snapshot, listings=listings)
+
+    entities, listing_ids, baskets = _selected_universe(
+        snapshot,
+        EventFilters(),
+    )
+
+    assert entities == {"E1", "E2"}
+    assert listing_ids == {"L1", "L2"}
+    assert "TCEHY_US" not in listing_ids
+    assert baskets == set()
+
+
 def test_today_page_marks_bytedance_only_universe_not_applicable(
     generated_root: Path,
     monkeypatch: pytest.MonkeyPatch,

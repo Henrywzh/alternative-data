@@ -2138,3 +2138,83 @@ def test_tcehy_excluded_from_active_listings_while_0700_hk_remains() -> None:
     assert "0700_HK" in listing_ids
     assert "TCEHY_US" not in listing_ids
     assert len(matrix.listing_rows) == 7
+
+
+def test_summary_linkage_excludes_ineligible_listing_but_keeps_entity_only_filing() -> None:
+    from dataclasses import replace
+
+    from control_tower.coverage import build_data_coverage_summary
+
+    snapshot = _snapshot(
+        official_filings=pd.DataFrame(
+            [_official_filing("DOC-ENTITY", "TENCENT")]
+        ),
+        news_filings=pd.DataFrame(
+            [
+                {
+                    "document_id": "NEWS-TCEHY",
+                    "source_id": "news_official_ai_rss",
+                    "related_entity_ids": (),
+                    "related_listing_ids": ("TCEHY_US",),
+                    "related_basket_ids": (),
+                    "published_at": FRESH,
+                }
+            ]
+        ),
+        health=_health(
+            **{
+                "filings:hkexnews": {
+                    "source_kind": "official_filing",
+                    "status": "available",
+                    "row_count": 1,
+                    "source_latest_at": FRESH,
+                    "cadence": "event_driven",
+                    "query_attempted": True,
+                    "execution_status": "completed",
+                    "completed_at": FRESH,
+                },
+                "news_official_ai_rss": {
+                    "source_kind": "news",
+                    "status": "available",
+                    "row_count": 1,
+                    "source_latest_at": FRESH,
+                    "cadence": "event_driven",
+                    "query_attempted": True,
+                    "execution_status": "completed",
+                    "completed_at": FRESH,
+                },
+            }
+        ),
+    )
+    listings = pd.concat(
+        [
+            snapshot.listings,
+            pd.DataFrame(
+                [
+                    {
+                        "listing_id": "TCEHY_US",
+                        "entity_id": "TENCENT",
+                        "canonical_ticker": "TCEHY.US",
+                        "mapping_status": "unresolved",
+                        "collection_eligible": False,
+                        "listing_status": "active",
+                        "active_from": "2026-01-01",
+                        "active_to": None,
+                    }
+                ]
+            ),
+        ],
+        ignore_index=True,
+    )
+
+    summary = {
+        row.category: row
+        for row in build_data_coverage_summary(
+            replace(snapshot, listings=listings)
+        ).rows
+    }
+
+    filings = summary["News & Filings"]
+    assert filings.record_count == 2
+    assert filings.linked_count == 1
+    assert filings.status_code == "partial"
