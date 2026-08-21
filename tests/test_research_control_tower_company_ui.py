@@ -1254,3 +1254,27 @@ def test_event_relation_precedence_explicit_links_isolate_company_events() -> No
     assert "EV_TENCENT_2Q2026_RESULTS" not in bytedance_event_ids
     assert "EV_TENCENT_3Q2026_WINDOW" not in bytedance_event_ids
     assert "EV_BASKET_ONLY_MACRO" in bytedance_event_ids
+
+
+def test_news_filings_section_renders_precise_unlinked_warning(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from streamlit.testing.v1 import AppTest
+    import streamlit as st
+
+    root = tmp_path / "news-warning-apptest"
+    snapshot = _make_tencent_snapshot()
+    _write_test_bundle(root, snapshot)
+
+    monkeypatch.setenv("CONTROL_TOWER_ARTIFACT_ROOT", str(root))
+    st.cache_data.clear()
+
+    app = AppTest.from_file(str(APP_PATH), default_timeout=30).run()
+    assert not app.exception
+
+    app.session_state["ct_page"] = "Company"
+    app.session_state["ct_company_entity"] = "TENCENT"
+    app = app.run()
+    assert not app.exception
+
+    text = _app_text(app)
+    assert "No registry-linked generic news/filing metadata rows are available for the selected company/listing" in text
+    assert "official filing metadata is rendered separately above" in text
