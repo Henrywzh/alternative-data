@@ -2306,3 +2306,153 @@ def test_today_page_marks_bytedance_only_universe_not_applicable(
     assert "Market quotes not applicable" in rendered
     assert "Not applicable" in rendered
     assert "USD 123.45" not in rendered
+
+def test_flight_deck_active_window_presents_as_active_catalyst(generated_root: Path) -> None:
+    from control_tower.components.flight_deck import build_flight_deck, flight_deck_html
+    from control_tower.models import EventFilters
+
+    snapshot = _snapshot(generated_root)
+    now = pd.Timestamp("2026-08-22T00:06:00Z")
+    active_events = pd.DataFrame([
+        {
+            "event_id": "AI_ADVANCED_PACKAGING_WINDOW",
+            "event_type": "thesis_checkpoint",
+            "title": "Advanced packaging adoption window",
+            "status": "active",
+            "certainty_class": "thesis_checkpoint",
+            "importance": "high",
+            "starts_at": "2026-06-30T16:00:00Z",
+            "ends_at": "2027-06-30T15:59:59Z",
+            "date_precision": "year",
+        }
+    ])
+    active_snapshot = replace(snapshot, events=active_events, as_of_utc=now)
+    deck = build_flight_deck(
+        active_snapshot,
+        filters=EventFilters(horizon="30d", now_utc=now),
+        viewer_timezone="Europe/London",
+    )
+    assert deck.catalyst_timing_state == "active"
+    html = flight_deck_html(deck)
+    assert "Active catalyst" in html
+    assert "Active window" in html
+    assert "T+53d" not in html
+    assert "Next catalyst" not in html
+
+
+def test_flight_deck_future_event_retains_next_catalyst_and_t_minus(generated_root: Path) -> None:
+    from control_tower.components.flight_deck import build_flight_deck, flight_deck_html
+    from control_tower.models import EventFilters
+
+    snapshot = _snapshot(generated_root)
+    now = pd.Timestamp("2026-08-22T00:06:00Z")
+    future_events = pd.DataFrame([
+        {
+            "event_id": "EV_FUTURE",
+            "event_type": "earnings",
+            "title": "Future earnings release",
+            "status": "scheduled",
+            "certainty_class": "hard",
+            "importance": "high",
+            "starts_at": "2026-08-29T00:00:00Z",
+            "ends_at": "2026-08-29T00:00:00Z",
+            "date_precision": "day",
+        }
+    ])
+    future_snapshot = replace(snapshot, events=future_events, as_of_utc=now)
+    deck = build_flight_deck(
+        future_snapshot,
+        filters=EventFilters(horizon="30d", now_utc=now),
+        viewer_timezone="Europe/London",
+    )
+    assert deck.catalyst_timing_state == "future"
+    html = flight_deck_html(deck)
+    assert "Next catalyst" in html
+    assert "T-7d" in html
+    assert "Active catalyst" not in html
+    assert "Active window" not in html
+
+
+def test_flight_deck_boundary_exact_day_now_and_ended_window(generated_root: Path) -> None:
+    from control_tower.components.flight_deck import build_flight_deck, flight_deck_html
+    from control_tower.models import EventFilters
+
+    snapshot = _snapshot(generated_root)
+    now = pd.Timestamp("2026-08-22T00:00:00Z")
+
+    # 1. Exact day event happening today (starts_at == ends_at on same day, starts_at == now) -> future/exact (T0d)
+    events_t0 = pd.DataFrame([
+        {
+            "event_id": "EV_TODAY",
+            "event_type": "earnings",
+            "title": "Today exact earnings",
+            "status": "scheduled",
+            "certainty_class": "hard",
+            "importance": "high",
+            "starts_at": "2026-08-22T00:00:00Z",
+            "ends_at": "2026-08-22T00:00:00Z",
+            "date_precision": "day",
+        }
+    ])
+    snapshot_t0 = replace(snapshot, events=events_t0, as_of_utc=now)
+    deck_t0 = build_flight_deck(
+        snapshot_t0,
+        filters=EventFilters(horizon="30d", now_utc=now),
+        viewer_timezone="Europe/London",
+    )
+    assert deck_t0.catalyst_timing_state == "future"
+    html_t0 = flight_deck_html(deck_t0)
+    assert "Next catalyst" in html_t0
+    assert "T0d" in html_t0
+
+    # 2. Window boundary: now exactly at ends_at -> active
+    events_window = pd.DataFrame([
+        {
+            "event_id": "EV_WINDOW_END",
+            "event_type": "thesis_checkpoint",
+            "title": "Ending window",
+            "status": "active",
+            "certainty_class": "thesis_checkpoint",
+            "importance": "high",
+            "starts_at": "2026-08-01T00:00:00Z",
+            "ends_at": "2026-08-22T10:00:00Z",
+            "date_precision": "day",
+        }
+    ])
+    now_window = pd.Timestamp("2026-08-22T10:00:00Z")
+    snapshot_window = replace(snapshot, events=events_window, as_of_utc=now_window)
+    deck_window = build_flight_deck(
+        snapshot_window,
+        filters=EventFilters(horizon="30d", now_utc=now_window),
+        viewer_timezone="Europe/London",
+    )
+    assert deck_window.catalyst_timing_state == "active"
+    html_window = flight_deck_html(deck_window)
+    assert "Active catalyst" in html_window
+    assert "Active window" in html_window
+
+    # 3. Window beginning exactly now follows select_next_catalyst's start < now rule.
+    events_window_start = pd.DataFrame([
+        {
+            "event_id": "EV_WINDOW_START",
+            "event_type": "thesis_checkpoint",
+            "title": "Starting window",
+            "status": "active",
+            "certainty_class": "thesis_checkpoint",
+            "importance": "high",
+            "starts_at": "2026-08-22T10:00:00Z",
+            "ends_at": "2026-08-23T10:00:00Z",
+            "date_precision": "day",
+        }
+    ])
+    snapshot_window_start = replace(snapshot, events=events_window_start, as_of_utc=now_window)
+    deck_window_start = build_flight_deck(
+        snapshot_window_start,
+        filters=EventFilters(horizon="30d", now_utc=now_window),
+        viewer_timezone="Europe/London",
+    )
+    assert deck_window_start.catalyst_timing_state == "future"
+    html_window_start = flight_deck_html(deck_window_start)
+    assert "Next catalyst" in html_window_start
+    assert "T0d" in html_window_start
+    assert "Active catalyst" not in html_window_start
