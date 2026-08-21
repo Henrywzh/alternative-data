@@ -826,6 +826,77 @@ def test_optional_artifact_missing_enters_degraded_mode(generated_root: Path) ->
     assert "consensus_revisions" in snapshot.missing_optional
     assert snapshot.consensus_revisions.empty
     assert snapshot.degraded_reasons["consensus_revisions"] == "missing"
+    assert not snapshot.source_health["source_id"].astype("string").str.startswith(
+        "artifact:"
+    ).any()
+
+
+def test_legacy_earnings_schema_is_accepted_but_arbitrary_schema_is_rejected(
+    generated_root: Path,
+) -> None:
+    from control_tower.config import (
+        LEGACY_EARNINGS_ACTUALS_COLUMNS,
+        ARTIFACT_COLUMNS,
+    )
+    from control_tower.repository import ControlTowerRepository
+
+    full_frame = _frame(
+        "earnings_actuals.parquet",
+        [{
+            "actual_id": "LEGACY-ACTUAL",
+            "version": 1,
+            "entity_id": "E1",
+            "listing_id": "L1",
+            "canonical_ticker": "ONE",
+            "metric": "revenue_total",
+            "period_label": "2026Q2",
+            "period_end": "2026-06-30",
+            "reported_value": 10.0,
+            "normalized_value": 10.0,
+            "currency": "USD",
+            "unit": "USD",
+            "accounting_basis": "GAAP",
+            "filing_at": "2026-08-13T11:00:00Z",
+            "published_at": "2026-08-13T11:00:00Z",
+            "retrieved_at_utc": "2026-08-13T11:30:00Z",
+            "source_url": "https://example.test/legacy-actual",
+            "source_id": "fixture",
+            "source_quality": "official_metadata",
+            "pit_class": "snapshot_from_live_source",
+            "source_license_class": "official_public_metadata",
+            "source_note": "legacy fixture",
+            "registry_version": "v1",
+        }],
+    )
+    full_table = pa.Table.from_pandas(
+        _typed_frame("earnings_actuals.parquet", full_frame),
+        schema=_fixture_schema("earnings_actuals.parquet"),
+        preserve_index=False,
+        safe=False,
+    )
+    legacy_table = full_table.select(list(LEGACY_EARNINGS_ACTUALS_COLUMNS))
+    pq.write_table(legacy_table, generated_root / "earnings_actuals.parquet")
+    _write_manifest(generated_root, _manifest_for(generated_root))
+
+    snapshot = ControlTowerRepository(generated_root).load_snapshot()
+    assert len(snapshot.earnings_actuals) == 1
+    assert tuple(snapshot.earnings_actuals.columns) == LEGACY_EARNINGS_ACTUALS_COLUMNS
+    assert "source_metric_label" not in snapshot.earnings_actuals.columns
+    assert tuple(ARTIFACT_COLUMNS["earnings_actuals.parquet"])[-8:] == (
+        "source_metric_label", "metric_basis", "source_document_id",
+        "source_document_sha256", "source_page_ref", "value_origin",
+        "derivation_method", "timestamp_precision",
+    )
+
+    malformed_table = legacy_table.append_column(
+        "unexpected_lineage", pa.array(["malformed"])
+    )
+    pq.write_table(malformed_table, generated_root / "earnings_actuals.parquet")
+    _write_manifest(generated_root, _manifest_for(generated_root))
+
+    degraded = ControlTowerRepository(generated_root).load_snapshot()
+    assert degraded.earnings_actuals.empty
+    assert degraded.degraded_reasons["earnings_actuals"] == "schema_mismatch"
 
 
 def test_legacy_generation_without_quote_artifact_loads_as_degraded(tmp_path: Path) -> None:

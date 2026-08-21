@@ -56,6 +56,33 @@ LEGACY_DATA_ARTIFACT_NAMES: Final[tuple[str, ...]] = tuple(
     name for name in DATA_ARTIFACT_NAMES if name != "quote_snapshots.parquet"
 )
 
+# The published generation selected by the current production pointer was
+# built before the Tencent T0-T3 additive marts were integrated.  It is a
+# supported, immutable read contract; do not broaden this tuple to arbitrary
+# subsets of the current artifact set.  A future legacy shape gets its own
+# explicitly versioned tuple instead.
+LEGACY_GENERATION_DATA_ARTIFACT_NAMES: Final[tuple[str, ...]] = (
+    "entities.parquet",
+    "listings.parquet",
+    "baskets.parquet",
+    "basket_memberships.parquet",
+    "indices.parquet",
+    "events.parquet",
+    "event_entity_links.parquet",
+    "event_basket_links.parquet",
+    "event_watch_questions.parquet",
+    "macro_observations.parquet",
+    "consensus_snapshots.parquet",
+    "consensus_revisions.parquet",
+    "quote_snapshots.parquet",
+    "price_bars.parquet",
+    "news_filings.parquet",
+    "official_filings.parquet",
+    "earnings_calendar.parquet",
+    "earnings_actuals.parquet",
+    "source_health.parquet",
+)
+
 OPTIONAL_ARTIFACT_NAMES: Final[tuple[str, ...]] = (
     "consensus_snapshots.parquet",
     "consensus_revisions.parquet",
@@ -273,6 +300,19 @@ ARTIFACT_COLUMNS: Final[dict[str, tuple[str, ...]]] = {
         "missing_geographies", "detail",
     ),
 }
+
+# Exact schema emitted before the Tencent lineage extension.  Legacy rows are
+# loaded honestly with these columns; the reader does not fabricate the
+# newer lineage fields and new builds continue to use ARTIFACT_COLUMNS above.
+LEGACY_EARNINGS_ACTUALS_COLUMNS: Final[tuple[str, ...]] = (
+    "actual_id", "version", "supersedes_actual_id", "entity_id", "listing_id",
+    "canonical_ticker", "metric", "period_label", "period_start", "period_end",
+    "reported_value", "normalized_value", "normalization_note", "currency", "unit",
+    "accounting_basis", "filing_at", "published_at", "retrieved_at_utc", "source_url",
+    "accession_no", "form", "xbrl_frame", "revision_reason", "is_restatement",
+    "source_id", "source_quality", "pit_class", "source_license_class", "source_note",
+    "registry_version",
+)
 
 EVENT_OPTIONAL_COLUMNS: Final[tuple[str, ...]] = ("importance",)
 
@@ -544,6 +584,8 @@ __all__ = [
     "ArtifactResolutionError",
     "DATA_ARTIFACT_NAMES",
     "LEGACY_DATA_ARTIFACT_NAMES",
+    "LEGACY_EARNINGS_ACTUALS_COLUMNS",
+    "LEGACY_GENERATION_DATA_ARTIFACT_NAMES",
     "EVENT_OPTIONAL_COLUMNS",
     "MANIFEST_FILENAMES",
     "NETWORK_POLICY",

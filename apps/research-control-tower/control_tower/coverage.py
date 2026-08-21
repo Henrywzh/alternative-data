@@ -401,8 +401,10 @@ def _matches_category_source(
 ) -> bool:
     """Match a source-health row to a coverage category.
 
-    Matches canonical ids, repository synthetic ids ("artifact:<stem>") and
-    prefixed provider ids such as "provider:yfinance", plus source kinds.
+    Matches canonical ids and prefixed provider ids such as
+    "provider:yfinance", plus source kinds. Optional artifact gaps remain in
+    the snapshot's degradation metadata rather than becoming source-health
+    rows and inflating source counts.
     """
 
     canonical = _CATEGORY_SOURCE_IDS.get(category, frozenset())
