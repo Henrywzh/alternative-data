@@ -5,10 +5,14 @@ replacement for the operating manual or generated source-status JSON.
 
 ## Current state
 
-- Production surface: Cloudflare Pages, non-Streamlit dashboard.
-- Private research surface: `apps/asia-markets-streamlit/app.py`; V1 currently
-  connects Hong Kong labour-market/talent-policy, population/migration and
-  transport artifacts.
+- Public production surface: Cloudflare Pages for the existing public sector
+  dashboard.
+- Private research surface: `apps/asia-markets-streamlit/app.py`. The current
+  app includes Overview, Index & ETF Allocation Monitor, labour, population,
+  transport, real estate, aerospace, crypto, Data Explorer and Source Health.
+  The Index & ETF Allocation Monitor is Streamlit-only in V1; it is not in
+  the Cloudflare `sectors.json` roster and is not packaged by
+  `package-dashboard.mjs`.
 - Canonical financial-data sibling: `/Users/henrywzh/Desktop/Quant/financial-data`;
   see `REPO_BRIDGE.md` for the shared contract.
 - Research Control Tower V1 is a local/private, read-only publication. The
@@ -594,13 +598,24 @@ replacement for the operating manual or generated source-status JSON.
   retain each source's own observation date. The full visitor-arrivals history
   remains in normalized storage, while the portable artifact uses a latest-
   ten-year regional detail window to stay under its per-dataset row limit.
-- Streamlit V1 is implemented as a private research terminal. It reads the
-  existing labour-market and population/migration artifacts, provides an
-  Overview, scrollable sector pages with Plotly charts and Level/MoM/YoY-style
-  controls, a read-only Data Explorer and Source Health. It intentionally does
-  not connect the other Hong Kong sectors, company explorer or cross-market
-  pages yet. The crypto page keeps the long-run monthly Fear & Greed context
-  plus the daily score and a derived trailing seven-calendar-day average for
+- Streamlit is implemented as a private research terminal. In addition to
+  the Hong Kong sector pages it now has the Streamlit-native Index & ETF
+  Allocation Monitor. Its flow is `src/market_monitor` sources -> immutable
+  normalized/derived Parquet -> `market-monitor-artifact*.json` -> Plotly
+  views. The monitor currently covers 11 investable exposures and 29 ETF
+  wrappers, with source-declared Sina/Sina-HK/CSI/Yahoo routing, two-year ETF
+  price and premium history, RSI/MA/drawdown, absolute entry status versus
+  peer rank, and 12 relative-strength pair histories. The artifact is
+  verified as ready at commit `9a096149`; 71 market-monitor tests and 64
+  Streamlit/wiring/history tests passed in the 2026-08-21 review. Do not
+  treat those counts as a permanent freshness guarantee.
+- The market-monitor review also recorded four follow-ups: ratio mode still
+  needs true reindexing if that remains the requested display, CSI source
+  health should use its own latest observation date, wrapper table columns
+  need fuller Chinese localization, and historical premium z-score/verified
+  NAV-based AUM/tracking difference remain V1.1.
+- The crypto page keeps the long-run monthly Fear & Greed context plus the
+  daily score and a derived trailing seven-calendar-day average for
   interactive research views. It also exposes the curated Wikimedia crypto
   attention basket as weekly traffic-agent totals and monthly user-by-page
   history.

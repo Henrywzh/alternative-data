@@ -2,3 +2,5 @@ streamlit>=1.45,<2
 pandas>=2.0,<3
 plotly>=5.18,<7
 pyarrow>=22,<26
+yfinance>=0.2.54
+requests>=2.31.0
