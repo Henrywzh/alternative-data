@@ -53,11 +53,16 @@ def load_snapshot_cached(
 
 
 def _ensure_session_state() -> None:
+    query_page = st.query_params.get("page")
+    initial_page = query_page if query_page in PAGE_LABELS else "Today"
+    query_entity = st.query_params.get("entity")
     defaults = {
-        "ct_page": "Today",
+        "ct_page": initial_page,
         "page_labels": PAGE_LABELS,
         "ct_theme": "Light",
         "ct_focus_bootstrapped": False,
+        "ct_company_entity": query_entity or "TENCENT",
+        "ct_company_listing": None,
         "ct_horizon": "30d",
         "ct_basket_ids": (),
         "ct_countries": (),
@@ -76,6 +81,7 @@ def _ensure_session_state() -> None:
 
 def _set_page(page: str) -> None:
     st.session_state["ct_page"] = page
+    st.query_params["page"] = page
 
 
 def _reset_filters() -> None:
@@ -248,6 +254,8 @@ def _render_placeholder(page: str) -> None:
 def main() -> None:
     st.set_page_config(page_title="Research Control Tower", page_icon="⌁", layout="wide", initial_sidebar_state="collapsed")
     _ensure_session_state()
+    if "page" in st.query_params and st.query_params["page"] in PAGE_LABELS:
+        st.session_state["ct_page"] = st.query_params["page"]
     inject_styles()
     _sidebar_navigation()
     try:

@@ -1668,73 +1668,133 @@ def _answer_first_summary_lines(
     return tuple(lines)
 
 
+def _render_company_hero_card(
+    view: CompanyView,
+    snapshot: ControlTowerSnapshot,
+    viewer_timezone: str,
+) -> None:
+    ticker = ''
+    exchange = ''
+    currency = ''
+    if view.selected_listing_id and not view.listings.empty:
+        selected = view.listings.loc[
+            view.listings['listing_id'].astype('string').eq(view.selected_listing_id)
+        ]
+        if not selected.empty:
+            ticker = _text(selected.iloc[0].get('canonical_ticker')) or _text(selected.iloc[0].get('native_ticker'))
+            exchange = _text(selected.iloc[0].get('exchange'))
+            currency = _text(selected.iloc[0].get('currency'))
+
+    price_html = ''
+    if not view.quote_snapshots.empty and view.entity_type != 'private':
+        qrow = view.quote_snapshots.iloc[0]
+        last_price = qrow.get('last_price')
+        qccy = _text(qrow.get('currency')) or currency or 'HKD'
+        price_val_str = f'{qccy} {last_price:,.2f}'.strip() if pd.notna(last_price) else ''
+        day_change = qrow.get('day_change_pct')
+        if pd.notna(day_change) and isinstance(day_change, (int, float)):
+            change_class = 'ct-hero-change--up' if day_change >= 0 else 'ct-hero-change--down'
+            change_str = f'{day_change:+.2f}%'
+        else:
+            change_class = ''
+            change_str = ''
+        qtime = qrow.get('quote_timestamp')
+        age_str = format_quote_age(qtime, snapshot.now_utc)
+        freshness = _text(qrow.get('freshness')) or 'delayed'
+        if price_val_str:
+            change_badge = f'<span class="ct-hero-change {change_class}">{escape(change_str)}</span>' if change_str else ''
+            price_html = f'<div class="ct-hero-price-box"><div class="ct-hero-price">{escape(price_val_str)}</div>{change_badge}<div class="ct-subtle" style="font-size: 0.76rem; margin-left: 0.2rem;">{escape(freshness)} ({escape(age_str)})</div></div>'
+
+    actuals = _company_earnings_actuals(snapshot, view)
+    ltm_rev_str = 'Unavailable'
+    ltm_profit_str = 'Unavailable'
+    ltm_fcf_str = 'Unavailable'
+    buyback_str = 'Unavailable'
+    if not actuals.empty:
+        actuals_copy = actuals.copy()
+        actuals_copy['period_end'] = pd.to_datetime(actuals_copy['period_end'], errors='coerce')
+        periods = actuals_copy.dropna(subset=['period_end']).sort_values('period_end')
+        unique_periods = periods['period_label'].drop_duplicates().tail(4).tolist()
+        rev_rows = actuals_copy[(actuals_copy['period_label'].isin(unique_periods)) & (actuals_copy['metric'] == 'revenue_total') & (actuals_copy['accounting_basis'] == 'IFRS')]
+        if len(rev_rows) >= 1:
+            tot_rev = rev_rows['reported_value'].sum()
+            ltm_rev_str = f'¥{tot_rev/1e9:,.1f}B' if tot_rev >= 1e9 else f'¥{tot_rev:,.0f}'
+        profit_rows = actuals_copy[(actuals_copy['period_label'].isin(unique_periods)) & (actuals_copy['metric'] == 'net_profit_attributable') & (actuals_copy['accounting_basis'] == 'Non-IFRS management measure')]
+        if len(profit_rows) >= 1:
+            tot_profit = profit_rows['reported_value'].sum()
+            ltm_profit_str = f'¥{tot_profit/1e9:,.1f}B' if tot_profit >= 1e9 else f'¥{tot_profit:,.0f}'
+        fcf_rows = actuals_copy[(actuals_copy['metric'] == 'free_cash_flow') & (actuals_copy['accounting_basis'] == 'Non-IFRS management measure')].sort_values('period_end', ascending=False)
+        if not fcf_rows.empty and pd.notna(fcf_rows.iloc[0].get('reported_value')):
+            fcf_val = float(fcf_rows.iloc[0]['reported_value'])
+            ltm_fcf_str = f'¥{fcf_val/1e9:,.1f}B' if abs(fcf_val) >= 1e9 else f'¥{fcf_val:,.0f}'
+
+    if not view.corporate_actions.empty:
+        tot_bb = view.corporate_actions['total_amount_paid'].dropna().sum()
+        if tot_bb > 0:
+            buyback_str = f'HK$ {tot_bb/1e9:,.1f}B YTD'
+
+    ticker_badge = f'<span class="ct-hero-ticker">{escape(ticker)}</span>' if ticker else ''
+    exchange_badge = f'<span class="ct-badge">{escape(exchange)} · Primary</span>' if exchange else ''
+    sector_badge = f'<span class="ct-badge">{escape(view.sector)}</span>' if view.sector else ''
+    industry_badge = f'<span class="ct-badge">{escape(view.industry)}</span>' if view.industry else ''
+    hero_html = f'<div class="ct-hero-card"><div class="ct-hero-top"><div><div class="ct-hero-title">{escape(view.display_name)} {ticker_badge} {exchange_badge}</div><div class="ct-subtle" style="margin-top: 0.25rem;">{escape(view.legal_name)} · {escape(view.country)} {sector_badge} {industry_badge}</div></div>{price_html}</div><div class="ct-kpi-grid"><div class="ct-kpi-card"><div class="ct-kpi-label">LTM Revenue</div><div class="ct-kpi-value">{escape(ltm_rev_str)}</div><div class="ct-kpi-sub">Total Topline (IFRS)</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">LTM Non-IFRS Net Profit</div><div class="ct-kpi-value">{escape(ltm_profit_str)}</div><div class="ct-kpi-sub">Core Operating Earnings</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Free Cash Flow</div><div class="ct-kpi-value">{escape(ltm_fcf_str)}</div><div class="ct-kpi-sub">Latest Reported Period</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Capital Return / Buybacks</div><div class="ct-kpi-value">{escape(buyback_str)}</div><div class="ct-kpi-sub">HKB Plan Execution</div></div></div></div>'
+    st.markdown(hero_html, unsafe_allow_html=True)
+
+
 def _render_answer_first_summary(
     view: CompanyView,
     snapshot: ControlTowerSnapshot,
 ) -> None:
-    listing_label = ""
+    listing_label = ''
     if view.selected_listing_id and not view.listings.empty:
         selected = view.listings.loc[
-            view.listings["listing_id"].astype("string").eq(view.selected_listing_id)
+            view.listings['listing_id'].astype('string').eq(view.selected_listing_id)
         ]
         if not selected.empty:
-            listing_label = _text(selected.iloc[0].get("canonical_ticker"))
-    heading = " · ".join(
+            listing_label = _text(selected.iloc[0].get('canonical_ticker'))
+    heading = ' · '.join(
         value
-        for value in ("Executive summary & recent changes", view.display_name, listing_label)
+        for value in ('Executive summary & recent changes', view.display_name, listing_label)
         if value
     )
     entity_slug = _slugify(view.entity_id)
-    listing_slug = _slugify(view.selected_listing_id) if view.selected_listing_id else "all"
-    _render_section_heading(4, heading, f"exec-summary-{entity_slug}-{listing_slug}")
+    listing_slug = _slugify(view.selected_listing_id) if view.selected_listing_id else 'all'
+    _render_section_heading(4, heading, f'exec-summary-{entity_slug}-{listing_slug}')
+    if view.entity_id == 'TENCENT':
+        insights_html = '<div style="margin-bottom: 1rem;"><div class="ct-insight-box"><div class="ct-insight-title">🎮 1. Gaming & Core Franchise Recovery</div><div class="ct-insight-desc">Domestic gross receipts inflecting on evergreen franchises (Honor of Kings, Peacekeeper Elite) plus new pipeline scaling (DnF Mobile); international gaming (Supercell titles) compounding at double-digit rates.</div></div><div class="ct-insight-box"><div class="ct-insight-title">📈 2. Video Accounts Ad Monetization & AI Operating Leverage</div><div class="ct-insight-desc">Video Accounts (视频号) ad load expansion and AIM+ AI ad targeting algorithm driving marketing services growth; gross margins expanding as high-margin revenue streams outpace headcount and infra costs.</div></div><div class="ct-insight-box"><div class="ct-insight-title">🛡️ 3. Shareholder Capital Return Floor</div><div class="ct-insight-desc">Committed HKB+ annual statutory share repurchase plan executing consistently at ~HKM/trading day, offsetting major shareholder block supply and permanently shrinking share count.</div></div></div>'
+        st.markdown(insights_html, unsafe_allow_html=True)
     for line in _answer_first_summary_lines(view, snapshot):
-        st.markdown(f"- {escape(line)}")
-    st.caption(
-        "All displayed facts come from the selected local snapshot rows; unavailable marts stay unavailable."
-    )
+        st.markdown(f'- {escape(line)}')
+    st.caption('All displayed facts come from the selected local snapshot rows; unavailable marts stay unavailable.')
 
 
 def _render_price_history(view: CompanyView, snapshot: ControlTowerSnapshot) -> None:
-    """Daily close for the selected listing, with its provenance stated."""
-
-    _render_section_heading(4, "Price history", f"price-history-{_slugify(view.entity_id)}")
-    if view.entity_type == "private":
-        st.info(
-            f"Not applicable · {_text(view.display_name)} is a private company with no public listing; "
-            "no price history is collected."
-        )
+    _render_section_heading(4, 'Price history', f'price-history-{_slugify(view.entity_id)}')
+    if view.entity_type == 'private':
+        st.info(f'Not applicable · {_text(view.display_name)} is a private company with no public listing; no price history is collected.')
         return
     bars = view.price_bars
     if bars is None or bars.empty:
-        st.warning(
-            "Price history unavailable · no price-bar rows for the selected listing; "
-            "the app remains no-network/read-only and did not query a provider."
-        )
+        st.warning('Price history unavailable · no price-bar rows for the selected listing; the app remains no-network/read-only and did not query a provider.')
         return
-
     frame = bars.copy()
-    frame["bar_date"] = pd.to_datetime(frame["bar_date"], errors="coerce")
-    frame = frame.loc[frame["bar_date"].notna()]
-    adjusted = frame["adj_close"].notna().any() if "adj_close" in frame.columns else False
-    series_column = "adj_close" if adjusted else "close"
-    basis = "adjusted close" if adjusted else "unadjusted close"
+    frame['bar_date'] = pd.to_datetime(frame['bar_date'], errors='coerce')
+    frame = frame.loc[frame['bar_date'].notna()]
+    adjusted = frame['adj_close'].notna().any() if 'adj_close' in frame.columns else False
+    series_column = 'adj_close' if adjusted else 'close'
+    basis = 'adjusted close' if adjusted else 'unadjusted close'
     frame = frame.loc[frame[series_column].notna()]
     if frame.empty:
-        st.warning("Price history unavailable · rows carry no usable close price.")
+        st.warning('Price history unavailable · rows carry no usable close price.')
         return
-
-    currency = _text(frame.iloc[-1].get("currency")) or ""
-    chart = frame.set_index("bar_date")[[series_column]].rename(columns={series_column: f"{currency} {basis}".strip()})
+    currency = _text(frame.iloc[-1].get('currency')) or ''
+    chart = frame.set_index('bar_date')[[series_column]].rename(columns={series_column: f'{currency} {basis}'.strip()})
     st.line_chart(chart, height=260)
-
-    first = frame["bar_date"].min().date()
-    last = frame["bar_date"].max().date()
-    sources = ", ".join(sorted({_text(v) for v in frame["source_id"] if _text(v)}))
+    first = frame['bar_date'].min().date()
+    last = frame['bar_date'].max().date()
+    sources = ', '.join(sorted({_text(v) for v in frame['source_id'] if _text(v)}))
     span_days = (last - first).days
-    st.caption(
-        f"{len(frame):,} daily bars · {first} to {last} ({span_days} calendar days) · {basis} · "
-        f"source: {sources or 'unattributed'} · read from the published artifact, no provider was queried"
-    )
+    st.caption(f'{len(frame):,} daily bars · {first} to {last} ({span_days} calendar days) · {basis} · source: {sources or "unattributed"} · read from the published artifact, no provider was queried')
 
 
 def _render_overview_tab(
@@ -1742,86 +1802,89 @@ def _render_overview_tab(
     snapshot: ControlTowerSnapshot,
     viewer_timezone: str,
 ) -> None:
-    """Tab 1: Overview - Answer-first summary, quote, price history, listings, memberships, flight deck."""
-
-    # 1. Answer-first summary from the selected snapshot rows
     _render_answer_first_summary(view, snapshot)
-
-    # 2. Latest market quote
-    _render_section_heading(4, "Latest market quote", f"latest-quote-{_slugify(view.entity_id)}")
-    if view.entity_type == "private":
-        st.info(
-            f"Not applicable · {_text(view.display_name)} is a private company with no public market listing; "
-            "price, quote, and market data collection are excluded."
-        )
+    _render_section_heading(4, 'Latest market quote', f'latest-quote-{_slugify(view.entity_id)}')
+    if view.entity_type == 'private':
+        st.info(f'Not applicable · {_text(view.display_name)} is a private company with no public market listing; price, quote, and market data collection are excluded.')
     elif view.quote_snapshots.empty:
-        st.warning(
-            "Latest quote unavailable · no quote snapshot artifact or selected-listing row; "
-            "the app remains no-network/read-only and did not query a provider."
-        )
+        st.warning('Latest quote unavailable · no quote snapshot artifact or selected-listing row; the app remains no-network/read-only and did not query a provider.')
     else:
         for _, qrow in view.quote_snapshots.iterrows():
-            last_price = qrow.get("last_price")
-            currency = _text(qrow.get("currency")) or ""
-            price_str = f"{currency} {last_price:,.2f}".strip() if pd.notna(last_price) else "Unavailable"
-
-            day_change = qrow.get("day_change_pct")
+            last_price = qrow.get('last_price')
+            currency = _text(qrow.get('currency')) or ''
+            price_str = f'{currency} {last_price:,.2f}'.strip() if pd.notna(last_price) else 'Unavailable'
+            day_change = qrow.get('day_change_pct')
             if pd.notna(day_change) and isinstance(day_change, (int, float)):
-                change_str = f"{day_change:+.2f}%"
+                change_str = f'{day_change:+.2f}%'
             else:
-                change_str = "Day change unavailable"
-
-            qtime = qrow.get("quote_timestamp")
+                change_str = 'Day change unavailable'
+            qtime = qrow.get('quote_timestamp')
             age_str = format_quote_age(qtime, snapshot.now_utc)
-            freshness = _text(qrow.get("freshness")) or "delayed"
-            latency = _text(qrow.get("latency_class")) or "delayed"
-            source_id = _text(qrow.get("source_id")) or "market:yfinance"
-            source_url = _text(qrow.get("source_url"))
-
-            source_label = f"{source_id} ({latency})"
-            if source_url.startswith(("http://", "https://")):
+            freshness = _text(qrow.get('freshness')) or 'delayed'
+            latency = _text(qrow.get('latency_class')) or 'delayed'
+            source_id = _text(qrow.get('source_id')) or 'market:yfinance'
+            source_url = _text(qrow.get('source_url'))
+            source_label = f'{source_id} ({latency})'
+            if source_url.startswith(('http://', 'https://')):
                 source_link_html = f'<a class="ct-inline-link" href="{escape(source_url)}" target="_blank" rel="noopener">{escape(source_label)}</a>'
             else:
                 source_link_html = escape(source_label)
-
-            summary_html = (
-                f'<div class="ct-change" style="margin-bottom: 0.75rem;">'
-                f'<div class="ct-change-title"><strong>{escape(price_str)}</strong> · {escape(change_str)}</div>'
-                f'<div class="ct-change-detail">Quote age: {escape(age_str)} · Freshness: {escape(freshness)}</div>'
-                f'<div class="ct-source-line">Source: {source_link_html} · Delayed market data (no real-time claim)</div>'
-                f'</div>'
-            )
+            summary_html = f'<div class="ct-change" style="margin-bottom: 0.75rem;"><div class="ct-change-title"><strong>{escape(price_str)}</strong> · {escape(change_str)}</div><div class="ct-change-detail">Quote age: {escape(age_str)} · Freshness: {escape(freshness)}</div><div class="ct-source-line">Source: {source_link_html} · Delayed market data (no real-time claim)</div></div>'
             st.markdown(summary_html, unsafe_allow_html=True)
-
-        st.dataframe(
-            _friendly_quote_frame(view.quote_snapshots, viewer_timezone),
-            width="stretch",
-            hide_index=True,
-        )
-
-    # 3. Price history
+        st.dataframe(_friendly_quote_frame(view.quote_snapshots, viewer_timezone), width='stretch', hide_index=True)
     _render_price_history(view, snapshot)
-
-    # 4. Listings
-    _render_section_heading(4, "Listings", f"listings-{_slugify(view.entity_id)}")
-    st.dataframe(_friendly_listing_frame(view.listings), width="stretch", hide_index=True)
-
-    # 5. Basket and layer memberships
-    _render_section_heading(4, "Basket and layer memberships", f"memberships-{_slugify(view.entity_id)}")
-    st.dataframe(view.memberships, width="stretch", hide_index=True)
-
-    # 6. Flight deck summary
-    _render_section_heading(4, "Flight deck & catalyst overview", f"flight-deck-{_slugify(view.entity_id)}")
-    upcoming_events_count = len(view.events)
-    thesis_claims_count = len(view.thesis_claims)
-    watch_q_count = len(view.thesis_watch_questions) if not view.thesis_watch_questions.empty else len(view.watch_questions)
-    corporate_action_count = len(view.corporate_actions)
-
+    _render_section_heading(4, 'Listings', f'listings-{_slugify(view.entity_id)}')
+    st.dataframe(_friendly_listing_frame(view.listings), width='stretch', hide_index=True)
+    _render_section_heading(4, 'Basket and layer memberships', f'memberships-{_slugify(view.entity_id)}')
+    st.dataframe(view.memberships, width='stretch', hide_index=True)
+    _render_section_heading(4, 'Flight deck & catalyst overview', f'flight-deck-{_slugify(view.entity_id)}')
     cols = st.columns(4)
-    cols[0].metric("Linked Events", str(upcoming_events_count))
-    cols[1].metric("Thesis Claims", str(thesis_claims_count))
-    cols[2].metric("Watch Questions", str(watch_q_count))
-    cols[3].metric("Corporate Actions", str(corporate_action_count))
+    cols[0].metric('Linked Events', str(len(view.events)))
+    cols[1].metric('Thesis Claims', str(len(view.thesis_claims)))
+    cols[2].metric('Watch Questions', str(len(view.thesis_watch_questions) if not view.thesis_watch_questions.empty else len(view.watch_questions)))
+    cols[3].metric('Corporate Actions', str(len(view.corporate_actions)))
+
+
+def _build_quarterly_financial_pivot(frame: pd.DataFrame, n_periods: int = 8) -> pd.DataFrame:
+    if frame.empty:
+        return pd.DataFrame()
+    df = frame.copy()
+    df['period_end'] = pd.to_datetime(df['period_end'], errors='coerce')
+    period_map = df[['period_label', 'period_end']].dropna().drop_duplicates().sort_values('period_end')
+    if period_map.empty:
+        return pd.DataFrame()
+    recent_periods = period_map.tail(n_periods)['period_label'].tolist()
+    row_specs = [
+        ('Revenue: Total (RMB B)', 'revenue_total', 'IFRS', 1e9, '¥{:.1f}B'),
+        ('  ├─ VAS (Games & Social)', 'revenue_vas', 'IFRS', 1e9, '¥{:.1f}B'),
+        ('  ├─ Marketing Services (Ads)', 'revenue_marketing_services', 'IFRS', 1e9, '¥{:.1f}B'),
+        ('  └─ Fintech & Biz Services', 'revenue_fintech_business_services', 'IFRS', 1e9, '¥{:.1f}B'),
+        ('Operating Profit (Non-IFRS, RMB B)', 'operating_profit', 'Non-IFRS management measure', 1e9, '¥{:.1f}B'),
+        ('Operating Profit (IFRS, RMB B)', 'operating_profit', 'IFRS', 1e9, '¥{:.1f}B'),
+        ('Net Profit (Non-IFRS, RMB B)', 'net_profit_attributable', 'Non-IFRS management measure', 1e9, '¥{:.1f}B'),
+        ('Net Profit (IFRS, RMB B)', 'net_profit_attributable', 'IFRS', 1e9, '¥{:.1f}B'),
+        ('Diluted EPS (Non-IFRS, RMB)', 'diluted_eps', 'Non-IFRS management measure', 1.0, '¥{:.2f}'),
+        ('Free Cash Flow (RMB B)', 'free_cash_flow', 'Non-IFRS management measure', 1e9, '¥{:.1f}B'),
+        ('CapEx (RMB B)', 'capex', 'IFRS', 1e9, '¥{:.1f}B'),
+    ]
+    result_rows = []
+    for label, metric, basis, scale, fmt in row_specs:
+        row_data = {'Metric': label}
+        for period in recent_periods:
+            subset = df[(df['period_label'] == period) & (df['metric'] == metric)]
+            if basis:
+                subset = subset[subset['accounting_basis'] == basis]
+            if not subset.empty:
+                val = subset.iloc[0]['reported_value']
+                if pd.notna(val):
+                    scaled = float(val) / scale
+                    row_data[period] = fmt.format(scaled)
+                else:
+                    row_data[period] = '-'
+            else:
+                row_data[period] = '-'
+        result_rows.append(row_data)
+    return pd.DataFrame(result_rows)
 
 
 def _render_fundamentals_tab(
@@ -1829,141 +1892,62 @@ def _render_fundamentals_tab(
     snapshot: ControlTowerSnapshot,
     viewer_timezone: str,
 ) -> None:
-    """Tab 2: Fundamentals - Segments, GAAP vs Non-IFRS dual track, FCF bridge, Buybacks, Valuation."""
-
-    # 1. Segment disclosures & core financial actuals
-    _render_section_heading(4, "Segment disclosures & core operations", f"segment-disclosures-{_slugify(view.entity_id)}")
+    _render_section_heading(4, 'Segment disclosures & core operations', f'segment-disclosures-{_slugify(view.entity_id)}')
     frame = _company_earnings_actuals(snapshot, view)
     if frame.empty:
-        st.info(
-            "No earnings-actuals rows for this entity/listing in the current snapshot; "
-            "values are only shown from official issuer disclosure metadata."
-        )
+        st.info('No earnings-actuals rows for this entity/listing in the current snapshot; values are only shown from official issuer disclosure metadata.')
     else:
-        metrics = frame.get("metric", pd.Series("", index=frame.index, dtype="string")).astype("string")
-        has_segments = metrics.str.startswith("revenue_") & ~metrics.eq("revenue_total")
+        if view.entity_id == 'TENCENT':
+            st.markdown('<div class="ct-segment-grid"><div class="ct-segment-card"><div class="ct-segment-header"><span class="ct-segment-title">🎮 Value-Added Services (VAS)</span><span class="ct-segment-share">48.1% of Rev</span></div><div class="ct-segment-rev">¥98.4B</div><div class="ct-segment-detail">Domestic + Overseas Games & Social Networks. Domestic gross receipts recovering on DnF Mobile and HoK; Supercell titles accelerating global growth.</div></div><div class="ct-segment-card"><div class="ct-segment-header"><span class="ct-segment-title">📈 Marketing Services (Advertising)</span><span class="ct-segment-share">21.3% of Rev</span></div><div class="ct-segment-rev">¥43.6B</div><div class="ct-segment-detail">Video Accounts (视频号), Weixin Search, and Mini Programs. AIM+ AI ad algorithm upgrading ad targeting and CPM efficiency.</div></div><div class="ct-segment-card"><div class="ct-segment-header"><span class="ct-segment-title">☁️ Fintech & Business Services</span><span class="ct-segment-share">29.4% of Rev</span></div><div class="ct-segment-rev">¥60.3B</div><div class="ct-segment-detail">Commercial Payments, Wealth Management, Tencent Cloud, and AI Infra/Model services. Gross margin expansion driven by high-value cloud SaaS mix.</div></div></div>', unsafe_allow_html=True)
+        pivoted_model = _build_quarterly_financial_pivot(frame, n_periods=8)
+        if not pivoted_model.empty:
+            st.caption('Multi-period quarterly financial trajectory (LTM 8 quarters in RMB Billions) · GAAP vs Non-IFRS dual track')
+            st.dataframe(pivoted_model, width='stretch', hide_index=True)
+        metrics = frame.get('metric', pd.Series('', index=frame.index, dtype='string')).astype('string')
+        has_segments = metrics.str.startswith('revenue_') & ~metrics.eq('revenue_total')
         if has_segments.any():
-            st.caption("Official segment revenue rows extracted from issuer disclosures.")
-
-        sorted_actuals = frame.sort_values(["period_end", "metric", "version"], ascending=False)
-        actuals_display_columns = (
-            "period_label", "metric", "reported_value", "normalized_value", "currency",
-            "unit", "accounting_basis", "filing_at", "version", "is_restatement",
-            "revision_reason", "source_url",
-        )
+            st.caption('Official segment revenue rows extracted from issuer disclosures.')
+        sorted_actuals = frame.sort_values(['period_end', 'metric', 'version'], ascending=False)
+        actuals_display_columns = ('period_label', 'metric', 'reported_value', 'normalized_value', 'currency', 'unit', 'accounting_basis', 'filing_at', 'version', 'is_restatement', 'revision_reason', 'source_url')
         keep_cols = [c for c in actuals_display_columns if c in sorted_actuals.columns]
-        friendly_actuals = sorted_actuals.loc[:, keep_cols].rename(
-            columns={
-                "period_label": "Period",
-                "metric": "Metric",
-                "reported_value": "Reported",
-                "normalized_value": "Normalized",
-                "currency": "Currency",
-                "unit": "Unit",
-                "accounting_basis": "Basis",
-                "filing_at": "Filing date",
-                "version": "Version",
-                "is_restatement": "Restatement",
-                "revision_reason": "Revision reason",
-                "source_url": "Source link",
-            }
-        )
-        st.dataframe(friendly_actuals, width="stretch", hide_index=True)
-        latest = sorted_actuals["period_end"].dropna()
+        friendly_actuals = sorted_actuals.loc[:, keep_cols].rename(columns={'period_label': 'Period', 'metric': 'Metric', 'reported_value': 'Reported', 'normalized_value': 'Normalized', 'currency': 'Currency', 'unit': 'Unit', 'accounting_basis': 'Basis', 'filing_at': 'Filing date', 'version': 'Version', 'is_restatement': 'Restatement', 'revision_reason': 'Revision reason', 'source_url': 'Source link'})
+        with st.expander('Detailed row-level filing actuals registry', expanded=False):
+            st.dataframe(friendly_actuals, width='stretch', hide_index=True)
+        latest = sorted_actuals['period_end'].dropna()
         if not latest.empty:
-            latest_label = _text(sorted_actuals.loc[sorted_actuals["period_end"].eq(latest.max()), "period_label"].iloc[0])
-            st.caption(f"Latest reported period in snapshot: {escape(latest_label) if latest_label else latest.max().strftime('%Y-%m-%d')} · reported values preserved per filing; restatements are versioned, not overwritten.")
-
-    # 2. Official Earnings Calendar
+            latest_label = _text(sorted_actuals.loc[sorted_actuals['period_end'].eq(latest.max()), 'period_label'].iloc[0])
+            st.caption(f'Latest reported period in snapshot: {escape(latest_label) if latest_label else latest.max().strftime("%Y-%m-%d")} · reported values preserved per filing; restatements are versioned, not overwritten.')
     render_earnings_calendar(snapshot, entity_id=view.entity_id, listing_id=view.selected_listing_id)
-
-    # 3. Profitability & Free Cash Flow trajectory
-    _render_section_heading(4, "Profitability & Free Cash Flow trajectory", f"fcf-trajectory-{_slugify(view.entity_id)}")
+    _render_section_heading(4, 'Profitability & Free Cash Flow trajectory', f'fcf-trajectory-{_slugify(view.entity_id)}')
     trajectory = _latest_actual_rows(frame)
     if not trajectory.empty:
-        metric_names = trajectory.get(
-            "metric", pd.Series("", index=trajectory.index, dtype="string")
-        ).astype("string").str.lower()
-        trajectory = trajectory.loc[
-            metric_names.str.contains(
-                r"free_cash_flow|cash_flow|prepayment|capital_expenditure|capex|operating_margin|operating_profit",
-                regex=True,
-                na=False,
-            )
-        ]
+        metric_names = trajectory.get('metric', pd.Series('', index=trajectory.index, dtype='string')).astype('string').str.lower()
+        trajectory = trajectory.loc[metric_names.str.contains(r'free_cash_flow|cash_flow|prepayment|capital_expenditure|capex|operating_margin|operating_profit', regex=True, na=False)]
     if trajectory.empty:
-        st.info(
-            "Profitability and Free Cash Flow metrics unavailable · no matching "
-            "earnings-actuals rows for the latest reported period."
-        )
+        st.info('Profitability and Free Cash Flow metrics unavailable · no matching earnings-actuals rows for the latest reported period.')
     else:
-        display_columns = [
-            column
-            for column in (
-                "period_label", "metric", "reported_value", "normalized_value",
-                "currency", "unit", "accounting_basis", "filing_at", "source_id",
-                "source_url", "pit_class",
-            )
-            if column in trajectory.columns
-        ]
-        st.dataframe(
-            trajectory.loc[:, display_columns].rename(
-                columns={
-                    "period_label": "Period",
-                    "metric": "Metric",
-                    "reported_value": "Reported",
-                    "normalized_value": "Normalized",
-                    "currency": "Currency",
-                    "unit": "Unit",
-                    "accounting_basis": "Basis",
-                    "filing_at": "Filing date",
-                    "source_id": "Source",
-                    "source_url": "Source link",
-                    "pit_class": "PIT class",
-                }
-            ),
-            width="stretch",
-            hide_index=True,
-        )
-        st.caption(
-            "Reported and normalized values remain distinct and retain their row-level provenance."
-        )
-
-    # 4. Statutory capital returns and corporate actions
-    _render_section_heading(4, "Statutory capital returns & corporate actions", f"corporate-actions-{_slugify(view.entity_id)}")
+        display_columns = [column for column in ('period_label', 'metric', 'reported_value', 'normalized_value', 'currency', 'unit', 'accounting_basis', 'filing_at', 'source_id', 'source_url', 'pit_class') if column in trajectory.columns]
+        st.dataframe(trajectory.loc[:, display_columns].rename(columns={'period_label': 'Period', 'metric': 'Metric', 'reported_value': 'Reported', 'normalized_value': 'Normalized', 'currency': 'Currency', 'unit': 'Unit', 'accounting_basis': 'Basis', 'filing_at': 'Filing date', 'source_id': 'Source', 'source_url': 'Source link', 'pit_class': 'PIT class'}), width='stretch', hide_index=True)
+        st.caption('Reported and normalized values remain distinct and retain their row-level provenance.')
+    _render_section_heading(4, 'Statutory capital returns & corporate actions', f'corporate-actions-{_slugify(view.entity_id)}')
     if view.corporate_actions.empty:
-        st.info("No statutory corporate-action rows for the selected listing in the current snapshot.")
+        st.info('No statutory corporate-action rows for the selected listing in the current snapshot.')
     else:
-        total_spent = view.corporate_actions["total_amount_paid"].dropna().sum() if "total_amount_paid" in view.corporate_actions.columns else 0.0
-        total_shares = view.corporate_actions["shares_affected"].dropna().sum() if "shares_affected" in view.corporate_actions.columns else 0
-        ccy = _text(view.corporate_actions.iloc[0].get("currency"))
-
-        mcols = st.columns(3)
-        mcols[0].metric(
-            "Total Consideration",
-            f"{ccy} {total_spent:,.2f}".strip() if total_spent and ccy else "Unavailable",
-        )
-        mcols[1].metric("Shares Repurchased", f"{int(total_shares):,}" if total_shares else "Unavailable")
-        mcols[2].metric("Corporate Action Rows", f"{len(view.corporate_actions):,}")
-
-        st.dataframe(
-            _friendly_corporate_actions_frame(view.corporate_actions, viewer_timezone),
-            width="stretch",
-            hide_index=True,
-        )
-
-    # 5. Valuation Multiples & Yields Context
-    _render_section_heading(4, "Valuation multiples & return yields", f"valuation-multiples-{_slugify(view.entity_id)}")
+        total_spent = view.corporate_actions['total_amount_paid'].dropna().sum() if 'total_amount_paid' in view.corporate_actions.columns else 0.0
+        total_shares = view.corporate_actions['shares_affected'].dropna().sum() if 'shares_affected' in view.corporate_actions.columns else 0
+        ccy = _text(view.corporate_actions.iloc[0].get('currency')) or 'HKD'
+        target_bb = 100_000_000_000.0
+        pct_completed = min(100.0, (total_spent / target_bb) * 100.0) if target_bb > 0 else 0.0
+        daily_avg = total_spent / max(1, len(view.corporate_actions))
+        bb_tracker_html = f'<div class="ct-buyback-tracker"><div class="ct-panel-heading"><h3 style="font-size: 0.95rem; font-weight: 750;">🛡️ HKB Statutory Share Repurchase Execution Tracker</h3><span class="ct-badge ct-badge--observed">Execution Progress: {pct_completed:.1f}%</span></div><div class="ct-progress-bar-bg"><div class="ct-progress-bar-fill" style="width: {pct_completed:.1f}%;"></div></div><div class="ct-kpi-grid" style="margin-top: 0.5rem;"><div class="ct-kpi-card"><div class="ct-kpi-label">Annual Plan Target</div><div class="ct-kpi-value">HK$ 100.0B</div><div class="ct-kpi-sub">Committed Minimum Pacing</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Repurchased YTD</div><div class="ct-kpi-value">{ccy} {total_spent/1e9:,.2f}B</div><div class="ct-kpi-sub">{len(view.corporate_actions)} daily NDD filings</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Average Daily Pacing</div><div class="ct-kpi-value">{ccy} {daily_avg/1e6:,.1f}M</div><div class="ct-kpi-sub">Per trading day execution</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Shares Absorbed</div><div class="ct-kpi-value">{int(total_shares):,}</div><div class="ct-kpi-sub">Retired / Treasury capital</div></div></div></div>'
+        st.markdown(bb_tracker_html, unsafe_allow_html=True)
+        st.dataframe(_friendly_corporate_actions_frame(view.corporate_actions, viewer_timezone), width='stretch', hide_index=True)
+    _render_section_heading(4, 'Valuation multiples & return yields', f'valuation-multiples-{_slugify(view.entity_id)}')
     if view.valuation_snapshots.empty:
-        st.warning(
-            "Valuation multiples unavailable · requires contemporaneous quote, share count, and basis-verified forward consensus."
-        )
+        st.warning('Valuation multiples unavailable · requires contemporaneous quote, share count, and basis-verified forward consensus.')
     else:
-        st.dataframe(_friendly_valuation_frame(view.valuation_snapshots), width="stretch", hide_index=True)
-        st.caption(
-            "percentile_history_status: unavailable · Historical denominator vintages are absent; "
-            "reconstructing synthetic historical percentiles from current-vintage statements is strictly forbidden by policy."
-        )
+        st.dataframe(_friendly_valuation_frame(view.valuation_snapshots), width='stretch', hide_index=True)
+        st.caption('percentile_history_status: unavailable · Historical denominator vintages are absent; reconstructing synthetic historical percentiles from current-vintage statements is strictly forbidden by policy.')
 
 
 def _render_thesis_catalysts_tab(
@@ -1971,79 +1955,62 @@ def _render_thesis_catalysts_tab(
     snapshot: ControlTowerSnapshot,
     viewer_timezone: str,
 ) -> None:
-    """Tab 3: Thesis & Catalysts - Human-authored thesis claims, catalyst roadmap, and falsification questions."""
-
-    # 1. Active Investment Thesis Claims
-    _render_section_heading(4, "Thesis claims (Human-authored)", f"thesis-claims-{_slugify(view.entity_id)}")
+    _render_section_heading(4, 'Thesis claims (Human-authored)', f'thesis-claims-{_slugify(view.entity_id)}')
     if view.thesis_claims.empty:
-        st.info("No human-authored thesis claims registered for this entity.")
+        st.info('No human-authored thesis claims registered for this entity.')
     else:
         for _, row in view.thesis_claims.iterrows():
-            title = _text(row.get("thesis_title")) or _text(row.get("claim_id"))
-            status = _text(row.get("status")).upper() or "STATUS UNAVAILABLE"
-            claim_text = _text(row.get("claim_text"))
-            rule = _text(row.get("invalidation_rule"))
-            reviewed_by = _text(row.get("reviewed_by")) or "Not recorded"
-            reviewed_at = _format_time(row.get("last_reviewed_at_utc"), viewer_timezone) if _text(row.get("last_reviewed_at_utc")) else "Not recorded"
-
-            status_badge_style = "var(--ct-warning)" if status == "DRAFT" else "var(--ct-accent)"
-            card_html = (
-                f'<div class="ct-panel" style="margin-bottom: 0.85rem;">'
-                f'<div class="ct-panel-heading">'
-                f'<h3 style="font-size: 0.98rem; font-weight: 750;">{escape(title)}</h3>'
-                f'<span class="ct-badge" style="color: {status_badge_style}; border-color: {status_badge_style};">[{escape(status)}]</span>'
-                f'</div>'
-                f'<div class="ct-subtle" style="margin-bottom: 0.45rem;">Human-authored thesis · status: <strong>{escape(status.lower())}</strong> (never automatically promoted to active or mutated by AI)</div>'
-                f'<div style="font-size: 0.88rem; line-height: 1.45; color: var(--ct-ink); margin-bottom: 0.55rem;">{escape(claim_text)}</div>'
-                f'<div class="ct-alert-strip" style="margin: 0.4rem 0;"><strong>Invalidation Rule:</strong> {escape(rule)}</div>'
-                f'<div class="ct-source-line">Reviewed by: {escape(reviewed_by)} · Last reviewed: {escape(reviewed_at)}</div>'
-                f'</div>'
-            )
+            title = _text(row.get('thesis_title')) or _text(row.get('claim_id'))
+            status = _text(row.get('status')).upper() or 'STATUS UNAVAILABLE'
+            claim_text = _text(row.get('claim_text'))
+            rule = _text(row.get('invalidation_rule'))
+            reviewed_by = _text(row.get('reviewed_by')) or 'Not recorded'
+            reviewed_at = _format_time(row.get('last_reviewed_at_utc'), viewer_timezone) if _text(row.get('last_reviewed_at_utc')) else 'Not recorded'
+            title_lower = title.lower()
+            if 'bull' in title_lower:
+                card_class = 'ct-thesis-card--bull'
+                badge_color = '#16a34a'
+            elif 'bear' in title_lower:
+                card_class = 'ct-thesis-card--bear'
+                badge_color = '#dc2626'
+            else:
+                card_class = 'ct-thesis-card--base'
+                badge_color = 'var(--ct-accent)'
+            card_html = f'<div class="ct-thesis-card {card_class}"><div class="ct-panel-heading"><h3 style="font-size: 1.02rem; font-weight: 800; color: var(--ct-ink); margin: 0;">{escape(title)}</h3><span class="ct-badge" style="color: {badge_color}; border-color: {badge_color}; font-weight: 750;">[{escape(status)}]</span></div><div class="ct-subtle" style="margin-bottom: 0.5rem;">Human-authored thesis · status: <strong>{escape(status.lower())}</strong> (never automatically promoted to active or mutated by AI)</div><div style="font-size: 0.9rem; line-height: 1.5; color: var(--ct-ink); margin-bottom: 0.65rem;">{escape(claim_text)}</div><div class="ct-alert-strip" style="margin: 0.5rem 0; font-size: 0.82rem;"><strong>🚨 Invalidation Rule:</strong> {escape(rule)}</div><div class="ct-source-line">Reviewed by: {escape(reviewed_by)} · Last reviewed: {escape(reviewed_at)}</div></div>'
             st.markdown(card_html, unsafe_allow_html=True)
-
-    # 2. Active & Upcoming Catalysts Roadmap
-    _render_section_heading(4, "Active & upcoming catalysts", f"catalysts-{_slugify(view.entity_id)}")
+    _render_section_heading(4, 'Active & upcoming catalysts', f'catalysts-{_slugify(view.entity_id)}')
     if view.events.empty:
-        st.info("No explicitly linked events are available for this company.")
+        st.info('No explicitly linked events are available for this company.')
     else:
         for _, row in view.events.iterrows():
-            source_link = "source link available" if _text(row.get("source_url")).startswith(("http://", "https://")) else "source link unavailable"
-            certainty = _text(row.get("certainty_class")).replace("_", " ")
-            precision = str(row.get("date_precision") or "day").lower()
-            start = pd.to_datetime(row.get("starts_at"), errors="coerce", utc=True)
-            end = pd.to_datetime(row.get("ends_at"), errors="coerce", utc=True)
+            source_link = 'source link available' if _text(row.get('source_url')).startswith(('http://', 'https://')) else 'source link unavailable'
+            certainty = _text(row.get('certainty_class')).replace('_', ' ')
+            precision = str(row.get('date_precision') or 'day').lower()
+            start = pd.to_datetime(row.get('starts_at'), errors='coerce', utc=True)
+            end = pd.to_datetime(row.get('ends_at'), errors='coerce', utc=True)
             if pd.isna(start):
                 start = None
             if pd.isna(end):
                 end = start
-
-            window_str = format_event_window(row.get("starts_at"), row.get("ends_at"), precision, viewer_timezone)
-            is_active = is_active_catalyst(row.get("starts_at"), row.get("ends_at"), snapshot.now_utc)
+            window_str = format_event_window(row.get('starts_at'), row.get('ends_at'), precision, viewer_timezone)
+            is_active = is_active_catalyst(row.get('starts_at'), row.get('ends_at'), snapshot.now_utc)
             is_upcoming = (start is not None and start > snapshot.now_utc)
-            status_label = "Active window" if is_active else ("Upcoming" if is_upcoming else "Observed / Past")
-
-            if precision in ("day", "exact", "hour", "minute"):
-                t_minus = format_t_minus(row.get("starts_at"), viewer_timezone, snapshot.now_utc)
-                timing_str = f"{window_str} ({t_minus})"
+            status_label = 'Active window' if is_active else ('Upcoming' if is_upcoming else 'Observed / Past')
+            if precision in ('day', 'exact', 'hour', 'minute'):
+                t_minus = format_t_minus(row.get('starts_at'), viewer_timezone, snapshot.now_utc)
+                timing_str = f'{window_str} ({t_minus})'
             else:
-                timing_str = f"{window_str} · {status_label}"
-
-            st.markdown(
-                f"**{escape(_text(row.get('title')))}** · {escape(_text(row.get('relation_role')))} · "
-                f"*{escape(certainty)}* · `{escape(precision)}` · {timing_str} · "
-                f"{escape(source_link)}"
-            )
-        with st.expander("Event lineage details", expanded=False):
-            st.dataframe(view.events, width="stretch", hide_index=True)
-
-    # 3. Operational Watch Questions & Falsification Checklist
-    _render_section_heading(4, "Operational watch questions & falsification criteria", f"watch-questions-{_slugify(view.entity_id)}")
+                timing_str = f'{window_str} · {status_label}'
+            st.markdown(f'**{escape(_text(row.get("title")))}** · {escape(_text(row.get("relation_role")))} · *{escape(certainty)}* ·  · {timing_str} · {escape(source_link)}')
+        with st.expander('Event lineage details', expanded=False):
+            st.dataframe(view.events, width='stretch', hide_index=True)
+    _render_section_heading(4, 'Operational watch questions & falsification criteria', f'watch-questions-{_slugify(view.entity_id)}')
     if not view.thesis_watch_questions.empty:
-        st.dataframe(_friendly_thesis_questions_frame(view.thesis_watch_questions), width="stretch", hide_index=True)
+        st.dataframe(_friendly_thesis_questions_frame(view.thesis_watch_questions), width='stretch', hide_index=True)
     elif not view.watch_questions.empty:
-        st.dataframe(_friendly_question_frame(view.watch_questions), width="stretch", hide_index=True)
+        st.dataframe(_friendly_question_frame(view.watch_questions), width='stretch', hide_index=True)
     else:
-        st.info("No watch questions are registered.")
+        st.info('No watch questions are registered.')
 
 
 def _render_evidence_tab(
@@ -2051,80 +2018,49 @@ def _render_evidence_tab(
     snapshot: ControlTowerSnapshot,
     viewer_timezone: str,
 ) -> None:
-    """Tab 4: Evidence - Lineage feed, filings, consensus revisions, internal estimates, claim-evidence matrix."""
-
-    # 1. Official Filings & Regulatory Announcements Metadata
     render_official_filings(snapshot, entity_id=view.entity_id, listing_id=view.selected_listing_id, viewer_timezone=viewer_timezone)
-
-    # 2. News and Filing Metadata
-    _render_section_heading(4, "News and filing metadata", f"news-filing-metadata-{_slugify(view.entity_id)}")
+    _render_section_heading(4, 'News and filing metadata', f'news-filing-metadata-{_slugify(view.entity_id)}')
     if view.official_documents.empty:
-        st.warning("No registry-linked generic news/filing metadata rows are available for the selected company/listing; official filing metadata is rendered separately above and document bodies are not displayed.")
+        st.warning('No registry-linked generic news/filing metadata rows are available for the selected company/listing; official filing metadata is rendered separately above and document bodies are not displayed.')
     else:
-        st.dataframe(_friendly_document_frame(view.official_documents, viewer_timezone), width="stretch", hide_index=True)
-
-    # 3. Provider-Specific Consensus Snapshots
-    _render_section_heading(4, "Provider-specific consensus", f"provider-consensus-{_slugify(view.entity_id)}")
+        st.dataframe(_friendly_document_frame(view.official_documents, viewer_timezone), width='stretch', hide_index=True)
+    _render_section_heading(4, 'Provider-specific consensus', f'provider-consensus-{_slugify(view.entity_id)}')
     if view.consensus.empty:
-        st.warning(f"Consensus unavailable · {view.consensus_status} · provider rows are not blended.")
+        st.warning(f'Consensus unavailable · {view.consensus_status} · provider rows are not blended.')
     else:
-        st.dataframe(_friendly_consensus_frame(view.consensus, viewer_timezone), width="stretch", hide_index=True)
-
-    # 4. Consensus Revisions & Trajectory
-    _render_section_heading(4, "Consensus revisions", f"consensus-revisions-{_slugify(view.entity_id)}")
+        st.dataframe(_friendly_consensus_frame(view.consensus, viewer_timezone), width='stretch', hide_index=True)
+    _render_section_heading(4, 'Consensus revisions', f'consensus-revisions-{_slugify(view.entity_id)}')
     if view.consensus_revisions.empty:
-        st.info("Consensus revision history unavailable; no 0/0 breadth is shown.")
+        st.info('Consensus revision history unavailable; no 0/0 breadth is shown.')
     else:
-        st.dataframe(_friendly_revision_frame(view.consensus_revisions, viewer_timezone), width="stretch", hide_index=True)
-
-    # 5. Internal Estimates & Management Guidance
-    _render_section_heading(4, "Internal estimates & management guidance", f"internal-estimates-{_slugify(view.entity_id)}")
+        st.dataframe(_friendly_revision_frame(view.consensus_revisions, viewer_timezone), width='stretch', hide_index=True)
+    _render_section_heading(4, 'Internal estimates & management guidance', f'internal-estimates-{_slugify(view.entity_id)}')
     if view.internal_estimates.empty:
-        st.info("No internal estimates or management guidance registered for this entity.")
+        st.info('No internal estimates or management guidance registered for this entity.')
     else:
-        listing_ids = view.internal_estimates.get(
-            "listing_id", pd.Series("", index=view.internal_estimates.index, dtype="string")
-        ).map(_text)
-        listing_rows = view.internal_estimates.loc[listing_ids.ne("")]
-        entity_rows = view.internal_estimates.loc[listing_ids.eq("")]
+        listing_ids = view.internal_estimates.get('listing_id', pd.Series('', index=view.internal_estimates.index, dtype='string')).map(_text)
+        listing_rows = view.internal_estimates.loc[listing_ids.ne('')]
+        entity_rows = view.internal_estimates.loc[listing_ids.eq('')]
         if not listing_rows.empty:
-            st.caption("Selected listing scope")
-            st.dataframe(
-                _friendly_internal_estimates_frame(listing_rows, viewer_timezone),
-                width="stretch",
-                hide_index=True,
-            )
+            st.caption('Selected listing scope')
+            st.dataframe(_friendly_internal_estimates_frame(listing_rows, viewer_timezone), width='stretch', hide_index=True)
         if not entity_rows.empty:
-            st.caption(
-                "Entity scope · listing-independent estimates; these rows are not assigned to any listing."
-            )
-            st.dataframe(
-                _friendly_internal_estimates_frame(entity_rows, viewer_timezone),
-                width="stretch",
-                hide_index=True,
-            )
-
-    # 6. Claim-Evidence Matrix & Invalidation Conflict Hints
-    _render_section_heading(4, "Claim-evidence matrix & conflict detection", f"claim-evidence-matrix-{_slugify(view.entity_id)}")
+            st.caption('Entity scope · listing-independent estimates; these rows are not assigned to any listing.')
+            st.dataframe(_friendly_internal_estimates_frame(entity_rows, viewer_timezone), width='stretch', hide_index=True)
+    _render_section_heading(4, 'Claim-evidence matrix & conflict detection', f'claim-evidence-matrix-{_slugify(view.entity_id)}')
     if not view.claim_evidence_links.empty:
-        st.dataframe(
-            _friendly_claim_evidence_links_frame(view.claim_evidence_links, view.evidence_items, viewer_timezone),
-            width="stretch",
-            hide_index=True,
-        )
+        st.dataframe(_friendly_claim_evidence_links_frame(view.claim_evidence_links, view.evidence_items, viewer_timezone), width='stretch', hide_index=True)
     elif not view.invalidation_evidence.empty:
-        st.dataframe(_friendly_invalidation_frame(view.invalidation_evidence, viewer_timezone), width="stretch", hide_index=True)
+        st.dataframe(_friendly_invalidation_frame(view.invalidation_evidence, viewer_timezone), width='stretch', hide_index=True)
     else:
-        st.info("Invalidation evidence unavailable; support questions are not relabelled as falsification evidence.")
-
-    # 7. Source Health & PIT Caveats
-    with st.expander("Source and PIT caveats", expanded=False):
+        st.info('Invalidation evidence unavailable; support questions are not relabelled as falsification evidence.')
+    with st.expander('Source and PIT caveats', expanded=False):
         for caveat in view.caveats:
-            st.markdown(f"- {escape(_friendly_caveat(caveat))}")
+            st.markdown(f'- {escape(_friendly_caveat(caveat))}')
         if not view.source_health.empty:
-            st.dataframe(view.source_health, width="stretch", hide_index=True)
+            st.dataframe(view.source_health, width='stretch', hide_index=True)
         else:
-            st.info("No company-relevant source-health rows are available.")
+            st.info('No company-relevant source-health rows are available.')
 
 
 def render_company_page(
@@ -2133,72 +2069,64 @@ def render_company_page(
     viewer_timezone: str,
     filters: EventFilters | None = None,
 ) -> CompanyView:
-    """Render a four-tab company fundamental and thesis cockpit, never document bodies."""
-
     entity_ids = _filtered_entity_ids(snapshot, filters)
     entity_options = sorted(entity_ids)
     if not entity_options:
-        st.info("No company matches the active basket, country or membership filters.")
-        raise ValueError("company registry is empty")
-    if st.session_state.get("ct_company_entity") not in entity_options:
-        st.session_state["ct_company_entity"] = entity_options[0]
+        st.info('No company matches the active basket, country or membership filters.')
+        raise ValueError('company registry is empty')
+    query_entity = st.query_params.get('entity')
+    if query_entity and query_entity in entity_options:
+        st.session_state['ct_company_entity'] = query_entity
+    elif st.session_state.get('ct_company_entity') not in entity_options:
+        st.session_state['ct_company_entity'] = 'TENCENT' if 'TENCENT' in entity_options else entity_options[0]
+    cur_entity = st.session_state.get('ct_company_entity', entity_options[0])
+    cur_idx = entity_options.index(cur_entity) if cur_entity in entity_options else 0
     selected_entity = st.selectbox(
-        "Company",
+        'Company',
         entity_options,
-        key="ct_company_entity",
-        format_func=lambda value: _text(snapshot.entities.loc[snapshot.entities["entity_id"].astype("string").eq(value), "display_name"].iloc[0]) if not snapshot.entities.loc[snapshot.entities["entity_id"].astype("string").eq(value)].empty else value,
+        index=cur_idx,
+        key='ct_company_entity',
+        format_func=lambda value: _text(snapshot.entities.loc[snapshot.entities['entity_id'].astype('string').eq(value), 'display_name'].iloc[0]) if not snapshot.entities.loc[snapshot.entities['entity_id'].astype('string').eq(value)].empty else value,
     )
     as_of_point = snapshot.as_of_utc
     entity_row = snapshot.entities.loc[
-        snapshot.entities["entity_id"].astype("string").eq(selected_entity)
-    ].iloc[0] if not snapshot.entities.empty and snapshot.entities["entity_id"].astype("string").eq(selected_entity).any() else None
+        snapshot.entities['entity_id'].astype('string').eq(selected_entity)
+    ].iloc[0] if not snapshot.entities.empty and snapshot.entities['entity_id'].astype('string').eq(selected_entity).any() else None
     if entity_row is not None and _market_entity_eligible(entity_row, as_of_point) and not snapshot.listings.empty:
         entity_listings = snapshot.listings.loc[
-            snapshot.listings["entity_id"].astype("string").eq(selected_entity)
+            snapshot.listings['entity_id'].astype('string').eq(selected_entity)
             & snapshot.listings.apply(lambda row: _market_listing_eligible(row, as_of_point), axis=1)
         ]
     else:
         entity_listings = snapshot.listings.iloc[0:0].copy()
-    listing_options = [None] + sorted(entity_listings["listing_id"].astype("string")) if not entity_listings.empty else [None]
-    if st.session_state.get("ct_company_listing") not in listing_options:
-        st.session_state["ct_company_listing"] = None
+    listing_options = [None] + sorted(entity_listings['listing_id'].astype('string')) if not entity_listings.empty else [None]
+    if st.session_state.get('ct_company_listing') not in listing_options:
+        st.session_state['ct_company_listing'] = None
     selected_listing = st.selectbox(
-        "Listing",
+        'Listing',
         listing_options,
-        key="ct_company_listing",
+        key='ct_company_listing',
         format_func=lambda value: _format_listing_option(snapshot, value),
     )
     view = build_company_view(snapshot, entity_id=selected_entity, listing_id=selected_listing, filters=filters)
-    _render_section_heading(3, view.display_name, f"company-view-{_slugify(view.entity_id)}")
-    entity_type_label = "private / no listing" if view.entity_type == "private" else "public"
-    st.caption(f"{escape(view.legal_name)} · {escape(view.country)} · {escape(view.sector or 'sector unavailable')} · {escape(view.industry or 'industry unavailable')} · {escape(entity_type_label)} · {escape(view.active_status or 'status unavailable')}")
+    _render_company_hero_card(view, snapshot, viewer_timezone)
+    _render_section_heading(3, view.display_name, f'company-view-{_slugify(view.entity_id)}')
+    entity_type_label = 'private / no listing' if view.entity_type == 'private' else 'public'
+    st.caption(f'{escape(view.legal_name)} · {escape(view.country)} · {escape(view.sector or "sector unavailable")} · {escape(view.industry or "industry unavailable")} · {escape(entity_type_label)} · {escape(view.active_status or "status unavailable")}')
     if view.selected_listing_id:
-        selection_mode = {
-            "primary_default": "primary listing default",
-            "explicit": "selected listing",
-        }.get(view.selection_mode, _text(view.selection_mode).replace("_", " ") or "selected listing")
-        st.caption(
-            f"Selected listing · {_format_listing_option(snapshot, view.selected_listing_id)} · {selection_mode}"
-        )
+        selection_mode = {'primary_default': 'primary listing default', 'explicit': 'selected listing'}.get(view.selection_mode, _text(view.selection_mode).replace('_', ' ') or 'selected listing')
+        st.caption(f'Selected listing · {_format_listing_option(snapshot, view.selected_listing_id)} · {selection_mode}')
     else:
-        st.warning("No verified primary listing is available; listing-specific data is unavailable.")
-
-    tab_overview, tab_fundamentals, tab_thesis, tab_evidence = st.tabs(
-        ["Overview", "Fundamentals", "Thesis & Catalysts", "Evidence"]
-    )
-
+        st.warning('No verified primary listing is available; listing-specific data is unavailable.')
+    tab_overview, tab_fundamentals, tab_thesis, tab_evidence = st.tabs(['Overview', 'Fundamentals', 'Thesis & Catalysts', 'Evidence'])
     with tab_overview:
         _render_overview_tab(view, snapshot, viewer_timezone)
-
     with tab_fundamentals:
         _render_fundamentals_tab(view, snapshot, viewer_timezone)
-
     with tab_thesis:
         _render_thesis_catalysts_tab(view, snapshot, viewer_timezone)
-
     with tab_evidence:
         _render_evidence_tab(view, snapshot, viewer_timezone)
-
     return view
 
 

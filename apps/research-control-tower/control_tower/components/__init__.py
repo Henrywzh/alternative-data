@@ -247,6 +247,50 @@ BASE_CSS = r"""
 .ct-inline-link { color: var(--ct-accent); text-decoration: none; }
 .ct-inline-link:hover, .ct-inline-link:focus { text-decoration: underline; }
 .ct-filter-summary { color: var(--ct-muted); font-size: 0.78rem; margin-top: 0.2rem; margin-bottom: 0.6rem; }
+
+/* Hero Header & KPI Cards */
+.ct-hero-card { background: var(--ct-surface); border: 1px solid var(--ct-border); border-radius: var(--ct-radius); padding: 1.15rem 1.35rem; margin-bottom: 1rem; }
+.ct-hero-top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.85rem; margin-bottom: 0.6rem; }
+.ct-hero-title { font-size: 1.4rem; font-weight: 800; color: var(--ct-ink); margin: 0; display: flex; align-items: center; gap: 0.6rem; }
+.ct-hero-ticker { font-size: 0.88rem; font-weight: 750; color: var(--ct-accent); background: color-mix(in srgb, var(--ct-accent) 12%, var(--ct-surface)); padding: 0.2rem 0.55rem; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--ct-accent) 25%, var(--ct-border)); }
+.ct-hero-price-box { display: flex; align-items: baseline; gap: 0.65rem; }
+.ct-hero-price { font-size: 1.45rem; font-weight: 800; color: var(--ct-ink); }
+.ct-hero-change { font-size: 0.86rem; font-weight: 750; padding: 0.18rem 0.48rem; border-radius: 6px; }
+.ct-hero-change--up { color: #16a34a; background: rgba(22, 163, 74, 0.12); }
+.ct-hero-change--down { color: #dc2626; background: rgba(220, 38, 38, 0.12); }
+
+.ct-kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0.65rem; margin-top: 0.75rem; }
+.ct-kpi-card { background: var(--ct-surface-muted); border: 1px solid var(--ct-border); border-radius: 10px; padding: 0.7rem 0.85rem; }
+.ct-kpi-label { font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: var(--ct-muted); letter-spacing: 0.06em; }
+.ct-kpi-value { font-size: 1.12rem; font-weight: 800; color: var(--ct-ink); margin-top: 0.2rem; }
+.ct-kpi-sub { font-size: 0.72rem; color: var(--ct-muted); margin-top: 0.12rem; }
+
+/* Financial model & Segment cards */
+.ct-segment-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.75rem; margin-bottom: 0.9rem; }
+.ct-segment-card { background: var(--ct-surface); border: 1px solid var(--ct-border); border-radius: 11px; padding: 0.95rem 1.05rem; }
+.ct-segment-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.4rem; }
+.ct-segment-title { font-size: 0.92rem; font-weight: 750; color: var(--ct-ink); }
+.ct-segment-share { font-size: 0.76rem; font-weight: 700; color: var(--ct-accent); }
+.ct-segment-rev { font-size: 1.2rem; font-weight: 800; color: var(--ct-ink); }
+.ct-segment-detail { font-size: 0.76rem; color: var(--ct-muted); margin-top: 0.3rem; line-height: 1.4; }
+
+/* Thesis & Pillar cards */
+.ct-thesis-grid { display: grid; grid-template-columns: 1fr; gap: 0.85rem; margin-bottom: 1.1rem; }
+.ct-thesis-card { background: var(--ct-surface); border: 1px solid var(--ct-border); border-left: 4px solid var(--ct-border); border-radius: 11px; padding: 1rem 1.15rem; }
+.ct-thesis-card--bull { border-left-color: #16a34a; background: color-mix(in srgb, #16a34a 4%, var(--ct-surface)); }
+.ct-thesis-card--bear { border-left-color: #dc2626; background: color-mix(in srgb, #dc2626 4%, var(--ct-surface)); }
+.ct-thesis-card--base { border-left-color: var(--ct-accent); background: color-mix(in srgb, var(--ct-accent) 4%, var(--ct-surface)); }
+
+/* Buyback Tracker */
+.ct-buyback-tracker { background: var(--ct-surface); border: 1px solid var(--ct-border); border-radius: 11px; padding: 0.95rem 1.15rem; margin-bottom: 0.9rem; }
+.ct-progress-bar-bg { background: var(--ct-surface-muted); border-radius: 999px; height: 9px; width: 100%; overflow: hidden; margin: 0.55rem 0; border: 1px solid var(--ct-border); }
+.ct-progress-bar-fill { background: linear-gradient(90deg, var(--ct-accent), #10b981); height: 100%; border-radius: 999px; }
+
+/* State of Play Insights */
+.ct-insight-box { background: var(--ct-surface-muted); border: 1px solid var(--ct-border); border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 0.65rem; }
+.ct-insight-title { font-size: 0.88rem; font-weight: 750; color: var(--ct-ink); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.4rem; }
+.ct-insight-desc { font-size: 0.82rem; color: var(--ct-ink); opacity: 0.9; line-height: 1.45; }
+
 @media (max-width: 1199px) {
   .ct-flight-deck { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ct-flight-slot--catalyst { grid-column: 1 / -1; }
