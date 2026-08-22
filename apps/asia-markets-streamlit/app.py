@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import re
 from html import escape
+import sys
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -4122,6 +4123,187 @@ def render_market_entry_cost_chart(cohort: pd.DataFrame, language: str) -> None:
     )
 
 
+def render_us_sector_tab(language: str) -> None:
+    """Render US 11 GICS Sectors and pure-play sub-industries from R2 / remote artifact."""
+    # ``streamlit run`` puts this script's directory on sys.path; AppTest and
+    # any other import path do not, so the tab raised ModuleNotFoundError
+    # everywhere except a live server. Resolve the sibling module explicitly.
+    app_dir = str(Path(__file__).resolve().parent)
+    if app_dir not in sys.path:
+        sys.path.insert(0, app_dir)
+    from remote_us_etf import load_us_sector_artifact
+
+    
+    artifact = load_us_sector_artifact()
+    sectors = artifact.get("sectors", [])
+    sub_map = artifact.get("sub_industries", {})
+    as_of = artifact.get("as_of", "—")
+    
+    if not sectors:
+        st.info(tr(language, "US sector data is updating...", "美股行业数据加载中..."))
+        return
+
+    coverage = artifact.get("coverage") or {}
+    source = artifact.get("source", "r2")
+    source_label = {
+        "r2": tr(language, "R2", "R2 云端"),
+        "local_cache": tr(language, "local cache", "本地缓存"),
+        "live": tr(language, "generated live", "本次会话现算"),
+    }.get(source, source)
+    age = artifact.get("cache_age_hours")
+    if age is not None:
+        source_label += tr(language, f", {age:.0f}h old", f"，{age:.0f} 小时前")
+    st.caption(
+        tr(
+            language,
+            f"Data as of {as_of} · 11 GICS Level-1 Sectors + Pure-play Sub-industries · source: {source_label}",
+            f"数据截至 {as_of} · 11大GICS核心行业板块 + 高纯度细分主题 · 数据来源：{source_label}",
+        )
+    )
+
+    # Partial coverage is stated, not hidden: four sectors must not read as
+    # though four were all there is.
+    missing = coverage.get("sectors_missing") or []
+    if missing:
+        st.warning(
+            tr(
+                language,
+                f"{coverage.get('sectors_delivered', len(sectors))} of "
+                f"{coverage.get('sectors_expected', 11)} sectors available; "
+                f"missing: {', '.join(missing)}",
+                f"仅取到 {coverage.get('sectors_delivered', len(sectors))}/"
+                f"{coverage.get('sectors_expected', 11)} 个板块，"
+                f"缺失：{'、'.join(missing)}",
+            )
+        )
+    excluded = [t for t in (coverage.get("rebase_excluded") or []) if t not in missing]
+    if excluded:
+        st.caption(
+            tr(
+                language,
+                f"Excluded from the relative-performance chart (short history): {', '.join(excluded)}",
+                f"未纳入相对表现图（历史长度不足，无法与其他序列共用基准日）：{'、'.join(excluded)}",
+            )
+        )
+
+    # 1. 11大板块相对表现折线图 (60D rebased)
+    plot_rows = []
+    for s in sectors:
+        sp = s.get("sparkline_60d", [])
+        sec_name = s.get("name_zh" if language == "zh" else "name_en", s["ticker"])
+        lbl = f"{s['ticker']} {sec_name}"
+        # A series without a rebased track does not share the common base date
+        # and must not be drawn on the same axis as those that do.
+        for pt in sp:
+            plot_rows.append({"date": pd.to_datetime(pt["d"]), "rebased": pt["rebased"], "series": lbl})
+            
+    if plot_rows:
+        df_plot = pd.DataFrame(plot_rows)
+        fig = px.line(
+            df_plot,
+            x="date",
+            y="rebased",
+            color="series",
+            color_discrete_sequence=PALETTE,
+        )
+        fig.add_hline(y=100.0, line_dash="dot", line_color="#9CA3AF", line_width=1)
+        base_date = coverage.get("rebase_base_date")
+        fig.update_yaxes(
+            title=tr(
+                language,
+                f"Rebased to 100 at {base_date}" if base_date else "Rebased level",
+                f"归一走势（{base_date} = 100）" if base_date else "归一走势 (基准100)",
+            )
+        )
+        fig.update_xaxes(title=None, tickformat="%b %d")
+        fig.update_layout(
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0, font=dict(size=10)),
+            margin=dict(l=10, r=10, t=30, b=10),
+            hovermode="x unified",
+        )
+        st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True})
+
+    # 2. 11大核心板块技术面表格
+    st.markdown(
+        f'<div class="am-chart-title">{tr(language, "US 11 GICS Sector Heatmap & Metrics", "美股 11 大行业板块技术面看板")}</div>',
+        unsafe_allow_html=True,
+    )
+    
+    sec_df = pd.DataFrame(sectors)
+    sec_df["_label_show"] = sec_df.apply(
+        lambda r: f"{r['ticker']} {r.get('name_zh' if language == 'zh' else 'name_en')}", axis=1
+    )
+    sec_df["_ret_20d"] = sec_df["ret_20d_pct"].apply(lambda v: f"{v:+.2f}%" if pd.notna(v) else "—")
+    sec_df["_ret_60d"] = sec_df["ret_60d_pct"].apply(lambda v: f"{v:+.2f}%" if pd.notna(v) else "—")
+    sec_df["_ma20"] = sec_df["ma20_pct"].apply(lambda v: f"{v:+.2f}%" if pd.notna(v) else "—")
+    sec_df["_dd60"] = sec_df["drawdown_60d"].apply(lambda v: f"{v:.2f}%" if pd.notna(v) else "—")
+    
+    def _rsi_label(v):
+        if pd.isna(v) or v is None: return "—"
+        val = float(v)
+        if val >= 70: return f"{val:.1f} (超买过热)" if language == "zh" else f"{val:.1f} (Overbought)"
+        if val <= 35: return f"{val:.1f} (超卖低估)" if language == "zh" else f"{val:.1f} (Oversold)"
+        return f"{val:.1f} (中性健康)" if language == "zh" else f"{val:.1f} (Neutral)"
+        
+    sec_df["_rsi_show"] = sec_df["rsi"].apply(_rsi_label)
+    
+    col_map_us = {
+        "_label_show": "板块代码与名称" if language == "zh" else "Sector Ticker & Name",
+        "_ret_20d": "近20日收益" if language == "zh" else "20D Return",
+        "_ret_60d": "近60日收益" if language == "zh" else "60D Return",
+        "_ma20": "相对20日均线" if language == "zh" else "vs MA20",
+        "_rsi_show": "RSI情绪状态" if language == "zh" else "RSI Status",
+        "_dd60": "60日最大回撤" if language == "zh" else "60D Drawdown",
+        "expense_ratio_str": "费率" if language == "zh" else "Expense",
+    }
+    
+    st.dataframe(
+        sec_df[[c for c in col_map_us.keys() if c in sec_df.columns]].rename(columns=col_map_us),
+        hide_index=True,
+        width="stretch",
+    )
+
+    # 3. 细分子行业与主题下钻 (Pure-play Sub-industries)
+    if sub_map:
+        st.markdown(
+            f'<div class="am-chart-title" style="margin-top:20px;">{tr(language, "🔍 Pure-Play Sub-Industry & Thematic ETFs", "🔍 专属细分子行业与主题 ETF 下钻")}</div>',
+            unsafe_allow_html=True,
+        )
+        sec_names = list(sub_map.keys())
+        selected_parent = st.selectbox(
+            tr(language, "Select Parent Sector", "选择所属大类行业"),
+            sec_names,
+            key="us_etf_parent_select",
+        )
+        
+        subs = sub_map.get(selected_parent, [])
+        if subs:
+            sub_df = pd.DataFrame(subs)
+            sub_df["_sub_show"] = sub_df.apply(
+                lambda r: f"{r['ticker']} {r.get('name_zh' if language == 'zh' else 'name_en')}", axis=1
+            )
+            sub_df["_theme_show"] = sub_df.get("sub_industry_zh" if language == "zh" else "sub_industry")
+            sub_df["_ret_20d"] = sub_df["ret_20d_pct"].apply(lambda v: f"{v:+.2f}%" if pd.notna(v) else "—")
+            sub_df["_ret_60d"] = sub_df["ret_60d_pct"].apply(lambda v: f"{v:+.2f}%" if pd.notna(v) else "—")
+            sub_df["_ma20"] = sub_df["ma20_pct"].apply(lambda v: f"{v:+.2f}%" if pd.notna(v) else "—")
+            sub_df["_rsi_show"] = sub_df["rsi"].apply(_rsi_label)
+            
+            col_map_sub = {
+                "_sub_show": "细分ETF标的" if language == "zh" else "Sub ETF",
+                "_theme_show": "所属细分赛道" if language == "zh" else "Sub-Industry",
+                "_ret_20d": "20日收益" if language == "zh" else "20D Ret",
+                "_ret_60d": "60日收益" if language == "zh" else "60D Ret",
+                "_ma20": "相对20日线" if language == "zh" else "vs MA20",
+                "_rsi_show": "RSI情绪" if language == "zh" else "RSI",
+                "expense_ratio_str": "管理费率" if language == "zh" else "Expense",
+            }
+            st.dataframe(
+                sub_df[[c for c in col_map_sub.keys() if c in sub_df.columns]].rename(columns=col_map_sub),
+                hide_index=True,
+                width="stretch",
+            )
+
+
 def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: str, window: str) -> None:
     """Index & ETF Allocation Monitor: exposure leadership, relative regime,
     and wrapper selection."""
@@ -4151,16 +4333,20 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
     # --- Leadership ---
     section_heading(language, "Market Leadership", "市场领导力", "Which exposure is leading, and the technical snapshot behind it.", "哪个指数在领跑，以及其技术面快照。")
     
-    # 采用顶级原生下划线 Tab 栏 (st.tabs)
+    # 采用顶级原生下划线 Tab 栏 (st.tabs) - 包含美股行业板块
     tab_core_label = tr(language, "🏛️ Core Indices", "🏛️ 核心大盘宽基")
-    tab_style_label = tr(language, "🎯 Styles & Themes", "🎯 风格与主题 ETF")
+    tab_style_label = tr(language, "🇨🇳 China/HK Themes", "🇨🇳 泛中国风格与主题")
+    tab_us_label = tr(language, "🇺🇸 US 11 GICS Sectors", "🇺🇸 美股 11 大行业")
     tab_all_label = tr(language, "🌐 All Exposures", "🌐 全部指数")
     
-    core_tab, style_tab, all_tab = st.tabs([tab_core_label, tab_style_label, tab_all_label])
+    core_tab, style_tab, us_tab, all_tab = st.tabs([tab_core_label, tab_style_label, tab_us_label, tab_all_label])
     
     core_eids = {"csi300", "csi500", "csi1000", "sp500", "hsi"}
     style_eids = {"dividend", "hk_dividend", "hk_internet", "hstech", "growth", "chinext"}
     
+    with us_tab:
+        render_us_sector_tab(language)
+
     tab_mapping = [
         (core_tab, core_eids, "core"),
         (style_tab, style_eids, "style"),
