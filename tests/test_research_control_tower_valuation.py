@@ -205,6 +205,62 @@ def test_real_quote_and_consensus_contract_produce_forward_pe() -> None:
     assert not validate_valuation_snapshots_df(result)
 
 
+@pytest.mark.parametrize("eps", [-4.0, 0.0])
+def test_loss_making_consensus_is_typed_empty_and_never_aborts_the_build(
+    eps: float,
+) -> None:
+    """A loss-making forecast has no forward P/E; it must skip, not crash.
+
+    ``build_valuation_snapshot_row`` rejects a non-positive denominator by
+    raising, which would take the whole automated build down over one metric
+    that simply has no meaningful value this period.  It never gets the chance:
+    ``_latest_consensus_eps`` admits only finite positive values upstream.
+    This pins that screen, which is load-bearing and easy to drop by accident
+    while editing the consensus filter.
+    """
+
+    result = compute_tencent_valuation_snapshots(
+        pd.DataFrame([_quote()]),
+        pd.DataFrame([_consensus(value=eps)]),
+        consensus_health_df=_consensus_health(),
+        fx_rates_df=_fx_rows(),
+        as_of_utc=AS_OF,
+        fiscal_year=2026,
+    )
+
+    assert result.empty
+    assert list(result.columns) == VALUATION_SNAPSHOTS_COLUMNS
+
+
+def test_the_valuation_natural_key_is_recoverable_from_mart_columns() -> None:
+    """``valuation_id`` is a content hash, so dedupe groups on the columns.
+
+    Re-deriving the same fact from a fresh capture mints a new ID by design
+    (that is what makes the canonical rebuild a tamper check), so nothing may
+    depend on the ID as a natural key.  Every component of the natural key is
+    a column of the mart, which is what keeps an upsert possible.
+    """
+
+    natural_key = (
+        "listing_id",
+        "valuation_at",
+        "metric_name",
+        "metric_basis",
+        "numerator_ref",
+        "denominator_ref",
+    )
+    assert set(natural_key) <= set(VALUATION_SNAPSHOTS_COLUMNS)
+
+    first = build_valuation_snapshot_row(_valuation_input())
+    restated = build_valuation_snapshot_row(
+        _valuation_input(
+            retrieved_at_utc=pd.Timestamp("2026-08-21T23:00:00Z").to_pydatetime()
+        )
+    )
+    assert first["valuation_id"] != restated["valuation_id"]
+    assert all(first[field] == restated[field] for field in natural_key)
+
+
 def test_provider_unverified_consensus_is_typed_empty_and_never_valued() -> None:
     result = compute_tencent_valuation_snapshots(
         pd.DataFrame([_quote()]),
