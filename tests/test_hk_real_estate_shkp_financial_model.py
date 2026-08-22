@@ -1009,3 +1009,122 @@ def test_v1_full_chain_invariants():
         recog = rec[rec["fiscal_year_end"].eq(fy)]["recognised_residential_revenue_hkd"].iloc[0]
         implied = sk_row["residential_development_profit_hkd_m"] / (recog / 1e6)
         assert abs(implied - wm_row["weighted_margin_point"]) < 0.005
+
+
+def test_margin_gap_eps_is_per_share_not_per_million_shares():
+    """The consensus gap per share must be an actual per-share figure.
+
+    ``recognised_revenue_hkd`` is absolute HKD while the share count is quoted
+    in millions, so the conversion needs an explicit 10^6.  Getting it wrong
+    produced a stored value of HK$11,616.88 per share against a stock that
+    trades near HK$80 -- wrong by six orders of magnitude, and range-checked
+    nowhere.  This uses a synthetic project model so it holds without local
+    normalized data.
+    """
+    import pandas as pd
+
+    from src.hk_real_estate.shkp_project_margin_model import build_shkp_fy27_weighted_margin
+
+    shares_outstanding = 2_896_000_000.0
+    projects = pd.DataFrame(
+        [
+            {
+                "fiscal_year": 2027,
+                "recognised_revenue_hkd": 20_000_000_000.0,
+                "margin_point": 0.25,
+                "margin_low": 0.20,
+                "margin_high": 0.30,
+            }
+        ]
+    )
+
+    row = build_shkp_fy27_weighted_margin(projects).iloc[0]
+
+    # Consensus 29.6% vs a 25.0% model margin on HK$20bn of revenue.
+    assert row["margin_gap_profit_hkd"] == pytest.approx(20_000_000_000.0 * (0.296 - 0.25))
+    assert row["margin_gap_eps_hkd"] == pytest.approx(
+        row["margin_gap_profit_hkd"] / shares_outstanding
+    )
+    # The independent check: a per-share gap on a HK$80-ish stock cannot be a
+    # four-figure number, whatever the arithmetic upstream.
+    assert abs(row["margin_gap_eps_hkd"]) < 100.0
+
+
+def _margin_phase(fy: int, dev: str, phase: str, revenue: float, point: float) -> dict:
+    return {
+        "fiscal_year": fy,
+        "development_name": dev,
+        "phase_name": phase,
+        "recognised_revenue_hkd": revenue,
+        "margin_point": point,
+        "margin_low": point - 0.05,
+        "margin_high": point + 0.05,
+        "asp_per_unit_hkd": 10_000_000.0,
+    }
+
+
+def test_margin_group_sensitivity_covers_one_fiscal_year_only():
+    """Group weights must come from the consensus year, not a two-year pool.
+
+    shkp_project_margin_model holds both FY2026 and FY2027 rows.  Pooling them
+    blends two years of recognised revenue into one weight base and then
+    compares it against a FY2027-only consensus margin -- which flipped the sign
+    of every consensus-required delta and reported 6 of 9 groups infeasible.
+    """
+    import pandas as pd
+
+    from src.hk_real_estate.shkp_margin_variant import build_shkp_margin_group_sensitivity
+
+    projects = pd.DataFrame(
+        [
+            _margin_phase(2026, "NOVO LAND", "p1", 40_000_000_000.0, 0.40),
+            _margin_phase(2027, "NOVO LAND", "p2", 10_000_000_000.0, 0.25),
+        ]
+    )
+
+    groups = build_shkp_margin_group_sensitivity(projects, target_fiscal_year=2027)
+
+    assert list(groups["fiscal_year"].unique()) == [2027]
+    assert groups["recognised_revenue_hkd"].sum() == pytest.approx(10_000_000_000.0)
+    assert groups.loc[0, "margin_point"] == pytest.approx(0.25)
+
+
+def test_margin_group_margins_are_revenue_weighted():
+    """A small phase must not move a group's margin as much as a large one.
+
+    The caveat on this dataset has always said "revenue-weighted phase mean";
+    an unweighted mean also stops the group margins aggregating back to the
+    portfolio margin they are compared against.
+    """
+    import pandas as pd
+
+    from src.hk_real_estate.shkp_margin_variant import build_shkp_margin_group_sensitivity
+
+    projects = pd.DataFrame(
+        [
+            _margin_phase(2027, "NOVO LAND", "big", 9_000_000_000.0, 0.30),
+            _margin_phase(2027, "NOVO LAND", "small", 1_000_000_000.0, 0.10),
+        ]
+    )
+
+    groups = build_shkp_margin_group_sensitivity(projects, target_fiscal_year=2027)
+
+    assert groups.loc[0, "margin_point"] == pytest.approx(0.28)  # not the 0.20 plain mean
+
+
+def test_consensus_required_margin_refuses_a_mismatched_fiscal_year():
+    """The 29.6% figure describes FY2027; comparing another year must be loud."""
+    import pandas as pd
+
+    from src.hk_real_estate.shkp_margin_variant import (
+        build_shkp_margin_consensus_required,
+        build_shkp_margin_group_sensitivity,
+    )
+
+    projects = pd.DataFrame(
+        [_margin_phase(2026, "NOVO LAND", "p1", 10_000_000_000.0, 0.30)]
+    )
+    groups = build_shkp_margin_group_sensitivity(projects, target_fiscal_year=2026)
+
+    with pytest.raises(ValueError, match="FY2027"):
+        build_shkp_margin_consensus_required(groups)
