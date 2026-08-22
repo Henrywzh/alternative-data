@@ -9,8 +9,18 @@ from datetime import date
 
 import pandas as pd
 
-from .alerts import build_email_html, send_report
+from .alerts import build_email_html, generate_sparkline_chart, send_report
 from .pipeline import run_pipeline
+
+
+# One entry per chart embedded in the digest. The email renders an ETF card
+# for each of these, so a card without its chart reads as a missing chart
+# rather than a deliberate omission -- keep the two lists in step.
+EMAIL_CHART_SERIES: tuple[tuple[str, str, str], ...] = (
+    ("csi300", "CSI 300 (沪深300) — 60D Trend & 20D MA", "#7c3aed"),
+    ("csi500", "CSI 500 (中证500) — 60D Trend & 20D MA", "#2563eb"),
+    ("sp500", "S&P 500 (标普500) — 60D Trend & 20D MA", "#0284c7"),
+)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -21,6 +31,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--no-write", action="store_true", help="Run without persisting snapshots")
     parser.add_argument("--allow-partial-write", action="store_true", help="Allow persisting partial/test runs to disk")
     parser.add_argument("--send-report", action="store_true", help="Send the daily Gmail digest after running")
+    parser.add_argument("--recipient", default=None, help="Override recipient email address")
     args = parser.parse_args(argv)
 
     is_partial = bool(args.limit_exposures or args.etf_only)
@@ -42,13 +53,28 @@ def main(argv: list[str] | None = None) -> int:
         regime = results.get("relative_regime", pd.DataFrame())
         wrappers = results.get("wrapper_metrics", pd.DataFrame())
         try:
+            prices = results.get("index_price_daily", pd.DataFrame())
+            images = {}
+            if not prices.empty:
+                for exposure_id, title, color in EMAIL_CHART_SERIES:
+                    image = generate_sparkline_chart(
+                        prices, exposure_id, title, color=color, days=60
+                    )
+                    if image:
+                        images[f"chart_{exposure_id}"] = image
             body = build_email_html(
                 report_date=date.today().isoformat(),
                 technicals=technicals,
                 regime=regime,
                 wrappers=wrappers,
+                charts=images.keys(),
             )
-            send_report(subject=f"Index & ETF Allocation Monitor — {date.today().isoformat()}", body_html=body)
+            send_report(
+                subject=f"Index & ETF Allocation Monitor — {date.today().isoformat()}",
+                body_html=body,
+                recipient_override=args.recipient,
+                images=images,
+            )
             print("daily Gmail digest sent")
         except Exception as exc:
             # Email is best-effort; pipeline/dashboard must never fail because

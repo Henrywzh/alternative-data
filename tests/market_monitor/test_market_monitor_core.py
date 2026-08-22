@@ -302,23 +302,40 @@ def test_email_trend_arrow_distinguishes_missing_from_down():
     """A missing MA20 must not render as a down arrow."""
     from market_monitor.alerts import build_email_html
 
+    from market_monitor.alerts import _get_tech_summary
+
     technicals = pd.DataFrame(
         [
-            {"label": "Has MA20", "ma20_pct": -1.2, "ma60_pct": -0.5, "rsi": 44.0},
-            {"label": "No MA20", "ma20_pct": float("nan"), "ma60_pct": None, "rsi": None},
+            {"exposure_id": "csi500", "ma20_pct": -1.2, "ma60_pct": -0.5, "rsi": 44.0},
+            {"exposure_id": "csi300", "ma20_pct": float("nan"), "ma60_pct": None, "rsi": None},
         ]
     )
+    below = _get_tech_summary(technicals, "csi500")
+    missing = _get_tech_summary(technicals, "csi300")
+
+    # A real reading below the MA says so; a missing one must not be rendered
+    # as any direction at all.
+    assert "20日线下方" in below["ma_status"]
+    assert "-1.2%" in below["ma_status"]
+    assert "20日线下方" not in missing["ma_status"]
+    assert "%" not in missing["ma_status"]
+    assert missing["rsi_status"] == "中性"
+
+    # The same must hold end to end, and a technicals frame with no
+    # exposure_id column at all must degrade rather than raise.
     html = build_email_html(
         report_date="2026-08-19",
         technicals=technicals,
         regime=pd.DataFrame(),
         wrappers=pd.DataFrame(),
     )
-    down_row = html.split("<td>Has MA20</td>")[1].split("</tr>")[0]
-    missing_row = html.split("<td>No MA20</td>")[1].split("</tr>")[0]
-    assert "▼" in down_row
-    assert "▼" not in missing_row
-    assert "—" in missing_row
+    assert below["ma_status"] in html
+    assert build_email_html(
+        report_date="2026-08-19",
+        technicals=pd.DataFrame([{"label": "no exposure_id", "ma20_pct": -1.2}]),
+        regime=pd.DataFrame(),
+        wrappers=pd.DataFrame(),
+    )
 
 
 def test_spot_premium_sign_is_premium_positive():
@@ -601,6 +618,7 @@ def test_email_escapes_provider_supplied_text():
     wrappers = pd.DataFrame(
         [
             {
+                "exposure_id": "csi300",
                 "ticker": "510300",
                 "fund_name": "<script>alert(1)</script>华泰柏瑞",
                 "premium_pct": -0.06,
@@ -1513,3 +1531,171 @@ def test_every_index_source_returns_the_same_date_type():
         pytest.skip("no normalized snapshot in this checkout")
     frame = pd.read_parquet(files[-1])
     assert all(isinstance(value, str) for value in frame["date"].head(50))
+
+
+# --- Regressions from the 2026-08-22 QDII / email review -------------------
+
+
+def test_every_premium_regime_can_be_both_scored_and_classified():
+    """The two regime tables must not drift apart again.
+
+    "qdii" was added to the status bands and not to the cost anchors, so every
+    QDII wrapper scored NaN and landed on rank 99 -- the sentinel that means
+    "no quote" -- while entry_status happily reported EXPENSIVE for the same
+    row. Nothing raised; the cohort ranking was simply gone.
+    """
+    from market_monitor.ranking import _ENTRY_COST_ANCHORS, _ENTRY_STATUS_BANDS
+
+    assert set(_ENTRY_STATUS_BANDS) == set(_ENTRY_COST_ANCHORS)
+
+
+def test_qdii_wrappers_are_scored_and_ranked_against_each_other():
+    from market_monitor.ranking import rank_wrappers
+
+    cohort = pd.DataFrame(
+        [
+            {"exposure_id": "nikkei225", "fund_id": "513520", "premium_pct": 2.0,
+             "premium_regime": "qdii", "turnover": 5e8, "management_fee": 0.002,
+             "custody_fee": 0.0005, "aum": 1e9, "fund_age_days": 2000},
+            {"exposure_id": "nikkei225", "fund_id": "513000", "premium_pct": 0.5,
+             "premium_regime": "qdii", "turnover": 5e8, "management_fee": 0.002,
+             "custody_fee": 0.0005, "aum": 1e9, "fund_age_days": 2000},
+        ]
+    )
+    ranked = rank_wrappers(cohort).set_index("fund_id")
+
+    assert ranked["buy_score"].notna().all()
+    # The cheaper entry must win; 99 is the "not measured" sentinel.
+    assert ranked.loc["513000", "buy_rank"] == 1
+    assert ranked.loc["513520", "buy_rank"] == 2
+    assert 99 not in set(ranked["buy_rank"])
+
+
+def test_an_unknown_regime_is_unavailable_not_judged_on_domestic_bands():
+    from market_monitor.ranking import rank_wrappers
+
+    frame = pd.DataFrame(
+        [{"exposure_id": "x", "fund_id": "1", "premium_pct": 1.0,
+          "premium_regime": "not_a_regime", "turnover": 1e8}]
+    )
+    assert rank_wrappers(frame)["entry_status"].iloc[0] == "UNAVAILABLE"
+
+
+def test_the_digest_survives_a_run_with_no_wrapper_or_technical_columns():
+    """The pre-open window is when the digest matters most.
+
+    With no IOPV published yet the pipeline hands the email an empty frame
+    with no columns at all. Raising there sent nothing, and the caller's
+    best-effort except turned that into silence.
+    """
+    from market_monitor.alerts import build_email_html
+
+    for technicals, wrappers in (
+        (pd.DataFrame(), pd.DataFrame()),
+        (pd.DataFrame([{"label": "no exposure_id", "ma20_pct": -1.0}]), pd.DataFrame()),
+        (pd.DataFrame(), pd.DataFrame([{"ticker": "510300", "premium_pct": 0.1}])),
+    ):
+        html = build_email_html(
+            report_date="2026-08-22",
+            technicals=technicals,
+            regime=pd.DataFrame(),
+            wrappers=wrappers,
+        )
+        assert "</html>" in html
+
+
+def test_only_attached_charts_get_a_cid_reference():
+    """A blunt has_charts flag emitted every slot and broke the rest."""
+    from market_monitor.alerts import build_email_html
+
+    html = build_email_html(
+        report_date="2026-08-22",
+        technicals=pd.DataFrame(),
+        regime=pd.DataFrame(),
+        wrappers=pd.DataFrame(),
+        charts=["chart_sp500"],
+    )
+    assert "cid:chart_sp500" in html
+    assert "cid:chart_csi500" not in html
+    assert "cid:chart_csi300" not in html
+
+
+def test_the_moving_average_covers_the_whole_plotted_window(monkeypatch):
+    """Computed on the slice, the first 19 of 60 plotted days had no MA line.
+
+    Captures what the function actually hands to matplotlib rather than
+    recomputing the correct answer alongside it -- the latter passes whether
+    or not the bug is present.
+    """
+    import matplotlib.axes
+    import numpy as np
+
+    from market_monitor.alerts import generate_sparkline_chart
+
+    plotted: list[np.ndarray] = []
+    real_plot = matplotlib.axes.Axes.plot
+
+    def capturing_plot(self, *args, **kwargs):
+        if len(args) >= 2:
+            plotted.append(pd.Series(args[1]).to_numpy(dtype=float))
+        return real_plot(self, *args, **kwargs)
+
+    monkeypatch.setattr(matplotlib.axes.Axes, "plot", capturing_plot)
+
+    rng = np.random.default_rng(0)
+    prices = pd.DataFrame(
+        {
+            "exposure_id": ["csi500"] * 200,
+            "date": pd.date_range("2026-01-01", periods=200, freq="B").astype(str),
+            "close": 5000 + np.cumsum(rng.normal(size=200) * 20),
+        }
+    )
+    assert generate_sparkline_chart(prices, "csi500", "t", days=60) is not None
+
+    close_line, ma_line = plotted[0], plotted[1]
+    assert len(close_line) == 60
+    assert len(ma_line) == 60
+    assert not np.isnan(ma_line).any(), (
+        f"{int(np.isnan(ma_line).sum())} of {len(ma_line)} plotted days have no MA"
+    )
+
+
+def test_a_fee_change_is_an_event_not_a_failed_fetch():
+    """A rate cut flipped the artifact to unhealthy and was reported as a
+    source call that failed."""
+    from market_monitor.pipeline import detect_fee_changes
+
+    previous = pd.DataFrame(
+        [
+            {"fund_id": "510300", "management_fee": 0.0050, "custody_fee": 0.0010},
+            {"fund_id": "159919", "management_fee": 0.0015, "custody_fee": 0.0005},
+        ]
+    )
+    published = {
+        "510300": {"management_fee": 0.0015, "custody_fee": 0.0010},   # a real cut
+        "159919": {"management_fee": 0.0015, "custody_fee": 0.0005},   # unchanged
+    }
+    changes = detect_fee_changes(previous, published)
+
+    assert len(changes) == 1
+    change = changes[0]
+    assert change["ticker"] == "510300"
+    assert change["severity"] == "event"
+    assert "cut" in change["error"]
+    # The artifact builder drops events before deciding whether the run failed.
+    assert [c for c in changes if c.get("severity") != "event"] == []
+
+
+def test_a_fee_move_inside_the_threshold_is_not_reported():
+    from market_monitor.pipeline import detect_fee_changes
+
+    previous = pd.DataFrame([{"fund_id": "510300", "management_fee": 0.0050}])
+    published = {"510300": {"management_fee": 0.0051}}  # +2%, under the 5% floor
+    assert detect_fee_changes(previous, published) == []
+
+
+def test_fee_change_detection_needs_no_previous_snapshot_to_be_safe():
+    from market_monitor.pipeline import detect_fee_changes
+
+    assert detect_fee_changes(None, {"510300": {"management_fee": 0.001}}) == []
+    assert detect_fee_changes(pd.DataFrame(), {"510300": {"management_fee": 0.001}}) == []
