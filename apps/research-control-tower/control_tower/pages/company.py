@@ -2355,6 +2355,8 @@ def _render_fundamentals_tab(
             rev_growth_df['YoY Growth (%)'] = piv_chart['revenue_total'].pct_change(4) * 100
             st.caption('Quarterly Topline & YoY Growth (%) Trajectory (2021Q1 → 2026Q2)')
             st.line_chart(rev_growth_df, height=220)
+        if view.entity_id == 'TENCENT':
+            _render_tencent_alt_data_modules()
         metrics = frame.get('metric', pd.Series('', index=frame.index, dtype='string')).astype('string')
         has_segments = metrics.str.startswith('revenue_') & ~metrics.eq('revenue_total')
         if has_segments.any():
@@ -2401,8 +2403,7 @@ def _render_fundamentals_tab(
         st.dataframe(_friendly_valuation_frame(view.valuation_snapshots), width='stretch', hide_index=True)
         st.caption('percentile_history_status: unavailable · Historical denominator vintages are absent; reconstructing synthetic historical percentiles from current-vintage statements is strictly forbidden by policy.')
 
-    if view.entity_id == "TENCENT":
-        _render_tencent_alt_data_modules()
+
 
 def _render_thesis_catalysts_tab(
     view: CompanyView,
