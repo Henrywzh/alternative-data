@@ -392,7 +392,12 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
             }
         )
 
-    fetch_errors = current_cov.get("fetch_errors") or []
+    reported = current_cov.get("fetch_errors") or []
+    # Entries marked as events are things that happened upstream and are worth
+    # seeing -- a fund cutting its management fee -- not calls that failed.
+    # Only real failures may degrade the run.
+    fetch_errors = [err for err in reported if err.get("severity") != "event"]
+    upstream_events = [err for err in reported if err.get("severity") == "event"]
     if fetch_errors:
         detail = "; ".join(
             f"{err.get('exposure_id') or err.get('dataset')}: {err.get('error')}"
@@ -405,6 +410,20 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
                 "latest_observation": current_cov.get("last_date") or "—",
                 "records": len(fetch_errors),
                 "notes": f"{len(fetch_errors)} source call(s) failed this run: {detail}",
+            }
+        )
+    if upstream_events:
+        detail = "; ".join(
+            f"{err.get('exposure_id') or err.get('dataset')}: {err.get('error')}"
+            for err in upstream_events[:6]
+        )
+        datasets["source_health"].append(
+            {
+                "source": "Upstream events",
+                "status": "Healthy",
+                "latest_observation": current_cov.get("last_date") or "—",
+                "records": len(upstream_events),
+                "notes": f"{len(upstream_events)} upstream change(s) observed this run: {detail}",
             }
         )
 
