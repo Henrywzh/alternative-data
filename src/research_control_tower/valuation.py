@@ -5,8 +5,6 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-import os
-import tempfile
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -14,7 +12,8 @@ from typing import Any, Mapping, Sequence
 
 import pandas as pd
 import pyarrow as pa
-import pyarrow.parquet as pq
+
+from .atomic_io import write_parquet_atomic as _write_parquet_atomic
 
 
 SUPPORTED_VALUATION_METRICS = frozenset(
@@ -49,8 +48,6 @@ SUPPORTED_PIT_CLASSES = frozenset(
         "not_pit",
     }
 )
-SUPPORTED_VALUATION_PIT_CLASSES = SUPPORTED_PIT_CLASSES
-
 UTC_TIMESTAMP = pa.timestamp("us", tz="UTC")
 
 VALUATION_SNAPSHOTS_COLUMNS = [
@@ -216,7 +213,17 @@ def _finite(value: Any, field: str, *, positive: bool = False) -> float:
 
 
 def _blank(value: Any) -> bool:
-    return value is None or pd.isna(value) or not str(value).strip()
+    if value is None or value is pd.NA or value is pd.NaT:
+        return True
+    try:
+        missing = pd.isna(value)
+        # ``pd.isna`` returns an array for array-like input; only a scalar
+        # result is a meaningful "this value is missing" answer.
+        if not hasattr(missing, "__len__") and bool(missing):
+            return True
+    except (TypeError, ValueError):
+        pass
+    return not str(value).strip()
 
 
 def empty_frame(schema: pa.Schema) -> pd.DataFrame:
@@ -762,7 +769,10 @@ def load_internal_estimates_csv(csv_path: Path) -> pd.DataFrame:
             if _blank(value):
                 parsed.append(pd.NaT)
                 continue
-            timestamp = pd.Timestamp(value)
+            # ``pd.Timestamp`` raises on unparseable text; coerce instead so a
+            # malformed cell becomes a validation issue rather than an import
+            # crash with no row number attached.
+            timestamp = pd.to_datetime(value, errors="coerce")
             parsed.append(
                 pd.NaT
                 if pd.isna(timestamp) or timestamp.tzinfo is None
@@ -783,25 +793,7 @@ def write_parquet_atomic(
 ) -> Path:
     """Write an exact Arrow schema atomically, including typed empty outputs."""
 
-    expected = [field.name for field in schema]
-    if list(frame.columns) != expected:
-        raise ValueError(f"invalid output columns for {output_path.name}")
-    table = pa.Table.from_pandas(frame, schema=schema, preserve_index=False)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    descriptor, temporary = tempfile.mkstemp(
-        prefix=f".{output_path.name}.", suffix=".tmp", dir=output_path.parent
-    )
-    os.close(descriptor)
-    try:
-        pq.write_table(table, temporary)
-        os.replace(temporary, output_path)
-    except BaseException:
-        try:
-            os.unlink(temporary)
-        except OSError:
-            pass
-        raise
-    return output_path
+    return _write_parquet_atomic(frame, output_path, schema=schema)
 
 
 __all__ = [
@@ -813,7 +805,6 @@ __all__ = [
     "SUPPORTED_OBSERVATION_TYPES",
     "SUPPORTED_PIT_CLASSES",
     "SUPPORTED_VALUATION_METRICS",
-    "SUPPORTED_VALUATION_PIT_CLASSES",
     "VALUATION_SNAPSHOTS_ARROW_SCHEMA",
     "VALUATION_SNAPSHOTS_COLUMNS",
     "VALUATION_SNAPSHOTS_SCHEMA_ID",

@@ -10,9 +10,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 import sys
-import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -23,6 +21,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from src.research_control_tower.atomic_io import write_parquet_atomic
 from src.research_control_tower.build import (
     EARNINGS_ACTUALS_COLUMNS,
     SOURCE_STATE_COLUMNS,
@@ -681,22 +680,7 @@ def assess_core_quarter_coverage(frame: pd.DataFrame) -> int:
 
 
 def _atomic_write_parquet(frame: pd.DataFrame, destination: Path) -> None:
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    temporary_path: Path | None = None
-    try:
-        with tempfile.NamedTemporaryFile(
-            dir=destination.parent,
-            prefix=f".{destination.name}.",
-            suffix=".tmp",
-            delete=False,
-        ) as handle:
-            temporary_path = Path(handle.name)
-        frame.to_parquet(temporary_path, index=False)
-        os.replace(temporary_path, destination)
-        temporary_path = None
-    finally:
-        if temporary_path is not None:
-            temporary_path.unlink(missing_ok=True)
+    write_parquet_atomic(frame, destination)
 
 
 def parse_and_collect_tencent_actuals(

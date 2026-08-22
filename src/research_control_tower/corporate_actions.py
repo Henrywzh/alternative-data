@@ -46,11 +46,10 @@ import hashlib
 import io
 import json
 import logging
-import os
 import re
 import time
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Callable
@@ -60,6 +59,7 @@ import pandas as pd
 import requests
 
 from .build import SOURCE_STATE_COLUMNS
+from .atomic_io import write_parquet_atomic
 from .official_filings import load_source_identity  # reuse the shared crosswalk loader
 
 
@@ -100,6 +100,19 @@ SKIP_NDD_KEYWORDS = (
     "OTHER INTERESTS",
 )
 DIVIDEND_KEYWORD = "DIVIDEND"
+# Explicit negations only. A title that merely mentions a dividend is not a
+# dividend declaration, and the mart must not infer one from a substring hit;
+# anything outside this list is still classified on the keyword, never guessed.
+NON_DIVIDEND_KEYWORDS = (
+    "NO DIVIDEND",
+    "NO FINAL DIVIDEND",
+    "NO INTERIM DIVIDEND",
+    "NOT DECLARE",
+    "NOT TO DECLARE",
+    "NOT RECOMMEND",
+    "NOT TO RECOMMEND",
+    "WITHOUT DIVIDEND",
+)
 DISTRIBUTION_IN_SPECIE_KEYWORD = "DISTRIBUTION IN SPECIE"
 
 CORP_ACTIONS_COLUMNS = [
@@ -220,16 +233,22 @@ def _action_id(
 ) -> str:
     """Deterministic primary key per the T1 design contract.
 
-    Canonical 4-tuple key: hash(listing_id|filing_date|execution_date|action_type).
-    When source_document_id or row_discriminator is provided, it is appended to
-    guarantee collision-free IDs across multiple filings on the same day or
-    multiple tranches/rows within the same filing on the same execution date.
+    Canonical key: hash of the 4-tuple plus source_document_id and
+    row_discriminator, which guarantee collision-free IDs across multiple
+    filings on the same day and multiple tranches/rows within one filing on
+    the same execution date.  The two discriminators are always part of the
+    key, blank or not: making them conditional would put the same 4-tuple in
+    two different ID namespaces depending on how the caller was invoked.
     """
 
-    parts = [listing_id, filing_date, execution_date, action_type]
-    if source_document_id or row_discriminator != "":
-        parts.append(str(source_document_id))
-        parts.append(str(row_discriminator))
+    parts = [
+        listing_id,
+        filing_date,
+        execution_date,
+        action_type,
+        str(source_document_id),
+        str(row_discriminator),
+    ]
     key = "|".join(parts)
     return "ca:" + hashlib.sha1(key.encode("utf-8")).hexdigest()[:24]
 
@@ -254,14 +273,54 @@ def _parse_count(value: object) -> int | None:
         return None
 
 
+# Month lookup is explicit rather than ``%B``/``%b`` because strptime month
+# names are locale-dependent: a CI container with a non-English LC_TIME would
+# otherwise fail to parse every HKEX date.
+_MONTH_NUMBERS = {
+    name.upper(): number
+    for number, names in enumerate(
+        (
+            ("January", "Jan"),
+            ("February", "Feb"),
+            ("March", "Mar"),
+            ("April", "Apr"),
+            ("May",),
+            ("June", "Jun"),
+            ("July", "Jul"),
+            ("August", "Aug"),
+            ("September", "Sep", "Sept"),
+            ("October", "Oct"),
+            ("November", "Nov"),
+            ("December", "Dec"),
+        ),
+        start=1,
+    )
+    for name in names
+}
+_DAY_MONTH_YEAR_PATTERN = re.compile(
+    r"^(\d{1,2})[\s\-/]+([A-Za-z]{3,9})\.?[\s\-/]+(\d{4})$"
+)
+
+
 def _parse_day_month_year(value: object) -> str | None:
-    """Parse 13-June-2025 style dates to ISO; None when unparseable."""
+    """Parse ``13 June 2025`` / ``13 Jun 2025`` / ``13-June-2025`` to ISO.
+
+    Accepts every day-month-year spelling the row/summary regexes can capture
+    (full and abbreviated month names, space or hyphen separated).  Returns
+    ``None`` only when the text genuinely is not such a date.
+    """
 
     raw = _text(value)
     if not raw:
         return None
+    match = _DAY_MONTH_YEAR_PATTERN.match(raw)
+    if match is None:
+        return None
+    month = _MONTH_NUMBERS.get(match.group(2).upper())
+    if month is None:
+        return None
     try:
-        return datetime.strptime(raw, "%d %B %Y").strftime("%Y-%m-%d")
+        return date(int(match.group(3)), month, int(match.group(1))).isoformat()
     except ValueError:
         return None
 
@@ -284,8 +343,11 @@ def html_to_text(payload: bytes) -> str:
     parser = _HtmlTextParser()
     try:
         parser.feed(payload.decode("utf-8", errors="replace"))
-    except Exception:
-        parser.parts = []
+    except (AssertionError, ValueError) as exc:
+        # HTMLParser raises on a handful of malformed constructs. Whatever it
+        # managed to collect before that point is still real text, so keep it
+        # and record why the rest is missing instead of silently returning "".
+        logger.warning("HTML body parse stopped early (%s); using partial text", exc)
     return "\n\n".join(part.strip() for part in parser.parts if part.strip())
 
 
@@ -340,6 +402,16 @@ def classify_action_type(*, title: str, long_text: str = "", short_text: str = "
     if DISTRIBUTION_IN_SPECIE_KEYWORD in context_upper:
         return "distribution_in_specie", "HKEX announcement title carries distribution-in-specie"
     if DIVIDEND_KEYWORD in context_upper:
+        negation = next(
+            (keyword for keyword in NON_DIVIDEND_KEYWORDS if keyword in context_upper),
+            None,
+        )
+        if negation is not None:
+            return (
+                None,
+                f"announcement mentions a dividend but carries the explicit negation {negation!r}; "
+                "skipped to avoid recording a declaration that was not made",
+            )
         return "cash_dividend", "HKEX announcement title carries dividend"
     return None, "announcement title outside the corporate-action families tracked by the T1 mart"
 
@@ -802,17 +874,7 @@ def _corporate_action_rows(
 
 def _atomic_write_parquet(frame: pd.DataFrame, target_path: Path) -> None:
     """Write DataFrame to parquet atomically via temporary file and rename."""
-    target_path.parent.mkdir(parents=True, exist_ok=True)
-    temp_path = target_path.with_name(f".{target_path.name}.{os.getpid()}.{time.time_ns()}.tmp")
-    try:
-        frame.to_parquet(temp_path, index=False)
-        temp_path.replace(target_path)
-    finally:
-        if temp_path.exists():
-            try:
-                temp_path.unlink()
-            except OSError:
-                pass
+    write_parquet_atomic(frame, target_path)
 
 
 def collect_corporate_actions(
