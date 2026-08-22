@@ -44,6 +44,7 @@ import numpy as np
 import pandas as pd
 
 from ..config import NORMALIZED_DIR, ROOT_DIR
+from ..storage import write_csv_atomic
 
 
 SOURCE_RECOVERED_MONTHLY_PATH = NORMALIZED_DIR / "airline_operating_kpi_source_recovered.parquet"
@@ -694,9 +695,8 @@ def build_airline_period_kpi_backtest(
     summary = _summary(result)
     out = output_path or (OUTPUT_PATH if assumption_mode == "strict_observed" else LOGICAL_OUTPUT_PATH)
     summary_out = summary_output_path or (SUMMARY_OUTPUT_PATH if assumption_mode == "strict_observed" else LOGICAL_SUMMARY_OUTPUT_PATH)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    result.to_csv(out, index=False)
-    summary.to_csv(summary_out, index=False)
+    write_csv_atomic(result, out)
+    write_csv_atomic(summary, summary_out)
     return result, summary
 
 
@@ -723,9 +723,9 @@ def build_airline_period_kpi_backtest_comparison(*, retrieved_at: str | None = N
     comparison["coverage_delta_logical_minus_strict"] = comparison["logical_historical_evaluated_rows"] - comparison["strict_historical_evaluated_rows"]
     comparison["source_quality"] = "strict_vs_logical_assumption_coverage_sensitivity"
     comparison["source_note"] = "Logical rows use a nearest observed level only when a full H1/H2/FY ASK/RPK window is otherwise unavailable; they are explicitly assumption rows and not silently promoted to observed data."
-    comparison.to_csv(MODEL_COMPARISON_OUTPUT_PATH, index=False)
+    write_csv_atomic(comparison, MODEL_COMPARISON_OUTPUT_PATH)
     diagnostics = _spring_diagnostics(logical)
-    diagnostics.to_csv(SPRING_DIAGNOSTIC_OUTPUT_PATH, index=False)
+    write_csv_atomic(diagnostics, SPRING_DIAGNOSTIC_OUTPUT_PATH)
     return strict, logical, comparison, diagnostics
 
 

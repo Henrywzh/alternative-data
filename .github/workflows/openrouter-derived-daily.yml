@@ -83,15 +83,18 @@ jobs:
           openrouter-derived-data --base-dir . guard --top-n 10 --json > guard.json
       - name: Open or update capability-map-drift issue
         if: steps.guard.outcome == 'failure'
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh issue list --state open --search "capability-map-drift in:title" \
-            --json number --jq '.[0].number' > issue.txt || true
-          if [ ! -s issue.txt ] || [ "$(cat issue.txt)" = "null" ]; then
-            gh issue create --title "capability-map-drift" \
+          set -euo pipefail
+          issue="$(gh issue list --state open --search "capability-map-drift in:title" \
+            --json number --jq '.[0].number // empty')"
+          if [ -z "$issue" ]; then
+            issue="$(gh issue create --title "capability-map-drift" \
               --label "data-quality" \
-              --body "The daily capability guard reported unresolved top-10 models. Details follow as comments."
+              --body "The daily capability guard reported unresolved top-10 models. Details follow as comments." \
+              | grep -oE '[0-9]+$')"
           fi
-          gh issue comment "$(gh issue list --state open --search 'capability-map-drift in:title' --json number --jq '.[0].number')" \
+          gh issue comment "$issue" \
             --body "$(printf 'Capability guard, %s\n\n```json\n%s\n```\n' "$(date -u +%Y-%m-%d)" "$(cat guard.json)")"
