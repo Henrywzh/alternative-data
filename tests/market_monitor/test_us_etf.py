@@ -112,11 +112,14 @@ def test_a_fund_without_twenty_sessions_has_no_ma20():
     assert sector["ret_20d_pct"] is None
 
 
-def test_a_missing_expense_ratio_is_not_filled_in_at_nine_basis_points():
+def test_a_missing_expense_ratio_is_not_filled_in_with_a_default():
     frame = _history({"XLK": [100.0 + i for i in range(70)]})
     artifact = build_us_sector_artifact(frame)
     sector = artifact["sectors"][0]
-    assert sector["expense_ratio"] == 0.0009  # XLK really does state it
+    # Compared against the registry rather than a literal: a hard-coded fee in
+    # a test is the same defect the registry itself just had.
+    stated = {i["ticker"]: i["expense_ratio"] for i in ALL_US_ETFS}[sector["ticker"]]
+    assert sector["expense_ratio"] == stated
 
     # An entry with no stated fee must surface as unknown.
     from market_monitor.us_etf import fetch as fetch_module
@@ -241,3 +244,60 @@ def test_an_unconfigured_bucket_is_distinguishable_from_a_failed_upload(
     assert storage_r2.load_local_cache_json("x.json") == {"a": 1}
     assert storage_r2.local_cache_age_hours("x.json") is not None
     assert storage_r2.local_cache_age_hours("missing.json") is None
+
+
+# --- fee reconciliation -----------------------------------------------------
+
+
+def test_the_verified_expense_ratios_are_what_the_issuers_publish():
+    """Verified against issuer pages on 2026-08-22, not against yfinance alone.
+
+    The registry shipped 17 of 27 stale, including all eleven SPDR sectors at
+    0.09% where State Street publishes 0.08%. Eleven funds sharing one figure
+    is the shape that hid 16 wrong fees on the CN side: the fee component of
+    the score differentiates nothing, so nothing looks odd.
+    """
+    verified = {
+        # sectorspdrs / ssga.com, XLK confirmed at the issuer 2026-08-20
+        "XLK": 0.0008, "XLF": 0.0008, "XLV": 0.0008, "XLY": 0.0008,
+        "XLC": 0.0008, "XLI": 0.0008, "XLE": 0.0008, "XLP": 0.0008,
+        "XLU": 0.0008, "XLB": 0.0008, "XLRE": 0.0008,
+        "SOXX": 0.0033,   # ishares.com
+        "IGV": 0.0038,    # ishares.com
+        "ITA": 0.0037,    # ishares.com
+        "IHI": 0.0037,    # ishares.com
+        "ICLN": 0.0039,   # ishares.com
+        "CIBR": 0.0058,   # ftportfolios.com, as of 2026-02-02
+    }
+    by_ticker = {item["ticker"]: item for item in ALL_US_ETFS}
+    wrong = {
+        ticker: (by_ticker[ticker]["expense_ratio"], expected)
+        for ticker, expected in verified.items()
+        if abs(by_ticker[ticker]["expense_ratio"] - expected) > 1e-9
+    }
+    assert wrong == {}
+
+
+def test_a_stale_registry_fee_is_reported_as_an_event_not_a_failure():
+    from market_monitor.us_etf.reconcile import reconcile_us_fees
+
+    problems = reconcile_us_fees({"XLK": 0.0005})
+    assert len(problems) == 1
+    assert problems[0]["ticker"] == "XLK"
+    assert problems[0]["severity"] == "event"
+    assert "FeeMismatch" in problems[0]["error"]
+
+
+def test_an_agreeing_fee_is_silent_and_rounding_is_tolerated():
+    from market_monitor.us_etf.reconcile import FEE_TOLERANCE, reconcile_us_fees
+
+    assert reconcile_us_fees({"XLK": 0.0008}) == []
+    assert reconcile_us_fees({"XLK": 0.0008 + FEE_TOLERANCE / 2}) == []
+    assert reconcile_us_fees({"XLK": 0.0008 + FEE_TOLERANCE * 4}) != []
+
+
+def test_an_unobserved_ticker_is_skipped_rather_than_flagged():
+    """A provider that answers for 20 of 27 must not indict the other 7."""
+    from market_monitor.us_etf.reconcile import reconcile_us_fees
+
+    assert reconcile_us_fees({}) == []

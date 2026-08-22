@@ -179,11 +179,15 @@ These are real implementation gaps and should not be forgotten:
    changing the source identifiers.
 4. Historical premium z-scores for each wrapper, verified NAV-based AUM and
    tracking difference remain V1.1 work.
-5. The US sector universe has no fee reconciliation. The CN registry checks
-   its hand-typed fees against the issuer on every run -- added after 16 of 23
-   were found wrong, where three wrappers sharing one placeholder is what hid
-   it. Eleven SPDRs sharing one `0.09%` is the same shape, and that figure has
-   not been re-verified against the issuer.
+5. ~~The US sector universe has no fee reconciliation.~~ Closed on
+   2026-08-22. The concern was well founded: verifying the 27 entries against
+   the issuers found **17 stale**, including all eleven SPDR sectors at 0.09%
+   where State Street publishes 0.08%, and SOXX 0.35% against a published
+   0.33%. `src/market_monitor/us_etf/reconcile.py` now checks the registry
+   against the provider and reports a disagreement as an event rather than
+   applying it silently. Eleven funds sharing one figure remains the shape
+   that hides this: the fee component of the score differentiates nothing, so
+   nothing looks wrong.
 
 ## Required validation after changes
 
