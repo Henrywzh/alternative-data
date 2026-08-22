@@ -11,8 +11,6 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
-import matplotlib
-import yfinance as yf
 
 if __package__ in {None, ""}:
     repo_root = Path(__file__).resolve().parent.parent

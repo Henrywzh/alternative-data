@@ -1,4 +1,7 @@
-pandas>=2.2
+# Keep this cap in step with requirements.txt: pandas 3 turns None in an
+# object column into NaN, and NaN is truthy, so `str(value or "")` yields
+# the string "nan".  See requirements.txt for the full rationale.
+pandas>=2.2,<3
 plotly>=5.24
 pyarrow>=16.0.0
 requests>=2.31
