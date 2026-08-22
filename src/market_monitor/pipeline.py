@@ -210,6 +210,67 @@ FEE_REFRESH_DAYS = 30
 FEE_FETCH_BUDGET_SECONDS = 120.0
 FEE_COLUMNS = ["fund_id", "management_fee", "custody_fee", "fetched_at"]
 
+# Minimum relative change (as a fraction of the old fee) that qualifies as a
+# real rate cut/raise rather than a data-provider rounding artefact.
+FEE_CHANGE_THRESHOLD = 0.05
+
+
+def detect_fee_changes(
+    previous: pd.DataFrame | None,
+    published: dict[str, dict[str, float | None]],
+) -> list[dict[str, str]]:
+    """Report funds whose published fee moved since the last persisted run.
+
+    Entries are tagged ``severity="event"``. A rate cut is news, not a failed
+    fetch: routed through the failure channel it would flip the artifact to
+    unhealthy and describe a fee cut as "source call(s) failed this run".
+    """
+
+    if previous is None or previous.empty or "fund_id" not in previous.columns:
+        return []
+    prev_by_id = {
+        str(row["fund_id"]).zfill(6): row for row in previous.to_dict("records")
+    }
+    changes: list[dict[str, str]] = []
+    for fund_id, current in published.items():
+        prior = prev_by_id.get(str(fund_id).zfill(6))
+        if not prior:
+            continue
+        for column in ("management_fee", "custody_fee"):
+            old_value = prior.get(column)
+            new_value = current.get(column)
+            if old_value is None or pd.isna(old_value):
+                continue
+            if new_value is None or pd.isna(new_value):
+                continue
+            old_fee = float(old_value)
+            new_fee = float(new_value)
+            if old_fee <= 0:
+                # A fee that was zero or unrecorded and now is not is a change
+                # worth seeing, but there is no baseline to size it against.
+                if new_fee > 0:
+                    changes.append(
+                        {"dataset": "fund_fee", "ticker": str(fund_id),
+                         "severity": "event",
+                         "error": f"FeeChange: {fund_id} {column} now published: {new_fee:.4%}"}
+                    )
+                continue
+            if abs(new_fee - old_fee) / old_fee < FEE_CHANGE_THRESHOLD:
+                continue
+            direction = "cut" if new_fee < old_fee else "raise"
+            changes.append(
+                {
+                    "dataset": "fund_fee",
+                    "ticker": str(fund_id),
+                    "severity": "event",
+                    "error": (
+                        f"FeeChange: {fund_id} {column} {direction}: "
+                        f"{old_fee:.4%} -> {new_fee:.4%}"
+                    ),
+                }
+            )
+    return changes
+
 
 def _stack_index_frames(frames: dict[str, pd.DataFrame]) -> pd.DataFrame:
     """Concatenate per-exposure index frames on one agreed date representation.
@@ -419,6 +480,13 @@ def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, 
     # fetch is reported so it reaches Source Health.
     published_fees = _published_fee_schedule(meta)
     raw["_published_fees"] = published_fees
+    # Fee change detection: compare the fresh schedule against the last
+    # persisted snapshot. A fund whose management or custody fee moved beyond
+    # the threshold since the previous run gets a visible alert, so a rate cut
+    # (or hike) never slips through silently.
+    for change in detect_fee_changes(load_latest_derived("fund_fees"), published_fees):
+        print(f"  [market_monitor] fee change: {change['error']}")
+        fetch_errors.append(change)
     for problem in eastmoney_fee.reconcile_fees(meta, published_fees):
         message = (
             f"registry states {problem['fund_id']} management fee {problem['stated']}, "

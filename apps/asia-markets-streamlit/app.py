@@ -3322,13 +3322,32 @@ def render_relative_regime(
     if not regions:
         regions = sorted(set(frame.get("region", pd.Series(dtype=str)).dropna()))
 
-    region_choice = st.radio(
-        tr(language, "Market", "市场"),
-        regions,
-        horizontal=True,
-        key="market_pair_region",
-        format_func=lambda r: tr(language, *REGION_NAMES.get(r, (r, r))),
-    )
+    if hasattr(st, "segmented_control"):
+        region_choice = st.segmented_control(
+            tr(language, "Market", "市场"),
+            regions,
+            default=regions[0] if regions else None,
+            key="market_pair_region",
+            format_func=lambda r: tr(language, *REGION_NAMES.get(r, (r, r))),
+            label_visibility="collapsed",
+        ) or (regions[0] if regions else None)
+    elif hasattr(st, "pills"):
+        region_choice = st.pills(
+            tr(language, "Market", "市场"),
+            regions,
+            default=regions[0] if regions else None,
+            key="market_pair_region",
+            format_func=lambda r: tr(language, *REGION_NAMES.get(r, (r, r))),
+            label_visibility="collapsed",
+        ) or (regions[0] if regions else None)
+    else:
+        region_choice = st.radio(
+            tr(language, "Market", "市场"),
+            regions,
+            horizontal=True,
+            key="market_pair_region",
+            format_func=lambda r: tr(language, *REGION_NAMES.get(r, (r, r))),
+        )
     cohort = frame[frame["region"].eq(region_choice)]
     if cohort.empty:
         return
@@ -3442,14 +3461,56 @@ def render_relative_regime(
         config={"displaylogo": False, "responsive": True},
     )
 
-    display = cohort.drop(columns=["_label"], errors="ignore")
+    display = cohort.copy()
+    
+    # 标签优化
     if language == "zh" and "label_zh" in display.columns:
-        display = display.drop(columns=["label", "regime"], errors="ignore").rename(
-            columns={"label_zh": "label", "regime_zh": "regime"}
-        )
+        display["_label_show"] = display["label_zh"]
     else:
-        display = display.drop(columns=["label_zh", "regime_zh"], errors="ignore")
-    st.dataframe(display, hide_index=True, width="stretch")
+        display["_label_show"] = display.get("label", display.get("pair_id"))
+
+    # 组合标的清晰展示: left / right
+    display["_pair_show"] = display.apply(lambda r: f"{r.get('left','')} / {r.get('right','')}", axis=1)
+
+    # 当前比值与60日均线
+    display["_ratio_show"] = display["ratio"].apply(lambda v: f"{float(v):.4f}" if pd.notna(v) else "—") if "ratio" in display.columns else "—"
+    display["_ratio_ma_show"] = display["ratio_ma60"].apply(lambda v: f"{float(v):.4f}" if pd.notna(v) else "—") if "ratio_ma60" in display.columns else "—"
+
+    # Z-Score 格式化
+    display["_zscore_show"] = display["zscore"].apply(lambda v: f"{float(v):+.2f}σ" if pd.notna(v) else "—") if "zscore" in display.columns else "—"
+
+    # 动量趋势
+    trend_map = {"UP": "▲ 向上占优", "DOWN": "▼ 向下转弱"} if language == "zh" else {"UP": "▲ Bullish", "DOWN": "▼ Bearish"}
+    display["_trend_show"] = display["trend"].map(trend_map).fillna(display.get("trend", "—")) if "trend" in display.columns else "—"
+
+    # 当前强弱状态说明
+    if language == "zh" and "regime_zh" in display.columns:
+        display["_regime_show"] = display["regime_zh"]
+    else:
+        display["_regime_show"] = display.get("regime", "—")
+
+    col_map_reg_zh = {
+        "_label_show": "配置风格对",
+        "_pair_show": "底层组合 (分子/分母)",
+        "_ratio_show": "当前比值",
+        "_ratio_ma_show": "60日均线",
+        "_zscore_show": "1年Z-Score",
+        "_trend_show": "动量趋势",
+        "_regime_show": "相对强弱状态",
+    }
+    col_map_reg_en = {
+        "_label_show": "Style Pair",
+        "_pair_show": "Basket (A/B)",
+        "_ratio_show": "Ratio",
+        "_ratio_ma_show": "60D MA",
+        "_zscore_show": "1Y Z-Score",
+        "_trend_show": "Trend",
+        "_regime_show": "Regime",
+    }
+    mapping_reg = col_map_reg_zh if language == "zh" else col_map_reg_en
+    final_reg_cols = [c for c in mapping_reg.keys() if c in display.columns]
+    table_to_show_reg = display[final_reg_cols].rename(columns=mapping_reg)
+    st.dataframe(table_to_show_reg, hide_index=True, width="stretch")
 
 
 def _market_premium_history_frame(datasets: dict[str, Any]) -> pd.DataFrame:
@@ -3895,16 +3956,109 @@ def render_market_index_detail(
 
     if "peer_rank" in cohort.columns:
         cohort = cohort.sort_values("peer_rank")
-    show_cols = [
-        c
-        for c in (
-            "ticker", "fund_name", "entry_status", "entry_cost_bp", "premium_pct",
-            "spread_bp", "liquidity_score", "management_fee", "aum_proxy",
-            "fund_age_days", "peer_rank", "hold_rank",
+
+    # Format human-readable columns
+    display_df = cohort.copy()
+    
+    # 费率格式化 (如 0.0015 -> 0.15%/年)。管理费 + 托管费，与 hold_score
+    # 的计分口径和邮件快报保持一致：单列管理费会把持有成本报低,
+    # 日经 225 的 0.20% 实际是 0.25%。
+    if "management_fee" in display_df.columns:
+        _total_fee = pd.to_numeric(display_df["management_fee"], errors="coerce")
+        if "custody_fee" in display_df.columns:
+            _total_fee = _total_fee.add(
+                pd.to_numeric(display_df["custody_fee"], errors="coerce").fillna(0.0)
+            )
+        display_df["_fee_display"] = _total_fee.apply(
+            lambda v: f"{float(v)*100:.2f}%/年" if pd.notna(v) else "—"
         )
-        if c in cohort.columns
-    ]
-    st.dataframe(cohort[show_cols], hide_index=True, width="stretch")
+    else:
+        display_df["_fee_display"] = "—"
+        
+    # 溢价率格式化 (如 -0.01 -> -0.01%)
+    if "premium_pct" in display_df.columns:
+        display_df["_prem_display"] = display_df["premium_pct"].apply(
+            lambda v: f"{float(v):+.2f}%" if pd.notna(v) else "—"
+        )
+    else:
+        display_df["_prem_display"] = "—"
+
+    # 同类相对溢价
+    if "relative_premium_pct" in display_df.columns:
+        display_df["_rel_prem_display"] = display_df["relative_premium_pct"].apply(
+            lambda v: f"{float(v):+.2f}%" if pd.notna(v) else "—"
+        )
+    else:
+        display_df["_rel_prem_display"] = "—"
+
+    # 规模格式化 (如 30628289962 -> 306.3 亿)
+    if "aum_proxy" in display_df.columns:
+        display_df["_aum_display"] = display_df["aum_proxy"].apply(
+            lambda v: f"{float(v)/1e8:.1f} 亿元" if pd.notna(v) and float(v) > 0 else "—"
+        )
+    else:
+        display_df["_aum_display"] = "—"
+
+    # 入场成本 (bp)
+    if "entry_cost_bp" in display_df.columns:
+        display_df["_cost_display"] = display_df["entry_cost_bp"].apply(
+            lambda v: f"{float(v):.1f} bp" if pd.notna(v) else "—"
+        )
+    else:
+        display_df["_cost_display"] = "—"
+
+    # 状态翻译与徽章化
+    status_map_zh = {
+        "ATTRACTIVE": "折价机会 (优先)",
+        "FAIR": "估值合理 (正常)",
+        "AVOID": "高溢警惕 (慎入)",
+        "EXPENSIVE": "偏贵",
+    }
+    if "entry_status" in display_df.columns:
+        if language == "zh":
+            display_df["_status_display"] = display_df["entry_status"].map(status_map_zh).fillna(display_df["entry_status"])
+        else:
+            display_df["_status_display"] = display_df["entry_status"]
+    else:
+        display_df["_status_display"] = "—"
+
+    # 买入优选排名
+    if "peer_rank" in display_df.columns:
+        display_df["_rank_display"] = display_df["peer_rank"].apply(
+            lambda v: f"#{int(round(v))}" if pd.notna(v) else "—"
+        )
+    else:
+        display_df["_rank_display"] = "—"
+
+    # 列映射定义
+    col_mapping_zh = {
+        "ticker": "代码",
+        "fund_name": "ETF简称",
+        "_status_display": "建仓建议",
+        "_prem_display": "折溢价率",
+        "_rel_prem_display": "同类相对溢价",
+        "_fee_display": "总费率",
+        "_aum_display": "基金规模",
+        "_cost_display": "综合买入成本",
+        "_rank_display": "买入优选",
+    }
+    col_mapping_en = {
+        "ticker": "Ticker",
+        "fund_name": "Fund Name",
+        "_status_display": "Status",
+        "_prem_display": "Premium",
+        "_rel_prem_display": "Rel Premium",
+        "_fee_display": "Total Fee",
+        "_aum_display": "AUM",
+        "_cost_display": "Entry Cost",
+        "_rank_display": "Peer Rank",
+    }
+
+    mapping = col_mapping_zh if language == "zh" else col_mapping_en
+    final_cols = [c for c in mapping.keys() if c in display_df.columns]
+    table_to_show = display_df[final_cols].rename(columns=mapping)
+
+    st.dataframe(table_to_show, hide_index=True, width="stretch")
 
     if "entry_cost_bp" in cohort.columns and cohort["entry_cost_bp"].notna().any():
         render_market_entry_cost_chart(cohort, language)
@@ -3916,51 +4070,53 @@ def render_market_index_detail(
 
 
 def render_market_entry_cost_chart(cohort: pd.DataFrame, language: str) -> None:
-    """Entry cost per wrapper against the bands that name it.
-
-    The bar is the number the ranking is computed from, and the reference lines
-    are the same thresholds entry_status uses, so "why is this one ATTRACTIVE"
-    is answerable by looking rather than by trusting the label.
-    """
+    """Entry cost & premium per wrapper with clear contextual axis limits."""
     frame = cohort.dropna(subset=["entry_cost_bp"]).copy()
     if frame.empty:
         return
     frame["_label"] = frame.get("ticker", pd.Series(dtype=str)).astype(str)
     if "fund_name" in frame.columns:
-        frame["_label"] = frame["_label"] + " " + frame["fund_name"].astype(str).str.slice(0, 14)
+        frame["_label"] = frame["_label"] + " " + frame["fund_name"].astype(str).str.slice(0, 16)
     frame = frame.sort_values("entry_cost_bp")
 
-    fig = px.bar(
-        frame,
-        x="entry_cost_bp",
-        y="_label",
-        orientation="h",
-        color_discrete_sequence=[PALETTE[0]],
-    )
-    cross = frame.get("is_cross_border")
-    if cross is not None and cross.notna().any() and cross.astype(bool).nunique() == 1:
-        # Domestic and cross-border wrappers are read against different bands,
-        # so the lines are only drawn when the whole cohort shares a regime.
-        edges = (0.0, 150.0, 400.0) if bool(cross.iloc[0]) else (-10.0, 20.0, 100.0)
-        names = (
-            tr(language, "Attractive ≤", "有吸引力 ≤"),
-            tr(language, "Fair ≤", "合理 ≤"),
-            tr(language, "Expensive ≤", "偏贵 ≤"),
+    # Determine colors based on cost/premium
+    colors = []
+    for _, r in frame.iterrows():
+        c = r.get("entry_cost_bp", 0)
+        if c < 0:
+            colors.append("#16a34a") # green for discount
+        elif c > 100:
+            colors.append("#dc2626") # red for high premium
+        else:
+            colors.append("#3b82f6") # blue
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Bar(
+            x=frame["entry_cost_bp"],
+            y=frame["_label"],
+            orientation="h",
+            marker=dict(color=colors),
+            text=[f"{v:.1f} bp ({v/100:+.2f}%)" for v in frame["entry_cost_bp"]],
+            textposition="outside",
+            hovertemplate="<b>%{y}</b><br>综合入场成本: %{x:.2f} bp<extra></extra>",
         )
-        for edge, name in zip(edges, names):
-            fig.add_vline(
-                x=edge,
-                line_dash="dot",
-                line_color="#9CA3AF",
-                line_width=1,
-                annotation_text=f"{name} {edge:g}",
-                annotation_position="top",
-                annotation_font_size=10,
-            )
-    fig.update_xaxes(title=tr(language, "Entry cost (bp) — premium + half-spread", "入场成本（bp）= 溢价 + 半价差"))
-    fig.update_yaxes(title=None)
+    )
+
+    # Smart X-axis range so bars are not squished against 100bp
+    min_x = min(frame["entry_cost_bp"].min(), 0) - 5
+    max_x = max(frame["entry_cost_bp"].max() * 1.35, 10)
+    fig.update_xaxes(
+        title=tr(language, "Entry Cost (bp = 0.01%) — Premium + Half-Spread", "综合买入成本 (bp，1bp=0.01%) = 折溢价 + 0.5×买卖价差"),
+        range=[min_x, max_x],
+        zeroline=True,
+        zerolinewidth=1.5,
+        zerolinecolor="#94a3b8",
+    )
+    fig.update_yaxes(title=None, automargin=True)
+
     st.plotly_chart(
-        chart_theme(fig, "number", date_axis=False, height=max(200, 60 * len(frame))),
+        chart_theme(fig, "number", date_axis=False, height=max(180, 50 * len(frame))),
         width="stretch",
         config={"displaylogo": False, "responsive": True},
     )
@@ -3994,34 +4150,98 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
 
     # --- Leadership ---
     section_heading(language, "Market Leadership", "市场领导力", "Which exposure is leading, and the technical snapshot behind it.", "哪个指数在领跑，以及其技术面快照。")
-    view_mode = st.radio(
-        tr(language, "View", "视图"),
-        [tr(language, "All (rebased)", "全部（归一）"), tr(language, "Ratio (A/B)", "比值 (A/B)")],
-        horizontal=True,
-        key="market_leadership_mode",
-    )
-    if not prices.empty:
-        if view_mode == tr(language, "Ratio (A/B)", "比值 (A/B)"):
-            render_market_ratio_chart(prices, technicals, language, window)
-        else:
-            render_market_leadership_chart(prices, label_by_exposure, language, window)
-    if not technicals.empty:
-        # Resolve the label column first, then pick columns off the resolved
-        # frame. Picking first and renaming after asked for "label_zh" in a
-        # frame where the rename had just consumed it, so the Chinese page
-        # raised KeyError while the English one was fine.
-        display_tech = technicals.copy()
-        if language == "zh" and "label_zh" in display_tech.columns:
-            display_tech = display_tech.drop(columns=["label"], errors="ignore").rename(
-                columns={"label_zh": "label"}
-            )
-        show_cols = [
-            c
-            for c in ("label", "rsi", "ma20_pct", "drawdown_60d", "avg_premium_30d")
-            if c in display_tech.columns
-        ]
-        if "label" in show_cols:
-            st.dataframe(display_tech[show_cols].sort_values("label"), hide_index=True, width="stretch")
+    
+    # 采用顶级原生下划线 Tab 栏 (st.tabs)
+    tab_core_label = tr(language, "🏛️ Core Indices", "🏛️ 核心大盘宽基")
+    tab_style_label = tr(language, "🎯 Styles & Themes", "🎯 风格与主题 ETF")
+    tab_all_label = tr(language, "🌐 All Exposures", "🌐 全部指数")
+    
+    core_tab, style_tab, all_tab = st.tabs([tab_core_label, tab_style_label, tab_all_label])
+    
+    core_eids = {"csi300", "csi500", "csi1000", "sp500", "hsi"}
+    style_eids = {"dividend", "hk_dividend", "hk_internet", "hstech", "growth", "chinext"}
+    
+    tab_mapping = [
+        (core_tab, core_eids, "core"),
+        (style_tab, style_eids, "style"),
+        (all_tab, set(label_by_exposure.keys()), "all"),
+    ]
+    
+    for tab_ctx, target_eids_filter, tab_key in tab_mapping:
+        with tab_ctx:
+            sub_prices = prices[prices["exposure_id"].isin(target_eids_filter)].copy() if not prices.empty else prices
+            sub_tech = technicals[technicals["exposure_id"].isin(target_eids_filter)].copy() if not technicals.empty else technicals
+            sub_labels = {k: v for k, v in label_by_exposure.items() if k in target_eids_filter}
+
+            view_options = [tr(language, "All (rebased)", "全部（归一）"), tr(language, "Ratio (A/B)", "比值 (A/B)")]
+            if hasattr(st, "segmented_control"):
+                view_mode = st.segmented_control(
+                    tr(language, "View", "视图"),
+                    view_options,
+                    default=view_options[0],
+                    key=f"market_leadership_mode_{tab_key}",
+                    label_visibility="collapsed",
+                ) or view_options[0]
+            else:
+                view_mode = st.radio(
+                    tr(language, "View", "视图"),
+                    view_options,
+                    horizontal=True,
+                    key=f"market_leadership_mode_{tab_key}",
+                )
+
+            if not sub_prices.empty:
+                if view_mode == tr(language, "Ratio (A/B)", "比值 (A/B)"):
+                    render_market_ratio_chart(sub_prices, sub_tech, language, window)
+                else:
+                    render_market_leadership_chart(sub_prices, sub_labels, language, window)
+                    
+            if not sub_tech.empty:
+                display_tech = sub_tech.copy()
+                if language == "zh" and "label_zh" in display_tech.columns:
+                    display_tech["_label_display"] = display_tech["label_zh"]
+                else:
+                    display_tech["_label_display"] = display_tech.get("label", display_tech.get("exposure_id"))
+
+                def _rsi_desc(v):
+                    if pd.isna(v): return "—"
+                    val = float(v)
+                    if val >= 70: return f"{val:.1f} (超买过热)" if language == "zh" else f"{val:.1f} (Overbought)"
+                    if val <= 35: return f"{val:.1f} (超卖低估)" if language == "zh" else f"{val:.1f} (Oversold)"
+                    return f"{val:.1f} (中性健康)" if language == "zh" else f"{val:.1f} (Neutral)"
+                    
+                display_tech["_rsi_display"] = display_tech["rsi"].apply(_rsi_desc) if "rsi" in display_tech.columns else "—"
+
+                display_tech["_ma20_display"] = display_tech["ma20_pct"].apply(
+                    lambda v: f"{float(v):+.2f}%" if pd.notna(v) else "—"
+                ) if "ma20_pct" in display_tech.columns else "—"
+
+                display_tech["_dd_display"] = display_tech["drawdown_60d"].apply(
+                    lambda v: f"{float(v):.2f}%" if pd.notna(v) else "—"
+                ) if "drawdown_60d" in display_tech.columns else "—"
+
+                display_tech["_prem_display"] = display_tech["avg_premium_30d"].apply(
+                    lambda v: f"{float(v):+.2f}%" if pd.notna(v) else "—"
+                ) if "avg_premium_30d" in display_tech.columns else "—"
+
+                col_map_zh = {
+                    "_label_display": "指数标的",
+                    "_ma20_display": "相对20日线",
+                    "_rsi_display": "RSI情绪状态",
+                    "_dd_display": "60日最大回撤",
+                    "_prem_display": "挂钩ETF平均溢价(30D)",
+                }
+                col_map_en = {
+                    "_label_display": "Index",
+                    "_ma20_display": "vs MA20",
+                    "_rsi_display": "RSI Status",
+                    "_dd_display": "60D Drawdown",
+                    "_prem_display": "Avg Premium (30D)",
+                }
+                mapping = col_map_zh if language == "zh" else col_map_en
+                final_cols = [c for c in mapping.keys() if c in display_tech.columns]
+                table_to_show = display_tech[final_cols].rename(columns=mapping).sort_values(mapping["_label_display"])
+                st.dataframe(table_to_show, hide_index=True, width="stretch")
 
     # --- Relative Regime ---
     pair_summary = pd.DataFrame(datasets.get("relative_pairs", []))
