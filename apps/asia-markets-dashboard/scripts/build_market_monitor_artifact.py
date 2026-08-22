@@ -213,9 +213,18 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         sina_latest = str(pd.to_datetime(cn_index["date"], errors="coerce").max().date()) if not cn_index.empty else "—"
         us_index = index_px[index_px["exposure_id"].isin(yahoo_ids)]
         yahoo_latest = str(pd.to_datetime(us_index["date"], errors="coerce").max().date()) if not us_index.empty else "—"
+        # Same reasoning as Yahoo above, extended to the two feeds that were
+        # still borrowing the mainland Sina date: a source-health row has to
+        # date itself by its own observations, or a stalled HK/CSI feed reads
+        # as fresh for as long as the mainland one keeps updating.
+        hk_index = index_px[index_px["exposure_id"].isin(sina_hk_ids)]
+        sina_hk_latest = str(pd.to_datetime(hk_index["date"], errors="coerce").max().date()) if not hk_index.empty else "—"
+        csi_index = index_px[index_px["exposure_id"].isin(csindex_ids)]
+        csindex_latest = str(pd.to_datetime(csi_index["date"], errors="coerce").max().date()) if not csi_index.empty else "—"
         latest_obs = str(pd.to_datetime(index_px["date"], errors="coerce").max().date())
     else:
         sina_latest = yahoo_latest = latest_obs = "—"
+        sina_hk_latest = csindex_latest = "—"
     # The run's write time, not a quote time -- Eastmoney's spot snapshot
     # carries no per-row timestamp, so this is the closest honest answer and is
     # labelled as a run time rather than an observation.
@@ -331,14 +340,14 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         {
             "source": "CSI index daily (Hong Kong Connect thematics)",
             "status": "Healthy" if csindex_count >= len(csindex_ids) else "Degraded",
-            "latest_observation": sina_latest,
+            "latest_observation": csindex_latest,
             "records": csindex_rows,
             "notes": f"Daily OHLCV for {csindex_count} of {len(csindex_ids)} CSI-served exposures.",
         },
         {
             "source": "Sina HK index daily (Hang Seng / CSI Hong Kong)",
             "status": "Healthy" if sina_hk_count >= len(sina_hk_ids) else "Degraded",
-            "latest_observation": sina_latest,
+            "latest_observation": sina_hk_latest,
             "records": sina_hk_rows,
             "notes": f"Daily OHLCV for {sina_hk_count} of {len(sina_hk_ids)} Hong Kong exposures.",
         },

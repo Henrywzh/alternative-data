@@ -65,6 +65,7 @@ For every parity reminder:
 
 The current Streamlit app connects:
 
+- `market_monitor` (Index & ETF Allocation Monitor; Streamlit-native in V1);
 - hk-labour-market;
 - hk-population-migration;
 - hk-transport (Airlines + MTR only in V1).
@@ -73,6 +74,11 @@ The current Streamlit app connects:
 All other Cloudflare sectors are currently Cloudflare-only or future scope
 unless an explicit implementation adds them to the Streamlit artifact loader
 and sidebar.
+
+`market_monitor` is the explicit exception to the parity workflow: it is
+already a Streamlit product surface and is intentionally not wired into the
+Cloudflare sector roster or portable package. Its JSON artifact is a shared
+read contract, not a request to publish the feature publicly.
 
 Current Overview rules:
 
