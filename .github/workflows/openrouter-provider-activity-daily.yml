@@ -129,6 +129,19 @@ jobs:
           done
           exit 1
 
+      # The serving-provider steps above are continue-on-error so one bad day
+      # against ~100 third-party pages cannot discard the data earlier steps
+      # already fetched. That protection also hides a persistent breakage: the
+      # job stays green while every reader of the dataset silently degrades.
+      # Check the artifact rather than the step outcome, and do it after the
+      # commit so a violation reports loudly without blocking the datasets that
+      # did refresh correctly.
+      - name: Verify serving-provider dataset contract
+        run: |
+          python scripts/check_dataset_contract.py \
+            cloud_infra_daily_activity \
+            data/normalized/openrouter/cloud_infra_daily_activity.parquet
+
       - name: Upload normalized datasets
         continue-on-error: true
         uses: actions/upload-artifact@v7
