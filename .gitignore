@@ -77,6 +77,12 @@ data/normalized/market_monitor/etf_price_daily/
 data/normalized/provider_adoption/*
 !data/normalized/provider_adoption/*.csv
 !data/normalized/provider_adoption/*.parquet
+# The two github_repo_* datasets are stored as one parquet per observation date
+# instead of one growing file, so the daily run rewrites only the partitions it
+# touched.  Git cannot re-include a file whose parent directory is excluded, so
+# the directory itself has to be un-ignored before the parts inside it.
+!data/normalized/provider_adoption/*/
+!data/normalized/provider_adoption/*/*.parquet
 !data/raw/
 data/raw/*
 !data/raw/provider_adoption/
