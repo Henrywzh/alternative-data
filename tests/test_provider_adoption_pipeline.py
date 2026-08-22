@@ -762,12 +762,13 @@ def test_provider_pipeline_repeated_runs_are_idempotent_and_write_manifest(tmp_p
 
     pypi = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "pypi_downloads_daily.csv")
     npm = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "npm_downloads_daily.csv")
-    candidates_parquet = tmp_path / "data" / "normalized" / "provider_adoption" / "github_repo_candidates_daily.parquet"
+    # These two are stored as date partitions, so go through the storage API
+    # rather than a physical path: the test is about the data the pipeline
+    # produced, not about which files it happens to be spread across.
     candidates_csv = tmp_path / "data" / "normalized" / "provider_adoption" / "github_repo_candidates_daily.csv"
-    rollup_parquet = tmp_path / "data" / "normalized" / "provider_adoption" / "github_repo_rollup_daily.parquet"
     rollup_csv = tmp_path / "data" / "normalized" / "provider_adoption" / "github_repo_rollup_daily.csv"
-    candidates = pd.read_parquet(candidates_parquet)
-    rollup = pd.read_parquet(rollup_parquet)
+    candidates = pipeline.storage.load_dataset("github_repo_candidates_daily")
+    rollup = pipeline.storage.load_dataset("github_repo_rollup_daily")
     gold = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "github_provider_adoption_daily.csv")
     momentum_csv = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "provider_momentum_daily.csv")
     momentum_parquet = pd.read_parquet(tmp_path / "data" / "normalized" / "provider_adoption" / "provider_momentum_daily.parquet")
@@ -778,8 +779,8 @@ def test_provider_pipeline_repeated_runs_are_idempotent_and_write_manifest(tmp_p
     assert npm[["provider", "package_name", "package_category", "download_date"]].duplicated().sum() == 0
     assert candidates_csv.exists() is False
     assert rollup_csv.exists() is False
-    assert candidates_parquet.exists() is True
-    assert rollup_parquet.exists() is True
+    assert pipeline.storage.partition_paths("github_repo_candidates_daily")
+    assert pipeline.storage.partition_paths("github_repo_rollup_daily")
     assert candidates[["provider", "repo_full_name", "repo_created_date"]].duplicated().sum() == 0
     assert rollup[["provider", "repo_full_name", "signal_date"]].duplicated().sum() == 0
     assert gold[["provider", "signal_date"]].duplicated().sum() == 0
@@ -796,7 +797,7 @@ def test_github_signal_records_include_provider_display_name(tmp_path: Path) -> 
     pipeline.run_github_daily_update(target_date="2026-04-05", provider_slugs=["openai", "anthropic", "google"])
 
     signals = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "github_provider_signals_daily.csv")
-    rollup = pd.read_parquet(tmp_path / "data" / "normalized" / "provider_adoption" / "github_repo_rollup_daily.parquet")
+    rollup = pipeline.storage.load_dataset("github_repo_rollup_daily")
     gold = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "github_provider_adoption_daily.csv")
 
     assert set(signals["provider_display_name"].dropna().unique()) == {"OpenAI"}
@@ -827,11 +828,17 @@ def test_provider_storage_loads_parquet_only_github_datasets(tmp_path: Path) -> 
 
     pipeline.run_github_daily_update(target_date="2026-04-05", provider_slugs=["openai", "anthropic", "google"])
 
-    candidates_path = tmp_path / "data" / "normalized" / "provider_adoption" / "github_repo_candidates_daily.parquet"
-    rollup_path = tmp_path / "data" / "normalized" / "provider_adoption" / "github_repo_rollup_daily.parquet"
-
-    assert candidates_path.exists()
-    assert rollup_path.exists()
+    # Parquet-only still holds; the parquet now lives in a date-partitioned
+    # directory instead of one file, and no single-file copy is left behind.
+    for dataset_id in ("github_repo_candidates_daily", "github_repo_rollup_daily"):
+        assert pipeline.storage.partition_paths(dataset_id)
+        assert not (
+            tmp_path
+            / "data"
+            / "normalized"
+            / "provider_adoption"
+            / f"{dataset_id}.parquet"
+        ).exists()
     assert not (tmp_path / "data" / "normalized" / "provider_adoption" / "github_repo_candidates_daily.csv").exists()
     assert not (tmp_path / "data" / "normalized" / "provider_adoption" / "github_repo_rollup_daily.csv").exists()
 
