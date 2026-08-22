@@ -346,7 +346,30 @@ class ValuationInput:
 
 
 def build_valuation_snapshot_row(inp: ValuationInput) -> dict[str, Any]:
-    """Build one ratio only when every causal and numeric input is auditable."""
+    """Build one ratio only when every causal and numeric input is auditable.
+
+    Two properties of this contract that callers must design around:
+
+    Positive inputs only.  Numerator, denominator and the resulting ratio must
+    all be finite and positive, so a loss-making period is rejected rather than
+    recorded with a negative ratio -- a negative forward P/E is not a cheaper
+    multiple, and silently admitting one would corrupt any ranking built on the
+    column.  Rejection is a raise, which is right for the explicitly audited
+    inputs this is called with directly; the automated derivation screens
+    upstream instead (``_latest_consensus_eps`` admits only finite positive
+    values), so a loss-making forecast yields a typed empty frame rather than
+    reaching this contract at all.  Any new automated caller owes the same
+    upstream screen.
+
+    ``valuation_id`` is a content hash.  It covers the whole canonical row,
+    including retrieval timestamps, so re-deriving the same economic fact from
+    a fresh capture mints a new ID; that is what lets
+    ``validate_valuation_snapshots_df`` detect any post-hoc edit.  It does not
+    prevent deduplication: the natural key is ``listing_id``, ``valuation_at``,
+    ``metric_name``, ``metric_basis``, ``numerator_ref`` and
+    ``denominator_ref``, all of which are columns of the mart, so an upsert
+    groups on those six rather than on the ID.
+    """
 
     if inp.metric_name not in SUPPORTED_VALUATION_METRICS:
         raise ValueError(f"unsupported metric_name: {inp.metric_name!r}")
