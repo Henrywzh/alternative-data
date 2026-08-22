@@ -33,6 +33,36 @@ def _read_parquet_projected(source, columns: list[str] | None) -> pd.DataFrame:
         return pd.read_parquet(source, columns=projected)
 
 
+# Datasets written as a directory of per-date Parquet partitions instead of a
+# single file, so that a day's push rewrites one small partition rather than the
+# whole 36 MB table (which git stores as an entirely new blob every night).
+# This mirrors PARTITION_COLUMNS in src/provider_adoption_data/storage.py;
+# scripts/check_dataset_contract.py asserts the two stay in step.  A reader that
+# does not know a dataset is partitioned does not fail -- it looks for
+# "<id>.parquet", misses, and returns zero rows with no error anywhere.
+PARTITIONED_DATASETS: frozenset[str] = frozenset(
+    {
+        "github_repo_candidates_daily",
+        "github_repo_rollup_daily",
+    }
+)
+
+
+def _read_parquet_partitions(sources: list, columns: list[str] | None) -> pd.DataFrame:
+    """Read and concatenate a partitioned dataset's parts into one frame.
+
+    Sources are file paths (local) or buffers (remote) already in partition-name
+    order.  Projection is applied per part so the full-width table is never
+    materialized.
+    """
+    frames = [_read_parquet_projected(source, columns) for source in sources]
+    if not frames:
+        return pd.DataFrame(columns=columns or [])
+    if len(frames) == 1:
+        return frames[0]
+    return pd.concat(frames, ignore_index=True)
+
+
 DATASET_REGISTRY: dict[str, dict[str, object]] = {
     "top_models": {
         "label": "Top Models",
@@ -1778,6 +1808,28 @@ PROVIDER_ADOPTION_LOAD_COLUMNS: dict[str, list[str]] = {
         "github_env_repo_count",
         "github_model_repo_count",
     ],
+    # These two are the repository's largest datasets by row count (~924k rows
+    # each) and share the 52-column provider_adoption schema, of which they
+    # populate 18 and 24.  Read in full they cost ~1.5 GB of pandas memory
+    # apiece -- more than the deployed container has -- and pyarrow aborts on a
+    # failed allocation with SIGSEGV rather than a catchable MemoryError.  No
+    # section renders their rows; they exist for freshness and the Data Health
+    # checks, so project down to exactly what the registry entry needs.
+    "github_repo_candidates_daily": [
+        *CORE_COLUMNS,
+        "provider",
+        "repo_full_name",
+        "repo_created_date",
+        "language_bucket",
+        "stargazers_count",
+    ],
+    "github_repo_rollup_daily": [
+        *CORE_COLUMNS,
+        "provider",
+        "repo_full_name",
+        "signal_date",
+        "matched_signal_count",
+    ],
 }
 
 # Vercel datasets carry columns that are not in EXPECTED_COLUMNS, so — like
@@ -2468,6 +2520,7 @@ def load_dataset(
     base = normalized_root(base_dir, source=source)
     parquet_path = base / f"{dataset_id}.parquet"
     csv_path = base / f"{dataset_id}.csv"
+    partition_dir = base / dataset_id
 
     required_columns = list(registry_entry.get("required_columns", []))
     if registry_entry.get("requires_core_provenance", True):
@@ -2491,7 +2544,19 @@ def load_dataset(
     use_remote_bytes = remote.remote_enabled() and (base_dir is None or data_sha is not None)
     if use_remote_bytes:
         sha = data_sha or remote.latest_data_sha(f"{remote.DATA_PATH_PREFIX}/{source}")
-        if sha:
+        if sha and dataset_id in PARTITIONED_DATASETS:
+            rel_dir = partition_dir.relative_to(root).as_posix()
+            payloads = remote.fetch_directory(rel_dir, sha)
+            if payloads:
+                try:
+                    frame = _read_parquet_partitions(
+                        [io.BytesIO(payload) for payload in payloads], load_columns
+                    )
+                    source_format = "parquet"
+                    source_path = partition_dir
+                except Exception as e:
+                    print(f"Warning: remote partitioned read failed for {rel_dir}: {e}")
+        elif sha:
             candidates = (
                 (parquet_path, "parquet", lambda b: _read_parquet_projected(io.BytesIO(b), load_columns)),
                 (csv_path, "csv", lambda b: pd.read_csv(io.BytesIO(b))),
@@ -2510,8 +2575,17 @@ def load_dataset(
                     print(f"Warning: remote read failed for {rel}: {e}")
 
     if source_format is None:
+        partitions = (
+            sorted(partition_dir.glob("*.parquet"))
+            if dataset_id in PARTITIONED_DATASETS and partition_dir.is_dir()
+            else []
+        )
         try:
-            if parquet_path.exists():
+            if partitions:
+                frame = _read_parquet_partitions(partitions, load_columns)
+                source_format = "parquet"
+                source_path = partition_dir
+            elif parquet_path.exists():
                 frame = _read_parquet_projected(parquet_path, load_columns)
                 source_format = "parquet"
                 source_path = parquet_path

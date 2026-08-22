@@ -15,6 +15,7 @@ always maps to correct content.
 from __future__ import annotations
 
 import os
+from concurrent.futures import ThreadPoolExecutor
 
 import requests
 import streamlit as st
@@ -122,5 +123,79 @@ def fetch_bytes(rel_path: str, sha: str) -> bytes | None:
     """Fetch remote bytes, falling back cleanly if Streamlit caching fails."""
     try:
         return _fetch_bytes_cached(rel_path, sha)
+    except Exception:
+        return None
+
+
+# GitHub's contents API returns at most 1000 entries for a directory and gives
+# no truncation flag, so a larger directory would come back looking complete
+# while silently missing files.  Refuse to assemble a dataset from a listing
+# that could be truncated and fall back to the local checkout instead.
+_MAX_DIRECTORY_ENTRIES = 1000
+
+
+@st.cache_data(ttl=1800, show_spinner=False, max_entries=8)
+def _fetch_directory_cached(rel_dir: str, sha: str, suffix: str) -> tuple[bytes, ...] | None:
+    """Fetch every ``suffix`` file in one repo directory at a pinned commit SHA.
+
+    Partitioned datasets are stored as a directory of per-date files rather than
+    a single blob, so reading one means listing the directory and fetching each
+    part.  Returns the payloads in sorted-name order, or None if the directory
+    is missing, unreachable, or only partially retrievable.
+
+    Cached as one entry per directory rather than one per file: a dataset with a
+    hundred-odd partitions would otherwise evict every other dataset out of the
+    per-file byte cache on each load.
+    """
+    listing_url = f"{_API_BASE}/repos/{repo_slug()}/contents/{rel_dir}"
+    try:
+        resp = _SESSION.get(
+            listing_url, params={"ref": sha}, headers=_auth_headers(), timeout=_TIMEOUT
+        )
+        if resp.status_code == 404:
+            return None
+        resp.raise_for_status()
+        entries = resp.json()
+    except Exception:
+        return None
+    if not isinstance(entries, list) or len(entries) >= _MAX_DIRECTORY_ENTRIES:
+        return None
+
+    names = sorted(
+        str(entry["name"])
+        for entry in entries
+        if isinstance(entry, dict)
+        and entry.get("type") == "file"
+        and str(entry.get("name", "")).endswith(suffix)
+    )
+    if not names:
+        return None
+
+    def _fetch_one(name: str) -> bytes | None:
+        url = f"{_RAW_BASE}/{repo_slug()}/{sha}/{rel_dir}/{name}"
+        try:
+            resp = _SESSION.get(url, headers=_auth_headers(), timeout=_TIMEOUT)
+            if resp.status_code == 404:
+                return None
+            resp.raise_for_status()
+            return resp.content
+        except Exception:
+            return None
+
+    with ThreadPoolExecutor(max_workers=min(8, len(names))) as executor:
+        payloads = list(executor.map(_fetch_one, names))
+
+    # A partially fetched directory is a wrong dataset, not a smaller one: one
+    # missing partition silently drops a day of history with no error anywhere.
+    # Treat it as a miss so the caller uses the local checkout instead.
+    if any(payload is None for payload in payloads):
+        return None
+    return tuple(payloads)
+
+
+def fetch_directory(rel_dir: str, sha: str, suffix: str = ".parquet") -> tuple[bytes, ...] | None:
+    """Fetch a remote directory's files, falling back cleanly if caching fails."""
+    try:
+        return _fetch_directory_cached(rel_dir, sha, suffix)
     except Exception:
         return None

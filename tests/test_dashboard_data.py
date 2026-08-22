@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import io
 import json
 from dataclasses import replace
 from pathlib import Path
@@ -40,6 +41,8 @@ from dashboard.data import (
     DatasetLoadResult,
     DOMAIN_ORDER,
     OPENROUTER_LOAD_COLUMNS,
+    PARTITIONED_DATASETS,
+    PROVIDER_ADOPTION_LOAD_COLUMNS,
     dataset_source_for_domain,
     domain_dataset_ids,
     load_all_datasets,
@@ -4985,3 +4988,94 @@ def test_latest_provider_market_coverage_reconciles_to_official_total() -> None:
     assert coverage == pytest.approx(0.9)
     assert coverage_date == "2026-07-17"
     assert provider_count == 2
+
+
+def _partition_row(dataset_id: str, repo: str, date: str) -> dict[str, object]:
+    return {
+        "dataset_id": dataset_id,
+        "source_url": f"fixture://{dataset_id}",
+        "source_run_id": "run-partitioned",
+        "scraped_at": "2026-08-22T00:00:00Z",
+        "provider": "openai",
+        "repo_full_name": repo,
+        "repo_created_date": date,
+        "signal_date": date,
+        "language_bucket": "python",
+        "stargazers_count": 7,
+        "matched_signal_count": 3,
+        # A column no reader needs, to prove the projection survives partitioning.
+        "repo_html_url": f"https://github.com/{repo}",
+    }
+
+
+def test_partitioned_datasets_match_the_writers_partition_map() -> None:
+    """The reader's partition list must not drift from the writer's.
+
+    A reader that does not know a dataset is partitioned looks for
+    "<id>.parquet", misses, and returns zero rows without raising -- so drift
+    here is invisible until someone notices an empty panel.
+    """
+    from provider_adoption_data.storage import PARTITION_COLUMNS
+
+    assert PARTITIONED_DATASETS == frozenset(PARTITION_COLUMNS)
+
+
+def test_every_partitioned_dataset_has_a_column_projection() -> None:
+    """Partitioned datasets are the largest ones; none may load full-width.
+
+    Read across all 52 schema columns these cost roughly 1.5 GB of pandas
+    memory each, and pyarrow aborts the process on a failed allocation instead
+    of raising MemoryError.
+    """
+    for dataset_id in PARTITIONED_DATASETS:
+        assert PROVIDER_ADOPTION_LOAD_COLUMNS.get(dataset_id), (
+            f"{dataset_id} is partitioned but has no load-columns projection"
+        )
+
+
+def test_load_dataset_reads_every_local_partition(tmp_path: Path) -> None:
+    root = tmp_path / "data" / "normalized" / "provider_adoption"
+    partition_dir = root / "github_repo_candidates_daily"
+    partition_dir.mkdir(parents=True)
+    for date, repo in (("2026-08-20", "acme/one"), ("2026-08-21", "acme/two")):
+        pd.DataFrame(
+            [_partition_row("github_repo_candidates_daily", repo, date)]
+        ).to_parquet(partition_dir / f"{date}.parquet", index=False)
+
+    result = load_dataset("github_repo_candidates_daily", base_dir=tmp_path)
+
+    assert result.source_format == "parquet"
+    assert result.source_path == partition_dir
+    assert sorted(result.frame["repo_full_name"]) == ["acme/one", "acme/two"]
+    assert "repo_html_url" not in result.frame.columns
+
+
+def test_load_dataset_reads_remote_partitions(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    payloads = []
+    for date, repo in (("2026-08-20", "remote/one"), ("2026-08-21", "remote/two")):
+        buffer = io.BytesIO()
+        pd.DataFrame(
+            [_partition_row("github_repo_rollup_daily", repo, date)]
+        ).to_parquet(buffer, index=False)
+        payloads.append(buffer.getvalue())
+
+    requested: list[str] = []
+
+    def _fake_fetch_directory(rel_dir: str, sha: str, suffix: str = ".parquet"):
+        requested.append(rel_dir)
+        return tuple(payloads)
+
+    monkeypatch.setattr("dashboard.data.remote.remote_enabled", lambda: True)
+    monkeypatch.setattr("dashboard.data.remote.fetch_directory", _fake_fetch_directory)
+    monkeypatch.setattr(
+        "dashboard.data.remote.fetch_bytes",
+        lambda *_a, **_k: pytest.fail("a partitioned dataset must not be fetched as one file"),
+    )
+
+    result = load_dataset("github_repo_rollup_daily", base_dir=tmp_path, data_sha="deadbeef")
+
+    assert requested == ["data/normalized/provider_adoption/github_repo_rollup_daily"]
+    assert sorted(result.frame["repo_full_name"]) == ["remote/one", "remote/two"]
+    assert "repo_html_url" not in result.frame.columns
