@@ -148,3 +148,63 @@ def test_partitions_win_over_a_leftover_single_file(storage: StorageManager) -> 
     stale.to_parquet(storage.normalized_root / f"{DATASET_ID}.parquet", index=False)
 
     assert len(storage.load_dataset(DATASET_ID)) == 3
+
+def test_bytes_are_stable_across_a_parquet_round_trip(tmp_path: Path) -> None:
+    """The property the layout depends on, tested the way it actually fails.
+
+    ``test_reupserting_identical_rows_rewrites_nothing`` compares a frame that
+    never left memory, and that passed while the real dataset rewrote all 138
+    partitions every night.  Two things drift across a parquet round trip: a
+    bool column written from ``_coerce_types``' object dtype reads back as
+    bool, and ``from_pandas`` records the source dtypes in the file's pandas
+    metadata.  Either one changes the bytes while every value stays the same,
+    which is indistinguishable from real churn to git.  So reload from disk
+    first, then re-upsert, and require the bytes to be untouched.
+    """
+
+    manager = StorageManager(tmp_path)
+    manager.upsert_dataset(
+        DATASET_ID,
+        [
+            _record("2026-08-18", "a/one", stars=3),
+            _record("2026-08-19", "a/two", stars=0),
+        ],
+    )
+    first = _digests(manager)
+
+    # Round trip through disk exactly as the next night's run does.
+    reloaded = manager.load_dataset(DATASET_ID)
+    assert not reloaded.empty
+    manager.upsert_dataset(
+        DATASET_ID,
+        [
+            _record("2026-08-18", "a/one", stars=3),
+            _record("2026-08-19", "a/two", stars=0),
+        ],
+    )
+
+    assert _digests(manager) == first
+
+
+def test_serialization_ignores_the_in_memory_dtype(tmp_path: Path) -> None:
+    """Same values, different pandas dtypes, identical bytes."""
+
+    manager = StorageManager(tmp_path)
+    frame = pd.DataFrame(
+        [{column: pd.NA for column in DATASET_COLUMNS} for _ in range(2)]
+    )
+    frame["provider"] = ["anthropic", "openai"]
+    frame["is_fork"] = [True, False]
+    frame["stargazers_count"] = [1, 2]
+
+    as_bool_and_int = frame.copy()
+    as_bool_and_int["is_fork"] = as_bool_and_int["is_fork"].astype(bool)
+    as_bool_and_int["stargazers_count"] = as_bool_and_int["stargazers_count"].astype("int64")
+
+    as_object_and_float = frame.copy()
+    as_object_and_float["is_fork"] = as_object_and_float["is_fork"].astype(object)
+    as_object_and_float["stargazers_count"] = as_object_and_float["stargazers_count"].astype("float64")
+
+    assert manager._serialize_partition(as_bool_and_int) == manager._serialize_partition(
+        as_object_and_float
+    )
