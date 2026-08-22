@@ -1741,6 +1741,118 @@ def _render_company_hero_card(
     st.markdown(hero_html, unsafe_allow_html=True)
 
 
+def _render_company_hero_card(
+    view: CompanyView,
+    snapshot: ControlTowerSnapshot,
+    viewer_timezone: str,
+) -> None:
+    ticker = ''
+    exchange = ''
+    currency = ''
+    if view.selected_listing_id and not view.listings.empty:
+        selected = view.listings.loc[
+            view.listings['listing_id'].astype('string').eq(view.selected_listing_id)
+        ]
+        if not selected.empty:
+            ticker = _text(selected.iloc[0].get('canonical_ticker')) or _text(selected.iloc[0].get('native_ticker'))
+            exchange = _text(selected.iloc[0].get('exchange'))
+            currency = _text(selected.iloc[0].get('currency'))
+
+    price_html = ''
+    if not view.quote_snapshots.empty and view.entity_type != 'private':
+        qrow = view.quote_snapshots.iloc[0]
+        last_price = qrow.get('last_price')
+        qccy = _text(qrow.get('currency')) or currency or 'HKD'
+        price_val_str = f'{qccy} {last_price:,.2f}'.strip() if pd.notna(last_price) else ''
+        day_change = qrow.get('day_change_pct')
+        if pd.notna(day_change) and isinstance(day_change, (int, float)):
+            change_class = 'ct-hero-change--up' if day_change >= 0 else 'ct-hero-change--down'
+            change_str = f'{day_change:+.2f}%'
+        else:
+            change_class = ''
+            change_str = ''
+        qtime = qrow.get('quote_timestamp')
+        age_str = format_quote_age(qtime, snapshot.now_utc)
+        freshness = _text(qrow.get('freshness')) or 'delayed'
+        if price_val_str:
+            change_badge = f'<span class="ct-hero-change {change_class}">{escape(change_str)}</span>' if change_str else ''
+            price_html = f'<div class="ct-hero-price-box"><div class="ct-hero-price">{escape(price_val_str)}</div>{change_badge}<div class="ct-subtle" style="font-size: 0.76rem; margin-left: 0.2rem;">{escape(freshness)} ({escape(age_str)})</div></div>'
+
+    actuals = _company_earnings_actuals(snapshot, view)
+    ltm_rev_str = 'Unavailable'
+    ltm_profit_str = 'Unavailable'
+    ltm_fcf_str = 'Unavailable'
+    buyback_str = 'Unavailable'
+    if not actuals.empty:
+        actuals_copy = actuals.copy()
+        actuals_copy['period_end'] = pd.to_datetime(actuals_copy['period_end'], errors='coerce')
+        periods = actuals_copy.dropna(subset=['period_end']).sort_values('period_end')
+        unique_periods = periods['period_label'].drop_duplicates().tail(4).tolist()
+        rev_rows = actuals_copy[(actuals_copy['period_label'].isin(unique_periods)) & (actuals_copy['metric'] == 'revenue_total') & (actuals_copy['accounting_basis'] == 'IFRS')]
+        if len(rev_rows) >= 1:
+            tot_rev = rev_rows['reported_value'].sum()
+            ltm_rev_str = f'¥{tot_rev/1e9:,.1f}B' if tot_rev >= 1e9 else f'¥{tot_rev:,.0f}'
+        profit_rows = actuals_copy[(actuals_copy['period_label'].isin(unique_periods)) & (actuals_copy['metric'] == 'net_profit_attributable') & (actuals_copy['accounting_basis'] == 'Non-IFRS management measure')]
+        if len(profit_rows) >= 1:
+            tot_profit = profit_rows['reported_value'].sum()
+            ltm_profit_str = f'¥{tot_profit/1e9:,.1f}B' if tot_profit >= 1e9 else f'¥{tot_profit:,.0f}'
+        fcf_rows = actuals_copy[(actuals_copy['metric'] == 'free_cash_flow') & (actuals_copy['accounting_basis'] == 'Non-IFRS management measure')].sort_values('period_end', ascending=False)
+        if not fcf_rows.empty and pd.notna(fcf_rows.iloc[0].get('reported_value')):
+            fcf_val = float(fcf_rows.iloc[0]['reported_value'])
+            ltm_fcf_str = f'¥{fcf_val/1e9:,.1f}B' if abs(fcf_val) >= 1e9 else f'¥{fcf_val:,.0f}'
+
+    if not view.corporate_actions.empty:
+        tot_bb = view.corporate_actions['total_amount_paid'].dropna().sum()
+        if tot_bb > 0:
+            buyback_str = f'HK$ {tot_bb/1e9:,.1f}B YTD'
+
+    ticker_badge = f'<span class="ct-hero-ticker">{escape(ticker)}</span>' if ticker else ''
+    exchange_badge = f'<span class="ct-badge">{escape(exchange)} · Primary</span>' if exchange else ''
+    sector_badge = f'<span class="ct-badge">{escape(view.sector)}</span>' if view.sector else ''
+    industry_badge = f'<span class="ct-badge">{escape(view.industry)}</span>' if view.industry else ''
+    hero_html = f'<div class="ct-hero-card"><div class="ct-hero-top"><div><div class="ct-hero-title">{escape(view.display_name)} {ticker_badge} {exchange_badge}</div><div class="ct-subtle" style="margin-top: 0.25rem;">{escape(view.legal_name)} · {escape(view.country)} {sector_badge} {industry_badge}</div></div>{price_html}</div><div class="ct-kpi-grid"><div class="ct-kpi-card"><div class="ct-kpi-label">LTM Revenue</div><div class="ct-kpi-value">{escape(ltm_rev_str)}</div><div class="ct-kpi-sub">Total Topline (IFRS)</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">LTM Non-IFRS Net Profit</div><div class="ct-kpi-value">{escape(ltm_profit_str)}</div><div class="ct-kpi-sub">Core Operating Earnings</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Free Cash Flow</div><div class="ct-kpi-value">{escape(ltm_fcf_str)}</div><div class="ct-kpi-sub">Latest Reported Period</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Capital Return / Buybacks</div><div class="ct-kpi-value">{escape(buyback_str)}</div><div class="ct-kpi-sub">HK$100B Plan Execution</div></div></div></div>'
+    st.markdown(hero_html, unsafe_allow_html=True)
+
+
+def _render_styled_bullet_card(line: str) -> None:
+    if line.startswith("Latest fundamentals ·"):
+        icon = "📊"
+        label = "Fundamentals"
+        badge_style = "color: var(--ct-accent); border-color: var(--ct-accent);"
+    elif line.startswith("Recent corporate action ·"):
+        icon = "🏛️"
+        label = "Capital Return"
+        badge_style = "color: var(--ct-hard); border-color: var(--ct-hard);"
+    elif line.startswith("Expectation context ·"):
+        icon = "🎯"
+        label = "Consensus"
+        badge_style = "color: var(--ct-provisional); border-color: var(--ct-provisional);"
+    elif line.startswith("Active catalyst ·"):
+        icon = "⚡"
+        label = "Catalyst"
+        badge_style = "color: var(--ct-thesis); border-color: var(--ct-thesis);"
+    elif line.startswith("Thesis registry ·"):
+        icon = "💡"
+        label = "Thesis"
+        badge_style = "color: var(--ct-accent); border-color: var(--ct-accent);"
+    elif line.startswith("Evidence lineage ·"):
+        icon = "🔍"
+        label = "Evidence Lineage"
+        badge_style = "color: var(--ct-observed); border-color: var(--ct-observed);"
+    else:
+        icon = "ℹ️"
+        label = "Fact"
+        badge_style = "color: var(--ct-muted); border-color: var(--ct-border);"
+    clean_line = line
+    source_link_html = ""
+    url_match = re.search(r'https?://[^\s]+', line)
+    if url_match:
+        url = url_match.group(0)
+        clean_line = line.replace(url, "").strip(" ·").strip()
+        source_link_html = f' · <a class="ct-inline-link" href="{escape(url)}" target="_blank" rel="noopener">Official Source ↗</a>'
+    card_html = f'<div class="ct-change" style="padding: 0.6rem 0.85rem; background: var(--ct-surface); border-radius: 9px; margin-bottom: 0.5rem; border: 1px solid var(--ct-border);"><div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.25rem;"><span class="ct-badge" style="{badge_style}; padding: 0.12rem 0.45rem; font-size: 0.72rem; font-weight: 750;">{icon} {escape(label)}</span></div><div style="font-size: 0.86rem; line-height: 1.45; color: var(--ct-ink);">{escape(clean_line)}{source_link_html}</div></div>'
+    st.markdown(card_html, unsafe_allow_html=True)
+
 def _render_answer_first_summary(
     view: CompanyView,
     snapshot: ControlTowerSnapshot,
@@ -1761,10 +1873,11 @@ def _render_answer_first_summary(
     listing_slug = _slugify(view.selected_listing_id) if view.selected_listing_id else 'all'
     _render_section_heading(4, heading, f'exec-summary-{entity_slug}-{listing_slug}')
     if view.entity_id == 'TENCENT':
-        insights_html = '<div style="margin-bottom: 1rem;"><div class="ct-insight-box"><div class="ct-insight-title">🎮 1. Gaming & Core Franchise Recovery</div><div class="ct-insight-desc">Domestic gross receipts inflecting on evergreen franchises (Honor of Kings, Peacekeeper Elite) plus new pipeline scaling (DnF Mobile); international gaming (Supercell titles) compounding at double-digit rates.</div></div><div class="ct-insight-box"><div class="ct-insight-title">📈 2. Video Accounts Ad Monetization & AI Operating Leverage</div><div class="ct-insight-desc">Video Accounts (视频号) ad load expansion and AIM+ AI ad targeting algorithm driving marketing services growth; gross margins expanding as high-margin revenue streams outpace headcount and infra costs.</div></div><div class="ct-insight-box"><div class="ct-insight-title">🛡️ 3. Shareholder Capital Return Floor</div><div class="ct-insight-desc">Committed HKB+ annual statutory share repurchase plan executing consistently at ~HKM/trading day, offsetting major shareholder block supply and permanently shrinking share count.</div></div></div>'
+        insights_html = '<div style="margin-bottom: 1rem;"><div class="ct-insight-box"><div class="ct-insight-title">🎮 1. Gaming & Core Franchise Recovery</div><div class="ct-insight-desc">Domestic gross receipts inflecting on evergreen franchises (Honor of Kings, Peacekeeper Elite) plus new pipeline scaling (DnF Mobile); international gaming (Supercell titles) compounding at double-digit rates.</div></div><div class="ct-insight-box"><div class="ct-insight-title">📈 2. Video Accounts Ad Monetization & AI Operating Leverage</div><div class="ct-insight-desc">Video Accounts (视频号) ad load expansion and AIM+ AI ad targeting algorithm driving marketing services growth; gross margins expanding as high-margin revenue streams outpace headcount and infra costs.</div></div><div class="ct-insight-box"><div class="ct-insight-title">🛡️ 3. Shareholder Capital Return Floor</div><div class="ct-insight-desc">Committed HK$100B+ annual statutory share repurchase plan executing consistently at ~HK$300M/trading day, offsetting major shareholder block supply and permanently shrinking share count.</div></div></div>'
         st.markdown(insights_html, unsafe_allow_html=True)
-    for line in _answer_first_summary_lines(view, snapshot):
-        st.markdown(f'- {escape(line)}')
+    summary_facts = _answer_first_summary_lines(view, snapshot)
+    for line in summary_facts:
+        _render_styled_bullet_card(line)
     st.caption('All displayed facts come from the selected local snapshot rows; unavailable marts stay unavailable.')
 
 
@@ -1853,15 +1966,30 @@ def _build_quarterly_financial_pivot(frame: pd.DataFrame, n_periods: int = 8) ->
     period_map = df[['period_label', 'period_end']].dropna().drop_duplicates().sort_values('period_end')
     if period_map.empty:
         return pd.DataFrame()
+    all_periods = period_map['period_label'].tolist()
     recent_periods = period_map.tail(n_periods)['period_label'].tolist()
+    tot_rev = {}
+    non_ifrs_op = {}
+    non_ifrs_np = {}
+    for p in all_periods:
+        sub_rev = df[(df['period_label'] == p) & (df['metric'] == 'revenue_total') & (df['accounting_basis'] == 'IFRS')]
+        tot_rev[p] = float(sub_rev.iloc[0]['reported_value']) if not sub_rev.empty and pd.notna(sub_rev.iloc[0]['reported_value']) else None
+        sub_op = df[(df['period_label'] == p) & (df['metric'] == 'operating_profit') & (df['accounting_basis'] == 'Non-IFRS management measure')]
+        non_ifrs_op[p] = float(sub_op.iloc[0]['reported_value']) if not sub_op.empty and pd.notna(sub_op.iloc[0]['reported_value']) else None
+        sub_np = df[(df['period_label'] == p) & (df['metric'] == 'net_profit_attributable') & (df['accounting_basis'] == 'Non-IFRS management measure')]
+        non_ifrs_np[p] = float(sub_np.iloc[0]['reported_value']) if not sub_np.empty and pd.notna(sub_np.iloc[0]['reported_value']) else None
     row_specs = [
         ('Revenue: Total (RMB B)', 'revenue_total', 'IFRS', 1e9, '¥{:.1f}B'),
         ('  ├─ VAS (Games & Social)', 'revenue_vas', 'IFRS', 1e9, '¥{:.1f}B'),
         ('  ├─ Marketing Services (Ads)', 'revenue_marketing_services', 'IFRS', 1e9, '¥{:.1f}B'),
         ('  └─ Fintech & Biz Services', 'revenue_fintech_business_services', 'IFRS', 1e9, '¥{:.1f}B'),
+        ('YoY Revenue Growth (%)', '__yoy_rev__', '', 1.0, '{:+.1f}%'),
+        ('QoQ Revenue Growth (%)', '__qoq_rev__', '', 1.0, '{:+.1f}%'),
         ('Operating Profit (Non-IFRS, RMB B)', 'operating_profit', 'Non-IFRS management measure', 1e9, '¥{:.1f}B'),
+        ('Non-IFRS Operating Margin (%)', '__non_ifrs_op_margin__', '', 1.0, '{:.1f}%'),
         ('Operating Profit (IFRS, RMB B)', 'operating_profit', 'IFRS', 1e9, '¥{:.1f}B'),
         ('Net Profit (Non-IFRS, RMB B)', 'net_profit_attributable', 'Non-IFRS management measure', 1e9, '¥{:.1f}B'),
+        ('Non-IFRS Net Margin (%)', '__non_ifrs_net_margin__', '', 1.0, '{:.1f}%'),
         ('Net Profit (IFRS, RMB B)', 'net_profit_attributable', 'IFRS', 1e9, '¥{:.1f}B'),
         ('Diluted EPS (Non-IFRS, RMB)', 'diluted_eps', 'Non-IFRS management measure', 1.0, '¥{:.2f}'),
         ('Free Cash Flow (RMB B)', 'free_cash_flow', 'Non-IFRS management measure', 1e9, '¥{:.1f}B'),
@@ -1871,18 +1999,44 @@ def _build_quarterly_financial_pivot(frame: pd.DataFrame, n_periods: int = 8) ->
     for label, metric, basis, scale, fmt in row_specs:
         row_data = {'Metric': label}
         for period in recent_periods:
-            subset = df[(df['period_label'] == period) & (df['metric'] == metric)]
-            if basis:
-                subset = subset[subset['accounting_basis'] == basis]
-            if not subset.empty:
-                val = subset.iloc[0]['reported_value']
-                if pd.notna(val):
-                    scaled = float(val) / scale
-                    row_data[period] = fmt.format(scaled)
+            p_idx = all_periods.index(period)
+            if metric == '__yoy_rev__':
+                if p_idx >= 4 and tot_rev.get(period) and tot_rev.get(all_periods[p_idx-4]):
+                    cur = tot_rev[period]
+                    prior = tot_rev[all_periods[p_idx-4]]
+                    row_data[period] = fmt.format(((cur / prior) - 1.0) * 100.0)
+                else:
+                    row_data[period] = '-'
+            elif metric == '__qoq_rev__':
+                if p_idx >= 1 and tot_rev.get(period) and tot_rev.get(all_periods[p_idx-1]):
+                    cur = tot_rev[period]
+                    prior = tot_rev[all_periods[p_idx-1]]
+                    row_data[period] = fmt.format(((cur / prior) - 1.0) * 100.0)
+                else:
+                    row_data[period] = '-'
+            elif metric == '__non_ifrs_op_margin__':
+                if tot_rev.get(period) and non_ifrs_op.get(period):
+                    row_data[period] = fmt.format((non_ifrs_op[period] / tot_rev[period]) * 100.0)
+                else:
+                    row_data[period] = '-'
+            elif metric == '__non_ifrs_net_margin__':
+                if tot_rev.get(period) and non_ifrs_np.get(period):
+                    row_data[period] = fmt.format((non_ifrs_np[period] / tot_rev[period]) * 100.0)
                 else:
                     row_data[period] = '-'
             else:
-                row_data[period] = '-'
+                subset = df[(df['period_label'] == period) & (df['metric'] == metric)]
+                if basis:
+                    subset = subset[subset['accounting_basis'] == basis]
+                if not subset.empty:
+                    val = subset.iloc[0]['reported_value']
+                    if pd.notna(val):
+                        scaled = float(val) / scale
+                        row_data[period] = fmt.format(scaled)
+                    else:
+                        row_data[period] = '-'
+                else:
+                    row_data[period] = '-'
         result_rows.append(row_data)
     return pd.DataFrame(result_rows)
 
@@ -1901,8 +2055,28 @@ def _render_fundamentals_tab(
             st.markdown('<div class="ct-segment-grid"><div class="ct-segment-card"><div class="ct-segment-header"><span class="ct-segment-title">🎮 Value-Added Services (VAS)</span><span class="ct-segment-share">48.1% of Rev</span></div><div class="ct-segment-rev">¥98.4B</div><div class="ct-segment-detail">Domestic + Overseas Games & Social Networks. Domestic gross receipts recovering on DnF Mobile and HoK; Supercell titles accelerating global growth.</div></div><div class="ct-segment-card"><div class="ct-segment-header"><span class="ct-segment-title">📈 Marketing Services (Advertising)</span><span class="ct-segment-share">21.3% of Rev</span></div><div class="ct-segment-rev">¥43.6B</div><div class="ct-segment-detail">Video Accounts (视频号), Weixin Search, and Mini Programs. AIM+ AI ad algorithm upgrading ad targeting and CPM efficiency.</div></div><div class="ct-segment-card"><div class="ct-segment-header"><span class="ct-segment-title">☁️ Fintech & Business Services</span><span class="ct-segment-share">29.4% of Rev</span></div><div class="ct-segment-rev">¥60.3B</div><div class="ct-segment-detail">Commercial Payments, Wealth Management, Tencent Cloud, and AI Infra/Model services. Gross margin expansion driven by high-value cloud SaaS mix.</div></div></div>', unsafe_allow_html=True)
         pivoted_model = _build_quarterly_financial_pivot(frame, n_periods=8)
         if not pivoted_model.empty:
-            st.caption('Multi-period quarterly financial trajectory (LTM 8 quarters in RMB Billions) · GAAP vs Non-IFRS dual track')
+            st.caption('Multi-period quarterly financial trajectory (LTM 8 quarters in RMB Billions) · GAAP vs Non-IFRS dual track · YoY & QoQ growth metrics')
             st.dataframe(pivoted_model, width='stretch', hide_index=True)
+        act_dt = frame.copy()
+        act_dt['period_end'] = pd.to_datetime(act_dt['period_end'], errors='coerce')
+        act_dt = act_dt.dropna(subset=['period_end']).sort_values('period_end')
+        piv_chart = act_dt[act_dt['accounting_basis'] == 'IFRS'].pivot_table(index='period_label', columns='metric', values='reported_value', aggfunc='first') / 1e9
+        period_order = act_dt[['period_label', 'period_end']].drop_duplicates().sort_values('period_end')['period_label'].tolist()
+        piv_chart = piv_chart.reindex(period_order)
+        if 'revenue_total' in piv_chart.columns:
+            piv_chart = piv_chart.dropna(subset=['revenue_total'])
+        if len(piv_chart) >= 4:
+            st.caption('Quarterly Revenue & Segment Mix Trajectory (2021Q1 → 2026Q2 in RMB Billions)')
+            seg_chart_df = pd.DataFrame(index=piv_chart.index)
+            if 'revenue_vas' in piv_chart.columns:
+                seg_chart_df['VAS (Games & Social)'] = piv_chart['revenue_vas']
+            if 'revenue_marketing_services' in piv_chart.columns:
+                seg_chart_df['Marketing Services (Ads)'] = piv_chart['revenue_marketing_services'].combine_first(piv_chart.get('revenue_online_advertising', pd.Series(index=piv_chart.index)))
+            elif 'revenue_online_advertising' in piv_chart.columns:
+                seg_chart_df['Marketing Services (Ads)'] = piv_chart['revenue_online_advertising']
+            if 'revenue_fintech_business_services' in piv_chart.columns:
+                seg_chart_df['Fintech & Enterprise Cloud'] = piv_chart['revenue_fintech_business_services']
+            st.area_chart(seg_chart_df, height=260)
         metrics = frame.get('metric', pd.Series('', index=frame.index, dtype='string')).astype('string')
         has_segments = metrics.str.startswith('revenue_') & ~metrics.eq('revenue_total')
         if has_segments.any():
@@ -1939,7 +2113,7 @@ def _render_fundamentals_tab(
         target_bb = 100_000_000_000.0
         pct_completed = min(100.0, (total_spent / target_bb) * 100.0) if target_bb > 0 else 0.0
         daily_avg = total_spent / max(1, len(view.corporate_actions))
-        bb_tracker_html = f'<div class="ct-buyback-tracker"><div class="ct-panel-heading"><h3 style="font-size: 0.95rem; font-weight: 750;">🛡️ HKB Statutory Share Repurchase Execution Tracker</h3><span class="ct-badge ct-badge--observed">Execution Progress: {pct_completed:.1f}%</span></div><div class="ct-progress-bar-bg"><div class="ct-progress-bar-fill" style="width: {pct_completed:.1f}%;"></div></div><div class="ct-kpi-grid" style="margin-top: 0.5rem;"><div class="ct-kpi-card"><div class="ct-kpi-label">Annual Plan Target</div><div class="ct-kpi-value">HK$ 100.0B</div><div class="ct-kpi-sub">Committed Minimum Pacing</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Repurchased YTD</div><div class="ct-kpi-value">{ccy} {total_spent/1e9:,.2f}B</div><div class="ct-kpi-sub">{len(view.corporate_actions)} daily NDD filings</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Average Daily Pacing</div><div class="ct-kpi-value">{ccy} {daily_avg/1e6:,.1f}M</div><div class="ct-kpi-sub">Per trading day execution</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Shares Absorbed</div><div class="ct-kpi-value">{int(total_shares):,}</div><div class="ct-kpi-sub">Retired / Treasury capital</div></div></div></div>'
+        bb_tracker_html = f'<div class="ct-buyback-tracker"><div class="ct-panel-heading"><h3 style="font-size: 0.95rem; font-weight: 750;">🛡️ HK$100B Statutory Share Repurchase Execution Tracker</h3><span class="ct-badge ct-badge--observed">Execution Progress: {pct_completed:.1f}%</span></div><div class="ct-progress-bar-bg"><div class="ct-progress-bar-fill" style="width: {pct_completed:.1f}%;"></div></div><div class="ct-kpi-grid" style="margin-top: 0.5rem;"><div class="ct-kpi-card"><div class="ct-kpi-label">Annual Plan Target</div><div class="ct-kpi-value">HK$ 100.0B</div><div class="ct-kpi-sub">Committed Minimum Pacing</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Repurchased YTD</div><div class="ct-kpi-value">{ccy} {total_spent/1e9:,.2f}B</div><div class="ct-kpi-sub">{len(view.corporate_actions)} daily NDD filings</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Average Daily Pacing</div><div class="ct-kpi-value">{ccy} {daily_avg/1e6:,.1f}M</div><div class="ct-kpi-sub">Per trading day execution</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Shares Absorbed</div><div class="ct-kpi-value">{int(total_shares):,}</div><div class="ct-kpi-sub">Retired / Treasury capital</div></div></div></div>'
         st.markdown(bb_tracker_html, unsafe_allow_html=True)
         st.dataframe(_friendly_corporate_actions_frame(view.corporate_actions, viewer_timezone), width='stretch', hide_index=True)
     _render_section_heading(4, 'Valuation multiples & return yields', f'valuation-multiples-{_slugify(view.entity_id)}')
@@ -2001,7 +2175,7 @@ def _render_thesis_catalysts_tab(
                 timing_str = f'{window_str} ({t_minus})'
             else:
                 timing_str = f'{window_str} · {status_label}'
-            st.markdown(f'**{escape(_text(row.get("title")))}** · {escape(_text(row.get("relation_role")))} · *{escape(certainty)}* ·  · {timing_str} · {escape(source_link)}')
+            st.markdown(f'**{escape(_text(row.get("title")))}** · {escape(_text(row.get("relation_role")))} · *{escape(certainty)}* · `{escape(precision)}` · {timing_str} · {escape(source_link)}')
         with st.expander('Event lineage details', expanded=False):
             st.dataframe(view.events, width='stretch', hide_index=True)
     _render_section_heading(4, 'Operational watch questions & falsification criteria', f'watch-questions-{_slugify(view.entity_id)}')
@@ -2019,6 +2193,15 @@ def _render_evidence_tab(
     viewer_timezone: str,
 ) -> None:
     render_official_filings(snapshot, entity_id=view.entity_id, listing_id=view.selected_listing_id, viewer_timezone=viewer_timezone)
+    if not view.corporate_actions.empty:
+        ca_df = view.corporate_actions.copy()
+        ca_df['date'] = pd.to_datetime(ca_df['filing_date'], errors='coerce').dt.date
+        ca_df = ca_df.dropna(subset=['date']).sort_values('date')
+        if not ca_df.empty:
+            ca_df['Daily Repurchase (HK$ Millions)'] = ca_df['total_amount_paid'] / 1e6
+            chart_ca = ca_df.set_index('date')[['Daily Repurchase (HK$ Millions)']]
+            st.caption(f'123-Day Statutory Repurchase Intensity (HK$ Millions per trading day · {ca_df["date"].min()} to {ca_df["date"].max()})')
+            st.bar_chart(chart_ca, height=220)
     _render_section_heading(4, 'News and filing metadata', f'news-filing-metadata-{_slugify(view.entity_id)}')
     if view.official_documents.empty:
         st.warning('No registry-linked generic news/filing metadata rows are available for the selected company/listing; official filing metadata is rendered separately above and document bodies are not displayed.')
