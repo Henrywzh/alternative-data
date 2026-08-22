@@ -128,6 +128,24 @@ PARQUET_ONLY_DATASETS = {
     "github_repo_rollup_daily",
 }
 
+# These two datasets grow by ~7200 append-only rows a day against ~917k rows
+# already stored, so a single-file layout rewrote a 36 MB parquet blob every
+# night for a 0.8% change.  Parquet is compressed binary, which git cannot
+# delta, so each run added ~36 MB of incompressible history -- roughly 26 GB a
+# year across the pair, which is what pushed the deployed checkout past its
+# disk budget.  Storing one file per date means a day's update rewrites only
+# the partitions it actually touched.
+#
+# The partition column is the dataset's own observation date, so a day's rows
+# land in one partition.  Nothing outside this module needs to know: the
+# directory is read and written through load_dataset/upsert_dataset like any
+# other dataset.
+PARTITION_COLUMNS: dict[str, str] = {
+    "github_repo_candidates_daily": "repo_created_date",
+    "github_repo_rollup_daily": "signal_date",
+}
+_UNPARTITIONED = "__unpartitioned__"
+
 
 class StorageManager:
     def __init__(self, base_dir: Path) -> None:
@@ -146,10 +164,42 @@ class StorageManager:
         (run_dir / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
         return run_dir
 
+    def partition_dir(self, dataset_id: str) -> Path:
+        return self.normalized_root / dataset_id
+
+    def partition_paths(self, dataset_id: str) -> list[Path]:
+        """Every partition file for a partitioned dataset, oldest name first."""
+
+        directory = self.partition_dir(dataset_id)
+        if dataset_id not in PARTITION_COLUMNS or not directory.is_dir():
+            return []
+        return sorted(directory.glob("*.parquet"))
+
+    @staticmethod
+    def _partition_name(value: Any) -> str:
+        """File stem for one partition value; blanks get an explicit bucket.
+
+        A null observation date is real data, not a reason to drop the row, so
+        it gets its own partition rather than being silently discarded or
+        merged into an arbitrary date.
+        """
+
+        if value is None or pd.isna(value) or not str(value).strip():
+            return _UNPARTITIONED
+        # Keep the stem filesystem-safe without inventing a new date format.
+        return str(value).strip().replace("/", "-")
+
     def load_dataset(self, dataset_id: str) -> pd.DataFrame:
         csv_path = self.normalized_root / f"{dataset_id}.csv"
         parquet_path = self.normalized_root / f"{dataset_id}.parquet"
-        if parquet_path.exists():
+        partitions = self.partition_paths(dataset_id)
+        if partitions:
+            # A leftover single-file copy would silently double every row, so
+            # the partitioned directory is authoritative once it exists.
+            dataframe = pd.concat(
+                [pd.read_parquet(path) for path in partitions], ignore_index=True
+            )
+        elif parquet_path.exists():
             dataframe = pd.read_parquet(parquet_path)
         elif csv_path.exists():
             dataframe = pd.read_csv(csv_path)
@@ -186,12 +236,55 @@ class StorageManager:
 
         csv_path = self.normalized_root / f"{dataset_id}.csv"
         parquet_path = self.normalized_root / f"{dataset_id}.parquet"
+        if dataset_id in PARTITION_COLUMNS:
+            self._write_partitions(dataset_id, merged)
+            # The pre-partition single file is now a stale duplicate of the
+            # whole dataset; leaving it behind would double-count on any reader
+            # that still prefers it.
+            parquet_path.unlink(missing_ok=True)
+            csv_path.unlink(missing_ok=True)
+            return merged
         merged.to_parquet(parquet_path, index=False)
         if dataset_id in PARQUET_ONLY_DATASETS:
             csv_path.unlink(missing_ok=True)
         else:
             merged.to_csv(csv_path, index=False)
         return merged
+
+    def _write_partitions(self, dataset_id: str, merged: pd.DataFrame) -> list[Path]:
+        """Write one file per partition value, rewriting only what changed.
+
+        Rewriting an unchanged partition would put the whole point of this
+        layout back: a byte-identical parquet still becomes a new git blob.  So
+        each partition is compared against what is already on disk and skipped
+        when equal.
+        """
+
+        column = PARTITION_COLUMNS[dataset_id]
+        directory = self.partition_dir(dataset_id)
+        directory.mkdir(parents=True, exist_ok=True)
+        names = merged[column].map(self._partition_name)
+
+        written: list[Path] = []
+        for name, group in merged.groupby(names, sort=True):
+            path = directory / f"{name}.parquet"
+            frame = group[DATASET_COLUMNS].reset_index(drop=True)
+            if path.exists():
+                try:
+                    if pd.read_parquet(path).equals(frame):
+                        continue
+                except Exception:
+                    pass  # unreadable partition: fall through and rewrite it
+            frame.to_parquet(path, index=False)
+            written.append(path)
+
+        # A partition whose rows all disappeared must not linger as a ghost
+        # that load_dataset would concatenate back in.
+        keep = {f"{name}.parquet" for name in names.unique()}
+        for stale in directory.glob("*.parquet"):
+            if stale.name not in keep:
+                stale.unlink()
+        return written
 
     @staticmethod
     def _coerce_types(dataframe: pd.DataFrame) -> pd.DataFrame:
