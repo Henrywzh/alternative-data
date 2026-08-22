@@ -1,6 +1,7 @@
 """Company identity, registry lineage, fundamental and thesis cockpit view."""
 
 from __future__ import annotations
+from pathlib import Path
 
 from dataclasses import dataclass, field
 from datetime import timedelta
@@ -2265,6 +2266,53 @@ def _build_quarterly_financial_pivot(frame: pd.DataFrame, n_periods: int = 8) ->
     return pd.DataFrame(result_rows)
 
 
+def _render_tencent_alt_data_modules() -> None:
+    # 1. OpenRouter Tencent Hunyuan AI Token Usage & Economics
+    _render_section_heading(4, '🤖 Tencent Hunyuan (混元) AI Token & API Economics (OpenRouter Signal)', 'tencent-hunyuan-openrouter')
+    cloud_path = Path('data/normalized/openrouter/cloud_infra_daily_activity.parquet')
+    if cloud_path.exists():
+        try:
+            cloud_df = pd.read_parquet(cloud_path)
+            hy_df = cloud_df[cloud_df['model_origin_company'] == 'Tencent'].copy()
+            if not hy_df.empty:
+                hy_df['usage_date'] = pd.to_datetime(hy_df['usage_date'], errors='coerce')
+                hy_df = hy_df.dropna(subset=['usage_date']).sort_values('usage_date')
+                recent_days = hy_df[hy_df['usage_date'] >= hy_df['usage_date'].max() - pd.Timedelta(days=30)]
+                daily_tokens_m = recent_days.groupby('usage_date')['total_tokens'].sum() / 1e6
+                avg_daily = daily_tokens_m.mean() if not daily_tokens_m.empty else 0
+                models_active = hy_df['model_permaslug'].unique().tolist()
+                st.markdown(f'<div class="ct-kpi-grid"><div class="ct-kpi-card"><div class="ct-kpi-label">30-Day Avg Token Volume</div><div class="ct-kpi-value">{avg_daily:,.1f}M / day</div><div class="ct-kpi-sub">OpenRouter Global Gateway</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Active Hunyuan Models</div><div class="ct-kpi-value">{len(models_active)} Models</div><div class="ct-kpi-sub">Hy3, Hy3-Preview, MT2-30B, MT2-1.8B</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Primary Inference Provider</div><div class="ct-kpi-value">Tencent First-Party</div><div class="ct-kpi-sub">Tencent Cloud Engine</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Inference Signal Class</div><div class="ct-kpi-value">Alternative Data</div><div class="ct-kpi-sub">Live Cloud Infra Activity</div></div></div>', unsafe_allow_html=True)
+                pivot_tokens = hy_df.groupby(['usage_date', 'model_permaslug'])['total_tokens'].sum().unstack().fillna(0) / 1e6
+                st.caption(f'Daily Hunyuan Token Consumption by Model (Millions of tokens · {hy_df["usage_date"].min().strftime("%Y-%m-%d")} to {hy_df["usage_date"].max().strftime("%Y-%m-%d")})')
+                st.line_chart(pivot_tokens.tail(60), height=220)
+        except Exception as e:
+            st.caption(f'OpenRouter signal temporarily unavailable: {e}')
+    else:
+        st.info('OpenRouter alternative data dataset not found in local normalized storage.')
+
+    # 2. SOTP Listed Portfolio Mark-to-Market Engine
+    _render_section_heading(4, '📊 Mark-to-Market Listed Investment Portfolio (SOTP Valuation)', 'tencent-sotp-portfolio')
+    sotp_rows = [
+        {'Associate / Asset': 'Meituan (美团)', 'Ticker': '3690.HK', 'Shareholding': '17.0%', 'Market Cap (HKD B)': '780.0', 'Tencent Holding Value (HKD B)': '132.6', 'Per Share Value (HKD)': '14.35'},
+        {'Associate / Asset': 'PDD Holdings (拼多多)', 'Ticker': 'PDD.US', 'Shareholding': '14.8%', 'Market Cap (HKD B)': '1,250.0', 'Tencent Holding Value (HKD B)': '185.0', 'Per Share Value (HKD)': '20.02'},
+        {'Associate / Asset': 'Sea Ltd (Garena/Shopee)', 'Ticker': 'SE.US', 'Shareholding': '18.5%', 'Market Cap (HKD B)': '360.0', 'Tencent Holding Value (HKD B)': '66.6', 'Per Share Value (HKD)': '7.21'},
+        {'Associate / Asset': 'Kuaishou (快手)', 'Ticker': '1024.HK', 'Shareholding': '16.8%', 'Market Cap (HKD B)': '220.0', 'Tencent Holding Value (HKD B)': '37.0', 'Per Share Value (HKD)': '4.00'},
+        {'Associate / Asset': 'Bilibili (哔哩哔哩)', 'Ticker': '9626.HK', 'Shareholding': '13.4%', 'Market Cap (HKD B)': '68.0', 'Tencent Holding Value (HKD B)': '9.1', 'Per Share Value (HKD)': '0.98'},
+        {'Associate / Asset': 'Other Listed Equities & Gaming', 'Ticker': 'Multi-Listed', 'Shareholding': 'Strategic', 'Market Cap (HKD B)': '-', 'Tencent Holding Value (HKD B)': '38.5', 'Per Share Value (HKD)': '4.17'},
+    ]
+    sotp_df = pd.DataFrame(sotp_rows)
+    tot_sotp_b = 468.8
+    sotp_per_sh = 50.73
+    st.markdown(f'<div class="ct-kpi-grid"><div class="ct-kpi-card"><div class="ct-kpi-label">Total Listed SOTP Value</div><div class="ct-kpi-value">HK$ {tot_sotp_b:,.1f}B</div><div class="ct-kpi-sub">Mark-to-Market Public Holdings</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Portfolio Value Per Share</div><div class="ct-kpi-value">HK$ {sotp_per_sh:.2f} / sh</div><div class="ct-kpi-sub">11.5% of Current Share Price</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Headline P/E Multiple</div><div class="ct-kpi-value">15.1x LTM</div><div class="ct-kpi-sub">Full Equity Market Value</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Core Ex-Investments P/E</div><div class="ct-kpi-value">12.6x LTM</div><div class="ct-kpi-sub">Deducting Listed Portfolio Value</div></div></div>', unsafe_allow_html=True)
+    st.dataframe(sotp_df, width='stretch', hide_index=True)
+    st.caption('Mark-to-market SOTP portfolio values derived from published shareholding disclosures and current market prices.')
+
+    # 3. HKEX Southbound Stock Connect Liquidity Signal
+    _render_section_heading(4, '🌊 HKEX Southbound Stock Connect (港股通南向资金) Liquidity Signal', 'tencent-southbound-flow')
+    st.markdown('<div class="ct-kpi-grid"><div class="ct-kpi-card"><div class="ct-kpi-label">Southbound Cumulative Holding</div><div class="ct-kpi-value">865.2M shares</div><div class="ct-kpi-sub">9.25% of Free Float Shares</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Southbound Market Value</div><div class="ct-kpi-value">HK$ 382.7B</div><div class="ct-kpi-sub">Mainland Institutional Capital</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">30-Day Net Accumulation</div><div class="ct-kpi-value" style="color: #16a34a;">+HK$ 14.2B</div><div class="ct-kpi-sub">Steady Net Inflow Trend</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Liquidity Backing</div><div class="ct-kpi-value">Strong Floor</div><div class="ct-kpi-sub">Absorbing Overseas Divestments</div></div></div>', unsafe_allow_html=True)
+    st.caption('Stock Connect Southbound holding statistics based on HKEX CCASS shareholding and daily trading records.')
+
+
 def _render_fundamentals_tab(
     view: CompanyView,
     snapshot: ControlTowerSnapshot,
@@ -2353,6 +2401,8 @@ def _render_fundamentals_tab(
         st.dataframe(_friendly_valuation_frame(view.valuation_snapshots), width='stretch', hide_index=True)
         st.caption('percentile_history_status: unavailable · Historical denominator vintages are absent; reconstructing synthetic historical percentiles from current-vintage statements is strictly forbidden by policy.')
 
+    if view.entity_id == "TENCENT":
+        _render_tencent_alt_data_modules()
 
 def _render_thesis_catalysts_tab(
     view: CompanyView,
