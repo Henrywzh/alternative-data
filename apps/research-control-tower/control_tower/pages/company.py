@@ -1853,6 +1853,230 @@ def _render_styled_bullet_card(line: str) -> None:
     card_html = f'<div class="ct-change" style="padding: 0.6rem 0.85rem; background: var(--ct-surface); border-radius: 9px; margin-bottom: 0.5rem; border: 1px solid var(--ct-border);"><div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.25rem;"><span class="ct-badge" style="{badge_style}; padding: 0.12rem 0.45rem; font-size: 0.72rem; font-weight: 750;">{icon} {escape(label)}</span></div><div style="font-size: 0.86rem; line-height: 1.45; color: var(--ct-ink);">{escape(clean_line)}{source_link_html}</div></div>'
     st.markdown(card_html, unsafe_allow_html=True)
 
+def _render_company_hero_card(
+    view: CompanyView,
+    snapshot: ControlTowerSnapshot,
+    viewer_timezone: str,
+) -> None:
+    ticker = ''
+    exchange = ''
+    currency = ''
+    if view.selected_listing_id and not view.listings.empty:
+        selected = view.listings.loc[
+            view.listings['listing_id'].astype('string').eq(view.selected_listing_id)
+        ]
+        if not selected.empty:
+            ticker = _text(selected.iloc[0].get('canonical_ticker')) or _text(selected.iloc[0].get('native_ticker'))
+            exchange = _text(selected.iloc[0].get('exchange'))
+            currency = _text(selected.iloc[0].get('currency'))
+
+    price_html = ''
+    if not view.quote_snapshots.empty and view.entity_type != 'private':
+        qrow = view.quote_snapshots.iloc[0]
+        last_price = qrow.get('last_price')
+        qccy = _text(qrow.get('currency')) or currency or 'HKD'
+        price_val_str = f'{qccy} {last_price:,.2f}'.strip() if pd.notna(last_price) else ''
+        day_change = qrow.get('day_change_pct')
+        if pd.notna(day_change) and isinstance(day_change, (int, float)):
+            change_class = 'ct-hero-change--up' if day_change >= 0 else 'ct-hero-change--down'
+            change_str = f'{day_change:+.2f}%'
+        else:
+            change_class = ''
+            change_str = ''
+        qtime = qrow.get('quote_timestamp')
+        age_str = format_quote_age(qtime, snapshot.now_utc)
+        freshness = _text(qrow.get('freshness')) or 'delayed'
+        if price_val_str:
+            change_badge = f'<span class="ct-hero-change {change_class}">{escape(change_str)}</span>' if change_str else ''
+            price_html = f'<div class="ct-hero-price-box"><div class="ct-hero-price">{escape(price_val_str)}</div>{change_badge}<div class="ct-subtle" style="font-size: 0.76rem; margin-left: 0.2rem;">{escape(freshness)} ({escape(age_str)})</div></div>'
+
+    actuals = _company_earnings_actuals(snapshot, view)
+    ltm_rev_str = 'Unavailable'
+    ltm_profit_str = 'Unavailable'
+    ltm_fcf_str = 'Unavailable'
+    buyback_str = 'Unavailable'
+    if not actuals.empty:
+        actuals_copy = actuals.copy()
+        actuals_copy['period_end'] = pd.to_datetime(actuals_copy['period_end'], errors='coerce')
+        periods = actuals_copy.dropna(subset=['period_end']).sort_values('period_end')
+        unique_periods = periods['period_label'].drop_duplicates().tail(4).tolist()
+        rev_rows = actuals_copy[(actuals_copy['period_label'].isin(unique_periods)) & (actuals_copy['metric'] == 'revenue_total') & (actuals_copy['accounting_basis'] == 'IFRS')]
+        if len(rev_rows) >= 1:
+            tot_rev = rev_rows['reported_value'].sum()
+            ltm_rev_str = f'¥{tot_rev/1e9:,.1f}B' if tot_rev >= 1e9 else f'¥{tot_rev:,.0f}'
+        profit_rows = actuals_copy[(actuals_copy['period_label'].isin(unique_periods)) & (actuals_copy['metric'] == 'net_profit_attributable') & (actuals_copy['accounting_basis'] == 'Non-IFRS management measure')]
+        if len(profit_rows) >= 1:
+            tot_profit = profit_rows['reported_value'].sum()
+            ltm_profit_str = f'¥{tot_profit/1e9:,.1f}B' if tot_profit >= 1e9 else f'¥{tot_profit:,.0f}'
+        fcf_rows = actuals_copy[(actuals_copy['metric'] == 'free_cash_flow') & (actuals_copy['accounting_basis'] == 'Non-IFRS management measure')].sort_values('period_end', ascending=False)
+        if not fcf_rows.empty and pd.notna(fcf_rows.iloc[0].get('reported_value')):
+            fcf_val = float(fcf_rows.iloc[0]['reported_value'])
+            ltm_fcf_str = f'¥{fcf_val/1e9:,.1f}B' if abs(fcf_val) >= 1e9 else f'¥{fcf_val:,.0f}'
+
+    if not view.corporate_actions.empty:
+        tot_bb = view.corporate_actions['total_amount_paid'].dropna().sum()
+        if tot_bb > 0:
+            buyback_str = f'HK$ {tot_bb/1e9:,.1f}B YTD'
+
+    ticker_badge = f'<span class="ct-hero-ticker">{escape(ticker)}</span>' if ticker else ''
+    exchange_badge = f'<span class="ct-badge">{escape(exchange)} · Primary</span>' if exchange else ''
+    sector_badge = f'<span class="ct-badge">{escape(view.sector)}</span>' if view.sector else ''
+    industry_badge = f'<span class="ct-badge">{escape(view.industry)}</span>' if view.industry else ''
+    hero_html = f'<div class="ct-hero-card"><div class="ct-hero-top"><div><div class="ct-hero-title">{escape(view.display_name)} {ticker_badge} {exchange_badge}</div><div class="ct-subtle" style="margin-top: 0.25rem;">{escape(view.legal_name)} · {escape(view.country)} {sector_badge} {industry_badge}</div></div>{price_html}</div><div class="ct-kpi-grid"><div class="ct-kpi-card"><div class="ct-kpi-label">LTM Revenue</div><div class="ct-kpi-value">{escape(ltm_rev_str)}</div><div class="ct-kpi-sub">Total Topline (IFRS)</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">LTM Non-IFRS Net Profit</div><div class="ct-kpi-value">{escape(ltm_profit_str)}</div><div class="ct-kpi-sub">Core Operating Earnings</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Free Cash Flow</div><div class="ct-kpi-value">{escape(ltm_fcf_str)}</div><div class="ct-kpi-sub">Latest Reported Period</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Capital Return / Buybacks</div><div class="ct-kpi-value">{escape(buyback_str)}</div><div class="ct-kpi-sub">HK$100B Plan Execution</div></div></div></div>'
+    st.markdown(hero_html, unsafe_allow_html=True)
+
+
+def _render_styled_bullet_card(line: str) -> None:
+    if line.startswith("Latest fundamentals ·"):
+        icon = "📊"
+        label = "Fundamentals"
+        badge_style = "color: var(--ct-accent); border-color: var(--ct-accent);"
+    elif line.startswith("Recent corporate action ·"):
+        icon = "🏛️"
+        label = "Capital Return"
+        badge_style = "color: var(--ct-hard); border-color: var(--ct-hard);"
+    elif line.startswith("Expectation context ·"):
+        icon = "🎯"
+        label = "Consensus"
+        badge_style = "color: var(--ct-provisional); border-color: var(--ct-provisional);"
+    elif line.startswith("Active catalyst ·"):
+        icon = "⚡"
+        label = "Catalyst"
+        badge_style = "color: var(--ct-thesis); border-color: var(--ct-thesis);"
+    elif line.startswith("Thesis registry ·"):
+        icon = "💡"
+        label = "Thesis"
+        badge_style = "color: var(--ct-accent); border-color: var(--ct-accent);"
+    elif line.startswith("Evidence lineage ·"):
+        icon = "🔍"
+        label = "Evidence Lineage"
+        badge_style = "color: var(--ct-observed); border-color: var(--ct-observed);"
+    else:
+        icon = "ℹ️"
+        label = "Fact"
+        badge_style = "color: var(--ct-muted); border-color: var(--ct-border);"
+    clean_line = line
+    source_link_html = ""
+    url_match = re.search(r'https?://[^\s]+', line)
+    if url_match:
+        url = url_match.group(0)
+        clean_line = line.replace(url, "").strip(" ·").strip()
+        source_link_html = f' · <a class="ct-inline-link" href="{escape(url)}" target="_blank" rel="noopener">Official Source ↗</a>'
+    card_html = f'<div class="ct-change" style="padding: 0.6rem 0.85rem; background: var(--ct-surface); border-radius: 9px; margin-bottom: 0.5rem; border: 1px solid var(--ct-border);"><div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.25rem;"><span class="ct-badge" style="{badge_style}; padding: 0.12rem 0.45rem; font-size: 0.72rem; font-weight: 750;">{icon} {escape(label)}</span></div><div style="font-size: 0.86rem; line-height: 1.45; color: var(--ct-ink);">{escape(clean_line)}{source_link_html}</div></div>'
+    st.markdown(card_html, unsafe_allow_html=True)
+
+def _render_company_hero_card(
+    view: CompanyView,
+    snapshot: ControlTowerSnapshot,
+    viewer_timezone: str,
+) -> None:
+    ticker = ''
+    exchange = ''
+    currency = ''
+    if view.selected_listing_id and not view.listings.empty:
+        selected = view.listings.loc[
+            view.listings['listing_id'].astype('string').eq(view.selected_listing_id)
+        ]
+        if not selected.empty:
+            ticker = _text(selected.iloc[0].get('canonical_ticker')) or _text(selected.iloc[0].get('native_ticker'))
+            exchange = _text(selected.iloc[0].get('exchange'))
+            currency = _text(selected.iloc[0].get('currency'))
+
+    price_html = ''
+    if not view.quote_snapshots.empty and view.entity_type != 'private':
+        qrow = view.quote_snapshots.iloc[0]
+        last_price = qrow.get('last_price')
+        qccy = _text(qrow.get('currency')) or currency or 'HKD'
+        price_val_str = f'{qccy} {last_price:,.2f}'.strip() if pd.notna(last_price) else ''
+        day_change = qrow.get('day_change_pct')
+        if pd.notna(day_change) and isinstance(day_change, (int, float)):
+            change_class = 'ct-hero-change--up' if day_change >= 0 else 'ct-hero-change--down'
+            change_str = f'{day_change:+.2f}%'
+        else:
+            change_class = ''
+            change_str = ''
+        qtime = qrow.get('quote_timestamp')
+        age_str = format_quote_age(qtime, snapshot.now_utc)
+        freshness = _text(qrow.get('freshness')) or 'delayed'
+        if price_val_str:
+            change_badge = f'<span class="ct-hero-change {change_class}">{escape(change_str)}</span>' if change_str else ''
+            price_html = f'<div class="ct-hero-price-box"><div class="ct-hero-price">{escape(price_val_str)}</div>{change_badge}<div class="ct-subtle" style="font-size: 0.76rem; margin-left: 0.2rem;">{escape(freshness)} ({escape(age_str)})</div></div>'
+
+    actuals = _company_earnings_actuals(snapshot, view)
+    ltm_rev_str = 'Unavailable'
+    ltm_profit_str = 'Unavailable'
+    ltm_fcf_str = 'Unavailable'
+    buyback_str = 'Unavailable'
+    if not actuals.empty:
+        actuals_copy = actuals.copy()
+        actuals_copy['period_end'] = pd.to_datetime(actuals_copy['period_end'], errors='coerce')
+        periods = actuals_copy.dropna(subset=['period_end']).sort_values('period_end')
+        unique_periods = periods['period_label'].drop_duplicates().tail(4).tolist()
+        rev_rows = actuals_copy[(actuals_copy['period_label'].isin(unique_periods)) & (actuals_copy['metric'] == 'revenue_total') & (actuals_copy['accounting_basis'] == 'IFRS')]
+        if len(rev_rows) >= 1:
+            tot_rev = rev_rows['reported_value'].sum()
+            ltm_rev_str = f'¥{tot_rev/1e9:,.1f}B' if tot_rev >= 1e9 else f'¥{tot_rev:,.0f}'
+        profit_rows = actuals_copy[(actuals_copy['period_label'].isin(unique_periods)) & (actuals_copy['metric'] == 'net_profit_attributable') & (actuals_copy['accounting_basis'] == 'Non-IFRS management measure')]
+        if len(profit_rows) >= 1:
+            tot_profit = profit_rows['reported_value'].sum()
+            ltm_profit_str = f'¥{tot_profit/1e9:,.1f}B' if tot_profit >= 1e9 else f'¥{tot_profit:,.0f}'
+        fcf_rows = actuals_copy[(actuals_copy['metric'] == 'free_cash_flow') & (actuals_copy['accounting_basis'] == 'Non-IFRS management measure')].sort_values('period_end', ascending=False)
+        if not fcf_rows.empty and pd.notna(fcf_rows.iloc[0].get('reported_value')):
+            fcf_val = float(fcf_rows.iloc[0]['reported_value'])
+            ltm_fcf_str = f'¥{fcf_val/1e9:,.1f}B' if abs(fcf_val) >= 1e9 else f'¥{fcf_val:,.0f}'
+
+    if not view.corporate_actions.empty:
+        tot_bb = view.corporate_actions['total_amount_paid'].dropna().sum()
+        if tot_bb > 0:
+            buyback_str = f'HK$ {tot_bb/1e9:,.1f}B YTD'
+
+    ticker_badge = f'<span class="ct-hero-ticker">{escape(ticker)}</span>' if ticker else ''
+    exchange_badge = f'<span class="ct-badge">{escape(exchange)} · Primary</span>' if exchange else ''
+    sector_badge = f'<span class="ct-badge">{escape(view.sector)}</span>' if view.sector else ''
+    industry_badge = f'<span class="ct-badge">{escape(view.industry)}</span>' if view.industry else ''
+    hero_html = f'<div class="ct-hero-card"><div class="ct-hero-top"><div><div class="ct-hero-title">{escape(view.display_name)} {ticker_badge} {exchange_badge}</div><div class="ct-subtle" style="margin-top: 0.25rem;">{escape(view.legal_name)} · {escape(view.country)} {sector_badge} {industry_badge}</div></div>{price_html}</div><div class="ct-kpi-grid"><div class="ct-kpi-card"><div class="ct-kpi-label">LTM Revenue</div><div class="ct-kpi-value">{escape(ltm_rev_str)}</div><div class="ct-kpi-sub">Total Topline (IFRS)</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">LTM Non-IFRS Net Profit</div><div class="ct-kpi-value">{escape(ltm_profit_str)}</div><div class="ct-kpi-sub">Core Operating Earnings</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Free Cash Flow</div><div class="ct-kpi-value">{escape(ltm_fcf_str)}</div><div class="ct-kpi-sub">Latest Reported Period</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Capital Return / Buybacks</div><div class="ct-kpi-value">{escape(buyback_str)}</div><div class="ct-kpi-sub">HK$100B Plan Execution</div></div></div></div>'
+    st.markdown(hero_html, unsafe_allow_html=True)
+
+
+def _render_styled_bullet_card(line: str) -> None:
+    if line.startswith("Latest fundamentals ·"):
+        icon = "📊"
+        label = "Fundamentals"
+        badge_style = "color: var(--ct-accent); border-color: var(--ct-accent);"
+    elif line.startswith("Recent corporate action ·"):
+        icon = "🏛️"
+        label = "Capital Return"
+        badge_style = "color: var(--ct-hard); border-color: var(--ct-hard);"
+    elif line.startswith("Expectation context ·"):
+        icon = "🎯"
+        label = "Consensus"
+        badge_style = "color: var(--ct-provisional); border-color: var(--ct-provisional);"
+    elif line.startswith("Active catalyst ·"):
+        icon = "⚡"
+        label = "Catalyst"
+        badge_style = "color: var(--ct-thesis); border-color: var(--ct-thesis);"
+    elif line.startswith("Thesis registry ·"):
+        icon = "💡"
+        label = "Thesis"
+        badge_style = "color: var(--ct-accent); border-color: var(--ct-accent);"
+    elif line.startswith("Evidence lineage ·"):
+        icon = "🔍"
+        label = "Evidence Lineage"
+        badge_style = "color: var(--ct-observed); border-color: var(--ct-observed);"
+    else:
+        icon = "ℹ️"
+        label = "Fact"
+        badge_style = "color: var(--ct-muted); border-color: var(--ct-border);"
+    clean_line = line
+    source_link_html = ""
+    url_match = re.search(r'https?://[^\s]+', line)
+    if url_match:
+        url = url_match.group(0)
+        clean_line = line.replace(url, "").strip(" ·").strip()
+        source_link_html = f' · <a class="ct-inline-link" href="{escape(url)}" target="_blank" rel="noopener">Official Source ↗</a>'
+    card_html = f'<div class="ct-change" style="padding: 0.6rem 0.85rem; background: var(--ct-surface); border-radius: 9px; margin-bottom: 0.5rem; border: 1px solid var(--ct-border);"><div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.25rem;"><span class="ct-badge" style="{badge_style}; padding: 0.12rem 0.45rem; font-size: 0.72rem; font-weight: 750;">{icon} {escape(label)}</span></div><div style="font-size: 0.86rem; line-height: 1.45; color: var(--ct-ink);">{escape(clean_line)}{source_link_html}</div></div>'
+    st.markdown(card_html, unsafe_allow_html=True)
+
 def _render_answer_first_summary(
     view: CompanyView,
     snapshot: ControlTowerSnapshot,
@@ -2060,8 +2284,9 @@ def _render_fundamentals_tab(
         act_dt = frame.copy()
         act_dt['period_end'] = pd.to_datetime(act_dt['period_end'], errors='coerce')
         act_dt = act_dt.dropna(subset=['period_end']).sort_values('period_end')
-        piv_chart = act_dt[act_dt['accounting_basis'] == 'IFRS'].pivot_table(index='period_label', columns='metric', values='reported_value', aggfunc='first') / 1e9
-        period_order = act_dt[['period_label', 'period_end']].drop_duplicates().sort_values('period_end')['period_label'].tolist()
+        act_dt['quarter_label'] = act_dt['period_end'].dt.year.astype(str) + 'Q' + act_dt['period_end'].dt.quarter.astype(str)
+        piv_chart = act_dt[act_dt['accounting_basis'] == 'IFRS'].pivot_table(index='quarter_label', columns='metric', values='reported_value', aggfunc='first') / 1e9
+        period_order = act_dt[['quarter_label', 'period_end']].drop_duplicates().sort_values('period_end')['quarter_label'].tolist()
         piv_chart = piv_chart.reindex(period_order)
         if 'revenue_total' in piv_chart.columns:
             piv_chart = piv_chart.dropna(subset=['revenue_total'])
@@ -2077,6 +2302,11 @@ def _render_fundamentals_tab(
             if 'revenue_fintech_business_services' in piv_chart.columns:
                 seg_chart_df['Fintech & Enterprise Cloud'] = piv_chart['revenue_fintech_business_services']
             st.area_chart(seg_chart_df, height=260)
+            rev_growth_df = pd.DataFrame(index=piv_chart.index)
+            rev_growth_df['Total Revenue (RMB B)'] = piv_chart['revenue_total']
+            rev_growth_df['YoY Growth (%)'] = piv_chart['revenue_total'].pct_change(4) * 100
+            st.caption('Quarterly Topline & YoY Growth (%) Trajectory (2021Q1 → 2026Q2)')
+            st.line_chart(rev_growth_df, height=220)
         metrics = frame.get('metric', pd.Series('', index=frame.index, dtype='string')).astype('string')
         has_segments = metrics.str.startswith('revenue_') & ~metrics.eq('revenue_total')
         if has_segments.any():
@@ -2192,7 +2422,37 @@ def _render_evidence_tab(
     snapshot: ControlTowerSnapshot,
     viewer_timezone: str,
 ) -> None:
-    render_official_filings(snapshot, entity_id=view.entity_id, listing_id=view.selected_listing_id, viewer_timezone=viewer_timezone)
+    _render_section_heading(4, 'Provider-specific consensus', f'provider-consensus-{_slugify(view.entity_id)}')
+    if view.consensus.empty:
+        st.warning(f'Consensus unavailable · {view.consensus_status} · provider rows are not blended.')
+    else:
+        c_eps = view.consensus[view.consensus['metric'] == 'eps']
+        c_rev = view.consensus[view.consensus['metric'] == 'revenue']
+        if not c_eps.empty or not c_rev.empty:
+            cols = st.columns(3)
+            if not c_eps.empty:
+                eps_val = c_eps.iloc[0]['value']
+                eps_ccy = _text(c_eps.iloc[0].get('currency')) or 'HKD'
+                eps_n = c_eps.iloc[0].get('analyst_count', '')
+                cols[0].metric('Consensus EPS', f'{eps_ccy} {float(eps_val):.2f}' if pd.notna(eps_val) else 'Unavailable', f'{eps_n} analysts' if eps_n else '')
+            if not c_rev.empty:
+                rev_val = c_rev.iloc[0]['value']
+                rev_ccy = _text(c_rev.iloc[0].get('currency')) or 'HKD'
+                rev_n = c_rev.iloc[0].get('analyst_count', '')
+                cols[1].metric('Consensus Revenue', f'{rev_ccy} {float(rev_val)/1e9:.1f}B' if pd.notna(rev_val) and float(rev_val) >= 1e9 else f'{rev_ccy} {float(rev_val):,.0f}', f'{rev_n} analysts' if rev_n else '')
+            cols[2].metric('Provider Source', 'yfinance', 'Mean Consensus')
+        st.dataframe(_friendly_consensus_frame(view.consensus, viewer_timezone), width='stretch', hide_index=True)
+    _render_section_heading(4, 'Consensus revisions', f'consensus-revisions-{_slugify(view.entity_id)}')
+    if view.consensus_revisions.empty:
+        st.info('Consensus revision history unavailable; no 0/0 breadth is shown.')
+    else:
+        rev_chart_data = view.consensus_revisions.dropna(subset=['revision_pct']).copy()
+        if not rev_chart_data.empty:
+            rev_chart_data['Revision (%)'] = rev_chart_data['revision_pct']
+            rev_chart_data['Label'] = rev_chart_data['metric'].astype('string') + ' (' + rev_chart_data['fiscal_period'].astype('string') + ')'
+            st.caption('Consensus Revisions & Trajectory (% change over lookback window)')
+            st.bar_chart(rev_chart_data.set_index('Label')[['Revision (%)']], height=200)
+        st.dataframe(_friendly_revision_frame(view.consensus_revisions, viewer_timezone), width='stretch', hide_index=True)
     if not view.corporate_actions.empty:
         ca_df = view.corporate_actions.copy()
         ca_df['date'] = pd.to_datetime(ca_df['filing_date'], errors='coerce').dt.date
@@ -2202,21 +2462,12 @@ def _render_evidence_tab(
             chart_ca = ca_df.set_index('date')[['Daily Repurchase (HK$ Millions)']]
             st.caption(f'123-Day Statutory Repurchase Intensity (HK$ Millions per trading day · {ca_df["date"].min()} to {ca_df["date"].max()})')
             st.bar_chart(chart_ca, height=220)
+    render_official_filings(snapshot, entity_id=view.entity_id, listing_id=view.selected_listing_id, viewer_timezone=viewer_timezone)
     _render_section_heading(4, 'News and filing metadata', f'news-filing-metadata-{_slugify(view.entity_id)}')
     if view.official_documents.empty:
         st.warning('No registry-linked generic news/filing metadata rows are available for the selected company/listing; official filing metadata is rendered separately above and document bodies are not displayed.')
     else:
         st.dataframe(_friendly_document_frame(view.official_documents, viewer_timezone), width='stretch', hide_index=True)
-    _render_section_heading(4, 'Provider-specific consensus', f'provider-consensus-{_slugify(view.entity_id)}')
-    if view.consensus.empty:
-        st.warning(f'Consensus unavailable · {view.consensus_status} · provider rows are not blended.')
-    else:
-        st.dataframe(_friendly_consensus_frame(view.consensus, viewer_timezone), width='stretch', hide_index=True)
-    _render_section_heading(4, 'Consensus revisions', f'consensus-revisions-{_slugify(view.entity_id)}')
-    if view.consensus_revisions.empty:
-        st.info('Consensus revision history unavailable; no 0/0 breadth is shown.')
-    else:
-        st.dataframe(_friendly_revision_frame(view.consensus_revisions, viewer_timezone), width='stretch', hide_index=True)
     _render_section_heading(4, 'Internal estimates & management guidance', f'internal-estimates-{_slugify(view.entity_id)}')
     if view.internal_estimates.empty:
         st.info('No internal estimates or management guidance registered for this entity.')
