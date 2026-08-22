@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
 
 from provider_adoption_data.models import DatasetRecord, Snapshot
 
@@ -146,6 +148,30 @@ PARTITION_COLUMNS: dict[str, str] = {
 }
 _UNPARTITIONED = "__unpartitioned__"
 
+# Partition files are only worth splitting if an unchanged partition keeps its
+# exact bytes: git stores a rewritten-but-identical parquet as a brand new
+# blob, which would put the whole 36 MB-a-night problem back.  Pandas dtypes
+# are not stable across a parquet round-trip -- a bool column written from
+# ``_coerce_types``' object dtype reads back as bool, and an all-present int
+# column reads back as int64 where the concatenated frame held float64 -- so
+# the same values would serialize to different bytes on consecutive runs.
+# Pinning the Arrow schema removes that degree of freedom: bytes depend on
+# values alone.
+def _partition_arrow_schema() -> pa.Schema:
+    fields = []
+    for column in DATASET_COLUMNS:
+        if column in BOOL_COLUMNS:
+            arrow_type: pa.DataType = pa.bool_()
+        elif column in NUMERIC_COLUMNS:
+            arrow_type = pa.float64()
+        else:
+            arrow_type = pa.string()
+        fields.append((column, arrow_type))
+    return pa.schema(fields)
+
+
+PARTITION_ARROW_SCHEMA = _partition_arrow_schema()
+
 
 class StorageManager:
     def __init__(self, base_dir: Path) -> None:
@@ -269,13 +295,13 @@ class StorageManager:
         for name, group in merged.groupby(names, sort=True):
             path = directory / f"{name}.parquet"
             frame = group[DATASET_COLUMNS].reset_index(drop=True)
-            if path.exists():
-                try:
-                    if pd.read_parquet(path).equals(frame):
-                        continue
-                except Exception:
-                    pass  # unreadable partition: fall through and rewrite it
-            frame.to_parquet(path, index=False)
+            payload = self._serialize_partition(frame)
+            # Compare the bytes we are about to write, not the frames: a frame
+            # comparison answers "are these equal in pandas", while the only
+            # question that matters here is "would this create a new blob".
+            if path.exists() and path.read_bytes() == payload:
+                continue
+            path.write_bytes(payload)
             written.append(path)
 
         # A partition whose rows all disappeared must not linger as a ghost
@@ -285,6 +311,24 @@ class StorageManager:
             if stale.name not in keep:
                 stale.unlink()
         return written
+
+    @staticmethod
+    def _serialize_partition(frame: pd.DataFrame) -> bytes:
+        """Serialize one partition to parquet bytes under the pinned schema."""
+
+        table = pa.Table.from_pandas(
+            frame[DATASET_COLUMNS], schema=PARTITION_ARROW_SCHEMA, preserve_index=False
+        )
+        # ``from_pandas`` records the source frame's dtypes in the schema's
+        # pandas metadata. That JSON travels into the file, so a partition
+        # whose values never changed still serializes to different bytes when
+        # the in-memory dtype differed -- object-vs-bool after a round trip is
+        # enough. Dropping the metadata leaves the bytes a function of the
+        # values and the pinned schema, which is the whole point.
+        table = table.replace_schema_metadata(None)
+        sink = pa.BufferOutputStream()
+        pq.write_table(table, sink)
+        return sink.getvalue().to_pybytes()
 
     @staticmethod
     def _coerce_types(dataframe: pd.DataFrame) -> pd.DataFrame:
