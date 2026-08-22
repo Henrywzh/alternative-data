@@ -35,7 +35,11 @@ CONSENSUS_REQUIRED_DATASET = "shkp_margin_consensus_required"
 CATALYST_DATASET = "shkp_margin_catalyst_map"
 
 SHARES_MILLION = 2896.0
+# The 29.6% consensus-implied margin is derived from FY2027 broker EPS less
+# non-residential run-rates.  It describes one year, so everything compared
+# against it must be that same year -- see CONSENSUS_FISCAL_YEAR below.
 CONSENSUS_IMPLIED_MARGIN = 0.296
+CONSENSUS_FISCAL_YEAR = 2027
 
 
 # Material project groups for FY2027 recognition (revenue weight >= ~1%).
@@ -52,11 +56,24 @@ _GROUP_RULES = [
 ]
 
 
-def build_shkp_margin_group_sensitivity(project_model: pd.DataFrame) -> pd.DataFrame:
-    """Group projects, compute weights, margins and 1pp EPS sensitivity."""
+def build_shkp_margin_group_sensitivity(
+    project_model: pd.DataFrame,
+    target_fiscal_year: int = CONSENSUS_FISCAL_YEAR,
+) -> pd.DataFrame:
+    """Group one fiscal year's projects into weights, margins and 1pp EPS sensitivity.
+
+    ``shkp_project_margin_model`` holds both FY2026 and FY2027 rows, so pooling
+    it unfiltered blends two years of recognised revenue into one weight base
+    and then compares it against a single-year consensus margin.  The year is
+    therefore explicit and carried on the output.
+    """
     if project_model is None or project_model.empty:
         return pd.DataFrame()
     frame = project_model.copy()
+    if "fiscal_year" in frame.columns:
+        frame = frame[frame["fiscal_year"].astype(int).eq(int(target_fiscal_year))].copy()
+    if frame.empty:
+        return pd.DataFrame()
     # Cullinan Sky phase split: phase 2 (ASP 22m) is high, phase 1 (ASP 13m)
     # is mid - keep them separate as Cullinan Sky 2 / Cullinan Sky 1.
     def _group_name(row: pd.Series) -> str:
@@ -79,13 +96,21 @@ def build_shkp_margin_group_sensitivity(project_model: pd.DataFrame) -> pd.DataF
         return "Other"
 
     frame["group"] = frame.apply(_group_name, axis=1)
+    # Revenue-weighted, not a plain phase mean: the caveat below has always
+    # described it that way, and an unweighted mean lets a small phase move a
+    # group's margin as much as a large one -- so the group margins would not
+    # aggregate back to the portfolio margin they are compared against.
+    def _weighted(column: str) -> pd.Series:
+        weighted = frame["recognised_revenue_hkd"] * frame[column]
+        return weighted.groupby(frame["group"]).sum() / frame.groupby("group")["recognised_revenue_hkd"].sum()
+
     grouped = frame.groupby("group").agg(
         recognised_revenue_hkd=("recognised_revenue_hkd", "sum"),
         n_phases=("phase_name", "count"),
-        margin_point=("margin_point", "mean"),
-        margin_low=("margin_low", "mean"),
-        margin_high=("margin_high", "mean"),
     ).reset_index()
+    for column in ("margin_point", "margin_low", "margin_high"):
+        grouped[column] = grouped["group"].map(_weighted(column))
+    grouped.insert(0, "fiscal_year", int(target_fiscal_year))
     total = float(grouped["recognised_revenue_hkd"].sum())
     grouped["revenue_weight_pct"] = grouped["recognised_revenue_hkd"] / total * 100.0
     grouped["eps_per_1pp_margin"] = grouped["recognised_revenue_hkd"] * 0.01 / (SHARES_MILLION * 1e6)
@@ -108,6 +133,16 @@ def build_shkp_margin_consensus_required(group_sensitivity: pd.DataFrame) -> pd.
     if group_sensitivity is None or group_sensitivity.empty:
         return pd.DataFrame()
     frame = group_sensitivity.copy()
+    # CONSENSUS_IMPLIED_MARGIN describes one fiscal year.  Comparing it against
+    # groups built for another year (or a blend of years) silently yields a
+    # required-margin delta with the wrong magnitude and, when the two years
+    # straddle consensus, the wrong sign.
+    years = {int(year) for year in frame.get("fiscal_year", pd.Series(dtype=int)).dropna().unique()}
+    if years and years != {CONSENSUS_FISCAL_YEAR}:
+        raise ValueError(
+            f"consensus-required margin is defined for FY{CONSENSUS_FISCAL_YEAR} only, "
+            f"but the group sensitivity covers {sorted(years)}"
+        )
     model_weighted = float((frame["recognised_revenue_hkd"] * frame["margin_point"]).sum() / frame["recognised_revenue_hkd"].sum())
     delta_total = CONSENSUS_IMPLIED_MARGIN - model_weighted
     rows: list[dict[str, Any]] = []
