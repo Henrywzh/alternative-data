@@ -47,6 +47,11 @@ _ENTRY_COST_ANCHORS: dict[str, tuple[list[float], list[float]]] = {
     "connect": ([-300.0, -10.0, 60.0, 160.0, 500.0], [100.0, 75.0, 50.0, 25.0, 0.0]),
     "quota": ([-500.0, 0.0, 150.0, 400.0, 1200.0], [100.0, 75.0, 50.0, 25.0, 0.0]),
 }
+# QDII wrappers live in the same quota-constrained premium regime, so they
+# score on the same curve. The alias is spelled out rather than duplicated so
+# the fact that the two are currently identical stays visible: if QDII ever
+# earns its own curve, this line is where it stops being an alias.
+_ENTRY_COST_ANCHORS["qdii"] = _ENTRY_COST_ANCHORS["quota"]
 
 # The status bands are the anchors above read as percentages of premium, so a
 # score and its label can never disagree.
@@ -54,7 +59,22 @@ _ENTRY_STATUS_BANDS: dict[str, tuple[float, float, float]] = {
     "domestic": (-0.1, 0.2, 1.0),
     "connect": (-0.1, 0.5, 1.5),
     "quota": (0.0, 1.5, 4.0),
+    # QDII wrappers: NAV lag and FX make small premiums normal. These bands are
+    # currently the quota bands exactly -- stated as its own entry so the two
+    # can diverge, not because they differ today.
+    "qdii": (0.0, 1.5, 4.0),
 }
+
+# Every regime that can produce a status must also be able to produce a score.
+# The two tables drifted apart once already: "qdii" was added to the bands and
+# not to the anchors, which left every QDII wrapper with a NaN buy_score and
+# rank 99 -- the sentinel that means "no quote", so the rows claimed to be
+# unmeasured while entry_status showed they had been measured.
+assert set(_ENTRY_STATUS_BANDS) == set(_ENTRY_COST_ANCHORS), (
+    "premium regimes must appear in both _ENTRY_STATUS_BANDS and "
+    f"_ENTRY_COST_ANCHORS; got {sorted(_ENTRY_STATUS_BANDS)} vs "
+    f"{sorted(_ENTRY_COST_ANCHORS)}"
+)
 
 
 def premium_regime(frame: pd.DataFrame) -> pd.Series:
@@ -238,9 +258,13 @@ def rank_wrappers(frame: pd.DataFrame, *, group_col: str = "exposure_id") -> pd.
         if pd.isna(p):
             return "UNAVAILABLE"
         p = float(p)
-        attractive, fair, expensive = _ENTRY_STATUS_BANDS[
-            str(row.get("premium_regime") or "domestic")
-        ]
+        declared = str(row.get("premium_regime") or "domestic")
+        # An unrecognised regime must not be scored against domestic bands: a
+        # QDII wrapper silently judged on a +/-0.1% band reads as AVOID for a
+        # premium that is ordinary for its regime.
+        if declared not in _ENTRY_STATUS_BANDS:
+            return "UNAVAILABLE"
+        attractive, fair, expensive = _ENTRY_STATUS_BANDS[declared]
         if p <= attractive:
             return "ATTRACTIVE"
         if p <= fair:

@@ -588,6 +588,85 @@ ETF_REGISTRY = (
         "is_cross_border": True,
         "underlying_timezone": "Asia/Hong_Kong",
     },
+    # --- Nikkei 225 (QDII) ---
+    {
+        "exposure_id": "nikkei225",
+        "index_id": "N225",
+        "fund_id": "513520",
+        "ticker": "513520.SH",
+        "fund_name": "华夏野村日经225ETF(QDII)",
+        "venue": "SH",
+        "currency": "CNY",
+        "wrapper_type": "qdii",
+        "management_fee": 0.0020,
+        "custody_fee": 0.0005,
+        "premium_regime": "qdii",
+        "inception_date": "2019-06-25",
+        "aum": None,
+        "is_qdii": True,
+        "is_cross_border": True,
+        "underlying_timezone": "Asia/Tokyo",
+    },
+    {
+        "exposure_id": "nikkei225",
+        "index_id": "N225",
+        "fund_id": "513000",
+        "ticker": "513000.SH",
+        "fund_name": "易方达日兴日经225ETF(QDII)",
+        "venue": "SH",
+        "currency": "CNY",
+        "wrapper_type": "qdii",
+        "management_fee": 0.0020,
+        "custody_fee": 0.0005,
+        "premium_regime": "qdii",
+        "inception_date": "2019-06-25",
+        "aum": None,
+        "is_qdii": True,
+        "is_cross_border": True,
+        "underlying_timezone": "Asia/Tokyo",
+    },
+    # --- CN-KR Semiconductor (QDII) ---
+    {
+        "exposure_id": "kr_semis",
+        "index_id": "931643",
+        "fund_id": "513310",
+        "ticker": "513310.SH",
+        "fund_name": "华泰柏瑞中韩半导体ETF(QDII)",
+        "venue": "SH",
+        "currency": "CNY",
+        "wrapper_type": "qdii",
+        "management_fee": 0.0080,
+        "custody_fee": 0.0015,
+        "premium_regime": "qdii",
+        "inception_date": "2022-01-20",
+        "aum": None,
+        "is_qdii": True,
+        "is_cross_border": True,
+        # The index straddles two sessions: KRX closes 14:30 CST, half an hour
+        # before Shanghai, so the wrapper's own close is the later of the two
+        # and Asia/Shanghai is the binding one. The Korean leg is 30 minutes
+        # stale at the close, which is small next to the HK mismatch.
+        "underlying_timezone": "Asia/Shanghai",
+    },
+    # --- Germany DAX (QDII) ---
+    {
+        "exposure_id": "dax",
+        "index_id": "DAX",
+        "fund_id": "513030",
+        "ticker": "513030.SH",
+        "fund_name": "华安德国(DAX)ETF(QDII)",
+        "venue": "SH",
+        "currency": "CNY",
+        "wrapper_type": "qdii",
+        "management_fee": 0.0080,
+        "custody_fee": 0.0020,
+        "premium_regime": "qdii",
+        "inception_date": "2014-09-05",
+        "aum": None,
+        "is_qdii": True,
+        "is_cross_border": True,
+        "underlying_timezone": "Europe/Berlin",
+    },
 )
 
 
@@ -612,6 +691,12 @@ EXPOSURE_NAME_TOKENS: dict[str, tuple[str, ...]] = {
     "hk_dividend": ("红利", "高股息", "股息"),
     "hk_internet": ("互联网",),
     "ndx": ("纳指", "纳斯达克"),
+    "nikkei225": ("日经", "Nikkei"),
+    # Not a bare 半导体: this check exists because 513310 was once filed as an
+    # S&P 500 tracker, and a token that matches every semiconductor fund is
+    # exactly the token that would have let that through.
+    "kr_semis": ("中韩半导体",),
+    "dax": ("德国", "DAX"),
     "sp500": ("标普500",),
 }
 

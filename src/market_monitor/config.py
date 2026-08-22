@@ -182,6 +182,49 @@ EXPOSURES = (
         "risk_character": "Offensive",
         "index_id": "931637",
     },
+    # --- QDII overseas exposures added 2026-08-22 ---
+    # Nikkei 225: two wrappers at identical 0.20%+0.05% fees, verified via
+    # Eastmoney F10 on 2026-08-22. Sina does not carry N225; yfinance ^N225
+    # is the only free index feed.
+    {
+        "exposure_id": "nikkei225",
+        "price_source": "yfinance",
+        "label": "Nikkei 225",
+        "label_zh": "日经225",
+        "region": "Japan",
+        "size": "Large",
+        "style": "Broad",
+        "risk_character": "Core",
+        "index_id": "N225",
+        "yf_symbol": "^N225",
+    },
+    # Sino-Korea semiconductor (中韩半导体): single QDII wrapper, high premium
+    # regime (+11% observed 2026-08-22). Index from CSI.
+    {
+        "exposure_id": "kr_semis",
+        "price_source": "csindex",
+        "label": "CN-KR Semiconductor",
+        "label_zh": "中韩半导体",
+        "region": "China / Korea",
+        "size": "Large",
+        "style": "Sector",
+        "risk_character": "High beta",
+        "index_id": "931643",
+    },
+    # Germany DAX: single QDII wrapper (513030), fee 1.00%/yr total.
+    # yfinance ^GDAXI for the index.
+    {
+        "exposure_id": "dax",
+        "price_source": "yfinance",
+        "label": "Germany DAX",
+        "label_zh": "德国DAX",
+        "region": "Europe",
+        "size": "Large",
+        "style": "Broad",
+        "risk_character": "Core",
+        "index_id": "DAX",
+        "yf_symbol": "^GDAXI",
+    },
     # --- Benchmarks: relative-strength legs, not investable exposures ---
     # Verified live on 2026-08-20. The obvious alternatives are traps: Sina
     # answers 200 for 中证800成长 (000967) and 中证800价值 (000969) but stopped
