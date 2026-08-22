@@ -10,7 +10,6 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
-import matplotlib
 import yfinance as yf
 
 from dashboard import remote
