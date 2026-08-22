@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from copy import deepcopy
 from pathlib import Path
 
@@ -129,14 +130,16 @@ exit 1"""
 _DRIFT_GUARD_RUN = """\
 openrouter-derived-data --base-dir . guard --top-n 10 --json > guard.json"""
 _DRIFT_ISSUE_RUN = """\
-gh issue list --state open --search "capability-map-drift in:title" \\
-  --json number --jq '.[0].number' > issue.txt || true
-if [ ! -s issue.txt ] || [ "$(cat issue.txt)" = "null" ]; then
-  gh issue create --title "capability-map-drift" \\
+set -euo pipefail
+issue="$(gh issue list --state open --search "capability-map-drift in:title" \\
+  --json number --jq '.[0].number // empty')"
+if [ -z "$issue" ]; then
+  issue="$(gh issue create --title "capability-map-drift" \\
     --label "data-quality" \\
-    --body "The daily capability guard reported unresolved top-10 models. Details follow as comments."
+    --body "The daily capability guard reported unresolved top-10 models. Details follow as comments." \\
+    | grep -oE '[0-9]+$')"
 fi
-gh issue comment "$(gh issue list --state open --search 'capability-map-drift in:title' --json number --jq '.[0].number')" \\
+gh issue comment "$issue" \\
   --body "$(printf 'Capability guard, %s\\n\\n```json\\n%s\\n```\\n' "$(date -u +%Y-%m-%d)" "$(cat guard.json)")"
 """
 
@@ -186,6 +189,7 @@ _APPROVED_DERIVED_STEPS = [
         "run": _normalize_run_body(_DRIFT_GUARD_RUN),
     },
     {
+        "continue-on-error": "true",
         "env": {"GH_TOKEN": "${{ secrets.GITHUB_TOKEN }}"},
         "if": "steps.guard.outcome == 'failure'",
         "name": "Open or update capability-map-drift issue",
@@ -253,12 +257,33 @@ def test_openrouter_derived_workflow_is_bounded_and_no_custom_secrets() -> None:
     workflow = _openrouter_derived_workflow()
 
     # The built-in GITHUB_TOKEN is allowed for repo-scoped issue notifications;
-    # any other secret would imply an external credential (and network access).
-    for line in workflow_text.splitlines():
-        if "secrets." not in line:
-            continue
-        assert "${{ secrets.GITHUB_TOKEN }}" in line, f"unexpected secret usage: {line}"
+    # any other secret would imply an external credential. Check every secret
+    # reference by name rather than per line: a line carrying GITHUB_TOKEN and
+    # a second secret would slip through a line-level substring test.
+    referenced = set(re.findall(r"secrets\.([A-Za-z_][A-Za-z0-9_-]*)", workflow_text))
+    assert referenced <= {"GITHUB_TOKEN"}, f"unexpected secret usage: {sorted(referenced)}"
     _assert_openrouter_derived_workflow_contract(workflow)
+
+
+def test_openrouter_derived_workflow_confines_github_api_calls_to_drift_notification() -> None:
+    """``gh`` reaches the GitHub API, so it is not covered by the no-network rule.
+
+    The drift notification legitimately opens an issue on this same repository.
+    That is the only step allowed to call out, and only when the guard failed --
+    every other step must stay offline.
+    """
+
+    steps = _derived_build_steps(_openrouter_derived_workflow())
+    calling_steps = [
+        step for step in steps if re.search(r"(?m)^\s*gh\s", step.get("run", "") or "")
+    ]
+    assert [step["name"] for step in calling_steps] == [
+        "Open or update capability-map-drift issue"
+    ]
+    for step in calling_steps:
+        assert step.get("if") == "steps.guard.outcome == 'failure'"
+        assert step.get("env") == {"GH_TOKEN": "${{ secrets.GITHUB_TOKEN }}"}
+        assert step.get("continue-on-error") == "true"
 
 
 def test_openrouter_derived_workflow_rejects_an_external_data_step() -> None:
