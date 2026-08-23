@@ -1426,9 +1426,11 @@ def test_load_latest_manifest_can_skip_raw_manifest_scan_when_datasets_provided(
 
 def test_section_domains_loads_only_selected_dashboard_inputs() -> None:
     assert section_domains("Overview") == ("overview",)
+    # "openrouter_catalog" is an exact alias of "compute_availability" and is
+    # deliberately not listed; see test_no_section_loads_the_same_domain_twice.
     assert section_domains("OpenRouter") == (
         "openrouter_intelligence", "compute_availability", "openrouter_official_market",
-        "openrouter_derived", "openrouter_model_explorer", "openrouter_catalog",
+        "openrouter_derived", "openrouter_model_explorer",
         "openrouter_workloads", "apps", "artificial_analysis",
     )
     assert section_domains("Provider Adoption") == ("provider_adoption",)
@@ -5096,3 +5098,29 @@ def test_domain_state_cache_holds_the_largest_section() -> None:
             f"section {section!r} spans {len(domains)} domains but the domain-state "
             f"cache holds only {DOMAIN_STATE_CACHE_ENTRIES}"
         )
+
+
+def test_no_section_loads_the_same_domain_twice_under_two_names() -> None:
+    """Two domains with identical dataset lists are an alias, not two domains.
+
+    Listing both loads every one of their datasets twice into two separately
+    cached domain states that nothing distinguishes -- the merged dataset dict
+    collapses them anyway.  For OpenRouter that was raw_openrouter_models, at
+    241 MB of RSS per load, and it pushed the section past the domain-state
+    cache so the whole section thrashed as well.
+    """
+    from dashboard.app import SECTION_DOMAIN_MAP
+    from dashboard.data import domain_dataset_ids
+
+    for section, domains in SECTION_DOMAIN_MAP.items():
+        seen: dict[frozenset[str], str] = {}
+        for domain in domains:
+            ids = frozenset(domain_dataset_ids(domain))
+            if not ids:
+                continue
+            duplicate = seen.get(ids)
+            assert duplicate is None, (
+                f"section {section!r} lists {domain!r} and {duplicate!r}, which resolve "
+                f"to the same datasets {sorted(ids)}"
+            )
+            seen[ids] = domain

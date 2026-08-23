@@ -1646,24 +1646,12 @@ def compute_compute_availability_views(datasets: dict[str, DatasetLoadResult]) -
 
     models_result = datasets.get("raw_openrouter_models")
     if models_result and not models_result.frame.empty:
-        df = models_result.frame.copy()
-        df["snapshot_ts"] = pd.to_datetime(df["snapshot_ts"], errors="coerce")
-        df = df.dropna(subset=["snapshot_ts", "model_id"]).sort_values(["snapshot_ts", "model_id"]).reset_index(drop=True)
-
-        if df.empty:
-            views["models_latest"] = pd.DataFrame()
-            views["catalog_size"] = pd.DataFrame()
-            views["models_history_start"] = None
-            views["models_history_end"] = None
-            return views
-
-        snapshot_groups = list(df.groupby("snapshot_ts", sort=True))
-
-        latest_ts = snapshot_groups[-1][0]
-        latest_models = df[df["snapshot_ts"] == latest_ts].drop_duplicates(subset="model_id", keep="last").sort_values("model_id").reset_index(drop=True)
-        # Prefer the authoritative current catalog emitted by the daily source.
-        # The historical table is change-only and therefore cannot remove a
-        # model that disappeared from the upstream API.
+        # Both outputs below have an authoritative sidecar, and in a deployed
+        # checkout both sidecars exist -- so reading them first means the
+        # 47k-row change log (60 MB, and another 60 MB to copy it) is only
+        # touched when a sidecar is missing, as in local dev.  It used to be
+        # copied, datetime-converted, sorted and grouped into 149 frames on
+        # every cache miss, after which every value it produced was overwritten.
         source_path = models_result.source_path
         sidecar_root = (
             source_path.parent
@@ -1671,6 +1659,11 @@ def compute_compute_availability_views(datasets: dict[str, DatasetLoadResult]) -
             else None
         )
         current_path = sidecar_root / "raw_openrouter_models_current.parquet" if sidecar_root else None
+
+        # Prefer the authoritative current catalog emitted by the daily source.
+        # The historical table is change-only and therefore cannot remove a
+        # model that disappeared from the upstream API.
+        latest_models: pd.DataFrame | None = None
         if current_path and current_path.exists():
             current_frame = pd.read_parquet(current_path)
             if not current_frame.empty and "model_id" in current_frame.columns:
@@ -1708,15 +1701,40 @@ def compute_compute_availability_views(datasets: dict[str, DatasetLoadResult]) -
             )
         views["catalog_size"] = catalog_size
 
+        # Only now, and only for what the sidecars could not answer, fall back
+        # to the change log itself.
+        change_log_span: tuple[object, object] | None = None
+        if latest_models is None or catalog_size.empty:
+            df = models_result.frame.copy()
+            df["snapshot_ts"] = pd.to_datetime(df["snapshot_ts"], errors="coerce")
+            df = df.dropna(subset=["snapshot_ts", "model_id"]).sort_values(["snapshot_ts", "model_id"]).reset_index(drop=True)
+            if df.empty:
+                views["models_latest"] = latest_models if latest_models is not None else pd.DataFrame()
+                views["catalog_size"] = catalog_size
+                views["models_history_start"] = None
+                views["models_history_end"] = None
+                return views
+            latest_ts = df["snapshot_ts"].max()
+            change_log_span = (df["snapshot_ts"].min(), latest_ts)
+            if latest_models is None:
+                latest_models = (
+                    df[df["snapshot_ts"] == latest_ts]
+                    .drop_duplicates(subset="model_id", keep="last")
+                    .sort_values("model_id")
+                    .reset_index(drop=True)
+                )
+
         views["models_latest"] = latest_models
         # Bound the caption by the size series actually plotted, not by the
         # change-log's span -- they no longer start and end together.
         if not catalog_size.empty:
             views["models_history_start"] = catalog_size["snapshot_ts"].min()
             views["models_history_end"] = catalog_size["snapshot_ts"].max()
+        elif change_log_span is not None:
+            views["models_history_start"], views["models_history_end"] = change_log_span
         else:
-            views["models_history_start"] = snapshot_groups[0][0]
-            views["models_history_end"] = latest_ts
+            views["models_history_start"] = None
+            views["models_history_end"] = None
     else:
         views["models_latest"] = pd.DataFrame()
         views["catalog_size"] = pd.DataFrame()

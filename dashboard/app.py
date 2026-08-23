@@ -114,7 +114,13 @@ SECTION_DESCRIPTIONS = {
 
 SECTION_DOMAIN_MAP = {
     "Overview": ("overview",),
-    "OpenRouter": ("openrouter_intelligence", "compute_availability", "openrouter_official_market", "openrouter_derived", "openrouter_model_explorer", "openrouter_catalog", "openrouter_workloads", "apps", "artificial_analysis"),
+    # "openrouter_catalog" is deliberately absent: it is an exact alias of
+    # "compute_availability" -- same single dataset, same source directory --
+    # so listing both loaded raw_openrouter_models twice (241 MB of RSS each)
+    # into two separately cached domain states that nothing distinguishes.
+    # The merged dataset dict collapsed them anyway, and only the
+    # compute_availability domain state is ever read by name.
+    "OpenRouter": ("openrouter_intelligence", "compute_availability", "openrouter_official_market", "openrouter_derived", "openrouter_model_explorer", "openrouter_workloads", "apps", "artificial_analysis"),
     "Vercel AI": ("vercel_ai",),
     "OpenCode Agents": ("opencode",),
     "Replicate Multimodal": ("replicate",),
