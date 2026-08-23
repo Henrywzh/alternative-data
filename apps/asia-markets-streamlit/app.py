@@ -4327,13 +4327,31 @@ def render_southbound_market_flow(frame: pd.DataFrame, language: str, window: st
     c1.metric(tr(language, "Latest net buy", "最新净买入"), f"{float(net):,.1f} 亿" if pd.notna(net) else "—", asof)
     c2.metric(tr(language, "Holding market value", "持股市值"), f"HK$ {float(mv)/1e12:,.2f}T" if pd.notna(mv) else "—")
     c3.metric(tr(language, "Same-day balance", "当日余额"), f"{float(bal):,.1f} 亿" if pd.notna(bal) else "Unavailable")
+    
+    net_series = pd.to_numeric(plot.get("net_buy_yi"), errors="coerce").fillna(0)
+    # High-contrast dual colors: Inflow = deep royal blue (#1d4ed8), Outflow = vivid red (#dc2626)
+    bar_colors = ["#1d4ed8" if v >= 0 else "#dc2626" for v in net_series]
+    net_ma20 = net_series.rolling(20, min_periods=5).mean()
+
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(
         go.Bar(
             x=plot[date_col],
-            y=pd.to_numeric(plot.get("net_buy_yi"), errors="coerce"),
-            name=tr(language, "Net buy (CNY 100m)", "当日净买入（亿元）"),
-            marker_color="#93c5fd",
+            y=net_series,
+            name=tr(language, "Daily net buy (CNY 100m)", "当日净买入（亿元）"),
+            marker=dict(color=bar_colors, line=dict(width=0)),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>当日净买入: %{y:,.1f} 亿元<extra></extra>",
+        ),
+        secondary_y=False,
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=plot[date_col],
+            y=net_ma20,
+            name=tr(language, "20D MA flow (CNY 100m)", "净买入20日均线（亿元）"),
+            mode="lines",
+            line=dict(width=1.8, color="#f59e0b", dash="solid"),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>20日均线净买入: %{y:,.1f} 亿元<extra></extra>",
         ),
         secondary_y=False,
     )
@@ -4341,16 +4359,25 @@ def render_southbound_market_flow(frame: pd.DataFrame, language: str, window: st
         go.Scatter(
             x=plot[date_col],
             y=pd.to_numeric(plot.get("holding_market_value"), errors="coerce") / 1e12,
-            name=tr(language, "Holding MV (HK$ tn)", "持股市值（万亿）"),
+            name=tr(language, "Holding MV (HK$ tn)", "累计持股市值（万亿港元）"),
             mode="lines",
-            line=dict(width=2.5, color="#2563EB"),
+            line=dict(width=2.5, color="#0f172a"),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>持股市值: HK$ %{y:,.2f} 万亿<extra></extra>",
         ),
         secondary_y=True,
     )
-    fig.update_layout(template="plotly_white", height=360, legend=dict(orientation="h", y=-0.2), margin=dict(l=0, r=8, t=12, b=40), hovermode="x unified")
+    fig.update_layout(
+        template="plotly_white",
+        height=380,
+        bargap=0.0,
+        bargroupgap=0.0,
+        legend=dict(orientation="h", y=-0.22, x=0),
+        margin=dict(l=0, r=8, t=12, b=45),
+        hovermode="x unified",
+    )
     fig.update_xaxes(tickformat="%b %Y", showgrid=False)
-    fig.update_yaxes(title_text=tr(language, "Net buy (CNY 100m)", "净买入（亿元）"), secondary_y=False, gridcolor="#F3F4F6")
-    fig.update_yaxes(title_text=tr(language, "Holding MV (HK$ tn)", "持股市值（万亿）"), secondary_y=True, showgrid=False)
+    fig.update_yaxes(title_text=tr(language, "Net buy (CNY 100m)", "净买入（亿元）"), secondary_y=False, gridcolor="#F3F4F6", zeroline=True, zerolinecolor="#94A3B8")
+    fig.update_yaxes(title_text=tr(language, "Holding MV (HK$ tn)", "持股市值（万亿港元）"), secondary_y=True, showgrid=False)
     st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True})
     st.caption(tr(
         language,
