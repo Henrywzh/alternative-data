@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import io
 import json
+from collections.abc import Iterable, Iterator, Mapping
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable
 
 import pandas as pd
 import pyarrow.parquet as pq
+import streamlit as st
 from pyarrow.lib import ArrowInvalid
 
 from dashboard import remote
@@ -31,6 +34,90 @@ def _read_parquet_projected(source, columns: list[str] | None) -> pd.DataFrame:
         # Retry only the available projection. Missing transition columns are
         # supplied later by reindexing without ever loading the full table.
         return pd.read_parquet(source, columns=projected)
+
+
+# Datasets written as a directory of per-date Parquet partitions instead of a
+# single file, so that a day's push rewrites one small partition rather than the
+# whole 36 MB table (which git stores as an entirely new blob every night).
+# This mirrors PARTITION_COLUMNS in src/provider_adoption_data/storage.py;
+# scripts/check_dataset_contract.py asserts the two stay in step.  A reader that
+# does not know a dataset is partitioned does not fail -- it looks for
+# "<id>.parquet", misses, and returns zero rows with no error anywhere.
+PARTITIONED_DATASETS: frozenset[str] = frozenset(
+    {
+        "github_repo_candidates_daily",
+        "github_repo_rollup_daily",
+    }
+)
+
+
+def _read_parquet_partitions(sources: list, columns: list[str] | None) -> pd.DataFrame:
+    """Read and concatenate a partitioned dataset's parts into one frame.
+
+    Sources are file paths (local) or buffers (remote) already in partition-name
+    order.  Projection is applied per part so the full-width table is never
+    materialized.
+    """
+    frames = [_read_parquet_projected(source, columns) for source in sources]
+    if not frames:
+        return pd.DataFrame(columns=columns or [])
+    if len(frames) == 1:
+        return frames[0]
+    return pd.concat(frames, ignore_index=True)
+
+
+# Daily-grain datasets are capped to a rolling window at load time.  They are
+# the only ones that grow without bound -- a weekly table adds 52 rows a year
+# where provider_daily_activity adds tens of thousands -- so the cap is what
+# stops this page drifting back into the memory ceiling as history accumulates.
+# The window is a date range anchored to the frame's own latest observation,
+# never a row count: a row count makes the retained span depend on how many
+# rows a source happened to emit.
+#
+# raw_openrouter_models is deliberately absent even though it is the largest
+# dataset here.  It is a change log, not a snapshot series, so dropping rows
+# older than the window drops models whose last change predates it -- the
+# reconstructed catalog would quietly lose them.  Its size is addressed by
+# reading the current-catalog sidecar instead (see
+# compute_compute_availability_views).
+DAILY_HISTORY_YEARS = 1
+DAILY_HISTORY_DATASETS: frozenset[str] = frozenset(
+    {
+        "provider_daily_activity",
+        "daily_provider_economics",
+        "daily_provider_revenue_estimates",
+        "openrouter_usage_economics_daily",
+        "openrouter_model_activity",
+        "cloud_infra_daily_activity",
+        "daily_cloud_infra_economics",
+        "official_model_rankings_daily",
+        "openrouter_task_spend",
+        "app_usage_daily",
+        "app_top_models_daily_snapshot",
+        "apps_global_ranking_snapshots",
+        "apps_trending_snapshots",
+        "app_metadata_snapshots",
+        "artificial_analysis_models_daily",
+        "artificial_analysis_leading_models_by_lab_daily",
+    }
+)
+
+
+def _apply_daily_history_window(
+    frame: pd.DataFrame, dataset_id: str, date_column: str | None
+) -> pd.DataFrame:
+    """Trim a daily dataset to DAILY_HISTORY_YEARS of its own latest date."""
+    if dataset_id not in DAILY_HISTORY_DATASETS:
+        return frame
+    if frame.empty or not date_column or date_column not in frame.columns:
+        return frame
+    dates = pd.to_datetime(frame[date_column], errors="coerce")
+    if not dates.notna().any():
+        return frame
+    cutoff = dates.max() - pd.DateOffset(years=DAILY_HISTORY_YEARS)
+    # Undated rows are kept: they carry no claim about the window, and dropping
+    # them here would silently change row counts the health checks compare.
+    return frame.loc[dates.isna() | dates.ge(cutoff)]
 
 
 DATASET_REGISTRY: dict[str, dict[str, object]] = {
@@ -1778,6 +1865,28 @@ PROVIDER_ADOPTION_LOAD_COLUMNS: dict[str, list[str]] = {
         "github_env_repo_count",
         "github_model_repo_count",
     ],
+    # These two are the repository's largest datasets by row count (~924k rows
+    # each) and share the 52-column provider_adoption schema, of which they
+    # populate 18 and 24.  Read in full they cost ~1.5 GB of pandas memory
+    # apiece -- more than the deployed container has -- and pyarrow aborts on a
+    # failed allocation with SIGSEGV rather than a catchable MemoryError.  No
+    # section renders their rows; they exist for freshness and the Data Health
+    # checks, so project down to exactly what the registry entry needs.
+    "github_repo_candidates_daily": [
+        *CORE_COLUMNS,
+        "provider",
+        "repo_full_name",
+        "repo_created_date",
+        "language_bucket",
+        "stargazers_count",
+    ],
+    "github_repo_rollup_daily": [
+        *CORE_COLUMNS,
+        "provider",
+        "repo_full_name",
+        "signal_date",
+        "matched_signal_count",
+    ],
 }
 
 # Vercel datasets carry columns that are not in EXPECTED_COLUMNS, so — like
@@ -2468,6 +2577,7 @@ def load_dataset(
     base = normalized_root(base_dir, source=source)
     parquet_path = base / f"{dataset_id}.parquet"
     csv_path = base / f"{dataset_id}.csv"
+    partition_dir = base / dataset_id
 
     required_columns = list(registry_entry.get("required_columns", []))
     if registry_entry.get("requires_core_provenance", True):
@@ -2491,7 +2601,19 @@ def load_dataset(
     use_remote_bytes = remote.remote_enabled() and (base_dir is None or data_sha is not None)
     if use_remote_bytes:
         sha = data_sha or remote.latest_data_sha(f"{remote.DATA_PATH_PREFIX}/{source}")
-        if sha:
+        if sha and dataset_id in PARTITIONED_DATASETS:
+            rel_dir = partition_dir.relative_to(root).as_posix()
+            payloads = remote.fetch_directory(rel_dir, sha)
+            if payloads:
+                try:
+                    frame = _read_parquet_partitions(
+                        [io.BytesIO(payload) for payload in payloads], load_columns
+                    )
+                    source_format = "parquet"
+                    source_path = partition_dir
+                except Exception as e:
+                    print(f"Warning: remote partitioned read failed for {rel_dir}: {e}")
+        elif sha:
             candidates = (
                 (parquet_path, "parquet", lambda b: _read_parquet_projected(io.BytesIO(b), load_columns)),
                 (csv_path, "csv", lambda b: pd.read_csv(io.BytesIO(b))),
@@ -2510,8 +2632,17 @@ def load_dataset(
                     print(f"Warning: remote read failed for {rel}: {e}")
 
     if source_format is None:
+        partitions = (
+            sorted(partition_dir.glob("*.parquet"))
+            if dataset_id in PARTITIONED_DATASETS and partition_dir.is_dir()
+            else []
+        )
         try:
-            if parquet_path.exists():
+            if partitions:
+                frame = _read_parquet_partitions(partitions, load_columns)
+                source_format = "parquet"
+                source_path = partition_dir
+            elif parquet_path.exists():
                 frame = _read_parquet_projected(parquet_path, load_columns)
                 source_format = "parquet"
                 source_path = parquet_path
@@ -2525,6 +2656,10 @@ def load_dataset(
     
     # CRITICAL: Ensure no duplicate columns exist before padding/filtering
     frame = frame.loc[:, ~frame.columns.duplicated()].copy()
+
+    frame = _apply_daily_history_window(
+        frame, dataset_id, str(registry_entry.get("primary_date_column") or "") or None
+    )
 
     missing_columns = [column for column in required_columns if column not in frame.columns]
     
@@ -2603,6 +2738,224 @@ def load_domain_datasets(
     with ThreadPoolExecutor(max_workers=min(8, len(ids))) as executor:
         results = executor.map(lambda dataset_id: load_dataset(dataset_id, base_dir=base_dir, data_sha=data_sha), ids)
         return dict(zip(ids, results))
+
+
+def dataset_parquet_path(dataset_id: str, base_dir: Path | None = None) -> Path:
+    """Where a dataset's parquet lives, without reading it."""
+    registry_entry = DATASET_REGISTRY.get(dataset_id, {})
+    source = dataset_source_for_domain(str(registry_entry.get("domain", "rankings")))
+    if dataset_id == "cloud_infra_daily_activity":
+        source = "openrouter"
+    return normalized_root(base_dir, source=source) / f"{dataset_id}.parquet"
+
+
+@st.cache_data(ttl=3600, max_entries=8, show_spinner=False)
+def load_dataset_projection(
+    dataset_id: str,
+    columns: tuple[str, ...],
+    base_dir: Path | None,
+    domain_signature: tuple[tuple[str, int, int], ...],
+    data_sha: str | None = None,
+) -> pd.DataFrame:
+    """Read a few columns of a dataset through the same local/remote resolution.
+
+    Some consumers need a handful of columns from a table whose registry
+    projection is wide because a *different* consumer displays it.  Reading the
+    wide projection for them is the difference between 2 MB and 242 MB of RSS on
+    raw_openrouter_models, so they ask for what they use.
+
+    This deliberately skips the registry contract work in load_dataset -- column
+    padding, natural-key duplicate counts, date coverage.  A projection is not a
+    dataset load and must not be reported as one to the health panel.
+    """
+    _ = domain_signature  # cache key only
+    projection = list(columns)
+    path = dataset_parquet_path(dataset_id, base_dir)
+
+    root = base_dir if base_dir is not None else repo_root()
+    if remote.remote_enabled() and (base_dir is None or data_sha is not None):
+        sha = data_sha
+        if sha is None:
+            registry_entry = DATASET_REGISTRY.get(dataset_id, {})
+            source = dataset_source_for_domain(str(registry_entry.get("domain", "rankings")))
+            sha = remote.latest_data_sha(f"{remote.DATA_PATH_PREFIX}/{source}")
+        if sha:
+            payload = remote.fetch_bytes(path.relative_to(root).as_posix(), sha)
+            if payload is not None:
+                try:
+                    return _read_parquet_projected(io.BytesIO(payload), projection)
+                except Exception as error:  # noqa: BLE001 - fall through to local
+                    print(f"Warning: remote projection failed for {dataset_id}: {error}")
+
+    if path.exists():
+        try:
+            return _read_parquet_projected(path, projection)
+        except Exception as error:  # noqa: BLE001
+            print(f"Warning: projection failed for {dataset_id}: {error}")
+    return pd.DataFrame(columns=projection)
+
+
+@st.cache_data(ttl=3600, max_entries=8, show_spinner=False)
+def load_sidecar_parquet(
+    dataset_id: str,
+    filename: str,
+    base_dir: Path | None,
+    domain_signature: tuple[tuple[str, int, int], ...],
+    data_sha: str | None = None,
+) -> pd.DataFrame:
+    """Read a parquet that sits beside a dataset, through the same resolution.
+
+    Sidecars are ordinary committed files, but they were only ever read from the
+    local checkout.  On Streamlit Cloud that checkout is frozen at the last
+    deploy, so a sidecar-backed view showed whatever was true when the container
+    started and never moved -- silently, since a stale file reads exactly like a
+    fresh one.  Resolving them the way datasets are resolved (committed bytes at
+    the pinned SHA, local checkout as the fallback) puts them on the same
+    footing as the data they sit next to.
+
+    Returns an empty frame when the sidecar does not exist, which is a normal
+    state: the caller falls back to deriving the value the long way.
+    """
+    _ = domain_signature  # cache key only
+    path = dataset_parquet_path(dataset_id, base_dir).parent / filename
+
+    root = base_dir if base_dir is not None else repo_root()
+    if remote.remote_enabled() and (base_dir is None or data_sha is not None):
+        sha = data_sha
+        if sha is None:
+            registry_entry = DATASET_REGISTRY.get(dataset_id, {})
+            source = dataset_source_for_domain(str(registry_entry.get("domain", "rankings")))
+            sha = remote.latest_data_sha(f"{remote.DATA_PATH_PREFIX}/{source}")
+        if sha:
+            payload = remote.fetch_bytes(path.relative_to(root).as_posix(), sha)
+            if payload is not None:
+                try:
+                    return pd.read_parquet(io.BytesIO(payload))
+                except Exception as error:  # noqa: BLE001 - fall through to local
+                    print(f"Warning: remote sidecar read failed for {filename}: {error}")
+
+    if path.exists():
+        try:
+            return pd.read_parquet(path)
+        except Exception as error:  # noqa: BLE001
+            print(f"Warning: sidecar read failed for {filename}: {error}")
+    return pd.DataFrame()
+
+
+@st.cache_data(ttl=3600, max_entries=64, show_spinner=False)
+def load_dataset_cached(
+    base_dir: Path | None,
+    dataset_id: str,
+    domain_signature: tuple[tuple[str, int, int], ...],
+    data_sha: str | None = None,
+) -> DatasetLoadResult:
+    """One cache entry per dataset, for on-demand section loading.
+
+    Keyed the way the domain-level cache is: the signature catches local edits,
+    the SHA catches remote pushes.  Caching per dataset rather than per domain
+    means a dataset shared by two domains is decoded once, and a dataset the
+    rendered sub-page never opens is not decoded at all.
+    """
+    _ = domain_signature  # cache key only
+    return load_dataset(dataset_id, base_dir=base_dir, data_sha=data_sha)
+
+
+class LazyDatasetMap(Mapping[str, "DatasetLoadResult"]):
+    """A section's datasets, each loaded on first access rather than up front.
+
+    Streamlit's st.tabs renders every tab body on every run, so a section that
+    drew its sub-pages as tabs genuinely needed all of its data.  Once only the
+    selected sub-page renders, most of it is never touched -- and the eager load
+    was paying hundreds of megabytes for datasets nothing asked for.
+
+    Iteration and ``len`` describe the *declared* datasets and never trigger a
+    load, so callers that only want to know what a section covers stay cheap.
+    ``loaded`` exposes exactly what was materialized, which is what the health
+    checks and freshness summary describe: reporting on datasets that were never
+    read would be reporting on nothing.
+    """
+
+    def __init__(
+        self,
+        dataset_ids: Iterable[str],
+        loader: Callable[[str], "DatasetLoadResult"],
+        cache_key: tuple = (),
+        projector: Callable[[str, tuple[str, ...]], pd.DataFrame] | None = None,
+        sidecar_loader: Callable[[str, str], pd.DataFrame] | None = None,
+        base_dir: Path | None = None,
+    ) -> None:
+        self._dataset_ids = tuple(dict.fromkeys(dataset_ids))
+        self._loader = loader
+        self._loaded: dict[str, DatasetLoadResult] = {}
+        # Views cached on this mapping cannot be keyed by its contents: the
+        # contents are whatever happens to have been loaded when the view is
+        # called, and the view may load more while it runs.  The freshness
+        # signature and commit SHA behind every declared dataset determine that
+        # content completely, and cost nothing to read.
+        self._cache_key = cache_key
+        self._projector = projector
+        self._sidecar_loader = sidecar_loader
+        self._base_dir = base_dir
+
+    @property
+    def cache_key(self) -> tuple:
+        return self._cache_key
+
+    def dataset_dir(self, dataset_id: str) -> Path:
+        """The directory a dataset lives in, without loading it.
+
+        Sidecar files sit beside their dataset.  Reaching for them through a
+        loaded DatasetLoadResult's source_path means decoding the dataset purely
+        to learn a directory name.
+        """
+        return dataset_parquet_path(dataset_id, self._base_dir).parent
+
+    def sidecar(self, dataset_id: str, filename: str) -> pd.DataFrame:
+        """A parquet sitting beside a dataset, resolved the way the dataset is.
+
+        Empty when the sidecar is absent -- callers treat that as "derive it the
+        long way", not as an error.
+        """
+        if self._sidecar_loader is None:
+            path = self.dataset_dir(dataset_id) / filename
+            return pd.read_parquet(path) if path.exists() else pd.DataFrame()
+        return self._sidecar_loader(dataset_id, filename)
+
+    def projection(self, dataset_id: str, columns: tuple[str, ...]) -> pd.DataFrame:
+        """A few columns of one dataset, without materializing the full load.
+
+        A consumer that needs six columns of a forty-column table should not pay
+        for the other thirty-four; on raw_openrouter_models that is the
+        difference between 2 MB and 242 MB of RSS.
+        """
+        if self._projector is None:
+            result = self.get(dataset_id)
+            if result is None or result.frame.empty:
+                return pd.DataFrame(columns=list(columns))
+            available = [column for column in columns if column in result.frame.columns]
+            return result.frame[available].copy()
+        return self._projector(dataset_id, tuple(columns))
+
+    def __getitem__(self, dataset_id: str) -> "DatasetLoadResult":
+        if dataset_id not in self._dataset_ids:
+            raise KeyError(dataset_id)
+        if dataset_id not in self._loaded:
+            self._loaded[dataset_id] = self._loader(dataset_id)
+        return self._loaded[dataset_id]
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._dataset_ids)
+
+    def __len__(self) -> int:
+        return len(self._dataset_ids)
+
+    def __contains__(self, dataset_id: object) -> bool:
+        return dataset_id in self._dataset_ids
+
+    @property
+    def loaded(self) -> dict[str, "DatasetLoadResult"]:
+        """Datasets actually materialized so far, in load order."""
+        return dict(self._loaded)
 
 
 def load_latest_manifest(

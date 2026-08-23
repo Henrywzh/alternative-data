@@ -6,7 +6,7 @@ from plotly.subplots import make_subplots
 import streamlit as st
 
 from dashboard.components import dataframe_for_display, format_metric, kpi_card_html, kpi_grid_html
-from dashboard.data import DatasetLoadResult
+from dashboard.data import DatasetLoadResult, LazyDatasetMap
 from dashboard.theme import ACCENT, CARD, GRID, MODEL_COLORS, MUTED, TEXT
 
 
@@ -14,7 +14,7 @@ DATASET_ID = "market_pulse_daily"
 SIGNAL_DATASET_ID = "overview_signal_series"
 
 
-@st.cache_data(ttl=3600, max_entries=8)
+@st.cache_data(ttl=3600, max_entries=8, hash_funcs={LazyDatasetMap: lambda mapping: mapping.cache_key})
 def compute_market_pulse_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
     result = datasets.get(DATASET_ID)
     if result is None or result.frame.empty:

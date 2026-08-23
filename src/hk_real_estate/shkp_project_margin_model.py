@@ -229,7 +229,13 @@ def build_shkp_fy27_weighted_margin(project_model: pd.DataFrame) -> pd.DataFrame
     consensus_profit = total_rev * consensus_margin if consensus_margin is not None else None
     model_profit = total_rev * weighted_point
     gap_profit = consensus_profit - model_profit if consensus_profit is not None else None
-    shares = 2896.0
+    # Named in millions to match SHARES_MILLION elsewhere in this package, and
+    # converted explicitly at the point of use.  ``gap_profit`` is an absolute
+    # HKD figure (recognised revenue is in HKD, not HKD millions), so dividing
+    # it by 2896.0 gives HKD per million shares -- a per-share number 10^6 too
+    # large, and one nothing downstream range-checks.
+    shares_million = 2896.0
+    shares_outstanding = shares_million * 1e6
     return pd.DataFrame(
         [
             {
@@ -243,7 +249,7 @@ def build_shkp_fy27_weighted_margin(project_model: pd.DataFrame) -> pd.DataFrame
                 "model_development_profit_hkd": model_profit,
                 "consensus_implied_development_profit_hkd": consensus_profit,
                 "margin_gap_profit_hkd": gap_profit,
-                "margin_gap_eps_hkd": gap_profit / shares if gap_profit is not None else None,
+                "margin_gap_eps_hkd": gap_profit / shares_outstanding if gap_profit is not None else None,
                 "model_use": "fy27_weighted_development_margin_variant",
                 "research_only": True,
                 "caveat": (
