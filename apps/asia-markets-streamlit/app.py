@@ -4358,11 +4358,93 @@ def render_southbound_market_flow(frame: pd.DataFrame, language: str, window: st
     ))
 
 
+def render_scoped_index_section(
+    scoped_eids: set[str],
+    label_by_exposure: dict[str, str],
+    prices: pd.DataFrame,
+    technicals: pd.DataFrame,
+    wrappers: pd.DataFrame,
+    language: str,
+    window: str,
+    etf_prices: pd.DataFrame | None = None,
+    premium_history: pd.DataFrame | None = None,
+    key_prefix: str = "market",
+    show_wrappers: bool = True,
+) -> None:
+    """Render single-index technical detail and (optionally) domestic ETF wrappers strictly within a scoped list."""
+    available = [e for e in label_by_exposure if e in scoped_eids and not prices.empty and e in set(prices["exposure_id"])]
+    if not available:
+        if not wrappers.empty and show_wrappers:
+            available = [e for e in sorted(wrappers["exposure_id"].astype(str).unique()) if e in scoped_eids]
+    if not available:
+        return
+
+    section_heading(
+        language,
+        "By Index",
+        "按指数查看",
+        "Inspect price, 20D/60D trend, and RSI for a selected index.",
+        "选择一个指数，查看其收盘价、均线趋势及 RSI 技术指标。",
+    )
+    
+    wrapper_counts = (
+        wrappers.groupby("exposure_id").size().to_dict() if not wrappers.empty and show_wrappers else {}
+    )
+    
+    def _fmt_name(e):
+        lbl = label_by_exposure.get(e, e)
+        if show_wrappers and wrapper_counts.get(e, 0) > 0:
+            return f"{lbl} ({wrapper_counts[e]} 只场内ETF)" if language == "zh" else f"{lbl} ({wrapper_counts[e]} ETF)"
+        return lbl
+
+    selected = st.selectbox(
+        tr(language, "Select Index", "选择指数标的"),
+        available,
+        key=f"{key_prefix}_index_select",
+        format_func=_fmt_name,
+    )
+    
+    with st.expander(tr(language, "Indicator settings", "指标参数"), expanded=False):
+        setting_columns = st.columns(4)
+        rsi_window = setting_columns[0].number_input(
+            tr(language, "RSI period", "RSI 周期"),
+            min_value=2, max_value=100, value=14, step=1, key=f"{key_prefix}_rsi_window",
+        )
+        ma_window = setting_columns[1].number_input(
+            tr(language, "MA period", "均线周期"),
+            min_value=2, max_value=250, value=20, step=1, key=f"{key_prefix}_ma_window",
+        )
+        rsi_upper = setting_columns[2].number_input(
+            tr(language, "Overbought", "超买线"),
+            min_value=50.0, max_value=95.0, value=70.0, step=1.0, key=f"{key_prefix}_rsi_upper",
+        )
+        rsi_lower = setting_columns[3].number_input(
+            tr(language, "Oversold", "超卖线"),
+            min_value=5.0, max_value=50.0, value=30.0, step=1.0, key=f"{key_prefix}_rsi_lower",
+        )
+
+    scoped_wrappers = wrappers if show_wrappers else pd.DataFrame()
+    render_market_index_detail(
+        selected,
+        label_by_exposure.get(selected, selected),
+        prices,
+        technicals,
+        scoped_wrappers,
+        language,
+        window,
+        etf_prices=etf_prices if show_wrappers else None,
+        premium_history=premium_history if show_wrappers else None,
+        rsi_window=rsi_window,
+        ma_window=ma_window,
+        rsi_upper=rsi_upper,
+        rsi_lower=rsi_lower,
+    )
+
+
 def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: str, window: str) -> None:
-    """Index & ETF Allocation Monitor: exposure leadership, relative regime,
-    and wrapper selection."""
+    """Index & ETF Allocation Monitor: fully modular regional tabs."""
     st.markdown(f'<div class="am-page-title">{tr(language, SECTORS["market"]["name_en"], SECTORS["market"]["name_zh"])}</div>', unsafe_allow_html=True)
-    st.caption(tr(language, "Exposure → Index → ETF wrapper. Relative signals over absolute RSI.", "Exposure → 指数 → ETF 包装。相对信号优先于绝对 RSI。"))
+    st.caption(tr(language, "Global Multi-Asset & ETF Monitor. Regional segmentation with clean data separation.", "全球多资产与 ETF 监控看板。按地域严格分层，无跨区干扰。"))
 
     datasets = artifact.get("snapshot", {}).get("datasets", {})
 
@@ -4372,6 +4454,9 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
     prices = _market_price_frame(datasets)
     etf_prices = _market_etf_price_frame(datasets)
     premium_history = _market_premium_history_frame(datasets)
+    pair_summary = pd.DataFrame(datasets.get("relative_pairs", []))
+    pair_history = _market_pair_history_frame(datasets)
+    southbound = pd.DataFrame(datasets.get("southbound_market_flow", []))
 
     if technicals.empty and not regime and wrappers.empty:
         st.info(tr(language, "This chart is not available in the current artifact snapshot.", "当前数据快照未包含此图表。"))
@@ -4384,21 +4469,23 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
             eid = str(row["exposure_id"])
             label_by_exposure[eid] = _market_label(row, language)
 
-    # --- Leadership ---
-    section_heading(language, "Market Leadership", "市场领导力", "Which exposure is leading, and the technical snapshot behind it.", "哪个指数在领跑，以及其技术面快照。")
-    
     # 采用顶级原生下划线 Tab 栏 (st.tabs) - 按全球大区清晰划分
-    tab_china_label = tr(language, "🇨🇳 China & HK", "🇨🇳 泛中国 (A股/港股)")
-    tab_us_label = tr(language, "🇺🇸 United States", "🇺🇸 美国市场 (标普/纳指/道指/罗素/11大行业)")
-    tab_apac_label = tr(language, "🌏 APAC ex-CN/HK", "🌏 亚太除中港 (日经/韩国/台湾/半导体)")
+    tab_china_label = tr(language, "🇨🇳 China & HK", "🇨🇳 泛中国 (A股/港股/出海QDII)")
+    tab_us_label = tr(language, "🇺🇸 United States", "🇺🇸 美国市场 (大盘基准/11大行业)")
+    tab_apac_label = tr(language, "🌏 APAC ex-CN/HK", "🌏 亚太除中港 (日经/韩国/台湾)")
     tab_emea_label = tr(language, "🌍 EMEA", "🌍 欧洲与中东 (英/德/法/沙特)")
     tab_global_label = tr(language, "🌐 Global & All", "🌐 全球大类基准 / 全部")
-    
+
     china_tab, us_tab, apac_tab, emea_tab, global_tab = st.tabs([
         tab_china_label, tab_us_label, tab_apac_label, tab_emea_label, tab_global_label
     ])
-    
+
     china_eids = {
+        "csi300", "csi500", "csi1000", "chinext", "growth", "dividend",
+        "hsi", "hstech", "hk_dividend", "hk_internet", "hk_midcap", "hk_hshares",
+        "cn_infotech", "cn_staples", "sp500", "ndx", "nikkei225", "dax", "saudi",
+    }
+    china_core_eids = {
         "csi300", "csi500", "csi1000", "chinext", "growth", "dividend",
         "hsi", "hstech", "hk_dividend", "hk_internet", "hk_midcap", "hk_hshares",
         "cn_infotech", "cn_staples",
@@ -4408,1096 +4495,211 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
     emea_eids = {"dax", "ftse100", "cac40", "saudi"}
     global_eids = {"csi300", "sp500", "ndx", "dow", "russell2000", "hsi", "nikkei225", "kospi", "twii", "dax", "ftse100", "cac40", "saudi"}
 
-    southbound = pd.DataFrame(datasets.get("southbound_market_flow", []))
+    def _render_leadership_block(sub_prices, sub_tech, sub_labels, tab_key):
+        view_options = [tr(language, "All (rebased)", "全部（归一）"), tr(language, "Ratio (A/B)", "比值 (A/B)")]
+        if hasattr(st, "segmented_control"):
+            view_mode = st.segmented_control(
+                tr(language, "View", "视图"),
+                view_options,
+                default=view_options[0],
+                key=f"market_leadership_mode_{tab_key}",
+                label_visibility="collapsed",
+            ) or view_options[0]
+        else:
+            view_mode = st.radio(
+                tr(language, "View", "视图"),
+                view_options,
+                horizontal=True,
+                key=f"market_leadership_mode_{tab_key}",
+            )
 
-    # 美国市场 Tab 包含大盘基准 + 11大GICS核心行业与纯度细分下钻
+        if not sub_prices.empty:
+            if view_mode == tr(language, "Ratio (A/B)", "比值 (A/B)"):
+                render_market_ratio_chart(sub_prices, sub_tech, language, window)
+            else:
+                render_market_leadership_chart(sub_prices, sub_labels, language, window)
+
+        if not sub_tech.empty:
+            display_tech = sub_tech.copy()
+            if language == "zh" and "label_zh" in display_tech.columns:
+                display_tech["_label_display"] = display_tech["label_zh"]
+            else:
+                display_tech["_label_display"] = display_tech.get("label", display_tech.get("exposure_id"))
+
+            def _rsi_desc(v):
+                if pd.isna(v): return "—"
+                val = float(v)
+                if val >= 70: return f"{val:.1f} (超买过热)" if language == "zh" else f"{val:.1f} (Overbought)"
+                if val <= 35: return f"{val:.1f} (超卖低估)" if language == "zh" else f"{val:.1f} (Oversold)"
+                return f"{val:.1f} (中性健康)" if language == "zh" else f"{val:.1f} (Neutral)"
+
+            display_tech["_rsi_display"] = display_tech["rsi"].apply(_rsi_desc) if "rsi" in display_tech.columns else "—"
+            display_tech["_ma20_display"] = display_tech["ma20_pct"].apply(
+                lambda v: f"{float(v):+.2f}%" if pd.notna(v) else "—"
+            ) if "ma20_pct" in display_tech.columns else "—"
+            display_tech["_dd_display"] = display_tech["drawdown_60d"].apply(
+                lambda v: f"{float(v):.2f}%" if pd.notna(v) else "—"
+            ) if "drawdown_60d" in display_tech.columns else "—"
+            display_tech["_prem_display"] = display_tech["avg_premium_30d"].apply(
+                lambda v: f"{float(v):+.2f}%" if pd.notna(v) else "—"
+            ) if "avg_premium_30d" in display_tech.columns else "—"
+
+            col_map_zh = {
+                "_label_display": "指数标的",
+                "_ma20_display": "相对20日线",
+                "_rsi_display": "RSI情绪状态",
+                "_dd_display": "60日最大回撤",
+                "_prem_display": "挂钩ETF平均溢价(30D)",
+            }
+            col_map_en = {
+                "_label_display": "Index",
+                "_ma20_display": "vs MA20",
+                "_rsi_display": "RSI Status",
+                "_dd_display": "60D Drawdown",
+                "_prem_display": "Avg Premium (30D)",
+            }
+            mapping = col_map_zh if language == "zh" else col_map_en
+            final_cols = [c for c in mapping.keys() if c in display_tech.columns]
+            table_to_show = display_tech[final_cols].rename(columns=mapping).sort_values(mapping["_label_display"])
+            st.dataframe(table_to_show, hide_index=True, width="stretch")
+
+    # ==================== 1. 🇨🇳 泛中国 (A股 / 港股 / QDII出海工具) ====================
+    with china_tab:
+        sub_cn_prices = prices[prices["exposure_id"].isin(china_core_eids)].copy() if not prices.empty else prices
+        sub_cn_tech = technicals[technicals["exposure_id"].isin(china_core_eids)].copy() if not technicals.empty else technicals
+        sub_cn_labels = {k: v for k, v in label_by_exposure.items() if k in china_core_eids}
+        _render_leadership_block(sub_cn_prices, sub_cn_tech, sub_cn_labels, "china")
+
+        # 港股通南向资金
+        if not southbound.empty:
+            st.markdown(
+                f'<div class="am-chart-title" style="margin-top:24px;">{tr(language, "Southbound Stock Connect Flow", "港股通南向资金全市场流向")}</div>',
+                unsafe_allow_html=True,
+            )
+            render_southbound_market_flow(southbound, language, window)
+
+        # A股与港股风格轮动配对 (Relative Regime)
+        if not pair_summary.empty:
+            cn_pairs = pair_summary[pair_summary.get("region", "").isin(["China", "HK"])].copy()
+            if not cn_pairs.empty:
+                section_heading(
+                    language,
+                    "China & HK Relative Regime",
+                    "A股与港股相对风格轮动",
+                    "Style pair spreads and rolling 20D/1Y z-score.",
+                    "风格轮动价差及滚动 z-score。",
+                )
+                render_relative_regime(cn_pairs, pair_history, language, window)
+
+        # 场内可投资 ETF 包装（含国内宽基、港股通与QDII出海工具）
+        render_scoped_index_section(
+            china_eids,
+            label_by_exposure,
+            prices,
+            technicals,
+            wrappers,
+            language,
+            window,
+            etf_prices=etf_prices,
+            premium_history=premium_history,
+            key_prefix="china",
+            show_wrappers=True,
+        )
+
+    # ==================== 2. 🇺🇸 美国市场 (实际指数 + 11大行业与纯度细分) ====================
     with us_tab:
         sub_us_prices = prices[prices["exposure_id"].isin(us_broad_eids)].copy() if not prices.empty else prices
         sub_us_tech = technicals[technicals["exposure_id"].isin(us_broad_eids)].copy() if not technicals.empty else technicals
         sub_us_labels = {k: v for k, v in label_by_exposure.items() if k in us_broad_eids}
-        if not sub_us_prices.empty:
-            render_market_leadership_chart(sub_us_prices, sub_us_labels, language, window)
+        _render_leadership_block(sub_us_prices, sub_us_tech, sub_us_labels, "us")
+
+        # 11大行业板块热力与细分赛道下钻
         render_us_sector_tab(language)
 
-    tab_mapping = [
-        (china_tab, china_eids, "china"),
-        (apac_tab, apac_eids, "apac"),
-        (emea_tab, emea_eids, "emea"),
-        (global_tab, set(label_by_exposure.keys()), "global"),
-    ]
-    
-    for tab_ctx, target_eids_filter, tab_key in tab_mapping:
-        with tab_ctx:
-            sub_prices = prices[prices["exposure_id"].isin(target_eids_filter)].copy() if not prices.empty else prices
-            sub_tech = technicals[technicals["exposure_id"].isin(target_eids_filter)].copy() if not technicals.empty else technicals
-            sub_labels = {k: v for k, v in label_by_exposure.items() if k in target_eids_filter}
-
-            view_options = [tr(language, "All (rebased)", "全部（归一）"), tr(language, "Ratio (A/B)", "比值 (A/B)")]
-            if hasattr(st, "segmented_control"):
-                view_mode = st.segmented_control(
-                    tr(language, "View", "视图"),
-                    view_options,
-                    default=view_options[0],
-                    key=f"market_leadership_mode_{tab_key}",
-                    label_visibility="collapsed",
-                ) or view_options[0]
-            else:
-                view_mode = st.radio(
-                    tr(language, "View", "视图"),
-                    view_options,
-                    horizontal=True,
-                    key=f"market_leadership_mode_{tab_key}",
-                )
-
-            if not sub_prices.empty:
-                if view_mode == tr(language, "Ratio (A/B)", "比值 (A/B)"):
-                    render_market_ratio_chart(sub_prices, sub_tech, language, window)
-                else:
-                    render_market_leadership_chart(sub_prices, sub_labels, language, window)
-                    
-            if not sub_tech.empty:
-                display_tech = sub_tech.copy()
-                if language == "zh" and "label_zh" in display_tech.columns:
-                    display_tech["_label_display"] = display_tech["label_zh"]
-                else:
-                    display_tech["_label_display"] = display_tech.get("label", display_tech.get("exposure_id"))
-
-                def _rsi_desc(v):
-                    if pd.isna(v): return "—"
-                    val = float(v)
-                    if val >= 70: return f"{val:.1f} (超买过热)" if language == "zh" else f"{val:.1f} (Overbought)"
-                    if val <= 35: return f"{val:.1f} (超卖低估)" if language == "zh" else f"{val:.1f} (Oversold)"
-                    return f"{val:.1f} (中性健康)" if language == "zh" else f"{val:.1f} (Neutral)"
-                    
-                display_tech["_rsi_display"] = display_tech["rsi"].apply(_rsi_desc) if "rsi" in display_tech.columns else "—"
-
-                display_tech["_ma20_display"] = display_tech["ma20_pct"].apply(
-                    lambda v: f"{float(v):+.2f}%" if pd.notna(v) else "—"
-                ) if "ma20_pct" in display_tech.columns else "—"
-
-                display_tech["_dd_display"] = display_tech["drawdown_60d"].apply(
-                    lambda v: f"{float(v):.2f}%" if pd.notna(v) else "—"
-                ) if "drawdown_60d" in display_tech.columns else "—"
-
-                display_tech["_prem_display"] = display_tech["avg_premium_30d"].apply(
-                    lambda v: f"{float(v):+.2f}%" if pd.notna(v) else "—"
-                ) if "avg_premium_30d" in display_tech.columns else "—"
-
-                col_map_zh = {
-                    "_label_display": "指数标的",
-                    "_ma20_display": "相对20日线",
-                    "_rsi_display": "RSI情绪状态",
-                    "_dd_display": "60日最大回撤",
-                    "_prem_display": "挂钩ETF平均溢价(30D)",
-                }
-                col_map_en = {
-                    "_label_display": "Index",
-                    "_ma20_display": "vs MA20",
-                    "_rsi_display": "RSI Status",
-                    "_dd_display": "60D Drawdown",
-                    "_prem_display": "Avg Premium (30D)",
-                }
-                mapping = col_map_zh if language == "zh" else col_map_en
-                final_cols = [c for c in mapping.keys() if c in display_tech.columns]
-                table_to_show = display_tech[final_cols].rename(columns=mapping).sort_values(mapping["_label_display"])
-                st.dataframe(table_to_show, hide_index=True, width="stretch")
-
-            # 南向资金只属于泛中国 (A股/港股) 板块
-            if tab_key == "china" and not southbound.empty:
-                st.markdown(
-                    f'<div class="am-chart-title" style="margin-top:24px;">{tr(language, "Southbound Stock Connect Flow", "港股通南向资金全市场流向")}</div>',
-                    unsafe_allow_html=True,
-                )
-                render_southbound_market_flow(southbound, language, window)
-    # --- Relative Regime ---
-    pair_summary = pd.DataFrame(datasets.get("relative_pairs", []))
-    pair_history = _market_pair_history_frame(datasets)
-    if not pair_summary.empty:
-        section_heading(
-            language,
-            "Relative Regime",
-            "相对强弱",
-            "Two baskets, one ratio. The level is cumulative relative performance; the z-score places it against its own trailing year.",
-            "两组篮子，一个比值。曲线是累计相对表现；z-score 衡量它在自身过去一年中的位置。",
-        )
-        render_relative_regime(pair_summary, pair_history, language, window)
-    elif regime:
-        # Pre-pair artifacts still carry the old block; keep rendering it so a
-        # stale snapshot degrades to the previous view instead of a blank page.
-        section_heading(language, "Relative Regime", "相对强弱", "Rolling 20D z-score of windowed spread; trend is 5D vs 20D.", "滚动20日z-score的区间价差；趋势为5日对20日。")
-        st.dataframe(pd.DataFrame(regime), hide_index=True, width="stretch")
-
-    # --- Per-index detail ---
-    if not wrappers.empty or not prices.empty:
-        section_heading(
-            language,
-            "By Index",
-            "按指数查看",
-            "Pick an index to see its price, RSI, all ETF wrappers tracking it, and premium history.",
-            "选择一个指数，查看其价格、RSI、全部追踪 ETF 及溢价历史。",
-        )
-        available = [e for e in label_by_exposure if not prices.empty and e in set(prices["exposure_id"])]
-        if not available and not wrappers.empty:
-            available = sorted(wrappers["exposure_id"].astype(str).unique())
-        if available:
-            wrapper_counts = (
-                wrappers.groupby("exposure_id").size().to_dict() if not wrappers.empty else {}
-            )
-            selected = st.selectbox(
-                tr(language, "Index", "指数"),
-                available,
-                key="market_index_select",
-                format_func=lambda e: f"{label_by_exposure.get(e, e)} ({wrapper_counts.get(e, 0)} ETF)",
-            )
-            with st.expander(tr(language, "Indicator settings", "指标参数"), expanded=False):
-                setting_columns = st.columns(4)
-                rsi_window = setting_columns[0].number_input(
-                    tr(language, "RSI period", "RSI 周期"),
-                    min_value=2, max_value=100, value=14, step=1, key="market_rsi_window",
-                )
-                ma_window = setting_columns[1].number_input(
-                    tr(language, "MA period", "均线周期"),
-                    min_value=2, max_value=250, value=20, step=1, key="market_ma_window",
-                )
-                rsi_upper = setting_columns[2].number_input(
-                    tr(language, "Overbought", "超买线"),
-                    min_value=50.0, max_value=95.0, value=70.0, step=1.0, key="market_rsi_upper",
-                )
-                rsi_lower = setting_columns[3].number_input(
-                    tr(language, "Oversold", "超卖线"),
-                    min_value=5.0, max_value=50.0, value=30.0, step=1.0, key="market_rsi_lower",
-                )
-                st.caption(
-                    tr(
-                        language,
-                        "Wilder smoothing. The card above keeps the pipeline's RSI(14); "
-                        "these settings apply to the chart.",
-                        "Wilder 平滑。上方卡片仍为管线计算的 RSI(14)；此处参数仅作用于图表。",
-                    )
-                )
-            render_market_index_detail(
-                selected,
-                label_by_exposure.get(selected, selected),
-                prices,
-                technicals,
-                wrappers,
-                language,
-                window,
-                etf_prices=etf_prices,
-                premium_history=premium_history,
-                rsi_window=rsi_window,
-                ma_window=ma_window,
-                rsi_upper=rsi_upper,
-                rsi_lower=rsi_lower,
-            )
-
-
-def set_app_page(page_key: str) -> None:
-    st.session_state["page"] = page_key
-
-
-def overview_source_summary(
-    artifacts: dict[str, dict[str, Any]],
-    labels: dict[str, dict[str, Any]],
-) -> dict[str, int]:
-    total = healthy = attention = problem = 0
-    for sector_key, artifact in artifacts.items():
-        health = source_health_frame(artifact)
-        if health.empty:
-            status_values = ["Ready"] * len(labels.get(sector_key, artifact).get("sources", []))
-        else:
-            status_values = health.get("status", pd.Series(dtype="object")).astype(str).tolist()
-        for value in status_values:
-            normalized = value.casefold()
-            total += 1
-            if normalized in {"healthy", "ready", "live", "success"}:
-                healthy += 1
-            elif normalized in {"partial", "warning", "degraded", "stale"}:
-                attention += 1
-            else:
-                problem += 1
-    return {"total": total, "healthy": healthy, "attention": attention, "problem": problem}
-
-
-def sector_source_status(artifact: dict[str, Any], label_artifact: dict[str, Any], language: str) -> str:
-    health = source_health_frame(artifact)
-    if health.empty:
-        statuses = ["ready"] * len(label_artifact.get("sources", []))
-    else:
-        statuses = health.get("status", pd.Series(dtype="object")).astype(str).str.casefold().tolist()
-    if not statuses:
-        return tr(language, "Snapshot", "数据快照")
-    if all(value in {"healthy", "ready", "live", "success"} for value in statuses):
-        return tr(language, "Ready", "可用")
-    if any(value in {"partial", "warning", "degraded", "stale"} for value in statuses):
-        return tr(language, "Attention", "需留意")
-    return tr(language, "Problem", "有问题")
-
-
-def latest_artifact_date(artifacts: dict[str, dict[str, Any]], language: str) -> str:
-    values = [
-        artifact.get("package_info", {}).get("dataAsOf")
-        for artifact in artifacts.values()
-        if artifact.get("package_info", {}).get("dataAsOf")
-    ]
-    if not values:
-        return "—"
-    parsed = [parse_period(value) for value in values]
-    parsed = [value for value in parsed if not pd.isna(value)]
-    if not parsed:
-        return str(max(values))
-    return observation_date_label(max(parsed), language)
-
-
-def render_overview_header(
-    artifacts: dict[str, dict[str, Any]],
-    labels: dict[str, dict[str, Any]],
-    language: str,
-) -> None:
-    summary = overview_source_summary(artifacts, labels)
-    latest = latest_artifact_date(artifacts, language)
-    status_items = [
-        (
-            tr(language, "Connected sectors", "已接入板块"),
-            f"{len(artifacts)}",
-            tr(language, "Detailed pages available", "已有详细板块页面"),
-        ),
-        (
-            tr(language, "Source feeds", "来源数据流"),
-            f"{summary['total']}",
-            tr(language, "Across current sectors", "覆盖当前板块"),
-        ),
-        (
-            tr(language, "Ready feeds", "可用数据流"),
-            f"{summary['healthy']}/{summary['total']}" if summary["total"] else "—",
-            tr(language, "Build-validated", "已通过构建验证"),
-        ),
-        (
-            tr(language, "Latest artifact", "最新数据快照"),
-            latest,
-            tr(language, "Individual metrics have their own dates", "各指标仍保留自己的观察日期"),
-        ),
-    ]
-    cards = "".join(
-        f'<div class="am-overview-status-item"><div class="am-overview-status-label">{escape(label)}</div>'
-        f'<div class="am-overview-status-value">{escape(value)}</div>'
-        f'<div class="am-overview-status-note">{escape(note)}</div></div>'
-        for label, value, note in status_items
-    )
-    st.markdown(f'<div class="am-overview-status">{cards}</div>', unsafe_allow_html=True)
-
-
-def render_sector_pulse(
-    artifacts: dict[str, dict[str, Any]],
-    labels: dict[str, dict[str, Any]],
-    language: str,
-) -> None:
-    section_heading(
-        language,
-        "Sector pulse",
-        "板块脉搏",
-        "A compact reading for each connected sector; open the sector page for full detail.",
-        "每个已接入板块只保留一组核心读数；完整细节请进入板块页面。",
-    )
-    columns = st.columns(2 if len(artifacts) > 1 else 1)
-    for index, (sector_key, artifact) in enumerate(artifacts.items()):
-        config = OVERVIEW_PULSE_CONFIG.get(sector_key, {})
-        sector = SECTORS.get(sector_key, {})
-        label_artifact = labels.get(sector_key, artifact)
-        name = sector.get("name_zh" if language == "zh" else "name_en", sector_key)
-        status = sector_source_status(artifact, label_artifact, language)
-        as_of = artifact.get("package_info", {}).get("dataAsOf", "—")
-        as_of = observation_date_label(as_of, language)
-        metric_blocks: list[str] = []
-        for metric in config.get("metrics", ())[:3]:
-            if metric.get("series"):
-                value, date = latest_series_reading(
-                    artifact,
-                    metric.get("chart_id", "immd_net_flow_chart"),
-                    metric["field"],
-                    metric.get("format", "number"),
-                    language,
-                )
-                label = metric["label_zh"] if language == "zh" else metric["label_en"]
-            else:
-                label, value, date = latest_metric_reading(
-                    artifact,
-                    metric["dataset"],
-                    metric["field"],
-                    metric.get("format", "number"),
-                    label_en=metric["label_en"],
-                    label_zh=metric["label_zh"],
-                    language=language,
-                )
-            if value == "—":
-                continue
-            metric_blocks.append(
-                f'<div class="am-pulse-metric"><div class="am-pulse-label">{escape(label)}</div>'
-                f'<div class="am-pulse-value">{escape(value)}</div>'
-                f'<div class="am-pulse-asof">{escape(date)}</div></div>'
-            )
-        sparkline = config.get("sparkline")
-        sparkline_markup = ""
-        sparkline_context_markup = ""
-        if sparkline:
-            sparkline_frame, sparkline_title, sparkline_latest, sparkline_range, sparkline_note = sparkline_context(
-                artifact,
-                sparkline,
-                language,
-            )
-            if not sparkline_frame.empty:
-                sparkline_context_markup = (
-                    f'<div class="am-pulse-sparkline-title">{escape(sparkline_title)}</div>'
-                    f'<div class="am-pulse-sparkline-meta">'
-                    f'{escape(tr(language, "Latest", "最新"))} {escape(sparkline_latest)} · '
-                    f'{escape(str(len(sparkline_frame)))} '
-                    f'{escape(tr(language, "plotted observations", "个观察值"))} · '
-                    f'{escape(sparkline_range)}</div>'
-                    f'<div class="am-pulse-sparkline-note">{escape(sparkline_note)}</div>'
-                )
-                sparkline_markup = sparkline_svg(
-                    sparkline_frame,
-                    color=PALETTE[index % len(PALETTE)],
-                )
-        with columns[index % len(columns)]:
-            with st.container(border=True):
-                st.markdown(
-                    f'<div class="am-pulse-title">{escape(name)}</div>'
-                    f'<div class="am-pulse-meta">{escape(tr(language, "Hong Kong", "香港"))} · '
-                    f'{escape(status)} · {escape(tr(language, "artifact through", "数据截至"))} {escape(as_of)}</div>',
-                    unsafe_allow_html=True,
-                )
-                if metric_blocks:
-                    st.markdown(
-                        f'<div class="am-pulse-metrics">{"".join(metric_blocks)}</div>',
-                        unsafe_allow_html=True,
-                    )
-                if sparkline_markup:
-                    st.markdown(f"{sparkline_context_markup}{sparkline_markup}", unsafe_allow_html=True)
-                st.button(
-                    tr(language, f"Open {sector.get('short_en', name)}", f"打开{sector.get('short_zh', name)}"),
-                    key=f"overview_open_{sector_key}",
-                    width="stretch",
-                    on_click=set_app_page,
-                    args=(sector_key,),
-                )
-
-
-def render_featured_trends(
-    artifacts: dict[str, dict[str, Any]],
-    labels: dict[str, dict[str, Any]],
-    language: str,
-    window: str,
-) -> None:
-    _ = (artifacts, labels, window)
-    section_heading(
-        language,
-        "Featured trends",
-        "精选走势",
-        "Reserved for higher-frequency derived signals after data ingestion and validation.",
-        "待高频数据接入及派生信号验证后再展示。",
-    )
-    if not OVERVIEW_FEATURED_CHARTS:
-        return
-    columns = st.columns(2)
-    for index, chart in enumerate(OVERVIEW_FEATURED_CHARTS[:2]):
-        sector_key = chart["sector"]
-        if sector_key not in artifacts:
-            continue
-        with columns[index]:
-            with st.container(height=PAIR_CARD_HEIGHT, border=True):
-                sector = SECTORS[sector_key]
-                st.markdown(
-                    f'<div class="am-kicker">{escape(sector["short_zh" if language == "zh" else "short_en"])}</div>',
-                    unsafe_allow_html=True,
-                )
-                st.caption(tr(language, chart["note_en"], chart["note_zh"]))
-                render_line_chart(
-                    artifacts[sector_key],
-                    labels[sector_key],
-                    chart["chart_id"],
-                    language,
-                    window,
-                    views=chart["views"],
-                    periods_per_year=chart["periods_per_year"],
-                    change_mode=chart["change_mode"],
-                    height=chart["height"],
-                )
-                st.button(
-                    tr(language, f"Open {sector['short_en']}", f"打开{sector['short_zh']}"),
-                    key=f"overview_featured_open_{sector_key}",
-                    width="stretch",
-                    on_click=set_app_page,
-                    args=(sector_key,),
-                )
-
-
-def render_overview_health_summary(
-    artifacts: dict[str, dict[str, Any]],
-    labels: dict[str, dict[str, Any]],
-    language: str,
-) -> None:
-    section_heading(
-        language,
-        "Source health",
-        "来源健康度",
-        "Overview shows only the compact status; the full source table stays on Source Health.",
-        "总览只显示摘要；完整来源表保留在来源健康度页面。",
-    )
-    summary = overview_source_summary(artifacts, labels)
-    with st.container(border=True):
-        columns = st.columns(4)
-        values = [
-            (tr(language, "Total feeds", "数据流总数"), summary["total"]),
-            (tr(language, "Ready", "可用"), summary["healthy"]),
-            (tr(language, "Attention", "需留意"), summary["attention"]),
-            (tr(language, "Problem", "有问题"), summary["problem"]),
-        ]
-        for column, (label, value) in zip(columns, values):
-            with column:
-                st.markdown(
-                    f'<div class="am-health-value">{escape(str(value))}</div>'
-                    f'<div class="am-health-label">{escape(label)}</div>',
-                    unsafe_allow_html=True,
-                )
-        st.caption(
-            tr(
-                language,
-                "Source observation dates remain mixed by cadence; inspect Source Health for dataset-level detail.",
-                "不同来源的观察日期按各自频率更新；请到来源健康度查看数据集详情。",
-            )
-        )
-        st.button(
-            tr(language, "Open Source Health", "打开来源健康度"),
-            key="overview_open_health",
-            width="stretch",
-            on_click=set_app_page,
-            args=("health",),
-        )
-
-
-
-def render_ccl_mhpi_combined_chart(
-    artifact: dict[str, Any],
-    language: str,
-    history_window_name: str,
-    *,
-    height: int = 380,
-) -> None:
-    """Overlay CCL and MHPI on one plot — both are weekly residential price indices on a comparable scale."""
-    ccl = frame_for_dataset(artifact, "ccl_history").assign(series=tr(language, "Centaline CCL", "中原城市领先指数（CCL）"))
-    mhpi = frame_for_dataset(artifact, "mhpi_history").assign(series=tr(language, "Midland MHPI", "美联物业价格指数（MHPI）"))
-    combined = pd.concat([ccl, mhpi], ignore_index=True)
-    combined, coverage = history_window(combined, "date", history_window_name)
-
-    title = tr(language, "Centaline CCL & Midland MHPI", "中原城市领先指数（CCL）与美联物业价格指数（MHPI）")
-    st.markdown(f'<div class="am-chart-title">{title}</div>', unsafe_allow_html=True)
-    subtitle = tr(
-        language,
-        "Two independently published weekly residential price indices, plotted together for comparison.",
-        "两个独立发布的住宅价格周度指数，一并显示以便比较。",
-    )
-    st.caption(" · ".join([subtitle, localize_coverage(coverage, language)]))
-    if combined.empty:
-        st.info(tr(language, "No rows are available for this selection.", "这个选择没有可用数据。"))
-        return
-
-    view = st.radio(
-        tr(language, "View", "视图"),
-        ("Level", "WoW %", "YoY %"),
-        horizontal=True,
-        key="view_ccl_mhpi_combined",
-        format_func=lambda item: view_label(language, item),
-    )
-    transformed, value_label, transformed_format = line_view_frame(combined, "value", "series", view, 52, "pct", "number")
-    if transformed.empty:
-        st.info(tr(language, "Not enough observations for this comparison window.", "这个比较视图没有足够的观察值。"))
-        return
-    fig = px.line(transformed, x="_date", y="_value", color="series", markers=False, color_discrete_sequence=PALETTE)
-    fig.update_yaxes(title=value_label)
-    fig.update_xaxes(title=None, tickformat="%b %Y")
-    if transformed["_date"].max() - transformed["_date"].min() > pd.Timedelta(days=365 * 7):
-        fig.update_xaxes(dtick="M12")
-    elif transformed["_date"].max() - transformed["_date"].min() > pd.Timedelta(days=365 * 3):
-        fig.update_xaxes(dtick="M6")
-    apply_line_hover(fig, transformed, transformed_format)
-    fig = chart_theme(fig, transformed_format, date_axis=True, height=height)
-    st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True})
-
-
-def render_real_estate_residential(artifact: dict[str, Any], labels: dict[str, Any], language: str, window: str) -> None:
-    cards = [
-        metric_from_card(artifact, labels, "ccl_card", "latest", "number"),
-        metric_from_card(artifact, labels, "mhpi_card", "latest", "number"),
-        metric_from_card(artifact, labels, "rvd_price_card", "latest", "number"),
-        metric_from_card(artifact, labels, "rvd_rent_card", "latest", "number"),
-    ]
-    columns = st.columns(len(cards))
-    for column, (label, value, help_text) in zip(columns, cards):
-        with column:
-            st.metric(label, value, help=help_text)
-
-    section_heading(
-        language,
-        "Price & rental core",
-        "价格与租金核心走势",
-        "CCL and MHPI are publisher-level weekly indices; RVD is the official monthly benchmark.",
-        "CCL 与 MHPI 为发布者周度指数；RVD 为官方月度基准指数。",
-    )
-    with st.container(border=True):
-        render_ccl_mhpi_combined_chart(artifact, language, window, height=420)
-
-    card_h, chart_h = get_pair_heights(None, None, 'line', 'line')
-    left, right = st.columns(2)
-    with left:
-        with st.container(height=card_h, border=True):
-            render_line_chart(
-                artifact,
-                labels,
-                "rvd_trend",
-                language,
-                window,
-                views=("Level", "MoM %", "YoY %"),
-                periods_per_year=12,
-                height=chart_h,
-            )
-    with right:
-        with st.container(height=card_h, border=True):
-            render_line_chart(
-                artifact,
-                labels,
-                "rvd_rent_trend",
-                language,
-                window,
-                views=("Level", "MoM %", "YoY %"),
-                periods_per_year=12,
-                height=chart_h,
-            )
-
-    section_heading(
-        language,
-        "Mortgage & credit",
-        "按揭与信贷",
-        "HKMA residential mortgage survey: rate mix, LTV, credit quality, applications and loan amounts.",
-        "金管局住宅按揭调查：利率组合、按揭成数、信贷质素、申请宗数及贷款金额。",
-    )
-    card_h, chart_h = get_pair_heights(None, None, 'line', 'line')
-    left, right = st.columns(2)
-    with left:
-        with st.container(height=card_h, border=True):
-            render_line_chart(
-                artifact,
-                labels,
-                "hkma_mortgage_rate_mix_chart",
-                language,
-                window,
-                views=("Level",),
-                periods_per_year=12,
-                height=chart_h,
-            )
-    with right:
-        with st.container(height=card_h, border=True):
-            render_line_chart(
-                artifact,
-                labels,
-                "hkma_ltv_chart",
-                language,
-                window,
-                views=("Level",),
-                periods_per_year=12,
-                height=chart_h,
-            )
-
-    card_h, chart_h = get_pair_heights(None, None, 'line', 'line')
-    left, right = st.columns(2)
-    with left:
-        with st.container(height=card_h, border=True):
-            render_line_chart(
-                artifact,
-                labels,
-                "hkma_credit_quality_chart",
-                language,
-                window,
-                views=("Level",),
-                periods_per_year=12,
-                height=chart_h,
-            )
-    with right:
-        with st.container(height=card_h, border=True):
-            render_line_chart(
-                artifact,
-                labels,
-                "hkma_applications_chart",
-                language,
-                window,
-                views=("Level",),
-                periods_per_year=12,
-                height=chart_h,
-            )
-
-    with st.container(border=True):
-        render_line_chart(
-            artifact,
-            labels,
-            "hkma_loan_amount_chart",
+        # 美股实际指数单指数详情 (不混杂国内QDII折溢价)
+        render_scoped_index_section(
+            us_broad_eids,
+            label_by_exposure,
+            prices,
+            technicals,
+            wrappers,
             language,
             window,
-            views=("Level",),
-            periods_per_year=12,
-            height=390,
+            key_prefix="us",
+            show_wrappers=False,
         )
 
-    with st.container(border=True):
-        render_table(artifact, labels, "hkma_mortgage_activity_table", language, max_rows=24)
+    # ==================== 3. 🌏 亚太除中港 (日经 / 韩国 / 台湾) ====================
+    with apac_tab:
+        sub_apac_prices = prices[prices["exposure_id"].isin(apac_eids)].copy() if not prices.empty else prices
+        sub_apac_tech = technicals[technicals["exposure_id"].isin(apac_eids)].copy() if not technicals.empty else technicals
+        sub_apac_labels = {k: v for k, v in label_by_exposure.items() if k in apac_eids}
+        _render_leadership_block(sub_apac_prices, sub_apac_tech, sub_apac_labels, "apac")
 
-    section_heading(
-        language,
-        "Transactions & new supply",
-        "成交与新盘供应",
-        "Land Registry ASP counts, agency transaction pulse, new project launches and 28Hse EPI/ERI.",
-        "土地注册处买卖合约宗数、代理行成交脉搏、新盘推售及 28Hse 楼价/租金指数。",
-    )
-    card_h, chart_h = get_pair_heights(None, None, 'line', 'line')
-    left, right = st.columns(2)
-    with left:
-        with st.container(height=card_h, border=True):
-            render_line_chart(
-                artifact,
-                labels,
-                "landreg_asp_chart",
-                language,
-                window,
-                views=("Level",),
-                periods_per_year=12,
-                height=chart_h,
-            )
-    with right:
-        with st.container(height=card_h, border=True):
-            render_line_chart(
-                artifact,
-                labels,
-                "epi_eri_chart",
-                language,
-                window,
-                views=("Level",),
-                periods_per_year=12,
-                height=chart_h,
-            )
-
-    card_h, chart_h = get_pair_heights(400, 400, 'bar', 'bar')
-    left, right = st.columns(2)
-    with left:
-        with st.container(height=card_h, border=True):
-            render_table(artifact, labels, "agency_transactions_pulse_table", language, max_rows=25)
-    with right:
-        with st.container(height=card_h, border=True):
-            render_table(artifact, labels, "hse28_new_projects_table", language, max_rows=25)
-
-    section_heading(
-        language,
-        "Government supply pipeline (Buildings Department)",
-        "政府房屋供应管道（屋宇署）",
-        "Demolition-to-occupation project lifecycle, from the official monthly digest archive.",
-        "由拆卸至入伙的项目生命周期，来自屋宇署月报档案。",
-    )
-    card_h, chart_h = get_pair_heights(None, None, 'line', 'line')
-    left, right = st.columns(2)
-    with left:
-        with st.container(height=card_h, border=True):
-            selected_units = series_options(artifact, "bd_supply_history_units_chart", language, default_count=4)
-            units_frequency = monthly_quarterly_control(language, "bd_supply_units_freq")
-            render_line_chart(
-                artifact,
-                labels,
-                "bd_supply_history_units_chart",
-                language,
-                window,
-                series_selection=selected_units,
-                views=("Level", "YoY %"),
-                periods_per_year=12 if units_frequency == "Monthly" else 4,
-                resample_frequency=units_frequency,
-                height=chart_h,
-            )
-    with right:
-        with st.container(height=card_h, border=True):
-            selected_counts = series_options(artifact, "bd_supply_history_counts_chart", language, default_count=4)
-            counts_frequency = monthly_quarterly_control(language, "bd_supply_counts_freq")
-            render_line_chart(
-                artifact,
-                labels,
-                "bd_supply_history_counts_chart",
-                language,
-                window,
-                series_selection=selected_counts,
-                views=("Level", "YoY %"),
-                periods_per_year=12 if counts_frequency == "Monthly" else 4,
-                resample_frequency=counts_frequency,
-                height=chart_h,
-            )
-
-    with st.container(border=True):
-        render_table(artifact, labels, "bd_supply_detail_table", language, max_rows=30)
-
-
-def render_real_estate_cross_source(artifact: dict[str, Any], labels: dict[str, Any], language: str, window: str) -> None:
-    section_heading(
-        language,
-        "Rebased comparisons",
-        "重新基准化比较",
-        "Each series rebased to 100 at its first available month in the window; price and rent are kept on separate scales.",
-        "各序列在窗口内首个可用月份重新基准化为 100；价格与租金分开显示，避免混合比较。",
-    )
-    card_h, chart_h = get_pair_heights(None, None, 'line', 'line')
-    left, right = st.columns(2)
-    with left:
-        with st.container(height=card_h, border=True):
-            render_line_chart(
-                artifact,
-                labels,
-                "residential_price_rebased_chart",
-                language,
-                window,
-                views=("Level",),
-                periods_per_year=12,
-                height=chart_h,
-            )
-    with right:
-        with st.container(height=card_h, border=True):
-            render_line_chart(
-                artifact,
-                labels,
-                "residential_rent_rebased_chart",
-                language,
-                window,
-                views=("Level",),
-                periods_per_year=12,
-                height=chart_h,
-            )
-
-    section_heading(
-        language,
-        "Centaline price & rental indices",
-        "中原价格与租金指数",
-        "CCI and CRI are separate Centaline index products from the CCL headline series; rental yield is a companion series, not a rent level.",
-        "CCI 与 CRI 为中原独立指数产品，有别于 CCL headline 序列；租金回报率为配套序列，并非租金水平。",
-    )
-    card_h, chart_h = get_pair_heights(None, None, 'line', 'line')
-    left, right = st.columns(2)
-    with left:
-        with st.container(height=card_h, border=True):
-            render_line_chart(
-                artifact,
-                labels,
-                "cci_trend",
-                language,
-                window,
-                views=("Level", "MoM %", "YoY %"),
-                periods_per_year=12,
-                height=chart_h,
-            )
-    with right:
-        with st.container(height=card_h, border=True):
-            render_line_chart(
-                artifact,
-                labels,
-                "cri_trend",
-                language,
-                window,
-                views=("Level", "MoM %", "YoY %"),
-                periods_per_year=12,
-                height=chart_h,
-            )
-
-    with st.container(border=True):
-        render_line_chart(
-            artifact,
-            labels,
-            "cri_yield_trend",
+        # 亚太主要市场单指数详情
+        render_scoped_index_section(
+            apac_eids,
+            label_by_exposure,
+            prices,
+            technicals,
+            wrappers,
             language,
             window,
-            views=("Level",),
-            periods_per_year=12,
-            height=360,
+            key_prefix="apac",
+            show_wrappers=False,
         )
 
-    section_heading(
-        language,
-        "Market sentiment",
-        "市场情绪",
-        "Two independent sentiment reads: Centaline CSI (weekly) and Midland's own confidence index.",
-        "两个独立的情绪指标：中原 CSI（周度）及美联物业信心指数。",
-    )
-    card_h, chart_h = get_pair_heights(None, None, 'line', 'line')
-    left, right = st.columns(2)
-    with left:
-        with st.container(height=card_h, border=True):
-            render_line_chart(
-                artifact,
-                labels,
-                "csi_trend",
-                language,
-                window,
-                views=("Level",),
-                periods_per_year=52,
-                height=chart_h,
-            )
-    with right:
-        with st.container(height=card_h, border=True):
-            render_line_chart(
-                artifact,
-                labels,
-                "confidence_trend",
-                language,
-                window,
-                views=("Level",),
-                periods_per_year=52,
-                height=chart_h,
-            )
+    # ==================== 4. 🌍 欧洲与中东 (英国 / 德国 / 法国 / 沙特) ====================
+    with emea_tab:
+        sub_emea_prices = prices[prices["exposure_id"].isin(emea_eids)].copy() if not prices.empty else prices
+        sub_emea_tech = technicals[technicals["exposure_id"].isin(emea_eids)].copy() if not technicals.empty else technicals
+        sub_emea_labels = {k: v for k, v in label_by_exposure.items() if k in emea_eids}
+        _render_leadership_block(sub_emea_prices, sub_emea_tech, sub_emea_labels, "emea")
 
-
-def render_real_estate_commercial(artifact: dict[str, Any], labels: dict[str, Any], language: str, window: str) -> None:
-    section_heading(
-        language,
-        "Office & retail rents",
-        "写字楼与零售租金",
-        "Official RVD rental/price indices for commercial property, separate from the residential series.",
-        "官方 RVD 商业地产租金／价格指数，与住宅序列分开显示。",
-    )
-    card_h, chart_h = get_pair_heights(None, None, 'line', 'line')
-    left, right = st.columns(2)
-    with left:
-        with st.container(height=card_h, border=True):
-            render_line_chart(
-                artifact,
-                labels,
-                "rvd_office_trend",
-                language,
-                window,
-                views=("Level", "MoM %", "YoY %"),
-                periods_per_year=12,
-                height=chart_h,
-            )
-    with right:
-        with st.container(height=card_h, border=True):
-            render_line_chart(
-                artifact,
-                labels,
-                "rvd_retail_trend",
-                language,
-                window,
-                views=("Level", "MoM %", "YoY %"),
-                periods_per_year=12,
-                height=chart_h,
-            )
-
-    section_heading(
-        language,
-        "Supply-side macro signals",
-        "供应端宏观信号",
-        "Economy-wide construction activity and government land disposed by method — leading indicators for future commercial and residential supply.",
-        "全经济建筑活动及政府卖地（按方式划分）——未来商业及住宅供应的领先指标。",
-    )
-    card_h, chart_h = get_pair_heights(None, None, 'line', 'line')
-    left, right = st.columns(2)
-    with left:
-        with st.container(height=card_h, border=True):
-            render_line_chart(
-                artifact,
-                labels,
-                "cnsd_construction_value_chart",
-                language,
-                window,
-                views=("Level", "QoQ %", "YoY %"),
-                periods_per_year=4,
-                height=chart_h,
-            )
-    with right:
-        with st.container(height=card_h, border=True):
-            render_line_chart(
-                artifact,
-                labels,
-                "censtatd_land_disposals_chart",
-                language,
-                window,
-                views=("Level",),
-                periods_per_year=4,
-                height=chart_h,
-            )
-
-
-def render_real_estate_tabs(artifact: dict[str, Any], labels: dict[str, Any], language: str, window: str) -> None:
-    """Render Hong Kong real estate as residential, cross-source/sentiment and commercial/land-supply tabs.
-
-    Company-level bottom-up analysis (e.g. individual developer deep dives) is
-    tracked separately and intentionally has no tab here yet.
-    """
-    render_header(
-        artifact,
-        labels,
-        language,
-        "real_estate",
-        title_override=tr(language, "Hong Kong Real Estate", "香港地产"),
-        description_override=tr(
+        # 欧洲与中东单指数详情
+        render_scoped_index_section(
+            emea_eids,
+            label_by_exposure,
+            prices,
+            technicals,
+            wrappers,
             language,
-            "Sector-level residential, cross-source/sentiment and commercial/land-supply signals. Company-level bottom-up analysis is tracked separately and is not part of this page.",
-            "板块级住宅、跨来源／情绪指标及商业地产／土地供应信号。个股自下而上分析另行追踪，不在此页面内。",
-        ),
-    )
-    residential_tab, cross_source_tab, commercial_tab = st.tabs([
-        tr(language, "Residential Market", "住宅市场"),
-        tr(language, "Cross-Source & Sentiment", "跨来源与市场情绪"),
-        tr(language, "Commercial & Land Supply", "商业地产与土地供应"),
-    ])
-    with residential_tab:
-        render_real_estate_residential(artifact, labels, language, window)
-    with cross_source_tab:
-        render_real_estate_cross_source(artifact, labels, language, window)
-    with commercial_tab:
-        render_real_estate_commercial(artifact, labels, language, window)
-    render_source_coverage({"real_estate": artifact}, {"real_estate": labels}, language)
+            window,
+            key_prefix="emea",
+            show_wrappers=False,
+        )
 
+    # ==================== 5. 🌐 全球大类基准 / 全部 ====================
+    with global_tab:
+        sub_glob_prices = prices[prices["exposure_id"].isin(global_eids)].copy() if not prices.empty else prices
+        sub_glob_tech = technicals[technicals["exposure_id"].isin(global_eids)].copy() if not technicals.empty else technicals
+        sub_glob_labels = {k: v for k, v in label_by_exposure.items() if k in global_eids}
+        _render_leadership_block(sub_glob_prices, sub_glob_tech, sub_glob_labels, "global")
 
+        # 全球宏观跨市场相对强弱 (如 China vs US)
+        if not pair_summary.empty:
+            cross_pairs = pair_summary[pair_summary.get("region", "").isin(["Cross", "US"])].copy()
+            if not cross_pairs.empty:
+                section_heading(
+                    language,
+                    "Cross-Market Relative Regime",
+                    "全球宏观跨市场比值",
+                    "Cross-market pair spreads and rolling 20D/1Y z-score.",
+                    "跨市场资产比值及滚动 z-score。",
+                )
+                render_relative_regime(cross_pairs, pair_history, language, window)
 
-def render_overview(
-    artifacts: dict[str, dict[str, Any]],
-    labels: dict[str, dict[str, Any]],
-    language: str,
-    window: str,
-) -> None:
-    st.markdown(f'<div class="am-page-title">{tr(language, "Asia Markets Overview", "亚洲市场总览")}</div>', unsafe_allow_html=True)
-    st.caption(
-        tr(
+        # 全量指数单指数详情
+        render_scoped_index_section(
+            set(label_by_exposure.keys()),
+            label_by_exposure,
+            prices,
+            technicals,
+            wrappers,
             language,
-            "A bounded Hong Kong market pulse across the connected sectors; detailed analysis stays on sector pages.",
-            "香港市场脉搏总览；详细分析保留在各板块页面。",
+            window,
+            etf_prices=etf_prices,
+            premium_history=premium_history,
+            key_prefix="global",
+            show_wrappers=True,
         )
-    )
-    st.markdown(
-        f'<div class="am-meta">{escape(tr(language, "Hong Kong", "香港"))} · '
-        f'{escape(tr(language, "artifact snapshots, not live browser connections", "artifact 数据快照，不是浏览器实时连接"))}</div>',
-        unsafe_allow_html=True,
-    )
-    render_overview_header(artifacts, labels, language)
-    render_sector_pulse(artifacts, labels, language)
-    render_featured_trends(artifacts, labels, language, window)
-    render_overview_health_summary(artifacts, labels, language)
-
-
-def make_sidebar(language: str) -> tuple[str, str, str]:
-    with st.sidebar:
-        st.markdown(
-            '<div class="am-brand"><div class="am-brand-mark">AM</div><div><div class="am-brand-name">Asia Markets</div><div class="am-brand-sub">Private research terminal</div></div></div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown(f'<div class="am-sidebar-group-label">{tr(language, "Preferences", "偏好设置")}</div>', unsafe_allow_html=True)
-        language_choice = st.selectbox(
-            "Language / 语言",
-            ["English", "中文"],
-            index=1 if language == "zh" else 0,
-            key="language_choice",
-        )
-        active_language = "zh" if language_choice == "中文" else "en"
-        page_labels = {
-            "overview": tr(active_language, "Overview", "总览"),
-            "market": tr(active_language, "ETF Monitor", "ETF监控"),
-            "labour": tr(active_language, "Labour Market", "劳动力市场"),
-            "population": tr(active_language, "Population & Migration", "人口与迁移"),
-            "real_estate": tr(active_language, "Hong Kong Real Estate", "地产"),
-            "transport": tr(active_language, "Transport & Aviation", "交通与航空"),
-            "aerospace": tr(active_language, "Commercial Aerospace", "商业航天"),
-            "crypto": tr(active_language, "Stablecoin & Crypto", "稳定币与加密资产"),
-            "data": tr(active_language, "Data Explorer", "数据探索器"),
-            "health": tr(active_language, "Source Health", "来源健康度"),
-        }
-        current_page = str(st.session_state.get("page", "overview"))
-        if current_page not in page_labels:
-            current_page = "overview"
-            st.session_state["page"] = current_page
-
-        def set_page(page_key: str) -> None:
-            st.session_state["page"] = page_key
-
-        def nav_button(page_key: str) -> None:
-            st.button(
-                page_labels[page_key],
-                key=f"sidebar_nav_{page_key}",
-                type="primary" if current_page == page_key else "secondary",
-                width="stretch",
-                on_click=set_page,
-                args=(page_key,),
-            )
-
-        st.markdown(f'<div class="am-sidebar-group-label">{tr(active_language, "Workspace", "工作台")}</div>', unsafe_allow_html=True)
-        nav_button("overview")
-        st.markdown(f'<div class="am-sidebar-group-label">{tr(active_language, "Markets", "市场")}</div>', unsafe_allow_html=True)
-        nav_button("market")
-        st.markdown(f'<div class="am-sidebar-group-label">{tr(active_language, "Hong Kong", "香港")}</div>', unsafe_allow_html=True)
-        nav_button("labour")
-        nav_button("population")
-        nav_button("real_estate")
-        nav_button("transport")
-        nav_button("aerospace")
-        nav_button("crypto")
-        st.markdown(f'<div class="am-sidebar-group-label">{tr(active_language, "Data", "数据")}</div>', unsafe_allow_html=True)
-        nav_button("data")
-        nav_button("health")
-        st.divider()
-        history_window_name = st.selectbox(
-            tr(active_language, "Default history window", "默认历史范围"),
-            list(HISTORY_WINDOWS),
-            index=0,
-            key="history_window",
-            help=tr(active_language, "The source grain is preserved; shorter source histories show all available rows.", "保留来源粒度；来源历史较短时显示全部可用数据。"),
-        )
-        st.divider()
-        st.caption(tr(active_language, "V1 scope", "V1 范围"))
-        st.caption(tr(active_language, "Hong Kong · 5 sectors", "香港 · 5 个板块"))
-    return active_language, current_page, history_window_name
-
-
-def main() -> None:
-    st.set_page_config(page_title="Asia Markets", page_icon="🌏", layout="wide", initial_sidebar_state="expanded")
-    style_app()
-    language_hint = st.session_state.get("language_choice", "English")
-    initial_language = "zh" if language_hint == "中文" else "en"
-    language, page, window = make_sidebar(initial_language)
-    artifacts: dict[str, dict[str, Any]] = {}
-    labels: dict[str, dict[str, Any]] = {}
-    try:
-        for key, config in SECTORS.items():
-            artifacts[key] = load_artifact(
-                config["slug"], "en", artifact_mtime_ns(config["slug"], "en")
-            )
-            labels[key] = load_artifact(
-                config["slug"], language, artifact_mtime_ns(config["slug"], language)
-            )
-    except FileNotFoundError as error:
-        st.error(f"Missing local dashboard artifact: {error}")
-        st.stop()
-
-    if page == "overview":
-        render_overview(artifacts, labels, language, window)
-    elif page == "market":
-        render_market(artifacts["market"], labels["market"], language, window)
-    elif page == "labour":
-        render_labour(artifacts["labour"], labels["labour"], language, window)
-    elif page == "population":
-        render_population(artifacts["population"], labels["population"], language, window)
-    elif page == "transport":
-        render_transport_tabs(artifacts["transport"], labels["transport"], language, window)
-    elif page == "aerospace":
-        render_aerospace(artifacts["aerospace"], labels["aerospace"], language, window)
-    elif page == "real_estate":
-        render_real_estate_tabs(artifacts["real_estate"], labels["real_estate"], language, window)
-    elif page == "crypto":
-        render_crypto(artifacts["crypto"], labels["crypto"], language, window)
-    elif page == "data":
-        render_data_explorer(artifacts, language)
-    elif page == "health":
-        st.markdown(f'<div class="am-page-title">{tr(language, "Source Health", "来源健康度")}</div>', unsafe_allow_html=True)
-        st.caption(tr(language, "Freshness and coverage for the five connected V1 sectors.", "五个已接入 V1 板块的更新时间和覆盖情况。"))
-        render_source_coverage(artifacts, labels, language)
-
-
-if __name__ == "__main__":
-    main()
