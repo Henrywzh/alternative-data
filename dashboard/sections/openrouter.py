@@ -16,7 +16,7 @@ import yfinance as yf
 
 from dashboard import remote
 from dashboard.checks import CheckResult, run_checks
-from dashboard.data import (DOMAIN_ORDER, DATASET_REGISTRY, DatasetLoadResult, FreshnessInfo, dataset_source_for_domain, domain_dataset_ids, load_domain_datasets, load_latest_manifest)
+from dashboard.data import (DAILY_HISTORY_YEARS, DOMAIN_ORDER, DATASET_REGISTRY, DatasetLoadResult, FreshnessInfo, dataset_source_for_domain, domain_dataset_ids, load_domain_datasets, load_latest_manifest)
 from openrouter_revenue import (
     build_price_context,
     build_conservative_provider_economics,
@@ -4768,6 +4768,15 @@ def _filter_pivot_by_history_range(pivot_df: pd.DataFrame, cutoff: pd.Timestamp 
     return pivot_df[keep]
 
 
+def _daily_retention_caption() -> str:
+    """State the daily retention window wherever a daily chart is drawn."""
+    unit = "year" if DAILY_HISTORY_YEARS == 1 else "years"
+    return (
+        f"Daily grain is retained for {DAILY_HISTORY_YEARS} {unit}; a longer History "
+        "selection extends the weekly and monthly tabs only."
+    )
+
+
 def render_history_range_control(key: str, *, default: str = "1Y") -> pd.Timestamp | None:
     """Shared YTD/1Y/2Y/5Y/All control -- backfilled history now runs back to
     2024/2025 in several sections, so daily/weekly charts default to a
@@ -5073,7 +5082,16 @@ def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrou
     with tab_month:
         _render_chart(pivot_active_monthly, "Usage Month", "monthly")
     with tab_day:
-        _render_chart(pivot_active_daily, "Usage Date", "daily")
+        # The History control above is shared with the weekly and monthly tabs,
+        # which keep their full history.  Daily tables are the ones that grow
+        # without bound and are capped at load time, so say so here rather than
+        # let a longer selection silently return the same year of data.
+        _render_chart(
+            pivot_active_daily,
+            "Usage Date",
+            "daily",
+            extra_caption=_daily_retention_caption(),
+        )
 
     if is_revenue:
         st.caption(

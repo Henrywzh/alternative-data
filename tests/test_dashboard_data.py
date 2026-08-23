@@ -5124,3 +5124,86 @@ def test_no_section_loads_the_same_domain_twice_under_two_names() -> None:
                 f"to the same datasets {sorted(ids)}"
             )
             seen[ids] = domain
+
+
+def _daily_window_frame(dataset_id: str, date_column: str, dates: list[str]) -> pd.DataFrame:
+    return pd.DataFrame(
+        [
+            {
+                "dataset_id": dataset_id,
+                "source_url": f"fixture://{dataset_id}",
+                "source_run_id": "run-window",
+                "scraped_at": "2026-08-22T00:00:00Z",
+                date_column: date,
+                "entity_id": "openai",
+                "entity_name": "OpenAI",
+                "model_permaslug": "openai/gpt-test",
+                "category_slug": "all",
+                "usage_date": date,
+                "total_tokens": 1.0,
+                "prompt_tokens": 0.0,
+                "completion_tokens": 0.0,
+                "reasoning_tokens": 0.0,
+                "request_count": None,
+            }
+            for date in dates
+        ]
+    )
+
+
+def test_daily_datasets_are_trimmed_to_the_retention_window(tmp_path: Path) -> None:
+    """Daily grain is the only grain that grows without bound, so it is capped.
+
+    The cutoff is anchored to the frame's own latest observation rather than the
+    clock, so a source that stops updating still exposes a full window instead
+    of decaying to nothing.
+    """
+    root = tmp_path / "data" / "normalized" / "openrouter"
+    root.mkdir(parents=True)
+    _daily_window_frame(
+        "provider_daily_activity",
+        "usage_date",
+        ["2023-01-01", "2024-01-01", "2026-08-01", "2026-08-22"],
+    ).to_parquet(root / "provider_daily_activity.parquet", index=False)
+
+    result = load_dataset("provider_daily_activity", base_dir=tmp_path)
+
+    kept = sorted(result.frame["usage_date"].astype(str))
+    assert kept == ["2026-08-01", "2026-08-22"]
+
+
+def test_weekly_datasets_keep_their_full_history(tmp_path: Path) -> None:
+    """Only daily datasets are capped; a weekly table adds 52 rows a year."""
+    root = tmp_path / "data" / "normalized" / "openrouter"
+    root.mkdir(parents=True)
+    pd.DataFrame(
+        [
+            {
+                "dataset_id": "top_models",
+                "source_url": "fixture://top_models",
+                "source_run_id": "run-window",
+                "scraped_at": "2026-08-22T00:00:00Z",
+                "week_start_date": week,
+                "entity_id": "openai/gpt-test",
+                "metric_value": 1.0,
+                "rank": 1,
+            }
+            for week in ("2023-01-02", "2024-01-01", "2026-08-17")
+        ]
+    ).to_parquet(root / "top_models.parquet", index=False)
+
+    result = load_dataset("top_models", base_dir=tmp_path)
+
+    assert len(result.frame) == 3
+
+
+def test_every_windowed_dataset_has_a_date_column_to_window_on() -> None:
+    """A capped dataset with no primary date column would silently keep everything."""
+    from dashboard.data import DAILY_HISTORY_DATASETS
+
+    for dataset_id in DAILY_HISTORY_DATASETS:
+        entry = DATASET_REGISTRY.get(dataset_id)
+        assert entry is not None, f"{dataset_id} is windowed but not registered"
+        assert entry.get("primary_date_column"), (
+            f"{dataset_id} is windowed but has no primary_date_column to window on"
+        )

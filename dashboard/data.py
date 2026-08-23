@@ -63,6 +63,60 @@ def _read_parquet_partitions(sources: list, columns: list[str] | None) -> pd.Dat
     return pd.concat(frames, ignore_index=True)
 
 
+# Daily-grain datasets are capped to a rolling window at load time.  They are
+# the only ones that grow without bound -- a weekly table adds 52 rows a year
+# where provider_daily_activity adds tens of thousands -- so the cap is what
+# stops this page drifting back into the memory ceiling as history accumulates.
+# The window is a date range anchored to the frame's own latest observation,
+# never a row count: a row count makes the retained span depend on how many
+# rows a source happened to emit.
+#
+# raw_openrouter_models is deliberately absent even though it is the largest
+# dataset here.  It is a change log, not a snapshot series, so dropping rows
+# older than the window drops models whose last change predates it -- the
+# reconstructed catalog would quietly lose them.  Its size is addressed by
+# reading the current-catalog sidecar instead (see
+# compute_compute_availability_views).
+DAILY_HISTORY_YEARS = 1
+DAILY_HISTORY_DATASETS: frozenset[str] = frozenset(
+    {
+        "provider_daily_activity",
+        "daily_provider_economics",
+        "daily_provider_revenue_estimates",
+        "openrouter_usage_economics_daily",
+        "openrouter_model_activity",
+        "cloud_infra_daily_activity",
+        "daily_cloud_infra_economics",
+        "official_model_rankings_daily",
+        "openrouter_task_spend",
+        "app_usage_daily",
+        "app_top_models_daily_snapshot",
+        "apps_global_ranking_snapshots",
+        "apps_trending_snapshots",
+        "app_metadata_snapshots",
+        "artificial_analysis_models_daily",
+        "artificial_analysis_leading_models_by_lab_daily",
+    }
+)
+
+
+def _apply_daily_history_window(
+    frame: pd.DataFrame, dataset_id: str, date_column: str | None
+) -> pd.DataFrame:
+    """Trim a daily dataset to DAILY_HISTORY_YEARS of its own latest date."""
+    if dataset_id not in DAILY_HISTORY_DATASETS:
+        return frame
+    if frame.empty or not date_column or date_column not in frame.columns:
+        return frame
+    dates = pd.to_datetime(frame[date_column], errors="coerce")
+    if not dates.notna().any():
+        return frame
+    cutoff = dates.max() - pd.DateOffset(years=DAILY_HISTORY_YEARS)
+    # Undated rows are kept: they carry no claim about the window, and dropping
+    # them here would silently change row counts the health checks compare.
+    return frame.loc[dates.isna() | dates.ge(cutoff)]
+
+
 DATASET_REGISTRY: dict[str, dict[str, object]] = {
     "top_models": {
         "label": "Top Models",
@@ -2599,6 +2653,10 @@ def load_dataset(
     
     # CRITICAL: Ensure no duplicate columns exist before padding/filtering
     frame = frame.loc[:, ~frame.columns.duplicated()].copy()
+
+    frame = _apply_daily_history_window(
+        frame, dataset_id, str(registry_entry.get("primary_date_column") or "") or None
+    )
 
     missing_columns = [column for column in required_columns if column not in frame.columns]
     
