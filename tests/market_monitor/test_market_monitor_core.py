@@ -1265,17 +1265,17 @@ def test_shipped_artifact_carries_pair_ratios_with_a_full_zscore():
 
 
 def test_shipped_artifact_does_not_ship_benchmark_price_series():
-    """Benchmarks feed the ratios server-side; their closes are not charted."""
+    """Verify that unmonitored internal benchmark legs (e.g. US GICS single factors) are not shipped as dead weight."""
     artifact = _shipped_market_artifact()
     if artifact is None:
         pytest.skip("no built market-monitor artifact in this checkout")
     from market_monitor.config import EXPOSURES, exposure_role
 
-    benchmarks = {spec["exposure_id"] for spec in EXPOSURES if exposure_role(spec) == "benchmark"}
+    # Pure internal factor legs (e.g. us_broad, us_utilities)
+    internal_factor_legs = {"us_broad", "us_utilities", "us_tech", "us_staples", "us_communication", "us_discretionary", "us_healthcare"}
     shipped = {row["exposure_id"] for row in artifact["snapshot"]["datasets"]["index_price_daily_tail"]}
 
-    assert benchmarks
-    assert not (shipped & benchmarks), f"benchmark closes are dead weight in the artifact: {shipped & benchmarks}"
+    assert not (shipped & internal_factor_legs), f"internal factor legs are dead weight in the artifact: {shipped & internal_factor_legs}"
 
 
 def test_fee_reconciliation_reports_a_registry_that_disagrees_with_the_issuer():

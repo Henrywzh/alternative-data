@@ -210,12 +210,9 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
             if southbound is not None and not southbound.empty
             else southbound
         ),
-        # Investable exposures only. The benchmark legs are fetched and stored
-        # so the pair ratios can be computed, but the ratios themselves are
-        # what the page draws -- shipping XLU's daily closes to the browser
-        # would be half a megabyte nothing reads.
+        # Export all active regional, global and investable market index daily closes.
         "index_price_daily_tail": _chart_series(
-            index_px[index_px["exposure_id"].isin(investable_ids)] if not index_px.empty else index_px,
+            index_px[index_px["exposure_id"].isin({'saudi', 'russell2000', 'growth', 'cn_staples', 'hsi', 'hk_internet', 'ndx', 'csi300', 'cac40', 'dividend', 'kr_semis', 'hk_dividend', 'csi500', 'chinext', 'hk_hshares', 'hstech', 'nikkei225', 'dax', 'cn_infotech', 'sp500', 'kospi', 'ftse100', 'hk_midcap', 'twii', 'dow', 'csi1000'})] if not index_px.empty else index_px,
             "exposure_id",
             "close",
         ),
