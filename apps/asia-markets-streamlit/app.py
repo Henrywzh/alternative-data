@@ -3832,7 +3832,7 @@ def render_market_index_detail(
 
     # --- All ETF prices on this index (rebased to 100) ---
     cohort_tickers: list[str] = []
-    if not wrappers.empty:
+    if wrappers is not None and not wrappers.empty and "exposure_id" in wrappers.columns:
         cohort = wrappers[wrappers["exposure_id"].eq(exposure_id)]
         if not cohort.empty and "ticker" in cohort.columns:
             cohort_tickers = cohort["ticker"].astype(str).str.zfill(6).tolist()
@@ -3946,14 +3946,15 @@ def render_market_index_detail(
                 )
 
     # --- ETF wrapper table ---
+    if wrappers is None or wrappers.empty or "exposure_id" not in wrappers.columns:
+        return
     cohort = wrappers[wrappers["exposure_id"].eq(exposure_id)].copy()
+    if cohort.empty:
+        return
     st.markdown(
         f'<div class="am-chart-title">{tr(language, "ETF wrappers on this index", "追踪该指数的 ETF")}</div>',
         unsafe_allow_html=True,
     )
-    if cohort.empty:
-        st.info(tr(language, "No ETF wrapper is tracked for this index yet.", "该指数暂无纳入跟踪的 ETF。"))
-        return
 
     if "peer_rank" in cohort.columns:
         cohort = cohort.sort_values("peer_rank")
