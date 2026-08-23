@@ -178,8 +178,8 @@ def _session_copy(relative: str, env_var: str) -> None:
 def _redirect_repo_data_writes() -> None:
     """Keep builder side-effect writes out of the working tree.
 
-    Builders under src/hk_transport/sources/ and scripts/build_asia_backtest_*
-    write their output as a side effect of building it -- for example
+    Builders under src/hk_transport/sources/, scripts/build_asia_backtest_*
+    and src/research_data write their output as a side effect of building it -- for example
     build_airline_catalyst_calendar() ends in result.to_csv(OUTPUT_PATH) with
     no way to ask for the frame alone -- and those path constants are frozen
     from a directory constant at import time. So a test that only wanted the
@@ -195,6 +195,7 @@ def _redirect_repo_data_writes() -> None:
     """
     _session_copy("data/normalized/hk_transport", "HK_TRANSPORT_NORMALIZED_DIR")
     _session_copy("data/registries", "ASIA_BACKTEST_REGISTRY_DIR")
+    _session_copy("data/normalized/marts", "RESEARCH_DATA_MARTS_DIR")
 
 
 _TRACKED_DATA_SNAPSHOT: dict[str, tuple[int, int]] = {}

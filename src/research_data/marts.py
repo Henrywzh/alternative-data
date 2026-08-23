@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import numpy as np
@@ -53,8 +54,20 @@ MART_REGISTRY: dict[str, dict[str, str | None]] = {
 
 
 def marts_root(base_dir: str | Path | None = None) -> Path:
-    base = Path(base_dir).resolve() if base_dir is not None else Path(__file__).resolve().parents[2]
-    return base / "data" / "normalized" / "marts"
+    """Where the marts live; ``RESEARCH_DATA_MARTS_DIR`` overrides the default.
+
+    write_mart() writes here, and notebooks/03_frontier_intelligence_dynamics
+    rebuilds a mart on execution -- which tests/test_research_notebooks.py does
+    by exec'ing the notebook, so the suite rewrote the tracked parquet. An
+    explicit ``base_dir`` still wins; the override only replaces the default,
+    the same way HK_TRANSPORT_NORMALIZED_DIR does for src/hk_transport.
+    """
+    if base_dir is not None:
+        return Path(base_dir).resolve() / "data" / "normalized" / "marts"
+    override = os.environ.get("RESEARCH_DATA_MARTS_DIR", "").strip()
+    if override:
+        return Path(override)
+    return Path(__file__).resolve().parents[2] / "data" / "normalized" / "marts"
 
 
 def mart_paths(mart_name: str, base_dir: str | Path | None = None) -> tuple[Path, Path]:
@@ -74,6 +87,15 @@ def read_mart(mart_name: str, base_dir: str | Path | None = None) -> pd.DataFram
 def write_mart(mart_name: str, frame: pd.DataFrame, base_dir: str | Path | None = None) -> pd.DataFrame:
     csv_path, parquet_path = mart_paths(mart_name, base_dir=base_dir)
     csv_path.parent.mkdir(parents=True, exist_ok=True)
+    # Skip a rewrite that would not change the bytes. build_*(refresh=False)
+    # reuses an existing mart only when it is non-empty, so a mart that is
+    # committed empty -- frontier_model_registry is -- gets recomputed and
+    # rewritten on every call, including every execution of
+    # notebooks/00_data_catalog.ipynb. That touched a tracked file with
+    # identical content, which is invisible to `git diff` but not to anything
+    # watching mtimes, and it happens to a human opening the notebook too.
+    if frame.equals(read_mart(mart_name, base_dir=base_dir)):
+        return frame
     frame.to_csv(csv_path, index=False)
     frame.to_parquet(parquet_path, index=False)
     return frame
