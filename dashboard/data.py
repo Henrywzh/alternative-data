@@ -2795,6 +2795,53 @@ def load_dataset_projection(
     return pd.DataFrame(columns=projection)
 
 
+@st.cache_data(ttl=3600, max_entries=8, show_spinner=False)
+def load_sidecar_parquet(
+    dataset_id: str,
+    filename: str,
+    base_dir: Path | None,
+    domain_signature: tuple[tuple[str, int, int], ...],
+    data_sha: str | None = None,
+) -> pd.DataFrame:
+    """Read a parquet that sits beside a dataset, through the same resolution.
+
+    Sidecars are ordinary committed files, but they were only ever read from the
+    local checkout.  On Streamlit Cloud that checkout is frozen at the last
+    deploy, so a sidecar-backed view showed whatever was true when the container
+    started and never moved -- silently, since a stale file reads exactly like a
+    fresh one.  Resolving them the way datasets are resolved (committed bytes at
+    the pinned SHA, local checkout as the fallback) puts them on the same
+    footing as the data they sit next to.
+
+    Returns an empty frame when the sidecar does not exist, which is a normal
+    state: the caller falls back to deriving the value the long way.
+    """
+    _ = domain_signature  # cache key only
+    path = dataset_parquet_path(dataset_id, base_dir).parent / filename
+
+    root = base_dir if base_dir is not None else repo_root()
+    if remote.remote_enabled() and (base_dir is None or data_sha is not None):
+        sha = data_sha
+        if sha is None:
+            registry_entry = DATASET_REGISTRY.get(dataset_id, {})
+            source = dataset_source_for_domain(str(registry_entry.get("domain", "rankings")))
+            sha = remote.latest_data_sha(f"{remote.DATA_PATH_PREFIX}/{source}")
+        if sha:
+            payload = remote.fetch_bytes(path.relative_to(root).as_posix(), sha)
+            if payload is not None:
+                try:
+                    return pd.read_parquet(io.BytesIO(payload))
+                except Exception as error:  # noqa: BLE001 - fall through to local
+                    print(f"Warning: remote sidecar read failed for {filename}: {error}")
+
+    if path.exists():
+        try:
+            return pd.read_parquet(path)
+        except Exception as error:  # noqa: BLE001
+            print(f"Warning: sidecar read failed for {filename}: {error}")
+    return pd.DataFrame()
+
+
 @st.cache_data(ttl=3600, max_entries=64, show_spinner=False)
 def load_dataset_cached(
     base_dir: Path | None,
@@ -2834,6 +2881,7 @@ class LazyDatasetMap(Mapping[str, "DatasetLoadResult"]):
         loader: Callable[[str], "DatasetLoadResult"],
         cache_key: tuple = (),
         projector: Callable[[str, tuple[str, ...]], pd.DataFrame] | None = None,
+        sidecar_loader: Callable[[str, str], pd.DataFrame] | None = None,
         base_dir: Path | None = None,
     ) -> None:
         self._dataset_ids = tuple(dict.fromkeys(dataset_ids))
@@ -2846,6 +2894,7 @@ class LazyDatasetMap(Mapping[str, "DatasetLoadResult"]):
         # content completely, and cost nothing to read.
         self._cache_key = cache_key
         self._projector = projector
+        self._sidecar_loader = sidecar_loader
         self._base_dir = base_dir
 
     @property
@@ -2860,6 +2909,17 @@ class LazyDatasetMap(Mapping[str, "DatasetLoadResult"]):
         to learn a directory name.
         """
         return dataset_parquet_path(dataset_id, self._base_dir).parent
+
+    def sidecar(self, dataset_id: str, filename: str) -> pd.DataFrame:
+        """A parquet sitting beside a dataset, resolved the way the dataset is.
+
+        Empty when the sidecar is absent -- callers treat that as "derive it the
+        long way", not as an error.
+        """
+        if self._sidecar_loader is None:
+            path = self.dataset_dir(dataset_id) / filename
+            return pd.read_parquet(path) if path.exists() else pd.DataFrame()
+        return self._sidecar_loader(dataset_id, filename)
 
     def projection(self, dataset_id: str, columns: tuple[str, ...]) -> pd.DataFrame:
         """A few columns of one dataset, without materializing the full load.

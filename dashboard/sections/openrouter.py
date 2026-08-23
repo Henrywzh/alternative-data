@@ -1686,31 +1686,33 @@ def compute_compute_availability_views(datasets: dict[str, DatasetLoadResult]) -
     # plain dict (direct callers, tests) has already loaded it, so its
     # source_path is free.  Either way the root follows the caller's base_dir,
     # or a test fixture would read the production sidecars.
-    sidecar_root: Path | None
-    if hasattr(datasets, "dataset_dir"):
-        sidecar_root = datasets.dataset_dir("raw_openrouter_models")
-    else:
+    def _read_sidecar(filename: str) -> pd.DataFrame:
+        if hasattr(datasets, "sidecar"):
+            # Resolved at the pinned commit SHA like the datasets themselves, so
+            # a frozen Streamlit Cloud checkout no longer pins the catalog to
+            # whatever was true at deploy time.
+            return datasets.sidecar("raw_openrouter_models", filename)
+        # Plain dict (direct callers, tests): the dataset is already loaded, so
+        # its source_path names the directory for free.  A relative path belongs
+        # to a fixture that has no sidecars.
         located = datasets.get("raw_openrouter_models")
         source_path = located.source_path if located is not None else None
-        sidecar_root = (
-            source_path.parent
-            if source_path is not None and source_path.is_absolute()
-            else None
-        )
+        if source_path is None or not source_path.is_absolute():
+            return pd.DataFrame()
+        path = source_path.parent / filename
+        return pd.read_parquet(path) if path.exists() else pd.DataFrame()
 
     # Prefer the authoritative current catalog emitted by the daily source. The
     # historical table is change-only and therefore cannot remove a model that
     # disappeared from the upstream API.
     latest_models: pd.DataFrame | None = None
-    current_path = sidecar_root / "raw_openrouter_models_current.parquet" if sidecar_root else None
-    if current_path is not None and current_path.exists():
-        current_frame = pd.read_parquet(current_path)
-        if not current_frame.empty and "model_id" in current_frame.columns:
-            latest_models = (
-                current_frame.drop_duplicates("model_id", keep="last")
-                .sort_values("model_id")
-                .reset_index(drop=True)
-            )
+    current_frame = _read_sidecar("raw_openrouter_models_current.parquet")
+    if not current_frame.empty and "model_id" in current_frame.columns:
+        latest_models = (
+            current_frame.drop_duplicates("model_id", keep="last")
+            .sort_values("model_id")
+            .reset_index(drop=True)
+        )
 
     # Catalog size comes from the openrouter_catalog_size sidecar, never from
     # counting rows in this table. raw_openrouter_models is change-only
@@ -1721,10 +1723,8 @@ def compute_compute_availability_views(datasets: dict[str, DatasetLoadResult]) -
     # (Wayback-backfilled snapshots *are* full dumps, so the old count happened
     # to be right for them, which is why the artifact only appeared at the right
     # edge once daily live runs began.)
-    size_path = sidecar_root / "openrouter_catalog_size.parquet" if sidecar_root else None
-    catalog_size = pd.DataFrame()
-    if size_path is not None and size_path.exists():
-        catalog_size = pd.read_parquet(size_path)
+    catalog_size = _read_sidecar("openrouter_catalog_size.parquet")
+    if not catalog_size.empty:
         catalog_size["snapshot_ts"] = pd.to_datetime(catalog_size["snapshot_ts"], errors="coerce", utc=True)
         catalog_size = catalog_size.dropna(subset=["snapshot_ts"]).sort_values("snapshot_ts")
         # The two capture sources overlap for a few days in mid-2026. Keep the

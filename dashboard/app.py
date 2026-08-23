@@ -24,6 +24,7 @@ from collections.abc import Iterable, Mapping
 
 from dashboard.data import (
     load_dataset_projection,
+    load_sidecar_parquet,
     load_dataset_cached,
     LazyDatasetMap,
     DOMAIN_ORDER,
@@ -427,11 +428,22 @@ def main() -> None:
             data_sha=domain_shas[domain],
         )
 
+    def _sidecar(dataset_id: str, filename: str):
+        domain = _domain_of_dataset[dataset_id]
+        return load_sidecar_parquet(
+            dataset_id,
+            filename,
+            BASE_DIR,
+            build_domain_signature(BASE_DIR, domain),
+            data_sha=domain_shas[domain],
+        )
+
     datasets = LazyDatasetMap(
         _domain_of_dataset,
         _load_one,
         cache_key=dataset_cache_key,
         projector=_project,
+        sidecar_loader=_sidecar,
         base_dir=BASE_DIR,
     )
 
