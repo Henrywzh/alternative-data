@@ -3310,6 +3310,7 @@ def render_relative_regime(
     history: pd.DataFrame,
     language: str,
     history_window_name: str,
+    key_prefix: str = "market",
 ) -> None:
     """One pair at a time: the ratio, its 60D trend, and its z-score.
 
@@ -3323,33 +3324,37 @@ def render_relative_regime(
     if not regions:
         regions = sorted(set(frame.get("region", pd.Series(dtype=str)).dropna()))
 
-    if hasattr(st, "segmented_control"):
-        region_choice = st.segmented_control(
-            tr(language, "Market", "市场"),
-            regions,
-            default=regions[0] if regions else None,
-            key="market_pair_region",
-            format_func=lambda r: tr(language, *REGION_NAMES.get(r, (r, r))),
-            label_visibility="collapsed",
-        ) or (regions[0] if regions else None)
-    elif hasattr(st, "pills"):
-        region_choice = st.pills(
-            tr(language, "Market", "市场"),
-            regions,
-            default=regions[0] if regions else None,
-            key="market_pair_region",
-            format_func=lambda r: tr(language, *REGION_NAMES.get(r, (r, r))),
-            label_visibility="collapsed",
-        ) or (regions[0] if regions else None)
+    if len(regions) > 1:
+        if hasattr(st, "segmented_control"):
+            region_choice = st.segmented_control(
+                tr(language, "Market", "市场"),
+                regions,
+                default=regions[0] if regions else None,
+                key=f"{key_prefix}_pair_region",
+                format_func=lambda r: tr(language, *REGION_NAMES.get(r, (r, r))),
+                label_visibility="collapsed",
+            ) or (regions[0] if regions else None)
+        elif hasattr(st, "pills"):
+            region_choice = st.pills(
+                tr(language, "Market", "市场"),
+                regions,
+                default=regions[0] if regions else None,
+                key=f"{key_prefix}_pair_region",
+                format_func=lambda r: tr(language, *REGION_NAMES.get(r, (r, r))),
+                label_visibility="collapsed",
+            ) or (regions[0] if regions else None)
+        else:
+            region_choice = st.radio(
+                tr(language, "Market", "市场"),
+                regions,
+                horizontal=True,
+                key=f"{key_prefix}_pair_region",
+                format_func=lambda r: tr(language, *REGION_NAMES.get(r, (r, r))),
+            )
     else:
-        region_choice = st.radio(
-            tr(language, "Market", "市场"),
-            regions,
-            horizontal=True,
-            key="market_pair_region",
-            format_func=lambda r: tr(language, *REGION_NAMES.get(r, (r, r))),
-        )
-    cohort = frame[frame["region"].eq(region_choice)]
+        region_choice = regions[0] if regions else None
+
+    cohort = frame[frame["region"].eq(region_choice)] if region_choice else frame
     if cohort.empty:
         return
 
@@ -3374,7 +3379,7 @@ def render_relative_regime(
     selected_label = st.selectbox(
         tr(language, "Pair", "配对"),
         cohort["_label"].tolist(),
-        key="market_pair_select",
+        key=f"{key_prefix}_pair_select",
     )
     row = cohort[cohort["_label"].eq(selected_label)].iloc[0]
     pair_id = str(row["pair_id"])
@@ -4617,7 +4622,7 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
                     "Style pair spreads and rolling 20D/1Y z-score.",
                     "风格轮动价差及滚动 z-score。",
                 )
-                render_relative_regime(cn_pairs, pair_history, language, window)
+                render_relative_regime(cn_pairs, pair_history, language, window, key_prefix="china")
 
         # 场内可投资 ETF 包装（含国内宽基、港股通与QDII出海工具）
         render_scoped_index_section(
@@ -4715,7 +4720,7 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
                     "Cross-market pair spreads and rolling 20D/1Y z-score.",
                     "跨市场资产比值及滚动 z-score。",
                 )
-                render_relative_regime(cross_pairs, pair_history, language, window)
+                render_relative_regime(cross_pairs, pair_history, language, window, key_prefix="global")
 
         # 全量指数单指数详情
         render_scoped_index_section(
