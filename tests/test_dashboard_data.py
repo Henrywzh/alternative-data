@@ -1426,9 +1426,11 @@ def test_load_latest_manifest_can_skip_raw_manifest_scan_when_datasets_provided(
 
 def test_section_domains_loads_only_selected_dashboard_inputs() -> None:
     assert section_domains("Overview") == ("overview",)
+    # "openrouter_catalog" is an exact alias of "compute_availability" and is
+    # deliberately not listed; see test_no_section_loads_the_same_domain_twice.
     assert section_domains("OpenRouter") == (
         "openrouter_intelligence", "compute_availability", "openrouter_official_market",
-        "openrouter_derived", "openrouter_model_explorer", "openrouter_catalog",
+        "openrouter_derived", "openrouter_model_explorer",
         "openrouter_workloads", "apps", "artificial_analysis",
     )
     assert section_domains("Provider Adoption") == ("provider_adoption",)
@@ -5096,3 +5098,183 @@ def test_domain_state_cache_holds_the_largest_section() -> None:
             f"section {section!r} spans {len(domains)} domains but the domain-state "
             f"cache holds only {DOMAIN_STATE_CACHE_ENTRIES}"
         )
+
+
+def test_no_section_loads_the_same_domain_twice_under_two_names() -> None:
+    """Two domains with identical dataset lists are an alias, not two domains.
+
+    Listing both loads every one of their datasets twice into two separately
+    cached domain states that nothing distinguishes -- the merged dataset dict
+    collapses them anyway.  For OpenRouter that was raw_openrouter_models, at
+    241 MB of RSS per load, and it pushed the section past the domain-state
+    cache so the whole section thrashed as well.
+    """
+    from dashboard.app import SECTION_DOMAIN_MAP
+    from dashboard.data import domain_dataset_ids
+
+    for section, domains in SECTION_DOMAIN_MAP.items():
+        seen: dict[frozenset[str], str] = {}
+        for domain in domains:
+            ids = frozenset(domain_dataset_ids(domain))
+            if not ids:
+                continue
+            duplicate = seen.get(ids)
+            assert duplicate is None, (
+                f"section {section!r} lists {domain!r} and {duplicate!r}, which resolve "
+                f"to the same datasets {sorted(ids)}"
+            )
+            seen[ids] = domain
+
+
+def _daily_window_frame(dataset_id: str, date_column: str, dates: list[str]) -> pd.DataFrame:
+    return pd.DataFrame(
+        [
+            {
+                "dataset_id": dataset_id,
+                "source_url": f"fixture://{dataset_id}",
+                "source_run_id": "run-window",
+                "scraped_at": "2026-08-22T00:00:00Z",
+                date_column: date,
+                "entity_id": "openai",
+                "entity_name": "OpenAI",
+                "model_permaslug": "openai/gpt-test",
+                "category_slug": "all",
+                "usage_date": date,
+                "total_tokens": 1.0,
+                "prompt_tokens": 0.0,
+                "completion_tokens": 0.0,
+                "reasoning_tokens": 0.0,
+                "request_count": None,
+            }
+            for date in dates
+        ]
+    )
+
+
+def test_daily_datasets_are_trimmed_to_the_retention_window(tmp_path: Path) -> None:
+    """Daily grain is the only grain that grows without bound, so it is capped.
+
+    The cutoff is anchored to the frame's own latest observation rather than the
+    clock, so a source that stops updating still exposes a full window instead
+    of decaying to nothing.
+    """
+    root = tmp_path / "data" / "normalized" / "openrouter"
+    root.mkdir(parents=True)
+    _daily_window_frame(
+        "provider_daily_activity",
+        "usage_date",
+        ["2023-01-01", "2024-01-01", "2026-08-01", "2026-08-22"],
+    ).to_parquet(root / "provider_daily_activity.parquet", index=False)
+
+    result = load_dataset("provider_daily_activity", base_dir=tmp_path)
+
+    kept = sorted(result.frame["usage_date"].astype(str))
+    assert kept == ["2026-08-01", "2026-08-22"]
+
+
+def test_weekly_datasets_keep_their_full_history(tmp_path: Path) -> None:
+    """Only daily datasets are capped; a weekly table adds 52 rows a year."""
+    root = tmp_path / "data" / "normalized" / "openrouter"
+    root.mkdir(parents=True)
+    pd.DataFrame(
+        [
+            {
+                "dataset_id": "top_models",
+                "source_url": "fixture://top_models",
+                "source_run_id": "run-window",
+                "scraped_at": "2026-08-22T00:00:00Z",
+                "week_start_date": week,
+                "entity_id": "openai/gpt-test",
+                "metric_value": 1.0,
+                "rank": 1,
+            }
+            for week in ("2023-01-02", "2024-01-01", "2026-08-17")
+        ]
+    ).to_parquet(root / "top_models.parquet", index=False)
+
+    result = load_dataset("top_models", base_dir=tmp_path)
+
+    assert len(result.frame) == 3
+
+
+def test_every_windowed_dataset_has_a_date_column_to_window_on() -> None:
+    """A capped dataset with no primary date column would silently keep everything."""
+    from dashboard.data import DAILY_HISTORY_DATASETS
+
+    for dataset_id in DAILY_HISTORY_DATASETS:
+        entry = DATASET_REGISTRY.get(dataset_id)
+        assert entry is not None, f"{dataset_id} is windowed but not registered"
+        assert entry.get("primary_date_column"), (
+            f"{dataset_id} is windowed but has no primary_date_column to window on"
+        )
+
+
+def test_lazy_dataset_map_loads_only_what_is_read() -> None:
+    """Declaring a dataset must not load it; only reading it may.
+
+    Iteration and len describe what a section covers, which callers ask for
+    without wanting the data -- forcing a load there would defeat the point.
+    """
+    from dashboard.data import LazyDatasetMap
+
+    loaded: list[str] = []
+    mapping = LazyDatasetMap(
+        ["alpha", "beta", "gamma"], lambda dataset_id: (loaded.append(dataset_id), dataset_id)[1]
+    )
+
+    assert sorted(mapping) == ["alpha", "beta", "gamma"]
+    assert len(mapping) == 3
+    assert "beta" in mapping
+    assert loaded == []
+
+    assert mapping["beta"] == "beta"
+    assert mapping["beta"] == "beta"  # memoized, not reloaded
+    assert loaded == ["beta"]
+    assert mapping.loaded == {"beta": "beta"}
+
+    assert mapping.get("absent", "fallback") == "fallback"
+    assert loaded == ["beta"]
+
+
+def test_lazy_dataset_map_projection_does_not_load_the_full_dataset() -> None:
+    """A consumer that needs six columns must not pay for forty.
+
+    On raw_openrouter_models that is the difference between 2 MB and 242 MB of
+    RSS, and the revenue estimators read six columns from it.
+    """
+    from dashboard.data import LazyDatasetMap
+
+    loaded: list[str] = []
+    projected: list[tuple[str, tuple[str, ...]]] = []
+    mapping = LazyDatasetMap(
+        ["raw_openrouter_models"],
+        lambda dataset_id: (loaded.append(dataset_id), dataset_id)[1],
+        projector=lambda dataset_id, columns: (
+            projected.append((dataset_id, columns)),
+            pd.DataFrame(columns=list(columns)),
+        )[1],
+    )
+
+    frame = mapping.projection("raw_openrouter_models", ("model_id", "pricing_prompt"))
+
+    assert list(frame.columns) == ["model_id", "pricing_prompt"]
+    assert projected == [("raw_openrouter_models", ("model_id", "pricing_prompt"))]
+    assert loaded == []
+
+
+def test_pricing_columns_cover_what_the_revenue_estimators_join_on() -> None:
+    """The narrow pricing projection must not omit a column the join needs.
+
+    A missing column here does not raise -- the alias table comes out empty and
+    every usage row is reported as unpriced, which reads as a revenue collapse.
+    """
+    from dashboard.sections.openrouter import PRICING_COLUMNS
+
+    assert set(PRICING_COLUMNS) >= {
+        "model_id",
+        "canonical_slug",
+        "provider_prefix",
+        "snapshot_ts",
+        "pricing_prompt",
+        "pricing_completion",
+    }
