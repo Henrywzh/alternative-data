@@ -52,7 +52,35 @@ from src.common.backtest.storage import (
 )
 from src.common.backtest.vocabulary import BASELINE_MODEL_ID, METRIC_POLICY_VERSION
 
-REGISTRY_DIR = ROOT / "data" / "registries"
+def _registry_dir() -> Path:
+    """The backtest registry directory, overridable for tests.
+
+    build_registry() and build_long_form() write their outputs here as part of
+    building, so a test that only wants the returned frame still rewrote the
+    tracked files -- and their manifests carry a build timestamp, so every run
+    showed a diff. tests/conftest.py points ASIA_BACKTEST_REGISTRY_DIR at a
+    session-scoped copy, keeping reads intact while writes land outside the
+    repository.
+    """
+    override = os.environ.get("ASIA_BACKTEST_REGISTRY_DIR", "").strip()
+    return Path(override) if override else ROOT / "data" / "registries"
+
+
+REGISTRY_DIR = _registry_dir()
+
+
+def _repo_relative(path: Path) -> str:
+    """Label a path for the manifest, tolerating one outside the repository.
+
+    REGISTRY_DIR is redirectable (see _registry_dir), so relative_to(ROOT)
+    could raise on an input that lives under the redirect. The manifest wants
+    a stable label, not a real location, so fall back to the file name.
+    """
+    try:
+        return path.relative_to(ROOT).as_posix()
+    except ValueError:
+        return path.name
+
 ROW_STATUS_CSV = REGISTRY_DIR / "asia_backtest_row_status.csv"
 TARGET_CSV = REGISTRY_DIR / "asia_backtest_target_registry.csv"
 LONG_FORM_CSV = REGISTRY_DIR / "asia_backtest_long_form.csv"
@@ -496,7 +524,7 @@ def _input_bundle(row_status: pd.DataFrame) -> tuple[str, dict[str, Any], list[P
     entries: dict[str, Any] = {}
     for label, path in sorted(paths.items()):
         entry: dict[str, Any] = {
-            "path": path.relative_to(ROOT).as_posix(),
+            "path": _repo_relative(path),
             "sha256": file_fingerprint(path),
             "bytes": path.stat().st_size,
         }
@@ -1161,7 +1189,7 @@ def build_long_form(
 
     if write_run_store:
         fingerprints = {
-            path.relative_to(ROOT).as_posix(): file_fingerprint(path)
+            _repo_relative(path): file_fingerprint(path)
             for path in input_paths
             if path.exists()
         }

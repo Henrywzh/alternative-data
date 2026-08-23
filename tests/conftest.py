@@ -1,6 +1,11 @@
 from __future__ import annotations
 
+import atexit
+import os
+import shutil
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 
@@ -119,6 +124,126 @@ def _install_socket_guard() -> None:
     socket.socket.connect = guarded_connect
 
 
+# --- tracked-data write guard ----------------------------------------
+# Several builders write their output as a side effect of building it --
+# ``build_airline_catalyst_calendar()`` ends in ``result.to_csv(OUTPUT_PATH)``
+# with no way to ask for the frame alone -- so a test that only wants the
+# returned DataFrame still rewrites the repository's copy. Those files carry a
+# ``retrieved_at`` stamp, so the rewrite always shows as a diff even when
+# nothing about the data changed, and a full run leaves ~40 tracked files
+# modified. `git status` then reports work nobody did, which is actively
+# dangerous when more than one session is on the same branch.
+#
+# tests/test_hk_transport_airline_earnings_model_v3.py already shows the fix:
+#
+#     monkeypatch.setattr(module, "OUTPUT_PATH", tmp_path / "output.csv")
+#
+# This hook does not stop the writes -- doing that centrally would break the
+# tests that deliberately read their output back. It records which tracked
+# files a run modified and reports them at the end, so an existing offender
+# is easy to find and a new one cannot slip in unnoticed.
+
+def _session_copy(relative: str, env_var: str) -> None:
+    """Point ``env_var`` at a throwaway copy of ``relative``.
+
+    It is a copy rather than an empty directory because these files are also
+    inputs -- the builders read each other's output -- so copying keeps the
+    within-session ordering behaviour identical to before; only the
+    repository's copy is spared. On APFS/btrfs the clone is nearly free
+    (~50 MB in ~50 ms).
+    """
+    if os.environ.get(env_var):
+        return
+    source = Path(__file__).resolve().parents[1] / relative
+    if not source.is_dir():
+        return
+    target = Path(tempfile.mkdtemp(prefix="repo-data-")) / source.name
+    try:
+        subprocess.run(
+            ["cp", "-c", "-R", str(source), str(target)],
+            capture_output=True,
+            timeout=300,
+            check=True,
+        )
+    except (OSError, subprocess.SubprocessError):
+        try:
+            shutil.copytree(source, target, dirs_exist_ok=True)
+        except OSError:
+            shutil.rmtree(target.parent, ignore_errors=True)
+            return
+    os.environ[env_var] = str(target)
+    atexit.register(shutil.rmtree, str(target.parent), True)
+
+
+def _redirect_repo_data_writes() -> None:
+    """Keep builder side-effect writes out of the working tree.
+
+    Builders under src/hk_transport/sources/ and scripts/build_asia_backtest_*
+    write their output as a side effect of building it -- for example
+    build_airline_catalyst_calendar() ends in result.to_csv(OUTPUT_PATH) with
+    no way to ask for the frame alone -- and those path constants are frozen
+    from a directory constant at import time. So a test that only wanted the
+    returned DataFrame rewrote the tracked file, and since each carries a
+    retrieved_at or build timestamp, a full run left ~75 tracked files
+    modified. `git status` then reported work nobody did, which is actively
+    dangerous when more than one session is on the same branch.
+
+    Redirecting the directories is the only lever that reaches all of them:
+    the builders chain, so patching one OUTPUT_PATH moves the problem down the
+    chain. This runs in pytest_configure, before any test module is imported
+    and therefore before those constants are computed.
+    """
+    _session_copy("data/normalized/hk_transport", "HK_TRANSPORT_NORMALIZED_DIR")
+    _session_copy("data/registries", "ASIA_BACKTEST_REGISTRY_DIR")
+
+
+_TRACKED_DATA_SNAPSHOT: dict[str, tuple[int, int]] = {}
+
+
+def _tracked_data_files() -> list[str]:
+    """Tracked paths under data/ -- git is the only authority on 'tracked'."""
+    import subprocess
+
+    try:
+        result = subprocess.run(
+            ["git", "ls-files", "-z", "data"],
+            cwd=str(Path(__file__).resolve().parents[1]),
+            capture_output=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return []
+    if result.returncode != 0:
+        return []
+    return [name for name in result.stdout.decode("utf-8", "replace").split("\0") if name]
+
+
+def _snapshot_tracked_data() -> None:
+    root = Path(__file__).resolve().parents[1]
+    for name in _tracked_data_files():
+        path = root / name
+        try:
+            stat = path.stat()
+        except OSError:
+            continue
+        _TRACKED_DATA_SNAPSHOT[name] = (stat.st_size, stat.st_mtime_ns)
+
+
+def _modified_tracked_data() -> list[str]:
+    root = Path(__file__).resolve().parents[1]
+    changed = []
+    for name, before in _TRACKED_DATA_SNAPSHOT.items():
+        path = root / name
+        try:
+            stat = path.stat()
+        except OSError:
+            changed.append(name)
+            continue
+        if (stat.st_size, stat.st_mtime_ns) != before:
+            changed.append(name)
+    return sorted(changed)
+
+
 def pytest_addoption(parser) -> None:
     parser.addoption(
         "--run-network",
@@ -134,6 +259,8 @@ def pytest_configure(config) -> None:
         "network: reaches live external endpoints; skipped unless --run-network is passed",
     )
     _install_socket_guard()
+    _redirect_repo_data_writes()
+    _snapshot_tracked_data()
 
 
 def pytest_collection_modifyitems(config, items) -> None:
@@ -155,3 +282,21 @@ def pytest_runtest_setup(item) -> None:
 
 def pytest_runtest_teardown(item) -> None:
     _ALLOW_NETWORK["enabled"] = False
+
+
+def pytest_terminal_summary(terminalreporter, exitstatus, config) -> None:
+    del exitstatus, config
+    changed = _modified_tracked_data()
+    if not changed:
+        return
+    terminalreporter.section("tracked data files modified by this run", red=True)
+    terminalreporter.write_line(
+        f"{len(changed)} tracked file(s) under data/ were rewritten by tests. "
+        "This is test output, not work you did -- restore it before reading "
+        "`git status`, and point the builder at tmp_path instead:"
+    )
+    for name in changed[:40]:
+        terminalreporter.write_line(f"  {name}")
+    if len(changed) > 40:
+        terminalreporter.write_line(f"  ... and {len(changed) - 40} more")
+    terminalreporter.write_line("  git checkout -- " + " ".join(sorted({name.split("/")[0] + "/" + name.split("/")[1] for name in changed})))

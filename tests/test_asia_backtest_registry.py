@@ -1,5 +1,13 @@
 from __future__ import annotations
 
+import os as _os
+from pathlib import Path as _Path
+
+# The builders write here; tests/conftest.py redirects the directory so those
+# writes stay out of the working tree. Reading the literal "data/registries/..."
+# would have read the repository's stale copy instead of what the test built.
+_REGISTRY_DIR = _Path(_os.environ.get("ASIA_BACKTEST_REGISTRY_DIR", "").strip() or "data/registries")
+
 import pandas as pd
 
 from scripts.build_asia_backtest_registry import (
@@ -322,7 +330,7 @@ def test_shkp_three_targets_are_separate_and_contract_activity_is_diagnostic() -
     contract-activity proxy never enters headline accuracy."""
     import pandas as pd
 
-    registry = pd.read_csv("data/registries/asia_backtest_target_registry.csv")
+    registry = pd.read_csv(_REGISTRY_DIR / "asia_backtest_target_registry.csv")
     shkp = registry[registry["entity_scope"].astype(str).eq("SHKP")]
     targets = sorted(shkp["target_id"].unique())
     assert targets == ["contract_activity_proxy", "hk_rental_revenue", "underlying_profit"]
@@ -348,7 +356,7 @@ def test_shkp_three_targets_are_separate_and_contract_activity_is_diagnostic() -
 def test_shkp_sales_model_ids_preserve_method_lookback_scenario() -> None:
     import pandas as pd
 
-    row_status = pd.read_csv("data/registries/asia_backtest_row_status.csv")
+    row_status = pd.read_csv(_REGISTRY_DIR / "asia_backtest_row_status.csv")
     sales = row_status[row_status["source_dataset"] == "shkp_indicative_sales_model_backtest"]
     assert len(sales) == 948
     assert sales["model_id"].str.contains(r"_lb\d+_(?:low|base|high)$").all()

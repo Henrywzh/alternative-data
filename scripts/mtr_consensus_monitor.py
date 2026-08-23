@@ -31,7 +31,12 @@ import sys
 import pandas as pd
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-NORM_DIR = os.path.join(REPO_ROOT, "data", "normalized", "hk_transport")
+# Same directory as src.hk_transport.config.NORMALIZED_DIR, so it honours the
+# same HK_TRANSPORT_NORMALIZED_DIR redirect and a test that calls this
+# builder stops rewriting the tracked CSV.
+NORM_DIR = os.environ.get("HK_TRANSPORT_NORMALIZED_DIR", "").strip() or os.path.join(
+    REPO_ROOT, "data", "normalized", "hk_transport"
+)
 OUT_CSV = os.path.join(NORM_DIR, "mtr_consensus_monitor.csv")
 
 SHARES_M = 6214.18

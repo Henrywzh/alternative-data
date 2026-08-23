@@ -2,6 +2,14 @@
 
 from __future__ import annotations
 
+import os as _os
+from pathlib import Path as _Path
+
+# The builders write here; tests/conftest.py redirects the directory so those
+# writes stay out of the working tree. Reading the literal "data/registries/..."
+# would have read the repository's stale copy instead of what the test built.
+_REGISTRY_DIR = _Path(_os.environ.get("ASIA_BACKTEST_REGISTRY_DIR", "").strip() or "data/registries")
+
 import json
 import math
 from pathlib import Path
@@ -14,7 +22,7 @@ from src.common.backtest.metrics import compute_error_intervals, compute_metric_
 from src.common.backtest.vocabulary import canonicalize_unit
 
 
-METRICS_CSV = Path("data/registries/asia_backtest_metrics.csv")
+METRICS_CSV = Path(_REGISTRY_DIR / "asia_backtest_metrics.csv")
 
 
 def _metrics() -> pd.DataFrame:
@@ -208,7 +216,7 @@ def test_shkp_contract_activity_is_diagnostic_only_in_metrics() -> None:
 
 def test_error_interval_artifact_is_well_formed() -> None:
     build_metrics()
-    intervals = pd.read_csv("data/registries/asia_backtest_metric_intervals.csv")
+    intervals = pd.read_csv(_REGISTRY_DIR / "asia_backtest_metric_intervals.csv")
     assert len(intervals) > 0
     assert {"metric_grain", "entity_id", "unit_canonical"}.issubset(intervals.columns)
     assert set(intervals["metric_grain"]) == {"pooled", "per_entity"}
@@ -235,7 +243,7 @@ def test_error_interval_guard_columns_present() -> None:
     # notion the metrics table guards on, metric_status/interval_status
     # state whether the band means anything at all.
     build_metrics()
-    intervals = pd.read_csv("data/registries/asia_backtest_metric_intervals.csv")
+    intervals = pd.read_csv(_REGISTRY_DIR / "asia_backtest_metric_intervals.csv")
     assert {"n_distinct_periods", "metric_status", "interval_status"}.issubset(intervals.columns)
     assert (intervals["n_distinct_periods"] > 0).all()
     assert (intervals["n_distinct_periods"] <= intervals["n_eval"]).all()
@@ -248,7 +256,7 @@ def test_error_interval_degenerate_rows_have_collapsed_percentiles() -> None:
     # anyone plotting this as a band without the guard column would read a
     # single point as a distribution.
     build_metrics()
-    intervals = pd.read_csv("data/registries/asia_backtest_metric_intervals.csv")
+    intervals = pd.read_csv(_REGISTRY_DIR / "asia_backtest_metric_intervals.csv")
     single_obs = intervals[intervals["n_eval"] == 1]
     assert len(single_obs) > 0
     assert (single_obs["interval_status"] == "degenerate").all()
@@ -270,7 +278,7 @@ def test_error_interval_metric_status_agrees_with_metrics_table_across_artifact(
     # metric_grain, entity_id) key -- and that no row claims "eligible" or
     # "reference_only" while the metrics table says the sample was
     # insufficient.
-    long_form = pd.read_parquet("data/registries/asia_backtest_long_form.parquet")
+    long_form = pd.read_parquet(_REGISTRY_DIR / "asia_backtest_long_form.parquet")
     metrics = compute_metric_table(long_form)
     intervals = compute_error_intervals(long_form, metrics=metrics)
     assert len(intervals) > 0
@@ -695,7 +703,7 @@ def test_metrics_manifest_records_status_counts() -> None:
     # pooled SHKP contract-activity rows -> 24 once their per-entity mirror
     # rows, one per single-entity contract, are added).
     build_metrics()
-    manifest = json.load(open("data/registries/asia_backtest_metrics_manifest.json"))
+    manifest = json.load(open(_REGISTRY_DIR / "asia_backtest_metrics_manifest.json"))
     counts = manifest["metric_status_counts"]
     assert "valid_headline" not in counts
     assert counts["insufficient_sample"] >= 16

@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -54,7 +55,21 @@ if str(ROOT) not in sys.path:
 
 from src.common.backtest import views as v  # noqa: E402
 
-REGISTRY_DIR = ROOT / "data" / "registries"
+def _registry_dir() -> Path:
+    """The backtest registry directory, overridable for tests.
+
+    build_registry() and build_long_form() write their outputs here as part of
+    building, so a test that only wants the returned frame still rewrote the
+    tracked files -- and their manifests carry a build timestamp, so every run
+    showed a diff. tests/conftest.py points ASIA_BACKTEST_REGISTRY_DIR at a
+    session-scoped copy, keeping reads intact while writes land outside the
+    repository.
+    """
+    override = os.environ.get("ASIA_BACKTEST_REGISTRY_DIR", "").strip()
+    return Path(override) if override else ROOT / "data" / "registries"
+
+
+REGISTRY_DIR = _registry_dir()
 LONG_FORM_PARQUET = REGISTRY_DIR / "asia_backtest_long_form.parquet"
 LONG_FORM_CSV = REGISTRY_DIR / "asia_backtest_long_form.csv"
 METRICS_PARQUET = REGISTRY_DIR / "asia_backtest_metrics.parquet"
