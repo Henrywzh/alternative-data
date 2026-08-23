@@ -3714,6 +3714,7 @@ def render_market_index_detail(
     ma_window: int = 20,
     rsi_upper: float = 70.0,
     rsi_lower: float = 30.0,
+    key_prefix: str = "market",
 ) -> None:
     """One index: price and RSI on a shared axis, its ETF wrappers, premiums."""
     series = prices[prices["exposure_id"].eq(exposure_id)].sort_values("_date").copy()
@@ -3836,6 +3837,7 @@ def render_market_index_detail(
             chart_theme(fig, "number", date_axis=True, height=460 if has_rsi else 340),
             width="stretch",
             config={"displaylogo": False, "responsive": True},
+            key=f"{key_prefix}_{exposure_id}_price_rsi_chart",
         )
 
     # --- All ETF prices on this index (rebased to 100) ---
@@ -3882,6 +3884,7 @@ def render_market_index_detail(
                         chart_theme(fig_etf, "number", date_axis=True, height=300),
                         width="stretch",
                         config={"displaylogo": False, "responsive": True},
+                        key=f"{key_prefix}_{exposure_id}_etf_rebased_chart",
                     )
 
     # --- Premium history ---
@@ -3951,6 +3954,7 @@ def render_market_index_detail(
                     chart_theme(fig_ph, "number", date_axis=True, height=280),
                     width="stretch",
                     config={"displaylogo": False, "responsive": True},
+                    key=f"{key_prefix}_{exposure_id}_prem_history_chart",
                 )
 
     # --- ETF wrapper table ---
@@ -4071,7 +4075,7 @@ def render_market_index_detail(
     st.dataframe(table_to_show, hide_index=True, width="stretch")
 
     if "entry_cost_bp" in cohort.columns and cohort["entry_cost_bp"].notna().any():
-        render_market_entry_cost_chart(cohort, language)
+        render_market_entry_cost_chart(cohort, language, key_prefix=f"{key_prefix}_{exposure_id}")
 
     if "premium_caveat" in cohort.columns:
         caveats = [str(x) for x in cohort["premium_caveat"].dropna().unique().tolist() if x]
@@ -4079,7 +4083,7 @@ def render_market_index_detail(
             st.caption(" · ".join(caveats))
 
 
-def render_market_entry_cost_chart(cohort: pd.DataFrame, language: str) -> None:
+def render_market_entry_cost_chart(cohort: pd.DataFrame, language: str, key_prefix: str = "market") -> None:
     """Entry cost & premium per wrapper with clear contextual axis limits."""
     frame = cohort.dropna(subset=["entry_cost_bp"]).copy()
     if frame.empty:
@@ -4129,6 +4133,7 @@ def render_market_entry_cost_chart(cohort: pd.DataFrame, language: str) -> None:
         chart_theme(fig, "number", date_axis=False, height=max(180, 50 * len(frame))),
         width="stretch",
         config={"displaylogo": False, "responsive": True},
+        key=f"{key_prefix}_entry_cost_chart",
     )
 
 
@@ -4520,6 +4525,7 @@ def render_scoped_index_section(
         ma_window=ma_window,
         rsi_upper=rsi_upper,
         rsi_lower=rsi_lower,
+        key_prefix=key_prefix,
     )
 
 
