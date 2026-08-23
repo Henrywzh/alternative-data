@@ -119,33 +119,37 @@ def _bootstrap_default_focus(snapshot: ControlTowerSnapshot) -> None:
 
 
 def _sidebar_navigation() -> None:
-    st.sidebar.markdown("### Research Control Tower")
-    st.sidebar.caption("Evidence-first review surface")
-    st.sidebar.caption(f"Default focus · {DEFAULT_FOCUS_LABEL}")
-    for group, pages in (
-        ("Review", PAGE_LABELS[:2]),
-        ("Research", PAGE_LABELS[2:4]),
-        ("Data", PAGE_LABELS[4:]),
-    ):
-        st.sidebar.markdown(f"**{group}**")
-        for page in pages:
-            selected = st.session_state["ct_page"] == page
-            st.sidebar.button(
-                page,
-                key=f"ct_nav_{page}",
-                type="primary" if selected else "secondary",
-                width="stretch",
-                on_click=_set_page,
-                args=(page,),
-            )
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("**Settings**")
-    st.sidebar.radio(
-        "Theme",
-        options=["Light", "Dark"],
-        key="ct_theme",
-        horizontal=True,
-    )
+    with st.sidebar:
+        st.markdown(
+            '<div class="sidebar-brand">Research Control Tower</div>'
+            '<div class="sidebar-brand-subtitle">Evidence-first review surface</div>'
+            f'<div class="sidebar-focus-note">Default focus · {DEFAULT_FOCUS_LABEL}</div>',
+            unsafe_allow_html=True,
+        )
+        for group, pages in (
+            ("Review", PAGE_LABELS[:2]),
+            ("Research", PAGE_LABELS[2:4]),
+            ("Data", PAGE_LABELS[4:]),
+        ):
+            st.markdown(f'<div class="sidebar-group-label">{group}</div>', unsafe_allow_html=True)
+            for page in pages:
+                selected = st.session_state["ct_page"] == page
+                st.button(
+                    page,
+                    key=f"ct_nav_{page}",
+                    type="primary" if selected else "secondary",
+                    width="stretch",
+                    on_click=_set_page,
+                    args=(page,),
+                )
+        st.divider()
+        st.markdown('<div class="sidebar-group-label">Settings</div>', unsafe_allow_html=True)
+        st.radio(
+            "Theme",
+            options=["Light", "Dark"],
+            key="ct_theme",
+            horizontal=True,
+        )
 
 
 def _active_filter_summary() -> str:

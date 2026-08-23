@@ -66,13 +66,11 @@ section[data-testid="stSidebar"] label,
 section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
   color: #f0f2f6 !important;
 }
-section[data-testid="stSidebar"] button[kind="secondary"],
 .stApp button[kind="secondary"] {
   background-color: #1f2937 !important;
   border-color: #334155 !important;
   color: #f0f2f6 !important;
 }
-section[data-testid="stSidebar"] button[kind="secondary"] [data-testid="stMarkdownContainer"] p,
 .stApp button[kind="secondary"] [data-testid="stMarkdownContainer"] p {
   color: #f0f2f6 !important;
 }
@@ -166,6 +164,65 @@ section[data-testid="stSidebar"] label[data-baseweb="radio"] p {
 """
 
 BASE_CSS = r"""
+[data-testid="stSidebar"] { border-right: 1px solid var(--ct-border); }
+[data-testid="stSidebar"] .sidebar-brand {
+  color: var(--ct-ink) !important;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  margin-top: 0.25rem;
+}
+[data-testid="stSidebar"] .sidebar-brand-subtitle {
+  color: var(--ct-muted) !important;
+  font-size: 0.78rem;
+  margin: 0.05rem 0 0.25rem 0;
+}
+[data-testid="stSidebar"] .sidebar-focus-note {
+  color: var(--ct-muted) !important;
+  font-size: 0.74rem;
+  margin: 0 0 1.05rem 0;
+}
+[data-testid="stSidebar"] .sidebar-group-label {
+  color: var(--ct-muted) !important;
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 1rem 0 0.3rem 0.15rem;
+}
+[data-testid="stSidebar"] .stButton { margin-bottom: 0.12rem; }
+[data-testid="stSidebar"] .stButton > button,
+[data-testid="stSidebar"] .stButton > button[kind="secondary"],
+[data-testid="stSidebar"] .stButton > button[kind="primary"] {
+  justify-content: flex-start;
+  min-height: 2.25rem;
+  padding: 0.4rem 0.65rem;
+  border: 0 !important;
+  border-radius: 7px;
+  box-shadow: none !important;
+  font-size: 0.86rem;
+  font-weight: 520;
+  color: var(--ct-ink) !important;
+}
+[data-testid="stSidebar"] .stButton > button,
+[data-testid="stSidebar"] .stButton > button[kind="secondary"] {
+  background: transparent !important;
+}
+[data-testid="stSidebar"] .stButton > button p {
+  width: 100%;
+  text-align: left;
+  color: inherit !important;
+}
+[data-testid="stSidebar"] .stButton > button:hover {
+  background: color-mix(in srgb, var(--ct-accent) 8%, transparent) !important;
+  color: var(--ct-accent) !important;
+  transform: none;
+}
+[data-testid="stSidebar"] .stButton > button[kind="primary"] {
+  background: color-mix(in srgb, var(--ct-accent) 12%, transparent) !important;
+  color: var(--ct-accent) !important;
+  font-weight: 700;
+}
 .ct-shell { max-width: 1480px; margin: 0 auto; padding-bottom: 2rem; }
 .ct-header-block { margin-bottom: 0.5rem; }
 .ct-eyebrow { color: var(--ct-muted); font-size: .72rem; letter-spacing: .12em;

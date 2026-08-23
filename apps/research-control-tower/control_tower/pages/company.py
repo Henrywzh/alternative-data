@@ -13,7 +13,20 @@ from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import pandas as pd
+import pyarrow.parquet as pq
 import streamlit as st
+
+from ..charts import (
+    ACCENT,
+    MODEL_COLORS,
+    apply_theme as apply_chart_theme,
+    bar_chart as _plotly_bar_chart,
+    dual_axis_bar_line,
+    line_chart as _plotly_line_chart,
+    stacked_share_chart,
+)
+
+from ..company_profiles import SegmentSpec, get_company_profile, segment_label
 
 from src.research_control_tower.eligibility import listing_eligibility_reason
 
@@ -622,24 +635,41 @@ def build_company_view(
         selected_listing_id = requested_listing
         selection_mode = "explicit"
     else:
-        verified = active_listings.loc[
+        eligible = active_listings.loc[
             active_listings["mapping_status"].astype("string").str.lower().eq("verified")
-            & active_listings["primary_listing"].map(
-                lambda value: _text(value).lower() in {"true", "1", "yes"}
-            )
             & active_listings["listing_status"].astype("string").str.lower().eq("active")
         ] if not active_listings.empty else active_listings
-        if verified.empty:
+        if eligible.empty:
             selected_listing_id = None
             selection_mode = "none"
         else:
+            exchanges = eligible["exchange"].astype("string").str.upper()
+            roles = eligible.get("listing_role", pd.Series("", index=eligible.index, dtype="string")).astype("string").str.lower()
+            has_hkex = bool(exchanges.eq("HKEX").any())
+            has_us_listing = bool(
+                roles.eq("depositary_receipt").any()
+                or exchanges.isin(["NYSE", "NASDAQ", "OTC"]).any()
+            )
+            # China-internet ADR pairs: prefer the HK ordinary share at runtime
+            # instead of rewriting a published generation's listings.parquet.
+            if has_hkex and has_us_listing:
+                pool = eligible.loc[exchanges.eq("HKEX")].copy()
+            else:
+                pool = eligible.loc[
+                    eligible["primary_listing"].map(
+                        lambda value: _text(value).lower() in {"true", "1", "yes"}
+                    )
+                ].copy()
+                if pool.empty:
+                    pool = eligible.copy()
             role_rank = {"primary": 0, "dual_primary": 1, "secondary": 2, "depositary_receipt": 3}
-            exchange_rank = {"HKEX": 0, "NASDAQ": 1, "NYSE": 2, "LSE": 3}
-            ranked = verified.copy()
+            ranked = pool.copy()
+            ranked["__primary_rank"] = ranked["primary_listing"].map(
+                lambda value: 0 if _text(value).lower() in {"true", "1", "yes"} else 1
+            )
             ranked["__role_rank"] = ranked["listing_role"].map(role_rank).fillna(99)
-            ranked["__exchange_rank"] = ranked["exchange"].astype("string").str.upper().map(exchange_rank).fillna(99)
             ranked = ranked.sort_values(
-                ["__role_rank", "__exchange_rank", "listing_id"],
+                ["__primary_rank", "__role_rank", "listing_id"],
                 kind="mergesort",
             )
             selected_listing_id = _text(ranked.iloc[0]["listing_id"])
@@ -1735,307 +1765,20 @@ def _render_company_hero_card(
             buyback_str = f'HK$ {tot_bb/1e9:,.1f}B YTD'
 
     ticker_badge = f'<span class="ct-hero-ticker">{escape(ticker)}</span>' if ticker else ''
-    exchange_badge = f'<span class="ct-badge">{escape(exchange)} · Primary</span>' if exchange else ''
-    sector_badge = f'<span class="ct-badge">{escape(view.sector)}</span>' if view.sector else ''
-    industry_badge = f'<span class="ct-badge">{escape(view.industry)}</span>' if view.industry else ''
-    hero_html = f'<div class="ct-hero-card"><div class="ct-hero-top"><div><div class="ct-hero-title">{escape(view.display_name)} {ticker_badge} {exchange_badge}</div><div class="ct-subtle" style="margin-top: 0.25rem;">{escape(view.legal_name)} · {escape(view.country)} {sector_badge} {industry_badge}</div></div>{price_html}</div><div class="ct-kpi-grid"><div class="ct-kpi-card"><div class="ct-kpi-label">LTM Revenue</div><div class="ct-kpi-value">{escape(ltm_rev_str)}</div><div class="ct-kpi-sub">Total Topline (IFRS)</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">LTM Non-IFRS Net Profit</div><div class="ct-kpi-value">{escape(ltm_profit_str)}</div><div class="ct-kpi-sub">Core Operating Earnings</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Free Cash Flow</div><div class="ct-kpi-value">{escape(ltm_fcf_str)}</div><div class="ct-kpi-sub">Latest Reported Period</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Capital Return / Buybacks</div><div class="ct-kpi-value">{escape(buyback_str)}</div><div class="ct-kpi-sub">HKB Plan Execution</div></div></div></div>'
-    st.markdown(hero_html, unsafe_allow_html=True)
-
-
-def _render_company_hero_card(
-    view: CompanyView,
-    snapshot: ControlTowerSnapshot,
-    viewer_timezone: str,
-) -> None:
-    ticker = ''
-    exchange = ''
-    currency = ''
+    profile = get_company_profile(view.entity_id)
+    listing_role = ''
     if view.selected_listing_id and not view.listings.empty:
-        selected = view.listings.loc[
+        selected_role = view.listings.loc[
             view.listings['listing_id'].astype('string').eq(view.selected_listing_id)
         ]
-        if not selected.empty:
-            ticker = _text(selected.iloc[0].get('canonical_ticker')) or _text(selected.iloc[0].get('native_ticker'))
-            exchange = _text(selected.iloc[0].get('exchange'))
-            currency = _text(selected.iloc[0].get('currency'))
-
-    price_html = ''
-    if not view.quote_snapshots.empty and view.entity_type != 'private':
-        qrow = view.quote_snapshots.iloc[0]
-        last_price = qrow.get('last_price')
-        qccy = _text(qrow.get('currency')) or currency or 'HKD'
-        price_val_str = f'{qccy} {last_price:,.2f}'.strip() if pd.notna(last_price) else ''
-        day_change = qrow.get('day_change_pct')
-        if pd.notna(day_change) and isinstance(day_change, (int, float)):
-            change_class = 'ct-hero-change--up' if day_change >= 0 else 'ct-hero-change--down'
-            change_str = f'{day_change:+.2f}%'
-        else:
-            change_class = ''
-            change_str = ''
-        qtime = qrow.get('quote_timestamp')
-        age_str = format_quote_age(qtime, snapshot.now_utc)
-        freshness = _text(qrow.get('freshness')) or 'delayed'
-        if price_val_str:
-            change_badge = f'<span class="ct-hero-change {change_class}">{escape(change_str)}</span>' if change_str else ''
-            price_html = f'<div class="ct-hero-price-box"><div class="ct-hero-price">{escape(price_val_str)}</div>{change_badge}<div class="ct-subtle" style="font-size: 0.76rem; margin-left: 0.2rem;">{escape(freshness)} ({escape(age_str)})</div></div>'
-
-    actuals = _company_earnings_actuals(snapshot, view)
-    ltm_rev_str = 'Unavailable'
-    ltm_profit_str = 'Unavailable'
-    ltm_fcf_str = 'Unavailable'
-    buyback_str = 'Unavailable'
-    if not actuals.empty:
-        actuals_copy = actuals.copy()
-        actuals_copy['period_end'] = pd.to_datetime(actuals_copy['period_end'], errors='coerce')
-        periods = actuals_copy.dropna(subset=['period_end']).sort_values('period_end')
-        unique_periods = periods['period_label'].drop_duplicates().tail(4).tolist()
-        rev_rows = actuals_copy[(actuals_copy['period_label'].isin(unique_periods)) & (actuals_copy['metric'] == 'revenue_total') & (actuals_copy['accounting_basis'] == 'IFRS')]
-        if len(rev_rows) >= 1:
-            tot_rev = rev_rows['reported_value'].sum()
-            ltm_rev_str = f'¥{tot_rev/1e9:,.1f}B' if tot_rev >= 1e9 else f'¥{tot_rev:,.0f}'
-        profit_rows = actuals_copy[(actuals_copy['period_label'].isin(unique_periods)) & (actuals_copy['metric'] == 'net_profit_attributable') & (actuals_copy['accounting_basis'] == 'Non-IFRS management measure')]
-        if len(profit_rows) >= 1:
-            tot_profit = profit_rows['reported_value'].sum()
-            ltm_profit_str = f'¥{tot_profit/1e9:,.1f}B' if tot_profit >= 1e9 else f'¥{tot_profit:,.0f}'
-        fcf_rows = actuals_copy[(actuals_copy['metric'] == 'free_cash_flow') & (actuals_copy['accounting_basis'] == 'Non-IFRS management measure')].sort_values('period_end', ascending=False)
-        if not fcf_rows.empty and pd.notna(fcf_rows.iloc[0].get('reported_value')):
-            fcf_val = float(fcf_rows.iloc[0]['reported_value'])
-            ltm_fcf_str = f'¥{fcf_val/1e9:,.1f}B' if abs(fcf_val) >= 1e9 else f'¥{fcf_val:,.0f}'
-
-    if not view.corporate_actions.empty:
-        tot_bb = view.corporate_actions['total_amount_paid'].dropna().sum()
-        if tot_bb > 0:
-            buyback_str = f'HK$ {tot_bb/1e9:,.1f}B YTD'
-
-    ticker_badge = f'<span class="ct-hero-ticker">{escape(ticker)}</span>' if ticker else ''
-    exchange_badge = f'<span class="ct-badge">{escape(exchange)} · Primary</span>' if exchange else ''
+        if not selected_role.empty:
+            listing_role = _text(selected_role.iloc[0].get('listing_role')).replace('_', ' ')
+    role_suffix = f' · {listing_role}' if listing_role else ''
+    exchange_badge = f'<span class="ct-badge">{escape(exchange)}{escape(role_suffix)}</span>' if exchange else ''
     sector_badge = f'<span class="ct-badge">{escape(view.sector)}</span>' if view.sector else ''
     industry_badge = f'<span class="ct-badge">{escape(view.industry)}</span>' if view.industry else ''
-    hero_html = f'<div class="ct-hero-card"><div class="ct-hero-top"><div><div class="ct-hero-title">{escape(view.display_name)} {ticker_badge} {exchange_badge}</div><div class="ct-subtle" style="margin-top: 0.25rem;">{escape(view.legal_name)} · {escape(view.country)} {sector_badge} {industry_badge}</div></div>{price_html}</div><div class="ct-kpi-grid"><div class="ct-kpi-card"><div class="ct-kpi-label">LTM Revenue</div><div class="ct-kpi-value">{escape(ltm_rev_str)}</div><div class="ct-kpi-sub">Total Topline (IFRS)</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">LTM Non-IFRS Net Profit</div><div class="ct-kpi-value">{escape(ltm_profit_str)}</div><div class="ct-kpi-sub">Core Operating Earnings</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Free Cash Flow</div><div class="ct-kpi-value">{escape(ltm_fcf_str)}</div><div class="ct-kpi-sub">Latest Reported Period</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Capital Return / Buybacks</div><div class="ct-kpi-value">{escape(buyback_str)}</div><div class="ct-kpi-sub">HK$100B Plan Execution</div></div></div></div>'
-    st.markdown(hero_html, unsafe_allow_html=True)
-
-
-def _render_styled_bullet_card(line: str) -> None:
-    if line.startswith("Latest fundamentals ·"):
-        icon = "📊"
-        label = "Fundamentals"
-        badge_style = "color: var(--ct-accent); border-color: var(--ct-accent);"
-    elif line.startswith("Recent corporate action ·"):
-        icon = "🏛️"
-        label = "Capital Return"
-        badge_style = "color: var(--ct-hard); border-color: var(--ct-hard);"
-    elif line.startswith("Expectation context ·"):
-        icon = "🎯"
-        label = "Consensus"
-        badge_style = "color: var(--ct-provisional); border-color: var(--ct-provisional);"
-    elif line.startswith("Active catalyst ·"):
-        icon = "⚡"
-        label = "Catalyst"
-        badge_style = "color: var(--ct-thesis); border-color: var(--ct-thesis);"
-    elif line.startswith("Thesis registry ·"):
-        icon = "💡"
-        label = "Thesis"
-        badge_style = "color: var(--ct-accent); border-color: var(--ct-accent);"
-    elif line.startswith("Evidence lineage ·"):
-        icon = "🔍"
-        label = "Evidence Lineage"
-        badge_style = "color: var(--ct-observed); border-color: var(--ct-observed);"
-    else:
-        icon = "ℹ️"
-        label = "Fact"
-        badge_style = "color: var(--ct-muted); border-color: var(--ct-border);"
-    clean_line = line
-    source_link_html = ""
-    url_match = re.search(r'https?://[^\s]+', line)
-    if url_match:
-        url = url_match.group(0)
-        clean_line = line.replace(url, "").strip(" ·").strip()
-        source_link_html = f' · <a class="ct-inline-link" href="{escape(url)}" target="_blank" rel="noopener">Official Source ↗</a>'
-    card_html = f'<div class="ct-change" style="padding: 0.6rem 0.85rem; background: var(--ct-surface); border-radius: 9px; margin-bottom: 0.5rem; border: 1px solid var(--ct-border);"><div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.25rem;"><span class="ct-badge" style="{badge_style}; padding: 0.12rem 0.45rem; font-size: 0.72rem; font-weight: 750;">{icon} {escape(label)}</span></div><div style="font-size: 0.86rem; line-height: 1.45; color: var(--ct-ink);">{escape(clean_line)}{source_link_html}</div></div>'
-    st.markdown(card_html, unsafe_allow_html=True)
-
-def _render_company_hero_card(
-    view: CompanyView,
-    snapshot: ControlTowerSnapshot,
-    viewer_timezone: str,
-) -> None:
-    ticker = ''
-    exchange = ''
-    currency = ''
-    if view.selected_listing_id and not view.listings.empty:
-        selected = view.listings.loc[
-            view.listings['listing_id'].astype('string').eq(view.selected_listing_id)
-        ]
-        if not selected.empty:
-            ticker = _text(selected.iloc[0].get('canonical_ticker')) or _text(selected.iloc[0].get('native_ticker'))
-            exchange = _text(selected.iloc[0].get('exchange'))
-            currency = _text(selected.iloc[0].get('currency'))
-
-    price_html = ''
-    if not view.quote_snapshots.empty and view.entity_type != 'private':
-        qrow = view.quote_snapshots.iloc[0]
-        last_price = qrow.get('last_price')
-        qccy = _text(qrow.get('currency')) or currency or 'HKD'
-        price_val_str = f'{qccy} {last_price:,.2f}'.strip() if pd.notna(last_price) else ''
-        day_change = qrow.get('day_change_pct')
-        if pd.notna(day_change) and isinstance(day_change, (int, float)):
-            change_class = 'ct-hero-change--up' if day_change >= 0 else 'ct-hero-change--down'
-            change_str = f'{day_change:+.2f}%'
-        else:
-            change_class = ''
-            change_str = ''
-        qtime = qrow.get('quote_timestamp')
-        age_str = format_quote_age(qtime, snapshot.now_utc)
-        freshness = _text(qrow.get('freshness')) or 'delayed'
-        if price_val_str:
-            change_badge = f'<span class="ct-hero-change {change_class}">{escape(change_str)}</span>' if change_str else ''
-            price_html = f'<div class="ct-hero-price-box"><div class="ct-hero-price">{escape(price_val_str)}</div>{change_badge}<div class="ct-subtle" style="font-size: 0.76rem; margin-left: 0.2rem;">{escape(freshness)} ({escape(age_str)})</div></div>'
-
-    actuals = _company_earnings_actuals(snapshot, view)
-    ltm_rev_str = 'Unavailable'
-    ltm_profit_str = 'Unavailable'
-    ltm_fcf_str = 'Unavailable'
-    buyback_str = 'Unavailable'
-    if not actuals.empty:
-        actuals_copy = actuals.copy()
-        actuals_copy['period_end'] = pd.to_datetime(actuals_copy['period_end'], errors='coerce')
-        periods = actuals_copy.dropna(subset=['period_end']).sort_values('period_end')
-        unique_periods = periods['period_label'].drop_duplicates().tail(4).tolist()
-        rev_rows = actuals_copy[(actuals_copy['period_label'].isin(unique_periods)) & (actuals_copy['metric'] == 'revenue_total') & (actuals_copy['accounting_basis'] == 'IFRS')]
-        if len(rev_rows) >= 1:
-            tot_rev = rev_rows['reported_value'].sum()
-            ltm_rev_str = f'¥{tot_rev/1e9:,.1f}B' if tot_rev >= 1e9 else f'¥{tot_rev:,.0f}'
-        profit_rows = actuals_copy[(actuals_copy['period_label'].isin(unique_periods)) & (actuals_copy['metric'] == 'net_profit_attributable') & (actuals_copy['accounting_basis'] == 'Non-IFRS management measure')]
-        if len(profit_rows) >= 1:
-            tot_profit = profit_rows['reported_value'].sum()
-            ltm_profit_str = f'¥{tot_profit/1e9:,.1f}B' if tot_profit >= 1e9 else f'¥{tot_profit:,.0f}'
-        fcf_rows = actuals_copy[(actuals_copy['metric'] == 'free_cash_flow') & (actuals_copy['accounting_basis'] == 'Non-IFRS management measure')].sort_values('period_end', ascending=False)
-        if not fcf_rows.empty and pd.notna(fcf_rows.iloc[0].get('reported_value')):
-            fcf_val = float(fcf_rows.iloc[0]['reported_value'])
-            ltm_fcf_str = f'¥{fcf_val/1e9:,.1f}B' if abs(fcf_val) >= 1e9 else f'¥{fcf_val:,.0f}'
-
-    if not view.corporate_actions.empty:
-        tot_bb = view.corporate_actions['total_amount_paid'].dropna().sum()
-        if tot_bb > 0:
-            buyback_str = f'HK$ {tot_bb/1e9:,.1f}B YTD'
-
-    ticker_badge = f'<span class="ct-hero-ticker">{escape(ticker)}</span>' if ticker else ''
-    exchange_badge = f'<span class="ct-badge">{escape(exchange)} · Primary</span>' if exchange else ''
-    sector_badge = f'<span class="ct-badge">{escape(view.sector)}</span>' if view.sector else ''
-    industry_badge = f'<span class="ct-badge">{escape(view.industry)}</span>' if view.industry else ''
-    hero_html = f'<div class="ct-hero-card"><div class="ct-hero-top"><div><div class="ct-hero-title">{escape(view.display_name)} {ticker_badge} {exchange_badge}</div><div class="ct-subtle" style="margin-top: 0.25rem;">{escape(view.legal_name)} · {escape(view.country)} {sector_badge} {industry_badge}</div></div>{price_html}</div><div class="ct-kpi-grid"><div class="ct-kpi-card"><div class="ct-kpi-label">LTM Revenue</div><div class="ct-kpi-value">{escape(ltm_rev_str)}</div><div class="ct-kpi-sub">Total Topline (IFRS)</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">LTM Non-IFRS Net Profit</div><div class="ct-kpi-value">{escape(ltm_profit_str)}</div><div class="ct-kpi-sub">Core Operating Earnings</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Free Cash Flow</div><div class="ct-kpi-value">{escape(ltm_fcf_str)}</div><div class="ct-kpi-sub">Latest Reported Period</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Capital Return / Buybacks</div><div class="ct-kpi-value">{escape(buyback_str)}</div><div class="ct-kpi-sub">HK$100B Plan Execution</div></div></div></div>'
-    st.markdown(hero_html, unsafe_allow_html=True)
-
-
-def _render_styled_bullet_card(line: str) -> None:
-    if line.startswith("Latest fundamentals ·"):
-        icon = "📊"
-        label = "Fundamentals"
-        badge_style = "color: var(--ct-accent); border-color: var(--ct-accent);"
-    elif line.startswith("Recent corporate action ·"):
-        icon = "🏛️"
-        label = "Capital Return"
-        badge_style = "color: var(--ct-hard); border-color: var(--ct-hard);"
-    elif line.startswith("Expectation context ·"):
-        icon = "🎯"
-        label = "Consensus"
-        badge_style = "color: var(--ct-provisional); border-color: var(--ct-provisional);"
-    elif line.startswith("Active catalyst ·"):
-        icon = "⚡"
-        label = "Catalyst"
-        badge_style = "color: var(--ct-thesis); border-color: var(--ct-thesis);"
-    elif line.startswith("Thesis registry ·"):
-        icon = "💡"
-        label = "Thesis"
-        badge_style = "color: var(--ct-accent); border-color: var(--ct-accent);"
-    elif line.startswith("Evidence lineage ·"):
-        icon = "🔍"
-        label = "Evidence Lineage"
-        badge_style = "color: var(--ct-observed); border-color: var(--ct-observed);"
-    else:
-        icon = "ℹ️"
-        label = "Fact"
-        badge_style = "color: var(--ct-muted); border-color: var(--ct-border);"
-    clean_line = line
-    source_link_html = ""
-    url_match = re.search(r'https?://[^\s]+', line)
-    if url_match:
-        url = url_match.group(0)
-        clean_line = line.replace(url, "").strip(" ·").strip()
-        source_link_html = f' · <a class="ct-inline-link" href="{escape(url)}" target="_blank" rel="noopener">Official Source ↗</a>'
-    card_html = f'<div class="ct-change" style="padding: 0.6rem 0.85rem; background: var(--ct-surface); border-radius: 9px; margin-bottom: 0.5rem; border: 1px solid var(--ct-border);"><div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.25rem;"><span class="ct-badge" style="{badge_style}; padding: 0.12rem 0.45rem; font-size: 0.72rem; font-weight: 750;">{icon} {escape(label)}</span></div><div style="font-size: 0.86rem; line-height: 1.45; color: var(--ct-ink);">{escape(clean_line)}{source_link_html}</div></div>'
-    st.markdown(card_html, unsafe_allow_html=True)
-
-def _render_company_hero_card(
-    view: CompanyView,
-    snapshot: ControlTowerSnapshot,
-    viewer_timezone: str,
-) -> None:
-    ticker = ''
-    exchange = ''
-    currency = ''
-    if view.selected_listing_id and not view.listings.empty:
-        selected = view.listings.loc[
-            view.listings['listing_id'].astype('string').eq(view.selected_listing_id)
-        ]
-        if not selected.empty:
-            ticker = _text(selected.iloc[0].get('canonical_ticker')) or _text(selected.iloc[0].get('native_ticker'))
-            exchange = _text(selected.iloc[0].get('exchange'))
-            currency = _text(selected.iloc[0].get('currency'))
-
-    price_html = ''
-    if not view.quote_snapshots.empty and view.entity_type != 'private':
-        qrow = view.quote_snapshots.iloc[0]
-        last_price = qrow.get('last_price')
-        qccy = _text(qrow.get('currency')) or currency or 'HKD'
-        price_val_str = f'{qccy} {last_price:,.2f}'.strip() if pd.notna(last_price) else ''
-        day_change = qrow.get('day_change_pct')
-        if pd.notna(day_change) and isinstance(day_change, (int, float)):
-            change_class = 'ct-hero-change--up' if day_change >= 0 else 'ct-hero-change--down'
-            change_str = f'{day_change:+.2f}%'
-        else:
-            change_class = ''
-            change_str = ''
-        qtime = qrow.get('quote_timestamp')
-        age_str = format_quote_age(qtime, snapshot.now_utc)
-        freshness = _text(qrow.get('freshness')) or 'delayed'
-        if price_val_str:
-            change_badge = f'<span class="ct-hero-change {change_class}">{escape(change_str)}</span>' if change_str else ''
-            price_html = f'<div class="ct-hero-price-box"><div class="ct-hero-price">{escape(price_val_str)}</div>{change_badge}<div class="ct-subtle" style="font-size: 0.76rem; margin-left: 0.2rem;">{escape(freshness)} ({escape(age_str)})</div></div>'
-
-    actuals = _company_earnings_actuals(snapshot, view)
-    ltm_rev_str = 'Unavailable'
-    ltm_profit_str = 'Unavailable'
-    ltm_fcf_str = 'Unavailable'
-    buyback_str = 'Unavailable'
-    if not actuals.empty:
-        actuals_copy = actuals.copy()
-        actuals_copy['period_end'] = pd.to_datetime(actuals_copy['period_end'], errors='coerce')
-        periods = actuals_copy.dropna(subset=['period_end']).sort_values('period_end')
-        unique_periods = periods['period_label'].drop_duplicates().tail(4).tolist()
-        rev_rows = actuals_copy[(actuals_copy['period_label'].isin(unique_periods)) & (actuals_copy['metric'] == 'revenue_total') & (actuals_copy['accounting_basis'] == 'IFRS')]
-        if len(rev_rows) >= 1:
-            tot_rev = rev_rows['reported_value'].sum()
-            ltm_rev_str = f'¥{tot_rev/1e9:,.1f}B' if tot_rev >= 1e9 else f'¥{tot_rev:,.0f}'
-        profit_rows = actuals_copy[(actuals_copy['period_label'].isin(unique_periods)) & (actuals_copy['metric'] == 'net_profit_attributable') & (actuals_copy['accounting_basis'] == 'Non-IFRS management measure')]
-        if len(profit_rows) >= 1:
-            tot_profit = profit_rows['reported_value'].sum()
-            ltm_profit_str = f'¥{tot_profit/1e9:,.1f}B' if tot_profit >= 1e9 else f'¥{tot_profit:,.0f}'
-        fcf_rows = actuals_copy[(actuals_copy['metric'] == 'free_cash_flow') & (actuals_copy['accounting_basis'] == 'Non-IFRS management measure')].sort_values('period_end', ascending=False)
-        if not fcf_rows.empty and pd.notna(fcf_rows.iloc[0].get('reported_value')):
-            fcf_val = float(fcf_rows.iloc[0]['reported_value'])
-            ltm_fcf_str = f'¥{fcf_val/1e9:,.1f}B' if abs(fcf_val) >= 1e9 else f'¥{fcf_val:,.0f}'
-
-    if not view.corporate_actions.empty:
-        tot_bb = view.corporate_actions['total_amount_paid'].dropna().sum()
-        if tot_bb > 0:
-            buyback_str = f'HK$ {tot_bb/1e9:,.1f}B YTD'
-
-    ticker_badge = f'<span class="ct-hero-ticker">{escape(ticker)}</span>' if ticker else ''
-    exchange_badge = f'<span class="ct-badge">{escape(exchange)} · Primary</span>' if exchange else ''
-    sector_badge = f'<span class="ct-badge">{escape(view.sector)}</span>' if view.sector else ''
-    industry_badge = f'<span class="ct-badge">{escape(view.industry)}</span>' if view.industry else ''
-    hero_html = f'<div class="ct-hero-card"><div class="ct-hero-top"><div><div class="ct-hero-title">{escape(view.display_name)} {ticker_badge} {exchange_badge}</div><div class="ct-subtle" style="margin-top: 0.25rem;">{escape(view.legal_name)} · {escape(view.country)} {sector_badge} {industry_badge}</div></div>{price_html}</div><div class="ct-kpi-grid"><div class="ct-kpi-card"><div class="ct-kpi-label">LTM Revenue</div><div class="ct-kpi-value">{escape(ltm_rev_str)}</div><div class="ct-kpi-sub">Total Topline (IFRS)</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">LTM Non-IFRS Net Profit</div><div class="ct-kpi-value">{escape(ltm_profit_str)}</div><div class="ct-kpi-sub">Core Operating Earnings</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Free Cash Flow</div><div class="ct-kpi-value">{escape(ltm_fcf_str)}</div><div class="ct-kpi-sub">Latest Reported Period</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Capital Return / Buybacks</div><div class="ct-kpi-value">{escape(buyback_str)}</div><div class="ct-kpi-sub">HK$100B Plan Execution</div></div></div></div>'
+    buyback_sub = 'Selected-listing statutory filings'
+    hero_html = f'<div class="ct-hero-card"><div class="ct-hero-top"><div><div class="ct-hero-title">{escape(view.display_name)} {ticker_badge} {exchange_badge}</div><div class="ct-subtle" style="margin-top: 0.25rem;">{escape(view.legal_name)} · {escape(view.country)} {sector_badge} {industry_badge}</div></div>{price_html}</div><div class="ct-kpi-grid"><div class="ct-kpi-card"><div class="ct-kpi-label">LTM Revenue</div><div class="ct-kpi-value">{escape(ltm_rev_str)}</div><div class="ct-kpi-sub">Total Topline (IFRS)</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">LTM Non-IFRS Net Profit</div><div class="ct-kpi-value">{escape(ltm_profit_str)}</div><div class="ct-kpi-sub">Core Operating Earnings</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Free Cash Flow</div><div class="ct-kpi-value">{escape(ltm_fcf_str)}</div><div class="ct-kpi-sub">Latest Reported Period</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Capital Return / Buybacks</div><div class="ct-kpi-value">{escape(buyback_str)}</div><div class="ct-kpi-sub">{escape(buyback_sub)}</div></div></div></div>'
     st.markdown(hero_html, unsafe_allow_html=True)
 
 
@@ -2097,9 +1840,6 @@ def _render_answer_first_summary(
     entity_slug = _slugify(view.entity_id)
     listing_slug = _slugify(view.selected_listing_id) if view.selected_listing_id else 'all'
     _render_section_heading(4, heading, f'exec-summary-{entity_slug}-{listing_slug}')
-    if view.entity_id == 'TENCENT':
-        insights_html = '<div style="margin-bottom: 1rem;"><div class="ct-insight-box"><div class="ct-insight-title">🎮 1. Gaming & Core Franchise Recovery</div><div class="ct-insight-desc">Domestic gross receipts inflecting on evergreen franchises (Honor of Kings, Peacekeeper Elite) plus new pipeline scaling (DnF Mobile); international gaming (Supercell titles) compounding at double-digit rates.</div></div><div class="ct-insight-box"><div class="ct-insight-title">📈 2. Video Accounts Ad Monetization & AI Operating Leverage</div><div class="ct-insight-desc">Video Accounts (视频号) ad load expansion and AIM+ AI ad targeting algorithm driving marketing services growth; gross margins expanding as high-margin revenue streams outpace headcount and infra costs.</div></div><div class="ct-insight-box"><div class="ct-insight-title">🛡️ 3. Shareholder Capital Return Floor</div><div class="ct-insight-desc">Committed HK$100B+ annual statutory share repurchase plan executing consistently at ~HK$300M/trading day, offsetting major shareholder block supply and permanently shrinking share count.</div></div></div>'
-        st.markdown(insights_html, unsafe_allow_html=True)
     summary_facts = _answer_first_summary_lines(view, snapshot)
     for line in summary_facts:
         _render_styled_bullet_card(line)
@@ -2127,7 +1867,7 @@ def _render_price_history(view: CompanyView, snapshot: ControlTowerSnapshot) -> 
         return
     currency = _text(frame.iloc[-1].get('currency')) or ''
     chart = frame.set_index('bar_date')[[series_column]].rename(columns={series_column: f'{currency} {basis}'.strip()})
-    st.line_chart(chart, height=260)
+    _render_plotly(_plotly_line_chart(chart, y_title=f'{currency} {basis}'.strip(), value_format=',.2f', height=280))
     first = frame['bar_date'].min().date()
     last = frame['bar_date'].max().date()
     sources = ', '.join(sorted({_text(v) for v in frame['source_id'] if _text(v)}))
@@ -2183,7 +1923,7 @@ def _render_overview_tab(
     cols[3].metric('Corporate Actions', str(len(view.corporate_actions)))
 
 
-def _build_quarterly_financial_pivot(frame: pd.DataFrame, n_periods: int = 8) -> pd.DataFrame:
+def _build_quarterly_financial_pivot(frame: pd.DataFrame, n_periods: int = 8, profile=None) -> pd.DataFrame:
     if frame.empty:
         return pd.DataFrame()
     df = frame.copy()
@@ -2203,22 +1943,41 @@ def _build_quarterly_financial_pivot(frame: pd.DataFrame, n_periods: int = 8) ->
         non_ifrs_op[p] = float(sub_op.iloc[0]['reported_value']) if not sub_op.empty and pd.notna(sub_op.iloc[0]['reported_value']) else None
         sub_np = df[(df['period_label'] == p) & (df['metric'] == 'net_profit_attributable') & (df['accounting_basis'] == 'Non-IFRS management measure')]
         non_ifrs_np[p] = float(sub_np.iloc[0]['reported_value']) if not sub_np.empty and pd.notna(sub_np.iloc[0]['reported_value']) else None
+    profile = profile or get_company_profile(None)
+    symbol = profile.reporting_currency_symbol or '¥'
+    present_metrics = set(df.get('metric', pd.Series(dtype='string')).astype('string'))
+    segment_rows = []
+    seen_labels = set()
+    preferred = list(profile.segment_metrics) if profile.segment_metrics else []
+    if not preferred:
+        extra = sorted(
+            metric for metric in present_metrics
+            if str(metric).startswith('revenue_') and str(metric) != 'revenue_total'
+        )
+        preferred = [SegmentSpec(metric, segment_label(metric, profile)) for metric in extra]
+    for spec in preferred:
+        if spec.metric not in present_metrics or spec.label in seen_labels:
+            continue
+        seen_labels.add(spec.label)
+        segment_rows.append((spec.metric, spec.label))
+    formatted_segments = []
+    for idx, (metric, label) in enumerate(segment_rows):
+        prefix = '  └─ ' if idx == len(segment_rows) - 1 else '  ├─ '
+        formatted_segments.append((f'{prefix}{label}', metric, 'IFRS', 1e9, symbol + '{:.1f}B'))
     row_specs = [
-        ('Revenue: Total (RMB B)', 'revenue_total', 'IFRS', 1e9, '¥{:.1f}B'),
-        ('  ├─ VAS (Games & Social)', 'revenue_vas', 'IFRS', 1e9, '¥{:.1f}B'),
-        ('  ├─ Marketing Services (Ads)', 'revenue_marketing_services', 'IFRS', 1e9, '¥{:.1f}B'),
-        ('  └─ Fintech & Biz Services', 'revenue_fintech_business_services', 'IFRS', 1e9, '¥{:.1f}B'),
+        (f'Revenue: Total ({profile.reporting_currency} B)', 'revenue_total', 'IFRS', 1e9, symbol + '{:.1f}B'),
+        *formatted_segments,
         ('YoY Revenue Growth (%)', '__yoy_rev__', '', 1.0, '{:+.1f}%'),
         ('QoQ Revenue Growth (%)', '__qoq_rev__', '', 1.0, '{:+.1f}%'),
-        ('Operating Profit (Non-IFRS, RMB B)', 'operating_profit', 'Non-IFRS management measure', 1e9, '¥{:.1f}B'),
+        (f'Operating Profit (Non-IFRS, {profile.reporting_currency} B)', 'operating_profit', 'Non-IFRS management measure', 1e9, symbol + '{:.1f}B'),
         ('Non-IFRS Operating Margin (%)', '__non_ifrs_op_margin__', '', 1.0, '{:.1f}%'),
-        ('Operating Profit (IFRS, RMB B)', 'operating_profit', 'IFRS', 1e9, '¥{:.1f}B'),
-        ('Net Profit (Non-IFRS, RMB B)', 'net_profit_attributable', 'Non-IFRS management measure', 1e9, '¥{:.1f}B'),
+        (f'Operating Profit (IFRS, {profile.reporting_currency} B)', 'operating_profit', 'IFRS', 1e9, symbol + '{:.1f}B'),
+        (f'Net Profit (Non-IFRS, {profile.reporting_currency} B)', 'net_profit_attributable', 'Non-IFRS management measure', 1e9, symbol + '{:.1f}B'),
         ('Non-IFRS Net Margin (%)', '__non_ifrs_net_margin__', '', 1.0, '{:.1f}%'),
-        ('Net Profit (IFRS, RMB B)', 'net_profit_attributable', 'IFRS', 1e9, '¥{:.1f}B'),
-        ('Diluted EPS (Non-IFRS, RMB)', 'diluted_eps', 'Non-IFRS management measure', 1.0, '¥{:.2f}'),
-        ('Free Cash Flow (RMB B)', 'free_cash_flow', 'Non-IFRS management measure', 1e9, '¥{:.1f}B'),
-        ('CapEx (RMB B)', 'capex', 'IFRS', 1e9, '¥{:.1f}B'),
+        (f'Net Profit (IFRS, {profile.reporting_currency} B)', 'net_profit_attributable', 'IFRS', 1e9, symbol + '{:.1f}B'),
+        (f'Diluted EPS (Non-IFRS, {profile.reporting_currency})', 'diluted_eps', 'Non-IFRS management measure', 1.0, symbol + '{:.2f}'),
+        (f'Free Cash Flow ({profile.reporting_currency} B)', 'free_cash_flow', 'Non-IFRS management measure', 1e9, symbol + '{:.1f}B'),
+        (f'CapEx ({profile.reporting_currency} B)', 'capex', 'IFRS', 1e9, symbol + '{:.1f}B'),
     ]
     result_rows = []
     for label, metric, basis, scale, fmt in row_specs:
@@ -2266,51 +2025,529 @@ def _build_quarterly_financial_pivot(frame: pd.DataFrame, n_periods: int = 8) ->
     return pd.DataFrame(result_rows)
 
 
-def _render_tencent_alt_data_modules() -> None:
-    # 1. OpenRouter Tencent Hunyuan AI Token Usage & Economics
-    _render_section_heading(4, '🤖 Tencent Hunyuan (混元) AI Token & API Economics (OpenRouter Signal)', 'tencent-hunyuan-openrouter')
-    cloud_path = Path('data/normalized/openrouter/cloud_infra_daily_activity.parquet')
-    if cloud_path.exists():
-        try:
-            cloud_df = pd.read_parquet(cloud_path)
-            hy_df = cloud_df[cloud_df['model_origin_company'] == 'Tencent'].copy()
-            if not hy_df.empty:
-                hy_df['usage_date'] = pd.to_datetime(hy_df['usage_date'], errors='coerce')
-                hy_df = hy_df.dropna(subset=['usage_date']).sort_values('usage_date')
-                recent_days = hy_df[hy_df['usage_date'] >= hy_df['usage_date'].max() - pd.Timedelta(days=30)]
-                daily_tokens_m = recent_days.groupby('usage_date')['total_tokens'].sum() / 1e6
-                avg_daily = daily_tokens_m.mean() if not daily_tokens_m.empty else 0
-                models_active = hy_df['model_permaslug'].unique().tolist()
-                st.markdown(f'<div class="ct-kpi-grid"><div class="ct-kpi-card"><div class="ct-kpi-label">30-Day Avg Token Volume</div><div class="ct-kpi-value">{avg_daily:,.1f}M / day</div><div class="ct-kpi-sub">OpenRouter Global Gateway</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Active Hunyuan Models</div><div class="ct-kpi-value">{len(models_active)} Models</div><div class="ct-kpi-sub">Hy3, Hy3-Preview, MT2-30B, MT2-1.8B</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Primary Inference Provider</div><div class="ct-kpi-value">Tencent First-Party</div><div class="ct-kpi-sub">Tencent Cloud Engine</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Inference Signal Class</div><div class="ct-kpi-value">Alternative Data</div><div class="ct-kpi-sub">Live Cloud Infra Activity</div></div></div>', unsafe_allow_html=True)
-                pivot_tokens = hy_df.groupby(['usage_date', 'model_permaslug'])['total_tokens'].sum().unstack().fillna(0) / 1e6
-                st.caption(f'Daily Hunyuan Token Consumption by Model (Millions of tokens · {hy_df["usage_date"].min().strftime("%Y-%m-%d")} to {hy_df["usage_date"].max().strftime("%Y-%m-%d")})')
-                st.line_chart(pivot_tokens.tail(60), height=220)
-        except Exception as e:
-            st.caption(f'OpenRouter signal temporarily unavailable: {e}')
-    else:
-        st.info('OpenRouter alternative data dataset not found in local normalized storage.')
+# Intermediate column name shared between the revenue frame and its chart.
+REVENUE_CHART_COLUMN = 'Total revenue'
 
-    # 2. SOTP Listed Portfolio Mark-to-Market Engine
-    _render_section_heading(4, '📊 Mark-to-Market Listed Investment Portfolio (SOTP Valuation)', 'tencent-sotp-portfolio')
-    sotp_rows = [
-        {'Associate / Asset': 'Meituan (美团)', 'Ticker': '3690.HK', 'Shareholding': '17.0%', 'Market Cap (HKD B)': '780.0', 'Tencent Holding Value (HKD B)': '132.6', 'Per Share Value (HKD)': '14.35'},
-        {'Associate / Asset': 'PDD Holdings (拼多多)', 'Ticker': 'PDD.US', 'Shareholding': '14.8%', 'Market Cap (HKD B)': '1,250.0', 'Tencent Holding Value (HKD B)': '185.0', 'Per Share Value (HKD)': '20.02'},
-        {'Associate / Asset': 'Sea Ltd (Garena/Shopee)', 'Ticker': 'SE.US', 'Shareholding': '18.5%', 'Market Cap (HKD B)': '360.0', 'Tencent Holding Value (HKD B)': '66.6', 'Per Share Value (HKD)': '7.21'},
-        {'Associate / Asset': 'Kuaishou (快手)', 'Ticker': '1024.HK', 'Shareholding': '16.8%', 'Market Cap (HKD B)': '220.0', 'Tencent Holding Value (HKD B)': '37.0', 'Per Share Value (HKD)': '4.00'},
-        {'Associate / Asset': 'Bilibili (哔哩哔哩)', 'Ticker': '9626.HK', 'Shareholding': '13.4%', 'Market Cap (HKD B)': '68.0', 'Tencent Holding Value (HKD B)': '9.1', 'Per Share Value (HKD)': '0.98'},
-        {'Associate / Asset': 'Other Listed Equities & Gaming', 'Ticker': 'Multi-Listed', 'Shareholding': 'Strategic', 'Market Cap (HKD B)': '-', 'Tencent Holding Value (HKD B)': '38.5', 'Per Share Value (HKD)': '4.17'},
+
+def _control_tower_repo_root() -> Path:
+    return Path(__file__).resolve().parents[4]
+
+
+# The alternative-data marts live outside the published generation, so they are
+# not covered by the snapshot cache in app.py. They are read from a tab body,
+# and st.tabs evaluates every tab body on every rerun -- so without a cache the
+# OpenRouter economics mart is decoded again on each widget interaction, even
+# when the user is on Overview. Project first (17 columns -> 5 cuts the frame
+# from ~38 MB to ~14 MB), then cache on (path, size, mtime).
+OPENROUTER_MART_COLUMNS: tuple[str, ...] = (
+    'usage_date',
+    'model_permaslug',
+    'model_origin_company',
+    'entity_id',
+    'provider_slug',
+    'total_tokens',
+    'estimated_revenue',
+    'include_in_default_kpis',
+    'is_complete_day',
+)
+
+SOUTHBOUND_MART_COLUMNS: tuple[str, ...] = (
+    'hold_date',
+    'holding_shares',
+    'holding_market_value',
+    'holding_share_pct',
+)
+
+
+def _parquet_fingerprint(path: Path) -> tuple[int, int]:
+    stat = path.stat()
+    return (stat.st_size, stat.st_mtime_ns)
+
+
+@st.cache_data(show_spinner=False, max_entries=8)
+def _read_mart_projected(
+    path_str: str,
+    fingerprint: tuple[int, int],
+    columns: tuple[str, ...],
+) -> pd.DataFrame:
+    """Read a local mart, keeping only ``columns`` that the file actually has.
+
+    A column named here but absent from the file is dropped rather than raised
+    on: the candidate marts have overlapping but not identical schemas, and the
+    filters downstream already treat every one of these columns as optional.
+    """
+    del fingerprint  # cache key only
+    path = Path(path_str)
+    if columns:
+        available = set(pq.ParquetFile(path).schema_arrow.names)
+        wanted = [column for column in columns if column in available]
+        if wanted:
+            return pd.read_parquet(path, columns=wanted)
+    return pd.read_parquet(path)
+
+
+def _bar_chart_with_year_axis(
+    frame: pd.DataFrame,
+    *,
+    x: str,
+    y: str,
+    y_title: str,
+    y_format: str | None = None,
+    height: int = 220,
+    series_name: str | None = None,
+):
+    plot = frame[[x, y]].dropna().copy()
+    plot = plot.set_index(x)[[y]]
+    # bar_chart names each trace after its column, so the legend showed the
+    # raw identifier ('daily_repurchase_hkd_m') next to a worded axis.
+    plot.columns = [series_name or y_title]
+    return _plotly_bar_chart(
+        plot,
+        title='',
+        y_title=y_title,
+        height=height,
+        value_format=y_format or ',.1f',
+        tickformat='%b %Y',
+    )
+
+
+def _segment_share_chart(frame: pd.DataFrame):
+    plot = frame.copy()
+    value_cols = [c for c in plot.columns if c != 'period']
+    long_index = plot['period'].astype(str)
+    values = plot.loc[:, value_cols].apply(pd.to_numeric, errors='coerce')
+    totals = values.sum(axis=1).replace(0, pd.NA)
+    share = values.div(totals, axis=0) * 100.0
+    share.index = long_index
+    return stacked_share_chart(share, title='', height=280)
+
+
+def _quarterly_profitability_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    """Derive quarterly operating/net margins from issuer actuals.
+
+    Gross margin is omitted because gross profit is not in the earnings-actuals mart.
+    """
+    empty = pd.DataFrame(columns=[
+        'period', 'period_end', 'revenue_rmb_b', 'operating_profit_non_ifrs_rmb_b',
+        'net_profit_non_ifrs_rmb_b', 'operating_margin_pct', 'net_margin_pct', 'ifrs_operating_margin_pct',
+    ])
+    if frame is None or frame.empty:
+        return empty
+    df = frame.copy()
+    df['period_end'] = pd.to_datetime(df['period_end'], errors='coerce')
+    df = df.dropna(subset=['period_end'])
+    if df.empty:
+        return empty
+
+    def _series(metric: str, basis: str) -> pd.Series:
+        subset = df.loc[
+            df['metric'].astype('string').eq(metric) & df['accounting_basis'].astype('string').eq(basis),
+            ['period_label', 'period_end', 'reported_value'],
+        ].copy()
+        if subset.empty:
+            return pd.Series(dtype='float64')
+        subset['reported_value'] = pd.to_numeric(subset['reported_value'], errors='coerce')
+        subset = subset.sort_values('period_end').drop_duplicates('period_label', keep='last')
+        return subset.set_index('period_label')['reported_value']
+
+    periods = (
+        df[['period_label', 'period_end']]
+        .drop_duplicates()
+        .sort_values('period_end')
+        .rename(columns={'period_label': 'period'})
+    )
+    out = periods.set_index('period')
+    out['revenue'] = _series('revenue_total', 'IFRS')
+    out['op_non_ifrs'] = _series('operating_profit', 'Non-IFRS management measure')
+    out['np_non_ifrs'] = _series('net_profit_attributable', 'Non-IFRS management measure')
+    out['op_ifrs'] = _series('operating_profit', 'IFRS')
+    out = out.reset_index()
+    out['revenue_rmb_b'] = pd.to_numeric(out['revenue'], errors='coerce') / 1e9
+    out['operating_profit_non_ifrs_rmb_b'] = pd.to_numeric(out['op_non_ifrs'], errors='coerce') / 1e9
+    out['net_profit_non_ifrs_rmb_b'] = pd.to_numeric(out['np_non_ifrs'], errors='coerce') / 1e9
+    revenue = pd.to_numeric(out['revenue'], errors='coerce')
+    out['operating_margin_pct'] = (pd.to_numeric(out['op_non_ifrs'], errors='coerce') / revenue * 100.0).where(revenue > 0)
+    out['net_margin_pct'] = (pd.to_numeric(out['np_non_ifrs'], errors='coerce') / revenue * 100.0).where(revenue > 0)
+    out['ifrs_operating_margin_pct'] = (pd.to_numeric(out['op_ifrs'], errors='coerce') / revenue * 100.0).where(revenue > 0)
+    keep = [
+        'period', 'period_end', 'revenue_rmb_b', 'operating_profit_non_ifrs_rmb_b',
+        'net_profit_non_ifrs_rmb_b', 'operating_margin_pct', 'net_margin_pct', 'ifrs_operating_margin_pct',
     ]
-    sotp_df = pd.DataFrame(sotp_rows)
-    tot_sotp_b = 468.8
-    sotp_per_sh = 50.73
-    st.markdown(f'<div class="ct-kpi-grid"><div class="ct-kpi-card"><div class="ct-kpi-label">Total Listed SOTP Value</div><div class="ct-kpi-value">HK$ {tot_sotp_b:,.1f}B</div><div class="ct-kpi-sub">Mark-to-Market Public Holdings</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Portfolio Value Per Share</div><div class="ct-kpi-value">HK$ {sotp_per_sh:.2f} / sh</div><div class="ct-kpi-sub">11.5% of Current Share Price</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Headline P/E Multiple</div><div class="ct-kpi-value">15.1x LTM</div><div class="ct-kpi-sub">Full Equity Market Value</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Core Ex-Investments P/E</div><div class="ct-kpi-value">12.6x LTM</div><div class="ct-kpi-sub">Deducting Listed Portfolio Value</div></div></div>', unsafe_allow_html=True)
-    st.dataframe(sotp_df, width='stretch', hide_index=True)
-    st.caption('Mark-to-market SOTP portfolio values derived from published shareholding disclosures and current market prices.')
+    return out.loc[:, keep].dropna(subset=['operating_profit_non_ifrs_rmb_b', 'operating_margin_pct'], how='all')
 
-    # 3. HKEX Southbound Stock Connect Liquidity Signal
-    _render_section_heading(4, '🌊 HKEX Southbound Stock Connect (港股通南向资金) Liquidity Signal', 'tencent-southbound-flow')
-    st.markdown('<div class="ct-kpi-grid"><div class="ct-kpi-card"><div class="ct-kpi-label">Southbound Cumulative Holding</div><div class="ct-kpi-value">865.2M shares</div><div class="ct-kpi-sub">9.25% of Free Float Shares</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Southbound Market Value</div><div class="ct-kpi-value">HK$ 382.7B</div><div class="ct-kpi-sub">Mainland Institutional Capital</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">30-Day Net Accumulation</div><div class="ct-kpi-value" style="color: #16a34a;">+HK$ 14.2B</div><div class="ct-kpi-sub">Steady Net Inflow Trend</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Liquidity Backing</div><div class="ct-kpi-value">Strong Floor</div><div class="ct-kpi-sub">Absorbing Overseas Divestments</div></div></div>', unsafe_allow_html=True)
-    st.caption('Stock Connect Southbound holding statistics based on HKEX CCASS shareholding and daily trading records.')
+
+def _profit_margin_chart(frame: pd.DataFrame, currency: str = 'CNY'):
+    # The financial matrix reads its currency from the company profile; these
+    # axis titles said RMB regardless, so a non-CNY reporter would have had a
+    # currency-aware table sitting above a chart contradicting it.
+    plot = frame.copy().set_index('period')
+    return dual_axis_bar_line(
+        plot,
+        bar_column='operating_profit_non_ifrs_rmb_b',
+        line_columns=['operating_margin_pct', 'net_margin_pct'],
+        bar_title=f'Non-IFRS operating profit ({currency} B)',
+        line_title='Margin (%)',
+        bar_name=f'Non-IFRS operating profit ({currency} B)',
+        line_names={
+            'operating_margin_pct': 'Non-IFRS operating margin',
+            'net_margin_pct': 'Non-IFRS net margin',
+        },
+        bar_format=',.1f',
+        line_format='.1f',
+        line_suffix='%',
+        height=320,
+    )
+
+
+def _spot_forward_pe_payload(view: CompanyView) -> dict[str, Any] | None:
+    """Display-only FY1 P/E from delayed quote / same-currency consensus EPS.
+
+    This is not written into valuation_snapshots; that mart stays fail-closed
+    until share count and basis-verified inputs exist.
+    """
+    if view.quote_snapshots.empty or view.consensus.empty:
+        return None
+    quote = view.quote_snapshots.iloc[0]
+    price = pd.to_numeric(pd.Series([quote.get('last_price')]), errors='coerce').iloc[0]
+    price_ccy = _text(quote.get('currency'))
+    if pd.isna(price) or float(price) <= 0 or not price_ccy:
+        return None
+    cons = view.consensus.copy()
+    metrics = cons.get('metric', pd.Series('', index=cons.index, dtype='string')).astype('string').str.lower()
+    horizons = cons.get('horizon', pd.Series('', index=cons.index, dtype='string')).astype('string').str.lower()
+    periods = cons.get('fiscal_period', pd.Series('', index=cons.index, dtype='string')).astype('string').str.lower()
+    annual = cons.loc[metrics.eq('eps') & (horizons.eq('0y') | periods.eq('annual'))].copy()
+    if annual.empty:
+        return None
+    # FY1 is the `0y` horizon. `fiscal_period == 'annual'` on its own also
+    # matches +1y/+2y rows, and one capture stamps every fiscal year with the
+    # same snapshot_at, so ordering by snapshot_at alone returned whichever
+    # year happened to be stored first -- FY2 for every real generation. Pin
+    # 0y, and fall back to the earliest annual year only when no 0y row exists.
+    fy1 = annual.loc[horizons.reindex(annual.index).eq('0y')]
+    is_fy1 = not fy1.empty
+    eps = fy1 if is_fy1 else annual
+    if not is_fy1 and 'fiscal_year' in eps.columns:
+        eps = eps.assign(__fiscal_year=pd.to_numeric(eps['fiscal_year'], errors='coerce'))
+        eps = eps.sort_values('__fiscal_year', na_position='last', kind='mergesort')
+    if 'snapshot_at' in eps.columns and eps['snapshot_at'].notna().any():
+        # Stable, so the fiscal-year order above survives inside one capture.
+        eps = eps.sort_values('snapshot_at', ascending=False, na_position='last', kind='mergesort')
+    row = eps.iloc[0]
+    eps_value = pd.to_numeric(pd.Series([row.get('value')]), errors='coerce').iloc[0]
+    eps_ccy = _text(row.get('currency'))
+    if pd.isna(eps_value) or float(eps_value) <= 0 or not eps_ccy:
+        return None
+    if eps_ccy.casefold() != price_ccy.casefold():
+        return None
+    return {
+        'price': float(price),
+        'eps': float(eps_value),
+        'pe': float(price) / float(eps_value),
+        'price_ccy': price_ccy,
+        'eps_ccy': eps_ccy,
+        'horizon': _text(row.get('horizon')),
+        'fiscal_year': row.get('fiscal_year'),
+        'is_fy1': is_fy1,
+        'provider': _text(row.get('provider')) or 'unattributed',
+        'analyst_count': row.get('analyst_count'),
+        'source_url': _text(row.get('source_url')),
+    }
+
+
+def _dual_axis_revenue_yoy_chart(frame: pd.DataFrame, currency: str = 'CNY'):
+    plot = frame.rename(columns={
+        REVENUE_CHART_COLUMN: 'revenue_rmb_b',
+        'YoY Growth (%)': 'yoy_pct',
+    })
+    return dual_axis_bar_line(
+        plot,
+        bar_column='revenue_rmb_b',
+        line_columns=['yoy_pct'],
+        bar_title=f'Total Revenue ({currency} B)',
+        line_title='YoY Growth (%)',
+        bar_name=f'Total revenue ({currency} B)',
+        line_names={'yoy_pct': 'YoY growth'},
+        bar_format=',.1f',
+        line_format='+.1f',
+        line_suffix='%',
+        height=320,
+    )
+
+
+def _openrouter_daily_frame(raw: pd.DataFrame, profile=None) -> pd.DataFrame:
+    """Sum OpenRouter activity for one company profile into a daily series."""
+    empty_cols = ['usage_date', 'total_tokens', 'estimated_revenue', 'model_count', 'is_complete']
+    filt = None if profile is None else profile.openrouter
+    if raw is None or raw.empty or filt is None:
+        return pd.DataFrame(columns=empty_cols)
+    frame = raw.copy()
+    if 'model_permaslug' not in frame.columns:
+        return pd.DataFrame(columns=empty_cols)
+    slugs = frame['model_permaslug'].astype('string')
+    origin = frame['model_origin_company'].astype('string') if 'model_origin_company' in frame.columns else pd.Series('', index=frame.index, dtype='string')
+    entity = frame['entity_id'].astype('string').str.lower() if 'entity_id' in frame.columns else pd.Series('', index=frame.index, dtype='string')
+    provider = frame['provider_slug'].astype('string').str.lower() if 'provider_slug' in frame.columns else pd.Series('', index=frame.index, dtype='string')
+    mask = pd.Series(False, index=frame.index)
+    for prefix in filt.slug_prefixes:
+        mask = mask | slugs.str.startswith(prefix, na=False)
+    if filt.origin_names:
+        mask = mask | origin.isin(list(filt.origin_names))
+    if filt.entity_ids:
+        wanted = {value.lower() for value in filt.entity_ids}
+        mask = mask | entity.isin(wanted) | provider.isin(wanted)
+    frame = frame.loc[mask].copy()
+    if frame.empty:
+        return pd.DataFrame(columns=empty_cols)
+    frame['usage_date'] = pd.to_datetime(frame['usage_date'], errors='coerce').dt.normalize()
+    frame = frame.dropna(subset=['usage_date'])
+    frame['total_tokens'] = pd.to_numeric(frame['total_tokens'], errors='coerce').fillna(0.0)
+    if 'estimated_revenue' in frame.columns:
+        frame['estimated_revenue'] = pd.to_numeric(frame['estimated_revenue'], errors='coerce').fillna(0.0)
+    else:
+        frame['estimated_revenue'] = 0.0
+    if 'include_in_default_kpis' in frame.columns:
+        frame['row_complete'] = frame['include_in_default_kpis'].astype('boolean').fillna(True)
+    elif 'is_complete_day' in frame.columns:
+        frame['row_complete'] = frame['is_complete_day'].astype('boolean').fillna(True)
+    else:
+        frame['row_complete'] = True
+    daily = (
+        frame.groupby('usage_date', as_index=False)
+        .agg(
+            total_tokens=('total_tokens', 'sum'),
+            estimated_revenue=('estimated_revenue', 'sum'),
+            model_count=('model_permaslug', 'nunique'),
+            is_complete=('row_complete', 'all'),
+        )
+        .sort_values('usage_date')
+        .reset_index(drop=True)
+    )
+    daily['is_complete'] = daily['is_complete'].astype(bool)
+    if daily['is_complete'].all() and len(daily) >= 8:
+        last = float(daily['total_tokens'].iloc[-1])
+        last_day = daily['usage_date'].iloc[-1]
+        same_weekday = daily.loc[daily['usage_date'].dt.weekday.eq(last_day.weekday()) & daily['usage_date'].lt(last_day), 'total_tokens']
+        typical = float(same_weekday.tail(4).median()) if len(same_weekday) >= 3 else 0.0
+        if typical > 0 and last < 0.5 * typical:
+            daily.loc[daily.index[-1], 'is_complete'] = False
+    return daily
+
+
+def _openrouter_period_frame(daily: pd.DataFrame, granularity: str) -> pd.DataFrame:
+    frame = daily.copy()
+    if frame.empty:
+        return frame
+    frame['usage_date'] = pd.to_datetime(frame['usage_date'], errors='coerce')
+    if granularity == 'Daily':
+        out = frame.rename(columns={'usage_date': 'period'})
+        out['is_partial'] = ~out['is_complete']
+        return out
+    if granularity == 'Weekly':
+        frame['period'] = frame['usage_date'] - pd.to_timedelta(frame['usage_date'].dt.weekday, unit='D')
+        expected_days = 7
+    else:
+        frame['period'] = frame['usage_date'].dt.to_period('M').dt.to_timestamp()
+        expected_days = frame.groupby('period')['usage_date'].transform(lambda s: int(pd.Timestamp(s.min()).days_in_month))
+    grouped = (
+        frame.groupby('period', as_index=False)
+        .agg(
+            total_tokens=('total_tokens', 'sum'),
+            estimated_revenue=('estimated_revenue', 'sum'),
+            model_count=('model_count', 'max'),
+            observed_days=('usage_date', 'nunique'),
+            complete_days=('is_complete', 'sum'),
+        )
+        .sort_values('period')
+        .reset_index(drop=True)
+    )
+    if granularity == 'Weekly':
+        grouped['is_partial'] = grouped['complete_days'] < expected_days
+    else:
+        month_days = grouped['period'].dt.days_in_month
+        grouped['is_partial'] = grouped['complete_days'] < month_days
+    return grouped
+
+
+def _load_southbound_holdings(profile) -> pd.DataFrame:
+    spec = None if profile is None else profile.southbound
+    if spec is None:
+        return pd.DataFrame()
+    repo_root = _control_tower_repo_root()
+    candidates = [
+        repo_root / 'data/normalized/marts' / spec.mart_filename,
+        Path('data/normalized/marts') / spec.mart_filename,
+    ]
+    for path in candidates:
+        if path.exists():
+            frame = _read_mart_projected(str(path), _parquet_fingerprint(path), SOUTHBOUND_MART_COLUMNS)
+            if frame.empty:
+                continue
+            frame = frame.copy()
+            frame['hold_date'] = pd.to_datetime(frame['hold_date'], errors='coerce')
+            frame = frame.dropna(subset=['hold_date']).sort_values('hold_date').reset_index(drop=True)
+            for column in ('holding_shares', 'holding_market_value', 'holding_share_pct'):
+                if column in frame.columns:
+                    frame[column] = pd.to_numeric(frame[column], errors='coerce')
+            return frame
+    return pd.DataFrame()
+
+
+def _load_openrouter_raw() -> tuple[pd.DataFrame, Path | None]:
+    repo_root = _control_tower_repo_root()
+    candidates = [
+        repo_root / 'data/normalized/marts/daily_provider_economics.parquet',
+        Path('data/normalized/marts/daily_provider_economics.parquet'),
+        repo_root / 'data/normalized/marts/daily_cloud_infra_economics.parquet',
+        Path('data/normalized/marts/daily_cloud_infra_economics.parquet'),
+        repo_root / 'data/normalized/openrouter/cloud_infra_daily_activity.parquet',
+        Path('data/normalized/openrouter/cloud_infra_daily_activity.parquet'),
+    ]
+    seen: set[str] = set()
+    for path in candidates:
+        key = str(path.resolve()) if path.exists() else str(path)
+        if key in seen:
+            continue
+        seen.add(key)
+        if path.exists():
+            return _read_mart_projected(str(path), _parquet_fingerprint(path), OPENROUTER_MART_COLUMNS), path
+    return pd.DataFrame(), None
+
+
+def _render_plotly(fig) -> None:
+    # Single entry point for every chart on this page, so the theme is applied
+    # once here rather than threaded through ten factory calls.
+    apply_chart_theme(fig, st.session_state.get('ct_theme', 'Light') == 'Dark')
+    st.plotly_chart(fig, width='stretch', theme=None, config={'displayModeBar': False})
+
+
+def _render_openrouter_module(view: CompanyView, profile) -> None:
+    filt = profile.openrouter
+    if filt is None:
+        return
+    heading = f'🤖 {filt.title}' if filt.title else '🤖 OpenRouter AI Token & API Economics'
+    _render_section_heading(4, heading, f'{_slugify(view.entity_id)}-openrouter')
+    try:
+        raw, source_path = _load_openrouter_raw()
+        daily = _openrouter_daily_frame(raw, profile)
+        if daily.empty:
+            if source_path is None:
+                st.info('OpenRouter alternative data dataset not found in local normalized storage.')
+            else:
+                st.info(f'OpenRouter dataset loaded, but no {escape(_text(view.display_name))} rows were present.')
+            return
+        window_options = ['Weekly', 'Daily', 'Monthly']
+        window_key = f'{_slugify(view.entity_id)}_openrouter_window'
+        if hasattr(st, 'segmented_control'):
+            granularity = st.segmented_control('Window', window_options, default='Weekly', key=window_key)
+        else:
+            granularity = st.radio('Window', window_options, horizontal=True, index=0, key=window_key)
+        granularity = str(granularity or 'Weekly')
+        period = _openrouter_period_frame(daily, granularity)
+        complete = period.loc[~period['is_partial']].copy() if 'is_partial' in period.columns else period
+        latest = complete.iloc[-1] if not complete.empty else period.iloc[-1]
+        recent_cut = latest['period'] - pd.Timedelta(days=30) if granularity == 'Daily' else latest['period'] - pd.Timedelta(days=90)
+        recent = complete[complete['period'] >= recent_cut] if not complete.empty else period
+        avg_tokens = float(recent['total_tokens'].mean()) if not recent.empty else 0.0
+        n_models = int(period['model_count'].max()) if not period.empty else 0
+        start = period['period'].min().strftime('%Y-%m-%d')
+        end = period['period'].max().strftime('%Y-%m-%d')
+        source_name = source_path.name if source_path is not None else 'openrouter'
+        partial_n = int(period['is_partial'].sum()) if 'is_partial' in period.columns else 0
+        signal_name = filt.signal_name or 'tokens'
+        st.markdown(
+            (
+                '<div class="ct-kpi-grid">'
+                f'<div class="ct-kpi-card"><div class="ct-kpi-label">Latest complete {granularity.lower()} tokens</div><div class="ct-kpi-value">{float(latest["total_tokens"]) / 1e9:,.1f}B</div><div class="ct-kpi-sub">{pd.Timestamp(latest["period"]).strftime("%Y-%m-%d")} · all models summed</div></div>'
+                f'<div class="ct-kpi-card"><div class="ct-kpi-label">Latest complete est. revenue</div><div class="ct-kpi-value">${float(latest["estimated_revenue"]):,.0f}</div><div class="ct-kpi-sub">OpenRouter priced routes</div></div>'
+                f'<div class="ct-kpi-card"><div class="ct-kpi-label">Recent avg tokens</div><div class="ct-kpi-value">{avg_tokens / 1e9:,.1f}B</div><div class="ct-kpi-sub">Complete {granularity.lower()} periods only</div></div>'
+                f'<div class="ct-kpi-card"><div class="ct-kpi-label">Tracked models</div><div class="ct-kpi-value">{n_models} Models</div><div class="ct-kpi-sub">Aggregated, not split by model</div></div>'
+                '</div>'
+            ),
+            unsafe_allow_html=True,
+        )
+        token_plot = period.set_index('period')[['total_tokens']].rename(columns={'total_tokens': signal_name})
+        revenue_plot = period.set_index('period')[['estimated_revenue']].rename(columns={'estimated_revenue': 'Estimated revenue'})
+        partial_mask = period.set_index('period')['is_partial'] if 'is_partial' in period.columns else None
+        if granularity == 'Daily':
+            _render_plotly(_plotly_line_chart(token_plot / 1e9, colors=MODEL_COLORS, y_title='Tokens (billions)', value_format=',.1f', hover_suffix='B', height=340))
+            _render_plotly(_plotly_line_chart(revenue_plot, colors=[ACCENT], y_title='Estimated revenue (USD)', value_format='$,.0f', height=300))
+        else:
+            _render_plotly(_plotly_bar_chart(token_plot / 1e9, y_title='Tokens (billions)', value_format=',.1f', hover_suffix='B', height=340, partial_mask=partial_mask))
+            _render_plotly(_plotly_bar_chart(revenue_plot, colors=[ACCENT], y_title='Estimated revenue (USD)', value_format='$,.0f', height=300, partial_mask=partial_mask))
+        note = f'{granularity} {signal_name} and estimated-revenue totals, all models summed · {start} to {end} · source: {source_name}.'
+        if partial_n:
+            note += f' Lighter bars are incomplete {granularity.lower()} periods shown as observed totals only; they are not nowcast.'
+        st.caption(note + ' ' + (filt.caption or 'Estimated revenue is a priced-route reconstruction, not issuer billed revenue.'))
+    except Exception as e:
+        st.caption(f'OpenRouter signal temporarily unavailable: {e}')
+
+
+def _render_southbound_module(view: CompanyView, profile) -> None:
+    spec = profile.southbound
+    if spec is None:
+        return
+    _render_section_heading(4, '🌊 HKEX Southbound Stock Connect (港股通南向资金) Liquidity Signal', f'{_slugify(view.entity_id)}-southbound-flow')
+    holdings = _load_southbound_holdings(profile)
+    ticker = spec.canonical_ticker
+    if holdings.empty:
+        st.warning(f'Southbound holding history is unavailable locally. Expected data/normalized/marts/{spec.mart_filename} from Eastmoney/akshare stock_hsgt_individual_em({spec.security_code}).')
+        st.caption('This is a rolling ~2-year per-stock ownership series, not the 2014-onward market-wide southbound flow.')
+        return
+    latest = holdings.iloc[-1]
+    prev_30 = holdings[holdings['hold_date'] <= latest['hold_date'] - pd.Timedelta(days=30)]
+    shares = float(latest['holding_shares']) if pd.notna(latest.get('holding_shares')) else float('nan')
+    mv = float(latest['holding_market_value']) if pd.notna(latest.get('holding_market_value')) else float('nan')
+    pct = float(latest['holding_share_pct']) if pd.notna(latest.get('holding_share_pct')) else float('nan')
+    mv_30 = float('nan')
+    if not prev_30.empty and pd.notna(mv):
+        prior_mv = pd.to_numeric(prev_30.iloc[-1].get('holding_market_value'), errors='coerce')
+        if pd.notna(prior_mv):
+            mv_30 = mv - float(prior_mv)
+    asof = pd.Timestamp(latest['hold_date']).strftime('%Y-%m-%d')
+    # NaN formats as the literal string 'nan', so an absent value rendered as
+    # 'nanM shares' / 'HK$ nanB' / 'nan%'. Only the 30-day delta was guarded.
+    shares_html = f'{shares/1e6:,.1f}M shares' if pd.notna(shares) else 'Unavailable'
+    mv_html = f'HK$ {mv/1e9:,.1f}B' if pd.notna(mv) else 'Unavailable'
+    pct_html = f'{pct:.2f}%' if pd.notna(pct) else 'Unavailable'
+    mv_30_html = f'+HK$ {mv_30/1e9:,.1f}B' if pd.notna(mv_30) and mv_30 >= 0 else (f'-HK$ {abs(mv_30)/1e9:,.1f}B' if pd.notna(mv_30) else 'Unavailable')
+    mv_30_color = '#16a34a' if pd.notna(mv_30) and mv_30 >= 0 else ('#dc2626' if pd.notna(mv_30) else 'inherit')
+    st.markdown(
+        (
+            '<div class="ct-kpi-grid">'
+            f'<div class="ct-kpi-card"><div class="ct-kpi-label">Southbound holding</div><div class="ct-kpi-value">{shares_html}</div><div class="ct-kpi-sub">{asof}</div></div>'
+            f'<div class="ct-kpi-card"><div class="ct-kpi-label">Holding market value</div><div class="ct-kpi-value">{mv_html}</div><div class="ct-kpi-sub">Eastmoney / HSGT individual</div></div>'
+            f'<div class="ct-kpi-card"><div class="ct-kpi-label">Share of issued shares</div><div class="ct-kpi-value">{pct_html}</div><div class="ct-kpi-sub">Provider labels this as A-share %, but the series is {escape(ticker)}</div></div>'
+            f'<div class="ct-kpi-card"><div class="ct-kpi-label">~30D holding MV change</div><div class="ct-kpi-value" style="color:{mv_30_color};">{mv_30_html}</div><div class="ct-kpi-sub">Price plus share-count mix, not official net inflow</div></div>'
+            '</div>'
+        ),
+        unsafe_allow_html=True,
+    )
+    share_plot = holdings.set_index('hold_date')[['holding_shares']].rename(columns={'holding_shares': 'Southbound shares'})
+    mv_plot = holdings.set_index('hold_date')[['holding_market_value']].rename(columns={'holding_market_value': 'Holding market value'})
+    pct_plot = holdings.set_index('hold_date')[['holding_share_pct']].rename(columns={'holding_share_pct': 'Holding share %'})
+    _render_plotly(_plotly_line_chart(share_plot / 1e6, y_title='Shares (millions)', value_format=',.1f', hover_suffix='M', height=300))
+    _render_plotly(_plotly_line_chart(mv_plot / 1e9, colors=['#00B5A4'], y_title='Holding market value (HK$ B)', value_format=',.1f', hover_suffix='B', height=280))
+    _render_plotly(_plotly_line_chart(pct_plot, colors=['#8B5CF6'], y_title='Holding share %', value_format='.2f', hover_suffix='%', height=240))
+    start = holdings['hold_date'].min().strftime('%Y-%m-%d')
+    end = holdings['hold_date'].max().strftime('%Y-%m-%d')
+    st.caption(f'{ticker} southbound ownership from Eastmoney/akshare stock_hsgt_individual_em · {start} to {end} · {len(holdings):,} daily rows. Rolling window only; this is not the 2014-onward market-wide southbound series.')
+
+
+def _render_alternative_data_tab(view: CompanyView) -> None:
+    profile = get_company_profile(view.entity_id)
+    _render_section_heading(4, 'Alternative data signals', f'alternative-data-{_slugify(view.entity_id)}')
+    has_modules = bool(profile.openrouter or profile.southbound)
+    if not has_modules:
+        st.info(
+            f'No company-specific alternative-data modules are wired for {_text(view.display_name)} yet. '
+            'Official filings, consensus, and thesis evidence remain on the other tabs.'
+        )
+        return
+    if profile.alt_data_caption:
+        st.caption(profile.alt_data_caption)
+    _render_openrouter_module(view, profile)
+    _render_southbound_module(view, profile)
 
 
 def _render_fundamentals_tab(
@@ -2323,11 +2560,10 @@ def _render_fundamentals_tab(
     if frame.empty:
         st.info('No earnings-actuals rows for this entity/listing in the current snapshot; values are only shown from official issuer disclosure metadata.')
     else:
-        if view.entity_id == 'TENCENT':
-            st.markdown('<div class="ct-segment-grid"><div class="ct-segment-card"><div class="ct-segment-header"><span class="ct-segment-title">🎮 Value-Added Services (VAS)</span><span class="ct-segment-share">48.1% of Rev</span></div><div class="ct-segment-rev">¥98.4B</div><div class="ct-segment-detail">Domestic + Overseas Games & Social Networks. Domestic gross receipts recovering on DnF Mobile and HoK; Supercell titles accelerating global growth.</div></div><div class="ct-segment-card"><div class="ct-segment-header"><span class="ct-segment-title">📈 Marketing Services (Advertising)</span><span class="ct-segment-share">21.3% of Rev</span></div><div class="ct-segment-rev">¥43.6B</div><div class="ct-segment-detail">Video Accounts (视频号), Weixin Search, and Mini Programs. AIM+ AI ad algorithm upgrading ad targeting and CPM efficiency.</div></div><div class="ct-segment-card"><div class="ct-segment-header"><span class="ct-segment-title">☁️ Fintech & Business Services</span><span class="ct-segment-share">29.4% of Rev</span></div><div class="ct-segment-rev">¥60.3B</div><div class="ct-segment-detail">Commercial Payments, Wealth Management, Tencent Cloud, and AI Infra/Model services. Gross margin expansion driven by high-value cloud SaaS mix.</div></div></div>', unsafe_allow_html=True)
-        pivoted_model = _build_quarterly_financial_pivot(frame, n_periods=8)
+        profile = get_company_profile(view.entity_id)
+        pivoted_model = _build_quarterly_financial_pivot(frame, n_periods=8, profile=profile)
         if not pivoted_model.empty:
-            st.caption('Multi-period quarterly financial trajectory (LTM 8 quarters in RMB Billions) · GAAP vs Non-IFRS dual track · YoY & QoQ growth metrics')
+            st.caption(f'Multi-period quarterly financial trajectory (LTM 8 quarters in {profile.reporting_currency} billions) · GAAP vs Non-IFRS dual track · YoY & QoQ growth metrics')
             st.dataframe(pivoted_model, width='stretch', hide_index=True)
         act_dt = frame.copy()
         act_dt['period_end'] = pd.to_datetime(act_dt['period_end'], errors='coerce')
@@ -2339,24 +2575,32 @@ def _render_fundamentals_tab(
         if 'revenue_total' in piv_chart.columns:
             piv_chart = piv_chart.dropna(subset=['revenue_total'])
         if len(piv_chart) >= 4:
-            st.caption('Quarterly Revenue & Segment Mix Trajectory (2021Q1 → 2026Q2 in RMB Billions)')
             seg_chart_df = pd.DataFrame(index=piv_chart.index)
-            if 'revenue_vas' in piv_chart.columns:
-                seg_chart_df['VAS (Games & Social)'] = piv_chart['revenue_vas']
-            if 'revenue_marketing_services' in piv_chart.columns:
-                seg_chart_df['Marketing Services (Ads)'] = piv_chart['revenue_marketing_services'].combine_first(piv_chart.get('revenue_online_advertising', pd.Series(index=piv_chart.index)))
-            elif 'revenue_online_advertising' in piv_chart.columns:
-                seg_chart_df['Marketing Services (Ads)'] = piv_chart['revenue_online_advertising']
-            if 'revenue_fintech_business_services' in piv_chart.columns:
-                seg_chart_df['Fintech & Enterprise Cloud'] = piv_chart['revenue_fintech_business_services']
-            st.area_chart(seg_chart_df, height=260)
+            seen_labels = set()
+            preferred = list(profile.segment_metrics)
+            if not preferred:
+                extra = [c for c in piv_chart.columns if str(c).startswith('revenue_') and str(c) != 'revenue_total']
+                preferred = [SegmentSpec(metric, segment_label(metric, profile)) for metric in extra]
+            for spec in preferred:
+                if spec.metric not in piv_chart.columns or spec.label in seen_labels:
+                    continue
+                seen_labels.add(spec.label)
+                seg_chart_df[spec.label] = piv_chart[spec.metric]
+            if not seg_chart_df.empty and seg_chart_df.notna().any().any():
+                share_frame = seg_chart_df.copy()
+                share_frame.index.name = 'period'
+                share_frame = share_frame.reset_index()
+                st.caption('Quarterly segment mix (% share of disclosed segments). Absolute reported currency is on the total-revenue chart below.')
+                _render_plotly(_segment_share_chart(share_frame))
             rev_growth_df = pd.DataFrame(index=piv_chart.index)
-            rev_growth_df['Total Revenue (RMB B)'] = piv_chart['revenue_total']
+            rev_growth_df[REVENUE_CHART_COLUMN] = piv_chart['revenue_total']
             rev_growth_df['YoY Growth (%)'] = piv_chart['revenue_total'].pct_change(4) * 100
-            st.caption('Quarterly Topline & YoY Growth (%) Trajectory (2021Q1 → 2026Q2)')
-            st.line_chart(rev_growth_df, height=220)
-        if view.entity_id == 'TENCENT':
-            _render_tencent_alt_data_modules()
+            st.caption('Quarterly topline and YoY growth · left axis revenue, right axis YoY')
+            _render_plotly(_dual_axis_revenue_yoy_chart(rev_growth_df, profile.reporting_currency))
+            profit_frame = _quarterly_profitability_frame(frame)
+            if not profit_frame.empty:
+                st.caption('Quarterly Non-IFRS operating profit and margins. Gross margin is unavailable because gross profit is not in the current earnings-actuals mart.')
+                _render_plotly(_profit_margin_chart(profit_frame, profile.reporting_currency))
         metrics = frame.get('metric', pd.Series('', index=frame.index, dtype='string')).astype('string')
         has_segments = metrics.str.startswith('revenue_') & ~metrics.eq('revenue_total')
         if has_segments.any():
@@ -2390,15 +2634,48 @@ def _render_fundamentals_tab(
         total_spent = view.corporate_actions['total_amount_paid'].dropna().sum() if 'total_amount_paid' in view.corporate_actions.columns else 0.0
         total_shares = view.corporate_actions['shares_affected'].dropna().sum() if 'shares_affected' in view.corporate_actions.columns else 0
         ccy = _text(view.corporate_actions.iloc[0].get('currency')) or 'HKD'
-        target_bb = 100_000_000_000.0
-        pct_completed = min(100.0, (total_spent / target_bb) * 100.0) if target_bb > 0 else 0.0
-        daily_avg = total_spent / max(1, len(view.corporate_actions))
-        bb_tracker_html = f'<div class="ct-buyback-tracker"><div class="ct-panel-heading"><h3 style="font-size: 0.95rem; font-weight: 750;">🛡️ HK$100B Statutory Share Repurchase Execution Tracker</h3><span class="ct-badge ct-badge--observed">Execution Progress: {pct_completed:.1f}%</span></div><div class="ct-progress-bar-bg"><div class="ct-progress-bar-fill" style="width: {pct_completed:.1f}%;"></div></div><div class="ct-kpi-grid" style="margin-top: 0.5rem;"><div class="ct-kpi-card"><div class="ct-kpi-label">Annual Plan Target</div><div class="ct-kpi-value">HK$ 100.0B</div><div class="ct-kpi-sub">Committed Minimum Pacing</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Repurchased YTD</div><div class="ct-kpi-value">{ccy} {total_spent/1e9:,.2f}B</div><div class="ct-kpi-sub">{len(view.corporate_actions)} daily NDD filings</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Average Daily Pacing</div><div class="ct-kpi-value">{ccy} {daily_avg/1e6:,.1f}M</div><div class="ct-kpi-sub">Per trading day execution</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Shares Absorbed</div><div class="ct-kpi-value">{int(total_shares):,}</div><div class="ct-kpi-sub">Retired / Treasury capital</div></div></div></div>'
+        spent_html = f'{ccy} {total_spent/1e9:,.2f}B' if total_spent else 'Unavailable'
+        shares_html = f'{int(total_shares):,}' if total_shares else 'Unavailable'
+        bb_tracker_html = (
+            '<div class="ct-buyback-tracker">'
+            '<div class="ct-panel-heading"><h3 style="font-size: 0.95rem; font-weight: 750;">🛡️ Statutory capital returns</h3></div>'
+            '<div class="ct-kpi-grid" style="margin-top: 0.5rem;">'
+            f'<div class="ct-kpi-card"><div class="ct-kpi-label">Recorded amount</div><div class="ct-kpi-value">{spent_html}</div><div class="ct-kpi-sub">{len(view.corporate_actions)} selected-listing rows</div></div>'
+            f'<div class="ct-kpi-card"><div class="ct-kpi-label">Shares affected</div><div class="ct-kpi-value">{shares_html}</div><div class="ct-kpi-sub">From local corporate-actions mart</div></div>'
+            '</div></div>'
+        )
         st.markdown(bb_tracker_html, unsafe_allow_html=True)
         st.dataframe(_friendly_corporate_actions_frame(view.corporate_actions, viewer_timezone), width='stretch', hide_index=True)
     _render_section_heading(4, 'Valuation multiples & return yields', f'valuation-multiples-{_slugify(view.entity_id)}')
+    spot = _spot_forward_pe_payload(view)
+    if spot is not None:
+        analysts = spot['analyst_count']
+        analyst_label = f"{int(analysts)} analysts" if pd.notna(analysts) else 'analyst count unavailable'
+        # Name the year the ratio actually used. The card used to say "FY1"
+        # unconditionally, which hid a selection that could land on FY2.
+        if pd.notna(spot['fiscal_year']):
+            year_label = f"FY{int(spot['fiscal_year'])}"
+        else:
+            year_label = spot['horizon'] or 'fiscal year unavailable'
+        eps_label = 'FY1 consensus EPS' if spot['is_fy1'] else f'Consensus EPS · {year_label}'
+        st.markdown(
+            (
+                '<div class="ct-kpi-grid">'
+                f'<div class="ct-kpi-card"><div class="ct-kpi-label">Last delayed price</div><div class="ct-kpi-value">{spot["price_ccy"]} {spot["price"]:,.2f}</div><div class="ct-kpi-sub">Quote snapshot</div></div>'
+                f'<div class="ct-kpi-card"><div class="ct-kpi-label">{escape(eps_label)}</div><div class="ct-kpi-value">{spot["eps_ccy"]} {spot["eps"]:.2f}</div><div class="ct-kpi-sub">{escape(year_label)} · {escape(spot["provider"])} · {escape(analyst_label)}</div></div>'
+                f'<div class="ct-kpi-card"><div class="ct-kpi-label">Spot forward P/E</div><div class="ct-kpi-value">{spot["pe"]:.1f}x</div><div class="ct-kpi-sub">Price / {escape(year_label)} EPS · display-only</div></div>'
+                '<div class="ct-kpi-card"><div class="ct-kpi-label">Trailing / historical P/E</div><div class="ct-kpi-value">Unavailable</div><div class="ct-kpi-sub">No share-count or historical EPS vintage in the valuation mart</div></div>'
+                '</div>'
+            ),
+            unsafe_allow_html=True,
+        )
+        fy1_note = '' if spot['is_fy1'] else ' No 0y consensus row is available, so the earliest annual estimate is used instead.'
+        st.caption(
+            f'Spot forward P/E is a same-currency display ratio from the delayed quote and {year_label} consensus EPS.'
+            f'{fy1_note} It is not a valuation_snapshots row and is not a historical percentile.'
+        )
     if view.valuation_snapshots.empty:
-        st.warning('Valuation multiples unavailable · requires contemporaneous quote, share count, and basis-verified forward consensus.')
+        st.warning('Audited valuation mart unavailable · forward_pe / EV/EBITDA / FCF yield require contemporaneous quote, share count, and basis-verified consensus. Gross margin history is also unavailable because gross profit is not extracted yet.')
     else:
         st.dataframe(_friendly_valuation_frame(view.valuation_snapshots), width='stretch', hide_index=True)
         st.caption('percentile_history_status: unavailable · Historical denominator vintages are absent; reconstructing synthetic historical percentiles from current-vintage statements is strictly forbidden by policy.')
@@ -2468,6 +2745,49 @@ def _render_thesis_catalysts_tab(
         st.info('No watch questions are registered.')
 
 
+
+def _consensus_revision_chart_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    """One bar per lookback x horizon, in percent units.
+
+    The mart stores revision_pct as a decimal (-0.024 = -2.4%). Duplicate
+    labels such as "eps (annual)" must not collapse FY1 and FY2, or 7d/30d/60d/90d,
+    onto two oversized bars.
+    """
+    empty = pd.DataFrame()
+    if frame is None or frame.empty or 'revision_pct' not in frame.columns:
+        return empty
+    plot = frame.copy()
+    plot['revision_pct'] = pd.to_numeric(plot['revision_pct'], errors='coerce') * 100.0
+    plot = plot.dropna(subset=['revision_pct'])
+    if plot.empty:
+        return empty
+    metrics = plot.get('metric', pd.Series('eps', index=plot.index, dtype='string')).astype('string').str.lower()
+    plot = plot.loc[metrics.eq('eps')].copy()
+    if plot.empty:
+        return empty
+    lookback = pd.to_numeric(plot.get('lookback_days', pd.Series(index=plot.index, dtype='float64')), errors='coerce')
+    horizon = plot.get('horizon', pd.Series('', index=plot.index, dtype='string')).astype('string')
+    fiscal_year = plot.get('fiscal_year', pd.Series(pd.NA, index=plot.index))
+    period = plot.get('fiscal_period', pd.Series('', index=plot.index, dtype='string')).astype('string')
+    labels = []
+    for idx in plot.index:
+        year = fiscal_year.loc[idx]
+        year_bit = f"FY{int(year)}" if pd.notna(year) else str(period.loc[idx] or 'period')
+        hz = str(horizon.loc[idx] or '').strip()
+        labels.append(f"{year_bit} {hz}".strip())
+    plot['series'] = labels
+    plot['lookback'] = lookback.map(lambda value: f"{int(value)}d" if pd.notna(value) else 'lookback unavailable')
+    # Prefer the latest snapshot when a lookback/horizon pair is duplicated.
+    if 'current_snapshot_at' in plot.columns:
+        plot = plot.sort_values('current_snapshot_at', ascending=False, na_position='last')
+    plot = plot.drop_duplicates(['lookback', 'series'], keep='first')
+    wide = (
+        plot.pivot_table(index='lookback', columns='series', values='revision_pct', aggfunc='first')
+        .reindex([label for label in ('7d', '30d', '60d', '90d') if label in set(plot['lookback'])])
+    )
+    return wide.dropna(how='all')
+
+
 def _render_evidence_tab(
     view: CompanyView,
     snapshot: ControlTowerSnapshot,
@@ -2497,22 +2817,42 @@ def _render_evidence_tab(
     if view.consensus_revisions.empty:
         st.info('Consensus revision history unavailable; no 0/0 breadth is shown.')
     else:
-        rev_chart_data = view.consensus_revisions.dropna(subset=['revision_pct']).copy()
+        rev_chart_data = _consensus_revision_chart_frame(view.consensus_revisions)
         if not rev_chart_data.empty:
-            rev_chart_data['Revision (%)'] = rev_chart_data['revision_pct']
-            rev_chart_data['Label'] = rev_chart_data['metric'].astype('string') + ' (' + rev_chart_data['fiscal_period'].astype('string') + ')'
-            st.caption('Consensus Revisions & Trajectory (% change over lookback window)')
-            st.bar_chart(rev_chart_data.set_index('Label')[['Revision (%)']], height=200)
+            st.caption('Consensus EPS revision vs prior snapshot, grouped by lookback window. Values are percent change, not decimal points on a percent axis.')
+            _render_plotly(
+                _plotly_bar_chart(
+                    rev_chart_data,
+                    y_title='Revision (%)',
+                    value_format='+.2f',
+                    hover_suffix='%',
+                    tickformat=None,
+                    height=280,
+                )
+            )
         st.dataframe(_friendly_revision_frame(view.consensus_revisions, viewer_timezone), width='stretch', hide_index=True)
     if not view.corporate_actions.empty:
         ca_df = view.corporate_actions.copy()
         ca_df['date'] = pd.to_datetime(ca_df['filing_date'], errors='coerce').dt.date
         ca_df = ca_df.dropna(subset=['date']).sort_values('date')
         if not ca_df.empty:
-            ca_df['Daily Repurchase (HK$ Millions)'] = ca_df['total_amount_paid'] / 1e6
-            chart_ca = ca_df.set_index('date')[['Daily Repurchase (HK$ Millions)']]
-            st.caption(f'123-Day Statutory Repurchase Intensity (HK$ Millions per trading day · {ca_df["date"].min()} to {ca_df["date"].max()})')
-            st.bar_chart(chart_ca, height=220)
+            plot = ca_df.copy()
+            plot['usage_date'] = pd.to_datetime(plot['date'], errors='coerce')
+            plot = plot.dropna(subset=['usage_date'])
+            plot['daily_repurchase_hkd_m'] = pd.to_numeric(plot['total_amount_paid'], errors='coerce') / 1e6
+            start = plot['usage_date'].min().strftime('%Y-%m-%d')
+            end = plot['usage_date'].max().strftime('%Y-%m-%d')
+            n_days = int(plot['usage_date'].nunique())
+            st.caption(f'{n_days}-Day Statutory Repurchase Intensity (HK$ Millions per trading day · {start} to {end})')
+            _render_plotly(
+                _bar_chart_with_year_axis(
+                    plot,
+                    x='usage_date',
+                    y='daily_repurchase_hkd_m',
+                    y_title='Daily repurchase (HK$ millions)',
+                    y_format=',.0f',
+                )
+            )
     render_official_filings(snapshot, entity_id=view.entity_id, listing_id=view.selected_listing_id, viewer_timezone=viewer_timezone)
     _render_section_heading(4, 'News and filing metadata', f'news-filing-metadata-{_slugify(view.entity_id)}')
     if view.official_documents.empty:
@@ -2560,19 +2900,23 @@ def render_company_page(
         st.info('No company matches the active basket, country or membership filters.')
         raise ValueError('company registry is empty')
     query_entity = st.query_params.get('entity')
-    if query_entity and query_entity in entity_options:
-        st.session_state['ct_company_entity'] = query_entity
-    elif st.session_state.get('ct_company_entity') not in entity_options:
-        st.session_state['ct_company_entity'] = 'TENCENT' if 'TENCENT' in entity_options else entity_options[0]
-    cur_entity = st.session_state.get('ct_company_entity', entity_options[0])
-    cur_idx = entity_options.index(cur_entity) if cur_entity in entity_options else 0
+    session_entity = st.session_state.get('ct_company_entity')
+    if session_entity not in entity_options:
+        if query_entity in entity_options:
+            st.session_state['ct_company_entity'] = query_entity
+        else:
+            st.session_state['ct_company_entity'] = 'TENCENT' if 'TENCENT' in entity_options else entity_options[0]
+        st.session_state['ct_company_listing'] = None
     selected_entity = st.selectbox(
         'Company',
         entity_options,
-        index=cur_idx,
         key='ct_company_entity',
         format_func=lambda value: _text(snapshot.entities.loc[snapshot.entities['entity_id'].astype('string').eq(value), 'display_name'].iloc[0]) if not snapshot.entities.loc[snapshot.entities['entity_id'].astype('string').eq(value)].empty else value,
     )
+    if selected_entity != session_entity:
+        st.session_state['ct_company_listing'] = None
+    if st.query_params.get('entity') != selected_entity:
+        st.query_params['entity'] = selected_entity
     as_of_point = snapshot.as_of_utc
     entity_row = snapshot.entities.loc[
         snapshot.entities['entity_id'].astype('string').eq(selected_entity)
@@ -2603,11 +2947,15 @@ def render_company_page(
         st.caption(f'Selected listing · {_format_listing_option(snapshot, view.selected_listing_id)} · {selection_mode}')
     else:
         st.warning('No verified primary listing is available; listing-specific data is unavailable.')
-    tab_overview, tab_fundamentals, tab_thesis, tab_evidence = st.tabs(['Overview', 'Fundamentals', 'Thesis & Catalysts', 'Evidence'])
+    tab_overview, tab_fundamentals, tab_alt, tab_thesis, tab_evidence = st.tabs(
+        ['Overview', 'Fundamentals', 'Alternative Data', 'Thesis & Catalysts', 'Evidence']
+    )
     with tab_overview:
         _render_overview_tab(view, snapshot, viewer_timezone)
     with tab_fundamentals:
         _render_fundamentals_tab(view, snapshot, viewer_timezone)
+    with tab_alt:
+        _render_alternative_data_tab(view)
     with tab_thesis:
         _render_thesis_catalysts_tab(view, snapshot, viewer_timezone)
     with tab_evidence:
