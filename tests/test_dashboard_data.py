@@ -5234,3 +5234,47 @@ def test_lazy_dataset_map_loads_only_what_is_read() -> None:
 
     assert mapping.get("absent", "fallback") == "fallback"
     assert loaded == ["beta"]
+
+
+def test_lazy_dataset_map_projection_does_not_load_the_full_dataset() -> None:
+    """A consumer that needs six columns must not pay for forty.
+
+    On raw_openrouter_models that is the difference between 2 MB and 242 MB of
+    RSS, and the revenue estimators read six columns from it.
+    """
+    from dashboard.data import LazyDatasetMap
+
+    loaded: list[str] = []
+    projected: list[tuple[str, tuple[str, ...]]] = []
+    mapping = LazyDatasetMap(
+        ["raw_openrouter_models"],
+        lambda dataset_id: (loaded.append(dataset_id), dataset_id)[1],
+        projector=lambda dataset_id, columns: (
+            projected.append((dataset_id, columns)),
+            pd.DataFrame(columns=list(columns)),
+        )[1],
+    )
+
+    frame = mapping.projection("raw_openrouter_models", ("model_id", "pricing_prompt"))
+
+    assert list(frame.columns) == ["model_id", "pricing_prompt"]
+    assert projected == [("raw_openrouter_models", ("model_id", "pricing_prompt"))]
+    assert loaded == []
+
+
+def test_pricing_columns_cover_what_the_revenue_estimators_join_on() -> None:
+    """The narrow pricing projection must not omit a column the join needs.
+
+    A missing column here does not raise -- the alias table comes out empty and
+    every usage row is reported as unpriced, which reads as a revenue collapse.
+    """
+    from dashboard.sections.openrouter import PRICING_COLUMNS
+
+    assert set(PRICING_COLUMNS) >= {
+        "model_id",
+        "canonical_slug",
+        "provider_prefix",
+        "snapshot_ts",
+        "pricing_prompt",
+        "pricing_completion",
+    }

@@ -17,7 +17,7 @@ import yfinance as yf
 from dashboard import remote
 from dashboard.checks import CheckResult, run_checks
 from dashboard.data import (
-    LazyDatasetMap,DAILY_HISTORY_YEARS, DOMAIN_ORDER, DATASET_REGISTRY, DatasetLoadResult, FreshnessInfo, dataset_source_for_domain, domain_dataset_ids, load_domain_datasets, load_latest_manifest)
+    LazyDatasetMap, DAILY_HISTORY_YEARS, DOMAIN_ORDER, DATASET_REGISTRY, DatasetLoadResult, FreshnessInfo, dataset_source_for_domain, domain_dataset_ids, load_domain_datasets, load_latest_manifest)
 from openrouter_revenue import (
     build_price_context,
     build_conservative_provider_economics,
@@ -34,6 +34,19 @@ from openrouter_arr_nowcast import build_arr_nowcast_summary
 
 
 REVENUE_CACHE_VERSION = "2026-07-01-pricing-perf-v1"
+
+# The revenue estimators join usage to the catalog on these six columns and read
+# nothing else from it.  raw_openrouter_models is projected to forty columns
+# because the Model Explorer displays them, and reading that wide projection
+# here costs 242 MB of RSS against 2 MB for these six.
+PRICING_COLUMNS: tuple[str, ...] = (
+    "model_id",
+    "canonical_slug",
+    "provider_prefix",
+    "snapshot_ts",
+    "pricing_prompt",
+    "pricing_completion",
+)
 OPENROUTER_COMPARISON_CACHE_VERSION = "2026-08-02-model-activity-test-run-filter-v1"
 CHANGE_DISPLAY_MIN_PCT = -100.0
 CHANGE_DISPLAY_MAX_PCT = 300.0
@@ -361,6 +374,7 @@ def _fuzzy_normalize_model_id(model_id: str) -> str:
 def compute_openrouter_views(
     datasets: dict[str, DatasetLoadResult],
     revenue_cache_version: str = REVENUE_CACHE_VERSION,
+    pricing: pd.DataFrame | None = None,
 ) -> dict[str, object]:
     _ = revenue_cache_version
     views: dict[str, object] = {}
@@ -492,7 +506,7 @@ def compute_openrouter_views(
     task_spend_frame = task_spend_result.frame.copy() if task_spend_result and not task_spend_result.frame.empty else pd.DataFrame()
     views["task_spend"] = _compute_task_spend_views(task_spend_frame)
 
-    views.update(_compute_revenue_views(datasets))
+    views.update(_compute_revenue_views(datasets, pricing=pricing))
     return views
 
 
@@ -1297,12 +1311,13 @@ def _estimator_coverage_summary(estimated: pd.DataFrame) -> dict[str, float | in
     }
 
 
-def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
+def _compute_revenue_views(
+    datasets: dict[str, DatasetLoadResult], pricing: pd.DataFrame | None = None
+) -> dict[str, object]:
     """Dashboard-oriented provider tokens and revenue with legacy fallback stitching."""
     provider_res = datasets.get("provider_daily_activity")
     model_activity_res = datasets.get("openrouter_model_activity")
     market_share_res = datasets.get("market_share")
-    pricing_res = datasets.get("raw_openrouter_models")
     macro_res = datasets.get("top_models")
     economics_mart_res = datasets.get("daily_provider_economics")
     revenue_estimates_mart_res = datasets.get("daily_provider_revenue_estimates")
@@ -1311,7 +1326,17 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
     model_activity = (
         model_activity_res.frame.copy() if model_activity_res and not model_activity_res.frame.empty else pd.DataFrame()
     )
-    pricing = pricing_res.frame.copy() if pricing_res and not pricing_res.frame.empty else pd.DataFrame()
+    if pricing is None:
+        # Callers that already hold the narrow pricing projection pass it in.
+        # Falling back to the full dataset keeps direct callers (and tests that
+        # build a datasets dict by hand) working unchanged.
+        pricing_result = datasets.get("raw_openrouter_models")
+        pricing = (
+            pricing_result.frame.copy()
+            if pricing_result is not None and not pricing_result.frame.empty
+            else pd.DataFrame()
+        )
+
 
     # Both revenue estimates below are precomputed daily by
     # openrouter-provider-activity-daily.yml (research_data.cli build-mart)
@@ -1643,104 +1668,111 @@ def compute_compute_availability_views(datasets: dict[str, DatasetLoadResult]) -
     # NOTE: Legacy function name. After removing AWS Spot + Lambda Cloud sources, this
     # now only surfaces OpenRouter catalog growth + latest-snapshot views used by the
     # Compute Evolution section on the OpenRouter tab.
-    views: dict[str, object] = {}
+    views: dict[str, object] = {
+        "models_latest": pd.DataFrame(),
+        "catalog_size": pd.DataFrame(),
+        "models_history_start": None,
+        "models_history_end": None,
+    }
 
-    models_result = datasets.get("raw_openrouter_models")
-    if models_result and not models_result.frame.empty:
-        # Both outputs below have an authoritative sidecar, and in a deployed
-        # checkout both sidecars exist -- so reading them first means the
-        # 47k-row change log (60 MB, and another 60 MB to copy it) is only
-        # touched when a sidecar is missing, as in local dev.  It used to be
-        # copied, datetime-converted, sorted and grouped into 149 frames on
-        # every cache miss, after which every value it produced was overwritten.
-        source_path = models_result.source_path
+    # Both outputs have an authoritative sidecar next to the dataset, and in a
+    # deployed checkout both sidecars exist.  Reading them first means the
+    # 47k-row change log -- 60 MB as a frame, 242 MB of RSS to decode -- is only
+    # touched when a sidecar cannot answer, as in local dev.  It used to be
+    # copied, datetime-converted, sorted and grouped into 149 frames on every
+    # cache miss, after which every value it produced was overwritten.
+    #
+    # The lazy mapping can name the dataset's directory without decoding it; a
+    # plain dict (direct callers, tests) has already loaded it, so its
+    # source_path is free.  Either way the root follows the caller's base_dir,
+    # or a test fixture would read the production sidecars.
+    sidecar_root: Path | None
+    if hasattr(datasets, "dataset_dir"):
+        sidecar_root = datasets.dataset_dir("raw_openrouter_models")
+    else:
+        located = datasets.get("raw_openrouter_models")
+        source_path = located.source_path if located is not None else None
         sidecar_root = (
             source_path.parent
             if source_path is not None and source_path.is_absolute()
             else None
         )
-        current_path = sidecar_root / "raw_openrouter_models_current.parquet" if sidecar_root else None
 
-        # Prefer the authoritative current catalog emitted by the daily source.
-        # The historical table is change-only and therefore cannot remove a
-        # model that disappeared from the upstream API.
-        latest_models: pd.DataFrame | None = None
-        if current_path and current_path.exists():
-            current_frame = pd.read_parquet(current_path)
-            if not current_frame.empty and "model_id" in current_frame.columns:
-                latest_models = current_frame.drop_duplicates("model_id", keep="last").sort_values("model_id").reset_index(drop=True)
-
-        # Catalog size comes from the openrouter_catalog_size sidecar, never
-        # from counting rows in this table. raw_openrouter_models is
-        # change-only (StorageManager._filter_unchanged_openrouter_rows), so a
-        # live snapshot's distinct model_id count is "models that changed that
-        # day" -- roughly 140-180 against a ~550-model catalog. Counting it
-        # here produced a chart that read as a catalog collapse in August 2026
-        # when nothing had collapsed. (Wayback-backfilled snapshots *are* full
-        # dumps, so the old count happened to be right for them, which is why
-        # the artifact only appeared at the right edge once daily live runs
-        # began.)
-        size_path = sidecar_root / "openrouter_catalog_size.parquet" if sidecar_root else None
-        catalog_size = pd.DataFrame()
-        if size_path and size_path.exists():
-            catalog_size = pd.read_parquet(size_path)
-            catalog_size["snapshot_ts"] = pd.to_datetime(catalog_size["snapshot_ts"], errors="coerce", utc=True)
-            catalog_size = catalog_size.dropna(subset=["snapshot_ts"]).sort_values("snapshot_ts")
-            # The two capture sources overlap for a few days in mid-2026. Keep
-            # the live reading on those days: it is a direct measurement of the
-            # catalog, while the archived one is whatever the crawler happened
-            # to catch. Plotting both leaves a sawtooth between two sources
-            # that are only expected to agree to within a few hours of churn.
-            catalog_size["_day"] = catalog_size["snapshot_ts"].dt.strftime("%Y-%m-%d")
-            catalog_size["_prefer"] = (catalog_size["capture_source"] == "live_api").astype(int)
-            catalog_size = (
-                catalog_size.sort_values(["_day", "_prefer", "snapshot_ts"])
-                .drop_duplicates("_day", keep="last")
-                .drop(columns=["_day", "_prefer"])
-                .sort_values("snapshot_ts")
+    # Prefer the authoritative current catalog emitted by the daily source. The
+    # historical table is change-only and therefore cannot remove a model that
+    # disappeared from the upstream API.
+    latest_models: pd.DataFrame | None = None
+    current_path = sidecar_root / "raw_openrouter_models_current.parquet" if sidecar_root else None
+    if current_path is not None and current_path.exists():
+        current_frame = pd.read_parquet(current_path)
+        if not current_frame.empty and "model_id" in current_frame.columns:
+            latest_models = (
+                current_frame.drop_duplicates("model_id", keep="last")
+                .sort_values("model_id")
                 .reset_index(drop=True)
             )
-        views["catalog_size"] = catalog_size
 
-        # Only now, and only for what the sidecars could not answer, fall back
-        # to the change log itself.
-        change_log_span: tuple[object, object] | None = None
-        if latest_models is None or catalog_size.empty:
+    # Catalog size comes from the openrouter_catalog_size sidecar, never from
+    # counting rows in this table. raw_openrouter_models is change-only
+    # (StorageManager._filter_unchanged_openrouter_rows), so a live snapshot's
+    # distinct model_id count is "models that changed that day" -- roughly
+    # 140-180 against a ~550-model catalog. Counting it here produced a chart
+    # that read as a catalog collapse in August 2026 when nothing had collapsed.
+    # (Wayback-backfilled snapshots *are* full dumps, so the old count happened
+    # to be right for them, which is why the artifact only appeared at the right
+    # edge once daily live runs began.)
+    size_path = sidecar_root / "openrouter_catalog_size.parquet" if sidecar_root else None
+    catalog_size = pd.DataFrame()
+    if size_path is not None and size_path.exists():
+        catalog_size = pd.read_parquet(size_path)
+        catalog_size["snapshot_ts"] = pd.to_datetime(catalog_size["snapshot_ts"], errors="coerce", utc=True)
+        catalog_size = catalog_size.dropna(subset=["snapshot_ts"]).sort_values("snapshot_ts")
+        # The two capture sources overlap for a few days in mid-2026. Keep the
+        # live reading on those days: it is a direct measurement of the catalog,
+        # while the archived one is whatever the crawler happened to catch.
+        # Plotting both leaves a sawtooth between two sources that are only
+        # expected to agree to within a few hours of churn.
+        catalog_size["_day"] = catalog_size["snapshot_ts"].dt.strftime("%Y-%m-%d")
+        catalog_size["_prefer"] = (catalog_size["capture_source"] == "live_api").astype(int)
+        catalog_size = (
+            catalog_size.sort_values(["_day", "_prefer", "snapshot_ts"])
+            .drop_duplicates("_day", keep="last")
+            .drop(columns=["_day", "_prefer"])
+            .sort_values("snapshot_ts")
+            .reset_index(drop=True)
+        )
+    views["catalog_size"] = catalog_size
+
+    # Only now, and only for what the sidecars could not answer, fall back to
+    # the change log itself.
+    change_log_span: tuple[object, object] | None = None
+    if latest_models is None or catalog_size.empty:
+        models_result = datasets.get("raw_openrouter_models")
+        if models_result is not None and not models_result.frame.empty:
             df = models_result.frame.copy()
             df["snapshot_ts"] = pd.to_datetime(df["snapshot_ts"], errors="coerce")
-            df = df.dropna(subset=["snapshot_ts", "model_id"]).sort_values(["snapshot_ts", "model_id"]).reset_index(drop=True)
-            if df.empty:
-                views["models_latest"] = latest_models if latest_models is not None else pd.DataFrame()
-                views["catalog_size"] = catalog_size
-                views["models_history_start"] = None
-                views["models_history_end"] = None
-                return views
-            latest_ts = df["snapshot_ts"].max()
-            change_log_span = (df["snapshot_ts"].min(), latest_ts)
-            if latest_models is None:
-                latest_models = (
-                    df[df["snapshot_ts"] == latest_ts]
-                    .drop_duplicates(subset="model_id", keep="last")
-                    .sort_values("model_id")
-                    .reset_index(drop=True)
-                )
+            df = df.dropna(subset=["snapshot_ts", "model_id"]).sort_values(
+                ["snapshot_ts", "model_id"]
+            ).reset_index(drop=True)
+            if not df.empty:
+                latest_ts = df["snapshot_ts"].max()
+                change_log_span = (df["snapshot_ts"].min(), latest_ts)
+                if latest_models is None:
+                    latest_models = (
+                        df[df["snapshot_ts"] == latest_ts]
+                        .drop_duplicates(subset="model_id", keep="last")
+                        .sort_values("model_id")
+                        .reset_index(drop=True)
+                    )
 
-        views["models_latest"] = latest_models
-        # Bound the caption by the size series actually plotted, not by the
-        # change-log's span -- they no longer start and end together.
-        if not catalog_size.empty:
-            views["models_history_start"] = catalog_size["snapshot_ts"].min()
-            views["models_history_end"] = catalog_size["snapshot_ts"].max()
-        elif change_log_span is not None:
-            views["models_history_start"], views["models_history_end"] = change_log_span
-        else:
-            views["models_history_start"] = None
-            views["models_history_end"] = None
-    else:
-        views["models_latest"] = pd.DataFrame()
-        views["catalog_size"] = pd.DataFrame()
-        views["models_history_start"] = None
-        views["models_history_end"] = None
+    views["models_latest"] = latest_models if latest_models is not None else pd.DataFrame()
+    # Bound the caption by the size series actually plotted, not by the change
+    # log's span -- they no longer start and end together.
+    if not catalog_size.empty:
+        views["models_history_start"] = catalog_size["snapshot_ts"].min()
+        views["models_history_end"] = catalog_size["snapshot_ts"].max()
+    elif change_log_span is not None:
+        views["models_history_start"], views["models_history_end"] = change_log_span
 
     return views
 
@@ -7331,14 +7363,15 @@ def render_unified(domain_states, datasets) -> None:
     elif subpage == UNIFIED_SUBPAGES[4]:
         render_workloads(domain_states, datasets)
     else:
+        # Merging the compute_availability domain state in here used to load
+        # raw_openrouter_models at its full forty-column width -- 242 MB of RSS
+        # -- when the only thing this page reads from it is six pricing columns.
         openrouter_views = compute_openrouter_views(
-            {
-                **domain_states["openrouter_intelligence"][0],
-                **domain_states["compute_availability"][0],
-            },
+            domain_states["openrouter_intelligence"][0],
             revenue_cache_version=REVENUE_CACHE_VERSION,
+            pricing=datasets.projection("raw_openrouter_models", PRICING_COLUMNS),
         )
-        compute_views = compute_compute_availability_views(domain_states["compute_availability"][0])
+        compute_views = compute_compute_availability_views(datasets)
         render_top_models_chart(datasets, openrouter_views)
         render_arr_nowcast_section(datasets)
         render_revenue_token_section(datasets, openrouter_views)

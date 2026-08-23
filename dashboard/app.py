@@ -23,6 +23,7 @@ from dashboard.checks import CheckResult, run_checks
 from collections.abc import Iterable, Mapping
 
 from dashboard.data import (
+    load_dataset_projection,
     load_dataset_cached,
     LazyDatasetMap,
     DOMAIN_ORDER,
@@ -416,7 +417,23 @@ def main() -> None:
         (dataset_id, build_domain_signature(BASE_DIR, domain), domain_shas[domain])
         for dataset_id, domain in sorted(_domain_of_dataset.items())
     )
-    datasets = LazyDatasetMap(_domain_of_dataset, _load_one, cache_key=dataset_cache_key)
+    def _project(dataset_id: str, columns: tuple[str, ...]):
+        domain = _domain_of_dataset[dataset_id]
+        return load_dataset_projection(
+            dataset_id,
+            columns,
+            BASE_DIR,
+            build_domain_signature(BASE_DIR, domain),
+            data_sha=domain_shas[domain],
+        )
+
+    datasets = LazyDatasetMap(
+        _domain_of_dataset,
+        _load_one,
+        cache_key=dataset_cache_key,
+        projector=_project,
+        base_dir=BASE_DIR,
+    )
 
     # The header and the health panel describe what was actually read, which is
     # only known once the section has rendered.  Reserve their slots now and

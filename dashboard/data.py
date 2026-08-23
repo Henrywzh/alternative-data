@@ -2740,6 +2740,61 @@ def load_domain_datasets(
         return dict(zip(ids, results))
 
 
+def dataset_parquet_path(dataset_id: str, base_dir: Path | None = None) -> Path:
+    """Where a dataset's parquet lives, without reading it."""
+    registry_entry = DATASET_REGISTRY.get(dataset_id, {})
+    source = dataset_source_for_domain(str(registry_entry.get("domain", "rankings")))
+    if dataset_id == "cloud_infra_daily_activity":
+        source = "openrouter"
+    return normalized_root(base_dir, source=source) / f"{dataset_id}.parquet"
+
+
+@st.cache_data(ttl=3600, max_entries=8, show_spinner=False)
+def load_dataset_projection(
+    dataset_id: str,
+    columns: tuple[str, ...],
+    base_dir: Path | None,
+    domain_signature: tuple[tuple[str, int, int], ...],
+    data_sha: str | None = None,
+) -> pd.DataFrame:
+    """Read a few columns of a dataset through the same local/remote resolution.
+
+    Some consumers need a handful of columns from a table whose registry
+    projection is wide because a *different* consumer displays it.  Reading the
+    wide projection for them is the difference between 2 MB and 242 MB of RSS on
+    raw_openrouter_models, so they ask for what they use.
+
+    This deliberately skips the registry contract work in load_dataset -- column
+    padding, natural-key duplicate counts, date coverage.  A projection is not a
+    dataset load and must not be reported as one to the health panel.
+    """
+    _ = domain_signature  # cache key only
+    projection = list(columns)
+    path = dataset_parquet_path(dataset_id, base_dir)
+
+    root = base_dir if base_dir is not None else repo_root()
+    if remote.remote_enabled() and (base_dir is None or data_sha is not None):
+        sha = data_sha
+        if sha is None:
+            registry_entry = DATASET_REGISTRY.get(dataset_id, {})
+            source = dataset_source_for_domain(str(registry_entry.get("domain", "rankings")))
+            sha = remote.latest_data_sha(f"{remote.DATA_PATH_PREFIX}/{source}")
+        if sha:
+            payload = remote.fetch_bytes(path.relative_to(root).as_posix(), sha)
+            if payload is not None:
+                try:
+                    return _read_parquet_projected(io.BytesIO(payload), projection)
+                except Exception as error:  # noqa: BLE001 - fall through to local
+                    print(f"Warning: remote projection failed for {dataset_id}: {error}")
+
+    if path.exists():
+        try:
+            return _read_parquet_projected(path, projection)
+        except Exception as error:  # noqa: BLE001
+            print(f"Warning: projection failed for {dataset_id}: {error}")
+    return pd.DataFrame(columns=projection)
+
+
 @st.cache_data(ttl=3600, max_entries=64, show_spinner=False)
 def load_dataset_cached(
     base_dir: Path | None,
@@ -2778,6 +2833,8 @@ class LazyDatasetMap(Mapping[str, "DatasetLoadResult"]):
         dataset_ids: Iterable[str],
         loader: Callable[[str], "DatasetLoadResult"],
         cache_key: tuple = (),
+        projector: Callable[[str, tuple[str, ...]], pd.DataFrame] | None = None,
+        base_dir: Path | None = None,
     ) -> None:
         self._dataset_ids = tuple(dict.fromkeys(dataset_ids))
         self._loader = loader
@@ -2788,10 +2845,36 @@ class LazyDatasetMap(Mapping[str, "DatasetLoadResult"]):
         # signature and commit SHA behind every declared dataset determine that
         # content completely, and cost nothing to read.
         self._cache_key = cache_key
+        self._projector = projector
+        self._base_dir = base_dir
 
     @property
     def cache_key(self) -> tuple:
         return self._cache_key
+
+    def dataset_dir(self, dataset_id: str) -> Path:
+        """The directory a dataset lives in, without loading it.
+
+        Sidecar files sit beside their dataset.  Reaching for them through a
+        loaded DatasetLoadResult's source_path means decoding the dataset purely
+        to learn a directory name.
+        """
+        return dataset_parquet_path(dataset_id, self._base_dir).parent
+
+    def projection(self, dataset_id: str, columns: tuple[str, ...]) -> pd.DataFrame:
+        """A few columns of one dataset, without materializing the full load.
+
+        A consumer that needs six columns of a forty-column table should not pay
+        for the other thirty-four; on raw_openrouter_models that is the
+        difference between 2 MB and 242 MB of RSS.
+        """
+        if self._projector is None:
+            result = self.get(dataset_id)
+            if result is None or result.frame.empty:
+                return pd.DataFrame(columns=list(columns))
+            available = [column for column in columns if column in result.frame.columns]
+            return result.frame[available].copy()
+        return self._projector(dataset_id, tuple(columns))
 
     def __getitem__(self, dataset_id: str) -> "DatasetLoadResult":
         if dataset_id not in self._dataset_ids:
