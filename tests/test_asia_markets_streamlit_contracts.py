@@ -180,3 +180,24 @@ def test_exposure_labels_are_unique_in_both_languages() -> None:
                 f"{field} {value!r} is shared by {seen[value]} and {exposure['exposure_id']}"
             )
             seen[value] = exposure["exposure_id"]
+
+
+def test_every_region_tab_can_show_the_ratio_view_at_once() -> None:
+    """Two tabs in Ratio mode crashed the whole ETF Monitor page.
+
+    render_market_ratio_chart hardcoded key="market_ratio_num"/"..._den"
+    while every region tab calls it, and st.tabs evaluates all five tab bodies
+    on every run -- so the second tab switched to Ratio raised
+    StreamlitDuplicateElementKey and took the page down.
+
+    test_every_page_renders_in_both_languages cannot catch this: it renders
+    with default widget state and never switches a view.
+    """
+    app = AppTest.from_file(str(APP_PATH), default_timeout=120)
+    app.session_state["page"] = "market"
+    app.session_state["language_choice"] = "English"
+    for tab_key in ("china", "us", "apac", "emea", "global"):
+        app.session_state[f"market_leadership_mode_{tab_key}"] = "Ratio (A/B)"
+    app.run()
+
+    assert not app.exception, [str(error) for error in app.exception]

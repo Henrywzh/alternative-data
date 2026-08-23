@@ -3617,15 +3617,26 @@ def render_market_ratio_chart(
     technicals: pd.DataFrame,
     language: str,
     history_window_name: str,
+    key_prefix: str = "market",
 ) -> None:
-    """Reindexed ratio of two exposures: A / B rebased to its own first value."""
+    """Ratio of two exposures, A / B, with 20D and 60D means.
+
+    ``key_prefix`` namespaces the two selectboxes. It used to be absent, and
+    the keys were the literals "market_ratio_num"/"market_ratio_den" -- but
+    every region tab calls this, and st.tabs evaluates all five tab bodies on
+    every run, so putting a second tab into Ratio mode crashed the whole page
+    with StreamlitDuplicateElementKey.
+
+    The ratio is plotted raw. The docstring used to claim it was "rebased to
+    its own first value", which no line of this function did.
+    """
     if technicals.empty:
         return
 
     labels = {}
     for _, row in technicals.iterrows():
         eid = str(row["exposure_id"])
-        labels[eid] = _market_label(row, language) if language == "zh" else str(row.get("label", eid))
+        labels[eid] = _market_label(row, language) or eid
 
     eids = sorted(labels.keys())
     col1, col2 = st.columns(2)
@@ -3634,7 +3645,7 @@ def render_market_ratio_chart(
             tr(language, "Numerator (A)", "分子 (A)"),
             eids,
             index=eids.index("csi1000") if "csi1000" in eids else 0,
-            key="market_ratio_num",
+            key=f"{key_prefix}_ratio_num",
             format_func=lambda e: labels.get(e, e),
         )
     with col2:
@@ -3642,7 +3653,7 @@ def render_market_ratio_chart(
             tr(language, "Denominator (B)", "分母 (B)"),
             eids,
             index=eids.index("csi300") if "csi300" in eids else min(1, len(eids) - 1),
-            key="market_ratio_den",
+            key=f"{key_prefix}_ratio_den",
             format_func=lambda e: labels.get(e, e),
         )
     if numerator == denominator:
@@ -4665,7 +4676,7 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
 
         if not sub_prices.empty:
             if view_mode == tr(language, "Ratio (A/B)", "比值 (A/B)"):
-                render_market_ratio_chart(sub_prices, sub_tech, language, window)
+                render_market_ratio_chart(sub_prices, sub_tech, language, window, key_prefix=f"market_{tab_key}")
             else:
                 render_market_leadership_chart(sub_prices, sub_labels, language, window)
 
