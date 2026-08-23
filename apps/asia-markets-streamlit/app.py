@@ -4422,20 +4422,38 @@ STYLE_CATEGORY_LABELS: dict[str, tuple[str, str]] = {
 }
 
 
+# The vocabulary config.py actually uses, most specific first. Keeping it here
+# rather than inline is what lets a test tell the difference between "this
+# style maps to broad" and "this style matched nothing and defaulted to broad".
+_STYLE_RULES: tuple[tuple[tuple[str, ...], str], ...] = (
+    (("Dividend", "Value"), "value_dividend"),
+    (("Tech", "Growth", "Semis"), "tech_growth"),
+    (("Sector", "Thematic"), "sector"),
+    (("Broad", "Core"), "broad"),
+)
+
+STYLE_FALLBACK_KEY = "broad"
+
+
+def index_style_key(raw_style: str) -> str | None:
+    """The category for a config ``style``, or None if nothing matched."""
+    s = str(raw_style or "").strip()
+    for needles, key in _STYLE_RULES:
+        if any(needle in s for needle in needles):
+            return key
+    return None
+
+
 def normalize_index_style(raw_style: str) -> str:
     """Map a config ``style`` string onto one of STYLE_CATEGORIES' keys.
 
-    An unrecognised style falls back to "broad", which is a guess -- add it
-    here rather than letting a new category quietly render as 宽基大盘.
+    Rendering must not fail on an unknown style, so this falls back to
+    "broad". That fallback is a guess, and used to be indistinguishable from a
+    real match -- a new style such as "Commodity" would have rendered under
+    宽基大盘 with nothing to notice. test_every_config_style_maps_explicitly
+    fails instead, so the rule gets added here deliberately.
     """
-    s = str(raw_style or "").strip()
-    if "Dividend" in s or "Value" in s:
-        return "value_dividend"
-    if "Tech" in s or "Growth" in s or "Semis" in s:
-        return "tech_growth"
-    if "Sector" in s:
-        return "sector"
-    return "broad"
+    return index_style_key(raw_style) or STYLE_FALLBACK_KEY
 
 
 def render_scoped_index_section(

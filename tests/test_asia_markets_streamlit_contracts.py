@@ -114,3 +114,69 @@ def test_index_style_pill_order_does_not_follow_the_data() -> None:
     styles = ["Growth", "Broad", "Sector", "Value"]
     assert ordered(styles) == ordered(list(reversed(styles)))
     assert ordered(styles) == ["broad", "tech_growth", "value_dividend", "sector"]
+
+
+def test_every_config_style_maps_explicitly() -> None:
+    """An unknown style renders under 宽基大盘 with nothing to notice.
+
+    normalize_index_style falls back to "broad" so a page never fails to
+    render, which means a new style spelling in config.py -- "Commodity",
+    "Bond" -- would silently join the Broad Benchmark pill. This is the signal
+    that fallback otherwise swallows: add a rule to _STYLE_RULES.
+    """
+    from market_monitor.config import EXPOSURES
+
+    app = _app_module()
+    unmatched = sorted(
+        {
+            str(e.get("style"))
+            for e in EXPOSURES
+            if app.index_style_key(e.get("style", "")) is None
+        }
+    )
+    assert not unmatched, f"styles matching no rule in _STYLE_RULES: {unmatched}"
+
+
+def test_us_sector_funds_are_not_filed_as_broad_benchmarks() -> None:
+    """XLK/XLU/XLV and friends sat under the Broad Benchmark pill.
+
+    Their config style was "Broad", so clicking 宽基大盘 listed six sector
+    funds alongside CSI 300 and the Hang Seng Index.
+    """
+    from market_monitor.config import EXPOSURES
+
+    app = _app_module()
+    by_id = {e["exposure_id"]: e for e in EXPOSURES}
+    for eid in (
+        "us_tech",
+        "us_discretionary",
+        "us_communication",
+        "us_staples",
+        "us_utilities",
+        "us_healthcare",
+    ):
+        assert app.normalize_index_style(by_id[eid]["style"]) == "sector", eid
+
+    # The Dow is price-weighted blue chips; it was filed as Dividend / Value
+    # only because its style string contained the word "Value".
+    assert app.normalize_index_style(by_id["dow"]["style"]) == "broad"
+
+
+def test_exposure_labels_are_unique_in_both_languages() -> None:
+    """Two exposures sharing a label put the same name in the picker twice.
+
+    russell2000 (the ^RUT index) and us_small (the IWM fund) were both
+    labelled "Russell 2000"; both are in the US scope, so the index picker
+    listed it twice with no way to tell them apart.
+    """
+    from market_monitor.config import EXPOSURES
+
+    for field in ("label", "label_zh"):
+        seen: dict[str, str] = {}
+        for exposure in EXPOSURES:
+            value = str(exposure.get(field, ""))
+            assert value, f"{exposure['exposure_id']} has no {field}"
+            assert value not in seen, (
+                f"{field} {value!r} is shared by {seen[value]} and {exposure['exposure_id']}"
+            )
+            seen[value] = exposure["exposure_id"]

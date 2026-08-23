@@ -1,7 +1,7 @@
 {
   "manifest": {
     "version": 1,
-    "generatedAt": "2026-08-23T15:35:21.311484+00:00",
+    "generatedAt": "2026-08-23T15:57:23.156923+00:00",
     "cards": [],
     "charts": [
       {
@@ -174,7 +174,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-23T15:35:21.311484+00:00",
+    "generatedAt": "2026-08-23T15:57:23.156923+00:00",
     "status": "partial",
     "datasets": {
       "exposure_technicals": [
@@ -595,7 +595,7 @@
           "avg_premium_days": 0
         },
         {
-          "rsi": 54.2841460818,
+          "rsi": 54.2841460869,
           "ma20": 762.3270019531,
           "ma20_pct": 0.4451,
           "ma60": 750.6409434001,
@@ -611,7 +611,7 @@
           "avg_premium_days": 0
         },
         {
-          "rsi": 60.4196076171,
+          "rsi": 60.4196076092,
           "ma20": 219.3409988403,
           "ma20_pct": 1.0618,
           "ma60": 213.9019119263,
@@ -627,7 +627,7 @@
           "avg_premium_days": 0
         },
         {
-          "rsi": 52.6313813038,
+          "rsi": 52.6313813,
           "ma20": 298.6029998779,
           "ma20_pct": 0.4544,
           "ma60": 295.0225626628,
@@ -635,15 +635,15 @@
           "realized_vol_20d": 0.0098570637,
           "drawdown_60d": -1.681472662,
           "exposure_id": "us_small",
-          "label": "Russell 2000",
+          "label": "Russell 2000 (IWM)",
           "date": "2026-08-21",
-          "label_zh": "罗素2000",
+          "label_zh": "罗素2000 (IWM)",
           "index_id": "IWM",
           "avg_premium_30d": null,
           "avg_premium_days": 0
         },
         {
-          "rsi": 50.0112121117,
+          "rsi": 50.0112121129,
           "ma20": 121.9370002747,
           "ma20_pct": 0.3715,
           "ma60": 122.2503941854,
@@ -659,7 +659,7 @@
           "avg_premium_days": 0
         },
         {
-          "rsi": 60.7133104447,
+          "rsi": 60.713310439,
           "ma20": 255.5680030823,
           "ma20_pct": 0.6738,
           "ma60": 247.1799105326,
@@ -675,7 +675,7 @@
           "avg_premium_days": 0
         },
         {
-          "rsi": 49.5206211218,
+          "rsi": 49.5206211219,
           "ma20": 182.7615005493,
           "ma20_pct": 0.3001,
           "ma60": 183.8569885254,
@@ -723,7 +723,7 @@
           "avg_premium_days": 0
         },
         {
-          "rsi": 54.2113008764,
+          "rsi": 54.2113008727,
           "ma20": 85.5505004883,
           "ma20_pct": 0.5137,
           "ma60": 84.3486993154,
@@ -739,7 +739,7 @@
           "avg_premium_days": 0
         },
         {
-          "rsi": 32.7478181987,
+          "rsi": 32.7478181986,
           "ma20": 44.0975004196,
           "ma20_pct": -3.0104,
           "ma60": 44.6053858439,
@@ -755,7 +755,7 @@
           "avg_premium_days": 0
         },
         {
-          "rsi": 68.3638629776,
+          "rsi": 68.3638629713,
           "ma20": 167.0854995728,
           "ma20_pct": 4.5094,
           "ma60": 159.6998171488,
@@ -869,19 +869,19 @@
           "market_price": 3.167,
           "iopv": 3.1655,
           "turnover": 1427085629.305,
-          "units": 2082425600.0,
+          "units": 2394425600.0,
           "bid": 3.166,
           "ask": 3.167,
           "spread_bp": 3.1580609506,
-          "aum": 6595041875,
-          "aum_proxy": 6595041875,
+          "aum": 7583145875,
+          "aum_proxy": 7583145875,
           "relative_premium_pct": 0.12,
           "premium_basis": "live",
           "fund_age_days": 1752,
           "entry_cost_bp": 6.58,
           "buy_score": 61.2,
           "liquidity_score": 95.8,
-          "hold_score": 86.7,
+          "hold_score": 87.0,
           "buy_rank": 3,
           "hold_rank": 2,
           "peer_rank": 3,
@@ -986,19 +986,19 @@
           "market_price": 4.888,
           "iopv": 4.8879,
           "turnover": 722401941.887,
-          "units": 6132816640.0,
+          "units": 6266016768.0,
           "bid": 4.888,
           "ask": 4.889,
           "spread_bp": 2.045617265,
-          "aum": 29977207736,
-          "aum_proxy": 29977207736,
+          "aum": 30628289962,
+          "aum_proxy": 30628289962,
           "relative_premium_pct": 0.0,
           "premium_basis": "live",
           "fund_age_days": 5221,
           "entry_cost_bp": 1.02,
           "buy_score": 65.8,
           "liquidity_score": 92.2,
-          "hold_score": 91.5,
+          "hold_score": 91.6,
           "buy_rank": 2,
           "hold_rank": 3,
           "peer_rank": 2,
@@ -1103,19 +1103,19 @@
           "market_price": 3.194,
           "iopv": 3.1948,
           "turnover": 348578378.831,
-          "units": 2673676768.0,
+          "units": 2759676768.0,
           "bid": 3.193,
           "ask": 3.194,
           "spread_bp": 3.1313605762,
-          "aum": 8539723597,
-          "aum_proxy": 8539723597,
+          "aum": 8814407597,
+          "aum_proxy": 8814407597,
           "relative_premium_pct": 0.05,
           "premium_basis": "live",
           "fund_age_days": 4946,
           "entry_cost_bp": -1.43,
           "buy_score": 67.9,
           "liquidity_score": 85.8,
-          "hold_score": 90.0,
+          "hold_score": 90.1,
           "buy_rank": 3,
           "hold_rank": 2,
           "peer_rank": 3,
@@ -1298,19 +1298,19 @@
           "market_price": 0.836,
           "iopv": 0.8396,
           "turnover": 89375620.0,
-          "units": 1470041008.0,
+          "units": 1460041008.0,
           "bid": 0.835,
           "ask": 0.836,
           "spread_bp": 11.9688809096,
-          "aum": 1228954283,
-          "aum_proxy": 1228954283,
+          "aum": 1220594283,
+          "aum_proxy": 1220594283,
           "relative_premium_pct": 0.0,
           "premium_basis": "live",
           "fund_age_days": 2155,
           "entry_cost_bp": -37.02,
           "buy_score": 76.9,
           "liquidity_score": 73.3,
-          "hold_score": 66.3,
+          "hold_score": 66.2,
           "buy_rank": 1,
           "hold_rank": 1,
           "peer_rank": 1,
@@ -1337,12 +1337,12 @@
           "market_price": 1.745,
           "iopv": 1.7457,
           "turnover": 4652314628.0,
-          "units": 49604668160.0,
+          "units": 49868668160.0,
           "bid": 1.745,
           "ask": 1.746,
           "spread_bp": 5.7290174735,
-          "aum": 86560145939,
-          "aum_proxy": 86560145939,
+          "aum": 87020825939,
+          "aum_proxy": 87020825939,
           "relative_premium_pct": 0.0,
           "premium_basis": "live",
           "fund_age_days": 2106,
@@ -1376,12 +1376,12 @@
           "market_price": 1.692,
           "iopv": 1.6927,
           "turnover": 1385876797.0,
-          "units": 24286628096.0,
+          "units": 24571628032.0,
           "bid": 1.692,
           "ask": 1.693,
           "spread_bp": 5.9084194978,
-          "aum": 41092974738,
-          "aum_proxy": 41092974738,
+          "aum": 41575194630,
+          "aum_proxy": 41575194630,
           "relative_premium_pct": 0.0,
           "premium_basis": "live",
           "fund_age_days": 2155,
@@ -1415,12 +1415,12 @@
           "market_price": 1.334,
           "iopv": 1.3251,
           "turnover": 126603806.455,
-          "units": 5297803776.0,
+          "units": 5299603712.0,
           "bid": 1.333,
           "ask": 1.334,
           "spread_bp": 7.4990626172,
-          "aum": 7067270237,
-          "aum_proxy": 7067270237,
+          "aum": 7069671352,
+          "aum_proxy": 7069671352,
           "relative_premium_pct": 0.66,
           "premium_basis": "live",
           "fund_age_days": 860,
@@ -1454,12 +1454,12 @@
           "market_price": 1.603,
           "iopv": 1.6029,
           "turnover": 222080785.0,
-          "units": 7398359040.0,
+          "units": 7406359040.0,
           "bid": 1.603,
           "ask": 1.604,
           "spread_bp": 6.2363579669,
-          "aum": 11859569541,
-          "aum_proxy": 11859569541,
+          "aum": 11872393541,
+          "aum_proxy": 11872393541,
           "relative_premium_pct": 0.0,
           "premium_basis": "live",
           "fund_age_days": 989,
@@ -1493,12 +1493,12 @@
           "market_price": 1.173,
           "iopv": 1.1784,
           "turnover": 141665118.0,
-          "units": 3149979904.0,
+          "units": 3148479904.0,
           "bid": 1.173,
           "ask": 1.174,
           "spread_bp": 8.52151683,
-          "aum": 3694926427,
-          "aum_proxy": 3694926427,
+          "aum": 3693166927,
+          "aum_proxy": 3693166927,
           "relative_premium_pct": -0.47,
           "premium_basis": "live",
           "fund_age_days": 1921,
@@ -1532,19 +1532,19 @@
           "market_price": 0.591,
           "iopv": 0.5937,
           "turnover": 1690899156.65,
-          "units": 69019856896.0,
+          "units": 68019855360.0,
           "bid": 0.591,
           "ask": 0.592,
           "spread_bp": 16.9061707523,
-          "aum": 40790735426,
-          "aum_proxy": 40790735426,
+          "aum": 40199734518,
+          "aum_proxy": 40199734518,
           "relative_premium_pct": 0.0,
           "premium_basis": "live",
           "fund_age_days": 1790,
           "entry_cost_bp": -36.55,
           "buy_score": 77.3,
           "liquidity_score": 96.1,
-          "hold_score": 89.2,
+          "hold_score": 89.1,
           "buy_rank": 2,
           "hold_rank": 1,
           "peer_rank": 2,
@@ -1610,12 +1610,12 @@
           "market_price": 0.613,
           "iopv": 0.6178,
           "turnover": 100793609.0,
-          "units": 2482255008.0,
+          "units": 2565255008.0,
           "bid": 0.613,
           "ask": 0.615,
           "spread_bp": 32.5732899023,
-          "aum": 1521622320,
-          "aum_proxy": 1521622320,
+          "aum": 1572501320,
+          "aum_proxy": 1572501320,
           "relative_premium_pct": -0.33,
           "premium_basis": "live",
           "fund_age_days": 286,
@@ -1688,12 +1688,12 @@
           "market_price": 1.535,
           "iopv": 1.5375,
           "turnover": 57303497.0,
-          "units": 1844000208.0,
+          "units": 1814000208.0,
           "bid": 1.535,
           "ask": 1.536,
           "spread_bp": 6.512536633,
-          "aum": 2830540319,
-          "aum_proxy": 2830540319,
+          "aum": 2784490319,
+          "aum_proxy": 2784490319,
           "relative_premium_pct": -0.035,
           "premium_basis": "live",
           "fund_age_days": 2991,
@@ -1844,12 +1844,12 @@
           "market_price": 4.85,
           "iopv": 4.3632,
           "turnover": 13614128576.0,
-          "units": 2400427008.0,
+          "units": 2403427008.0,
           "bid": 4.85,
           "ask": 4.851,
           "spread_bp": 2.0616431296,
-          "aum": 11642070989,
-          "aum_proxy": 11642070989,
+          "aum": 11656620989,
+          "aum_proxy": 11656620989,
           "relative_premium_pct": 0.0,
           "premium_basis": "live",
           "fund_age_days": 1676,
@@ -1883,12 +1883,12 @@
           "market_price": 1.635,
           "iopv": 1.4785,
           "turnover": 889220437.652,
-          "units": 22529310208.0,
+          "units": 22530610176.0,
           "bid": 1.634,
           "ask": 1.635,
           "spread_bp": 6.1180789232,
-          "aum": 36835422190,
-          "aum_proxy": 36835422190,
+          "aum": 36837547638,
+          "aum_proxy": 36837547638,
           "relative_premium_pct": 0.0,
           "premium_basis": "live",
           "fund_age_days": 4223,
@@ -2039,12 +2039,12 @@
           "market_price": 2.268,
           "iopv": 2.1833,
           "turnover": 198867021.0,
-          "units": 1072887200.0,
+          "units": 1073387200.0,
           "bid": 2.268,
           "ask": 2.269,
           "spread_bp": 4.4081992506,
-          "aum": 2433308170,
-          "aum_proxy": 2433308170,
+          "aum": 2434442170,
+          "aum_proxy": 2434442170,
           "relative_premium_pct": 0.175,
           "premium_basis": "live",
           "fund_age_days": 2616,
@@ -2117,12 +2117,12 @@
           "market_price": 0.898,
           "iopv": 0.8941,
           "turnover": 8028277.0,
-          "units": 1120119008.0,
+          "units": 1121119008.0,
           "bid": 0.897,
           "ask": 0.898,
           "spread_bp": 11.1420612813,
-          "aum": 1005866869,
-          "aum_proxy": 1005866869,
+          "aum": 1006764869,
+          "aum_proxy": 1006764869,
           "relative_premium_pct": 0.095,
           "premium_basis": "live",
           "fund_age_days": 790,
@@ -2195,12 +2195,12 @@
           "market_price": 2.672,
           "iopv": 2.4493,
           "turnover": 228746612.0,
-          "units": 10205638656.0,
+          "units": 10206638592.0,
           "bid": 2.672,
           "ask": 2.673,
           "spread_bp": 3.7418147802,
-          "aum": 27269466489,
-          "aum_proxy": 27269466489,
+          "aum": 27272138318,
+          "aum_proxy": 27272138318,
           "relative_premium_pct": 1.62,
           "premium_basis": "live",
           "fund_age_days": 4644,
@@ -2234,12 +2234,12 @@
           "market_price": 2.006,
           "iopv": 1.8666,
           "turnover": 313161273.0,
-          "units": 4347734016.0,
+          "units": 4349733888.0,
           "bid": 2.006,
           "ask": 2.007,
           "spread_bp": 4.9838026414,
-          "aum": 8721554436,
-          "aum_proxy": 8721554436,
+          "aum": 8725566179,
+          "aum_proxy": 8725566179,
           "relative_premium_pct": 0.0,
           "premium_basis": "live",
           "fund_age_days": 2270,
@@ -108309,7 +108309,7 @@
           "date": "2024-08-21",
           "pair_id": "us_breadth",
           "ratio": 0.894517,
-          "ratio_ma": 0.890097,
+          "ratio_ma": 0.890096,
           "zscore": -1.2967
         },
         {
@@ -108393,7 +108393,7 @@
           "date": "2024-08-22",
           "pair_id": "us_breadth",
           "ratio": 0.899034,
-          "ratio_ma": 0.890031,
+          "ratio_ma": 0.89003,
           "zscore": -1.1186
         },
         {
@@ -108406,7 +108406,7 @@
         {
           "date": "2024-08-22",
           "pair_id": "us_risk_appetite",
-          "ratio": 0.965741,
+          "ratio": 0.965742,
           "ratio_ma": 1.004953,
           "zscore": -0.6647
         },
@@ -108533,7 +108533,7 @@
           "date": "2024-08-26",
           "pair_id": "cn_vs_us",
           "ratio": 0.519726,
-          "ratio_ma": 0.555102,
+          "ratio_ma": 0.555101,
           "zscore": -1.5613
         },
         {
@@ -108561,13 +108561,13 @@
           "date": "2024-08-26",
           "pair_id": "us_breadth",
           "ratio": 0.902898,
-          "ratio_ma": 0.889968,
+          "ratio_ma": 0.889967,
           "zscore": -0.9578
         },
         {
           "date": "2024-08-26",
           "pair_id": "us_growth_value",
-          "ratio": 1.069846,
+          "ratio": 1.069845,
           "ratio_ma": 1.103492,
           "zscore": 0.5946
         },
@@ -108667,7 +108667,7 @@
           "pair_id": "us_small_large",
           "ratio": 0.783903,
           "ratio_ma": 0.771278,
-          "zscore": -0.5459
+          "zscore": -0.546
         },
         {
           "date": "2024-08-28",
@@ -109002,7 +109002,7 @@
           "date": "2024-09-03",
           "pair_id": "cn_vs_us",
           "ratio": 0.519859,
-          "ratio_ma": 0.548268,
+          "ratio_ma": 0.548267,
           "zscore": -1.5093
         },
         {
@@ -109051,7 +109051,7 @@
           "date": "2024-09-03",
           "pair_id": "us_small_large",
           "ratio": 0.777716,
-          "ratio_ma": 0.77205,
+          "ratio_ma": 0.772051,
           "zscore": -0.7572
         },
         {
@@ -109128,7 +109128,7 @@
           "date": "2024-09-04",
           "pair_id": "us_risk_appetite",
           "ratio": 0.92794,
-          "ratio_ma": 1.000469,
+          "ratio_ma": 1.00047,
           "zscore": -1.7645
         },
         {
@@ -109344,7 +109344,7 @@
         {
           "date": "2024-09-09",
           "pair_id": "us_breadth",
-          "ratio": 0.915122,
+          "ratio": 0.915121,
           "ratio_ma": 0.891822,
           "zscore": -0.432
         },
@@ -109436,7 +109436,7 @@
           "date": "2024-09-10",
           "pair_id": "us_growth_value",
           "ratio": 1.046122,
-          "ratio_ma": 1.095886,
+          "ratio_ma": 1.095885,
           "zscore": 0.0554
         },
         {
@@ -109519,7 +109519,7 @@
         {
           "date": "2024-09-11",
           "pair_id": "us_growth_value",
-          "ratio": 1.069553,
+          "ratio": 1.069552,
           "ratio_ma": 1.094644,
           "zscore": 0.544
         },
@@ -109603,14 +109603,14 @@
         {
           "date": "2024-09-12",
           "pair_id": "us_growth_value",
-          "ratio": 1.076568,
+          "ratio": 1.076567,
           "ratio_ma": 1.093432,
           "zscore": 0.6861
         },
         {
           "date": "2024-09-12",
           "pair_id": "us_risk_appetite",
-          "ratio": 0.95471,
+          "ratio": 0.954711,
           "ratio_ma": 0.992278,
           "zscore": -0.9991
         },
@@ -109680,14 +109680,14 @@
         {
           "date": "2024-09-13",
           "pair_id": "us_breadth",
-          "ratio": 0.904764,
+          "ratio": 0.904763,
           "ratio_ma": 0.893711,
           "zscore": -0.8109
         },
         {
           "date": "2024-09-13",
           "pair_id": "us_growth_value",
-          "ratio": 1.072837,
+          "ratio": 1.072836,
           "ratio_ma": 1.092198,
           "zscore": 0.6008
         },
@@ -109702,7 +109702,7 @@
           "date": "2024-09-13",
           "pair_id": "us_small_large",
           "ratio": 0.776436,
-          "ratio_ma": 0.774644,
+          "ratio_ma": 0.774645,
           "zscore": -0.7399
         },
         {
@@ -109729,7 +109729,7 @@
         {
           "date": "2024-09-16",
           "pair_id": "us_breadth",
-          "ratio": 0.909986,
+          "ratio": 0.909985,
           "ratio_ma": 0.894248,
           "zscore": -0.5989
         },
@@ -109779,7 +109779,7 @@
           "date": "2024-09-17",
           "pair_id": "us_breadth",
           "ratio": 0.910955,
-          "ratio_ma": 0.894764,
+          "ratio_ma": 0.894763,
           "zscore": -0.5545
         },
         {
@@ -109925,14 +109925,14 @@
         {
           "date": "2024-09-19",
           "pair_id": "us_breadth",
-          "ratio": 0.906223,
+          "ratio": 0.906222,
           "ratio_ma": 0.895653,
           "zscore": -0.731
         },
         {
           "date": "2024-09-19",
           "pair_id": "us_growth_value",
-          "ratio": 1.07433,
+          "ratio": 1.074329,
           "ratio_ma": 1.087889,
           "zscore": 0.6126
         },
@@ -109947,7 +109947,7 @@
           "date": "2024-09-19",
           "pair_id": "us_small_large",
           "ratio": 0.789404,
-          "ratio_ma": 0.777529,
+          "ratio_ma": 0.77753,
           "zscore": -0.2132
         },
         {
@@ -109982,7 +109982,7 @@
           "date": "2024-09-20",
           "pair_id": "cn_vs_us",
           "ratio": 0.492388,
-          "ratio_ma": 0.535776,
+          "ratio_ma": 0.535775,
           "zscore": -1.7486
         },
         {
@@ -110100,8 +110100,8 @@
         {
           "date": "2024-09-23",
           "pair_id": "us_growth_value",
-          "ratio": 1.072888,
-          "ratio_ma": 1.085522,
+          "ratio": 1.072887,
+          "ratio_ma": 1.085521,
           "zscore": 0.5688
         },
         {
@@ -110191,16 +110191,16 @@
         {
           "date": "2024-09-24",
           "pair_id": "us_risk_appetite",
-          "ratio": 0.98094,
+          "ratio": 0.980939,
           "ratio_ma": 0.983539,
           "zscore": -0.3253
         },
         {
           "date": "2024-09-24",
           "pair_id": "us_small_large",
-          "ratio": 0.776575,
+          "ratio": 0.776576,
           "ratio_ma": 0.779261,
-          "zscore": -0.6991
+          "zscore": -0.699
         },
         {
           "date": "2024-09-25",
@@ -110268,7 +110268,7 @@
         {
           "date": "2024-09-25",
           "pair_id": "us_growth_value",
-          "ratio": 1.085527,
+          "ratio": 1.085526,
           "ratio_ma": 1.083343,
           "zscore": 0.8374
         },
@@ -110318,7 +110318,7 @@
           "date": "2024-09-26",
           "pair_id": "cn_vs_us",
           "ratio": 0.541485,
-          "ratio_ma": 0.533127,
+          "ratio_ma": 0.533126,
           "zscore": -1.0558
         },
         {
@@ -110345,7 +110345,7 @@
         {
           "date": "2024-09-26",
           "pair_id": "us_breadth",
-          "ratio": 0.905929,
+          "ratio": 0.905928,
           "ratio_ma": 0.898438,
           "zscore": -0.7099
         },
@@ -110436,7 +110436,7 @@
         {
           "date": "2024-09-27",
           "pair_id": "us_growth_value",
-          "ratio": 1.070419,
+          "ratio": 1.070418,
           "ratio_ma": 1.080335,
           "zscore": 0.4859
         },
@@ -110485,7 +110485,7 @@
         {
           "date": "2024-09-30",
           "pair_id": "cn_vs_us",
-          "ratio": 0.612094,
+          "ratio": 0.612095,
           "ratio_ma": 0.534209,
           "zscore": -0.0965
         },
@@ -110549,7 +110549,7 @@
           "date": "2024-10-01",
           "pair_id": "us_growth_value",
           "ratio": 1.061997,
-          "ratio_ma": 1.076439,
+          "ratio_ma": 1.076438,
           "zscore": 0.2798
         },
         {
@@ -110597,7 +110597,7 @@
         {
           "date": "2024-10-02",
           "pair_id": "us_growth_value",
-          "ratio": 1.062913,
+          "ratio": 1.062912,
           "ratio_ma": 1.074387,
           "zscore": 0.2949
         },
@@ -110688,7 +110688,7 @@
         {
           "date": "2024-10-04",
           "pair_id": "us_breadth",
-          "ratio": 0.906275,
+          "ratio": 0.906274,
           "ratio_ma": 0.903318,
           "zscore": -0.6625
         },
@@ -110696,7 +110696,7 @@
           "date": "2024-10-04",
           "pair_id": "us_growth_value",
           "ratio": 1.071759,
-          "ratio_ma": 1.071125,
+          "ratio_ma": 1.071124,
           "zscore": 0.4884
         },
         {
@@ -110793,7 +110793,7 @@
         {
           "date": "2024-10-08",
           "pair_id": "cn_vs_us",
-          "ratio": 0.649057,
+          "ratio": 0.649056,
           "ratio_ma": 0.535849,
           "zscore": 0.4099
         },
@@ -110905,7 +110905,7 @@
         {
           "date": "2024-10-09",
           "pair_id": "us_breadth",
-          "ratio": 0.901002,
+          "ratio": 0.901001,
           "ratio_ma": 0.904632,
           "zscore": -0.8616
         },
@@ -111045,7 +111045,7 @@
         {
           "date": "2024-10-11",
           "pair_id": "cn_vs_us",
-          "ratio": 0.586238,
+          "ratio": 0.586239,
           "ratio_ma": 0.538679,
           "zscore": -0.4263
         },
@@ -111073,7 +111073,7 @@
         {
           "date": "2024-10-11",
           "pair_id": "us_small_large",
-          "ratio": 0.768544,
+          "ratio": 0.768545,
           "ratio_ma": 0.781712,
           "zscore": -0.9171
         },
@@ -111150,7 +111150,7 @@
         {
           "date": "2024-10-14",
           "pair_id": "us_risk_appetite",
-          "ratio": 0.996902,
+          "ratio": 0.996901,
           "ratio_ma": 0.968977,
           "zscore": 0.0782
         },
@@ -111325,7 +111325,7 @@
         {
           "date": "2024-10-16",
           "pair_id": "us_small_large",
-          "ratio": 0.7839,
+          "ratio": 0.783901,
           "ratio_ma": 0.780432,
           "zscore": -0.2961
         },
@@ -111388,15 +111388,15 @@
         {
           "date": "2024-10-17",
           "pair_id": "us_breadth",
-          "ratio": 0.905475,
+          "ratio": 0.905474,
           "ratio_ma": 0.905841,
           "zscore": -0.638
         },
         {
           "date": "2024-10-17",
           "pair_id": "us_growth_value",
-          "ratio": 1.068852,
-          "ratio_ma": 1.065889,
+          "ratio": 1.068851,
+          "ratio_ma": 1.065888,
           "zscore": 0.3626
         },
         {
@@ -111613,7 +111613,7 @@
           "date": "2024-10-22",
           "pair_id": "cn_vs_us",
           "ratio": 0.59306,
-          "ratio_ma": 0.543108,
+          "ratio_ma": 0.543107,
           "zscore": -0.282
         },
         {
@@ -111649,7 +111649,7 @@
           "pair_id": "us_growth_value",
           "ratio": 1.089929,
           "ratio_ma": 1.067057,
-          "zscore": 0.8524
+          "zscore": 0.8523
         },
         {
           "date": "2024-10-22",
@@ -111732,7 +111732,7 @@
           "date": "2024-10-23",
           "pair_id": "us_growth_value",
           "ratio": 1.075342,
-          "ratio_ma": 1.067678,
+          "ratio_ma": 1.067677,
           "zscore": 0.4918
         },
         {
@@ -111864,7 +111864,7 @@
         {
           "date": "2024-10-25",
           "pair_id": "cn_vs_us",
-          "ratio": 0.597239,
+          "ratio": 0.59724,
           "ratio_ma": 0.5452,
           "zscore": -0.2003
         },
@@ -111976,7 +111976,7 @@
         {
           "date": "2024-10-28",
           "pair_id": "us_breadth",
-          "ratio": 0.89678,
+          "ratio": 0.896779,
           "ratio_ma": 0.90475,
           "zscore": -0.9504
         },
@@ -112033,7 +112033,7 @@
           "date": "2024-10-29",
           "pair_id": "cn_vs_us",
           "ratio": 0.589663,
-          "ratio_ma": 0.546516,
+          "ratio_ma": 0.546515,
           "zscore": -0.2988
         },
         {
@@ -112067,7 +112067,7 @@
         {
           "date": "2024-10-29",
           "pair_id": "us_growth_value",
-          "ratio": 1.107942,
+          "ratio": 1.107941,
           "ratio_ma": 1.070595,
           "zscore": 1.2656
         },
@@ -112228,14 +112228,14 @@
         {
           "date": "2024-10-31",
           "pair_id": "us_breadth",
-          "ratio": 0.901532,
+          "ratio": 0.901531,
           "ratio_ma": 0.903796,
           "zscore": -0.7283
         },
         {
           "date": "2024-10-31",
           "pair_id": "us_growth_value",
-          "ratio": 1.080555,
+          "ratio": 1.080554,
           "ratio_ma": 1.072354,
           "zscore": 0.5703
         },
@@ -112284,7 +112284,7 @@
         {
           "date": "2024-11-01",
           "pair_id": "cn_vs_us",
-          "ratio": 0.595443,
+          "ratio": 0.595442,
           "ratio_ma": 0.548847,
           "zscore": -0.1866
         },
@@ -112334,7 +112334,7 @@
           "date": "2024-11-01",
           "pair_id": "us_small_large",
           "ratio": 0.772,
-          "ratio_ma": 0.773192,
+          "ratio_ma": 0.773193,
           "zscore": -0.7051
         },
         {
@@ -112396,7 +112396,7 @@
         {
           "date": "2024-11-04",
           "pair_id": "us_breadth",
-          "ratio": 0.901314,
+          "ratio": 0.901313,
           "ratio_ma": 0.903473,
           "zscore": -0.725
         },
@@ -112417,7 +112417,7 @@
         {
           "date": "2024-11-04",
           "pair_id": "us_small_large",
-          "ratio": 0.777589,
+          "ratio": 0.777588,
           "ratio_ma": 0.77316,
           "zscore": -0.4846
         },
@@ -112571,7 +112571,7 @@
         {
           "date": "2024-11-06",
           "pair_id": "us_growth_value",
-          "ratio": 1.087412,
+          "ratio": 1.087411,
           "ratio_ma": 1.074023,
           "zscore": 0.7167
         },
@@ -112649,7 +112649,7 @@
           "date": "2024-11-07",
           "pair_id": "us_breadth",
           "ratio": 0.89386,
-          "ratio_ma": 0.90337,
+          "ratio_ma": 0.903369,
           "zscore": -1.0166
         },
         {
@@ -112705,7 +112705,7 @@
           "date": "2024-11-08",
           "pair_id": "cn_vs_us",
           "ratio": 0.599691,
-          "ratio_ma": 0.552792,
+          "ratio_ma": 0.552791,
           "zscore": -0.078
         },
         {
@@ -112732,8 +112732,8 @@
         {
           "date": "2024-11-08",
           "pair_id": "us_breadth",
-          "ratio": 0.894964,
-          "ratio_ma": 0.903369,
+          "ratio": 0.894963,
+          "ratio_ma": 0.903368,
           "zscore": -0.9632
         },
         {
@@ -112816,14 +112816,14 @@
         {
           "date": "2024-11-11",
           "pair_id": "us_breadth",
-          "ratio": 0.89858,
-          "ratio_ma": 0.903426,
+          "ratio": 0.898579,
+          "ratio_ma": 0.903425,
           "zscore": -0.8064
         },
         {
           "date": "2024-11-11",
           "pair_id": "us_growth_value",
-          "ratio": 1.10006,
+          "ratio": 1.100059,
           "ratio_ma": 1.075079,
           "zscore": 1.0109
         },
@@ -112901,14 +112901,14 @@
           "date": "2024-11-12",
           "pair_id": "us_breadth",
           "ratio": 0.89451,
-          "ratio_ma": 0.903444,
+          "ratio_ma": 0.903443,
           "zscore": -0.9693
         },
         {
           "date": "2024-11-12",
           "pair_id": "us_growth_value",
           "ratio": 1.109102,
-          "ratio_ma": 1.075378,
+          "ratio_ma": 1.075377,
           "zscore": 1.2303
         },
         {
@@ -113076,7 +113076,7 @@
           "date": "2024-11-14",
           "pair_id": "us_growth_value",
           "ratio": 1.107431,
-          "ratio_ma": 1.075823,
+          "ratio_ma": 1.075822,
           "zscore": 1.1688
         },
         {
@@ -113243,21 +113243,21 @@
         {
           "date": "2024-11-18",
           "pair_id": "us_growth_value",
-          "ratio": 1.087956,
+          "ratio": 1.087955,
           "ratio_ma": 1.076132,
           "zscore": 0.6649
         },
         {
           "date": "2024-11-18",
           "pair_id": "us_risk_appetite",
-          "ratio": 1.077223,
+          "ratio": 1.077222,
           "ratio_ma": 0.99506,
           "zscore": 2.2387
         },
         {
           "date": "2024-11-18",
           "pair_id": "us_small_large",
-          "ratio": 0.783599,
+          "ratio": 0.7836,
           "ratio_ma": 0.776914,
           "zscore": -0.2594
         },
@@ -113321,13 +113321,13 @@
           "date": "2024-11-19",
           "pair_id": "us_breadth",
           "ratio": 0.892541,
-          "ratio_ma": 0.903245,
+          "ratio_ma": 0.903244,
           "zscore": -1.016
         },
         {
           "date": "2024-11-19",
           "pair_id": "us_growth_value",
-          "ratio": 1.103906,
+          "ratio": 1.103905,
           "ratio_ma": 1.0767,
           "zscore": 1.0602
         },
@@ -113404,7 +113404,7 @@
         {
           "date": "2024-11-20",
           "pair_id": "us_breadth",
-          "ratio": 0.895243,
+          "ratio": 0.895242,
           "ratio_ma": 0.903131,
           "zscore": -0.897
         },
@@ -113412,7 +113412,7 @@
           "date": "2024-11-20",
           "pair_id": "us_growth_value",
           "ratio": 1.098359,
-          "ratio_ma": 1.077141,
+          "ratio_ma": 1.07714,
           "zscore": 0.9127
         },
         {
@@ -113488,7 +113488,7 @@
         {
           "date": "2024-11-21",
           "pair_id": "us_breadth",
-          "ratio": 0.90168,
+          "ratio": 0.901679,
           "ratio_ma": 0.903078,
           "zscore": -0.6251
         },
@@ -113496,7 +113496,7 @@
           "date": "2024-11-21",
           "pair_id": "us_growth_value",
           "ratio": 1.088748,
-          "ratio_ma": 1.077562,
+          "ratio_ma": 1.077561,
           "zscore": 0.6639
         },
         {
@@ -113544,7 +113544,7 @@
         {
           "date": "2024-11-22",
           "pair_id": "cn_vs_us",
-          "ratio": 0.567405,
+          "ratio": 0.567406,
           "ratio_ma": 0.561428,
           "zscore": -0.5792
         },
@@ -113580,7 +113580,7 @@
           "date": "2024-11-22",
           "pair_id": "us_growth_value",
           "ratio": 1.081034,
-          "ratio_ma": 1.078002,
+          "ratio_ma": 1.078001,
           "zscore": 0.4639
         },
         {
@@ -113628,7 +113628,7 @@
         {
           "date": "2024-11-25",
           "pair_id": "cn_vs_us",
-          "ratio": 0.562912,
+          "ratio": 0.562911,
           "ratio_ma": 0.562152,
           "zscore": -0.6607
         },
@@ -113740,14 +113740,14 @@
         {
           "date": "2024-11-26",
           "pair_id": "us_breadth",
-          "ratio": 0.906452,
+          "ratio": 0.906451,
           "ratio_ma": 0.902998,
           "zscore": -0.4149
         },
         {
           "date": "2024-11-26",
           "pair_id": "us_growth_value",
-          "ratio": 1.083865,
+          "ratio": 1.083864,
           "ratio_ma": 1.079039,
           "zscore": 0.5264
         },
@@ -113798,7 +113798,7 @@
           "pair_id": "cn_vs_us",
           "ratio": 0.570295,
           "ratio_ma": 0.563618,
-          "zscore": -0.5099
+          "zscore": -0.51
         },
         {
           "date": "2024-11-27",
@@ -113824,28 +113824,28 @@
         {
           "date": "2024-11-27",
           "pair_id": "us_breadth",
-          "ratio": 0.908333,
-          "ratio_ma": 0.9029,
+          "ratio": 0.908332,
+          "ratio_ma": 0.902899,
           "zscore": -0.3327
         },
         {
           "date": "2024-11-27",
           "pair_id": "us_growth_value",
-          "ratio": 1.075622,
+          "ratio": 1.075621,
           "ratio_ma": 1.079697,
           "zscore": 0.3126
         },
         {
           "date": "2024-11-27",
           "pair_id": "us_risk_appetite",
-          "ratio": 1.059381,
+          "ratio": 1.059382,
           "ratio_ma": 1.009006,
           "zscore": 1.5522
         },
         {
           "date": "2024-11-27",
           "pair_id": "us_small_large",
-          "ratio": 0.810034,
+          "ratio": 0.810033,
           "ratio_ma": 0.778929,
           "zscore": 0.7568
         },
@@ -113929,7 +113929,7 @@
         {
           "date": "2024-11-29",
           "pair_id": "cn_vs_us",
-          "ratio": 0.568158,
+          "ratio": 0.568157,
           "ratio_ma": 0.564425,
           "zscore": -0.5477
         },
@@ -113957,7 +113957,7 @@
         {
           "date": "2024-11-29",
           "pair_id": "us_breadth",
-          "ratio": 0.905476,
+          "ratio": 0.905475,
           "ratio_ma": 0.90281,
           "zscore": -0.4468
         },
@@ -113980,7 +113980,7 @@
           "pair_id": "us_small_large",
           "ratio": 0.808106,
           "ratio_ma": 0.779464,
-          "zscore": 0.6792
+          "zscore": 0.6791
         },
         {
           "date": "2024-12-02",
@@ -114042,7 +114042,7 @@
           "date": "2024-12-02",
           "pair_id": "us_breadth",
           "ratio": 0.901591,
-          "ratio_ma": 0.902562,
+          "ratio_ma": 0.902561,
           "zscore": -0.6028
         },
         {
@@ -114126,20 +114126,20 @@
           "date": "2024-12-03",
           "pair_id": "us_breadth",
           "ratio": 0.897177,
-          "ratio_ma": 0.902263,
+          "ratio_ma": 0.902262,
           "zscore": -0.7805
         },
         {
           "date": "2024-12-03",
           "pair_id": "us_growth_value",
           "ratio": 1.1093,
-          "ratio_ma": 1.082633,
+          "ratio_ma": 1.082632,
           "zscore": 1.1506
         },
         {
           "date": "2024-12-03",
           "pair_id": "us_risk_appetite",
-          "ratio": 1.093158,
+          "ratio": 1.093159,
           "ratio_ma": 1.016673,
           "zscore": 2.4142
         },
@@ -114294,7 +114294,7 @@
           "date": "2024-12-05",
           "pair_id": "us_breadth",
           "ratio": 0.8887,
-          "ratio_ma": 0.901694,
+          "ratio_ma": 0.901693,
           "zscore": -1.1204
         },
         {
@@ -114567,7 +114567,7 @@
           "date": "2024-12-10",
           "pair_id": "us_small_large",
           "ratio": 0.790505,
-          "ratio_ma": 0.782585,
+          "ratio_ma": 0.782586,
           "zscore": 0.0166
         },
         {
@@ -114728,13 +114728,13 @@
           "date": "2024-12-12",
           "pair_id": "us_risk_appetite",
           "ratio": 1.150894,
-          "ratio_ma": 1.037365,
+          "ratio_ma": 1.037366,
           "zscore": 3.4243
         },
         {
           "date": "2024-12-12",
           "pair_id": "us_small_large",
-          "ratio": 0.781774,
+          "ratio": 0.781775,
           "ratio_ma": 0.782567,
           "zscore": -0.3176
         },
@@ -114804,7 +114804,7 @@
         {
           "date": "2024-12-13",
           "pair_id": "us_growth_value",
-          "ratio": 1.169265,
+          "ratio": 1.169264,
           "ratio_ma": 1.093669,
           "zscore": 2.4735
         },
@@ -114853,7 +114853,7 @@
         {
           "date": "2024-12-16",
           "pair_id": "cn_vs_us",
-          "ratio": 0.563505,
+          "ratio": 0.563504,
           "ratio_ma": 0.574686,
           "zscore": -0.6081
         },
@@ -114881,7 +114881,7 @@
         {
           "date": "2024-12-16",
           "pair_id": "us_breadth",
-          "ratio": 0.870107,
+          "ratio": 0.870106,
           "ratio_ma": 0.898572,
           "zscore": -1.8375
         },
@@ -114896,7 +114896,7 @@
           "date": "2024-12-16",
           "pair_id": "us_risk_appetite",
           "ratio": 1.170583,
-          "ratio_ma": 1.043512,
+          "ratio_ma": 1.043513,
           "zscore": 3.684
         },
         {
@@ -114973,7 +114973,7 @@
           "date": "2024-12-17",
           "pair_id": "us_growth_value",
           "ratio": 1.193259,
-          "ratio_ma": 1.097549,
+          "ratio_ma": 1.097548,
           "zscore": 2.9536
         },
         {
@@ -115023,7 +115023,7 @@
           "pair_id": "cn_vs_us",
           "ratio": 0.587698,
           "ratio_ma": 0.57743,
-          "zscore": -0.0016
+          "zscore": -0.0017
         },
         {
           "date": "2024-12-18",
@@ -115063,7 +115063,7 @@
         {
           "date": "2024-12-18",
           "pair_id": "us_risk_appetite",
-          "ratio": 1.147886,
+          "ratio": 1.147887,
           "ratio_ma": 1.049603,
           "zscore": 2.9968
         },
@@ -115133,7 +115133,7 @@
         {
           "date": "2024-12-19",
           "pair_id": "us_breadth",
-          "ratio": 0.864405,
+          "ratio": 0.864404,
           "ratio_ma": 0.896636,
           "zscore": -2.0344
         },
@@ -115141,7 +115141,7 @@
           "date": "2024-12-19",
           "pair_id": "us_growth_value",
           "ratio": 1.187778,
-          "ratio_ma": 1.101044,
+          "ratio_ma": 1.101043,
           "zscore": 2.729
         },
         {
@@ -115218,7 +115218,7 @@
           "date": "2024-12-20",
           "pair_id": "us_breadth",
           "ratio": 0.866108,
-          "ratio_ma": 0.895973,
+          "ratio_ma": 0.895972,
           "zscore": -1.9461
         },
         {
@@ -115233,12 +115233,12 @@
           "pair_id": "us_risk_appetite",
           "ratio": 1.147126,
           "ratio_ma": 1.055034,
-          "zscore": 2.8546
+          "zscore": 2.8547
         },
         {
           "date": "2024-12-20",
           "pair_id": "us_small_large",
-          "ratio": 0.755451,
+          "ratio": 0.755452,
           "ratio_ma": 0.781492,
           "zscore": -1.3399
         },
@@ -115386,14 +115386,14 @@
           "date": "2024-12-24",
           "pair_id": "us_breadth",
           "ratio": 0.859082,
-          "ratio_ma": 0.894351,
+          "ratio_ma": 0.89435,
           "zscore": -2.2093
         },
         {
           "date": "2024-12-24",
           "pair_id": "us_growth_value",
           "ratio": 1.201259,
-          "ratio_ma": 1.107039,
+          "ratio_ma": 1.107038,
           "zscore": 2.8905
         },
         {
@@ -115483,7 +115483,7 @@
         {
           "date": "2024-12-26",
           "pair_id": "us_growth_value",
-          "ratio": 1.197427,
+          "ratio": 1.197426,
           "ratio_ma": 1.109296,
           "zscore": 2.7565
         },
@@ -115560,8 +115560,8 @@
         {
           "date": "2024-12-27",
           "pair_id": "us_breadth",
-          "ratio": 0.863667,
-          "ratio_ma": 0.892729,
+          "ratio": 0.863666,
+          "ratio_ma": 0.892728,
           "zscore": -1.9849
         },
         {
@@ -115665,7 +115665,7 @@
         {
           "date": "2024-12-30",
           "pair_id": "us_small_large",
-          "ratio": 0.754972,
+          "ratio": 0.754973,
           "ratio_ma": 0.779829,
           "zscore": -1.3699
         },
@@ -115868,7 +115868,7 @@
         {
           "date": "2025-01-03",
           "pair_id": "cn_vs_us",
-          "ratio": 0.55558,
+          "ratio": 0.555579,
           "ratio_ma": 0.584233,
           "zscore": -0.7905
         },
@@ -115917,7 +115917,7 @@
         {
           "date": "2025-01-03",
           "pair_id": "us_small_large",
-          "ratio": 0.762963,
+          "ratio": 0.762964,
           "ratio_ma": 0.779458,
           "zscore": -1.0081
         },
@@ -115994,7 +115994,7 @@
         {
           "date": "2025-01-06",
           "pair_id": "us_risk_appetite",
-          "ratio": 1.156505,
+          "ratio": 1.156506,
           "ratio_ma": 1.079017,
           "zscore": 2.6117
         },
@@ -116072,7 +116072,7 @@
           "date": "2025-01-07",
           "pair_id": "us_growth_value",
           "ratio": 1.172315,
-          "ratio_ma": 1.121586,
+          "ratio_ma": 1.121585,
           "zscore": 2.0275
         },
         {
@@ -116149,7 +116149,7 @@
           "date": "2025-01-08",
           "pair_id": "us_breadth",
           "ratio": 0.867461,
-          "ratio_ma": 0.88841,
+          "ratio_ma": 0.888409,
           "zscore": -1.7643
         },
         {
@@ -116282,7 +116282,7 @@
           "date": "2025-01-10",
           "pair_id": "us_breadth",
           "ratio": 0.868034,
-          "ratio_ma": 0.887846,
+          "ratio_ma": 0.887845,
           "zscore": -1.7303
         },
         {
@@ -116372,7 +116372,7 @@
         {
           "date": "2025-01-13",
           "pair_id": "us_growth_value",
-          "ratio": 1.156618,
+          "ratio": 1.156617,
           "ratio_ma": 1.126097,
           "zscore": 1.6349
         },
@@ -116387,7 +116387,7 @@
           "date": "2025-01-13",
           "pair_id": "us_small_large",
           "ratio": 0.751969,
-          "ratio_ma": 0.778648,
+          "ratio_ma": 0.778649,
           "zscore": -1.4902
         },
         {
@@ -116618,13 +116618,13 @@
           "date": "2025-01-16",
           "pair_id": "us_breadth",
           "ratio": 0.880777,
-          "ratio_ma": 0.88592,
+          "ratio_ma": 0.885919,
           "zscore": -1.133
         },
         {
           "date": "2025-01-16",
           "pair_id": "us_growth_value",
-          "ratio": 1.142031,
+          "ratio": 1.14203,
           "ratio_ma": 1.130012,
           "zscore": 1.2825
         },
@@ -116701,8 +116701,8 @@
         {
           "date": "2025-01-17",
           "pair_id": "us_breadth",
-          "ratio": 0.876257,
-          "ratio_ma": 0.88555,
+          "ratio": 0.876256,
+          "ratio_ma": 0.885549,
           "zscore": -1.3277
         },
         {
@@ -116836,7 +116836,7 @@
           "pair_id": "us_breadth",
           "ratio": 0.878388,
           "ratio_ma": 0.885274,
-          "zscore": -1.2229
+          "zscore": -1.2228
         },
         {
           "date": "2025-01-21",
@@ -116925,7 +116925,7 @@
         {
           "date": "2025-01-22",
           "pair_id": "us_growth_value",
-          "ratio": 1.165106,
+          "ratio": 1.165105,
           "ratio_ma": 1.133414,
           "zscore": 1.7425
         },
@@ -117261,7 +117261,7 @@
         {
           "date": "2025-01-29",
           "pair_id": "us_risk_appetite",
-          "ratio": 1.135816,
+          "ratio": 1.135815,
           "ratio_ma": 1.111449,
           "zscore": 1.8647
         },
@@ -117296,7 +117296,7 @@
         {
           "date": "2025-01-30",
           "pair_id": "us_small_large",
-          "ratio": 0.760093,
+          "ratio": 0.760094,
           "ratio_ma": 0.776554,
           "zscore": -1.0073
         },
@@ -117317,8 +117317,8 @@
         {
           "date": "2025-01-31",
           "pair_id": "us_risk_appetite",
-          "ratio": 1.129357,
-          "ratio_ma": 1.115105,
+          "ratio": 1.129358,
+          "ratio_ma": 1.115106,
           "zscore": 1.7205
         },
         {
@@ -117499,7 +117499,7 @@
         {
           "date": "2025-02-05",
           "pair_id": "us_risk_appetite",
-          "ratio": 1.123461,
+          "ratio": 1.123462,
           "ratio_ma": 1.119171,
           "zscore": 1.574
         },
@@ -117906,20 +117906,20 @@
           "date": "2025-02-12",
           "pair_id": "us_breadth",
           "ratio": 0.866223,
-          "ratio_ma": 0.878777,
+          "ratio_ma": 0.878776,
           "zscore": -1.5912
         },
         {
           "date": "2025-02-12",
           "pair_id": "us_growth_value",
           "ratio": 1.148137,
-          "ratio_ma": 1.145445,
+          "ratio_ma": 1.145444,
           "zscore": 1.2237
         },
         {
           "date": "2025-02-12",
           "pair_id": "us_risk_appetite",
-          "ratio": 1.116464,
+          "ratio": 1.116465,
           "ratio_ma": 1.122478,
           "zscore": 1.3973
         },
@@ -118045,7 +118045,7 @@
         {
           "date": "2025-02-14",
           "pair_id": "cn_vs_us",
-          "ratio": 0.562816,
+          "ratio": 0.562815,
           "ratio_ma": 0.570839,
           "zscore": -0.4384
         },
@@ -118081,7 +118081,7 @@
           "date": "2025-02-14",
           "pair_id": "us_growth_value",
           "ratio": 1.156253,
-          "ratio_ma": 1.147339,
+          "ratio_ma": 1.147338,
           "zscore": 1.3712
         },
         {
@@ -118207,7 +118207,7 @@
           "date": "2025-02-18",
           "pair_id": "us_breadth",
           "ratio": 0.867882,
-          "ratio_ma": 0.877221,
+          "ratio_ma": 0.87722,
           "zscore": -1.4719
         },
         {
@@ -118264,7 +118264,7 @@
           "pair_id": "cn_vs_us",
           "ratio": 0.560013,
           "ratio_ma": 0.569417,
-          "zscore": -0.5136
+          "zscore": -0.5135
         },
         {
           "date": "2025-02-19",
@@ -118311,7 +118311,7 @@
         {
           "date": "2025-02-19",
           "pair_id": "us_small_large",
-          "ratio": 0.743414,
+          "ratio": 0.743415,
           "ratio_ma": 0.768142,
           "zscore": -1.672
         },
@@ -118381,7 +118381,7 @@
         {
           "date": "2025-02-20",
           "pair_id": "us_growth_value",
-          "ratio": 1.145619,
+          "ratio": 1.145618,
           "ratio_ma": 1.149858,
           "zscore": 1.1213
         },
@@ -118465,7 +118465,7 @@
         {
           "date": "2025-02-21",
           "pair_id": "us_growth_value",
-          "ratio": 1.135085,
+          "ratio": 1.135084,
           "ratio_ma": 1.15063,
           "zscore": 0.8953
         },
@@ -118542,7 +118542,7 @@
         {
           "date": "2025-02-24",
           "pair_id": "us_breadth",
-          "ratio": 0.876459,
+          "ratio": 0.876458,
           "ratio_ma": 0.875377,
           "zscore": -1.0492
         },
@@ -118627,7 +118627,7 @@
           "date": "2025-02-25",
           "pair_id": "us_breadth",
           "ratio": 0.88172,
-          "ratio_ma": 0.874888,
+          "ratio_ma": 0.874887,
           "zscore": -0.8083
         },
         {
@@ -118718,7 +118718,7 @@
           "date": "2025-02-26",
           "pair_id": "us_growth_value",
           "ratio": 1.117607,
-          "ratio_ma": 1.152476,
+          "ratio_ma": 1.152475,
           "zscore": 0.5182
         },
         {
@@ -118796,7 +118796,7 @@
           "pair_id": "us_breadth",
           "ratio": 0.885876,
           "ratio_ma": 0.874063,
-          "zscore": -0.6097
+          "zscore": -0.6098
         },
         {
           "date": "2025-02-27",
@@ -118962,7 +118962,7 @@
         {
           "date": "2025-03-03",
           "pair_id": "us_breadth",
-          "ratio": 0.888118,
+          "ratio": 0.888117,
           "ratio_ma": 0.873446,
           "zscore": -0.4968
         },
@@ -119046,14 +119046,14 @@
         {
           "date": "2025-03-04",
           "pair_id": "us_breadth",
-          "ratio": 0.884235,
-          "ratio_ma": 0.873231,
+          "ratio": 0.884236,
+          "ratio_ma": 0.87323,
           "zscore": -0.6649
         },
         {
           "date": "2025-03-04",
           "pair_id": "us_growth_value",
-          "ratio": 1.094331,
+          "ratio": 1.09433,
           "ratio_ma": 1.152454,
           "zscore": 0.0234
         },
@@ -119137,14 +119137,14 @@
         {
           "date": "2025-03-05",
           "pair_id": "us_growth_value",
-          "ratio": 1.101077,
+          "ratio": 1.101076,
           "ratio_ma": 1.152032,
           "zscore": 0.1616
         },
         {
           "date": "2025-03-05",
           "pair_id": "us_risk_appetite",
-          "ratio": 1.056543,
+          "ratio": 1.056544,
           "ratio_ma": 1.124546,
           "zscore": 0.3599
         },
@@ -119215,7 +119215,7 @@
           "date": "2025-03-06",
           "pair_id": "us_breadth",
           "ratio": 0.888967,
-          "ratio_ma": 0.87309,
+          "ratio_ma": 0.873089,
           "zscore": -0.4392
         },
         {
@@ -119312,7 +119312,7 @@
         {
           "date": "2025-03-07",
           "pair_id": "us_risk_appetite",
-          "ratio": 1.038055,
+          "ratio": 1.038054,
           "ratio_ma": 1.121906,
           "zscore": 0.0656
         },
@@ -119467,7 +119467,7 @@
           "date": "2025-03-11",
           "pair_id": "us_breadth",
           "ratio": 0.899231,
-          "ratio_ma": 0.873725,
+          "ratio_ma": 0.873724,
           "zscore": 0.0457
         },
         {
@@ -119573,7 +119573,7 @@
           "pair_id": "us_small_large",
           "ratio": 0.724118,
           "ratio_ma": 0.74982,
-          "zscore": -2.1409
+          "zscore": -2.1408
         },
         {
           "date": "2025-03-13",
@@ -119606,7 +119606,7 @@
         {
           "date": "2025-03-13",
           "pair_id": "cn_vs_us",
-          "ratio": 0.617967,
+          "ratio": 0.617966,
           "ratio_ma": 0.572149,
           "zscore": 1.2861
         },
@@ -119720,7 +119720,7 @@
           "pair_id": "us_breadth",
           "ratio": 0.892253,
           "ratio_ma": 0.874417,
-          "zscore": -0.2557
+          "zscore": -0.2556
         },
         {
           "date": "2025-03-14",
@@ -119732,7 +119732,7 @@
         {
           "date": "2025-03-14",
           "pair_id": "us_risk_appetite",
-          "ratio": 1.019851,
+          "ratio": 1.019852,
           "ratio_ma": 1.111245,
           "zscore": -0.221
         },
@@ -119803,7 +119803,7 @@
           "date": "2025-03-17",
           "pair_id": "us_breadth",
           "ratio": 0.897374,
-          "ratio_ma": 0.874872,
+          "ratio_ma": 0.874871,
           "zscore": -0.0087
         },
         {
@@ -119887,14 +119887,14 @@
           "date": "2025-03-18",
           "pair_id": "us_breadth",
           "ratio": 0.902462,
-          "ratio_ma": 0.875466,
+          "ratio_ma": 0.875465,
           "zscore": 0.2369
         },
         {
           "date": "2025-03-18",
           "pair_id": "us_growth_value",
           "ratio": 1.045624,
-          "ratio_ma": 1.137922,
+          "ratio_ma": 1.137921,
           "zscore": -1.0239
         },
         {
@@ -119970,8 +119970,8 @@
         {
           "date": "2025-03-19",
           "pair_id": "us_breadth",
-          "ratio": 0.899355,
-          "ratio_ma": 0.876005,
+          "ratio": 0.899354,
+          "ratio_ma": 0.876004,
           "zscore": 0.0965
         },
         {
@@ -119984,7 +119984,7 @@
         {
           "date": "2025-03-19",
           "pair_id": "us_risk_appetite",
-          "ratio": 1.017945,
+          "ratio": 1.017946,
           "ratio_ma": 1.103737,
           "zscore": -0.2502
         },
@@ -120062,7 +120062,7 @@
           "date": "2025-03-20",
           "pair_id": "us_growth_value",
           "ratio": 1.054414,
-          "ratio_ma": 1.133533,
+          "ratio_ma": 1.133532,
           "zscore": -0.8414
         },
         {
@@ -120075,7 +120075,7 @@
         {
           "date": "2025-03-20",
           "pair_id": "us_small_large",
-          "ratio": 0.73137,
+          "ratio": 0.731371,
           "ratio_ma": 0.745603,
           "zscore": -1.7087
         },
@@ -120245,7 +120245,7 @@
           "pair_id": "us_small_large",
           "ratio": 0.731576,
           "ratio_ma": 0.744828,
-          "zscore": -1.6626
+          "zscore": -1.6627
         },
         {
           "date": "2025-03-25",
@@ -120320,7 +120320,7 @@
         {
           "date": "2025-03-25",
           "pair_id": "us_risk_appetite",
-          "ratio": 1.063213,
+          "ratio": 1.063214,
           "ratio_ma": 1.09591,
           "zscore": 0.4631
         },
@@ -120391,7 +120391,7 @@
           "date": "2025-03-26",
           "pair_id": "us_breadth",
           "ratio": 0.896447,
-          "ratio_ma": 0.878595,
+          "ratio_ma": 0.878594,
           "zscore": -0.0078
         },
         {
@@ -120496,7 +120496,7 @@
           "date": "2025-03-27",
           "pair_id": "us_small_large",
           "ratio": 0.725537,
-          "ratio_ma": 0.743551,
+          "ratio_ma": 0.743552,
           "zscore": -1.8528
         },
         {
@@ -120558,7 +120558,7 @@
         {
           "date": "2025-03-28",
           "pair_id": "us_breadth",
-          "ratio": 0.900843,
+          "ratio": 0.900842,
           "ratio_ma": 0.879742,
           "zscore": 0.2207
         },
@@ -120580,7 +120580,7 @@
           "date": "2025-03-28",
           "pair_id": "us_small_large",
           "ratio": 0.725394,
-          "ratio_ma": 0.743058,
+          "ratio_ma": 0.743059,
           "zscore": -1.8387
         },
         {
@@ -120726,7 +120726,7 @@
         {
           "date": "2025-04-01",
           "pair_id": "us_breadth",
-          "ratio": 0.900678,
+          "ratio": 0.900677,
           "ratio_ma": 0.880812,
           "zscore": 0.2309
         },
@@ -120783,7 +120783,7 @@
           "date": "2025-04-02",
           "pair_id": "cn_vs_us",
           "ratio": 0.597632,
-          "ratio_ma": 0.57946,
+          "ratio_ma": 0.579459,
           "zscore": 0.6459
         },
         {
@@ -120810,7 +120810,7 @@
         {
           "date": "2025-04-02",
           "pair_id": "us_breadth",
-          "ratio": 0.902498,
+          "ratio": 0.902497,
           "ratio_ma": 0.881415,
           "zscore": 0.3315
         },
@@ -121015,7 +121015,7 @@
           "pair_id": "us_growth_value",
           "ratio": 1.03752,
           "ratio_ma": 1.106423,
-          "zscore": -1.2195
+          "zscore": -1.2196
         },
         {
           "date": "2025-04-07",
@@ -121259,8 +121259,8 @@
           "date": "2025-04-10",
           "pair_id": "us_breadth",
           "ratio": 0.886454,
-          "ratio_ma": 0.883991,
-          "zscore": -0.4524
+          "ratio_ma": 0.88399,
+          "zscore": -0.4523
         },
         {
           "date": "2025-04-10",
@@ -121427,7 +121427,7 @@
           "date": "2025-04-14",
           "pair_id": "us_breadth",
           "ratio": 0.886812,
-          "ratio_ma": 0.88429,
+          "ratio_ma": 0.884289,
           "zscore": -0.4206
         },
         {
@@ -121518,7 +121518,7 @@
           "date": "2025-04-15",
           "pair_id": "us_growth_value",
           "ratio": 1.066609,
-          "ratio_ma": 1.097437,
+          "ratio_ma": 1.097436,
           "zscore": -0.6149
         },
         {
@@ -121531,9 +121531,9 @@
         {
           "date": "2025-04-15",
           "pair_id": "us_small_large",
-          "ratio": 0.698543,
+          "ratio": 0.698544,
           "ratio_ma": 0.732783,
-          "zscore": -2.4846
+          "zscore": -2.4845
         },
         {
           "date": "2025-04-16",
@@ -121693,7 +121693,7 @@
           "date": "2025-04-17",
           "pair_id": "us_risk_appetite",
           "ratio": 0.958105,
-          "ratio_ma": 1.053729,
+          "ratio_ma": 1.05373,
           "zscore": -1.1347
         },
         {
@@ -121769,7 +121769,7 @@
         {
           "date": "2025-04-21",
           "pair_id": "us_breadth",
-          "ratio": 0.903721,
+          "ratio": 0.90372,
           "ratio_ma": 0.885799,
           "zscore": 0.5135
         },
@@ -121778,7 +121778,7 @@
           "pair_id": "us_growth_value",
           "ratio": 1.035407,
           "ratio_ma": 1.091698,
-          "zscore": -1.2842
+          "zscore": -1.2841
         },
         {
           "date": "2025-04-21",
@@ -121825,7 +121825,7 @@
         {
           "date": "2025-04-22",
           "pair_id": "cn_vs_us",
-          "ratio": 0.623333,
+          "ratio": 0.623332,
           "ratio_ma": 0.589301,
           "zscore": 1.409
         },
@@ -121853,7 +121853,7 @@
         {
           "date": "2025-04-22",
           "pair_id": "us_breadth",
-          "ratio": 0.902522,
+          "ratio": 0.902521,
           "ratio_ma": 0.886315,
           "zscore": 0.4557
         },
@@ -121909,7 +121909,7 @@
         {
           "date": "2025-04-23",
           "pair_id": "cn_vs_us",
-          "ratio": 0.614297,
+          "ratio": 0.614296,
           "ratio_ma": 0.590242,
           "zscore": 1.1325
         },
@@ -121951,7 +121951,7 @@
         {
           "date": "2025-04-23",
           "pair_id": "us_risk_appetite",
-          "ratio": 0.978692,
+          "ratio": 0.978693,
           "ratio_ma": 1.045317,
           "zscore": -0.8058
         },
@@ -122196,15 +122196,15 @@
         {
           "date": "2025-04-28",
           "pair_id": "us_growth_value",
-          "ratio": 1.083771,
+          "ratio": 1.08377,
           "ratio_ma": 1.085325,
-          "zscore": -0.2683
+          "zscore": -0.2682
         },
         {
           "date": "2025-04-28",
           "pair_id": "us_risk_appetite",
           "ratio": 1.014142,
-          "ratio_ma": 1.03921,
+          "ratio_ma": 1.039211,
           "zscore": -0.266
         },
         {
@@ -122435,7 +122435,7 @@
           "date": "2025-05-02",
           "pair_id": "us_breadth",
           "ratio": 0.883662,
-          "ratio_ma": 0.887964,
+          "ratio_ma": 0.887963,
           "zscore": -0.5377
         },
         {
@@ -122462,14 +122462,14 @@
         {
           "date": "2025-05-05",
           "pair_id": "us_breadth",
-          "ratio": 0.885812,
+          "ratio": 0.885811,
           "ratio_ma": 0.888248,
           "zscore": -0.404
         },
         {
           "date": "2025-05-05",
           "pair_id": "us_growth_value",
-          "ratio": 1.095641,
+          "ratio": 1.09564,
           "ratio_ma": 1.081123,
           "zscore": -0.0363
         },
@@ -122477,7 +122477,7 @@
           "date": "2025-05-05",
           "pair_id": "us_risk_appetite",
           "ratio": 1.032611,
-          "ratio_ma": 1.030613,
+          "ratio_ma": 1.030614,
           "zscore": 0.0065
         },
         {
@@ -122637,7 +122637,7 @@
         {
           "date": "2025-05-07",
           "pair_id": "us_growth_value",
-          "ratio": 1.090483,
+          "ratio": 1.090482,
           "ratio_ma": 1.07934,
           "zscore": -0.163
         },
@@ -122652,7 +122652,7 @@
           "date": "2025-05-07",
           "pair_id": "us_small_large",
           "ratio": 0.707439,
-          "ratio_ma": 0.720856,
+          "ratio_ma": 0.720857,
           "zscore": -1.8287
         },
         {
@@ -122882,7 +122882,7 @@
         {
           "date": "2025-05-12",
           "pair_id": "us_breadth",
-          "ratio": 0.8861,
+          "ratio": 0.886099,
           "ratio_ma": 0.889942,
           "zscore": -0.3574
         },
@@ -122890,7 +122890,7 @@
           "date": "2025-05-12",
           "pair_id": "us_growth_value",
           "ratio": 1.113277,
-          "ratio_ma": 1.076845,
+          "ratio_ma": 1.076844,
           "zscore": 0.3431
         },
         {
@@ -122905,7 +122905,7 @@
           "pair_id": "us_small_large",
           "ratio": 0.716981,
           "ratio_ma": 0.719288,
-          "zscore": -1.4671
+          "zscore": -1.4672
         },
         {
           "date": "2025-05-13",
@@ -122973,7 +122973,7 @@
         {
           "date": "2025-05-13",
           "pair_id": "us_growth_value",
-          "ratio": 1.13215,
+          "ratio": 1.132149,
           "ratio_ma": 1.076443,
           "zscore": 0.768
         },
@@ -123226,7 +123226,7 @@
           "date": "2025-05-16",
           "pair_id": "us_growth_value",
           "ratio": 1.1307,
-          "ratio_ma": 1.075996,
+          "ratio_ma": 1.075995,
           "zscore": 0.7124
         },
         {
@@ -123302,7 +123302,7 @@
         {
           "date": "2025-05-19",
           "pair_id": "us_breadth",
-          "ratio": 0.881511,
+          "ratio": 0.88151,
           "ratio_ma": 0.89097,
           "zscore": -0.6113
         },
@@ -123386,7 +123386,7 @@
         {
           "date": "2025-05-20",
           "pair_id": "us_breadth",
-          "ratio": 0.882175,
+          "ratio": 0.882174,
           "ratio_ma": 0.891065,
           "zscore": -0.5624
         },
@@ -123554,7 +123554,7 @@
         {
           "date": "2025-05-22",
           "pair_id": "us_breadth",
-          "ratio": 0.874605,
+          "ratio": 0.874604,
           "ratio_ma": 0.890919,
           "zscore": -1.044
         },
@@ -123638,7 +123638,7 @@
         {
           "date": "2025-05-23",
           "pair_id": "us_breadth",
-          "ratio": 0.877094,
+          "ratio": 0.877093,
           "ratio_ma": 0.890773,
           "zscore": -0.8738
         },
@@ -123654,7 +123654,7 @@
           "pair_id": "us_risk_appetite",
           "ratio": 1.092699,
           "ratio_ma": 1.026269,
-          "zscore": 0.8424
+          "zscore": 0.8423
         },
         {
           "date": "2025-05-23",
@@ -123778,8 +123778,8 @@
         {
           "date": "2025-05-27",
           "pair_id": "us_growth_value",
-          "ratio": 1.137688,
-          "ratio_ma": 1.078002,
+          "ratio": 1.137689,
+          "ratio_ma": 1.078001,
           "zscore": 0.8369
         },
         {
@@ -123855,8 +123855,8 @@
         {
           "date": "2025-05-28",
           "pair_id": "us_breadth",
-          "ratio": 0.872856,
-          "ratio_ma": 0.890407,
+          "ratio": 0.872855,
+          "ratio_ma": 0.890406,
           "zscore": -1.1389
         },
         {
@@ -123869,7 +123869,7 @@
         {
           "date": "2025-05-28",
           "pair_id": "us_risk_appetite",
-          "ratio": 1.111375,
+          "ratio": 1.111376,
           "ratio_ma": 1.028203,
           "zscore": 1.1134
         },
@@ -123995,7 +123995,7 @@
         {
           "date": "2025-05-30",
           "pair_id": "cn_vs_us",
-          "ratio": 0.565908,
+          "ratio": 0.565907,
           "ratio_ma": 0.597987,
           "zscore": -0.2706
         },
@@ -124072,7 +124072,7 @@
         {
           "date": "2025-06-02",
           "pair_id": "us_breadth",
-          "ratio": 0.86798,
+          "ratio": 0.867979,
           "ratio_ma": 0.889665,
           "zscore": -1.4307
         },
@@ -124248,7 +124248,7 @@
           "date": "2025-06-04",
           "pair_id": "us_growth_value",
           "ratio": 1.154941,
-          "ratio_ma": 1.084405,
+          "ratio_ma": 1.084404,
           "zscore": 1.1916
         },
         {
@@ -124324,7 +124324,7 @@
         {
           "date": "2025-06-05",
           "pair_id": "us_breadth",
-          "ratio": 0.870381,
+          "ratio": 0.87038,
           "ratio_ma": 0.888229,
           "zscore": -1.2413
         },
@@ -124345,7 +124345,7 @@
         {
           "date": "2025-06-05",
           "pair_id": "us_small_large",
-          "ratio": 0.707057,
+          "ratio": 0.707056,
           "ratio_ma": 0.712407,
           "zscore": -1.5082
         },
@@ -124416,7 +124416,7 @@
           "date": "2025-06-06",
           "pair_id": "us_growth_value",
           "ratio": 1.15021,
-          "ratio_ma": 1.087049,
+          "ratio_ma": 1.087048,
           "zscore": 1.0652
         },
         {
@@ -124465,7 +124465,7 @@
           "date": "2025-06-09",
           "pair_id": "cn_vs_us",
           "ratio": 0.562717,
-          "ratio_ma": 0.596239,
+          "ratio_ma": 0.596238,
           "zscore": -0.3419
         },
         {
@@ -124493,7 +124493,7 @@
           "date": "2025-06-09",
           "pair_id": "us_breadth",
           "ratio": 0.868337,
-          "ratio_ma": 0.887453,
+          "ratio_ma": 0.887452,
           "zscore": -1.3533
         },
         {
@@ -124507,7 +124507,7 @@
           "date": "2025-06-09",
           "pair_id": "us_risk_appetite",
           "ratio": 1.121443,
-          "ratio_ma": 1.038763,
+          "ratio_ma": 1.038764,
           "zscore": 1.2039
         },
         {
@@ -124598,7 +124598,7 @@
           "date": "2025-06-10",
           "pair_id": "us_small_large",
           "ratio": 0.715236,
-          "ratio_ma": 0.711895,
+          "ratio_ma": 0.711896,
           "zscore": -1.221
         },
         {
@@ -124660,15 +124660,15 @@
         {
           "date": "2025-06-11",
           "pair_id": "us_breadth",
-          "ratio": 0.867753,
+          "ratio": 0.867752,
           "ratio_ma": 0.88655,
           "zscore": -1.368
         },
         {
           "date": "2025-06-11",
           "pair_id": "us_growth_value",
-          "ratio": 1.151466,
-          "ratio_ma": 1.091389,
+          "ratio": 1.151465,
+          "ratio_ma": 1.091388,
           "zscore": 1.0705
         },
         {
@@ -124682,7 +124682,7 @@
           "date": "2025-06-11",
           "pair_id": "us_small_large",
           "ratio": 0.714339,
-          "ratio_ma": 0.711651,
+          "ratio_ma": 0.711652,
           "zscore": -1.2396
         },
         {
@@ -124912,7 +124912,7 @@
         {
           "date": "2025-06-16",
           "pair_id": "us_breadth",
-          "ratio": 0.865659,
+          "ratio": 0.865658,
           "ratio_ma": 0.884842,
           "zscore": -1.4679
         },
@@ -124926,7 +124926,7 @@
         {
           "date": "2025-06-16",
           "pair_id": "us_risk_appetite",
-          "ratio": 1.126232,
+          "ratio": 1.126233,
           "ratio_ma": 1.047515,
           "zscore": 1.2309
         },
@@ -124996,9 +124996,9 @@
         {
           "date": "2025-06-17",
           "pair_id": "us_breadth",
-          "ratio": 0.864733,
+          "ratio": 0.864732,
           "ratio_ma": 0.884358,
-          "zscore": -1.5169
+          "zscore": -1.517
         },
         {
           "date": "2025-06-17",
@@ -125081,7 +125081,7 @@
           "date": "2025-06-18",
           "pair_id": "us_breadth",
           "ratio": 0.86496,
-          "ratio_ma": 0.883913,
+          "ratio_ma": 0.883912,
           "zscore": -1.4949
         },
         {
@@ -125220,7 +125220,7 @@
         {
           "date": "2025-06-20",
           "pair_id": "us_growth_value",
-          "ratio": 1.141899,
+          "ratio": 1.141898,
           "ratio_ma": 1.100336,
           "zscore": 0.8302
         },
@@ -125382,7 +125382,7 @@
           "date": "2025-06-24",
           "pair_id": "us_breadth",
           "ratio": 0.866157,
-          "ratio_ma": 0.882608,
+          "ratio_ma": 0.882607,
           "zscore": -1.4021
         },
         {
@@ -125465,7 +125465,7 @@
         {
           "date": "2025-06-25",
           "pair_id": "us_breadth",
-          "ratio": 0.859427,
+          "ratio": 0.859426,
           "ratio_ma": 0.881917,
           "zscore": -1.8146
         },
@@ -125479,7 +125479,7 @@
         {
           "date": "2025-06-25",
           "pair_id": "us_risk_appetite",
-          "ratio": 1.144807,
+          "ratio": 1.144808,
           "ratio_ma": 1.057198,
           "zscore": 1.449
         },
@@ -125640,7 +125640,7 @@
         {
           "date": "2025-06-27",
           "pair_id": "us_growth_value",
-          "ratio": 1.169984,
+          "ratio": 1.169983,
           "ratio_ma": 1.109827,
           "zscore": 1.4404
         },
@@ -125788,7 +125788,7 @@
           "date": "2025-07-01",
           "pair_id": "us_growth_value",
           "ratio": 1.149756,
-          "ratio_ma": 1.113996,
+          "ratio_ma": 1.113995,
           "zscore": 0.9795
         },
         {
@@ -125871,7 +125871,7 @@
         {
           "date": "2025-07-02",
           "pair_id": "us_growth_value",
-          "ratio": 1.156964,
+          "ratio": 1.156963,
           "ratio_ma": 1.116129,
           "zscore": 1.1375
         },
@@ -125949,7 +125949,7 @@
           "date": "2025-07-03",
           "pair_id": "us_breadth",
           "ratio": 0.863772,
-          "ratio_ma": 0.877876,
+          "ratio_ma": 0.877875,
           "zscore": -1.4836
         },
         {
@@ -126179,7 +126179,7 @@
         {
           "date": "2025-07-08",
           "pair_id": "us_risk_appetite",
-          "ratio": 1.157905,
+          "ratio": 1.157906,
           "ratio_ma": 1.080301,
           "zscore": 1.5329
         },
@@ -126256,7 +126256,7 @@
         {
           "date": "2025-07-09",
           "pair_id": "us_growth_value",
-          "ratio": 1.172246,
+          "ratio": 1.172245,
           "ratio_ma": 1.123622,
           "zscore": 1.4816
         },
@@ -126334,14 +126334,14 @@
           "date": "2025-07-10",
           "pair_id": "us_breadth",
           "ratio": 0.865906,
-          "ratio_ma": 0.876431,
+          "ratio_ma": 0.87643,
           "zscore": -1.3628
         },
         {
           "date": "2025-07-10",
           "pair_id": "us_growth_value",
           "ratio": 1.165531,
-          "ratio_ma": 1.125216,
+          "ratio_ma": 1.125215,
           "zscore": 1.3362
         },
         {
@@ -126431,7 +126431,7 @@
         {
           "date": "2025-07-11",
           "pair_id": "us_risk_appetite",
-          "ratio": 1.156838,
+          "ratio": 1.156839,
           "ratio_ma": 1.088973,
           "zscore": 1.4825
         },
@@ -126503,7 +126503,7 @@
           "pair_id": "us_breadth",
           "ratio": 0.861844,
           "ratio_ma": 0.875617,
-          "zscore": -1.6295
+          "zscore": -1.6294
         },
         {
           "date": "2025-07-14",
@@ -126523,7 +126523,7 @@
           "date": "2025-07-14",
           "pair_id": "us_small_large",
           "ratio": 0.718159,
-          "ratio_ma": 0.709527,
+          "ratio_ma": 0.709528,
           "zscore": -0.9779
         },
         {
@@ -126670,7 +126670,7 @@
           "date": "2025-07-16",
           "pair_id": "us_breadth",
           "ratio": 0.854014,
-          "ratio_ma": 0.874156,
+          "ratio_ma": 0.874155,
           "zscore": -2.0795
         },
         {
@@ -126678,7 +126678,7 @@
           "pair_id": "us_growth_value",
           "ratio": 1.187932,
           "ratio_ma": 1.133469,
-          "zscore": 1.8264
+          "zscore": 1.8263
         },
         {
           "date": "2025-07-16",
@@ -126837,7 +126837,7 @@
         {
           "date": "2025-07-18",
           "pair_id": "us_breadth",
-          "ratio": 0.856042,
+          "ratio": 0.856041,
           "ratio_ma": 0.872581,
           "zscore": -1.9178
         },
@@ -126858,7 +126858,7 @@
         {
           "date": "2025-07-18",
           "pair_id": "us_small_large",
-          "ratio": 0.712235,
+          "ratio": 0.712234,
           "ratio_ma": 0.709495,
           "zscore": -1.1152
         },
@@ -126923,12 +126923,12 @@
           "pair_id": "us_breadth",
           "ratio": 0.851499,
           "ratio_ma": 0.871817,
-          "zscore": -2.1643
+          "zscore": -2.1644
         },
         {
           "date": "2025-07-21",
           "pair_id": "us_growth_value",
-          "ratio": 1.192819,
+          "ratio": 1.192818,
           "ratio_ma": 1.140866,
           "zscore": 1.8825
         },
@@ -127062,7 +127062,7 @@
           "date": "2025-07-23",
           "pair_id": "cn_vs_us",
           "ratio": 0.562534,
-          "ratio_ma": 0.569548,
+          "ratio_ma": 0.569547,
           "zscore": -0.2165
         },
         {
@@ -127258,7 +127258,7 @@
           "date": "2025-07-25",
           "pair_id": "us_breadth",
           "ratio": 0.859503,
-          "ratio_ma": 0.869935,
+          "ratio_ma": 0.869934,
           "zscore": -1.6214
         },
         {
@@ -127313,7 +127313,7 @@
         {
           "date": "2025-07-28",
           "pair_id": "cn_vs_us",
-          "ratio": 0.562306,
+          "ratio": 0.562305,
           "ratio_ma": 0.56706,
           "zscore": -0.227
         },
@@ -127355,7 +127355,7 @@
         {
           "date": "2025-07-28",
           "pair_id": "us_risk_appetite",
-          "ratio": 1.176134,
+          "ratio": 1.176135,
           "ratio_ma": 1.12226,
           "zscore": 1.5936
         },
@@ -127426,7 +127426,7 @@
           "date": "2025-07-29",
           "pair_id": "us_breadth",
           "ratio": 0.856483,
-          "ratio_ma": 0.868955,
+          "ratio_ma": 0.868954,
           "zscore": -1.76
         },
         {
@@ -127600,8 +127600,8 @@
         {
           "date": "2025-07-31",
           "pair_id": "us_growth_value",
-          "ratio": 1.209076,
-          "ratio_ma": 1.154406,
+          "ratio": 1.209075,
+          "ratio_ma": 1.154405,
           "zscore": 2.0793
         },
         {
@@ -127768,8 +127768,8 @@
         {
           "date": "2025-08-04",
           "pair_id": "us_growth_value",
-          "ratio": 1.212779,
-          "ratio_ma": 1.15827,
+          "ratio": 1.212778,
+          "ratio_ma": 1.158269,
           "zscore": 2.1106
         },
         {
@@ -127852,8 +127852,8 @@
         {
           "date": "2025-08-05",
           "pair_id": "us_growth_value",
-          "ratio": 1.204549,
-          "ratio_ma": 1.160145,
+          "ratio": 1.204548,
+          "ratio_ma": 1.160144,
           "zscore": 1.9175
         },
         {
@@ -127930,13 +127930,13 @@
           "date": "2025-08-06",
           "pair_id": "us_breadth",
           "ratio": 0.842922,
-          "ratio_ma": 0.865103,
+          "ratio_ma": 0.865102,
           "zscore": -2.3902
         },
         {
           "date": "2025-08-06",
           "pair_id": "us_growth_value",
-          "ratio": 1.220832,
+          "ratio": 1.220831,
           "ratio_ma": 1.162321,
           "zscore": 2.2268
         },
@@ -128105,7 +128105,7 @@
           "date": "2025-08-08",
           "pair_id": "us_growth_value",
           "ratio": 1.222728,
-          "ratio_ma": 1.165592,
+          "ratio_ma": 1.165591,
           "zscore": 2.2134
         },
         {
@@ -128273,7 +128273,7 @@
           "date": "2025-08-12",
           "pair_id": "us_growth_value",
           "ratio": 1.224509,
-          "ratio_ma": 1.168331,
+          "ratio_ma": 1.16833,
           "zscore": 2.1964
         },
         {
@@ -128349,8 +128349,8 @@
         {
           "date": "2025-08-13",
           "pair_id": "us_breadth",
-          "ratio": 0.848262,
-          "ratio_ma": 0.861767,
+          "ratio": 0.848261,
+          "ratio_ma": 0.861766,
           "zscore": -1.9422
         },
         {
@@ -128363,7 +128363,7 @@
         {
           "date": "2025-08-13",
           "pair_id": "us_risk_appetite",
-          "ratio": 1.186356,
+          "ratio": 1.186357,
           "ratio_ma": 1.14203,
           "zscore": 1.5954
         },
@@ -128525,7 +128525,7 @@
           "date": "2025-08-15",
           "pair_id": "us_growth_value",
           "ratio": 1.214844,
-          "ratio_ma": 1.17259,
+          "ratio_ma": 1.172589,
           "zscore": 1.933
         },
         {
@@ -128603,7 +128603,7 @@
           "pair_id": "us_breadth",
           "ratio": 0.842559,
           "ratio_ma": 0.859872,
-          "zscore": -2.1642
+          "zscore": -2.1643
         },
         {
           "date": "2025-08-18",
@@ -128700,7 +128700,7 @@
           "date": "2025-08-19",
           "pair_id": "us_risk_appetite",
           "ratio": 1.164292,
-          "ratio_ma": 1.147362,
+          "ratio_ma": 1.147363,
           "zscore": 1.2509
         },
         {
@@ -128776,7 +128776,7 @@
         {
           "date": "2025-08-20",
           "pair_id": "us_growth_value",
-          "ratio": 1.186161,
+          "ratio": 1.18616,
           "ratio_ma": 1.175877,
           "zscore": 1.3193
         },
@@ -128937,7 +128937,7 @@
         {
           "date": "2025-08-22",
           "pair_id": "us_breadth",
-          "ratio": 0.856524,
+          "ratio": 0.856523,
           "ratio_ma": 0.858431,
           "zscore": -1.3605
         },
@@ -129028,7 +129028,7 @@
         {
           "date": "2025-08-25",
           "pair_id": "us_growth_value",
-          "ratio": 1.190027,
+          "ratio": 1.190026,
           "ratio_ma": 1.17818,
           "zscore": 1.3615
         },
@@ -129113,7 +129113,7 @@
           "date": "2025-08-26",
           "pair_id": "us_growth_value",
           "ratio": 1.194781,
-          "ratio_ma": 1.179093,
+          "ratio_ma": 1.179092,
           "zscore": 1.4409
         },
         {
@@ -129126,7 +129126,7 @@
         {
           "date": "2025-08-26",
           "pair_id": "us_small_large",
-          "ratio": 0.730065,
+          "ratio": 0.730066,
           "ratio_ma": 0.709812,
           "zscore": -0.3592
         },
@@ -129280,7 +129280,7 @@
         {
           "date": "2025-08-28",
           "pair_id": "us_growth_value",
-          "ratio": 1.200034,
+          "ratio": 1.200033,
           "ratio_ma": 1.180768,
           "zscore": 1.516
         },
@@ -129329,7 +129329,7 @@
         {
           "date": "2025-08-29",
           "pair_id": "cn_vs_us",
-          "ratio": 0.603692,
+          "ratio": 0.603691,
           "ratio_ma": 0.564536,
           "zscore": 1.1165
         },
@@ -129365,13 +129365,13 @@
           "date": "2025-08-29",
           "pair_id": "us_growth_value",
           "ratio": 1.18562,
-          "ratio_ma": 1.18128,
+          "ratio_ma": 1.181279,
           "zscore": 1.2277
         },
         {
           "date": "2025-08-29",
           "pair_id": "us_risk_appetite",
-          "ratio": 1.18869,
+          "ratio": 1.188689,
           "ratio_ma": 1.15772,
           "zscore": 1.4862
         },
@@ -129462,7 +129462,7 @@
         {
           "date": "2025-09-02",
           "pair_id": "cn_vs_us",
-          "ratio": 0.607346,
+          "ratio": 0.607345,
           "ratio_ma": 0.565193,
           "zscore": 1.2323
         },
@@ -129490,7 +129490,7 @@
         {
           "date": "2025-09-02",
           "pair_id": "us_breadth",
-          "ratio": 0.852515,
+          "ratio": 0.852514,
           "ratio_ma": 0.856588,
           "zscore": -1.4837
         },
@@ -129575,8 +129575,8 @@
           "date": "2025-09-03",
           "pair_id": "us_breadth",
           "ratio": 0.846605,
-          "ratio_ma": 0.856216,
-          "zscore": -1.7721
+          "ratio_ma": 0.856215,
+          "zscore": -1.772
         },
         {
           "date": "2025-09-03",
@@ -129588,7 +129588,7 @@
         {
           "date": "2025-09-03",
           "pair_id": "us_risk_appetite",
-          "ratio": 1.196343,
+          "ratio": 1.196342,
           "ratio_ma": 1.16034,
           "zscore": 1.5671
         },
@@ -129596,7 +129596,7 @@
           "date": "2025-09-03",
           "pair_id": "us_small_large",
           "ratio": 0.729771,
-          "ratio_ma": 0.712111,
+          "ratio_ma": 0.712112,
           "zscore": -0.3417
         },
         {
@@ -129681,7 +129681,7 @@
           "pair_id": "us_small_large",
           "ratio": 0.732766,
           "ratio_ma": 0.7124,
-          "zscore": -0.2436
+          "zscore": -0.2435
         },
         {
           "date": "2025-09-05",
@@ -129834,7 +129834,7 @@
           "date": "2025-09-08",
           "pair_id": "us_growth_value",
           "ratio": 1.202939,
-          "ratio_ma": 1.184824,
+          "ratio_ma": 1.184823,
           "zscore": 1.5092
         },
         {
@@ -129847,7 +129847,7 @@
         {
           "date": "2025-09-08",
           "pair_id": "us_small_large",
-          "ratio": 0.738237,
+          "ratio": 0.738238,
           "ratio_ma": 0.713187,
           "zscore": -0.0645
         },
@@ -129884,7 +129884,7 @@
           "pair_id": "cn_vs_us",
           "ratio": 0.590734,
           "ratio_ma": 0.567904,
-          "zscore": 0.636
+          "zscore": 0.6361
         },
         {
           "date": "2025-09-09",
@@ -129918,7 +129918,7 @@
           "date": "2025-09-09",
           "pair_id": "us_growth_value",
           "ratio": 1.205397,
-          "ratio_ma": 1.185692,
+          "ratio_ma": 1.185691,
           "zscore": 1.5443
         },
         {
@@ -129932,7 +129932,7 @@
           "date": "2025-09-09",
           "pair_id": "us_small_large",
           "ratio": 0.732207,
-          "ratio_ma": 0.713579,
+          "ratio_ma": 0.71358,
           "zscore": -0.2477
         },
         {
@@ -129995,7 +129995,7 @@
           "date": "2025-09-10",
           "pair_id": "us_breadth",
           "ratio": 0.838652,
-          "ratio_ma": 0.854322,
+          "ratio_ma": 0.854321,
           "zscore": -2.0978
         },
         {
@@ -130176,7 +130176,7 @@
         {
           "date": "2025-09-12",
           "pair_id": "us_risk_appetite",
-          "ratio": 1.228981,
+          "ratio": 1.228982,
           "ratio_ma": 1.171591,
           "zscore": 1.9251
         },
@@ -130255,14 +130255,14 @@
           "pair_id": "us_growth_value",
           "ratio": 1.230481,
           "ratio_ma": 1.190005,
-          "zscore": 1.9664
+          "zscore": 1.9665
         },
         {
           "date": "2025-09-15",
           "pair_id": "us_risk_appetite",
           "ratio": 1.249339,
           "ratio_ma": 1.173626,
-          "zscore": 2.1816
+          "zscore": 2.1815
         },
         {
           "date": "2025-09-15",
@@ -130344,14 +130344,14 @@
         {
           "date": "2025-09-16",
           "pair_id": "us_risk_appetite",
-          "ratio": 1.254488,
+          "ratio": 1.254489,
           "ratio_ma": 1.175838,
           "zscore": 2.228
         },
         {
           "date": "2025-09-16",
           "pair_id": "us_small_large",
-          "ratio": 0.727893,
+          "ratio": 0.727894,
           "ratio_ma": 0.715612,
           "zscore": -0.3627
         },
@@ -130387,7 +130387,7 @@
           "date": "2025-09-17",
           "pair_id": "cn_vs_us",
           "ratio": 0.59788,
-          "ratio_ma": 0.571348,
+          "ratio_ma": 0.571347,
           "zscore": 0.8437
         },
         {
@@ -130499,7 +130499,7 @@
           "date": "2025-09-18",
           "pair_id": "us_breadth",
           "ratio": 0.834822,
-          "ratio_ma": 0.851276,
+          "ratio_ma": 0.851275,
           "zscore": -2.1394
         },
         {
@@ -130519,7 +130519,7 @@
         {
           "date": "2025-09-18",
           "pair_id": "us_small_large",
-          "ratio": 0.74538,
+          "ratio": 0.745381,
           "ratio_ma": 0.716546,
           "zscore": 0.1979
         },
@@ -130667,7 +130667,7 @@
           "date": "2025-09-22",
           "pair_id": "us_breadth",
           "ratio": 0.825751,
-          "ratio_ma": 0.850216,
+          "ratio_ma": 0.850215,
           "zscore": -2.5229
         },
         {
@@ -130835,7 +130835,7 @@
           "date": "2025-09-24",
           "pair_id": "us_breadth",
           "ratio": 0.831992,
-          "ratio_ma": 0.849336,
+          "ratio_ma": 0.849335,
           "zscore": -2.1629
         },
         {
@@ -130891,7 +130891,7 @@
           "date": "2025-09-25",
           "pair_id": "cn_vs_us",
           "ratio": 0.602823,
-          "ratio_ma": 0.574851,
+          "ratio_ma": 0.57485,
           "zscore": 0.9955
         },
         {
@@ -131087,7 +131087,7 @@
           "date": "2025-09-29",
           "pair_id": "us_breadth",
           "ratio": 0.832852,
-          "ratio_ma": 0.847598,
+          "ratio_ma": 0.847597,
           "zscore": -2.0451
         },
         {
@@ -131107,7 +131107,7 @@
         {
           "date": "2025-09-29",
           "pair_id": "us_small_large",
-          "ratio": 0.731974,
+          "ratio": 0.731975,
           "ratio_ma": 0.719609,
           "zscore": -0.1903
         },
@@ -131206,7 +131206,7 @@
           "date": "2025-10-01",
           "pair_id": "us_growth_value",
           "ratio": 1.235559,
-          "ratio_ma": 1.204185,
+          "ratio_ma": 1.204184,
           "zscore": 1.8226
         },
         {
@@ -131297,7 +131297,7 @@
           "date": "2025-10-03",
           "pair_id": "us_breadth",
           "ratio": 0.834919,
-          "ratio_ma": 0.845453,
+          "ratio_ma": 0.845452,
           "zscore": -1.8659
         },
         {
@@ -131345,7 +131345,7 @@
         {
           "date": "2025-10-06",
           "pair_id": "us_breadth",
-          "ratio": 0.831675,
+          "ratio": 0.831674,
           "ratio_ma": 0.844937,
           "zscore": -1.999
         },
@@ -131437,7 +131437,7 @@
           "date": "2025-10-08",
           "pair_id": "us_risk_appetite",
           "ratio": 1.213039,
-          "ratio_ma": 1.199538,
+          "ratio_ma": 1.199539,
           "zscore": 1.3933
         },
         {
@@ -131598,7 +131598,7 @@
           "date": "2025-10-10",
           "pair_id": "us_growth_value",
           "ratio": 1.231615,
-          "ratio_ma": 1.210802,
+          "ratio_ma": 1.210801,
           "zscore": 1.633
         },
         {
@@ -131674,14 +131674,14 @@
         {
           "date": "2025-10-13",
           "pair_id": "us_breadth",
-          "ratio": 0.82361,
+          "ratio": 0.823609,
           "ratio_ma": 0.84252,
           "zscore": -2.2482
         },
         {
           "date": "2025-10-13",
           "pair_id": "us_growth_value",
-          "ratio": 1.242762,
+          "ratio": 1.242761,
           "ratio_ma": 1.211691,
           "zscore": 1.8126
         },
@@ -131816,7 +131816,7 @@
           "pair_id": "cn_vs_us",
           "ratio": 0.598033,
           "ratio_ma": 0.580965,
-          "zscore": 0.7759
+          "zscore": 0.7758
         },
         {
           "date": "2025-10-15",
@@ -131849,7 +131849,7 @@
         {
           "date": "2025-10-15",
           "pair_id": "us_growth_value",
-          "ratio": 1.224677,
+          "ratio": 1.224676,
           "ratio_ma": 1.213035,
           "zscore": 1.4647
         },
@@ -131926,7 +131926,7 @@
         {
           "date": "2025-10-16",
           "pair_id": "us_breadth",
-          "ratio": 0.827221,
+          "ratio": 0.82722,
           "ratio_ma": 0.841059,
           "zscore": -2.0185
         },
@@ -131948,7 +131948,7 @@
           "date": "2025-10-16",
           "pair_id": "us_small_large",
           "ratio": 0.745812,
-          "ratio_ma": 0.724788,
+          "ratio_ma": 0.724789,
           "zscore": 0.3163
         },
         {
@@ -132017,7 +132017,7 @@
         {
           "date": "2025-10-17",
           "pair_id": "us_growth_value",
-          "ratio": 1.231133,
+          "ratio": 1.231132,
           "ratio_ma": 1.214716,
           "zscore": 1.5507
         },
@@ -132067,7 +132067,7 @@
           "date": "2025-10-20",
           "pair_id": "cn_vs_us",
           "ratio": 0.583815,
-          "ratio_ma": 0.582676,
+          "ratio_ma": 0.582675,
           "zscore": 0.1966
         },
         {
@@ -132178,7 +132178,7 @@
         {
           "date": "2025-10-21",
           "pair_id": "us_breadth",
-          "ratio": 0.8302,
+          "ratio": 0.830199,
           "ratio_ma": 0.839563,
           "zscore": -1.8258
         },
@@ -132270,7 +132270,7 @@
           "date": "2025-10-22",
           "pair_id": "us_growth_value",
           "ratio": 1.22702,
-          "ratio_ma": 1.216754,
+          "ratio_ma": 1.216753,
           "zscore": 1.4393
         },
         {
@@ -132437,7 +132437,7 @@
         {
           "date": "2025-10-24",
           "pair_id": "us_growth_value",
-          "ratio": 1.23658,
+          "ratio": 1.236579,
           "ratio_ma": 1.217784,
           "zscore": 1.578
         },
@@ -132613,7 +132613,7 @@
           "date": "2025-10-28",
           "pair_id": "us_risk_appetite",
           "ratio": 1.23729,
-          "ratio_ma": 1.207746,
+          "ratio_ma": 1.207747,
           "zscore": 1.6075
         },
         {
@@ -132662,7 +132662,7 @@
           "date": "2025-10-29",
           "pair_id": "us_breadth",
           "ratio": 0.800427,
-          "ratio_ma": 0.836332,
+          "ratio_ma": 0.836331,
           "zscore": -2.9441
         },
         {
@@ -132746,7 +132746,7 @@
           "date": "2025-10-30",
           "pair_id": "us_breadth",
           "ratio": 0.805847,
-          "ratio_ma": 0.835714,
+          "ratio_ma": 0.835713,
           "zscore": -2.6652
         },
         {
@@ -132829,14 +132829,14 @@
         {
           "date": "2025-10-31",
           "pair_id": "us_breadth",
-          "ratio": 0.804969,
+          "ratio": 0.804968,
           "ratio_ma": 0.835078,
           "zscore": -2.655
         },
         {
           "date": "2025-10-31",
           "pair_id": "us_growth_value",
-          "ratio": 1.268963,
+          "ratio": 1.268962,
           "ratio_ma": 1.222505,
           "zscore": 2.0145
         },
@@ -132998,7 +132998,7 @@
           "date": "2025-11-04",
           "pair_id": "us_breadth",
           "ratio": 0.805743,
-          "ratio_ma": 0.833939,
+          "ratio_ma": 0.833938,
           "zscore": -2.5342
         },
         {
@@ -133081,7 +133081,7 @@
         {
           "date": "2025-11-05",
           "pair_id": "us_breadth",
-          "ratio": 0.807661,
+          "ratio": 0.80766,
           "ratio_ma": 0.833413,
           "zscore": -2.4198
         },
@@ -133166,7 +133166,7 @@
           "date": "2025-11-06",
           "pair_id": "us_breadth",
           "ratio": 0.810667,
-          "ratio_ma": 0.832787,
+          "ratio_ma": 0.832786,
           "zscore": -2.2682
         },
         {
@@ -133508,7 +133508,7 @@
         {
           "date": "2025-11-12",
           "pair_id": "us_growth_value",
-          "ratio": 1.233842,
+          "ratio": 1.233841,
           "ratio_ma": 1.227117,
           "zscore": 1.3004
         },
@@ -133838,7 +133838,7 @@
           "date": "2025-11-18",
           "pair_id": "us_breadth",
           "ratio": 0.818761,
-          "ratio_ma": 0.828075,
+          "ratio_ma": 0.828074,
           "zscore": -1.7596
         },
         {
@@ -133894,7 +133894,7 @@
           "date": "2025-11-19",
           "pair_id": "cn_vs_us",
           "ratio": 0.59798,
-          "ratio_ma": 0.59422,
+          "ratio_ma": 0.594219,
           "zscore": 0.8015
         },
         {
@@ -134273,12 +134273,12 @@
           "pair_id": "us_risk_appetite",
           "ratio": 1.159765,
           "ratio_ma": 1.21381,
-          "zscore": 0.4047
+          "zscore": 0.4048
         },
         {
           "date": "2025-11-25",
           "pair_id": "us_small_large",
-          "ratio": 0.730132,
+          "ratio": 0.730133,
           "ratio_ma": 0.729901,
           "zscore": 0.0121
         },
@@ -134825,7 +134825,7 @@
           "date": "2025-12-04",
           "pair_id": "us_risk_appetite",
           "ratio": 1.20388,
-          "ratio_ma": 1.210934,
+          "ratio_ma": 1.210935,
           "zscore": 0.9632
         },
         {
@@ -134903,7 +134903,7 @@
           "pair_id": "us_growth_value",
           "ratio": 1.216169,
           "ratio_ma": 1.233508,
-          "zscore": 0.8847
+          "zscore": 0.8848
         },
         {
           "date": "2025-12-05",
@@ -134915,7 +134915,7 @@
         {
           "date": "2025-12-05",
           "pair_id": "us_small_large",
-          "ratio": 0.735308,
+          "ratio": 0.735309,
           "ratio_ma": 0.729652,
           "zscore": 0.3517
         },
@@ -135119,7 +135119,7 @@
           "date": "2025-12-10",
           "pair_id": "cn_vs_us",
           "ratio": 0.576733,
-          "ratio_ma": 0.591108,
+          "ratio_ma": 0.591107,
           "zscore": -0.2051
         },
         {
@@ -135160,7 +135160,7 @@
         {
           "date": "2025-12-10",
           "pair_id": "us_risk_appetite",
-          "ratio": 1.234443,
+          "ratio": 1.234444,
           "ratio_ma": 1.21025,
           "zscore": 1.3333
         },
@@ -135237,7 +135237,7 @@
         {
           "date": "2025-12-11",
           "pair_id": "us_growth_value",
-          "ratio": 1.203073,
+          "ratio": 1.203072,
           "ratio_ma": 1.232922,
           "zscore": 0.6439
         },
@@ -135399,14 +135399,14 @@
           "date": "2025-12-15",
           "pair_id": "us_breadth",
           "ratio": 0.83109,
-          "ratio_ma": 0.821012,
+          "ratio_ma": 0.821011,
           "zscore": -1.0415
         },
         {
           "date": "2025-12-15",
           "pair_id": "us_growth_value",
           "ratio": 1.182676,
-          "ratio_ma": 1.23151,
+          "ratio_ma": 1.231509,
           "zscore": 0.3035
         },
         {
@@ -135504,7 +135504,7 @@
           "date": "2025-12-16",
           "pair_id": "us_small_large",
           "ratio": 0.742601,
-          "ratio_ma": 0.730927,
+          "ratio_ma": 0.730928,
           "zscore": 0.8471
         },
         {
@@ -135657,7 +135657,7 @@
         {
           "date": "2025-12-18",
           "pair_id": "us_growth_value",
-          "ratio": 1.190324,
+          "ratio": 1.190323,
           "ratio_ma": 1.229032,
           "zscore": 0.4266
         },
@@ -135839,7 +135839,7 @@
         {
           "date": "2025-12-22",
           "pair_id": "us_small_large",
-          "ratio": 0.744777,
+          "ratio": 0.744778,
           "ratio_ma": 0.731464,
           "zscore": 1.0278
         },
@@ -135923,7 +135923,7 @@
         {
           "date": "2025-12-23",
           "pair_id": "us_small_large",
-          "ratio": 0.737003,
+          "ratio": 0.737004,
           "ratio_ma": 0.731548,
           "zscore": 0.6105
         },
@@ -136098,7 +136098,7 @@
         {
           "date": "2025-12-26",
           "pair_id": "us_small_large",
-          "ratio": 0.732571,
+          "ratio": 0.732572,
           "ratio_ma": 0.731702,
           "zscore": 0.3777
         },
@@ -136246,7 +136246,7 @@
           "date": "2025-12-30",
           "pair_id": "us_breadth",
           "ratio": 0.822459,
-          "ratio_ma": 0.819996,
+          "ratio_ma": 0.819995,
           "zscore": -1.2696
         },
         {
@@ -136329,7 +136329,7 @@
         {
           "date": "2025-12-31",
           "pair_id": "us_breadth",
-          "ratio": 0.821522,
+          "ratio": 0.821521,
           "ratio_ma": 0.819826,
           "zscore": -1.2937
         },
@@ -136393,7 +136393,7 @@
           "date": "2026-01-02",
           "pair_id": "us_risk_appetite",
           "ratio": 1.201462,
-          "ratio_ma": 1.202741,
+          "ratio_ma": 1.202742,
           "zscore": 0.8192
         },
         {
@@ -136470,7 +136470,7 @@
           "date": "2026-01-05",
           "pair_id": "us_growth_value",
           "ratio": 1.175145,
-          "ratio_ma": 1.223427,
+          "ratio_ma": 1.223426,
           "zscore": 0.1708
         },
         {
@@ -136519,7 +136519,7 @@
           "date": "2026-01-06",
           "pair_id": "cn_vs_us",
           "ratio": 0.596261,
-          "ratio_ma": 0.587708,
+          "ratio_ma": 0.587707,
           "zscore": 0.7825
         },
         {
@@ -136638,7 +136638,7 @@
           "date": "2026-01-07",
           "pair_id": "us_growth_value",
           "ratio": 1.185023,
-          "ratio_ma": 1.221389,
+          "ratio_ma": 1.221388,
           "zscore": 0.3327
         },
         {
@@ -136820,7 +136820,7 @@
           "date": "2026-01-09",
           "pair_id": "us_small_large",
           "ratio": 0.754134,
-          "ratio_ma": 0.731874,
+          "ratio_ma": 0.731875,
           "zscore": 1.6755
         },
         {
@@ -136854,7 +136854,7 @@
         {
           "date": "2026-01-12",
           "pair_id": "cn_vs_us",
-          "ratio": 0.593292,
+          "ratio": 0.593291,
           "ratio_ma": 0.587123,
           "zscore": 0.614
         },
@@ -136905,7 +136905,7 @@
           "pair_id": "us_small_large",
           "ratio": 0.756626,
           "ratio_ma": 0.731874,
-          "zscore": 1.8196
+          "zscore": 1.8195
         },
         {
           "date": "2026-01-13",
@@ -136973,7 +136973,7 @@
         {
           "date": "2026-01-13",
           "pair_id": "us_growth_value",
-          "ratio": 1.165016,
+          "ratio": 1.165015,
           "ratio_ma": 1.217082,
           "zscore": 0.0071
         },
@@ -137050,7 +137050,7 @@
         {
           "date": "2026-01-14",
           "pair_id": "us_breadth",
-          "ratio": 0.84164,
+          "ratio": 0.841639,
           "ratio_ma": 0.8204,
           "zscore": -0.5059
         },
@@ -137072,8 +137072,8 @@
           "date": "2026-01-14",
           "pair_id": "us_small_large",
           "ratio": 0.766811,
-          "ratio_ma": 0.732575,
-          "zscore": 2.3811
+          "ratio_ma": 0.732576,
+          "zscore": 2.3812
         },
         {
           "date": "2026-01-15",
@@ -137134,15 +137134,15 @@
         {
           "date": "2026-01-15",
           "pair_id": "us_breadth",
-          "ratio": 0.843072,
-          "ratio_ma": 0.820678,
+          "ratio": 0.843071,
+          "ratio_ma": 0.820677,
           "zscore": -0.4495
         },
         {
           "date": "2026-01-15",
           "pair_id": "us_growth_value",
           "ratio": 1.143545,
-          "ratio_ma": 1.214184,
+          "ratio_ma": 1.214183,
           "zscore": -0.3451
         },
         {
@@ -137191,7 +137191,7 @@
           "date": "2026-01-16",
           "pair_id": "cn_vs_us",
           "ratio": 0.589068,
-          "ratio_ma": 0.586958,
+          "ratio_ma": 0.586957,
           "zscore": 0.3823
         },
         {
@@ -137226,7 +137226,7 @@
           "date": "2026-01-16",
           "pair_id": "us_growth_value",
           "ratio": 1.144423,
-          "ratio_ma": 1.212727,
+          "ratio_ma": 1.212726,
           "zscore": -0.3298
         },
         {
@@ -137624,7 +137624,7 @@
         {
           "date": "2026-01-23",
           "pair_id": "us_small_large",
-          "ratio": 0.772795,
+          "ratio": 0.772796,
           "ratio_ma": 0.736608,
           "zscore": 2.5497
         },
@@ -137694,8 +137694,8 @@
         {
           "date": "2026-01-26",
           "pair_id": "us_growth_value",
-          "ratio": 1.145255,
-          "ratio_ma": 1.203653,
+          "ratio": 1.145254,
+          "ratio_ma": 1.203652,
           "zscore": -0.3098
         },
         {
@@ -137710,7 +137710,7 @@
           "pair_id": "us_small_large",
           "ratio": 0.766481,
           "ratio_ma": 0.73724,
-          "zscore": 2.1977
+          "zscore": 2.1976
         },
         {
           "date": "2026-01-27",
@@ -137940,7 +137940,7 @@
           "date": "2026-01-29",
           "pair_id": "us_breadth",
           "ratio": 0.836503,
-          "ratio_ma": 0.824378,
+          "ratio_ma": 0.824377,
           "zscore": -0.6477
         },
         {
@@ -138023,7 +138023,7 @@
         {
           "date": "2026-01-30",
           "pair_id": "us_breadth",
-          "ratio": 0.837146,
+          "ratio": 0.837145,
           "ratio_ma": 0.824972,
           "zscore": -0.6192
         },
@@ -138045,7 +138045,7 @@
           "date": "2026-01-30",
           "pair_id": "us_small_large",
           "ratio": 0.754737,
-          "ratio_ma": 0.739757,
+          "ratio_ma": 0.739758,
           "zscore": 1.5519
         },
         {
@@ -138108,7 +138108,7 @@
           "date": "2026-02-02",
           "pair_id": "us_breadth",
           "ratio": 0.837294,
-          "ratio_ma": 0.825498,
+          "ratio_ma": 0.825497,
           "zscore": -0.6083
         },
         {
@@ -138276,7 +138276,7 @@
           "date": "2026-02-04",
           "pair_id": "us_breadth",
           "ratio": 0.853658,
-          "ratio_ma": 0.82679,
+          "ratio_ma": 0.826789,
           "zscore": -0.0044
         },
         {
@@ -138444,7 +138444,7 @@
           "date": "2026-02-06",
           "pair_id": "us_breadth",
           "ratio": 0.856482,
-          "ratio_ma": 0.828257,
+          "ratio_ma": 0.828256,
           "zscore": 0.1035
         },
         {
@@ -138611,15 +138611,15 @@
         {
           "date": "2026-02-10",
           "pair_id": "us_breadth",
-          "ratio": 0.858176,
-          "ratio_ma": 0.829698,
+          "ratio": 0.858175,
+          "ratio_ma": 0.829697,
           "zscore": 0.17
         },
         {
           "date": "2026-02-10",
           "pair_id": "us_growth_value",
           "ratio": 1.090875,
-          "ratio_ma": 1.176945,
+          "ratio_ma": 1.176944,
           "zscore": -1.1589
         },
         {
@@ -138716,7 +138716,7 @@
         {
           "date": "2026-02-11",
           "pair_id": "us_small_large",
-          "ratio": 0.770153,
+          "ratio": 0.770154,
           "ratio_ma": 0.74615,
           "zscore": 2.2904
         },
@@ -138780,7 +138780,7 @@
           "date": "2026-02-12",
           "pair_id": "us_breadth",
           "ratio": 0.861927,
-          "ratio_ma": 0.831196,
+          "ratio_ma": 0.831195,
           "zscore": 0.3099
         },
         {
@@ -138870,9 +138870,9 @@
         {
           "date": "2026-02-13",
           "pair_id": "us_growth_value",
-          "ratio": 1.064547,
+          "ratio": 1.064546,
           "ratio_ma": 1.169315,
-          "zscore": -1.5516
+          "zscore": -1.5517
         },
         {
           "date": "2026-02-13",
@@ -138940,7 +138940,7 @@
         {
           "date": "2026-02-18",
           "pair_id": "us_breadth",
-          "ratio": 0.867469,
+          "ratio": 0.867468,
           "ratio_ma": 0.833891,
           "zscore": 0.5111
         },
@@ -138963,13 +138963,13 @@
           "pair_id": "us_small_large",
           "ratio": 0.773703,
           "ratio_ma": 0.750442,
-          "zscore": 2.3671
+          "zscore": 2.3672
         },
         {
           "date": "2026-02-19",
           "pair_id": "us_breadth",
           "ratio": 0.867925,
-          "ratio_ma": 0.834763,
+          "ratio_ma": 0.834762,
           "zscore": 0.5278
         },
         {
@@ -139024,7 +139024,7 @@
         {
           "date": "2026-02-20",
           "pair_id": "us_growth_value",
-          "ratio": 1.072991,
+          "ratio": 1.07299,
           "ratio_ma": 1.159703,
           "zscore": -1.3758
         },
@@ -139039,7 +139039,7 @@
           "date": "2026-02-20",
           "pair_id": "us_small_large",
           "ratio": 0.771988,
-          "ratio_ma": 0.752522,
+          "ratio_ma": 0.752523,
           "zscore": 2.2265
         },
         {
@@ -139067,7 +139067,7 @@
           "date": "2026-02-23",
           "pair_id": "us_breadth",
           "ratio": 0.865055,
-          "ratio_ma": 0.836303,
+          "ratio_ma": 0.836302,
           "zscore": 0.4237
         },
         {
@@ -139157,7 +139157,7 @@
         {
           "date": "2026-02-24",
           "pair_id": "us_growth_value",
-          "ratio": 1.074351,
+          "ratio": 1.07435,
           "ratio_ma": 1.154806,
           "zscore": -1.3362
         },
@@ -139255,7 +139255,7 @@
         {
           "date": "2026-02-25",
           "pair_id": "us_small_large",
-          "ratio": 0.767757,
+          "ratio": 0.767758,
           "ratio_ma": 0.754576,
           "zscore": 1.9508
         },
@@ -139494,14 +139494,14 @@
           "date": "2026-03-02",
           "pair_id": "us_growth_value",
           "ratio": 1.067909,
-          "ratio_ma": 1.145119,
+          "ratio_ma": 1.145118,
           "zscore": -1.4133
         },
         {
           "date": "2026-03-02",
           "pair_id": "us_risk_appetite",
           "ratio": 1.089075,
-          "ratio_ma": 1.177652,
+          "ratio_ma": 1.177653,
           "zscore": -0.6844
         },
         {
@@ -139654,8 +139654,8 @@
         {
           "date": "2026-03-04",
           "pair_id": "us_breadth",
-          "ratio": 0.866035,
-          "ratio_ma": 0.842132,
+          "ratio": 0.866034,
+          "ratio_ma": 0.842131,
           "zscore": 0.478
         },
         {
@@ -139746,7 +139746,7 @@
           "date": "2026-03-05",
           "pair_id": "us_growth_value",
           "ratio": 1.093727,
-          "ratio_ma": 1.13859,
+          "ratio_ma": 1.138589,
           "zscore": -1.0122
         },
         {
@@ -139759,7 +139759,7 @@
         {
           "date": "2026-03-05",
           "pair_id": "us_small_large",
-          "ratio": 0.758013,
+          "ratio": 0.758014,
           "ratio_ma": 0.758219,
           "zscore": 1.3748
         },
@@ -139829,7 +139829,7 @@
         {
           "date": "2026-03-06",
           "pair_id": "us_growth_value",
-          "ratio": 1.093566,
+          "ratio": 1.093565,
           "ratio_ma": 1.136428,
           "zscore": -1.0138
         },
@@ -139991,8 +139991,8 @@
           "date": "2026-03-10",
           "pair_id": "us_breadth",
           "ratio": 0.851715,
-          "ratio_ma": 0.844831,
-          "zscore": -0.0353
+          "ratio_ma": 0.84483,
+          "zscore": -0.0354
         },
         {
           "date": "2026-03-10",
@@ -140166,7 +140166,7 @@
           "date": "2026-03-12",
           "pair_id": "us_growth_value",
           "ratio": 1.099775,
-          "ratio_ma": 1.129396,
+          "ratio_ma": 1.129395,
           "zscore": -0.9357
         },
         {
@@ -140244,7 +140244,7 @@
           "pair_id": "us_breadth",
           "ratio": 0.854526,
           "ratio_ma": 0.845978,
-          "zscore": 0.0923
+          "zscore": 0.0924
         },
         {
           "date": "2026-03-13",
@@ -140347,7 +140347,7 @@
         {
           "date": "2026-03-16",
           "pair_id": "us_small_large",
-          "ratio": 0.748356,
+          "ratio": 0.748357,
           "ratio_ma": 0.758905,
           "zscore": 0.8847
         },
@@ -140383,7 +140383,7 @@
           "date": "2026-03-17",
           "pair_id": "cn_vs_us",
           "ratio": 0.595274,
-          "ratio_ma": 0.587709,
+          "ratio_ma": 0.587708,
           "zscore": 0.5629
         },
         {
@@ -140411,7 +140411,7 @@
           "date": "2026-03-17",
           "pair_id": "us_breadth",
           "ratio": 0.854728,
-          "ratio_ma": 0.846728,
+          "ratio_ma": 0.846727,
           "zscore": 0.1131
         },
         {
@@ -140495,7 +140495,7 @@
           "date": "2026-03-18",
           "pair_id": "us_breadth",
           "ratio": 0.855416,
-          "ratio_ma": 0.847152,
+          "ratio_ma": 0.847151,
           "zscore": 0.147
         },
         {
@@ -140586,7 +140586,7 @@
           "date": "2026-03-19",
           "pair_id": "us_growth_value",
           "ratio": 1.080703,
-          "ratio_ma": 1.120743,
+          "ratio_ma": 1.120742,
           "zscore": -1.2503
         },
         {
@@ -140670,7 +140670,7 @@
           "date": "2026-03-20",
           "pair_id": "us_growth_value",
           "ratio": 1.074151,
-          "ratio_ma": 1.118654,
+          "ratio_ma": 1.118653,
           "zscore": -1.357
         },
         {
@@ -140753,7 +140753,7 @@
         {
           "date": "2026-03-23",
           "pair_id": "us_growth_value",
-          "ratio": 1.081373,
+          "ratio": 1.081372,
           "ratio_ma": 1.116572,
           "zscore": -1.2482
         },
@@ -140851,7 +140851,7 @@
         {
           "date": "2026-03-24",
           "pair_id": "us_small_large",
-          "ratio": 0.765357,
+          "ratio": 0.765358,
           "ratio_ma": 0.760365,
           "zscore": 1.6
         },
@@ -140929,7 +140929,7 @@
           "date": "2026-03-25",
           "pair_id": "us_risk_appetite",
           "ratio": 1.119568,
-          "ratio_ma": 1.148596,
+          "ratio_ma": 1.148597,
           "zscore": -0.4043
         },
         {
@@ -141006,7 +141006,7 @@
           "date": "2026-03-26",
           "pair_id": "us_growth_value",
           "ratio": 1.055367,
-          "ratio_ma": 1.109598,
+          "ratio_ma": 1.109597,
           "zscore": -1.6522
         },
         {
@@ -141139,7 +141139,7 @@
           "date": "2026-03-30",
           "pair_id": "cn_vs_us",
           "ratio": 0.61035,
-          "ratio_ma": 0.590718,
+          "ratio_ma": 0.590717,
           "zscore": 1.3558
         },
         {
@@ -141173,7 +141173,7 @@
         {
           "date": "2026-03-30",
           "pair_id": "us_growth_value",
-          "ratio": 1.041931,
+          "ratio": 1.04193,
           "ratio_ma": 1.104409,
           "zscore": -1.8562
         },
@@ -141251,7 +141251,7 @@
           "date": "2026-03-31",
           "pair_id": "us_breadth",
           "ratio": 0.864367,
-          "ratio_ma": 0.853112,
+          "ratio_ma": 0.853111,
           "zscore": 0.5706
         },
         {
@@ -141335,13 +141335,13 @@
           "date": "2026-04-01",
           "pair_id": "us_breadth",
           "ratio": 0.860675,
-          "ratio_ma": 0.853661,
+          "ratio_ma": 0.85366,
           "zscore": 0.4299
         },
         {
           "date": "2026-04-01",
           "pair_id": "us_growth_value",
-          "ratio": 1.062607,
+          "ratio": 1.062606,
           "ratio_ma": 1.100461,
           "zscore": -1.543
         },
@@ -141419,7 +141419,7 @@
           "date": "2026-04-02",
           "pair_id": "us_breadth",
           "ratio": 0.862357,
-          "ratio_ma": 0.854154,
+          "ratio_ma": 0.854153,
           "zscore": 0.5099
         },
         {
@@ -141496,7 +141496,7 @@
           "date": "2026-04-06",
           "pair_id": "us_small_large",
           "ratio": 0.769596,
-          "ratio_ma": 0.764828,
+          "ratio_ma": 0.764829,
           "zscore": 1.6552
         },
         {
@@ -141530,7 +141530,7 @@
         {
           "date": "2026-04-07",
           "pair_id": "cn_vs_us",
-          "ratio": 0.578434,
+          "ratio": 0.578433,
           "ratio_ma": 0.591178,
           "zscore": -0.4097
         },
@@ -141538,14 +141538,14 @@
           "date": "2026-04-07",
           "pair_id": "us_breadth",
           "ratio": 0.859699,
-          "ratio_ma": 0.855193,
+          "ratio_ma": 0.855192,
           "zscore": 0.4212
         },
         {
           "date": "2026-04-07",
           "pair_id": "us_growth_value",
           "ratio": 1.058632,
-          "ratio_ma": 1.094721,
+          "ratio_ma": 1.09472,
           "zscore": -1.6207
         },
         {
@@ -141594,7 +141594,7 @@
           "date": "2026-04-08",
           "pair_id": "cn_vs_us",
           "ratio": 0.583748,
-          "ratio_ma": 0.591192,
+          "ratio_ma": 0.591191,
           "zscore": -0.106
         },
         {
@@ -141621,7 +141621,7 @@
         {
           "date": "2026-04-08",
           "pair_id": "us_breadth",
-          "ratio": 0.857715,
+          "ratio": 0.857714,
           "ratio_ma": 0.855611,
           "zscore": 0.3492
         },
@@ -141964,7 +141964,7 @@
         {
           "date": "2026-04-14",
           "pair_id": "us_growth_value",
-          "ratio": 1.088194,
+          "ratio": 1.088193,
           "ratio_ma": 1.087413,
           "zscore": -1.1716
         },
@@ -142064,7 +142064,7 @@
           "pair_id": "us_small_large",
           "ratio": 0.773397,
           "ratio_ma": 0.76627,
-          "zscore": 1.6926
+          "zscore": 1.6925
         },
         {
           "date": "2026-04-16",
@@ -142209,7 +142209,7 @@
         {
           "date": "2026-04-17",
           "pair_id": "us_breadth",
-          "ratio": 0.83794,
+          "ratio": 0.837939,
           "ratio_ma": 0.855845,
           "zscore": -0.4648
         },
@@ -142265,7 +142265,7 @@
         {
           "date": "2026-04-20",
           "pair_id": "cn_vs_us",
-          "ratio": 0.576421,
+          "ratio": 0.57642,
           "ratio_ma": 0.589424,
           "zscore": -0.4741
         },
@@ -142293,7 +142293,7 @@
         {
           "date": "2026-04-20",
           "pair_id": "us_breadth",
-          "ratio": 0.842264,
+          "ratio": 0.842263,
           "ratio_ma": 0.855758,
           "zscore": -0.2643
         },
@@ -142385,7 +142385,7 @@
           "date": "2026-04-21",
           "pair_id": "us_growth_value",
           "ratio": 1.10793,
-          "ratio_ma": 1.085406,
+          "ratio_ma": 1.085405,
           "zscore": -0.8903
         },
         {
@@ -142468,7 +142468,7 @@
         {
           "date": "2026-04-22",
           "pair_id": "us_growth_value",
-          "ratio": 1.122442,
+          "ratio": 1.122441,
           "ratio_ma": 1.085025,
           "zscore": -0.6632
         },
@@ -142629,7 +142629,7 @@
         {
           "date": "2026-04-24",
           "pair_id": "us_breadth",
-          "ratio": 0.828844,
+          "ratio": 0.828843,
           "ratio_ma": 0.85555,
           "zscore": -0.8614
         },
@@ -142720,7 +142720,7 @@
         {
           "date": "2026-04-27",
           "pair_id": "us_growth_value",
-          "ratio": 1.119416,
+          "ratio": 1.119415,
           "ratio_ma": 1.08342,
           "zscore": -0.7365
         },
@@ -142812,7 +142812,7 @@
           "date": "2026-04-28",
           "pair_id": "us_risk_appetite",
           "ratio": 1.201799,
-          "ratio_ma": 1.129243,
+          "ratio_ma": 1.129244,
           "zscore": 0.6885
         },
         {
@@ -143042,7 +143042,7 @@
         {
           "date": "2026-05-04",
           "pair_id": "us_breadth",
-          "ratio": 0.822555,
+          "ratio": 0.822554,
           "ratio_ma": 0.853715,
           "zscore": -1.128
         },
@@ -143231,7 +143231,7 @@
         {
           "date": "2026-05-07",
           "pair_id": "cn_vs_us",
-          "ratio": 0.575202,
+          "ratio": 0.575201,
           "ratio_ma": 0.587231,
           "zscore": -0.4952
         },
@@ -143266,7 +143266,7 @@
         {
           "date": "2026-05-07",
           "pair_id": "us_growth_value",
-          "ratio": 1.12365,
+          "ratio": 1.123649,
           "ratio_ma": 1.08485,
           "zscore": -0.6821
         },
@@ -143483,7 +143483,7 @@
         {
           "date": "2026-05-12",
           "pair_id": "cn_vs_us",
-          "ratio": 0.575589,
+          "ratio": 0.575588,
           "ratio_ma": 0.586768,
           "zscore": -0.4555
         },
@@ -143526,7 +143526,7 @@
           "date": "2026-05-12",
           "pair_id": "us_risk_appetite",
           "ratio": 1.246605,
-          "ratio_ma": 1.144853,
+          "ratio_ma": 1.144854,
           "zscore": 1.5126
         },
         {
@@ -143602,7 +143602,7 @@
         {
           "date": "2026-05-13",
           "pair_id": "us_growth_value",
-          "ratio": 1.125076,
+          "ratio": 1.125075,
           "ratio_ma": 1.087957,
           "zscore": -0.6688
         },
@@ -143680,7 +143680,7 @@
           "date": "2026-05-14",
           "pair_id": "us_breadth",
           "ratio": 0.797304,
-          "ratio_ma": 0.846814,
+          "ratio_ma": 0.846813,
           "zscore": -2.2943
         },
         {
@@ -143764,7 +143764,7 @@
           "date": "2026-05-15",
           "pair_id": "us_breadth",
           "ratio": 0.79869,
-          "ratio_ma": 0.84566,
+          "ratio_ma": 0.845659,
           "zscore": -2.1999
         },
         {
@@ -143855,7 +143855,7 @@
           "date": "2026-05-18",
           "pair_id": "us_growth_value",
           "ratio": 1.132926,
-          "ratio_ma": 1.091114,
+          "ratio_ma": 1.091113,
           "zscore": -0.5341
         },
         {
@@ -143931,7 +143931,7 @@
         {
           "date": "2026-05-19",
           "pair_id": "us_breadth",
-          "ratio": 0.804852,
+          "ratio": 0.804851,
           "ratio_ma": 0.84363,
           "zscore": -1.8635
         },
@@ -144071,7 +144071,7 @@
         {
           "date": "2026-05-21",
           "pair_id": "cn_vs_us",
-          "ratio": 0.553,
+          "ratio": 0.552999,
           "ratio_ma": 0.584231,
           "zscore": -1.8947
         },
@@ -144107,7 +144107,7 @@
           "date": "2026-05-21",
           "pair_id": "us_growth_value",
           "ratio": 1.128376,
-          "ratio_ma": 1.093781,
+          "ratio_ma": 1.09378,
           "zscore": -0.6119
         },
         {
@@ -144183,7 +144183,7 @@
         {
           "date": "2026-05-22",
           "pair_id": "us_breadth",
-          "ratio": 0.81148,
+          "ratio": 0.811479,
           "ratio_ma": 0.840814,
           "zscore": -1.4981
         },
@@ -144296,7 +144296,7 @@
           "date": "2026-05-26",
           "pair_id": "us_breadth",
           "ratio": 0.810264,
-          "ratio_ma": 0.839755,
+          "ratio_ma": 0.839754,
           "zscore": -1.5474
         },
         {
@@ -144309,7 +144309,7 @@
         {
           "date": "2026-05-26",
           "pair_id": "us_risk_appetite",
-          "ratio": 1.267927,
+          "ratio": 1.267928,
           "ratio_ma": 1.168205,
           "zscore": 1.8244
         },
@@ -144387,7 +144387,7 @@
           "date": "2026-05-27",
           "pair_id": "us_growth_value",
           "ratio": 1.122253,
-          "ratio_ma": 1.096475,
+          "ratio_ma": 1.096474,
           "zscore": -0.7133
         },
         {
@@ -144464,7 +144464,7 @@
           "date": "2026-05-28",
           "pair_id": "us_breadth",
           "ratio": 0.808326,
-          "ratio_ma": 0.837718,
+          "ratio_ma": 0.837717,
           "zscore": -1.6216
         },
         {
@@ -144554,7 +144554,7 @@
         {
           "date": "2026-05-29",
           "pair_id": "us_growth_value",
-          "ratio": 1.141214,
+          "ratio": 1.141213,
           "ratio_ma": 1.098471,
           "zscore": -0.3896
         },
@@ -144631,7 +144631,7 @@
         {
           "date": "2026-06-01",
           "pair_id": "us_breadth",
-          "ratio": 0.807835,
+          "ratio": 0.807834,
           "ratio_ma": 0.835877,
           "zscore": -1.6205
         },
@@ -144715,7 +144715,7 @@
         {
           "date": "2026-06-02",
           "pair_id": "us_breadth",
-          "ratio": 0.80994,
+          "ratio": 0.809939,
           "ratio_ma": 0.835012,
           "zscore": -1.5034
         },
@@ -144723,7 +144723,7 @@
           "date": "2026-06-02",
           "pair_id": "us_growth_value",
           "ratio": 1.138633,
-          "ratio_ma": 1.100191,
+          "ratio_ma": 1.10019,
           "zscore": -0.4343
         },
         {
@@ -144800,7 +144800,7 @@
           "date": "2026-06-03",
           "pair_id": "us_breadth",
           "ratio": 0.812595,
-          "ratio_ma": 0.834276,
+          "ratio_ma": 0.834275,
           "zscore": -1.3593
         },
         {
@@ -144884,14 +144884,14 @@
           "date": "2026-06-04",
           "pair_id": "us_breadth",
           "ratio": 0.815649,
-          "ratio_ma": 0.833675,
+          "ratio_ma": 0.833674,
           "zscore": -1.1971
         },
         {
           "date": "2026-06-04",
           "pair_id": "us_growth_value",
           "ratio": 1.117689,
-          "ratio_ma": 1.100819,
+          "ratio_ma": 1.100818,
           "zscore": -0.7867
         },
         {
@@ -144988,7 +144988,7 @@
         {
           "date": "2026-06-05",
           "pair_id": "us_small_large",
-          "ratio": 0.767361,
+          "ratio": 0.767362,
           "ratio_ma": 0.769114,
           "zscore": 1.0069
         },
@@ -145142,7 +145142,7 @@
         {
           "date": "2026-06-09",
           "pair_id": "us_growth_value",
-          "ratio": 1.088214,
+          "ratio": 1.088213,
           "ratio_ma": 1.100818,
           "zscore": -1.268
         },
@@ -145192,7 +145192,7 @@
           "date": "2026-06-10",
           "pair_id": "cn_vs_us",
           "ratio": 0.562095,
-          "ratio_ma": 0.577271,
+          "ratio_ma": 0.57727,
           "zscore": -1.1284
         },
         {
@@ -145220,7 +145220,7 @@
           "date": "2026-06-10",
           "pair_id": "us_breadth",
           "ratio": 0.833885,
-          "ratio_ma": 0.83212,
+          "ratio_ma": 0.832119,
           "zscore": -0.2498
         },
         {
@@ -145310,7 +145310,7 @@
         {
           "date": "2026-06-11",
           "pair_id": "us_growth_value",
-          "ratio": 1.076921,
+          "ratio": 1.07692,
           "ratio_ma": 1.100493,
           "zscore": -1.4377
         },
@@ -145472,7 +145472,7 @@
           "date": "2026-06-15",
           "pair_id": "us_breadth",
           "ratio": 0.826046,
-          "ratio_ma": 0.830912,
+          "ratio_ma": 0.830911,
           "zscore": -0.6367
         },
         {
@@ -145639,7 +145639,7 @@
         {
           "date": "2026-06-17",
           "pair_id": "us_breadth",
-          "ratio": 0.826132,
+          "ratio": 0.826131,
           "ratio_ma": 0.82993,
           "zscore": -0.6207
         },
@@ -145723,7 +145723,7 @@
         {
           "date": "2026-06-18",
           "pair_id": "us_breadth",
-          "ratio": 0.821426,
+          "ratio": 0.821425,
           "ratio_ma": 0.829277,
           "zscore": -0.8591
         },
@@ -146066,7 +146066,7 @@
         {
           "date": "2026-06-25",
           "pair_id": "us_growth_value",
-          "ratio": 1.024039,
+          "ratio": 1.024038,
           "ratio_ma": 1.09997,
           "zscore": -2.1663
         },
@@ -146234,7 +146234,7 @@
         {
           "date": "2026-06-29",
           "pair_id": "us_growth_value",
-          "ratio": 1.064915,
+          "ratio": 1.064914,
           "ratio_ma": 1.099667,
           "zscore": -1.4809
         },
@@ -146431,7 +146431,7 @@
           "date": "2026-07-02",
           "pair_id": "cn_vs_us",
           "ratio": 0.553411,
-          "ratio_ma": 0.569433,
+          "ratio_ma": 0.569432,
           "zscore": -1.6565
         },
         {
@@ -146675,7 +146675,7 @@
         {
           "date": "2026-07-07",
           "pair_id": "us_breadth",
-          "ratio": 0.842247,
+          "ratio": 0.842246,
           "ratio_ma": 0.825115,
           "zscore": 0.295
         },
@@ -146781,7 +146781,7 @@
           "date": "2026-07-08",
           "pair_id": "us_small_large",
           "ratio": 0.791016,
-          "ratio_ma": 0.781466,
+          "ratio_ma": 0.781467,
           "zscore": 1.506
         },
         {
@@ -146851,7 +146851,7 @@
           "date": "2026-07-09",
           "pair_id": "us_growth_value",
           "ratio": 1.060579,
-          "ratio_ma": 1.099038,
+          "ratio_ma": 1.099037,
           "zscore": -1.4525
         },
         {
@@ -147186,7 +147186,7 @@
         {
           "date": "2026-07-15",
           "pair_id": "us_growth_value",
-          "ratio": 1.059119,
+          "ratio": 1.059118,
           "ratio_ma": 1.095751,
           "zscore": -1.4222
         },
@@ -147354,7 +147354,7 @@
         {
           "date": "2026-07-17",
           "pair_id": "us_growth_value",
-          "ratio": 1.02003,
+          "ratio": 1.020029,
           "ratio_ma": 1.092961,
           "zscore": -1.9627
         },
@@ -147432,7 +147432,7 @@
           "date": "2026-07-20",
           "pair_id": "us_breadth",
           "ratio": 0.839496,
-          "ratio_ma": 0.824317,
+          "ratio_ma": 0.824316,
           "zscore": 0.2003
         },
         {
@@ -147684,7 +147684,7 @@
           "date": "2026-07-23",
           "pair_id": "us_breadth",
           "ratio": 0.841956,
-          "ratio_ma": 0.82462,
+          "ratio_ma": 0.824619,
           "zscore": 0.355
         },
         {
@@ -147935,7 +147935,7 @@
         {
           "date": "2026-07-28",
           "pair_id": "us_breadth",
-          "ratio": 0.861752,
+          "ratio": 0.861751,
           "ratio_ma": 0.826002,
           "zscore": 1.4886
         },
@@ -148034,7 +148034,7 @@
           "date": "2026-07-29",
           "pair_id": "us_risk_appetite",
           "ratio": 1.116929,
-          "ratio_ma": 1.220724,
+          "ratio_ma": 1.220725,
           "zscore": -1.4397
         },
         {
@@ -148111,14 +148111,14 @@
           "date": "2026-07-30",
           "pair_id": "us_growth_value",
           "ratio": 0.992642,
-          "ratio_ma": 1.077334,
+          "ratio_ma": 1.077333,
           "zscore": -2.1166
         },
         {
           "date": "2026-07-30",
           "pair_id": "us_risk_appetite",
           "ratio": 1.146695,
-          "ratio_ma": 1.219664,
+          "ratio_ma": 1.219665,
           "zscore": -0.8493
         },
         {
@@ -148187,7 +148187,7 @@
         {
           "date": "2026-07-31",
           "pair_id": "us_breadth",
-          "ratio": 0.844113,
+          "ratio": 0.844112,
           "ratio_ma": 0.827564,
           "zscore": 0.4824
         },
@@ -148439,8 +148439,8 @@
         {
           "date": "2026-08-05",
           "pair_id": "us_breadth",
-          "ratio": 0.837138,
-          "ratio_ma": 0.828763,
+          "ratio": 0.837137,
+          "ratio_ma": 0.828762,
           "zscore": 0.0935
         },
         {
@@ -148832,7 +148832,7 @@
           "date": "2026-08-12",
           "pair_id": "cn_vs_us",
           "ratio": 0.520101,
-          "ratio_ma": 0.549084,
+          "ratio_ma": 0.549083,
           "zscore": -2.7071
         },
         {
@@ -148867,7 +148867,7 @@
           "date": "2026-08-12",
           "pair_id": "us_growth_value",
           "ratio": 1.022924,
-          "ratio_ma": 1.061759,
+          "ratio_ma": 1.061758,
           "zscore": -1.5474
         },
         {
@@ -149112,7 +149112,7 @@
           "date": "2026-08-17",
           "pair_id": "us_breadth",
           "ratio": 0.838041,
-          "ratio_ma": 0.833346,
+          "ratio_ma": 0.833345,
           "zscore": 0.1547
         },
         {
@@ -149167,7 +149167,7 @@
         {
           "date": "2026-08-18",
           "pair_id": "cn_vs_us",
-          "ratio": 0.527412,
+          "ratio": 0.527411,
           "ratio_ma": 0.546358,
           "zscore": -2.2053
         },
@@ -149286,7 +149286,7 @@
         {
           "date": "2026-08-19",
           "pair_id": "us_growth_value",
-          "ratio": 1.004639,
+          "ratio": 1.004638,
           "ratio_ma": 1.052831,
           "zscore": -1.718
         },
@@ -149336,7 +149336,7 @@
           "date": "2026-08-20",
           "pair_id": "cn_vs_us",
           "ratio": 0.515821,
-          "ratio_ma": 0.544739,
+          "ratio_ma": 0.544738,
           "zscore": -2.6347
         },
         {
@@ -149363,8 +149363,8 @@
         {
           "date": "2026-08-20",
           "pair_id": "us_breadth",
-          "ratio": 0.847146,
-          "ratio_ma": 0.835094,
+          "ratio": 0.847145,
+          "ratio_ma": 0.835093,
           "zscore": 0.6771
         },
         {
@@ -149447,7 +149447,7 @@
         {
           "date": "2026-08-21",
           "pair_id": "us_breadth",
-          "ratio": 0.849018,
+          "ratio": 0.849017,
           "ratio_ma": 0.835747,
           "zscore": 0.7858
         },
@@ -253649,7 +253649,7 @@
         {
           "date": "2024-08-21",
           "exposure_id": "saudi",
-          "close": 39.846660614
+          "close": 39.8466644287
         },
         {
           "date": "2024-08-21",
@@ -253779,7 +253779,7 @@
         {
           "date": "2024-08-22",
           "exposure_id": "saudi",
-          "close": 39.7246665955
+          "close": 39.7246627808
         },
         {
           "date": "2024-08-22",
@@ -253909,7 +253909,7 @@
         {
           "date": "2024-08-23",
           "exposure_id": "saudi",
-          "close": 40.0062026978
+          "close": 40.0061988831
         },
         {
           "date": "2024-08-23",
@@ -254164,7 +254164,7 @@
         {
           "date": "2024-08-27",
           "exposure_id": "saudi",
-          "close": 39.9686584473
+          "close": 39.968662262
         },
         {
           "date": "2024-08-27",
@@ -254294,7 +254294,7 @@
         {
           "date": "2024-08-28",
           "exposure_id": "saudi",
-          "close": 39.734046936
+          "close": 39.7340507507
         },
         {
           "date": "2024-08-28",
@@ -254424,7 +254424,7 @@
         {
           "date": "2024-08-29",
           "exposure_id": "saudi",
-          "close": 39.7434310913
+          "close": 39.743434906
         },
         {
           "date": "2024-08-29",
@@ -254554,7 +254554,7 @@
         {
           "date": "2024-08-30",
           "exposure_id": "saudi",
-          "close": 39.7622070312
+          "close": 39.7621994019
         },
         {
           "date": "2024-08-30",
@@ -255049,7 +255049,7 @@
         {
           "date": "2024-09-05",
           "exposure_id": "saudi",
-          "close": 39.5463562012
+          "close": 39.5463600159
         },
         {
           "date": "2024-09-05",
@@ -255154,7 +255154,7 @@
         {
           "date": "2024-09-06",
           "exposure_id": "saudi",
-          "close": 39.1897468567
+          "close": 39.189743042
         },
         {
           "date": "2024-09-06",
@@ -255284,7 +255284,7 @@
         {
           "date": "2024-09-09",
           "exposure_id": "saudi",
-          "close": 39.2460517883
+          "close": 39.246055603
         },
         {
           "date": "2024-09-09",
@@ -255414,7 +255414,7 @@
         {
           "date": "2024-09-10",
           "exposure_id": "saudi",
-          "close": 39.0583572388
+          "close": 39.0583610535
         },
         {
           "date": "2024-09-10",
@@ -255674,7 +255674,7 @@
         {
           "date": "2024-09-12",
           "exposure_id": "saudi",
-          "close": 38.6736030579
+          "close": 38.6735992432
         },
         {
           "date": "2024-09-12",
@@ -256049,7 +256049,7 @@
         {
           "date": "2024-09-18",
           "exposure_id": "saudi",
-          "close": 39.0583572388
+          "close": 39.0583610535
         },
         {
           "date": "2024-09-18",
@@ -256434,7 +256434,7 @@
         {
           "date": "2024-09-23",
           "exposure_id": "saudi",
-          "close": 39.9686584473
+          "close": 39.968662262
         },
         {
           "date": "2024-09-23",
@@ -256564,7 +256564,7 @@
         {
           "date": "2024-09-24",
           "exposure_id": "saudi",
-          "close": 40.5223503113
+          "close": 40.5223464966
         },
         {
           "date": "2024-09-24",
@@ -256954,7 +256954,7 @@
         {
           "date": "2024-09-27",
           "exposure_id": "saudi",
-          "close": 40.6443443298
+          "close": 40.6443481445
         },
         {
           "date": "2024-09-27",
@@ -257589,7 +257589,7 @@
         {
           "date": "2024-10-08",
           "exposure_id": "saudi",
-          "close": 39.2460517883
+          "close": 39.246055603
         },
         {
           "date": "2024-10-08",
@@ -257844,7 +257844,7 @@
         {
           "date": "2024-10-10",
           "exposure_id": "saudi",
-          "close": 39.0583572388
+          "close": 39.0583610535
         },
         {
           "date": "2024-10-10",
@@ -257939,7 +257939,7 @@
         {
           "date": "2024-10-11",
           "exposure_id": "saudi",
-          "close": 39.2742042542
+          "close": 39.2742004395
         },
         {
           "date": "2024-10-11",
@@ -258064,7 +258064,7 @@
         {
           "date": "2024-10-14",
           "exposure_id": "saudi",
-          "close": 39.2272872925
+          "close": 39.2272834778
         },
         {
           "date": "2024-10-14",
@@ -258324,7 +258324,7 @@
         {
           "date": "2024-10-16",
           "exposure_id": "saudi",
-          "close": 39.4337463379
+          "close": 39.4337425232
         },
         {
           "date": "2024-10-16",
@@ -258454,7 +258454,7 @@
         {
           "date": "2024-10-17",
           "exposure_id": "saudi",
-          "close": 39.0489807129
+          "close": 39.0489730835
         },
         {
           "date": "2024-10-17",
@@ -258584,7 +258584,7 @@
         {
           "date": "2024-10-18",
           "exposure_id": "saudi",
-          "close": 39.0865211487
+          "close": 39.086517334
         },
         {
           "date": "2024-10-18",
@@ -258844,7 +258844,7 @@
         {
           "date": "2024-10-22",
           "exposure_id": "saudi",
-          "close": 39.2085113525
+          "close": 39.2085189819
         },
         {
           "date": "2024-10-22",
@@ -258974,7 +258974,7 @@
         {
           "date": "2024-10-23",
           "exposure_id": "saudi",
-          "close": 39.0865211487
+          "close": 39.086517334
         },
         {
           "date": "2024-10-23",
@@ -259879,7 +259879,7 @@
         {
           "date": "2024-11-01",
           "exposure_id": "saudi",
-          "close": 39.4337463379
+          "close": 39.4337425232
         },
         {
           "date": "2024-11-01",
@@ -260134,7 +260134,7 @@
         {
           "date": "2024-11-05",
           "exposure_id": "saudi",
-          "close": 39.3305168152
+          "close": 39.3305130005
         },
         {
           "date": "2024-11-05",
@@ -260524,7 +260524,7 @@
         {
           "date": "2024-11-08",
           "exposure_id": "saudi",
-          "close": 39.5932807922
+          "close": 39.5932769775
         },
         {
           "date": "2024-11-08",
@@ -260914,7 +260914,7 @@
         {
           "date": "2024-11-13",
           "exposure_id": "saudi",
-          "close": 38.8706665039
+          "close": 38.8706741333
         },
         {
           "date": "2024-11-13",
@@ -261824,7 +261824,7 @@
         {
           "date": "2024-11-22",
           "exposure_id": "saudi",
-          "close": 39.0302085876
+          "close": 39.0302124023
         },
         {
           "date": "2024-11-22",
@@ -261954,7 +261954,7 @@
         {
           "date": "2024-11-25",
           "exposure_id": "saudi",
-          "close": 38.6736030579
+          "close": 38.6735992432
         },
         {
           "date": "2024-11-25",
@@ -262084,7 +262084,7 @@
         {
           "date": "2024-11-26",
           "exposure_id": "saudi",
-          "close": 38.4014472961
+          "close": 38.4014434814
         },
         {
           "date": "2024-11-26",
@@ -262214,7 +262214,7 @@
         {
           "date": "2024-11-27",
           "exposure_id": "saudi",
-          "close": 37.8477668762
+          "close": 37.8477630615
         },
         {
           "date": "2024-11-27",
@@ -262969,7 +262969,7 @@
         {
           "date": "2024-12-05",
           "exposure_id": "saudi",
-          "close": 39.1709785461
+          "close": 39.1709823608
         },
         {
           "date": "2024-12-05",
@@ -263099,7 +263099,7 @@
         {
           "date": "2024-12-06",
           "exposure_id": "saudi",
-          "close": 39.0677452087
+          "close": 39.0677490234
         },
         {
           "date": "2024-12-06",
@@ -263229,7 +263229,7 @@
         {
           "date": "2024-12-09",
           "exposure_id": "saudi",
-          "close": 39.734046936
+          "close": 39.7340507507
         },
         {
           "date": "2024-12-09",
@@ -263359,7 +263359,7 @@
         {
           "date": "2024-12-10",
           "exposure_id": "saudi",
-          "close": 39.8372802734
+          "close": 39.8372764587
         },
         {
           "date": "2024-12-10",
@@ -263489,7 +263489,7 @@
         {
           "date": "2024-12-11",
           "exposure_id": "saudi",
-          "close": 39.8372802734
+          "close": 39.8372764587
         },
         {
           "date": "2024-12-11",
@@ -263619,7 +263619,7 @@
         {
           "date": "2024-12-12",
           "exposure_id": "saudi",
-          "close": 39.6777381897
+          "close": 39.6777420044
         },
         {
           "date": "2024-12-12",
@@ -263879,7 +263879,7 @@
         {
           "date": "2024-12-16",
           "exposure_id": "saudi",
-          "close": 39.5369682312
+          "close": 39.5369720459
         },
         {
           "date": "2024-12-16",
@@ -264009,7 +264009,7 @@
         {
           "date": "2024-12-17",
           "exposure_id": "saudi",
-          "close": 39.1155433655
+          "close": 39.1155395508
         },
         {
           "date": "2024-12-17",
@@ -264399,7 +264399,7 @@
         {
           "date": "2024-12-20",
           "exposure_id": "saudi",
-          "close": 38.8118019104
+          "close": 38.8118057251
         },
         {
           "date": "2024-12-20",
@@ -317574,7 +317574,7 @@
         {
           "source": "Eastmoney ETF spot (premium / turnover / IOPV)",
           "status": "Healthy",
-          "latest_observation": "run 2026-08-23 15:34Z",
+          "latest_observation": "run 2026-08-23 15:57Z",
           "records": 37,
           "notes": "Eastmoney ETF spot: all 37 / 37 wrappers observed."
         },
@@ -317658,9 +317658,9 @@
     }
   ],
   "package_info": {
-    "snapshotId": "64b44351d6852ad8",
+    "snapshotId": "04ea6746d251954b",
     "dataAsOf": "2026-08-21",
-    "pipelineRunId": "20260823T153448-b5a4c3db",
+    "pipelineRunId": "20260823T155707-17549c0e",
     "runConsistent": true
   }
 }
