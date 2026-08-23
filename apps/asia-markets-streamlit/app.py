@@ -4433,44 +4433,59 @@ def render_scoped_index_section(
     # 构建元数据映射 (style / risk_character)
     meta_by_eid = {e["exposure_id"]: e for e in EXPOSURES}
     
-    # 动态提取当前池子的风格标签
-    style_tags = []
+    # 规范化大类风格映射 (标准化归类，避免字符串细微差异导致胶囊重名)
+    def _normalize_style(raw_style: str) -> tuple[str, str, str]:
+        """Return (canonical_key, label_en, label_zh)."""
+        s = str(raw_style or "").strip()
+        if "Dividend" in s or "Value" in s:
+            return ("value_dividend", "Dividend / Value", "红利价值")
+        if "Tech" in s or "Growth" in s or "Semis" in s:
+            return ("tech_growth", "Tech & Growth", "科技成长")
+        if "Sector" in s:
+            return ("sector", "Sector / Thematic", "行业主题")
+        return ("broad", "Broad Benchmark", "宽基大盘")
+
+    # 建立当前可用标的的分类映射
+    style_groups: dict[str, tuple[str, str, list[str]]] = {}
     for eid in available:
         spec = meta_by_eid.get(eid, {})
-        style = spec.get("style", "Broad")
-        if style not in style_tags:
-            style_tags.append(style)
-            
+        raw_s = spec.get("style", "Broad")
+        canonical_key, en_name, zh_name = _normalize_style(raw_s)
+        if canonical_key not in style_groups:
+            style_groups[canonical_key] = (en_name, zh_name, [])
+        style_groups[canonical_key][2].append(eid)
+
     filtered_available = available
-    if len(available) > 4 and len(style_tags) > 1:
-        # 当标的大于4个时，提供动态胶囊过滤器
-        tag_labels = [tr(language, "All Types", "全部类型")] + [
-            tr(language, s, "宽基大盘" if s == "Broad" else ("行业主题" if s == "Sector" else ("科技成长" if "Tech" in s or "Growth" in s else ("红利价值" if "Value" in s or "Dividend" in s else s))))
-            for s in style_tags
+    if len(available) > 4 and len(style_groups) > 1:
+        # 当标的大于4个且分类多样时，生成无重复的胶囊按钮
+        cat_keys = ["all"] + list(style_groups.keys())
+        cat_labels = [tr(language, "All Types", "全部类型")] + [
+            tr(language, style_groups[k][0], style_groups[k][1]) for k in style_groups
         ]
+        label_to_key = dict(zip(cat_labels, cat_keys))
+
         if hasattr(st, "segmented_control"):
-            choice = st.segmented_control(
+            choice_label = st.segmented_control(
                 tr(language, "Filter Type", "指数类型筛选"),
-                tag_labels,
-                default=tag_labels[0],
+                cat_labels,
+                default=cat_labels[0],
                 key=f"{key_prefix}_index_filter_pills",
                 label_visibility="collapsed",
-            ) or tag_labels[0]
+            ) or cat_labels[0]
         elif hasattr(st, "pills"):
-            choice = st.pills(
+            choice_label = st.pills(
                 tr(language, "Filter Type", "指数类型筛选"),
-                tag_labels,
-                default=tag_labels[0],
+                cat_labels,
+                default=cat_labels[0],
                 key=f"{key_prefix}_index_filter_pills",
                 label_visibility="collapsed",
-            ) or tag_labels[0]
+            ) or cat_labels[0]
         else:
-            choice = tag_labels[0]
-            
-        if choice != tag_labels[0]:
-            sel_idx = tag_labels.index(choice) - 1
-            selected_style = style_tags[sel_idx]
-            filtered_available = [e for e in available if meta_by_eid.get(e, {}).get("style") == selected_style]
+            choice_label = cat_labels[0]
+
+        selected_key = label_to_key.get(choice_label, "all")
+        if selected_key != "all":
+            filtered_available = style_groups[selected_key][2]
             if not filtered_available:
                 filtered_available = available
 
