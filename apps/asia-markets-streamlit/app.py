@@ -4404,7 +4404,9 @@ def render_scoped_index_section(
     key_prefix: str = "market",
     show_wrappers: bool = True,
 ) -> None:
-    """Render single-index technical detail and (optionally) domestic ETF wrappers strictly within a scoped list."""
+    """Render single-index technical detail and ETF wrappers with dynamic sub-category filtering."""
+    from src.market_monitor.config import EXPOSURES
+    
     available = [e for e in label_by_exposure if e in scoped_eids and not prices.empty and e in set(prices["exposure_id"])]
     if not available:
         if not wrappers.empty and show_wrappers:
@@ -4420,6 +4422,50 @@ def render_scoped_index_section(
         "选择一个指数，查看其收盘价、均线趋势及 RSI 技术指标。",
     )
     
+    # 构建元数据映射 (style / risk_character)
+    meta_by_eid = {e["exposure_id"]: e for e in EXPOSURES}
+    
+    # 动态提取当前池子的风格标签
+    style_tags = []
+    for eid in available:
+        spec = meta_by_eid.get(eid, {})
+        style = spec.get("style", "Broad")
+        if style not in style_tags:
+            style_tags.append(style)
+            
+    filtered_available = available
+    if len(available) > 4 and len(style_tags) > 1:
+        # 当标的大于4个时，提供动态胶囊过滤器
+        tag_labels = [tr(language, "All Types", "全部类型")] + [
+            tr(language, s, "宽基大盘" if s == "Broad" else ("行业主题" if s == "Sector" else ("科技成长" if "Tech" in s or "Growth" in s else ("红利价值" if "Value" in s or "Dividend" in s else s))))
+            for s in style_tags
+        ]
+        if hasattr(st, "segmented_control"):
+            choice = st.segmented_control(
+                tr(language, "Filter Type", "指数类型筛选"),
+                tag_labels,
+                default=tag_labels[0],
+                key=f"{key_prefix}_index_filter_pills",
+                label_visibility="collapsed",
+            ) or tag_labels[0]
+        elif hasattr(st, "pills"):
+            choice = st.pills(
+                tr(language, "Filter Type", "指数类型筛选"),
+                tag_labels,
+                default=tag_labels[0],
+                key=f"{key_prefix}_index_filter_pills",
+                label_visibility="collapsed",
+            ) or tag_labels[0]
+        else:
+            choice = tag_labels[0]
+            
+        if choice != tag_labels[0]:
+            sel_idx = tag_labels.index(choice) - 1
+            selected_style = style_tags[sel_idx]
+            filtered_available = [e for e in available if meta_by_eid.get(e, {}).get("style") == selected_style]
+            if not filtered_available:
+                filtered_available = available
+
     wrapper_counts = (
         wrappers.groupby("exposure_id").size().to_dict() if not wrappers.empty and show_wrappers else {}
     )
@@ -4432,7 +4478,7 @@ def render_scoped_index_section(
 
     selected = st.selectbox(
         tr(language, "Select Index", "选择指数标的"),
-        available,
+        filtered_available,
         key=f"{key_prefix}_index_select",
         format_func=_fmt_name,
     )
