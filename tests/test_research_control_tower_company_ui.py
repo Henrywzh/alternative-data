@@ -1065,7 +1065,7 @@ def test_company_view_supports_old_snapshots_safely() -> None:
 
 
 def test_company_page_renders_four_tabs_cleanly_via_apptest(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """AppTest rendering verification of the four tabs and row-derived summary."""
+    """AppTest rendering verification of the company tabs and row-derived summary."""
     from streamlit.testing.v1 import AppTest
     import streamlit as st
 
@@ -1089,9 +1089,10 @@ def test_company_page_renders_four_tabs_cleanly_via_apptest(tmp_path: Path, monk
     assert "Tencent Holdings" in text
     assert "Selected listing · 0700.HK · HKEX · HKD · primary listing default" in text
 
-    # 2. Four tabs present
+    # 2. Company tabs present
     assert "Overview" in text
     assert "Fundamentals" in text
+    assert "Alternative Data" in text
     assert "Thesis & Catalysts" in text
     assert "Evidence" in text
 
@@ -1114,6 +1115,10 @@ def test_company_page_renders_four_tabs_cleanly_via_apptest(tmp_path: Path, monk
     assert "Segment disclosures &amp; core operations" in text or "Segment disclosures & core operations" in text
     assert "Profitability &amp; Free Cash Flow trajectory" in text or "Profitability & Free Cash Flow trajectory" in text
     assert "Reported and normalized values remain distinct" in text
+
+    # 6b. Alternative data is its own tab, not mixed into official filings
+    assert "Alternative data signals" in text
+    assert "Tencent Hunyuan" in text
 
     # 7. Thesis & Catalysts section
     assert "Thesis claims (Human-authored)" in text
@@ -1278,3 +1283,582 @@ def test_news_filings_section_renders_precise_unlinked_warning(tmp_path: Path, m
     text = _app_text(app)
     assert "No registry-linked generic news/filing metadata rows are available for the selected company/listing" in text
     assert "official filing metadata is rendered separately above" in text
+
+
+def test_openrouter_daily_frame_sums_models_without_running_total() -> None:
+    from control_tower.company_profiles import get_company_profile
+    from control_tower.pages.company import _openrouter_daily_frame
+
+    raw = pd.DataFrame(
+        {
+            "usage_date": ["2026-01-01", "2026-01-01", "2026-01-02", "2026-01-03", "2026-01-03"],
+            "model_permaslug": [
+                "tencent/hy3-20260706",
+                "tencent/hy-mt2-30b-a3b-20260521",
+                "tencent/hy3-20260706",
+                "tencent/hy3-20260706",
+                "openai/gpt-5",
+            ],
+            "model_origin_company": ["Tencent", "Tencent", "Tencent", "Tencent", "OpenAI"],
+            "total_tokens": [100.0, 50.0, 40.0, 10.0, 999.0],
+            "estimated_revenue": [2.0, 1.0, 0.5, 0.25, 80.0],
+        }
+    )
+    daily = _openrouter_daily_frame(raw, get_company_profile("TENCENT"))
+    assert list(daily["usage_date"].dt.strftime("%Y-%m-%d")) == ["2026-01-01", "2026-01-02", "2026-01-03"]
+    assert list(daily["total_tokens"]) == [150.0, 40.0, 10.0]
+    assert list(daily["estimated_revenue"]) == [3.0, 0.5, 0.25]
+    assert "cumulative_tokens" not in daily.columns
+    assert "tencent/hy3-20260706" not in daily.columns
+    assert daily.columns.tolist() == [
+        "usage_date",
+        "total_tokens",
+        "estimated_revenue",
+        "model_count",
+        "is_complete",
+    ]
+
+
+def test_bar_chart_axis_includes_year() -> None:
+    from control_tower.pages.company import _bar_chart_with_year_axis
+
+    frame = pd.DataFrame(
+        {
+            "usage_date": pd.to_datetime(["2025-08-22", "2026-08-21"]),
+            "daily_repurchase_hkd_m": [300.0, 310.0],
+        }
+    )
+    fig = _bar_chart_with_year_axis(
+        frame,
+        x="usage_date",
+        y="daily_repurchase_hkd_m",
+        y_title="Daily repurchase (HK$ millions)",
+    )
+    assert fig.layout.xaxis.tickformat == "%b %Y"
+    assert fig.data[0].type == "bar"
+    # Not the dataframe column name, which is what the legend showed before.
+    assert fig.data[0].name == "Daily repurchase (HK$ millions)"
+
+
+def test_chart_theme_repaints_both_axes_of_a_dual_axis_figure() -> None:
+    """The app has a Light/Dark toggle; Plotly bakes colours into the figure.
+
+    st.plotly_chart is called with theme=None and the factories hardcoded a
+    white paper/plot background, so every chart stayed a white block in Dark
+    mode no matter what the CSS tokens said.
+    """
+    from control_tower.charts import DARK_CHART, LIGHT_CHART, apply_theme, dual_axis_bar_line
+
+    frame = pd.DataFrame(
+        {"bars": [1.0, 2.0], "line": [10.0, 20.0]},
+        index=["2026Q1", "2026Q2"],
+    )
+    fig = dual_axis_bar_line(
+        frame,
+        bar_column="bars",
+        line_columns=["line"],
+        bar_title="Bars",
+        line_title="Line",
+    )
+    assert fig.layout.paper_bgcolor == "white"
+
+    apply_theme(fig, dark=True)
+    assert fig.layout.paper_bgcolor == DARK_CHART["paper"]
+    assert fig.layout.plot_bgcolor == DARK_CHART["plot"]
+    assert fig.layout.font.color == DARK_CHART["ink"]
+    # A dual-axis figure has yaxis and yaxis2; update_layout(yaxis=...) would
+    # have left the secondary axis on the light palette.
+    assert fig.layout.yaxis.tickfont.color == DARK_CHART["muted"]
+    assert fig.layout.yaxis2.tickfont.color == DARK_CHART["muted"]
+
+    apply_theme(fig, dark=False)
+    assert fig.layout.paper_bgcolor == LIGHT_CHART["paper"]
+    assert fig.layout.yaxis2.tickfont.color == LIGHT_CHART["muted"]
+
+
+def test_segment_share_chart_is_percent_stacked() -> None:
+    from control_tower.pages.company import _segment_share_chart
+
+    frame = pd.DataFrame(
+        {
+            "period": ["2026Q1", "2026Q2"],
+            "VAS (Games & Social)": [90.0, 98.4],
+            "Marketing Services (Ads)": [40.0, 43.6],
+            "Fintech & Enterprise Cloud": [50.0, 60.3],
+        }
+    )
+    fig = _segment_share_chart(frame)
+    assert fig.layout.barmode == "stack"
+    assert fig.layout.yaxis.range == (0, 100)
+    assert {trace.name for trace in fig.data} == {
+        "VAS (Games & Social)",
+        "Marketing Services (Ads)",
+        "Fintech & Enterprise Cloud",
+    }
+
+
+def test_dual_axis_revenue_yoy_chart_uses_independent_scales() -> None:
+    from control_tower.pages.company import _dual_axis_revenue_yoy_chart
+
+    from control_tower.pages.company import REVENUE_CHART_COLUMN
+
+    frame = pd.DataFrame(
+        {
+            REVENUE_CHART_COLUMN: [100.0, 120.0, 140.0],
+            "YoY Growth (%)": [None, 20.0, 16.7],
+        },
+        index=["2025Q4", "2026Q1", "2026Q2"],
+    )
+    fig = _dual_axis_revenue_yoy_chart(frame, "HKD")
+    types = {trace.type for trace in fig.data}
+    assert "bar" in types
+    assert "scatter" in types
+    # The table above this chart is currency-aware from the company profile;
+    # the axis title used to say RMB no matter what the profile reported.
+    assert fig.layout.yaxis.title.text == "Total Revenue (HKD B)"
+    # Legend labels are what the reader sees beside each series; they used to
+    # be the internal column identifiers (revenue_rmb_b / yoy_pct).
+    names = [trace.name for trace in fig.data]
+    assert names == ["Total revenue (HKD B)", "YoY growth"]
+
+
+def test_tencent_openrouter_marks_incomplete_last_day_instead_of_dropping_it() -> None:
+    from control_tower.company_profiles import get_company_profile
+    from control_tower.pages.company import _openrouter_daily_frame, _openrouter_period_frame
+
+    dates = pd.date_range("2026-01-01", periods=29, freq="D")
+    tokens = [100.0] * 28 + [10.0]
+    raw = pd.DataFrame(
+        {
+            "usage_date": dates,
+            "model_permaslug": ["tencent/hy3-20260706"] * 29,
+            "total_tokens": tokens,
+            "estimated_revenue": [1.0] * 28 + [0.1],
+        }
+    )
+    daily = _openrouter_daily_frame(raw, get_company_profile("TENCENT"))
+    assert list(daily["usage_date"].dt.strftime("%Y-%m-%d"))[-1] == "2026-01-29"
+    assert bool(daily["is_complete"].iloc[-1]) is False
+    weekly = _openrouter_period_frame(daily, "Weekly")
+    assert bool(weekly["is_partial"].iloc[-1]) is True
+    monthly = _openrouter_period_frame(daily, "Monthly")
+    assert bool(monthly["is_partial"].iloc[-1]) is True
+
+def test_quarterly_profitability_frame_computes_margins_from_actuals() -> None:
+    from control_tower.pages.company import _quarterly_profitability_frame, _profit_margin_chart
+
+    frame = pd.DataFrame(
+        {
+            "period_label": ["2026Q1", "2026Q1", "2026Q1", "2026Q2", "2026Q2", "2026Q2"],
+            "period_end": ["2026-03-31"] * 3 + ["2026-06-30"] * 3,
+            "metric": ["revenue_total", "operating_profit", "net_profit_attributable"] * 2,
+            "accounting_basis": [
+                "IFRS",
+                "Non-IFRS management measure",
+                "Non-IFRS management measure",
+                "IFRS",
+                "Non-IFRS management measure",
+                "Non-IFRS management measure",
+            ],
+            "reported_value": [100e9, 30e9, 20e9, 200e9, 80e9, 50e9],
+        }
+    )
+    out = _quarterly_profitability_frame(frame)
+    assert list(out["period"]) == ["2026Q1", "2026Q2"]
+    assert list(out["operating_margin_pct"].round(1)) == [30.0, 40.0]
+    assert list(out["net_margin_pct"].round(1)) == [20.0, 25.0]
+    fig = _profit_margin_chart(out)
+    assert {trace.type for trace in fig.data} == {"bar", "scatter"}
+
+
+def _minimal_company_view(**overrides: object) -> CompanyView:
+    empty = pd.DataFrame()
+    payload = {
+        "entity_id": "TENCENT",
+        "legal_name": "Tencent Holdings Limited",
+        "display_name": "Tencent Holdings",
+        "country": "CN",
+        "sector": "Communication Services",
+        "industry": "Internet",
+        "entity_type": "public",
+        "active_status": "active",
+        "selected_listing_id": "0700_HK",
+        "selection_mode": "primary_default",
+        "listings": empty,
+        "memberships": empty,
+        "quote_snapshots": empty,
+        "quote_status": "available",
+        "price_bars": empty,
+        "events": empty,
+        "official_documents": empty,
+        "consensus": empty,
+        "consensus_revisions": empty,
+        "consensus_status": "available",
+        "source_health": empty,
+        "watch_questions": empty,
+        "invalidation_evidence": empty,
+        "caveats": (),
+    }
+    payload.update(overrides)
+    return CompanyView(**payload)
+
+
+def test_spot_forward_pe_payload_uses_same_currency_quote_and_fy1_eps() -> None:
+    from control_tower.pages.company import _spot_forward_pe_payload
+
+    view = _minimal_company_view(
+        quote_snapshots=pd.DataFrame([{"last_price": 442.4, "currency": "HKD"}]),
+        consensus=pd.DataFrame(
+            [
+                {
+                    "metric": "eps",
+                    "horizon": "0y",
+                    "fiscal_period": "annual",
+                    "fiscal_year": 2026,
+                    "value": 29.12,
+                    "currency": "HKD",
+                    "provider": "yfinance",
+                    "analyst_count": 34,
+                    "source_url": "https://finance.yahoo.com/quote/0700.HK/analysis",
+                }
+            ]
+        ),
+    )
+    payload = _spot_forward_pe_payload(view)
+    assert payload is not None
+    assert payload["pe"] == pytest.approx(442.4 / 29.12)
+    assert payload["price_ccy"] == "HKD"
+
+    mismatched = _minimal_company_view(
+        quote_snapshots=pd.DataFrame([{"last_price": 442.4, "currency": "HKD"}]),
+        consensus=pd.DataFrame(
+            [{"metric": "eps", "horizon": "0y", "value": 29.12, "currency": "CNY", "provider": "yfinance"}]
+        ),
+    )
+    assert _spot_forward_pe_payload(mismatched) is None
+
+
+def test_spot_forward_pe_ignores_next_year_eps_captured_in_the_same_snapshot() -> None:
+    """A real generation carries every fiscal year with one shared snapshot_at.
+
+    Selecting on ``fiscal_period == 'annual'`` and ordering by snapshot_at
+    therefore returned whichever year was stored first, which is +1y in the
+    published consensus mart. The card says FY1, so it must use FY1.
+    """
+    from control_tower.pages.company import _spot_forward_pe_payload
+
+    shared_capture = pd.Timestamp("2026-08-23T05:57:56Z")
+    view = _minimal_company_view(
+        quote_snapshots=pd.DataFrame([{"last_price": 457.0, "currency": "HKD"}]),
+        consensus=pd.DataFrame(
+            [
+                # +1y deliberately first, exactly as the mart stores it.
+                {
+                    "metric": "eps",
+                    "horizon": "+1y",
+                    "fiscal_period": "annual",
+                    "fiscal_year": 2027,
+                    "value": 31.02466,
+                    "currency": "HKD",
+                    "provider": "yfinance",
+                    "analyst_count": 34,
+                    "snapshot_at": shared_capture,
+                },
+                {
+                    "metric": "eps",
+                    "horizon": "0y",
+                    "fiscal_period": "annual",
+                    "fiscal_year": 2026,
+                    "value": 29.05101,
+                    "currency": "HKD",
+                    "provider": "yfinance",
+                    "analyst_count": 34,
+                    "snapshot_at": shared_capture,
+                },
+            ]
+        ),
+    )
+    payload = _spot_forward_pe_payload(view)
+    assert payload is not None
+    assert payload["horizon"] == "0y"
+    assert payload["fiscal_year"] == 2026
+    assert payload["is_fy1"] is True
+    assert payload["eps"] == pytest.approx(29.05101)
+    assert payload["pe"] == pytest.approx(457.0 / 29.05101)
+
+
+def test_spot_forward_pe_falls_back_to_earliest_annual_and_says_so() -> None:
+    from control_tower.pages.company import _spot_forward_pe_payload
+
+    view = _minimal_company_view(
+        quote_snapshots=pd.DataFrame([{"last_price": 457.0, "currency": "HKD"}]),
+        consensus=pd.DataFrame(
+            [
+                {"metric": "eps", "horizon": "+2y", "fiscal_period": "annual", "fiscal_year": 2028,
+                 "value": 40.0, "currency": "HKD", "provider": "yfinance"},
+                {"metric": "eps", "horizon": "+1y", "fiscal_period": "annual", "fiscal_year": 2027,
+                 "value": 31.0, "currency": "HKD", "provider": "yfinance"},
+            ]
+        ),
+    )
+    payload = _spot_forward_pe_payload(view)
+    assert payload is not None
+    assert payload["is_fy1"] is False
+    assert payload["fiscal_year"] == 2027
+    assert payload["eps"] == pytest.approx(31.0)
+
+
+def test_tencent_southbound_holdings_loader_reads_local_mart(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from control_tower.company_profiles import get_company_profile
+    from control_tower.pages import company as company_page
+
+    mart = tmp_path / "tencent_southbound_holdings.parquet"
+    pd.DataFrame(
+        {
+            "hold_date": pd.to_datetime(["2026-07-22", "2026-08-21"]),
+            "holding_shares": [1_000_000_000, 1_074_345_268],
+            "holding_market_value": [4.5e11, 4.909758e11],
+            "holding_share_pct": [11.0, 11.79],
+        }
+    ).to_parquet(mart, index=False)
+    monkeypatch.setattr(company_page, "_control_tower_repo_root", lambda: tmp_path)
+    # loader looks under data/normalized/marts relative to repo root
+    nested = tmp_path / "data" / "normalized" / "marts"
+    nested.mkdir(parents=True)
+    (nested / "tencent_southbound_holdings.parquet").write_bytes(mart.read_bytes())
+    frame = company_page._load_southbound_holdings(get_company_profile("TENCENT"))
+    assert len(frame) == 2
+    assert float(frame.iloc[-1]["holding_share_pct"]) == 11.79
+
+def test_openrouter_daily_frame_filters_by_company_profile() -> None:
+    from control_tower.company_profiles import get_company_profile
+    from control_tower.pages.company import _openrouter_daily_frame
+
+    raw = pd.DataFrame(
+        {
+            "usage_date": ["2026-01-01", "2026-01-01", "2026-01-01"],
+            "model_permaslug": ["qwen/qwen3.5-flash-20260224", "tencent/hy3-20260706", "openai/gpt-5"],
+            "model_origin_company": ["Alibaba (Qwen)", "Tencent", "OpenAI"],
+            "total_tokens": [200.0, 50.0, 999.0],
+            "estimated_revenue": [4.0, 1.0, 80.0],
+        }
+    )
+    daily = _openrouter_daily_frame(raw, get_company_profile("ALIBABA"))
+    assert list(daily["total_tokens"]) == [200.0]
+    assert list(daily["estimated_revenue"]) == [4.0]
+
+
+def test_alibaba_southbound_holdings_loader_reads_local_mart(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from control_tower.company_profiles import get_company_profile
+    from control_tower.pages import company as company_page
+
+    nested = tmp_path / "data" / "normalized" / "marts"
+    nested.mkdir(parents=True)
+    pd.DataFrame(
+        {
+            "hold_date": pd.to_datetime(["2026-07-22", "2026-08-21"]),
+            "holding_shares": [1_900_000_000, 1_969_602_697],
+            "holding_market_value": [2.4e11, 2.42261131731e11],
+            "holding_share_pct": [10.10, 10.26],
+        }
+    ).to_parquet(nested / "alibaba_southbound_holdings.parquet", index=False)
+    monkeypatch.setattr(company_page, "_control_tower_repo_root", lambda: tmp_path)
+    frame = company_page._load_southbound_holdings(get_company_profile("ALIBABA"))
+    assert len(frame) == 2
+    assert float(frame.iloc[-1]["holding_share_pct"]) == 10.26
+
+
+def test_quarterly_financial_pivot_uses_profile_segment_metrics() -> None:
+    from control_tower.company_profiles import get_company_profile
+    from control_tower.pages.company import _build_quarterly_financial_pivot
+
+    frame = pd.DataFrame(
+        {
+            "period_label": ["2026Q1", "2026Q1", "2026Q2", "2026Q2"],
+            "period_end": ["2026-03-31", "2026-03-31", "2026-06-30", "2026-06-30"],
+            "metric": ["revenue_total", "revenue_cloud", "revenue_total", "revenue_cloud"],
+            "accounting_basis": ["IFRS"] * 4,
+            "reported_value": [100e9, 30e9, 120e9, 40e9],
+        }
+    )
+    out = _build_quarterly_financial_pivot(frame, n_periods=8, profile=get_company_profile("ALIBABA"))
+    assert "Cloud" in " ".join(out["Metric"].astype(str))
+    assert "VAS (Games & Social)" not in " ".join(out["Metric"].astype(str))
+
+def test_alibaba_defaults_to_hkex_ordinary_share_not_us_adr() -> None:
+    snapshot = _make_tencent_snapshot()
+    entities = pd.concat(
+        [
+            snapshot.entities,
+            pd.DataFrame(
+                [
+                    {
+                        "entity_id": "ALIBABA",
+                        "legal_name": "Alibaba Group Holding Limited",
+                        "display_name": "Alibaba",
+                        "country": "CN",
+                        "sector": "Consumer Discretionary",
+                        "industry": "Internet Retail",
+                        "active_status": "active",
+                        "active_from": "2014-09-19",
+                        "active_to": None,
+                        "registry_version": "v1",
+                        "source_or_research_note": "China internet",
+                        "entity_type": "public",
+                    }
+                ]
+            ),
+        ],
+        ignore_index=True,
+    )
+    listings = pd.concat(
+        [
+            snapshot.listings,
+            pd.DataFrame(
+                [
+                    {
+                        "listing_id": "9988_HK",
+                        "entity_id": "ALIBABA",
+                        "exchange": "HKEX",
+                        "native_ticker": "9988",
+                        "canonical_ticker": "9988.HK",
+                        "financial_data_security_id": "sec-9988",
+                        "financial_data_issuer_group_id": "grp-alibaba",
+                        "mapping_status": "verified",
+                        "mapping_verified_at": "2026-08-21",
+                        "mapping_source_url": "https://www.hkex.com.hk",
+                        "collection_eligible": True,
+                        "listing_role": "secondary",
+                        "vendor_tickers": "yfinance:9988.HK;hkex:9988",
+                        "currency": "HKD",
+                        "primary_listing": False,
+                        "active_from": "2019-11-26",
+                        "active_to": None,
+                        "listing_status": "active",
+                        "registry_version": "v1",
+                        "source_url": "https://www.hkex.com.hk",
+                        "source_or_research_note": "Research-preferred HK ordinary share",
+                    },
+                    {
+                        "listing_id": "BABA_US",
+                        "entity_id": "ALIBABA",
+                        "exchange": "NYSE",
+                        "native_ticker": "BABA",
+                        "canonical_ticker": "BABA.US",
+                        "financial_data_security_id": "sec-baba",
+                        "financial_data_issuer_group_id": "grp-alibaba",
+                        "mapping_status": "verified",
+                        "mapping_verified_at": "2026-08-21",
+                        "mapping_source_url": "https://www.nyse.com",
+                        "collection_eligible": True,
+                        "listing_role": "primary",
+                        "vendor_tickers": "yfinance:BABA;nyse:BABA",
+                        "currency": "USD",
+                        "primary_listing": True,
+                        "active_from": "2014-09-19",
+                        "active_to": None,
+                        "listing_status": "active",
+                        "registry_version": "v1",
+                        "source_url": "https://www.nyse.com",
+                        "source_or_research_note": "NYSE ADR",
+                    },
+                ]
+            ),
+        ],
+        ignore_index=True,
+    )
+    snapshot = replace(snapshot, entities=entities, listings=listings)
+    view = build_company_view(snapshot, entity_id="ALIBABA")
+    assert view.selected_listing_id == "9988_HK"
+    assert view.selection_mode == "primary_default"
+
+
+def test_company_profiles_contain_no_invented_kpis() -> None:
+    """Guard the files the fabricated numbers were actually in.
+
+    This scanned company_profiles.py only, which never held them: the invented
+    SOTP table, the 48.1%% segment shares and the HK$100B buyback target all
+    lived in pages/company.py, so the guard was watching an empty room.
+    """
+    from control_tower import company_profiles as profiles
+    from control_tower.pages import company as company_page
+
+    banned = ("Honor of Kings", "48.1%", "HK$100B", "15.1x", "Meituan (美团)", "SOTP")
+    for module in (profiles, company_page):
+        source = Path(module.__file__).read_text()
+        for token in banned:
+            assert token not in source, f"{token!r} reappeared in {Path(module.__file__).name}"
+
+def test_openrouter_daily_frame_covers_listed_and_private_llm_names() -> None:
+    from control_tower.company_profiles import get_company_profile
+    from control_tower.pages.company import _openrouter_daily_frame
+
+    raw = pd.DataFrame(
+        {
+            "usage_date": ["2026-01-01"] * 4,
+            "model_permaslug": [
+                "minimax/minimax-m2.5-20260211",
+                "z-ai/glm-5-20260211",
+                "moonshotai/kimi-k2.6-20260420",
+                "tencent/hy3-20260706",
+            ],
+            "model_origin_company": ["MiniMax", "智谱AI (Z.ai)", "Moonshot AI", "Tencent"],
+            "total_tokens": [10.0, 20.0, 30.0, 40.0],
+            "estimated_revenue": [1.0, 2.0, 3.0, 4.0],
+        }
+    )
+    minimax = _openrouter_daily_frame(raw, get_company_profile("MINIMAX"))
+    zai = _openrouter_daily_frame(raw, get_company_profile("Z_AI"))
+    moonshot = _openrouter_daily_frame(raw, get_company_profile("MOONSHOT"))
+    assert list(minimax["total_tokens"]) == [10.0]
+    assert list(zai["total_tokens"]) == [20.0]
+    assert list(moonshot["total_tokens"]) == [30.0]
+
+def test_company_selectbox_is_not_reset_by_stale_query_entity(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A leftover ?entity= query must not pin the cockpit after the user switches companies."""
+    from streamlit.testing.v1 import AppTest
+    import streamlit as st
+
+    root = tmp_path / "company-switch-query"
+    snapshot = _make_tencent_snapshot()
+    _write_test_bundle(root, snapshot)
+
+    monkeypatch.setenv("CONTROL_TOWER_ARTIFACT_ROOT", str(root))
+    st.cache_data.clear()
+
+    app = AppTest.from_file(str(APP_PATH), default_timeout=30)
+    app.query_params["page"] = "Company"
+    app.query_params["entity"] = "BYTEDANCE"
+    app = app.run()
+    assert not app.exception
+    assert app.session_state["ct_company_entity"] == "BYTEDANCE"
+    assert "ByteDance" in _app_text(app)
+
+    app.session_state["ct_company_entity"] = "TENCENT"
+    app = app.run()
+    assert not app.exception
+    assert app.session_state["ct_company_entity"] == "TENCENT"
+    text = _app_text(app)
+    assert "Tencent Holdings" in text
+    assert "private / no listing" not in text
+
+def test_consensus_revision_chart_uses_percent_units_and_lookback_groups() -> None:
+    from control_tower.pages.company import _consensus_revision_chart_frame
+
+    frame = pd.DataFrame(
+        {
+            "metric": ["eps"] * 4,
+            "fiscal_period": ["annual", "annual", "quarterly", "quarterly"],
+            "fiscal_year": [2026, 2026, 2026, 2026],
+            "horizon": ["0y", "0y", "0q", "0q"],
+            "lookback_days": [7, 30, 7, 30],
+            "revision_pct": [-0.016583, -0.022821, -0.033346, -0.045659],
+            "current_snapshot_at": pd.Timestamp("2026-08-23T05:57:56Z"),
+        }
+    )
+    out = _consensus_revision_chart_frame(frame)
+    assert list(out.index) == ["7d", "30d"]
+    assert "FY2026 0y" in out.columns
+    assert "FY2026 0q" in out.columns
+    assert out.loc["7d", "FY2026 0y"] == pytest.approx(-1.6583)
+    assert out.loc["30d", "FY2026 0q"] == pytest.approx(-4.5659)

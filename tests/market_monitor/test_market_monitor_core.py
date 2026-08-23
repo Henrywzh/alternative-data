@@ -1699,3 +1699,98 @@ def test_fee_change_detection_needs_no_previous_snapshot_to_be_safe():
 
     assert detect_fee_changes(None, {"510300": {"management_fee": 0.001}}) == []
     assert detect_fee_changes(pd.DataFrame(), {"510300": {"management_fee": 0.001}}) == []
+
+
+def test_eastmoney_hsgt_normalizes_southbound_columns(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Run the normalizer, not just its lookup table.
+
+    Asserting on MARKET_COLUMNS alone only restated a literal: it never
+    reached the rename, the date parse, the numeric coercion or the sort, so
+    a provider column rename would still have shipped strings to the chart.
+    """
+    import sys
+    import types
+
+    import market_monitor.sources.eastmoney_hsgt as hsgt
+
+    raw = pd.DataFrame(
+        {
+            # Deliberately out of order, and every value a string, as akshare
+            # returns them.
+            "日期": ["2026-08-21", "2014-11-17", "not-a-date"],
+            "当日成交净买额": ["120.5", "21.3208", "9"],
+            "当日余额": ["300.0", "87.32", "1"],
+            "持股市值": ["4.2e12", "0.0", "3"],
+            "领涨股": ["腾讯控股", "上海医药", "x"],
+        }
+    )
+    fake_ak = types.ModuleType("akshare")
+    captured: dict[str, object] = {}
+
+    def _stock_hsgt_hist_em(symbol: str):
+        captured["symbol"] = symbol
+        return raw
+
+    fake_ak.stock_hsgt_hist_em = _stock_hsgt_hist_em
+    monkeypatch.setitem(sys.modules, "akshare", fake_ak)
+
+    frame = hsgt.fetch_southbound_market_flow()
+
+    assert captured["symbol"] == "南向资金"
+    # The unparseable date is dropped, not carried as NaT.
+    assert len(frame) == 2
+    assert list(frame["trade_date"]) == [
+        pd.Timestamp("2014-11-17"),
+        pd.Timestamp("2026-08-21"),
+    ]
+    assert frame["net_buy_yi"].tolist() == [21.3208, 120.5]
+    assert frame["balance_yi"].tolist() == [87.32, 300.0]
+    assert frame["holding_market_value"].tolist() == [0.0, 4.2e12]
+    assert pd.api.types.is_numeric_dtype(frame["net_buy_yi"])
+    assert frame["leader_name"].tolist() == ["上海医药", "腾讯控股"]
+    assert set(frame["flow"]) == {"southbound"}
+    assert set(frame["source_id"]) == {"eastmoney:hsgt_hist"}
+
+
+def test_southbound_artifact_ships_only_the_columns_the_renderer_reads() -> None:
+    """render_southbound_market_flow reads four fields; the dump carried 17.
+
+    Four of the extras (source_id, source_url, retrieved_at_utc, flow) were a
+    single constant repeated across every row, which is lineage, not data.
+    """
+    artifact = _shipped_market_artifact()
+    if artifact is None:
+        pytest.skip("no built market-monitor artifact in this checkout")
+    rows = artifact["snapshot"]["datasets"].get("southbound_market_flow") or []
+    if not rows:
+        pytest.skip("this artifact carries no southbound flow")
+
+    assert set(rows[0]) == {
+        "trade_date",
+        "net_buy_yi",
+        "balance_yi",
+        "holding_market_value",
+    }
+    # The window selector offers the full 2014-onward history, so rows are not
+    # truncated -- only the per-row width is.
+    assert len(rows) > 2_000
+
+
+def test_southbound_flow_has_a_source_health_row() -> None:
+    """A dataset with no health row cannot report that it failed.
+
+    Southbound shipped to the browser without one, so an empty fetch would
+    have been indistinguishable from a quiet market.
+    """
+    artifact = _shipped_market_artifact()
+    if artifact is None:
+        pytest.skip("no built market-monitor artifact in this checkout")
+    datasets = artifact["snapshot"]["datasets"]
+    health = {row["source"]: row for row in datasets["source_health"]}
+    southbound_rows = datasets.get("southbound_market_flow") or []
+
+    matching = [row for source, row in health.items() if "southbound" in source.lower()]
+    assert matching, f"no southbound source_health row in {sorted(health)}"
+    row = matching[0]
+    assert row["records"] == len(southbound_rows)
+    assert row["status"] == ("Healthy" if southbound_rows else "Unavailable")

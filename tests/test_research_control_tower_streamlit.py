@@ -1284,7 +1284,30 @@ def _production_task7_generation_or_skip() -> Path:
     stage1_members = memberships.loc[
         memberships["basket_id"].astype("string").eq("RESEARCH_STAGE_1_CHINA_INTERNET")
     ]
-    assert set(stage1_members["entity_id"].astype("string")) == {
+    published_stage1 = set(stage1_members["entity_id"].astype("string"))
+    # The published basket must reproduce the registry the build read. Pinning a
+    # literal set here instead made every new company in
+    # config/research_control_tower/ fail this acceptance guard, while a build
+    # that dropped or invented a member was caught no more sharply.
+    registry_memberships = pd.read_csv(
+        Path(__file__).resolve().parents[1]
+        / "config"
+        / "research_control_tower"
+        / "basket_memberships.csv"
+    )
+    registry_stage1 = set(
+        registry_memberships.loc[
+            registry_memberships["basket_id"].astype("string").eq("RESEARCH_STAGE_1_CHINA_INTERNET"),
+            "entity_id",
+        ].astype("string")
+    )
+    assert published_stage1 == registry_stage1, (
+        f"CURRENT publication {resolution.current_target} Stage 1 basket "
+        f"{sorted(published_stage1)} does not match the registry "
+        f"{sorted(registry_stage1)}"
+    )
+    # The six names Stage 1 was verified on must never silently drop out.
+    assert published_stage1 >= {
         "ALIBABA", "TENCENT", "BAIDU", "KUAISHOU", "BILIBILI", "BYTEDANCE",
     }
     assert entities.set_index("entity_id").loc["BYTEDANCE", "entity_type"] == "private"

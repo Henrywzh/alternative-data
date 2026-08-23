@@ -127,28 +127,41 @@ def test_required_ai_anchor_coverage_and_sk_hynix_core(registry_root):
             assert bool(eligible_by_entity[row["entity_id"]])
 
 
-def test_stage1_focus_contains_six_entities_and_private_bytedance(registry_root):
+def test_stage1_focus_contains_listed_platforms_and_private_watch_only(registry_root):
     bundle = load_registry_bundle(registry_root)
     focus = bundle.basket_memberships.loc[
         bundle.basket_memberships["basket_id"].eq("RESEARCH_STAGE_1_CHINA_INTERNET")
     ]
 
-    assert set(focus["entity_id"]) == {
-        "ALIBABA", "TENCENT", "BAIDU", "KUAISHOU", "BILIBILI", "BYTEDANCE",
-    }
+    assert {
+        "ALIBABA", "TENCENT", "BAIDU", "KUAISHOU", "BILIBILI",
+        "BYTEDANCE", "MINIMAX", "Z_AI", "MOONSHOT",
+    } <= set(focus["entity_id"])
     by_id = bundle.entities.set_index("entity_id")
     assert set(bundle.entities.loc[bundle.entities["active_status"].eq("active"), "entity_id"]) == set(focus["entity_id"])
     assert (bundle.entities.loc[
         ~bundle.entities["entity_id"].isin(set(focus["entity_id"])), "active_status"
     ] == "archived").all()
     assert by_id.loc["BYTEDANCE", "entity_type"] == "private"
+    assert by_id.loc["MOONSHOT", "entity_type"] == "private"
+    assert by_id.loc["MINIMAX", "entity_type"] == "public"
+    assert by_id.loc["Z_AI", "entity_type"] == "public"
     assert by_id.loc["BILIBILI", "entity_type"] == "public"
     assert bundle.listings.loc[
         bundle.listings["entity_id"].eq("BYTEDANCE")
     ].empty
+    assert bundle.listings.loc[
+        bundle.listings["entity_id"].eq("MOONSHOT")
+    ].empty
     assert set(bundle.listings.loc[
         bundle.listings["entity_id"].eq("BILIBILI"), "listing_id"
     ]) == {"9626_HK"}
+    assert set(bundle.listings.loc[
+        bundle.listings["entity_id"].eq("MINIMAX"), "listing_id"
+    ]) == {"0100_HK"}
+    assert set(bundle.listings.loc[
+        bundle.listings["entity_id"].eq("Z_AI"), "listing_id"
+    ]) == {"2513_HK"}
 
 
 def test_financial_data_security_id_crosswalk_is_exact(registry_root):
@@ -267,18 +280,13 @@ def test_listing_roles_and_primary_flags_are_consistent(registry_root):
         ]
         assert len(true_roles) == 1 or set(true_roles) <= {"dual_primary"}
 
-    assert listings.set_index("listing_id").loc[
-        "JD_US", "listing_role"
-    ] == "primary"
-    assert listings.set_index("listing_id").loc[
-        "9618_HK", "listing_role"
-    ] == "secondary"
-    assert listings.set_index("listing_id").loc[
-        "BIDU_US", "listing_role"
-    ] == "primary"
-    assert listings.set_index("listing_id").loc[
-        "9888_HK", "listing_role"
-    ] == "secondary"
+    indexed = listings.set_index("listing_id")
+    assert indexed.loc["9618_HK", "listing_role"] == "primary"
+    assert indexed.loc["JD_US", "listing_role"] == "depositary_receipt"
+    assert indexed.loc["9888_HK", "listing_role"] == "primary"
+    assert indexed.loc["BIDU_US", "listing_role"] == "depositary_receipt"
+    assert indexed.loc["9988_HK", "listing_role"] == "primary"
+    assert indexed.loc["BABA_US", "listing_role"] == "depositary_receipt"
 
 
 def test_membership_duplicate_overlap_and_containment_validation(registry_root):

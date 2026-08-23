@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import hashlib
 import json
 import os
@@ -563,15 +564,23 @@ def test_build_writes_stable_artifact_set(tmp_path, minimal_inputs):
     assert list(pd.read_parquet(_published(minimal_inputs, "event_watch_questions.parquet")).columns) == EVENT_WATCH_QUESTION_COLUMNS
     health = pd.read_parquet(_published(minimal_inputs, "source_health.parquet"))
     required_health = health[health["required"]]
+    # Registry row counts are derived from the CSVs this build actually read,
+    # not hardcoded: adding a company to config/research_control_tower/ must not
+    # fail this test, while a source_health count that disagrees with its own
+    # input still does.
+    def _registry_rows(name: str) -> int:
+        with minimal_inputs.registry_root.joinpath(f"{name}.csv").open(newline="", encoding="utf-8") as handle:
+            return sum(1 for _ in csv.DictReader(handle))
+
     assert dict(zip(required_health["source_id"], required_health["row_count"])) == {
         "events:event_links": 52,
         "events:event_watch_questions": 20,
         "events:events": 21,
-        "registry:basket_memberships": 97,
-        "registry:baskets": 7,
-        "registry:entities": 71,
-        "registry:indices": 12,
-        "registry:listings": 81,
+        "registry:basket_memberships": _registry_rows("basket_memberships"),
+        "registry:baskets": _registry_rows("baskets"),
+        "registry:entities": _registry_rows("entities"),
+        "registry:indices": _registry_rows("indices"),
+        "registry:listings": _registry_rows("listings"),
     }
     manifest_json = json.loads(_published(minimal_inputs, "build_manifest.json").read_text())
     assert manifest_json["network_policy"] == "forbidden"
