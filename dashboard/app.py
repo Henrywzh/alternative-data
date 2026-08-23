@@ -20,7 +20,11 @@ if __package__ in {None, ""}:
 
 from dashboard import remote
 from dashboard.checks import CheckResult, run_checks
+from collections.abc import Iterable, Mapping
+
 from dashboard.data import (
+    load_dataset_cached,
+    LazyDatasetMap,
     DOMAIN_ORDER,
     DATASET_REGISTRY,
     DatasetLoadResult,
@@ -274,6 +278,41 @@ def render_header(freshness: FreshnessInfo, section: str) -> None:
     )
 
 
+class LazyDomainStates(Mapping[str, tuple[dict[str, DatasetLoadResult], FreshnessInfo, list[CheckResult]]]):
+    """Domain states loaded on first access, mirroring LazyDatasetMap.
+
+    Only the economics sub-tab reaches for a whole domain state by name; the
+    other sub-tabs ignore the argument entirely and read individual datasets.
+    Loading every domain up front therefore paid for whole domains that the
+    rendered sub-tab never opened.
+    """
+
+    def __init__(self, domains: Iterable[str], loader) -> None:
+        self._domains = tuple(dict.fromkeys(domains))
+        self._loader = loader
+        self._loaded: dict[str, tuple[dict[str, DatasetLoadResult], FreshnessInfo, list[CheckResult]]] = {}
+
+    def __getitem__(self, domain: str):
+        if domain not in self._domains:
+            raise KeyError(domain)
+        if domain not in self._loaded:
+            self._loaded[domain] = self._loader(domain)
+        return self._loaded[domain]
+
+    def __iter__(self):
+        return iter(self._domains)
+
+    def __len__(self) -> int:
+        return len(self._domains)
+
+    def __contains__(self, domain: object) -> bool:
+        return domain in self._domains
+
+    @property
+    def loaded(self):
+        return dict(self._loaded)
+
+
 def render_checks(checks: list[CheckResult]) -> None:
     ok_count   = sum(1 for c in checks if c.status == "ok")
     warn_count = sum(1 for c in checks if c.status == "warning")
@@ -344,53 +383,75 @@ def main() -> None:
         if visible_shas:
             st.caption(f"Data {' · '.join(f'`{sha}`' for sha in visible_shas)}")
 
-    def _load_domain(domain: str) -> tuple[str, tuple[dict[str, DatasetLoadResult], FreshnessInfo, list[CheckResult]]]:
-        return domain, load_domain_state_cached(
+    def _load_domain(domain: str) -> tuple[dict[str, DatasetLoadResult], FreshnessInfo, list[CheckResult]]:
+        return load_domain_state_cached(
             BASE_DIR,
             domain,
             build_domain_signature(BASE_DIR, domain),
             data_sha=domain_shas[domain],
         )
 
-    # Domains are independent (each has its own cache key), so loading them
-    # concurrently lets their underlying dataset fetches overlap instead of
-    # queuing one domain's worth of network I/O behind the previous one's.
-    if len(selected_domains) > 1:
-        with ThreadPoolExecutor(max_workers=min(8, len(selected_domains))) as executor:
-            domain_states = dict(executor.map(_load_domain, selected_domains))
-    else:
-        domain_states = dict(_load_domain(domain) for domain in selected_domains)
+    domain_states = LazyDomainStates(selected_domains, _load_domain)
 
-    datasets: dict[str, DatasetLoadResult] = {}
-    _all_freshness: list[FreshnessInfo] = []
-    checks: list[CheckResult] = []
-    for domain_datasets, domain_freshness, domain_checks in domain_states.values():
-        datasets.update(domain_datasets)
-        _all_freshness.append(domain_freshness)
-        checks.extend(domain_checks)
+    # Which domain a dataset belongs to decides which commit SHA pins its bytes.
+    _domain_of_dataset = {
+        dataset_id: domain
+        for domain in selected_domains
+        for dataset_id in domain_dataset_ids(domain)
+    }
 
-    freshness = FreshnessInfo(
-        latest_scraped_at=max(
-            (f.latest_scraped_at for f in _all_freshness if f.latest_scraped_at), default=None,
-        ),
-        latest_run_id=next(
-            (f.latest_run_id for f in _all_freshness if f.latest_run_id), None,
-        ),
-        latest_manifest_path=next(
-            (f.latest_manifest_path for f in _all_freshness if f.latest_manifest_path), None,
-        ),
-        latest_manifest_scraped_at=max(
-            (f.latest_manifest_scraped_at for f in _all_freshness if f.latest_manifest_scraped_at), default=None,
-        ),
+    def _load_one(dataset_id: str) -> DatasetLoadResult:
+        domain = _domain_of_dataset[dataset_id]
+        return load_dataset_cached(
+            BASE_DIR,
+            dataset_id,
+            build_domain_signature(BASE_DIR, domain),
+            data_sha=domain_shas[domain],
+        )
+
+    # Keyed by every declared dataset's freshness signature and pinned SHA, so
+    # views cached on this mapping invalidate exactly when their data changes --
+    # without loading anything to work that out.
+    dataset_cache_key = tuple(
+        (dataset_id, build_domain_signature(BASE_DIR, domain), domain_shas[domain])
+        for dataset_id, domain in sorted(_domain_of_dataset.items())
     )
+    datasets = LazyDatasetMap(_domain_of_dataset, _load_one, cache_key=dataset_cache_key)
 
-    render_header(freshness, selected_section)
-
+    # The header and the health panel describe what was actually read, which is
+    # only known once the section has rendered.  Reserve their slots now and
+    # fill them afterwards, so the page keeps its order while the data behind it
+    # is loaded on demand.
+    header_slot = st.container()
     renderer = SECTION_RENDERERS.get(selected_section)
-    if renderer is not None:
-        renderer(domain_states, datasets)
+    section_slot = st.container()
+    checks_slot = st.container()
 
-    render_checks(checks)
+    with section_slot:
+        if renderer is not None:
+            renderer(domain_states, datasets)
+
+    loaded = {**datasets.loaded}
+    for domain_datasets, _, _ in domain_states.loaded.values():
+        loaded.update(domain_datasets)
+
+    freshness = load_latest_manifest(
+        base_dir=BASE_DIR, datasets=loaded, scan_raw_manifests=False
+    )
+    with header_slot:
+        render_header(freshness, selected_section)
+
+    with checks_slot:
+        render_checks(
+            run_checks(
+                loaded,
+                freshness,
+                base_dir=BASE_DIR,
+                expected_dataset_ids=sorted(loaded),
+            )
+            if loaded
+            else []
+        )
 
 
 if __name__ == "__main__":

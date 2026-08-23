@@ -16,7 +16,8 @@ import yfinance as yf
 
 from dashboard import remote
 from dashboard.checks import CheckResult, run_checks
-from dashboard.data import (DAILY_HISTORY_YEARS, DOMAIN_ORDER, DATASET_REGISTRY, DatasetLoadResult, FreshnessInfo, dataset_source_for_domain, domain_dataset_ids, load_domain_datasets, load_latest_manifest)
+from dashboard.data import (
+    LazyDatasetMap,DAILY_HISTORY_YEARS, DOMAIN_ORDER, DATASET_REGISTRY, DatasetLoadResult, FreshnessInfo, dataset_source_for_domain, domain_dataset_ids, load_domain_datasets, load_latest_manifest)
 from openrouter_revenue import (
     build_price_context,
     build_conservative_provider_economics,
@@ -356,7 +357,7 @@ def _fuzzy_normalize_model_id(model_id: str) -> str:
     return f"{provider}/{normalized_model}"
 
 
-@st.cache_data(ttl=3600, max_entries=12)
+@st.cache_data(ttl=3600, max_entries=12, hash_funcs={LazyDatasetMap: lambda mapping: mapping.cache_key})
 def compute_openrouter_views(
     datasets: dict[str, DatasetLoadResult],
     revenue_cache_version: str = REVENUE_CACHE_VERSION,
@@ -1637,7 +1638,7 @@ def _default_task_spend_window(windows: list[int]) -> int:
     return 7 if 7 in windows else windows[0]
 
 
-@st.cache_data(ttl=3600, max_entries=12)
+@st.cache_data(ttl=3600, max_entries=12, hash_funcs={LazyDatasetMap: lambda mapping: mapping.cache_key})
 def compute_compute_availability_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
     # NOTE: Legacy function name. After removing AWS Spot + Lambda Cloud sources, this
     # now only surfaces OpenRouter catalog growth + latest-snapshot views used by the
@@ -1973,7 +1974,7 @@ def _drop_identical_route_alias_rows(frame: pd.DataFrame) -> pd.DataFrame:
     return result.drop(index=list(drop_indices)).drop(columns=["_is_free_route", "_base_model"])
 
 
-@st.cache_data(ttl=3600, max_entries=12)
+@st.cache_data(ttl=3600, max_entries=12, hash_funcs={LazyDatasetMap: lambda mapping: mapping.cache_key})
 def build_openrouter_explorer_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
     """Build compact, reusable frames for company, model, and catalog exploration."""
     catalog_views = compute_compute_availability_views(datasets)
@@ -2848,7 +2849,7 @@ def _comparison_metric_frame(
     return merged.reindex(columns=columns).sort_values(["period_start", "entity_id"]).reset_index(drop=True)
 
 
-@st.cache_data(ttl=3600, max_entries=8)
+@st.cache_data(ttl=3600, max_entries=8, hash_funcs={LazyDatasetMap: lambda mapping: mapping.cache_key})
 def build_openrouter_comparison_views(
     datasets: dict[str, DatasetLoadResult],
     *,
@@ -6457,7 +6458,7 @@ ARR_PROVIDER_COLORS: dict[str, str] = {
 }
 
 
-@st.cache_data(ttl=3600)
+@st.cache_data(ttl=3600, hash_funcs={LazyDatasetMap: lambda mapping: mapping.cache_key})
 def compute_arr_nowcasts_summary(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
     """Compute historical monthly ARR and four latest-month nowcast models."""
     rev_res = datasets.get("daily_provider_revenue_estimates")
@@ -7272,20 +7273,64 @@ def render_cloud_infra_section(datasets: dict[str, DatasetLoadResult]) -> None:
     )
 
 
+UNIFIED_SUBPAGES = (
+    "📈 Overview, Economics & ARR",
+    "☁️ Cloud & Infra Providers",
+    "🔍 Model Explorer & Catalog",
+    "⚖️ Provider Compare",
+    "📊 Workloads & Modality",
+)
+UNIFIED_SUBPAGE_KEY = "openrouter_subpage"
+
+
+def selected_unified_subpage() -> str:
+    """The active sub-page, readable before the selector itself is drawn.
+
+    Streamlit restores widget state into session_state before the script body
+    runs, so the loader at the top of the page can see the choice the selector
+    further down will render.
+    """
+    choice = st.session_state.get(UNIFIED_SUBPAGE_KEY)
+    return str(choice) if choice in UNIFIED_SUBPAGES else UNIFIED_SUBPAGES[0]
+
+
 def render_unified(domain_states, datasets) -> None:
-    """Unified OpenRouter hub with 4 top-level sub-tabs."""
-    tab_econ, tab_cloud_infra, tab_models, tab_compare, tab_workloads = st.tabs([
-        "📈 Overview, Economics & ARR",
-        "☁️ Cloud & Infra Providers",
-        "🔍 Model Explorer & Catalog",
-        "⚖️ Provider Compare",
-        "📊 Workloads & Modality",
-    ])
+    """Unified OpenRouter hub, rendering one sub-page at a time.
 
-    with tab_cloud_infra:
+    This used to be st.tabs.  Streamlit renders every tab body on every run --
+    tabs are hidden with CSS, not lazily evaluated -- so all five sub-pages
+    computed their views and touched their datasets even though four of them
+    were not being looked at.  A selector renders one body, which is what lets
+    the datasets behind the other four go unread.
+    """
+    if hasattr(st, "segmented_control"):
+        st.segmented_control(
+            "View",
+            UNIFIED_SUBPAGES,
+            default=selected_unified_subpage(),
+            key=UNIFIED_SUBPAGE_KEY,
+            label_visibility="collapsed",
+        )
+    else:
+        st.radio(
+            "View",
+            UNIFIED_SUBPAGES,
+            index=UNIFIED_SUBPAGES.index(selected_unified_subpage()),
+            horizontal=True,
+            key=UNIFIED_SUBPAGE_KEY,
+            label_visibility="collapsed",
+        )
+    subpage = selected_unified_subpage()
+
+    if subpage == UNIFIED_SUBPAGES[1]:
         render_cloud_infra_section(datasets)
-
-    with tab_econ:
+    elif subpage == UNIFIED_SUBPAGES[2]:
+        render_data_explorer(datasets)
+    elif subpage == UNIFIED_SUBPAGES[3]:
+        render_compare(domain_states, datasets)
+    elif subpage == UNIFIED_SUBPAGES[4]:
+        render_workloads(domain_states, datasets)
+    else:
         openrouter_views = compute_openrouter_views(
             {
                 **domain_states["openrouter_intelligence"][0],
@@ -7300,12 +7345,3 @@ def render_unified(domain_states, datasets) -> None:
         render_task_spend_section(openrouter_views)
         render_token_revenue_comparison(openrouter_views)
         render_compute_evolution_section(compute_views)
-
-    with tab_models:
-        render_data_explorer(datasets)
-
-    with tab_compare:
-        render_compare(domain_states, datasets)
-
-    with tab_workloads:
-        render_workloads(domain_states, datasets)

@@ -5207,3 +5207,30 @@ def test_every_windowed_dataset_has_a_date_column_to_window_on() -> None:
         assert entry.get("primary_date_column"), (
             f"{dataset_id} is windowed but has no primary_date_column to window on"
         )
+
+
+def test_lazy_dataset_map_loads_only_what_is_read() -> None:
+    """Declaring a dataset must not load it; only reading it may.
+
+    Iteration and len describe what a section covers, which callers ask for
+    without wanting the data -- forcing a load there would defeat the point.
+    """
+    from dashboard.data import LazyDatasetMap
+
+    loaded: list[str] = []
+    mapping = LazyDatasetMap(
+        ["alpha", "beta", "gamma"], lambda dataset_id: (loaded.append(dataset_id), dataset_id)[1]
+    )
+
+    assert sorted(mapping) == ["alpha", "beta", "gamma"]
+    assert len(mapping) == 3
+    assert "beta" in mapping
+    assert loaded == []
+
+    assert mapping["beta"] == "beta"
+    assert mapping["beta"] == "beta"  # memoized, not reloaded
+    assert loaded == ["beta"]
+    assert mapping.loaded == {"beta": "beta"}
+
+    assert mapping.get("absent", "fallback") == "fallback"
+    assert loaded == ["beta"]

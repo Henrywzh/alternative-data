@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import io
 import json
+from collections.abc import Iterable, Iterator, Mapping
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable
 
 import pandas as pd
 import pyarrow.parquet as pq
+import streamlit as st
 from pyarrow.lib import ArrowInvalid
 
 from dashboard import remote
@@ -2735,6 +2738,81 @@ def load_domain_datasets(
     with ThreadPoolExecutor(max_workers=min(8, len(ids))) as executor:
         results = executor.map(lambda dataset_id: load_dataset(dataset_id, base_dir=base_dir, data_sha=data_sha), ids)
         return dict(zip(ids, results))
+
+
+@st.cache_data(ttl=3600, max_entries=64, show_spinner=False)
+def load_dataset_cached(
+    base_dir: Path | None,
+    dataset_id: str,
+    domain_signature: tuple[tuple[str, int, int], ...],
+    data_sha: str | None = None,
+) -> DatasetLoadResult:
+    """One cache entry per dataset, for on-demand section loading.
+
+    Keyed the way the domain-level cache is: the signature catches local edits,
+    the SHA catches remote pushes.  Caching per dataset rather than per domain
+    means a dataset shared by two domains is decoded once, and a dataset the
+    rendered sub-page never opens is not decoded at all.
+    """
+    _ = domain_signature  # cache key only
+    return load_dataset(dataset_id, base_dir=base_dir, data_sha=data_sha)
+
+
+class LazyDatasetMap(Mapping[str, "DatasetLoadResult"]):
+    """A section's datasets, each loaded on first access rather than up front.
+
+    Streamlit's st.tabs renders every tab body on every run, so a section that
+    drew its sub-pages as tabs genuinely needed all of its data.  Once only the
+    selected sub-page renders, most of it is never touched -- and the eager load
+    was paying hundreds of megabytes for datasets nothing asked for.
+
+    Iteration and ``len`` describe the *declared* datasets and never trigger a
+    load, so callers that only want to know what a section covers stay cheap.
+    ``loaded`` exposes exactly what was materialized, which is what the health
+    checks and freshness summary describe: reporting on datasets that were never
+    read would be reporting on nothing.
+    """
+
+    def __init__(
+        self,
+        dataset_ids: Iterable[str],
+        loader: Callable[[str], "DatasetLoadResult"],
+        cache_key: tuple = (),
+    ) -> None:
+        self._dataset_ids = tuple(dict.fromkeys(dataset_ids))
+        self._loader = loader
+        self._loaded: dict[str, DatasetLoadResult] = {}
+        # Views cached on this mapping cannot be keyed by its contents: the
+        # contents are whatever happens to have been loaded when the view is
+        # called, and the view may load more while it runs.  The freshness
+        # signature and commit SHA behind every declared dataset determine that
+        # content completely, and cost nothing to read.
+        self._cache_key = cache_key
+
+    @property
+    def cache_key(self) -> tuple:
+        return self._cache_key
+
+    def __getitem__(self, dataset_id: str) -> "DatasetLoadResult":
+        if dataset_id not in self._dataset_ids:
+            raise KeyError(dataset_id)
+        if dataset_id not in self._loaded:
+            self._loaded[dataset_id] = self._loader(dataset_id)
+        return self._loaded[dataset_id]
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._dataset_ids)
+
+    def __len__(self) -> int:
+        return len(self._dataset_ids)
+
+    def __contains__(self, dataset_id: object) -> bool:
+        return dataset_id in self._dataset_ids
+
+    @property
+    def loaded(self) -> dict[str, "DatasetLoadResult"]:
+        """Datasets actually materialized so far, in load order."""
+        return dict(self._loaded)
 
 
 def load_latest_manifest(

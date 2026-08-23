@@ -76,19 +76,43 @@ def test_model_deep_link_is_preserved_on_unified_openrouter(monkeypatch) -> None
     )
 
 
-def test_unified_openrouter_contains_model_compare_and_workload_panels(monkeypatch) -> None:
+def _run_openrouter_subpage(monkeypatch, subpage: str | None) -> str:
     monkeypatch.setenv("DATA_SOURCE", "local")
     app = AppTest.from_file(APP_PATH, default_timeout=120)
     app.session_state["main_section"] = "OpenRouter"
-
+    if subpage is not None:
+        app.session_state["openrouter_subpage"] = subpage
     app.run()
-
     assert not app.exception
-    rendered_markdown = "\n".join(str(markdown.value) for markdown in app.markdown)
-    assert "Context Length Usage" in rendered_markdown
-    assert "Modality Rankings" in rendered_markdown
-    assert "App Rankings & Trends" in rendered_markdown
-    assert "Provider Revenue &amp; Token Volume" in rendered_markdown
+    return "\n".join(str(markdown.value) for markdown in app.markdown)
+
+
+def test_unified_openrouter_renders_the_selected_subpage(monkeypatch) -> None:
+    """Each sub-page draws its own panels when selected.
+
+    These used to be st.tabs, which renders every body on every run, so one run
+    contained all of them.  Only the selected body renders now -- that is what
+    lets the other sub-pages' datasets go unread.
+    """
+    from dashboard.sections.openrouter import UNIFIED_SUBPAGES
+
+    economics = _run_openrouter_subpage(monkeypatch, UNIFIED_SUBPAGES[0])
+    assert "Provider Revenue &amp; Token Volume" in economics
+
+    workloads = _run_openrouter_subpage(monkeypatch, UNIFIED_SUBPAGES[4])
+    assert "Context Length Usage" in workloads
+    assert "Modality Rankings" in workloads
+    assert "App Rankings & Trends" in workloads
+
+
+def test_unified_openrouter_does_not_render_unselected_subpages(monkeypatch) -> None:
+    """The point of the selector: an unselected sub-page must not be computed."""
+    from dashboard.sections.openrouter import UNIFIED_SUBPAGES
+
+    economics = _run_openrouter_subpage(monkeypatch, UNIFIED_SUBPAGES[0])
+
+    assert "Context Length Usage" not in economics
+    assert "App Rankings & Trends" not in economics
 
 
 def test_provider_incident_section_renders_live_history_and_coverage(monkeypatch) -> None:
