@@ -96,3 +96,8 @@ BAIDU,RESEARCH_STAGE_1_CHINA_INTERNET,core,platforms,ai;cloud,2026-01-01,,Core l
 KUAISHOU,RESEARCH_STAGE_1_CHINA_INTERNET,core,platforms,short_video;advertising,2026-01-01,,Core listed China Internet platform for Stage 1,Default Research Control Tower focus,v1
 BILIBILI,RESEARCH_STAGE_1_CHINA_INTERNET,core,platforms,content;advertising,2026-01-01,,Core listed China Internet platform for Stage 1,Default Research Control Tower focus,v1
 BYTEDANCE,RESEARCH_STAGE_1_CHINA_INTERNET,watch_only,platforms,ai;advertising;short_video,2026-01-01,,Private competitor and product research only; no market-data collection,Default Research Control Tower focus,v1
+MINIMAX,RESEARCH_STAGE_1_CHINA_INTERNET,core,platforms,ai;llm;openrouter,2026-01-01,,Core listed China LLM platform for Stage 1,Default Research Control Tower focus,v1
+Z_AI,RESEARCH_STAGE_1_CHINA_INTERNET,core,platforms,ai;llm;openrouter,2026-01-01,,Core listed China LLM platform for Stage 1,Default Research Control Tower focus,v1
+MOONSHOT,RESEARCH_STAGE_1_CHINA_INTERNET,watch_only,platforms,ai;llm;openrouter,2026-01-01,,Private LLM competitor and product research only pending a listing; no market-data collection,Default Research Control Tower focus,v1
+MINIMAX,HK_AI_THEMATIC,core,platforms,ai;llm,2026-01-01,,Hong Kong-listed LLM company,Approved V1 AI thematic basket,v1
+Z_AI,HK_AI_THEMATIC,core,platforms,ai;llm,2026-01-01,,Hong Kong-listed LLM company,Approved V1 AI thematic basket,v1

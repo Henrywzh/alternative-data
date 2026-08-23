@@ -23,3 +23,11 @@ JD_COM,negative,京东物流,substring,v1,京东物流（独立 HK 上市）不�
 JD_COM,negative,京东健康,substring,v1,京东健康（独立 HK 上市）不是京东集团 9618.HK/JD.US；不得解析为 JD_COM。
 MEITUAN,positive,美团,substring,v1,Chinese name variant for Meituan.
 BYTEDANCE,positive,字节跳动,substring,v1,Chinese name variant for ByteDance (private; discovery coverage only).
+MINIMAX,positive,minimax,word,v1,Issuer token for MiniMax 0100.HK.
+MINIMAX,positive,稀宇科技,substring,v1,Chinese name variant for MiniMax.
+Z_AI,positive,z.ai,word,v1,Issuer-style token for Z.AI 2513.HK.
+Z_AI,positive,zhipu,word,v1,English name variant for Z.AI.
+Z_AI,positive,智谱,substring,v1,Chinese name variant for Z.AI.
+MOONSHOT,positive,moonshot ai,word,v1,Private competitor token for Moonshot AI / Kimi; discovery coverage only.
+MOONSHOT,positive,kimi,word,v1,Product name variant for Moonshot AI; discovery coverage only.
+MOONSHOT,positive,月之暗面,substring,v1,Chinese name variant for Moonshot AI (private; discovery coverage only).
