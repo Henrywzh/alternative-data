@@ -4408,6 +4408,8 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
     emea_eids = {"dax", "ftse100", "saudi"}
     global_eids = {"csi300", "sp500", "ndx", "hsi", "nikkei225", "dax", "ftse100", "saudi"}
 
+    southbound = pd.DataFrame(datasets.get("southbound_market_flow", []))
+
     # 美国市场 Tab 包含大盘基准 + 11大GICS核心行业与纯度细分下钻
     with us_tab:
         sub_us_prices = prices[prices["exposure_id"].isin(us_broad_eids)].copy() if not prices.empty else prices
@@ -4500,16 +4502,13 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
                 table_to_show = display_tech[final_cols].rename(columns=mapping).sort_values(mapping["_label_display"])
                 st.dataframe(table_to_show, hide_index=True, width="stretch")
 
-    southbound = pd.DataFrame(datasets.get("southbound_market_flow", []))
-    if not southbound.empty:
-        section_heading(
-            language,
-            "Southbound Stock Connect",
-            "南向资金（全市场）",
-            "Aggregate daily net buy, balance and holding market value since 2014. Not per-stock ownership.",
-            "2014年起的全市场日频净买入、余额和持股市值。不是个股持股。",
-        )
-        render_southbound_market_flow(southbound, language, window)
+            # 南向资金只属于泛中国 (A股/港股) 板块
+            if tab_key == "china" and not southbound.empty:
+                st.markdown(
+                    f'<div class="am-chart-title" style="margin-top:24px;">{tr(language, "Southbound Stock Connect Flow", "港股通南向资金全市场流向")}</div>',
+                    unsafe_allow_html=True,
+                )
+                render_southbound_market_flow(southbound, language, window)
     # --- Relative Regime ---
     pair_summary = pd.DataFrame(datasets.get("relative_pairs", []))
     pair_history = _market_pair_history_frame(datasets)
