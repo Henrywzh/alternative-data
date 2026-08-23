@@ -1794,3 +1794,60 @@ def test_southbound_flow_has_a_source_health_row() -> None:
     row = matching[0]
     assert row["records"] == len(southbound_rows)
     assert row["status"] == ("Healthy" if southbound_rows else "Unavailable")
+
+
+def test_every_exposure_is_either_charted_or_a_pair_leg() -> None:
+    """An exposure wired to nothing is fetched every run and shown nowhere.
+
+    The monitor has two ways to use an exposure: a regional tab charts it, or
+    a relative pair uses it as one leg. Adding one to EXPOSURES without doing
+    either costs a provider call on every run and produces nothing, and there
+    was no signal for it -- the list of tab members lived in the Streamlit app,
+    so config.py could not see it.
+    """
+    from market_monitor.config import EXPOSURES, charted_exposures
+    from market_monitor.relative_strength import RELATIVE_PAIRS
+
+    legs = set()
+    for pair in RELATIVE_PAIRS:
+        legs |= set(pair["left"]) | set(pair["right"])
+
+    used = charted_exposures() | legs
+    unused = sorted({spec["exposure_id"] for spec in EXPOSURES} - used)
+    assert not unused, (
+        f"{unused} are in EXPOSURES but no tab charts them and no pair uses "
+        "them: add them to MARKET_TABS or to a RELATIVE_PAIRS leg"
+    )
+
+
+def test_market_tabs_only_name_exposures_that_exist() -> None:
+    """A typo in MARKET_TABS silently drops the index from its tab."""
+    from market_monitor.config import EXPOSURES, MARKET_TABS
+
+    known = {spec["exposure_id"] for spec in EXPOSURES}
+    for tab, ids in MARKET_TABS.items():
+        unknown = sorted(set(ids) - known)
+        assert not unknown, f"tab {tab!r} names unknown exposures: {unknown}"
+        assert len(set(ids)) == len(ids), f"tab {tab!r} lists an exposure twice"
+
+
+def test_artifact_exports_a_price_series_for_every_charted_exposure() -> None:
+    """A charted exposure with no price series vanishes from its tab.
+
+    The exported set was an inline literal in the artifact builder, separate
+    from the tab lists in the Streamlit app, and the two had drifted:
+    us_growth, us_small and us_value were in the US tab but absent here, so it
+    silently offered four of its seven indices.
+    """
+    from market_monitor.config import charted_exposures
+
+    artifact = _shipped_market_artifact()
+    if artifact is None:
+        pytest.skip("no built market-monitor artifact in this checkout")
+    rows = artifact["snapshot"]["datasets"].get("index_price_daily_tail") or []
+    if not rows:
+        pytest.skip("this artifact carries no index price series")
+
+    exported = {str(row.get("exposure_id") or row.get("ticker")) for row in rows}
+    missing = sorted(charted_exposures() - exported)
+    assert not missing, f"charted but no price series exported: {missing}"

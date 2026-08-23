@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
+import pandas as pd
 import pytest
 from streamlit.testing.v1 import AppTest
 
@@ -201,3 +202,80 @@ def test_every_region_tab_can_show_the_ratio_view_at_once() -> None:
     app.run()
 
     assert not app.exception, [str(error) for error in app.exception]
+
+
+# --- render-layer data transforms -------------------------------------
+# These four turn raw artifact records into the frames every ETF Monitor chart
+# reads. They had no tests: the only coverage over the render layer was
+# test_every_page_renders_in_both_languages, which asserts that rendering does
+# not raise and nothing about what it produces. Every defect found in this
+# area so far -- duplicate pills, labels reduced to exposure ids, column names
+# leaking into legends -- rendered without raising.
+
+
+def test_market_price_frame_types_sorts_and_drops_unusable_rows() -> None:
+    app = _app_module()
+    frame = app._market_price_frame(
+        {
+            "index_price_daily_tail": [
+                {"exposure_id": "csi300", "date": "2026-08-21", "close": "4100.5"},
+                {"exposure_id": "csi300", "date": "2026-08-19", "close": "4000"},
+                {"exposure_id": "csi300", "date": "not-a-date", "close": "4050"},
+                {"exposure_id": "csi300", "date": "2026-08-20", "close": "n/a"},
+            ]
+        }
+    )
+    # The unparseable date and the unparseable close are dropped, not carried
+    # as NaT/NaN into a chart.
+    assert len(frame) == 2
+    assert list(frame["_date"]) == [pd.Timestamp("2026-08-19"), pd.Timestamp("2026-08-21")]
+    assert list(frame["close"]) == [4000.0, 4100.5]
+    assert pd.api.types.is_numeric_dtype(frame["close"])
+
+
+def test_market_price_frame_is_empty_when_the_dataset_lacks_its_columns() -> None:
+    """A shape change upstream must not raise inside a chart."""
+    app = _app_module()
+    assert app._market_price_frame({}).empty
+    assert app._market_price_frame({"index_price_daily_tail": []}).empty
+    assert app._market_price_frame(
+        {"index_price_daily_tail": [{"exposure_id": "csi300", "date": "2026-08-21"}]}
+    ).empty
+
+
+def test_market_pair_history_frame_coerces_every_numeric_column() -> None:
+    """ratio_ma and zscore are optional; when present they must be numeric.
+
+    A string zscore plots as a category axis rather than raising, which is the
+    failure mode this whole area keeps producing.
+    """
+    app = _app_module()
+    frame = app._market_pair_history_frame(
+        {
+            "relative_pair_history": [
+                {"pair_id": "cn_small_large", "date": "2026-08-21", "ratio": "1.05",
+                 "ratio_ma": "1.02", "zscore": "0.51"},
+                {"pair_id": "cn_small_large", "date": "2026-08-20", "ratio": "1.04",
+                 "ratio_ma": "", "zscore": None},
+                {"pair_id": "cn_small_large", "date": "2026-08-19", "ratio": "bad",
+                 "ratio_ma": "1.00", "zscore": "0.4"},
+            ]
+        }
+    )
+    assert len(frame) == 2
+    assert list(frame["_date"]) == [pd.Timestamp("2026-08-20"), pd.Timestamp("2026-08-21")]
+    for column in ("ratio", "ratio_ma", "zscore"):
+        assert pd.api.types.is_numeric_dtype(frame[column]), column
+
+
+def test_market_label_falls_back_to_english_when_no_chinese_label_exists() -> None:
+    app = _app_module()
+    row = pd.Series({"exposure_id": "csi300", "label": "CSI 300", "label_zh": "沪深300"})
+    assert app._market_label(row, "zh") == "沪深300"
+    assert app._market_label(row, "en") == "CSI 300"
+
+    blank = pd.Series({"exposure_id": "csi300", "label": "CSI 300", "label_zh": "  "})
+    assert app._market_label(blank, "zh") == "CSI 300"
+
+    missing = pd.Series({"exposure_id": "csi300", "label": "CSI 300"})
+    assert app._market_label(missing, "zh") == "CSI 300"

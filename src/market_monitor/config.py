@@ -533,6 +533,48 @@ def exposure_by_id(exposure_id: str) -> dict:
     raise KeyError(f"unknown exposure_id: {exposure_id}")
 
 
+# Which exposures each regional tab of the ETF Monitor shows.
+#
+# This is a curation, not something `region` can produce: the China tab
+# deliberately carries S&P 500, Nasdaq 100, Nikkei and DAX because those are
+# reachable from the mainland through QDII wrappers, and Global is a
+# cross-region digest. It lives here because it was previously written out
+# three times -- as five set literals in the Streamlit app, and again as an
+# inline `isin({...})` in the artifact builder deciding which price series to
+# export. The three had already drifted: us_growth, us_small and us_value were
+# listed in the US tab but their price series were never exported, so the tab
+# silently offered four of its seven indices.
+MARKET_TABS: dict[str, tuple[str, ...]] = {
+    "china": (
+        "csi300", "csi500", "csi1000", "chinext", "growth", "dividend",
+        "hsi", "hstech", "hk_dividend", "hk_internet", "hk_midcap", "hk_hshares",
+        "cn_infotech", "cn_staples", "sp500", "ndx", "nikkei225", "dax", "saudi",
+    ),
+    "china_core": (
+        "csi300", "csi500", "csi1000", "chinext", "growth", "dividend",
+        "hsi", "hstech", "hk_dividend", "hk_internet", "hk_midcap", "hk_hshares",
+        "cn_infotech", "cn_staples",
+    ),
+    "us": ("sp500", "ndx", "dow", "russell2000", "us_small", "us_growth", "us_value"),
+    "apac": ("nikkei225", "kospi", "twii", "kr_semis"),
+    "emea": ("dax", "ftse100", "cac40", "saudi"),
+    "global": (
+        "csi300", "sp500", "ndx", "dow", "russell2000", "hsi", "nikkei225",
+        "kospi", "twii", "dax", "ftse100", "cac40", "saudi",
+    ),
+}
+
+
+def market_tab_exposures(tab: str) -> set[str]:
+    """Exposure ids shown by one regional tab."""
+    return set(MARKET_TABS[tab])
+
+
+def charted_exposures() -> set[str]:
+    """Every exposure some regional tab charts, so every one needs a price series."""
+    return {exposure_id for ids in MARKET_TABS.values() for exposure_id in ids}
+
+
 def exposures_by_price_source(source: str) -> tuple[str, ...]:
     """Exposure ids served by one provider, for routing and source health."""
     return tuple(spec["exposure_id"] for spec in EXPOSURES if spec["price_source"] == source)

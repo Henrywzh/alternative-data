@@ -4604,6 +4604,8 @@ def render_scoped_index_section(
 
 def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: str, window: str) -> None:
     """Index & ETF Allocation Monitor: fully modular regional tabs."""
+    from src.market_monitor.config import market_tab_exposures
+
     st.markdown(f'<div class="am-page-title">{tr(language, SECTORS["market"]["name_en"], SECTORS["market"]["name_zh"])}</div>', unsafe_allow_html=True)
     st.caption(tr(language, "Global Multi-Asset & ETF Monitor. Regional segmentation with clean data separation.", "全球多资产与 ETF 监控看板。按地域严格分层，无跨区干扰。"))
 
@@ -4641,20 +4643,14 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
         tab_china_label, tab_us_label, tab_apac_label, tab_emea_label, tab_global_label
     ])
 
-    china_eids = {
-        "csi300", "csi500", "csi1000", "chinext", "growth", "dividend",
-        "hsi", "hstech", "hk_dividend", "hk_internet", "hk_midcap", "hk_hshares",
-        "cn_infotech", "cn_staples", "sp500", "ndx", "nikkei225", "dax", "saudi",
-    }
-    china_core_eids = {
-        "csi300", "csi500", "csi1000", "chinext", "growth", "dividend",
-        "hsi", "hstech", "hk_dividend", "hk_internet", "hk_midcap", "hk_hshares",
-        "cn_infotech", "cn_staples",
-    }
-    us_broad_eids = {"sp500", "ndx", "dow", "russell2000", "us_small", "us_growth", "us_value"}
-    apac_eids = {"nikkei225", "kospi", "twii", "kr_semis"}
-    emea_eids = {"dax", "ftse100", "cac40", "saudi"}
-    global_eids = {"csi300", "sp500", "ndx", "dow", "russell2000", "hsi", "nikkei225", "kospi", "twii", "dax", "ftse100", "cac40", "saudi"}
+    # Tab membership lives in market_monitor.config.MARKET_TABS; it was also
+    # written out in the artifact builder, and the two had drifted.
+    china_eids = market_tab_exposures("china")
+    china_core_eids = market_tab_exposures("china_core")
+    us_broad_eids = market_tab_exposures("us")
+    apac_eids = market_tab_exposures("apac")
+    emea_eids = market_tab_exposures("emea")
+    global_eids = market_tab_exposures("global")
 
     def _render_leadership_block(sub_prices, sub_tech, sub_labels, tab_key):
         view_options = [tr(language, "All (rebased)", "全部（归一）"), tr(language, "Ratio (A/B)", "比值 (A/B)")]

@@ -97,11 +97,15 @@ def load_latest(root: Path, dataset_name: str, scope: str | None = "full") -> pd
                     run_scope = meta.get("run_scope", "full")
                     if run_scope != scope:
                         continue
-                except Exception:
+                # A truncated or unreadable lineage file means this run cannot
+                # be identified, so fall through to the next older one rather
+                # than failing the read. JSONDecodeError and pyarrow's
+                # ArrowInvalid are both ValueError.
+                except (OSError, ValueError):
                     continue
         try:
             frame = pd.read_parquet(parquet)
-        except Exception:
+        except (OSError, ValueError):  # unreadable snapshot: try the older one
             continue
         if not frame.empty:
             return frame
@@ -131,7 +135,7 @@ def load_latest_with_lineage(root: Path, dataset_name: str, scope: str | None = 
             frame = pd.read_parquet(parquet)
             if not frame.empty:
                 return frame, lineage
-        except Exception:
+        except (OSError, ValueError):  # unreadable snapshot: try the older one
             continue
     return pd.DataFrame(), None
 
@@ -154,7 +158,7 @@ def load_lineage_history(root: Path, dataset_name: str, scope: str | None = "ful
             continue
         try:
             lineage = json.loads(lineage_path.read_text(encoding="utf-8"))
-        except Exception:
+        except (OSError, ValueError):  # unreadable lineage: skip this run
             continue
         if scope is not None and lineage.get("run_scope", "full") != scope:
             continue

@@ -29,6 +29,7 @@ from src.market_monitor.config import (
     DERIVED_DIR,
     EXPOSURES,
     NORMALIZED_DIR,
+    charted_exposures,
     exposures_by_price_source,
     investable_exposures,
 )
@@ -210,9 +211,12 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
             if southbound is not None and not southbound.empty
             else southbound
         ),
-        # Export all active regional, global and investable market index daily closes.
+        # Price series for every exposure a regional tab charts. This was an
+        # inline set literal that had drifted from the tabs it was meant to
+        # serve: us_growth, us_small and us_value were listed in the US tab but
+        # missing here, so that tab silently offered four of its seven indices.
         "index_price_daily_tail": _chart_series(
-            index_px[index_px["exposure_id"].isin({'saudi', 'russell2000', 'growth', 'cn_staples', 'hsi', 'hk_internet', 'ndx', 'csi300', 'cac40', 'dividend', 'kr_semis', 'hk_dividend', 'csi500', 'chinext', 'hk_hshares', 'hstech', 'nikkei225', 'dax', 'cn_infotech', 'sp500', 'kospi', 'ftse100', 'hk_midcap', 'twii', 'dow', 'csi1000'})] if not index_px.empty else index_px,
+            index_px[index_px["exposure_id"].isin(charted_exposures())] if not index_px.empty else index_px,
             "exposure_id",
             "close",
         ),
