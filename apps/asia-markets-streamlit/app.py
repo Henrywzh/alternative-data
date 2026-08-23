@@ -4399,6 +4399,45 @@ def render_southbound_market_flow(frame: pd.DataFrame, language: str, window: st
     ))
 
 
+# Canonical index-style categories for the "By Index" filter pills.
+#
+# config.py records styles as free text -- "Tech / Growth", "Growth" and
+# "Tech / Semis" are three spellings of one idea -- and the pills used the raw
+# strings as their identity while translating them to the same Chinese label,
+# so the row showed 科技成长 and 红利价值 twice. Collapsing to these keys is
+# what makes each pill appear once.
+#
+# The order here is the order the pills render in. Deriving it from the data
+# instead made the row reshuffle between sections of the same page, because it
+# followed whichever exposure happened to come first.
+STYLE_CATEGORIES: tuple[tuple[str, str, str], ...] = (
+    ("broad", "Broad Benchmark", "宽基大盘"),
+    ("tech_growth", "Tech & Growth", "科技成长"),
+    ("value_dividend", "Dividend / Value", "红利价值"),
+    ("sector", "Sector / Thematic", "行业主题"),
+)
+
+STYLE_CATEGORY_LABELS: dict[str, tuple[str, str]] = {
+    key: (label_en, label_zh) for key, label_en, label_zh in STYLE_CATEGORIES
+}
+
+
+def normalize_index_style(raw_style: str) -> str:
+    """Map a config ``style`` string onto one of STYLE_CATEGORIES' keys.
+
+    An unrecognised style falls back to "broad", which is a guess -- add it
+    here rather than letting a new category quietly render as 宽基大盘.
+    """
+    s = str(raw_style or "").strip()
+    if "Dividend" in s or "Value" in s:
+        return "value_dividend"
+    if "Tech" in s or "Growth" in s or "Semis" in s:
+        return "tech_growth"
+    if "Sector" in s:
+        return "sector"
+    return "broad"
+
+
 def render_scoped_index_section(
     scoped_eids: set[str],
     label_by_exposure: dict[str, str],
@@ -4433,27 +4472,17 @@ def render_scoped_index_section(
     # 构建元数据映射 (style / risk_character)
     meta_by_eid = {e["exposure_id"]: e for e in EXPOSURES}
     
-    # 规范化大类风格映射 (标准化归类，避免字符串细微差异导致胶囊重名)
-    def _normalize_style(raw_style: str) -> tuple[str, str, str]:
-        """Return (canonical_key, label_en, label_zh)."""
-        s = str(raw_style or "").strip()
-        if "Dividend" in s or "Value" in s:
-            return ("value_dividend", "Dividend / Value", "红利价值")
-        if "Tech" in s or "Growth" in s or "Semis" in s:
-            return ("tech_growth", "Tech & Growth", "科技成长")
-        if "Sector" in s:
-            return ("sector", "Sector / Thematic", "行业主题")
-        return ("broad", "Broad Benchmark", "宽基大盘")
-
     # 建立当前可用标的的分类映射
-    style_groups: dict[str, tuple[str, str, list[str]]] = {}
+    members_by_key: dict[str, list[str]] = {}
     for eid in available:
         spec = meta_by_eid.get(eid, {})
-        raw_s = spec.get("style", "Broad")
-        canonical_key, en_name, zh_name = _normalize_style(raw_s)
-        if canonical_key not in style_groups:
-            style_groups[canonical_key] = (en_name, zh_name, [])
-        style_groups[canonical_key][2].append(eid)
+        members_by_key.setdefault(normalize_index_style(spec.get("style", "Broad")), []).append(eid)
+    # Iterate STYLE_CATEGORIES, not the data, so the pill row is stable.
+    style_groups: dict[str, tuple[str, str, list[str]]] = {
+        key: (STYLE_CATEGORY_LABELS[key][0], STYLE_CATEGORY_LABELS[key][1], members_by_key[key])
+        for key, _en, _zh in STYLE_CATEGORIES
+        if key in members_by_key
+    }
 
     filtered_available = available
     if len(available) > 4 and len(style_groups) > 1:

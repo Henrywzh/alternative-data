@@ -16,7 +16,7 @@ from typing import Any
 import pandas as pd
 import requests
 
-from .config import EXPOSURES, DERIVED_DIR, NORMALIZED_DIR, RAW_DIR, investable_exposures
+from .config import EXPOSURES, DERIVED_DIR, NORMALIZED_DIR, RAW_DIR
 from .metadata import build_metadata_frame, reconcile_registry_names
 from .ranking import rank_wrappers
 from .relative_strength import (
@@ -603,11 +603,18 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
     results["southbound_market_flow"] = raw.get("southbound_market_flow", pd.DataFrame())
 
     # Derived: per-exposure technical snapshot (latest row).
-    # Investable exposures only: a benchmark exists to be one leg of a ratio,
-    # has no ETF wrapper behind it, and would show up on the ETF monitor as an
-    # index you cannot buy.
+    #
+    # Every exposure with a price series, not just the investable ones. The
+    # restriction to investable_exposures() predates the regional tabs: the US,
+    # APAC, EMEA and Global tabs chart benchmarks directly, and the Streamlit
+    # app builds its label map from this dataset, so excluded exposures showed
+    # up in the index picker as bare ids ("chinext", "dow") with no English
+    # name. Benchmarks still carry no ETF wrapper -- that invariant lives in
+    # build_metadata_frame() and is asserted by
+    # test_benchmarks_do_not_appear_on_the_etf_monitor -- and show_wrappers on
+    # the render side is what keeps them off the wrapper tables.
     tech_rows: list[dict[str, Any]] = []
-    for spec in investable_exposures():
+    for spec in EXPOSURES:
         exposure = spec["exposure_id"]
         if limit_exposures and exposure not in limit_exposures:
             continue
