@@ -43,6 +43,16 @@ from history_policy import history_window  # noqa: E402
 CHART_HISTORY_YEARS = 2
 
 
+# Fields render_southbound_market_flow actually reads (KPI strip + dual-axis
+# chart). Add one here when the renderer starts needing it.
+SOUTHBOUND_ARTIFACT_COLUMNS: tuple[str, ...] = (
+    "trade_date",
+    "net_buy_yi",
+    "balance_yi",
+    "holding_market_value",
+)
+
+
 def _records(frame: pd.DataFrame) -> list[dict[str, Any]]:
     if frame is None or frame.empty:
         return []
@@ -124,6 +134,7 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     pairs, _pairs_lineage = load_latest_with_lineage(DERIVED_DIR, "relative_pairs", scope="full")
     pair_hist, _pair_hist_lineage = load_latest_with_lineage(DERIVED_DIR, "relative_pair_history", scope="full")
     etf_px, etf_px_lineage = load_latest_with_lineage(NORMALIZED_DIR, "etf_price_daily", scope="full")
+    southbound, southbound_lineage = load_latest_with_lineage(NORMALIZED_DIR, "southbound_market_flow", scope="full")
 
     # Add bilingual labels from config
     label_zh_map = {e["exposure_id"]: e.get("label_zh", e["label"]) for e in EXPOSURES}
@@ -190,6 +201,15 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         # year of baseline on the first day shown, not so all five are drawn.
         "relative_pair_history": _chart_series(pair_hist, "pair_id", "ratio", keep=("ratio_ma", "zscore")),
         "etf_price_daily_tail": _chart_series(etf_px, "fund_id", "close", id_as="ticker"),
+        # Only the four fields render_southbound_market_flow reads. The full
+        # 17-column dump was 1.5 MB of a 3.7 MB artifact, of which source_id /
+        # source_url / retrieved_at_utc / flow were one constant value repeated
+        # across 2,698 rows. Lineage belongs in the sources block, once.
+        "southbound_market_flow": _records(
+            southbound.loc[:, [c for c in SOUTHBOUND_ARTIFACT_COLUMNS if c in southbound.columns]]
+            if southbound is not None and not southbound.empty
+            else southbound
+        ),
         # Investable exposures only. The benchmark legs are fetched and stored
         # so the pair ratios can be computed, but the ratios themselves are
         # what the page draws -- shipping XLU's daily closes to the browser
@@ -322,6 +342,12 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     yahoo_labels = ", ".join(_yahoo_named)
     if _yahoo_extra:
         yahoo_labels += f" + {_yahoo_extra} relative-strength benchmarks"
+    southbound_rows = int(len(southbound)) if southbound is not None and not southbound.empty else 0
+    if southbound_rows and "trade_date" in southbound.columns:
+        southbound_latest = str(pd.to_datetime(southbound["trade_date"], errors="coerce").max().date())
+    else:
+        southbound_latest = "—"
+
     overall_healthy = (
         actual_exposures >= expected_count
         and spot_status == "Healthy"
@@ -369,6 +395,21 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
                 f"US session history for {yahoo_actual_count} of {len(yahoo_expected)} Yahoo-served exposures."
                 if sp500_ok
                 else f"Only {yahoo_actual_count} of {len(yahoo_expected)} Yahoo-served indexes returned data."
+            ),
+        },
+        # Southbound shipped to the browser with no health row at all, so an
+        # empty fetch would have looked identical to a quiet market. Every
+        # dataset in the artifact gets a row that can say "Unavailable".
+        {
+            "source": "Eastmoney aggregate southbound Stock Connect flow",
+            "status": "Healthy" if southbound_rows else "Unavailable",
+            "latest_observation": southbound_latest,
+            "records": southbound_rows,
+            "notes": (
+                f"Daily aggregate southbound net buy / holding value, {southbound_rows} sessions "
+                f"through {southbound_latest}."
+                if southbound_rows
+                else "Southbound flow fetch returned no rows; the panel has no data this run."
             ),
         },
     ]
@@ -448,6 +489,7 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         )
     sources = [
         {"id": "eastmoney_etf_spot", "label": "Eastmoney ETF snapshot (premium / spread / turnover / IOPV)", "href": "https://quote.eastmoney.com/center/gridlist.html#fund_etf", "query": {"engine": "akshare fund_etf_spot_em"}},
+        {"id": "eastmoney_hsgt_southbound", "label": "Eastmoney aggregate southbound Stock Connect flow", "href": "https://data.eastmoney.com/hsgt/hsgtV2.html", "query": {"engine": "akshare stock_hsgt_hist_em(南向资金)"}},
         {"id": "sina_index_daily", "label": "Sina Finance index / ETF daily OHLCV", "href": "https://finance.sina.com.cn/", "query": {"engine": "akshare stock_zh_index_daily / fund_etf_hist_sina"}},
         {"id": "yfinance_spx", "label": "Yahoo Finance S&P 500 index", "href": "https://finance.yahoo.com/quote/%5EGSPC/", "query": {"engine": "yfinance ^GSPC"}},
     ]
