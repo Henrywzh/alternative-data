@@ -4326,13 +4326,18 @@ def render_southbound_market_flow(frame: pd.DataFrame, language: str, window: st
     c1.metric(tr(language, "Latest net buy", "最新净买入"), f"{float(net):,.1f} 亿" if pd.notna(net) else "—", asof)
     c2.metric(tr(language, "Holding market value", "持股市值"), f"HK$ {float(mv)/1e12:,.2f}T" if pd.notna(mv) else "—")
     c3.metric(tr(language, "Same-day balance", "当日余额"), f"{float(bal):,.1f} 亿" if pd.notna(bal) else "Unavailable")
+    net_series = pd.to_numeric(plot.get("net_buy_yi"), errors="coerce").fillna(0)
+    # Conditional vibrant colors: Inflow (#2563eb vibrant blue), Outflow (#ef4444 vivid red)
+    bar_colors = ["#2563eb" if v >= 0 else "#ef4444" for v in net_series]
+
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(
         go.Bar(
             x=plot[date_col],
-            y=pd.to_numeric(plot.get("net_buy_yi"), errors="coerce"),
+            y=net_series,
             name=tr(language, "Net buy (CNY 100m)", "当日净买入（亿元）"),
-            marker_color="#93c5fd",
+            marker=dict(color=bar_colors, opacity=0.85),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>净买入: %{y:,.1f} 亿元<extra></extra>",
         ),
         secondary_y=False,
     )
@@ -4340,9 +4345,10 @@ def render_southbound_market_flow(frame: pd.DataFrame, language: str, window: st
         go.Scatter(
             x=plot[date_col],
             y=pd.to_numeric(plot.get("holding_market_value"), errors="coerce") / 1e12,
-            name=tr(language, "Holding MV (HK$ tn)", "持股市值（万亿）"),
+            name=tr(language, "Holding MV (HK$ tn)", "累计持股市值（万亿港元）"),
             mode="lines",
-            line=dict(width=2.5, color="#2563EB"),
+            line=dict(width=2.2, color="#0f172a"),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>持股市值: HK$ %{y:,.2f} 万亿<extra></extra>",
         ),
         secondary_y=True,
     )
