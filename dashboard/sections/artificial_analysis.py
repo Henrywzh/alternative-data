@@ -14,7 +14,8 @@ import yfinance as yf
 
 from dashboard import remote
 from dashboard.checks import CheckResult, run_checks
-from dashboard.data import (DOMAIN_ORDER, DATASET_REGISTRY, DatasetLoadResult, FreshnessInfo, dataset_source_for_domain, domain_dataset_ids, load_domain_datasets, load_latest_manifest, repo_root)
+from dashboard.data import (
+    LazyDatasetMap,DOMAIN_ORDER, DATASET_REGISTRY, DatasetLoadResult, FreshnessInfo, dataset_source_for_domain, domain_dataset_ids, load_domain_datasets, load_latest_manifest, repo_root)
 from openrouter_revenue import (build_price_context, build_conservative_provider_economics, estimate_usage_revenue, summarize_economics_coverage)
 from artificial_analysis_data.countries import artificial_analysis_country_label
 from semiconductor_memory_data.sources.config import AI_DEMAND_PPI_WEIGHTS
@@ -164,7 +165,7 @@ def _frontier_points_with_metadata(
     return pd.DataFrame(rows, columns=columns)
 
 
-@st.cache_data(ttl=3600, max_entries=8)
+@st.cache_data(ttl=3600, max_entries=8, hash_funcs={LazyDatasetMap: lambda mapping: mapping.cache_key})
 def compute_artificial_analysis_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
     views: dict[str, object] = {}
     models_result = datasets.get("artificial_analysis_models_daily")
