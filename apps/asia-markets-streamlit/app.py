@@ -4304,6 +4304,60 @@ def render_us_sector_tab(language: str) -> None:
             )
 
 
+
+def render_southbound_market_flow(frame: pd.DataFrame, language: str, window: str) -> None:
+    if frame is None or frame.empty:
+        st.info(tr(language, "Aggregate southbound Stock Connect history is not in this artifact yet.", "当前快照尚未包含全市场南向资金历史。"))
+        return
+    plot = frame.copy()
+    date_col = "trade_date" if "trade_date" in plot.columns else "date"
+    plot[date_col] = pd.to_datetime(plot[date_col], errors="coerce")
+    plot = plot.dropna(subset=[date_col]).sort_values(date_col)
+    years = HISTORY_WINDOWS.get(window)
+    if years:
+        cutoff = plot[date_col].max() - pd.DateOffset(years=years)
+        plot = plot[plot[date_col] >= cutoff]
+    latest = plot.iloc[-1]
+    net = pd.to_numeric(pd.Series([latest.get("net_buy_yi")]), errors="coerce").iloc[0]
+    mv = pd.to_numeric(pd.Series([latest.get("holding_market_value")]), errors="coerce").iloc[0]
+    bal = pd.to_numeric(pd.Series([latest.get("balance_yi")]), errors="coerce").iloc[0]
+    asof = pd.Timestamp(latest[date_col]).strftime("%Y-%m-%d")
+    c1, c2, c3 = st.columns(3)
+    c1.metric(tr(language, "Latest net buy", "最新净买入"), f"{float(net):,.1f} 亿" if pd.notna(net) else "—", asof)
+    c2.metric(tr(language, "Holding market value", "持股市值"), f"HK$ {float(mv)/1e12:,.2f}T" if pd.notna(mv) else "—")
+    c3.metric(tr(language, "Same-day balance", "当日余额"), f"{float(bal):,.1f} 亿" if pd.notna(bal) else "Unavailable")
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig.add_trace(
+        go.Bar(
+            x=plot[date_col],
+            y=pd.to_numeric(plot.get("net_buy_yi"), errors="coerce"),
+            name=tr(language, "Net buy (CNY 100m)", "当日净买入（亿元）"),
+            marker_color="#93c5fd",
+        ),
+        secondary_y=False,
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=plot[date_col],
+            y=pd.to_numeric(plot.get("holding_market_value"), errors="coerce") / 1e12,
+            name=tr(language, "Holding MV (HK$ tn)", "持股市值（万亿）"),
+            mode="lines",
+            line=dict(width=2.5, color="#2563EB"),
+        ),
+        secondary_y=True,
+    )
+    fig.update_layout(template="plotly_white", height=360, legend=dict(orientation="h", y=-0.2), margin=dict(l=0, r=8, t=12, b=40), hovermode="x unified")
+    fig.update_xaxes(tickformat="%b %Y", showgrid=False)
+    fig.update_yaxes(title_text=tr(language, "Net buy (CNY 100m)", "净买入（亿元）"), secondary_y=False, gridcolor="#F3F4F6")
+    fig.update_yaxes(title_text=tr(language, "Holding MV (HK$ tn)", "持股市值（万亿）"), secondary_y=True, showgrid=False)
+    st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True})
+    st.caption(tr(
+        language,
+        "Market-wide southbound Stock Connect from Eastmoney/akshare stock_hsgt_hist_em. This is not per-stock 0700.HK ownership.",
+        "全市场南向资金来自东财/akshare stock_hsgt_hist_em，不是 0700.HK 个股持股。",
+    ))
+
+
 def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: str, window: str) -> None:
     """Index & ETF Allocation Monitor: exposure leadership, relative regime,
     and wrapper selection."""
@@ -4333,24 +4387,41 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
     # --- Leadership ---
     section_heading(language, "Market Leadership", "市场领导力", "Which exposure is leading, and the technical snapshot behind it.", "哪个指数在领跑，以及其技术面快照。")
     
-    # 采用顶级原生下划线 Tab 栏 (st.tabs) - 包含美股行业板块
-    tab_core_label = tr(language, "🏛️ Core Indices", "🏛️ 核心大盘宽基")
-    tab_style_label = tr(language, "🇨🇳 China/HK Themes", "🇨🇳 泛中国风格与主题")
-    tab_us_label = tr(language, "🇺🇸 US 11 GICS Sectors", "🇺🇸 美股 11 大行业")
-    tab_all_label = tr(language, "🌐 All Exposures", "🌐 全部指数")
+    # 采用顶级原生下划线 Tab 栏 (st.tabs) - 按全球大区清晰划分
+    tab_china_label = tr(language, "🇨🇳 China & HK", "🇨🇳 泛中国 (A股/港股)")
+    tab_us_label = tr(language, "🇺🇸 United States", "🇺🇸 美国市场 (大盘/11大行业)")
+    tab_apac_label = tr(language, "🌏 APAC ex-CN/HK", "🌏 亚太除中港 (日/韩/亚太)")
+    tab_emea_label = tr(language, "🌍 EMEA", "🌍 欧洲与中东 (英/德/沙特)")
+    tab_global_label = tr(language, "🌐 Global & All", "🌐 全球大类基准 / 全部")
     
-    core_tab, style_tab, us_tab, all_tab = st.tabs([tab_core_label, tab_style_label, tab_us_label, tab_all_label])
+    china_tab, us_tab, apac_tab, emea_tab, global_tab = st.tabs([
+        tab_china_label, tab_us_label, tab_apac_label, tab_emea_label, tab_global_label
+    ])
     
-    core_eids = {"csi300", "csi500", "csi1000", "sp500", "hsi"}
-    style_eids = {"dividend", "hk_dividend", "hk_internet", "hstech", "growth", "chinext"}
-    
+    china_eids = {
+        "csi300", "csi500", "csi1000", "chinext", "growth", "dividend",
+        "hsi", "hstech", "hk_dividend", "hk_internet", "hk_midcap", "hk_hshares",
+        "cn_infotech", "cn_staples",
+    }
+    us_broad_eids = {"sp500", "ndx", "us_small", "us_growth", "us_value"}
+    apac_eids = {"nikkei225", "kr_semis"}
+    emea_eids = {"dax", "ftse100", "saudi"}
+    global_eids = {"csi300", "sp500", "ndx", "hsi", "nikkei225", "dax", "ftse100", "saudi"}
+
+    # 美国市场 Tab 包含大盘基准 + 11大GICS核心行业与纯度细分下钻
     with us_tab:
+        sub_us_prices = prices[prices["exposure_id"].isin(us_broad_eids)].copy() if not prices.empty else prices
+        sub_us_tech = technicals[technicals["exposure_id"].isin(us_broad_eids)].copy() if not technicals.empty else technicals
+        sub_us_labels = {k: v for k, v in label_by_exposure.items() if k in us_broad_eids}
+        if not sub_us_prices.empty:
+            render_market_leadership_chart(sub_us_prices, sub_us_labels, language, window)
         render_us_sector_tab(language)
 
     tab_mapping = [
-        (core_tab, core_eids, "core"),
-        (style_tab, style_eids, "style"),
-        (all_tab, set(label_by_exposure.keys()), "all"),
+        (china_tab, china_eids, "china"),
+        (apac_tab, apac_eids, "apac"),
+        (emea_tab, emea_eids, "emea"),
+        (global_tab, set(label_by_exposure.keys()), "global"),
     ]
     
     for tab_ctx, target_eids_filter, tab_key in tab_mapping:
@@ -4429,6 +4500,16 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
                 table_to_show = display_tech[final_cols].rename(columns=mapping).sort_values(mapping["_label_display"])
                 st.dataframe(table_to_show, hide_index=True, width="stretch")
 
+    southbound = pd.DataFrame(datasets.get("southbound_market_flow", []))
+    if not southbound.empty:
+        section_heading(
+            language,
+            "Southbound Stock Connect",
+            "南向资金（全市场）",
+            "Aggregate daily net buy, balance and holding market value since 2014. Not per-stock ownership.",
+            "2014年起的全市场日频净买入、余额和持股市值。不是个股持股。",
+        )
+        render_southbound_market_flow(southbound, language, window)
     # --- Relative Regime ---
     pair_summary = pd.DataFrame(datasets.get("relative_pairs", []))
     pair_history = _market_pair_history_frame(datasets)

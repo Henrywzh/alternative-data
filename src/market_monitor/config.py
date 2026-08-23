@@ -225,6 +225,33 @@ EXPOSURES = (
         "index_id": "DAX",
         "yf_symbol": "^GDAXI",
     },
+    # UK FTSE 100: QDII wrapper (513970).
+    # yfinance ^FTSE for the index.
+    {
+        "exposure_id": "ftse100",
+        "price_source": "yfinance",
+        "label": "UK FTSE 100",
+        "label_zh": "英国富时100",
+        "region": "Europe",
+        "size": "Large",
+        "style": "Broad",
+        "risk_character": "Core",
+        "index_id": "FTSE",
+        "yf_symbol": "^FTSE",
+    },
+    # Saudi Arabia (MSCI Saudi proxy KSA): QDII wrappers (159329, 520830).
+    {
+        "exposure_id": "saudi",
+        "price_source": "yfinance",
+        "label": "Saudi Arabia",
+        "label_zh": "沙特阿拉伯",
+        "region": "Middle East",
+        "size": "Large",
+        "style": "Broad",
+        "risk_character": "Emerging",
+        "index_id": "KSA",
+        "yf_symbol": "KSA",
+    },
     # --- Benchmarks: relative-strength legs, not investable exposures ---
     # Verified live on 2026-08-20. The obvious alternatives are traps: Sina
     # answers 200 for 中证800成长 (000967) and 中证800价值 (000969) but stopped
