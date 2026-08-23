@@ -5079,3 +5079,20 @@ def test_load_dataset_reads_remote_partitions(
     assert requested == ["data/normalized/provider_adoption/github_repo_rollup_daily"]
     assert sorted(result.frame["repo_full_name"]) == ["remote/one", "remote/two"]
     assert "repo_html_url" not in result.frame.columns
+
+
+def test_domain_state_cache_holds_the_largest_section() -> None:
+    """Every domain of the biggest section must fit in the cache at once.
+
+    A cap below the section's domain count means that section evicts and
+    re-decodes a domain on every rerun and can never be served from cache --
+    silently, as extra load rather than an error.  OpenRouter spans nine
+    domains and the cap was eight.
+    """
+    from dashboard.app import DOMAIN_STATE_CACHE_ENTRIES, SECTION_DOMAIN_MAP
+
+    for section, domains in SECTION_DOMAIN_MAP.items():
+        assert len(domains) <= DOMAIN_STATE_CACHE_ENTRIES, (
+            f"section {section!r} spans {len(domains)} domains but the domain-state "
+            f"cache holds only {DOMAIN_STATE_CACHE_ENTRIES}"
+        )

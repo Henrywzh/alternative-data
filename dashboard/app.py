@@ -218,7 +218,16 @@ def select_main_section() -> str:
     return current
 
 
-@st.cache_data(ttl=3600, max_entries=8)
+# One entry per domain, sized so the largest section fits: OpenRouter spans
+# nine domains, so a cap of eight meant that section evicted and re-decoded a
+# domain on every single rerun and could never be served from cache at all.
+# Derived rather than typed, so adding a domain to a section cannot silently
+# reintroduce the thrash.
+_MAX_SECTION_DOMAINS = max(len(domains) for domains in SECTION_DOMAIN_MAP.values())
+DOMAIN_STATE_CACHE_ENTRIES = _MAX_SECTION_DOMAINS + 4
+
+
+@st.cache_data(ttl=3600, max_entries=DOMAIN_STATE_CACHE_ENTRIES)
 def load_domain_state_cached(
     base_dir: Path,
     domain: str,
