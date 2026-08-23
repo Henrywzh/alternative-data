@@ -9,6 +9,7 @@ views without touching the live data sources at build time.
 from __future__ import annotations
 
 import argparse
+from dataclasses import dataclass
 import hashlib
 import json
 import sys
@@ -122,6 +123,115 @@ def coverage_regressions(current: dict[str, Any], previous: dict[str, Any]) -> l
         if previous_count and current_count < previous_count * 0.9:
             notes.append(f"{exposure_id} {current_count} rows vs {previous_count} in the previous run")
     return notes
+
+
+@dataclass(frozen=True)
+class ProviderDelivery:
+    """What each price provider actually delivered this run.
+
+    build_artifact used to derive the source-health rows from about thirty
+    loose locals scattered across a hundred lines, which is why nothing tested
+    the status rules: there was no way to call them. Gathering the counts here
+    lets _source_health_rows be a pure function of this record.
+    """
+
+    spot_status: str
+    spot_notes: str
+    spot_latest: str
+    spot_observed: int
+    csindex_count: int
+    csindex_expected: int
+    csindex_rows: int
+    csindex_latest: str
+    sina_hk_count: int
+    sina_hk_expected: int
+    sina_hk_rows: int
+    sina_hk_latest: str
+    sina_status: str
+    sina_actual_count: int
+    sina_expected: int
+    sina_records: int
+    sina_latest: str
+    yfinance_status: str
+    yahoo_labels: str
+    yahoo_actual_count: int
+    yahoo_expected: int
+    yahoo_records: int
+    yahoo_latest: str
+    southbound_rows: int
+    southbound_latest: str
+
+
+def _source_health_rows(delivery: ProviderDelivery) -> list[dict[str, Any]]:
+    """The per-provider health rows, from delivery alone.
+
+    Run-level diagnostics -- coverage regression, upstream fetch errors, run
+    consistency -- are appended by the caller, because they come from lineage
+    rather than from what a provider returned.
+    """
+    d = delivery
+    return [
+        {
+            "source": "Eastmoney ETF spot (premium / turnover / IOPV)",
+            "status": d.spot_status,
+            "latest_observation": f"run {d.spot_latest}Z" if d.spot_latest != "—" else "—",
+            "records": d.spot_observed,
+            "notes": d.spot_notes,
+        },
+        {
+            "source": "CSI index daily (Hong Kong Connect thematics)",
+            "status": "Healthy" if d.csindex_count >= d.csindex_expected else "Degraded",
+            "latest_observation": d.csindex_latest,
+            "records": d.csindex_rows,
+            "notes": f"Daily OHLCV for {d.csindex_count} of {d.csindex_expected} CSI-served exposures.",
+        },
+        {
+            "source": "Sina HK index daily (Hang Seng / CSI Hong Kong)",
+            "status": "Healthy" if d.sina_hk_count >= d.sina_hk_expected else "Degraded",
+            "latest_observation": d.sina_hk_latest,
+            "records": d.sina_hk_rows,
+            "notes": f"Daily OHLCV for {d.sina_hk_count} of {d.sina_hk_expected} Hong Kong exposures.",
+        },
+        {
+            "source": "Sina index daily (CN)",
+            "status": d.sina_status,
+            "latest_observation": d.sina_latest,
+            "records": d.sina_records,
+            "notes": (
+                f"Covering {d.sina_actual_count} of {d.sina_expected} Sina-owned exposures (CN/HK)."
+                if d.sina_actual_count < d.sina_expected
+                else f"Daily OHLCV for all {d.sina_actual_count} Sina-owned exposures (CN/HK)."
+            ),
+        },
+        {
+            "source": f"Yahoo Finance ({d.yahoo_labels})",
+            "status": d.yfinance_status,
+            "latest_observation": d.yahoo_latest,
+            # Counted over every exposure Yahoo actually serves. This was
+            # len(sp500 rows) even after Nasdaq 100 was added to the label.
+            "records": d.yahoo_records,
+            "notes": (
+                f"US session history for {d.yahoo_actual_count} of {d.yahoo_expected} Yahoo-served exposures."
+                if d.yahoo_actual_count >= d.yahoo_expected
+                else f"Only {d.yahoo_actual_count} of {d.yahoo_expected} Yahoo-served indexes returned data."
+            ),
+        },
+        # Southbound shipped to the browser with no health row at all, so an
+        # empty fetch would have looked identical to a quiet market. Every
+        # dataset in the artifact gets a row that can say "Unavailable".
+        {
+            "source": "Eastmoney aggregate southbound Stock Connect flow",
+            "status": "Healthy" if d.southbound_rows else "Unavailable",
+            "latest_observation": d.southbound_latest,
+            "records": d.southbound_rows,
+            "notes": (
+                f"Daily aggregate southbound net buy / holding value, {d.southbound_rows} sessions "
+                f"through {d.southbound_latest}."
+                if d.southbound_rows
+                else "Southbound flow fetch returned no rows; the panel has no data this run."
+            ),
+        },
+    ]
 
 
 def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
@@ -356,64 +466,35 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         and run_consistent
     )
 
-    datasets["source_health"] = [
-        {
-            "source": "Eastmoney ETF spot (premium / turnover / IOPV)",
-            "status": spot_status,
-            "latest_observation": f"run {spot_latest}Z" if spot_latest != "—" else "—",
-            "records": spot_observed,
-            "notes": spot_notes,
-        },
-        {
-            "source": "CSI index daily (Hong Kong Connect thematics)",
-            "status": "Healthy" if csindex_count >= len(csindex_ids) else "Degraded",
-            "latest_observation": csindex_latest,
-            "records": csindex_rows,
-            "notes": f"Daily OHLCV for {csindex_count} of {len(csindex_ids)} CSI-served exposures.",
-        },
-        {
-            "source": "Sina HK index daily (Hang Seng / CSI Hong Kong)",
-            "status": "Healthy" if sina_hk_count >= len(sina_hk_ids) else "Degraded",
-            "latest_observation": sina_hk_latest,
-            "records": sina_hk_rows,
-            "notes": f"Daily OHLCV for {sina_hk_count} of {len(sina_hk_ids)} Hong Kong exposures.",
-        },
-        {
-            "source": "Sina index daily (CN)",
-            "status": sina_status,
-            "latest_observation": sina_latest,
-            "records": sina_records,
-            "notes": f"Covering {sina_actual_count} of {len(sina_expected)} Sina-owned exposures (CN/HK)." if sina_actual_count < len(sina_expected) else f"Daily OHLCV for all {sina_actual_count} Sina-owned exposures (CN/HK).",
-        },
-        {
-            "source": f"Yahoo Finance ({yahoo_labels})",
-            "status": yfinance_status,
-            "latest_observation": yahoo_latest,
-            # Counted over every exposure Yahoo actually serves. This was
-            # len(sp500 rows) even after Nasdaq 100 was added to the label.
-            "records": int(len(yahoo_rows)),
-            "notes": (
-                f"US session history for {yahoo_actual_count} of {len(yahoo_expected)} Yahoo-served exposures."
-                if sp500_ok
-                else f"Only {yahoo_actual_count} of {len(yahoo_expected)} Yahoo-served indexes returned data."
-            ),
-        },
-        # Southbound shipped to the browser with no health row at all, so an
-        # empty fetch would have looked identical to a quiet market. Every
-        # dataset in the artifact gets a row that can say "Unavailable".
-        {
-            "source": "Eastmoney aggregate southbound Stock Connect flow",
-            "status": "Healthy" if southbound_rows else "Unavailable",
-            "latest_observation": southbound_latest,
-            "records": southbound_rows,
-            "notes": (
-                f"Daily aggregate southbound net buy / holding value, {southbound_rows} sessions "
-                f"through {southbound_latest}."
-                if southbound_rows
-                else "Southbound flow fetch returned no rows; the panel has no data this run."
-            ),
-        },
-    ]
+    datasets["source_health"] = _source_health_rows(
+        ProviderDelivery(
+            spot_status=spot_status,
+            spot_notes=spot_notes,
+            spot_latest=spot_latest,
+            spot_observed=spot_observed,
+            csindex_count=int(csindex_count),
+            csindex_expected=len(csindex_ids),
+            csindex_rows=csindex_rows,
+            csindex_latest=csindex_latest,
+            sina_hk_count=int(sina_hk_count),
+            sina_hk_expected=len(sina_hk_ids),
+            sina_hk_rows=sina_hk_rows,
+            sina_hk_latest=sina_hk_latest,
+            sina_status=sina_status,
+            sina_actual_count=int(sina_actual_count),
+            sina_expected=len(sina_expected),
+            sina_records=sina_records,
+            sina_latest=sina_latest,
+            yfinance_status=yfinance_status,
+            yahoo_labels=yahoo_labels,
+            yahoo_actual_count=int(yahoo_actual_count),
+            yahoo_expected=len(yahoo_expected),
+            yahoo_records=int(len(yahoo_rows)),
+            yahoo_latest=yahoo_latest,
+            southbound_rows=southbound_rows,
+            southbound_latest=southbound_latest,
+        )
+    )
     # --- Coverage regression check -------------------------------------
     # run_scope reports intent, not receipt: it is derived from the CLI
     # arguments, so a run that asked for everything and got a third of the

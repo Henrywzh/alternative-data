@@ -555,11 +555,17 @@ def _shipped_market_artifact():
 
 def _load_builder():
     import importlib.util
+    import sys
 
     root = Path(__file__).resolve().parents[2]
     path = root / "apps" / "asia-markets-dashboard" / "scripts" / "build_market_monitor_artifact.py"
     spec = importlib.util.spec_from_file_location("_mm_builder", path)
     module = importlib.util.module_from_spec(spec)
+    # Register before executing. @dataclass resolves its string annotations --
+    # the module uses `from __future__ import annotations` -- through
+    # sys.modules[cls.__module__], and without this that lookup returns None
+    # and the class body raises AttributeError at import time.
+    sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     return module
 
@@ -1851,3 +1857,77 @@ def test_artifact_exports_a_price_series_for_every_charted_exposure() -> None:
     exported = {str(row.get("exposure_id") or row.get("ticker")) for row in rows}
     missing = sorted(charted_exposures() - exported)
     assert not missing, f"charted but no price series exported: {missing}"
+
+
+def _delivery(builder, **overrides):
+    """A fully healthy ProviderDelivery, so each test states only its own case."""
+    healthy = dict(
+        spot_status="Healthy",
+        spot_notes="Eastmoney ETF spot: all 37 / 37 wrappers observed.",
+        spot_latest="2026-08-23 06:36",
+        spot_observed=37,
+        csindex_count=2, csindex_expected=2, csindex_rows=2441, csindex_latest="2026-08-21",
+        sina_hk_count=5, sina_hk_expected=5, sina_hk_rows=6130, sina_hk_latest="2026-08-21",
+        sina_status="Healthy", sina_actual_count=8, sina_expected=8,
+        sina_records=9680, sina_latest="2026-08-21",
+        yfinance_status="Healthy", yahoo_labels="Nasdaq 100, S&P 500",
+        yahoo_actual_count=15, yahoo_expected=15, yahoo_records=18798, yahoo_latest="2026-08-21",
+        southbound_rows=2698, southbound_latest="2026-08-21",
+    )
+    healthy.update(overrides)
+    return builder.ProviderDelivery(**healthy)
+
+
+def test_source_health_reports_a_partial_provider_as_degraded() -> None:
+    """The status rules were unreachable before ProviderDelivery existed.
+
+    They were derived from about thirty locals inside build_artifact, so the
+    only way to exercise them was to run a whole build against real data.
+    """
+    builder = _load_builder()
+
+    rows = {r["source"]: r for r in builder._source_health_rows(_delivery(builder))}
+    assert {r["status"] for r in rows.values()} == {"Healthy"}
+
+    partial = builder._source_health_rows(_delivery(builder, csindex_count=1, csindex_expected=2))
+    csi = next(r for r in partial if r["source"].startswith("CSI index"))
+    assert csi["status"] == "Degraded"
+    assert "1 of 2" in csi["notes"]
+
+
+def test_source_health_distinguishes_an_empty_source_from_a_partial_one() -> None:
+    """Zero rows is Unavailable, not Degraded: nothing arrived at all."""
+    builder = _load_builder()
+
+    empty = builder._source_health_rows(_delivery(builder, southbound_rows=0, southbound_latest="—"))
+    southbound = next(r for r in empty if "southbound" in r["source"].lower())
+    assert southbound["status"] == "Unavailable"
+    assert southbound["records"] == 0
+    assert "no rows" in southbound["notes"]
+
+
+def test_source_health_dates_each_provider_by_its_own_observations() -> None:
+    """A stalled feed must not borrow a fresher one's date.
+
+    Every row used to carry the mainland Sina date, so HK and CSI read as
+    fresh for as long as the CN feed kept updating.
+    """
+    builder = _load_builder()
+
+    rows = {
+        r["source"]: r["latest_observation"]
+        for r in builder._source_health_rows(
+            _delivery(builder, sina_latest="2026-08-21", sina_hk_latest="2026-06-30", csindex_latest="2026-05-04")
+        )
+    }
+    assert rows["Sina index daily (CN)"] == "2026-08-21"
+    assert rows["Sina HK index daily (Hang Seng / CSI Hong Kong)"] == "2026-06-30"
+    assert rows["CSI index daily (Hong Kong Connect thematics)"] == "2026-05-04"
+
+
+def test_source_health_row_count_matches_the_datasets_it_speaks_for() -> None:
+    """One row per price provider, plus southbound. No dataset without a row."""
+    builder = _load_builder()
+    rows = builder._source_health_rows(_delivery(builder))
+    assert len(rows) == 6
+    assert all(set(r) == {"source", "status", "latest_observation", "records", "notes"} for r in rows)
