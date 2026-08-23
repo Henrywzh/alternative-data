@@ -225,6 +225,76 @@ EXPOSURES = (
         "index_id": "DAX",
         "yf_symbol": "^GDAXI",
     },
+    # --- Global Benchmark & Regional Exposures ---
+    # Dow Jones Industrial Average (^DJI)
+    {
+        "exposure_id": "dow",
+        "role": "benchmark",
+        "price_source": "yfinance",
+        "label": "Dow Jones",
+        "label_zh": "道琼斯工业",
+        "region": "US",
+        "size": "Large",
+        "style": "Value / Core",
+        "risk_character": "Core",
+        "index_id": "DJI",
+        "yf_symbol": "^DJI",
+    },
+    # Russell 2000 Small-Cap (^RUT)
+    {
+        "exposure_id": "russell2000",
+        "role": "benchmark",
+        "price_source": "yfinance",
+        "label": "Russell 2000",
+        "label_zh": "罗素2000小盘",
+        "region": "US",
+        "size": "Small",
+        "style": "Broad",
+        "risk_character": "High beta",
+        "index_id": "RUT",
+        "yf_symbol": "^RUT",
+    },
+    # Korea KOSPI (^KS11)
+    {
+        "exposure_id": "kospi",
+        "role": "benchmark",
+        "price_source": "yfinance",
+        "label": "Korea KOSPI",
+        "label_zh": "韩国综合指数",
+        "region": "APAC",
+        "size": "Large",
+        "style": "Broad",
+        "risk_character": "Cyclical / Tech",
+        "index_id": "KOSPI",
+        "yf_symbol": "^KS11",
+    },
+    # Taiwan TAIEX (^TWII)
+    {
+        "exposure_id": "twii",
+        "role": "benchmark",
+        "price_source": "yfinance",
+        "label": "Taiwan TAIEX",
+        "label_zh": "台湾加权指数",
+        "region": "APAC",
+        "size": "Large",
+        "style": "Tech / Semis",
+        "risk_character": "High beta",
+        "index_id": "TAIEX",
+        "yf_symbol": "^TWII",
+    },
+    # France CAC 40 (^FCHI)
+    {
+        "exposure_id": "cac40",
+        "price_source": "yfinance",
+        "label": "France CAC 40",
+        "label_zh": "法国CAC40",
+        "region": "Europe",
+        "size": "Large",
+        "style": "Broad",
+        "risk_character": "Core",
+        "index_id": "CAC40",
+        "yf_symbol": "^FCHI",
+    },
     # UK FTSE 100: QDII wrapper (513970).
     # yfinance ^FTSE for the index.
     {

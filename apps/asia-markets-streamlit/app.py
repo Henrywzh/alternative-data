@@ -4389,9 +4389,9 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
     
     # 采用顶级原生下划线 Tab 栏 (st.tabs) - 按全球大区清晰划分
     tab_china_label = tr(language, "🇨🇳 China & HK", "🇨🇳 泛中国 (A股/港股)")
-    tab_us_label = tr(language, "🇺🇸 United States", "🇺🇸 美国市场 (大盘/11大行业)")
-    tab_apac_label = tr(language, "🌏 APAC ex-CN/HK", "🌏 亚太除中港 (日/韩/亚太)")
-    tab_emea_label = tr(language, "🌍 EMEA", "🌍 欧洲与中东 (英/德/沙特)")
+    tab_us_label = tr(language, "🇺🇸 United States", "🇺🇸 美国市场 (标普/纳指/道指/罗素/11大行业)")
+    tab_apac_label = tr(language, "🌏 APAC ex-CN/HK", "🌏 亚太除中港 (日经/韩国/台湾/半导体)")
+    tab_emea_label = tr(language, "🌍 EMEA", "🌍 欧洲与中东 (英/德/法/沙特)")
     tab_global_label = tr(language, "🌐 Global & All", "🌐 全球大类基准 / 全部")
     
     china_tab, us_tab, apac_tab, emea_tab, global_tab = st.tabs([
@@ -4403,10 +4403,10 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
         "hsi", "hstech", "hk_dividend", "hk_internet", "hk_midcap", "hk_hshares",
         "cn_infotech", "cn_staples",
     }
-    us_broad_eids = {"sp500", "ndx", "us_small", "us_growth", "us_value"}
-    apac_eids = {"nikkei225", "kr_semis"}
-    emea_eids = {"dax", "ftse100", "saudi"}
-    global_eids = {"csi300", "sp500", "ndx", "hsi", "nikkei225", "dax", "ftse100", "saudi"}
+    us_broad_eids = {"sp500", "ndx", "dow", "russell2000", "us_small", "us_growth", "us_value"}
+    apac_eids = {"nikkei225", "kospi", "twii", "kr_semis"}
+    emea_eids = {"dax", "ftse100", "cac40", "saudi"}
+    global_eids = {"csi300", "sp500", "ndx", "dow", "russell2000", "hsi", "nikkei225", "kospi", "twii", "dax", "ftse100", "cac40", "saudi"}
 
     southbound = pd.DataFrame(datasets.get("southbound_market_flow", []))
 

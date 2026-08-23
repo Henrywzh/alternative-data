@@ -648,6 +648,25 @@ ETF_REGISTRY = (
         # stale at the close, which is small next to the HK mismatch.
         "underlying_timezone": "Asia/Shanghai",
     },
+    # --- France CAC 40 (QDII) ---
+    {
+        "exposure_id": "cac40",
+        "index_id": "CAC40",
+        "fund_id": "513080",
+        "ticker": "513080.SH",
+        "fund_name": "华安法国CAC40ETF(QDII)",
+        "venue": "SH",
+        "currency": "CNY",
+        "wrapper_type": "qdii",
+        "management_fee": 0.0080,
+        "custody_fee": 0.0020,
+        "premium_regime": "qdii",
+        "inception_date": "2020-05-29",
+        "aum": None,
+        "is_qdii": True,
+        "is_cross_border": True,
+        "underlying_timezone": "Europe/Paris",
+    },
     # --- Germany DAX (QDII) ---
     {
         "exposure_id": "dax",
@@ -753,6 +772,11 @@ EXPOSURE_NAME_TOKENS: dict[str, tuple[str, ...]] = {
     # exactly the token that would have let that through.
     "kr_semis": ("中韩半导体",),
     "dax": ("德国", "DAX"),
+    "cac40": ("法国", "CAC40", "CAC"),
+    "dow": ("道琼斯", "道指", "Dow"),
+    "russell2000": ("罗素2000", "罗素"),
+    "kospi": ("韩国", "KOSPI"),
+    "twii": ("台湾", "加权指数", "TAIEX"),
     "ftse100": ("英国", "富时100", "FTSE"),
     "saudi": ("沙特", "Saudi", "中东"),
     "sp500": ("标普500",),

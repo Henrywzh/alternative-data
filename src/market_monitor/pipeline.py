@@ -25,7 +25,7 @@ from .relative_strength import (
     build_relative_regime,
     compute_spread_metrics,
 )
-from .sources import akshare_etf, csindex, eastmoney_fee, eastmoney_nav, yfinance
+from .sources import akshare_etf, csindex, eastmoney_fee, eastmoney_nav, eastmoney_hsgt, yfinance
 from .storage import (
     load_latest_derived,
     load_latest_normalized,
@@ -518,6 +518,14 @@ def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, 
             }
         )
 
+
+    # --- Aggregate southbound Stock Connect flow ---
+    try:
+        raw["southbound_market_flow"] = eastmoney_hsgt.fetch_southbound_market_flow()
+    except Exception as exc:  # noqa: BLE001
+        print(f"  [market_monitor] southbound flow fetch failed: {exc}")
+        raw["southbound_market_flow"] = pd.DataFrame()
+        fetch_errors.append({"dataset": "southbound_market_flow", "error": f"{type(exc).__name__}: {exc}"})
     return raw
 
 
@@ -592,6 +600,7 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
     # Normalized: ETF prices.
     normalized_etf = raw["etf_close"].copy() if not raw["etf_close"].empty else pd.DataFrame()
     results["etf_price_daily"] = normalized_etf
+    results["southbound_market_flow"] = raw.get("southbound_market_flow", pd.DataFrame())
 
     # Derived: per-exposure technical snapshot (latest row).
     # Investable exposures only: a benchmark exists to be one leg of a ratio,
@@ -677,6 +686,12 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
         run_info: dict[str, Any] = {}
         run_info["index_price_daily"] = save_normalized("index_price_daily", normalized_index, metadata={"type": "normalized", "run_scope": run_scope, "coverage": coverage}, run_id=run_id) if not normalized_index.empty else None
         run_info["etf_price_daily"] = save_normalized("etf_price_daily", normalized_etf, metadata={"type": "normalized", "run_scope": run_scope}, run_id=run_id) if not normalized_etf.empty else None
+        run_info["southbound_market_flow"] = save_normalized(
+            "southbound_market_flow",
+            results.get("southbound_market_flow", pd.DataFrame()),
+            metadata={"type": "normalized", "run_scope": run_scope, "source_id": "eastmoney:hsgt_hist"},
+            run_id=run_id,
+        ) if not results.get("southbound_market_flow", pd.DataFrame()).empty else None
         run_info["exposure_technicals"] = save_derived("exposure_technicals", results["exposure_technicals"], metadata={"type": "derived", "run_scope": run_scope}, run_id=run_id) if not results["exposure_technicals"].empty else None
         run_info["relative_regime"] = save_derived("relative_regime", results["relative_regime"], metadata={"type": "derived", "run_scope": run_scope}, run_id=run_id) if not results["relative_regime"].empty else None
         run_info["wrapper_metrics"] = save_derived("wrapper_metrics", ranked, metadata={"type": "derived", "run_scope": run_scope}, run_id=run_id) if not ranked.empty else None
@@ -691,7 +706,7 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
         # Bounded retention. Every run writes the complete history rather than
         # a delta, so old snapshots are pure duplication; see prune_runs.
         pruned: dict[str, list[str]] = {}
-        for root, datasets in ((NORMALIZED_DIR, ("index_price_daily", "etf_price_daily")),
+        for root, datasets in ((NORMALIZED_DIR, ("index_price_daily", "etf_price_daily", "southbound_market_flow")),
                                # premium_history was missing here, so the one
                                # dataset that carries a full 11k-row series
                                # kept every run it had ever written while the
