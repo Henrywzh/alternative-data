@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-08-24T03:32:59Z",
-  "snapshot_id": "e4859efe0dcee0b1",
+  "generated_at": "2026-08-24T07:21:14Z",
+  "snapshot_id": "112d4357d6ca6d02",
   "data_as_of": "2026-08-24",
   "overall_status": "Healthy",
   "live_sources": 12,
@@ -120,10 +120,10 @@
       "source": "Wikimedia Wikipedia Crypto Pageviews",
       "dataset": "wikimedia_crypto_pageviews",
       "type": "Monitor",
-      "status": "Healthy",
+      "status": "Degraded",
       "latest_observation": "2026-08-24",
-      "records": 106056,
-      "freshness": "Live",
+      "records": 101984,
+      "freshness": "Unavailable",
       "notes": "Daily English Wikipedia pageviews for a curated crypto/DeFi page basket, aggregated into complete Monday-Sunday weekly agent totals and monthly user-by-page history. This measures page-load attention, not unique people, trading activity, or Hong Kong adoption."
     }
   ],

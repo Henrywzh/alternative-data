@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-08-24T02:56:55.670821Z",
-  "snapshot_id": "8ddea5fb90cae6f0",
+  "generated_at": "2026-08-24T07:21:14.609937Z",
+  "snapshot_id": "19e21caf5591f09e",
   "data_as_of": "2026-08-24",
   "overall_status": "Degraded",
   "live_sources": 11,
@@ -132,7 +132,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "2026-08-23",
-      "records": 5752,
+      "records": 5524,
       "freshness": "Live",
       "notes": "Daily English Wikipedia pageviews for a curated aerospace page basket, aggregated into monthly and complete Monday-Sunday weekly views; user, search-engine spider, automated and all-agent traffic remain separate."
     }
