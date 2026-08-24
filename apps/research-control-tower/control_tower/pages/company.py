@@ -29,6 +29,13 @@ from ..charts import (
 from ..company_profiles import SegmentSpec, get_company_profile, segment_label
 
 from src.research_control_tower.eligibility import listing_eligibility_reason
+from src.research_control_tower.southbound_holdings import hkex_security_code, southbound_mart_path
+from src.research_control_tower.vendor_financials import (
+    VendorLoadResult,
+    default_local_mart_path,
+    load_vendor_financials,
+    vendor_source_caption,
+)
 
 from ..filters import apply_event_filters
 from ..formatting import format_t_minus
@@ -1780,6 +1787,8 @@ def _render_company_hero_card(
     buyback_sub = 'Selected-listing statutory filings'
     hero_html = f'<div class="ct-hero-card"><div class="ct-hero-top"><div><div class="ct-hero-title">{escape(view.display_name)} {ticker_badge} {exchange_badge}</div><div class="ct-subtle" style="margin-top: 0.25rem;">{escape(view.legal_name)} · {escape(view.country)} {sector_badge} {industry_badge}</div></div>{price_html}</div><div class="ct-kpi-grid"><div class="ct-kpi-card"><div class="ct-kpi-label">LTM Revenue</div><div class="ct-kpi-value">{escape(ltm_rev_str)}</div><div class="ct-kpi-sub">Total Topline (IFRS)</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">LTM Non-IFRS Net Profit</div><div class="ct-kpi-value">{escape(ltm_profit_str)}</div><div class="ct-kpi-sub">Core Operating Earnings</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Free Cash Flow</div><div class="ct-kpi-value">{escape(ltm_fcf_str)}</div><div class="ct-kpi-sub">Latest Reported Period</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Capital Return / Buybacks</div><div class="ct-kpi-value">{escape(buyback_str)}</div><div class="ct-kpi-sub">{escape(buyback_sub)}</div></div></div></div>'
     st.markdown(hero_html, unsafe_allow_html=True)
+    if actuals.empty:
+        st.caption('Official LTM cards stay unavailable when issuer actuals are absent. A labelled yfinance/akshare overlay, if present, is on Fundamentals and is not written into these KPIs.')
 
 
 def _render_styled_bullet_card(line: str) -> None:
@@ -2236,14 +2245,16 @@ def _spot_forward_pe_payload(view: CompanyView) -> dict[str, Any] | None:
     row = eps.iloc[0]
     eps_value = pd.to_numeric(pd.Series([row.get('value')]), errors='coerce').iloc[0]
     eps_ccy = _text(row.get('currency'))
-    if pd.isna(eps_value) or float(eps_value) <= 0 or not eps_ccy:
+    if pd.isna(eps_value) or not eps_ccy:
         return None
     if eps_ccy.casefold() != price_ccy.casefold():
         return None
+    eps_num = float(eps_value)
+    pe_value = float(price) / eps_num if eps_num > 0 else None
     return {
         'price': float(price),
-        'eps': float(eps_value),
-        'pe': float(price) / float(eps_value),
+        'eps': eps_num,
+        'pe': pe_value,
         'price_ccy': price_ccy,
         'eps_ccy': eps_ccy,
         'horizon': _text(row.get('horizon')),
@@ -2369,15 +2380,60 @@ def _openrouter_period_frame(daily: pd.DataFrame, granularity: str) -> pd.DataFr
     return grouped
 
 
-def _load_southbound_holdings(profile) -> pd.DataFrame:
+def _southbound_spec_from_view(view: CompanyView, profile):
+    """Prefer listing-derived HKEX southbound identity over hardcoded profiles."""
+    listing = None
+    if view.selected_listing_id and not view.listings.empty:
+        rows = view.listings.loc[view.listings['listing_id'].astype('string').eq(view.selected_listing_id)]
+        if not rows.empty:
+            listing = rows.iloc[0]
+    if listing is None and not view.listings.empty:
+        hk = view.listings.loc[view.listings.get('exchange', pd.Series('', index=view.listings.index)).astype('string').str.upper().eq('HKEX')]
+        if not hk.empty:
+            listing = hk.iloc[0]
+    if listing is not None:
+        listing_id = _text(listing.get('listing_id'))
+        canonical = _text(listing.get('canonical_ticker')) or _text(listing.get('native_ticker'))
+        code = hkex_security_code(listing.get('native_ticker'), canonical)
+        if listing_id and code:
+            return {
+                'mart_filename': f'{listing_id.lower()}_southbound_holdings.parquet',
+                'security_code': code,
+                'canonical_ticker': canonical or f"{code[1:]}.HK",
+                'listing_id': listing_id,
+            }
     spec = None if profile is None else profile.southbound
     if spec is None:
+        return None
+    return {
+        'mart_filename': spec.mart_filename,
+        'security_code': spec.security_code,
+        'canonical_ticker': spec.canonical_ticker,
+        'listing_id': spec.listing_id,
+    }
+
+
+def _load_southbound_holdings(spec) -> pd.DataFrame:
+    if spec is None:
         return pd.DataFrame()
+    if not isinstance(spec, dict):
+        southbound = getattr(spec, 'southbound', None)
+        if southbound is None:
+            return pd.DataFrame()
+        spec = {
+            'mart_filename': southbound.mart_filename,
+            'security_code': southbound.security_code,
+            'canonical_ticker': southbound.canonical_ticker,
+            'listing_id': southbound.listing_id,
+        }
     repo_root = _control_tower_repo_root()
-    candidates = [
-        repo_root / 'data/normalized/marts' / spec.mart_filename,
-        Path('data/normalized/marts') / spec.mart_filename,
-    ]
+    listing_id = spec.get('listing_id')
+    filename = spec.get('mart_filename')
+    candidates = []
+    if listing_id:
+        candidates.append(southbound_mart_path(repo_root, listing_id))
+    if filename:
+        candidates.append(repo_root / 'data/normalized/marts' / filename)
     for path in candidates:
         if path.exists():
             frame = _read_mart_projected(str(path), _parquet_fingerprint(path), SOUTHBOUND_MART_COLUMNS)
@@ -2484,14 +2540,14 @@ def _render_openrouter_module(view: CompanyView, profile) -> None:
 
 
 def _render_southbound_module(view: CompanyView, profile) -> None:
-    spec = profile.southbound
+    spec = _southbound_spec_from_view(view, profile)
     if spec is None:
         return
     _render_section_heading(4, '🌊 HKEX Southbound Stock Connect (港股通南向资金) Liquidity Signal', f'{_slugify(view.entity_id)}-southbound-flow')
-    holdings = _load_southbound_holdings(profile)
-    ticker = spec.canonical_ticker
+    holdings = _load_southbound_holdings(spec)
+    ticker = spec['canonical_ticker']
     if holdings.empty:
-        st.warning(f'Southbound holding history is unavailable locally. Expected data/normalized/marts/{spec.mart_filename} from Eastmoney/akshare stock_hsgt_individual_em({spec.security_code}).')
+        st.warning(f"Southbound holding history is unavailable locally. Expected data/normalized/marts/{spec['mart_filename']} from Eastmoney/akshare stock_hsgt_individual_em({spec['security_code']}).")
         st.caption('This is a rolling ~2-year per-stock ownership series, not the 2014-onward market-wide southbound flow.')
         return
     latest = holdings.iloc[-1]
@@ -2537,7 +2593,8 @@ def _render_southbound_module(view: CompanyView, profile) -> None:
 def _render_alternative_data_tab(view: CompanyView) -> None:
     profile = get_company_profile(view.entity_id)
     _render_section_heading(4, 'Alternative data signals', f'alternative-data-{_slugify(view.entity_id)}')
-    has_modules = bool(profile.openrouter or profile.southbound)
+    southbound_spec = _southbound_spec_from_view(view, profile)
+    has_modules = bool(profile.openrouter or southbound_spec)
     if not has_modules:
         st.info(
             f'No company-specific alternative-data modules are wired for {_text(view.display_name)} yet. '
@@ -2549,6 +2606,139 @@ def _render_alternative_data_tab(view: CompanyView) -> None:
     _render_openrouter_module(view, profile)
     _render_southbound_module(view, profile)
 
+
+
+
+@st.cache_data(show_spinner=False, max_entries=8)
+def _load_vendor_financials_cached(
+    entity_id: str,
+    listing_id: str | None,
+    listings_json: str,
+    mart_path: str,
+    fingerprint: tuple[int, int] | None,
+) -> tuple[str, str, str, str]:
+    """Cache the labelled vendor overlay; official actuals are never touched."""
+
+    del fingerprint
+    listings = pd.read_json(listings_json, dtype=False) if listings_json else pd.DataFrame()
+    result = load_vendor_financials(
+        entity_id=entity_id,
+        listing_id=listing_id,
+        listings=listings,
+        local_mart_path=Path(mart_path) if mart_path else None,
+        allow_sibling_fallback=not bool(mart_path and Path(mart_path).is_file()),
+    )
+    payload = result.frame.to_json(date_format='iso', default_handler=str) if result.frame is not None else ''
+    return result.status, result.detail, result.source_kind, payload
+
+
+def _vendor_financials_for_view(view: CompanyView) -> VendorLoadResult:
+    """Read labelled yfinance/akshare rows without touching official actuals."""
+
+    if view.entity_type == 'private' and view.listings.empty:
+        return VendorLoadResult(pd.DataFrame(), 'unavailable', 'private entity has no listing for vendor financials', 'local_mart')
+    mart = default_local_mart_path(_control_tower_repo_root())
+    fingerprint = _parquet_fingerprint(mart) if mart.is_file() else None
+    listings_json = view.listings.to_json(date_format='iso', default_handler=str) if view.listings is not None and not view.listings.empty else ''
+    try:
+        status, detail, source_kind, payload = _load_vendor_financials_cached(
+            view.entity_id,
+            view.selected_listing_id,
+            listings_json,
+            str(mart),
+            fingerprint,
+        )
+    except (OSError, ValueError) as exc:
+        return VendorLoadResult(pd.DataFrame(), 'error', f'vendor financials failed: {exc}', 'local_mart')
+    frame = pd.read_json(payload, dtype=False) if payload else pd.DataFrame()
+    return VendorLoadResult(frame, status, detail, source_kind)
+
+
+def _vendor_series(frame: pd.DataFrame, provider: str, metric: str, period_type: str) -> pd.DataFrame:
+    if frame is None or frame.empty:
+        return pd.DataFrame(columns=['period_end', 'period_label', 'reported_value', 'currency', 'source_label'])
+    scoped = frame.loc[
+        frame['provider'].astype('string').eq(provider)
+        & frame['metric'].astype('string').eq(metric)
+        & frame['period_type'].astype('string').eq(period_type)
+    ].copy()
+    if scoped.empty:
+        return scoped
+    scoped['period_end'] = pd.to_datetime(scoped['period_end'], errors='coerce')
+    scoped = scoped.dropna(subset=['period_end', 'reported_value']).sort_values('period_end')
+    return scoped.drop_duplicates(subset=['period_end'], keep='last')
+
+
+def _render_vendor_financials_overlay(view: CompanyView) -> VendorLoadResult:
+    _render_section_heading(
+        4,
+        'Vendor financials overlay (not official)',
+        f'vendor-financials-{_slugify(view.entity_id)}',
+    )
+    result = _vendor_financials_for_view(view)
+    st.caption(vendor_source_caption(result))
+    frame = result.frame
+    if result.status == 'error':
+        st.error(result.detail)
+        return result
+    if frame is None or frame.empty:
+        st.info(result.detail or 'Vendor financials overlay unavailable for this listing.')
+        return result
+    st.warning(
+        'These numbers come from yfinance and/or akshare inside the sibling financial-data store. '
+        'They are not HKEX/SEC issuer actuals, not IFRS vs Non-IFRS, and not a PIT official series. '
+        'AkShare interim rows are year-to-date. Currencies are source-reported and not FX-aligned.'
+    )
+    annual_rev = _vendor_series(frame, 'yfinance', 'revenue_total', 'annual')
+    annual_op = _vendor_series(frame, 'yfinance', 'operating_profit', 'annual')
+    annual_np = _vendor_series(frame, 'yfinance', 'net_profit_attributable', 'annual')
+    if not annual_rev.empty:
+        annual_rev = annual_rev.loc[pd.to_numeric(annual_rev['reported_value'], errors='coerce').fillna(0) != 0]
+        plot = pd.DataFrame({'period_end': annual_rev['period_end']})
+        plot = plot.merge(
+            annual_rev[['period_end', 'reported_value']].rename(columns={'reported_value': 'Revenue'}),
+            on='period_end',
+            how='left',
+        )
+        if not annual_op.empty:
+            plot = plot.merge(
+                annual_op[['period_end', 'reported_value']].rename(columns={'reported_value': 'Operating profit'}),
+                on='period_end',
+                how='left',
+            )
+        if not annual_np.empty:
+            plot = plot.merge(
+                annual_np[['period_end', 'reported_value']].rename(columns={'reported_value': 'Net profit attributable'}),
+                on='period_end',
+                how='left',
+            )
+        currency = _text(annual_rev.iloc[-1].get('currency')) or 'CNY'
+        values = plot.set_index('period_end').apply(pd.to_numeric, errors='coerce') / 1e9
+        st.caption(f'yfinance annual statements via financial-data · values in {currency} billions · vendor reported, unverified · zeros dropped')
+        _render_plotly(_plotly_bar_chart(values, y_title=f'{currency} billions', value_format=',.1f', height=300, tickformat='%Y'))
+    display_columns = [
+        column for column in (
+            'provider', 'source_label', 'period_label', 'period_type', 'interim_is_ytd', 'metric',
+            'source_metric_label', 'reported_value', 'currency', 'currency_semantics', 'unit', 'pit_class',
+        ) if column in frame.columns
+    ]
+    friendly = frame.loc[:, display_columns].rename(columns={
+        'provider': 'Provider',
+        'source_label': 'Source',
+        'period_label': 'Period',
+        'period_type': 'Period type',
+        'interim_is_ytd': 'Interim is YTD',
+        'metric': 'Metric',
+        'source_metric_label': 'Vendor line item',
+        'reported_value': 'Reported',
+        'currency': 'Currency',
+        'currency_semantics': 'Currency semantics',
+        'unit': 'Unit',
+        'pit_class': 'PIT class',
+    })
+    with st.expander('Vendor row registry (yfinance / akshare via financial-data)', expanded=False):
+        st.dataframe(friendly, width='stretch', hide_index=True)
+    return result
 
 def _render_fundamentals_tab(
     view: CompanyView,
@@ -2615,6 +2805,7 @@ def _render_fundamentals_tab(
         if not latest.empty:
             latest_label = _text(sorted_actuals.loc[sorted_actuals['period_end'].eq(latest.max()), 'period_label'].iloc[0])
             st.caption(f'Latest reported period in snapshot: {escape(latest_label) if latest_label else latest.max().strftime("%Y-%m-%d")} · reported values preserved per filing; restatements are versioned, not overwritten.')
+    _render_vendor_financials_overlay(view)
     render_earnings_calendar(snapshot, entity_id=view.entity_id, listing_id=view.selected_listing_id)
     _render_section_heading(4, 'Profitability & Free Cash Flow trajectory', f'fcf-trajectory-{_slugify(view.entity_id)}')
     trajectory = _latest_actual_rows(frame)
@@ -2649,6 +2840,7 @@ def _render_fundamentals_tab(
     _render_section_heading(4, 'Valuation multiples & return yields', f'valuation-multiples-{_slugify(view.entity_id)}')
     spot = _spot_forward_pe_payload(view)
     if spot is not None:
+        spot_pe_html = f'{spot["pe"]:.1f}x' if spot.get('pe') else 'NM'
         analysts = spot['analyst_count']
         analyst_label = f"{int(analysts)} analysts" if pd.notna(analysts) else 'analyst count unavailable'
         # Name the year the ratio actually used. The card used to say "FY1"
@@ -2663,7 +2855,7 @@ def _render_fundamentals_tab(
                 '<div class="ct-kpi-grid">'
                 f'<div class="ct-kpi-card"><div class="ct-kpi-label">Last delayed price</div><div class="ct-kpi-value">{spot["price_ccy"]} {spot["price"]:,.2f}</div><div class="ct-kpi-sub">Quote snapshot</div></div>'
                 f'<div class="ct-kpi-card"><div class="ct-kpi-label">{escape(eps_label)}</div><div class="ct-kpi-value">{spot["eps_ccy"]} {spot["eps"]:.2f}</div><div class="ct-kpi-sub">{escape(year_label)} · {escape(spot["provider"])} · {escape(analyst_label)}</div></div>'
-                f'<div class="ct-kpi-card"><div class="ct-kpi-label">Spot forward P/E</div><div class="ct-kpi-value">{spot["pe"]:.1f}x</div><div class="ct-kpi-sub">Price / {escape(year_label)} EPS · display-only</div></div>'
+                f'<div class="ct-kpi-card"><div class="ct-kpi-label">Spot forward P/E</div><div class="ct-kpi-value">{spot_pe_html}</div><div class="ct-kpi-sub">Price / {escape(year_label)} EPS · vendor display-only, not official valuation_snapshots</div></div>'
                 '<div class="ct-kpi-card"><div class="ct-kpi-label">Trailing / historical P/E</div><div class="ct-kpi-value">Unavailable</div><div class="ct-kpi-sub">No share-count or historical EPS vintage in the valuation mart</div></div>'
                 '</div>'
             ),
@@ -2671,11 +2863,13 @@ def _render_fundamentals_tab(
         )
         fy1_note = '' if spot['is_fy1'] else ' No 0y consensus row is available, so the earliest annual estimate is used instead.'
         st.caption(
-            f'Spot forward P/E is a same-currency display ratio from the delayed quote and {year_label} consensus EPS.'
-            f'{fy1_note} It is not a valuation_snapshots row and is not a historical percentile.'
+            f'Spot forward P/E is a same-currency vendor display ratio from delayed yfinance quote and yfinance consensus EPS ({year_label}).'
+            f'{fy1_note} Negative FY1 EPS is shown as NM. This is not a valuation_snapshots row, not share-count-based, and not a historical percentile.'
         )
+    else:
+        st.info('Vendor forward P/E unavailable · needs a delayed quote and a same-currency yfinance annual EPS consensus row.')
     if view.valuation_snapshots.empty:
-        st.warning('Audited valuation mart unavailable · forward_pe / EV/EBITDA / FCF yield require contemporaneous quote, share count, and basis-verified consensus. Gross margin history is also unavailable because gross profit is not extracted yet.')
+        st.warning('Audited valuation mart unavailable · official forward_pe / EV/EBITDA / FCF yield still require contemporaneous quote, share count, and basis-verified consensus. The vendor overlay above is separate and labelled.')
     else:
         st.dataframe(_friendly_valuation_frame(view.valuation_snapshots), width='stretch', hide_index=True)
         st.caption('percentile_history_status: unavailable · Historical denominator vintages are absent; reconstructing synthetic historical percentiles from current-vintage statements is strictly forbidden by policy.')
