@@ -1095,7 +1095,7 @@ def build_company_view(
         selection_mode=selection_mode,
         listings=listings,
         memberships=memberships,
-        quote_snapshots=quote_snapshots,
+        quote_snapshots=_newer_local_quotes(quote_snapshots),
         price_bars=price_bars,
         quote_status=quote_status,
         events=events,
@@ -2413,6 +2413,53 @@ def _southbound_spec_from_view(view: CompanyView, profile):
     }
 
 
+def _local_quote_overlay_path() -> Path:
+    return _control_tower_repo_root() / 'data' / 'normalized' / 'marts' / 'quote_snapshots_v1.parquet'
+
+
+def _newer_local_quotes(snapshot_quotes: pd.DataFrame) -> pd.DataFrame:
+    """Replace published quotes with a newer local mart, listing by listing.
+
+    This does not rewrite the generation and never widens company scope to
+    other tickers. Pytest keeps the snapshot fixture by skipping the overlay.
+    """
+    import os
+    if os.environ.get('PYTEST_CURRENT_TEST') or os.environ.get('CONTROL_TOWER_DISABLE_LOCAL_QUOTE_OVERLAY'):
+        return snapshot_quotes
+    if snapshot_quotes is None or snapshot_quotes.empty or 'listing_id' not in snapshot_quotes.columns:
+        return snapshot_quotes
+    path = _local_quote_overlay_path()
+    if not path.is_file():
+        return snapshot_quotes
+    try:
+        local = pd.read_parquet(path)
+    except (OSError, ValueError):
+        return snapshot_quotes
+    if local.empty or 'listing_id' not in local.columns or 'quote_timestamp' not in local.columns:
+        return snapshot_quotes
+    local = local.copy()
+    local['quote_timestamp'] = pd.to_datetime(local['quote_timestamp'], errors='coerce', utc=True)
+    published = snapshot_quotes.copy()
+    published['quote_timestamp'] = pd.to_datetime(published['quote_timestamp'], errors='coerce', utc=True)
+    wanted = set(published['listing_id'].astype('string'))
+    local = local.loc[local['listing_id'].astype('string').isin(wanted)]
+    if local.empty:
+        return snapshot_quotes
+    rows = []
+    for listing_id, group in published.groupby(published['listing_id'].astype('string'), dropna=False):
+        overlay = local.loc[local['listing_id'].astype('string').eq(str(listing_id))]
+        if overlay.empty:
+            rows.append(group)
+            continue
+        pub_ts = group['quote_timestamp'].max()
+        loc_ts = overlay['quote_timestamp'].max()
+        if pd.notna(loc_ts) and (pd.isna(pub_ts) or loc_ts > pub_ts):
+            rows.append(overlay.loc[overlay['quote_timestamp'].eq(loc_ts)].head(1))
+        else:
+            rows.append(group)
+    return pd.concat(rows, ignore_index=True)
+
+
 def _load_southbound_holdings(spec) -> pd.DataFrame:
     if spec is None:
         return pd.DataFrame()
@@ -2547,7 +2594,14 @@ def _render_southbound_module(view: CompanyView, profile) -> None:
     holdings = _load_southbound_holdings(spec)
     ticker = spec['canonical_ticker']
     if holdings.empty:
-        st.warning(f"Southbound holding history is unavailable locally. Expected data/normalized/marts/{spec['mart_filename']} from Eastmoney/akshare stock_hsgt_individual_em({spec['security_code']}).")
+        code = spec['security_code']
+        extra = ''
+        if code in {'09888', '9888'}:
+            extra = ' Eastmoney returned an empty payload for Baidu 9888.HK (akshare result[pages] is null); this is an upstream gap, not a missing listing mapping.'
+        st.warning(
+            f"Southbound holding history is unavailable locally. Expected data/normalized/marts/{spec['mart_filename']} "
+            f"from Eastmoney/akshare stock_hsgt_individual_em({code}).{extra}"
+        )
         st.caption('This is a rolling ~2-year per-stock ownership series, not the 2014-onward market-wide southbound flow.')
         return
     latest = holdings.iloc[-1]
