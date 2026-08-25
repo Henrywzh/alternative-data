@@ -279,3 +279,240 @@ def test_market_label_falls_back_to_english_when_no_chinese_label_exists() -> No
 
     missing = pd.Series({"exposure_id": "csi300", "label": "CSI 300"})
     assert app._market_label(missing, "zh") == "CSI 300"
+
+
+class _RecordingStreamlit:
+    """Captures what a render function hands to Streamlit.
+
+    render_relative_regime and render_market_index_detail are ~200 and ~380
+    lines that only a "did not raise" smoke test has ever run. Driving them
+    with a recorder makes their data transforms assertable without pulling
+    them apart while another session is editing the file.
+    """
+
+    def __init__(self, selections: dict | None = None) -> None:
+        self.selections = selections or {}
+        self.figures: list = []
+        self.infos: list[str] = []
+        self.captions: list[str] = []
+        self.options: dict[str, list] = {}
+
+    def _pick(self, label, options, key=None, **kwargs):
+        options = list(options)
+        self.options[str(key or label)] = options
+        chosen = self.selections.get(str(key or label))
+        return chosen if chosen is not None else (options[0] if options else None)
+
+    segmented_control = _pick
+    pills = _pick
+
+    def radio(self, label, options, **kwargs):
+        return self._pick(label, options, key=kwargs.get("key"))
+
+    def selectbox(self, label, options, **kwargs):
+        return self._pick(label, options, key=kwargs.get("key"))
+
+    def plotly_chart(self, fig, **kwargs):
+        self.figures.append(fig)
+
+    def info(self, text, **kwargs):
+        self.infos.append(str(text))
+
+    def caption(self, text, **kwargs):
+        self.captions.append(str(text))
+
+    def columns(self, spec, **kwargs):
+        count = spec if isinstance(spec, int) else len(list(spec))
+        return [_RecordingStreamlit._Slot(self) for _ in range(max(count, 1))]
+
+    def container(self, *args, **kwargs):
+        return _RecordingStreamlit._Slot(self)
+
+    expander = container
+    empty = container
+
+    def __getattr__(self, name):
+        def _noop(*args, **kwargs):
+            return None
+        return _noop
+
+    class _Slot:
+        """Stands in for a column/container: a context manager that also
+        forwards the recording calls made inside it."""
+
+        def __init__(self, parent: "_RecordingStreamlit") -> None:
+            self._parent = parent
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def __getattr__(self, name):
+            return getattr(self._parent, name)
+
+
+def _regime_fixture() -> tuple[pd.DataFrame, pd.DataFrame]:
+    summary = pd.DataFrame(
+        [
+            {"pair_id": "cross_pair", "region": "Cross", "numerator_id": "csi300",
+             "denominator_id": "sp500", "ratio": 1.2, "zscore": 0.4},
+            {"pair_id": "china_pair", "region": "China", "numerator_id": "csi500",
+             "denominator_id": "csi300", "ratio": 0.9, "zscore": -1.1},
+            {"pair_id": "hk_pair", "region": "HK", "numerator_id": "hstech",
+             "denominator_id": "hsi", "ratio": 1.05, "zscore": 0.2},
+        ]
+    )
+    dates = pd.date_range("2026-01-01", periods=40, freq="D")
+    history = pd.concat(
+        [
+            pd.DataFrame({"pair_id": pair, "date": dates,
+                          "ratio": [1.0 + i / 100 for i in range(len(dates))],
+                          "ratio_ma": [1.0 for _ in range(len(dates))]})
+            for pair in ("cross_pair", "china_pair", "hk_pair")
+        ],
+        ignore_index=True,
+    )
+    return summary, history
+
+
+def test_relative_regime_orders_markets_china_first(monkeypatch) -> None:
+    """Region order is fixed, not whatever order the summary arrives in.
+
+    The fixture deliberately lists Cross first; a sorted() or first-seen
+    ordering would put Cross or China at the front by accident.
+    """
+    app = _app_module()
+    recorder = _RecordingStreamlit()
+    monkeypatch.setattr(app, "st", recorder)
+    summary, history = _regime_fixture()
+
+    app.render_relative_regime(summary, history, "en", "1 year")
+
+    # sorted() would give China, Cross, HK; first-seen would give Cross first.
+    assert recorder.options["market_pair_region"] == ["China", "HK", "Cross"]
+
+
+def test_relative_regime_charts_only_the_selected_pair(monkeypatch) -> None:
+    """The cohort filter is what keeps one market's pair out of another's."""
+    app = _app_module()
+    recorder = _RecordingStreamlit(selections={"market_pair_region": "HK"})
+    monkeypatch.setattr(app, "st", recorder)
+    summary, history = _regime_fixture()
+
+    app.render_relative_regime(summary, history, "en", "1 year")
+
+    assert recorder.options["market_pair_select"] == ["hk_pair"]
+    assert recorder.figures, "the selected pair should have produced a chart"
+
+
+def test_relative_regime_says_so_when_a_pair_has_no_history(monkeypatch) -> None:
+    """Empty history used to be indistinguishable from a flat line."""
+    app = _app_module()
+    recorder = _RecordingStreamlit()
+    monkeypatch.setattr(app, "st", recorder)
+    summary, _ = _regime_fixture()
+
+    app.render_relative_regime(summary, pd.DataFrame(), "en", "1 year")
+
+    assert any("history" in text.lower() for text in recorder.infos)
+    assert not recorder.figures
+
+
+def _detail_fixture() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    dates = pd.date_range("2026-01-01", periods=90, freq="D")
+    prices = pd.concat(
+        [
+            pd.DataFrame({"exposure_id": exposure, "date": dates.strftime("%Y-%m-%d"),
+                          "close": [base + i * 0.5 for i in range(len(dates))]})
+            for exposure, base in (("csi300", 3800.0), ("csi500", 6000.0))
+        ],
+        ignore_index=True,
+    )
+    prices["_date"] = pd.to_datetime(prices["date"])
+    technicals = pd.DataFrame(
+        [
+            {"exposure_id": "csi300", "rsi14": 58.0, "ma20_pct": 1.4,
+             "avg_premium_30d": 0.35, "avg_premium_days": 30, "drawdown_60d": -4.2},
+            {"exposure_id": "csi500", "rsi14": 71.0, "ma20_pct": 3.1,
+             "avg_premium_30d": -0.10, "avg_premium_days": 5, "drawdown_60d": -1.0},
+        ]
+    )
+    wrappers = pd.DataFrame(
+        [
+            {"exposure_id": "csi300", "fund_id": "510300", "ticker": "510300",
+             "fund_name": "Big CSI300 ETF", "premium_pct": 0.2, "peer_rank": 1},
+            {"exposure_id": "csi500", "fund_id": "510500", "ticker": "510500",
+             "fund_name": "Other ETF", "premium_pct": -0.4, "peer_rank": 1},
+        ]
+    )
+    return prices, technicals, wrappers
+
+
+def test_index_detail_plots_only_the_requested_exposure(monkeypatch) -> None:
+    """Every frame it receives holds all exposures; the filter is the contract.
+
+    380 lines had never been run by anything but a "did not raise" smoke
+    test, so nothing checked that asking for csi300 does not chart csi500.
+    """
+    app = _app_module()
+    recorder = _RecordingStreamlit()
+    monkeypatch.setattr(app, "st", recorder)
+    prices, technicals, wrappers = _detail_fixture()
+
+    app.render_market_index_detail(
+        "csi300", "CSI 300", prices, technicals, wrappers, "en", "1 year"
+    )
+
+    assert recorder.figures, "the index chart should have been drawn"
+    plotted = [
+        float(value)
+        for figure in recorder.figures
+        for trace in figure.data
+        for value in (list(trace.y) if getattr(trace, "y", None) is not None else [])
+        if value is not None and value == value
+    ]
+    price_points = [value for value in plotted if value > 1000]
+    assert price_points, "no price series was plotted"
+    # csi300 runs 3800..3844.5; csi500 starts at 6000, so any value that high
+    # means the other exposure's rows were charted too.
+    assert max(price_points) < 4000, f"charted a foreign exposure: max {max(price_points)}"
+
+
+def test_index_detail_names_the_window_its_premium_average_covers(monkeypatch) -> None:
+    """A five-day mean labelled "30D" is the failure this guards.
+
+    The card reads its own avg_premium_days rather than assuming the column
+    name is the truth.
+    """
+    app = _app_module()
+    prices, technicals, wrappers = _detail_fixture()
+
+    labels = {}
+    for exposure in ("csi300", "csi500"):
+        recorder = _RecordingStreamlit()
+        monkeypatch.setattr(app, "st", recorder)
+        captured: list[str] = []
+        recorder.metric = lambda label, *a, **k: captured.append(str(label))
+        app.render_market_index_detail(
+            exposure, exposure, prices, technicals, wrappers, "en", "1 year"
+        )
+        labels[exposure] = captured
+
+    assert any("30D" in text for text in labels["csi300"])
+    assert any("5D" in text for text in labels["csi500"])
+    assert not any("30D" in text for text in labels["csi500"])
+
+
+def test_index_detail_survives_an_exposure_with_no_technicals(monkeypatch) -> None:
+    app = _app_module()
+    recorder = _RecordingStreamlit()
+    monkeypatch.setattr(app, "st", recorder)
+    prices, _, wrappers = _detail_fixture()
+
+    app.render_market_index_detail(
+        "csi300", "CSI 300", prices, pd.DataFrame(columns=["exposure_id"]), wrappers, "en", "1 year"
+    )
+
+    assert recorder.figures
