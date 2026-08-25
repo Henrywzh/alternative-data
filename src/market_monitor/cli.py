@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 
 import pandas as pd
@@ -49,6 +50,29 @@ def _freshness_blockers(freshness: dict[str, object], *, mode: str) -> list[str]
     if regressions:
         blockers.append("coverage regression: " + "; ".join(str(item) for item in regressions[:6]))
     return blockers
+
+
+def _emit_degraded_signal(blockers: list[str]) -> None:
+    """Make a skipped digest visible to CI without failing the artifact build.
+
+    Writes the ``degraded`` step output the workflow fails on, an annotation,
+    and a job-summary line. Outside GitHub Actions the env vars are unset and
+    only the annotation is printed, which is harmless in a terminal.
+    """
+    reason = ", ".join(blockers)
+    print(f"::warning title=Digest skipped::{reason}")
+    for env_var, payload in (
+        ("GITHUB_OUTPUT", "degraded=true\n"),
+        ("GITHUB_STEP_SUMMARY", f"### ⚠️ 邮件已跳过\n\n数据未通过 freshness gate：{reason}\n"),
+    ):
+        path = os.environ.get(env_var)
+        if not path:
+            continue
+        try:
+            with open(path, "a", encoding="utf-8") as handle:
+                handle.write(payload)
+        except OSError as exc:  # never let a CI-reporting write break the run
+            print(f"Warning: could not write {env_var} ({exc})", file=sys.stderr)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -121,6 +145,11 @@ def main(argv: list[str] | None = None) -> int:
                     "Continuing close-mode persistence so the dashboard can show the degraded run; email skipped.",
                     file=sys.stderr,
                 )
+                # A skipped digest used to leave no trace anywhere the operator
+                # looks: exit 0, a green job, and simply no mail that morning.
+                # The whole point of the gate is to make bad data loud, so
+                # announce the degradation to CI even though the job continues.
+                _emit_degraded_signal(blockers)
             else:
                 return 2
     if args.send_report and not freshness_blocked:

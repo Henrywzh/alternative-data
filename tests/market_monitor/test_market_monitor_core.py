@@ -2334,3 +2334,121 @@ def test_source_health_row_count_matches_the_datasets_it_speaks_for() -> None:
     rows = builder._source_health_rows(_delivery(builder))
     assert len(rows) == 6
     assert all(set(r) == {"source", "status", "latest_observation", "records", "notes"} for r in rows)
+
+
+def test_a_skipped_digest_signals_ci_instead_of_passing_quietly(monkeypatch, tmp_path):
+    """--allow-stale-artifact used to end in a green job and no email.
+
+    The only operator-visible difference between "the gate stopped a bad
+    digest" and "nothing happened today" was the absence of a mail, so the
+    gate could hold for days without anyone noticing.
+    """
+    from market_monitor import cli
+
+    output = tmp_path / "gh_output"
+    summary = tmp_path / "gh_summary"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
+    monkeypatch.setattr(
+        cli,
+        "run_pipeline",
+        lambda **kwargs: {
+            "mode": "close",
+            "freshness": {
+                "daily_close": {"status": "Last session"},
+                "quote": {"status": "Fresh"},
+                "daily_close_by_region": {"HK": {"status": "Stale"}},
+                "fetch_errors": [],
+            },
+        },
+    )
+    monkeypatch.setattr(cli, "send_report", lambda **kwargs: pytest.fail("email must be skipped"))
+
+    assert cli.main([
+        "--mode", "close", "--no-write", "--send-report", "--require-fresh", "--allow-stale-artifact"
+    ]) == 0
+    assert "degraded=true" in output.read_text(encoding="utf-8")
+    assert "region HK" in summary.read_text(encoding="utf-8")
+
+
+def test_a_healthy_close_run_leaves_no_degraded_marker(monkeypatch, tmp_path):
+    from market_monitor import cli
+
+    output = tmp_path / "gh_output"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    monkeypatch.setattr(
+        cli,
+        "run_pipeline",
+        lambda **kwargs: {
+            "mode": "close",
+            "freshness": {
+                "daily_close": {"status": "Last session"},
+                "quote": {"status": "Fresh"},
+                "fetch_errors": [],
+            },
+        },
+    )
+    monkeypatch.setattr(cli, "send_report", lambda **kwargs: None)
+
+    assert cli.main([
+        "--mode", "close", "--no-write", "--send-report", "--require-fresh", "--allow-stale-artifact"
+    ]) == 0
+    assert not output.exists() or "degraded=true" not in output.read_text(encoding="utf-8")
+
+
+def test_the_midday_digest_flags_a_stale_borrowed_close():
+    """The intraday gate only blocks on the live quote, by design.
+
+    That left the borrowed close with no warning path at all: the red banner
+    reads per-region/per-source records that only the close pipeline emits.
+    """
+    from market_monitor.alerts import build_email_html
+
+    html = build_email_html(
+        report_date="2026-08-25",
+        technicals=pd.DataFrame(),
+        regime=pd.DataFrame(),
+        wrappers=pd.DataFrame(),
+        mode="intraday",
+        freshness={
+            "quote": {"status": "Fresh"},
+            "daily_close": {"status": "Stale", "observation_date": "2026-08-19"},
+        },
+    )
+    assert "借用的收盘技术面" in html
+    assert "2026-08-19" in html
+
+
+def test_the_midday_digest_names_the_borrowed_session_instead_of_claiming_yesterday():
+    from market_monitor.alerts import build_email_html
+
+    html = build_email_html(
+        report_date="2026-08-25",
+        technicals=pd.DataFrame(),
+        regime=pd.DataFrame(),
+        wrappers=pd.DataFrame(),
+        mode="intraday",
+        freshness={
+            "quote": {"status": "Fresh"},
+            "daily_close": {"status": "Last session", "observation_date": "2026-08-22"},
+        },
+    )
+    assert "技术面沿用 2026-08-22 收盘" in html
+    assert "上一交易日" not in html
+
+
+def test_a_fresh_borrowed_close_raises_no_midday_warning():
+    from market_monitor.alerts import build_email_html
+
+    html = build_email_html(
+        report_date="2026-08-25",
+        technicals=pd.DataFrame(),
+        regime=pd.DataFrame(),
+        wrappers=pd.DataFrame(),
+        mode="intraday",
+        freshness={
+            "quote": {"status": "Fresh"},
+            "daily_close": {"status": "Last session", "observation_date": "2026-08-22"},
+        },
+    )
+    assert "借用的收盘技术面" not in html

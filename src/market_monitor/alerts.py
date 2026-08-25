@@ -259,9 +259,19 @@ def _build_cross_border_note(wrappers: pd.DataFrame) -> str:
     )
 
 
-def _freshness_warning(freshness: dict[str, object]) -> str:
+def _freshness_warning(freshness: dict[str, object], *, mode: str = "close") -> str:
     """Summarize blocking regional/source freshness issues for the email."""
     issues: list[str] = []
+    if mode == "intraday":
+        # The midday run borrows the last persisted close instead of computing
+        # a half-session bar, and its own gate deliberately only blocks on the
+        # live quote -- a stale close must never stop the quote mail. But the
+        # per-region and per-source records below are produced by the close
+        # pipeline only, so without this the intraday banner could never fire
+        # and an arbitrarily old borrowed close read as if it were yesterday's.
+        close = freshness.get("daily_close", {}) or {}
+        if str(close.get("status")) in BLOCKING_FRESHNESS_STATUSES:
+            issues.append(f"借用的收盘技术面: {freshness_note(close, language='zh')}")
     for scope, records in (
         ("区域", freshness.get("daily_close_by_region", {}) or {}),
         ("来源", freshness.get("daily_close_by_source", {}) or {}),
@@ -390,14 +400,22 @@ def build_email_html(
     freshness = freshness or {}
     is_intraday = mode == "intraday"
     report_title = "指数与 ETF 午盘实时快报" if is_intraday else "指数与 ETF 核心配置快报"
+    # Do not assert "上一交易日" for the borrowed close: the midday run reads
+    # whatever the close pipeline last persisted, which after a failed or
+    # skipped daily run can be several sessions old. Name the observed date.
+    borrowed_close_date = (freshness.get("daily_close", {}) or {}).get("observation_date")
     report_subtitle = (
-        "盘中 ETF 行情；技术面沿用上一交易日收盘，不重算半日 K 线"
+        (
+            f"盘中 ETF 行情；技术面沿用 {borrowed_close_date} 收盘，不重算半日 K 线"
+            if borrowed_close_date
+            else "盘中 ETF 行情；技术面沿用最近一次已持久化的收盘，不重算半日 K 线"
+        )
         if is_intraday
         else "收盘数据；各区块按自身来源的最新观察日展示"
     )
     quote_note = freshness_note(freshness.get("quote", {}), language="zh") if freshness.get("quote") else "实时行情状态未提供"
     close_note = freshness_note(freshness.get("daily_close", {}), language="zh") if freshness.get("daily_close") else "收盘技术面状态未提供"
-    freshness_warning = _freshness_warning(freshness)
+    freshness_warning = _freshness_warning(freshness, mode=mode)
     southbound_note = (
         freshness_note(freshness.get("southbound", {}), language="zh")
         if freshness.get("southbound")
