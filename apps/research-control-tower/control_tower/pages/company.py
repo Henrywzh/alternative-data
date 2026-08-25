@@ -3149,6 +3149,20 @@ def _hkex_event_bucket(event_class: object, headline: object) -> str:
     return 'other'
 
 
+def _hkex_card_tone(event_class: object, headline: object) -> str:
+    label = _text(event_class).lower()
+    title = _text(headline).upper()
+    if label == 'earnings_results' or ('RESULTS' in title and 'ENDED' in title):
+        return 'results'
+    if label == 'period_report' or 'INTERIM REPORT' in title or 'ANNUAL REPORT' in title:
+        return 'report'
+    if label == 'share_buyback' or 'NEXT DAY DISCLOSURE' in title:
+        return 'buyback'
+    if label == 'share_scheme' or 'SHARE AWARD' in title or 'SHARE OPTION' in title:
+        return 'scheme'
+    return 'other'
+
+
 def _hkex_card(row: pd.Series) -> str:
     published = row.get('published_at')
     published_txt = pd.Timestamp(published).strftime('%Y-%m-%d %H:%M UTC') if pd.notna(published) else 'date unavailable'
@@ -3156,8 +3170,9 @@ def _hkex_card(row: pd.Series) -> str:
     event_class = escape(_text(row.get('event_class')) or 'unclassified')
     url = _text(row.get('source_url'))
     link = f'<a class="ct-inline-link" href="{escape(url)}" target="_blank" rel="noopener">Open ↗</a>' if url else 'link unavailable'
+    tone = _hkex_card_tone(row.get('event_class'), row.get('headline'))
     return (
-        '<div class="ct-thesis-card">'
+        f'<div class="ct-thesis-card ct-news-card ct-news-card--{tone}">'
         f'<div class="ct-subtle">{escape(published_txt)} · hkexnews · {event_class}</div>'
         f'<div style="font-weight:700;margin:0.25rem 0;">{headline}</div>'
         f'<div class="ct-source-line">{link}</div>'
@@ -3263,8 +3278,9 @@ def _render_local_news_overlay(view: CompanyView) -> None:
             freshness = 'updated this refresh'
         elif pd.isna(refresh_at):
             freshness = 'cached overlay'
+        tone = 'fresh' if freshness == 'updated this refresh' else 'stale'
         cards.append(
-            '<div class="ct-thesis-card">'
+            f'<div class="ct-thesis-card ct-news-card ct-news-card--{tone}">'
             f'<div class="ct-subtle">{escape(published_txt)} · {source} · {publisher} · {escape(freshness)}</div>'
             f'<div style="font-weight:700;margin:0.25rem 0;">{headline}</div>'
             f'<div class="ct-source-line">{link}</div>'

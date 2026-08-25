@@ -164,6 +164,50 @@ section[data-testid="stSidebar"] label[data-baseweb="radio"] p {
 """
 
 BASE_CSS = r"""
+/* Tables rendered by ct_dataframe(). Plain DOM, so unlike st.dataframe's
+ * canvas grid these follow --ct-* and flip with the theme toggle. */
+.ct-table-scroll {
+  overflow-x: auto;
+  max-height: 460px;
+  overflow-y: auto;
+  border: 1px solid var(--ct-border);
+  border-radius: 10px;
+  background: var(--ct-surface);
+  margin-bottom: 0.75rem;
+}
+table.ct-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.82rem;
+  color: var(--ct-ink);
+  background: var(--ct-surface);
+}
+table.ct-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--ct-surface-muted);
+  color: var(--ct-muted);
+  font-weight: 700;
+  text-align: left;
+  white-space: nowrap;
+  padding: 0.5rem 0.7rem;
+  border-bottom: 1px solid var(--ct-border);
+}
+table.ct-table tbody td {
+  padding: 0.45rem 0.7rem;
+  border-bottom: 1px solid var(--ct-border);
+  vertical-align: top;
+}
+table.ct-table tbody tr:last-child td { border-bottom: none; }
+table.ct-table tbody tr:hover td { background: var(--ct-surface-muted); }
+table.ct-table tbody th {
+  padding: 0.45rem 0.7rem;
+  border-bottom: 1px solid var(--ct-border);
+  color: var(--ct-muted);
+  font-weight: 600;
+  text-align: left;
+}
 [data-testid="stSidebar"] { border-right: 1px solid var(--ct-border); }
 [data-testid="stSidebar"] .sidebar-brand {
   color: var(--ct-ink) !important;
@@ -337,6 +381,15 @@ BASE_CSS = r"""
 .ct-thesis-card--bull { border-left-color: #16a34a; background: color-mix(in srgb, #16a34a 4%, var(--ct-surface)); }
 .ct-thesis-card--bear { border-left-color: #dc2626; background: color-mix(in srgb, #dc2626 4%, var(--ct-surface)); }
 .ct-thesis-card--base { border-left-color: var(--ct-accent); background: color-mix(in srgb, var(--ct-accent) 4%, var(--ct-surface)); }
+.ct-news-card { margin-bottom: .55rem; border-left-width: 6px; }
+.ct-news-card--results { border-left-color: #7c3aed; background: color-mix(in srgb, #7c3aed 6%, var(--ct-surface)); }
+.ct-news-card--report { border-left-color: #2563eb; background: color-mix(in srgb, #2563eb 6%, var(--ct-surface)); }
+.ct-news-card--buyback { border-left-color: #0f766e; background: color-mix(in srgb, #0f766e 5%, var(--ct-surface)); }
+.ct-news-card--scheme { border-left-color: #ca8a04; background: color-mix(in srgb, #ca8a04 6%, var(--ct-surface)); }
+.ct-news-card--other { border-left-color: var(--ct-border); }
+.ct-news-card--fresh { border-left-color: #16a34a; background: color-mix(in srgb, #16a34a 5%, var(--ct-surface)); }
+.ct-news-card--stale { border-left-color: #94a3b8; background: color-mix(in srgb, #94a3b8 6%, var(--ct-surface)); }
+
 
 /* Buyback Tracker */
 .ct-buyback-tracker { background: var(--ct-surface); border: 1px solid var(--ct-border); border-radius: 11px; padding: 0.95rem 1.15rem; margin-bottom: 0.9rem; }
@@ -390,3 +443,64 @@ def inject_styles(theme: str | None = None) -> None:
 
 
 __all__ = ["CONTROL_TOWER_CSS", "get_control_tower_css", "inject_styles"]
+
+
+def _display_float(value):
+    """Four decimals, matching what st.dataframe's grid used to show."""
+    try:
+        return f"{float(value):,.4f}"
+    except (TypeError, ValueError):
+        return value
+
+
+def ct_dataframe(frame, *, width: str = "stretch", hide_index: bool = True) -> None:
+    """Render a DataFrame as themed HTML instead of st.dataframe.
+
+    st.dataframe paints through glide-data-grid, which reads Streamlit's own
+    theme rather than this app's CSS, so every table stayed white while the
+    rest of the page went dark. A plain table follows --ct-* like everything
+    else does.
+
+    What this gives up against the grid: column sorting, resizing and the
+    download button. None of the 26 call sites this replaced used
+    column_config or selection, and all of them passed the same two
+    arguments.
+    """
+    import pandas as pd
+
+    if frame is None:
+        return
+    if hasattr(frame, "data") and isinstance(getattr(frame, "data", None), pd.DataFrame):
+        frame = frame.data  # a Styler was passed; render its underlying frame
+    if not isinstance(frame, pd.DataFrame):
+        frame = pd.DataFrame(frame)
+    if frame.empty:
+        st.caption("No rows.")
+        return
+
+    # to_html's na_rep only catches NaN/NaT; a literal None in an object
+    # column would print as the word "None". Convert both to one em dash so a
+    # missing value never reads as a value.
+    #
+    # Per column, and only where something is actually missing: a frame-wide
+    # mask raises on nullable dtypes ("Invalid value '—' for dtype Float64"),
+    # and casting every column to object would hand float formatting to str().
+    display = frame.copy()
+    for column in display.columns:
+        missing = display[column].isna()
+        if not missing.any():
+            continue
+        # to_html's float_format still reaches floats sitting in an object
+        # column, so the cast below does not cost the grid's four decimals,
+        # and integers keep their own shape.
+        display[column] = display[column].astype(object).where(~missing, "—")
+    html = display.to_html(
+        index=not hide_index,
+        escape=True,
+        border=0,
+        classes="ct-table",
+        na_rep="—",
+        justify="left",
+        float_format=_display_float,
+    )
+    st.markdown(f'<div class="ct-table-scroll">{html}</div>', unsafe_allow_html=True)

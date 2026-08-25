@@ -223,6 +223,10 @@ def test_company_page_exposes_refresh_button() -> None:
     assert "refresh_company_news" in source
     assert "Routine capital-return filings" in source
     assert "updated this refresh" in source
+    assert "ct-news-card--{tone}" in source
+    css = (REPO / "apps/research-control-tower/control_tower/components/__init__.py").read_text()
+    assert ".ct-news-card--results" in css
+    assert ".ct-news-card--stale" in css
 
 
 def test_the_cooldown_survives_a_new_browser_session(tmp_path: Path) -> None:
