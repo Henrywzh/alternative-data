@@ -491,7 +491,7 @@ def _probe_structured(
     probe_window = (now_utc - pd.Timedelta(days=2)).strftime("%Y-%m-%d")
     params: Mapping[str, object]
     if provider == "finnhub":
-        params = {"symbol": "0700.HK", "from": probe_window, "to": now_utc.strftime("%Y-%m-%d"), "token": api_key}
+        params = {"symbol": "BABA", "from": probe_window, "to": now_utc.strftime("%Y-%m-%d"), "token": api_key}
     elif provider == "marketaux":
         params = {"symbols": "0700.HK", "language": "en", "api_token": api_key}
     else:

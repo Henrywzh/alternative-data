@@ -30,6 +30,7 @@ from ..company_profiles import SegmentSpec, get_company_profile, segment_label
 
 from src.research_control_tower.eligibility import listing_eligibility_reason
 from src.research_control_tower.southbound_holdings import hkex_security_code, southbound_mart_path
+from src.research_control_tower.news_overlay import load_local_news_overlay
 from src.research_control_tower.vendor_financials import (
     VendorLoadResult,
     default_local_mart_path,
@@ -3036,6 +3037,33 @@ def _consensus_revision_chart_frame(frame: pd.DataFrame) -> pd.DataFrame:
     return wide.dropna(how='all')
 
 
+
+def _render_local_news_overlay(view: CompanyView) -> None:
+    _render_section_heading(4, 'Vendor news overlay (not official filings)', f'vendor-news-{_slugify(view.entity_id)}')
+    try:
+        frame = load_local_news_overlay(
+            entity_id=view.entity_id,
+            listing_id=view.selected_listing_id,
+            repo_root=_control_tower_repo_root(),
+        )
+    except (OSError, ValueError) as exc:
+        st.error(f'Vendor news overlay failed: {exc}')
+        return
+    st.caption('Not official issuer disclosure. Marketaux and Finnhub metadata from local marts, resolved through the registry alias table. Article bodies are not stored. Finnhub free tier 403s HK symbols; Marketaux covers HK listings.')
+    if frame.empty:
+        st.info('No locally collected vendor headlines currently resolve to this company.')
+        return
+    display = frame.rename(columns={
+        'published_at': 'Published',
+        'headline': 'Headline',
+        'publisher': 'Publisher',
+        'source_id': 'Source',
+        'source_url': 'Link',
+        'related_entity_ids': 'Resolved entities',
+        'related_listing_ids': 'Resolved listings',
+    })
+    st.dataframe(display, width='stretch', hide_index=True)
+
 def _render_evidence_tab(
     view: CompanyView,
     snapshot: ControlTowerSnapshot,
@@ -3102,6 +3130,7 @@ def _render_evidence_tab(
                 )
             )
     render_official_filings(snapshot, entity_id=view.entity_id, listing_id=view.selected_listing_id, viewer_timezone=viewer_timezone)
+    _render_local_news_overlay(view)
     _render_section_heading(4, 'News and filing metadata', f'news-filing-metadata-{_slugify(view.entity_id)}')
     if view.official_documents.empty:
         st.warning('No registry-linked generic news/filing metadata rows are available for the selected company/listing; official filing metadata is rendered separately above and document bodies are not displayed.')
