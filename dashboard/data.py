@@ -400,6 +400,37 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
             "expected_release_window_days",
         ],
     },
+    "us_census_memory_imports_monthly": {
+        "label": "US Memory Imports (Census)",
+        "domain": "us_census_trade",
+        "natural_keys": ["period", "partner_country_code", "hs_code"],
+        "primary_date_column": "period",
+        "metric_column": "general_import_value_usd",
+        "required_columns": [
+            "period",
+            "partner_country_name",
+            "hs_code",
+            "item_name",
+            "general_import_value_usd",
+            "air_import_value_usd",
+            "vessel_import_value_usd",
+        ],
+    },
+    "us_census_memory_imports_port_monthly": {
+        "label": "US Memory Imports by Port (Census)",
+        "domain": "us_census_trade",
+        "natural_keys": ["period", "partner_country_code", "hs_code", "port_code"],
+        "primary_date_column": "period",
+        "metric_column": "general_import_value_usd",
+        "required_columns": [
+            "period",
+            "partner_country_name",
+            "hs_code",
+            "port_code",
+            "port_name",
+            "general_import_value_usd",
+        ],
+    },
     "tw_monthly_revenue": {
         "label": "Taiwan Monthly Revenue",
         "domain": "taiwan_semiconductor_revenue",
@@ -1216,6 +1247,10 @@ DOMAIN_ORDER = {
     ],
     "taiwan_semiconductor_revenue": [
         "tw_monthly_revenue",
+    ],
+    "us_census_trade": [
+        "us_census_memory_imports_monthly",
+        "us_census_memory_imports_port_monthly",
     ],
     "ai_frontier": [
         "llm_benchmarks",
@@ -2521,6 +2556,8 @@ def dataset_source_for_domain(domain: str) -> str:
         return "semiconductor_proxies"
     if domain == "taiwan_semiconductor_revenue":
         return "taiwan_semiconductor_revenue"
+    if domain == "us_census_trade":
+        return "us_census_trade"
     if domain == "ai_frontier":
         return "llm_benchmarks"
     if domain == "compute_availability":

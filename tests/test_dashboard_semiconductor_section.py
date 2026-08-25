@@ -92,3 +92,101 @@ def test_the_native_scale_labels_thousand_usd_in_billions() -> None:
 
     assert y_title == "USD Billion"
     assert 33_564_194.0 / scale == pytest.approx(33.564194)
+
+
+class _StubDataset:
+    """Minimal stand-in for DatasetLoadResult as render_dataset_guard reads it."""
+
+    def __init__(self, dataset_id: str, frame: pd.DataFrame) -> None:
+        self.dataset_id = dataset_id
+        self.label = dataset_id
+        self.frame = frame
+        self.source_path = "stub.parquet"
+
+
+def _census_frame() -> pd.DataFrame:
+    periods = pd.period_range("2025-01", periods=18, freq="M").strftime("%Y-%m")
+    rows = []
+    for partner, base in (("KOREA, SOUTH", 100.0), ("TAIWAN", 50.0)):
+        for i, period in enumerate(periods):
+            rows.append(
+                {
+                    "period": period,
+                    "partner_country_name": partner,
+                    "hs_code": "854232",
+                    "item_name": "MEMORIES, ELECTRONIC INTEGRATED CIRCUITS",
+                    "general_import_value_usd": (base + i) * 1e6,
+                    "air_import_value_usd": (base + i) * 1e6 * 0.99,
+                    "vessel_import_value_usd": (base + i) * 1e6 * 0.01,
+                }
+            )
+    return pd.DataFrame(rows)
+
+
+def test_the_import_panel_does_not_call_its_own_flow_exports(monkeypatch) -> None:
+    """The YoY chart is shared with the export tracker, which hardcoded the word.
+
+    Reused as-is on the Census panel it titled a chart of US imports
+    "US Imports of Memory Exports YoY" -- the one thing a reader must not get
+    wrong here, since the two panels describe opposite directions of trade.
+    """
+    titles: list[str] = []
+    monkeypatch.setattr(semiconductor.st, "plotly_chart", lambda fig, **kwargs: None)
+    monkeypatch.setattr(semiconductor.st, "dataframe", lambda *a, **k: None)
+    monkeypatch.setattr(
+        semiconductor,
+        "make_line_chart",
+        lambda pivot, colors, **kwargs: titles.append(kwargs.get("title", "")),
+    )
+    monkeypatch.setattr(semiconductor, "make_stacked_area_chart", lambda *a, **k: None)
+
+    semiconductor._render_us_import_demand(
+        {"us_census_memory_imports_monthly": _StubDataset("us_census_memory_imports_monthly", _census_frame())},
+        None,
+    )
+
+    assert titles, "the YoY chart should have been drawn"
+    assert "Imports" in titles[0]
+    assert "Exports" not in titles[0]
+
+
+def test_census_partner_names_are_normalised_for_display() -> None:
+    assert semiconductor._display_partner_name("KOREA, SOUTH") == "South Korea"
+    assert semiconductor._display_partner_name("TAIWAN") == "Taiwan"
+    assert semiconductor._display_partner_name("") == "Unknown"
+    assert semiconductor._display_partner_name(None) == "Unknown"
+
+
+def test_the_export_tracker_still_says_exports(monkeypatch) -> None:
+    """The shared helper's default must not have moved when it gained a flag."""
+    titles: list[str] = []
+    monkeypatch.setattr(semiconductor.st, "plotly_chart", lambda fig, **kwargs: None)
+    monkeypatch.setattr(
+        semiconductor,
+        "make_line_chart",
+        lambda pivot, colors, **kwargs: titles.append(kwargs.get("title", "")),
+    )
+    semiconductor._render_trade_yoy_chart(_monthly_frame("Japan", "2025-01", 14, 1.0), "IC-only", "Official")
+
+    assert titles == ["Official IC-only Exports YoY"]
+
+
+def test_the_census_datasets_are_reachable_through_the_registry() -> None:
+    """Wiring, not rendering: without these the tab loads nothing at all."""
+    from dashboard.data import DATASET_REGISTRY, dataset_source_for_domain, domain_dataset_ids
+
+    ids = domain_dataset_ids("us_census_trade")
+    assert ids == [
+        "us_census_memory_imports_monthly",
+        "us_census_memory_imports_port_monthly",
+    ]
+    assert dataset_source_for_domain("us_census_trade") == "us_census_trade"
+    for dataset_id in ids:
+        assert DATASET_REGISTRY[dataset_id]["domain"] == "us_census_trade"
+
+
+def test_the_semiconductor_page_requests_the_census_domain() -> None:
+    """The section reads domain_states["us_census_trade"] and would KeyError."""
+    import dashboard.app as app
+
+    assert "us_census_trade" in app.SECTION_DOMAIN_MAP["Semiconductor Analysis"]
