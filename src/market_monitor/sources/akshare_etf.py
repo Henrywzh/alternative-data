@@ -12,6 +12,8 @@ from typing import Any
 
 import pandas as pd
 
+from ..freshness import isoformat_utc, market_date
+
 
 OHLCV_COLUMNS = ("date", "open", "high", "low", "close", "volume", "amount")
 
@@ -67,7 +69,7 @@ def fetch_etf_daily(symbol: str, start_date: str | date | None = None, end_date:
     import time
 
     start = _fmt_start(start_date, em=True) or "19900101"
-    end = _fmt_start(end_date, em=True) or date.today().strftime("%Y%m%d")
+    end = _fmt_start(end_date, em=True) or market_date().replace("-", "")
     # Prefer Sina (stable from more networks); fall back to Eastmoney spot if
     # Sina is unavailable for a particular issue.
     code = _coerce_symbol(symbol)
@@ -79,7 +81,7 @@ def fetch_etf_daily(symbol: str, start_date: str | date | None = None, end_date:
             df = df.copy()
             df["date"] = pd.to_datetime(df["date"], errors="coerce")
             start_ts = _parse_date(start)
-            end_ts = _parse_date(end) or pd.Timestamp(date.today())
+            end_ts = _parse_date(end) or pd.Timestamp(market_date())
             if start_ts:
                 df = df[df["date"] >= start_ts]
             if end_ts:
@@ -103,6 +105,8 @@ def fetch_etf_daily(symbol: str, start_date: str | date | None = None, end_date:
         }
     )
     keep = [c for c in OHLCV_COLUMNS if c in raw.columns]
+    if "close" not in keep:
+        return pd.DataFrame(columns=OHLCV_COLUMNS)
     out = raw[keep].copy()
     for col in ("open", "high", "low", "close"):
         if col in out.columns:
@@ -112,7 +116,10 @@ def fetch_etf_daily(symbol: str, start_date: str | date | None = None, end_date:
             out[col] = pd.to_numeric(out[col], errors="coerce")
     if "date" in out.columns:
         out["date"] = pd.to_datetime(out["date"], errors="coerce").dt.strftime("%Y-%m-%d")
-    return out[keep].dropna(subset=["date"]).reset_index(drop=True)
+    out = out[keep].dropna(subset=["date", "close"]).reset_index(drop=True)
+    out["retrieved_at_utc"] = isoformat_utc()
+    out["observation_type"] = "daily_close"
+    return out
 
 
 def fetch_index_daily(symbol: str, start_date: str | None = None, end_date: str | None = None) -> pd.DataFrame:
@@ -120,7 +127,7 @@ def fetch_index_daily(symbol: str, start_date: str | None = None, end_date: str 
     import akshare as ak
 
     start = _fmt_start(start_date, em=True) or "19900101"
-    end = _fmt_start(end_date, em=True) or date.today().strftime("%Y%m%d")
+    end = _fmt_start(end_date, em=True) or market_date().replace("-", "")
     code = _coerce_symbol(symbol)
     sina_symbol = SINA_INDEX_SYMBOLS.get(symbol)
     if symbol not in SINA_INDEX_SYMBOLS and symbol not in SINA_HK_INDEX_SYMBOLS and not symbol[:1].isdigit():
@@ -140,7 +147,7 @@ def fetch_index_daily(symbol: str, start_date: str | None = None, end_date: str 
             df = df.copy()
             df["date"] = pd.to_datetime(df["date"], errors="coerce")
             start_ts = _parse_date(start)
-            end_ts = _parse_date(end) or pd.Timestamp(date.today())
+            end_ts = _parse_date(end) or pd.Timestamp(market_date())
             if start_ts:
                 df = df[df["date"] >= start_ts]
             if end_ts:
@@ -155,7 +162,7 @@ def fetch_index_daily(symbol: str, start_date: str | None = None, end_date: str 
                 df["date"] = pd.to_datetime(df["date"], errors="coerce")
                 if slice_from:
                     df = df[df["date"] >= slice_from]
-                end_ts = _parse_date(end) or pd.Timestamp(date.today())
+                end_ts = _parse_date(end) or pd.Timestamp(market_date())
                 if end_ts:
                     df = df[df["date"] <= end_ts]
     else:
@@ -174,13 +181,18 @@ def fetch_index_daily(symbol: str, start_date: str | None = None, end_date: str 
         }
     )
     keep = [c for c in OHLCV_COLUMNS if c in raw.columns]
+    if "close" not in keep:
+        return pd.DataFrame(columns=OHLCV_COLUMNS)
     out = raw[keep].copy()
     for col in ("open", "high", "low", "close", "volume", "amount"):
         if col in out.columns:
             out[col] = pd.to_numeric(out[col], errors="coerce")
     if "date" in out.columns:
         out["date"] = pd.to_datetime(out["date"], errors="coerce").dt.strftime("%Y-%m-%d")
-    return out[keep].dropna(subset=["date"]).reset_index(drop=True)
+    out = out[keep].dropna(subset=["date", "close"]).reset_index(drop=True)
+    out["retrieved_at_utc"] = isoformat_utc()
+    out["observation_type"] = "daily_close"
+    return out
 
 
 def fetch_etf_spot() -> pd.DataFrame:
@@ -190,6 +202,7 @@ def fetch_etf_spot() -> pd.DataFrame:
     df = ak.fund_etf_spot_em()
     if df is None or df.empty:
         return pd.DataFrame()
+    retrieved_at_utc = isoformat_utc()
     out = df.rename(
         columns={
             "代码": "ticker",
@@ -230,4 +243,12 @@ def fetch_etf_spot() -> pd.DataFrame:
     if "markcap" in out.columns:
         out["aum"] = out["markcap"]  # CNY, from EM total market cap
     out["ticker"] = out["ticker"].astype(str)
+    # Eastmoney's public spot frame does not expose a stable per-row UTC quote
+    # timestamp. Keep retrieval time explicit, but do not pretend it is the
+    # exchange's observation time. Downstream freshness logic can therefore
+    # reject an old snapshot instead of calling it live.
+    out["retrieved_at_utc"] = retrieved_at_utc
+    out["source_observed_at_utc"] = pd.NaT
+    out["timestamp_basis"] = "retrieved_at"
+    out["observation_type"] = "intraday_quote"
     return out.reset_index(drop=True)

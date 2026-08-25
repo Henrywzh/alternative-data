@@ -33,7 +33,26 @@ def merge_premium(
     # markcap is deliberately not carried through: aum is derived from it just
     # above, so shipping both put two identical columns in the artifact under
     # different names, which is how "AUM" came to label a market-cap proxy.
-    spot_cols = [c for c in ("ticker", "premium_pct", "market_price", "iopv", "turnover", "aum", "units", "bid", "ask", "spread_bp") if c in spot_rows.columns]
+    spot_cols = [
+        c
+        for c in (
+            "ticker",
+            "premium_pct",
+            "market_price",
+            "iopv",
+            "turnover",
+            "aum",
+            "units",
+            "bid",
+            "ask",
+            "spread_bp",
+            "retrieved_at_utc",
+            "source_observed_at_utc",
+            "timestamp_basis",
+            "observation_type",
+        )
+        if c in spot_rows.columns
+    ]
     if "ticker" in spot_rows.columns:
         spot_rows["ticker"] = spot_rows["ticker"].astype(str).str.zfill(6)
     merged = meta.merge(spot_rows[spot_cols], on="ticker", how="left")
@@ -68,6 +87,41 @@ def merge_premium(
     return merged.sort_values(["exposure_id", "fund_id"]).reset_index(drop=True)
 
 
+def filter_premium_history_to_sessions(
+    history: pd.DataFrame,
+    prices: pd.DataFrame,
+) -> pd.DataFrame:
+    """Keep premium rows only where the ETF printed a daily close.
+
+    A stored premium row is not self-validating: old spot snapshots can carry
+    a retrieval date that was never an ETF session, and an artifact rebuild
+    must not resurrect that row merely because it is already persisted.
+    """
+    if history is None or history.empty:
+        return history.copy() if history is not None else pd.DataFrame()
+    if prices is None or prices.empty or not {"fund_id", "date", "close"}.issubset(prices.columns):
+        return history.iloc[0:0].copy()
+
+    price_sessions = pd.DataFrame(
+        {
+            "ticker": prices["fund_id"].astype(str).str.zfill(6),
+            "date": pd.to_datetime(prices["date"], errors="coerce").dt.strftime("%Y-%m-%d"),
+            "close": pd.to_numeric(prices["close"], errors="coerce"),
+        }
+    )
+    price_sessions = price_sessions[
+        price_sessions["date"].notna()
+        & price_sessions["ticker"].ne("nan")
+        & price_sessions["close"].notna()
+    ]
+    valid_sessions = set(zip(price_sessions["ticker"], price_sessions["date"]))
+    out = history.copy()
+    out["ticker"] = out["ticker"].astype(str).str.zfill(6)
+    out["date"] = pd.to_datetime(out["date"], errors="coerce").dt.strftime("%Y-%m-%d")
+    keys = zip(out["ticker"], out["date"])
+    return out.loc[[key in valid_sessions for key in keys]].copy()
+
+
 def fill_premium_from_last_close(merged: pd.DataFrame, prices: pd.DataFrame) -> pd.DataFrame:
     """Price a wrapper the live feed forgot to refresh, using its last close.
 
@@ -85,6 +139,11 @@ def fill_premium_from_last_close(merged: pd.DataFrame, prices: pd.DataFrame) -> 
     if "premium_basis" not in out.columns:
         out["premium_basis"] = pd.Series(
             ["live" if pd.notna(value) else None for value in out.get("premium_pct", pd.Series(dtype=float))],
+            index=out.index,
+        )
+    if "quote_basis" not in out.columns:
+        out["quote_basis"] = pd.Series(
+            ["intraday_quote" if pd.notna(value) else None for value in out.get("premium_pct", pd.Series(dtype=float))],
             index=out.index,
         )
     if prices is None or prices.empty or "fund_id" not in prices.columns or "iopv" not in out.columns:
@@ -111,6 +170,9 @@ def fill_premium_from_last_close(merged: pd.DataFrame, prices: pd.DataFrame) -> 
         (fallback_price[recoverable] / iopv[recoverable] - 1.0) * 100.0
     ).round(2)
     out.loc[recoverable, "premium_basis"] = "last_close"
+    out.loc[recoverable, "quote_basis"] = "last_close"
+    out.loc[recoverable, "timestamp_basis"] = "last_close"
+    out.loc[recoverable, "observation_type"] = "daily_close_fallback"
     out["relative_premium_pct"] = out.groupby("exposure_id")["premium_pct"].transform(
         lambda s: s - s.median() if s.notna().any() else s
     )

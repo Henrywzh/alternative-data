@@ -24,6 +24,7 @@ from matplotlib import font_manager
 import pandas as pd
 
 from .config import REPO_ROOT
+from .freshness import BLOCKING_FRESHNESS_STATUSES, freshness_note
 
 
 LABEL_ZH_MAP = {
@@ -201,6 +202,79 @@ def _get_tech_summary(tech_df: pd.DataFrame, exposure_id: str) -> dict[str, str]
 _NO_WRAPPER_DATA = '<div style="color:#94a3b8;font-size:12px;">暂无该指数的跟踪标的数据</div>'
 
 
+def _current_quote_cohort(wrappers: pd.DataFrame, exposure_id: str) -> pd.DataFrame:
+    """Return only rows eligible for a same-index current comparison."""
+    if wrappers is None or wrappers.empty or "exposure_id" not in wrappers.columns:
+        return pd.DataFrame()
+    cohort = wrappers[wrappers["exposure_id"].eq(exposure_id)].copy()
+    if cohort.empty:
+        return cohort
+    current = pd.Series(True, index=cohort.index)
+    if "premium_pct" in cohort.columns:
+        current &= pd.to_numeric(cohort["premium_pct"], errors="coerce").notna()
+    if "quote_basis" in cohort.columns:
+        current &= ~cohort["quote_basis"].astype(str).eq("last_close")
+    if "quote_status" in cohort.columns:
+        current &= cohort["quote_status"].fillna("").astype(str).eq("Fresh")
+    return cohort.loc[current]
+
+
+def _fee_display(row: pd.Series) -> str:
+    management = pd.to_numeric(row.get("management_fee"), errors="coerce")
+    custody = pd.to_numeric(row.get("custody_fee"), errors="coerce")
+    total = sum(value for value in (management, custody) if pd.notna(value))
+    return f"{float(total) * 100:.2f}%/年" if total else "费率暂无"
+
+
+def _build_dynamic_summary(wrappers: pd.DataFrame) -> str:
+    """Describe only same-index comparisons backed by current quote rows."""
+    lines: list[str] = []
+    for exposure_id in ("csi500", "csi300", "sp500"):
+        cohort = _current_quote_cohort(wrappers, exposure_id)
+        label = LABEL_ZH_MAP.get(exposure_id, exposure_id)
+        if cohort.empty:
+            lines.append(f"• <b>{_esc(label)}</b>：暂无经过当前报价验证的同类溢价比较。")
+            continue
+        ordered = cohort.assign(
+            _premium=pd.to_numeric(cohort["premium_pct"], errors="coerce")
+        ).sort_values("_premium")
+        row = ordered.iloc[0]
+        lines.append(
+            f"• <b>{_esc(label)}</b>：同类最低溢价 "
+            f"<b>{_esc(row.get('ticker'))} {_esc(row.get('fund_name'))}</b> "
+            f"({_fmt_pct(row.get('premium_pct'))})，费率 {_esc(_fee_display(row))}。"
+        )
+    return "<br>".join(lines)
+
+
+def _build_cross_border_note(wrappers: pd.DataFrame) -> str:
+    cohort = _current_quote_cohort(wrappers, "sp500")
+    if cohort.empty:
+        return "⚠️ <b>跨境溢价提示</b>：当前没有经过源端时间验证的标普500挂钩 ETF 报价，暂不进行横向溢价判断。"
+    premiums = pd.to_numeric(cohort["premium_pct"], errors="coerce").dropna()
+    return (
+        "ℹ️ <b>跨境溢价提示</b>：标普500挂钩 ETF 只在本组内比较；"
+        f"当前 {len(premiums)} 个有效报价，溢价范围 {_fmt_pct(premiums.min())} 至 {_fmt_pct(premiums.max())}。"
+        "不与 A 股或其他指数的 ETF 混比。"
+    )
+
+
+def _freshness_warning(freshness: dict[str, object]) -> str:
+    """Summarize blocking regional/source freshness issues for the email."""
+    issues: list[str] = []
+    for scope, records in (
+        ("区域", freshness.get("daily_close_by_region", {}) or {}),
+        ("来源", freshness.get("daily_close_by_source", {}) or {}),
+    ):
+        for group, record in sorted(records.items()):
+            if str(record.get("status")) in BLOCKING_FRESHNESS_STATUSES:
+                issues.append(f"{scope} {group}: {freshness_note(record, language='zh')}")
+    regressions = freshness.get("coverage_regressions") or []
+    if regressions:
+        issues.append("历史覆盖回退: " + "; ".join(str(item) for item in regressions[:4]))
+    return "；".join(issues)
+
+
 def _render_etf_card(w_df: pd.DataFrame, exposure_id: str, is_overseas: bool = False) -> str:
     # A run with no wrapper metrics at all -- the pre-open window where the
     # spot feed publishes no IOPV, or a failed spot fetch -- hands this an
@@ -220,8 +294,21 @@ def _render_etf_card(w_df: pd.DataFrame, exposure_id: str, is_overseas: bool = F
         cohort = cohort.sort_values(sort_column, ascending=True)
 
 
+    # Only current quote rows may define a same-index premium comparison. A
+    # last-close fallback is retained for auditability, but it must not become
+    # the "lowest premium" anchor for the live QDII cohort.
+    quote_is_current = pd.Series(True, index=cohort.index)
+    if "premium_pct" in cohort.columns:
+        quote_is_current &= pd.to_numeric(cohort["premium_pct"], errors="coerce").notna()
+    if "quote_basis" in cohort.columns:
+        quote_is_current &= ~cohort["quote_basis"].astype(str).eq("last_close")
+    if "quote_status" in cohort.columns:
+        quote_is_current &= cohort["quote_status"].fillna("").astype(str).isin({"", "Fresh"})
+    current_cohort = cohort.loc[quote_is_current]
+
     rows = []
-    min_prem = cohort["premium_pct"].min() if "premium_pct" in cohort.columns else 0.0
+    min_prem = current_cohort["premium_pct"].min() if "premium_pct" in current_cohort.columns and not current_cohort.empty else 0.0
+    live_seen = 0
 
     for idx, (_, w) in enumerate(cohort.iterrows()):
         ticker = _esc(w.get("ticker"))
@@ -229,6 +316,14 @@ def _render_etf_card(w_df: pd.DataFrame, exposure_id: str, is_overseas: bool = F
         prem = w.get("premium_pct")
         fee = w.get("management_fee")
         custody_fee = w.get("custody_fee")
+        quote_basis = str(w.get("quote_basis") or "intraday_quote")
+        quote_status = str(w.get("quote_status") or "Fresh")
+        quote_ok = bool(quote_is_current.iloc[idx])
+        displayable_quote = (
+            pd.notna(prem)
+            and quote_basis != "last_close"
+            and quote_status in {"Fresh", "Unverified"}
+        )
         
         # Fee display
         fee_val = (float(fee) if pd.notna(fee) else 0.0) + (float(custody_fee) if pd.notna(custody_fee) else 0.0)
@@ -236,17 +331,31 @@ def _render_etf_card(w_df: pd.DataFrame, exposure_id: str, is_overseas: bool = F
 
         prem_color = "#16a34a" if pd.notna(prem) and float(prem) < 0 else ("#dc2626" if pd.notna(prem) and float(prem) > 0.5 else "#334155")
         
-        if not is_overseas:
+        if not quote_ok:
+            if quote_basis == "last_close":
+                badge = '<span style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:700;">上一收盘 · 非实时</span>'
+                detail_str = f'折溢价: <b style="color:#92400e;font-family:monospace;">{_fmt_pct(prem)}</b> · 费率: <span style="color:#64748b;">{fee_str}</span>'
+            elif quote_status == "Stale":
+                badge = '<span style="background:#fee2e2;color:#b91c1c;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:700;">报价已过期</span>'
+                detail_str = f'折溢价: <b style="color:#b91c1c;font-family:monospace;">{_fmt_pct(prem)}</b> · 费率: <span style="color:#64748b;">{fee_str}</span>'
+            elif quote_status == "Unverified" and displayable_quote:
+                badge = '<span style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:700;">已抓取 · 时间未验证</span>'
+                detail_str = f'折溢价: <b style="color:#92400e;font-family:monospace;">{_fmt_pct(prem)}</b> · 费率: <span style="color:#64748b;">{fee_str}</span>'
+            else:
+                badge = '<span style="background:#f1f5f9;color:#64748b;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:700;">暂无最新报价</span>'
+                detail_str = f'折溢价: <b style="color:#64748b;font-family:monospace;">—</b> · 费率: <span style="color:#64748b;">{fee_str}</span>'
+        elif not is_overseas:
             # Domestic A-share ETF Logic
-            if idx == 0:
+            if live_seen == 0:
                 badge = '<span style="background:#dcfce7;color:#15803d;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:700;">🏆 综合首选</span>'
             else:
                 badge = '<span style="background:#f1f5f9;color:#64748b;padding:2px 6px;border-radius:4px;font-size:11px;">备选标的</span>'
             detail_str = f'折溢价: <b style="color:{prem_color};font-family:monospace;">{_fmt_pct(prem)}</b> · 费率: <span style="color:#64748b;">{fee_str}</span>'
+            live_seen += 1
         else:
             # Overseas QDII ETF Logic (Within-Cohort comparison)
             diff_from_min = float(prem) - min_prem if pd.notna(prem) else 0.0
-            if idx == 0:
+            if live_seen == 0:
                 badge = '<span style="background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:700;">同类溢价最低</span>'
                 rel_note = " (同类最优)"
             else:
@@ -254,6 +363,7 @@ def _render_etf_card(w_df: pd.DataFrame, exposure_id: str, is_overseas: bool = F
                 rel_note = f" (比最低高 +{diff_from_min:.2f}%)" if diff_from_min > 0.01 else ""
 
             detail_str = f'溢价率: <b style="color:{prem_color};font-family:monospace;">{_fmt_pct(prem)}</b><span style="font-size:11px;color:#64748b;">{rel_note}</span> · 费率: <span style="color:#64748b;">{fee_str}</span>'
+            live_seen += 1
             
         rows.append(
             f'<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:12px;">'
@@ -273,8 +383,27 @@ def build_email_html(
     regime: pd.DataFrame,
     wrappers: pd.DataFrame,
     charts: Collection[str] | None = None,
+    mode: str = "close",
+    freshness: dict[str, object] | None = None,
 ) -> str:
     """Render a clean, modular, decision-first email digest."""
+    freshness = freshness or {}
+    is_intraday = mode == "intraday"
+    report_title = "指数与 ETF 午盘实时快报" if is_intraday else "指数与 ETF 核心配置快报"
+    report_subtitle = (
+        "盘中 ETF 行情；技术面沿用上一交易日收盘，不重算半日 K 线"
+        if is_intraday
+        else "收盘数据；各区块按自身来源的最新观察日展示"
+    )
+    quote_note = freshness_note(freshness.get("quote", {}), language="zh") if freshness.get("quote") else "实时行情状态未提供"
+    close_note = freshness_note(freshness.get("daily_close", {}), language="zh") if freshness.get("daily_close") else "收盘技术面状态未提供"
+    freshness_warning = _freshness_warning(freshness)
+    southbound_note = (
+        freshness_note(freshness.get("southbound", {}), language="zh")
+        if freshness.get("southbound")
+        else None
+    )
+    fetch_errors = freshness.get("fetch_errors") or []
     csi500_tech = _get_tech_summary(technicals, "csi500")
     csi300_tech = _get_tech_summary(technicals, "csi300")
     sp500_tech = _get_tech_summary(technicals, "sp500")
@@ -302,13 +431,15 @@ def build_email_html(
     csi500_etfs = _render_etf_card(wrappers, "csi500", is_overseas=False)
     csi300_etfs = _render_etf_card(wrappers, "csi300", is_overseas=False)
     sp500_etfs = _render_etf_card(wrappers, "sp500", is_overseas=True)
+    summary_html = _build_dynamic_summary(wrappers)
+    cross_border_note = _build_cross_border_note(wrappers)
 
     return f"""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>指数与 ETF 战术配置快报</title>
+<title>{_esc(report_title)}</title>
 </head>
 <body style="margin:0;padding:12px;background-color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
   <table width="100%" border="0" cellspacing="0" cellpadding="0">
@@ -319,18 +450,26 @@ def build_email_html(
           <!-- Header -->
           <div style="background:#0f172a;padding:18px 20px;color:#ffffff;">
             <div style="font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:1px;">Asia Markets Monitor · 战术决策</div>
-            <div style="font-size:18px;font-weight:700;margin-top:3px;color:#ffffff;">指数与 ETF 核心配置快报</div>
-            <div style="font-size:12px;color:#94a3b8;margin-top:2px;">{report_date} · 聚焦 沪深300 / 中证500 / 标普500</div>
+            <div style="font-size:18px;font-weight:700;margin-top:3px;color:#ffffff;">{_esc(report_title)}</div>
+            <div style="font-size:12px;color:#94a3b8;margin-top:2px;">{_esc(report_date)} · 聚焦 沪深300 / 中证500 / 标普500</div>
           </div>
 
           <div style="padding:16px 18px;">
+
+            <div style="background:#eff6ff;border-left:4px solid #2563eb;padding:10px 12px;border-radius:6px;margin-bottom:16px;font-size:11px;color:#1e3a8a;line-height:1.55;">
+              <b>数据口径</b>：{_esc(report_subtitle)}<br>
+              ETF 行情：{_esc(quote_note)}<br>
+              技术面：{_esc(close_note)}
+              {('<br>南向资金：' + _esc(southbound_note)) if southbound_note else ''}
+              {('<br><span style="color:#b91c1c;"><b>区域/来源数据警告</b>：' + _esc(freshness_warning) + '</span>') if freshness_warning else ''}
+              {('<br><span style="color:#b91c1c;"><b>数据警告</b>：' + _esc(str(len(fetch_errors))) + ' 个数据源请求失败，缺失值未用旧数据补齐。</span>') if fetch_errors else ''}
+            </div>
 
             <!-- Summary Takeaways -->
             <div style="background:#f0fdf4;border-left:4px solid #16a34a;padding:12px 14px;border-radius:6px;margin-bottom:20px;">
               <div style="font-size:12px;font-weight:700;color:#166534;margin-bottom:4px;">💡 今日核心配置摘要</div>
               <div style="font-size:12px;color:#1e293b;line-height:1.6;">
-                • <b>国内 A 股</b>：中盘风格更具弹性，<b>510500 (南方中证500)</b> 处于小幅折价区间，性价比最佳。<br>
-                • <b>海外跨境</b>：标普500 维持高位整理；国内挂钩 ETF 整体处于高溢价状态，同类中优先选择溢价相对较低的标的，避免追高。
+                {summary_html}
               </div>
             </div>
 
@@ -377,7 +516,7 @@ def build_email_html(
               </div>
               {chart_sp500_html}
               <div style="background:#fef2f2;border:1px solid #fee2e2;padding:8px 10px;border-radius:6px;margin-bottom:8px;font-size:11px;color:#991b1b;line-height:1.4;">
-                ⚠️ <b>跨境溢价提示</b>：QDII 额度受限导致二级市场普遍存在 +8%~+11% 结构性高溢价。请勿与国内 A 股 ETF 混比，在同类中优选溢价相对较低者。
+                {cross_border_note}
               </div>
               <div style="background:#f8fafc;padding:8px 12px;border-radius:6px;">
                 <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:4px;">🎯 挂钩 ETF 溢价横向对比</div>

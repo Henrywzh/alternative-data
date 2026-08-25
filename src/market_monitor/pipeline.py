@@ -16,7 +16,21 @@ from typing import Any
 import pandas as pd
 import requests
 
-from .config import EXPOSURES, DERIVED_DIR, NORMALIZED_DIR, RAW_DIR
+from .config import (
+    COVERAGE_BOUNDARY_TOLERANCE_DAYS,
+    COVERAGE_MIN_ROW_RATIO,
+    EXPOSURES,
+    DERIVED_DIR,
+    NORMALIZED_DIR,
+    RAW_DIR,
+)
+from .freshness import (
+    classify_daily_groups,
+    classify_daily_observation,
+    classify_intraday_quote,
+    isoformat_utc,
+    market_date,
+)
 from .metadata import build_metadata_frame, reconcile_registry_names
 from .ranking import rank_wrappers
 from .relative_strength import (
@@ -27,6 +41,7 @@ from .relative_strength import (
 )
 from .sources import akshare_etf, csindex, eastmoney_fee, eastmoney_nav, eastmoney_hsgt, yfinance
 from .storage import (
+    load_lineage_history,
     load_latest_derived,
     load_latest_normalized,
     new_run_id,
@@ -36,7 +51,11 @@ from .storage import (
     save_raw,
 )
 from .technicals import compute_technicals
-from .wrapper import fill_premium_from_last_close, merge_premium
+from .wrapper import (
+    filter_premium_history_to_sessions,
+    fill_premium_from_last_close,
+    merge_premium,
+)
 
 
 # How many immutable run snapshots to keep per dataset. Each one holds the
@@ -70,21 +89,111 @@ ETF_HISTORY_DAYS = 730
 
 
 def _last_2y_start() -> str:
-    return (date.today() - timedelta(days=ETF_HISTORY_DAYS)).strftime("%Y%m%d")
+    return (_market_today() - timedelta(days=ETF_HISTORY_DAYS)).strftime("%Y%m%d")
 
 
 def _index_start() -> str:
-    return (date.today() - timedelta(days=INDEX_HISTORY_DAYS)).strftime("%Y%m%d")
+    return (_market_today() - timedelta(days=INDEX_HISTORY_DAYS)).strftime("%Y%m%d")
 
 
 def _iso_start() -> str:
-    return (date.today() - timedelta(days=INDEX_HISTORY_DAYS)).strftime("%Y-%m-%d")
+    return (_market_today() - timedelta(days=INDEX_HISTORY_DAYS)).strftime("%Y-%m-%d")
+
+
+def _market_today() -> date:
+    """Use the configured Asia market date instead of the runner's UTC date."""
+    return date.fromisoformat(market_date())
+
+
+def _spot_retrieval_timestamp(spot: pd.DataFrame | None) -> str | None:
+    """Return the source-layer retrieval timestamp without inventing quote time."""
+    if spot is None or spot.empty or "retrieved_at_utc" not in spot.columns:
+        return None
+    values = spot["retrieved_at_utc"].dropna().astype(str)
+    return values.iloc[0] if not values.empty else None
+
+
+def _spot_freshness(
+    spot: pd.DataFrame | None,
+    *,
+    now_utc: Any | None = None,
+) -> dict[str, Any]:
+    available = spot is not None and not spot.empty
+    return classify_intraday_quote(
+        retrieved_at_utc=_spot_retrieval_timestamp(spot),
+        source_observed_at_utc=(
+            spot["source_observed_at_utc"].dropna().iloc[0]
+            if spot is not None
+            and not spot.empty
+            and "source_observed_at_utc" in spot.columns
+            and spot["source_observed_at_utc"].notna().any()
+            else None
+        ),
+        now_utc=now_utc,
+        quote_available=available,
+    )
+
+
+def coverage_regressions(current: dict[str, Any], previous: dict[str, Any]) -> list[str]:
+    """Return material index-history coverage regressions for this run.
+
+    This belongs beside the pipeline result, not only in the dashboard
+    builder: the CLI must be able to stop a Gmail report before a later
+    artifact step discovers that a source silently returned a shortened
+    history. A first run has no previous coverage and therefore cannot shrink.
+    """
+    notes: list[str] = []
+    missing = set(current.get("missing_exposures") or [])
+    notes.extend(f"no rows for {exposure_id}" for exposure_id in sorted(missing))
+    current_rows = current.get("rows_by_exposure") or {}
+    previous_rows = previous.get("rows_by_exposure") or {}
+    for exposure_id, previous_count in sorted(previous_rows.items()):
+        current_count = int(current_rows.get(exposure_id, 0))
+        if exposure_id in missing:
+            continue
+        previous_count = int(previous_count or 0)
+        if previous_count and current_count < previous_count * COVERAGE_MIN_ROW_RATIO:
+            notes.append(
+                f"{exposure_id} {current_count} rows vs {previous_count} in the previous run"
+            )
+
+    def _boundary(value: Any) -> date | None:
+        if value in (None, ""):
+            return None
+        try:
+            return date.fromisoformat(str(value)[:10])
+        except ValueError:
+            return None
+
+    current_first = _boundary(current.get("first_date"))
+    previous_first = _boundary(previous.get("first_date"))
+    if current_first and previous_first:
+        first_shift = (current_first - previous_first).days
+        if first_shift > COVERAGE_BOUNDARY_TOLERANCE_DAYS:
+            notes.append(
+                f"first_date moved from {previous_first.isoformat()} to {current_first.isoformat()}"
+            )
+
+    current_last = _boundary(current.get("last_date"))
+    previous_last = _boundary(previous.get("last_date"))
+    if current_last and previous_last:
+        last_shift = (previous_last - current_last).days
+        if last_shift > COVERAGE_BOUNDARY_TOLERANCE_DAYS:
+            notes.append(
+                f"last_date moved from {previous_last.isoformat()} to {current_last.isoformat()}"
+            )
+    return notes
 
 
 PREMIUM_HISTORY_COLUMNS = ["date", "fund_id", "ticker", "premium_pct", "spread_bp", "market_price", "basis"]
 
 
-def _premium_rows_from_raw_snapshots(tracked: set[str]) -> list[dict]:
+def _premium_rows_from_raw_snapshots(
+    tracked: set[str],
+    *,
+    allowed_observation_dates: set[str] | None = None,
+    allowed_sessions: set[tuple[str, str]] | None = None,
+) -> list[dict]:
     """Backfill from whatever local raw etf_spot snapshots happen to exist.
 
     Only ever a bootstrap: data/raw/ is gitignored, so a fresh checkout has
@@ -101,15 +210,33 @@ def _premium_rows_from_raw_snapshots(tracked: set[str]) -> list[dict]:
         if not run_dir.is_dir() or not parquet.exists() or not lineage.exists():
             continue
         try:
-            snapshot_date = str(json.loads(lineage.read_text(encoding="utf-8")).get("created_at", ""))[:10]
+            lineage_data = json.loads(lineage.read_text(encoding="utf-8"))
+            snapshot_date = ""
             if not snapshot_date:
-                continue
+                snapshot_date = str(lineage_data.get("created_at", ""))[:10]
             spot = pd.read_parquet(parquet)
             if spot.empty or "ticker" not in spot.columns:
                 continue
+            if "retrieved_at_utc" in spot.columns and spot["retrieved_at_utc"].notna().any():
+                retrieved = pd.to_datetime(spot["retrieved_at_utc"].dropna().iloc[0], errors="coerce", utc=True)
+                if not pd.isna(retrieved):
+                    snapshot_date = retrieved.tz_convert("Asia/Taipei").date().isoformat()
+            elif allowed_observation_dates is not None:
+                # Without row-level retrieval provenance, an old raw snapshot
+                # cannot be safely assigned to a session in a strict pipeline.
+                continue
+            if allowed_observation_dates is not None and snapshot_date not in allowed_observation_dates:
+                continue
             spot = spot.copy()
             spot["ticker"] = spot["ticker"].astype(str).str.zfill(6)
-            rows.extend(_premium_rows(spot[spot["ticker"].isin(tracked)], snapshot_date))
+            eligible_tickers = tracked
+            if allowed_sessions is not None:
+                eligible_tickers = {
+                    ticker
+                    for ticker, session_date in allowed_sessions
+                    if session_date == snapshot_date
+                }
+            rows.extend(_premium_rows(spot[spot["ticker"].isin(eligible_tickers)], snapshot_date))
         except Exception as exc:  # noqa: BLE001 - a bad snapshot must not stop the run
             print(f"  [market_monitor] skipped raw spot snapshot {run_dir.name}: {exc}")
     return rows
@@ -162,8 +289,8 @@ def _nav_premium_rows(
         if not nav_rows.empty:
             already = nav_rows.groupby("ticker")["date"].max().astype(str).to_dict()
 
-    default_start = (date.today() - timedelta(days=NAV_BACKFILL_DAYS)).strftime("%Y-%m-%d")
-    end = date.today().strftime("%Y-%m-%d")
+    default_start = (_market_today() - timedelta(days=NAV_BACKFILL_DAYS)).strftime("%Y-%m-%d")
+    end = _market_today().strftime("%Y-%m-%d")
     session = requests.Session()
 
     rows: list[dict] = []
@@ -298,8 +425,8 @@ def _published_fee_schedule(meta: pd.DataFrame) -> dict[str, dict]:
         for row in cached.to_dict("records"):
             known[str(row["fund_id"]).zfill(6)] = row
 
-    cutoff = (date.today() - timedelta(days=FEE_REFRESH_DAYS)).strftime("%Y-%m-%d")
-    today = date.today().strftime("%Y-%m-%d")
+    cutoff = (_market_today() - timedelta(days=FEE_REFRESH_DAYS)).strftime("%Y-%m-%d")
+    today = _market_today().strftime("%Y-%m-%d")
     deadline = time.monotonic() + FEE_FETCH_BUDGET_SECONDS
     out: dict[str, dict] = {}
     for record in meta.to_dict("records"):
@@ -337,11 +464,13 @@ def _build_premium_history(
     spot: pd.DataFrame,
     observation_date: str,
     prices: pd.DataFrame | None = None,
+    *,
+    validate_observation_date: bool = False,
 ) -> pd.DataFrame:
     """Accumulate a per-fund premium series across runs.
 
     The history is carried by the derived snapshot itself: each run loads the
-    previous one, appends today's observation, and writes the whole series back,
+    previous one, appends the latest validated session observation, and writes the whole series back,
     the same way index_price_daily carries its own history. That is what makes
     it survive both the retention window and a fresh checkout.
 
@@ -357,8 +486,44 @@ def _build_premium_history(
     )
 
     previous = load_latest_derived("premium_history")
-    rows = _premium_rows_from_raw_snapshots(tracked)
-    rows.extend(row for row in _premium_rows(spot, observation_date) if row["ticker"] in tracked)
+    allowed_dates: set[str] | None = None
+    allowed_sessions: set[tuple[str, str]] | None = None
+    current_spot = spot
+    if validate_observation_date:
+        if prices is None or prices.empty or not {"date", "fund_id", "close"}.issubset(prices.columns):
+            allowed_dates = set()
+            allowed_sessions = set()
+            current_spot = pd.DataFrame()
+        else:
+            price_dates = pd.to_datetime(prices["date"], errors="coerce").dt.strftime("%Y-%m-%d")
+            session_frame = pd.DataFrame(
+                {
+                    "ticker": prices["fund_id"].astype(str).str.zfill(6),
+                    "date": price_dates,
+                    "close": pd.to_numeric(prices["close"], errors="coerce"),
+                }
+            ).dropna(subset=["ticker", "date", "close"])
+            session_frame = session_frame[session_frame["ticker"].ne("nan")]
+            allowed_sessions = set(zip(session_frame["ticker"], session_frame["date"]))
+            allowed_dates = set(session_frame["date"].astype(str))
+            latest_by_ticker = (
+                session_frame.groupby("ticker")["date"]
+                .max()
+            )
+            spot_tickers = spot["ticker"].astype(str).str.zfill(6) if spot is not None and "ticker" in spot.columns else pd.Series(dtype=str)
+            valid_tickers = set(latest_by_ticker[latest_by_ticker.eq(observation_date)].index)
+            current_spot = spot.loc[spot_tickers.isin(valid_tickers)] if spot is not None and not spot.empty else pd.DataFrame()
+    raw_rows = (
+        _premium_rows_from_raw_snapshots(tracked)
+        if allowed_dates is None
+        else _premium_rows_from_raw_snapshots(
+            tracked,
+            allowed_observation_dates=allowed_dates,
+            allowed_sessions=allowed_sessions,
+        )
+    )
+    rows = raw_rows
+    rows.extend(row for row in _premium_rows(current_spot, observation_date) if row["ticker"] in tracked)
     for row in rows:
         row.setdefault("basis", "iopv")
 
@@ -375,6 +540,7 @@ def _build_premium_history(
     history = pd.concat(frames, ignore_index=True)
     history = history[[c for c in PREMIUM_HISTORY_COLUMNS if c in history.columns]]
     history["ticker"] = history["ticker"].astype(str).str.zfill(6)
+    history["date"] = pd.to_datetime(history["date"], errors="coerce").dt.strftime("%Y-%m-%d")
     if "basis" not in history.columns:
         history["basis"] = "iopv"
     history["basis"] = history["basis"].fillna("iopv")
@@ -382,6 +548,8 @@ def _build_premium_history(
     # A fund that has left the tracked universe keeps its past observations out
     # of the series rather than sitting in it with a null fund_id.
     history = history[history["ticker"].isin(tracked)]
+    if allowed_sessions is not None:
+        history = filter_premium_history_to_sessions(history, prices)
     # Today's reading supersedes an earlier one for the same day.
     history = history.drop_duplicates(subset=["date", "ticker"], keep="last")
     return history.sort_values(["ticker", "date"]).reset_index(drop=True)
@@ -404,6 +572,8 @@ def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, 
 
     # --- index closes (S&P 500 via yfinance, others via akshare) ---
     index_frames: dict[str, pd.DataFrame] = {}
+    market_end = _market_today()
+    market_end_em = market_end.strftime("%Y%m%d")
     for spec in EXPOSURES:
         exposure = spec["exposure_id"]
         if limit_exposures and exposure not in limit_exposures:
@@ -418,15 +588,15 @@ def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, 
                 else:
                     us_start = start_date or _iso_start()
                 yf_symbol = YFINANCE_SYMBOLS[exposure]
-                frame = yfinance.fetch_daily(yf_symbol, start_date=us_start)
+                frame = yfinance.fetch_daily(yf_symbol, start_date=us_start, end_date=market_end)
                 if frame is not None and not frame.empty:
                     frame["index_id"] = idx
             elif spec["price_source"] == "csindex":
-                frame = csindex.fetch_index_daily(idx, start_date=start)
+                frame = csindex.fetch_index_daily(idx, start_date=start, end_date=market_end_em)
                 if frame is not None and not frame.empty:
                     frame["index_id"] = idx
             else:
-                frame = akshare_etf.fetch_index_daily(idx, start_date=start)
+                frame = akshare_etf.fetch_index_daily(idx, start_date=start, end_date=market_end_em)
                 if frame is not None and not frame.empty:
                     frame["index_id"] = idx
             if frame is not None and not frame.empty:
@@ -450,7 +620,7 @@ def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, 
         if etf_only and row["ticker"] not in etf_only:
             continue
         try:
-            frame = akshare_etf.fetch_etf_daily(row["ticker"], start_date=etf_start)
+            frame = akshare_etf.fetch_etf_daily(row["ticker"], start_date=etf_start, end_date=market_end)
             if frame is not None and not frame.empty:
                 frame = frame.copy()
                 frame["fund_id"] = row["fund_id"]
@@ -529,24 +699,92 @@ def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, 
     return raw
 
 
+def run_intraday_snapshot(*, now_utc: Any | None = None) -> dict[str, Any]:
+    """Fetch a non-persistent intraday quote snapshot for the midday alert.
+
+    This deliberately does not call ``run_pipeline``.  The daily pipeline
+    owns completed bars, technicals, relative regimes and historical premium
+    series; reusing it for a noon run would mix a partial session into those
+    contracts.  The snapshot reuses the latest persisted daily technicals and
+    prices only as explicitly labelled context, then overlays a fresh ETF
+    spot fetch without falling back to yesterday's quote.
+    """
+    requested_at_utc = isoformat_utc(now_utc)
+    meta = build_metadata_frame()
+    fetch_errors: list[dict[str, str]] = []
+    try:
+        spot = akshare_etf.fetch_etf_spot()
+    except Exception as exc:  # noqa: BLE001 - the email reports unavailable data
+        spot = pd.DataFrame()
+        fetch_errors.append({"dataset": "etf_spot", "error": f"{type(exc).__name__}: {exc}"})
+    # The run timestamp describes when the job ran, not when an ETF quote was
+    # observed. An empty response must therefore remain unavailable instead of
+    # borrowing the request timestamp and passing the freshness gate.
+    wrappers = merge_premium(spot, meta)
+    if "quote_basis" not in wrappers.columns:
+        wrappers["quote_basis"] = wrappers["premium_pct"].map(
+            lambda value: "intraday_quote" if pd.notna(value) else None
+        )
+
+    # The same fetch timestamp applies to the returned Eastmoney frame when
+    # the provider does not expose a row-level quote time.  It is still a
+    # retrieval timestamp, never an invented exchange timestamp.
+    quote_freshness = _spot_freshness(spot, now_utc=now_utc)
+    if not wrappers.empty:
+        wrappers["quote_status"] = quote_freshness["status"]
+        wrappers["quote_age_seconds"] = quote_freshness["age_seconds"]
+        wrappers["quote_retrieved_at_utc"] = quote_freshness["retrieved_at_utc"]
+        wrappers["quote_timestamp_basis"] = quote_freshness["timestamp_basis"]
+
+    # Bring in issuer fee metadata from the last complete run.  Fees are not
+    # intraday facts, so their cached publication date remains visible through
+    # the existing ``fetched_at`` field rather than being refreshed here.
+    previous_wrappers = load_latest_derived("wrapper_metrics")
+    if not previous_wrappers.empty and "fund_id" in previous_wrappers.columns and "fund_id" in wrappers.columns:
+        fee_columns = [
+            column
+            for column in ("management_fee", "custody_fee", "fund_age_days", "fetched_at")
+            if column in previous_wrappers.columns and column not in wrappers.columns
+        ]
+        if fee_columns:
+            fee_frame = previous_wrappers[["fund_id", *fee_columns]].drop_duplicates("fund_id")
+            wrappers = wrappers.merge(fee_frame, on="fund_id", how="left")
+
+    technicals = load_latest_derived("exposure_technicals")
+    regime = load_latest_derived("relative_regime")
+    prices = load_latest_normalized("index_price_daily")
+    daily_observation = None
+    if not technicals.empty and "date" in technicals.columns:
+        daily_observation = classify_daily_observation(technicals["date"].max(), now_utc=now_utc)
+
+    # No last-close fill and no write: unavailable live rows remain unavailable.
+    # Ranking is allowed only over the quote snapshot and cached static fees;
+    # it therefore cannot turn yesterday's market price into today's premium.
+    ranked = rank_wrappers(wrappers) if not wrappers.empty else wrappers
+    return {
+        "mode": "intraday",
+        "generated_at_utc": requested_at_utc,
+        "exposure_technicals": technicals,
+        "relative_regime": regime,
+        "wrapper_metrics": ranked,
+        "index_price_daily": prices,
+        "freshness": {
+            "quote": quote_freshness,
+            "daily_close": daily_observation or {"status": "Unavailable", "observation_type": "daily_close"},
+            "fetch_errors": fetch_errors,
+        },
+    }
+
+
 def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tuple[str, ...] | None = None, start_date: str | None = None, write: bool = True) -> dict[str, Any]:
     """Fetch raw, normalize, derive signals, and persist run snapshots."""
     raw = fetch_all_raw(start_date=start_date, limit_exposures=limit_exposures, etf_only=etf_only)
     meta = build_metadata_frame()
     results: dict[str, Any] = {}
+    quote_freshness = _spot_freshness(raw.get("etf_spot", pd.DataFrame()))
     run_scope = "partial" if (limit_exposures or etf_only) else "full"
-    as_of_date = date.today().isoformat()
+    as_of_date = _market_today().isoformat()
     shared_run_id = new_run_id()
-
-    # Persist raw observations first so the raw -> normalized -> derived chain
-    # is not missing its bottom layer on disk (PIT discipline). Note this layer
-    # is local only: data/raw/* is gitignored, so a run reconstructed from the
-    # repository starts at "normalized" and cannot re-derive from source grain.
-    raw_write: dict[str, dict[str, str] | None] = {}
-    if write:
-        for dataset_name in ("index_close", "etf_close", "etf_spot"):  # not _fetch_errors
-            raw_write[dataset_name] = save_raw(dataset_name, raw[dataset_name], metadata={"type": "raw", "run_scope": run_scope}, run_id=shared_run_id) if dataset_name in raw and not raw[dataset_name].empty else None
-        results["_raw_run"] = raw_write
 
     # Normalized: index prices (close from OHLCV).
     index_close_rows = []
@@ -562,7 +800,16 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
             continue
         rows["exposure_id"] = exposure
         rows["close"] = pd.to_numeric(rows["close"], errors="coerce")
-        index_close_rows.append(rows[["date", "exposure_id", "index_id", "close", "open", "high", "low", "volume"]])
+        rows = rows.dropna(subset=["date", "close"])
+        if rows.empty:
+            continue
+        columns = ["date", "exposure_id", "index_id", "close", "open", "high", "low", "volume"]
+        columns.extend(
+            column
+            for column in ("retrieved_at_utc", "observation_type")
+            if column in rows.columns
+        )
+        index_close_rows.append(rows[columns])
     normalized_index = pd.concat(index_close_rows, ignore_index=True) if index_close_rows else pd.DataFrame()
     results["index_price_daily"] = normalized_index
 
@@ -595,7 +842,28 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
         "requested_start_date": start_date,
         "fetch_errors": raw.get("_fetch_errors") or [],
     }
+    # Compare before writing this run, so a later CLI freshness gate can stop
+    # the email even when the artifact builder has not run yet. Partial test
+    # runs are intentionally excluded: they asked for a smaller universe and
+    # must not be compared with the full scheduled run.
+    previous_history = (
+        load_lineage_history(NORMALIZED_DIR, "index_price_daily", scope="full", limit=1)
+        if run_scope == "full"
+        else []
+    )
+    previous_coverage = (previous_history[0].get("coverage") if previous_history else None) or {}
+    coverage["regressions"] = coverage_regressions(coverage, previous_coverage)
     results["_coverage"] = coverage
+
+    # Persist raw observations only after the coverage check has been
+    # calculated. The raw layer is local and gitignored, but a failed full
+    # fetch must not look like a healthy run simply because its incomplete raw
+    # response was written before the email gate could inspect it.
+    raw_write: dict[str, dict[str, str] | None] = {}
+    if write:
+        for dataset_name in ("index_close", "etf_close", "etf_spot"):  # not _fetch_errors
+            raw_write[dataset_name] = save_raw(dataset_name, raw[dataset_name], metadata={"type": "raw", "run_scope": run_scope}, run_id=shared_run_id) if dataset_name in raw and not raw[dataset_name].empty else None
+        results["_raw_run"] = raw_write
 
     # Normalized: ETF prices.
     normalized_etf = raw["etf_close"].copy() if not raw["etf_close"].empty else pd.DataFrame()
@@ -673,8 +941,18 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
     if "turnover" in wrapper.columns:
         wrapper["turnover"] = pd.to_numeric(wrapper["turnover"], errors="coerce")
     if "inception_date" in wrapper.columns:
-        wrapper["fund_age_days"] = pd.to_datetime(date.today()) - pd.to_datetime(wrapper["inception_date"], errors="coerce")
+        wrapper["fund_age_days"] = pd.to_datetime(_market_today()) - pd.to_datetime(wrapper["inception_date"], errors="coerce")
         wrapper["fund_age_days"] = wrapper["fund_age_days"].dt.days
+    if not wrapper.empty:
+        has_premium = pd.to_numeric(wrapper["premium_pct"], errors="coerce").notna()
+        wrapper["quote_status"] = has_premium.map(
+            lambda value: quote_freshness["status"] if value else "Unavailable"
+        )
+        wrapper["quote_age_seconds"] = quote_freshness["age_seconds"]
+        wrapper["quote_retrieved_at_utc"] = quote_freshness["retrieved_at_utc"]
+        wrapper["quote_timestamp_basis"] = quote_freshness["timestamp_basis"]
+        if "quote_basis" in wrapper.columns:
+            wrapper.loc[wrapper["quote_basis"].astype(str).eq("last_close"), "quote_status"] = "Unavailable"
     ranked = rank_wrappers(wrapper)
     # cross-border caveat flag for the dashboard
     ranked["premium_caveat"] = ranked["is_cross_border"].map(
@@ -684,7 +962,11 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
 
     # Premium history, accumulated across runs (see _build_premium_history).
     premium_history = _build_premium_history(
-        meta, raw.get("etf_spot", pd.DataFrame()), as_of_date, prices=normalized_etf
+        meta,
+        raw.get("etf_spot", pd.DataFrame()),
+        as_of_date,
+        prices=normalized_etf,
+        validate_observation_date=True,
     )
     results["premium_history"] = premium_history
 
@@ -727,4 +1009,39 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
                 if dropped:
                     pruned[dataset_name] = dropped
         results["_pruned"] = pruned
+    latest_by_exposure = {}
+    if not results["exposure_technicals"].empty and {"exposure_id", "date"}.issubset(results["exposure_technicals"].columns):
+        latest_by_exposure = {
+            str(row["exposure_id"]): row["date"]
+            for row in results["exposure_technicals"].to_dict("records")
+        }
+    daily_close_by_region = classify_daily_groups(
+        latest_by_exposure,
+        EXPOSURES,
+        group_key="region",
+    )
+    daily_close_by_source = classify_daily_groups(
+        latest_by_exposure,
+        EXPOSURES,
+        group_key="price_source",
+    )
+    daily_observation = None
+    if not results["exposure_technicals"].empty and "date" in results["exposure_technicals"].columns:
+        daily_observation = classify_daily_observation(results["exposure_technicals"]["date"].max())
+    southbound_observation = None
+    southbound = results.get("southbound_market_flow", pd.DataFrame())
+    if southbound is not None and not southbound.empty and "trade_date" in southbound.columns:
+        southbound_observation = classify_daily_observation(
+            southbound["trade_date"].max(), observation_type="published_data"
+        )
+    results["mode"] = "close"
+    results["freshness"] = {
+        "quote": quote_freshness,
+        "daily_close": daily_observation or {"status": "Unavailable", "observation_type": "daily_close"},
+        "daily_close_by_region": daily_close_by_region,
+        "daily_close_by_source": daily_close_by_source,
+        "southbound": southbound_observation or {"status": "Unavailable", "observation_type": "published_data"},
+        "coverage_regressions": coverage.get("regressions") or [],
+        "fetch_errors": raw.get("_fetch_errors") or [],
+    }
     return results

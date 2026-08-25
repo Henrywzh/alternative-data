@@ -7,13 +7,15 @@ from datetime import timedelta
 
 import pandas as pd
 
+from ..freshness import isoformat_utc, market_date
+
 
 def fetch_daily(symbol: str, start_date: str | date | None = None, end_date: str | date | None = None) -> pd.DataFrame:
     """Daily OHLCV (adjusted close) for one yfinance symbol."""
     import yfinance as yf
 
-    default_start = date.today() - timedelta(days=365 * 2)
-    default_end = date.today()
+    default_end = date.fromisoformat(market_date())
+    default_start = default_end - timedelta(days=365 * 2)
     start = start_date.isoformat() if isinstance(start_date, date) else (str(start_date) if start_date else default_start.isoformat())
     end = end_date.isoformat() if isinstance(end_date, date) else (str(end_date) if end_date else default_end.isoformat())
     ticker = yf.Ticker(symbol)
@@ -42,4 +44,7 @@ def fetch_daily(symbol: str, start_date: str | date | None = None, end_date: str
     out["date"] = pd.to_datetime(out["date"], errors="coerce").dt.strftime("%Y-%m-%d")
     for col in ("open", "high", "low", "close", "volume"):
         out[col] = pd.to_numeric(out[col], errors="coerce")
-    return out.dropna(subset=["date", "close"]).reset_index(drop=True)
+    out = out.dropna(subset=["date", "close"]).reset_index(drop=True)
+    out["retrieved_at_utc"] = isoformat_utc()
+    out["observation_type"] = "daily_close"
+    return out

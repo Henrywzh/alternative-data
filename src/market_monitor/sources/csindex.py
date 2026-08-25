@@ -9,9 +9,9 @@ style indices with data that stopped years ago (中证800成长 in 2016,
 
 from __future__ import annotations
 
-from datetime import date
-
 import pandas as pd
+
+from ..freshness import isoformat_utc, market_date
 
 
 _COLUMNS = {
@@ -34,7 +34,7 @@ def fetch_index_daily(
     import akshare as ak
 
     start = (start_date or "19900101").replace("-", "")
-    end = (end_date or date.today().strftime("%Y%m%d")).replace("-", "")
+    end = (end_date or market_date().replace("-", "")).replace("-", "")
     frame = ak.stock_zh_index_hist_csindex(symbol=str(symbol), start_date=start, end_date=end)
     if frame is None or frame.empty:
         return pd.DataFrame()
@@ -50,4 +50,6 @@ def fetch_index_daily(
             out[column] = pd.to_numeric(out[column], errors="coerce")
     out = out.dropna(subset=["date", "close"]).sort_values("date")
     out["date"] = out["date"].dt.strftime("%Y-%m-%d")
+    out["retrieved_at_utc"] = isoformat_utc()
+    out["observation_type"] = "daily_close"
     return out.reset_index(drop=True)

@@ -231,11 +231,38 @@ def rank_wrappers(frame: pd.DataFrame, *, group_col: str = "exposure_id") -> pd.
     QDII wrapper is never ranked against a mainland A-share ETF.
     """
     out = frame.copy()
+    # A last-close reconstruction is useful context for an audit trail, but it
+    # is not a current quote. Keep the value in the row so the provenance is
+    # inspectable while removing it from every entry-cost decision. The same
+    # gate also handles a quote explicitly marked stale/unavailable by a
+    # provider-aware caller.
+    quote_is_current = pd.Series(True, index=out.index)
+    if "premium_pct" in out.columns:
+        quote_is_current &= pd.to_numeric(out["premium_pct"], errors="coerce").notna()
+    if "quote_basis" in out.columns:
+        quote_is_current &= ~out["quote_basis"].astype(str).eq("last_close")
+    if "quote_status" in out.columns:
+        status = out["quote_status"].fillna("").astype(str)
+        quote_is_current &= status.isin({"", "Fresh"})
+
+    # Relative premium is a current-cohort comparison, not an audit value for
+    # last-close or unverified rows. Recompute it after the quote gate so a
+    # stale row cannot become the median anchor for today's comparison. Keep
+    # the raw premium itself for provenance; derived current-signal fields are
+    # cleared below when the quote is not verified.
+    if "premium_pct" in out.columns:
+        current_premium = pd.to_numeric(out["premium_pct"], errors="coerce").where(quote_is_current)
+        out["relative_premium_pct"] = current_premium.groupby(out[group_col]).transform(
+            lambda values: values - values.median() if values.notna().any() else values
+        )
+    elif "relative_premium_pct" in out.columns:
+        out.loc[~quote_is_current, "relative_premium_pct"] = float("nan")
+
     hold_score = _hold_quality_score(out)
 
     regime = premium_regime(out)
     out["premium_regime"] = regime
-    out["entry_cost_bp"] = entry_cost_bp(out).round(2)
+    out["entry_cost_bp"] = entry_cost_bp(out).where(quote_is_current).round(2)
     out["buy_score"] = _entry_cost_score(out["entry_cost_bp"], regime).round(1)
     out["liquidity_score"] = (
         _liquidity_score(out["turnover"]).round(1)
@@ -254,6 +281,13 @@ def rank_wrappers(frame: pd.DataFrame, *, group_col: str = "exposure_id") -> pd.
     out["peer_rank"] = out["buy_rank"]
 
     def _calc_entry_status(row: pd.Series) -> str:
+        if str(row.get("quote_basis") or "") == "last_close":
+            return "UNAVAILABLE"
+        quote_status = row.get("quote_status")
+        if pd.notna(quote_status) and str(quote_status) not in {"", "Fresh"}:
+            return "UNAVAILABLE"
+        if pd.isna(row.get("premium_pct")):
+            return "UNAVAILABLE"
         p = row.get("premium_pct")
         if pd.isna(p):
             return "UNAVAILABLE"

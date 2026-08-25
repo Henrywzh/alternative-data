@@ -11,6 +11,28 @@ RAW_DIR = REPO_ROOT / "data" / "raw" / "market_monitor"
 NORMALIZED_DIR = REPO_ROOT / "data" / "normalized" / "market_monitor"
 DERIVED_DIR = REPO_ROOT / "data" / "derived" / "market_monitor"
 
+# Freshness policy is part of the data contract, not a renderer detail.  The
+# quote threshold is intentionally short because a live quote that is older
+# than one market interval is no longer a useful "latest" value.  Daily
+# observations are allowed to span weekends and exchange holidays; the
+# longer bound is a safety net for a stalled provider, not a claim that the
+# last row is today's close.
+MARKET_TIMEZONE = "Asia/Taipei"
+FRESHNESS_POLICIES = {
+    "intraday_quote": {"max_age_minutes": 15},
+    "daily_close": {"stale_after_calendar_days": 7},
+    "published_data": {"stale_after_calendar_days": 14},
+}
+
+# A rolling history can legitimately move by a small number of calendar days
+# when an exchange holiday or a provider's backfill changes the window. A
+# larger boundary movement with the same row count is a coverage loss, so it
+# must be visible to the email gate instead of being mistaken for a refresh.
+COVERAGE_BOUNDARY_TOLERANCE_DAYS = 7
+# A history losing more than ten percent of its rows is material even when
+# its first/last dates happen to look unchanged.
+COVERAGE_MIN_ROW_RATIO = 0.90
+
 
 # Identifiers used across the domain. Exposure groups indexes; index owns
 # wrappers; venue keeps the schema open to CN / HK / US listing venues.

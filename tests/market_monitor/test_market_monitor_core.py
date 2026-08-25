@@ -3,6 +3,7 @@
 import json
 import sys
 import warnings
+from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -12,6 +13,127 @@ import pytest
 from market_monitor.ranking import rank_wrappers
 from market_monitor.relative_strength import build_relative_regime, compute_spread_metrics
 from market_monitor.technicals import compute_technicals
+
+
+def test_intraday_quote_freshness_does_not_confuse_retrieval_with_source_time():
+    from market_monitor.freshness import classify_intraday_quote
+
+    now = datetime(2026, 8, 24, 4, 15, tzinfo=timezone.utc)
+    fresh = classify_intraday_quote(
+        retrieved_at_utc="2026-08-24T04:14:30Z",
+        now_utc=now,
+    )
+    assert fresh["status"] == "Unverified"
+    assert fresh["timestamp_basis"] == "retrieved_at"
+    assert fresh["observed_at_utc"] is None
+
+    verified = classify_intraday_quote(
+        retrieved_at_utc="2026-08-24T04:14:30Z",
+        source_observed_at_utc="2026-08-24T04:14:00Z",
+        now_utc=now,
+    )
+    assert verified["status"] == "Fresh"
+
+    stale = classify_intraday_quote(
+        retrieved_at_utc="2026-08-24T03:30:00Z",
+        now_utc=now,
+    )
+    assert stale["status"] == "Stale"
+
+
+def test_daily_freshness_calls_weekend_data_last_session_not_current():
+    from market_monitor.freshness import classify_daily_observation
+
+    # Sunday in Asia/Taipei; Friday's close is valid latest-session context,
+    # but it must not be labelled as Sunday's current session.
+    now = datetime(2026, 8, 23, 4, 15, tzinfo=timezone.utc)
+    record = classify_daily_observation("2026-08-21", now_utc=now)
+    assert record["status"] == "Last session"
+    assert record["observation_date"] == "2026-08-21"
+
+
+def test_daily_group_freshness_does_not_borrow_another_region_latest_date():
+    from market_monitor.freshness import classify_daily_groups
+
+    now = datetime(2026, 8, 24, 4, 15, tzinfo=timezone.utc)
+    specs = [
+        {"exposure_id": "cn", "region": "China"},
+        {"exposure_id": "us", "region": "US"},
+    ]
+    grouped = classify_daily_groups(
+        {"cn": "2026-08-01", "us": "2026-08-21"},
+        specs,
+        group_key="region",
+        now_utc=now,
+    )
+
+    assert grouped["China"]["status"] == "Stale"
+    assert grouped["US"]["status"] == "Last session"
+
+
+def test_daily_group_freshness_surfaces_invalid_member():
+    from market_monitor.freshness import classify_daily_groups
+
+    now = datetime(2026, 8, 24, 4, 15, tzinfo=timezone.utc)
+    grouped = classify_daily_groups(
+        {"cn": "2026-08-21", "us": "2026-08-25"},
+        [
+            {"exposure_id": "cn", "region": "US"},
+            {"exposure_id": "us", "region": "US"},
+        ],
+        group_key="region",
+        now_utc=now,
+    )
+
+    assert grouped["US"]["status"] == "Invalid"
+    assert grouped["US"]["invalid_exposures"] == ["us"]
+
+
+def test_intraday_snapshot_never_fills_a_missing_quote_from_last_close(monkeypatch):
+    from market_monitor import pipeline as pl
+
+    monkeypatch.setattr(
+        pl.akshare_etf,
+        "fetch_etf_spot",
+        lambda: pd.DataFrame(
+            [{
+                "ticker": "510300",
+                "fund_name": "沪深300ETF",
+                "market_price": 4.2,
+                "iopv": 4.2,
+                "premium_pct": 0.0,
+                "retrieved_at_utc": "2026-08-24T04:15:00Z",
+                "timestamp_basis": "retrieved_at",
+                "observation_type": "intraday_quote",
+            }]
+        ),
+    )
+    monkeypatch.setattr(pl, "load_latest_derived", lambda name: pd.DataFrame())
+    monkeypatch.setattr(pl, "load_latest_normalized", lambda name: pd.DataFrame())
+
+    snapshot = pl.run_intraday_snapshot(
+        now_utc=datetime(2026, 8, 24, 4, 15, tzinfo=timezone.utc)
+    )
+    row = snapshot["wrapper_metrics"].loc[lambda frame: frame["ticker"].eq("510300")].iloc[0]
+    assert row["quote_basis"] == "intraday_quote"
+    if "premium_basis" in row.index:
+        assert row["premium_basis"] != "last_close"
+    assert snapshot["freshness"]["quote"]["status"] == "Unverified"
+
+
+def test_empty_intraday_response_is_unavailable_not_fresh(monkeypatch):
+    from market_monitor import pipeline as pl
+
+    monkeypatch.setattr(pl.akshare_etf, "fetch_etf_spot", lambda: pd.DataFrame())
+    monkeypatch.setattr(pl, "load_latest_derived", lambda name: pd.DataFrame())
+    monkeypatch.setattr(pl, "load_latest_normalized", lambda name: pd.DataFrame())
+
+    snapshot = pl.run_intraday_snapshot(
+        now_utc=datetime(2026, 8, 24, 4, 15, tzinfo=timezone.utc)
+    )
+
+    assert snapshot["freshness"]["quote"]["status"] == "Unavailable"
+    assert snapshot["freshness"]["quote"]["retrieved_at_utc"] is None
 
 
 def _make_daily(days: int = 120, base: float = 100.0, drift: float = 0.001) -> pd.Series:
@@ -617,6 +739,26 @@ def test_coverage_regression_tolerates_calendar_wobble_and_first_runs():
     assert builder.coverage_regressions(gone, steady) == ["no rows for csi300"]
 
 
+def test_coverage_regression_catches_boundary_loss_with_unchanged_row_count():
+    builder = _load_builder()
+    previous = {
+        "rows_by_exposure": {"csi300": 879},
+        "missing_exposures": [],
+        "first_date": "2024-01-01",
+        "last_date": "2026-08-21",
+    }
+    current = {
+        "rows_by_exposure": {"csi300": 879},
+        "missing_exposures": [],
+        "first_date": "2024-01-20",
+        "last_date": "2026-08-21",
+    }
+
+    notes = builder.coverage_regressions(current, previous)
+
+    assert any("first_date moved from 2024-01-01 to 2024-01-20" in note for note in notes)
+
+
 def test_email_escapes_provider_supplied_text():
     """fund_name arrives from Eastmoney and goes straight into markup."""
     from market_monitor.alerts import build_email_html
@@ -643,6 +785,27 @@ def test_email_escapes_provider_supplied_text():
     )
     assert "<script>" not in html_out
     assert "&lt;script&gt;alert(1)&lt;/script&gt;华泰柏瑞" in html_out
+
+
+def test_qdii_email_comparison_ignores_last_close_anchor():
+    from market_monitor.alerts import _render_etf_card
+
+    wrappers = pd.DataFrame(
+        [
+            {"exposure_id": "sp500", "ticker": "stale", "fund_name": "旧快照", "premium_pct": 0.10,
+             "quote_basis": "last_close", "quote_status": "Unavailable"},
+            {"exposure_id": "sp500", "ticker": "live1", "fund_name": "当前快照一", "premium_pct": 7.13,
+             "quote_basis": "intraday_quote", "quote_status": "Fresh"},
+            {"exposure_id": "sp500", "ticker": "live2", "fund_name": "当前快照二", "premium_pct": 7.47,
+             "quote_basis": "intraday_quote", "quote_status": "Fresh"},
+        ]
+    )
+
+    html = _render_etf_card(wrappers, "sp500", is_overseas=True)
+
+    # The old 0.10% row must not make both current rows look expensive.
+    assert html.count("同类溢价最低") == 1
+    assert "比最低高 +0.34%" in html
 
 
 def test_merge_premium_does_not_mutate_the_caller_frame():
@@ -689,6 +852,29 @@ def test_index_fetch_rejects_a_symbol_it_would_mangle():
 
     with pytest.raises(ValueError, match="no Sina mapping"):
         akshare_etf.fetch_index_daily("SPX")
+
+
+def test_index_fetch_drops_rows_without_a_valid_close(monkeypatch):
+    """A dated but blank close must not become a technical-history row."""
+    from market_monitor.sources import akshare_etf
+
+    class _FakeAk:
+        @staticmethod
+        def stock_zh_index_daily(symbol):
+            return pd.DataFrame(
+                {
+                    "date": ["2026-08-20", "2026-08-21"],
+                    "close": [None, 100.0],
+                }
+            )
+
+    monkeypatch.setitem(sys.modules, "akshare", _FakeAk)
+    out = akshare_etf.fetch_index_daily(
+        "000300.SH", start_date="2026-08-01", end_date="2026-08-21"
+    )
+
+    assert out["date"].tolist() == ["2026-08-21"]
+    assert out["close"].tolist() == [100.0]
 
 
 def test_fetch_errors_reach_lineage_not_just_stdout(monkeypatch, capsys):
@@ -828,6 +1014,90 @@ def test_premium_history_accumulates_instead_of_being_rebuilt(tmp_path, monkeypa
     assert len(day2_again) == 4
     latest = day2_again[day2_again["date"].eq("2026-08-20")].set_index("ticker")["premium_pct"]
     assert latest.loc["510300"] == 0.20
+
+
+def test_strict_premium_history_does_not_stamp_unobserved_spot_as_a_session(monkeypatch):
+    """A weekend/holiday run must not write the retrieval date as a premium date."""
+    from market_monitor import pipeline as pl
+    from market_monitor.sources import eastmoney_nav
+
+    monkeypatch.setattr(pl, "_premium_rows_from_raw_snapshots", lambda tracked, **kwargs: [])
+    monkeypatch.setattr(pl, "load_latest_derived", lambda name: None)
+    monkeypatch.setattr(
+        eastmoney_nav,
+        "fetch_nav_history",
+        lambda *args, **kwargs: pd.DataFrame(),
+    )
+    meta = pd.DataFrame([{"ticker": "510300.SH", "fund_id": "510300", "exposure_id": "csi300"}])
+    spot = pd.DataFrame([{"ticker": "510300", "premium_pct": 0.2, "market_price": 4.8}])
+    prices = pd.DataFrame([{"date": "2026-08-21", "fund_id": "510300", "close": 4.8}])
+
+    out = pl._build_premium_history(
+        meta,
+        spot,
+        "2026-08-22",
+        prices=prices,
+        validate_observation_date=True,
+    )
+
+    assert out.empty
+
+
+def test_strict_premium_history_revalidates_persisted_rows_against_etf_sessions(monkeypatch):
+    """A prior bad spot row must not survive a later artifact rebuild."""
+    from market_monitor import pipeline as pl
+    from market_monitor.sources import eastmoney_nav
+
+    previous = pd.DataFrame(
+        [
+            {"date": "2026-08-20", "fund_id": "510300", "ticker": "510300", "premium_pct": 9.9},
+            {"date": "2026-08-21", "fund_id": "510300", "ticker": "510300", "premium_pct": 0.2},
+        ]
+    )
+    monkeypatch.setattr(pl, "load_latest_derived", lambda name: previous)
+    monkeypatch.setattr(pl, "_premium_rows_from_raw_snapshots", lambda tracked, **kwargs: [])
+    monkeypatch.setattr(eastmoney_nav, "fetch_nav_history", lambda *args, **kwargs: pd.DataFrame())
+
+    meta = pd.DataFrame([{"ticker": "510300.SH", "fund_id": "510300", "exposure_id": "csi300"}])
+    prices = pd.DataFrame(
+        [
+            {"date": "2026-08-21", "fund_id": "510300", "close": 4.8},
+        ]
+    )
+    out = pl._build_premium_history(
+        meta,
+        pd.DataFrame(),
+        "2026-08-21",
+        prices=prices,
+        validate_observation_date=True,
+    )
+
+    assert out["date"].tolist() == ["2026-08-21"]
+    assert out["premium_pct"].tolist() == [0.2]
+
+
+def test_strict_premium_history_rejects_sessions_without_a_valid_close(monkeypatch):
+    from market_monitor import pipeline as pl
+    from market_monitor.sources import eastmoney_nav
+
+    previous = pd.DataFrame(
+        [{"date": "2026-08-21", "fund_id": "510300", "ticker": "510300", "premium_pct": 0.2}]
+    )
+    monkeypatch.setattr(pl, "load_latest_derived", lambda name: previous)
+    monkeypatch.setattr(pl, "_premium_rows_from_raw_snapshots", lambda tracked, **kwargs: [])
+    monkeypatch.setattr(eastmoney_nav, "fetch_nav_history", lambda *args, **kwargs: pd.DataFrame())
+
+    meta = pd.DataFrame([{"ticker": "510300.SH", "fund_id": "510300", "exposure_id": "csi300"}])
+    prices = pd.DataFrame([{"date": "2026-08-21", "fund_id": "510300", "close": float("nan")}])
+    out = pl._build_premium_history(
+        meta,
+        pd.DataFrame(),
+        "2026-08-21",
+        prices=prices,
+        validate_observation_date=True,
+    )
+
+    assert out.empty
 
 
 def test_avg_premium_reports_how_many_days_it_averaged():
@@ -1577,6 +1847,41 @@ def test_qdii_wrappers_are_scored_and_ranked_against_each_other():
     assert 99 not in set(ranked["buy_rank"])
 
 
+def test_last_close_context_does_not_enter_current_entry_ranking():
+    from market_monitor.ranking import rank_wrappers
+
+    frame = pd.DataFrame(
+        [
+            {"exposure_id": "x", "fund_id": "stale", "premium_pct": -0.5,
+             "quote_basis": "last_close", "management_fee": 0.001},
+            {"exposure_id": "x", "fund_id": "live", "premium_pct": 0.2,
+             "quote_basis": "intraday_quote", "management_fee": 0.001},
+        ]
+    )
+    ranked = rank_wrappers(frame).set_index("fund_id")
+
+    assert ranked.loc["stale", "entry_status"] == "UNAVAILABLE"
+    assert pd.isna(ranked.loc["stale", "entry_cost_bp"])
+    assert ranked.loc["stale", "peer_rank"] == 99
+    assert ranked.loc["live", "entry_status"] != "UNAVAILABLE"
+
+
+def test_unverified_quote_does_not_anchor_relative_premium_or_peer_rank():
+    frame = pd.DataFrame(
+        [
+            {"exposure_id": "x", "fund_id": "unverified", "premium_pct": -1.0,
+             "quote_basis": "intraday_quote", "quote_status": "Unverified", "management_fee": 0.001},
+            {"exposure_id": "x", "fund_id": "verified", "premium_pct": 1.0,
+             "quote_basis": "intraday_quote", "quote_status": "Fresh", "management_fee": 0.001},
+        ]
+    )
+    ranked = rank_wrappers(frame).set_index("fund_id")
+
+    assert pd.isna(ranked.loc["unverified", "relative_premium_pct"])
+    assert ranked.loc["unverified", "peer_rank"] == 99
+    assert ranked.loc["verified", "relative_premium_pct"] == 0.0
+
+
 def test_an_unknown_regime_is_unavailable_not_judged_on_domestic_bands():
     from market_monitor.ranking import rank_wrappers
 
@@ -1608,6 +1913,104 @@ def test_the_digest_survives_a_run_with_no_wrapper_or_technical_columns():
             wrappers=wrappers,
         )
         assert "</html>" in html
+
+
+def test_digest_summary_is_data_driven_and_does_not_hardcode_a_recommendation():
+    from market_monitor.alerts import build_email_html
+
+    wrappers = pd.DataFrame(
+        [
+            {
+                "exposure_id": "csi500",
+                "ticker": "999999",
+                "fund_name": "测试中证500ETF",
+                "premium_pct": -0.8,
+                "quote_status": "Fresh",
+                "quote_basis": "intraday_quote",
+                "management_fee": 0.0015,
+                "custody_fee": 0.0005,
+            }
+        ]
+    )
+    html = build_email_html(
+        report_date="2026-08-22",
+        technicals=pd.DataFrame(),
+        regime=pd.DataFrame(),
+        wrappers=wrappers,
+    )
+
+    assert "999999" in html
+    assert "510500" not in html
+    assert "+8%~+11%" not in html
+
+
+def test_close_freshness_gate_can_publish_degraded_artifact_without_sending_email(monkeypatch):
+    from market_monitor import cli
+
+    monkeypatch.setattr(
+        cli,
+        "run_pipeline",
+        lambda **kwargs: {
+            "mode": "close",
+            "freshness": {
+                "daily_close": {"status": "Last session"},
+                "quote": {"status": "Unavailable"},
+                "fetch_errors": [{"dataset": "etf_spot", "error": "empty"}],
+            },
+        },
+    )
+    monkeypatch.setattr(cli, "send_report", lambda **kwargs: pytest.fail("email must be skipped"))
+
+    assert cli.main([
+        "--mode", "close", "--no-write", "--send-report", "--require-fresh", "--allow-stale-artifact"
+    ]) == 0
+
+
+def test_close_freshness_gate_blocks_stale_region_before_email(monkeypatch):
+    from market_monitor import cli
+
+    monkeypatch.setattr(
+        cli,
+        "run_pipeline",
+        lambda **kwargs: {
+            "mode": "close",
+            "freshness": {
+                "daily_close": {"status": "Last session"},
+                "quote": {"status": "Fresh"},
+                "daily_close_by_region": {"HK": {"status": "Stale"}},
+                "daily_close_by_source": {"sina_hk": {"status": "Stale"}},
+                "fetch_errors": [],
+            },
+        },
+    )
+    monkeypatch.setattr(cli, "send_report", lambda **kwargs: pytest.fail("email must be skipped"))
+
+    assert cli.main([
+        "--mode", "close", "--no-write", "--send-report", "--require-fresh", "--allow-stale-artifact"
+    ]) == 0
+
+
+def test_close_freshness_gate_blocks_coverage_regression_before_email(monkeypatch):
+    from market_monitor import cli
+
+    monkeypatch.setattr(
+        cli,
+        "run_pipeline",
+        lambda **kwargs: {
+            "mode": "close",
+            "freshness": {
+                "daily_close": {"status": "Last session"},
+                "quote": {"status": "Fresh"},
+                "coverage_regressions": ["csi500 100 rows vs 120 in the previous run"],
+                "fetch_errors": [],
+            },
+        },
+    )
+    monkeypatch.setattr(cli, "send_report", lambda **kwargs: pytest.fail("email must be skipped"))
+
+    assert cli.main([
+        "--mode", "close", "--no-write", "--send-report", "--require-fresh", "--allow-stale-artifact"
+    ]) == 0
 
 
 def test_only_attached_charts_get_a_cid_reference():
