@@ -46,6 +46,7 @@ from src.research_control_tower.vendor_financials import (
 
 from ..filters import apply_event_filters
 from ..formatting import format_t_minus
+from ..components import ct_dataframe
 from ..components.timeline import format_event_window, is_active_catalyst, select_next_catalyst
 from ..market_data import QUOTE_SNAPSHOT_COLUMNS, classify_quote_freshness, format_quote_age
 from ..models import ControlTowerSnapshot, EventFilters
@@ -1938,12 +1939,12 @@ def _render_overview_tab(
                 source_link_html = escape(source_label)
             summary_html = f'<div class="ct-change" style="margin-bottom: 0.75rem;"><div class="ct-change-title"><strong>{escape(price_str)}</strong> · {escape(change_str)}</div><div class="ct-change-detail">Quote age: {escape(age_str)} · Freshness: {escape(freshness)}</div><div class="ct-source-line">Source: {source_link_html} · Delayed market data (no real-time claim)</div></div>'
             st.markdown(summary_html, unsafe_allow_html=True)
-        st.dataframe(_friendly_quote_frame(view.quote_snapshots, viewer_timezone), width='stretch', hide_index=True)
+        ct_dataframe(_friendly_quote_frame(view.quote_snapshots, viewer_timezone), width='stretch', hide_index=True)
     _render_price_history(view, snapshot)
     _render_section_heading(4, 'Listings', f'listings-{_slugify(view.entity_id)}')
-    st.dataframe(_friendly_listing_frame(view.listings), width='stretch', hide_index=True)
+    ct_dataframe(_friendly_listing_frame(view.listings), width='stretch', hide_index=True)
     _render_section_heading(4, 'Basket and layer memberships', f'memberships-{_slugify(view.entity_id)}')
-    st.dataframe(view.memberships, width='stretch', hide_index=True)
+    ct_dataframe(view.memberships, width='stretch', hide_index=True)
     _render_section_heading(4, 'Flight deck & catalyst overview', f'flight-deck-{_slugify(view.entity_id)}')
     cols = st.columns(4)
     cols[0].metric('Linked Events', str(len(view.events)))
@@ -2838,7 +2839,7 @@ def _render_vendor_financials_overlay(view: CompanyView) -> VendorLoadResult:
         'pit_class': 'PIT class',
     })
     with st.expander('Vendor row registry (yfinance / akshare via financial-data)', expanded=False):
-        st.dataframe(friendly, width='stretch', hide_index=True)
+        ct_dataframe(friendly, width='stretch', hide_index=True)
     return result
 
 def _render_fundamentals_tab(
@@ -2855,7 +2856,7 @@ def _render_fundamentals_tab(
         pivoted_model = _build_quarterly_financial_pivot(frame, n_periods=8, profile=profile)
         if not pivoted_model.empty:
             st.caption(f'Multi-period quarterly financial trajectory (LTM 8 quarters in {profile.reporting_currency} billions) · GAAP vs Non-IFRS dual track · YoY & QoQ growth metrics')
-            st.dataframe(pivoted_model, width='stretch', hide_index=True)
+            ct_dataframe(pivoted_model, width='stretch', hide_index=True)
         act_dt = frame.copy()
         act_dt['period_end'] = pd.to_datetime(act_dt['period_end'], errors='coerce')
         act_dt = act_dt.dropna(subset=['period_end']).sort_values('period_end')
@@ -2905,7 +2906,7 @@ def _render_fundamentals_tab(
         keep_cols = [c for c in actuals_display_columns if c in sorted_actuals.columns]
         friendly_actuals = sorted_actuals.loc[:, keep_cols].rename(columns={'period_label': 'Period', 'metric': 'Metric', 'reported_value': 'Reported', 'normalized_value': 'Normalized', 'currency': 'Currency', 'unit': 'Unit', 'accounting_basis': 'Basis', 'filing_at': 'Filing date', 'version': 'Version', 'is_restatement': 'Restatement', 'revision_reason': 'Revision reason', 'source_url': 'Source link'})
         with st.expander('Detailed row-level filing actuals registry', expanded=False):
-            st.dataframe(friendly_actuals, width='stretch', hide_index=True)
+            ct_dataframe(friendly_actuals, width='stretch', hide_index=True)
         latest = sorted_actuals['period_end'].dropna()
         if not latest.empty:
             latest_label = _text(sorted_actuals.loc[sorted_actuals['period_end'].eq(latest.max()), 'period_label'].iloc[0])
@@ -2921,7 +2922,7 @@ def _render_fundamentals_tab(
         st.info('Profitability and Free Cash Flow metrics unavailable · no matching earnings-actuals rows for the latest reported period.')
     else:
         display_columns = [column for column in ('period_label', 'metric', 'reported_value', 'normalized_value', 'currency', 'unit', 'accounting_basis', 'filing_at', 'source_id', 'source_url', 'pit_class') if column in trajectory.columns]
-        st.dataframe(trajectory.loc[:, display_columns].rename(columns={'period_label': 'Period', 'metric': 'Metric', 'reported_value': 'Reported', 'normalized_value': 'Normalized', 'currency': 'Currency', 'unit': 'Unit', 'accounting_basis': 'Basis', 'filing_at': 'Filing date', 'source_id': 'Source', 'source_url': 'Source link', 'pit_class': 'PIT class'}), width='stretch', hide_index=True)
+        ct_dataframe(trajectory.loc[:, display_columns].rename(columns={'period_label': 'Period', 'metric': 'Metric', 'reported_value': 'Reported', 'normalized_value': 'Normalized', 'currency': 'Currency', 'unit': 'Unit', 'accounting_basis': 'Basis', 'filing_at': 'Filing date', 'source_id': 'Source', 'source_url': 'Source link', 'pit_class': 'PIT class'}), width='stretch', hide_index=True)
         st.caption('Reported and normalized values remain distinct and retain their row-level provenance.')
     _render_section_heading(4, 'Statutory capital returns & corporate actions', f'corporate-actions-{_slugify(view.entity_id)}')
     if view.corporate_actions.empty:
@@ -2941,7 +2942,7 @@ def _render_fundamentals_tab(
             '</div></div>'
         )
         st.markdown(bb_tracker_html, unsafe_allow_html=True)
-        st.dataframe(_friendly_corporate_actions_frame(view.corporate_actions, viewer_timezone), width='stretch', hide_index=True)
+        ct_dataframe(_friendly_corporate_actions_frame(view.corporate_actions, viewer_timezone), width='stretch', hide_index=True)
     _render_section_heading(4, 'Valuation multiples & return yields', f'valuation-multiples-{_slugify(view.entity_id)}')
     spot = _spot_forward_pe_payload(view)
     if spot is not None:
@@ -2976,7 +2977,7 @@ def _render_fundamentals_tab(
     if view.valuation_snapshots.empty:
         st.warning('Audited valuation mart unavailable · official forward_pe / EV/EBITDA / FCF yield still require contemporaneous quote, share count, and basis-verified consensus. The vendor overlay above is separate and labelled.')
     else:
-        st.dataframe(_friendly_valuation_frame(view.valuation_snapshots), width='stretch', hide_index=True)
+        ct_dataframe(_friendly_valuation_frame(view.valuation_snapshots), width='stretch', hide_index=True)
         st.caption('percentile_history_status: unavailable · Historical denominator vintages are absent; reconstructing synthetic historical percentiles from current-vintage statements is strictly forbidden by policy.')
 
 
@@ -3034,12 +3035,12 @@ def _render_thesis_catalysts_tab(
                 timing_str = f'{window_str} · {status_label}'
             st.markdown(f'**{escape(_text(row.get("title")))}** · {escape(_text(row.get("relation_role")))} · *{escape(certainty)}* · `{escape(precision)}` · {timing_str} · {escape(source_link)}')
         with st.expander('Event lineage details', expanded=False):
-            st.dataframe(view.events, width='stretch', hide_index=True)
+            ct_dataframe(view.events, width='stretch', hide_index=True)
     _render_section_heading(4, 'Operational watch questions & falsification criteria', f'watch-questions-{_slugify(view.entity_id)}')
     if not view.thesis_watch_questions.empty:
-        st.dataframe(_friendly_thesis_questions_frame(view.thesis_watch_questions), width='stretch', hide_index=True)
+        ct_dataframe(_friendly_thesis_questions_frame(view.thesis_watch_questions), width='stretch', hide_index=True)
     elif not view.watch_questions.empty:
-        st.dataframe(_friendly_question_frame(view.watch_questions), width='stretch', hide_index=True)
+        ct_dataframe(_friendly_question_frame(view.watch_questions), width='stretch', hide_index=True)
     else:
         st.info('No watch questions are registered.')
 
@@ -3134,9 +3135,39 @@ def _render_refresh_status(view: CompanyView) -> None:
         st.warning(escape(_text(issue)))
 
 
+def _hkex_event_bucket(event_class: object, headline: object) -> str:
+    label = _text(event_class).lower()
+    title = _text(headline).upper()
+    if label == 'earnings_results' or ('RESULTS' in title and 'ENDED' in title):
+        return 'priority'
+    if label == 'period_report' or title.strip() in {'INTERIM REPORT', 'ANNUAL REPORT'} or (
+        ('INTERIM REPORT' in title or 'ANNUAL REPORT' in title) and 'ENDED' not in title
+    ):
+        return 'reports'
+    if label in {'share_buyback', 'share_scheme'} or 'NEXT DAY DISCLOSURE' in title or 'SHARE AWARD' in title or 'SHARE OPTION' in title:
+        return 'routine'
+    return 'other'
+
+
+def _hkex_card(row: pd.Series) -> str:
+    published = row.get('published_at')
+    published_txt = pd.Timestamp(published).strftime('%Y-%m-%d %H:%M UTC') if pd.notna(published) else 'date unavailable'
+    headline = escape(_text(row.get('headline')) or 'headline unavailable')
+    event_class = escape(_text(row.get('event_class')) or 'unclassified')
+    url = _text(row.get('source_url'))
+    link = f'<a class="ct-inline-link" href="{escape(url)}" target="_blank" rel="noopener">Open ↗</a>' if url else 'link unavailable'
+    return (
+        '<div class="ct-thesis-card">'
+        f'<div class="ct-subtle">{escape(published_txt)} · hkexnews · {event_class}</div>'
+        f'<div style="font-weight:700;margin:0.25rem 0;">{headline}</div>'
+        f'<div class="ct-source-line">{link}</div>'
+        '</div>'
+    )
+
+
 def _render_live_hkex_overlay(view: CompanyView) -> None:
     _render_section_heading(4, 'On-demand HKEXnews overlay (official metadata)', f'hkex-live-{_slugify(view.entity_id)}')
-    st.caption('Official exchange announcements from a local live mart, not the published generation. Titles and PDF links only; announcement bodies are not stored. Newer than the frozen bundle when Refresh has been used.')
+    st.caption('Official exchange announcements from a local live mart, not the published generation. Titles and PDF links only. Results stay on the first screen; daily buyback returns are grouped separately.')
     try:
         frame = load_local_hkex_overlay(
             entity_id=view.entity_id,
@@ -3149,22 +3180,27 @@ def _render_live_hkex_overlay(view: CompanyView) -> None:
     if frame is None or frame.empty:
         st.info('No on-demand HKEXnews rows yet. Use Refresh news & filings on this company.')
         return
-    cards = []
-    for _, row in frame.head(12).iterrows():
-        published = row.get('published_at')
-        published_txt = pd.Timestamp(published).strftime('%Y-%m-%d %H:%M UTC') if pd.notna(published) else 'date unavailable'
-        headline = escape(_text(row.get('headline')) or 'headline unavailable')
-        event_class = escape(_text(row.get('event_class')) or 'unclassified')
-        url = _text(row.get('source_url'))
-        link = f'<a class="ct-inline-link" href="{escape(url)}" target="_blank" rel="noopener">Open ↗</a>' if url else 'link unavailable'
-        cards.append(
-            '<div class="ct-thesis-card">'
-            f'<div class="ct-subtle">{escape(published_txt)} · hkexnews · {event_class}</div>'
-            f'<div style="font-weight:700;margin:0.25rem 0;">{headline}</div>'
-            f'<div class="ct-source-line">{link}</div>'
-            '</div>'
-        )
-    st.markdown(''.join(cards), unsafe_allow_html=True)
+    work = frame.copy()
+    work['_bucket'] = [
+        _hkex_event_bucket(row.get('event_class'), row.get('headline'))
+        for _, row in work.iterrows()
+    ]
+    sections = (
+        ('priority', 'Results and material announcements'),
+        ('reports', 'Interim / annual reports'),
+        ('other', 'Other announcements'),
+        ('routine', 'Routine capital-return filings'),
+    )
+    for bucket, title in sections:
+        subset = work.loc[work['_bucket'].eq(bucket)]
+        if subset.empty:
+            continue
+        st.caption(f'{title} · {len(subset)}')
+        limit = 8 if bucket != 'routine' else 5
+        st.markdown(''.join(_hkex_card(row) for _, row in subset.head(limit).iterrows()), unsafe_allow_html=True)
+        if bucket == 'routine' and len(subset) > limit:
+            with st.expander(f'{len(subset) - limit} older buyback / share-scheme filings'):
+                st.markdown(''.join(_hkex_card(row) for _, row in subset.iloc[limit:].iterrows()), unsafe_allow_html=True)
     st.caption(f'{len(frame)} live HKEXnews rows for {escape(_text(view.display_name))}. The published official_filings table below is the frozen generation.')
 
 
@@ -3208,6 +3244,10 @@ def _render_local_news_overlay(view: CompanyView) -> None:
     if frame is None or frame.empty:
         st.info('No locally collected vendor headlines currently resolve to this company.')
         return
+    refresh_at = None
+    payload = st.session_state.get('ct_news_refresh_result') or {}
+    if payload.get('entity_id') == view.entity_id:
+        refresh_at = pd.to_datetime(payload.get('fetched_at_utc'), errors='coerce', utc=True)
     cards = []
     for _, row in frame.head(12).iterrows():
         published = row.get('published_at')
@@ -3217,15 +3257,25 @@ def _render_local_news_overlay(view: CompanyView) -> None:
         publisher = escape(_text(row.get('publisher')) or 'publisher unavailable')
         url = _text(row.get('source_url'))
         link = f'<a class="ct-inline-link" href="{escape(url)}" target="_blank" rel="noopener">Open ↗</a>' if url else 'link unavailable'
+        last_seen = pd.to_datetime(row.get('last_seen_at'), errors='coerce', utc=True)
+        freshness = 'not in this refresh'
+        if pd.notna(refresh_at) and pd.notna(last_seen) and last_seen >= refresh_at - pd.Timedelta(seconds=5):
+            freshness = 'updated this refresh'
+        elif pd.isna(refresh_at):
+            freshness = 'cached overlay'
         cards.append(
             '<div class="ct-thesis-card">'
-            f'<div class="ct-subtle">{escape(published_txt)} · {source} · {publisher}</div>'
+            f'<div class="ct-subtle">{escape(published_txt)} · {source} · {publisher} · {escape(freshness)}</div>'
             f'<div style="font-weight:700;margin:0.25rem 0;">{headline}</div>'
             f'<div class="ct-source-line">{link}</div>'
             '</div>'
         )
     st.markdown(''.join(cards), unsafe_allow_html=True)
-    st.caption(f'{len(frame)} resolved vendor headlines for {escape(_text(view.display_name))}. This is not the published news_filings.parquet table below.')
+    st.caption(
+        f'{len(frame)} resolved vendor headlines for {escape(_text(view.display_name))}. '
+        'Finnhub rows on HK-only names are leftover title matches, not a HK feed. '
+        'This is not the published news_filings.parquet table below.'
+    )
 
 def _render_evidence_tab(
     view: CompanyView,
@@ -3252,7 +3302,7 @@ def _render_evidence_tab(
                 rev_n = c_rev.iloc[0].get('analyst_count', '')
                 cols[1].metric('Consensus Revenue', f'{rev_ccy} {float(rev_val)/1e9:.1f}B' if pd.notna(rev_val) and float(rev_val) >= 1e9 else f'{rev_ccy} {float(rev_val):,.0f}', f'{rev_n} analysts' if rev_n else '')
             cols[2].metric('Provider Source', 'yfinance', 'Mean Consensus')
-        st.dataframe(_friendly_consensus_frame(view.consensus, viewer_timezone), width='stretch', hide_index=True)
+        ct_dataframe(_friendly_consensus_frame(view.consensus, viewer_timezone), width='stretch', hide_index=True)
     _render_section_heading(4, 'Consensus revisions', f'consensus-revisions-{_slugify(view.entity_id)}')
     if view.consensus_revisions.empty:
         st.info('Consensus revision history unavailable; no 0/0 breadth is shown.')
@@ -3270,7 +3320,7 @@ def _render_evidence_tab(
                     height=280,
                 )
             )
-        st.dataframe(_friendly_revision_frame(view.consensus_revisions, viewer_timezone), width='stretch', hide_index=True)
+        ct_dataframe(_friendly_revision_frame(view.consensus_revisions, viewer_timezone), width='stretch', hide_index=True)
     if not view.corporate_actions.empty:
         ca_df = view.corporate_actions.copy()
         ca_df['date'] = pd.to_datetime(ca_df['filing_date'], errors='coerce').dt.date
@@ -3298,7 +3348,7 @@ def _render_evidence_tab(
     if view.official_documents.empty:
         st.caption('This empty state is the published news_filings.parquet artifact, whose related_entity_ids are still blank. Vendor Marketaux/Finnhub headlines are in the overlay at the top of this tab, not this generation table.')
     else:
-        st.dataframe(_friendly_document_frame(view.official_documents, viewer_timezone), width='stretch', hide_index=True)
+        ct_dataframe(_friendly_document_frame(view.official_documents, viewer_timezone), width='stretch', hide_index=True)
     _render_section_heading(4, 'Internal estimates & management guidance', f'internal-estimates-{_slugify(view.entity_id)}')
     if view.internal_estimates.empty:
         st.info('No internal estimates or management guidance registered for this entity.')
@@ -3308,22 +3358,22 @@ def _render_evidence_tab(
         entity_rows = view.internal_estimates.loc[listing_ids.eq('')]
         if not listing_rows.empty:
             st.caption('Selected listing scope')
-            st.dataframe(_friendly_internal_estimates_frame(listing_rows, viewer_timezone), width='stretch', hide_index=True)
+            ct_dataframe(_friendly_internal_estimates_frame(listing_rows, viewer_timezone), width='stretch', hide_index=True)
         if not entity_rows.empty:
             st.caption('Entity scope · listing-independent estimates; these rows are not assigned to any listing.')
-            st.dataframe(_friendly_internal_estimates_frame(entity_rows, viewer_timezone), width='stretch', hide_index=True)
+            ct_dataframe(_friendly_internal_estimates_frame(entity_rows, viewer_timezone), width='stretch', hide_index=True)
     _render_section_heading(4, 'Claim-evidence matrix & conflict detection', f'claim-evidence-matrix-{_slugify(view.entity_id)}')
     if not view.claim_evidence_links.empty:
-        st.dataframe(_friendly_claim_evidence_links_frame(view.claim_evidence_links, view.evidence_items, viewer_timezone), width='stretch', hide_index=True)
+        ct_dataframe(_friendly_claim_evidence_links_frame(view.claim_evidence_links, view.evidence_items, viewer_timezone), width='stretch', hide_index=True)
     elif not view.invalidation_evidence.empty:
-        st.dataframe(_friendly_invalidation_frame(view.invalidation_evidence, viewer_timezone), width='stretch', hide_index=True)
+        ct_dataframe(_friendly_invalidation_frame(view.invalidation_evidence, viewer_timezone), width='stretch', hide_index=True)
     else:
         st.info('Invalidation evidence unavailable; support questions are not relabelled as falsification evidence.')
     with st.expander('Source and PIT caveats', expanded=False):
         for caveat in view.caveats:
             st.markdown(f'- {escape(_friendly_caveat(caveat))}')
         if not view.source_health.empty:
-            st.dataframe(view.source_health, width='stretch', hide_index=True)
+            ct_dataframe(view.source_health, width='stretch', hide_index=True)
         else:
             st.info('No company-relevant source-health rows are available.')
 

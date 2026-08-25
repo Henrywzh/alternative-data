@@ -34,7 +34,7 @@ from .news_collector import (
     write_news_input,
 )
 from .news_overlay import default_news_mart_dir
-from .official_filings import _hkex_announcement_rows, load_source_identity
+from .official_filings import _classify_hkex_title, _hkex_announcement_rows, load_source_identity
 from .registries import load_registry_bundle
 
 
@@ -374,6 +374,7 @@ def load_local_hkex_overlay(
     if rows.empty:
         return rows
     rows["published_at"] = pd.to_datetime(rows.get("published_at"), errors="coerce", utc=True)
+    rows["event_class"] = rows["headline"].map(lambda title: _classify_hkex_title(str(title or "")).get("event_class") or "general")
     return rows.sort_values("published_at", ascending=False, na_position="last").reset_index(drop=True)
 
 

@@ -31,6 +31,9 @@ def _empty() -> pd.DataFrame:
             "source_url",
             "related_entity_ids",
             "related_listing_ids",
+            "first_seen_at",
+            "last_seen_at",
+            "scraped_at",
         ]
     )
 
@@ -82,10 +85,16 @@ def load_local_news_overlay(
                 "source_url": item.get("link") or item.get("source_url"),
                 "related_entity_ids": ",".join(entity_ids),
                 "related_listing_ids": ",".join(listing_ids),
+                "first_seen_at": item.get("first_seen_at"),
+                "last_seen_at": item.get("last_seen_at"),
+                "scraped_at": item.get("scraped_at"),
             }
         )
     if not rows:
         return _empty()
     out = pd.DataFrame(rows)
     out["published_at"] = pd.to_datetime(out["published_at"], errors="coerce", utc=True)
+    for column in ("first_seen_at", "last_seen_at", "scraped_at"):
+        if column in out.columns:
+            out[column] = pd.to_datetime(out[column], errors="coerce", utc=True)
     return out.sort_values("published_at", ascending=False, na_position="last").reset_index(drop=True)

@@ -159,7 +159,7 @@ def test_tencent_refresh_writes_hkex_and_marketaux_skips_finnhub(tmp_path: Path)
     assert len(marketaux_calls) == 1
     assert marketaux_calls[0][1].get("symbols") == "0700.HK"
     assert (mart_dir / "hkexnews_live.parquet").is_file()
-    assert not (REPO / "data" / "normalized" / "marts" / "hkexnews_live.parquet").exists()
+    assert mart_dir.resolve() != (REPO / "data" / "normalized" / "marts").resolve()
 
 
 def test_alibaba_refresh_queries_finnhub_us_adr(tmp_path: Path) -> None:
@@ -221,6 +221,8 @@ def test_company_page_exposes_refresh_button() -> None:
     assert "Refresh news & filings" in source
     assert "On-demand HKEXnews overlay" in source
     assert "refresh_company_news" in source
+    assert "Routine capital-return filings" in source
+    assert "updated this refresh" in source
 
 
 def test_the_cooldown_survives_a_new_browser_session(tmp_path: Path) -> None:

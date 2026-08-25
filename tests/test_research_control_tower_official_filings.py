@@ -151,6 +151,9 @@ def test_hkex_title_classification_covers_annual_interim_quarterly_and_general()
     assert quarterly["event_class"] == "earnings_results"
     assert quarterly["reporting_period_label"] == "Q12026"
     assert _classify_hkex_title("MONTHLY RETURN OF EQUITY ISSUER")["event_class"] == "general"
+    assert _classify_hkex_title("Next Day Disclosure Return - Changes in issued shares and share buybacks")["event_class"] == "share_buyback"
+    assert _classify_hkex_title("INTERIM REPORT 2026")["event_class"] == "period_report"
+    assert _classify_hkex_title("GRANT OF AWARDS PURSUANT TO SHARE AWARD SCHEME")["event_class"] == "share_scheme"
 
 
 def test_hkex_adapter_guards_stock_code_and_maps_publication_time():
