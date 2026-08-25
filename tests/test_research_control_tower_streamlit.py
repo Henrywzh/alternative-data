@@ -1782,13 +1782,14 @@ def test_task8_app_region_filter_renders_only_selected_theme_rows(
     app = region.select("KR").run()
     assert not app.exception
 
-    rendered_entity_ids: set[str] = set()
-    for dataframe in app.dataframe:
-        if "entity_id" in dataframe.value.columns:
-            rendered_entity_ids.update(
-                dataframe.value["entity_id"].dropna().astype("string")
-            )
-    assert rendered_entity_ids == {"SK_HYNIX"}
+    # ct_dataframe renders tables as markdown, so the rows are read out of
+    # what the page actually shows rather than out of st.dataframe elements.
+    rendered_tables = "\n".join(
+        item.value for item in app.markdown if "ct-table" in str(item.value)
+    )
+    assert "SK_HYNIX" in rendered_tables
+    for other in ("SAMSUNG", "MICRON", "TENCENT"):
+        assert other not in rendered_tables
     rendered = _app_text(app)
     assert "1 registry member(s)" in rendered
     assert "Active theme filters" in rendered
@@ -2165,8 +2166,9 @@ def test_batch0_stage1_matrix_renders_on_today_and_empty_source_health(
     today_text = _app_text(app)
     assert "Stage 1 coverage matrix" in today_text
     assert any(
-        "Price / market quotes" in dataframe.value.columns
-        for dataframe in app.dataframe
+        "Price / market quotes" in str(item.value)
+        for item in app.markdown
+        if "ct-table" in str(item.value)
     )
 
     app.session_state["ct_page"] = "Source Health"
@@ -2176,8 +2178,9 @@ def test_batch0_stage1_matrix_renders_on_today_and_empty_source_health(
     assert "No source-health rows are available" in source_text
     assert "Stage 1 coverage matrix" in source_text
     assert any(
-        "Price / market quotes" in dataframe.value.columns
-        for dataframe in app.dataframe
+        "Price / market quotes" in str(item.value)
+        for item in app.markdown
+        if "ct-table" in str(item.value)
     )
 
 

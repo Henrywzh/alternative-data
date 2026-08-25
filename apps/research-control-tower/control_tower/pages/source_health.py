@@ -9,6 +9,7 @@ from typing import Mapping
 import pandas as pd
 import streamlit as st
 
+from ..components import ct_dataframe
 from ..components.coverage_matrix import coverage_legend_html
 from ..models import ControlTowerSnapshot
 
@@ -602,7 +603,7 @@ def render_source_health_page(
         "cadence": "Cadence",
         "row_count": "Rows",
     })
-    st.dataframe(table, width="stretch", hide_index=True)
+    ct_dataframe(table, width="stretch", hide_index=True)
     with st.expander("Source details", expanded=False):
         for _, row in classified.iterrows():
             source_id = _text(row.get("source_id")) or "source unavailable"

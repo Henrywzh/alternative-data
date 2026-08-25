@@ -12,6 +12,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import pandas as pd
 import streamlit as st
 
+from ..components import ct_dataframe
 from ..components.flight_deck import build_flight_deck, render_flight_deck
 from ..models import ControlTowerSnapshot, EventFilters
 from .source_health import classify_source_health
@@ -825,7 +826,7 @@ def render_ai_bottlenecks_page(
         if summary.members.empty:
             st.info("No registry members match these layer, tier and region filters.")
         else:
-            st.dataframe(
+            ct_dataframe(
                 _member_watchlist_frame(snapshot, summary.members, viewer_timezone=viewer_timezone),
                 width="stretch",
                 hide_index=True,
@@ -845,7 +846,7 @@ def render_ai_bottlenecks_page(
                 "membership_tier": "Tier",
                 "relationship_type": "Relationship",
             })
-            st.dataframe(relationship_view, width="stretch", hide_index=True)
+            ct_dataframe(relationship_view, width="stretch", hide_index=True)
             st.caption("Shared-layer cohort only; no supplier, customer, competitor or causal edge is inferred.")
 
     st.markdown("#### Upcoming catalysts")
@@ -895,14 +896,14 @@ def render_ai_bottlenecks_page(
                 lineage_labels.append("source link unavailable")
             st.caption("Lineage status · " + " · ".join(lineage_labels))
         if not summary.evidence_changes.empty:
-            st.dataframe(summary.evidence_changes, width="stretch", hide_index=True)
+            ct_dataframe(summary.evidence_changes, width="stretch", hide_index=True)
         if not summary.catalysts.empty:
-            st.dataframe(summary.catalysts, width="stretch", hide_index=True)
+            ct_dataframe(summary.catalysts, width="stretch", hide_index=True)
     with st.expander("Source coverage and caveats", expanded=False):
         if summary.source_coverage.empty:
             st.info("Source coverage unavailable for this registry selection.")
         else:
-            st.dataframe(_source_coverage_frame(summary.source_coverage), width="stretch", hide_index=True)
+            ct_dataframe(_source_coverage_frame(summary.source_coverage), width="stretch", hide_index=True)
         st.caption("Registry relationships, evidence change and source coverage only.")
     return summary
 

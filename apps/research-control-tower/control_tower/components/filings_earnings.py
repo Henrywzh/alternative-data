@@ -16,6 +16,7 @@ import pandas as pd
 import streamlit as st
 
 from ..models import ControlTowerSnapshot
+from . import ct_dataframe
 
 
 OFFICIAL_FILING_COLUMNS = (
@@ -94,7 +95,7 @@ def render_official_filings(
     if frame.empty:
         st.info("No official filing/announcement metadata rows for this entity/listing.")
         return
-    st.dataframe(_friendly(frame, OFFICIAL_FILING_COLUMNS), width="stretch", hide_index=True)
+    ct_dataframe(_friendly(frame, OFFICIAL_FILING_COLUMNS), width="stretch", hide_index=True)
 
 
 def render_earnings_calendar(
@@ -118,7 +119,7 @@ def render_earnings_calendar(
     if frame.empty:
         st.info("No official earnings-calendar rows for this entity/listing.")
         return
-    st.dataframe(_friendly(frame, CALENDAR_COLUMNS), width="stretch", hide_index=True)
+    ct_dataframe(_friendly(frame, CALENDAR_COLUMNS), width="stretch", hide_index=True)
 
 
 def render_earnings_actuals(
@@ -144,7 +145,7 @@ def render_earnings_actuals(
         st.info("No earnings-actuals rows for this entity/listing.")
         return
     frame = frame.sort_values(["period_end", "metric", "version"], ascending=False)
-    st.dataframe(_friendly(frame, ACTUALS_COLUMNS), width="stretch", hide_index=True)
+    ct_dataframe(_friendly(frame, ACTUALS_COLUMNS), width="stretch", hide_index=True)
     latest = frame["period_end"].dropna()
     if not latest.empty:
         latest_label = _text(frame.loc[frame["period_end"].eq(latest.max()), "period_label"].iloc[0])
