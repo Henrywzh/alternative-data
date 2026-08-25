@@ -35,3 +35,4 @@ def test_company_page_renders_vendor_news_section() -> None:
     assert "Vendor news overlay (not official filings)" in source
     assert "load_local_news_overlay" in source
     assert "Finnhub free tier 403s HK symbols" in source
+    assert "Refresh news & filings" in source

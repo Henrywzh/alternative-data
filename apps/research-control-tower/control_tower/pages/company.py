@@ -30,6 +30,11 @@ from ..company_profiles import SegmentSpec, get_company_profile, segment_label
 
 from src.research_control_tower.eligibility import listing_eligibility_reason
 from src.research_control_tower.southbound_holdings import hkex_security_code, southbound_mart_path
+from src.research_control_tower.live_refresh import (
+    DEFAULT_COOLDOWN_SECONDS,
+    load_local_hkex_overlay,
+    refresh_company_news,
+)
 from src.research_control_tower.news_overlay import load_local_news_overlay
 from src.research_control_tower.vendor_financials import (
     VendorLoadResult,
@@ -3038,7 +3043,104 @@ def _consensus_revision_chart_frame(frame: pd.DataFrame) -> pd.DataFrame:
 
 
 
+def _refresh_cooldown_remaining(entity_id: str) -> float:
+    last = st.session_state.get('ct_news_refresh_at', {}).get(entity_id)
+    if last is None:
+        return 0.0
+    elapsed = (pd.Timestamp.now(tz='UTC') - pd.Timestamp(last)).total_seconds()
+    remaining = DEFAULT_COOLDOWN_SECONDS - elapsed
+    return remaining if remaining > 0 else 0.0
+
+
+def _run_company_news_refresh(view: CompanyView) -> None:
+    remaining = _refresh_cooldown_remaining(view.entity_id)
+    if remaining > 0:
+        st.warning(f'Refresh cooldown · wait {int(remaining)}s to protect Marketaux free-tier quota.')
+        return
+    with st.spinner('Fetching HKEXnews plus vendor headlines for this company…'):
+        result = refresh_company_news(
+            view.entity_id,
+            repo_root=_control_tower_repo_root(),
+            listing_id=view.selected_listing_id,
+        )
+    stamps = dict(st.session_state.get('ct_news_refresh_at') or {})
+    stamps[view.entity_id] = result.fetched_at_utc.isoformat()
+    st.session_state['ct_news_refresh_at'] = stamps
+    st.session_state['ct_news_refresh_result'] = result.to_dict()
+    st.session_state['ct_news_refresh_entity'] = view.entity_id
+
+
+def _render_refresh_status(view: CompanyView) -> None:
+    payload = st.session_state.get('ct_news_refresh_result') or {}
+    if payload.get('entity_id') != view.entity_id:
+        return
+    fetched = escape(_text(payload.get('fetched_at_utc')) or 'time unavailable')
+    bits = []
+    for item in payload.get('sources') or []:
+        bits.append(
+            f"{escape(_text(item.get('source_id')))} · {escape(_text(item.get('status')))} · "
+            f"new {escape(_text(item.get('new_rows')))}"
+        )
+    st.caption(f'Last on-demand refresh · {fetched} · ' + ' · '.join(bits))
+    for issue in payload.get('issues') or []:
+        st.warning(escape(_text(issue)))
+
+
+def _render_live_hkex_overlay(view: CompanyView) -> None:
+    _render_section_heading(4, 'On-demand HKEXnews overlay (official metadata)', f'hkex-live-{_slugify(view.entity_id)}')
+    st.caption('Official exchange announcements from a local live mart, not the published generation. Titles and PDF links only; announcement bodies are not stored. Newer than the frozen bundle when Refresh has been used.')
+    try:
+        frame = load_local_hkex_overlay(
+            entity_id=view.entity_id,
+            listing_id=view.selected_listing_id,
+            repo_root=_control_tower_repo_root(),
+        )
+    except (OSError, ValueError) as exc:
+        st.error(f'HKEXnews overlay failed: {exc}')
+        return
+    if frame is None or frame.empty:
+        st.info('No on-demand HKEXnews rows yet. Use Refresh news & filings on this company.')
+        return
+    cards = []
+    for _, row in frame.head(12).iterrows():
+        published = row.get('published_at')
+        published_txt = pd.Timestamp(published).strftime('%Y-%m-%d %H:%M UTC') if pd.notna(published) else 'date unavailable'
+        headline = escape(_text(row.get('headline')) or 'headline unavailable')
+        event_class = escape(_text(row.get('event_class')) or 'unclassified')
+        url = _text(row.get('source_url'))
+        link = f'<a class="ct-inline-link" href="{escape(url)}" target="_blank" rel="noopener">Open ↗</a>' if url else 'link unavailable'
+        cards.append(
+            '<div class="ct-thesis-card">'
+            f'<div class="ct-subtle">{escape(published_txt)} · hkexnews · {event_class}</div>'
+            f'<div style="font-weight:700;margin:0.25rem 0;">{headline}</div>'
+            f'<div class="ct-source-line">{link}</div>'
+            '</div>'
+        )
+    st.markdown(''.join(cards), unsafe_allow_html=True)
+    st.caption(f'{len(frame)} live HKEXnews rows for {escape(_text(view.display_name))}. The published official_filings table below is the frozen generation.')
+
+
 def _render_local_news_overlay(view: CompanyView) -> None:
+    remaining = _refresh_cooldown_remaining(view.entity_id)
+    cols = st.columns([1, 3])
+    with cols[0]:
+        clicked = st.button(
+            'Refresh news & filings',
+            key=f'ct_refresh_news_{_slugify(view.entity_id)}',
+            type='primary',
+            disabled=remaining > 0,
+            help='Fetch latest HKEXnews plus Marketaux/Finnhub headlines for this company only. 60s cooldown.',
+        )
+    if clicked:
+        _run_company_news_refresh(view)
+        remaining = _refresh_cooldown_remaining(view.entity_id)
+    with cols[1]:
+        if remaining > 0:
+            st.caption(f'Cooldown {int(remaining)}s · Marketaux free tier is 100 requests/day.')
+        else:
+            st.caption('On-demand fetch for this company only. Does not rewrite the published generation. HKEX needs no key; Finnhub is US ADR only.')
+    _render_refresh_status(view)
+    _render_live_hkex_overlay(view)
     _render_section_heading(4, 'Vendor news overlay (not official filings)', f'vendor-news-{_slugify(view.entity_id)}')
     st.caption('Not official issuer disclosure. Marketaux and Finnhub metadata from local marts, resolved through the registry alias table. Article bodies are not stored. Finnhub free tier 403s HK symbols; Marketaux covers HK listings.')
     try:
