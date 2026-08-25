@@ -3040,6 +3040,7 @@ def _consensus_revision_chart_frame(frame: pd.DataFrame) -> pd.DataFrame:
 
 def _render_local_news_overlay(view: CompanyView) -> None:
     _render_section_heading(4, 'Vendor news overlay (not official filings)', f'vendor-news-{_slugify(view.entity_id)}')
+    st.caption('Not official issuer disclosure. Marketaux and Finnhub metadata from local marts, resolved through the registry alias table. Article bodies are not stored. Finnhub free tier 403s HK symbols; Marketaux covers HK listings.')
     try:
         frame = load_local_news_overlay(
             entity_id=view.entity_id,
@@ -3049,20 +3050,27 @@ def _render_local_news_overlay(view: CompanyView) -> None:
     except (OSError, ValueError) as exc:
         st.error(f'Vendor news overlay failed: {exc}')
         return
-    st.caption('Not official issuer disclosure. Marketaux and Finnhub metadata from local marts, resolved through the registry alias table. Article bodies are not stored. Finnhub free tier 403s HK symbols; Marketaux covers HK listings.')
-    if frame.empty:
+    if frame is None or frame.empty:
         st.info('No locally collected vendor headlines currently resolve to this company.')
         return
-    display = frame.rename(columns={
-        'published_at': 'Published',
-        'headline': 'Headline',
-        'publisher': 'Publisher',
-        'source_id': 'Source',
-        'source_url': 'Link',
-        'related_entity_ids': 'Resolved entities',
-        'related_listing_ids': 'Resolved listings',
-    })
-    st.dataframe(display, width='stretch', hide_index=True)
+    cards = []
+    for _, row in frame.head(12).iterrows():
+        published = row.get('published_at')
+        published_txt = pd.Timestamp(published).strftime('%Y-%m-%d %H:%M UTC') if pd.notna(published) else 'date unavailable'
+        headline = escape(_text(row.get('headline')) or 'headline unavailable')
+        source = escape(_text(row.get('source_id')) or 'source unavailable')
+        publisher = escape(_text(row.get('publisher')) or 'publisher unavailable')
+        url = _text(row.get('source_url'))
+        link = f'<a class="ct-inline-link" href="{escape(url)}" target="_blank" rel="noopener">Open ↗</a>' if url else 'link unavailable'
+        cards.append(
+            '<div class="ct-thesis-card">'
+            f'<div class="ct-subtle">{escape(published_txt)} · {source} · {publisher}</div>'
+            f'<div style="font-weight:700;margin:0.25rem 0;">{headline}</div>'
+            f'<div class="ct-source-line">{link}</div>'
+            '</div>'
+        )
+    st.markdown(''.join(cards), unsafe_allow_html=True)
+    st.caption(f'{len(frame)} resolved vendor headlines for {escape(_text(view.display_name))}. This is not the published news_filings.parquet table below.')
 
 def _render_evidence_tab(
     view: CompanyView,
