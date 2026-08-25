@@ -264,6 +264,8 @@ def _official_trade_unit_config(unit: str) -> tuple[float, str]:
     normalized = str(unit or "").strip().lower()
     if normalized == "usd":
         return 1e9, "USD Billion"
+    if normalized == "usd_thousand":
+        return 1e6, "USD Billion"
     if normalized == "jpy_thousand":
         return 1e6, "JPY Billion"
     if normalized == "hkd_thousand":
@@ -319,8 +321,18 @@ def _prepare_official_trade_display(official_trade: pd.DataFrame, scale_mode: st
         fx_df = _fetch_monthly_fx_to_usd(start_period, end_period)
         chart_frame["display_value"] = np.nan
 
-        usd_mask = chart_frame["currency"].astype(str).str.upper() == "USD"
+        # Scale by the unit, not the currency. A USD series still has to say
+        # whether it counts dollars or thousands of them, and keying off
+        # currency alone silently plotted Korea's thousand-USD figures a
+        # thousandfold too small next to Hong Kong and Japan.
+        units = chart_frame["unit"].astype(str).str.strip().str.lower()
+        currencies = chart_frame["currency"].astype(str).str.upper()
+        usd_mask = (currencies == "USD") & (units != "usd_thousand")
         chart_frame.loc[usd_mask, "display_value"] = chart_frame.loc[usd_mask, "value"] / 1e9
+        usd_thousand_mask = units == "usd_thousand"
+        chart_frame.loc[usd_thousand_mask, "display_value"] = (
+            chart_frame.loc[usd_thousand_mask, "value"] / 1e6
+        )
 
         if not fx_df.empty:
             merged = chart_frame.merge(fx_df, on=["period", "currency"], how="left")

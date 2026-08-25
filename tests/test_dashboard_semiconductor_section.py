@@ -57,3 +57,38 @@ def test_the_yoy_lag_is_twelve_months_not_twelve_rows(monkeypatch) -> None:
     assert pivot.loc["2026-01", "Japan"] == pytest.approx(100.0)
     # The absent month stays absent rather than being padded into existence.
     assert "2025-06" not in pivot.index
+
+
+def test_a_thousand_usd_series_is_not_plotted_as_dollars() -> None:
+    """Korea Customs answers in thousands; the label said plain USD.
+
+    Keying the USD-normalized scale off currency alone put Korea's exports
+    on the chart a thousandfold too small. Comtrade reports the same month
+    at exactly 1000x the official figure, which is what a thousands series
+    read as dollars looks like.
+    """
+    frame = pd.DataFrame(
+        [
+            {"period": "2026-06", "country_name": "South Korea", "currency": "USD",
+             "unit": "usd_thousand", "value": 33_564_194.0},
+            {"period": "2026-06", "country_name": "United States", "currency": "USD",
+             "unit": "usd", "value": 33_564_194_000.0},
+        ]
+    )
+    display, y_title, complete = semiconductor._prepare_official_trade_display(
+        frame, "USD Normalized (PT FX)"
+    )
+
+    assert y_title == "USD Billion"
+    assert complete
+    by_country = display.set_index("country_name")["display_value"]
+    # The same economic quantity, one reported in thousands: both are 33.56bn.
+    assert by_country["South Korea"] == pytest.approx(33.564194)
+    assert by_country["United States"] == pytest.approx(33.564194)
+
+
+def test_the_native_scale_labels_thousand_usd_in_billions() -> None:
+    scale, y_title = semiconductor._official_trade_unit_config("usd_thousand")
+
+    assert y_title == "USD Billion"
+    assert 33_564_194.0 / scale == pytest.approx(33.564194)
