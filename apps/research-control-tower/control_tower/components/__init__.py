@@ -146,21 +146,21 @@ section[data-testid="stSidebar"] label[data-baseweb="radio"] p {
 .stTabs [data-baseweb="tab-border"] {
   background-color: #334155 !important;
 }
-[data-testid="stDataFrame"], [data-testid="stTable"] {
-  --gdg-bg-cell: #161b22 !important;
-  --gdg-bg-cell-medium: #1c2430 !important;
-  --gdg-bg-header: #1c2430 !important;
-  --gdg-bg-header-has-focus: #253247 !important;
-  --gdg-bg-header-hovered: #253247 !important;
-  --gdg-text-dark: #f0f2f6 !important;
-  --gdg-text-medium: #cbd5e1 !important;
-  --gdg-text-light: #94a3b8 !important;
-  --gdg-text-header: #f0f2f6 !important;
-  --gdg-border-color: #334155 !important;
-  --gdg-horizontal-border-color: #334155 !important;
-  --gdg-accent-color: #3b82f6 !important;
-  --gdg-accent-light: rgba(59, 130, 246, 0.2) !important;
-}
+/* No --gdg-* block here on purpose.
+ *
+ * st.dataframe renders through glide-data-grid, which paints its cells to a
+ * canvas from Streamlit's own theme, not from CSS custom properties. The
+ * variables were being set on the element -- computed style confirmed
+ * --gdg-bg-cell: #161b22 -- and the table still drew white on a dark page.
+ *
+ * So the tables stay light in dark mode, and there is no CSS fix. The two
+ * routes that do work, neither of them a small edit:
+ *   1. Pass a pandas Styler. Colours land, but Streamlit then formats
+ *      numbers through the Styler instead of the grid's column config, so
+ *      0.0045 renders as 0.004460. Every table needs its own .format().
+ *   2. Render the app's own HTML tables and drop st.dataframe. 26 call
+ *      sites across company.py, ai_bottlenecks.py and source_health.py.
+ */
 """
 
 BASE_CSS = r"""
