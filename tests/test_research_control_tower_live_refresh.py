@@ -14,7 +14,10 @@ from src.research_control_tower.live_refresh import (
     refresh_company_news,
 )
 from src.research_control_tower.news_collector import FetchResult, NEWS_INPUT_COLUMNS
-from tests.test_research_control_tower_official_filings import _FakeHkexSession, _hkex_row
+# Sibling test module, imported bare: pytest puts tests/ on sys.path, and
+# `tests.` cannot be used because google-search-results ships a real
+# top-level `tests` package that shadows this directory.
+from test_research_control_tower_official_filings import _FakeHkexSession, _hkex_row
 
 
 REPO = Path(__file__).resolve().parents[1]
