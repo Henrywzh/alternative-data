@@ -32,10 +32,9 @@ def _monthly_frame(country: str, start: str, months: int, step: float) -> pd.Dat
 def test_a_country_that_has_not_reported_this_month_gets_no_yoy_point(monkeypatch) -> None:
     """pandas padded the previous month forward and called it a YoY reading.
 
-    Hong Kong had not published 2026-07, yet the chart drew it at -1206.93%:
-    its June value divided by July a year earlier. The point is an artefact,
-    not an observation, and being wildly out of range it also rescaled the
-    whole panel.
+    Hong Kong had not published 2026-07, yet the chart drew it at +57.75%:
+    its June value divided by July a year earlier. The value sits inside the
+    range the real series occupies, so the fabricated point reads as data.
     """
     reported = _monthly_frame("South Korea", "2025-01", 19, 1.0)
     lagging = _monthly_frame("Hong Kong", "2025-01", 18, 2.0)

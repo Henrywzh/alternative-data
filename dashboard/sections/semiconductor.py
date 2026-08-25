@@ -385,8 +385,10 @@ def _render_trade_yoy_chart(chart_frame: pd.DataFrame, category_choice: str, tit
     # year earlier when every country happens to have reported every month.
     # And never pad -- pandas' deprecated default carried the previous month
     # forward, which invented a YoY point for a country that had not reported
-    # yet. Hong Kong's missing 2026-07 came out as -1206.93%, an artefact of
-    # its June value divided by July a year earlier.
+    # yet. On the IC-only panel that drew Hong Kong at +57.75% and Japan at
+    # +25.25% for 2026-07, a month neither had published: June's value over
+    # July a year earlier. Both land in the range the real series occupies,
+    # so nothing about the chart looks wrong.
     try:
         monthly_index = pd.PeriodIndex(yoy_pivot.index.astype(str), freq="M")
     except (TypeError, ValueError):
