@@ -380,7 +380,24 @@ def _render_trade_yoy_chart(chart_frame: pd.DataFrame, category_choice: str, tit
         values="display_value",
         aggfunc="last",
     ).sort_index()
-    yoy_pivot = yoy_pivot.pct_change(12) * 100.0
+    # Index by calendar month, not by row position: countries publish on
+    # different schedules, so the twelfth row back is only the same month a
+    # year earlier when every country happens to have reported every month.
+    # And never pad -- pandas' deprecated default carried the previous month
+    # forward, which invented a YoY point for a country that had not reported
+    # yet. Hong Kong's missing 2026-07 came out as -1206.93%, an artefact of
+    # its June value divided by July a year earlier.
+    try:
+        monthly_index = pd.PeriodIndex(yoy_pivot.index.astype(str), freq="M")
+    except (TypeError, ValueError):
+        monthly_index = None
+    if monthly_index is not None:
+        yoy_pivot = yoy_pivot.set_axis(monthly_index).reindex(
+            pd.period_range(monthly_index.min(), monthly_index.max(), freq="M")
+        )
+    yoy_pivot = yoy_pivot.pct_change(12, fill_method=None) * 100.0
+    if monthly_index is not None:
+        yoy_pivot.index = yoy_pivot.index.strftime("%Y-%m")
     yoy_pivot = yoy_pivot.dropna(how="all")
     if yoy_pivot.empty:
         return
