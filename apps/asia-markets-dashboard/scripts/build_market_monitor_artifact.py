@@ -35,7 +35,16 @@ from src.market_monitor.config import (
     investable_exposures,
 )
 from src.market_monitor.metadata import build_metadata_frame
+from src.market_monitor.freshness import (
+    BLOCKING_FRESHNESS_STATUSES,
+    classify_daily_groups,
+    classify_daily_observation,
+    classify_intraday_quote,
+)
+from src.market_monitor.pipeline import coverage_regressions  # noqa: E402
+from src.market_monitor.ranking import rank_wrappers
 from src.market_monitor.storage import load_lineage_history, load_latest_with_lineage  # noqa: E402
+from src.market_monitor.wrapper import filter_premium_history_to_sessions  # noqa: E402
 from history_policy import history_window  # noqa: E402
 
 # Charts read a date window, not a row count: with a row count the displayed
@@ -100,29 +109,6 @@ def _chart_series(
     if id_as and id_as != id_column:
         projected = projected.rename(columns={id_column: id_as})
     return _records(projected)
-
-
-def coverage_regressions(current: dict[str, Any], previous: dict[str, Any]) -> list[str]:
-    """Ways this run covers less ground than the previous one, in words.
-
-    Empty means no regression, which includes the case where there is nothing
-    to compare against -- a first run cannot have shrunk.
-    """
-    notes: list[str] = []
-    for exposure_id in sorted(current.get("missing_exposures") or []):
-        notes.append(f"no rows for {exposure_id}")
-    current_rows = current.get("rows_by_exposure") or {}
-    previous_rows = previous.get("rows_by_exposure") or {}
-    for exposure_id, previous_count in sorted(previous_rows.items()):
-        current_count = int(current_rows.get(exposure_id, 0))
-        # 10% absorbs a routine trading-calendar wobble while still catching
-        # the 38% collapse this check was written for. A vanished exposure is
-        # already reported above, so skip it here to avoid saying it twice.
-        if exposure_id in (current.get("missing_exposures") or []):
-            continue
-        if previous_count and current_count < previous_count * 0.9:
-            notes.append(f"{exposure_id} {current_count} rows vs {previous_count} in the previous run")
-    return notes
 
 
 @dataclass(frozen=True)
@@ -234,6 +220,43 @@ def _source_health_rows(delivery: ProviderDelivery) -> list[dict[str, Any]]:
     ]
 
 
+def _apply_daily_source_freshness(
+    rows: list[dict[str, Any]],
+    daily_by_source: dict[str, dict[str, Any]],
+    southbound: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Make source-health status reflect source-specific observation dates."""
+    source_prefixes = {
+        "CSI index daily": "csindex",
+        "Sina HK index daily": "sina_hk",
+        "Sina index daily": "sina",
+        "Yahoo Finance": "yfinance",
+    }
+    out = [dict(row) for row in rows]
+    for row in out:
+        source = str(row.get("source") or "")
+        group = next(
+            (group for prefix, group in source_prefixes.items() if source.startswith(prefix)),
+            None,
+        )
+        record = southbound if source.startswith("Eastmoney aggregate southbound") else (
+            daily_by_source.get(group, {}) if group else {}
+        )
+        if not record:
+            continue
+        status = str(record.get("status") or "Unavailable")
+        if status in BLOCKING_FRESHNESS_STATUSES:
+            row["status"] = "Unavailable" if status == "Unavailable" else "Degraded"
+        observation_date = record.get("observation_date")
+        if observation_date:
+            row["latest_observation"] = str(observation_date)
+        detail = f" Freshness: {status}"
+        if observation_date:
+            detail += f" through {observation_date}."
+        row["notes"] = f"{row.get('notes', '').rstrip()} {detail}".strip()
+    return out
+
+
 def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     now = datetime.now(timezone.utc)
     generated_at = now.isoformat()
@@ -246,6 +269,11 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     pair_hist, _pair_hist_lineage = load_latest_with_lineage(DERIVED_DIR, "relative_pair_history", scope="full")
     etf_px, etf_px_lineage = load_latest_with_lineage(NORMALIZED_DIR, "etf_price_daily", scope="full")
     southbound, southbound_lineage = load_latest_with_lineage(NORMALIZED_DIR, "southbound_market_flow", scope="full")
+
+    # Re-validate the persisted history at the artifact boundary as well as in
+    # the close pipeline. This protects a rebuild from an older derived file
+    # that predates the ETF-session gate.
+    premium_hist = filter_premium_history_to_sessions(premium_hist, etf_px)
 
     # Add bilingual labels from config
     label_zh_map = {e["exposure_id"]: e.get("label_zh", e["label"]) for e in EXPOSURES}
@@ -356,10 +384,64 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     else:
         sina_latest = yahoo_latest = latest_obs = "—"
         sina_hk_latest = csindex_latest = "—"
-    # The run's write time, not a quote time -- Eastmoney's spot snapshot
-    # carries no per-row timestamp, so this is the closest honest answer and is
-    # labelled as a run time rather than an observation.
-    spot_latest = (wrap_lineage or {}).get("created_at", "—")[:16].replace("T", " ") if wrap_lineage else "—"
+    # Use the source-layer retrieval timestamp when the persisted wrapper rows
+    # have one. Never substitute this artifact's generation time: it is not a
+    # quote observation and would make an old snapshot look current.
+    spot_retrieved_at = None
+    if not wrappers.empty and "retrieved_at_utc" in wrappers.columns:
+        retrieved_values = wrappers["retrieved_at_utc"].dropna().astype(str)
+        spot_retrieved_at = retrieved_values.iloc[0] if not retrieved_values.empty else None
+    # Older committed wrapper snapshots do not carry row-level retrieval time;
+    # those are intentionally reported as unknown rather than being treated as
+    # current because the artifact happened to be rebuilt today.
+    has_quote_rows = (
+        not wrappers.empty
+        and "premium_pct" in wrappers.columns
+        and pd.to_numeric(wrappers["premium_pct"], errors="coerce").notna().any()
+    )
+    spot_freshness = classify_intraday_quote(
+        retrieved_at_utc=spot_retrieved_at,
+        source_observed_at_utc=None,
+        quote_available=has_quote_rows,
+    )
+    # Older wrapper snapshots may contain a premium but no row-level quote
+    # provenance. Do not let that value look current merely because the JSON
+    # artifact was rebuilt today. The row keeps its raw value for auditability,
+    # while the renderer/ranker sees it as unavailable unless the quote
+    # snapshot itself has a valid fresh retrieval timestamp.
+    if not wrappers.empty:
+        wrappers = wrappers.copy()
+        has_premium = (
+            pd.to_numeric(wrappers["premium_pct"], errors="coerce").notna()
+            if "premium_pct" in wrappers.columns
+            else pd.Series(False, index=wrappers.index)
+        )
+        if "quote_basis" not in wrappers.columns:
+            wrappers["quote_basis"] = has_premium.map(
+                lambda value: "intraday_quote"
+                if value and spot_freshness["status"] in {"Fresh", "Unverified"}
+                else None
+            )
+        last_close = wrappers["quote_basis"].astype(str).eq("last_close")
+        wrappers["quote_status"] = has_premium.map(
+            lambda value: spot_freshness["status"] if value else "Unavailable"
+        )
+        wrappers.loc[last_close, "quote_status"] = "Unavailable"
+        # Recompute the derived entry fields after stamping freshness. A
+        # previously persisted artifact can contain FAIR/rank values from a
+        # run whose quote timestamp is no longer available; carrying those
+        # numbers forward would make a raw JSON consumer see stale advice.
+        wrappers = rank_wrappers(wrappers)
+        # ``datasets`` was initialized before the provenance gate so the
+        # wrapper JSON keeps the row-level status, too.
+        datasets["wrapper_metrics"] = _records(wrappers)
+    # Do not fall back to the derived-run creation time: that is when the
+    # artifact was written, not when the ETF quote was observed.
+    spot_latest = (
+        str(spot_freshness.get("retrieved_at_utc"))[:16].replace("T", " ")
+        if spot_freshness.get("retrieved_at_utc")
+        else "—"
+    )
 
     # Compact KPI row for the Overview pulse card. ONE WIDE ROW, one column per
     # metric: latest_metric_reading takes latest_row(frame) and reads
@@ -413,8 +495,8 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     expected_count = len(EXPOSURES)
     actual_exposures = served.nunique()
     expected_wrappers = len(build_metadata_frame())
-    if not wrappers.empty and "market_price" in wrappers.columns and "premium_pct" in wrappers.columns:
-        spot_observed = int((wrappers["market_price"].notna() & wrappers["premium_pct"].notna()).sum())
+    if not wrappers.empty and "premium_pct" in wrappers.columns:
+        spot_observed = int(pd.to_numeric(wrappers["premium_pct"], errors="coerce").notna().sum())
     else:
         spot_observed = 0
     yahoo_rows = (
@@ -425,12 +507,12 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     yahoo_actual_count = yahoo_rows["exposure_id"].nunique() if not yahoo_rows.empty else 0
     sp500_ok = yahoo_actual_count >= len(yahoo_expected)
 
-    if spot_observed == expected_wrappers and expected_wrappers > 0:
+    if spot_observed == expected_wrappers and expected_wrappers > 0 and spot_freshness["status"] == "Fresh":
         spot_status = "Healthy"
-        spot_notes = f"Eastmoney ETF spot: all {spot_observed} / {expected_wrappers} wrappers observed."
+        spot_notes = f"Eastmoney ETF spot: all {spot_observed} / {expected_wrappers} wrappers observed; {spot_freshness['timestamp_basis']} timestamp."
     elif spot_observed > 0:
         spot_status = "Degraded"
-        spot_notes = f"Eastmoney ETF spot: {spot_observed} / {expected_wrappers} wrappers observed."
+        spot_notes = f"Eastmoney ETF spot: {spot_observed} / {expected_wrappers} wrappers observed; freshness={spot_freshness['status']} ({spot_freshness['timestamp_basis']})."
     else:
         spot_status = "Unavailable"
         spot_notes = f"Eastmoney ETF spot snapshot failed (0 / {expected_wrappers} wrappers observed)."
@@ -459,14 +541,41 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     else:
         southbound_latest = "—"
 
+    latest_by_exposure = {}
+    if not technicals.empty and {"exposure_id", "date"}.issubset(technicals.columns):
+        latest_by_exposure = {
+            str(row["exposure_id"]): row["date"]
+            for row in technicals.to_dict("records")
+        }
+    daily_close_by_region = classify_daily_groups(
+        latest_by_exposure,
+        EXPOSURES,
+        group_key="region",
+    )
+    daily_close_by_source = classify_daily_groups(
+        latest_by_exposure,
+        EXPOSURES,
+        group_key="price_source",
+    )
+    daily_freshness = classify_daily_observation(data_as_of, observation_type="daily_close")
+    southbound_freshness = classify_daily_observation(
+        southbound_latest if southbound_latest != "—" else None,
+        observation_type="published_data",
+    )
+
     overall_healthy = (
         actual_exposures >= expected_count
         and spot_status == "Healthy"
         and sp500_ok
         and run_consistent
+        and all(
+            record.get("status") not in BLOCKING_FRESHNESS_STATUSES
+            for group_records in (daily_close_by_region, daily_close_by_source)
+            for record in group_records.values()
+        )
     )
 
-    datasets["source_health"] = _source_health_rows(
+    source_health_rows = _source_health_rows(
         ProviderDelivery(
             spot_status=spot_status,
             spot_notes=spot_notes,
@@ -495,6 +604,24 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
             southbound_latest=southbound_latest,
         )
     )
+    datasets["source_health"] = _apply_daily_source_freshness(
+        source_health_rows,
+        daily_close_by_source,
+        southbound_freshness,
+    )
+    datasets["freshness"] = [
+        {"scope": "ETF spot", **spot_freshness},
+        {"scope": "Index technicals", **daily_freshness},
+        {"scope": "Southbound flow", **southbound_freshness},
+        *(
+            {"scope": f"Region · {group}", **record}
+            for group, record in sorted(daily_close_by_region.items())
+        ),
+        *(
+            {"scope": f"Source · {group}", **record}
+            for group, record in sorted(daily_close_by_source.items())
+        ),
+    ]
     # --- Coverage regression check -------------------------------------
     # run_scope reports intent, not receipt: it is derived from the CLI
     # arguments, so a run that asked for everything and got a third of the
@@ -665,7 +792,19 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         # has the artifact should not be told everything is fine.
         "snapshot": {"version": 1, "generatedAt": generated_at, "status": "ready" if overall_healthy else "partial", "datasets": datasets},
         "sources": sources,
-        "package_info": {"snapshotId": snapshot_id, "dataAsOf": data_as_of, "pipelineRunId": latest_run_id, "runConsistent": run_consistent},
+        "package_info": {
+            "snapshotId": snapshot_id,
+            "dataAsOf": data_as_of,
+            "pipelineRunId": latest_run_id,
+            "runConsistent": run_consistent,
+            "freshness": {
+                "quote": spot_freshness,
+                "daily_close": daily_freshness,
+                "daily_close_by_region": daily_close_by_region,
+                "daily_close_by_source": daily_close_by_source,
+                "southbound": southbound_freshness,
+            },
+        },
     }
     status = {
         "generated_at": generated_at,
