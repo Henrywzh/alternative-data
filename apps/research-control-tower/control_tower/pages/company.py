@@ -664,8 +664,19 @@ def build_company_view(
                 roles.eq("depositary_receipt").any()
                 or exchanges.isin(["NYSE", "NASDAQ", "OTC"]).any()
             )
-            # China-internet ADR pairs: prefer the HK ordinary share at runtime
-            # instead of rewriting a published generation's listings.parquet.
+            # China-internet ADR pairs: prefer the HK ordinary share.
+            #
+            # config/listings.csv has since been corrected -- Alibaba, Baidu
+            # and JD all mark the HK line primary now -- so for anything
+            # published from it this branch and the generic one agree. It
+            # stays because the snapshot comes from a *published generation*,
+            # and generations are frozen: an older bundle still carries the
+            # ADR marked primary, and loading one must not silently flip the
+            # page to the US line.
+            #
+            # Known limitation: an issuer genuinely primary in the US with an
+            # HK secondary would be mis-preferred here. No such issuer is in
+            # the registry; revisit this rule before adding one.
             if has_hkex and has_us_listing:
                 pool = eligible.loc[exchanges.eq("HKEX")].copy()
             else:
@@ -1130,7 +1141,9 @@ def _format_time(value: object, timezone: str) -> str:
         return "Unavailable"
     try:
         return timestamp.tz_convert(timezone).strftime("%d %b %H:%M %Z")
-    except Exception:
+    except (KeyError, TypeError, ValueError):
+        # Unknown zone name (pytz raises a KeyError subclass), or a naive
+        # timestamp that cannot be converted. Anything else is a bug here.
         return timestamp.strftime("%d %b %H:%M UTC")
 
 
@@ -2138,6 +2151,27 @@ def _segment_share_chart(frame: pd.DataFrame):
     return stacked_share_chart(share, title='', height=280)
 
 
+def _quarterly_yoy(series: pd.Series) -> pd.Series:
+    """YoY % on a quarter-labelled series, by calendar quarter.
+
+    Labels look like ``2026Q2``. Reindexing onto a gapless quarterly range
+    makes the four-period lag mean a year, and fill_method=None leaves a
+    quarter with no year-ago counterpart empty instead of reaching further
+    back for one.
+    """
+    if series is None or series.empty:
+        return pd.Series(dtype="float64")
+    try:
+        quarters = pd.PeriodIndex(series.index.astype(str), freq="Q")
+    except (TypeError, ValueError):
+        return series.pct_change(4) * 100
+    dense = series.set_axis(quarters).reindex(
+        pd.period_range(quarters.min(), quarters.max(), freq="Q")
+    )
+    grown = dense.pct_change(4, fill_method=None) * 100
+    return grown.reindex(quarters).set_axis(series.index)
+
+
 def _quarterly_profitability_frame(frame: pd.DataFrame) -> pd.DataFrame:
     """Derive quarterly operating/net margins from issuer actuals.
 
@@ -2537,60 +2571,66 @@ def _render_openrouter_module(view: CompanyView, profile) -> None:
         return
     heading = f'🤖 {filt.title}' if filt.title else '🤖 OpenRouter AI Token & API Economics'
     _render_section_heading(4, heading, f'{_slugify(view.entity_id)}-openrouter')
+    # Only the load is guarded. The blanket try that used to wrap this whole
+    # function turned any bug in the chart code below into a one-line caption
+    # reading "temporarily unavailable", which is how a broken chart hid as a
+    # missing feed. Data being absent or malformed is the real failure this
+    # handles; a TypeError in the plotting path should surface.
     try:
         raw, source_path = _load_openrouter_raw()
         daily = _openrouter_daily_frame(raw, profile)
-        if daily.empty:
-            if source_path is None:
-                st.info('OpenRouter alternative data dataset not found in local normalized storage.')
-            else:
-                st.info(f'OpenRouter dataset loaded, but no {escape(_text(view.display_name))} rows were present.')
-            return
-        window_options = ['Weekly', 'Daily', 'Monthly']
-        window_key = f'{_slugify(view.entity_id)}_openrouter_window'
-        if hasattr(st, 'segmented_control'):
-            granularity = st.segmented_control('Window', window_options, default='Weekly', key=window_key)
+    except (OSError, KeyError, ValueError) as exc:
+        st.caption(f'OpenRouter signal temporarily unavailable: {exc}')
+        return
+    if daily.empty:
+        if source_path is None:
+            st.info('OpenRouter alternative data dataset not found in local normalized storage.')
         else:
-            granularity = st.radio('Window', window_options, horizontal=True, index=0, key=window_key)
-        granularity = str(granularity or 'Weekly')
-        period = _openrouter_period_frame(daily, granularity)
-        complete = period.loc[~period['is_partial']].copy() if 'is_partial' in period.columns else period
-        latest = complete.iloc[-1] if not complete.empty else period.iloc[-1]
-        recent_cut = latest['period'] - pd.Timedelta(days=30) if granularity == 'Daily' else latest['period'] - pd.Timedelta(days=90)
-        recent = complete[complete['period'] >= recent_cut] if not complete.empty else period
-        avg_tokens = float(recent['total_tokens'].mean()) if not recent.empty else 0.0
-        n_models = int(period['model_count'].max()) if not period.empty else 0
-        start = period['period'].min().strftime('%Y-%m-%d')
-        end = period['period'].max().strftime('%Y-%m-%d')
-        source_name = source_path.name if source_path is not None else 'openrouter'
-        partial_n = int(period['is_partial'].sum()) if 'is_partial' in period.columns else 0
-        signal_name = filt.signal_name or 'tokens'
-        st.markdown(
-            (
-                '<div class="ct-kpi-grid">'
-                f'<div class="ct-kpi-card"><div class="ct-kpi-label">Latest complete {granularity.lower()} tokens</div><div class="ct-kpi-value">{float(latest["total_tokens"]) / 1e9:,.1f}B</div><div class="ct-kpi-sub">{pd.Timestamp(latest["period"]).strftime("%Y-%m-%d")} · all models summed</div></div>'
-                f'<div class="ct-kpi-card"><div class="ct-kpi-label">Latest complete est. revenue</div><div class="ct-kpi-value">${float(latest["estimated_revenue"]):,.0f}</div><div class="ct-kpi-sub">OpenRouter priced routes</div></div>'
-                f'<div class="ct-kpi-card"><div class="ct-kpi-label">Recent avg tokens</div><div class="ct-kpi-value">{avg_tokens / 1e9:,.1f}B</div><div class="ct-kpi-sub">Complete {granularity.lower()} periods only</div></div>'
-                f'<div class="ct-kpi-card"><div class="ct-kpi-label">Tracked models</div><div class="ct-kpi-value">{n_models} Models</div><div class="ct-kpi-sub">Aggregated, not split by model</div></div>'
-                '</div>'
-            ),
-            unsafe_allow_html=True,
-        )
-        token_plot = period.set_index('period')[['total_tokens']].rename(columns={'total_tokens': signal_name})
-        revenue_plot = period.set_index('period')[['estimated_revenue']].rename(columns={'estimated_revenue': 'Estimated revenue'})
-        partial_mask = period.set_index('period')['is_partial'] if 'is_partial' in period.columns else None
-        if granularity == 'Daily':
-            _render_plotly(_plotly_line_chart(token_plot / 1e9, colors=MODEL_COLORS, y_title='Tokens (billions)', value_format=',.1f', hover_suffix='B', height=340))
-            _render_plotly(_plotly_line_chart(revenue_plot, colors=[ACCENT], y_title='Estimated revenue (USD)', value_format='$,.0f', height=300))
-        else:
-            _render_plotly(_plotly_bar_chart(token_plot / 1e9, y_title='Tokens (billions)', value_format=',.1f', hover_suffix='B', height=340, partial_mask=partial_mask))
-            _render_plotly(_plotly_bar_chart(revenue_plot, colors=[ACCENT], y_title='Estimated revenue (USD)', value_format='$,.0f', height=300, partial_mask=partial_mask))
-        note = f'{granularity} {signal_name} and estimated-revenue totals, all models summed · {start} to {end} · source: {source_name}.'
-        if partial_n:
-            note += f' Lighter bars are incomplete {granularity.lower()} periods shown as observed totals only; they are not nowcast.'
-        st.caption(note + ' ' + (filt.caption or 'Estimated revenue is a priced-route reconstruction, not issuer billed revenue.'))
-    except Exception as e:
-        st.caption(f'OpenRouter signal temporarily unavailable: {e}')
+            st.info(f'OpenRouter dataset loaded, but no {escape(_text(view.display_name))} rows were present.')
+        return
+    window_options = ['Weekly', 'Daily', 'Monthly']
+    window_key = f'{_slugify(view.entity_id)}_openrouter_window'
+    if hasattr(st, 'segmented_control'):
+        granularity = st.segmented_control('Window', window_options, default='Weekly', key=window_key)
+    else:
+        granularity = st.radio('Window', window_options, horizontal=True, index=0, key=window_key)
+    granularity = str(granularity or 'Weekly')
+    period = _openrouter_period_frame(daily, granularity)
+    complete = period.loc[~period['is_partial']].copy() if 'is_partial' in period.columns else period
+    latest = complete.iloc[-1] if not complete.empty else period.iloc[-1]
+    recent_cut = latest['period'] - pd.Timedelta(days=30) if granularity == 'Daily' else latest['period'] - pd.Timedelta(days=90)
+    recent = complete[complete['period'] >= recent_cut] if not complete.empty else period
+    avg_tokens = float(recent['total_tokens'].mean()) if not recent.empty else 0.0
+    n_models = int(period['model_count'].max()) if not period.empty else 0
+    start = period['period'].min().strftime('%Y-%m-%d')
+    end = period['period'].max().strftime('%Y-%m-%d')
+    source_name = source_path.name if source_path is not None else 'openrouter'
+    partial_n = int(period['is_partial'].sum()) if 'is_partial' in period.columns else 0
+    signal_name = filt.signal_name or 'tokens'
+    st.markdown(
+        (
+            '<div class="ct-kpi-grid">'
+            f'<div class="ct-kpi-card"><div class="ct-kpi-label">Latest complete {granularity.lower()} tokens</div><div class="ct-kpi-value">{float(latest["total_tokens"]) / 1e9:,.1f}B</div><div class="ct-kpi-sub">{pd.Timestamp(latest["period"]).strftime("%Y-%m-%d")} · all models summed</div></div>'
+            f'<div class="ct-kpi-card"><div class="ct-kpi-label">Latest complete est. revenue</div><div class="ct-kpi-value">${float(latest["estimated_revenue"]):,.0f}</div><div class="ct-kpi-sub">OpenRouter priced routes</div></div>'
+            f'<div class="ct-kpi-card"><div class="ct-kpi-label">Recent avg tokens</div><div class="ct-kpi-value">{avg_tokens / 1e9:,.1f}B</div><div class="ct-kpi-sub">Complete {granularity.lower()} periods only</div></div>'
+            f'<div class="ct-kpi-card"><div class="ct-kpi-label">Tracked models</div><div class="ct-kpi-value">{n_models} Models</div><div class="ct-kpi-sub">Aggregated, not split by model</div></div>'
+            '</div>'
+        ),
+        unsafe_allow_html=True,
+    )
+    token_plot = period.set_index('period')[['total_tokens']].rename(columns={'total_tokens': signal_name})
+    revenue_plot = period.set_index('period')[['estimated_revenue']].rename(columns={'estimated_revenue': 'Estimated revenue'})
+    partial_mask = period.set_index('period')['is_partial'] if 'is_partial' in period.columns else None
+    if granularity == 'Daily':
+        _render_plotly(_plotly_line_chart(token_plot / 1e9, colors=MODEL_COLORS, y_title='Tokens (billions)', value_format=',.1f', hover_suffix='B', height=340))
+        _render_plotly(_plotly_line_chart(revenue_plot, colors=[ACCENT], y_title='Estimated revenue (USD)', value_format='$,.0f', height=300))
+    else:
+        _render_plotly(_plotly_bar_chart(token_plot / 1e9, y_title='Tokens (billions)', value_format=',.1f', hover_suffix='B', height=340, partial_mask=partial_mask))
+        _render_plotly(_plotly_bar_chart(revenue_plot, colors=[ACCENT], y_title='Estimated revenue (USD)', value_format='$,.0f', height=300, partial_mask=partial_mask))
+    note = f'{granularity} {signal_name} and estimated-revenue totals, all models summed · {start} to {end} · source: {source_name}.'
+    if partial_n:
+        note += f' Lighter bars are incomplete {granularity.lower()} periods shown as observed totals only; they are not nowcast.'
+    st.caption(note + ' ' + (filt.caption or 'Estimated revenue is a priced-route reconstruction, not issuer billed revenue.'))
 
 
 def _render_southbound_module(view: CompanyView, profile) -> None:
@@ -2845,7 +2885,11 @@ def _render_fundamentals_tab(
                 _render_plotly(_segment_share_chart(share_frame))
             rev_growth_df = pd.DataFrame(index=piv_chart.index)
             rev_growth_df[REVENUE_CHART_COLUMN] = piv_chart['revenue_total']
-            rev_growth_df['YoY Growth (%)'] = piv_chart['revenue_total'].pct_change(4) * 100
+            # Four rows back is only a year back when every intervening
+            # quarter is present, and the dropna above removes any quarter
+            # without a reported total -- so a company that skipped one had
+            # its next four quarters compared against the wrong period.
+            rev_growth_df['YoY Growth (%)'] = _quarterly_yoy(piv_chart['revenue_total'])
             st.caption('Quarterly topline and YoY growth · left axis revenue, right axis YoY')
             _render_plotly(_dual_axis_revenue_yoy_chart(rev_growth_df, profile.reporting_currency))
             profit_frame = _quarterly_profitability_frame(frame)

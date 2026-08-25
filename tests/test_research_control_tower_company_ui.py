@@ -1863,3 +1863,81 @@ def test_consensus_revision_chart_uses_percent_units_and_lookback_groups() -> No
     assert "FY2026 0q" in out.columns
     assert out.loc["7d", "FY2026 0y"] == pytest.approx(-1.6583)
     assert out.loc["30d", "FY2026 0q"] == pytest.approx(-4.5659)
+
+
+def test_quarterly_yoy_compares_the_same_quarter_a_year_earlier() -> None:
+    """pct_change(4) counted rows, and the frame it ran on had rows removed.
+
+    The chart drops quarters with no reported total before computing growth,
+    so an issuer that skipped one had its next four quarters measured against
+    the wrong period -- here 2026Q1 read +66.7% against 2025Q2 instead of
+    +100% against 2025Q1.
+    """
+    from control_tower.pages.company import _quarterly_yoy
+
+    complete = pd.Series(
+        [100.0, 110.0, 120.0, 130.0, 200.0, 210.0],
+        index=["2025Q1", "2025Q2", "2025Q3", "2025Q4", "2026Q1", "2026Q2"],
+    )
+    with_gap = complete.drop("2025Q3")
+
+    assert _quarterly_yoy(complete).loc["2026Q1"] == pytest.approx(100.0)
+    assert _quarterly_yoy(with_gap).loc["2026Q1"] == pytest.approx(100.0)
+    assert _quarterly_yoy(with_gap).loc["2026Q2"] == pytest.approx(90.909090, rel=1e-5)
+
+
+def test_a_quarter_with_no_year_ago_counterpart_gets_no_growth() -> None:
+    from control_tower.pages.company import _quarterly_yoy
+
+    series = pd.Series(
+        [100.0, 110.0, 200.0],
+        index=["2025Q1", "2025Q2", "2026Q2"],
+    )
+    out = _quarterly_yoy(series)
+
+    assert out.loc["2026Q2"] == pytest.approx(81.8181, rel=1e-4)
+    assert pd.isna(out.loc["2025Q1"])
+    # The index the chart plots against must come back unchanged.
+    assert list(out.index) == ["2025Q1", "2025Q2", "2026Q2"]
+
+
+def test_quarterly_yoy_survives_labels_it_cannot_parse() -> None:
+    from control_tower.pages.company import _quarterly_yoy
+
+    series = pd.Series([1.0, 2.0], index=["FY26 interim", "FY26 final"])
+
+    assert len(_quarterly_yoy(series)) == 2
+
+
+def _dual_listing_rows(entity_id: str, *, us_primary: bool) -> pd.DataFrame:
+    def row(listing_id, exchange, role, primary, ticker, currency):
+        return {
+            "listing_id": listing_id, "entity_id": entity_id, "exchange": exchange,
+            "native_ticker": listing_id.split("_")[0], "canonical_ticker": ticker,
+            "financial_data_security_id": f"sec-{listing_id}",
+            "financial_data_issuer_group_id": f"grp-{entity_id.lower()}",
+            "mapping_status": "verified", "mapping_verified_at": "2026-08-21",
+            "mapping_source_url": "https://example.invalid",
+            "collection_eligible": True, "listing_role": role,
+            "vendor_tickers": "", "currency": currency, "primary_listing": primary,
+            "active_from": "2004-06-16", "active_to": None, "listing_status": "active",
+            "registry_version": "v1", "source_url": "https://example.invalid",
+            "source_or_research_note": "test fixture",
+        }
+
+    return pd.DataFrame(
+        [
+            row(f"{entity_id}_HK", "HKEX", "secondary" if us_primary else "primary",
+                not us_primary, f"9999.HK", "HKD"),
+            row(f"{entity_id}_US", "NYSE",
+                "primary" if us_primary else "depositary_receipt", us_primary, "XXXX.US", "USD"),
+        ]
+    )
+
+
+def test_the_china_internet_pairs_still_resolve_to_the_hk_ordinary() -> None:
+    snapshot = _make_tencent_snapshot()
+    listings = _dual_listing_rows("TENCENT", us_primary=False)
+    view = build_company_view(replace(snapshot, listings=listings), entity_id="TENCENT")
+
+    assert view.selected_listing_id == "TENCENT_HK"
