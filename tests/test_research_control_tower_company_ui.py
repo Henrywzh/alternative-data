@@ -1281,8 +1281,9 @@ def test_news_filings_section_renders_precise_unlinked_warning(tmp_path: Path, m
     assert not app.exception
 
     text = _app_text(app)
-    assert "No registry-linked generic news/filing metadata rows are available for the selected company/listing" in text
-    assert "official filing metadata is rendered separately above" in text
+    assert "Vendor news overlay (not official filings)" in text
+    assert "Published news/filing metadata (generation artifact)" in text
+    assert "related_entity_ids are still blank" in text
 
 
 def test_openrouter_daily_frame_sums_models_without_running_total() -> None:

@@ -3069,6 +3069,7 @@ def _render_evidence_tab(
     snapshot: ControlTowerSnapshot,
     viewer_timezone: str,
 ) -> None:
+    _render_local_news_overlay(view)
     _render_section_heading(4, 'Provider-specific consensus', f'provider-consensus-{_slugify(view.entity_id)}')
     if view.consensus.empty:
         st.warning(f'Consensus unavailable · {view.consensus_status} · provider rows are not blended.')
@@ -3130,10 +3131,9 @@ def _render_evidence_tab(
                 )
             )
     render_official_filings(snapshot, entity_id=view.entity_id, listing_id=view.selected_listing_id, viewer_timezone=viewer_timezone)
-    _render_local_news_overlay(view)
-    _render_section_heading(4, 'News and filing metadata', f'news-filing-metadata-{_slugify(view.entity_id)}')
+    _render_section_heading(4, 'Published news/filing metadata (generation artifact)', f'news-filing-metadata-{_slugify(view.entity_id)}')
     if view.official_documents.empty:
-        st.warning('No registry-linked generic news/filing metadata rows are available for the selected company/listing; official filing metadata is rendered separately above and document bodies are not displayed.')
+        st.caption('This empty state is the published news_filings.parquet artifact, whose related_entity_ids are still blank. Vendor Marketaux/Finnhub headlines are in the overlay at the top of this tab, not this generation table.')
     else:
         st.dataframe(_friendly_document_frame(view.official_documents, viewer_timezone), width='stretch', hide_index=True)
     _render_section_heading(4, 'Internal estimates & management guidance', f'internal-estimates-{_slugify(view.entity_id)}')
