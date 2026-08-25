@@ -12,6 +12,14 @@ against ``data/registries/``.
 
 from __future__ import annotations
 
+import os as _os
+from pathlib import Path as _Path
+
+# The builders write here; tests/conftest.py redirects the directory so those
+# writes stay out of the working tree. Reading the literal "data/registries/..."
+# would have read the repository's stale copy instead of what the test built.
+_REGISTRY_DIR = _Path(_os.environ.get("ASIA_BACKTEST_REGISTRY_DIR", "").strip() or "data/registries")
+
 from pathlib import Path
 
 import numpy as np
@@ -22,9 +30,9 @@ from src.common.backtest import views as v
 from src.common.backtest.metrics import compute_error_intervals, compute_metric_table
 from src.common.backtest.tracks import assert_single_track
 
-LONG_FORM_PATH = Path("data/registries/asia_backtest_long_form.csv")
-METRICS_PATH = Path("data/registries/asia_backtest_metrics.csv")
-INTERVALS_PATH = Path("data/registries/asia_backtest_metric_intervals.csv")
+LONG_FORM_PATH = Path(_REGISTRY_DIR / "asia_backtest_long_form.csv")
+METRICS_PATH = Path(_REGISTRY_DIR / "asia_backtest_metrics.csv")
+INTERVALS_PATH = Path(_REGISTRY_DIR / "asia_backtest_metric_intervals.csv")
 
 
 # ---------------------------------------------------------------------------

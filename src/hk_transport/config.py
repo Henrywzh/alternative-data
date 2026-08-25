@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 DEFAULT_TIMEOUT = 15
@@ -299,7 +300,27 @@ TD_METERED_PARKING_OCCUPANCY_URL = (
 # Data Storage directories
 ROOT_DIR = Path(__file__).resolve().parents[2]
 RAW_DIR = ROOT_DIR / "data" / "raw" / "hk_transport"
-NORMALIZED_DIR = ROOT_DIR / "data" / "normalized" / "hk_transport"
+
+# Every builder in sources/ writes its output as a side effect of building it
+# -- build_airline_catalyst_calendar() ends in result.to_csv(OUTPUT_PATH) with
+# no way to ask for the frame alone -- and those OUTPUT_PATH constants are
+# derived from NORMALIZED_DIR at import time. So a test that only wants the
+# returned DataFrame rewrote the tracked CSV, and since each carries a
+# retrieved_at stamp, a full test run left ~68 tracked files modified. That
+# turns `git status` into false signal, which is dangerous when more than one
+# session is working the same branch.
+#
+# Redirecting the whole directory is the only lever that reaches all of them:
+# the builders chain (one reads another's output), so patching a single
+# OUTPUT_PATH just moves the problem down the chain. tests/conftest.py points
+# this at a session-scoped copy, so reads still see real inputs and writes
+# land outside the repository.
+_normalized_override = os.environ.get("HK_TRANSPORT_NORMALIZED_DIR", "").strip()
+NORMALIZED_DIR = (
+    Path(_normalized_override)
+    if _normalized_override
+    else ROOT_DIR / "data" / "normalized" / "hk_transport"
+)
 AIRLINE_REPORTS_DIR = ROOT_DIR / "data" / "raw" / "airline_reports"
 RAW_DIR.mkdir(parents=True, exist_ok=True)
 NORMALIZED_DIR.mkdir(parents=True, exist_ok=True)

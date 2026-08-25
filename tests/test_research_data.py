@@ -1277,3 +1277,28 @@ def test_pyproject_exposes_llm_benchmark_cli_script() -> None:
 
     scripts = pyproject["project"]["scripts"]
     assert scripts["llm-benchmark-data"] == "llm_benchmark_data.cli:main"
+
+
+def test_write_mart_leaves_an_unchanged_file_alone(tmp_path: Path) -> None:
+    """An identical rewrite is invisible to git but not to everything else.
+
+    build_*(refresh=False) reuses an existing mart only when it is non-empty,
+    so a mart committed empty -- frontier_model_registry is -- was recomputed
+    and rewritten on every call, including every execution of
+    notebooks/00_data_catalog.ipynb. The bytes never changed, so `git diff`
+    showed nothing while the mtime moved on every notebook run.
+    """
+    from research_data.marts import mart_paths, read_mart, write_mart
+
+    empty = pd.DataFrame({"model_id": pd.Series(dtype="object")})
+    write_mart("frontier_model_registry", empty, base_dir=tmp_path)
+    _, parquet_path = mart_paths("frontier_model_registry", base_dir=tmp_path)
+    first = parquet_path.stat().st_mtime_ns
+
+    write_mart("frontier_model_registry", read_mart("frontier_model_registry", base_dir=tmp_path), base_dir=tmp_path)
+    assert parquet_path.stat().st_mtime_ns == first
+
+    changed = pd.DataFrame({"model_id": ["gpt-5"]})
+    write_mart("frontier_model_registry", changed, base_dir=tmp_path)
+    assert parquet_path.stat().st_mtime_ns != first
+    assert read_mart("frontier_model_registry", base_dir=tmp_path)["model_id"].tolist() == ["gpt-5"]

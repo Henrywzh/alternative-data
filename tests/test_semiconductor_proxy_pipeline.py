@@ -233,7 +233,8 @@ def test_korea_customs_source_extraction_and_broad_aggregation() -> None:
     assert april_export.country_name == "South Korea"
     assert april_export.category_id == "broad_semiconductor"
     assert april_export.classification_code == "8541,8542"
-    assert april_export.unit == "usd"
+    # ttwgTpcd=1000 in the request: the API answers in thousands of USD.
+    assert april_export.unit == "usd_thousand"
     assert april_export.currency == "USD"
     assert april_export.value == 3000.0
     assert may_export.value == 3300.0

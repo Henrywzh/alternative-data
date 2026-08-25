@@ -1439,6 +1439,7 @@ def test_section_domains_loads_only_selected_dashboard_inputs() -> None:
         "semiconductor_memory",
         "semiconductor_proxies",
         "taiwan_semiconductor_revenue",
+        "us_census_trade",
     )
 
 

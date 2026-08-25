@@ -66,13 +66,11 @@ section[data-testid="stSidebar"] label,
 section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
   color: #f0f2f6 !important;
 }
-section[data-testid="stSidebar"] button[kind="secondary"],
 .stApp button[kind="secondary"] {
   background-color: #1f2937 !important;
   border-color: #334155 !important;
   color: #f0f2f6 !important;
 }
-section[data-testid="stSidebar"] button[kind="secondary"] [data-testid="stMarkdownContainer"] p,
 .stApp button[kind="secondary"] [data-testid="stMarkdownContainer"] p {
   color: #f0f2f6 !important;
 }
@@ -148,24 +146,127 @@ section[data-testid="stSidebar"] label[data-baseweb="radio"] p {
 .stTabs [data-baseweb="tab-border"] {
   background-color: #334155 !important;
 }
-[data-testid="stDataFrame"], [data-testid="stTable"] {
-  --gdg-bg-cell: #161b22 !important;
-  --gdg-bg-cell-medium: #1c2430 !important;
-  --gdg-bg-header: #1c2430 !important;
-  --gdg-bg-header-has-focus: #253247 !important;
-  --gdg-bg-header-hovered: #253247 !important;
-  --gdg-text-dark: #f0f2f6 !important;
-  --gdg-text-medium: #cbd5e1 !important;
-  --gdg-text-light: #94a3b8 !important;
-  --gdg-text-header: #f0f2f6 !important;
-  --gdg-border-color: #334155 !important;
-  --gdg-horizontal-border-color: #334155 !important;
-  --gdg-accent-color: #3b82f6 !important;
-  --gdg-accent-light: rgba(59, 130, 246, 0.2) !important;
-}
+/* No --gdg-* block here on purpose.
+ *
+ * st.dataframe renders through glide-data-grid, which paints its cells to a
+ * canvas from Streamlit's own theme, not from CSS custom properties. The
+ * variables were being set on the element -- computed style confirmed
+ * --gdg-bg-cell: #161b22 -- and the table still drew white on a dark page.
+ *
+ * So the tables stay light in dark mode, and there is no CSS fix. The two
+ * routes that do work, neither of them a small edit:
+ *   1. Pass a pandas Styler. Colours land, but Streamlit then formats
+ *      numbers through the Styler instead of the grid's column config, so
+ *      0.0045 renders as 0.004460. Every table needs its own .format().
+ *   2. Render the app's own HTML tables and drop st.dataframe. 26 call
+ *      sites across company.py, ai_bottlenecks.py and source_health.py.
+ */
 """
 
 BASE_CSS = r"""
+/* Tables rendered by ct_dataframe(). Plain DOM, so unlike st.dataframe's
+ * canvas grid these follow --ct-* and flip with the theme toggle. */
+.ct-table-scroll {
+  overflow-x: auto;
+  max-height: 460px;
+  overflow-y: auto;
+  border: 1px solid var(--ct-border);
+  border-radius: 10px;
+  background: var(--ct-surface);
+  margin-bottom: 0.75rem;
+}
+table.ct-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.82rem;
+  color: var(--ct-ink);
+  background: var(--ct-surface);
+}
+table.ct-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--ct-surface-muted);
+  color: var(--ct-muted);
+  font-weight: 700;
+  text-align: left;
+  white-space: nowrap;
+  padding: 0.5rem 0.7rem;
+  border-bottom: 1px solid var(--ct-border);
+}
+table.ct-table tbody td {
+  padding: 0.45rem 0.7rem;
+  border-bottom: 1px solid var(--ct-border);
+  vertical-align: top;
+}
+table.ct-table tbody tr:last-child td { border-bottom: none; }
+table.ct-table tbody tr:hover td { background: var(--ct-surface-muted); }
+table.ct-table tbody th {
+  padding: 0.45rem 0.7rem;
+  border-bottom: 1px solid var(--ct-border);
+  color: var(--ct-muted);
+  font-weight: 600;
+  text-align: left;
+}
+[data-testid="stSidebar"] { border-right: 1px solid var(--ct-border); }
+[data-testid="stSidebar"] .sidebar-brand {
+  color: var(--ct-ink) !important;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  margin-top: 0.25rem;
+}
+[data-testid="stSidebar"] .sidebar-brand-subtitle {
+  color: var(--ct-muted) !important;
+  font-size: 0.78rem;
+  margin: 0.05rem 0 0.25rem 0;
+}
+[data-testid="stSidebar"] .sidebar-focus-note {
+  color: var(--ct-muted) !important;
+  font-size: 0.74rem;
+  margin: 0 0 1.05rem 0;
+}
+[data-testid="stSidebar"] .sidebar-group-label {
+  color: var(--ct-muted) !important;
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 1rem 0 0.3rem 0.15rem;
+}
+[data-testid="stSidebar"] .stButton { margin-bottom: 0.12rem; }
+[data-testid="stSidebar"] .stButton > button,
+[data-testid="stSidebar"] .stButton > button[kind="secondary"],
+[data-testid="stSidebar"] .stButton > button[kind="primary"] {
+  justify-content: flex-start;
+  min-height: 2.25rem;
+  padding: 0.4rem 0.65rem;
+  border: 0 !important;
+  border-radius: 7px;
+  box-shadow: none !important;
+  font-size: 0.86rem;
+  font-weight: 520;
+  color: var(--ct-ink) !important;
+}
+[data-testid="stSidebar"] .stButton > button,
+[data-testid="stSidebar"] .stButton > button[kind="secondary"] {
+  background: transparent !important;
+}
+[data-testid="stSidebar"] .stButton > button p {
+  width: 100%;
+  text-align: left;
+  color: inherit !important;
+}
+[data-testid="stSidebar"] .stButton > button:hover {
+  background: color-mix(in srgb, var(--ct-accent) 8%, transparent) !important;
+  color: var(--ct-accent) !important;
+  transform: none;
+}
+[data-testid="stSidebar"] .stButton > button[kind="primary"] {
+  background: color-mix(in srgb, var(--ct-accent) 12%, transparent) !important;
+  color: var(--ct-accent) !important;
+  font-weight: 700;
+}
 .ct-shell { max-width: 1480px; margin: 0 auto; padding-bottom: 2rem; }
 .ct-header-block { margin-bottom: 0.5rem; }
 .ct-eyebrow { color: var(--ct-muted); font-size: .72rem; letter-spacing: .12em;
@@ -247,6 +348,59 @@ BASE_CSS = r"""
 .ct-inline-link { color: var(--ct-accent); text-decoration: none; }
 .ct-inline-link:hover, .ct-inline-link:focus { text-decoration: underline; }
 .ct-filter-summary { color: var(--ct-muted); font-size: 0.78rem; margin-top: 0.2rem; margin-bottom: 0.6rem; }
+
+/* Hero Header & KPI Cards */
+.ct-hero-card { background: var(--ct-surface); border: 1px solid var(--ct-border); border-radius: var(--ct-radius); padding: 1.15rem 1.35rem; margin-bottom: 1rem; }
+.ct-hero-top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.85rem; margin-bottom: 0.6rem; }
+.ct-hero-title { font-size: 1.4rem; font-weight: 800; color: var(--ct-ink); margin: 0; display: flex; align-items: center; gap: 0.6rem; }
+.ct-hero-ticker { font-size: 0.88rem; font-weight: 750; color: var(--ct-accent); background: color-mix(in srgb, var(--ct-accent) 12%, var(--ct-surface)); padding: 0.2rem 0.55rem; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--ct-accent) 25%, var(--ct-border)); }
+.ct-hero-price-box { display: flex; align-items: baseline; gap: 0.65rem; }
+.ct-hero-price { font-size: 1.45rem; font-weight: 800; color: var(--ct-ink); }
+.ct-hero-change { font-size: 0.86rem; font-weight: 750; padding: 0.18rem 0.48rem; border-radius: 6px; }
+.ct-hero-change--up { color: #16a34a; background: rgba(22, 163, 74, 0.12); }
+.ct-hero-change--down { color: #dc2626; background: rgba(220, 38, 38, 0.12); }
+
+.ct-kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0.65rem; margin-top: 0.75rem; }
+.ct-kpi-card { background: var(--ct-surface-muted); border: 1px solid var(--ct-border); border-radius: 10px; padding: 0.7rem 0.85rem; }
+.ct-kpi-label { font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: var(--ct-muted); letter-spacing: 0.06em; }
+.ct-kpi-value { font-size: 1.12rem; font-weight: 800; color: var(--ct-ink); margin-top: 0.2rem; }
+.ct-kpi-sub { font-size: 0.72rem; color: var(--ct-muted); margin-top: 0.12rem; }
+
+/* Financial model & Segment cards */
+.ct-segment-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.75rem; margin-bottom: 0.9rem; }
+.ct-segment-card { background: var(--ct-surface); border: 1px solid var(--ct-border); border-radius: 11px; padding: 0.95rem 1.05rem; }
+.ct-segment-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.4rem; }
+.ct-segment-title { font-size: 0.92rem; font-weight: 750; color: var(--ct-ink); }
+.ct-segment-share { font-size: 0.76rem; font-weight: 700; color: var(--ct-accent); }
+.ct-segment-rev { font-size: 1.2rem; font-weight: 800; color: var(--ct-ink); }
+.ct-segment-detail { font-size: 0.76rem; color: var(--ct-muted); margin-top: 0.3rem; line-height: 1.4; }
+
+/* Thesis & Pillar cards */
+.ct-thesis-grid { display: grid; grid-template-columns: 1fr; gap: 0.85rem; margin-bottom: 1.1rem; }
+.ct-thesis-card { background: var(--ct-surface); border: 1px solid var(--ct-border); border-left: 4px solid var(--ct-border); border-radius: 11px; padding: 1rem 1.15rem; }
+.ct-thesis-card--bull { border-left-color: #16a34a; background: color-mix(in srgb, #16a34a 4%, var(--ct-surface)); }
+.ct-thesis-card--bear { border-left-color: #dc2626; background: color-mix(in srgb, #dc2626 4%, var(--ct-surface)); }
+.ct-thesis-card--base { border-left-color: var(--ct-accent); background: color-mix(in srgb, var(--ct-accent) 4%, var(--ct-surface)); }
+.ct-news-card { margin-bottom: .55rem; border-left-width: 6px; }
+.ct-news-card--results { border-left-color: #7c3aed; background: color-mix(in srgb, #7c3aed 6%, var(--ct-surface)); }
+.ct-news-card--report { border-left-color: #2563eb; background: color-mix(in srgb, #2563eb 6%, var(--ct-surface)); }
+.ct-news-card--buyback { border-left-color: #0f766e; background: color-mix(in srgb, #0f766e 5%, var(--ct-surface)); }
+.ct-news-card--scheme { border-left-color: #ca8a04; background: color-mix(in srgb, #ca8a04 6%, var(--ct-surface)); }
+.ct-news-card--other { border-left-color: var(--ct-border); }
+.ct-news-card--fresh { border-left-color: #16a34a; background: color-mix(in srgb, #16a34a 5%, var(--ct-surface)); }
+.ct-news-card--stale { border-left-color: #94a3b8; background: color-mix(in srgb, #94a3b8 6%, var(--ct-surface)); }
+
+
+/* Buyback Tracker */
+.ct-buyback-tracker { background: var(--ct-surface); border: 1px solid var(--ct-border); border-radius: 11px; padding: 0.95rem 1.15rem; margin-bottom: 0.9rem; }
+.ct-progress-bar-bg { background: var(--ct-surface-muted); border-radius: 999px; height: 9px; width: 100%; overflow: hidden; margin: 0.55rem 0; border: 1px solid var(--ct-border); }
+.ct-progress-bar-fill { background: linear-gradient(90deg, var(--ct-accent), #10b981); height: 100%; border-radius: 999px; }
+
+/* State of Play Insights */
+.ct-insight-box { background: var(--ct-surface-muted); border: 1px solid var(--ct-border); border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 0.65rem; }
+.ct-insight-title { font-size: 0.88rem; font-weight: 750; color: var(--ct-ink); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.4rem; }
+.ct-insight-desc { font-size: 0.82rem; color: var(--ct-ink); opacity: 0.9; line-height: 1.45; }
+
 @media (max-width: 1199px) {
   .ct-flight-deck { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ct-flight-slot--catalyst { grid-column: 1 / -1; }
@@ -289,3 +443,64 @@ def inject_styles(theme: str | None = None) -> None:
 
 
 __all__ = ["CONTROL_TOWER_CSS", "get_control_tower_css", "inject_styles"]
+
+
+def _display_float(value):
+    """Four decimals, matching what st.dataframe's grid used to show."""
+    try:
+        return f"{float(value):,.4f}"
+    except (TypeError, ValueError):
+        return value
+
+
+def ct_dataframe(frame, *, width: str = "stretch", hide_index: bool = True) -> None:
+    """Render a DataFrame as themed HTML instead of st.dataframe.
+
+    st.dataframe paints through glide-data-grid, which reads Streamlit's own
+    theme rather than this app's CSS, so every table stayed white while the
+    rest of the page went dark. A plain table follows --ct-* like everything
+    else does.
+
+    What this gives up against the grid: column sorting, resizing and the
+    download button. None of the 26 call sites this replaced used
+    column_config or selection, and all of them passed the same two
+    arguments.
+    """
+    import pandas as pd
+
+    if frame is None:
+        return
+    if hasattr(frame, "data") and isinstance(getattr(frame, "data", None), pd.DataFrame):
+        frame = frame.data  # a Styler was passed; render its underlying frame
+    if not isinstance(frame, pd.DataFrame):
+        frame = pd.DataFrame(frame)
+    if frame.empty:
+        st.caption("No rows.")
+        return
+
+    # to_html's na_rep only catches NaN/NaT; a literal None in an object
+    # column would print as the word "None". Convert both to one em dash so a
+    # missing value never reads as a value.
+    #
+    # Per column, and only where something is actually missing: a frame-wide
+    # mask raises on nullable dtypes ("Invalid value '—' for dtype Float64"),
+    # and casting every column to object would hand float formatting to str().
+    display = frame.copy()
+    for column in display.columns:
+        missing = display[column].isna()
+        if not missing.any():
+            continue
+        # to_html's float_format still reaches floats sitting in an object
+        # column, so the cast below does not cost the grid's four decimals,
+        # and integers keep their own shape.
+        display[column] = display[column].astype(object).where(~missing, "—")
+    html = display.to_html(
+        index=not hide_index,
+        escape=True,
+        border=0,
+        classes="ct-table",
+        na_rep="—",
+        justify="left",
+        float_format=_display_float,
+    )
+    st.markdown(f'<div class="ct-table-scroll">{html}</div>', unsafe_allow_html=True)

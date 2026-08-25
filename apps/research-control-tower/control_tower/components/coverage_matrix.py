@@ -11,6 +11,8 @@ from html import escape
 import pandas as pd
 import streamlit as st
 
+from . import ct_dataframe
+
 from ..coverage import (
     COVERAGE_CATEGORY_LABELS,
     COVERAGE_STATUS_DESCRIPTIONS,
@@ -148,7 +150,7 @@ def render_stage1_coverage_matrix(matrix: Stage1CoverageMatrix) -> None:
             },
         }
     )
-    st.dataframe(display, width="stretch", hide_index=True)
+    ct_dataframe(display, width="stretch", hide_index=True)
 
     if not listing_frame.empty:
         st.caption("Active listings · quote coverage")
@@ -163,7 +165,7 @@ def render_stage1_coverage_matrix(matrix: Stage1CoverageMatrix) -> None:
                 "quote_status": "Quote status",
             }
         )
-        st.dataframe(listing_display, width="stretch", hide_index=True)
+        ct_dataframe(listing_display, width="stretch", hide_index=True)
 
     macro = matrix.global_macro
     st.caption(

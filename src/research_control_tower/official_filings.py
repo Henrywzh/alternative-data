@@ -317,15 +317,33 @@ def _hkex_period_metadata(period_end: date, granularity: str | None) -> dict[str
 
 
 def _classify_hkex_title(title: str) -> dict[str, object]:
+    """Map an HKEXnews title to a coarse event class.
+
+    Earnings still require a parseable period-end date. Routine daily buyback
+    returns and standalone interim/annual *reports* (the PDF booklet, not the
+    results announcement) are labelled separately so the live overlay can keep
+    them off the first screen.
+    """
+
     text = title.upper()
+    empty_period = {
+        "reporting_period_label": "",
+        "reporting_period_start": pd.NaT,
+        "reporting_period_end": pd.NaT,
+    }
+    if "NEXT DAY DISCLOSURE" in text:
+        return {"event_class": "share_buyback", **empty_period}
+    if "SHARE AWARD" in text or "SHARE OPTION" in text:
+        return {"event_class": "share_scheme", **empty_period}
+    if text.strip() in {"INTERIM REPORT", "ANNUAL REPORT"} or (
+        ("INTERIM REPORT" in text or "ANNUAL REPORT" in text)
+        and "ENDED" not in text
+        and "RESULTS" not in text
+    ):
+        return {"event_class": "period_report", **empty_period}
     period_end, granularity = _hkex_title_period_end(text)
     if granularity is None:
-        return {
-            "event_class": "general",
-            "reporting_period_label": "",
-            "reporting_period_start": pd.NaT,
-            "reporting_period_end": pd.NaT,
-        }
+        return {"event_class": "general", **empty_period}
     return {"event_class": "earnings_results", **_hkex_period_metadata(period_end, granularity)}  # type: ignore[arg-type]
 
 

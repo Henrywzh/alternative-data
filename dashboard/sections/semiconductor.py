@@ -264,6 +264,8 @@ def _official_trade_unit_config(unit: str) -> tuple[float, str]:
     normalized = str(unit or "").strip().lower()
     if normalized == "usd":
         return 1e9, "USD Billion"
+    if normalized == "usd_thousand":
+        return 1e6, "USD Billion"
     if normalized == "jpy_thousand":
         return 1e6, "JPY Billion"
     if normalized == "hkd_thousand":
@@ -319,8 +321,18 @@ def _prepare_official_trade_display(official_trade: pd.DataFrame, scale_mode: st
         fx_df = _fetch_monthly_fx_to_usd(start_period, end_period)
         chart_frame["display_value"] = np.nan
 
-        usd_mask = chart_frame["currency"].astype(str).str.upper() == "USD"
+        # Scale by the unit, not the currency. A USD series still has to say
+        # whether it counts dollars or thousands of them, and keying off
+        # currency alone silently plotted Korea's thousand-USD figures a
+        # thousandfold too small next to Hong Kong and Japan.
+        units = chart_frame["unit"].astype(str).str.strip().str.lower()
+        currencies = chart_frame["currency"].astype(str).str.upper()
+        usd_mask = (currencies == "USD") & (units != "usd_thousand")
         chart_frame.loc[usd_mask, "display_value"] = chart_frame.loc[usd_mask, "value"] / 1e9
+        usd_thousand_mask = units == "usd_thousand"
+        chart_frame.loc[usd_thousand_mask, "display_value"] = (
+            chart_frame.loc[usd_thousand_mask, "value"] / 1e6
+        )
 
         if not fx_df.empty:
             merged = chart_frame.merge(fx_df, on=["period", "currency"], how="left")
@@ -371,7 +383,13 @@ def _render_official_trade_chart(official_trade: pd.DataFrame, category_choice: 
         )
 
 
-def _render_trade_yoy_chart(chart_frame: pd.DataFrame, category_choice: str, title_prefix: str) -> None:
+def _render_trade_yoy_chart(
+    chart_frame: pd.DataFrame,
+    category_choice: str,
+    title_prefix: str,
+    *,
+    flow_label: str = "Exports",
+) -> None:
     if chart_frame.empty:
         return
     yoy_pivot = chart_frame.pivot_table(
@@ -380,7 +398,26 @@ def _render_trade_yoy_chart(chart_frame: pd.DataFrame, category_choice: str, tit
         values="display_value",
         aggfunc="last",
     ).sort_index()
-    yoy_pivot = yoy_pivot.pct_change(12) * 100.0
+    # Index by calendar month, not by row position: countries publish on
+    # different schedules, so the twelfth row back is only the same month a
+    # year earlier when every country happens to have reported every month.
+    # And never pad -- pandas' deprecated default carried the previous month
+    # forward, which invented a YoY point for a country that had not reported
+    # yet. On the IC-only panel that drew Hong Kong at +57.75% and Japan at
+    # +25.25% for 2026-07, a month neither had published: June's value over
+    # July a year earlier. Both land in the range the real series occupies,
+    # so nothing about the chart looks wrong.
+    try:
+        monthly_index = pd.PeriodIndex(yoy_pivot.index.astype(str), freq="M")
+    except (TypeError, ValueError):
+        monthly_index = None
+    if monthly_index is not None:
+        yoy_pivot = yoy_pivot.set_axis(monthly_index).reindex(
+            pd.period_range(monthly_index.min(), monthly_index.max(), freq="M")
+        )
+    yoy_pivot = yoy_pivot.pct_change(12, fill_method=None) * 100.0
+    if monthly_index is not None:
+        yoy_pivot.index = yoy_pivot.index.strftime("%Y-%m")
     yoy_pivot = yoy_pivot.dropna(how="all")
     if yoy_pivot.empty:
         return
@@ -388,7 +425,7 @@ def _render_trade_yoy_chart(chart_frame: pd.DataFrame, category_choice: str, tit
         make_line_chart(
             yoy_pivot,
             MODEL_COLORS[:len(yoy_pivot.columns)],
-            title=f"{title_prefix} {category_choice} Exports YoY",
+            title=f"{title_prefix} {category_choice} {flow_label} YoY",
             y_title="YoY %",
             x_title="Month",
             height=320,
@@ -498,6 +535,141 @@ def _render_private_company_revenue(semi_views: dict[str, object], cutoff_month:
         )
 
 
+def _display_partner_name(raw: object) -> str:
+    """Census writes partners in caps and last-name-first ("KOREA, SOUTH").
+
+    Left as published they read as two partners in any comma-joined list and
+    shout in every legend, so normalise them for display only.
+    """
+    name = str(raw or "").strip()
+    if not name:
+        return "Unknown"
+    if "," in name:
+        head, _, tail = name.partition(",")
+        name = f"{tail.strip()} {head.strip()}".strip()
+    return " ".join(part.capitalize() for part in name.split())
+
+
+def _render_us_import_demand(datasets: dict[str, DatasetLoadResult], cutoff_month: str | None) -> None:
+    """US Census memory-chip imports -- the demand side of the export tracker.
+
+    The Tiered Tracker above follows what Hong Kong, Japan and Korea ship
+    out. This follows what the US pulls in, so the two must never share an
+    axis: for the same trade they point in opposite directions. HS 854232 is
+    memory only, and Census publishes it per partner, so the split across
+    Korea, Taiwan, Japan and China is the part worth looking at.
+    """
+    national_result = datasets.get("us_census_memory_imports_monthly")
+    if not render_dataset_guard(national_result):
+        return
+    national = national_result.frame.copy()
+    national["partner_display"] = national["partner_country_name"].map(_display_partner_name)
+
+    st.markdown('<div class="section-title">US Memory Import Demand</div>', unsafe_allow_html=True)
+    item_name = str(national["item_name"].dropna().iloc[0]) if national["item_name"].notna().any() else "memory ICs"
+    partners = sorted(national["partner_display"].dropna().unique())
+    st.caption(
+        f"US general imports of HS {national['hs_code'].dropna().iloc[0]} ({item_name.title()}), "
+        f"by partner. Tracked partners: {' · '.join(partners)} -- "
+        "a selected panel, not total US imports. Values are US dollars as published; "
+        "this is an import flow and is not comparable with the export series above."
+    )
+
+    if cutoff_month:
+        national = national[national["period"] >= cutoff_month]
+    if national.empty:
+        st.info("No US import observations inside the selected time range.")
+        return
+
+    national["value_b"] = national["general_import_value_usd"] / 1e9
+    pivot = national.pivot_table(
+        index="period", columns="partner_display", values="value_b", aggfunc="sum"
+    ).sort_index()
+
+    latest_period = str(pivot.index.max())
+    latest_total = float(pivot.loc[latest_period].sum())
+    year_ago = (pd.Period(latest_period, freq="M") - 12).strftime("%Y-%m")
+    prior_total = float(pivot.loc[year_ago].sum()) if year_ago in pivot.index else float("nan")
+    yoy = ((latest_total / prior_total - 1.0) * 100.0) if prior_total and prior_total == prior_total else float("nan")
+
+    latest_rows = national[national["period"] == latest_period]
+    air_share = float("nan")
+    if latest_rows["general_import_value_usd"].sum():
+        air_share = (
+            latest_rows["air_import_value_usd"].sum()
+            / latest_rows["general_import_value_usd"].sum()
+            * 100.0
+        )
+
+    st.markdown(
+        kpi_grid_html(
+            kpi_card_html("LATEST MONTH", latest_period, f"{len(partners)} partners"),
+            kpi_card_html("TRACKED IMPORTS", f"${latest_total:,.2f}B", "general customs value"),
+            kpi_card_html(
+                "YOY",
+                "—" if yoy != yoy else f"{yoy:+.1f}%",
+                f"vs {year_ago}" if year_ago in pivot.index else "no year-ago month",
+                delta_class="up" if yoy == yoy and yoy >= 0 else "down",
+            ),
+            kpi_card_html(
+                "AIR SHARE",
+                "—" if air_share != air_share else f"{air_share:.1f}%",
+                "of customs value",
+            ),
+        ),
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        '<div class="section-title">Tracked Imports by Partner</div>', unsafe_allow_html=True
+    )
+    st.plotly_chart(
+        make_stacked_area_chart(
+            pivot,
+            list(pivot.index),
+            MODEL_COLORS[:len(pivot.columns)],
+            x_title="Month",
+            y_title="USD Billion",
+            height=360,
+            hover_prefix="$",
+            hover_suffix="B",
+        ),
+        width="stretch",
+    )
+
+    yoy_frame = national.rename(columns={"partner_display": "country_name"}).copy()
+    yoy_frame["display_value"] = yoy_frame["value_b"]
+    _render_trade_yoy_chart(yoy_frame, "Memory", "US", flow_label="Imports")
+
+    port_result = datasets.get("us_census_memory_imports_port_monthly")
+    if port_result is None or port_result.frame.empty:
+        return
+    ports = port_result.frame
+    ports = ports[ports["period"] == latest_period]
+    if ports.empty:
+        st.caption(f"Port detail has not been published for {latest_period}.")
+        return
+    top_ports = (
+        ports.groupby("port_name")["general_import_value_usd"].sum().nlargest(10).div(1e6).round(1)
+    )
+    top_ports.index = [str(name).title() for name in top_ports.index]
+    st.markdown(
+        f'<div class="section-title">Entry Points — {latest_period}</div>', unsafe_allow_html=True
+    )
+    st.caption(
+        "Where the tracked imports cleared customs, by district of entry. Airports dominating "
+        "the list is the expected shape for memory: high value per kilogram moves by air."
+    )
+    st.dataframe(
+        dataframe_for_display(
+            top_ports.rename("USD Million").reset_index().rename(columns={"port_name": "District of Entry"}),
+            "-",
+        ),
+        width="stretch",
+        hide_index=True,
+    )
+
+
 def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_views: dict[str, object]) -> None:
     _ppi_range = st.radio(
         "Time range",
@@ -515,8 +687,13 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
     }
     _cutoff = _cutoffs.get(_ppi_range)
 
-    tab_ppi, tab_private, tab_trade = st.tabs(
-        ["AI Demand PPI (FRED)", "TODO", "Tiered Trade & Production Tracker"]
+    tab_ppi, tab_private, tab_trade, tab_us_imports = st.tabs(
+        [
+            "AI Demand PPI (FRED)",
+            "TODO",
+            "Tiered Trade & Production Tracker",
+            "US Import Demand (Census)",
+        ]
     )
 
     with tab_ppi:
@@ -831,12 +1008,16 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
             if category_choice == "Company Revenue":
                 st.info("Use the TODO tab for company-level monthly revenue disclosures.")
 
+    with tab_us_imports:
+        _render_us_import_demand(datasets, _cutoff)
+
 
 def render(domain_states, datasets) -> None:
     combined = {
         **domain_states["semiconductor_memory"][0],
         **domain_states["semiconductor_proxies"][0],
         **domain_states["taiwan_semiconductor_revenue"][0],
+        **domain_states["us_census_trade"][0],
     }
     semi_views = compute_semiconductor_views(combined)
     render_semiconductor_section(datasets, semi_views)

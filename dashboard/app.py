@@ -133,7 +133,7 @@ SECTION_DOMAIN_MAP = {
     "Ramp": ("ramp",),
     "Artificial Analysis": ("artificial_analysis",),
     "Provider Adoption": ("provider_adoption",),
-    "Semiconductor Analysis": ("semiconductor_memory", "semiconductor_proxies", "taiwan_semiconductor_revenue"),
+    "Semiconductor Analysis": ("semiconductor_memory", "semiconductor_proxies", "taiwan_semiconductor_revenue", "us_census_trade"),
     "Google Trends Signal": (),
     # Self-contained, like Google Trends — loads its own data, no registry domain.
     "Minerals": (),

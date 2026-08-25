@@ -41,7 +41,7 @@ from typing import Any
 
 import pandas as pd
 
-from ..config import NORMALIZED_DIR
+from ..config import NORMALIZED_DIR, ROOT_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -53,8 +53,12 @@ PLAYBOOK_PATH = NORMALIZED_DIR / "airline_h1_2026_validation_playbook.csv"
 EXPECTATION_PATH = NORMALIZED_DIR / "airline_expectation_bridge.csv"
 FILING_CALENDAR_PATH = NORMALIZED_DIR / "airline_filing_calendar.csv"
 UNIFIED_PRE_EVENT_PATH = NORMALIZED_DIR / "airline_pre_event_unified_snapshot.csv"
+# Derived from ROOT_DIR, not by walking three levels up from NORMALIZED_DIR:
+# the walk-up silently produced a path outside the repository as soon as the
+# normalized directory was relocated, and a missing bars file is handled by
+# leaving the market-reaction columns empty, so it failed without complaint.
 YFINANCE_BARS_PATH = (
-    Path(NORMALIZED_DIR).parent.parent.parent
+    ROOT_DIR
     / "data/raw/market_data/yfinance/20260808T-stage3-daily-5y/bars_1d.parquet"
 )
 

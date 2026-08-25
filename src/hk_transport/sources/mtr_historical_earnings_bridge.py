@@ -53,8 +53,12 @@ from typing import Any
 
 import pandas as pd
 
+from ..config import NORMALIZED_DIR
+
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-OUT_DIR = os.path.join(REPO_ROOT, "data", "normalized", "hk_transport")
+# Same directory as ..config.NORMALIZED_DIR, so it honours the same
+# HK_TRANSPORT_NORMALIZED_DIR redirect the rest of the package does.
+OUT_DIR = str(NORMALIZED_DIR)
 os.makedirs(OUT_DIR, exist_ok=True)
 
 CSV_PATH = os.path.join(OUT_DIR, "mtr_historical_earnings_bridge.csv")

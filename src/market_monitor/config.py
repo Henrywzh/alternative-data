@@ -11,6 +11,28 @@ RAW_DIR = REPO_ROOT / "data" / "raw" / "market_monitor"
 NORMALIZED_DIR = REPO_ROOT / "data" / "normalized" / "market_monitor"
 DERIVED_DIR = REPO_ROOT / "data" / "derived" / "market_monitor"
 
+# Freshness policy is part of the data contract, not a renderer detail.  The
+# quote threshold is intentionally short because a live quote that is older
+# than one market interval is no longer a useful "latest" value.  Daily
+# observations are allowed to span weekends and exchange holidays; the
+# longer bound is a safety net for a stalled provider, not a claim that the
+# last row is today's close.
+MARKET_TIMEZONE = "Asia/Taipei"
+FRESHNESS_POLICIES = {
+    "intraday_quote": {"max_age_minutes": 15},
+    "daily_close": {"stale_after_calendar_days": 7},
+    "published_data": {"stale_after_calendar_days": 14},
+}
+
+# A rolling history can legitimately move by a small number of calendar days
+# when an exchange holiday or a provider's backfill changes the window. A
+# larger boundary movement with the same row count is a coverage loss, so it
+# must be visible to the email gate instead of being mistaken for a refresh.
+COVERAGE_BOUNDARY_TOLERANCE_DAYS = 7
+# A history losing more than ten percent of its rows is material even when
+# its first/last dates happen to look unchanged.
+COVERAGE_MIN_ROW_RATIO = 0.90
+
 
 # Identifiers used across the domain. Exposure groups indexes; index owns
 # wrappers; venue keeps the schema open to CN / HK / US listing venues.
@@ -225,6 +247,103 @@ EXPOSURES = (
         "index_id": "DAX",
         "yf_symbol": "^GDAXI",
     },
+    # --- Global Benchmark & Regional Exposures ---
+    # Dow Jones Industrial Average (^DJI)
+    {
+        "exposure_id": "dow",
+        "role": "benchmark",
+        "price_source": "yfinance",
+        "label": "Dow Jones",
+        "label_zh": "道琼斯工业",
+        "region": "US",
+        "size": "Large",
+        "style": "Broad",
+        "risk_character": "Core",
+        "index_id": "DJI",
+        "yf_symbol": "^DJI",
+    },
+    # Russell 2000 Small-Cap (^RUT)
+    {
+        "exposure_id": "russell2000",
+        "role": "benchmark",
+        "price_source": "yfinance",
+        "label": "Russell 2000",
+        "label_zh": "罗素2000小盘",
+        "region": "US",
+        "size": "Small",
+        "style": "Broad",
+        "risk_character": "High beta",
+        "index_id": "RUT",
+        "yf_symbol": "^RUT",
+    },
+    # Korea KOSPI (^KS11)
+    {
+        "exposure_id": "kospi",
+        "role": "benchmark",
+        "price_source": "yfinance",
+        "label": "Korea KOSPI",
+        "label_zh": "韩国综合指数",
+        "region": "APAC",
+        "size": "Large",
+        "style": "Broad",
+        "risk_character": "Cyclical / Tech",
+        "index_id": "KOSPI",
+        "yf_symbol": "^KS11",
+    },
+    # Taiwan TAIEX (^TWII)
+    {
+        "exposure_id": "twii",
+        "role": "benchmark",
+        "price_source": "yfinance",
+        "label": "Taiwan TAIEX",
+        "label_zh": "台湾加权指数",
+        "region": "APAC",
+        "size": "Large",
+        "style": "Tech / Semis",
+        "risk_character": "High beta",
+        "index_id": "TAIEX",
+        "yf_symbol": "^TWII",
+    },
+    # France CAC 40 (^FCHI)
+    {
+        "exposure_id": "cac40",
+        "price_source": "yfinance",
+        "label": "France CAC 40",
+        "label_zh": "法国CAC40",
+        "region": "Europe",
+        "size": "Large",
+        "style": "Broad",
+        "risk_character": "Core",
+        "index_id": "CAC40",
+        "yf_symbol": "^FCHI",
+    },
+    # UK FTSE 100: QDII wrapper (513970).
+    # yfinance ^FTSE for the index.
+    {
+        "exposure_id": "ftse100",
+        "price_source": "yfinance",
+        "label": "UK FTSE 100",
+        "label_zh": "英国富时100",
+        "region": "Europe",
+        "size": "Large",
+        "style": "Broad",
+        "risk_character": "Core",
+        "index_id": "FTSE",
+        "yf_symbol": "^FTSE",
+    },
+    # Saudi Arabia (MSCI Saudi proxy KSA): QDII wrappers (159329, 520830).
+    {
+        "exposure_id": "saudi",
+        "price_source": "yfinance",
+        "label": "Saudi Arabia",
+        "label_zh": "沙特阿拉伯",
+        "region": "Middle East",
+        "size": "Large",
+        "style": "Broad",
+        "risk_character": "Emerging",
+        "index_id": "KSA",
+        "yf_symbol": "KSA",
+    },
     # --- Benchmarks: relative-strength legs, not investable exposures ---
     # Verified live on 2026-08-20. The obvious alternatives are traps: Sina
     # answers 200 for 中证800成长 (000967) and 中证800价值 (000969) but stopped
@@ -322,8 +441,8 @@ EXPOSURES = (
         "exposure_id": "us_small",
         "role": "benchmark",
         "price_source": "yfinance",
-        "label": "Russell 2000",
-        "label_zh": "罗素2000",
+        "label": "Russell 2000 (IWM)",
+        "label_zh": "罗素2000 (IWM)",
         "region": "US",
         "size": "Small",
         "style": "Broad",
@@ -362,7 +481,7 @@ EXPOSURES = (
         "label_zh": "美国科技",
         "region": "US",
         "size": "Broad",
-        "style": "Broad",
+        "style": "Sector",
         "risk_character": "Offensive",
         "index_id": "XLK",
     },
@@ -374,7 +493,7 @@ EXPOSURES = (
         "label_zh": "美国可选消费",
         "region": "US",
         "size": "Broad",
-        "style": "Broad",
+        "style": "Sector",
         "risk_character": "Offensive",
         "index_id": "XLY",
     },
@@ -386,7 +505,7 @@ EXPOSURES = (
         "label_zh": "美国通信服务",
         "region": "US",
         "size": "Broad",
-        "style": "Broad",
+        "style": "Sector",
         "risk_character": "Offensive",
         "index_id": "XLC",
     },
@@ -398,7 +517,7 @@ EXPOSURES = (
         "label_zh": "美国日常消费",
         "region": "US",
         "size": "Broad",
-        "style": "Broad",
+        "style": "Sector",
         "risk_character": "Defensive",
         "index_id": "XLP",
     },
@@ -410,7 +529,7 @@ EXPOSURES = (
         "label_zh": "美国公用事业",
         "region": "US",
         "size": "Broad",
-        "style": "Broad",
+        "style": "Sector",
         "risk_character": "Defensive",
         "index_id": "XLU",
     },
@@ -422,7 +541,7 @@ EXPOSURES = (
         "label_zh": "美国医疗保健",
         "region": "US",
         "size": "Broad",
-        "style": "Broad",
+        "style": "Sector",
         "risk_character": "Defensive",
         "index_id": "XLV",
     },
@@ -434,6 +553,48 @@ def exposure_by_id(exposure_id: str) -> dict:
         if spec["exposure_id"] == exposure_id:
             return spec
     raise KeyError(f"unknown exposure_id: {exposure_id}")
+
+
+# Which exposures each regional tab of the ETF Monitor shows.
+#
+# This is a curation, not something `region` can produce: the China tab
+# deliberately carries S&P 500, Nasdaq 100, Nikkei and DAX because those are
+# reachable from the mainland through QDII wrappers, and Global is a
+# cross-region digest. It lives here because it was previously written out
+# three times -- as five set literals in the Streamlit app, and again as an
+# inline `isin({...})` in the artifact builder deciding which price series to
+# export. The three had already drifted: us_growth, us_small and us_value were
+# listed in the US tab but their price series were never exported, so the tab
+# silently offered four of its seven indices.
+MARKET_TABS: dict[str, tuple[str, ...]] = {
+    "china": (
+        "csi300", "csi500", "csi1000", "chinext", "growth", "dividend",
+        "hsi", "hstech", "hk_dividend", "hk_internet", "hk_midcap", "hk_hshares",
+        "cn_infotech", "cn_staples", "sp500", "ndx", "nikkei225", "dax", "saudi",
+    ),
+    "china_core": (
+        "csi300", "csi500", "csi1000", "chinext", "growth", "dividend",
+        "hsi", "hstech", "hk_dividend", "hk_internet", "hk_midcap", "hk_hshares",
+        "cn_infotech", "cn_staples",
+    ),
+    "us": ("sp500", "ndx", "dow", "russell2000", "us_small", "us_growth", "us_value"),
+    "apac": ("nikkei225", "kospi", "twii", "kr_semis"),
+    "emea": ("dax", "ftse100", "cac40", "saudi"),
+    "global": (
+        "csi300", "sp500", "ndx", "dow", "russell2000", "hsi", "nikkei225",
+        "kospi", "twii", "dax", "ftse100", "cac40", "saudi",
+    ),
+}
+
+
+def market_tab_exposures(tab: str) -> set[str]:
+    """Exposure ids shown by one regional tab."""
+    return set(MARKET_TABS[tab])
+
+
+def charted_exposures() -> set[str]:
+    """Every exposure some regional tab charts, so every one needs a price series."""
+    return {exposure_id for ids in MARKET_TABS.values() for exposure_id in ids}
 
 
 def exposures_by_price_source(source: str) -> tuple[str, ...]:

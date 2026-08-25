@@ -24,6 +24,9 @@ import streamlit as st
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 ARTIFACT_ROOT = REPO_ROOT / "apps" / "asia-markets-dashboard" / ".generated"
 
 SECTORS: dict[str, dict[str, str]] = {
@@ -3310,6 +3313,7 @@ def render_relative_regime(
     history: pd.DataFrame,
     language: str,
     history_window_name: str,
+    key_prefix: str = "market",
 ) -> None:
     """One pair at a time: the ratio, its 60D trend, and its z-score.
 
@@ -3323,33 +3327,37 @@ def render_relative_regime(
     if not regions:
         regions = sorted(set(frame.get("region", pd.Series(dtype=str)).dropna()))
 
-    if hasattr(st, "segmented_control"):
-        region_choice = st.segmented_control(
-            tr(language, "Market", "市场"),
-            regions,
-            default=regions[0] if regions else None,
-            key="market_pair_region",
-            format_func=lambda r: tr(language, *REGION_NAMES.get(r, (r, r))),
-            label_visibility="collapsed",
-        ) or (regions[0] if regions else None)
-    elif hasattr(st, "pills"):
-        region_choice = st.pills(
-            tr(language, "Market", "市场"),
-            regions,
-            default=regions[0] if regions else None,
-            key="market_pair_region",
-            format_func=lambda r: tr(language, *REGION_NAMES.get(r, (r, r))),
-            label_visibility="collapsed",
-        ) or (regions[0] if regions else None)
+    if len(regions) > 1:
+        if hasattr(st, "segmented_control"):
+            region_choice = st.segmented_control(
+                tr(language, "Market", "市场"),
+                regions,
+                default=regions[0] if regions else None,
+                key=f"{key_prefix}_pair_region",
+                format_func=lambda r: tr(language, *REGION_NAMES.get(r, (r, r))),
+                label_visibility="collapsed",
+            ) or (regions[0] if regions else None)
+        elif hasattr(st, "pills"):
+            region_choice = st.pills(
+                tr(language, "Market", "市场"),
+                regions,
+                default=regions[0] if regions else None,
+                key=f"{key_prefix}_pair_region",
+                format_func=lambda r: tr(language, *REGION_NAMES.get(r, (r, r))),
+                label_visibility="collapsed",
+            ) or (regions[0] if regions else None)
+        else:
+            region_choice = st.radio(
+                tr(language, "Market", "市场"),
+                regions,
+                horizontal=True,
+                key=f"{key_prefix}_pair_region",
+                format_func=lambda r: tr(language, *REGION_NAMES.get(r, (r, r))),
+            )
     else:
-        region_choice = st.radio(
-            tr(language, "Market", "市场"),
-            regions,
-            horizontal=True,
-            key="market_pair_region",
-            format_func=lambda r: tr(language, *REGION_NAMES.get(r, (r, r))),
-        )
-    cohort = frame[frame["region"].eq(region_choice)]
+        region_choice = regions[0] if regions else None
+
+    cohort = frame[frame["region"].eq(region_choice)] if region_choice else frame
     if cohort.empty:
         return
 
@@ -3374,7 +3382,7 @@ def render_relative_regime(
     selected_label = st.selectbox(
         tr(language, "Pair", "配对"),
         cohort["_label"].tolist(),
-        key="market_pair_select",
+        key=f"{key_prefix}_pair_select",
     )
     row = cohort[cohort["_label"].eq(selected_label)].iloc[0]
     pair_id = str(row["pair_id"])
@@ -3609,15 +3617,26 @@ def render_market_ratio_chart(
     technicals: pd.DataFrame,
     language: str,
     history_window_name: str,
+    key_prefix: str = "market",
 ) -> None:
-    """Reindexed ratio of two exposures: A / B rebased to its own first value."""
+    """Ratio of two exposures, A / B, with 20D and 60D means.
+
+    ``key_prefix`` namespaces the two selectboxes. It used to be absent, and
+    the keys were the literals "market_ratio_num"/"market_ratio_den" -- but
+    every region tab calls this, and st.tabs evaluates all five tab bodies on
+    every run, so putting a second tab into Ratio mode crashed the whole page
+    with StreamlitDuplicateElementKey.
+
+    The ratio is plotted raw. The docstring used to claim it was "rebased to
+    its own first value", which no line of this function did.
+    """
     if technicals.empty:
         return
 
     labels = {}
     for _, row in technicals.iterrows():
         eid = str(row["exposure_id"])
-        labels[eid] = _market_label(row, language) if language == "zh" else str(row.get("label", eid))
+        labels[eid] = _market_label(row, language) or eid
 
     eids = sorted(labels.keys())
     col1, col2 = st.columns(2)
@@ -3626,7 +3645,7 @@ def render_market_ratio_chart(
             tr(language, "Numerator (A)", "分子 (A)"),
             eids,
             index=eids.index("csi1000") if "csi1000" in eids else 0,
-            key="market_ratio_num",
+            key=f"{key_prefix}_ratio_num",
             format_func=lambda e: labels.get(e, e),
         )
     with col2:
@@ -3634,7 +3653,7 @@ def render_market_ratio_chart(
             tr(language, "Denominator (B)", "分母 (B)"),
             eids,
             index=eids.index("csi300") if "csi300" in eids else min(1, len(eids) - 1),
-            key="market_ratio_den",
+            key=f"{key_prefix}_ratio_den",
             format_func=lambda e: labels.get(e, e),
         )
     if numerator == denominator:
@@ -3706,6 +3725,7 @@ def render_market_index_detail(
     ma_window: int = 20,
     rsi_upper: float = 70.0,
     rsi_lower: float = 30.0,
+    key_prefix: str = "market",
 ) -> None:
     """One index: price and RSI on a shared axis, its ETF wrappers, premiums."""
     series = prices[prices["exposure_id"].eq(exposure_id)].sort_values("_date").copy()
@@ -3828,11 +3848,12 @@ def render_market_index_detail(
             chart_theme(fig, "number", date_axis=True, height=460 if has_rsi else 340),
             width="stretch",
             config={"displaylogo": False, "responsive": True},
+            key=f"{key_prefix}_{exposure_id}_price_rsi_chart",
         )
 
     # --- All ETF prices on this index (rebased to 100) ---
     cohort_tickers: list[str] = []
-    if not wrappers.empty:
+    if wrappers is not None and not wrappers.empty and "exposure_id" in wrappers.columns:
         cohort = wrappers[wrappers["exposure_id"].eq(exposure_id)]
         if not cohort.empty and "ticker" in cohort.columns:
             cohort_tickers = cohort["ticker"].astype(str).str.zfill(6).tolist()
@@ -3874,6 +3895,7 @@ def render_market_index_detail(
                         chart_theme(fig_etf, "number", date_axis=True, height=300),
                         width="stretch",
                         config={"displaylogo": False, "responsive": True},
+                        key=f"{key_prefix}_{exposure_id}_etf_rebased_chart",
                     )
 
     # --- Premium history ---
@@ -3943,17 +3965,19 @@ def render_market_index_detail(
                     chart_theme(fig_ph, "number", date_axis=True, height=280),
                     width="stretch",
                     config={"displaylogo": False, "responsive": True},
+                    key=f"{key_prefix}_{exposure_id}_prem_history_chart",
                 )
 
     # --- ETF wrapper table ---
+    if wrappers is None or wrappers.empty or "exposure_id" not in wrappers.columns:
+        return
     cohort = wrappers[wrappers["exposure_id"].eq(exposure_id)].copy()
+    if cohort.empty:
+        return
     st.markdown(
         f'<div class="am-chart-title">{tr(language, "ETF wrappers on this index", "追踪该指数的 ETF")}</div>',
         unsafe_allow_html=True,
     )
-    if cohort.empty:
-        st.info(tr(language, "No ETF wrapper is tracked for this index yet.", "该指数暂无纳入跟踪的 ETF。"))
-        return
 
     if "peer_rank" in cohort.columns:
         cohort = cohort.sort_values("peer_rank")
@@ -4062,7 +4086,7 @@ def render_market_index_detail(
     st.dataframe(table_to_show, hide_index=True, width="stretch")
 
     if "entry_cost_bp" in cohort.columns and cohort["entry_cost_bp"].notna().any():
-        render_market_entry_cost_chart(cohort, language)
+        render_market_entry_cost_chart(cohort, language, key_prefix=f"{key_prefix}_{exposure_id}")
 
     if "premium_caveat" in cohort.columns:
         caveats = [str(x) for x in cohort["premium_caveat"].dropna().unique().tolist() if x]
@@ -4070,7 +4094,7 @@ def render_market_index_detail(
             st.caption(" · ".join(caveats))
 
 
-def render_market_entry_cost_chart(cohort: pd.DataFrame, language: str) -> None:
+def render_market_entry_cost_chart(cohort: pd.DataFrame, language: str, key_prefix: str = "market") -> None:
     """Entry cost & premium per wrapper with clear contextual axis limits."""
     frame = cohort.dropna(subset=["entry_cost_bp"]).copy()
     if frame.empty:
@@ -4120,6 +4144,7 @@ def render_market_entry_cost_chart(cohort: pd.DataFrame, language: str) -> None:
         chart_theme(fig, "number", date_axis=False, height=max(180, 50 * len(frame))),
         width="stretch",
         config={"displaylogo": False, "responsive": True},
+        key=f"{key_prefix}_entry_cost_chart",
     )
 
 
@@ -4304,11 +4329,285 @@ def render_us_sector_tab(language: str) -> None:
             )
 
 
+
+def render_southbound_market_flow(frame: pd.DataFrame, language: str, window: str) -> None:
+    if frame is None or frame.empty:
+        st.info(tr(language, "Aggregate southbound Stock Connect history is not in this artifact yet.", "当前快照尚未包含全市场南向资金历史。"))
+        return
+    plot = frame.copy()
+    date_col = "trade_date" if "trade_date" in plot.columns else "date"
+    plot[date_col] = pd.to_datetime(plot[date_col], errors="coerce")
+    plot = plot.dropna(subset=[date_col]).sort_values(date_col)
+    years = HISTORY_WINDOWS.get(window)
+    if years:
+        cutoff = plot[date_col].max() - pd.DateOffset(years=years)
+        plot = plot[plot[date_col] >= cutoff]
+    latest = plot.iloc[-1]
+    net = pd.to_numeric(pd.Series([latest.get("net_buy_yi")]), errors="coerce").iloc[0]
+    mv = pd.to_numeric(pd.Series([latest.get("holding_market_value")]), errors="coerce").iloc[0]
+    bal = pd.to_numeric(pd.Series([latest.get("balance_yi")]), errors="coerce").iloc[0]
+    asof = pd.Timestamp(latest[date_col]).strftime("%Y-%m-%d")
+    c1, c2, c3 = st.columns(3)
+    c1.metric(tr(language, "Latest net buy", "最新净买入"), f"{float(net):,.1f} 亿" if pd.notna(net) else "—", asof)
+    c2.metric(tr(language, "Holding market value", "持股市值"), f"HK$ {float(mv)/1e12:,.2f}T" if pd.notna(mv) else "—")
+    c3.metric(tr(language, "Same-day balance", "当日余额"), f"{float(bal):,.1f} 亿" if pd.notna(bal) else "Unavailable")
+    
+    net_series = pd.to_numeric(plot.get("net_buy_yi"), errors="coerce").fillna(0)
+    # High-contrast dual colors: Inflow = deep royal blue (#1d4ed8), Outflow = vivid red (#dc2626)
+    bar_colors = ["#1d4ed8" if v >= 0 else "#dc2626" for v in net_series]
+    net_ma20 = net_series.rolling(20, min_periods=5).mean()
+
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig.add_trace(
+        go.Bar(
+            x=plot[date_col],
+            y=net_series,
+            name=tr(language, "Daily net buy (CNY 100m)", "当日净买入（亿元）"),
+            marker=dict(color=bar_colors, line=dict(width=0)),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>当日净买入: %{y:,.1f} 亿元<extra></extra>",
+        ),
+        secondary_y=False,
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=plot[date_col],
+            y=net_ma20,
+            name=tr(language, "20D MA flow (CNY 100m)", "净买入20日均线（亿元）"),
+            mode="lines",
+            line=dict(width=1.8, color="#f59e0b", dash="solid"),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>20日均线净买入: %{y:,.1f} 亿元<extra></extra>",
+        ),
+        secondary_y=False,
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=plot[date_col],
+            y=pd.to_numeric(plot.get("holding_market_value"), errors="coerce") / 1e12,
+            name=tr(language, "Holding MV (HK$ tn)", "累计持股市值（万亿港元）"),
+            mode="lines",
+            line=dict(width=2.5, color="#0f172a"),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>持股市值: HK$ %{y:,.2f} 万亿<extra></extra>",
+        ),
+        secondary_y=True,
+    )
+    fig.update_layout(
+        template="plotly_white",
+        height=380,
+        bargap=0.0,
+        bargroupgap=0.0,
+        legend=dict(orientation="h", y=-0.22, x=0),
+        margin=dict(l=0, r=8, t=12, b=45),
+        hovermode="x unified",
+    )
+    fig.update_xaxes(tickformat="%b %Y", showgrid=False)
+    fig.update_yaxes(title_text=tr(language, "Net buy (CNY 100m)", "净买入（亿元）"), secondary_y=False, gridcolor="#F3F4F6", zeroline=True, zerolinecolor="#94A3B8")
+    fig.update_yaxes(title_text=tr(language, "Holding MV (HK$ tn)", "持股市值（万亿港元）"), secondary_y=True, showgrid=False)
+    st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True})
+    st.caption(tr(
+        language,
+        "Market-wide southbound Stock Connect from Eastmoney/akshare stock_hsgt_hist_em. This is not per-stock 0700.HK ownership.",
+        "全市场南向资金来自东财/akshare stock_hsgt_hist_em，不是 0700.HK 个股持股。",
+    ))
+
+
+# Canonical index-style categories for the "By Index" filter pills.
+#
+# config.py records styles as free text -- "Tech / Growth", "Growth" and
+# "Tech / Semis" are three spellings of one idea -- and the pills used the raw
+# strings as their identity while translating them to the same Chinese label,
+# so the row showed 科技成长 and 红利价值 twice. Collapsing to these keys is
+# what makes each pill appear once.
+#
+# The order here is the order the pills render in. Deriving it from the data
+# instead made the row reshuffle between sections of the same page, because it
+# followed whichever exposure happened to come first.
+STYLE_CATEGORIES: tuple[tuple[str, str, str], ...] = (
+    ("broad", "Broad Benchmark", "宽基大盘"),
+    ("tech_growth", "Tech & Growth", "科技成长"),
+    ("value_dividend", "Dividend / Value", "红利价值"),
+    ("sector", "Sector / Thematic", "行业主题"),
+)
+
+STYLE_CATEGORY_LABELS: dict[str, tuple[str, str]] = {
+    key: (label_en, label_zh) for key, label_en, label_zh in STYLE_CATEGORIES
+}
+
+
+# The vocabulary config.py actually uses, most specific first. Keeping it here
+# rather than inline is what lets a test tell the difference between "this
+# style maps to broad" and "this style matched nothing and defaulted to broad".
+_STYLE_RULES: tuple[tuple[tuple[str, ...], str], ...] = (
+    (("Dividend", "Value"), "value_dividend"),
+    (("Tech", "Growth", "Semis"), "tech_growth"),
+    (("Sector", "Thematic"), "sector"),
+    (("Broad", "Core"), "broad"),
+)
+
+STYLE_FALLBACK_KEY = "broad"
+
+
+def index_style_key(raw_style: str) -> str | None:
+    """The category for a config ``style``, or None if nothing matched."""
+    s = str(raw_style or "").strip()
+    for needles, key in _STYLE_RULES:
+        if any(needle in s for needle in needles):
+            return key
+    return None
+
+
+def normalize_index_style(raw_style: str) -> str:
+    """Map a config ``style`` string onto one of STYLE_CATEGORIES' keys.
+
+    Rendering must not fail on an unknown style, so this falls back to
+    "broad". That fallback is a guess, and used to be indistinguishable from a
+    real match -- a new style such as "Commodity" would have rendered under
+    宽基大盘 with nothing to notice. test_every_config_style_maps_explicitly
+    fails instead, so the rule gets added here deliberately.
+    """
+    return index_style_key(raw_style) or STYLE_FALLBACK_KEY
+
+
+def render_scoped_index_section(
+    scoped_eids: set[str],
+    label_by_exposure: dict[str, str],
+    prices: pd.DataFrame,
+    technicals: pd.DataFrame,
+    wrappers: pd.DataFrame,
+    language: str,
+    window: str,
+    etf_prices: pd.DataFrame | None = None,
+    premium_history: pd.DataFrame | None = None,
+    key_prefix: str = "market",
+    show_wrappers: bool = True,
+) -> None:
+    """Render single-index technical detail and ETF wrappers with dynamic sub-category filtering."""
+    from src.market_monitor.config import EXPOSURES
+    
+    available = [e for e in label_by_exposure if e in scoped_eids and not prices.empty and e in set(prices["exposure_id"])]
+    if not available:
+        if not wrappers.empty and show_wrappers:
+            available = [e for e in sorted(wrappers["exposure_id"].astype(str).unique()) if e in scoped_eids]
+    if not available:
+        return
+
+    section_heading(
+        language,
+        "By Index",
+        "按指数查看",
+        "Inspect price, 20D/60D trend, and RSI for a selected index.",
+        "选择一个指数，查看其收盘价、均线趋势及 RSI 技术指标。",
+    )
+    
+    # 构建元数据映射 (style / risk_character)
+    meta_by_eid = {e["exposure_id"]: e for e in EXPOSURES}
+    
+    # 建立当前可用标的的分类映射
+    members_by_key: dict[str, list[str]] = {}
+    for eid in available:
+        spec = meta_by_eid.get(eid, {})
+        members_by_key.setdefault(normalize_index_style(spec.get("style", "Broad")), []).append(eid)
+    # Iterate STYLE_CATEGORIES, not the data, so the pill row is stable.
+    style_groups: dict[str, tuple[str, str, list[str]]] = {
+        key: (STYLE_CATEGORY_LABELS[key][0], STYLE_CATEGORY_LABELS[key][1], members_by_key[key])
+        for key, _en, _zh in STYLE_CATEGORIES
+        if key in members_by_key
+    }
+
+    filtered_available = available
+    if len(available) > 4 and len(style_groups) > 1:
+        # 当标的大于4个且分类多样时，生成无重复的胶囊按钮
+        cat_keys = ["all"] + list(style_groups.keys())
+        cat_labels = [tr(language, "All Types", "全部类型")] + [
+            tr(language, style_groups[k][0], style_groups[k][1]) for k in style_groups
+        ]
+        label_to_key = dict(zip(cat_labels, cat_keys))
+
+        if hasattr(st, "segmented_control"):
+            choice_label = st.segmented_control(
+                tr(language, "Filter Type", "指数类型筛选"),
+                cat_labels,
+                default=cat_labels[0],
+                key=f"{key_prefix}_index_filter_pills",
+                label_visibility="collapsed",
+            ) or cat_labels[0]
+        elif hasattr(st, "pills"):
+            choice_label = st.pills(
+                tr(language, "Filter Type", "指数类型筛选"),
+                cat_labels,
+                default=cat_labels[0],
+                key=f"{key_prefix}_index_filter_pills",
+                label_visibility="collapsed",
+            ) or cat_labels[0]
+        else:
+            choice_label = cat_labels[0]
+
+        selected_key = label_to_key.get(choice_label, "all")
+        if selected_key != "all":
+            filtered_available = style_groups[selected_key][2]
+            if not filtered_available:
+                filtered_available = available
+
+    wrapper_counts = (
+        wrappers.groupby("exposure_id").size().to_dict() if not wrappers.empty and show_wrappers else {}
+    )
+    
+    def _fmt_name(e):
+        lbl = label_by_exposure.get(e, e)
+        if show_wrappers and wrapper_counts.get(e, 0) > 0:
+            return f"{lbl} ({wrapper_counts[e]} 只场内ETF)" if language == "zh" else f"{lbl} ({wrapper_counts[e]} ETF)"
+        return lbl
+
+    selected = st.selectbox(
+        tr(language, "Select Index", "选择指数标的"),
+        filtered_available,
+        key=f"{key_prefix}_index_select",
+        format_func=_fmt_name,
+    )
+    
+    with st.expander(tr(language, "Indicator settings", "指标参数"), expanded=False):
+        setting_columns = st.columns(4)
+        rsi_window = setting_columns[0].number_input(
+            tr(language, "RSI period", "RSI 周期"),
+            min_value=2, max_value=100, value=14, step=1, key=f"{key_prefix}_rsi_window",
+        )
+        ma_window = setting_columns[1].number_input(
+            tr(language, "MA period", "均线周期"),
+            min_value=2, max_value=250, value=20, step=1, key=f"{key_prefix}_ma_window",
+        )
+        rsi_upper = setting_columns[2].number_input(
+            tr(language, "Overbought", "超买线"),
+            min_value=50.0, max_value=95.0, value=70.0, step=1.0, key=f"{key_prefix}_rsi_upper",
+        )
+        rsi_lower = setting_columns[3].number_input(
+            tr(language, "Oversold", "超卖线"),
+            min_value=5.0, max_value=50.0, value=30.0, step=1.0, key=f"{key_prefix}_rsi_lower",
+        )
+
+    scoped_wrappers = wrappers if show_wrappers else pd.DataFrame()
+    render_market_index_detail(
+        selected,
+        label_by_exposure.get(selected, selected),
+        prices,
+        technicals,
+        scoped_wrappers,
+        language,
+        window,
+        etf_prices=etf_prices if show_wrappers else None,
+        premium_history=premium_history if show_wrappers else None,
+        rsi_window=rsi_window,
+        ma_window=ma_window,
+        rsi_upper=rsi_upper,
+        rsi_lower=rsi_lower,
+        key_prefix=key_prefix,
+    )
+
+
 def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: str, window: str) -> None:
-    """Index & ETF Allocation Monitor: exposure leadership, relative regime,
-    and wrapper selection."""
+    """Index & ETF Allocation Monitor: fully modular regional tabs."""
+    from src.market_monitor.config import market_tab_exposures
+
     st.markdown(f'<div class="am-page-title">{tr(language, SECTORS["market"]["name_en"], SECTORS["market"]["name_zh"])}</div>', unsafe_allow_html=True)
-    st.caption(tr(language, "Exposure → Index → ETF wrapper. Relative signals over absolute RSI.", "Exposure → 指数 → ETF 包装。相对信号优先于绝对 RSI。"))
+    st.caption(tr(language, "Global Multi-Asset & ETF Monitor. Regional segmentation with clean data separation.", "全球多资产与 ETF 监控看板。按地域严格分层，无跨区干扰。"))
 
     datasets = artifact.get("snapshot", {}).get("datasets", {})
 
@@ -4318,6 +4617,9 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
     prices = _market_price_frame(datasets)
     etf_prices = _market_etf_price_frame(datasets)
     premium_history = _market_premium_history_frame(datasets)
+    pair_summary = pd.DataFrame(datasets.get("relative_pairs", []))
+    pair_history = _market_pair_history_frame(datasets)
+    southbound = pd.DataFrame(datasets.get("southbound_market_flow", []))
 
     if technicals.empty and not regime and wrappers.empty:
         st.info(tr(language, "This chart is not available in the current artifact snapshot.", "当前数据快照未包含此图表。"))
@@ -4330,186 +4632,234 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
             eid = str(row["exposure_id"])
             label_by_exposure[eid] = _market_label(row, language)
 
-    # --- Leadership ---
-    section_heading(language, "Market Leadership", "市场领导力", "Which exposure is leading, and the technical snapshot behind it.", "哪个指数在领跑，以及其技术面快照。")
-    
-    # 采用顶级原生下划线 Tab 栏 (st.tabs) - 包含美股行业板块
-    tab_core_label = tr(language, "🏛️ Core Indices", "🏛️ 核心大盘宽基")
-    tab_style_label = tr(language, "🇨🇳 China/HK Themes", "🇨🇳 泛中国风格与主题")
-    tab_us_label = tr(language, "🇺🇸 US 11 GICS Sectors", "🇺🇸 美股 11 大行业")
-    tab_all_label = tr(language, "🌐 All Exposures", "🌐 全部指数")
-    
-    core_tab, style_tab, us_tab, all_tab = st.tabs([tab_core_label, tab_style_label, tab_us_label, tab_all_label])
-    
-    core_eids = {"csi300", "csi500", "csi1000", "sp500", "hsi"}
-    style_eids = {"dividend", "hk_dividend", "hk_internet", "hstech", "growth", "chinext"}
-    
+    # 采用顶级原生下划线 Tab 栏 (st.tabs) - 按全球大区清晰划分
+    tab_china_label = tr(language, "🇨🇳 China & HK", "🇨🇳 泛中国 (A股/港股/出海QDII)")
+    tab_us_label = tr(language, "🇺🇸 United States", "🇺🇸 美国市场 (大盘基准/11大行业)")
+    tab_apac_label = tr(language, "🌏 APAC ex-CN/HK", "🌏 亚太除中港 (日经/韩国/台湾)")
+    tab_emea_label = tr(language, "🌍 EMEA", "🌍 欧洲与中东 (英/德/法/沙特)")
+    tab_global_label = tr(language, "🌐 Global & All", "🌐 全球大类基准 / 全部")
+
+    china_tab, us_tab, apac_tab, emea_tab, global_tab = st.tabs([
+        tab_china_label, tab_us_label, tab_apac_label, tab_emea_label, tab_global_label
+    ])
+
+    # Tab membership lives in market_monitor.config.MARKET_TABS; it was also
+    # written out in the artifact builder, and the two had drifted.
+    china_eids = market_tab_exposures("china")
+    china_core_eids = market_tab_exposures("china_core")
+    us_broad_eids = market_tab_exposures("us")
+    apac_eids = market_tab_exposures("apac")
+    emea_eids = market_tab_exposures("emea")
+    global_eids = market_tab_exposures("global")
+
+    def _render_leadership_block(sub_prices, sub_tech, sub_labels, tab_key):
+        view_options = [tr(language, "All (rebased)", "全部（归一）"), tr(language, "Ratio (A/B)", "比值 (A/B)")]
+        if hasattr(st, "segmented_control"):
+            view_mode = st.segmented_control(
+                tr(language, "View", "视图"),
+                view_options,
+                default=view_options[0],
+                key=f"market_leadership_mode_{tab_key}",
+                label_visibility="collapsed",
+            ) or view_options[0]
+        else:
+            view_mode = st.radio(
+                tr(language, "View", "视图"),
+                view_options,
+                horizontal=True,
+                key=f"market_leadership_mode_{tab_key}",
+            )
+
+        if not sub_prices.empty:
+            if view_mode == tr(language, "Ratio (A/B)", "比值 (A/B)"):
+                render_market_ratio_chart(sub_prices, sub_tech, language, window, key_prefix=f"market_{tab_key}")
+            else:
+                render_market_leadership_chart(sub_prices, sub_labels, language, window)
+
+        if not sub_tech.empty:
+            display_tech = sub_tech.copy()
+            if language == "zh" and "label_zh" in display_tech.columns:
+                display_tech["_label_display"] = display_tech["label_zh"]
+            else:
+                display_tech["_label_display"] = display_tech.get("label", display_tech.get("exposure_id"))
+
+            def _rsi_desc(v):
+                if pd.isna(v): return "—"
+                val = float(v)
+                if val >= 70: return f"{val:.1f} (超买过热)" if language == "zh" else f"{val:.1f} (Overbought)"
+                if val <= 35: return f"{val:.1f} (超卖低估)" if language == "zh" else f"{val:.1f} (Oversold)"
+                return f"{val:.1f} (中性健康)" if language == "zh" else f"{val:.1f} (Neutral)"
+
+            display_tech["_rsi_display"] = display_tech["rsi"].apply(_rsi_desc) if "rsi" in display_tech.columns else "—"
+            display_tech["_ma20_display"] = display_tech["ma20_pct"].apply(
+                lambda v: f"{float(v):+.2f}%" if pd.notna(v) else "—"
+            ) if "ma20_pct" in display_tech.columns else "—"
+            display_tech["_dd_display"] = display_tech["drawdown_60d"].apply(
+                lambda v: f"{float(v):.2f}%" if pd.notna(v) else "—"
+            ) if "drawdown_60d" in display_tech.columns else "—"
+            display_tech["_prem_display"] = display_tech["avg_premium_30d"].apply(
+                lambda v: f"{float(v):+.2f}%" if pd.notna(v) else "—"
+            ) if "avg_premium_30d" in display_tech.columns else "—"
+
+            col_map_zh = {
+                "_label_display": "指数标的",
+                "_ma20_display": "相对20日线",
+                "_rsi_display": "RSI情绪状态",
+                "_dd_display": "60日最大回撤",
+                "_prem_display": "挂钩ETF平均溢价(30D)",
+            }
+            col_map_en = {
+                "_label_display": "Index",
+                "_ma20_display": "vs MA20",
+                "_rsi_display": "RSI Status",
+                "_dd_display": "60D Drawdown",
+                "_prem_display": "Avg Premium (30D)",
+            }
+            mapping = col_map_zh if language == "zh" else col_map_en
+            final_cols = [c for c in mapping.keys() if c in display_tech.columns]
+            table_to_show = display_tech[final_cols].rename(columns=mapping).sort_values(mapping["_label_display"])
+            st.dataframe(table_to_show, hide_index=True, width="stretch")
+
+    # ==================== 1. 🇨🇳 泛中国 (A股 / 港股 / QDII出海工具) ====================
+    with china_tab:
+        sub_cn_prices = prices[prices["exposure_id"].isin(china_core_eids)].copy() if not prices.empty else prices
+        sub_cn_tech = technicals[technicals["exposure_id"].isin(china_core_eids)].copy() if not technicals.empty else technicals
+        sub_cn_labels = {k: v for k, v in label_by_exposure.items() if k in china_core_eids}
+        _render_leadership_block(sub_cn_prices, sub_cn_tech, sub_cn_labels, "china")
+
+        # 港股通南向资金
+        if not southbound.empty:
+            st.markdown(
+                f'<div class="am-chart-title" style="margin-top:24px;">{tr(language, "Southbound Stock Connect Flow", "港股通南向资金全市场流向")}</div>',
+                unsafe_allow_html=True,
+            )
+            render_southbound_market_flow(southbound, language, window)
+
+        # A股与港股风格轮动配对 (Relative Regime)
+        if not pair_summary.empty:
+            cn_pairs = pair_summary[pair_summary.get("region", "").isin(["China", "HK"])].copy()
+            if not cn_pairs.empty:
+                section_heading(
+                    language,
+                    "China & HK Relative Regime",
+                    "A股与港股相对风格轮动",
+                    "Style pair spreads and rolling 20D/1Y z-score.",
+                    "风格轮动价差及滚动 z-score。",
+                )
+                render_relative_regime(cn_pairs, pair_history, language, window, key_prefix="china")
+
+        # 场内可投资 ETF 包装（含国内宽基、港股通与QDII出海工具）
+        render_scoped_index_section(
+            china_eids,
+            label_by_exposure,
+            prices,
+            technicals,
+            wrappers,
+            language,
+            window,
+            etf_prices=etf_prices,
+            premium_history=premium_history,
+            key_prefix="china",
+            show_wrappers=True,
+        )
+
+    # ==================== 2. 🇺🇸 美国市场 (实际指数 + 11大行业与纯度细分) ====================
     with us_tab:
+        sub_us_prices = prices[prices["exposure_id"].isin(us_broad_eids)].copy() if not prices.empty else prices
+        sub_us_tech = technicals[technicals["exposure_id"].isin(us_broad_eids)].copy() if not technicals.empty else technicals
+        sub_us_labels = {k: v for k, v in label_by_exposure.items() if k in us_broad_eids}
+        _render_leadership_block(sub_us_prices, sub_us_tech, sub_us_labels, "us")
+
+        # 11大行业板块热力与细分赛道下钻
         render_us_sector_tab(language)
 
-    tab_mapping = [
-        (core_tab, core_eids, "core"),
-        (style_tab, style_eids, "style"),
-        (all_tab, set(label_by_exposure.keys()), "all"),
-    ]
-    
-    for tab_ctx, target_eids_filter, tab_key in tab_mapping:
-        with tab_ctx:
-            sub_prices = prices[prices["exposure_id"].isin(target_eids_filter)].copy() if not prices.empty else prices
-            sub_tech = technicals[technicals["exposure_id"].isin(target_eids_filter)].copy() if not technicals.empty else technicals
-            sub_labels = {k: v for k, v in label_by_exposure.items() if k in target_eids_filter}
-
-            view_options = [tr(language, "All (rebased)", "全部（归一）"), tr(language, "Ratio (A/B)", "比值 (A/B)")]
-            if hasattr(st, "segmented_control"):
-                view_mode = st.segmented_control(
-                    tr(language, "View", "视图"),
-                    view_options,
-                    default=view_options[0],
-                    key=f"market_leadership_mode_{tab_key}",
-                    label_visibility="collapsed",
-                ) or view_options[0]
-            else:
-                view_mode = st.radio(
-                    tr(language, "View", "视图"),
-                    view_options,
-                    horizontal=True,
-                    key=f"market_leadership_mode_{tab_key}",
-                )
-
-            if not sub_prices.empty:
-                if view_mode == tr(language, "Ratio (A/B)", "比值 (A/B)"):
-                    render_market_ratio_chart(sub_prices, sub_tech, language, window)
-                else:
-                    render_market_leadership_chart(sub_prices, sub_labels, language, window)
-                    
-            if not sub_tech.empty:
-                display_tech = sub_tech.copy()
-                if language == "zh" and "label_zh" in display_tech.columns:
-                    display_tech["_label_display"] = display_tech["label_zh"]
-                else:
-                    display_tech["_label_display"] = display_tech.get("label", display_tech.get("exposure_id"))
-
-                def _rsi_desc(v):
-                    if pd.isna(v): return "—"
-                    val = float(v)
-                    if val >= 70: return f"{val:.1f} (超买过热)" if language == "zh" else f"{val:.1f} (Overbought)"
-                    if val <= 35: return f"{val:.1f} (超卖低估)" if language == "zh" else f"{val:.1f} (Oversold)"
-                    return f"{val:.1f} (中性健康)" if language == "zh" else f"{val:.1f} (Neutral)"
-                    
-                display_tech["_rsi_display"] = display_tech["rsi"].apply(_rsi_desc) if "rsi" in display_tech.columns else "—"
-
-                display_tech["_ma20_display"] = display_tech["ma20_pct"].apply(
-                    lambda v: f"{float(v):+.2f}%" if pd.notna(v) else "—"
-                ) if "ma20_pct" in display_tech.columns else "—"
-
-                display_tech["_dd_display"] = display_tech["drawdown_60d"].apply(
-                    lambda v: f"{float(v):.2f}%" if pd.notna(v) else "—"
-                ) if "drawdown_60d" in display_tech.columns else "—"
-
-                display_tech["_prem_display"] = display_tech["avg_premium_30d"].apply(
-                    lambda v: f"{float(v):+.2f}%" if pd.notna(v) else "—"
-                ) if "avg_premium_30d" in display_tech.columns else "—"
-
-                col_map_zh = {
-                    "_label_display": "指数标的",
-                    "_ma20_display": "相对20日线",
-                    "_rsi_display": "RSI情绪状态",
-                    "_dd_display": "60日最大回撤",
-                    "_prem_display": "挂钩ETF平均溢价(30D)",
-                }
-                col_map_en = {
-                    "_label_display": "Index",
-                    "_ma20_display": "vs MA20",
-                    "_rsi_display": "RSI Status",
-                    "_dd_display": "60D Drawdown",
-                    "_prem_display": "Avg Premium (30D)",
-                }
-                mapping = col_map_zh if language == "zh" else col_map_en
-                final_cols = [c for c in mapping.keys() if c in display_tech.columns]
-                table_to_show = display_tech[final_cols].rename(columns=mapping).sort_values(mapping["_label_display"])
-                st.dataframe(table_to_show, hide_index=True, width="stretch")
-
-    # --- Relative Regime ---
-    pair_summary = pd.DataFrame(datasets.get("relative_pairs", []))
-    pair_history = _market_pair_history_frame(datasets)
-    if not pair_summary.empty:
-        section_heading(
+        # 美股实际指数单指数详情 (不混杂国内QDII折溢价)
+        render_scoped_index_section(
+            us_broad_eids,
+            label_by_exposure,
+            prices,
+            technicals,
+            wrappers,
             language,
-            "Relative Regime",
-            "相对强弱",
-            "Two baskets, one ratio. The level is cumulative relative performance; the z-score places it against its own trailing year.",
-            "两组篮子，一个比值。曲线是累计相对表现；z-score 衡量它在自身过去一年中的位置。",
+            window,
+            key_prefix="us",
+            show_wrappers=False,
         )
-        render_relative_regime(pair_summary, pair_history, language, window)
-    elif regime:
-        # Pre-pair artifacts still carry the old block; keep rendering it so a
-        # stale snapshot degrades to the previous view instead of a blank page.
-        section_heading(language, "Relative Regime", "相对强弱", "Rolling 20D z-score of windowed spread; trend is 5D vs 20D.", "滚动20日z-score的区间价差；趋势为5日对20日。")
-        st.dataframe(pd.DataFrame(regime), hide_index=True, width="stretch")
 
-    # --- Per-index detail ---
-    if not wrappers.empty or not prices.empty:
-        section_heading(
+    # ==================== 3. 🌏 亚太除中港 (日经 / 韩国 / 台湾) ====================
+    with apac_tab:
+        sub_apac_prices = prices[prices["exposure_id"].isin(apac_eids)].copy() if not prices.empty else prices
+        sub_apac_tech = technicals[technicals["exposure_id"].isin(apac_eids)].copy() if not technicals.empty else technicals
+        sub_apac_labels = {k: v for k, v in label_by_exposure.items() if k in apac_eids}
+        _render_leadership_block(sub_apac_prices, sub_apac_tech, sub_apac_labels, "apac")
+
+        # 亚太主要市场单指数详情
+        render_scoped_index_section(
+            apac_eids,
+            label_by_exposure,
+            prices,
+            technicals,
+            wrappers,
             language,
-            "By Index",
-            "按指数查看",
-            "Pick an index to see its price, RSI, all ETF wrappers tracking it, and premium history.",
-            "选择一个指数，查看其价格、RSI、全部追踪 ETF 及溢价历史。",
+            window,
+            key_prefix="apac",
+            show_wrappers=False,
         )
-        available = [e for e in label_by_exposure if not prices.empty and e in set(prices["exposure_id"])]
-        if not available and not wrappers.empty:
-            available = sorted(wrappers["exposure_id"].astype(str).unique())
-        if available:
-            wrapper_counts = (
-                wrappers.groupby("exposure_id").size().to_dict() if not wrappers.empty else {}
-            )
-            selected = st.selectbox(
-                tr(language, "Index", "指数"),
-                available,
-                key="market_index_select",
-                format_func=lambda e: f"{label_by_exposure.get(e, e)} ({wrapper_counts.get(e, 0)} ETF)",
-            )
-            with st.expander(tr(language, "Indicator settings", "指标参数"), expanded=False):
-                setting_columns = st.columns(4)
-                rsi_window = setting_columns[0].number_input(
-                    tr(language, "RSI period", "RSI 周期"),
-                    min_value=2, max_value=100, value=14, step=1, key="market_rsi_window",
+
+    # ==================== 4. 🌍 欧洲与中东 (英国 / 德国 / 法国 / 沙特) ====================
+    with emea_tab:
+        sub_emea_prices = prices[prices["exposure_id"].isin(emea_eids)].copy() if not prices.empty else prices
+        sub_emea_tech = technicals[technicals["exposure_id"].isin(emea_eids)].copy() if not technicals.empty else technicals
+        sub_emea_labels = {k: v for k, v in label_by_exposure.items() if k in emea_eids}
+        _render_leadership_block(sub_emea_prices, sub_emea_tech, sub_emea_labels, "emea")
+
+        # 欧洲与中东单指数详情
+        render_scoped_index_section(
+            emea_eids,
+            label_by_exposure,
+            prices,
+            technicals,
+            wrappers,
+            language,
+            window,
+            key_prefix="emea",
+            show_wrappers=False,
+        )
+
+    # ==================== 5. 🌐 全球大类基准 / 全部 ====================
+    with global_tab:
+        sub_glob_prices = prices[prices["exposure_id"].isin(global_eids)].copy() if not prices.empty else prices
+        sub_glob_tech = technicals[technicals["exposure_id"].isin(global_eids)].copy() if not technicals.empty else technicals
+        sub_glob_labels = {k: v for k, v in label_by_exposure.items() if k in global_eids}
+        _render_leadership_block(sub_glob_prices, sub_glob_tech, sub_glob_labels, "global")
+
+        # 全球宏观跨市场相对强弱 (如 China vs US)
+        if not pair_summary.empty:
+            cross_pairs = pair_summary[pair_summary.get("region", "").isin(["Cross", "US"])].copy()
+            if not cross_pairs.empty:
+                section_heading(
+                    language,
+                    "Cross-Market Relative Regime",
+                    "全球宏观跨市场比值",
+                    "Cross-market pair spreads and rolling 20D/1Y z-score.",
+                    "跨市场资产比值及滚动 z-score。",
                 )
-                ma_window = setting_columns[1].number_input(
-                    tr(language, "MA period", "均线周期"),
-                    min_value=2, max_value=250, value=20, step=1, key="market_ma_window",
-                )
-                rsi_upper = setting_columns[2].number_input(
-                    tr(language, "Overbought", "超买线"),
-                    min_value=50.0, max_value=95.0, value=70.0, step=1.0, key="market_rsi_upper",
-                )
-                rsi_lower = setting_columns[3].number_input(
-                    tr(language, "Oversold", "超卖线"),
-                    min_value=5.0, max_value=50.0, value=30.0, step=1.0, key="market_rsi_lower",
-                )
-                st.caption(
-                    tr(
-                        language,
-                        "Wilder smoothing. The card above keeps the pipeline's RSI(14); "
-                        "these settings apply to the chart.",
-                        "Wilder 平滑。上方卡片仍为管线计算的 RSI(14)；此处参数仅作用于图表。",
-                    )
-                )
-            render_market_index_detail(
-                selected,
-                label_by_exposure.get(selected, selected),
-                prices,
-                technicals,
-                wrappers,
-                language,
-                window,
-                etf_prices=etf_prices,
-                premium_history=premium_history,
-                rsi_window=rsi_window,
-                ma_window=ma_window,
-                rsi_upper=rsi_upper,
-                rsi_lower=rsi_lower,
-            )
+                render_relative_regime(cross_pairs, pair_history, language, window, key_prefix="global")
+
+        # 全量指数单指数详情
+        render_scoped_index_section(
+            set(label_by_exposure.keys()),
+            label_by_exposure,
+            prices,
+            technicals,
+            wrappers,
+            language,
+            window,
+            etf_prices=etf_prices,
+            premium_history=premium_history,
+            key_prefix="global",
+            show_wrappers=True,
+        )
 
 
 def set_app_page(page_key: str) -> None:

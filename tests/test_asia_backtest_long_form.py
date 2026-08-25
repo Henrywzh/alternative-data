@@ -2,6 +2,14 @@
 
 from __future__ import annotations
 
+import os as _os
+from pathlib import Path as _Path
+
+# The builders write here; tests/conftest.py redirects the directory so those
+# writes stay out of the working tree. Reading the literal "data/registries/..."
+# would have read the repository's stale copy instead of what the test built.
+_REGISTRY_DIR = _Path(_os.environ.get("ASIA_BACKTEST_REGISTRY_DIR", "").strip() or "data/registries")
+
 import pandas as pd
 import pytest
 
@@ -21,7 +29,7 @@ def _fresh_registry() -> None:
 
 
 def _build(recon: dict) -> pd.DataFrame:
-    frame = pd.read_csv("data/registries/asia_backtest_long_form.csv")
+    frame = pd.read_csv(_REGISTRY_DIR / "asia_backtest_long_form.csv")
     return frame
 
 
@@ -61,8 +69,8 @@ def test_emitter_passes_hard_gate_and_produces_baselines() -> None:
 @pytest.mark.network
 def test_csv_and_parquet_preserve_optional_provenance_values() -> None:
     build_long_form(write_outputs=True, write_run_store=False)
-    csv = pd.read_csv("data/registries/asia_backtest_long_form.csv")
-    parquet = pd.read_parquet("data/registries/asia_backtest_long_form.parquet")
+    csv = pd.read_csv(_REGISTRY_DIR / "asia_backtest_long_form.csv")
+    parquet = pd.read_parquet(_REGISTRY_DIR / "asia_backtest_long_form.parquet")
     assert len(csv) == len(parquet)
     assert list(csv.columns) == list(parquet.columns)
     for column in ("source_run_id", "information_cutoff", "source_observation_date", "actual_available_at", "research_only", "notes"):
@@ -258,7 +266,7 @@ def test_prior_period_start_rules() -> None:
 
 def test_contract_table_reproduces_source_values_for_airline_fy_revenue() -> None:
     build_long_form(write_outputs=True, write_run_store=False)
-    frame = pd.read_csv("data/registries/asia_backtest_long_form.csv")
+    frame = pd.read_csv(_REGISTRY_DIR / "asia_backtest_long_form.csv")
     registry_id = "airline_period_kpi_backtest:FY:revenue:flat_ask_v1"
     table = contract_table(frame, registry_id)
     # 54 rows in the period table for FY, minus the insufficient-coverage row.

@@ -1284,7 +1284,30 @@ def _production_task7_generation_or_skip() -> Path:
     stage1_members = memberships.loc[
         memberships["basket_id"].astype("string").eq("RESEARCH_STAGE_1_CHINA_INTERNET")
     ]
-    assert set(stage1_members["entity_id"].astype("string")) == {
+    published_stage1 = set(stage1_members["entity_id"].astype("string"))
+    # The published basket must reproduce the registry the build read. Pinning a
+    # literal set here instead made every new company in
+    # config/research_control_tower/ fail this acceptance guard, while a build
+    # that dropped or invented a member was caught no more sharply.
+    registry_memberships = pd.read_csv(
+        Path(__file__).resolve().parents[1]
+        / "config"
+        / "research_control_tower"
+        / "basket_memberships.csv"
+    )
+    registry_stage1 = set(
+        registry_memberships.loc[
+            registry_memberships["basket_id"].astype("string").eq("RESEARCH_STAGE_1_CHINA_INTERNET"),
+            "entity_id",
+        ].astype("string")
+    )
+    assert published_stage1 == registry_stage1, (
+        f"CURRENT publication {resolution.current_target} Stage 1 basket "
+        f"{sorted(published_stage1)} does not match the registry "
+        f"{sorted(registry_stage1)}"
+    )
+    # The six names Stage 1 was verified on must never silently drop out.
+    assert published_stage1 >= {
         "ALIBABA", "TENCENT", "BAIDU", "KUAISHOU", "BILIBILI", "BYTEDANCE",
     }
     assert entities.set_index("entity_id").loc["BYTEDANCE", "entity_type"] == "private"
@@ -1759,13 +1782,14 @@ def test_task8_app_region_filter_renders_only_selected_theme_rows(
     app = region.select("KR").run()
     assert not app.exception
 
-    rendered_entity_ids: set[str] = set()
-    for dataframe in app.dataframe:
-        if "entity_id" in dataframe.value.columns:
-            rendered_entity_ids.update(
-                dataframe.value["entity_id"].dropna().astype("string")
-            )
-    assert rendered_entity_ids == {"SK_HYNIX"}
+    # ct_dataframe renders tables as markdown, so the rows are read out of
+    # what the page actually shows rather than out of st.dataframe elements.
+    rendered_tables = "\n".join(
+        item.value for item in app.markdown if "ct-table" in str(item.value)
+    )
+    assert "SK_HYNIX" in rendered_tables
+    for other in ("SAMSUNG", "MICRON", "TENCENT"):
+        assert other not in rendered_tables
     rendered = _app_text(app)
     assert "1 registry member(s)" in rendered
     assert "Active theme filters" in rendered
@@ -2142,8 +2166,9 @@ def test_batch0_stage1_matrix_renders_on_today_and_empty_source_health(
     today_text = _app_text(app)
     assert "Stage 1 coverage matrix" in today_text
     assert any(
-        "Price / market quotes" in dataframe.value.columns
-        for dataframe in app.dataframe
+        "Price / market quotes" in str(item.value)
+        for item in app.markdown
+        if "ct-table" in str(item.value)
     )
 
     app.session_state["ct_page"] = "Source Health"
@@ -2153,8 +2178,9 @@ def test_batch0_stage1_matrix_renders_on_today_and_empty_source_health(
     assert "No source-health rows are available" in source_text
     assert "Stage 1 coverage matrix" in source_text
     assert any(
-        "Price / market quotes" in dataframe.value.columns
-        for dataframe in app.dataframe
+        "Price / market quotes" in str(item.value)
+        for item in app.markdown
+        if "ct-table" in str(item.value)
     )
 
 

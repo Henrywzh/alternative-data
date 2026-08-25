@@ -162,7 +162,10 @@ class KoreaCustomsSource:
                         category_label=config["category_label"],
                         classification_system="HS",
                         classification_code=classification_code,
-                        unit="usd",
+                        # The request sends ttwgTpcd=1000, so the API returns
+                        # thousands of USD. Labelling these "usd" understated
+                        # every Korean figure by a factor of 1000 downstream.
+                        unit="usd_thousand",
                         currency="USD",
                         value=value,
                         yoy_pct=None,
@@ -198,7 +201,7 @@ class KoreaCustomsSource:
                         latest_period=None,
                         cadence="monthly",
                         expected_release_window_days=20,
-                        default_unit="usd",
+                        default_unit="usd_thousand",
                         default_currency="USD",
                         is_official_primary=True,
                         notes=(

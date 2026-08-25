@@ -52,8 +52,17 @@ jobs:
           python -m pytest tests/market_monitor -q
 
       - name: Fetch and derive index/ETF signals
+        id: pipeline
         run: |
-          python -m market_monitor.cli --send-report
+          # Required stale/unavailable/invalid regional or source data, a
+          # coverage regression or a failed fetch blocks the email, but not
+          # the artifact build: the dashboard publishes technical data and
+          # its explicit freshness warning.
+          python -m market_monitor.cli \
+            --mode close \
+            --send-report \
+            --require-fresh \
+            --allow-stale-artifact
 
       - name: Build dashboard artifact
         working-directory: apps/asia-markets-dashboard
@@ -79,4 +88,14 @@ jobs:
             fi
             sleep $((attempt * 5))
           done
+          exit 1
+
+      - name: Fail the run when the digest was skipped
+        if: steps.pipeline.outputs.degraded == 'true'
+        run: |
+          # The artifact and the commit above are deliberately allowed through
+          # on a degraded run. Without this step the operator's only signal
+          # that no digest was sent is the absence of an email, which is
+          # indistinguishable from a quiet day -- so end the job red.
+          echo "::error::Freshness gate skipped the digest; see the job summary."
           exit 1

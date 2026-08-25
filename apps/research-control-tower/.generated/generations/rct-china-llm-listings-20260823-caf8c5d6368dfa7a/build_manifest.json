@@ -1,0 +1,577 @@
+{
+  "artifacts": {
+    "basket_memberships.parquet": {
+      "byte_size": 10797,
+      "name": "basket_memberships.parquet",
+      "relative_path": "basket_memberships.parquet",
+      "row_count": 102,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "1296055df9999c393aab89d8fc0fccd771c2989e3829cd70e17fe53595be75e5",
+      "source_ids": [
+        "registry:basket_memberships"
+      ],
+      "status": "available"
+    },
+    "baskets.parquet": {
+      "byte_size": 6009,
+      "name": "baskets.parquet",
+      "relative_path": "baskets.parquet",
+      "row_count": 7,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "c4b94cb2e70d11beb3761655fd40eadd103e744d5ea4f0df18a69d2afc71b754",
+      "source_ids": [
+        "registry:baskets"
+      ],
+      "status": "available"
+    },
+    "build_manifest.json": {
+      "byte_size": 22987,
+      "name": "build_manifest.json",
+      "relative_path": "build_manifest.json",
+      "row_count": 1,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": null,
+      "source_ids": [],
+      "status": "available"
+    },
+    "claim_evidence_links.parquet": {
+      "byte_size": 6135,
+      "name": "claim_evidence_links.parquet",
+      "relative_path": "claim_evidence_links.parquet",
+      "row_count": 4,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "31467f272d860524a74b52e31cce3cddd4df0e1e08546f70e0f851a00d8f372b",
+      "source_ids": [
+        "thesis:claim_evidence_links"
+      ],
+      "status": "available"
+    },
+    "consensus_revisions.parquet": {
+      "byte_size": 38621,
+      "name": "consensus_revisions.parquet",
+      "relative_path": "consensus_revisions.parquet",
+      "row_count": 128,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "4da578c4cc1996233cd25f3b44a21e1555ba056b9963ccb28aec0a51f56f2509",
+      "source_ids": [
+        "consensus:akshare",
+        "consensus:yfinance",
+        "consensus_export"
+      ],
+      "status": "degraded"
+    },
+    "consensus_snapshots.parquet": {
+      "byte_size": 30784,
+      "name": "consensus_snapshots.parquet",
+      "relative_path": "consensus_snapshots.parquet",
+      "row_count": 68,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "e3854f35bebda16dcbaa47c7ca9ad96ec70a5366841426467ce7d331909802ee",
+      "source_ids": [
+        "consensus:akshare",
+        "consensus:yfinance",
+        "consensus_export"
+      ],
+      "status": "degraded"
+    },
+    "corporate_actions.parquet": {
+      "byte_size": 43417,
+      "name": "corporate_actions.parquet",
+      "relative_path": "corporate_actions.parquet",
+      "row_count": 201,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "27b75b191e747685c3f223d928bf1de86202cbd726f38b60833f35d398533389",
+      "source_ids": [
+        "corporate_actions",
+        "corporate_actions:hkexnews",
+        "corporate_actions_state"
+      ],
+      "status": "degraded"
+    },
+    "earnings_actuals.parquet": {
+      "byte_size": 51144,
+      "name": "earnings_actuals.parquet",
+      "relative_path": "earnings_actuals.parquet",
+      "row_count": 224,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "47a70ab2335b75f7eba0e383c78e8cfc603ceeab6162bf171bdf63009564dbec",
+      "source_ids": [
+        "earnings:bytedance",
+        "earnings:hkex_issuer_ir",
+        "earnings:sec_companyfacts",
+        "earnings:tencent_hkex_financials",
+        "earnings_actuals",
+        "earnings_actuals_state",
+        "tencent_earnings_actuals",
+        "tencent_earnings_actuals_state"
+      ],
+      "status": "degraded"
+    },
+    "earnings_calendar.parquet": {
+      "byte_size": 17986,
+      "name": "earnings_calendar.parquet",
+      "relative_path": "earnings_calendar.parquet",
+      "row_count": 14,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "e1f3ecd5727ca338a8c7a6ae8260cb19fd26fc908c4f417f0af69b4cac637d26",
+      "source_ids": [
+        "filings:bytedance",
+        "filings:hkexnews",
+        "filings:issuer_ir",
+        "filings:sec_edgar_submissions",
+        "official_filings",
+        "official_filings_state"
+      ],
+      "status": "available"
+    },
+    "entities.parquet": {
+      "byte_size": 13319,
+      "name": "entities.parquet",
+      "relative_path": "entities.parquet",
+      "row_count": 74,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "59ca09227c2bef19b908e21877641510288409cac9df3a5e32c5a2926cae039c",
+      "source_ids": [
+        "registry:entities"
+      ],
+      "status": "available"
+    },
+    "event_basket_links.parquet": {
+      "byte_size": 6776,
+      "name": "event_basket_links.parquet",
+      "relative_path": "event_basket_links.parquet",
+      "row_count": 19,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "d99a0e8a74ef04fc0820546389a1dd67f604b2298db290e0fb4c80a72a40057c",
+      "source_ids": [
+        "events:event_links"
+      ],
+      "status": "available"
+    },
+    "event_entity_links.parquet": {
+      "byte_size": 7537,
+      "name": "event_entity_links.parquet",
+      "relative_path": "event_entity_links.parquet",
+      "row_count": 33,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "6d9e85f6af7f522933000448d085f866b0b1ae2daafdd5fe27472a32801476b4",
+      "source_ids": [
+        "events:event_links"
+      ],
+      "status": "available"
+    },
+    "event_watch_questions.parquet": {
+      "byte_size": 6154,
+      "name": "event_watch_questions.parquet",
+      "relative_path": "event_watch_questions.parquet",
+      "row_count": 20,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "0ec73142cf1da012670f39e18f966f8df45bff1af16aab7b01aad37bed24cc10",
+      "source_ids": [
+        "events:event_watch_questions"
+      ],
+      "status": "available"
+    },
+    "events.parquet": {
+      "byte_size": 33721,
+      "name": "events.parquet",
+      "relative_path": "events.parquet",
+      "row_count": 21,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "b53b29749284b062ee8f49bbbf6f3aade3b8b6c0f4b1c6b07cb97715492b67dd",
+      "source_ids": [
+        "events:events"
+      ],
+      "status": "available"
+    },
+    "evidence_items.parquet": {
+      "byte_size": 10945,
+      "name": "evidence_items.parquet",
+      "relative_path": "evidence_items.parquet",
+      "row_count": 4,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "2d23c83f5c962bd17535742b0f315f2a73f010f822f238e39fb4301e338a46dc",
+      "source_ids": [
+        "thesis:evidence_items"
+      ],
+      "status": "available"
+    },
+    "indices.parquet": {
+      "byte_size": 12136,
+      "name": "indices.parquet",
+      "relative_path": "indices.parquet",
+      "row_count": 12,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "432f529801af02717be04afbd600ed7df5be6616f91ccacc2992461c0d165c77",
+      "source_ids": [
+        "registry:indices"
+      ],
+      "status": "available"
+    },
+    "internal_estimates.parquet": {
+      "byte_size": 11888,
+      "name": "internal_estimates.parquet",
+      "relative_path": "internal_estimates.parquet",
+      "row_count": 0,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "b158e72223dc07b3883bdbd445a71bd3b894e1ad2bc63303965f86b5578887ab",
+      "source_ids": [],
+      "status": "unavailable"
+    },
+    "listings.parquet": {
+      "byte_size": 28728,
+      "name": "listings.parquet",
+      "relative_path": "listings.parquet",
+      "row_count": 83,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "f12a44f4fe227e9ba40a0275fe0ff4963a87171593569abca5b1ccce1813ff33",
+      "source_ids": [
+        "registry:listings"
+      ],
+      "status": "available"
+    },
+    "macro_observations.parquet": {
+      "byte_size": 4813290,
+      "name": "macro_observations.parquet",
+      "relative_path": "macro_observations.parquet",
+      "row_count": 62628,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "efdaf0676467a18f684f97e19a2253c7f4c90afad8fc56a6a93f4e35d0d24447",
+      "source_ids": [
+        "ecb_fx_rates",
+        "events:events",
+        "fred_observations",
+        "fred_series_meta",
+        "ofr_mnemonics",
+        "ofr_timeseries",
+        "tw_monthly_revenue"
+      ],
+      "status": "degraded"
+    },
+    "news_filings.parquet": {
+      "byte_size": 258221,
+      "name": "news_filings.parquet",
+      "relative_path": "news_filings.parquet",
+      "row_count": 1972,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "acd99e4d091f8bd134000f208fc403ca83c6236e7487522a47c3681f70925fd8",
+      "source_ids": [
+        "filings_sec_edgar",
+        "news_official_ai_rss"
+      ],
+      "status": "degraded"
+    },
+    "official_filings.parquet": {
+      "byte_size": 50845,
+      "name": "official_filings.parquet",
+      "relative_path": "official_filings.parquet",
+      "row_count": 599,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "b98be9da67b0ced680c35f411401b99cdc77d4398dc78d258cf974349d2833d6",
+      "source_ids": [
+        "filings:bytedance",
+        "filings:hkexnews",
+        "filings:issuer_ir",
+        "filings:sec_edgar_submissions",
+        "official_filings",
+        "official_filings_state"
+      ],
+      "status": "available"
+    },
+    "price_bars.parquet": {
+      "byte_size": 917786,
+      "name": "price_bars.parquet",
+      "relative_path": "price_bars.parquet",
+      "row_count": 8873,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "74352d6947882ba073cf0eabff2dd181983b484cccda34fedc1c1e4e0211443b",
+      "source_ids": [
+        "price_bars"
+      ],
+      "status": "available"
+    },
+    "quote_snapshots.parquet": {
+      "byte_size": 12489,
+      "name": "quote_snapshots.parquet",
+      "relative_path": "quote_snapshots.parquet",
+      "row_count": 9,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "c64c0388bb3f8287c7120c1f094d5a5b612572222c605946e85a7e8e54d9d2e9",
+      "source_ids": [
+        "quote_snapshots"
+      ],
+      "status": "degraded"
+    },
+    "source_health.parquet": {
+      "byte_size": 24028,
+      "name": "source_health.parquet",
+      "relative_path": "source_health.parquet",
+      "row_count": 44,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "046f4be1cafb7b89df20863dc75a8f032d213a5b6b4532244092b62bf0336ee0",
+      "source_ids": [
+        "consensus:akshare",
+        "consensus:yfinance",
+        "consensus_export",
+        "corporate_actions",
+        "corporate_actions:hkexnews",
+        "corporate_actions_state",
+        "earnings:bytedance",
+        "earnings:hkex_issuer_ir",
+        "earnings:sec_companyfacts",
+        "earnings:tencent_hkex_financials",
+        "earnings_actuals",
+        "earnings_actuals_state",
+        "ecb_fx_rates",
+        "events:event_links",
+        "events:event_watch_questions",
+        "events:events",
+        "filings:bytedance",
+        "filings:hkexnews",
+        "filings:issuer_ir",
+        "filings:sec_edgar_submissions",
+        "filings_sec_edgar",
+        "fred_observations",
+        "fred_series_meta",
+        "internal_estimates",
+        "news_finnhub",
+        "news_fmp",
+        "news_marketaux",
+        "news_official_ai_rss",
+        "news_official_ir_allowlist",
+        "official_filings",
+        "official_filings_state",
+        "ofr_mnemonics",
+        "ofr_timeseries",
+        "price_bars",
+        "quote_snapshots",
+        "registry:basket_memberships",
+        "registry:baskets",
+        "registry:entities",
+        "registry:indices",
+        "registry:listings",
+        "tencent_earnings_actuals",
+        "tencent_earnings_actuals_state",
+        "tw_monthly_revenue",
+        "valuation_snapshots"
+      ],
+      "status": "available"
+    },
+    "thesis_claims.parquet": {
+      "byte_size": 8829,
+      "name": "thesis_claims.parquet",
+      "relative_path": "thesis_claims.parquet",
+      "row_count": 3,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "5d7860dfdd999f7d2088cf8c10596b694aff791c4cab58b7e36b2986aac15a3b",
+      "source_ids": [
+        "thesis:claims"
+      ],
+      "status": "available"
+    },
+    "thesis_watch_questions.parquet": {
+      "byte_size": 5887,
+      "name": "thesis_watch_questions.parquet",
+      "relative_path": "thesis_watch_questions.parquet",
+      "row_count": 6,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "47ef9a38f4e26e734433a3c5b22b9a3fad51bdc8fd8947747750bd8191bfc6f1",
+      "source_ids": [
+        "thesis:watch_questions"
+      ],
+      "status": "available"
+    },
+    "valuation_snapshots.parquet": {
+      "byte_size": 19861,
+      "name": "valuation_snapshots.parquet",
+      "relative_path": "valuation_snapshots.parquet",
+      "row_count": 0,
+      "schema_version": "control_tower_marts_v1",
+      "sha256": "8211193f466636e2cc3919505621c95df7bc8b0135c99f1d219c966840c869ad",
+      "source_ids": [],
+      "status": "unavailable"
+    }
+  },
+  "as_of_utc": "2026-08-23T06:04:21.330875Z",
+  "build_id": "rct-china-llm-listings-20260823",
+  "built_at_utc": "2026-08-23T06:04:21.330875Z",
+  "current_pointer": "generations/rct-china-llm-listings-20260823-caf8c5d6368dfa7a",
+  "degraded_inputs": [
+    "consensus:akshare",
+    "consensus_export",
+    "earnings_actuals",
+    "ecb_fx_rates",
+    "internal_estimates",
+    "news_finnhub",
+    "news_fmp",
+    "news_marketaux",
+    "news_official_ai_rss",
+    "news_official_ir_allowlist",
+    "ofr_timeseries",
+    "quote_snapshots",
+    "tw_monthly_revenue",
+    "valuation_snapshots"
+  ],
+  "generation_id": "rct-china-llm-listings-20260823-caf8c5d6368dfa7a",
+  "input_fingerprints": {
+    "inputs/consensus-akshare/data-control_tower_consensus_source_health.parquet-cea9912f0c80": "cea9912f0c80a369153d8d4835afe47e80df23395424986796679275fc95261a",
+    "inputs/consensus-yfinance/data-control_tower_consensus_source_health.parquet-cea9912f0c80": "cea9912f0c80a369153d8d4835afe47e80df23395424986796679275fc95261a",
+    "inputs/consensus_export/health-control_tower_consensus_source_health.parquet-cea9912f0c80": "cea9912f0c80a369153d8d4835afe47e80df23395424986796679275fc95261a",
+    "inputs/consensus_export/revisions-control_tower_consensus_revisions.parquet-0863891dd173": "0863891dd17310c54c9c7c5d5f2f3183073eae1bcbcc2f36235d474536fe7fa1",
+    "inputs/consensus_export/snapshots-control_tower_consensus_snapshots.parquet-cfd1794a6218": "cfd1794a621886ca9df39ca4fd5300e14fb28346031bca66de181e73abba6e4a",
+    "inputs/corporate_actions/data-corporate_actions_v1.parquet-2332dd3d413e": "2332dd3d413ec84a2fd002237dba2ff1b2a402d47dbdd7e6762dda0b6ef22cd9",
+    "inputs/corporate_actions_state/data-corporate_actions_state.parquet-270e7ec16e26": "270e7ec16e26178cee4933f03f37ecfc5b93b170cf89d1e45545e301ad040b72",
+    "inputs/earnings_actuals/data-earnings_actuals_v1.parquet-3728c9e01ad1": "3728c9e01ad1dcf3b2f3cdda23341270e0b06d3229634f6c698ad6572285e64a",
+    "inputs/earnings_actuals_state/data-earnings_actuals_state.parquet-f9f0cf2f656b": "f9f0cf2f656b38936e33bd97bd9f88f708f3282c00ee50b4d8bac5588154398c",
+    "inputs/ecb_fx_rates/data-airline_fx_rates.parquet-f1ceb135c414": "f1ceb135c414373b26f5494d67efab22a85bce1da3262b2d6ece47a1941e54e3",
+    "inputs/events-event_links/data-event_links.csv-713b5621c163": "713b5621c1639ab88c4751d330ab22301c98659dc74e3058d66480cd37c779e4",
+    "inputs/events-event_watch_questions/data-event_watch_questions.csv-303c4e3c45f2": "303c4e3c45f251be5625b673ccda7eb44139f0b6f104ae5e1dfb8dc03ef79846",
+    "inputs/events-events/data-events.csv-c2e9f7965d55": "c2e9f7965d55b62ce6cecff6167f381c564fd31ae71eedc76ef6d8dcf15a8693",
+    "inputs/filings_sec_edgar/data-edgar_filings.parquet-beef52c393b8": "beef52c393b88a2934a3b5d9f7b374ad4d0e3b89b36ecfc10419fe73940a7a3e",
+    "inputs/fred_observations/data-fred_observations.parquet-eb25302078ed": "eb25302078ed4b14c733a6208e2d0a62c3783661f0ead6370cd9d3dabe9dc03b",
+    "inputs/fred_series_meta/data-fred_series_meta.parquet-40c7fb96f7fb": "40c7fb96f7fbe61c62d7b76a1a67e6dcb04a24c9d1418ba615fe4ee727d931e9",
+    "inputs/official_filings/data-official_filings_v1.parquet-25a296c4fb1a": "25a296c4fb1abd9ea871485fc653594afd7052e6ddf115cc97dce47516f9deb2",
+    "inputs/official_filings_state/data-official_filings_state.parquet-eee3e61b09e8": "eee3e61b09e8ede1074e2f09cade615f061f7ea15181312d1f86b005de17c270",
+    "inputs/ofr_mnemonics/data-ofr_mnemonics.parquet-65605ac49d5d": "65605ac49d5d0257db0aa934425975c6bf6f9d147fcb18a9bfac1f142314bb1b",
+    "inputs/ofr_timeseries/data-ofr_timeseries.parquet-09148f5b8558": "09148f5b85588d6b2f4c2ef26084a0d0c04fcabf9d62381cca09051a22a6abfa",
+    "inputs/price_bars/data-price_bars_v1.parquet-ebd39b99c906": "ebd39b99c906727e54e9659e7fb2999d7f5753dbefa0714f6380458be9bb50e3",
+    "inputs/quote_snapshots/data-quote_snapshots_v1.parquet-89ab1ca38de5": "89ab1ca38de518232f1196152a370758949e6db529e71d6d4dce3ca01af80a5d",
+    "inputs/quote_snapshots/status-quote_snapshots_v1.status.json-dc3da42a8b6a": "dc3da42a8b6a1105de5ba894338ca4309683d4e8f501f91e698fc6d818c8951f",
+    "inputs/registry-basket_memberships/data-basket_memberships.csv-0c3c35528c14": "0c3c35528c1499e3fc4a57a7b428cccaedbe891d30f17f8a14a2946726aea6cf",
+    "inputs/registry-baskets/data-baskets.csv-e139d1c2b400": "e139d1c2b4003e23fe418c3ac3ee717c23ae6378754e8e93c9e60a5b9ba33e7d",
+    "inputs/registry-entities/data-entities.csv-746821c229e1": "746821c229e17220a1ca17e4873d32b776edf14459520bc13b4d4801de960a13",
+    "inputs/registry-indices/data-indices.csv-f8a16664344c": "f8a16664344cf1d1a541a334d5879079b9b6407c1bec729802ec4f81ba486357",
+    "inputs/registry-listings/data-listings.csv-33afd325a402": "33afd325a4025c6e3f32a906559c7c81cb6fb0ee1d65a395b521b33f2d7d1d47",
+    "inputs/tencent_earnings_actuals/data-tencent_earnings_actuals_v1.parquet-66db1c57a251": "66db1c57a2518c30ad966ba457ba4d70713994812e06b78204fcfa031f84ea17",
+    "inputs/tencent_earnings_actuals_state/data-tencent_earnings_actuals_state.parquet-3d54a539a8b6": "3d54a539a8b67da47db0bd31776ecb9a8beff1e9e73ae5216ff92babc5ddae1d",
+    "inputs/tw_monthly_revenue/data-tw_monthly_revenue.parquet-5932a766f24f": "5932a766f24fd0d6370be19a66fd5e0b912e4759c95fc4ae9e2ec87244344cf3"
+  },
+  "network_policy": "forbidden",
+  "previous_build_at": "2026-08-22T00:08:00Z",
+  "schema_version": "control_tower_marts_v1",
+  "source_health_summary": {
+    "available": 25,
+    "degraded": 7,
+    "no_records": 2,
+    "not_applicable": 2,
+    "partial": 1,
+    "unavailable": 7
+  },
+  "status": "degraded",
+  "validation_errors": [
+    {
+      "code": "stale_source",
+      "message": "latest=2026-07-17T00:00:00Z;cutoff=2026-07-24T06:04:21.330875Z;threshold=30 days 00:00:00",
+      "severity": "warning",
+      "source_id": "ofr_timeseries"
+    },
+    {
+      "code": "stale_source",
+      "message": "latest=2026-06-01T00:00:00Z;cutoff=2026-06-22T06:04:21.330875Z;threshold=62 days 00:00:00",
+      "severity": "warning",
+      "source_id": "tw_monthly_revenue"
+    },
+    {
+      "code": "stale_source",
+      "message": "latest=2026-08-07T00:00:00Z;cutoff=2026-08-16T06:04:21.330875Z;threshold=7 days 00:00:00",
+      "severity": "warning",
+      "source_id": "ecb_fx_rates"
+    },
+    {
+      "code": "optional_source_degraded",
+      "message": "composite_sha256=sha256(sorted(filename\\x1ffile_sha256_pairs));files=control_tower_consensus_snapshots.parquet,control_tower_consensus_revisions.parquet,control_tower_consensus_source_health.parquet",
+      "severity": "warning",
+      "source_id": "consensus_export"
+    },
+    {
+      "code": "provider_health_not_available_for_populated_rows",
+      "message": "provider=akshare;status=stale",
+      "severity": "warning",
+      "source_id": "consensus:akshare"
+    },
+    {
+      "code": "stale_source",
+      "message": "latest=2026-08-21T19:59:00Z;cutoff=2026-08-23T05:59:21.330875Z;threshold=0 days 00:05:00",
+      "severity": "warning",
+      "source_id": "quote_snapshots"
+    },
+    {
+      "code": "optional_source_unavailable",
+      "message": "optional_official_ai_rss_not_configured",
+      "severity": "warning",
+      "source_id": "news_official_ai_rss"
+    },
+    {
+      "code": "optional_source_degraded",
+      "message": "no machine-readable issuer IR calendar snapshot configured; official exchange metadata (SEC/HKEX) is used instead; HTML IR pages are not scraped",
+      "severity": "warning",
+      "source_id": "filings:issuer_ir"
+    },
+    {
+      "code": "optional_source_degraded",
+      "message": "private company with no public filings or earnings calendar; competitor research only",
+      "severity": "warning",
+      "source_id": "filings:bytedance"
+    },
+    {
+      "code": "input_validation_failed",
+      "message": "earnings_actuals schema drift: missing=['derivation_method', 'metric_basis', 'source_document_id', 'source_document_sha256', 'source_metric_label', 'source_page_ref', 'timestamp_precision', 'value_origin']",
+      "severity": "warning",
+      "source_id": "earnings_actuals"
+    },
+    {
+      "code": "optional_source_degraded",
+      "message": "HKEX-only issuers without SEC XBRL actuals: ALIBABA, BAIDU, BILIBILI, KUAISHOU, TENCENT; no machine-readable issuer IR actuals snapshot configured; no values fabricated",
+      "severity": "warning",
+      "source_id": "earnings:hkex_issuer_ir"
+    },
+    {
+      "code": "optional_source_degraded",
+      "message": "private company with no public earnings disclosure; partial/not_applicable unless a reusable public company disclosure exists",
+      "severity": "warning",
+      "source_id": "earnings:bytedance"
+    },
+    {
+      "code": "optional_source_degraded",
+      "message": "hkexnews corporate-action title-search rows: collected=224 parsed=180 unparsed=14 skipped=23 exceptions=0 raw_rows=224 returned_rows=224 queries=168 truncated=false issuers=7",
+      "severity": "warning",
+      "source_id": "corporate_actions:hkexnews"
+    },
+    {
+      "code": "optional_source_unavailable",
+      "message": "optional_source_not_configured",
+      "severity": "warning",
+      "source_id": "news_finnhub"
+    },
+    {
+      "code": "optional_source_unavailable",
+      "message": "optional_source_not_configured",
+      "severity": "warning",
+      "source_id": "news_marketaux"
+    },
+    {
+      "code": "optional_source_unavailable",
+      "message": "optional_source_not_configured",
+      "severity": "warning",
+      "source_id": "news_fmp"
+    },
+    {
+      "code": "optional_source_unavailable",
+      "message": "optional_source_not_configured",
+      "severity": "warning",
+      "source_id": "news_official_ir_allowlist"
+    },
+    {
+      "code": "optional_source_unavailable",
+      "message": "optional_source_not_configured",
+      "severity": "warning",
+      "source_id": "valuation_snapshots"
+    },
+    {
+      "code": "optional_source_unavailable",
+      "message": "optional_source_not_configured",
+      "severity": "warning",
+      "source_id": "internal_estimates"
+    }
+  ]
+}

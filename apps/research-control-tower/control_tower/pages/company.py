@@ -1,6 +1,7 @@
 """Company identity, registry lineage, fundamental and thesis cockpit view."""
 
 from __future__ import annotations
+from pathlib import Path
 
 from dataclasses import dataclass, field
 from datetime import timedelta
@@ -12,12 +13,40 @@ from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import pandas as pd
+import pyarrow.parquet as pq
 import streamlit as st
 
+from ..charts import (
+    ACCENT,
+    MODEL_COLORS,
+    apply_theme as apply_chart_theme,
+    bar_chart as _plotly_bar_chart,
+    dual_axis_bar_line,
+    line_chart as _plotly_line_chart,
+    stacked_share_chart,
+)
+
+from ..company_profiles import SegmentSpec, get_company_profile, segment_label
+
 from src.research_control_tower.eligibility import listing_eligibility_reason
+from src.research_control_tower.southbound_holdings import hkex_security_code, southbound_mart_path
+from src.research_control_tower.live_refresh import (
+    load_local_hkex_overlay,
+    record_refresh,
+    refresh_company_news,
+    refresh_cooldown_remaining,
+)
+from src.research_control_tower.news_overlay import load_local_news_overlay
+from src.research_control_tower.vendor_financials import (
+    VendorLoadResult,
+    default_local_mart_path,
+    load_vendor_financials,
+    vendor_source_caption,
+)
 
 from ..filters import apply_event_filters
 from ..formatting import format_t_minus
+from ..components import ct_dataframe
 from ..components.timeline import format_event_window, is_active_catalyst, select_next_catalyst
 from ..market_data import QUOTE_SNAPSHOT_COLUMNS, classify_quote_freshness, format_quote_age
 from ..models import ControlTowerSnapshot, EventFilters
@@ -621,24 +650,52 @@ def build_company_view(
         selected_listing_id = requested_listing
         selection_mode = "explicit"
     else:
-        verified = active_listings.loc[
+        eligible = active_listings.loc[
             active_listings["mapping_status"].astype("string").str.lower().eq("verified")
-            & active_listings["primary_listing"].map(
-                lambda value: _text(value).lower() in {"true", "1", "yes"}
-            )
             & active_listings["listing_status"].astype("string").str.lower().eq("active")
         ] if not active_listings.empty else active_listings
-        if verified.empty:
+        if eligible.empty:
             selected_listing_id = None
             selection_mode = "none"
         else:
+            exchanges = eligible["exchange"].astype("string").str.upper()
+            roles = eligible.get("listing_role", pd.Series("", index=eligible.index, dtype="string")).astype("string").str.lower()
+            has_hkex = bool(exchanges.eq("HKEX").any())
+            has_us_listing = bool(
+                roles.eq("depositary_receipt").any()
+                or exchanges.isin(["NYSE", "NASDAQ", "OTC"]).any()
+            )
+            # China-internet ADR pairs: prefer the HK ordinary share.
+            #
+            # config/listings.csv has since been corrected -- Alibaba, Baidu
+            # and JD all mark the HK line primary now -- so for anything
+            # published from it this branch and the generic one agree. It
+            # stays because the snapshot comes from a *published generation*,
+            # and generations are frozen: an older bundle still carries the
+            # ADR marked primary, and loading one must not silently flip the
+            # page to the US line.
+            #
+            # Known limitation: an issuer genuinely primary in the US with an
+            # HK secondary would be mis-preferred here. No such issuer is in
+            # the registry; revisit this rule before adding one.
+            if has_hkex and has_us_listing:
+                pool = eligible.loc[exchanges.eq("HKEX")].copy()
+            else:
+                pool = eligible.loc[
+                    eligible["primary_listing"].map(
+                        lambda value: _text(value).lower() in {"true", "1", "yes"}
+                    )
+                ].copy()
+                if pool.empty:
+                    pool = eligible.copy()
             role_rank = {"primary": 0, "dual_primary": 1, "secondary": 2, "depositary_receipt": 3}
-            exchange_rank = {"HKEX": 0, "NASDAQ": 1, "NYSE": 2, "LSE": 3}
-            ranked = verified.copy()
+            ranked = pool.copy()
+            ranked["__primary_rank"] = ranked["primary_listing"].map(
+                lambda value: 0 if _text(value).lower() in {"true", "1", "yes"} else 1
+            )
             ranked["__role_rank"] = ranked["listing_role"].map(role_rank).fillna(99)
-            ranked["__exchange_rank"] = ranked["exchange"].astype("string").str.upper().map(exchange_rank).fillna(99)
             ranked = ranked.sort_values(
-                ["__role_rank", "__exchange_rank", "listing_id"],
+                ["__primary_rank", "__role_rank", "listing_id"],
                 kind="mergesort",
             )
             selected_listing_id = _text(ranked.iloc[0]["listing_id"])
@@ -1057,7 +1114,7 @@ def build_company_view(
         selection_mode=selection_mode,
         listings=listings,
         memberships=memberships,
-        quote_snapshots=quote_snapshots,
+        quote_snapshots=_newer_local_quotes(quote_snapshots),
         price_bars=price_bars,
         quote_status=quote_status,
         events=events,
@@ -1085,7 +1142,9 @@ def _format_time(value: object, timezone: str) -> str:
         return "Unavailable"
     try:
         return timestamp.tz_convert(timezone).strftime("%d %b %H:%M %Z")
-    except Exception:
+    except (KeyError, TypeError, ValueError):
+        # Unknown zone name (pytz raises a KeyError subclass), or a naive
+        # timestamp that cannot be converted. Anything else is a bug here.
         return timestamp.strftime("%d %b %H:%M UTC")
 
 
@@ -1668,73 +1727,182 @@ def _answer_first_summary_lines(
     return tuple(lines)
 
 
+def _render_company_hero_card(
+    view: CompanyView,
+    snapshot: ControlTowerSnapshot,
+    viewer_timezone: str,
+) -> None:
+    ticker = ''
+    exchange = ''
+    currency = ''
+    if view.selected_listing_id and not view.listings.empty:
+        selected = view.listings.loc[
+            view.listings['listing_id'].astype('string').eq(view.selected_listing_id)
+        ]
+        if not selected.empty:
+            ticker = _text(selected.iloc[0].get('canonical_ticker')) or _text(selected.iloc[0].get('native_ticker'))
+            exchange = _text(selected.iloc[0].get('exchange'))
+            currency = _text(selected.iloc[0].get('currency'))
+
+    price_html = ''
+    if not view.quote_snapshots.empty and view.entity_type != 'private':
+        qrow = view.quote_snapshots.iloc[0]
+        last_price = qrow.get('last_price')
+        qccy = _text(qrow.get('currency')) or currency or 'HKD'
+        price_val_str = f'{qccy} {last_price:,.2f}'.strip() if pd.notna(last_price) else ''
+        day_change = qrow.get('day_change_pct')
+        if pd.notna(day_change) and isinstance(day_change, (int, float)):
+            change_class = 'ct-hero-change--up' if day_change >= 0 else 'ct-hero-change--down'
+            change_str = f'{day_change:+.2f}%'
+        else:
+            change_class = ''
+            change_str = ''
+        qtime = qrow.get('quote_timestamp')
+        age_str = format_quote_age(qtime, snapshot.now_utc)
+        freshness = _text(qrow.get('freshness')) or 'delayed'
+        if price_val_str:
+            change_badge = f'<span class="ct-hero-change {change_class}">{escape(change_str)}</span>' if change_str else ''
+            price_html = f'<div class="ct-hero-price-box"><div class="ct-hero-price">{escape(price_val_str)}</div>{change_badge}<div class="ct-subtle" style="font-size: 0.76rem; margin-left: 0.2rem;">{escape(freshness)} ({escape(age_str)})</div></div>'
+
+    actuals = _company_earnings_actuals(snapshot, view)
+    ltm_rev_str = 'Unavailable'
+    ltm_profit_str = 'Unavailable'
+    ltm_fcf_str = 'Unavailable'
+    buyback_str = 'Unavailable'
+    if not actuals.empty:
+        actuals_copy = actuals.copy()
+        actuals_copy['period_end'] = pd.to_datetime(actuals_copy['period_end'], errors='coerce')
+        periods = actuals_copy.dropna(subset=['period_end']).sort_values('period_end')
+        unique_periods = periods['period_label'].drop_duplicates().tail(4).tolist()
+        rev_rows = actuals_copy[(actuals_copy['period_label'].isin(unique_periods)) & (actuals_copy['metric'] == 'revenue_total') & (actuals_copy['accounting_basis'] == 'IFRS')]
+        if len(rev_rows) >= 1:
+            tot_rev = rev_rows['reported_value'].sum()
+            ltm_rev_str = f'¥{tot_rev/1e9:,.1f}B' if tot_rev >= 1e9 else f'¥{tot_rev:,.0f}'
+        profit_rows = actuals_copy[(actuals_copy['period_label'].isin(unique_periods)) & (actuals_copy['metric'] == 'net_profit_attributable') & (actuals_copy['accounting_basis'] == 'Non-IFRS management measure')]
+        if len(profit_rows) >= 1:
+            tot_profit = profit_rows['reported_value'].sum()
+            ltm_profit_str = f'¥{tot_profit/1e9:,.1f}B' if tot_profit >= 1e9 else f'¥{tot_profit:,.0f}'
+        fcf_rows = actuals_copy[(actuals_copy['metric'] == 'free_cash_flow') & (actuals_copy['accounting_basis'] == 'Non-IFRS management measure')].sort_values('period_end', ascending=False)
+        if not fcf_rows.empty and pd.notna(fcf_rows.iloc[0].get('reported_value')):
+            fcf_val = float(fcf_rows.iloc[0]['reported_value'])
+            ltm_fcf_str = f'¥{fcf_val/1e9:,.1f}B' if abs(fcf_val) >= 1e9 else f'¥{fcf_val:,.0f}'
+
+    if not view.corporate_actions.empty:
+        tot_bb = view.corporate_actions['total_amount_paid'].dropna().sum()
+        if tot_bb > 0:
+            buyback_str = f'HK$ {tot_bb/1e9:,.1f}B YTD'
+
+    ticker_badge = f'<span class="ct-hero-ticker">{escape(ticker)}</span>' if ticker else ''
+    profile = get_company_profile(view.entity_id)
+    listing_role = ''
+    if view.selected_listing_id and not view.listings.empty:
+        selected_role = view.listings.loc[
+            view.listings['listing_id'].astype('string').eq(view.selected_listing_id)
+        ]
+        if not selected_role.empty:
+            listing_role = _text(selected_role.iloc[0].get('listing_role')).replace('_', ' ')
+    role_suffix = f' · {listing_role}' if listing_role else ''
+    exchange_badge = f'<span class="ct-badge">{escape(exchange)}{escape(role_suffix)}</span>' if exchange else ''
+    sector_badge = f'<span class="ct-badge">{escape(view.sector)}</span>' if view.sector else ''
+    industry_badge = f'<span class="ct-badge">{escape(view.industry)}</span>' if view.industry else ''
+    buyback_sub = 'Selected-listing statutory filings'
+    hero_html = f'<div class="ct-hero-card"><div class="ct-hero-top"><div><div class="ct-hero-title">{escape(view.display_name)} {ticker_badge} {exchange_badge}</div><div class="ct-subtle" style="margin-top: 0.25rem;">{escape(view.legal_name)} · {escape(view.country)} {sector_badge} {industry_badge}</div></div>{price_html}</div><div class="ct-kpi-grid"><div class="ct-kpi-card"><div class="ct-kpi-label">LTM Revenue</div><div class="ct-kpi-value">{escape(ltm_rev_str)}</div><div class="ct-kpi-sub">Total Topline (IFRS)</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">LTM Non-IFRS Net Profit</div><div class="ct-kpi-value">{escape(ltm_profit_str)}</div><div class="ct-kpi-sub">Core Operating Earnings</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Free Cash Flow</div><div class="ct-kpi-value">{escape(ltm_fcf_str)}</div><div class="ct-kpi-sub">Latest Reported Period</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Capital Return / Buybacks</div><div class="ct-kpi-value">{escape(buyback_str)}</div><div class="ct-kpi-sub">{escape(buyback_sub)}</div></div></div></div>'
+    st.markdown(hero_html, unsafe_allow_html=True)
+    if actuals.empty:
+        st.caption('Official LTM cards stay unavailable when issuer actuals are absent. A labelled yfinance/akshare overlay, if present, is on Fundamentals and is not written into these KPIs.')
+
+
+def _render_styled_bullet_card(line: str) -> None:
+    if line.startswith("Latest fundamentals ·"):
+        icon = "📊"
+        label = "Fundamentals"
+        badge_style = "color: var(--ct-accent); border-color: var(--ct-accent);"
+    elif line.startswith("Recent corporate action ·"):
+        icon = "🏛️"
+        label = "Capital Return"
+        badge_style = "color: var(--ct-hard); border-color: var(--ct-hard);"
+    elif line.startswith("Expectation context ·"):
+        icon = "🎯"
+        label = "Consensus"
+        badge_style = "color: var(--ct-provisional); border-color: var(--ct-provisional);"
+    elif line.startswith("Active catalyst ·"):
+        icon = "⚡"
+        label = "Catalyst"
+        badge_style = "color: var(--ct-thesis); border-color: var(--ct-thesis);"
+    elif line.startswith("Thesis registry ·"):
+        icon = "💡"
+        label = "Thesis"
+        badge_style = "color: var(--ct-accent); border-color: var(--ct-accent);"
+    elif line.startswith("Evidence lineage ·"):
+        icon = "🔍"
+        label = "Evidence Lineage"
+        badge_style = "color: var(--ct-observed); border-color: var(--ct-observed);"
+    else:
+        icon = "ℹ️"
+        label = "Fact"
+        badge_style = "color: var(--ct-muted); border-color: var(--ct-border);"
+    clean_line = line
+    source_link_html = ""
+    url_match = re.search(r'https?://[^\s]+', line)
+    if url_match:
+        url = url_match.group(0)
+        clean_line = line.replace(url, "").strip(" ·").strip()
+        source_link_html = f' · <a class="ct-inline-link" href="{escape(url)}" target="_blank" rel="noopener">Official Source ↗</a>'
+    card_html = f'<div class="ct-change" style="padding: 0.6rem 0.85rem; background: var(--ct-surface); border-radius: 9px; margin-bottom: 0.5rem; border: 1px solid var(--ct-border);"><div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.25rem;"><span class="ct-badge" style="{badge_style}; padding: 0.12rem 0.45rem; font-size: 0.72rem; font-weight: 750;">{icon} {escape(label)}</span></div><div style="font-size: 0.86rem; line-height: 1.45; color: var(--ct-ink);">{escape(clean_line)}{source_link_html}</div></div>'
+    st.markdown(card_html, unsafe_allow_html=True)
+
 def _render_answer_first_summary(
     view: CompanyView,
     snapshot: ControlTowerSnapshot,
 ) -> None:
-    listing_label = ""
+    listing_label = ''
     if view.selected_listing_id and not view.listings.empty:
         selected = view.listings.loc[
-            view.listings["listing_id"].astype("string").eq(view.selected_listing_id)
+            view.listings['listing_id'].astype('string').eq(view.selected_listing_id)
         ]
         if not selected.empty:
-            listing_label = _text(selected.iloc[0].get("canonical_ticker"))
-    heading = " · ".join(
+            listing_label = _text(selected.iloc[0].get('canonical_ticker'))
+    heading = ' · '.join(
         value
-        for value in ("Executive summary & recent changes", view.display_name, listing_label)
+        for value in ('Executive summary & recent changes', view.display_name, listing_label)
         if value
     )
     entity_slug = _slugify(view.entity_id)
-    listing_slug = _slugify(view.selected_listing_id) if view.selected_listing_id else "all"
-    _render_section_heading(4, heading, f"exec-summary-{entity_slug}-{listing_slug}")
-    for line in _answer_first_summary_lines(view, snapshot):
-        st.markdown(f"- {escape(line)}")
-    st.caption(
-        "All displayed facts come from the selected local snapshot rows; unavailable marts stay unavailable."
-    )
+    listing_slug = _slugify(view.selected_listing_id) if view.selected_listing_id else 'all'
+    _render_section_heading(4, heading, f'exec-summary-{entity_slug}-{listing_slug}')
+    summary_facts = _answer_first_summary_lines(view, snapshot)
+    for line in summary_facts:
+        _render_styled_bullet_card(line)
+    st.caption('All displayed facts come from the selected local snapshot rows; unavailable marts stay unavailable.')
 
 
 def _render_price_history(view: CompanyView, snapshot: ControlTowerSnapshot) -> None:
-    """Daily close for the selected listing, with its provenance stated."""
-
-    _render_section_heading(4, "Price history", f"price-history-{_slugify(view.entity_id)}")
-    if view.entity_type == "private":
-        st.info(
-            f"Not applicable · {_text(view.display_name)} is a private company with no public listing; "
-            "no price history is collected."
-        )
+    _render_section_heading(4, 'Price history', f'price-history-{_slugify(view.entity_id)}')
+    if view.entity_type == 'private':
+        st.info(f'Not applicable · {_text(view.display_name)} is a private company with no public listing; no price history is collected.')
         return
     bars = view.price_bars
     if bars is None or bars.empty:
-        st.warning(
-            "Price history unavailable · no price-bar rows for the selected listing; "
-            "the app remains no-network/read-only and did not query a provider."
-        )
+        st.warning('Price history unavailable · no price-bar rows for the selected listing; the app remains no-network/read-only and did not query a provider.')
         return
-
     frame = bars.copy()
-    frame["bar_date"] = pd.to_datetime(frame["bar_date"], errors="coerce")
-    frame = frame.loc[frame["bar_date"].notna()]
-    adjusted = frame["adj_close"].notna().any() if "adj_close" in frame.columns else False
-    series_column = "adj_close" if adjusted else "close"
-    basis = "adjusted close" if adjusted else "unadjusted close"
+    frame['bar_date'] = pd.to_datetime(frame['bar_date'], errors='coerce')
+    frame = frame.loc[frame['bar_date'].notna()]
+    adjusted = frame['adj_close'].notna().any() if 'adj_close' in frame.columns else False
+    series_column = 'adj_close' if adjusted else 'close'
+    basis = 'adjusted close' if adjusted else 'unadjusted close'
     frame = frame.loc[frame[series_column].notna()]
     if frame.empty:
-        st.warning("Price history unavailable · rows carry no usable close price.")
+        st.warning('Price history unavailable · rows carry no usable close price.')
         return
-
-    currency = _text(frame.iloc[-1].get("currency")) or ""
-    chart = frame.set_index("bar_date")[[series_column]].rename(columns={series_column: f"{currency} {basis}".strip()})
-    st.line_chart(chart, height=260)
-
-    first = frame["bar_date"].min().date()
-    last = frame["bar_date"].max().date()
-    sources = ", ".join(sorted({_text(v) for v in frame["source_id"] if _text(v)}))
+    currency = _text(frame.iloc[-1].get('currency')) or ''
+    chart = frame.set_index('bar_date')[[series_column]].rename(columns={series_column: f'{currency} {basis}'.strip()})
+    _render_plotly(_plotly_line_chart(chart, y_title=f'{currency} {basis}'.strip(), value_format=',.2f', height=280))
+    first = frame['bar_date'].min().date()
+    last = frame['bar_date'].max().date()
+    sources = ', '.join(sorted({_text(v) for v in frame['source_id'] if _text(v)}))
     span_days = (last - first).days
-    st.caption(
-        f"{len(frame):,} daily bars · {first} to {last} ({span_days} calendar days) · {basis} · "
-        f"source: {sources or 'unattributed'} · read from the published artifact, no provider was queried"
-    )
+    st.caption(f'{len(frame):,} daily bars · {first} to {last} ({span_days} calendar days) · {basis} · source: {sources or "unattributed"} · read from the published artifact, no provider was queried')
 
 
 def _render_overview_tab(
@@ -1742,228 +1910,1076 @@ def _render_overview_tab(
     snapshot: ControlTowerSnapshot,
     viewer_timezone: str,
 ) -> None:
-    """Tab 1: Overview - Answer-first summary, quote, price history, listings, memberships, flight deck."""
-
-    # 1. Answer-first summary from the selected snapshot rows
     _render_answer_first_summary(view, snapshot)
-
-    # 2. Latest market quote
-    _render_section_heading(4, "Latest market quote", f"latest-quote-{_slugify(view.entity_id)}")
-    if view.entity_type == "private":
-        st.info(
-            f"Not applicable · {_text(view.display_name)} is a private company with no public market listing; "
-            "price, quote, and market data collection are excluded."
-        )
+    _render_section_heading(4, 'Latest market quote', f'latest-quote-{_slugify(view.entity_id)}')
+    if view.entity_type == 'private':
+        st.info(f'Not applicable · {_text(view.display_name)} is a private company with no public market listing; price, quote, and market data collection are excluded.')
     elif view.quote_snapshots.empty:
-        st.warning(
-            "Latest quote unavailable · no quote snapshot artifact or selected-listing row; "
-            "the app remains no-network/read-only and did not query a provider."
-        )
+        st.warning('Latest quote unavailable · no quote snapshot artifact or selected-listing row; the app remains no-network/read-only and did not query a provider.')
     else:
         for _, qrow in view.quote_snapshots.iterrows():
-            last_price = qrow.get("last_price")
-            currency = _text(qrow.get("currency")) or ""
-            price_str = f"{currency} {last_price:,.2f}".strip() if pd.notna(last_price) else "Unavailable"
-
-            day_change = qrow.get("day_change_pct")
+            last_price = qrow.get('last_price')
+            currency = _text(qrow.get('currency')) or ''
+            price_str = f'{currency} {last_price:,.2f}'.strip() if pd.notna(last_price) else 'Unavailable'
+            day_change = qrow.get('day_change_pct')
             if pd.notna(day_change) and isinstance(day_change, (int, float)):
-                change_str = f"{day_change:+.2f}%"
+                change_str = f'{day_change:+.2f}%'
             else:
-                change_str = "Day change unavailable"
-
-            qtime = qrow.get("quote_timestamp")
+                change_str = 'Day change unavailable'
+            qtime = qrow.get('quote_timestamp')
             age_str = format_quote_age(qtime, snapshot.now_utc)
-            freshness = _text(qrow.get("freshness")) or "delayed"
-            latency = _text(qrow.get("latency_class")) or "delayed"
-            source_id = _text(qrow.get("source_id")) or "market:yfinance"
-            source_url = _text(qrow.get("source_url"))
-
-            source_label = f"{source_id} ({latency})"
-            if source_url.startswith(("http://", "https://")):
+            freshness = _text(qrow.get('freshness')) or 'delayed'
+            latency = _text(qrow.get('latency_class')) or 'delayed'
+            source_id = _text(qrow.get('source_id')) or 'market:yfinance'
+            source_url = _text(qrow.get('source_url'))
+            source_label = f'{source_id} ({latency})'
+            if source_url.startswith(('http://', 'https://')):
                 source_link_html = f'<a class="ct-inline-link" href="{escape(source_url)}" target="_blank" rel="noopener">{escape(source_label)}</a>'
             else:
                 source_link_html = escape(source_label)
-
-            summary_html = (
-                f'<div class="ct-change" style="margin-bottom: 0.75rem;">'
-                f'<div class="ct-change-title"><strong>{escape(price_str)}</strong> · {escape(change_str)}</div>'
-                f'<div class="ct-change-detail">Quote age: {escape(age_str)} · Freshness: {escape(freshness)}</div>'
-                f'<div class="ct-source-line">Source: {source_link_html} · Delayed market data (no real-time claim)</div>'
-                f'</div>'
-            )
+            summary_html = f'<div class="ct-change" style="margin-bottom: 0.75rem;"><div class="ct-change-title"><strong>{escape(price_str)}</strong> · {escape(change_str)}</div><div class="ct-change-detail">Quote age: {escape(age_str)} · Freshness: {escape(freshness)}</div><div class="ct-source-line">Source: {source_link_html} · Delayed market data (no real-time claim)</div></div>'
             st.markdown(summary_html, unsafe_allow_html=True)
-
-        st.dataframe(
-            _friendly_quote_frame(view.quote_snapshots, viewer_timezone),
-            width="stretch",
-            hide_index=True,
-        )
-
-    # 3. Price history
+        ct_dataframe(_friendly_quote_frame(view.quote_snapshots, viewer_timezone), width='stretch', hide_index=True)
     _render_price_history(view, snapshot)
-
-    # 4. Listings
-    _render_section_heading(4, "Listings", f"listings-{_slugify(view.entity_id)}")
-    st.dataframe(_friendly_listing_frame(view.listings), width="stretch", hide_index=True)
-
-    # 5. Basket and layer memberships
-    _render_section_heading(4, "Basket and layer memberships", f"memberships-{_slugify(view.entity_id)}")
-    st.dataframe(view.memberships, width="stretch", hide_index=True)
-
-    # 6. Flight deck summary
-    _render_section_heading(4, "Flight deck & catalyst overview", f"flight-deck-{_slugify(view.entity_id)}")
-    upcoming_events_count = len(view.events)
-    thesis_claims_count = len(view.thesis_claims)
-    watch_q_count = len(view.thesis_watch_questions) if not view.thesis_watch_questions.empty else len(view.watch_questions)
-    corporate_action_count = len(view.corporate_actions)
-
+    _render_section_heading(4, 'Listings', f'listings-{_slugify(view.entity_id)}')
+    ct_dataframe(_friendly_listing_frame(view.listings), width='stretch', hide_index=True)
+    _render_section_heading(4, 'Basket and layer memberships', f'memberships-{_slugify(view.entity_id)}')
+    ct_dataframe(view.memberships, width='stretch', hide_index=True)
+    _render_section_heading(4, 'Flight deck & catalyst overview', f'flight-deck-{_slugify(view.entity_id)}')
     cols = st.columns(4)
-    cols[0].metric("Linked Events", str(upcoming_events_count))
-    cols[1].metric("Thesis Claims", str(thesis_claims_count))
-    cols[2].metric("Watch Questions", str(watch_q_count))
-    cols[3].metric("Corporate Actions", str(corporate_action_count))
+    cols[0].metric('Linked Events', str(len(view.events)))
+    cols[1].metric('Thesis Claims', str(len(view.thesis_claims)))
+    cols[2].metric('Watch Questions', str(len(view.thesis_watch_questions) if not view.thesis_watch_questions.empty else len(view.watch_questions)))
+    cols[3].metric('Corporate Actions', str(len(view.corporate_actions)))
 
+
+def _build_quarterly_financial_pivot(frame: pd.DataFrame, n_periods: int = 8, profile=None) -> pd.DataFrame:
+    if frame.empty:
+        return pd.DataFrame()
+    df = frame.copy()
+    df['period_end'] = pd.to_datetime(df['period_end'], errors='coerce')
+    period_map = df[['period_label', 'period_end']].dropna().drop_duplicates().sort_values('period_end')
+    if period_map.empty:
+        return pd.DataFrame()
+    all_periods = period_map['period_label'].tolist()
+    recent_periods = period_map.tail(n_periods)['period_label'].tolist()
+    tot_rev = {}
+    non_ifrs_op = {}
+    non_ifrs_np = {}
+    for p in all_periods:
+        sub_rev = df[(df['period_label'] == p) & (df['metric'] == 'revenue_total') & (df['accounting_basis'] == 'IFRS')]
+        tot_rev[p] = float(sub_rev.iloc[0]['reported_value']) if not sub_rev.empty and pd.notna(sub_rev.iloc[0]['reported_value']) else None
+        sub_op = df[(df['period_label'] == p) & (df['metric'] == 'operating_profit') & (df['accounting_basis'] == 'Non-IFRS management measure')]
+        non_ifrs_op[p] = float(sub_op.iloc[0]['reported_value']) if not sub_op.empty and pd.notna(sub_op.iloc[0]['reported_value']) else None
+        sub_np = df[(df['period_label'] == p) & (df['metric'] == 'net_profit_attributable') & (df['accounting_basis'] == 'Non-IFRS management measure')]
+        non_ifrs_np[p] = float(sub_np.iloc[0]['reported_value']) if not sub_np.empty and pd.notna(sub_np.iloc[0]['reported_value']) else None
+    profile = profile or get_company_profile(None)
+    symbol = profile.reporting_currency_symbol or '¥'
+    present_metrics = set(df.get('metric', pd.Series(dtype='string')).astype('string'))
+    segment_rows = []
+    seen_labels = set()
+    preferred = list(profile.segment_metrics) if profile.segment_metrics else []
+    if not preferred:
+        extra = sorted(
+            metric for metric in present_metrics
+            if str(metric).startswith('revenue_') and str(metric) != 'revenue_total'
+        )
+        preferred = [SegmentSpec(metric, segment_label(metric, profile)) for metric in extra]
+    for spec in preferred:
+        if spec.metric not in present_metrics or spec.label in seen_labels:
+            continue
+        seen_labels.add(spec.label)
+        segment_rows.append((spec.metric, spec.label))
+    formatted_segments = []
+    for idx, (metric, label) in enumerate(segment_rows):
+        prefix = '  └─ ' if idx == len(segment_rows) - 1 else '  ├─ '
+        formatted_segments.append((f'{prefix}{label}', metric, 'IFRS', 1e9, symbol + '{:.1f}B'))
+    row_specs = [
+        (f'Revenue: Total ({profile.reporting_currency} B)', 'revenue_total', 'IFRS', 1e9, symbol + '{:.1f}B'),
+        *formatted_segments,
+        ('YoY Revenue Growth (%)', '__yoy_rev__', '', 1.0, '{:+.1f}%'),
+        ('QoQ Revenue Growth (%)', '__qoq_rev__', '', 1.0, '{:+.1f}%'),
+        (f'Operating Profit (Non-IFRS, {profile.reporting_currency} B)', 'operating_profit', 'Non-IFRS management measure', 1e9, symbol + '{:.1f}B'),
+        ('Non-IFRS Operating Margin (%)', '__non_ifrs_op_margin__', '', 1.0, '{:.1f}%'),
+        (f'Operating Profit (IFRS, {profile.reporting_currency} B)', 'operating_profit', 'IFRS', 1e9, symbol + '{:.1f}B'),
+        (f'Net Profit (Non-IFRS, {profile.reporting_currency} B)', 'net_profit_attributable', 'Non-IFRS management measure', 1e9, symbol + '{:.1f}B'),
+        ('Non-IFRS Net Margin (%)', '__non_ifrs_net_margin__', '', 1.0, '{:.1f}%'),
+        (f'Net Profit (IFRS, {profile.reporting_currency} B)', 'net_profit_attributable', 'IFRS', 1e9, symbol + '{:.1f}B'),
+        (f'Diluted EPS (Non-IFRS, {profile.reporting_currency})', 'diluted_eps', 'Non-IFRS management measure', 1.0, symbol + '{:.2f}'),
+        (f'Free Cash Flow ({profile.reporting_currency} B)', 'free_cash_flow', 'Non-IFRS management measure', 1e9, symbol + '{:.1f}B'),
+        (f'CapEx ({profile.reporting_currency} B)', 'capex', 'IFRS', 1e9, symbol + '{:.1f}B'),
+    ]
+    result_rows = []
+    for label, metric, basis, scale, fmt in row_specs:
+        row_data = {'Metric': label}
+        for period in recent_periods:
+            p_idx = all_periods.index(period)
+            if metric == '__yoy_rev__':
+                if p_idx >= 4 and tot_rev.get(period) and tot_rev.get(all_periods[p_idx-4]):
+                    cur = tot_rev[period]
+                    prior = tot_rev[all_periods[p_idx-4]]
+                    row_data[period] = fmt.format(((cur / prior) - 1.0) * 100.0)
+                else:
+                    row_data[period] = '-'
+            elif metric == '__qoq_rev__':
+                if p_idx >= 1 and tot_rev.get(period) and tot_rev.get(all_periods[p_idx-1]):
+                    cur = tot_rev[period]
+                    prior = tot_rev[all_periods[p_idx-1]]
+                    row_data[period] = fmt.format(((cur / prior) - 1.0) * 100.0)
+                else:
+                    row_data[period] = '-'
+            elif metric == '__non_ifrs_op_margin__':
+                if tot_rev.get(period) and non_ifrs_op.get(period):
+                    row_data[period] = fmt.format((non_ifrs_op[period] / tot_rev[period]) * 100.0)
+                else:
+                    row_data[period] = '-'
+            elif metric == '__non_ifrs_net_margin__':
+                if tot_rev.get(period) and non_ifrs_np.get(period):
+                    row_data[period] = fmt.format((non_ifrs_np[period] / tot_rev[period]) * 100.0)
+                else:
+                    row_data[period] = '-'
+            else:
+                subset = df[(df['period_label'] == period) & (df['metric'] == metric)]
+                if basis:
+                    subset = subset[subset['accounting_basis'] == basis]
+                if not subset.empty:
+                    val = subset.iloc[0]['reported_value']
+                    if pd.notna(val):
+                        scaled = float(val) / scale
+                        row_data[period] = fmt.format(scaled)
+                    else:
+                        row_data[period] = '-'
+                else:
+                    row_data[period] = '-'
+        result_rows.append(row_data)
+    return pd.DataFrame(result_rows)
+
+
+# Intermediate column name shared between the revenue frame and its chart.
+REVENUE_CHART_COLUMN = 'Total revenue'
+
+
+def _control_tower_repo_root() -> Path:
+    return Path(__file__).resolve().parents[4]
+
+
+# The alternative-data marts live outside the published generation, so they are
+# not covered by the snapshot cache in app.py. They are read from a tab body,
+# and st.tabs evaluates every tab body on every rerun -- so without a cache the
+# OpenRouter economics mart is decoded again on each widget interaction, even
+# when the user is on Overview. Project first (17 columns -> 5 cuts the frame
+# from ~38 MB to ~14 MB), then cache on (path, size, mtime).
+OPENROUTER_MART_COLUMNS: tuple[str, ...] = (
+    'usage_date',
+    'model_permaslug',
+    'model_origin_company',
+    'entity_id',
+    'provider_slug',
+    'total_tokens',
+    'estimated_revenue',
+    'include_in_default_kpis',
+    'is_complete_day',
+)
+
+SOUTHBOUND_MART_COLUMNS: tuple[str, ...] = (
+    'hold_date',
+    'holding_shares',
+    'holding_market_value',
+    'holding_share_pct',
+)
+
+
+def _parquet_fingerprint(path: Path) -> tuple[int, int]:
+    stat = path.stat()
+    return (stat.st_size, stat.st_mtime_ns)
+
+
+@st.cache_data(show_spinner=False, max_entries=8)
+def _read_mart_projected(
+    path_str: str,
+    fingerprint: tuple[int, int],
+    columns: tuple[str, ...],
+) -> pd.DataFrame:
+    """Read a local mart, keeping only ``columns`` that the file actually has.
+
+    A column named here but absent from the file is dropped rather than raised
+    on: the candidate marts have overlapping but not identical schemas, and the
+    filters downstream already treat every one of these columns as optional.
+    """
+    del fingerprint  # cache key only
+    path = Path(path_str)
+    if columns:
+        available = set(pq.ParquetFile(path).schema_arrow.names)
+        wanted = [column for column in columns if column in available]
+        if wanted:
+            return pd.read_parquet(path, columns=wanted)
+    return pd.read_parquet(path)
+
+
+def _bar_chart_with_year_axis(
+    frame: pd.DataFrame,
+    *,
+    x: str,
+    y: str,
+    y_title: str,
+    y_format: str | None = None,
+    height: int = 220,
+    series_name: str | None = None,
+):
+    plot = frame[[x, y]].dropna().copy()
+    plot = plot.set_index(x)[[y]]
+    # bar_chart names each trace after its column, so the legend showed the
+    # raw identifier ('daily_repurchase_hkd_m') next to a worded axis.
+    plot.columns = [series_name or y_title]
+    return _plotly_bar_chart(
+        plot,
+        title='',
+        y_title=y_title,
+        height=height,
+        value_format=y_format or ',.1f',
+        tickformat='%b %Y',
+    )
+
+
+def _segment_share_chart(frame: pd.DataFrame):
+    plot = frame.copy()
+    value_cols = [c for c in plot.columns if c != 'period']
+    long_index = plot['period'].astype(str)
+    values = plot.loc[:, value_cols].apply(pd.to_numeric, errors='coerce')
+    totals = values.sum(axis=1).replace(0, pd.NA)
+    share = values.div(totals, axis=0) * 100.0
+    share.index = long_index
+    return stacked_share_chart(share, title='', height=280)
+
+
+def _quarterly_yoy(series: pd.Series) -> pd.Series:
+    """YoY % on a quarter-labelled series, by calendar quarter.
+
+    Labels look like ``2026Q2``. Reindexing onto a gapless quarterly range
+    makes the four-period lag mean a year, and fill_method=None leaves a
+    quarter with no year-ago counterpart empty instead of reaching further
+    back for one.
+    """
+    if series is None or series.empty:
+        return pd.Series(dtype="float64")
+    try:
+        quarters = pd.PeriodIndex(series.index.astype(str), freq="Q")
+    except (TypeError, ValueError):
+        return series.pct_change(4) * 100
+    dense = series.set_axis(quarters).reindex(
+        pd.period_range(quarters.min(), quarters.max(), freq="Q")
+    )
+    grown = dense.pct_change(4, fill_method=None) * 100
+    return grown.reindex(quarters).set_axis(series.index)
+
+
+def _quarterly_profitability_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    """Derive quarterly operating/net margins from issuer actuals.
+
+    Gross margin is omitted because gross profit is not in the earnings-actuals mart.
+    """
+    empty = pd.DataFrame(columns=[
+        'period', 'period_end', 'revenue_rmb_b', 'operating_profit_non_ifrs_rmb_b',
+        'net_profit_non_ifrs_rmb_b', 'operating_margin_pct', 'net_margin_pct', 'ifrs_operating_margin_pct',
+    ])
+    if frame is None or frame.empty:
+        return empty
+    df = frame.copy()
+    df['period_end'] = pd.to_datetime(df['period_end'], errors='coerce')
+    df = df.dropna(subset=['period_end'])
+    if df.empty:
+        return empty
+
+    def _series(metric: str, basis: str) -> pd.Series:
+        subset = df.loc[
+            df['metric'].astype('string').eq(metric) & df['accounting_basis'].astype('string').eq(basis),
+            ['period_label', 'period_end', 'reported_value'],
+        ].copy()
+        if subset.empty:
+            return pd.Series(dtype='float64')
+        subset['reported_value'] = pd.to_numeric(subset['reported_value'], errors='coerce')
+        subset = subset.sort_values('period_end').drop_duplicates('period_label', keep='last')
+        return subset.set_index('period_label')['reported_value']
+
+    periods = (
+        df[['period_label', 'period_end']]
+        .drop_duplicates()
+        .sort_values('period_end')
+        .rename(columns={'period_label': 'period'})
+    )
+    out = periods.set_index('period')
+    out['revenue'] = _series('revenue_total', 'IFRS')
+    out['op_non_ifrs'] = _series('operating_profit', 'Non-IFRS management measure')
+    out['np_non_ifrs'] = _series('net_profit_attributable', 'Non-IFRS management measure')
+    out['op_ifrs'] = _series('operating_profit', 'IFRS')
+    out = out.reset_index()
+    out['revenue_rmb_b'] = pd.to_numeric(out['revenue'], errors='coerce') / 1e9
+    out['operating_profit_non_ifrs_rmb_b'] = pd.to_numeric(out['op_non_ifrs'], errors='coerce') / 1e9
+    out['net_profit_non_ifrs_rmb_b'] = pd.to_numeric(out['np_non_ifrs'], errors='coerce') / 1e9
+    revenue = pd.to_numeric(out['revenue'], errors='coerce')
+    out['operating_margin_pct'] = (pd.to_numeric(out['op_non_ifrs'], errors='coerce') / revenue * 100.0).where(revenue > 0)
+    out['net_margin_pct'] = (pd.to_numeric(out['np_non_ifrs'], errors='coerce') / revenue * 100.0).where(revenue > 0)
+    out['ifrs_operating_margin_pct'] = (pd.to_numeric(out['op_ifrs'], errors='coerce') / revenue * 100.0).where(revenue > 0)
+    keep = [
+        'period', 'period_end', 'revenue_rmb_b', 'operating_profit_non_ifrs_rmb_b',
+        'net_profit_non_ifrs_rmb_b', 'operating_margin_pct', 'net_margin_pct', 'ifrs_operating_margin_pct',
+    ]
+    return out.loc[:, keep].dropna(subset=['operating_profit_non_ifrs_rmb_b', 'operating_margin_pct'], how='all')
+
+
+def _profit_margin_chart(frame: pd.DataFrame, currency: str = 'CNY'):
+    # The financial matrix reads its currency from the company profile; these
+    # axis titles said RMB regardless, so a non-CNY reporter would have had a
+    # currency-aware table sitting above a chart contradicting it.
+    plot = frame.copy().set_index('period')
+    return dual_axis_bar_line(
+        plot,
+        bar_column='operating_profit_non_ifrs_rmb_b',
+        line_columns=['operating_margin_pct', 'net_margin_pct'],
+        bar_title=f'Non-IFRS operating profit ({currency} B)',
+        line_title='Margin (%)',
+        bar_name=f'Non-IFRS operating profit ({currency} B)',
+        line_names={
+            'operating_margin_pct': 'Non-IFRS operating margin',
+            'net_margin_pct': 'Non-IFRS net margin',
+        },
+        bar_format=',.1f',
+        line_format='.1f',
+        line_suffix='%',
+        height=320,
+    )
+
+
+def _spot_forward_pe_payload(view: CompanyView) -> dict[str, Any] | None:
+    """Display-only FY1 P/E from delayed quote / same-currency consensus EPS.
+
+    This is not written into valuation_snapshots; that mart stays fail-closed
+    until share count and basis-verified inputs exist.
+    """
+    if view.quote_snapshots.empty or view.consensus.empty:
+        return None
+    quote = view.quote_snapshots.iloc[0]
+    price = pd.to_numeric(pd.Series([quote.get('last_price')]), errors='coerce').iloc[0]
+    price_ccy = _text(quote.get('currency'))
+    if pd.isna(price) or float(price) <= 0 or not price_ccy:
+        return None
+    cons = view.consensus.copy()
+    metrics = cons.get('metric', pd.Series('', index=cons.index, dtype='string')).astype('string').str.lower()
+    horizons = cons.get('horizon', pd.Series('', index=cons.index, dtype='string')).astype('string').str.lower()
+    periods = cons.get('fiscal_period', pd.Series('', index=cons.index, dtype='string')).astype('string').str.lower()
+    annual = cons.loc[metrics.eq('eps') & (horizons.eq('0y') | periods.eq('annual'))].copy()
+    if annual.empty:
+        return None
+    # FY1 is the `0y` horizon. `fiscal_period == 'annual'` on its own also
+    # matches +1y/+2y rows, and one capture stamps every fiscal year with the
+    # same snapshot_at, so ordering by snapshot_at alone returned whichever
+    # year happened to be stored first -- FY2 for every real generation. Pin
+    # 0y, and fall back to the earliest annual year only when no 0y row exists.
+    fy1 = annual.loc[horizons.reindex(annual.index).eq('0y')]
+    is_fy1 = not fy1.empty
+    eps = fy1 if is_fy1 else annual
+    if not is_fy1 and 'fiscal_year' in eps.columns:
+        eps = eps.assign(__fiscal_year=pd.to_numeric(eps['fiscal_year'], errors='coerce'))
+        eps = eps.sort_values('__fiscal_year', na_position='last', kind='mergesort')
+    if 'snapshot_at' in eps.columns and eps['snapshot_at'].notna().any():
+        # Stable, so the fiscal-year order above survives inside one capture.
+        eps = eps.sort_values('snapshot_at', ascending=False, na_position='last', kind='mergesort')
+    row = eps.iloc[0]
+    eps_value = pd.to_numeric(pd.Series([row.get('value')]), errors='coerce').iloc[0]
+    eps_ccy = _text(row.get('currency'))
+    if pd.isna(eps_value) or not eps_ccy:
+        return None
+    if eps_ccy.casefold() != price_ccy.casefold():
+        return None
+    eps_num = float(eps_value)
+    pe_value = float(price) / eps_num if eps_num > 0 else None
+    return {
+        'price': float(price),
+        'eps': eps_num,
+        'pe': pe_value,
+        'price_ccy': price_ccy,
+        'eps_ccy': eps_ccy,
+        'horizon': _text(row.get('horizon')),
+        'fiscal_year': row.get('fiscal_year'),
+        'is_fy1': is_fy1,
+        'provider': _text(row.get('provider')) or 'unattributed',
+        'analyst_count': row.get('analyst_count'),
+        'source_url': _text(row.get('source_url')),
+    }
+
+
+def _dual_axis_revenue_yoy_chart(frame: pd.DataFrame, currency: str = 'CNY'):
+    plot = frame.rename(columns={
+        REVENUE_CHART_COLUMN: 'revenue_rmb_b',
+        'YoY Growth (%)': 'yoy_pct',
+    })
+    return dual_axis_bar_line(
+        plot,
+        bar_column='revenue_rmb_b',
+        line_columns=['yoy_pct'],
+        bar_title=f'Total Revenue ({currency} B)',
+        line_title='YoY Growth (%)',
+        bar_name=f'Total revenue ({currency} B)',
+        line_names={'yoy_pct': 'YoY growth'},
+        bar_format=',.1f',
+        line_format='+.1f',
+        line_suffix='%',
+        height=320,
+    )
+
+
+def _openrouter_daily_frame(raw: pd.DataFrame, profile=None) -> pd.DataFrame:
+    """Sum OpenRouter activity for one company profile into a daily series."""
+    empty_cols = ['usage_date', 'total_tokens', 'estimated_revenue', 'model_count', 'is_complete']
+    filt = None if profile is None else profile.openrouter
+    if raw is None or raw.empty or filt is None:
+        return pd.DataFrame(columns=empty_cols)
+    frame = raw.copy()
+    if 'model_permaslug' not in frame.columns:
+        return pd.DataFrame(columns=empty_cols)
+    slugs = frame['model_permaslug'].astype('string')
+    origin = frame['model_origin_company'].astype('string') if 'model_origin_company' in frame.columns else pd.Series('', index=frame.index, dtype='string')
+    entity = frame['entity_id'].astype('string').str.lower() if 'entity_id' in frame.columns else pd.Series('', index=frame.index, dtype='string')
+    provider = frame['provider_slug'].astype('string').str.lower() if 'provider_slug' in frame.columns else pd.Series('', index=frame.index, dtype='string')
+    mask = pd.Series(False, index=frame.index)
+    for prefix in filt.slug_prefixes:
+        mask = mask | slugs.str.startswith(prefix, na=False)
+    if filt.origin_names:
+        mask = mask | origin.isin(list(filt.origin_names))
+    if filt.entity_ids:
+        wanted = {value.lower() for value in filt.entity_ids}
+        mask = mask | entity.isin(wanted) | provider.isin(wanted)
+    frame = frame.loc[mask].copy()
+    if frame.empty:
+        return pd.DataFrame(columns=empty_cols)
+    frame['usage_date'] = pd.to_datetime(frame['usage_date'], errors='coerce').dt.normalize()
+    frame = frame.dropna(subset=['usage_date'])
+    frame['total_tokens'] = pd.to_numeric(frame['total_tokens'], errors='coerce').fillna(0.0)
+    if 'estimated_revenue' in frame.columns:
+        frame['estimated_revenue'] = pd.to_numeric(frame['estimated_revenue'], errors='coerce').fillna(0.0)
+    else:
+        frame['estimated_revenue'] = 0.0
+    if 'include_in_default_kpis' in frame.columns:
+        frame['row_complete'] = frame['include_in_default_kpis'].astype('boolean').fillna(True)
+    elif 'is_complete_day' in frame.columns:
+        frame['row_complete'] = frame['is_complete_day'].astype('boolean').fillna(True)
+    else:
+        frame['row_complete'] = True
+    daily = (
+        frame.groupby('usage_date', as_index=False)
+        .agg(
+            total_tokens=('total_tokens', 'sum'),
+            estimated_revenue=('estimated_revenue', 'sum'),
+            model_count=('model_permaslug', 'nunique'),
+            is_complete=('row_complete', 'all'),
+        )
+        .sort_values('usage_date')
+        .reset_index(drop=True)
+    )
+    daily['is_complete'] = daily['is_complete'].astype(bool)
+    if daily['is_complete'].all() and len(daily) >= 8:
+        last = float(daily['total_tokens'].iloc[-1])
+        last_day = daily['usage_date'].iloc[-1]
+        same_weekday = daily.loc[daily['usage_date'].dt.weekday.eq(last_day.weekday()) & daily['usage_date'].lt(last_day), 'total_tokens']
+        typical = float(same_weekday.tail(4).median()) if len(same_weekday) >= 3 else 0.0
+        if typical > 0 and last < 0.5 * typical:
+            daily.loc[daily.index[-1], 'is_complete'] = False
+    return daily
+
+
+def _openrouter_period_frame(daily: pd.DataFrame, granularity: str) -> pd.DataFrame:
+    frame = daily.copy()
+    if frame.empty:
+        return frame
+    frame['usage_date'] = pd.to_datetime(frame['usage_date'], errors='coerce')
+    if granularity == 'Daily':
+        out = frame.rename(columns={'usage_date': 'period'})
+        out['is_partial'] = ~out['is_complete']
+        return out
+    if granularity == 'Weekly':
+        frame['period'] = frame['usage_date'] - pd.to_timedelta(frame['usage_date'].dt.weekday, unit='D')
+        expected_days = 7
+    else:
+        frame['period'] = frame['usage_date'].dt.to_period('M').dt.to_timestamp()
+        expected_days = frame.groupby('period')['usage_date'].transform(lambda s: int(pd.Timestamp(s.min()).days_in_month))
+    grouped = (
+        frame.groupby('period', as_index=False)
+        .agg(
+            total_tokens=('total_tokens', 'sum'),
+            estimated_revenue=('estimated_revenue', 'sum'),
+            model_count=('model_count', 'max'),
+            observed_days=('usage_date', 'nunique'),
+            complete_days=('is_complete', 'sum'),
+        )
+        .sort_values('period')
+        .reset_index(drop=True)
+    )
+    if granularity == 'Weekly':
+        grouped['is_partial'] = grouped['complete_days'] < expected_days
+    else:
+        month_days = grouped['period'].dt.days_in_month
+        grouped['is_partial'] = grouped['complete_days'] < month_days
+    return grouped
+
+
+def _southbound_spec_from_view(view: CompanyView, profile):
+    """Prefer listing-derived HKEX southbound identity over hardcoded profiles."""
+    listing = None
+    if view.selected_listing_id and not view.listings.empty:
+        rows = view.listings.loc[view.listings['listing_id'].astype('string').eq(view.selected_listing_id)]
+        if not rows.empty:
+            listing = rows.iloc[0]
+    if listing is None and not view.listings.empty:
+        hk = view.listings.loc[view.listings.get('exchange', pd.Series('', index=view.listings.index)).astype('string').str.upper().eq('HKEX')]
+        if not hk.empty:
+            listing = hk.iloc[0]
+    if listing is not None:
+        listing_id = _text(listing.get('listing_id'))
+        canonical = _text(listing.get('canonical_ticker')) or _text(listing.get('native_ticker'))
+        code = hkex_security_code(listing.get('native_ticker'), canonical)
+        if listing_id and code:
+            return {
+                'mart_filename': f'{listing_id.lower()}_southbound_holdings.parquet',
+                'security_code': code,
+                'canonical_ticker': canonical or f"{code[1:]}.HK",
+                'listing_id': listing_id,
+            }
+    spec = None if profile is None else profile.southbound
+    if spec is None:
+        return None
+    return {
+        'mart_filename': spec.mart_filename,
+        'security_code': spec.security_code,
+        'canonical_ticker': spec.canonical_ticker,
+        'listing_id': spec.listing_id,
+    }
+
+
+def _local_quote_overlay_path() -> Path:
+    return _control_tower_repo_root() / 'data' / 'normalized' / 'marts' / 'quote_snapshots_v1.parquet'
+
+
+def _newer_local_quotes(snapshot_quotes: pd.DataFrame) -> pd.DataFrame:
+    """Replace published quotes with a newer local mart, listing by listing.
+
+    This does not rewrite the generation and never widens company scope to
+    other tickers. Pytest keeps the snapshot fixture by skipping the overlay.
+    """
+    import os
+    if os.environ.get('PYTEST_CURRENT_TEST') or os.environ.get('CONTROL_TOWER_DISABLE_LOCAL_QUOTE_OVERLAY'):
+        return snapshot_quotes
+    if snapshot_quotes is None or snapshot_quotes.empty or 'listing_id' not in snapshot_quotes.columns:
+        return snapshot_quotes
+    path = _local_quote_overlay_path()
+    if not path.is_file():
+        return snapshot_quotes
+    try:
+        local = pd.read_parquet(path)
+    except (OSError, ValueError):
+        return snapshot_quotes
+    if local.empty or 'listing_id' not in local.columns or 'quote_timestamp' not in local.columns:
+        return snapshot_quotes
+    local = local.copy()
+    local['quote_timestamp'] = pd.to_datetime(local['quote_timestamp'], errors='coerce', utc=True)
+    published = snapshot_quotes.copy()
+    published['quote_timestamp'] = pd.to_datetime(published['quote_timestamp'], errors='coerce', utc=True)
+    wanted = set(published['listing_id'].astype('string'))
+    local = local.loc[local['listing_id'].astype('string').isin(wanted)]
+    if local.empty:
+        return snapshot_quotes
+    rows = []
+    for listing_id, group in published.groupby(published['listing_id'].astype('string'), dropna=False):
+        overlay = local.loc[local['listing_id'].astype('string').eq(str(listing_id))]
+        if overlay.empty:
+            rows.append(group)
+            continue
+        pub_ts = group['quote_timestamp'].max()
+        loc_ts = overlay['quote_timestamp'].max()
+        if pd.notna(loc_ts) and (pd.isna(pub_ts) or loc_ts > pub_ts):
+            rows.append(overlay.loc[overlay['quote_timestamp'].eq(loc_ts)].head(1))
+        else:
+            rows.append(group)
+    return pd.concat(rows, ignore_index=True)
+
+
+def _load_southbound_holdings(spec) -> pd.DataFrame:
+    if spec is None:
+        return pd.DataFrame()
+    if not isinstance(spec, dict):
+        southbound = getattr(spec, 'southbound', None)
+        if southbound is None:
+            return pd.DataFrame()
+        spec = {
+            'mart_filename': southbound.mart_filename,
+            'security_code': southbound.security_code,
+            'canonical_ticker': southbound.canonical_ticker,
+            'listing_id': southbound.listing_id,
+        }
+    repo_root = _control_tower_repo_root()
+    listing_id = spec.get('listing_id')
+    filename = spec.get('mart_filename')
+    candidates = []
+    if listing_id:
+        candidates.append(southbound_mart_path(repo_root, listing_id))
+    if filename:
+        candidates.append(repo_root / 'data/normalized/marts' / filename)
+    for path in candidates:
+        if path.exists():
+            frame = _read_mart_projected(str(path), _parquet_fingerprint(path), SOUTHBOUND_MART_COLUMNS)
+            if frame.empty:
+                continue
+            frame = frame.copy()
+            frame['hold_date'] = pd.to_datetime(frame['hold_date'], errors='coerce')
+            frame = frame.dropna(subset=['hold_date']).sort_values('hold_date').reset_index(drop=True)
+            for column in ('holding_shares', 'holding_market_value', 'holding_share_pct'):
+                if column in frame.columns:
+                    frame[column] = pd.to_numeric(frame[column], errors='coerce')
+            return frame
+    return pd.DataFrame()
+
+
+def _load_openrouter_raw() -> tuple[pd.DataFrame, Path | None]:
+    repo_root = _control_tower_repo_root()
+    candidates = [
+        repo_root / 'data/normalized/marts/daily_provider_economics.parquet',
+        Path('data/normalized/marts/daily_provider_economics.parquet'),
+        repo_root / 'data/normalized/marts/daily_cloud_infra_economics.parquet',
+        Path('data/normalized/marts/daily_cloud_infra_economics.parquet'),
+        repo_root / 'data/normalized/openrouter/cloud_infra_daily_activity.parquet',
+        Path('data/normalized/openrouter/cloud_infra_daily_activity.parquet'),
+    ]
+    seen: set[str] = set()
+    for path in candidates:
+        key = str(path.resolve()) if path.exists() else str(path)
+        if key in seen:
+            continue
+        seen.add(key)
+        if path.exists():
+            return _read_mart_projected(str(path), _parquet_fingerprint(path), OPENROUTER_MART_COLUMNS), path
+    return pd.DataFrame(), None
+
+
+def _render_plotly(fig) -> None:
+    # Single entry point for every chart on this page, so the theme is applied
+    # once here rather than threaded through ten factory calls.
+    apply_chart_theme(fig, st.session_state.get('ct_theme', 'Light') == 'Dark')
+    st.plotly_chart(fig, width='stretch', theme=None, config={'displayModeBar': False})
+
+
+def _render_openrouter_module(view: CompanyView, profile) -> None:
+    filt = profile.openrouter
+    if filt is None:
+        return
+    heading = f'🤖 {filt.title}' if filt.title else '🤖 OpenRouter AI Token & API Economics'
+    _render_section_heading(4, heading, f'{_slugify(view.entity_id)}-openrouter')
+    # Only the load is guarded. The blanket try that used to wrap this whole
+    # function turned any bug in the chart code below into a one-line caption
+    # reading "temporarily unavailable", which is how a broken chart hid as a
+    # missing feed. Data being absent or malformed is the real failure this
+    # handles; a TypeError in the plotting path should surface.
+    try:
+        raw, source_path = _load_openrouter_raw()
+        daily = _openrouter_daily_frame(raw, profile)
+    except (OSError, KeyError, ValueError) as exc:
+        st.caption(f'OpenRouter signal temporarily unavailable: {exc}')
+        return
+    if daily.empty:
+        if source_path is None:
+            st.info('OpenRouter alternative data dataset not found in local normalized storage.')
+        else:
+            st.info(f'OpenRouter dataset loaded, but no {escape(_text(view.display_name))} rows were present.')
+        return
+    window_options = ['Weekly', 'Daily', 'Monthly']
+    window_key = f'{_slugify(view.entity_id)}_openrouter_window'
+    if hasattr(st, 'segmented_control'):
+        granularity = st.segmented_control('Window', window_options, default='Weekly', key=window_key)
+    else:
+        granularity = st.radio('Window', window_options, horizontal=True, index=0, key=window_key)
+    granularity = str(granularity or 'Weekly')
+    period = _openrouter_period_frame(daily, granularity)
+    complete = period.loc[~period['is_partial']].copy() if 'is_partial' in period.columns else period
+    latest = complete.iloc[-1] if not complete.empty else period.iloc[-1]
+    recent_cut = latest['period'] - pd.Timedelta(days=30) if granularity == 'Daily' else latest['period'] - pd.Timedelta(days=90)
+    recent = complete[complete['period'] >= recent_cut] if not complete.empty else period
+    avg_tokens = float(recent['total_tokens'].mean()) if not recent.empty else 0.0
+    n_models = int(period['model_count'].max()) if not period.empty else 0
+    start = period['period'].min().strftime('%Y-%m-%d')
+    end = period['period'].max().strftime('%Y-%m-%d')
+    source_name = source_path.name if source_path is not None else 'openrouter'
+    partial_n = int(period['is_partial'].sum()) if 'is_partial' in period.columns else 0
+    signal_name = filt.signal_name or 'tokens'
+    st.markdown(
+        (
+            '<div class="ct-kpi-grid">'
+            f'<div class="ct-kpi-card"><div class="ct-kpi-label">Latest complete {granularity.lower()} tokens</div><div class="ct-kpi-value">{float(latest["total_tokens"]) / 1e9:,.1f}B</div><div class="ct-kpi-sub">{pd.Timestamp(latest["period"]).strftime("%Y-%m-%d")} · all models summed</div></div>'
+            f'<div class="ct-kpi-card"><div class="ct-kpi-label">Latest complete est. revenue</div><div class="ct-kpi-value">${float(latest["estimated_revenue"]):,.0f}</div><div class="ct-kpi-sub">OpenRouter priced routes</div></div>'
+            f'<div class="ct-kpi-card"><div class="ct-kpi-label">Recent avg tokens</div><div class="ct-kpi-value">{avg_tokens / 1e9:,.1f}B</div><div class="ct-kpi-sub">Complete {granularity.lower()} periods only</div></div>'
+            f'<div class="ct-kpi-card"><div class="ct-kpi-label">Tracked models</div><div class="ct-kpi-value">{n_models} Models</div><div class="ct-kpi-sub">Aggregated, not split by model</div></div>'
+            '</div>'
+        ),
+        unsafe_allow_html=True,
+    )
+    token_plot = period.set_index('period')[['total_tokens']].rename(columns={'total_tokens': signal_name})
+    revenue_plot = period.set_index('period')[['estimated_revenue']].rename(columns={'estimated_revenue': 'Estimated revenue'})
+    partial_mask = period.set_index('period')['is_partial'] if 'is_partial' in period.columns else None
+    if granularity == 'Daily':
+        _render_plotly(_plotly_line_chart(token_plot / 1e9, colors=MODEL_COLORS, y_title='Tokens (billions)', value_format=',.1f', hover_suffix='B', height=340))
+        _render_plotly(_plotly_line_chart(revenue_plot, colors=[ACCENT], y_title='Estimated revenue (USD)', value_format='$,.0f', height=300))
+    else:
+        _render_plotly(_plotly_bar_chart(token_plot / 1e9, y_title='Tokens (billions)', value_format=',.1f', hover_suffix='B', height=340, partial_mask=partial_mask))
+        _render_plotly(_plotly_bar_chart(revenue_plot, colors=[ACCENT], y_title='Estimated revenue (USD)', value_format='$,.0f', height=300, partial_mask=partial_mask))
+    note = f'{granularity} {signal_name} and estimated-revenue totals, all models summed · {start} to {end} · source: {source_name}.'
+    if partial_n:
+        note += f' Lighter bars are incomplete {granularity.lower()} periods shown as observed totals only; they are not nowcast.'
+    st.caption(note + ' ' + (filt.caption or 'Estimated revenue is a priced-route reconstruction, not issuer billed revenue.'))
+
+
+def _render_southbound_module(view: CompanyView, profile) -> None:
+    spec = _southbound_spec_from_view(view, profile)
+    if spec is None:
+        return
+    _render_section_heading(4, '🌊 HKEX Southbound Stock Connect (港股通南向资金) Liquidity Signal', f'{_slugify(view.entity_id)}-southbound-flow')
+    holdings = _load_southbound_holdings(spec)
+    ticker = spec['canonical_ticker']
+    if holdings.empty:
+        code = spec['security_code']
+        extra = ''
+        if code in {'09888', '9888'}:
+            extra = ' Eastmoney returned an empty payload for Baidu 9888.HK (akshare result[pages] is null); this is an upstream gap, not a missing listing mapping.'
+        st.warning(
+            f"Southbound holding history is unavailable locally. Expected data/normalized/marts/{spec['mart_filename']} "
+            f"from Eastmoney/akshare stock_hsgt_individual_em({code}).{extra}"
+        )
+        st.caption('This is a rolling ~2-year per-stock ownership series, not the 2014-onward market-wide southbound flow.')
+        return
+    latest = holdings.iloc[-1]
+    prev_30 = holdings[holdings['hold_date'] <= latest['hold_date'] - pd.Timedelta(days=30)]
+    shares = float(latest['holding_shares']) if pd.notna(latest.get('holding_shares')) else float('nan')
+    mv = float(latest['holding_market_value']) if pd.notna(latest.get('holding_market_value')) else float('nan')
+    pct = float(latest['holding_share_pct']) if pd.notna(latest.get('holding_share_pct')) else float('nan')
+    mv_30 = float('nan')
+    if not prev_30.empty and pd.notna(mv):
+        prior_mv = pd.to_numeric(prev_30.iloc[-1].get('holding_market_value'), errors='coerce')
+        if pd.notna(prior_mv):
+            mv_30 = mv - float(prior_mv)
+    asof = pd.Timestamp(latest['hold_date']).strftime('%Y-%m-%d')
+    # NaN formats as the literal string 'nan', so an absent value rendered as
+    # 'nanM shares' / 'HK$ nanB' / 'nan%'. Only the 30-day delta was guarded.
+    shares_html = f'{shares/1e6:,.1f}M shares' if pd.notna(shares) else 'Unavailable'
+    mv_html = f'HK$ {mv/1e9:,.1f}B' if pd.notna(mv) else 'Unavailable'
+    pct_html = f'{pct:.2f}%' if pd.notna(pct) else 'Unavailable'
+    mv_30_html = f'+HK$ {mv_30/1e9:,.1f}B' if pd.notna(mv_30) and mv_30 >= 0 else (f'-HK$ {abs(mv_30)/1e9:,.1f}B' if pd.notna(mv_30) else 'Unavailable')
+    mv_30_color = '#16a34a' if pd.notna(mv_30) and mv_30 >= 0 else ('#dc2626' if pd.notna(mv_30) else 'inherit')
+    st.markdown(
+        (
+            '<div class="ct-kpi-grid">'
+            f'<div class="ct-kpi-card"><div class="ct-kpi-label">Southbound holding</div><div class="ct-kpi-value">{shares_html}</div><div class="ct-kpi-sub">{asof}</div></div>'
+            f'<div class="ct-kpi-card"><div class="ct-kpi-label">Holding market value</div><div class="ct-kpi-value">{mv_html}</div><div class="ct-kpi-sub">Eastmoney / HSGT individual</div></div>'
+            f'<div class="ct-kpi-card"><div class="ct-kpi-label">Share of issued shares</div><div class="ct-kpi-value">{pct_html}</div><div class="ct-kpi-sub">Provider labels this as A-share %, but the series is {escape(ticker)}</div></div>'
+            f'<div class="ct-kpi-card"><div class="ct-kpi-label">~30D holding MV change</div><div class="ct-kpi-value" style="color:{mv_30_color};">{mv_30_html}</div><div class="ct-kpi-sub">Price plus share-count mix, not official net inflow</div></div>'
+            '</div>'
+        ),
+        unsafe_allow_html=True,
+    )
+    share_plot = holdings.set_index('hold_date')[['holding_shares']].rename(columns={'holding_shares': 'Southbound shares'})
+    mv_plot = holdings.set_index('hold_date')[['holding_market_value']].rename(columns={'holding_market_value': 'Holding market value'})
+    pct_plot = holdings.set_index('hold_date')[['holding_share_pct']].rename(columns={'holding_share_pct': 'Holding share %'})
+    _render_plotly(_plotly_line_chart(share_plot / 1e6, y_title='Shares (millions)', value_format=',.1f', hover_suffix='M', height=300))
+    _render_plotly(_plotly_line_chart(mv_plot / 1e9, colors=['#00B5A4'], y_title='Holding market value (HK$ B)', value_format=',.1f', hover_suffix='B', height=280))
+    _render_plotly(_plotly_line_chart(pct_plot, colors=['#8B5CF6'], y_title='Holding share %', value_format='.2f', hover_suffix='%', height=240))
+    start = holdings['hold_date'].min().strftime('%Y-%m-%d')
+    end = holdings['hold_date'].max().strftime('%Y-%m-%d')
+    st.caption(f'{ticker} southbound ownership from Eastmoney/akshare stock_hsgt_individual_em · {start} to {end} · {len(holdings):,} daily rows. Rolling window only; this is not the 2014-onward market-wide southbound series.')
+
+
+def _render_alternative_data_tab(view: CompanyView) -> None:
+    profile = get_company_profile(view.entity_id)
+    _render_section_heading(4, 'Alternative data signals', f'alternative-data-{_slugify(view.entity_id)}')
+    southbound_spec = _southbound_spec_from_view(view, profile)
+    has_modules = bool(profile.openrouter or southbound_spec)
+    if not has_modules:
+        st.info(
+            f'No company-specific alternative-data modules are wired for {_text(view.display_name)} yet. '
+            'Official filings, consensus, and thesis evidence remain on the other tabs.'
+        )
+        return
+    if profile.alt_data_caption:
+        st.caption(profile.alt_data_caption)
+    _render_openrouter_module(view, profile)
+    _render_southbound_module(view, profile)
+
+
+
+
+@st.cache_data(show_spinner=False, max_entries=8)
+def _load_vendor_financials_cached(
+    entity_id: str,
+    listing_id: str | None,
+    listings_json: str,
+    mart_path: str,
+    fingerprint: tuple[int, int] | None,
+) -> tuple[str, str, str, str]:
+    """Cache the labelled vendor overlay; official actuals are never touched."""
+
+    del fingerprint
+    listings = pd.read_json(listings_json, dtype=False) if listings_json else pd.DataFrame()
+    result = load_vendor_financials(
+        entity_id=entity_id,
+        listing_id=listing_id,
+        listings=listings,
+        local_mart_path=Path(mart_path) if mart_path else None,
+        allow_sibling_fallback=not bool(mart_path and Path(mart_path).is_file()),
+    )
+    payload = result.frame.to_json(date_format='iso', default_handler=str) if result.frame is not None else ''
+    return result.status, result.detail, result.source_kind, payload
+
+
+def _vendor_financials_for_view(view: CompanyView) -> VendorLoadResult:
+    """Read labelled yfinance/akshare rows without touching official actuals."""
+
+    if view.entity_type == 'private' and view.listings.empty:
+        return VendorLoadResult(pd.DataFrame(), 'unavailable', 'private entity has no listing for vendor financials', 'local_mart')
+    mart = default_local_mart_path(_control_tower_repo_root())
+    fingerprint = _parquet_fingerprint(mart) if mart.is_file() else None
+    listings_json = view.listings.to_json(date_format='iso', default_handler=str) if view.listings is not None and not view.listings.empty else ''
+    try:
+        status, detail, source_kind, payload = _load_vendor_financials_cached(
+            view.entity_id,
+            view.selected_listing_id,
+            listings_json,
+            str(mart),
+            fingerprint,
+        )
+    except (OSError, ValueError) as exc:
+        return VendorLoadResult(pd.DataFrame(), 'error', f'vendor financials failed: {exc}', 'local_mart')
+    frame = pd.read_json(payload, dtype=False) if payload else pd.DataFrame()
+    return VendorLoadResult(frame, status, detail, source_kind)
+
+
+def _vendor_series(frame: pd.DataFrame, provider: str, metric: str, period_type: str) -> pd.DataFrame:
+    if frame is None or frame.empty:
+        return pd.DataFrame(columns=['period_end', 'period_label', 'reported_value', 'currency', 'source_label'])
+    scoped = frame.loc[
+        frame['provider'].astype('string').eq(provider)
+        & frame['metric'].astype('string').eq(metric)
+        & frame['period_type'].astype('string').eq(period_type)
+    ].copy()
+    if scoped.empty:
+        return scoped
+    scoped['period_end'] = pd.to_datetime(scoped['period_end'], errors='coerce')
+    scoped = scoped.dropna(subset=['period_end', 'reported_value']).sort_values('period_end')
+    return scoped.drop_duplicates(subset=['period_end'], keep='last')
+
+
+def _render_vendor_financials_overlay(view: CompanyView) -> VendorLoadResult:
+    _render_section_heading(
+        4,
+        'Vendor financials overlay (not official)',
+        f'vendor-financials-{_slugify(view.entity_id)}',
+    )
+    result = _vendor_financials_for_view(view)
+    st.caption(vendor_source_caption(result))
+    frame = result.frame
+    if result.status == 'error':
+        st.error(result.detail)
+        return result
+    if frame is None or frame.empty:
+        st.info(result.detail or 'Vendor financials overlay unavailable for this listing.')
+        return result
+    st.warning(
+        'These numbers come from yfinance and/or akshare inside the sibling financial-data store. '
+        'They are not HKEX/SEC issuer actuals, not IFRS vs Non-IFRS, and not a PIT official series. '
+        'AkShare interim rows are year-to-date. Currencies are source-reported and not FX-aligned.'
+    )
+    annual_rev = _vendor_series(frame, 'yfinance', 'revenue_total', 'annual')
+    annual_op = _vendor_series(frame, 'yfinance', 'operating_profit', 'annual')
+    annual_np = _vendor_series(frame, 'yfinance', 'net_profit_attributable', 'annual')
+    if not annual_rev.empty:
+        annual_rev = annual_rev.loc[pd.to_numeric(annual_rev['reported_value'], errors='coerce').fillna(0) != 0]
+        plot = pd.DataFrame({'period_end': annual_rev['period_end']})
+        plot = plot.merge(
+            annual_rev[['period_end', 'reported_value']].rename(columns={'reported_value': 'Revenue'}),
+            on='period_end',
+            how='left',
+        )
+        if not annual_op.empty:
+            plot = plot.merge(
+                annual_op[['period_end', 'reported_value']].rename(columns={'reported_value': 'Operating profit'}),
+                on='period_end',
+                how='left',
+            )
+        if not annual_np.empty:
+            plot = plot.merge(
+                annual_np[['period_end', 'reported_value']].rename(columns={'reported_value': 'Net profit attributable'}),
+                on='period_end',
+                how='left',
+            )
+        currency = _text(annual_rev.iloc[-1].get('currency')) or 'CNY'
+        values = plot.set_index('period_end').apply(pd.to_numeric, errors='coerce') / 1e9
+        st.caption(f'yfinance annual statements via financial-data · values in {currency} billions · vendor reported, unverified · zeros dropped')
+        _render_plotly(_plotly_bar_chart(values, y_title=f'{currency} billions', value_format=',.1f', height=300, tickformat='%Y'))
+    display_columns = [
+        column for column in (
+            'provider', 'source_label', 'period_label', 'period_type', 'interim_is_ytd', 'metric',
+            'source_metric_label', 'reported_value', 'currency', 'currency_semantics', 'unit', 'pit_class',
+        ) if column in frame.columns
+    ]
+    friendly = frame.loc[:, display_columns].rename(columns={
+        'provider': 'Provider',
+        'source_label': 'Source',
+        'period_label': 'Period',
+        'period_type': 'Period type',
+        'interim_is_ytd': 'Interim is YTD',
+        'metric': 'Metric',
+        'source_metric_label': 'Vendor line item',
+        'reported_value': 'Reported',
+        'currency': 'Currency',
+        'currency_semantics': 'Currency semantics',
+        'unit': 'Unit',
+        'pit_class': 'PIT class',
+    })
+    with st.expander('Vendor row registry (yfinance / akshare via financial-data)', expanded=False):
+        ct_dataframe(friendly, width='stretch', hide_index=True)
+    return result
 
 def _render_fundamentals_tab(
     view: CompanyView,
     snapshot: ControlTowerSnapshot,
     viewer_timezone: str,
 ) -> None:
-    """Tab 2: Fundamentals - Segments, GAAP vs Non-IFRS dual track, FCF bridge, Buybacks, Valuation."""
-
-    # 1. Segment disclosures & core financial actuals
-    _render_section_heading(4, "Segment disclosures & core operations", f"segment-disclosures-{_slugify(view.entity_id)}")
+    _render_section_heading(4, 'Segment disclosures & core operations', f'segment-disclosures-{_slugify(view.entity_id)}')
     frame = _company_earnings_actuals(snapshot, view)
     if frame.empty:
-        st.info(
-            "No earnings-actuals rows for this entity/listing in the current snapshot; "
-            "values are only shown from official issuer disclosure metadata."
-        )
+        st.info('No earnings-actuals rows for this entity/listing in the current snapshot; values are only shown from official issuer disclosure metadata.')
     else:
-        metrics = frame.get("metric", pd.Series("", index=frame.index, dtype="string")).astype("string")
-        has_segments = metrics.str.startswith("revenue_") & ~metrics.eq("revenue_total")
+        profile = get_company_profile(view.entity_id)
+        pivoted_model = _build_quarterly_financial_pivot(frame, n_periods=8, profile=profile)
+        if not pivoted_model.empty:
+            st.caption(f'Multi-period quarterly financial trajectory (LTM 8 quarters in {profile.reporting_currency} billions) · GAAP vs Non-IFRS dual track · YoY & QoQ growth metrics')
+            ct_dataframe(pivoted_model, width='stretch', hide_index=True)
+        act_dt = frame.copy()
+        act_dt['period_end'] = pd.to_datetime(act_dt['period_end'], errors='coerce')
+        act_dt = act_dt.dropna(subset=['period_end']).sort_values('period_end')
+        act_dt['quarter_label'] = act_dt['period_end'].dt.year.astype(str) + 'Q' + act_dt['period_end'].dt.quarter.astype(str)
+        piv_chart = act_dt[act_dt['accounting_basis'] == 'IFRS'].pivot_table(index='quarter_label', columns='metric', values='reported_value', aggfunc='first') / 1e9
+        period_order = act_dt[['quarter_label', 'period_end']].drop_duplicates().sort_values('period_end')['quarter_label'].tolist()
+        piv_chart = piv_chart.reindex(period_order)
+        if 'revenue_total' in piv_chart.columns:
+            piv_chart = piv_chart.dropna(subset=['revenue_total'])
+        if len(piv_chart) >= 4:
+            seg_chart_df = pd.DataFrame(index=piv_chart.index)
+            seen_labels = set()
+            preferred = list(profile.segment_metrics)
+            if not preferred:
+                extra = [c for c in piv_chart.columns if str(c).startswith('revenue_') and str(c) != 'revenue_total']
+                preferred = [SegmentSpec(metric, segment_label(metric, profile)) for metric in extra]
+            for spec in preferred:
+                if spec.metric not in piv_chart.columns or spec.label in seen_labels:
+                    continue
+                seen_labels.add(spec.label)
+                seg_chart_df[spec.label] = piv_chart[spec.metric]
+            if not seg_chart_df.empty and seg_chart_df.notna().any().any():
+                share_frame = seg_chart_df.copy()
+                share_frame.index.name = 'period'
+                share_frame = share_frame.reset_index()
+                st.caption('Quarterly segment mix (% share of disclosed segments). Absolute reported currency is on the total-revenue chart below.')
+                _render_plotly(_segment_share_chart(share_frame))
+            rev_growth_df = pd.DataFrame(index=piv_chart.index)
+            rev_growth_df[REVENUE_CHART_COLUMN] = piv_chart['revenue_total']
+            # Four rows back is only a year back when every intervening
+            # quarter is present, and the dropna above removes any quarter
+            # without a reported total -- so a company that skipped one had
+            # its next four quarters compared against the wrong period.
+            rev_growth_df['YoY Growth (%)'] = _quarterly_yoy(piv_chart['revenue_total'])
+            st.caption('Quarterly topline and YoY growth · left axis revenue, right axis YoY')
+            _render_plotly(_dual_axis_revenue_yoy_chart(rev_growth_df, profile.reporting_currency))
+            profit_frame = _quarterly_profitability_frame(frame)
+            if not profit_frame.empty:
+                st.caption('Quarterly Non-IFRS operating profit and margins. Gross margin is unavailable because gross profit is not in the current earnings-actuals mart.')
+                _render_plotly(_profit_margin_chart(profit_frame, profile.reporting_currency))
+        metrics = frame.get('metric', pd.Series('', index=frame.index, dtype='string')).astype('string')
+        has_segments = metrics.str.startswith('revenue_') & ~metrics.eq('revenue_total')
         if has_segments.any():
-            st.caption("Official segment revenue rows extracted from issuer disclosures.")
-
-        sorted_actuals = frame.sort_values(["period_end", "metric", "version"], ascending=False)
-        actuals_display_columns = (
-            "period_label", "metric", "reported_value", "normalized_value", "currency",
-            "unit", "accounting_basis", "filing_at", "version", "is_restatement",
-            "revision_reason", "source_url",
-        )
+            st.caption('Official segment revenue rows extracted from issuer disclosures.')
+        sorted_actuals = frame.sort_values(['period_end', 'metric', 'version'], ascending=False)
+        actuals_display_columns = ('period_label', 'metric', 'reported_value', 'normalized_value', 'currency', 'unit', 'accounting_basis', 'filing_at', 'version', 'is_restatement', 'revision_reason', 'source_url')
         keep_cols = [c for c in actuals_display_columns if c in sorted_actuals.columns]
-        friendly_actuals = sorted_actuals.loc[:, keep_cols].rename(
-            columns={
-                "period_label": "Period",
-                "metric": "Metric",
-                "reported_value": "Reported",
-                "normalized_value": "Normalized",
-                "currency": "Currency",
-                "unit": "Unit",
-                "accounting_basis": "Basis",
-                "filing_at": "Filing date",
-                "version": "Version",
-                "is_restatement": "Restatement",
-                "revision_reason": "Revision reason",
-                "source_url": "Source link",
-            }
-        )
-        st.dataframe(friendly_actuals, width="stretch", hide_index=True)
-        latest = sorted_actuals["period_end"].dropna()
+        friendly_actuals = sorted_actuals.loc[:, keep_cols].rename(columns={'period_label': 'Period', 'metric': 'Metric', 'reported_value': 'Reported', 'normalized_value': 'Normalized', 'currency': 'Currency', 'unit': 'Unit', 'accounting_basis': 'Basis', 'filing_at': 'Filing date', 'version': 'Version', 'is_restatement': 'Restatement', 'revision_reason': 'Revision reason', 'source_url': 'Source link'})
+        with st.expander('Detailed row-level filing actuals registry', expanded=False):
+            ct_dataframe(friendly_actuals, width='stretch', hide_index=True)
+        latest = sorted_actuals['period_end'].dropna()
         if not latest.empty:
-            latest_label = _text(sorted_actuals.loc[sorted_actuals["period_end"].eq(latest.max()), "period_label"].iloc[0])
-            st.caption(f"Latest reported period in snapshot: {escape(latest_label) if latest_label else latest.max().strftime('%Y-%m-%d')} · reported values preserved per filing; restatements are versioned, not overwritten.")
-
-    # 2. Official Earnings Calendar
+            latest_label = _text(sorted_actuals.loc[sorted_actuals['period_end'].eq(latest.max()), 'period_label'].iloc[0])
+            st.caption(f'Latest reported period in snapshot: {escape(latest_label) if latest_label else latest.max().strftime("%Y-%m-%d")} · reported values preserved per filing; restatements are versioned, not overwritten.')
+    _render_vendor_financials_overlay(view)
     render_earnings_calendar(snapshot, entity_id=view.entity_id, listing_id=view.selected_listing_id)
-
-    # 3. Profitability & Free Cash Flow trajectory
-    _render_section_heading(4, "Profitability & Free Cash Flow trajectory", f"fcf-trajectory-{_slugify(view.entity_id)}")
+    _render_section_heading(4, 'Profitability & Free Cash Flow trajectory', f'fcf-trajectory-{_slugify(view.entity_id)}')
     trajectory = _latest_actual_rows(frame)
     if not trajectory.empty:
-        metric_names = trajectory.get(
-            "metric", pd.Series("", index=trajectory.index, dtype="string")
-        ).astype("string").str.lower()
-        trajectory = trajectory.loc[
-            metric_names.str.contains(
-                r"free_cash_flow|cash_flow|prepayment|capital_expenditure|capex|operating_margin|operating_profit",
-                regex=True,
-                na=False,
-            )
-        ]
+        metric_names = trajectory.get('metric', pd.Series('', index=trajectory.index, dtype='string')).astype('string').str.lower()
+        trajectory = trajectory.loc[metric_names.str.contains(r'free_cash_flow|cash_flow|prepayment|capital_expenditure|capex|operating_margin|operating_profit', regex=True, na=False)]
     if trajectory.empty:
-        st.info(
-            "Profitability and Free Cash Flow metrics unavailable · no matching "
-            "earnings-actuals rows for the latest reported period."
-        )
+        st.info('Profitability and Free Cash Flow metrics unavailable · no matching earnings-actuals rows for the latest reported period.')
     else:
-        display_columns = [
-            column
-            for column in (
-                "period_label", "metric", "reported_value", "normalized_value",
-                "currency", "unit", "accounting_basis", "filing_at", "source_id",
-                "source_url", "pit_class",
-            )
-            if column in trajectory.columns
-        ]
-        st.dataframe(
-            trajectory.loc[:, display_columns].rename(
-                columns={
-                    "period_label": "Period",
-                    "metric": "Metric",
-                    "reported_value": "Reported",
-                    "normalized_value": "Normalized",
-                    "currency": "Currency",
-                    "unit": "Unit",
-                    "accounting_basis": "Basis",
-                    "filing_at": "Filing date",
-                    "source_id": "Source",
-                    "source_url": "Source link",
-                    "pit_class": "PIT class",
-                }
-            ),
-            width="stretch",
-            hide_index=True,
-        )
-        st.caption(
-            "Reported and normalized values remain distinct and retain their row-level provenance."
-        )
-
-    # 4. Statutory capital returns and corporate actions
-    _render_section_heading(4, "Statutory capital returns & corporate actions", f"corporate-actions-{_slugify(view.entity_id)}")
+        display_columns = [column for column in ('period_label', 'metric', 'reported_value', 'normalized_value', 'currency', 'unit', 'accounting_basis', 'filing_at', 'source_id', 'source_url', 'pit_class') if column in trajectory.columns]
+        ct_dataframe(trajectory.loc[:, display_columns].rename(columns={'period_label': 'Period', 'metric': 'Metric', 'reported_value': 'Reported', 'normalized_value': 'Normalized', 'currency': 'Currency', 'unit': 'Unit', 'accounting_basis': 'Basis', 'filing_at': 'Filing date', 'source_id': 'Source', 'source_url': 'Source link', 'pit_class': 'PIT class'}), width='stretch', hide_index=True)
+        st.caption('Reported and normalized values remain distinct and retain their row-level provenance.')
+    _render_section_heading(4, 'Statutory capital returns & corporate actions', f'corporate-actions-{_slugify(view.entity_id)}')
     if view.corporate_actions.empty:
-        st.info("No statutory corporate-action rows for the selected listing in the current snapshot.")
+        st.info('No statutory corporate-action rows for the selected listing in the current snapshot.')
     else:
-        total_spent = view.corporate_actions["total_amount_paid"].dropna().sum() if "total_amount_paid" in view.corporate_actions.columns else 0.0
-        total_shares = view.corporate_actions["shares_affected"].dropna().sum() if "shares_affected" in view.corporate_actions.columns else 0
-        ccy = _text(view.corporate_actions.iloc[0].get("currency"))
-
-        mcols = st.columns(3)
-        mcols[0].metric(
-            "Total Consideration",
-            f"{ccy} {total_spent:,.2f}".strip() if total_spent and ccy else "Unavailable",
+        total_spent = view.corporate_actions['total_amount_paid'].dropna().sum() if 'total_amount_paid' in view.corporate_actions.columns else 0.0
+        total_shares = view.corporate_actions['shares_affected'].dropna().sum() if 'shares_affected' in view.corporate_actions.columns else 0
+        ccy = _text(view.corporate_actions.iloc[0].get('currency')) or 'HKD'
+        spent_html = f'{ccy} {total_spent/1e9:,.2f}B' if total_spent else 'Unavailable'
+        shares_html = f'{int(total_shares):,}' if total_shares else 'Unavailable'
+        bb_tracker_html = (
+            '<div class="ct-buyback-tracker">'
+            '<div class="ct-panel-heading"><h3 style="font-size: 0.95rem; font-weight: 750;">🛡️ Statutory capital returns</h3></div>'
+            '<div class="ct-kpi-grid" style="margin-top: 0.5rem;">'
+            f'<div class="ct-kpi-card"><div class="ct-kpi-label">Recorded amount</div><div class="ct-kpi-value">{spent_html}</div><div class="ct-kpi-sub">{len(view.corporate_actions)} selected-listing rows</div></div>'
+            f'<div class="ct-kpi-card"><div class="ct-kpi-label">Shares affected</div><div class="ct-kpi-value">{shares_html}</div><div class="ct-kpi-sub">From local corporate-actions mart</div></div>'
+            '</div></div>'
         )
-        mcols[1].metric("Shares Repurchased", f"{int(total_shares):,}" if total_shares else "Unavailable")
-        mcols[2].metric("Corporate Action Rows", f"{len(view.corporate_actions):,}")
-
-        st.dataframe(
-            _friendly_corporate_actions_frame(view.corporate_actions, viewer_timezone),
-            width="stretch",
-            hide_index=True,
+        st.markdown(bb_tracker_html, unsafe_allow_html=True)
+        ct_dataframe(_friendly_corporate_actions_frame(view.corporate_actions, viewer_timezone), width='stretch', hide_index=True)
+    _render_section_heading(4, 'Valuation multiples & return yields', f'valuation-multiples-{_slugify(view.entity_id)}')
+    spot = _spot_forward_pe_payload(view)
+    if spot is not None:
+        spot_pe_html = f'{spot["pe"]:.1f}x' if spot.get('pe') else 'NM'
+        analysts = spot['analyst_count']
+        analyst_label = f"{int(analysts)} analysts" if pd.notna(analysts) else 'analyst count unavailable'
+        # Name the year the ratio actually used. The card used to say "FY1"
+        # unconditionally, which hid a selection that could land on FY2.
+        if pd.notna(spot['fiscal_year']):
+            year_label = f"FY{int(spot['fiscal_year'])}"
+        else:
+            year_label = spot['horizon'] or 'fiscal year unavailable'
+        eps_label = 'FY1 consensus EPS' if spot['is_fy1'] else f'Consensus EPS · {year_label}'
+        st.markdown(
+            (
+                '<div class="ct-kpi-grid">'
+                f'<div class="ct-kpi-card"><div class="ct-kpi-label">Last delayed price</div><div class="ct-kpi-value">{spot["price_ccy"]} {spot["price"]:,.2f}</div><div class="ct-kpi-sub">Quote snapshot</div></div>'
+                f'<div class="ct-kpi-card"><div class="ct-kpi-label">{escape(eps_label)}</div><div class="ct-kpi-value">{spot["eps_ccy"]} {spot["eps"]:.2f}</div><div class="ct-kpi-sub">{escape(year_label)} · {escape(spot["provider"])} · {escape(analyst_label)}</div></div>'
+                f'<div class="ct-kpi-card"><div class="ct-kpi-label">Spot forward P/E</div><div class="ct-kpi-value">{spot_pe_html}</div><div class="ct-kpi-sub">Price / {escape(year_label)} EPS · vendor display-only, not official valuation_snapshots</div></div>'
+                '<div class="ct-kpi-card"><div class="ct-kpi-label">Trailing / historical P/E</div><div class="ct-kpi-value">Unavailable</div><div class="ct-kpi-sub">No share-count or historical EPS vintage in the valuation mart</div></div>'
+                '</div>'
+            ),
+            unsafe_allow_html=True,
         )
-
-    # 5. Valuation Multiples & Yields Context
-    _render_section_heading(4, "Valuation multiples & return yields", f"valuation-multiples-{_slugify(view.entity_id)}")
-    if view.valuation_snapshots.empty:
-        st.warning(
-            "Valuation multiples unavailable · requires contemporaneous quote, share count, and basis-verified forward consensus."
-        )
-    else:
-        st.dataframe(_friendly_valuation_frame(view.valuation_snapshots), width="stretch", hide_index=True)
+        fy1_note = '' if spot['is_fy1'] else ' No 0y consensus row is available, so the earliest annual estimate is used instead.'
         st.caption(
-            "percentile_history_status: unavailable · Historical denominator vintages are absent; "
-            "reconstructing synthetic historical percentiles from current-vintage statements is strictly forbidden by policy."
+            f'Spot forward P/E is a same-currency vendor display ratio from delayed yfinance quote and yfinance consensus EPS ({year_label}).'
+            f'{fy1_note} Negative FY1 EPS is shown as NM. This is not a valuation_snapshots row, not share-count-based, and not a historical percentile.'
         )
+    else:
+        st.info('Vendor forward P/E unavailable · needs a delayed quote and a same-currency yfinance annual EPS consensus row.')
+    if view.valuation_snapshots.empty:
+        st.warning('Audited valuation mart unavailable · official forward_pe / EV/EBITDA / FCF yield still require contemporaneous quote, share count, and basis-verified consensus. The vendor overlay above is separate and labelled.')
+    else:
+        ct_dataframe(_friendly_valuation_frame(view.valuation_snapshots), width='stretch', hide_index=True)
+        st.caption('percentile_history_status: unavailable · Historical denominator vintages are absent; reconstructing synthetic historical percentiles from current-vintage statements is strictly forbidden by policy.')
+
 
 
 def _render_thesis_catalysts_tab(
@@ -1971,160 +2987,411 @@ def _render_thesis_catalysts_tab(
     snapshot: ControlTowerSnapshot,
     viewer_timezone: str,
 ) -> None:
-    """Tab 3: Thesis & Catalysts - Human-authored thesis claims, catalyst roadmap, and falsification questions."""
-
-    # 1. Active Investment Thesis Claims
-    _render_section_heading(4, "Thesis claims (Human-authored)", f"thesis-claims-{_slugify(view.entity_id)}")
+    _render_section_heading(4, 'Thesis claims (Human-authored)', f'thesis-claims-{_slugify(view.entity_id)}')
     if view.thesis_claims.empty:
-        st.info("No human-authored thesis claims registered for this entity.")
+        st.info('No human-authored thesis claims registered for this entity.')
     else:
         for _, row in view.thesis_claims.iterrows():
-            title = _text(row.get("thesis_title")) or _text(row.get("claim_id"))
-            status = _text(row.get("status")).upper() or "STATUS UNAVAILABLE"
-            claim_text = _text(row.get("claim_text"))
-            rule = _text(row.get("invalidation_rule"))
-            reviewed_by = _text(row.get("reviewed_by")) or "Not recorded"
-            reviewed_at = _format_time(row.get("last_reviewed_at_utc"), viewer_timezone) if _text(row.get("last_reviewed_at_utc")) else "Not recorded"
-
-            status_badge_style = "var(--ct-warning)" if status == "DRAFT" else "var(--ct-accent)"
-            card_html = (
-                f'<div class="ct-panel" style="margin-bottom: 0.85rem;">'
-                f'<div class="ct-panel-heading">'
-                f'<h3 style="font-size: 0.98rem; font-weight: 750;">{escape(title)}</h3>'
-                f'<span class="ct-badge" style="color: {status_badge_style}; border-color: {status_badge_style};">[{escape(status)}]</span>'
-                f'</div>'
-                f'<div class="ct-subtle" style="margin-bottom: 0.45rem;">Human-authored thesis · status: <strong>{escape(status.lower())}</strong> (never automatically promoted to active or mutated by AI)</div>'
-                f'<div style="font-size: 0.88rem; line-height: 1.45; color: var(--ct-ink); margin-bottom: 0.55rem;">{escape(claim_text)}</div>'
-                f'<div class="ct-alert-strip" style="margin: 0.4rem 0;"><strong>Invalidation Rule:</strong> {escape(rule)}</div>'
-                f'<div class="ct-source-line">Reviewed by: {escape(reviewed_by)} · Last reviewed: {escape(reviewed_at)}</div>'
-                f'</div>'
-            )
+            title = _text(row.get('thesis_title')) or _text(row.get('claim_id'))
+            status = _text(row.get('status')).upper() or 'STATUS UNAVAILABLE'
+            claim_text = _text(row.get('claim_text'))
+            rule = _text(row.get('invalidation_rule'))
+            reviewed_by = _text(row.get('reviewed_by')) or 'Not recorded'
+            reviewed_at = _format_time(row.get('last_reviewed_at_utc'), viewer_timezone) if _text(row.get('last_reviewed_at_utc')) else 'Not recorded'
+            title_lower = title.lower()
+            if 'bull' in title_lower:
+                card_class = 'ct-thesis-card--bull'
+                badge_color = '#16a34a'
+            elif 'bear' in title_lower:
+                card_class = 'ct-thesis-card--bear'
+                badge_color = '#dc2626'
+            else:
+                card_class = 'ct-thesis-card--base'
+                badge_color = 'var(--ct-accent)'
+            card_html = f'<div class="ct-thesis-card {card_class}"><div class="ct-panel-heading"><h3 style="font-size: 1.02rem; font-weight: 800; color: var(--ct-ink); margin: 0;">{escape(title)}</h3><span class="ct-badge" style="color: {badge_color}; border-color: {badge_color}; font-weight: 750;">[{escape(status)}]</span></div><div class="ct-subtle" style="margin-bottom: 0.5rem;">Human-authored thesis · status: <strong>{escape(status.lower())}</strong> (never automatically promoted to active or mutated by AI)</div><div style="font-size: 0.9rem; line-height: 1.5; color: var(--ct-ink); margin-bottom: 0.65rem;">{escape(claim_text)}</div><div class="ct-alert-strip" style="margin: 0.5rem 0; font-size: 0.82rem;"><strong>🚨 Invalidation Rule:</strong> {escape(rule)}</div><div class="ct-source-line">Reviewed by: {escape(reviewed_by)} · Last reviewed: {escape(reviewed_at)}</div></div>'
             st.markdown(card_html, unsafe_allow_html=True)
-
-    # 2. Active & Upcoming Catalysts Roadmap
-    _render_section_heading(4, "Active & upcoming catalysts", f"catalysts-{_slugify(view.entity_id)}")
+    _render_section_heading(4, 'Active & upcoming catalysts', f'catalysts-{_slugify(view.entity_id)}')
     if view.events.empty:
-        st.info("No explicitly linked events are available for this company.")
+        st.info('No explicitly linked events are available for this company.')
     else:
         for _, row in view.events.iterrows():
-            source_link = "source link available" if _text(row.get("source_url")).startswith(("http://", "https://")) else "source link unavailable"
-            certainty = _text(row.get("certainty_class")).replace("_", " ")
-            precision = str(row.get("date_precision") or "day").lower()
-            start = pd.to_datetime(row.get("starts_at"), errors="coerce", utc=True)
-            end = pd.to_datetime(row.get("ends_at"), errors="coerce", utc=True)
+            source_link = 'source link available' if _text(row.get('source_url')).startswith(('http://', 'https://')) else 'source link unavailable'
+            certainty = _text(row.get('certainty_class')).replace('_', ' ')
+            precision = str(row.get('date_precision') or 'day').lower()
+            start = pd.to_datetime(row.get('starts_at'), errors='coerce', utc=True)
+            end = pd.to_datetime(row.get('ends_at'), errors='coerce', utc=True)
             if pd.isna(start):
                 start = None
             if pd.isna(end):
                 end = start
-
-            window_str = format_event_window(row.get("starts_at"), row.get("ends_at"), precision, viewer_timezone)
-            is_active = is_active_catalyst(row.get("starts_at"), row.get("ends_at"), snapshot.now_utc)
+            window_str = format_event_window(row.get('starts_at'), row.get('ends_at'), precision, viewer_timezone)
+            is_active = is_active_catalyst(row.get('starts_at'), row.get('ends_at'), snapshot.now_utc)
             is_upcoming = (start is not None and start > snapshot.now_utc)
-            status_label = "Active window" if is_active else ("Upcoming" if is_upcoming else "Observed / Past")
-
-            if precision in ("day", "exact", "hour", "minute"):
-                t_minus = format_t_minus(row.get("starts_at"), viewer_timezone, snapshot.now_utc)
-                timing_str = f"{window_str} ({t_minus})"
+            status_label = 'Active window' if is_active else ('Upcoming' if is_upcoming else 'Observed / Past')
+            if precision in ('day', 'exact', 'hour', 'minute'):
+                t_minus = format_t_minus(row.get('starts_at'), viewer_timezone, snapshot.now_utc)
+                timing_str = f'{window_str} ({t_minus})'
             else:
-                timing_str = f"{window_str} · {status_label}"
-
-            st.markdown(
-                f"**{escape(_text(row.get('title')))}** · {escape(_text(row.get('relation_role')))} · "
-                f"*{escape(certainty)}* · `{escape(precision)}` · {timing_str} · "
-                f"{escape(source_link)}"
-            )
-        with st.expander("Event lineage details", expanded=False):
-            st.dataframe(view.events, width="stretch", hide_index=True)
-
-    # 3. Operational Watch Questions & Falsification Checklist
-    _render_section_heading(4, "Operational watch questions & falsification criteria", f"watch-questions-{_slugify(view.entity_id)}")
+                timing_str = f'{window_str} · {status_label}'
+            st.markdown(f'**{escape(_text(row.get("title")))}** · {escape(_text(row.get("relation_role")))} · *{escape(certainty)}* · `{escape(precision)}` · {timing_str} · {escape(source_link)}')
+        with st.expander('Event lineage details', expanded=False):
+            ct_dataframe(view.events, width='stretch', hide_index=True)
+    _render_section_heading(4, 'Operational watch questions & falsification criteria', f'watch-questions-{_slugify(view.entity_id)}')
     if not view.thesis_watch_questions.empty:
-        st.dataframe(_friendly_thesis_questions_frame(view.thesis_watch_questions), width="stretch", hide_index=True)
+        ct_dataframe(_friendly_thesis_questions_frame(view.thesis_watch_questions), width='stretch', hide_index=True)
     elif not view.watch_questions.empty:
-        st.dataframe(_friendly_question_frame(view.watch_questions), width="stretch", hide_index=True)
+        ct_dataframe(_friendly_question_frame(view.watch_questions), width='stretch', hide_index=True)
     else:
-        st.info("No watch questions are registered.")
+        st.info('No watch questions are registered.')
 
+
+
+def _consensus_revision_chart_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    """One bar per lookback x horizon, in percent units.
+
+    The mart stores revision_pct as a decimal (-0.024 = -2.4%). Duplicate
+    labels such as "eps (annual)" must not collapse FY1 and FY2, or 7d/30d/60d/90d,
+    onto two oversized bars.
+    """
+    empty = pd.DataFrame()
+    if frame is None or frame.empty or 'revision_pct' not in frame.columns:
+        return empty
+    plot = frame.copy()
+    plot['revision_pct'] = pd.to_numeric(plot['revision_pct'], errors='coerce') * 100.0
+    plot = plot.dropna(subset=['revision_pct'])
+    if plot.empty:
+        return empty
+    metrics = plot.get('metric', pd.Series('eps', index=plot.index, dtype='string')).astype('string').str.lower()
+    plot = plot.loc[metrics.eq('eps')].copy()
+    if plot.empty:
+        return empty
+    lookback = pd.to_numeric(plot.get('lookback_days', pd.Series(index=plot.index, dtype='float64')), errors='coerce')
+    horizon = plot.get('horizon', pd.Series('', index=plot.index, dtype='string')).astype('string')
+    fiscal_year = plot.get('fiscal_year', pd.Series(pd.NA, index=plot.index))
+    period = plot.get('fiscal_period', pd.Series('', index=plot.index, dtype='string')).astype('string')
+    labels = []
+    for idx in plot.index:
+        year = fiscal_year.loc[idx]
+        year_bit = f"FY{int(year)}" if pd.notna(year) else str(period.loc[idx] or 'period')
+        hz = str(horizon.loc[idx] or '').strip()
+        labels.append(f"{year_bit} {hz}".strip())
+    plot['series'] = labels
+    plot['lookback'] = lookback.map(lambda value: f"{int(value)}d" if pd.notna(value) else 'lookback unavailable')
+    # Prefer the latest snapshot when a lookback/horizon pair is duplicated.
+    if 'current_snapshot_at' in plot.columns:
+        plot = plot.sort_values('current_snapshot_at', ascending=False, na_position='last')
+    plot = plot.drop_duplicates(['lookback', 'series'], keep='first')
+    wide = (
+        plot.pivot_table(index='lookback', columns='series', values='revision_pct', aggfunc='first')
+        .reindex([label for label in ('7d', '30d', '60d', '90d') if label in set(plot['lookback'])])
+    )
+    return wide.dropna(how='all')
+
+
+
+def _refresh_cooldown_remaining(entity_id: str) -> tuple[float, str]:
+    # Read from disk, not session_state: a page reload or a second tab starts
+    # a new Streamlit session, and the quota being protected belongs to the
+    # API key, which every session shares.
+    return refresh_cooldown_remaining(entity_id, repo_root=_control_tower_repo_root())
+
+
+def _run_company_news_refresh(view: CompanyView) -> None:
+    remaining, scope = _refresh_cooldown_remaining(view.entity_id)
+    if remaining > 0:
+        st.warning(
+            f'Refresh cooldown ({scope}) · wait {int(remaining) + 1}s to protect '
+            'Marketaux free-tier quota.'
+        )
+        return
+    with st.spinner('Fetching HKEXnews plus vendor headlines for this company…'):
+        result = refresh_company_news(
+            view.entity_id,
+            repo_root=_control_tower_repo_root(),
+            listing_id=view.selected_listing_id,
+        )
+    record_refresh(
+        view.entity_id,
+        now_utc=result.fetched_at_utc,
+        repo_root=_control_tower_repo_root(),
+    )
+    st.session_state['ct_news_refresh_result'] = result.to_dict()
+    st.session_state['ct_news_refresh_entity'] = view.entity_id
+
+
+def _render_refresh_status(view: CompanyView) -> None:
+    payload = st.session_state.get('ct_news_refresh_result') or {}
+    if payload.get('entity_id') != view.entity_id:
+        return
+    fetched = escape(_text(payload.get('fetched_at_utc')) or 'time unavailable')
+    bits = []
+    for item in payload.get('sources') or []:
+        bits.append(
+            f"{escape(_text(item.get('source_id')))} · {escape(_text(item.get('status')))} · "
+            f"new {escape(_text(item.get('new_rows')))}"
+        )
+    st.caption(f'Last on-demand refresh · {fetched} · ' + ' · '.join(bits))
+    for issue in payload.get('issues') or []:
+        st.warning(escape(_text(issue)))
+
+
+def _hkex_event_bucket(event_class: object, headline: object) -> str:
+    label = _text(event_class).lower()
+    title = _text(headline).upper()
+    if label == 'earnings_results' or ('RESULTS' in title and 'ENDED' in title):
+        return 'priority'
+    if label == 'period_report' or title.strip() in {'INTERIM REPORT', 'ANNUAL REPORT'} or (
+        ('INTERIM REPORT' in title or 'ANNUAL REPORT' in title) and 'ENDED' not in title
+    ):
+        return 'reports'
+    if label in {'share_buyback', 'share_scheme'} or 'NEXT DAY DISCLOSURE' in title or 'SHARE AWARD' in title or 'SHARE OPTION' in title:
+        return 'routine'
+    return 'other'
+
+
+def _hkex_card_tone(event_class: object, headline: object) -> str:
+    label = _text(event_class).lower()
+    title = _text(headline).upper()
+    if label == 'earnings_results' or ('RESULTS' in title and 'ENDED' in title):
+        return 'results'
+    if label == 'period_report' or 'INTERIM REPORT' in title or 'ANNUAL REPORT' in title:
+        return 'report'
+    if label == 'share_buyback' or 'NEXT DAY DISCLOSURE' in title:
+        return 'buyback'
+    if label == 'share_scheme' or 'SHARE AWARD' in title or 'SHARE OPTION' in title:
+        return 'scheme'
+    return 'other'
+
+
+def _hkex_card(row: pd.Series) -> str:
+    published = row.get('published_at')
+    published_txt = pd.Timestamp(published).strftime('%Y-%m-%d %H:%M UTC') if pd.notna(published) else 'date unavailable'
+    headline = escape(_text(row.get('headline')) or 'headline unavailable')
+    event_class = escape(_text(row.get('event_class')) or 'unclassified')
+    url = _text(row.get('source_url'))
+    link = f'<a class="ct-inline-link" href="{escape(url)}" target="_blank" rel="noopener">Open ↗</a>' if url else 'link unavailable'
+    tone = _hkex_card_tone(row.get('event_class'), row.get('headline'))
+    return (
+        f'<div class="ct-thesis-card ct-news-card ct-news-card--{tone}">'
+        f'<div class="ct-subtle">{escape(published_txt)} · hkexnews · {event_class}</div>'
+        f'<div style="font-weight:700;margin:0.25rem 0;">{headline}</div>'
+        f'<div class="ct-source-line">{link}</div>'
+        '</div>'
+    )
+
+
+def _render_live_hkex_overlay(view: CompanyView) -> None:
+    _render_section_heading(4, 'On-demand HKEXnews overlay (official metadata)', f'hkex-live-{_slugify(view.entity_id)}')
+    st.caption('Official exchange announcements from a local live mart, not the published generation. Titles and PDF links only. Results stay on the first screen; daily buyback returns are grouped separately.')
+    try:
+        frame = load_local_hkex_overlay(
+            entity_id=view.entity_id,
+            listing_id=view.selected_listing_id,
+            repo_root=_control_tower_repo_root(),
+        )
+    except (OSError, ValueError) as exc:
+        st.error(f'HKEXnews overlay failed: {exc}')
+        return
+    if frame is None or frame.empty:
+        st.info('No on-demand HKEXnews rows yet. Use Refresh news & filings on this company.')
+        return
+    work = frame.copy()
+    work['_bucket'] = [
+        _hkex_event_bucket(row.get('event_class'), row.get('headline'))
+        for _, row in work.iterrows()
+    ]
+    sections = (
+        ('priority', 'Results and material announcements'),
+        ('reports', 'Interim / annual reports'),
+        ('other', 'Other announcements'),
+        ('routine', 'Routine capital-return filings'),
+    )
+    for bucket, title in sections:
+        subset = work.loc[work['_bucket'].eq(bucket)]
+        if subset.empty:
+            continue
+        st.caption(f'{title} · {len(subset)}')
+        limit = 8 if bucket != 'routine' else 5
+        st.markdown(''.join(_hkex_card(row) for _, row in subset.head(limit).iterrows()), unsafe_allow_html=True)
+        if bucket == 'routine' and len(subset) > limit:
+            with st.expander(f'{len(subset) - limit} older buyback / share-scheme filings'):
+                st.markdown(''.join(_hkex_card(row) for _, row in subset.iloc[limit:].iterrows()), unsafe_allow_html=True)
+    st.caption(f'{len(frame)} live HKEXnews rows for {escape(_text(view.display_name))}. The published official_filings table below is the frozen generation.')
+
+
+def _render_local_news_overlay(view: CompanyView) -> None:
+    remaining, scope = _refresh_cooldown_remaining(view.entity_id)
+    cols = st.columns([1, 3])
+    with cols[0]:
+        clicked = st.button(
+            'Refresh news & filings',
+            key=f'ct_refresh_news_{_slugify(view.entity_id)}',
+            type='primary',
+            disabled=remaining > 0,
+            help=(
+                'Fetch latest HKEXnews plus Marketaux/Finnhub headlines for this company only. '
+                '60s cooldown per company, 15s across companies.'
+            ),
+        )
+    if clicked:
+        _run_company_news_refresh(view)
+        remaining, scope = _refresh_cooldown_remaining(view.entity_id)
+    with cols[1]:
+        if remaining > 0:
+            st.caption(
+                f'Cooldown {int(remaining) + 1}s ({scope}) · Marketaux free tier is 100 requests/day.'
+            )
+        else:
+            st.caption('On-demand fetch for this company only. Does not rewrite the published generation. HKEX needs no key; Finnhub is US ADR only.')
+    _render_refresh_status(view)
+    _render_live_hkex_overlay(view)
+    _render_section_heading(4, 'Vendor news overlay (not official filings)', f'vendor-news-{_slugify(view.entity_id)}')
+    st.caption('Not official issuer disclosure. Marketaux and Finnhub metadata from local marts, resolved through the registry alias table. Article bodies are not stored. Finnhub free tier 403s HK symbols; Marketaux covers HK listings.')
+    try:
+        frame = load_local_news_overlay(
+            entity_id=view.entity_id,
+            listing_id=view.selected_listing_id,
+            repo_root=_control_tower_repo_root(),
+        )
+    except (OSError, ValueError) as exc:
+        st.error(f'Vendor news overlay failed: {exc}')
+        return
+    if frame is None or frame.empty:
+        st.info('No locally collected vendor headlines currently resolve to this company.')
+        return
+    refresh_at = None
+    payload = st.session_state.get('ct_news_refresh_result') or {}
+    if payload.get('entity_id') == view.entity_id:
+        refresh_at = pd.to_datetime(payload.get('fetched_at_utc'), errors='coerce', utc=True)
+    cards = []
+    for _, row in frame.head(12).iterrows():
+        published = row.get('published_at')
+        published_txt = pd.Timestamp(published).strftime('%Y-%m-%d %H:%M UTC') if pd.notna(published) else 'date unavailable'
+        headline = escape(_text(row.get('headline')) or 'headline unavailable')
+        source = escape(_text(row.get('source_id')) or 'source unavailable')
+        publisher = escape(_text(row.get('publisher')) or 'publisher unavailable')
+        url = _text(row.get('source_url'))
+        link = f'<a class="ct-inline-link" href="{escape(url)}" target="_blank" rel="noopener">Open ↗</a>' if url else 'link unavailable'
+        last_seen = pd.to_datetime(row.get('last_seen_at'), errors='coerce', utc=True)
+        freshness = 'not in this refresh'
+        if pd.notna(refresh_at) and pd.notna(last_seen) and last_seen >= refresh_at - pd.Timedelta(seconds=5):
+            freshness = 'updated this refresh'
+        elif pd.isna(refresh_at):
+            freshness = 'cached overlay'
+        tone = 'fresh' if freshness == 'updated this refresh' else 'stale'
+        cards.append(
+            f'<div class="ct-thesis-card ct-news-card ct-news-card--{tone}">'
+            f'<div class="ct-subtle">{escape(published_txt)} · {source} · {publisher} · {escape(freshness)}</div>'
+            f'<div style="font-weight:700;margin:0.25rem 0;">{headline}</div>'
+            f'<div class="ct-source-line">{link}</div>'
+            '</div>'
+        )
+    st.markdown(''.join(cards), unsafe_allow_html=True)
+    st.caption(
+        f'{len(frame)} resolved vendor headlines for {escape(_text(view.display_name))}. '
+        'Finnhub rows on HK-only names are leftover title matches, not a HK feed. '
+        'This is not the published news_filings.parquet table below.'
+    )
 
 def _render_evidence_tab(
     view: CompanyView,
     snapshot: ControlTowerSnapshot,
     viewer_timezone: str,
 ) -> None:
-    """Tab 4: Evidence - Lineage feed, filings, consensus revisions, internal estimates, claim-evidence matrix."""
-
-    # 1. Official Filings & Regulatory Announcements Metadata
-    render_official_filings(snapshot, entity_id=view.entity_id, listing_id=view.selected_listing_id, viewer_timezone=viewer_timezone)
-
-    # 2. News and Filing Metadata
-    _render_section_heading(4, "News and filing metadata", f"news-filing-metadata-{_slugify(view.entity_id)}")
-    if view.official_documents.empty:
-        st.warning("No registry-linked generic news/filing metadata rows are available for the selected company/listing; official filing metadata is rendered separately above and document bodies are not displayed.")
-    else:
-        st.dataframe(_friendly_document_frame(view.official_documents, viewer_timezone), width="stretch", hide_index=True)
-
-    # 3. Provider-Specific Consensus Snapshots
-    _render_section_heading(4, "Provider-specific consensus", f"provider-consensus-{_slugify(view.entity_id)}")
+    _render_local_news_overlay(view)
+    _render_section_heading(4, 'Provider-specific consensus', f'provider-consensus-{_slugify(view.entity_id)}')
     if view.consensus.empty:
-        st.warning(f"Consensus unavailable · {view.consensus_status} · provider rows are not blended.")
+        st.warning(f'Consensus unavailable · {view.consensus_status} · provider rows are not blended.')
     else:
-        st.dataframe(_friendly_consensus_frame(view.consensus, viewer_timezone), width="stretch", hide_index=True)
-
-    # 4. Consensus Revisions & Trajectory
-    _render_section_heading(4, "Consensus revisions", f"consensus-revisions-{_slugify(view.entity_id)}")
+        c_eps = view.consensus[view.consensus['metric'] == 'eps']
+        c_rev = view.consensus[view.consensus['metric'] == 'revenue']
+        if not c_eps.empty or not c_rev.empty:
+            cols = st.columns(3)
+            if not c_eps.empty:
+                eps_val = c_eps.iloc[0]['value']
+                eps_ccy = _text(c_eps.iloc[0].get('currency')) or 'HKD'
+                eps_n = c_eps.iloc[0].get('analyst_count', '')
+                cols[0].metric('Consensus EPS', f'{eps_ccy} {float(eps_val):.2f}' if pd.notna(eps_val) else 'Unavailable', f'{eps_n} analysts' if eps_n else '')
+            if not c_rev.empty:
+                rev_val = c_rev.iloc[0]['value']
+                rev_ccy = _text(c_rev.iloc[0].get('currency')) or 'HKD'
+                rev_n = c_rev.iloc[0].get('analyst_count', '')
+                cols[1].metric('Consensus Revenue', f'{rev_ccy} {float(rev_val)/1e9:.1f}B' if pd.notna(rev_val) and float(rev_val) >= 1e9 else f'{rev_ccy} {float(rev_val):,.0f}', f'{rev_n} analysts' if rev_n else '')
+            cols[2].metric('Provider Source', 'yfinance', 'Mean Consensus')
+        ct_dataframe(_friendly_consensus_frame(view.consensus, viewer_timezone), width='stretch', hide_index=True)
+    _render_section_heading(4, 'Consensus revisions', f'consensus-revisions-{_slugify(view.entity_id)}')
     if view.consensus_revisions.empty:
-        st.info("Consensus revision history unavailable; no 0/0 breadth is shown.")
+        st.info('Consensus revision history unavailable; no 0/0 breadth is shown.')
     else:
-        st.dataframe(_friendly_revision_frame(view.consensus_revisions, viewer_timezone), width="stretch", hide_index=True)
-
-    # 5. Internal Estimates & Management Guidance
-    _render_section_heading(4, "Internal estimates & management guidance", f"internal-estimates-{_slugify(view.entity_id)}")
+        rev_chart_data = _consensus_revision_chart_frame(view.consensus_revisions)
+        if not rev_chart_data.empty:
+            st.caption('Consensus EPS revision vs prior snapshot, grouped by lookback window. Values are percent change, not decimal points on a percent axis.')
+            _render_plotly(
+                _plotly_bar_chart(
+                    rev_chart_data,
+                    y_title='Revision (%)',
+                    value_format='+.2f',
+                    hover_suffix='%',
+                    tickformat=None,
+                    height=280,
+                )
+            )
+        ct_dataframe(_friendly_revision_frame(view.consensus_revisions, viewer_timezone), width='stretch', hide_index=True)
+    if not view.corporate_actions.empty:
+        ca_df = view.corporate_actions.copy()
+        ca_df['date'] = pd.to_datetime(ca_df['filing_date'], errors='coerce').dt.date
+        ca_df = ca_df.dropna(subset=['date']).sort_values('date')
+        if not ca_df.empty:
+            plot = ca_df.copy()
+            plot['usage_date'] = pd.to_datetime(plot['date'], errors='coerce')
+            plot = plot.dropna(subset=['usage_date'])
+            plot['daily_repurchase_hkd_m'] = pd.to_numeric(plot['total_amount_paid'], errors='coerce') / 1e6
+            start = plot['usage_date'].min().strftime('%Y-%m-%d')
+            end = plot['usage_date'].max().strftime('%Y-%m-%d')
+            n_days = int(plot['usage_date'].nunique())
+            st.caption(f'{n_days}-Day Statutory Repurchase Intensity (HK$ Millions per trading day · {start} to {end})')
+            _render_plotly(
+                _bar_chart_with_year_axis(
+                    plot,
+                    x='usage_date',
+                    y='daily_repurchase_hkd_m',
+                    y_title='Daily repurchase (HK$ millions)',
+                    y_format=',.0f',
+                )
+            )
+    render_official_filings(snapshot, entity_id=view.entity_id, listing_id=view.selected_listing_id, viewer_timezone=viewer_timezone)
+    _render_section_heading(4, 'Published news/filing metadata (generation artifact)', f'news-filing-metadata-{_slugify(view.entity_id)}')
+    if view.official_documents.empty:
+        st.caption('This empty state is the published news_filings.parquet artifact, whose related_entity_ids are still blank. Vendor Marketaux/Finnhub headlines are in the overlay at the top of this tab, not this generation table.')
+    else:
+        ct_dataframe(_friendly_document_frame(view.official_documents, viewer_timezone), width='stretch', hide_index=True)
+    _render_section_heading(4, 'Internal estimates & management guidance', f'internal-estimates-{_slugify(view.entity_id)}')
     if view.internal_estimates.empty:
-        st.info("No internal estimates or management guidance registered for this entity.")
+        st.info('No internal estimates or management guidance registered for this entity.')
     else:
-        listing_ids = view.internal_estimates.get(
-            "listing_id", pd.Series("", index=view.internal_estimates.index, dtype="string")
-        ).map(_text)
-        listing_rows = view.internal_estimates.loc[listing_ids.ne("")]
-        entity_rows = view.internal_estimates.loc[listing_ids.eq("")]
+        listing_ids = view.internal_estimates.get('listing_id', pd.Series('', index=view.internal_estimates.index, dtype='string')).map(_text)
+        listing_rows = view.internal_estimates.loc[listing_ids.ne('')]
+        entity_rows = view.internal_estimates.loc[listing_ids.eq('')]
         if not listing_rows.empty:
-            st.caption("Selected listing scope")
-            st.dataframe(
-                _friendly_internal_estimates_frame(listing_rows, viewer_timezone),
-                width="stretch",
-                hide_index=True,
-            )
+            st.caption('Selected listing scope')
+            ct_dataframe(_friendly_internal_estimates_frame(listing_rows, viewer_timezone), width='stretch', hide_index=True)
         if not entity_rows.empty:
-            st.caption(
-                "Entity scope · listing-independent estimates; these rows are not assigned to any listing."
-            )
-            st.dataframe(
-                _friendly_internal_estimates_frame(entity_rows, viewer_timezone),
-                width="stretch",
-                hide_index=True,
-            )
-
-    # 6. Claim-Evidence Matrix & Invalidation Conflict Hints
-    _render_section_heading(4, "Claim-evidence matrix & conflict detection", f"claim-evidence-matrix-{_slugify(view.entity_id)}")
+            st.caption('Entity scope · listing-independent estimates; these rows are not assigned to any listing.')
+            ct_dataframe(_friendly_internal_estimates_frame(entity_rows, viewer_timezone), width='stretch', hide_index=True)
+    _render_section_heading(4, 'Claim-evidence matrix & conflict detection', f'claim-evidence-matrix-{_slugify(view.entity_id)}')
     if not view.claim_evidence_links.empty:
-        st.dataframe(
-            _friendly_claim_evidence_links_frame(view.claim_evidence_links, view.evidence_items, viewer_timezone),
-            width="stretch",
-            hide_index=True,
-        )
+        ct_dataframe(_friendly_claim_evidence_links_frame(view.claim_evidence_links, view.evidence_items, viewer_timezone), width='stretch', hide_index=True)
     elif not view.invalidation_evidence.empty:
-        st.dataframe(_friendly_invalidation_frame(view.invalidation_evidence, viewer_timezone), width="stretch", hide_index=True)
+        ct_dataframe(_friendly_invalidation_frame(view.invalidation_evidence, viewer_timezone), width='stretch', hide_index=True)
     else:
-        st.info("Invalidation evidence unavailable; support questions are not relabelled as falsification evidence.")
-
-    # 7. Source Health & PIT Caveats
-    with st.expander("Source and PIT caveats", expanded=False):
+        st.info('Invalidation evidence unavailable; support questions are not relabelled as falsification evidence.')
+    with st.expander('Source and PIT caveats', expanded=False):
         for caveat in view.caveats:
-            st.markdown(f"- {escape(_friendly_caveat(caveat))}")
+            st.markdown(f'- {escape(_friendly_caveat(caveat))}')
         if not view.source_health.empty:
-            st.dataframe(view.source_health, width="stretch", hide_index=True)
+            ct_dataframe(view.source_health, width='stretch', hide_index=True)
         else:
-            st.info("No company-relevant source-health rows are available.")
+            st.info('No company-relevant source-health rows are available.')
 
 
 def render_company_page(
@@ -2133,72 +3400,72 @@ def render_company_page(
     viewer_timezone: str,
     filters: EventFilters | None = None,
 ) -> CompanyView:
-    """Render a four-tab company fundamental and thesis cockpit, never document bodies."""
-
     entity_ids = _filtered_entity_ids(snapshot, filters)
     entity_options = sorted(entity_ids)
     if not entity_options:
-        st.info("No company matches the active basket, country or membership filters.")
-        raise ValueError("company registry is empty")
-    if st.session_state.get("ct_company_entity") not in entity_options:
-        st.session_state["ct_company_entity"] = entity_options[0]
+        st.info('No company matches the active basket, country or membership filters.')
+        raise ValueError('company registry is empty')
+    query_entity = st.query_params.get('entity')
+    session_entity = st.session_state.get('ct_company_entity')
+    if session_entity not in entity_options:
+        if query_entity in entity_options:
+            st.session_state['ct_company_entity'] = query_entity
+        else:
+            st.session_state['ct_company_entity'] = 'TENCENT' if 'TENCENT' in entity_options else entity_options[0]
+        st.session_state['ct_company_listing'] = None
     selected_entity = st.selectbox(
-        "Company",
+        'Company',
         entity_options,
-        key="ct_company_entity",
-        format_func=lambda value: _text(snapshot.entities.loc[snapshot.entities["entity_id"].astype("string").eq(value), "display_name"].iloc[0]) if not snapshot.entities.loc[snapshot.entities["entity_id"].astype("string").eq(value)].empty else value,
+        key='ct_company_entity',
+        format_func=lambda value: _text(snapshot.entities.loc[snapshot.entities['entity_id'].astype('string').eq(value), 'display_name'].iloc[0]) if not snapshot.entities.loc[snapshot.entities['entity_id'].astype('string').eq(value)].empty else value,
     )
+    if selected_entity != session_entity:
+        st.session_state['ct_company_listing'] = None
+    if st.query_params.get('entity') != selected_entity:
+        st.query_params['entity'] = selected_entity
     as_of_point = snapshot.as_of_utc
     entity_row = snapshot.entities.loc[
-        snapshot.entities["entity_id"].astype("string").eq(selected_entity)
-    ].iloc[0] if not snapshot.entities.empty and snapshot.entities["entity_id"].astype("string").eq(selected_entity).any() else None
+        snapshot.entities['entity_id'].astype('string').eq(selected_entity)
+    ].iloc[0] if not snapshot.entities.empty and snapshot.entities['entity_id'].astype('string').eq(selected_entity).any() else None
     if entity_row is not None and _market_entity_eligible(entity_row, as_of_point) and not snapshot.listings.empty:
         entity_listings = snapshot.listings.loc[
-            snapshot.listings["entity_id"].astype("string").eq(selected_entity)
+            snapshot.listings['entity_id'].astype('string').eq(selected_entity)
             & snapshot.listings.apply(lambda row: _market_listing_eligible(row, as_of_point), axis=1)
         ]
     else:
         entity_listings = snapshot.listings.iloc[0:0].copy()
-    listing_options = [None] + sorted(entity_listings["listing_id"].astype("string")) if not entity_listings.empty else [None]
-    if st.session_state.get("ct_company_listing") not in listing_options:
-        st.session_state["ct_company_listing"] = None
+    listing_options = [None] + sorted(entity_listings['listing_id'].astype('string')) if not entity_listings.empty else [None]
+    if st.session_state.get('ct_company_listing') not in listing_options:
+        st.session_state['ct_company_listing'] = None
     selected_listing = st.selectbox(
-        "Listing",
+        'Listing',
         listing_options,
-        key="ct_company_listing",
+        key='ct_company_listing',
         format_func=lambda value: _format_listing_option(snapshot, value),
     )
     view = build_company_view(snapshot, entity_id=selected_entity, listing_id=selected_listing, filters=filters)
-    _render_section_heading(3, view.display_name, f"company-view-{_slugify(view.entity_id)}")
-    entity_type_label = "private / no listing" if view.entity_type == "private" else "public"
-    st.caption(f"{escape(view.legal_name)} · {escape(view.country)} · {escape(view.sector or 'sector unavailable')} · {escape(view.industry or 'industry unavailable')} · {escape(entity_type_label)} · {escape(view.active_status or 'status unavailable')}")
+    _render_company_hero_card(view, snapshot, viewer_timezone)
+    _render_section_heading(3, view.display_name, f'company-view-{_slugify(view.entity_id)}')
+    entity_type_label = 'private / no listing' if view.entity_type == 'private' else 'public'
+    st.caption(f'{escape(view.legal_name)} · {escape(view.country)} · {escape(view.sector or "sector unavailable")} · {escape(view.industry or "industry unavailable")} · {escape(entity_type_label)} · {escape(view.active_status or "status unavailable")}')
     if view.selected_listing_id:
-        selection_mode = {
-            "primary_default": "primary listing default",
-            "explicit": "selected listing",
-        }.get(view.selection_mode, _text(view.selection_mode).replace("_", " ") or "selected listing")
-        st.caption(
-            f"Selected listing · {_format_listing_option(snapshot, view.selected_listing_id)} · {selection_mode}"
-        )
+        selection_mode = {'primary_default': 'primary listing default', 'explicit': 'selected listing'}.get(view.selection_mode, _text(view.selection_mode).replace('_', ' ') or 'selected listing')
+        st.caption(f'Selected listing · {_format_listing_option(snapshot, view.selected_listing_id)} · {selection_mode}')
     else:
-        st.warning("No verified primary listing is available; listing-specific data is unavailable.")
-
-    tab_overview, tab_fundamentals, tab_thesis, tab_evidence = st.tabs(
-        ["Overview", "Fundamentals", "Thesis & Catalysts", "Evidence"]
+        st.warning('No verified primary listing is available; listing-specific data is unavailable.')
+    tab_overview, tab_fundamentals, tab_alt, tab_thesis, tab_evidence = st.tabs(
+        ['Overview', 'Fundamentals', 'Alternative Data', 'Thesis & Catalysts', 'Evidence']
     )
-
     with tab_overview:
         _render_overview_tab(view, snapshot, viewer_timezone)
-
     with tab_fundamentals:
         _render_fundamentals_tab(view, snapshot, viewer_timezone)
-
+    with tab_alt:
+        _render_alternative_data_tab(view)
     with tab_thesis:
         _render_thesis_catalysts_tab(view, snapshot, viewer_timezone)
-
     with tab_evidence:
         _render_evidence_tab(view, snapshot, viewer_timezone)
-
     return view
 
 
