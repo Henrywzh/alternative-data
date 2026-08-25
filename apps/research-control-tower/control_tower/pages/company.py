@@ -31,9 +31,10 @@ from ..company_profiles import SegmentSpec, get_company_profile, segment_label
 from src.research_control_tower.eligibility import listing_eligibility_reason
 from src.research_control_tower.southbound_holdings import hkex_security_code, southbound_mart_path
 from src.research_control_tower.live_refresh import (
-    DEFAULT_COOLDOWN_SECONDS,
     load_local_hkex_overlay,
+    record_refresh,
     refresh_company_news,
+    refresh_cooldown_remaining,
 )
 from src.research_control_tower.news_overlay import load_local_news_overlay
 from src.research_control_tower.vendor_financials import (
@@ -3043,19 +3044,20 @@ def _consensus_revision_chart_frame(frame: pd.DataFrame) -> pd.DataFrame:
 
 
 
-def _refresh_cooldown_remaining(entity_id: str) -> float:
-    last = st.session_state.get('ct_news_refresh_at', {}).get(entity_id)
-    if last is None:
-        return 0.0
-    elapsed = (pd.Timestamp.now(tz='UTC') - pd.Timestamp(last)).total_seconds()
-    remaining = DEFAULT_COOLDOWN_SECONDS - elapsed
-    return remaining if remaining > 0 else 0.0
+def _refresh_cooldown_remaining(entity_id: str) -> tuple[float, str]:
+    # Read from disk, not session_state: a page reload or a second tab starts
+    # a new Streamlit session, and the quota being protected belongs to the
+    # API key, which every session shares.
+    return refresh_cooldown_remaining(entity_id, repo_root=_control_tower_repo_root())
 
 
 def _run_company_news_refresh(view: CompanyView) -> None:
-    remaining = _refresh_cooldown_remaining(view.entity_id)
+    remaining, scope = _refresh_cooldown_remaining(view.entity_id)
     if remaining > 0:
-        st.warning(f'Refresh cooldown · wait {int(remaining)}s to protect Marketaux free-tier quota.')
+        st.warning(
+            f'Refresh cooldown ({scope}) · wait {int(remaining) + 1}s to protect '
+            'Marketaux free-tier quota.'
+        )
         return
     with st.spinner('Fetching HKEXnews plus vendor headlines for this company…'):
         result = refresh_company_news(
@@ -3063,9 +3065,11 @@ def _run_company_news_refresh(view: CompanyView) -> None:
             repo_root=_control_tower_repo_root(),
             listing_id=view.selected_listing_id,
         )
-    stamps = dict(st.session_state.get('ct_news_refresh_at') or {})
-    stamps[view.entity_id] = result.fetched_at_utc.isoformat()
-    st.session_state['ct_news_refresh_at'] = stamps
+    record_refresh(
+        view.entity_id,
+        now_utc=result.fetched_at_utc,
+        repo_root=_control_tower_repo_root(),
+    )
     st.session_state['ct_news_refresh_result'] = result.to_dict()
     st.session_state['ct_news_refresh_entity'] = view.entity_id
 
@@ -3121,7 +3125,7 @@ def _render_live_hkex_overlay(view: CompanyView) -> None:
 
 
 def _render_local_news_overlay(view: CompanyView) -> None:
-    remaining = _refresh_cooldown_remaining(view.entity_id)
+    remaining, scope = _refresh_cooldown_remaining(view.entity_id)
     cols = st.columns([1, 3])
     with cols[0]:
         clicked = st.button(
@@ -3129,14 +3133,19 @@ def _render_local_news_overlay(view: CompanyView) -> None:
             key=f'ct_refresh_news_{_slugify(view.entity_id)}',
             type='primary',
             disabled=remaining > 0,
-            help='Fetch latest HKEXnews plus Marketaux/Finnhub headlines for this company only. 60s cooldown.',
+            help=(
+                'Fetch latest HKEXnews plus Marketaux/Finnhub headlines for this company only. '
+                '60s cooldown per company, 15s across companies.'
+            ),
         )
     if clicked:
         _run_company_news_refresh(view)
-        remaining = _refresh_cooldown_remaining(view.entity_id)
+        remaining, scope = _refresh_cooldown_remaining(view.entity_id)
     with cols[1]:
         if remaining > 0:
-            st.caption(f'Cooldown {int(remaining)}s · Marketaux free tier is 100 requests/day.')
+            st.caption(
+                f'Cooldown {int(remaining) + 1}s ({scope}) · Marketaux free tier is 100 requests/day.'
+            )
         else:
             st.caption('On-demand fetch for this company only. Does not rewrite the published generation. HKEX needs no key; Finnhub is US ADR only.')
     _render_refresh_status(view)

@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from src.research_control_tower.live_refresh import (
     load_local_hkex_overlay,
@@ -220,3 +221,85 @@ def test_company_page_exposes_refresh_button() -> None:
     assert "Refresh news & filings" in source
     assert "On-demand HKEXnews overlay" in source
     assert "refresh_company_news" in source
+
+
+def test_the_cooldown_survives_a_new_browser_session(tmp_path: Path) -> None:
+    """It used to live in st.session_state, which a page reload throws away.
+
+    The quota it protects belongs to the API key and is shared by every
+    session on the deployment, so a reload handing out a fresh allowance
+    defeated the whole guard.
+    """
+    from src.research_control_tower.live_refresh import record_refresh, refresh_cooldown_remaining
+
+    start = pd.Timestamp("2026-08-25T10:00:00Z")
+    record_refresh("TENCENT", now_utc=start, mart_dir=tmp_path)
+
+    # A brand-new process, as a reloaded page effectively is.
+    remaining, scope = refresh_cooldown_remaining(
+        "TENCENT", now_utc=start + pd.Timedelta(seconds=5), mart_dir=tmp_path
+    )
+    assert remaining == pytest.approx(55.0)
+    assert scope == "this company"
+
+
+def test_cycling_companies_cannot_walk_around_the_cooldown(tmp_path: Path) -> None:
+    """Vendor quota is per key, so a per-company timer alone spends it freely."""
+    from src.research_control_tower.live_refresh import record_refresh, refresh_cooldown_remaining
+
+    start = pd.Timestamp("2026-08-25T10:00:00Z")
+    record_refresh("TENCENT", now_utc=start, mart_dir=tmp_path)
+
+    blocked, scope = refresh_cooldown_remaining(
+        "ALIBABA", now_utc=start + pd.Timedelta(seconds=5), mart_dir=tmp_path
+    )
+    assert blocked > 0
+    assert scope == "any company"
+
+    allowed, _ = refresh_cooldown_remaining(
+        "ALIBABA", now_utc=start + pd.Timedelta(seconds=20), mart_dir=tmp_path
+    )
+    assert allowed == 0.0
+
+
+def test_a_backwards_clock_does_not_lock_refresh_out(tmp_path: Path) -> None:
+    from src.research_control_tower.live_refresh import (
+        DEFAULT_COOLDOWN_SECONDS,
+        record_refresh,
+        refresh_cooldown_remaining,
+    )
+
+    start = pd.Timestamp("2026-08-25T10:00:00Z")
+    record_refresh("TENCENT", now_utc=start, mart_dir=tmp_path)
+
+    remaining, _ = refresh_cooldown_remaining(
+        "TENCENT", now_utc=start - pd.Timedelta(hours=3), mart_dir=tmp_path
+    )
+    assert remaining == pytest.approx(float(DEFAULT_COOLDOWN_SECONDS))
+
+
+def test_unreadable_cooldown_state_does_not_block_the_button(tmp_path: Path) -> None:
+    from src.research_control_tower.live_refresh import COOLDOWN_STATE_NAME, refresh_cooldown_remaining
+
+    (tmp_path / COOLDOWN_STATE_NAME).write_text("{not json", encoding="utf-8")
+
+    assert refresh_cooldown_remaining("TENCENT", mart_dir=tmp_path) == (0.0, "")
+
+
+def test_the_refresh_scratch_files_stay_out_of_git() -> None:
+    """The marts rule un-ignores every parquet, these two included."""
+    import subprocess
+
+    for relative in (
+        "data/normalized/marts/hkexnews_live.parquet",
+        "data/normalized/marts/news_refresh_cooldown.json",
+    ):
+        assert subprocess.run(
+            ["git", "check-ignore", "-q", relative], cwd=REPO
+        ).returncode == 0, f"{relative} would show up in git status"
+
+    # ...but a real mart must still be committable.
+    assert subprocess.run(
+        ["git", "check-ignore", "-q", "data/normalized/marts/daily_provider_economics.parquet"],
+        cwd=REPO,
+    ).returncode == 1

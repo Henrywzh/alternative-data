@@ -14,6 +14,7 @@ HKEXnews title search. Callers should enforce a UI cooldown.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
+import json
 import os
 from pathlib import Path
 from typing import Any, Mapping
@@ -38,7 +39,14 @@ from .registries import load_registry_bundle
 
 
 DEFAULT_COOLDOWN_SECONDS = 60
+# A second guard with a different job. The per-company cooldown stops someone
+# re-clicking one issuer; it does nothing about cycling through issuers, and
+# vendor quota is per API key, not per company. Marketaux's free tier is 100
+# requests a day, so ten companies clicked in ten seconds is a tenth of the
+# day's budget with the per-company timer never once firing.
+DEFAULT_GLOBAL_COOLDOWN_SECONDS = 15
 HKEX_LIVE_MART_NAME = "hkexnews_live.parquet"
+COOLDOWN_STATE_NAME = "news_refresh_cooldown.json"
 CONFIG_KEY_MAP = {
     "finnhub": "FINNHUB_API_KEY",
     "marketaux": "MARKETAUX_API_KEY",
@@ -77,6 +85,78 @@ def default_mart_dir(repo_root: Path | None = None) -> Path:
 
 def hkex_live_mart_path(repo_root: Path | None = None) -> Path:
     return default_mart_dir(repo_root) / HKEX_LIVE_MART_NAME
+
+
+def cooldown_state_path(repo_root: Path | None = None, mart_dir: Path | None = None) -> Path:
+    base = Path(mart_dir) if mart_dir is not None else default_mart_dir(repo_root)
+    return base / COOLDOWN_STATE_NAME
+
+
+def _read_cooldown_state(path: Path) -> dict[str, Any]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def refresh_cooldown_remaining(
+    entity_id: str,
+    *,
+    now_utc: pd.Timestamp | None = None,
+    repo_root: Path | None = None,
+    mart_dir: Path | None = None,
+) -> tuple[float, str]:
+    """Seconds still to wait, and which cooldown is holding.
+
+    Deliberately on disk rather than in Streamlit's session_state. Session
+    state dies with the browser session, so reloading the page or opening a
+    second tab handed out a fresh allowance -- against a vendor quota that is
+    per API key and shared by every session on the deployment.
+    """
+    now = _now_utc() if now_utc is None else pd.Timestamp(now_utc).tz_convert("UTC")
+    state = _read_cooldown_state(cooldown_state_path(repo_root, mart_dir))
+    checks = (
+        ("this company", state.get("entities", {}).get(str(entity_id)), DEFAULT_COOLDOWN_SECONDS),
+        ("any company", state.get("global"), DEFAULT_GLOBAL_COOLDOWN_SECONDS),
+    )
+    worst = (0.0, "")
+    for scope, stamp, window in checks:
+        if not stamp:
+            continue
+        try:
+            elapsed = (now - pd.Timestamp(stamp)).total_seconds()
+        except (TypeError, ValueError):
+            continue
+        # A clock that moved backwards must not grant an unbounded wait.
+        remaining = window - elapsed if elapsed >= 0 else window
+        if remaining > worst[0]:
+            worst = (float(remaining), scope)
+    return worst
+
+
+def record_refresh(
+    entity_id: str,
+    *,
+    now_utc: pd.Timestamp,
+    repo_root: Path | None = None,
+    mart_dir: Path | None = None,
+) -> None:
+    """Persist the refresh time for both cooldown scopes."""
+    path = cooldown_state_path(repo_root, mart_dir)
+    state = _read_cooldown_state(path)
+    entities = dict(state.get("entities") or {})
+    stamp = pd.Timestamp(now_utc).tz_convert("UTC").isoformat()
+    entities[str(entity_id)] = stamp
+    payload = {"global": stamp, "entities": entities}
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temporary = path.with_suffix(path.suffix + ".tmp")
+        temporary.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+        temporary.replace(path)
+    except OSError:
+        # Losing the stamp costs a cooldown, never the refresh the user asked for.
+        pass
 
 
 def _now_utc() -> pd.Timestamp:

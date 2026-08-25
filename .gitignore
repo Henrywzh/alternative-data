@@ -259,6 +259,13 @@ data/normalized/sec_edgar/*
 !data/normalized/marts/
 data/normalized/marts/*
 !data/normalized/marts/*.parquet
+# ...except the on-demand refresh scratch. The Refresh button on the company
+# page writes these on a single operator's machine from an ad-hoc fetch. The
+# rule above un-ignores every mart parquet, so without these the first click
+# left a file sitting in `git status` waiting to be committed into the
+# published data set.
+data/normalized/marts/hkexnews_live.parquet
+data/normalized/marts/news_refresh_cooldown.json
 
 # ai_news: commit normalized parquet files + raw run manifests only
 !data/normalized/ai_news/
