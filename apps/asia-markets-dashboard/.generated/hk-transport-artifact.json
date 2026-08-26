@@ -6,7 +6,7 @@
     "title": "HK Transport & Aviation Sector Monitor",
     "description": "MTR Corporation monthly rail patronage, CAD HKIA airport traffic, Cathay Pacific Group operating statistics, China listed-airline operating data, TD public-transport and private-car series, C&SD cross-boundary movements, EV registrations and metered-space parking occupancy.",
     "sector": "hk-transport",
-    "generatedAt": "2026-08-25T07:09:00.685124Z",
+    "generatedAt": "2026-08-26T07:09:36.138352Z",
     "cards": [
       {
         "id": "mtr_card",
@@ -2025,7 +2025,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-25T07:09:00.685124Z",
+    "generatedAt": "2026-08-26T07:09:36.138352Z",
     "status": "ready",
     "datasets": {
       "kpi_mtr": [
