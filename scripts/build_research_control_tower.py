@@ -110,6 +110,18 @@ REPO_SOURCES: tuple[tuple[str, str, str, str, str, str, str, str], ...] = (
         "sec_edgar_filings_v1", "current_vintage", "official_public",
         "daily", "https://www.sec.gov/edgar",
     ),
+    (
+        "news", "news_marketaux",
+        "data/normalized/marts/news_marketaux.parquet",
+        "ai_news_blog_posts_v1", "snapshot_from_live_source", "free_tier_metadata_only",
+        "on_demand", "https://www.marketaux.com/",
+    ),
+    (
+        "news", "news_finnhub",
+        "data/normalized/marts/news_finnhub.parquet",
+        "ai_news_blog_posts_v1", "snapshot_from_live_source", "free_tier_metadata_only",
+        "on_demand", "https://finnhub.io/",
+    ),
 )
 
 # Produced by the Control Tower's own network-reaching collectors.  Absent
@@ -264,6 +276,12 @@ COLLECTOR_COMMANDS = {
         "--baskets config/research_control_tower/baskets.csv "
         "--basket-memberships config/research_control_tower/basket_memberships.csv "
         f"--output {COLLECTOR_DIR.relative_to(REPO_ROOT)}/quote_snapshots_v1.parquet"
+    ),
+    "news_marketaux": (
+        "python scripts/research_control_tower_news.py --providers marketaux,finnhub"
+    ),
+    "news_finnhub": (
+        "python scripts/research_control_tower_news.py --providers marketaux,finnhub"
     ),
     "valuation_snapshots": (
         "python scripts/research_control_tower_valuation.py "

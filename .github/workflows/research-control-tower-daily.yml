@@ -1,0 +1,70 @@
+name: Research Control Tower Daily Refresh
+
+# Collects overlay freshness for quotes, southbound holdings, vendor news, and
+# recent HKEXnews metadata. Does not rebuild CURRENT. Official valuation_snapshots
+# stay empty until consensus basis is GAAP/IFRS-verified.
+
+on:
+  schedule:
+    - cron: "20 8 * * 1-5"   # 16:20 HKT after the HK close
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: research-control-tower-daily
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      MARKETAUX_API_KEY: ${{ secrets.MARKETAUX_API_KEY }}
+      FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+      SEC_EDGAR_USER_AGENT: ${{ secrets.SEC_EDGAR_USER_AGENT }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev]
+
+      - name: Collect quotes, southbound and recent filings
+        run: python scripts/research_control_tower_daily.py
+
+      - name: Collect vendor news metadata
+        run: python scripts/research_control_tower_news.py --lookback-days 7
+        continue-on-error: true
+
+      - name: Commit overlay marts
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # One git add per directory. A single add with both globs stages
+          # nothing at all when either pathspec matches no file -- git aborts
+          # the whole command -- so a run that wrote news marts but no quote
+          # snapshot would have reported "no changes" and committed neither.
+          # `|| true` then hides it, and the job still ends green.
+          git add data/normalized/marts/*.parquet 2>/dev/null || true
+          git add data/normalized/research_control_tower/*.parquet 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "No Control Tower overlay changes"
+            exit 0
+          fi
+          git commit -m "chore: refresh control-tower overlays [$(date -u +%Y-%m-%d)]"
+          for attempt in 1 2 3; do
+            if git pull --rebase origin "${{ github.event.repository.default_branch }}" && git push; then
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
