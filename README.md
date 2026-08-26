@@ -19,7 +19,9 @@ Rankings datasets:
 - `top_models`: weekly model usage history
 - `market_share`: weekly token share by model author
 - `provider_weekly_requests`: weekly text request counts by model author from the OpenRouter Rankings Market Share raw-values view
-- `categories_programming`: weekly rankings/programming history
+- `categories_programming`: **retired 2026-08-26**. OpenRouter deleted
+  /rankings/programming; the collected history (2025-05-19 to 2026-08-03)
+  stays on disk and is no longer updated.
 - `openrouter_model_activity`: daily model-level activity with request counts and token splits (`prompt`, `completion`, optional `reasoning`)
 - `provider_daily_activity`: daily provider-page total-token history by model for the configured major OpenRouter providers
 

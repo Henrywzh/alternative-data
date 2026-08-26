@@ -28,7 +28,7 @@ RANKINGS_DATASET_IDS = (
     "top_models",
     "market_share",
     "provider_weekly_requests",
-    "categories_programming",
+    # categories_programming retired 2026-08-26; see sources/rankings.py.
     "context_length_requests",
     "modality_rankings",
 )

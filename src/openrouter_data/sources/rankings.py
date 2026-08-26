@@ -56,14 +56,19 @@ PROVIDER_WEEKLY_REQUESTS_SPEC = DatasetSpec(
     week_anchor="end",
 )
 
-CATEGORIES_PROGRAMMING_SPEC = DatasetSpec(
-    dataset_id="categories_programming",
-    source_url="https://openrouter.ai/rankings/programming",
-    metric_name="tokens",
-    metric_unit="tokens",
-    week_anchor="start",
-    category_slug="programming",
-)
+# categories_programming is retired.
+#
+# OpenRouter deleted /rankings/programming. The route answers 200 and renders
+# a client-side "404: Not Found", so raise_for_status() saw nothing wrong and
+# the chart was simply absent; the categories testId is gone from /rankings
+# too, and model-rankings-chart returns byte identical responses for
+# category, routeSegment and categorySlug, so no parameter brings it back.
+# The current page has a Programming section, but it breaks down by language
+# rather than ranking models within a category -- a different series, not a
+# new address for this one.
+#
+# The 104 weeks already collected (2025-05-19 to 2026-08-03) stay on disk and
+# stay readable: storage.py keeps this dataset's keys. Nothing writes it.
 
 CONTEXT_LENGTH_BUCKETS = ("1K", "10K", "100K", "1M", "10M")
 CONTEXT_LENGTH_LABELS = {
@@ -107,7 +112,6 @@ class RankingsSource(SourceExtractor):
     def fetch_snapshots(self) -> list[Snapshot]:
         snapshots = [
             self._fetch("rankings", TOP_MODELS_SPEC.source_url),
-            self._fetch("rankings_programming", CATEGORIES_PROGRAMMING_SPEC.source_url),
             self._fetch_optional("model_rankings_chart", MODEL_RANKINGS_CHART_URL),
             self._fetch_optional("text_modality_chart", TEXT_MODALITY_CHART_URL),
         ]
@@ -142,10 +146,9 @@ class RankingsSource(SourceExtractor):
     def extract(self, snapshots: list[Snapshot], context: RunContext) -> dict[str, list[DatasetRecord]]:
         snapshot_by_name = {snapshot.name: snapshot for snapshot in snapshots}
         rankings_html = snapshot_by_name["rankings"].body
-        programming_html = snapshot_by_name["rankings_programming"].body
 
         charts = self._extract_chart_payloads_from_api(snapshot_by_name)
-        static_charts = self._extract_chart_payloads(rankings_html, programming_html)
+        static_charts = self._extract_chart_payloads(rankings_html)
         for label, chart in static_charts.items():
             charts.setdefault(label, chart)
         missing = self._missing_chart_labels(charts)
@@ -163,11 +166,6 @@ class RankingsSource(SourceExtractor):
         return {
             TOP_MODELS_SPEC.dataset_id: self._records_from_chart(charts[TOP_MODELS_SPEC.dataset_id], TOP_MODELS_SPEC, context),
             MARKET_SHARE_SPEC.dataset_id: self._records_from_chart(charts[MARKET_SHARE_SPEC.dataset_id], MARKET_SHARE_SPEC, context),
-            CATEGORIES_PROGRAMMING_SPEC.dataset_id: self._records_from_chart(
-                charts[CATEGORIES_PROGRAMMING_SPEC.dataset_id],
-                CATEGORIES_PROGRAMMING_SPEC,
-                context,
-            ),
             **self._extract_context_length_records(charts, context),
             **self._extract_modality_records(charts, context),
             **(
@@ -300,7 +298,7 @@ class RankingsSource(SourceExtractor):
     def _modality_chart_key(modality: str) -> str:
         return f"{MODALITY_RANKINGS_DATASET_ID}:{modality}"
 
-    def _extract_chart_payloads(self, rankings_html: str, programming_html: str) -> dict[str, dict[str, Any] | None]:
+    def _extract_chart_payloads(self, rankings_html: str) -> dict[str, dict[str, Any] | None]:
         return {
             TOP_MODELS_SPEC.dataset_id: self._find_chart(
                 rankings_html,
@@ -311,12 +309,6 @@ class RankingsSource(SourceExtractor):
                 rankings_html,
                 predicate=self._looks_like_market_share_chart,
                 label=MARKET_SHARE_SPEC.dataset_id,
-            ),
-            CATEGORIES_PROGRAMMING_SPEC.dataset_id: self._find_first_chart(
-                programming_html,
-                rankings_html,
-                predicate=lambda chart: chart.get("testId") == "model-rankings-categories-chart",
-                label=CATEGORIES_PROGRAMMING_SPEC.dataset_id,
             ),
         }
 
@@ -414,11 +406,6 @@ class RankingsSource(SourceExtractor):
                                 section_selector="#market-share",
                                 label=MARKET_SHARE_SPEC.dataset_id,
                             ),
-                            CATEGORIES_PROGRAMMING_SPEC.dataset_id: self._extract_runtime_chart_from_page(
-                                page,
-                                section_selector="#programming-languages",
-                                label=CATEGORIES_PROGRAMMING_SPEC.dataset_id,
-                            ),
                         }
                     finally:
                         page.close()
@@ -427,8 +414,7 @@ class RankingsSource(SourceExtractor):
                         return charts
 
                     rankings_html = self._capture_runtime_next_f_html(browser, TOP_MODELS_SPEC.source_url)
-                    programming_html = self._capture_runtime_next_f_html(browser, CATEGORIES_PROGRAMMING_SPEC.source_url)
-                    html_charts = self._extract_chart_payloads(rankings_html, programming_html)
+                    html_charts = self._extract_chart_payloads(rankings_html)
                     charts.update({label: chart for label, chart in html_charts.items() if chart is not None})
                 finally:
                     browser.close()

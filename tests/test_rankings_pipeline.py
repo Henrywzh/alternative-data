@@ -29,12 +29,10 @@ def build_fixture_html(
     *,
     top_models: list[dict] | None = None,
     market_share: list[dict] | None = None,
-    categories_programming: list[dict] | None = None,
 ) -> str:
     payloads = _load_payloads()
     top_models = payloads["top_models"] if top_models is None else top_models
     market_share = payloads["market_share"] if market_share is None else market_share
-    categories_programming = payloads["categories_programming"] if categories_programming is None else categories_programming
 
     top_models_payload = [
         "$",
@@ -69,27 +67,10 @@ def build_fixture_html(
             ],
         },
     ]
-    categories_payload = [
-        "$",
-        "$L52",
-        None,
-        {
-            "children": [
-                "$",
-                "$L58",
-                None,
-                {
-                    "data": categories_programming,
-                    "testId": "model-rankings-categories-chart",
-                },
-            ],
-        },
-    ]
     return (
         "<html><body>"
         f"{_make_next_f_script('44', top_models_payload)}"
         f"{_make_next_f_script('46', market_share_payload)}"
-        f"{_make_next_f_script('4c', categories_payload)}"
         "</body></html>"
     )
 
@@ -113,10 +94,6 @@ def _runtime_fallback_charts() -> dict[str, dict]:
     return {
         "top_models": {"data": payloads["top_models"], "forecast": "forecast-1w"},
         "market_share": {"data": payloads["market_share"]},
-        "categories_programming": {
-            "data": payloads["categories_programming"],
-            "testId": "model-rankings-categories-chart",
-        },
     }
 
 
@@ -127,12 +104,10 @@ def test_parse_fixture_snapshots_for_rankings_datasets() -> None:
 
     extracted = source.extract(make_snapshots(html), context)
 
-    assert set(extracted) == {"top_models", "market_share", "categories_programming"}
+    assert set(extracted) == {"top_models", "market_share"}
     assert len(extracted["top_models"]) == 9
     assert len(extracted["market_share"]) == 9
-    assert len(extracted["categories_programming"]) == 9
     assert extracted["top_models"][0].rank == 1
-    assert extracted["categories_programming"][0].category_slug == "programming"
 
 
 def test_extract_prefers_rankings_api_payloads_for_top_models_and_market_share(
@@ -238,7 +213,6 @@ def test_fetch_snapshots_keeps_html_fallback_available_when_rankings_api_fails(
 
     assert {snapshot.name for snapshot in snapshots} == {
         "rankings",
-        "rankings_programming",
         "model_rankings_chart",
         "text_modality_chart",
         "context_length_1K",
@@ -257,12 +231,14 @@ def test_fetch_snapshots_keeps_html_fallback_available_when_rankings_api_fails(
 
 
 def test_selector_drift_raises_clear_error() -> None:
-    broken_html = build_fixture_html(categories_programming=[])
+    # Retargeted from categories_programming, which is retired: its absence
+    # is not drift, there is nothing upstream left to drift from.
+    broken_html = build_fixture_html(market_share=[])
     source = RankingsSource()
     context = RunContext(run_id="broken", scraped_at=pd.Timestamp("2024-02-01", tz="UTC").to_pydatetime())
     source._extract_chart_payloads_with_playwright = lambda: {}
 
-    with pytest.raises(ExtractionError, match="categories_programming"):
+    with pytest.raises(ExtractionError, match="market_share"):
         source.extract(make_snapshots(broken_html), context)
 
 
@@ -273,7 +249,6 @@ def test_programming_chart_can_fall_back_to_main_rankings_html() -> None:
 
     extracted = source.extract(make_split_snapshots(html, "<html><body>missing</body></html>"), context)
 
-    assert len(extracted["categories_programming"]) == 9
 
 
 def test_browser_fallback_is_used_when_static_chart_payloads_are_missing(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -290,7 +265,7 @@ def test_browser_fallback_is_used_when_static_chart_payloads_are_missing(monkeyp
     extracted = source.extract(make_snapshots("<html><body>missing</body></html>"), context)
 
     assert called["value"] is True
-    assert set(extracted) == {"top_models", "market_share", "categories_programming"}
+    assert set(extracted) == {"top_models", "market_share"}
     assert len(extracted["top_models"]) == 9
 
 
@@ -307,7 +282,6 @@ def test_normalize_repeated_runs_are_idempotent(tmp_path: Path, monkeypatch: pyt
     html = build_fixture_html(
         top_models=_load_payloads()["top_models"][:2],
         market_share=_load_payloads()["market_share"][:2],
-        categories_programming=_load_payloads()["categories_programming"][:2],
     )
     pipeline = RankingsPipeline(tmp_path)
     monkeypatch.setattr(pipeline.source, "fetch_snapshots", lambda: make_snapshots(html))
@@ -331,12 +305,10 @@ def test_weekly_update_adds_one_new_week(tmp_path: Path, monkeypatch: pytest.Mon
     initial_html = build_fixture_html(
         top_models=payloads["top_models"][:2],
         market_share=payloads["market_share"][:2],
-        categories_programming=payloads["categories_programming"][:2],
     )
     updated_html = build_fixture_html(
         top_models=payloads["top_models"][:3],
         market_share=payloads["market_share"][:3],
-        categories_programming=payloads["categories_programming"][:3],
     )
     pipeline = RankingsPipeline(tmp_path)
     monkeypatch.setattr(pipeline.source, "fetch_snapshots", lambda: make_snapshots(initial_html))
@@ -364,7 +336,6 @@ def test_validate_and_weekly_update_share_the_same_fallback_extraction_path(
     assert counts["top_models"] == 9
     assert weekly.datasets_written["top_models"] == 9
     assert weekly.datasets_written["market_share"] == 9
-    assert weekly.datasets_written["categories_programming"] == 9
 
 
 def test_backfill_missing_fills_multiple_weeks(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -372,7 +343,6 @@ def test_backfill_missing_fills_multiple_weeks(tmp_path: Path, monkeypatch: pyte
     sparse_html = build_fixture_html(
         top_models=payloads["top_models"][:1],
         market_share=payloads["market_share"][:1],
-        categories_programming=payloads["categories_programming"][:1],
     )
     full_html = build_fixture_html()
     pipeline = RankingsPipeline(tmp_path)
@@ -382,8 +352,8 @@ def test_backfill_missing_fills_multiple_weeks(tmp_path: Path, monkeypatch: pyte
     monkeypatch.setattr(pipeline.source, "fetch_snapshots", lambda: make_snapshots(full_html))
     pipeline.run_backfill_missing()
 
-    categories = pd.read_csv(tmp_path / "data" / "normalized" / "openrouter" / "categories_programming.csv")
-    assert sorted(categories["week_start_date"].unique().tolist()) == ["2024-01-01", "2024-01-08", "2024-01-15"]
+    top = pd.read_csv(tmp_path / "data" / "normalized" / "openrouter" / "top_models.csv")
+    assert sorted(top["week_start_date"].unique().tolist()) == ["2024-01-01", "2024-01-08", "2024-01-15"]
 
 
 def test_raw_manifest_written_for_each_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -400,7 +370,6 @@ def test_raw_manifest_written_for_each_run(tmp_path: Path, monkeypatch: pytest.M
     assert {item["dataset_id"] for item in manifest["datasets"]} == {
         "top_models",
         "market_share",
-        "categories_programming",
     }
 
 
@@ -414,3 +383,37 @@ def test_csv_and_parquet_outputs_stay_schema_consistent(tmp_path: Path, monkeypa
     csv_df = pd.read_csv(tmp_path / "data" / "normalized" / "openrouter" / "top_models.csv")
     parquet_df = pd.read_parquet(tmp_path / "data" / "normalized" / "openrouter" / "top_models.parquet")
     assert list(csv_df.columns) == list(parquet_df.columns)
+
+
+def test_the_retired_category_dataset_is_not_fetched_or_produced(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """OpenRouter deleted /rankings/programming; nothing should still ask.
+
+    The route answers 200 and renders a client-side "404: Not Found", so a
+    fetch of it looks healthy and the run then died looking for a chart that
+    was not there -- taking top_models, market_share, context_length_requests
+    and modality_rankings down with it for a fortnight.
+    """
+    source = RankingsSource()
+    requested: list[str] = []
+
+    def fake_fetch(name: str, url: str) -> Snapshot:
+        requested.append(url)
+        return Snapshot(name=name, source_url=url, body="<html></html>")
+
+    monkeypatch.setattr(source, "_fetch", fake_fetch)
+    source.fetch_snapshots()
+
+    assert not any("rankings/programming" in url for url in requested)
+    assert "categories_programming" not in RankingsPipeline.dataset_ids
+
+
+def test_the_retired_history_is_still_readable(tmp_path: Path) -> None:
+    """Retiring the collector must not make 104 weeks of history unloadable."""
+    from openrouter_data.storage import StorageManager
+
+    storage = StorageManager(tmp_path)
+    frame = storage.load_dataset("categories_programming")
+
+    assert frame.empty  # nothing stored under tmp_path, but the id still resolves

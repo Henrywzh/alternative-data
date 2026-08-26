@@ -15,6 +15,7 @@ NATURAL_KEYS: dict[str, list[str]] = {
     "top_models": ["week_start_date", "entity_id"],
     "market_share": ["week_start_date", "entity_id"],
     "provider_weekly_requests": ["week_start_date", "entity_id"],
+    # Retired 2026-08-26. Kept so the collected history stays readable.
     "categories_programming": ["week_start_date", "category_slug", "entity_id"],
     "context_length_requests": ["week_start_date", "context_length_bucket", "entity_id"],
     "modality_rankings": ["week_start_date", "modality", "entity_id"],
@@ -142,6 +143,7 @@ SORT_KEYS: dict[str, list[str]] = {
     "top_models": ["week_start_date", "rank", "entity_id"],
     "market_share": ["week_start_date", "rank", "entity_id"],
     "provider_weekly_requests": ["week_start_date", "rank", "entity_id"],
+    # Retired 2026-08-26. Kept so the collected history stays readable.
     "categories_programming": ["week_start_date", "rank", "entity_id"],
     "context_length_requests": ["week_start_date", "context_length_bucket", "rank", "entity_id"],
     "modality_rankings": ["week_start_date", "modality", "rank", "entity_id"],
