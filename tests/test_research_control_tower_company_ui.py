@@ -36,6 +36,8 @@ from control_tower.pages.company import (
     COMPANY_VALUATION_COLUMNS,
     CompanyView,
     _answer_first_summary_lines,
+    _company_earnings_actuals,
+    _latest_reported_kpi,
     build_company_view,
     render_company_page,
 )
@@ -1941,3 +1943,82 @@ def test_the_china_internet_pairs_still_resolve_to_the_hk_ordinary() -> None:
     view = build_company_view(replace(snapshot, listings=listings), entity_id="TENCENT")
 
     assert view.selected_listing_id == "TENCENT_HK"
+
+
+def test_company_earnings_actuals_are_issuer_level_not_listing_filtered() -> None:
+    snapshot = _make_tencent_snapshot()
+    actuals = pd.DataFrame(
+        [
+            {
+                "entity_id": "ALIBABA",
+                "listing_id": "BABA_US",
+                "metric": "revenue",
+                "period_label": "FY2026",
+                "period_end": "2026-03-31",
+                "reported_value": 1.02e12,
+                "accounting_basis": "us-gaap as reported",
+            }
+        ]
+    )
+    snapshot = replace(snapshot, earnings_actuals=actuals)
+    entities = pd.concat(
+        [
+            snapshot.entities,
+            pd.DataFrame(
+                [{
+                    "entity_id": "ALIBABA",
+                    "legal_name": "Alibaba Group Holding Limited",
+                    "display_name": "Alibaba",
+                    "country": "CN",
+                    "sector": "Consumer Discretionary",
+                    "industry": "Internet Retail",
+                    "active_status": "active",
+                    "active_from": "2014-09-19",
+                    "active_to": None,
+                    "registry_version": "v1",
+                    "source_or_research_note": "China internet",
+                    "entity_type": "public",
+                }]
+            ),
+        ],
+        ignore_index=True,
+    )
+    listings = pd.concat(
+        [
+            snapshot.listings,
+            pd.DataFrame(
+                [{
+                    "listing_id": "9988_HK",
+                    "entity_id": "ALIBABA",
+                    "exchange": "HKEX",
+                    "native_ticker": "9988",
+                    "canonical_ticker": "9988.HK",
+                    "financial_data_security_id": "sec-9988",
+                    "financial_data_issuer_group_id": "grp-alibaba",
+                    "mapping_status": "verified",
+                    "mapping_verified_at": "2026-08-21",
+                    "mapping_source_url": "https://www.hkex.com.hk",
+                    "collection_eligible": True,
+                    "listing_role": "secondary",
+                    "vendor_tickers": "yfinance:9988.HK;hkex:9988",
+                    "currency": "HKD",
+                    "primary_listing": False,
+                    "active_from": "2019-11-26",
+                    "active_to": None,
+                    "listing_status": "active",
+                    "registry_version": "v1",
+                    "source_url": "https://www.hkex.com.hk",
+                    "source_or_research_note": "HK ordinary share",
+                }]
+            ),
+        ],
+        ignore_index=True,
+    )
+    snapshot = replace(snapshot, entities=entities, listings=listings, earnings_actuals=actuals)
+    view = build_company_view(snapshot, entity_id="ALIBABA", listing_id="9988_HK")
+    frame = _company_earnings_actuals(snapshot, view)
+    assert not frame.empty
+    assert set(frame["listing_id"]) == {"BABA_US"}
+    value, note = _latest_reported_kpi(frame, ("revenue", "revenue_total"))
+    assert value == 1.02e12
+    assert "FY2026" in note

@@ -1449,24 +1449,49 @@ def _format_listing_option(snapshot: ControlTowerSnapshot, listing_id: str | Non
     return " · ".join(value for value in (ticker, exchange, currency) if value) or "Listing unavailable"
 
 
+
+def _latest_reported_kpi(frame: pd.DataFrame, metrics: tuple[str, ...]) -> tuple[float | None, str]:
+    """Pick a display KPI from official actuals without inventing a period."""
+
+    if frame is None or frame.empty or 'metric' not in frame.columns:
+        return None, 'unavailable'
+    work = frame.copy()
+    work['metric'] = work['metric'].astype('string')
+    work = work.loc[work['metric'].isin(list(metrics))].copy()
+    if work.empty:
+        return None, 'unavailable'
+    work['period_end'] = pd.to_datetime(work.get('period_end'), errors='coerce')
+    work = work.dropna(subset=['period_end', 'reported_value'])
+    if work.empty:
+        return None, 'unavailable'
+    work['period_label'] = work.get('period_label', pd.Series('', index=work.index)).astype('string')
+    quarterly = work.loc[work['period_label'].str.match(r'^([1-4]Q|Q[1-4]|1H)', na=False)]
+    if len(quarterly['period_label'].dropna().unique()) >= 4:
+        latest = quarterly.sort_values('period_end').drop_duplicates(['period_label', 'metric'], keep='last')
+        labels = latest['period_label'].drop_duplicates().tail(4)
+        subset = latest.loc[latest['period_label'].isin(labels)]
+        return float(subset['reported_value'].sum()), 'sum of latest disclosed quarters'
+    annual = work.loc[work['period_label'].str.startswith('FY', na=False)]
+    source = annual if not annual.empty else work
+    row = source.sort_values('period_end').drop_duplicates(['period_label', 'metric'], keep='last').iloc[-1]
+    label = str(row.get('period_label') or 'latest period')
+    return float(row['reported_value']), f'{label} official'
+
 def _company_earnings_actuals(
     snapshot: ControlTowerSnapshot,
     view: CompanyView,
 ) -> pd.DataFrame:
-    """Return earnings rows scoped to the selected entity and listing."""
+    """Return earnings rows for the selected issuer.
+
+    Official actuals are issuer-level. A Hong Kong ordinary share should still
+    see SEC companyfacts filed against the ADR listing of the same entity;
+    filtering only on the selected listing hid Alibaba/Baidu annuals.
+    """
 
     source = getattr(snapshot, "earnings_actuals", pd.DataFrame())
     if source is None or source.empty or "entity_id" not in source.columns:
         return pd.DataFrame()
-    frame = source.loc[source["entity_id"].astype("string").eq(view.entity_id)].copy()
-    if view.selected_listing_id and "listing_id" in frame.columns:
-        listing = frame["listing_id"]
-        frame = frame.loc[
-            listing.isna()
-            | listing.astype("string").eq("")
-            | listing.astype("string").eq(view.selected_listing_id)
-        ]
-    return frame
+    return source.loc[source["entity_id"].astype("string").eq(view.entity_id)].copy()
 
 
 def _latest_actual_rows(frame: pd.DataFrame) -> pd.DataFrame:
@@ -1769,22 +1794,19 @@ def _render_company_hero_card(
     ltm_profit_str = 'Unavailable'
     ltm_fcf_str = 'Unavailable'
     buyback_str = 'Unavailable'
+    ltm_rev_sub = 'Official issuer actuals'
+    ltm_profit_sub = 'Official issuer actuals'
     if not actuals.empty:
-        actuals_copy = actuals.copy()
-        actuals_copy['period_end'] = pd.to_datetime(actuals_copy['period_end'], errors='coerce')
-        periods = actuals_copy.dropna(subset=['period_end']).sort_values('period_end')
-        unique_periods = periods['period_label'].drop_duplicates().tail(4).tolist()
-        rev_rows = actuals_copy[(actuals_copy['period_label'].isin(unique_periods)) & (actuals_copy['metric'] == 'revenue_total') & (actuals_copy['accounting_basis'] == 'IFRS')]
-        if len(rev_rows) >= 1:
-            tot_rev = rev_rows['reported_value'].sum()
-            ltm_rev_str = f'¥{tot_rev/1e9:,.1f}B' if tot_rev >= 1e9 else f'¥{tot_rev:,.0f}'
-        profit_rows = actuals_copy[(actuals_copy['period_label'].isin(unique_periods)) & (actuals_copy['metric'] == 'net_profit_attributable') & (actuals_copy['accounting_basis'] == 'Non-IFRS management measure')]
-        if len(profit_rows) >= 1:
-            tot_profit = profit_rows['reported_value'].sum()
-            ltm_profit_str = f'¥{tot_profit/1e9:,.1f}B' if tot_profit >= 1e9 else f'¥{tot_profit:,.0f}'
-        fcf_rows = actuals_copy[(actuals_copy['metric'] == 'free_cash_flow') & (actuals_copy['accounting_basis'] == 'Non-IFRS management measure')].sort_values('period_end', ascending=False)
-        if not fcf_rows.empty and pd.notna(fcf_rows.iloc[0].get('reported_value')):
-            fcf_val = float(fcf_rows.iloc[0]['reported_value'])
+        rev_val, rev_note = _latest_reported_kpi(actuals, ('revenue_total', 'revenue'))
+        if rev_val is not None:
+            ltm_rev_str = f'¥{rev_val/1e9:,.1f}B' if abs(rev_val) >= 1e9 else f'¥{rev_val:,.0f}'
+            ltm_rev_sub = rev_note
+        profit_val, profit_note = _latest_reported_kpi(actuals, ('net_profit_attributable', 'net_income'))
+        if profit_val is not None:
+            ltm_profit_str = f'¥{profit_val/1e9:,.1f}B' if abs(profit_val) >= 1e9 else f'¥{profit_val:,.0f}'
+            ltm_profit_sub = profit_note
+        fcf_val, fcf_note = _latest_reported_kpi(actuals, ('free_cash_flow',))
+        if fcf_val is not None:
             ltm_fcf_str = f'¥{fcf_val/1e9:,.1f}B' if abs(fcf_val) >= 1e9 else f'¥{fcf_val:,.0f}'
 
     if not view.corporate_actions.empty:
@@ -1806,7 +1828,7 @@ def _render_company_hero_card(
     sector_badge = f'<span class="ct-badge">{escape(view.sector)}</span>' if view.sector else ''
     industry_badge = f'<span class="ct-badge">{escape(view.industry)}</span>' if view.industry else ''
     buyback_sub = 'Selected-listing statutory filings'
-    hero_html = f'<div class="ct-hero-card"><div class="ct-hero-top"><div><div class="ct-hero-title">{escape(view.display_name)} {ticker_badge} {exchange_badge}</div><div class="ct-subtle" style="margin-top: 0.25rem;">{escape(view.legal_name)} · {escape(view.country)} {sector_badge} {industry_badge}</div></div>{price_html}</div><div class="ct-kpi-grid"><div class="ct-kpi-card"><div class="ct-kpi-label">LTM Revenue</div><div class="ct-kpi-value">{escape(ltm_rev_str)}</div><div class="ct-kpi-sub">Total Topline (IFRS)</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">LTM Non-IFRS Net Profit</div><div class="ct-kpi-value">{escape(ltm_profit_str)}</div><div class="ct-kpi-sub">Core Operating Earnings</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Free Cash Flow</div><div class="ct-kpi-value">{escape(ltm_fcf_str)}</div><div class="ct-kpi-sub">Latest Reported Period</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Capital Return / Buybacks</div><div class="ct-kpi-value">{escape(buyback_str)}</div><div class="ct-kpi-sub">{escape(buyback_sub)}</div></div></div></div>'
+    hero_html = f'<div class="ct-hero-card"><div class="ct-hero-top"><div><div class="ct-hero-title">{escape(view.display_name)} {ticker_badge} {exchange_badge}</div><div class="ct-subtle" style="margin-top: 0.25rem;">{escape(view.legal_name)} · {escape(view.country)} {sector_badge} {industry_badge}</div></div>{price_html}</div><div class="ct-kpi-grid"><div class="ct-kpi-card"><div class="ct-kpi-label">Latest Revenue</div><div class="ct-kpi-value">{escape(ltm_rev_str)}</div><div class="ct-kpi-sub">{escape(ltm_rev_sub)}</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Latest Net Profit</div><div class="ct-kpi-value">{escape(ltm_profit_str)}</div><div class="ct-kpi-sub">{escape(ltm_profit_sub)}</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Free Cash Flow</div><div class="ct-kpi-value">{escape(ltm_fcf_str)}</div><div class="ct-kpi-sub">Latest Reported Period</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Capital Return / Buybacks</div><div class="ct-kpi-value">{escape(buyback_str)}</div><div class="ct-kpi-sub">{escape(buyback_sub)}</div></div></div></div>'
     st.markdown(hero_html, unsafe_allow_html=True)
     if actuals.empty:
         st.caption('Official LTM cards stay unavailable when issuer actuals are absent. A labelled yfinance/akshare overlay, if present, is on Fundamentals and is not written into these KPIs.')
