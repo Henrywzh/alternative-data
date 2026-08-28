@@ -28,7 +28,7 @@ def load_us_sector_artifact() -> dict[str, Any]:
 
     # 1. Cloudflare R2 / public CDN
     try:
-        from src.market_monitor.us_etf.storage_r2 import get_r2_config
+        from market_monitor.us_etf.storage_r2 import get_r2_config
         cfg = get_r2_config()
         public_url = cfg.get("R2_PUBLIC_URL")
         if public_url:
@@ -44,7 +44,7 @@ def load_us_sector_artifact() -> dict[str, Any]:
 
     # 2. Git-ignored local cache, carrying its own age
     try:
-        from src.market_monitor.us_etf.storage_r2 import (
+        from market_monitor.us_etf.storage_r2 import (
             load_local_cache_json,
             local_cache_age_hours,
         )
@@ -58,7 +58,7 @@ def load_us_sector_artifact() -> dict[str, Any]:
 
     # 3. Live generation fallback if yfinance is installed
     try:
-        from src.market_monitor.us_etf.fetch import (
+        from market_monitor.us_etf.fetch import (
             build_us_sector_artifact,
             fetch_us_etf_history,
         )

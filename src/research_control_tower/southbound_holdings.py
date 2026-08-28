@@ -14,7 +14,7 @@ from typing import Any
 
 import pandas as pd
 
-from src.market_monitor.sources.eastmoney_hsgt import fetch_southbound_individual
+from market_monitor.sources.eastmoney_hsgt import fetch_southbound_individual
 
 SOUTHBOUND_COLUMNS = [
     "hold_date",

@@ -7,7 +7,7 @@ from pathlib import Path
 import pandas as pd
 import requests
 
-from src.hk_local_consumer.config import (
+from hk_local_consumer.config import (
     CONSUMER_COUNCIL_PRICE_WATCH_URL,
     DATA_SOURCE_FALLBACK,
     DATA_SOURCE_LIVE,

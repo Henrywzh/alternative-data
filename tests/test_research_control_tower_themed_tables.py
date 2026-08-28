@@ -111,3 +111,45 @@ def test_no_call_site_still_reaches_for_st_dataframe() -> None:
     ).stdout.strip()
 
     assert not hits, f"st.dataframe still called:\n{hits}"
+
+
+def test_the_control_tower_app_imports_domain_packages_by_their_real_name() -> None:
+    """`src.` resolves only while nothing else on sys.path claims the name.
+
+    src has no __init__.py, so `src.research_control_tower` is a PEP 420
+    namespace package and loses to any installed distribution shipping a
+    top-level `src`. That is what took the sibling Streamlit app down in
+    production; this app carried the same seven imports, and its own path
+    setup did not even cover src/.
+    """
+    from pathlib import Path
+
+    app_root = Path(__file__).resolve().parents[1] / "apps" / "research-control-tower"
+    offenders = [
+        f"{path.relative_to(app_root)}:{number}: {line.strip()}"
+        for path in sorted(app_root.rglob("*.py"))
+        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1)
+        if line.strip().startswith(("from src.", "import src."))
+    ]
+
+    assert not offenders, "import these as top-level packages instead:\n" + "\n".join(offenders)
+
+
+def test_the_domain_packages_do_not_import_themselves_through_src() -> None:
+    """Worst case of the same defect: the installed package reaching for src.
+
+    A real (non-editable) install has no src directory at all, so
+    `from src.hk_local_consumer.config import ...` inside hk_local_consumer
+    could only ever work from a repo checkout.
+    """
+    from pathlib import Path
+
+    src_root = Path(__file__).resolve().parents[1] / "src"
+    offenders = [
+        f"{path.relative_to(src_root)}:{number}: {line.strip()}"
+        for path in sorted(src_root.rglob("*.py"))
+        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1)
+        if line.strip().startswith(("from src.", "import src."))
+    ]
+
+    assert not offenders, "these are inside the installed package:\n" + "\n".join(offenders)

@@ -530,10 +530,12 @@ def test_the_deployed_app_imports_domain_packages_by_their_real_name() -> None:
     pyproject maps these to the top level already (package-dir = {"" = "src"}),
     so market_monitor is the name that does not depend on path luck.
     """
-    source = APP_PATH.read_text(encoding="utf-8")
+    # The whole deployed tree, not just app.py: remote_us_etf.py hid three of
+    # these inside function bodies, where a line-start scan missed them.
     offenders = [
-        line.strip()
-        for line in source.splitlines()
+        f"{path.relative_to(APP_PATH.parent.parent)}:{number}: {line.strip()}"
+        for path in sorted(APP_PATH.parent.rglob("*.py"))
+        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1)
         if line.strip().startswith(("from src.", "import src."))
     ]
 

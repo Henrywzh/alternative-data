@@ -28,7 +28,7 @@ from ..storage import save_raw_snapshot
 # C&SD's web-table viewer is JavaScript-heavy, but the sibling local-consumer
 # source already uses the stable underlying MDT CSV files.  Reuse that parser
 # so the two sectors do not drift in their definition of the retail index.
-from src.hk_local_consumer.sources.cnsd_retail import fetch_cnsd_retail_sales
+from hk_local_consumer.sources.cnsd_retail import fetch_cnsd_retail_sales
 
 
 RVD_OFFICE_VACANCY_URL = "https://www.rvd.gov.hk/datagovhk/Private_Offices-Vacancy.csv"

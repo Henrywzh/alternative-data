@@ -28,16 +28,16 @@ from ..charts import (
 
 from ..company_profiles import SegmentSpec, get_company_profile, segment_label
 
-from src.research_control_tower.eligibility import listing_eligibility_reason
-from src.research_control_tower.southbound_holdings import hkex_security_code, southbound_mart_path
-from src.research_control_tower.live_refresh import (
+from research_control_tower.eligibility import listing_eligibility_reason
+from research_control_tower.southbound_holdings import hkex_security_code, southbound_mart_path
+from research_control_tower.live_refresh import (
     load_local_hkex_overlay,
     record_refresh,
     refresh_company_news,
     refresh_cooldown_remaining,
 )
-from src.research_control_tower.news_overlay import load_local_news_overlay
-from src.research_control_tower.vendor_financials import (
+from research_control_tower.news_overlay import load_local_news_overlay
+from research_control_tower.vendor_financials import (
     VendorLoadResult,
     default_local_mart_path,
     load_vendor_financials,

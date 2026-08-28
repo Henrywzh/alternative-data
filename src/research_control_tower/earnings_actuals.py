@@ -30,9 +30,9 @@ from typing import Any, Mapping
 import pandas as pd
 import requests
 
-from ..sec_edgar_data.client import build_retrying_session
-from ..sec_edgar_data.config import resolve_user_agent
-from ..sec_edgar_data.storage import EdgarStorage
+from sec_edgar_data.client import build_retrying_session
+from sec_edgar_data.config import resolve_user_agent
+from sec_edgar_data.storage import EdgarStorage
 from .build import EARNINGS_ACTUALS_COLUMNS, EARNINGS_ACTUALS_SCHEMA_ID, SOURCE_STATE_COLUMNS
 
 

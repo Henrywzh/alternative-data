@@ -8,7 +8,7 @@ from html import escape
 import pandas as pd
 import streamlit as st
 
-from src.research_control_tower.eligibility import listing_eligibility_reason
+from research_control_tower.eligibility import listing_eligibility_reason
 
 from ..components.coverage_matrix import (
     coverage_legend_html,

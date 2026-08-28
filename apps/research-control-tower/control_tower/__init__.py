@@ -3,10 +3,20 @@
 from pathlib import Path
 import sys
 
-# Ensure repository root is on sys.path deterministically before importing modules that depend on src
+# Put the repository root and src/ on sys.path before importing anything that
+# reaches into the domain packages.
+#
+# The root alone is not enough. src has no __init__.py, so `src.foo` resolves
+# as a PEP 420 namespace package and loses to any installed distribution that
+# ships a top-level `src`. That is how the sibling Streamlit app went down
+# with an ImportError on Streamlit Cloud. pyproject maps these packages to the
+# top level already (package-dir = {"" = "src"}), so research_control_tower is
+# the name that does not depend on path luck.
 _REPO_ROOT = Path(__file__).resolve().parents[3]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
+_SRC_ROOT = _REPO_ROOT / "src"
+for _path in (_REPO_ROOT, _SRC_ROOT):
+    if str(_path) not in sys.path:
+        sys.path.insert(0, str(_path))
 
 from .config import artifact_fingerprint
 from .coverage import (

@@ -16,7 +16,7 @@ import pandas as pd
 
 from .models import ControlTowerSnapshot
 
-from src.research_control_tower.eligibility import listing_eligibility_reason
+from research_control_tower.eligibility import listing_eligibility_reason
 
 CoverageStatusCode = Literal[
     "available",
