@@ -516,3 +516,32 @@ def test_index_detail_survives_an_exposure_with_no_technicals(monkeypatch) -> No
     )
 
     assert recorder.figures
+
+
+def test_the_deployed_app_imports_domain_packages_by_their_real_name() -> None:
+    """`src.` only resolves by accident, and it stopped resolving in production.
+
+    src has no __init__.py, so `src.market_monitor` is a PEP 420 namespace
+    package: any installed distribution shipping a top-level `src` wins over
+    the repo directory and the import raises. That is what took the deployed
+    Streamlit app down -- render_market's very first statement was
+    `from src.market_monitor.config import market_tab_exposures`.
+
+    pyproject maps these to the top level already (package-dir = {"" = "src"}),
+    so market_monitor is the name that does not depend on path luck.
+    """
+    source = APP_PATH.read_text(encoding="utf-8")
+    offenders = [
+        line.strip()
+        for line in source.splitlines()
+        if line.strip().startswith(("from src.", "import src."))
+    ]
+
+    assert not offenders, "import these as top-level packages instead:\n" + "\n".join(offenders)
+
+
+def test_the_app_puts_src_on_sys_path_so_those_imports_resolve() -> None:
+    source = APP_PATH.read_text(encoding="utf-8")
+
+    assert 'SRC_ROOT = REPO_ROOT / "src"' in source
+    assert "sys.path.insert(0, str(SRC_ROOT))" in source

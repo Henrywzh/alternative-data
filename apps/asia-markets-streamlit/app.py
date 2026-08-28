@@ -26,6 +26,15 @@ import streamlit as st
 REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+# The domain packages live under src/ and pyproject maps them to the top level
+# (package-dir = {"" = "src"}), so market_monitor is the real module name.
+# Importing them as src.market_monitor only ever worked by accident: src has no
+# __init__.py, so it resolves as a PEP 420 namespace package, and any installed
+# distribution shipping a top-level src wins over the repo directory. That is
+# what took the deployed app down with an ImportError.
+SRC_ROOT = REPO_ROOT / "src"
+if str(SRC_ROOT) not in sys.path:
+    sys.path.insert(0, str(SRC_ROOT))
 
 ARTIFACT_ROOT = REPO_ROOT / "apps" / "asia-markets-dashboard" / ".generated"
 
@@ -4481,7 +4490,7 @@ def render_scoped_index_section(
     show_wrappers: bool = True,
 ) -> None:
     """Render single-index technical detail and ETF wrappers with dynamic sub-category filtering."""
-    from src.market_monitor.config import EXPOSURES
+    from market_monitor.config import EXPOSURES
     
     available = [e for e in label_by_exposure if e in scoped_eids and not prices.empty and e in set(prices["exposure_id"])]
     if not available:
@@ -4604,7 +4613,7 @@ def render_scoped_index_section(
 
 def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: str, window: str) -> None:
     """Index & ETF Allocation Monitor: fully modular regional tabs."""
-    from src.market_monitor.config import market_tab_exposures
+    from market_monitor.config import market_tab_exposures
 
     st.markdown(f'<div class="am-page-title">{tr(language, SECTORS["market"]["name_en"], SECTORS["market"]["name_zh"])}</div>', unsafe_allow_html=True)
     st.caption(tr(language, "Global Multi-Asset & ETF Monitor. Regional segmentation with clean data separation.", "全球多资产与 ETF 监控看板。按地域严格分层，无跨区干扰。"))
