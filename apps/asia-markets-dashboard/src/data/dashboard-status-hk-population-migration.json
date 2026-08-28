@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-08-27T17:38:58.223686Z",
-  "snapshot_id": "859841fae380f228",
-  "data_as_of": "2026-08-26",
+  "generated_at": "2026-08-28T18:42:51.393972Z",
+  "snapshot_id": "0571b38b83d3940a",
+  "data_as_of": "2026-08-27",
   "overall_status": "Healthy",
   "live_sources": 6,
   "planned_sources": 0,
@@ -11,7 +11,7 @@
       "dataset": "immd",
       "type": "Monitor",
       "status": "Healthy",
-      "latest_observation": "2026-08-26",
+      "latest_observation": "2026-08-27",
       "records": 365,
       "freshness": "Dated snapshot",
       "notes": "Daily passenger clearance by control point, direction and residency, used to derive HK-resident net flow and Mainland-visitor net retention."
@@ -51,8 +51,8 @@
       "dataset": "td",
       "type": "Monitor",
       "status": "Healthy",
-      "latest_observation": "2026-05",
-      "records": 92,
+      "latest_observation": "2026-06",
+      "records": 93,
       "freshness": "Dated snapshot",
       "notes": "Monthly HZMB vehicular traffic (incl. Northbound Travel for HK Vehicles 港车北上) and cross-boundary passenger traffic incl. Express Rail West Kowloon."
     },
@@ -67,5 +67,5 @@
       "notes": "Monthly visitor arrivals by nationality/region since 2004, a geographic companion/cross-check to ImmD's cross-border passenger data."
     }
   ],
-  "attachment_filename": "hk-population-migration-dashboard-2026-08-27.html"
+  "attachment_filename": "hk-population-migration-dashboard-2026-08-28.html"
 }
