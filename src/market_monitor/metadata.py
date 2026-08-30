@@ -658,8 +658,9 @@ ETF_REGISTRY = (
         "venue": "SH",
         "currency": "CNY",
         "wrapper_type": "qdii",
-        "management_fee": 0.0080,
-        "custody_fee": 0.0020,
+        # Issuer-published, not the hand-typed 0.80/0.20 this used to carry.
+        "management_fee": 0.0050,
+        "custody_fee": 0.0015,
         "premium_regime": "qdii",
         "inception_date": "2020-05-29",
         "aum": None,
@@ -687,24 +688,13 @@ ETF_REGISTRY = (
         "underlying_timezone": "Europe/Berlin",
     },
     # --- UK FTSE 100 (QDII) ---
-    {
-        "exposure_id": "ftse100",
-        "index_id": "FTSE",
-        "fund_id": "513970",
-        "ticker": "513970.SH",
-        "fund_name": "建信富时100ETF(QDII)",
-        "venue": "SH",
-        "currency": "CNY",
-        "wrapper_type": "qdii",
-        "management_fee": 0.0080,
-        "custody_fee": 0.0020,
-        "premium_regime": "qdii",
-        "inception_date": "2020-09-28",
-        "aum": None,
-        "is_qdii": True,
-        "is_cross_border": True,
-        "underlying_timezone": "Europe/London",
-    },
+    # No wrapper. 513970 was registered here as 建信富时100ETF(QDII); the
+    # exchange calls it 恒生消费ETF景顺, a Hang Seng consumer fund with three
+    # siblings and nothing to do with the FTSE 100. There is no A-share FTSE
+    # 100 tracker to put in its place: across 1594 listed ETFs the only 富时
+    # funds are 富时A50, which is Chinese large caps. The ftse100 exposure
+    # keeps its Yahoo index series; 20 of 37 exposures already carry no
+    # wrapper, so this is the normal shape for one, not a gap to fill.
     # --- Saudi Arabia (QDII) ---
     {
         "exposure_id": "saudi",

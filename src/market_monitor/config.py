@@ -321,6 +321,12 @@ EXPOSURES = (
     # yfinance ^FTSE for the index.
     {
         "exposure_id": "ftse100",
+        # Benchmark, not investable: there is no A-share FTSE 100 tracker to
+        # wrap. Of 1594 listed ETFs the only 富时 funds are 富时A50, Chinese
+        # large caps. 513970 stood here until the venue's own name for it
+        # (恒生消费ETF景顺) contradicted the registry. The index series stays;
+        # only the claim that it can be bought through this monitor goes.
+        "role": "benchmark",
         "price_source": "yfinance",
         "label": "UK FTSE 100",
         "label_zh": "英国富时100",

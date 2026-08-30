@@ -2452,3 +2452,40 @@ def test_a_fresh_borrowed_close_raises_no_midday_warning():
         },
     )
     assert "借用的收盘技术面" not in html
+
+
+def test_no_wrapper_claims_an_exposure_its_own_name_contradicts():
+    """The registry must not contradict itself about what a fund tracks.
+
+    Deliberately weaker than it looks, and worth being clear about: this
+    compares the registry's own fund_name against the exposure's tokens, so
+    it catches a 恒生消费 fund filed under ftse100 by name. It could not have
+    caught 513970, which carried the name 建信富时100ETF(QDII) -- internally
+    consistent, and simply untrue of the fund that code belongs to. Only the
+    daily reconciliation against the venue's own names finds that, which is
+    what it did, on every run, for three days.
+    """
+    from market_monitor.metadata import ETF_REGISTRY, EXPOSURE_NAME_TOKENS
+
+    offenders = []
+    for wrapper in ETF_REGISTRY:
+        exposure = str(wrapper.get("exposure_id"))
+        name = str(wrapper.get("fund_name") or "")
+        tokens = EXPOSURE_NAME_TOKENS.get(exposure)
+        if tokens and not any(token in name for token in tokens):
+            offenders.append(f"{wrapper.get('fund_id')} {name!r} filed under {exposure}")
+
+    assert not offenders, "registry name contradicts the exposure:\n" + "\n".join(offenders)
+
+
+def test_the_ftse100_exposure_carries_no_a_share_wrapper():
+    """There is no A-share FTSE 100 tracker to register.
+
+    Across the 1594 listed ETFs the only 富时 funds are 富时A50, which is
+    Chinese large caps. Keeping the exposure without a wrapper is the correct
+    shape -- 20 of 37 exposures are already index-only -- and this stops the
+    empty slot being refilled with another near-miss.
+    """
+    from market_monitor.metadata import ETF_REGISTRY
+
+    assert not [w for w in ETF_REGISTRY if str(w.get("exposure_id")) == "ftse100"]
