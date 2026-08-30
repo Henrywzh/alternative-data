@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import time
 from datetime import datetime, timezone
 from typing import Any
 
@@ -147,17 +148,34 @@ def fetch_censtatd_table(
     *,
     session: requests.Session | None = None,
     timeout: int = 90,
+    attempts: int = 3,
 ) -> tuple[dict[str, Any], pd.DataFrame]:
     """Fetch one full history table and return both raw response and normalized frame."""
     client = session or requests.Session()
-    response = client.get(
-        CENSTATD_API_URL,
-        params={"id": spec.table_id, "lang": "en", "full_series": "1"},
-        headers=DEFAULT_HEADERS,
-        timeout=timeout,
-    )
-    response.raise_for_status()
-    payload = response.json()
+    if attempts < 1:
+        raise ValueError("attempts must be at least 1")
+    last_error: Exception | None = None
+    payload: dict[str, Any] | None = None
+    for attempt in range(1, attempts + 1):
+        try:
+            response = client.get(
+                CENSTATD_API_URL,
+                params={"id": spec.table_id, "lang": "en", "full_series": "1"},
+                headers=DEFAULT_HEADERS,
+                timeout=timeout,
+            )
+            response.raise_for_status()
+            payload = response.json()
+            break
+        except (requests.RequestException, ValueError) as exc:
+            last_error = exc
+            if attempt == attempts:
+                raise
+            time.sleep(attempt)
+    if payload is None:
+        raise CenstatdFetchError(
+            f"{spec.table_id}: fetch failed without a response payload: {last_error}"
+        )
     try:
         frame = normalize_censtatd_table(payload, spec)
     except CenstatdFetchError as exc:

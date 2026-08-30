@@ -8,7 +8,8 @@ import pandas as pd
 from src.hk_labour_market import pipeline
 from src.hk_labour_market.quality import validate_frame, validate_policy_frame
 from src.hk_labour_market.source_registry import CORE_CENSTATD_TABLES
-from src.hk_labour_market.sources.censtatd import normalize_censtatd_table
+from src.hk_labour_market.sources import censtatd
+from src.hk_labour_market.sources.censtatd import fetch_censtatd_table, normalize_censtatd_table
 from src.hk_labour_market.sources.labour_department import ESLS_SOURCE_ID
 
 
@@ -65,6 +66,36 @@ def test_normalize_preserves_period_dimensions_and_status_flags():
     assert frame.loc[1, "industry"] == "Financial and insurance activities"
     assert frame.loc[0, "status_flag"] == "p"
     assert frame.loc[0, "value"] == 48610.0
+
+
+def test_censtatd_fetch_retries_transient_incomplete_response(monkeypatch):
+    spec = next(item for item in CORE_CENSTATD_TABLES if item.table_id == "215-16001")
+
+    class Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return _payload()
+
+    class Session:
+        def __init__(self):
+            self.calls = 0
+
+        def get(self, *args, **kwargs):
+            self.calls += 1
+            if self.calls == 1:
+                raise censtatd.requests.exceptions.ChunkedEncodingError("incomplete response")
+            return Response()
+
+    session = Session()
+    monkeypatch.setattr(censtatd.time, "sleep", lambda _: None)
+
+    payload, frame = fetch_censtatd_table(spec, session=session, attempts=2)
+
+    assert session.calls == 2
+    assert payload["header"]["status"]["name"] == "Success"
+    assert len(frame) == 3
 
 
 def test_validate_allows_provisional_values_but_rejects_duplicate_source_rows():
@@ -291,3 +322,27 @@ def test_run_update_rebuilds_marts_and_runs_audit_after_all_stages_succeed(monke
     result = pipeline.run_update_pipeline()
     assert result["marts"] == {"marts": {}}
     assert result["audit"]["status"] == "pass"
+
+
+def test_run_update_rebuilds_marts_when_only_optional_stage_two_fails(monkeypatch):
+    success = lambda **kwargs: {"results": {"dataset": {"status": "success"}}}
+    failure = lambda **kwargs: {"results": {"dataset": {"status": "error"}}}
+    monkeypatch.setattr(pipeline, "run_stage_1_pipeline", success)
+    monkeypatch.setattr(pipeline, "run_stage_2_pipeline", failure)
+    monkeypatch.setattr(pipeline, "run_stage_3_pipeline", success)
+    monkeypatch.setattr(pipeline, "run_stage_4_pipeline", success)
+
+    from src.hk_labour_market import audit, marts
+
+    monkeypatch.setattr(marts, "build_analysis_marts", lambda: {"marts": {}})
+    monkeypatch.setattr(
+        audit,
+        "run_labour_market_audit",
+        lambda: {"status": "fail", "errors": ["optional Stage 2 source failed"]},
+    )
+
+    result = pipeline.run_update_pipeline()
+
+    assert result["marts"] == {"marts": {}}
+    assert result["stage_success"]["stage_2"] is False
+    assert result["audit"]["status"] == "fail"

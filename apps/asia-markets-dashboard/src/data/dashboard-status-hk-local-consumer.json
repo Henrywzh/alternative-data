@@ -1,19 +1,19 @@
 {
-  "generated_at": "2026-08-09T16:09:01.081916Z",
-  "snapshot_id": "d9891023da667880",
-  "data_as_of": "2026-07-27",
+  "generated_at": "2026-08-30T14:33:46.056311Z",
+  "snapshot_id": "d9047fb8f06fe98a",
+  "data_as_of": "2026-08-26",
   "overall_status": "Healthy",
-  "live_sources": 8,
-  "planned_sources": 0,
+  "live_sources": 7,
+  "planned_sources": 1,
   "sources": [
     {
       "source": "HKO Severe Weather Warnings & FRED Exchange Rate",
       "dataset": "HKO Severe Weather & FRED FX",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-07-01",
-      "records": 961,
-      "freshness": "39d old",
+      "latest_observation": "2026-08-01",
+      "records": 962,
+      "freshness": "29d old",
       "notes": "Monthly hours under Typhoon Signal 8+ & Red/Black Rainstorm warnings alongside HKD/RMB FX."
     },
     {
@@ -21,9 +21,9 @@
       "dataset": "Immigration Passenger Clearance",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-07-28",
-      "records": 2035,
-      "freshness": "12d old",
+      "latest_observation": "2026-08-29",
+      "records": 2067,
+      "freshness": "1d old",
       "notes": "Daily clearance across 17 control points for HK residents & Mainland visitors."
     },
     {
@@ -31,9 +31,9 @@
       "dataset": "SGE Gold Benchmark",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-07-27",
-      "records": 2497,
-      "freshness": "13d old",
+      "latest_observation": "2026-08-26",
+      "records": 2519,
+      "freshness": "4d old",
       "notes": "Daily AM/PM benchmark fixing."
     },
     {
@@ -41,9 +41,9 @@
       "dataset": "HK Consumer Ticker Valuations",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-07-30",
-      "records": 4015,
-      "freshness": "10d old",
+      "latest_observation": "2026-08-30",
+      "records": 4026,
+      "freshness": "0d old",
       "notes": "PE (TTM), PB, and market cap only; no dividend-yield indicator is available from this endpoint."
     },
     {
@@ -51,9 +51,9 @@
       "dataset": "Retail Sales Value/Volume Index",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-05-01",
-      "records": 6500,
-      "freshness": "100d old",
+      "latest_observation": "2026-06-01",
+      "records": 6525,
+      "freshness": "90d old",
       "notes": "25 outlet-type categories, monthly since 2004."
     },
     {
@@ -61,9 +61,9 @@
       "dataset": "Restaurant Receipts & Purchases Survey",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-03-31",
-      "records": 516,
-      "freshness": "131d old",
+      "latest_observation": "2026-06-30",
+      "records": 522,
+      "freshness": "61d old",
       "notes": "Sector-wide purchases only; per-type purchases are not published."
     },
     {
@@ -80,12 +80,10 @@
       "source": "Consumer Council Online Price Watch",
       "dataset": "Online Price Watch historical archive",
       "type": "Catalog",
-      "status": "Healthy",
-      "latest_observation": "2026-07",
-      "records": 4268,
-      "freshness": "Archive through 2026-07",
-      "notes": "75 months across 11 categories and 12 supermarket codes. Coverage only; no price index is rendered."
+      "status": "Unavailable locally",
+      "freshness": "—",
+      "notes": "Not marked Healthy: archive validation did not pass."
     }
   ],
-  "attachment_filename": "hk-local-consumer-dashboard-2026-08-09.html"
+  "attachment_filename": "hk-local-consumer-dashboard-2026-08-30.html"
 }

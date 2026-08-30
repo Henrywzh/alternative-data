@@ -48,6 +48,84 @@ def _scraper():
     return module
 
 
+def test_incremental_window_is_enforced_locally_when_cninfo_overreturns():
+    scraper = _scraper()
+    rows = [
+        {"month": "2024-12", "announcement_id": "old"},
+        {"month": "2025-07", "announcement_id": "boundary"},
+        {"month": "2026-07", "announcement_id": "latest"},
+    ]
+
+    filtered = scraper.filter_announcements_from(rows, "2025-07-26")
+
+    assert [row["announcement_id"] for row in filtered] == ["boundary", "latest"]
+
+
+def test_incremental_refresh_preserves_old_months_and_replaces_overlap():
+    scraper = _scraper()
+    existing = pd.DataFrame(
+        [
+            {"month": "2025-12", "airline_code": "601111", "metric": "passengers", "region": "Total", "value": 1.0},
+            {"month": "2026-06", "airline_code": "601111", "metric": "passengers", "region": "Total", "value": 2.0},
+        ]
+    )
+    fetched = pd.DataFrame(
+        [
+            {"month": "2026-06", "airline_code": "601111", "metric": "passengers", "region": "Total", "value": 3.0},
+            {"month": "2026-07", "airline_code": "601111", "metric": "passengers", "region": "Total", "value": 4.0},
+        ]
+    )
+
+    merged = scraper.merge_incremental_rows(
+        existing,
+        fetched,
+        keys=["month", "airline_code", "metric", "region"],
+        sort_columns=["month", "airline_code", "metric", "region"],
+    )
+
+    assert merged["month"].tolist() == ["2025-12", "2026-06", "2026-07"]
+    assert merged.loc[merged["month"].eq("2026-06"), "value"].iloc[0] == 3.0
+
+
+def test_incremental_refresh_normalizes_mixed_identifier_storage_types(tmp_path):
+    scraper = _scraper()
+    existing = pd.DataFrame(
+        [
+            {
+                "month": "2026-06",
+                "airline_code": 601111,
+                "metric": "passengers",
+                "region": "Total",
+                "announcement_id": 1224497808,
+                "value": 1.0,
+            }
+        ]
+    )
+    fetched = pd.DataFrame(
+        [
+            {
+                "month": "2026-07",
+                "airline_code": "601111",
+                "metric": "passengers",
+                "region": "Total",
+                "announcement_id": "1225000000",
+                "value": 2.0,
+            }
+        ]
+    )
+
+    merged = scraper.merge_incremental_rows(
+        existing,
+        fetched,
+        keys=["month", "airline_code", "metric", "region"],
+        sort_columns=["month", "airline_code", "metric", "region"],
+    )
+
+    assert str(merged["airline_code"].dtype) == "string"
+    assert str(merged["announcement_id"].dtype) == "string"
+    merged.to_parquet(tmp_path / "airline-identifiers.parquet", index=False)
+
+
 # --- unit scale: Spring states ASK/RPK 100x smaller than the other carriers ---
 
 
@@ -526,9 +604,11 @@ def test_china_eastern_fleet_history_has_table_totals_not_freighter_subtotals(
         (operating_events["airline_code"] == "600115")
         & (operating_events["event_type"] == "fleet_total_aircraft")
     ].sort_values("month")
-    assert len(totals) == 115
+    assert len(totals) >= 115
+    assert not totals["month"].duplicated().any()
     assert totals.iloc[0]["month"] == "2016-12"
     assert totals.iloc[0]["value"] == 581
+    assert totals.iloc[-1]["month"] == operating_events["month"].max()
     assert totals["value"].min() >= 500
 
 

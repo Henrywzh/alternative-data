@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
 
+from src.hk_real_estate import pipeline as re_pipeline
 from src.hk_real_estate.sources.midland import (
     build_midland_field_dictionary,
     parse_midland_mhpi,
@@ -38,6 +39,92 @@ from src.hk_real_estate.sources.bd_projects import (
     _infer_region_from_address,
 )
 from src.hk_real_estate.sources.buildings_dept import _period_from_row, fetch_buildings_dept_monthly_stats
+
+
+def test_bd_current_year_refresh_merges_new_digest_without_losing_history(monkeypatch):
+    existing = pd.DataFrame(
+        [
+            {
+                "observation_month": "2025-12-01",
+                "permit_stage": "Occupation",
+                "region": "All Hong Kong",
+                "property_category": "All",
+                "revision_status": "as_published",
+                "total_domestic_units": 100,
+            },
+            {
+                "observation_month": "2026-05-01",
+                "permit_stage": "Occupation",
+                "region": "All Hong Kong",
+                "property_category": "All",
+                "revision_status": "as_published",
+                "total_domestic_units": 200,
+            },
+        ]
+    )
+    fresh = pd.DataFrame(
+        [
+            {
+                "observation_month": "2026-05-01",
+                "permit_stage": "Occupation",
+                "region": "All Hong Kong",
+                "property_category": "All",
+                "revision_status": "as_published",
+                "total_domestic_units": 210,
+            },
+            {
+                "observation_month": "2026-06-01",
+                "permit_stage": "Occupation",
+                "region": "All Hong Kong",
+                "property_category": "All",
+                "revision_status": "as_published",
+                "total_domestic_units": 220,
+            },
+        ]
+    )
+    fresh.attrs["source_url"] = "https://example.test/Md202606e.pdf"
+    captured: dict[str, pd.DataFrame] = {}
+
+    monkeypatch.setattr(
+        re_pipeline,
+        "fetch_bd_supply_pipeline_history",
+        lambda **kwargs: fresh,
+    )
+    monkeypatch.setattr(
+        re_pipeline,
+        "load_latest_normalized",
+        lambda dataset_name: existing,
+    )
+    monkeypatch.setattr(
+        re_pipeline,
+        "_record_many",
+        lambda run_id, results, datasets: (
+            captured.update(datasets),
+            results.update(
+                {
+                    name: {"status": "success", "records": len(frame)}
+                    for name, frame in datasets.items()
+                }
+            ),
+        ),
+    )
+
+    result = re_pipeline.run_bd_history_current_year_refresh(
+        year=2026,
+        _raise_on_failure=True,
+    )
+
+    merged = captured["bd_supply_pipeline_history"]
+    assert result["bd_supply_pipeline_history"]["status"] == "success"
+    assert set(merged["observation_month"]) == {
+        "2025-12-01",
+        "2026-05-01",
+        "2026-06-01",
+    }
+    assert (
+        merged.loc[merged["observation_month"].eq("2026-05-01"), "total_domestic_units"].iloc[0]
+        == 210
+    )
 from src.hk_real_estate.sources.bd_history import (
     discover_bd_digest_archives,
     list_archive_pdf_members,

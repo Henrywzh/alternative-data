@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 
 from .marts import build_analysis_marts
 from .audit import run_labour_market_audit
@@ -24,7 +25,15 @@ def main() -> None:
     subparsers.add_parser("run-stage-3", help="Backfill annual official wage-distribution and working-hours history")
     subparsers.add_parser("run-stage-4", help="Backfill reliable official labour-supply policy history")
     subparsers.add_parser("build-marts", help="Build source-backed labour-market analytical marts")
-    subparsers.add_parser("run-update", help="Refresh all official sources and rebuild analytical marts")
+    update_parser = subparsers.add_parser(
+        "run-update",
+        help="Refresh all official sources and rebuild analytical marts",
+    )
+    update_parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Exit non-zero when any source group or the final audit fails.",
+    )
     subparsers.add_parser("audit", help="Run the final labour-market data quality audit")
     args = parser.parse_args()
     if args.command == "run-stage-1":
@@ -38,9 +47,17 @@ def main() -> None:
     elif args.command == "build-marts":
         print(json.dumps(build_analysis_marts(), indent=2))
     elif args.command == "run-update":
-        print(json.dumps(run_update_pipeline(), indent=2))
+        print(
+            json.dumps(
+                run_update_pipeline(raise_on_failure=args.strict),
+                indent=2,
+            )
+        )
     elif args.command == "audit":
-        print(json.dumps(run_labour_market_audit(), indent=2, ensure_ascii=False))
+        report = run_labour_market_audit()
+        print(json.dumps(report, indent=2, ensure_ascii=False))
+        if report["status"] != "pass":
+            sys.exit(1)
 
 
 if __name__ == "__main__":

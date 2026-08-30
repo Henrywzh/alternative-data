@@ -87,6 +87,48 @@ def test_load_china_airline_traffic_normalizes_clean_parquet(tmp_path):
     assert result.iloc[0]["value"] == 123.4
 
 
+def test_load_china_airline_traffic_overlays_recovery_without_hiding_new_raw_month(tmp_path):
+    builder = _load_builder(
+        "build_hk_transport_artifact.py",
+        "transport_builder_recovery_overlay_test",
+    )
+    raw_path = tmp_path / "raw.parquet"
+    recovered_path = tmp_path / "recovered.parquet"
+    raw = pd.DataFrame(
+        [
+            {
+                "month": "2026-06",
+                "date": "2026-06-01",
+                "airline_code": "600029",
+                "region": "Domestic",
+                "metric": "passengers",
+                "value": 100.0,
+            },
+            {
+                "month": "2026-07",
+                "date": "2026-07-01",
+                "airline_code": "600029",
+                "region": "Domestic",
+                "metric": "passengers",
+                "value": 200.0,
+            },
+        ]
+    )
+    recovered = raw.iloc[[0]].copy()
+    recovered.loc[:, "value"] = 101.0
+    raw.to_parquet(raw_path, index=False)
+    recovered.to_parquet(recovered_path, index=False)
+
+    result = builder.load_china_airline_traffic(
+        raw_path,
+        recovered_path=recovered_path,
+    )
+
+    assert result["month"].tolist() == ["2026-06", "2026-07"]
+    assert result.loc[result["month"].eq("2026-06"), "value"].item() == 101.0
+    assert result.loc[result["month"].eq("2026-07"), "value"].item() == 200.0
+
+
 def test_china_airline_views_are_wired_into_transport_artifact():
     builder = _load_builder("build_hk_transport_artifact.py", "transport_builder_views_test")
     source = pd.DataFrame(

@@ -6,7 +6,7 @@
     "title": "HK Transport & Aviation Sector Monitor",
     "description": "MTR Corporation monthly rail patronage, CAD HKIA airport traffic, Cathay Pacific Group operating statistics, China listed-airline operating data, TD public-transport and private-car series, C&SD cross-boundary movements, EV registrations and metered-space parking occupancy.",
     "sector": "hk-transport",
-    "generatedAt": "2026-08-30T11:55:30.504319Z",
+    "generatedAt": "2026-08-30T14:27:22.177600Z",
     "cards": [
       {
         "id": "mtr_card",
@@ -2025,7 +2025,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-30T11:55:30.504319Z",
+    "generatedAt": "2026-08-30T14:27:22.177600Z",
     "status": "ready",
     "datasets": {
       "kpi_mtr": [
@@ -7945,6 +7945,196 @@
           "cathay_freighter_flight_sectors": null
         },
         {
+          "date": "2020-05-01 00:00:00",
+          "month": "2020-05",
+          "hkia_passengers": 37423.0,
+          "hkia_aircraft_movements": 11363.0,
+          "hkia_freight_tonnes": 374433.0,
+          "cathay_passengers": 18473.0,
+          "cathay_rpk_thousands": 100133.0,
+          "cathay_ask_thousands": 338027.0,
+          "cathay_passenger_load_factor_pct": 29.6,
+          "cathay_cargo_tonnes": 98710.0,
+          "cathay_aftk_thousands": 913775.0,
+          "cathay_rftk_thousands": 666880.0,
+          "cathay_cargo_load_factor_pct": 73.0,
+          "cathay_atk_thousands": 945929.0,
+          "cathay_flight_sectors": 1432.0,
+          "cathay_passenger_flight_sectors": null,
+          "cathay_freighter_flight_sectors": null
+        },
+        {
+          "date": "2020-06-01 00:00:00",
+          "month": "2020-06",
+          "hkia_passengers": 59199.0,
+          "hkia_aircraft_movements": 9963.0,
+          "hkia_freight_tonnes": 354367.0,
+          "cathay_passengers": 27106.0,
+          "cathay_rpk_thousands": 145713.0,
+          "cathay_ask_thousands": 533147.0,
+          "cathay_passenger_load_factor_pct": 27.3,
+          "cathay_cargo_tonnes": 93228.0,
+          "cathay_aftk_thousands": 799987.0,
+          "cathay_rftk_thousands": 596037.0,
+          "cathay_cargo_load_factor_pct": 74.5,
+          "cathay_atk_thousands": 850713.0,
+          "cathay_flight_sectors": 1110.0,
+          "cathay_passenger_flight_sectors": null,
+          "cathay_freighter_flight_sectors": null
+        },
+        {
+          "date": "2020-07-01 00:00:00",
+          "month": "2020-07",
+          "hkia_passengers": 96028.0,
+          "hkia_aircraft_movements": 9873.0,
+          "hkia_freight_tonnes": 369477.0,
+          "cathay_passengers": 42984.0,
+          "cathay_rpk_thousands": 242927.0,
+          "cathay_ask_thousands": 1036254.0,
+          "cathay_passenger_load_factor_pct": 23.4,
+          "cathay_cargo_tonnes": 102129.0,
+          "cathay_aftk_thousands": 837080.0,
+          "cathay_rftk_thousands": 634779.0,
+          "cathay_cargo_load_factor_pct": 75.8,
+          "cathay_atk_thousands": 935735.0,
+          "cathay_flight_sectors": 1140.0,
+          "cathay_passenger_flight_sectors": null,
+          "cathay_freighter_flight_sectors": null
+        },
+        {
+          "date": "2020-08-01 00:00:00",
+          "month": "2020-08",
+          "hkia_passengers": 83807.0,
+          "hkia_aircraft_movements": 10005.0,
+          "hkia_freight_tonnes": 368087.0,
+          "cathay_passengers": 35773.0,
+          "cathay_rpk_thousands": 222544.0,
+          "cathay_ask_thousands": 1119756.0,
+          "cathay_passenger_load_factor_pct": 19.9,
+          "cathay_cargo_tonnes": 102122.0,
+          "cathay_aftk_thousands": 859880.0,
+          "cathay_rftk_thousands": 645048.0,
+          "cathay_cargo_load_factor_pct": 75.0,
+          "cathay_atk_thousands": 966438.0,
+          "cathay_flight_sectors": 1157.0,
+          "cathay_passenger_flight_sectors": null,
+          "cathay_freighter_flight_sectors": null
+        },
+        {
+          "date": "2020-09-01 00:00:00",
+          "month": "2020-09",
+          "hkia_passengers": 99805.0,
+          "hkia_aircraft_movements": 10544.0,
+          "hkia_freight_tonnes": 382049.0,
+          "cathay_passengers": 47061.0,
+          "cathay_rpk_thousands": 301698.0,
+          "cathay_ask_thousands": 1213977.0,
+          "cathay_passenger_load_factor_pct": 24.9,
+          "cathay_cargo_tonnes": 109453.0,
+          "cathay_aftk_thousands": 887471.0,
+          "cathay_rftk_thousands": 668278.0,
+          "cathay_cargo_load_factor_pct": 75.3,
+          "cathay_atk_thousands": 1003011.0,
+          "cathay_flight_sectors": 1283.0,
+          "cathay_passenger_flight_sectors": null,
+          "cathay_freighter_flight_sectors": null
+        },
+        {
+          "date": "2020-10-01 00:00:00",
+          "month": "2020-10",
+          "hkia_passengers": 79360.0,
+          "hkia_aircraft_movements": 10877.0,
+          "hkia_freight_tonnes": 399316.0,
+          "cathay_passengers": 38541.0,
+          "cathay_rpk_thousands": 210168.0,
+          "cathay_ask_thousands": 1153938.0,
+          "cathay_passenger_load_factor_pct": 18.2,
+          "cathay_cargo_tonnes": 114346.0,
+          "cathay_aftk_thousands": 906202.0,
+          "cathay_rftk_thousands": 709964.0,
+          "cathay_cargo_load_factor_pct": 78.3,
+          "cathay_atk_thousands": 1015991.0,
+          "cathay_flight_sectors": 1347.0,
+          "cathay_passenger_flight_sectors": null,
+          "cathay_freighter_flight_sectors": null
+        },
+        {
+          "date": "2020-11-01 00:00:00",
+          "month": "2020-11",
+          "hkia_passengers": 81001.0,
+          "hkia_aircraft_movements": 12559.0,
+          "hkia_freight_tonnes": 430145.0,
+          "cathay_passengers": 37815.0,
+          "cathay_rpk_thousands": 210103.0,
+          "cathay_ask_thousands": 1133508.0,
+          "cathay_passenger_load_factor_pct": 18.5,
+          "cathay_cargo_tonnes": 116853.0,
+          "cathay_aftk_thousands": 949553.0,
+          "cathay_rftk_thousands": 737454.0,
+          "cathay_cargo_load_factor_pct": 77.7,
+          "cathay_atk_thousands": 1057366.0,
+          "cathay_flight_sectors": 1479.0,
+          "cathay_passenger_flight_sectors": null,
+          "cathay_freighter_flight_sectors": null
+        },
+        {
+          "date": "2020-12-01 00:00:00",
+          "month": "2020-12",
+          "hkia_passengers": 90531.0,
+          "hkia_aircraft_movements": 12659.0,
+          "hkia_freight_tonnes": 435327.0,
+          "cathay_passengers": 39989.0,
+          "cathay_rpk_thousands": 223781.0,
+          "cathay_ask_thousands": 1219512.0,
+          "cathay_passenger_load_factor_pct": 18.4,
+          "cathay_cargo_tonnes": 120218.0,
+          "cathay_aftk_thousands": 930811.0,
+          "cathay_rftk_thousands": 747356.0,
+          "cathay_cargo_load_factor_pct": 80.3,
+          "cathay_atk_thousands": 1046822.0,
+          "cathay_flight_sectors": 1503.0,
+          "cathay_passenger_flight_sectors": null,
+          "cathay_freighter_flight_sectors": null
+        },
+        {
+          "date": "2021-01-01 00:00:00",
+          "month": "2021-01",
+          "hkia_passengers": 71094.0,
+          "hkia_aircraft_movements": 11380.0,
+          "hkia_freight_tonnes": 406499.0,
+          "cathay_passengers": 30410.0,
+          "cathay_rpk_thousands": 152055.0,
+          "cathay_ask_thousands": 1144614.0,
+          "cathay_passenger_load_factor_pct": 13.3,
+          "cathay_cargo_tonnes": 108930.0,
+          "cathay_aftk_thousands": 842806.0,
+          "cathay_rftk_thousands": 669496.0,
+          "cathay_cargo_load_factor_pct": 79.4,
+          "cathay_atk_thousands": 951676.0,
+          "cathay_flight_sectors": 1258.0,
+          "cathay_passenger_flight_sectors": null,
+          "cathay_freighter_flight_sectors": null
+        },
+        {
+          "date": "2021-02-01 00:00:00",
+          "month": "2021-02",
+          "hkia_passengers": 47729.0,
+          "hkia_aircraft_movements": 8492.0,
+          "hkia_freight_tonnes": 307315.0,
+          "cathay_passengers": 21134.0,
+          "cathay_rpk_thousands": 94156.0,
+          "cathay_ask_thousands": 679186.0,
+          "cathay_passenger_load_factor_pct": 13.9,
+          "cathay_cargo_tonnes": 82297.0,
+          "cathay_aftk_thousands": 647442.0,
+          "cathay_rftk_thousands": 514987.0,
+          "cathay_cargo_load_factor_pct": 79.5,
+          "cathay_atk_thousands": 712041.0,
+          "cathay_flight_sectors": 958.0,
+          "cathay_passenger_flight_sectors": null,
+          "cathay_freighter_flight_sectors": null
+        },
+        {
           "date": "2021-03-01 00:00:00",
           "month": "2021-03",
           "hkia_passengers": 58245.0,
@@ -13522,6 +13712,126 @@
           "value": 79799.0
         },
         {
+          "date": "2020-05-01",
+          "month": "2020-05",
+          "series": "ASK ('000)",
+          "value": 338027.0
+        },
+        {
+          "date": "2020-05-01",
+          "month": "2020-05",
+          "series": "RPK ('000)",
+          "value": 100133.0
+        },
+        {
+          "date": "2020-06-01",
+          "month": "2020-06",
+          "series": "ASK ('000)",
+          "value": 533147.0
+        },
+        {
+          "date": "2020-06-01",
+          "month": "2020-06",
+          "series": "RPK ('000)",
+          "value": 145713.0
+        },
+        {
+          "date": "2020-07-01",
+          "month": "2020-07",
+          "series": "ASK ('000)",
+          "value": 1036254.0
+        },
+        {
+          "date": "2020-07-01",
+          "month": "2020-07",
+          "series": "RPK ('000)",
+          "value": 242927.0
+        },
+        {
+          "date": "2020-08-01",
+          "month": "2020-08",
+          "series": "ASK ('000)",
+          "value": 1119756.0
+        },
+        {
+          "date": "2020-08-01",
+          "month": "2020-08",
+          "series": "RPK ('000)",
+          "value": 222544.0
+        },
+        {
+          "date": "2020-09-01",
+          "month": "2020-09",
+          "series": "ASK ('000)",
+          "value": 1213977.0
+        },
+        {
+          "date": "2020-09-01",
+          "month": "2020-09",
+          "series": "RPK ('000)",
+          "value": 301698.0
+        },
+        {
+          "date": "2020-10-01",
+          "month": "2020-10",
+          "series": "ASK ('000)",
+          "value": 1153938.0
+        },
+        {
+          "date": "2020-10-01",
+          "month": "2020-10",
+          "series": "RPK ('000)",
+          "value": 210168.0
+        },
+        {
+          "date": "2020-11-01",
+          "month": "2020-11",
+          "series": "ASK ('000)",
+          "value": 1133508.0
+        },
+        {
+          "date": "2020-11-01",
+          "month": "2020-11",
+          "series": "RPK ('000)",
+          "value": 210103.0
+        },
+        {
+          "date": "2020-12-01",
+          "month": "2020-12",
+          "series": "ASK ('000)",
+          "value": 1219512.0
+        },
+        {
+          "date": "2020-12-01",
+          "month": "2020-12",
+          "series": "RPK ('000)",
+          "value": 223781.0
+        },
+        {
+          "date": "2021-01-01",
+          "month": "2021-01",
+          "series": "ASK ('000)",
+          "value": 1144614.0
+        },
+        {
+          "date": "2021-01-01",
+          "month": "2021-01",
+          "series": "RPK ('000)",
+          "value": 152055.0
+        },
+        {
+          "date": "2021-02-01",
+          "month": "2021-02",
+          "series": "ASK ('000)",
+          "value": 679186.0
+        },
+        {
+          "date": "2021-02-01",
+          "month": "2021-02",
+          "series": "RPK ('000)",
+          "value": 94156.0
+        },
+        {
           "date": "2021-03-01",
           "month": "2021-03",
           "series": "ASK ('000)",
@@ -15010,6 +15320,126 @@
           "month": "2020-04",
           "series": "RFTK ('000)",
           "value": 568988.0
+        },
+        {
+          "date": "2020-05-01",
+          "month": "2020-05",
+          "series": "AFTK ('000)",
+          "value": 913775.0
+        },
+        {
+          "date": "2020-05-01",
+          "month": "2020-05",
+          "series": "RFTK ('000)",
+          "value": 666880.0
+        },
+        {
+          "date": "2020-06-01",
+          "month": "2020-06",
+          "series": "AFTK ('000)",
+          "value": 799987.0
+        },
+        {
+          "date": "2020-06-01",
+          "month": "2020-06",
+          "series": "RFTK ('000)",
+          "value": 596037.0
+        },
+        {
+          "date": "2020-07-01",
+          "month": "2020-07",
+          "series": "AFTK ('000)",
+          "value": 837080.0
+        },
+        {
+          "date": "2020-07-01",
+          "month": "2020-07",
+          "series": "RFTK ('000)",
+          "value": 634779.0
+        },
+        {
+          "date": "2020-08-01",
+          "month": "2020-08",
+          "series": "AFTK ('000)",
+          "value": 859880.0
+        },
+        {
+          "date": "2020-08-01",
+          "month": "2020-08",
+          "series": "RFTK ('000)",
+          "value": 645048.0
+        },
+        {
+          "date": "2020-09-01",
+          "month": "2020-09",
+          "series": "AFTK ('000)",
+          "value": 887471.0
+        },
+        {
+          "date": "2020-09-01",
+          "month": "2020-09",
+          "series": "RFTK ('000)",
+          "value": 668278.0
+        },
+        {
+          "date": "2020-10-01",
+          "month": "2020-10",
+          "series": "AFTK ('000)",
+          "value": 906202.0
+        },
+        {
+          "date": "2020-10-01",
+          "month": "2020-10",
+          "series": "RFTK ('000)",
+          "value": 709964.0
+        },
+        {
+          "date": "2020-11-01",
+          "month": "2020-11",
+          "series": "AFTK ('000)",
+          "value": 949553.0
+        },
+        {
+          "date": "2020-11-01",
+          "month": "2020-11",
+          "series": "RFTK ('000)",
+          "value": 737454.0
+        },
+        {
+          "date": "2020-12-01",
+          "month": "2020-12",
+          "series": "AFTK ('000)",
+          "value": 930811.0
+        },
+        {
+          "date": "2020-12-01",
+          "month": "2020-12",
+          "series": "RFTK ('000)",
+          "value": 747356.0
+        },
+        {
+          "date": "2021-01-01",
+          "month": "2021-01",
+          "series": "AFTK ('000)",
+          "value": 842806.0
+        },
+        {
+          "date": "2021-01-01",
+          "month": "2021-01",
+          "series": "RFTK ('000)",
+          "value": 669496.0
+        },
+        {
+          "date": "2021-02-01",
+          "month": "2021-02",
+          "series": "AFTK ('000)",
+          "value": 647442.0
+        },
+        {
+          "date": "2021-02-01",
+          "month": "2021-02",
+          "series": "RFTK ('000)",
+          "value": 514987.0
         },
         {
           "date": "2021-03-01",
@@ -22154,6 +22584,54 @@
           "airline": "Spring Airlines",
           "region": "Total",
           "value": 2876.99
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "AC",
+          "airline": "Air China",
+          "region": "Total",
+          "value": 15690.8
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "CE",
+          "airline": "China Eastern",
+          "region": "Total",
+          "value": 14267.34
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "CS",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 16731.9
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Hainan",
+          "airline": "Hainan Airlines Holdings",
+          "region": "Total",
+          "value": 6795.51
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Juneyao",
+          "airline": "Juneyao Airlines",
+          "region": "Total",
+          "value": 2487.16
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Spring",
+          "airline": "Spring Airlines",
+          "region": "Total",
+          "value": 3226.98
         }
       ],
       "china_airline_ask_history": [
@@ -28164,6 +28642,54 @@
           "airline": "Spring Airlines",
           "region": "Total",
           "value": 5595.0155
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "AC",
+          "airline": "Air China",
+          "region": "Total",
+          "value": 35650.9
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "CE",
+          "airline": "China Eastern",
+          "region": "Total",
+          "value": 30978.8
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "CS",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 38034.6
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Hainan",
+          "airline": "Hainan Airlines Holdings",
+          "region": "Total",
+          "value": 15384.66
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Juneyao",
+          "airline": "Juneyao Airlines",
+          "region": "Total",
+          "value": 5261.6052
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Spring",
+          "airline": "Spring Airlines",
+          "region": "Total",
+          "value": 6289.5826
         }
       ],
       "china_airline_rpk_history": [
@@ -34174,6 +34700,54 @@
           "airline": "Spring Airlines",
           "region": "Total",
           "value": 5139.6701
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "AC",
+          "airline": "Air China",
+          "region": "Total",
+          "value": 30305.3
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "CE",
+          "airline": "China Eastern",
+          "region": "Total",
+          "value": 26985.16
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "CS",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 32405.19
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Hainan",
+          "airline": "Hainan Airlines Holdings",
+          "region": "Total",
+          "value": 13116.2
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Juneyao",
+          "airline": "Juneyao Airlines",
+          "region": "Total",
+          "value": 4615.2783
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Spring",
+          "airline": "Spring Airlines",
+          "region": "Total",
+          "value": 5868.6826
         }
       ],
       "china_airline_load_factor_history": [
@@ -40184,6 +40758,54 @@
           "airline": "Spring Airlines",
           "region": "Total",
           "value": 91.8616
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "AC",
+          "airline": "Air China",
+          "region": "Total",
+          "value": 85.0057
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "CE",
+          "airline": "China Eastern",
+          "region": "Total",
+          "value": 87.1085
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "CS",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 85.2
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Hainan",
+          "airline": "Hainan Airlines Holdings",
+          "region": "Total",
+          "value": 85.26
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Juneyao",
+          "airline": "Juneyao Airlines",
+          "region": "Total",
+          "value": 87.7162
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Spring",
+          "airline": "Spring Airlines",
+          "region": "Total",
+          "value": 93.308
         }
       ],
       "china_airline_region_split_history": [
@@ -43210,153 +43832,33 @@
           "airline": "All carriers",
           "region": "Regional",
           "value": 893.78
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Domestic",
+          "airline": "All carriers",
+          "region": "Domestic",
+          "value": 51324.12
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "International",
+          "airline": "All carriers",
+          "region": "International",
+          "value": 6879.84
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Regional",
+          "airline": "All carriers",
+          "region": "Regional",
+          "value": 995.73
         }
       ],
       "china_airline_region_by_carrier_history": [
-        {
-          "date": "2017-06-01",
-          "month": "2017-06",
-          "series": "AC \u00b7 Domestic",
-          "airline": "Air China",
-          "region": "Domestic",
-          "value": 6585.3
-        },
-        {
-          "date": "2017-06-01",
-          "month": "2017-06",
-          "series": "AC \u00b7 International",
-          "airline": "Air China",
-          "region": "International",
-          "value": 1044.6
-        },
-        {
-          "date": "2017-06-01",
-          "month": "2017-06",
-          "series": "AC \u00b7 Regional",
-          "airline": "Air China",
-          "region": "Regional",
-          "value": 356.1
-        },
-        {
-          "date": "2017-06-01",
-          "month": "2017-06",
-          "series": "CE \u00b7 Domestic",
-          "airline": "China Eastern",
-          "region": "Domestic",
-          "value": 7285.74
-        },
-        {
-          "date": "2017-06-01",
-          "month": "2017-06",
-          "series": "CE \u00b7 International",
-          "airline": "China Eastern",
-          "region": "International",
-          "value": 1096.11
-        },
-        {
-          "date": "2017-06-01",
-          "month": "2017-06",
-          "series": "CE \u00b7 Regional",
-          "airline": "China Eastern",
-          "region": "Regional",
-          "value": 279.99
-        },
-        {
-          "date": "2017-06-01",
-          "month": "2017-06",
-          "series": "CS \u00b7 Domestic",
-          "airline": "China Southern",
-          "region": "Domestic",
-          "value": 8539.3
-        },
-        {
-          "date": "2017-06-01",
-          "month": "2017-06",
-          "series": "CS \u00b7 International",
-          "airline": "China Southern",
-          "region": "International",
-          "value": 1209.23
-        },
-        {
-          "date": "2017-06-01",
-          "month": "2017-06",
-          "series": "CS \u00b7 Regional",
-          "airline": "China Southern",
-          "region": "Regional",
-          "value": 188.99
-        },
-        {
-          "date": "2017-06-01",
-          "month": "2017-06",
-          "series": "Hainan \u00b7 Domestic",
-          "airline": "Hainan Airlines Holdings",
-          "region": "Domestic",
-          "value": 5273.63
-        },
-        {
-          "date": "2017-06-01",
-          "month": "2017-06",
-          "series": "Hainan \u00b7 International",
-          "airline": "Hainan Airlines Holdings",
-          "region": "International",
-          "value": 327.2
-        },
-        {
-          "date": "2017-06-01",
-          "month": "2017-06",
-          "series": "Hainan \u00b7 Regional",
-          "airline": "Hainan Airlines Holdings",
-          "region": "Regional",
-          "value": 23.56
-        },
-        {
-          "date": "2017-06-01",
-          "month": "2017-06",
-          "series": "Juneyao \u00b7 Domestic",
-          "airline": "Juneyao Airlines",
-          "region": "Domestic",
-          "value": 1210.1
-        },
-        {
-          "date": "2017-06-01",
-          "month": "2017-06",
-          "series": "Juneyao \u00b7 International",
-          "airline": "Juneyao Airlines",
-          "region": "International",
-          "value": 132.59
-        },
-        {
-          "date": "2017-06-01",
-          "month": "2017-06",
-          "series": "Juneyao \u00b7 Regional",
-          "airline": "Juneyao Airlines",
-          "region": "Regional",
-          "value": 21.62
-        },
-        {
-          "date": "2017-06-01",
-          "month": "2017-06",
-          "series": "Spring \u00b7 Domestic",
-          "airline": "Spring Airlines",
-          "region": "Domestic",
-          "value": 1037.79
-        },
-        {
-          "date": "2017-06-01",
-          "month": "2017-06",
-          "series": "Spring \u00b7 International",
-          "airline": "Spring Airlines",
-          "region": "International",
-          "value": 286.85
-        },
-        {
-          "date": "2017-06-01",
-          "month": "2017-06",
-          "series": "Spring \u00b7 Regional",
-          "airline": "Spring Airlines",
-          "region": "Regional",
-          "value": 55.14
-        },
         {
           "date": "2017-07-01",
           "month": "2017-07",
@@ -58844,6 +59346,150 @@
           "airline": "Spring Airlines",
           "region": "Regional",
           "value": 22.26
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "AC \u00b7 Domestic",
+          "airline": "Air China",
+          "region": "Domestic",
+          "value": 13471.8
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "AC \u00b7 International",
+          "airline": "Air China",
+          "region": "International",
+          "value": 1814.2
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "AC \u00b7 Regional",
+          "airline": "Air China",
+          "region": "Regional",
+          "value": 404.8
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "CE \u00b7 Domestic",
+          "airline": "China Eastern",
+          "region": "Domestic",
+          "value": 12003.81
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "CE \u00b7 International",
+          "airline": "China Eastern",
+          "region": "International",
+          "value": 1912.45
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "CE \u00b7 Regional",
+          "airline": "China Eastern",
+          "region": "Regional",
+          "value": 351.08
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "CS \u00b7 Domestic",
+          "airline": "China Southern",
+          "region": "Domestic",
+          "value": 14573.41
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "CS \u00b7 International",
+          "airline": "China Southern",
+          "region": "International",
+          "value": 1994.46
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "CS \u00b7 Regional",
+          "airline": "China Southern",
+          "region": "Regional",
+          "value": 164.03
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Hainan \u00b7 Domestic",
+          "airline": "Hainan Airlines Holdings",
+          "region": "Domestic",
+          "value": 6402.18
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Hainan \u00b7 International",
+          "airline": "Hainan Airlines Holdings",
+          "region": "International",
+          "value": 367.62
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Hainan \u00b7 Regional",
+          "airline": "Hainan Airlines Holdings",
+          "region": "Regional",
+          "value": 25.71
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Juneyao \u00b7 Domestic",
+          "airline": "Juneyao Airlines",
+          "region": "Domestic",
+          "value": 2174.11
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Juneyao \u00b7 International",
+          "airline": "Juneyao Airlines",
+          "region": "International",
+          "value": 291.01
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Juneyao \u00b7 Regional",
+          "airline": "Juneyao Airlines",
+          "region": "Regional",
+          "value": 22.04
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Spring \u00b7 Domestic",
+          "airline": "Spring Airlines",
+          "region": "Domestic",
+          "value": 2698.81
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Spring \u00b7 International",
+          "airline": "Spring Airlines",
+          "region": "International",
+          "value": 500.1
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Spring \u00b7 Regional",
+          "airline": "Spring Airlines",
+          "region": "Regional",
+          "value": 28.07
         }
       ],
       "china_airline_latest_snapshot": [
@@ -58852,33 +59498,33 @@
           "airline": "Air China",
           "reporting_scope": "Group-consolidated operating data",
           "region": "Domestic",
-          "passengers": 10051.2,
-          "ask": 18356.2,
-          "rpk": 15418.5,
-          "load_factor_pct": 84.0,
-          "observation_date": "2026-06-01"
+          "passengers": 13471.8,
+          "ask": 24464.9,
+          "rpk": 20973.1,
+          "load_factor_pct": 85.7,
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "601111",
           "airline": "Air China",
           "reporting_scope": "Group-consolidated operating data",
           "region": "International",
-          "passengers": 1519.0,
-          "ask": 8588.1,
-          "rpk": 7221.2,
-          "load_factor_pct": 84.1,
-          "observation_date": "2026-06-01"
+          "passengers": 1814.2,
+          "ask": 10388.5,
+          "rpk": 8714.4,
+          "load_factor_pct": 83.9,
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "601111",
           "airline": "Air China",
           "reporting_scope": "Group-consolidated operating data",
           "region": "Regional",
-          "passengers": 366.4,
-          "ask": 701.5,
-          "rpk": 561.9,
-          "load_factor_pct": 80.1,
-          "observation_date": "2026-06-01"
+          "passengers": 404.8,
+          "ask": 797.4,
+          "rpk": 617.8,
+          "load_factor_pct": 77.5,
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "601111",
@@ -58886,43 +59532,43 @@
           "reporting_scope": "Group-consolidated operating data",
           "region": "Total",
           "passengers": null,
-          "ask": 27645.8,
-          "rpk": 23201.6,
+          "ask": 35650.9,
+          "rpk": 30305.3,
           "load_factor_pct": null,
-          "observation_date": "2026-06-01"
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "600115",
           "airline": "China Eastern",
           "reporting_scope": "Group-consolidated operating data",
           "region": "Domestic",
-          "passengers": 9114.33,
-          "ask": 15547.06,
-          "rpk": 13414.53,
-          "load_factor_pct": 86.28,
-          "observation_date": "2026-06-01"
+          "passengers": 12003.81,
+          "ask": 20436.01,
+          "rpk": 18033.8,
+          "load_factor_pct": 88.25,
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "600115",
           "airline": "China Eastern",
           "reporting_scope": "Group-consolidated operating data",
           "region": "International",
-          "passengers": 1661.8,
-          "ask": 8424.07,
-          "rpk": 7348.96,
-          "load_factor_pct": 87.24,
-          "observation_date": "2026-06-01"
+          "passengers": 1912.45,
+          "ask": 9959.66,
+          "rpk": 8457.0,
+          "load_factor_pct": 84.91,
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "600115",
           "airline": "China Eastern",
           "reporting_scope": "Group-consolidated operating data",
           "region": "Regional",
-          "passengers": 303.32,
-          "ask": 475.86,
-          "rpk": 411.26,
-          "load_factor_pct": 86.42,
-          "observation_date": "2026-06-01"
+          "passengers": 351.08,
+          "ask": 583.13,
+          "rpk": 494.36,
+          "load_factor_pct": 84.78,
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "600115",
@@ -58930,131 +59576,131 @@
           "reporting_scope": "Group-consolidated operating data",
           "region": "Total",
           "passengers": null,
-          "ask": 24446.99,
-          "rpk": 21174.74,
+          "ask": 30978.8,
+          "rpk": 26985.16,
           "load_factor_pct": null,
-          "observation_date": "2026-06-01"
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "600029",
           "airline": "China Southern",
           "reporting_scope": "Group-consolidated operating data",
           "region": "Domestic",
-          "passengers": 10985.76,
-          "ask": 21345.67,
-          "rpk": 18000.01,
-          "load_factor_pct": 84.33,
-          "observation_date": "2026-06-01"
+          "passengers": 14573.41,
+          "ask": 27981.84,
+          "rpk": 24145.62,
+          "load_factor_pct": 86.29,
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "600029",
           "airline": "China Southern",
           "reporting_scope": "Group-consolidated operating data",
           "region": "International",
-          "passengers": 1740.67,
-          "ask": 8532.13,
-          "rpk": 7119.26,
-          "load_factor_pct": 83.44,
-          "observation_date": "2026-06-01"
+          "passengers": 1994.46,
+          "ask": 9753.76,
+          "rpk": 8018.71,
+          "load_factor_pct": 82.21,
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "600029",
           "airline": "China Southern",
           "reporting_scope": "Group-consolidated operating data",
           "region": "Regional",
-          "passengers": 153.06,
-          "ask": 292.72,
-          "rpk": 231.75,
-          "load_factor_pct": 79.17,
-          "observation_date": "2026-06-01"
+          "passengers": 164.03,
+          "ask": 298.99,
+          "rpk": 240.86,
+          "load_factor_pct": 80.56,
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "600029",
           "airline": "China Southern",
           "reporting_scope": "Group-consolidated operating data",
           "region": "Total",
-          "passengers": 12879.49,
-          "ask": 30170.51,
-          "rpk": 25351.02,
-          "load_factor_pct": 84.03,
-          "observation_date": "2026-06-01"
+          "passengers": 16731.9,
+          "ask": 38034.6,
+          "rpk": 32405.19,
+          "load_factor_pct": 85.2,
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "600221",
           "airline": "Hainan Airlines Holdings",
           "reporting_scope": "Hainan group consolidated; includes eight operating carriers",
           "region": "Domestic",
-          "passengers": 4539.86,
-          "ask": 9016.35,
-          "rpk": 7604.28,
-          "load_factor_pct": 84.34,
-          "observation_date": "2026-06-01"
+          "passengers": 6402.18,
+          "ask": 12238.69,
+          "rpk": 10695.41,
+          "load_factor_pct": 87.39,
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "600221",
           "airline": "Hainan Airlines Holdings",
           "reporting_scope": "Hainan group consolidated; includes eight operating carriers",
           "region": "International",
-          "passengers": 324.76,
-          "ask": 2772.14,
-          "rpk": 2035.38,
-          "load_factor_pct": 73.42,
-          "observation_date": "2026-06-01"
+          "passengers": 367.62,
+          "ask": 3109.08,
+          "rpk": 2391.71,
+          "load_factor_pct": 76.93,
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "600221",
           "airline": "Hainan Airlines Holdings",
           "reporting_scope": "Hainan group consolidated; includes eight operating carriers",
           "region": "Regional",
-          "passengers": 22.72,
-          "ask": 34.33,
-          "rpk": 25.02,
-          "load_factor_pct": 72.89,
-          "observation_date": "2026-06-01"
+          "passengers": 25.71,
+          "ask": 36.9,
+          "rpk": 29.09,
+          "load_factor_pct": 78.83,
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "600221",
           "airline": "Hainan Airlines Holdings",
           "reporting_scope": "Hainan group consolidated; includes eight operating carriers",
           "region": "Total",
-          "passengers": 4887.33,
-          "ask": 11822.83,
-          "rpk": 9664.68,
-          "load_factor_pct": 81.75,
-          "observation_date": "2026-06-01"
+          "passengers": 6795.51,
+          "ask": 15384.66,
+          "rpk": 13116.2,
+          "load_factor_pct": 85.26,
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "603885",
           "airline": "Juneyao Airlines",
           "reporting_scope": "Company and Jiuyuan Airlines consolidated",
           "region": "Domestic",
-          "passengers": 1859.97,
-          "ask": 3380.9267,
-          "rpk": 2952.4955,
-          "load_factor_pct": 87.33,
-          "observation_date": "2026-06-01"
+          "passengers": 2174.11,
+          "ask": 3898.4828,
+          "rpk": 3482.1612,
+          "load_factor_pct": 89.32,
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "603885",
           "airline": "Juneyao Airlines",
           "reporting_scope": "Company and Jiuyuan Airlines consolidated",
           "region": "International",
-          "passengers": 270.81,
-          "ask": 1189.9389,
-          "rpk": 1026.9136,
-          "load_factor_pct": 86.3,
-          "observation_date": "2026-06-01"
+          "passengers": 291.01,
+          "ask": 1330.6091,
+          "rpk": 1103.7325,
+          "load_factor_pct": 82.95,
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "603885",
           "airline": "Juneyao Airlines",
           "reporting_scope": "Company and Jiuyuan Airlines consolidated",
           "region": "Regional",
-          "passengers": 26.02,
-          "ask": 40.1071,
-          "rpk": 36.3109,
-          "load_factor_pct": 90.53,
-          "observation_date": "2026-06-01"
+          "passengers": 22.04,
+          "ask": 32.5133,
+          "rpk": 29.3846,
+          "load_factor_pct": 90.38,
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "603885",
@@ -59062,43 +59708,43 @@
           "reporting_scope": "Company and Jiuyuan Airlines consolidated",
           "region": "Total",
           "passengers": null,
-          "ask": 4610.9727,
-          "rpk": 4015.72,
+          "ask": 5261.6052,
+          "rpk": 4615.2783,
           "load_factor_pct": null,
-          "observation_date": "2026-06-01"
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "601021",
           "airline": "Spring Airlines",
           "reporting_scope": "Company and subsidiaries",
           "region": "Domestic",
-          "passengers": 2446.63,
-          "ask": 4681.9468,
-          "rpk": 4300.7287,
-          "load_factor_pct": 91.86,
-          "observation_date": "2026-06-01"
+          "passengers": 2698.81,
+          "ask": 5042.4688,
+          "rpk": 4734.4056,
+          "load_factor_pct": 93.89,
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "601021",
           "airline": "Spring Airlines",
           "reporting_scope": "Company and subsidiaries",
           "region": "International",
-          "passengers": 408.1,
-          "ask": 879.0142,
-          "rpk": 807.8622,
-          "load_factor_pct": 91.91,
-          "observation_date": "2026-06-01"
+          "passengers": 500.1,
+          "ask": 1203.8719,
+          "rpk": 1094.7874,
+          "load_factor_pct": 90.94,
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "601021",
           "airline": "Spring Airlines",
           "reporting_scope": "Company and subsidiaries",
           "region": "Regional",
-          "passengers": 22.26,
-          "ask": 34.0545,
-          "rpk": 31.0792,
-          "load_factor_pct": 91.26,
-          "observation_date": "2026-06-01"
+          "passengers": 28.07,
+          "ask": 43.2419,
+          "rpk": 39.4896,
+          "load_factor_pct": 91.32,
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "601021",
@@ -59106,10 +59752,10 @@
           "reporting_scope": "Company and subsidiaries",
           "region": "Total",
           "passengers": null,
-          "ask": 5595.0155,
-          "rpk": 5139.6701,
+          "ask": 6289.5826,
+          "rpk": 5868.6826,
           "load_factor_pct": null,
-          "observation_date": "2026-06-01"
+          "observation_date": "2026-07-01"
         }
       ],
       "china_airline_cargo_history": [
@@ -64362,6 +65008,48 @@
           "series": "Spring",
           "airline": "Spring Airlines",
           "value": 10005.87
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "AC",
+          "airline": "Air China",
+          "value": 127721.3
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "CE",
+          "airline": "China Eastern",
+          "value": 95830.0
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "CS",
+          "airline": "China Southern",
+          "value": 153190.0
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Hainan",
+          "airline": "Hainan Airlines Holdings",
+          "value": 51320.0
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Juneyao",
+          "airline": "Juneyao Airlines",
+          "value": 13436.16
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Spring",
+          "airline": "Spring Airlines",
+          "value": 7882.26
         }
       ],
       "china_airline_freight_load_factor_history": [
@@ -69544,6 +70232,48 @@
           "series": "Spring",
           "airline": "Spring Airlines",
           "value": 22.7
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "AC",
+          "airline": "Air China",
+          "value": 42.2
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "CE",
+          "airline": "China Eastern",
+          "value": 46.04
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "CS",
+          "airline": "China Southern",
+          "value": 49.79
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Hainan",
+          "airline": "Hainan Airlines Holdings",
+          "value": 58.45
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Juneyao",
+          "airline": "Juneyao Airlines",
+          "value": 27.68
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Spring",
+          "airline": "Spring Airlines",
+          "value": 15.74
         }
       ],
       "china_airline_cargo_latest_snapshot": [
@@ -69551,67 +70281,67 @@
           "airline_code": "601111",
           "airline": "Air China",
           "reporting_scope": "Group-consolidated operating data",
-          "cargo_tonnes": 122932.2,
-          "aftk": 900.9,
-          "rftk": 432.3,
-          "freight_load_factor_pct": 48.0,
-          "overall_load_factor_pct": 73.5,
-          "observation_date": "2026-06-01"
+          "cargo_tonnes": 127721.3,
+          "aftk": 1121.8,
+          "rftk": 473.4,
+          "freight_load_factor_pct": 42.2,
+          "overall_load_factor_pct": 71.6,
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "600115",
           "airline": "China Eastern",
           "reporting_scope": "Group-consolidated operating data",
-          "cargo_tonnes": 95310.0,
-          "aftk": 739.63,
-          "rftk": 360.17,
-          "freight_load_factor_pct": 48.7,
-          "overall_load_factor_pct": 75.99,
-          "observation_date": "2026-06-01"
+          "cargo_tonnes": 95830.0,
+          "aftk": 814.64,
+          "rftk": 375.03,
+          "freight_load_factor_pct": 46.04,
+          "overall_load_factor_pct": 75.21,
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "600029",
           "airline": "China Southern",
           "reporting_scope": "Group-consolidated operating data",
-          "cargo_tonnes": 157960.0,
-          "aftk": 1487.35,
-          "rftk": 824.01,
-          "freight_load_factor_pct": 55.4,
-          "overall_load_factor_pct": 72.99,
-          "observation_date": "2026-06-01"
+          "cargo_tonnes": 153190.0,
+          "aftk": 1656.02,
+          "rftk": 824.46,
+          "freight_load_factor_pct": 49.79,
+          "overall_load_factor_pct": 71.21,
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "600221",
           "airline": "Hainan Airlines Holdings",
           "reporting_scope": "Hainan group consolidated; includes eight operating carriers",
-          "cargo_tonnes": 50050.0,
-          "aftk": 284.24,
-          "rftk": 184.6,
-          "freight_load_factor_pct": 64.95,
-          "overall_load_factor_pct": 90.0,
-          "observation_date": "2026-06-01"
+          "cargo_tonnes": 51320.0,
+          "aftk": 326.12,
+          "rftk": 190.6,
+          "freight_load_factor_pct": 58.45,
+          "overall_load_factor_pct": 89.57,
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "603885",
           "airline": "Juneyao Airlines",
           "reporting_scope": "Company and Jiuyuan Airlines consolidated",
-          "cargo_tonnes": 14506.04,
-          "aftk": 155.581,
-          "rftk": 48.1216,
-          "freight_load_factor_pct": 30.93,
-          "overall_load_factor_pct": 70.6,
-          "observation_date": "2026-06-01"
+          "cargo_tonnes": 13436.16,
+          "aftk": 178.5197,
+          "rftk": 49.4071,
+          "freight_load_factor_pct": 27.68,
+          "overall_load_factor_pct": 68.47,
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "601021",
           "airline": "Spring Airlines",
           "reporting_scope": "Company and subsidiaries",
-          "cargo_tonnes": 10005.87,
-          "aftk": 83.942,
-          "rftk": 19.0507,
-          "freight_load_factor_pct": 22.7,
-          "overall_load_factor_pct": 80.55,
-          "observation_date": "2026-06-01"
+          "cargo_tonnes": 7882.26,
+          "aftk": 94.4311,
+          "rftk": 14.8652,
+          "freight_load_factor_pct": 15.74,
+          "overall_load_factor_pct": 78.38,
+          "observation_date": "2026-07-01"
         }
       ],
       "china_airline_fleet_total_history": [
@@ -74640,6 +75370,48 @@
           "series": "Spring",
           "airline": "Spring Airlines",
           "value": 138.0
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "AC",
+          "airline": "Air China",
+          "value": 973.0
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "CE",
+          "airline": "China Eastern",
+          "value": 833.0
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "CS",
+          "airline": "China Southern",
+          "value": 974.0
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Hainan",
+          "airline": "Hainan Airlines Holdings",
+          "value": 368.0
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Juneyao",
+          "airline": "Juneyao Airlines",
+          "value": 131.0
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Spring",
+          "airline": "Spring Airlines",
+          "value": 138.0
         }
       ],
       "china_airline_fleet_net_change_history": [
@@ -78884,6 +79656,41 @@
           "series": "Spring",
           "airline": "Spring Airlines",
           "value": 4.0
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "AC",
+          "airline": "Air China",
+          "value": 1.0
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "CE",
+          "airline": "China Eastern",
+          "value": 0.0
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "CS",
+          "airline": "China Southern",
+          "value": 1.0
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Hainan",
+          "airline": "Hainan Airlines Holdings",
+          "value": 1.0
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Juneyao",
+          "airline": "Juneyao Airlines",
+          "value": 1.0
         }
       ],
       "china_airline_new_route_history": [
@@ -83121,6 +83928,41 @@
           "series": "Spring",
           "airline": "Spring Airlines",
           "value": 2.0
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "AC",
+          "airline": "Air China",
+          "value": 1.0
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "CE",
+          "airline": "China Eastern",
+          "value": 6.0
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "CS",
+          "airline": "China Southern",
+          "value": 1.0
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Juneyao",
+          "airline": "Juneyao Airlines",
+          "value": 1.0
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "series": "Spring",
+          "airline": "Spring Airlines",
+          "value": 5.0
         }
       ],
       "china_airline_operating_events_latest": [
@@ -83130,8 +83972,8 @@
           "reporting_scope": "Group-consolidated operating data",
           "event_type": "fleet_added_aircraft",
           "value": 2,
-          "detail": "\u5f15\u8fdb 1 \u67b6A320 \u7cfb\u5217\u98de\u673a\uff0c1 \u67b6 B737 \u7cfb\u5217\u98de\u673a\uff0c",
-          "observation_date": "2026-06-01"
+          "detail": "\u5f15\u8fdb 1 \u67b6 C919 \u98de\u673a\uff0c1 \u67b6 B737 \u7cfb\u5217\u98de\u673a\uff0c",
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "601111",
@@ -83140,43 +83982,43 @@
           "event_type": "fleet_retired_aircraft",
           "value": 1,
           "detail": "\u9000\u51fa 1 \u67b6 A320 \u7cfb\u5217\u98de\u673a",
-          "observation_date": "2026-06-01"
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "601111",
           "airline": "Air China",
           "reporting_scope": "Group-consolidated operating data",
           "event_type": "fleet_total_aircraft",
-          "value": 972,
-          "detail": "\u5408\u8ba1\u8fd0\u8425 972 \u67b6",
-          "observation_date": "2026-06-01"
+          "value": 973,
+          "detail": "\u5408\u8ba1\u8fd0\u8425 973 \u67b6",
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "601111",
           "airline": "Air China",
           "reporting_scope": "Group-consolidated operating data",
           "event_type": "new_route_event_count",
-          "value": 2,
-          "detail": "\u65b0\u5f00\u6210\u90fd\u5929\u5e9c-\u5ef6\u5b89\u822a\u7ebf\uff08\u6bcf\u5468\u56db\u73ed\uff09\uff1b\u65b0\u5f00\u6e29\u5dde-\u6d4e\u5dde\u822a\u7ebf\uff08\u6bcf\u5468\u4e24\u73ed\uff09",
-          "observation_date": "2026-06-01"
+          "value": 1,
+          "detail": "\u65b0\u5f00\u822a\u7ebf\u5982\u4e0b\u8868\uff1a \u822a\u7ebf\u73ed\u671f\u5f00\u59cb\u6267\u884c\u65e5\u671f\u91cd\u5e86-\u4eb3\u5dde\u4e00\u5468\u56db\u73ed 2026\u5e747\u67081\u65e5\u5317\u4eac\u9996\u90fd-\u5a01\u5c3c\u65af\u4e00\u5468\u56db\u73ed 2026\u5e747\u67082\u65e5\u91cd\u5e86-\u6b66\u5937\u5c71\u4e00\u5468\u4e09\u73ed 2026\u5e747\u67082\u65e5\u547c\u548c\u6d69\u7279-\u963f\u5c14\u5c71-\u4e4c\u5170\u6d69\u7279\u4e00\u5468\u4e09\u73ed 2026\u5e747\u67087\u65e5\u91cd\u5e86-\u5609\u5174\u4e00\u5468\u4e03\u73ed 2026\u5e74",
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "600115",
           "airline": "China Eastern",
           "reporting_scope": "Group-consolidated operating data",
           "event_type": "fleet_added_aircraft",
-          "value": 9,
-          "detail": "\u5f15\u8fdb9\u67b6\u98de\u673a\uff0c\u5305\u62ec7\u67b6A320\u7cfb\u5217\u30011\u67b6B787\u7cfb\u5217\u30011 \u67b6C919\uff0c",
-          "observation_date": "2026-06-01"
+          "value": 2,
+          "detail": "\u5f15\u8fdb 2\u67b6\u98de\u673a\uff0c\u5305\u62ec 1\u67b6 A320\u7cfb\u5217\u30011\u67b6 B737\u7cfb\u5217\uff0c",
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "600115",
           "airline": "China Eastern",
           "reporting_scope": "Group-consolidated operating data",
           "event_type": "fleet_retired_aircraft",
-          "value": 3,
-          "detail": "\u9000\u51fa3\u67b6A320\u7cfb\u5217",
-          "observation_date": "2026-06-01"
+          "value": 2,
+          "detail": "\u9000\u51fa 2\u67b6\u98de\u673a\uff0c\u5305\u62ec 1\u67b6 A320\u7cfb\u5217\u30011\u67b6B737\u7cfb\u5217",
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "600115",
@@ -83184,17 +84026,17 @@
           "reporting_scope": "Group-consolidated operating data",
           "event_type": "fleet_total_aircraft",
           "value": 833,
-          "detail": "\u5408\u8ba1 377 271 185 833",
-          "observation_date": "2026-06-01"
+          "detail": "\u5408\u8ba1 377 272 184 833",
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "600115",
           "airline": "China Eastern",
           "reporting_scope": "Group-consolidated operating data",
           "event_type": "new_route_event_count",
-          "value": 3,
-          "detail": "\u65b0\u5f00\u4e0a\u6d77\u6d66\u4e1c-\u82cf\u9ece\u4e16\u3001\u4e0a\u6d77\u6d66\u4e1c-\u963f\u5fb7\u83b1\u5fb7\u7b49\u822a\u7ebf\uff1b\u65b0\u5f00\u4e0a\u6d77\u8679\u6865-\u4f0a\u5b81\u7b49\u822a\u7ebf",
-          "observation_date": "2026-06-01"
+          "value": 6,
+          "detail": "\u65b0\u5f00\u4e0a\u6d77\u6d66\u4e1c-\u662d\u82cf\u3001\u6210\u90fd\u5929\u5e9c-\u666f\u5fb7\u9547\u7b49\u822a\u7ebf\uff1b\u65b0\u5f00\u4e0a\u6d77\u6d66\u4e1c-\u7b2c\u6bd4\u5229\u65af\u3001\u4e0a\u6d77\u6d66\u4e1c-\u90fd\u67cf\u6797\u3001\u4e0a\u6d77\u6d66\u4e1c-\u6e05\u5dde\u3001\u5317\u4eac\u5927\u5174-\u5df4\u5398\u5c9b\u7b49\u822a\u7ebf",
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "600029",
@@ -83202,80 +84044,71 @@
           "reporting_scope": "Group-consolidated operating data",
           "event_type": "fleet_added_aircraft",
           "value": 8,
-          "detail": "\u5f15\u8fdb8\u67b6\u98de\u673a\uff08\u5305\u542b3\u67b6A320NEO\u98de\u673a\u30012 \u67b6A321NEO\u98de\u673a\u30011\u67b6B787-9\u98de\u673a\u30011\u67b6B737-8\u98de\u673a\u548c1\u67b6C919\u98de\u673a\uff09\uff0c",
-          "observation_date": "2026-06-01"
+          "detail": "\u5f15\u8fdb8\u67b6\u98de\u673a\uff08\u5305\u542b2\u67b6A320NEO\u98de\u673a\u30013 \u67b6A321NEO\u98de\u673a\u30012\u67b6B737-8\u98de\u673a\u548c1\u67b6C919\u98de\u673a\uff09\uff0c",
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "600029",
           "airline": "China Southern",
           "reporting_scope": "Group-consolidated operating data",
           "event_type": "fleet_retired_aircraft",
-          "value": 4,
-          "detail": "\u9000\u51fa4\u67b6\u98de\u673a\uff08\u5305\u542b1\u67b6A321\u98de\u673a\u30011\u67b6B787-8\u98de\u673a\u30011\u67b6 B737-700\u98de\u673a\u548c1\u67b6B737-800\u98de\u673a\uff09",
-          "observation_date": "2026-06-01"
+          "value": 7,
+          "detail": "\u9000\u51fa7\u67b6\u98de\u673a \uff08\u5305\u542b1\u67b6A319\u98de\u673a\u30012\u67b6B787-8\u98de\u673a\u30012\u67b6B737-700\u98de\u673a\u548c2\u67b6 B737-800\u98de\u673a\uff09",
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "600029",
           "airline": "China Southern",
           "reporting_scope": "Group-consolidated operating data",
           "event_type": "fleet_total_aircraft",
-          "value": 973,
-          "detail": "\u5408\u8ba1\u8fd0\u8425973\u67b6",
-          "observation_date": "2026-06-01"
+          "value": 974,
+          "detail": "\u5408\u8ba1\u8fd0\u8425974\u67b6",
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "600029",
           "airline": "China Southern",
           "reporting_scope": "Group-consolidated operating data",
           "event_type": "new_route_event_count",
-          "value": 2,
-          "detail": "\u65b0\u589e\u5e7f\u5dde-\u4e4c\u9c81\u6728\u9f50 1 -\u6cd5\u5170\u514b\u798f-\u4e4c\u9c81\u6728\u9f50-\u5e7f\u5dde\u3001\u798f\u5dde-\u963f\u59c6\u65af\u7279\u4e39-\u798f\u5dde\uff08\u5747\u4e3a\u6bcf\u5468\u4e24\u73ed\uff09",
-          "observation_date": "2026-06-01"
+          "value": 1,
+          "detail": "\u65b0\u589e\u798f\u5dde-\u9a6c\u5c3c\u62c9- \u798f\u5dde\uff08\u6bcf\u5468\u56db\u73ed\uff09",
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "600221",
           "airline": "Hainan Airlines Holdings",
           "reporting_scope": "Hainan group consolidated; includes eight operating carriers",
           "event_type": "fleet_added_aircraft",
-          "value": 7,
-          "detail": "\u5f15\u8fdb 3 \u67b6 A320NEO \u98de\u673a\u30013 \u67b6 B737-8MAX \u98de\u673a\u548c 1 \u67b6 C909 \u98de\u673a\uff0c",
-          "observation_date": "2026-06-01"
+          "value": 2,
+          "detail": "\u5f15\u8fdb1\u67b6B737-8MAX \u98de\u673a\u548c1\u67b6A321NEO \u98de\u673a\uff0c",
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "600221",
           "airline": "Hainan Airlines Holdings",
           "reporting_scope": "Hainan group consolidated; includes eight operating carriers",
           "event_type": "fleet_retired_aircraft",
-          "value": 3,
-          "detail": "\u9000\u51fa 3\u67b6 B737-800 \u98de\u673a",
-          "observation_date": "2026-06-01"
+          "value": 1,
+          "detail": "\u9000\u51fa1 \u67b6B737-800 \u98de\u673a",
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "600221",
           "airline": "Hainan Airlines Holdings",
           "reporting_scope": "Hainan group consolidated; includes eight operating carriers",
           "event_type": "fleet_total_aircraft",
-          "value": 367,
-          "detail": "\u5408\u8ba1\u8fd0\u8425 367 \u67b6",
-          "observation_date": "2026-06-01"
-        },
-        {
-          "airline_code": "600221",
-          "airline": "Hainan Airlines Holdings",
-          "reporting_scope": "Hainan group consolidated; includes eight operating carriers",
-          "event_type": "new_route_event_count",
-          "value": 1,
-          "detail": "\u65b0\u5f00\u6d77\u53e3=\u91cd\u5e86=\u9a6c\u5fb7\u91cc\uff08\u6bcf\u5468\u4e00\u73ed\uff09",
-          "observation_date": "2026-06-01"
+          "value": 368,
+          "detail": "\u5408\u8ba1\u8fd0\u8425368\u67b6",
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "603885",
           "airline": "Juneyao Airlines",
           "reporting_scope": "Company and Jiuyuan Airlines consolidated",
           "event_type": "fleet_added_aircraft",
-          "value": 0,
-          "detail": "\u5f15\u8fdb\u98de\u673a0\u67b6\uff0c",
-          "observation_date": "2026-06-01"
+          "value": 1,
+          "detail": "\u5f15\u8fdb\u98de\u673a1\u67b6\uff0c",
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "603885",
@@ -83284,16 +84117,16 @@
           "event_type": "fleet_retired_aircraft",
           "value": 0,
           "detail": "\u9000\u5f79\u98de\u673a0\u67b6",
-          "observation_date": "2026-06-01"
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "603885",
           "airline": "Juneyao Airlines",
           "reporting_scope": "Company and Jiuyuan Airlines consolidated",
           "event_type": "fleet_total_aircraft",
-          "value": 130,
-          "detail": "\u5408\u8ba1 \u2014 130",
-          "observation_date": "2026-06-01"
+          "value": 131,
+          "detail": "\u5408\u8ba1 \u2014 131",
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "603885",
@@ -83301,17 +84134,8 @@
           "reporting_scope": "Company and Jiuyuan Airlines consolidated",
           "event_type": "new_route_event_count",
           "value": 1,
-          "detail": "\u65b0\u589e\u5408\u80a5\u2014\u6d77\u62c9\u5c14\u5f80\u8fd4\u822a\u7ebf\uff08\u6bcf\u54684\u73ed\uff09",
-          "observation_date": "2026-06-01"
-        },
-        {
-          "airline_code": "601021",
-          "airline": "Spring Airlines",
-          "reporting_scope": "Company and subsidiaries",
-          "event_type": "fleet_added_aircraft",
-          "value": 4,
-          "detail": "\u65b0\u589e4\u67b6\u7a7a\u5ba2A320neo\u98de\u673a",
-          "observation_date": "2026-06-01"
+          "detail": "\u65b0\u589e\u6d66\u4e1c\u2014\u5609\u5cea\u5173\u5f80\u8fd4\u822a\u7ebf\uff08\u6bcf\u54683\u73ed\uff09 \u65b0\u589e\u6d66\u4e1c\u2014\u5927\u540c\u5f80\u8fd4\u822a\u7ebf\uff08\u6bcf\u54682\u73ed\uff09",
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "601021",
@@ -83320,16 +84144,16 @@
           "event_type": "fleet_total_aircraft",
           "value": 138,
           "detail": "\u5408\u8ba1 100 34 4 138",
-          "observation_date": "2026-06-01"
+          "observation_date": "2026-07-01"
         },
         {
           "airline_code": "601021",
           "airline": "Spring Airlines",
           "reporting_scope": "Company and subsidiaries",
           "event_type": "new_route_event_count",
-          "value": 2,
-          "detail": "\u65b0\u589e\u822a\u7ebf\u60c5\u51b5\u672c\u6708\u65b0\u589e\u822a\u7ebf\uff1a\u6df1\u5733=\u96c5\u52a0\u8fbe\uff08\u546836\uff09\u3001\u5e7f\u5dde=\u96c5\u52a0\u8fbe\uff08\u5468257\uff09",
-          "observation_date": "2026-06-01"
+          "value": 5,
+          "detail": "\u65b0\u589e\u822a\u7ebf\u60c5\u51b5\u672c\u6708\u65b0\u589e\u822a\u7ebf\uff1a\u4e0a\u6d77\u6d66\u4e1c=\u901a\u5316\uff08\u5468 246\uff09\u3001\u5b81\u6ce2=\u897f\u5b81\uff08\u5468 1357\uff09\u3001\u5b81\u6ce2=\u5b89\u987a\uff08\u5468246\uff09\u3001\u5170\u5dde=\u5b89\u987a\uff08\u54682457\uff09\u3001\u77f3\u5bb6\u5e84=\u5b89\u987a\uff08\u5468246\uff09",
+          "observation_date": "2026-07-01"
         }
       ],
       "airline_h1_revenue_mae_comparison": [
@@ -95622,7 +96446,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-transport/",
-    "snapshotId": "e56b4b822b3e0c88",
+    "snapshotId": "0ef3c5a031178e57",
     "dataAsOf": "2026-08-01"
   }
 }

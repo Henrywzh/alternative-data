@@ -81,6 +81,7 @@ def test_run_stage_1_pipeline():
     assert "mpfa_departure_claims" in results
     assert "ugc_nonlocal_students" in results
     assert "td_cross_border_traffic" in results
+    assert "censtatd_visitor_arrivals" in results
     assert "ia_mainland_visitor_premiums" in results
 
 
@@ -94,6 +95,9 @@ def test_stage_1_persists_normalized_runs_and_excludes_unused_visitor_departures
         "mpfa_departure_claims": pd.DataFrame({"quarter": ["2026-Q1"], "claims_count": [1]}),
         "ugc_nonlocal_students": pd.DataFrame({"academic_year": ["2025/26"], "mainland_students": [1]}),
         "td_cross_border_traffic": pd.DataFrame({"month": ["2026-05"], "hzmb_vehicular_traffic": [1]}),
+        "censtatd_visitor_arrivals": pd.DataFrame(
+            {"date": ["2026-06-30"], "region": ["Mainland China"], "visitors": [1]}
+        ),
     }
     for name, frame in frames.items():
         frame.attrs["source_url"] = f"https://example.com/{name}"
@@ -103,6 +107,11 @@ def test_stage_1_persists_normalized_runs_and_excludes_unused_visitor_departures
     monkeypatch.setattr(pipeline_mod, "fetch_mpfa_permanent_departure_claims", lambda: frames["mpfa_departure_claims"])
     monkeypatch.setattr(pipeline_mod, "fetch_ugc_nonlocal_students", lambda: frames["ugc_nonlocal_students"])
     monkeypatch.setattr(pipeline_mod, "fetch_td_cross_border_traffic", lambda: frames["td_cross_border_traffic"])
+    monkeypatch.setattr(
+        pipeline_mod,
+        "fetch_visitor_arrivals_by_region",
+        lambda: frames["censtatd_visitor_arrivals"],
+    )
     monkeypatch.setattr(pipeline_mod, "fetch_ia_mainland_visitor_premiums", lambda: pd.DataFrame())
 
     results = pipeline_mod.run_stage_1_pipeline()
@@ -119,3 +128,20 @@ def test_cli_requires_explicit_run_flag(monkeypatch):
     with pytest.raises(SystemExit) as exc_info:
         cli_mod.main()
     assert exc_info.value.code == 2
+
+
+def test_stage_1_strict_mode_fails_when_an_active_source_fails(monkeypatch):
+    monkeypatch.setattr(
+        pipeline_mod,
+        "fetch_immd_daily_traffic",
+        lambda: (_ for _ in ()).throw(RuntimeError("network down")),
+    )
+    monkeypatch.setattr(pipeline_mod, "fetch_csd_population_estimates", lambda: pd.DataFrame())
+    monkeypatch.setattr(pipeline_mod, "fetch_mpfa_permanent_departure_claims", lambda: pd.DataFrame())
+    monkeypatch.setattr(pipeline_mod, "fetch_ugc_nonlocal_students", lambda: pd.DataFrame())
+    monkeypatch.setattr(pipeline_mod, "fetch_td_cross_border_traffic", lambda: pd.DataFrame())
+    monkeypatch.setattr(pipeline_mod, "fetch_visitor_arrivals_by_region", lambda: pd.DataFrame())
+    monkeypatch.setattr(pipeline_mod, "fetch_ia_mainland_visitor_premiums", lambda: pd.DataFrame())
+
+    with pytest.raises(RuntimeError, match="immd_daily_traffic"):
+        pipeline_mod.run_stage_1_pipeline(raise_on_failure=True)

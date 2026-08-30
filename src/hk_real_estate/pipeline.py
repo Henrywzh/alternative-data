@@ -915,6 +915,65 @@ def run_bd_history_backfill(
     return _finalize_group(run_id, "bd_history_backfill", results, _raise_on_failure)
 
 
+def run_bd_history_current_year_refresh(
+    run_id: str | None = None,
+    *,
+    year: int | None = None,
+    _raise_on_failure: bool = True,
+) -> Dict[str, Any]:
+    """Refresh the current direct-PDF digest without discarding older history.
+
+    The full archive backfill is intentionally expensive. Routine automation
+    only needs the newest official digest, but saving a current-year-only frame
+    as the latest immutable run would make downstream readers lose 2005-present
+    history. This runner replaces the selected year's rows inside the latest
+    non-empty normalized history and writes the merged result as one new run.
+    """
+    run_id = run_id or str(uuid.uuid4())
+    target_year = year or datetime.now(timezone.utc).year
+    results: Dict[str, Any] = {}
+    try:
+        fresh = fetch_bd_supply_pipeline_history(
+            start_year=target_year,
+            end_year=target_year,
+        )
+        if fresh.empty:
+            raise ValueError(f"Buildings Department returned no history rows for {target_year}")
+        existing = load_latest_normalized("bd_supply_pipeline_history")
+        if not existing.empty:
+            period_column = (
+                "observation_month"
+                if "observation_month" in existing.columns
+                else "date"
+            )
+            existing_period = pd.to_datetime(existing[period_column], errors="coerce")
+            existing = existing.loc[existing_period.dt.year.ne(target_year)].copy()
+            merged = pd.concat([existing, fresh], ignore_index=True, sort=False)
+        else:
+            merged = fresh.copy()
+        merged = merged.drop_duplicates(
+            subset=[
+                "observation_month",
+                "permit_stage",
+                "region",
+                "property_category",
+                "revision_status",
+            ],
+            keep="last",
+        ).sort_values(["observation_month", "permit_stage"]).reset_index(drop=True)
+        merged.attrs.update(fresh.attrs)
+        _record_many(run_id, results, {"bd_supply_pipeline_history": merged})
+    except Exception as exc:
+        logger.exception("Buildings Department current-year history refresh failed")
+        results["bd_supply_pipeline_history"] = _error_result(exc)
+    return _finalize_group(
+        run_id,
+        "bd_history_current_year_refresh",
+        results,
+        _raise_on_failure,
+    )
+
+
 def run_bd_project_history_backfill(
     run_id: str | None = None,
     *,

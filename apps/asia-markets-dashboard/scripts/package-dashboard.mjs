@@ -12,6 +12,20 @@ import { STATUS_ZH } from "./status-zh.mjs";
 const generatedDir = join(projectRoot, ".generated");
 const distDir = join(projectRoot, "dist");
 
+// --localize-only: regenerate every sector's ZH artifact JSON from the
+// current EN artifact without requiring the portable HTML builder plugin or
+// a prior static-hub build. Used by the daily refresh workflow so Streamlit
+// always reads ZH labels derived from the same snapshot as EN.
+const localizeOnly = process.argv.includes("--localize-only");
+const sectorArgIndex = process.argv.indexOf("--sector");
+const requestedSector =
+  sectorArgIndex >= 0 && process.argv[sectorArgIndex + 1]
+    ? process.argv[sectorArgIndex + 1]
+    : null;
+if (sectorArgIndex >= 0 && !requestedSector) {
+  throw new Error("--sector requires a sector id.");
+}
+
 function findPortableBuilder() {
   if (process.env.DATA_ANALYTICS_PORTABLE_BUILDER) {
     return resolve(process.env.DATA_ANALYTICS_PORTABLE_BUILDER);
@@ -2286,15 +2300,20 @@ const ZH_DICTIONARIES = {
   "hk-population-migration": HK_POPULATION_MIGRATION_ZH,
 };
 
-const SECTORS = LIVE_SECTORS.map((sector) => {
+const SECTORS = LIVE_SECTORS.filter(
+  (sector) => requestedSector === null || sector.id === requestedSector,
+).map((sector) => {
   const zh = ZH_DICTIONARIES[sector.id];
   if (!zh) {
     throw new Error(`No ZH dictionary for sector "${sector.id}" (add one in package-dashboard.mjs).`);
   }
   return { ...sector, zh };
 });
+if (requestedSector && SECTORS.length === 0) {
+  throw new Error(`Unknown or non-live sector "${requestedSector}".`);
+}
 
-if (!existsSync(distDir)) {
+if (!localizeOnly && !existsSync(distDir)) {
   throw new Error("Run the static hub build step before packaging dashboards.");
 }
 
@@ -2303,24 +2322,41 @@ let deliveryScript = null;
 let deliverPortableArtifact = null;
 let buildPortableArtifact = null;
 let verifyPortableArtifact = null;
-try {
-  deliveryScript = findPortableBuilder();
-  const moduleDir = dirname(deliveryScript);
-  const deliveryModule = await import(`file://${deliveryScript}`);
-  const builderModule = await import(`file://${join(moduleDir, "build_portable_artifact.mjs")}`);
-  const verifyModule = await import(`file://${join(moduleDir, "verify_portable_artifact.mjs")}`);
-  deliverPortableArtifact = deliveryModule.deliverPortableArtifact;
-  buildPortableArtifact = builderModule.buildPortableArtifact;
-  verifyPortableArtifact = verifyModule.verifyPortableArtifact;
-} catch (error) {
-  process.stdout.write(`[package-dashboard] Portable builder unavailable (${error.message}); skipping dashboard packaging.\n`);
-  process.exit(0);
+if (!localizeOnly) {
+  try {
+    deliveryScript = findPortableBuilder();
+    const moduleDir = dirname(deliveryScript);
+    const deliveryModule = await import(`file://${deliveryScript}`);
+    const builderModule = await import(`file://${join(moduleDir, "build_portable_artifact.mjs")}`);
+    const verifyModule = await import(`file://${join(moduleDir, "verify_portable_artifact.mjs")}`);
+    deliverPortableArtifact = deliveryModule.deliverPortableArtifact;
+    buildPortableArtifact = builderModule.buildPortableArtifact;
+    verifyPortableArtifact = verifyModule.verifyPortableArtifact;
+  } catch (error) {
+    process.stdout.write(`[package-dashboard] Portable builder unavailable (${error.message}); skipping dashboard packaging.\n`);
+    process.exit(0);
+  }
 }
 
 for (const sector of SECTORS) {
   const statusPath = join(projectRoot, "src/data", sector.statusFile);
   if (!existsSync(statusPath)) {
     process.stdout.write(`[package-dashboard] Status file ${sector.statusFile} missing; skipping ${sector.id}.\n`);
+    continue;
+  }
+
+  if (localizeOnly) {
+    const sectorSlug = sector.id;
+    const artifactFile = join(generatedDir, `${sectorSlug}-artifact.json`);
+    const zhArtifactFile = join(generatedDir, `${sectorSlug}-artifact-zh.json`);
+    if (!existsSync(artifactFile)) {
+      process.stdout.write(`[package-dashboard] Artifact file ${artifactFile} missing for ${sector.id}; skipping.\n`);
+      continue;
+    }
+    const rawArtifact = JSON.parse(readFileSync(artifactFile, "utf8"));
+    const zhArtifact = localizeArtifact(rawArtifact, sector.zh);
+    writeFileSync(zhArtifactFile, JSON.stringify(zhArtifact, null, 2));
+    process.stdout.write(`[package-dashboard] Localized ZH artifact for ${sector.id}.\n`);
     continue;
   }
 
@@ -2396,4 +2432,8 @@ for (const sector of SECTORS) {
   process.stdout.write(`[package-dashboard] Completed ${sector.id}.\n`);
 }
 
-process.stdout.write("[package-dashboard] All sector dashboards packaged successfully.\n");
+process.stdout.write(
+  localizeOnly
+    ? `[package-dashboard] ${requestedSector || "All sector"} artifact localization completed successfully.\n`
+    : "[package-dashboard] All sector dashboards packaged successfully.\n",
+);

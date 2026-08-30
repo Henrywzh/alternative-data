@@ -1,0 +1,219 @@
+{
+  "version": "asia-markets-freshness.v1",
+  "auditedAt": "2026-08-30T14:53:52.266382Z",
+  "asOf": "2026-08-30",
+  "status": "healthy",
+  "requiredFailures": [],
+  "checks": [
+    {
+      "check_id": "labour.unemployment",
+      "sector": "hk-labour-market",
+      "dataset": "labour_force_history",
+      "required": true,
+      "status": "healthy",
+      "expected_latest_period": "2026-07",
+      "latest_observation": "2026-07",
+      "notes": "C&SD rolling three-month labour-force release, normally published around day 20."
+    },
+    {
+      "check_id": "labour.earnings",
+      "sector": "hk-labour-market",
+      "dataset": "earnings_history",
+      "required": true,
+      "status": "healthy",
+      "expected_latest_period": "2026-Q2",
+      "latest_observation": "2026-Q2",
+      "notes": "C&SD industry/occupation median employment earnings come from the Quarterly General Household Survey report, normally released near the end of the second month after quarter-end."
+    },
+    {
+      "check_id": "labour.vacancies",
+      "sector": "hk-labour-market",
+      "dataset": "vacancy_history",
+      "required": true,
+      "status": "healthy",
+      "expected_latest_period": "2026-Q1",
+      "latest_observation": "2026-Q1",
+      "notes": "C&SD persons-engaged and vacancy statistics are quarterly; the 2026 calendar schedules Q2 for 18 September."
+    },
+    {
+      "check_id": "labour.wages",
+      "sector": "hk-labour-market",
+      "dataset": "wage_yoy_history",
+      "required": true,
+      "status": "healthy",
+      "expected_latest_period": "2026-Q1",
+      "latest_observation": "2026-Q1",
+      "notes": "C&SD wage and payroll statistics are quarterly; the 2026 calendar schedules Q2 for 28 September."
+    },
+    {
+      "check_id": "local_consumer.retail",
+      "sector": "hk-local-consumer",
+      "dataset": "retail_history",
+      "required": true,
+      "status": "healthy",
+      "expected_latest_period": "2026-06",
+      "latest_observation": "2026-06",
+      "notes": "C&SD retail sales are monthly and normally release about 32-35 days after month-end."
+    },
+    {
+      "check_id": "local_consumer.restaurant",
+      "sector": "hk-local-consumer",
+      "dataset": "restaurant_history",
+      "required": true,
+      "status": "healthy",
+      "expected_latest_period": "2026-Q2",
+      "latest_observation": "2026-Q2",
+      "notes": "C&SD restaurant receipts and purchases are quarterly."
+    },
+    {
+      "check_id": "local_consumer.cpi",
+      "sector": "hk-local-consumer",
+      "dataset": "censtatd_cpi_headline_history",
+      "required": true,
+      "status": "healthy",
+      "expected_latest_period": "2026-07",
+      "latest_observation": "2026-07",
+      "notes": "C&SD CPI is monthly and normally releases about three weeks after month-end."
+    },
+    {
+      "check_id": "local_consumer.immigration",
+      "sector": "hk-local-consumer",
+      "dataset": "kpi_northbound",
+      "required": true,
+      "status": "healthy",
+      "expected_latest_period": "2026-08-28",
+      "latest_observation": "2026-08-29",
+      "notes": "Immigration passenger clearance is daily; allow a two-day publication/holiday lag."
+    },
+    {
+      "check_id": "local_consumer.oilprice",
+      "sector": "hk-local-consumer",
+      "dataset": "consumer_council_oilprice",
+      "required": true,
+      "status": "healthy",
+      "expected_latest_period": "2026-08-28",
+      "latest_observation": "2026-08-30",
+      "notes": "Consumer Council pump-price snapshot is fetched daily; allow a two-day publication lag."
+    },
+    {
+      "check_id": "population.mpfa",
+      "sector": "hk-population-migration",
+      "dataset": "mpfa_claims",
+      "required": true,
+      "status": "healthy",
+      "expected_latest_period": "2026-Q2",
+      "latest_observation": "2026-Q2",
+      "notes": "MPFA Statistical Digest is quarterly and normally arrives within roughly 49 days."
+    },
+    {
+      "check_id": "real_estate.bd_history",
+      "sector": "hk-real-estate",
+      "dataset": "bd_supply_pipeline_history_units,bd_supply_pipeline_history_counts",
+      "required": true,
+      "status": "healthy",
+      "expected_latest_period": "2026-06",
+      "latest_observation": "2026-06",
+      "notes": "Md54/Md55/Md56 history must include the latest parsed Buildings Department digest."
+    },
+    {
+      "check_id": "real_estate.hkma_mortgage",
+      "sector": "hk-real-estate",
+      "dataset": "hkma_applications_history",
+      "required": true,
+      "status": "healthy",
+      "expected_latest_period": "2026-06",
+      "latest_observation": "2026-06",
+      "notes": "HKMA residential mortgage survey is monthly; a conservative two-month release gate is applied."
+    },
+    {
+      "check_id": "transport.china_airlines",
+      "sector": "hk-transport",
+      "dataset": "china_airline_passengers_history",
+      "required": true,
+      "status": "healthy",
+      "expected_latest_period": "2026-07",
+      "latest_observation": "2026-07",
+      "notes": "Listed airlines normally publish the prior month's operating bulletin before day 20."
+    },
+    {
+      "check_id": "market-monitor.localisation",
+      "sector": "market-monitor",
+      "dataset": "artifact-en/zh",
+      "required": true,
+      "status": "healthy",
+      "expected_latest_period": "2026-08-30T11:35:16.630925+00:00",
+      "latest_observation": "2026-08-30T11:35:16.630925+00:00",
+      "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
+    },
+    {
+      "check_id": "hk-labour-market.localisation",
+      "sector": "hk-labour-market",
+      "dataset": "artifact-en/zh",
+      "required": true,
+      "status": "healthy",
+      "expected_latest_period": "2026-08-30T14:11:48.789009Z",
+      "latest_observation": "2026-08-30T14:11:48.789009Z",
+      "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
+    },
+    {
+      "check_id": "hk-local-consumer.localisation",
+      "sector": "hk-local-consumer",
+      "dataset": "artifact-en/zh",
+      "required": true,
+      "status": "healthy",
+      "expected_latest_period": "2026-08-30T14:33:46.056311Z",
+      "latest_observation": "2026-08-30T14:33:46.056311Z",
+      "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
+    },
+    {
+      "check_id": "hk-population-migration.localisation",
+      "sector": "hk-population-migration",
+      "dataset": "artifact-en/zh",
+      "required": true,
+      "status": "healthy",
+      "expected_latest_period": "2026-08-30T14:13:37.476144Z",
+      "latest_observation": "2026-08-30T14:13:37.476144Z",
+      "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
+    },
+    {
+      "check_id": "hk-real-estate.localisation",
+      "sector": "hk-real-estate",
+      "dataset": "artifact-en/zh",
+      "required": true,
+      "status": "healthy",
+      "expected_latest_period": "2026-08-30T14:13:30.774323Z",
+      "latest_observation": "2026-08-30T14:13:30.774323Z",
+      "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
+    },
+    {
+      "check_id": "hk-transport.localisation",
+      "sector": "hk-transport",
+      "dataset": "artifact-en/zh",
+      "required": true,
+      "status": "healthy",
+      "expected_latest_period": "2026-08-30T14:27:22.177600Z",
+      "latest_observation": "2026-08-30T14:27:22.177600Z",
+      "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
+    },
+    {
+      "check_id": "hk-commercial-aerospace.localisation",
+      "sector": "hk-commercial-aerospace",
+      "dataset": "artifact-en/zh",
+      "required": true,
+      "status": "healthy",
+      "expected_latest_period": "2026-08-24T07:21:14.609937Z",
+      "latest_observation": "2026-08-24T07:21:14.609937Z",
+      "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
+    },
+    {
+      "check_id": "hk-stablecoin-crypto.localisation",
+      "sector": "hk-stablecoin-crypto",
+      "dataset": "artifact-en/zh",
+      "required": true,
+      "status": "healthy",
+      "expected_latest_period": "2026-08-30T11:55:30Z",
+      "latest_observation": "2026-08-30T11:55:30Z",
+      "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
+    }
+  ]
+}

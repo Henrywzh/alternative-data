@@ -1,0 +1,107 @@
+name: HK Labour Market Sector Data Refresh Monthly
+
+# The labour sector pipeline is CLI-driven (hk-labour-market-data run-update),
+# but no workflow ran it, so data/normalized/hk_labour_market marts were never
+# regenerated and are gitignored anyway. On a clean CI checkout the artifact
+# builder found no marts, raised, and was swallowed by --tolerate-errors, so
+# the published sector stayed frozen on whatever snapshot a local machine had
+# built. This workflow regenerates marts + audit first, then rebuilds the
+# artifact and status file from those marts.
+#
+# Source failures inside run-update are tolerated: the CLI refreshes each
+# source group independently and the marts step still works off whatever rows
+# were fetched or already cached locally. A hard audit failure is allowed to
+# surface via ::warning without blocking the artifact refresh.
+#
+# Same packaging limitation as the other sector workflows: portable HTML/zh
+# packaging depends on a local plugin bundle not available in CI, so only the
+# .generated artifact JSON and the status file are refreshed here.
+
+on:
+  schedule:
+    # 21st catches the normal prior-month labour-force/earnings release; the
+    # 29th catches quarterly vacancy/wage releases that arrive later.
+    - cron: "15 6 21,29 * *"
+  workflow_dispatch:
+
+concurrency:
+  group: hk-labour-market-monthly-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-hk-labour-market:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev]
+
+      - name: Refresh labour pipeline (sources, marts, audit)
+        run: |
+          hk-labour-market-data run-update \
+            || echo "::warning::labour run-update reported failures; artifact will still build from best available marts"
+          hk-labour-market-data audit \
+            || echo "::warning::labour audit is degraded; publishing the honest best-available artifact"
+
+      - name: Build HK Labour Market artifact
+        working-directory: apps/asia-markets-dashboard
+        run: |
+          python3 scripts/build_hk_labour_market_artifact.py \
+            --output .generated/hk-labour-market-artifact.json \
+            --status-output src/data/dashboard-status-hk-labour-market.json
+
+      - name: Localize Streamlit-facing artifacts
+        working-directory: apps/asia-markets-dashboard
+        run: node scripts/package-dashboard.mjs --localize-only --sector hk-labour-market
+
+      - name: Write freshness report
+        run: python scripts/audit_asia_markets_freshness.py --report-only
+
+      - name: Commit refreshed labour data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add \
+            apps/asia-markets-dashboard/.generated/hk-labour-market-artifact.json \
+            apps/asia-markets-dashboard/.generated/hk-labour-market-artifact-zh.json \
+            apps/asia-markets-dashboard/.generated/asia-markets-freshness.json \
+            apps/asia-markets-dashboard/src/data/dashboard-status-hk-labour-market.json
+
+          if git diff --staged --quiet; then
+            echo "No HK labour market artifact changes to commit"
+            exit 0
+          fi
+
+          git commit -m "chore(hk-labour-market): refresh sector artifact [$(date -u +%Y-%m-%d)]"
+
+          for attempt in 1 2 3; do
+            if git pull --rebase origin "${{ github.event.repository.default_branch }}" && git push; then
+              exit 0
+            fi
+            sleep $((attempt * 5))
+          done
+          exit 1
+
+      - name: Enforce labour observation freshness
+        if: always()
+        run: |
+          python scripts/audit_asia_markets_freshness.py \
+            --sector hk-labour-market \
+            --output /tmp/hk-labour-market-freshness.json

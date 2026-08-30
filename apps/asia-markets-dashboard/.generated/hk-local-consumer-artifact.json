@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "Hong Kong Local Consumer Monitor",
     "description": "A source-backed snapshot of cross-border passenger traffic, fresh-food wholesale prices, gold input costs, auto fuel pricing, and watchlist valuations for HK local-consumer names.",
-    "generatedAt": "2026-08-09T16:09:01.081916Z",
+    "generatedAt": "2026-08-30T14:33:46.056311Z",
     "cards": [
       {
         "id": "northbound_card",
@@ -563,35 +563,6 @@
         "layout": "full"
       },
       {
-        "id": "consumer_council_pricewatch_matched_index_chart",
-        "title": "Online Price Watch matched-item supermarket price index",
-        "subtitle": "The six longest source-code series (at least 12 linked months). Each supermarket starts at 100 in its first available month; each link uses the equal-weight geometric mean of product-code price relatives matched to the prior month. Promotions and pack-size changes are not adjusted.",
-        "type": "line",
-        "intent": "trend",
-        "dataset": "consumer_council_pricewatch_matched_index",
-        "sourceId": "consumer_council_pricewatch",
-        "encodings": {
-          "x": {
-            "field": "year_month",
-            "type": "temporal",
-            "label": "Month"
-          },
-          "y": {
-            "field": "matched_item_index",
-            "type": "quantitative",
-            "label": "Index (first month = 100)"
-          },
-          "color": {
-            "field": "supermarket_code",
-            "type": "nominal",
-            "label": "Supermarket"
-          }
-        },
-        "valueFormat": "number",
-        "layout": "full",
-        "maxRows": 1200
-      },
-      {
         "id": "consumer_council_oilprice_chart",
         "title": "Auto Fuel Walk-in Discount Comparison (HK$/L)",
         "subtitle": "Walk-in discounts per liter across Caltex, PetroChina, Shell, Sinopec, and Esso.",
@@ -1032,52 +1003,6 @@
         ]
       },
       {
-        "id": "consumer_council_pricewatch_archive_table",
-        "title": "Online Price Watch historical archive coverage",
-        "subtitle": "Availability check only; no average-price trend is presented as an index.",
-        "dataset": "consumer_council_pricewatch_archive",
-        "sourceId": "consumer_council_pricewatch",
-        "density": "dense",
-        "layout": "full",
-        "columns": [
-          {
-            "field": "first_observation",
-            "label": "First month",
-            "type": "text"
-          },
-          {
-            "field": "latest_observation",
-            "label": "Latest month",
-            "type": "text"
-          },
-          {
-            "field": "months",
-            "label": "Months",
-            "format": "number"
-          },
-          {
-            "field": "category_supermarket_aggregates",
-            "label": "Monthly category-store aggregates",
-            "format": "number"
-          },
-          {
-            "field": "categories",
-            "label": "Categories",
-            "format": "number"
-          },
-          {
-            "field": "supermarkets",
-            "label": "Supermarket codes",
-            "format": "number"
-          },
-          {
-            "field": "notes",
-            "label": "Methodology caveat",
-            "type": "text"
-          }
-        ]
-      },
-      {
         "id": "consumer_council_oilprice_table",
         "title": "Consumer Council Auto Fuel Pump Prices & Discounts",
         "subtitle": "Daily pump prices, walk-in discounts, and net prices per liter across Hong Kong oil majors.",
@@ -1309,7 +1234,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `d9891023da667880` · generated 2026-08-09T16:09:01.081916Z.  This is a published snapshot, not a live connection. Includes official Consumer Council auto fuel calculator pricing."
+        "body": "**Data snapshot:** `d9047fb8f06fe98a` · generated 2026-08-30T14:33:46.056311Z.  This is a published snapshot, not a live connection. Includes official Consumer Council auto fuel calculator pricing."
       },
       {
         "id": "demand_signals_section",
@@ -1409,16 +1334,6 @@
         "id": "oilprice_wow_table_block",
         "type": "table",
         "tableId": "consumer_council_oilprice_wow_table"
-      },
-      {
-        "id": "consumer_council_pricewatch_matched_index_block",
-        "type": "chart",
-        "chartId": "consumer_council_pricewatch_matched_index_chart"
-      },
-      {
-        "id": "consumer_council_pricewatch_archive_block",
-        "type": "table",
-        "tableId": "consumer_council_pricewatch_archive_table"
       },
       {
         "id": "retail_fnb_section",
@@ -1543,15 +1458,15 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-09T16:09:01.081916Z",
+    "generatedAt": "2026-08-30T14:33:46.056311Z",
     "status": "ready",
     "datasets": {
       "kpi_weather": [
         {
-          "latest": 20.5,
-          "period_change": 0.541353,
-          "year_change": -0.33871,
-          "observation_date": "2026-07-01"
+          "latest": 4.2,
+          "period_change": -0.822034,
+          "year_change": -0.864516,
+          "observation_date": "2026-08-01"
         }
       ],
       "kpi_fx": [
@@ -1559,17 +1474,10 @@
           "latest": 92.0,
           "period_change": 0.0,
           "year_change": 0.0,
-          "observation_date": "2026-07-01"
+          "observation_date": "2026-08-01"
         }
       ],
       "severe_weather_history": [
-        {
-          "date": "2016-07-01",
-          "month": "2016-07",
-          "signal_8_plus_hours": 0.0,
-          "red_black_rain_hours": 0.0,
-          "total_disruption_hours": 0.0
-        },
         {
           "date": "2016-08-01",
           "month": "2016-08",
@@ -2407,26 +2315,33 @@
           "date": "2026-07-01",
           "month": "2026-07",
           "signal_8_plus_hours": 14.5,
-          "red_black_rain_hours": 6.0,
-          "total_disruption_hours": 20.5
+          "red_black_rain_hours": 9.1,
+          "total_disruption_hours": 23.6
+        },
+        {
+          "date": "2026-08-01",
+          "month": "2026-08",
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 4.2,
+          "total_disruption_hours": 4.2
         }
       ],
       "severe_weather_daily": [],
       "severe_weather_log": [],
       "kpi_northbound": [
         {
-          "latest": 262361.0,
-          "period_change": -0.00116,
-          "year_change": -0.028743,
-          "observation_date": "2026-07-28"
+          "latest": 312042.4,
+          "period_change": 0.002372,
+          "year_change": 0.037002,
+          "observation_date": "2026-08-29"
         }
       ],
       "kpi_southbound": [
         {
-          "latest": 116646.6,
-          "period_change": 0.00821,
-          "year_change": -0.106193,
-          "observation_date": "2026-07-28"
+          "latest": 132266.0,
+          "period_change": -0.076389,
+          "year_change": 0.059526,
+          "observation_date": "2026-08-29"
         }
       ],
       "immigration_trend_history": [
@@ -3092,37 +3007,33 @@
         },
         {
           "month": "2026-07",
-          "value": 289411.4,
+          "value": 286405.3,
           "flow_type": "Northbound"
         },
         {
           "month": "2026-07",
-          "value": 113755.3,
+          "value": 114088.5,
           "flow_type": "Southbound"
         }
       ],
       "immigration_checkpoint_history": [],
       "kpi_gold": [
         {
-          "latest": 882.55,
-          "period_change": -0.011912,
-          "year_change": 0.12563,
-          "observation_date": "2026-07-27"
+          "latest": 993.37,
+          "period_change": -0.006749,
+          "year_change": 0.270018,
+          "observation_date": "2026-08-26"
         }
       ],
       "kpi_median_pe": [
         {
-          "latest": 13.26
+          "latest": 11.01
         }
       ],
       "gold_history": [
         {
-          "month": "2016-07",
-          "value": 287.17
-        },
-        {
           "month": "2016-08",
-          "value": 286.94
+          "value": 283.16
         },
         {
           "month": "2016-09",
@@ -3598,386 +3509,146 @@
         },
         {
           "month": "2026-07",
-          "value": 890.02
+          "value": 888.91
+        },
+        {
+          "month": "2026-08",
+          "value": 951.31
         }
       ],
       "valuation_table": [
         {
           "ticker": "00709.HK",
           "company_name": "Giordano International",
-          "pe_ttm": 10.5,
-          "pb_ratio": 1.13,
-          "market_cap_hkd_b": 2.279,
-          "date": "2026-07-30"
-        },
-        {
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.94,
-          "pb_ratio": 0.95,
-          "market_cap_hkd_b": 14.196,
-          "date": "2026-07-30"
-        },
-        {
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 39.66,
-          "pb_ratio": -9.72,
-          "market_cap_hkd_b": 0.529,
-          "date": "2026-07-30"
-        },
-        {
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 14.06,
-          "pb_ratio": 0.87,
-          "market_cap_hkd_b": 0.584,
-          "date": "2026-07-30"
+          "pe_ttm": 11.01,
+          "pb_ratio": 1.12,
+          "market_cap_hkd_b": 2.247,
+          "date": "2026-08-30"
         },
         {
           "ticker": "00341.HK",
           "company_name": "Café de Coral Holdings",
-          "pe_ttm": 19.69,
-          "pb_ratio": 1.19,
-          "market_cap_hkd_b": 3.231,
-          "date": "2026-07-30"
-        },
-        {
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 14.24,
-          "pb_ratio": 2.23,
-          "market_cap_hkd_b": 2.855,
-          "date": "2026-07-30"
-        },
-        {
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 8.98,
-          "pb_ratio": 1.5,
-          "market_cap_hkd_b": 19.216,
-          "date": "2026-07-30"
-        },
-        {
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 13.68,
-          "pb_ratio": 2.37,
-          "market_cap_hkd_b": 96.979,
-          "date": "2026-07-30"
-        },
-        {
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.44,
-          "pb_ratio": 0.53,
-          "market_cap_hkd_b": 7.617,
-          "date": "2026-07-30"
+          "pe_ttm": 18.17,
+          "pb_ratio": 1.1,
+          "market_cap_hkd_b": 2.981,
+          "date": "2026-08-30"
         },
         {
           "ticker": "01929.HK",
           "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 13.26,
-          "pb_ratio": 3.85,
-          "market_cap_hkd_b": 119.383,
-          "date": "2026-07-30"
+          "pe_ttm": 14.9,
+          "pb_ratio": 4.33,
+          "market_cap_hkd_b": 134.182,
+          "date": "2026-08-30"
+        },
+        {
+          "ticker": "00178.HK",
+          "company_name": "Sa Sa International",
+          "pe_ttm": 15.01,
+          "pb_ratio": 2.35,
+          "market_cap_hkd_b": 3.01,
+          "date": "2026-08-30"
+        },
+        {
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 8.34,
+          "pb_ratio": 1.45,
+          "market_cap_hkd_b": 17.116,
+          "date": "2026-08-30"
+        },
+        {
+          "ticker": "00590.HK",
+          "company_name": "Luk Fook Holdings",
+          "pe_ttm": 6.85,
+          "pb_ratio": 0.93,
+          "market_cap_hkd_b": 14.008,
+          "date": "2026-08-30"
+        },
+        {
+          "ticker": "00116.HK",
+          "company_name": "Chow Sang Sang Holdings",
+          "pe_ttm": 3.44,
+          "pb_ratio": 0.63,
+          "market_cap_hkd_b": 10.21,
+          "date": "2026-08-30"
+        },
+        {
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 15.03,
+          "pb_ratio": 2.6,
+          "market_cap_hkd_b": 106.549,
+          "date": "2026-08-30"
+        },
+        {
+          "ticker": "00052.HK",
+          "company_name": "Fairwood Holdings",
+          "pe_ttm": 14.65,
+          "pb_ratio": 0.91,
+          "market_cap_hkd_b": 0.609,
+          "date": "2026-08-30"
+        },
+        {
+          "ticker": "01255.HK",
+          "company_name": "TATA Health",
+          "pe_ttm": -64.93,
+          "pb_ratio": -8.89,
+          "market_cap_hkd_b": 0.489,
+          "date": "2026-08-30"
         },
         {
           "ticker": "06811.HK",
           "company_name": "Tai Hing Group",
-          "pe_ttm": 10.42,
-          "pb_ratio": 1.26,
-          "market_cap_hkd_b": 1.127,
-          "date": "2026-07-30"
+          "pe_ttm": 10.49,
+          "pb_ratio": 1.6,
+          "market_cap_hkd_b": 1.491,
+          "date": "2026-08-30"
         }
       ],
       "valuation_pe_chart": [
         {
           "company_name": "Giordano International",
-          "pe_ttm": 10.5
-        },
-        {
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.94
-        },
-        {
-          "company_name": "TATA Health",
-          "pe_ttm": 39.66
-        },
-        {
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 14.06
+          "pe_ttm": 11.01
         },
         {
           "company_name": "Café de Coral Holdings",
-          "pe_ttm": 19.69
-        },
-        {
-          "company_name": "Sa Sa International",
-          "pe_ttm": 14.24
-        },
-        {
-          "company_name": "Samsonite",
-          "pe_ttm": 8.98
-        },
-        {
-          "company_name": "Prada",
-          "pe_ttm": 13.68
-        },
-        {
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.44
+          "pe_ttm": 18.17
         },
         {
           "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 13.26
+          "pe_ttm": 14.9
+        },
+        {
+          "company_name": "Sa Sa International",
+          "pe_ttm": 15.01
+        },
+        {
+          "company_name": "Samsonite",
+          "pe_ttm": 8.34
+        },
+        {
+          "company_name": "Luk Fook Holdings",
+          "pe_ttm": 6.85
+        },
+        {
+          "company_name": "Chow Sang Sang Holdings",
+          "pe_ttm": 3.44
+        },
+        {
+          "company_name": "Prada",
+          "pe_ttm": 15.03
+        },
+        {
+          "company_name": "Fairwood Holdings",
+          "pe_ttm": 14.65
         },
         {
           "company_name": "Tai Hing Group",
-          "pe_ttm": 10.42
+          "pe_ttm": 10.49
         }
       ],
       "valuation_history": [
-        {
-          "date": "2025-07-31",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 9.23,
-          "pb_ratio": 1.92,
-          "market_cap_hkd_b": 22.239
-        },
-        {
-          "date": "2025-08-01",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 9.19,
-          "pb_ratio": 1.91,
-          "market_cap_hkd_b": 22.156
-        },
-        {
-          "date": "2025-08-02",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 9.19,
-          "pb_ratio": 1.91,
-          "market_cap_hkd_b": 22.156
-        },
-        {
-          "date": "2025-08-03",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 9.19,
-          "pb_ratio": 1.91,
-          "market_cap_hkd_b": 22.156
-        },
-        {
-          "date": "2025-08-04",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 9.25,
-          "pb_ratio": 1.92,
-          "market_cap_hkd_b": 22.294
-        },
-        {
-          "date": "2025-08-05",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 9.33,
-          "pb_ratio": 1.94,
-          "market_cap_hkd_b": 22.488
-        },
-        {
-          "date": "2025-08-06",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 9.29,
-          "pb_ratio": 1.93,
-          "market_cap_hkd_b": 22.391
-        },
-        {
-          "date": "2025-08-07",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 9.43,
-          "pb_ratio": 1.96,
-          "market_cap_hkd_b": 22.724
-        },
-        {
-          "date": "2025-08-08",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 9.39,
-          "pb_ratio": 1.95,
-          "market_cap_hkd_b": 22.627
-        },
-        {
-          "date": "2025-08-09",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 9.39,
-          "pb_ratio": 1.95,
-          "market_cap_hkd_b": 22.627
-        },
-        {
-          "date": "2025-08-10",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 9.39,
-          "pb_ratio": 1.95,
-          "market_cap_hkd_b": 22.627
-        },
-        {
-          "date": "2025-08-11",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 9.12,
-          "pb_ratio": 1.9,
-          "market_cap_hkd_b": 21.976
-        },
-        {
-          "date": "2025-08-12",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 9.19,
-          "pb_ratio": 1.91,
-          "market_cap_hkd_b": 22.156
-        },
-        {
-          "date": "2025-08-13",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 9.87,
-          "pb_ratio": 2.03,
-          "market_cap_hkd_b": 22.807
-        },
-        {
-          "date": "2025-08-14",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 10.16,
-          "pb_ratio": 2.09,
-          "market_cap_hkd_b": 23.485
-        },
-        {
-          "date": "2025-08-15",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 10.42,
-          "pb_ratio": 2.15,
-          "market_cap_hkd_b": 24.081
-        },
-        {
-          "date": "2025-08-16",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 10.42,
-          "pb_ratio": 2.15,
-          "market_cap_hkd_b": 24.081
-        },
-        {
-          "date": "2025-08-17",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 10.42,
-          "pb_ratio": 2.15,
-          "market_cap_hkd_b": 24.081
-        },
-        {
-          "date": "2025-08-18",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 10.01,
-          "pb_ratio": 2.06,
-          "market_cap_hkd_b": 23.139
-        },
-        {
-          "date": "2025-08-19",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 9.95,
-          "pb_ratio": 2.05,
-          "market_cap_hkd_b": 22.987
-        },
-        {
-          "date": "2025-08-20",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 9.93,
-          "pb_ratio": 2.05,
-          "market_cap_hkd_b": 22.945
-        },
-        {
-          "date": "2025-08-21",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 9.87,
-          "pb_ratio": 2.03,
-          "market_cap_hkd_b": 22.807
-        },
-        {
-          "date": "2025-08-22",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 9.89,
-          "pb_ratio": 2.04,
-          "market_cap_hkd_b": 22.848
-        },
-        {
-          "date": "2025-08-23",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 9.89,
-          "pb_ratio": 2.04,
-          "market_cap_hkd_b": 22.848
-        },
-        {
-          "date": "2025-08-24",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 9.89,
-          "pb_ratio": 2.04,
-          "market_cap_hkd_b": 22.848
-        },
-        {
-          "date": "2025-08-25",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 9.97,
-          "pb_ratio": 2.05,
-          "market_cap_hkd_b": 23.042
-        },
-        {
-          "date": "2025-08-26",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 10.26,
-          "pb_ratio": 2.11,
-          "market_cap_hkd_b": 23.721
-        },
-        {
-          "date": "2025-08-27",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 10.05,
-          "pb_ratio": 2.07,
-          "market_cap_hkd_b": 23.236
-        },
-        {
-          "date": "2025-08-28",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 10.14,
-          "pb_ratio": 2.09,
-          "market_cap_hkd_b": 23.444
-        },
-        {
-          "date": "2025-08-29",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 10.17,
-          "pb_ratio": 2.1,
-          "market_cap_hkd_b": 23.513
-        },
         {
           "date": "2025-08-30",
           "ticker": "01910.HK",
@@ -6659,244 +6330,252 @@
           "market_cap_hkd_b": 19.216
         },
         {
-          "date": "2025-07-31",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 16.1,
-          "pb_ratio": 2.82,
-          "market_cap_hkd_b": 109.774
+          "date": "2026-07-31",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 9.01,
+          "pb_ratio": 1.51,
+          "market_cap_hkd_b": 19.27
         },
         {
-          "date": "2025-08-01",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 15.24,
-          "pb_ratio": 2.67,
-          "market_cap_hkd_b": 103.888
+          "date": "2026-08-01",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 9.01,
+          "pb_ratio": 1.51,
+          "market_cap_hkd_b": 19.27
         },
         {
-          "date": "2025-08-02",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 15.24,
-          "pb_ratio": 2.67,
-          "market_cap_hkd_b": 103.888
+          "date": "2026-08-02",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 9.01,
+          "pb_ratio": 1.51,
+          "market_cap_hkd_b": 19.27
         },
         {
-          "date": "2025-08-03",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 15.24,
-          "pb_ratio": 2.67,
-          "market_cap_hkd_b": 103.888
+          "date": "2026-08-03",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 9.15,
+          "pb_ratio": 1.53,
+          "market_cap_hkd_b": 19.584
         },
         {
-          "date": "2025-08-04",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 15.6,
-          "pb_ratio": 2.73,
-          "market_cap_hkd_b": 106.345
+          "date": "2026-08-04",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 9.03,
+          "pb_ratio": 1.51,
+          "market_cap_hkd_b": 19.311
         },
         {
-          "date": "2025-08-05",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 15.5,
-          "pb_ratio": 2.71,
-          "market_cap_hkd_b": 105.679
+          "date": "2026-08-05",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 9.05,
+          "pb_ratio": 1.51,
+          "market_cap_hkd_b": 19.352
         },
         {
-          "date": "2025-08-06",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 15.37,
-          "pb_ratio": 2.69,
-          "market_cap_hkd_b": 104.758
+          "date": "2026-08-06",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 8.99,
+          "pb_ratio": 1.5,
+          "market_cap_hkd_b": 19.23
         },
         {
-          "date": "2025-08-07",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 15.47,
-          "pb_ratio": 2.71,
-          "market_cap_hkd_b": 105.475
+          "date": "2026-08-07",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 8.85,
+          "pb_ratio": 1.48,
+          "market_cap_hkd_b": 18.929
         },
         {
-          "date": "2025-08-08",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 15.17,
-          "pb_ratio": 2.66,
-          "market_cap_hkd_b": 103.428
+          "date": "2026-08-08",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 8.85,
+          "pb_ratio": 1.48,
+          "market_cap_hkd_b": 18.929
         },
         {
-          "date": "2025-08-09",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 15.17,
-          "pb_ratio": 2.66,
-          "market_cap_hkd_b": 103.428
+          "date": "2026-08-09",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 8.85,
+          "pb_ratio": 1.48,
+          "market_cap_hkd_b": 18.929
         },
         {
-          "date": "2025-08-10",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 15.17,
-          "pb_ratio": 2.66,
-          "market_cap_hkd_b": 103.428
+          "date": "2026-08-10",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 8.87,
+          "pb_ratio": 1.48,
+          "market_cap_hkd_b": 18.97
         },
         {
-          "date": "2025-08-11",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 15.18,
-          "pb_ratio": 2.66,
-          "market_cap_hkd_b": 103.479
+          "date": "2026-08-11",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 8.83,
+          "pb_ratio": 1.48,
+          "market_cap_hkd_b": 18.889
         },
         {
-          "date": "2025-08-12",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 14.95,
-          "pb_ratio": 2.62,
-          "market_cap_hkd_b": 101.944
+          "date": "2026-08-12",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 8.65,
+          "pb_ratio": 1.45,
+          "market_cap_hkd_b": 18.507
         },
         {
-          "date": "2025-08-13",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 15.23,
-          "pb_ratio": 2.67,
-          "market_cap_hkd_b": 103.837
+          "date": "2026-08-13",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 9.26,
+          "pb_ratio": 1.61,
+          "market_cap_hkd_b": 19.011
         },
         {
-          "date": "2025-08-14",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 15.65,
-          "pb_ratio": 2.74,
-          "market_cap_hkd_b": 106.703
+          "date": "2026-08-14",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 8.79,
+          "pb_ratio": 1.52,
+          "market_cap_hkd_b": 18.029
         },
         {
-          "date": "2025-08-15",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 15.57,
-          "pb_ratio": 2.73,
-          "market_cap_hkd_b": 106.14
+          "date": "2026-08-15",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 8.79,
+          "pb_ratio": 1.52,
+          "market_cap_hkd_b": 18.029
         },
         {
-          "date": "2025-08-16",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 15.57,
-          "pb_ratio": 2.73,
-          "market_cap_hkd_b": 106.14
+          "date": "2026-08-16",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 8.79,
+          "pb_ratio": 1.52,
+          "market_cap_hkd_b": 18.029
         },
         {
-          "date": "2025-08-17",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 15.57,
-          "pb_ratio": 2.73,
-          "market_cap_hkd_b": 106.14
+          "date": "2026-08-17",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 8.91,
+          "pb_ratio": 1.55,
+          "market_cap_hkd_b": 18.288
         },
         {
-          "date": "2025-08-18",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 15.58,
-          "pb_ratio": 2.73,
-          "market_cap_hkd_b": 106.242
+          "date": "2026-08-18",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 8.84,
+          "pb_ratio": 1.53,
+          "market_cap_hkd_b": 18.138
         },
         {
-          "date": "2025-08-19",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 15.76,
-          "pb_ratio": 2.76,
-          "market_cap_hkd_b": 107.471
+          "date": "2026-08-19",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 8.77,
+          "pb_ratio": 1.52,
+          "market_cap_hkd_b": 18.002
         },
         {
-          "date": "2025-08-20",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 15.72,
-          "pb_ratio": 2.75,
-          "market_cap_hkd_b": 107.164
+          "date": "2026-08-20",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 8.71,
+          "pb_ratio": 1.51,
+          "market_cap_hkd_b": 17.866
         },
         {
-          "date": "2025-08-21",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 15.55,
-          "pb_ratio": 2.72,
-          "market_cap_hkd_b": 106.038
+          "date": "2026-08-21",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 8.63,
+          "pb_ratio": 1.5,
+          "market_cap_hkd_b": 17.716
         },
         {
-          "date": "2025-08-22",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 15.43,
-          "pb_ratio": 2.7,
-          "market_cap_hkd_b": 105.168
+          "date": "2026-08-22",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 8.63,
+          "pb_ratio": 1.5,
+          "market_cap_hkd_b": 17.716
         },
         {
-          "date": "2025-08-23",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 15.43,
-          "pb_ratio": 2.7,
-          "market_cap_hkd_b": 105.168
+          "date": "2026-08-23",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 8.63,
+          "pb_ratio": 1.5,
+          "market_cap_hkd_b": 17.716
         },
         {
-          "date": "2025-08-24",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 15.43,
-          "pb_ratio": 2.7,
-          "market_cap_hkd_b": 105.168
+          "date": "2026-08-24",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 8.42,
+          "pb_ratio": 1.46,
+          "market_cap_hkd_b": 17.279
         },
         {
-          "date": "2025-08-25",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 15.13,
-          "pb_ratio": 2.65,
-          "market_cap_hkd_b": 103.172
+          "date": "2026-08-25",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 8.48,
+          "pb_ratio": 1.47,
+          "market_cap_hkd_b": 17.402
         },
         {
-          "date": "2025-08-26",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 15.68,
-          "pb_ratio": 2.75,
-          "market_cap_hkd_b": 106.908
+          "date": "2026-08-26",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 8.47,
+          "pb_ratio": 1.47,
+          "market_cap_hkd_b": 17.388
         },
         {
-          "date": "2025-08-27",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 16.28,
-          "pb_ratio": 2.85,
-          "market_cap_hkd_b": 111.002
+          "date": "2026-08-27",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 8.36,
+          "pb_ratio": 1.45,
+          "market_cap_hkd_b": 17.157
         },
         {
-          "date": "2025-08-28",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 16.82,
-          "pb_ratio": 2.95,
-          "market_cap_hkd_b": 114.686
+          "date": "2026-08-28",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 8.34,
+          "pb_ratio": 1.45,
+          "market_cap_hkd_b": 17.116
         },
         {
-          "date": "2025-08-29",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 17.2,
-          "pb_ratio": 3.01,
-          "market_cap_hkd_b": 117.245
+          "date": "2026-08-29",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 8.34,
+          "pb_ratio": 1.45,
+          "market_cap_hkd_b": 17.116
+        },
+        {
+          "date": "2026-08-30",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 8.34,
+          "pb_ratio": 1.45,
+          "market_cap_hkd_b": 17.116
         },
         {
           "date": "2025-08-30",
@@ -9579,244 +9258,252 @@
           "market_cap_hkd_b": 96.979
         },
         {
-          "date": "2025-07-31",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 21.95,
-          "pb_ratio": 4.91,
-          "market_cap_hkd_b": 129.823
+          "date": "2026-07-31",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 15.61,
+          "pb_ratio": 2.7,
+          "market_cap_hkd_b": 110.695
         },
         {
-          "date": "2025-08-01",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 22.01,
-          "pb_ratio": 4.93,
-          "market_cap_hkd_b": 130.217
+          "date": "2026-08-01",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 15.61,
+          "pb_ratio": 2.7,
+          "market_cap_hkd_b": 110.695
         },
         {
-          "date": "2025-08-02",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 22.01,
-          "pb_ratio": 4.93,
-          "market_cap_hkd_b": 130.217
+          "date": "2026-08-02",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 15.61,
+          "pb_ratio": 2.7,
+          "market_cap_hkd_b": 110.695
         },
         {
-          "date": "2025-08-03",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 22.01,
-          "pb_ratio": 4.93,
-          "market_cap_hkd_b": 130.217
+          "date": "2026-08-03",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 15.73,
+          "pb_ratio": 2.72,
+          "market_cap_hkd_b": 111.514
         },
         {
-          "date": "2025-08-04",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 22.56,
-          "pb_ratio": 5.05,
-          "market_cap_hkd_b": 133.473
+          "date": "2026-08-04",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 16.05,
+          "pb_ratio": 2.78,
+          "market_cap_hkd_b": 113.816
         },
         {
-          "date": "2025-08-05",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 21.88,
-          "pb_ratio": 4.9,
-          "market_cap_hkd_b": 129.428
+          "date": "2026-08-05",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 16.42,
+          "pb_ratio": 2.84,
+          "market_cap_hkd_b": 116.426
         },
         {
-          "date": "2025-08-06",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 22.33,
-          "pb_ratio": 5.0,
-          "market_cap_hkd_b": 132.092
+          "date": "2026-08-06",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 16.21,
+          "pb_ratio": 2.8,
+          "market_cap_hkd_b": 114.942
         },
         {
-          "date": "2025-08-07",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 23.0,
-          "pb_ratio": 5.15,
-          "market_cap_hkd_b": 136.038
+          "date": "2026-08-07",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 15.91,
+          "pb_ratio": 2.75,
+          "market_cap_hkd_b": 112.844
         },
         {
-          "date": "2025-08-08",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 23.36,
-          "pb_ratio": 5.23,
-          "market_cap_hkd_b": 138.208
+          "date": "2026-08-08",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 15.91,
+          "pb_ratio": 2.75,
+          "market_cap_hkd_b": 112.844
         },
         {
-          "date": "2025-08-09",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 23.36,
-          "pb_ratio": 5.23,
-          "market_cap_hkd_b": 138.208
+          "date": "2026-08-09",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 15.91,
+          "pb_ratio": 2.75,
+          "market_cap_hkd_b": 112.844
         },
         {
-          "date": "2025-08-10",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 23.36,
-          "pb_ratio": 5.23,
-          "market_cap_hkd_b": 138.208
+          "date": "2026-08-10",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 16.05,
+          "pb_ratio": 2.78,
+          "market_cap_hkd_b": 113.816
         },
         {
-          "date": "2025-08-11",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 22.85,
-          "pb_ratio": 5.11,
-          "market_cap_hkd_b": 135.15
+          "date": "2026-08-11",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 15.73,
+          "pb_ratio": 2.72,
+          "market_cap_hkd_b": 111.514
         },
         {
-          "date": "2025-08-12",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 22.91,
-          "pb_ratio": 5.13,
-          "market_cap_hkd_b": 135.544
+          "date": "2026-08-12",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 15.24,
+          "pb_ratio": 2.63,
+          "market_cap_hkd_b": 108.034
         },
         {
-          "date": "2025-08-13",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 23.78,
-          "pb_ratio": 5.32,
-          "market_cap_hkd_b": 140.674
+          "date": "2026-08-13",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 15.23,
+          "pb_ratio": 2.63,
+          "market_cap_hkd_b": 107.982
         },
         {
-          "date": "2025-08-14",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 23.93,
-          "pb_ratio": 5.36,
-          "market_cap_hkd_b": 141.562
+          "date": "2026-08-14",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 15.03,
+          "pb_ratio": 2.6,
+          "market_cap_hkd_b": 106.601
         },
         {
-          "date": "2025-08-15",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 23.51,
-          "pb_ratio": 5.26,
-          "market_cap_hkd_b": 139.096
+          "date": "2026-08-15",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 15.03,
+          "pb_ratio": 2.6,
+          "market_cap_hkd_b": 106.601
         },
         {
-          "date": "2025-08-16",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 23.51,
-          "pb_ratio": 5.26,
-          "market_cap_hkd_b": 139.096
+          "date": "2026-08-16",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 15.03,
+          "pb_ratio": 2.6,
+          "market_cap_hkd_b": 106.601
         },
         {
-          "date": "2025-08-17",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 23.51,
-          "pb_ratio": 5.26,
-          "market_cap_hkd_b": 139.096
+          "date": "2026-08-17",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 14.9,
+          "pb_ratio": 2.58,
+          "market_cap_hkd_b": 105.628
         },
         {
-          "date": "2025-08-18",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 24.1,
-          "pb_ratio": 5.39,
-          "market_cap_hkd_b": 142.548
+          "date": "2026-08-18",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 14.99,
+          "pb_ratio": 2.59,
+          "market_cap_hkd_b": 106.294
         },
         {
-          "date": "2025-08-19",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 23.81,
-          "pb_ratio": 5.33,
-          "market_cap_hkd_b": 140.871
+          "date": "2026-08-19",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 14.76,
+          "pb_ratio": 2.55,
+          "market_cap_hkd_b": 104.656
         },
         {
-          "date": "2025-08-20",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 23.81,
-          "pb_ratio": 5.33,
-          "market_cap_hkd_b": 140.871
+          "date": "2026-08-20",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 14.88,
+          "pb_ratio": 2.57,
+          "market_cap_hkd_b": 105.526
         },
         {
-          "date": "2025-08-21",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 24.11,
-          "pb_ratio": 5.4,
-          "market_cap_hkd_b": 142.647
+          "date": "2026-08-21",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 14.83,
+          "pb_ratio": 2.56,
+          "market_cap_hkd_b": 105.168
         },
         {
-          "date": "2025-08-22",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 24.31,
-          "pb_ratio": 5.44,
-          "market_cap_hkd_b": 143.831
+          "date": "2026-08-22",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 14.83,
+          "pb_ratio": 2.56,
+          "market_cap_hkd_b": 105.168
         },
         {
-          "date": "2025-08-23",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 24.31,
-          "pb_ratio": 5.44,
-          "market_cap_hkd_b": 143.831
+          "date": "2026-08-23",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 14.83,
+          "pb_ratio": 2.56,
+          "market_cap_hkd_b": 105.168
         },
         {
-          "date": "2025-08-24",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 24.31,
-          "pb_ratio": 5.44,
-          "market_cap_hkd_b": 143.831
+          "date": "2026-08-24",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 14.72,
+          "pb_ratio": 2.54,
+          "market_cap_hkd_b": 104.349
         },
         {
-          "date": "2025-08-25",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 24.46,
-          "pb_ratio": 5.48,
-          "market_cap_hkd_b": 144.719
+          "date": "2026-08-25",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 14.76,
+          "pb_ratio": 2.55,
+          "market_cap_hkd_b": 104.656
         },
         {
-          "date": "2025-08-26",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 24.51,
-          "pb_ratio": 5.49,
-          "market_cap_hkd_b": 145.015
+          "date": "2026-08-26",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 14.75,
+          "pb_ratio": 2.55,
+          "market_cap_hkd_b": 104.554
         },
         {
-          "date": "2025-08-27",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 23.88,
-          "pb_ratio": 5.35,
-          "market_cap_hkd_b": 141.266
+          "date": "2026-08-27",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 14.78,
+          "pb_ratio": 2.56,
+          "market_cap_hkd_b": 104.809
         },
         {
-          "date": "2025-08-28",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 24.1,
-          "pb_ratio": 5.39,
-          "market_cap_hkd_b": 142.548
+          "date": "2026-08-28",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 15.03,
+          "pb_ratio": 2.6,
+          "market_cap_hkd_b": 106.549
         },
         {
-          "date": "2025-08-29",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 24.28,
-          "pb_ratio": 5.44,
-          "market_cap_hkd_b": 143.634
+          "date": "2026-08-29",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 15.03,
+          "pb_ratio": 2.6,
+          "market_cap_hkd_b": 106.549
+        },
+        {
+          "date": "2026-08-30",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 15.03,
+          "pb_ratio": 2.6,
+          "market_cap_hkd_b": 106.549
         },
         {
           "date": "2025-08-30",
@@ -12497,22 +12184,265 @@
           "pe_ttm": 13.26,
           "pb_ratio": 3.85,
           "market_cap_hkd_b": 119.383
+        },
+        {
+          "date": "2026-07-31",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 13.55,
+          "pb_ratio": 3.94,
+          "market_cap_hkd_b": 122.047
+        },
+        {
+          "date": "2026-08-01",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 13.55,
+          "pb_ratio": 3.94,
+          "market_cap_hkd_b": 122.047
+        },
+        {
+          "date": "2026-08-02",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 13.55,
+          "pb_ratio": 3.94,
+          "market_cap_hkd_b": 122.047
+        },
+        {
+          "date": "2026-08-03",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 13.69,
+          "pb_ratio": 3.98,
+          "market_cap_hkd_b": 123.23
+        },
+        {
+          "date": "2026-08-04",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 13.37,
+          "pb_ratio": 3.89,
+          "market_cap_hkd_b": 120.369
+        },
+        {
+          "date": "2026-08-05",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 13.0,
+          "pb_ratio": 3.78,
+          "market_cap_hkd_b": 117.015
+        },
+        {
+          "date": "2026-08-06",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 13.49,
+          "pb_ratio": 3.92,
+          "market_cap_hkd_b": 121.455
+        },
+        {
+          "date": "2026-08-07",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 13.39,
+          "pb_ratio": 3.89,
+          "market_cap_hkd_b": 120.567
+        },
+        {
+          "date": "2026-08-08",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 13.39,
+          "pb_ratio": 3.89,
+          "market_cap_hkd_b": 120.567
+        },
+        {
+          "date": "2026-08-09",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 13.39,
+          "pb_ratio": 3.89,
+          "market_cap_hkd_b": 120.567
+        },
+        {
+          "date": "2026-08-10",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 14.28,
+          "pb_ratio": 4.15,
+          "market_cap_hkd_b": 128.558
+        },
+        {
+          "date": "2026-08-11",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 13.78,
+          "pb_ratio": 4.01,
+          "market_cap_hkd_b": 124.118
+        },
+        {
+          "date": "2026-08-12",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 13.59,
+          "pb_ratio": 3.95,
+          "market_cap_hkd_b": 122.343
+        },
+        {
+          "date": "2026-08-13",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 13.49,
+          "pb_ratio": 3.92,
+          "market_cap_hkd_b": 121.455
+        },
+        {
+          "date": "2026-08-14",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 13.59,
+          "pb_ratio": 3.95,
+          "market_cap_hkd_b": 122.343
+        },
+        {
+          "date": "2026-08-15",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 13.59,
+          "pb_ratio": 3.95,
+          "market_cap_hkd_b": 122.343
+        },
+        {
+          "date": "2026-08-16",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 13.59,
+          "pb_ratio": 3.95,
+          "market_cap_hkd_b": 122.343
+        },
+        {
+          "date": "2026-08-17",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 13.83,
+          "pb_ratio": 4.02,
+          "market_cap_hkd_b": 124.513
+        },
+        {
+          "date": "2026-08-18",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 13.85,
+          "pb_ratio": 4.03,
+          "market_cap_hkd_b": 124.71
+        },
+        {
+          "date": "2026-08-19",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 13.88,
+          "pb_ratio": 4.04,
+          "market_cap_hkd_b": 125.006
+        },
+        {
+          "date": "2026-08-20",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 14.67,
+          "pb_ratio": 4.27,
+          "market_cap_hkd_b": 132.11
+        },
+        {
+          "date": "2026-08-21",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 14.84,
+          "pb_ratio": 4.31,
+          "market_cap_hkd_b": 133.59
+        },
+        {
+          "date": "2026-08-22",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 14.84,
+          "pb_ratio": 4.31,
+          "market_cap_hkd_b": 133.59
+        },
+        {
+          "date": "2026-08-23",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 14.84,
+          "pb_ratio": 4.31,
+          "market_cap_hkd_b": 133.59
+        },
+        {
+          "date": "2026-08-24",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 14.83,
+          "pb_ratio": 4.31,
+          "market_cap_hkd_b": 133.491
+        },
+        {
+          "date": "2026-08-25",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 14.91,
+          "pb_ratio": 4.34,
+          "market_cap_hkd_b": 134.281
+        },
+        {
+          "date": "2026-08-26",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 14.76,
+          "pb_ratio": 4.29,
+          "market_cap_hkd_b": 132.899
+        },
+        {
+          "date": "2026-08-27",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 14.62,
+          "pb_ratio": 4.25,
+          "market_cap_hkd_b": 131.617
+        },
+        {
+          "date": "2026-08-28",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 14.9,
+          "pb_ratio": 4.33,
+          "market_cap_hkd_b": 134.182
+        },
+        {
+          "date": "2026-08-29",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 14.9,
+          "pb_ratio": 4.33,
+          "market_cap_hkd_b": 134.182
+        },
+        {
+          "date": "2026-08-30",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 14.9,
+          "pb_ratio": 4.33,
+          "market_cap_hkd_b": 134.182
         }
       ],
       "kpi_retail": [
         {
-          "latest": 121.0,
-          "period_change": 0.076512,
-          "year_change": 0.113155,
-          "observation_date": "2026-05-01"
+          "latest": 112.8,
+          "period_change": -0.067769,
+          "year_change": 0.037718,
+          "observation_date": "2026-06-01"
         }
       ],
       "retail_history": [
-        {
-          "date": "2016-05-01",
-          "month": "2016-05",
-          "value": 128.1
-        },
         {
           "date": "2016-06-01",
           "month": "2016-06",
@@ -13112,94 +13042,94 @@
           "date": "2026-05-01",
           "month": "2026-05",
           "value": 121.0
+        },
+        {
+          "date": "2026-06-01",
+          "month": "2026-06",
+          "value": 112.8
         }
       ],
       "retail_category_snapshot": [
         {
           "category": "Other consumer goods",
-          "sales_value_index": 165.7,
-          "sales_volume_index": 153.2,
-          "yoy_change": 0.0908492429,
-          "mom_change": 0.0388714734,
-          "date": "2026-05-01"
+          "sales_value_index": 155.1,
+          "sales_volume_index": 143.5,
+          "yoy_change": 0.052238806,
+          "mom_change": -0.064535585,
+          "date": "2026-06-01"
         },
         {
           "category": "All retail outlet",
-          "sales_value_index": 121.0,
-          "sales_volume_index": 107.4,
+          "sales_value_index": 112.8,
+          "sales_volume_index": 100.1,
           "yoy_change": null,
           "mom_change": null,
-          "date": "2026-05-01"
-        },
-        {
-          "category": "Department stores",
-          "sales_value_index": 106.8,
-          "sales_volume_index": 97.3,
-          "yoy_change": 0.0931422723,
-          "mom_change": 0.4412955466,
-          "date": "2026-05-01"
+          "date": "2026-06-01"
         },
         {
           "category": "Consumer durable goods",
-          "sales_value_index": 94.2,
-          "sales_volume_index": 98.1,
-          "yoy_change": 0.0902777778,
-          "mom_change": -0.1237209302,
-          "date": "2026-05-01"
+          "sales_value_index": 87.5,
+          "sales_volume_index": 91.7,
+          "yoy_change": 0.0542168675,
+          "mom_change": -0.0721102863,
+          "date": "2026-06-01"
         },
         {
           "category": "Supermarkets",
-          "sales_value_index": 88.8,
-          "sales_volume_index": 74.9,
-          "yoy_change": 0.0090909091,
-          "mom_change": 0.0776699029,
-          "date": "2026-05-01"
+          "sales_value_index": 85.5,
+          "sales_volume_index": 72.4,
+          "yoy_change": -0.0115606936,
+          "mom_change": -0.0371621622,
+          "date": "2026-06-01"
+        },
+        {
+          "category": "Department stores",
+          "sales_value_index": 72.7,
+          "sales_volume_index": 66.3,
+          "yoy_change": -0.0421607378,
+          "mom_change": -0.3192883895,
+          "date": "2026-06-01"
         },
         {
           "category": "Fuels",
-          "sales_value_index": 76.3,
-          "sales_volume_index": 49.4,
-          "yoy_change": -0.1219792865,
-          "mom_change": 0.1354166667,
-          "date": "2026-05-01"
+          "sales_value_index": 71.4,
+          "sales_volume_index": 47.3,
+          "yoy_change": -0.153024911,
+          "mom_change": -0.0654450262,
+          "date": "2026-06-01"
         }
       ],
       "retail_category_chart": [
         {
           "category": "Fuels",
-          "yoy_change": -0.1219792865
-        },
-        {
-          "category": "Supermarkets",
-          "yoy_change": 0.0090909091
-        },
-        {
-          "category": "Consumer durable goods",
-          "yoy_change": 0.0902777778
-        },
-        {
-          "category": "Other consumer goods",
-          "yoy_change": 0.0908492429
+          "yoy_change": -0.153024911
         },
         {
           "category": "Department stores",
-          "yoy_change": 0.0931422723
+          "yoy_change": -0.0421607378
+        },
+        {
+          "category": "Supermarkets",
+          "yoy_change": -0.0115606936
+        },
+        {
+          "category": "Other consumer goods",
+          "yoy_change": 0.052238806
+        },
+        {
+          "category": "Consumer durable goods",
+          "yoy_change": 0.0542168675
         }
       ],
       "kpi_restaurant": [
         {
-          "latest": 28358.0,
-          "period_change": 0.019082,
-          "year_change": 0.046614,
-          "observation_date": "2026-03-31"
+          "latest": 27196.0,
+          "period_change": -0.040976,
+          "year_change": 0.003728,
+          "observation_date": "2026-06-30"
         }
       ],
       "restaurant_history": [
-        {
-          "date": "2016-03-31",
-          "month": "2016-03",
-          "value": 26638.0
-        },
         {
           "date": "2016-06-30",
           "month": "2016-06",
@@ -13399,84 +13329,89 @@
           "date": "2026-03-31",
           "month": "2026-03",
           "value": 28358.0
+        },
+        {
+          "date": "2026-06-30",
+          "month": "2026-06",
+          "value": 27196.0
         }
       ],
       "restaurant_snapshot": [
         {
           "sub_sector": "All restaurants",
-          "total_receipts_hkd_m": 28358.0,
-          "total_purchases_hkd_m": 9094.0,
-          "receipts_value_index": 132.1,
+          "total_receipts_hkd_m": 27196.0,
+          "total_purchases_hkd_m": 8774.0,
+          "receipts_value_index": 126.7,
           "yoy_change": null,
           "qoq_change": null,
-          "date": "2026-03-31"
-        },
-        {
-          "sub_sector": "Non-Chinese restaurants",
-          "total_receipts_hkd_m": 10131.0,
-          "total_purchases_hkd_m": null,
-          "receipts_value_index": 155.5,
-          "yoy_change": 0.027589005,
-          "qoq_change": 0.1369094378,
-          "date": "2026-03-31"
+          "date": "2026-06-30"
         },
         {
           "sub_sector": "Chinese restaurants",
-          "total_receipts_hkd_m": 9699.0,
+          "total_receipts_hkd_m": 9485.0,
           "total_purchases_hkd_m": null,
-          "receipts_value_index": 118.2,
-          "yoy_change": 0.0093662192,
-          "qoq_change": -0.050699814,
-          "date": "2026-03-31"
+          "receipts_value_index": 115.6,
+          "yoy_change": 0.0146555413,
+          "qoq_change": -0.0220641303,
+          "date": "2026-06-30"
+        },
+        {
+          "sub_sector": "Non-Chinese restaurants",
+          "total_receipts_hkd_m": 8871.0,
+          "total_purchases_hkd_m": null,
+          "receipts_value_index": 136.1,
+          "yoy_change": 0.0155695478,
+          "qoq_change": -0.1243707433,
+          "date": "2026-06-30"
         },
         {
           "sub_sector": "Fast food shops",
-          "total_receipts_hkd_m": 6074.0,
+          "total_receipts_hkd_m": 6366.0,
           "total_purchases_hkd_m": null,
-          "receipts_value_index": 126.3,
-          "yoy_change": -0.0062172775,
-          "qoq_change": -0.0141210842,
-          "date": "2026-03-31"
+          "receipts_value_index": 132.3,
+          "yoy_change": -0.0154655119,
+          "qoq_change": 0.048073757,
+          "date": "2026-06-30"
         },
         {
           "sub_sector": "Miscellaneous eating and drinking places",
-          "total_receipts_hkd_m": 2175.0,
+          "total_receipts_hkd_m": 2156.0,
           "total_purchases_hkd_m": null,
-          "receipts_value_index": 129.3,
-          "yoy_change": 0.0041551247,
-          "qoq_change": 0.0097493036,
-          "date": "2026-03-31"
+          "receipts_value_index": 128.1,
+          "yoy_change": -0.0266365688,
+          "qoq_change": -0.0087356322,
+          "date": "2026-06-30"
         },
         {
           "sub_sector": "Bars",
-          "total_receipts_hkd_m": 280.0,
+          "total_receipts_hkd_m": 318.0,
           "total_purchases_hkd_m": null,
-          "receipts_value_index": 109.2,
-          "yoy_change": -0.0344827586,
-          "qoq_change": -0.2708333333,
-          "date": "2026-03-31"
+          "receipts_value_index": 124.3,
+          "yoy_change": -0.0392749245,
+          "qoq_change": 0.1357142857,
+          "date": "2026-06-30"
         }
       ],
       "restaurant_chart": [
         {
           "sub_sector": "Bars",
-          "yoy_change": -0.0344827586
-        },
-        {
-          "sub_sector": "Fast food shops",
-          "yoy_change": -0.0062172775
+          "yoy_change": -0.0392749245
         },
         {
           "sub_sector": "Miscellaneous eating and drinking places",
-          "yoy_change": 0.0041551247
+          "yoy_change": -0.0266365688
+        },
+        {
+          "sub_sector": "Fast food shops",
+          "yoy_change": -0.0154655119
         },
         {
           "sub_sector": "Chinese restaurants",
-          "yoy_change": 0.0093662192
+          "yoy_change": 0.0146555413
         },
         {
           "sub_sector": "Non-Chinese restaurants",
-          "yoy_change": 0.027589005
+          "yoy_change": 0.0155695478
         }
       ],
       "kpi_store_footprint": [
@@ -13621,2083 +13556,14 @@
           "total_stores": 26.0
         }
       ],
-      "consumer_council_pricewatch_archive": [
-        {
-          "first_observation": "2020-05",
-          "latest_observation": "2026-07",
-          "months": 75,
-          "category_supermarket_aggregates": 4268,
-          "categories": 11,
-          "supermarkets": 12,
-          "notes": "Local archive coverage only. A simple monthly mean of listed products is not a price index because product assortment, pack size, and offers can change."
-        }
-      ],
-      "consumer_council_pricewatch_matched_index": [
-        {
-          "match_rate": 1.0,
-          "matched_item_index": 100.0,
-          "matched_products": 535,
-          "supermarket_code": "AEON",
-          "year_month": "2020-05"
-        },
-        {
-          "match_rate": 1.0,
-          "matched_item_index": 100.0,
-          "matched_products": 1798,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2020-05"
-        },
-        {
-          "match_rate": 1.0,
-          "matched_item_index": 100.0,
-          "matched_products": 409,
-          "supermarket_code": "WATSONS",
-          "year_month": "2020-05"
-        },
-        {
-          "match_rate": 1.0,
-          "matched_item_index": 100.0,
-          "matched_products": 535,
-          "supermarket_code": "AEON",
-          "year_month": "2020-06"
-        },
-        {
-          "match_rate": 1.0,
-          "matched_item_index": 100.0,
-          "matched_products": 24,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2020-06"
-        },
-        {
-          "match_rate": 0.9933,
-          "matched_item_index": 100.06,
-          "matched_products": 1783,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2020-06"
-        },
-        {
-          "match_rate": 0.9902,
-          "matched_item_index": 100.05,
-          "matched_products": 405,
-          "supermarket_code": "WATSONS",
-          "year_month": "2020-06"
-        },
-        {
-          "match_rate": 0.7871,
-          "matched_item_index": 101.0,
-          "matched_products": 462,
-          "supermarket_code": "AEON",
-          "year_month": "2020-07"
-        },
-        {
-          "match_rate": 0.7667,
-          "matched_item_index": 100.24,
-          "matched_products": 23,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2020-07"
-        },
-        {
-          "match_rate": 0.9597,
-          "matched_item_index": 100.19,
-          "matched_products": 1740,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2020-07"
-        },
-        {
-          "match_rate": 0.8993,
-          "matched_item_index": 97.15,
-          "matched_products": 384,
-          "supermarket_code": "WATSONS",
-          "year_month": "2020-07"
-        },
-        {
-          "match_rate": 0.8913,
-          "matched_item_index": 101.15,
-          "matched_products": 582,
-          "supermarket_code": "AEON",
-          "year_month": "2020-08"
-        },
-        {
-          "match_rate": 0.8824,
-          "matched_item_index": 99.95,
-          "matched_products": 30,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2020-08"
-        },
-        {
-          "match_rate": 0.9532,
-          "matched_item_index": 100.2,
-          "matched_products": 1813,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2020-08"
-        },
-        {
-          "match_rate": 0.9192,
-          "matched_item_index": 96.97,
-          "matched_products": 421,
-          "supermarket_code": "WATSONS",
-          "year_month": "2020-08"
-        },
-        {
-          "match_rate": 0.9648,
-          "matched_item_index": 100.85,
-          "matched_products": 630,
-          "supermarket_code": "AEON",
-          "year_month": "2020-09"
-        },
-        {
-          "match_rate": 1.0,
-          "matched_item_index": 100.56,
-          "matched_products": 31,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2020-09"
-        },
-        {
-          "match_rate": 0.9859,
-          "matched_item_index": 99.84,
-          "matched_products": 1883,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2020-09"
-        },
-        {
-          "match_rate": 0.9846,
-          "matched_item_index": 96.4,
-          "matched_products": 447,
-          "supermarket_code": "WATSONS",
-          "year_month": "2020-09"
-        },
-        {
-          "match_rate": 0.9512,
-          "matched_item_index": 101.41,
-          "matched_products": 643,
-          "supermarket_code": "AEON",
-          "year_month": "2020-10"
-        },
-        {
-          "match_rate": 0.6944,
-          "matched_item_index": 100.59,
-          "matched_products": 25,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2020-10"
-        },
-        {
-          "match_rate": 0.9922,
-          "matched_item_index": 99.78,
-          "matched_products": 1900,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2020-10"
-        },
-        {
-          "match_rate": 0.9739,
-          "matched_item_index": 96.64,
-          "matched_products": 447,
-          "supermarket_code": "WATSONS",
-          "year_month": "2020-10"
-        },
-        {
-          "match_rate": 0.9503,
-          "matched_item_index": 101.21,
-          "matched_products": 669,
-          "supermarket_code": "AEON",
-          "year_month": "2020-11"
-        },
-        {
-          "match_rate": 0.8889,
-          "matched_item_index": 99.79,
-          "matched_products": 32,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2020-11"
-        },
-        {
-          "match_rate": 0.9773,
-          "matched_item_index": 99.31,
-          "matched_products": 1897,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2020-11"
-        },
-        {
-          "match_rate": 0.9439,
-          "matched_item_index": 96.23,
-          "matched_products": 454,
-          "supermarket_code": "WATSONS",
-          "year_month": "2020-11"
-        },
-        {
-          "match_rate": 0.986,
-          "matched_item_index": 100.79,
-          "matched_products": 703,
-          "supermarket_code": "AEON",
-          "year_month": "2020-12"
-        },
-        {
-          "match_rate": 0.8857,
-          "matched_item_index": 101.16,
-          "matched_products": 31,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2020-12"
-        },
-        {
-          "match_rate": 0.9943,
-          "matched_item_index": 99.13,
-          "matched_products": 1917,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2020-12"
-        },
-        {
-          "match_rate": 0.9895,
-          "matched_item_index": 96.1,
-          "matched_products": 472,
-          "supermarket_code": "WATSONS",
-          "year_month": "2020-12"
-        },
-        {
-          "match_rate": 0.9958,
-          "matched_item_index": 100.21,
-          "matched_products": 705,
-          "supermarket_code": "AEON",
-          "year_month": "2021-01"
-        },
-        {
-          "match_rate": 0.875,
-          "matched_item_index": 102.62,
-          "matched_products": 35,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2021-01"
-        },
-        {
-          "match_rate": 0.9943,
-          "matched_item_index": 99.57,
-          "matched_products": 1917,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2021-01"
-        },
-        {
-          "match_rate": 0.9914,
-          "matched_item_index": 96.3,
-          "matched_products": 463,
-          "supermarket_code": "WATSONS",
-          "year_month": "2021-01"
-        },
-        {
-          "match_rate": 0.9943,
-          "matched_item_index": 99.67,
-          "matched_products": 700,
-          "supermarket_code": "AEON",
-          "year_month": "2021-02"
-        },
-        {
-          "match_rate": 0.975,
-          "matched_item_index": 103.08,
-          "matched_products": 39,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2021-02"
-        },
-        {
-          "match_rate": 0.999,
-          "matched_item_index": 99.28,
-          "matched_products": 1912,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2021-02"
-        },
-        {
-          "match_rate": 0.9914,
-          "matched_item_index": 95.76,
-          "matched_products": 462,
-          "supermarket_code": "WATSONS",
-          "year_month": "2021-02"
-        },
-        {
-          "match_rate": 0.9914,
-          "matched_item_index": 100.02,
-          "matched_products": 694,
-          "supermarket_code": "AEON",
-          "year_month": "2021-03"
-        },
-        {
-          "match_rate": 0.825,
-          "matched_item_index": 102.25,
-          "matched_products": 33,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2021-03"
-        },
-        {
-          "match_rate": 0.9963,
-          "matched_item_index": 99.88,
-          "matched_products": 1902,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2021-03"
-        },
-        {
-          "match_rate": 0.9935,
-          "matched_item_index": 95.42,
-          "matched_products": 460,
-          "supermarket_code": "WATSONS",
-          "year_month": "2021-03"
-        },
-        {
-          "match_rate": 0.9773,
-          "matched_item_index": 100.3,
-          "matched_products": 688,
-          "supermarket_code": "AEON",
-          "year_month": "2021-04"
-        },
-        {
-          "match_rate": 0.2035,
-          "matched_item_index": 102.37,
-          "matched_products": 35,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2021-04"
-        },
-        {
-          "match_rate": 0.9823,
-          "matched_item_index": 100.93,
-          "matched_products": 1888,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2021-04"
-        },
-        {
-          "match_rate": 0.9934,
-          "matched_item_index": 95.28,
-          "matched_products": 454,
-          "supermarket_code": "WATSONS",
-          "year_month": "2021-04"
-        },
-        {
-          "match_rate": 0.9859,
-          "matched_item_index": 99.76,
-          "matched_products": 699,
-          "supermarket_code": "AEON",
-          "year_month": "2021-05"
-        },
-        {
-          "match_rate": 0.9762,
-          "matched_item_index": 103.6,
-          "matched_products": 164,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2021-05"
-        },
-        {
-          "match_rate": 0.9958,
-          "matched_item_index": 100.43,
-          "matched_products": 1900,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2021-05"
-        },
-        {
-          "match_rate": 0.9741,
-          "matched_item_index": 95.0,
-          "matched_products": 451,
-          "supermarket_code": "WATSONS",
-          "year_month": "2021-05"
-        },
-        {
-          "match_rate": 0.9749,
-          "matched_item_index": 100.94,
-          "matched_products": 700,
-          "supermarket_code": "AEON",
-          "year_month": "2021-06"
-        },
-        {
-          "match_rate": 0.9467,
-          "matched_item_index": 101.91,
-          "matched_products": 160,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2021-06"
-        },
-        {
-          "match_rate": 0.9853,
-          "matched_item_index": 100.94,
-          "matched_products": 1810,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2021-06"
-        },
-        {
-          "match_rate": 0.9911,
-          "matched_item_index": 94.78,
-          "matched_products": 443,
-          "supermarket_code": "WATSONS",
-          "year_month": "2021-06"
-        },
-        {
-          "match_rate": 0.986,
-          "matched_item_index": 101.29,
-          "matched_products": 704,
-          "supermarket_code": "AEON",
-          "year_month": "2021-07"
-        },
-        {
-          "match_rate": 0.927,
-          "matched_item_index": 101.93,
-          "matched_products": 165,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2021-07"
-        },
-        {
-          "match_rate": 0.9891,
-          "matched_item_index": 100.68,
-          "matched_products": 1811,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2021-07"
-        },
-        {
-          "match_rate": 0.9796,
-          "matched_item_index": 94.63,
-          "matched_products": 433,
-          "supermarket_code": "WATSONS",
-          "year_month": "2021-07"
-        },
-        {
-          "match_rate": 0.9381,
-          "matched_item_index": 100.47,
-          "matched_products": 697,
-          "supermarket_code": "AEON",
-          "year_month": "2021-08"
-        },
-        {
-          "match_rate": 0.9322,
-          "matched_item_index": 102.14,
-          "matched_products": 165,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2021-08"
-        },
-        {
-          "match_rate": 0.9721,
-          "matched_item_index": 100.76,
-          "matched_products": 1815,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2021-08"
-        },
-        {
-          "match_rate": 0.9414,
-          "matched_item_index": 94.72,
-          "matched_products": 434,
-          "supermarket_code": "WATSONS",
-          "year_month": "2021-08"
-        },
-        {
-          "match_rate": 0.9682,
-          "matched_item_index": 100.24,
-          "matched_products": 730,
-          "supermarket_code": "AEON",
-          "year_month": "2021-09"
-        },
-        {
-          "match_rate": 0.9766,
-          "matched_item_index": 101.87,
-          "matched_products": 167,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2021-09"
-        },
-        {
-          "match_rate": 0.9709,
-          "matched_item_index": 100.58,
-          "matched_products": 1833,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2021-09"
-        },
-        {
-          "match_rate": 0.9595,
-          "matched_item_index": 94.1,
-          "matched_products": 450,
-          "supermarket_code": "WATSONS",
-          "year_month": "2021-09"
-        },
-        {
-          "match_rate": 0.9787,
-          "matched_item_index": 100.12,
-          "matched_products": 734,
-          "supermarket_code": "AEON",
-          "year_month": "2021-10"
-        },
-        {
-          "match_rate": 0.9708,
-          "matched_item_index": 102.28,
-          "matched_products": 166,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2021-10"
-        },
-        {
-          "match_rate": 0.9967,
-          "matched_item_index": 101.21,
-          "matched_products": 1816,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2021-10"
-        },
-        {
-          "match_rate": 0.9832,
-          "matched_item_index": 94.86,
-          "matched_products": 467,
-          "supermarket_code": "WATSONS",
-          "year_month": "2021-10"
-        },
-        {
-          "match_rate": 0.9812,
-          "matched_item_index": 100.64,
-          "matched_products": 730,
-          "supermarket_code": "AEON",
-          "year_month": "2021-11"
-        },
-        {
-          "match_rate": 0.9588,
-          "matched_item_index": 103.43,
-          "matched_products": 163,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2021-11"
-        },
-        {
-          "match_rate": 0.9762,
-          "matched_item_index": 101.66,
-          "matched_products": 1765,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2021-11"
-        },
-        {
-          "match_rate": 0.9915,
-          "matched_item_index": 94.8,
-          "matched_products": 466,
-          "supermarket_code": "WATSONS",
-          "year_month": "2021-11"
-        },
-        {
-          "match_rate": 0.9759,
-          "matched_item_index": 99.62,
-          "matched_products": 729,
-          "supermarket_code": "AEON",
-          "year_month": "2021-12"
-        },
-        {
-          "match_rate": 0.9941,
-          "matched_item_index": 103.19,
-          "matched_products": 168,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2021-12"
-        },
-        {
-          "match_rate": 0.9932,
-          "matched_item_index": 101.07,
-          "matched_products": 1762,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2021-12"
-        },
-        {
-          "match_rate": 0.9831,
-          "matched_item_index": 95.01,
-          "matched_products": 465,
-          "supermarket_code": "WATSONS",
-          "year_month": "2021-12"
-        },
-        {
-          "match_rate": 0.9696,
-          "matched_item_index": 100.59,
-          "matched_products": 734,
-          "supermarket_code": "AEON",
-          "year_month": "2022-01"
-        },
-        {
-          "match_rate": 0.9815,
-          "matched_item_index": 103.28,
-          "matched_products": 159,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2022-01"
-        },
-        {
-          "match_rate": 0.9728,
-          "matched_item_index": 100.88,
-          "matched_products": 1751,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2022-01"
-        },
-        {
-          "match_rate": 0.97,
-          "matched_item_index": 95.23,
-          "matched_products": 453,
-          "supermarket_code": "WATSONS",
-          "year_month": "2022-01"
-        },
-        {
-          "match_rate": 0.9907,
-          "matched_item_index": 101.27,
-          "matched_products": 742,
-          "supermarket_code": "AEON",
-          "year_month": "2022-02"
-        },
-        {
-          "match_rate": 0.9557,
-          "matched_item_index": 103.9,
-          "matched_products": 151,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2022-02"
-        },
-        {
-          "match_rate": 0.9949,
-          "matched_item_index": 101.16,
-          "matched_products": 1773,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2022-02"
-        },
-        {
-          "match_rate": 0.9872,
-          "matched_item_index": 95.3,
-          "matched_products": 464,
-          "supermarket_code": "WATSONS",
-          "year_month": "2022-02"
-        },
-        {
-          "match_rate": 0.9337,
-          "matched_item_index": 102.44,
-          "matched_products": 732,
-          "supermarket_code": "AEON",
-          "year_month": "2022-03"
-        },
-        {
-          "match_rate": 0.993,
-          "matched_item_index": 104.78,
-          "matched_products": 142,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2022-03"
-        },
-        {
-          "match_rate": 0.9898,
-          "matched_item_index": 102.73,
-          "matched_products": 1740,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2022-03"
-        },
-        {
-          "match_rate": 0.9414,
-          "matched_item_index": 95.45,
-          "matched_products": 466,
-          "supermarket_code": "WATSONS",
-          "year_month": "2022-03"
-        },
-        {
-          "match_rate": 0.9891,
-          "matched_item_index": 102.51,
-          "matched_products": 633,
-          "supermarket_code": "AEON",
-          "year_month": "2022-04"
-        },
-        {
-          "match_rate": 0.949,
-          "matched_item_index": 105.06,
-          "matched_products": 93,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2022-04"
-        },
-        {
-          "match_rate": 0.99,
-          "matched_item_index": 103.29,
-          "matched_products": 1680,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2022-04"
-        },
-        {
-          "match_rate": 0.9877,
-          "matched_item_index": 94.69,
-          "matched_products": 480,
-          "supermarket_code": "WATSONS",
-          "year_month": "2022-04"
-        },
-        {
-          "match_rate": 0.8063,
-          "matched_item_index": 102.68,
-          "matched_products": 616,
-          "supermarket_code": "AEON",
-          "year_month": "2022-05"
-        },
-        {
-          "match_rate": 0.9381,
-          "matched_item_index": 104.88,
-          "matched_products": 91,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2022-05"
-        },
-        {
-          "match_rate": 0.9916,
-          "matched_item_index": 103.41,
-          "matched_products": 1656,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2022-05"
-        },
-        {
-          "match_rate": 0.9917,
-          "matched_item_index": 94.77,
-          "matched_products": 477,
-          "supermarket_code": "WATSONS",
-          "year_month": "2022-05"
-        },
-        {
-          "match_rate": 0.9296,
-          "matched_item_index": 103.68,
-          "matched_products": 541,
-          "supermarket_code": "AEON",
-          "year_month": "2022-06"
-        },
-        {
-          "match_rate": 0.8624,
-          "matched_item_index": 105.48,
-          "matched_products": 94,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2022-06"
-        },
-        {
-          "match_rate": 0.9849,
-          "matched_item_index": 103.14,
-          "matched_products": 1630,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2022-06"
-        },
-        {
-          "match_rate": 0.9814,
-          "matched_item_index": 95.0,
-          "matched_products": 475,
-          "supermarket_code": "WATSONS",
-          "year_month": "2022-06"
-        },
-        {
-          "match_rate": 0.6239,
-          "matched_item_index": 104.96,
-          "matched_products": 501,
-          "supermarket_code": "AEON",
-          "year_month": "2022-07"
-        },
-        {
-          "match_rate": 0.9123,
-          "matched_item_index": 106.2,
-          "matched_products": 104,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2022-07"
-        },
-        {
-          "match_rate": 0.9738,
-          "matched_item_index": 103.64,
-          "matched_products": 1633,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2022-07"
-        },
-        {
-          "match_rate": 0.9811,
-          "matched_item_index": 94.01,
-          "matched_products": 468,
-          "supermarket_code": "WATSONS",
-          "year_month": "2022-07"
-        },
-        {
-          "match_rate": 0.8957,
-          "matched_item_index": 104.71,
-          "matched_products": 756,
-          "supermarket_code": "AEON",
-          "year_month": "2022-08"
-        },
-        {
-          "match_rate": 0.9895,
-          "matched_item_index": 106.57,
-          "matched_products": 94,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2022-08"
-        },
-        {
-          "match_rate": 0.975,
-          "matched_item_index": 103.84,
-          "matched_products": 1641,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2022-08"
-        },
-        {
-          "match_rate": 0.9615,
-          "matched_item_index": 93.68,
-          "matched_products": 449,
-          "supermarket_code": "WATSONS",
-          "year_month": "2022-08"
-        },
-        {
-          "match_rate": 0.9541,
-          "matched_item_index": 105.72,
-          "matched_products": 769,
-          "supermarket_code": "AEON",
-          "year_month": "2022-09"
-        },
-        {
-          "match_rate": 0.9342,
-          "matched_item_index": 110.3,
-          "matched_products": 71,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2022-09"
-        },
-        {
-          "match_rate": 0.9863,
-          "matched_item_index": 104.06,
-          "matched_products": 1653,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2022-09"
-        },
-        {
-          "match_rate": 0.972,
-          "matched_item_index": 94.93,
-          "matched_products": 451,
-          "supermarket_code": "WATSONS",
-          "year_month": "2022-09"
-        },
-        {
-          "match_rate": 0.9089,
-          "matched_item_index": 105.49,
-          "matched_products": 788,
-          "supermarket_code": "AEON",
-          "year_month": "2022-10"
-        },
-        {
-          "match_rate": 1.0,
-          "matched_item_index": 110.56,
-          "matched_products": 66,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2022-10"
-        },
-        {
-          "match_rate": 0.9857,
-          "matched_item_index": 104.65,
-          "matched_products": 1656,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2022-10"
-        },
-        {
-          "match_rate": 0.9533,
-          "matched_item_index": 95.57,
-          "matched_products": 449,
-          "supermarket_code": "WATSONS",
-          "year_month": "2022-10"
-        },
-        {
-          "match_rate": 0.9825,
-          "matched_item_index": 105.52,
-          "matched_products": 786,
-          "supermarket_code": "AEON",
-          "year_month": "2022-11"
-        },
-        {
-          "match_rate": 0.75,
-          "matched_item_index": 110.68,
-          "matched_products": 66,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2022-11"
-        },
-        {
-          "match_rate": 0.9828,
-          "matched_item_index": 104.53,
-          "matched_products": 1655,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2022-11"
-        },
-        {
-          "match_rate": 0.9414,
-          "matched_item_index": 96.15,
-          "matched_products": 450,
-          "supermarket_code": "WATSONS",
-          "year_month": "2022-11"
-        },
-        {
-          "match_rate": 0.9861,
-          "matched_item_index": 104.26,
-          "matched_products": 778,
-          "supermarket_code": "AEON",
-          "year_month": "2022-12"
-        },
-        {
-          "match_rate": 0.8415,
-          "matched_item_index": 110.94,
-          "matched_products": 69,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2022-12"
-        },
-        {
-          "match_rate": 0.9857,
-          "matched_item_index": 104.57,
-          "matched_products": 1652,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2022-12"
-        },
-        {
-          "match_rate": 0.9792,
-          "matched_item_index": 95.99,
-          "matched_products": 470,
-          "supermarket_code": "WATSONS",
-          "year_month": "2022-12"
-        },
-        {
-          "match_rate": 0.9686,
-          "matched_item_index": 104.8,
-          "matched_products": 770,
-          "supermarket_code": "AEON",
-          "year_month": "2023-01"
-        },
-        {
-          "match_rate": 0.988,
-          "matched_item_index": 110.94,
-          "matched_products": 82,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2023-01"
-        },
-        {
-          "match_rate": 0.9826,
-          "matched_item_index": 105.55,
-          "matched_products": 1638,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2023-01"
-        },
-        {
-          "match_rate": 0.9636,
-          "matched_item_index": 97.2,
-          "matched_products": 477,
-          "supermarket_code": "WATSONS",
-          "year_month": "2023-01"
-        },
-        {
-          "match_rate": 0.9748,
-          "matched_item_index": 106.16,
-          "matched_products": 697,
-          "supermarket_code": "AEON",
-          "year_month": "2023-02"
-        },
-        {
-          "match_rate": 1.0,
-          "matched_item_index": 111.58,
-          "matched_products": 70,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2023-02"
-        },
-        {
-          "match_rate": 0.9898,
-          "matched_item_index": 105.04,
-          "matched_products": 1653,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2023-02"
-        },
-        {
-          "match_rate": 1.0,
-          "matched_item_index": 97.16,
-          "matched_products": 491,
-          "supermarket_code": "WATSONS",
-          "year_month": "2023-02"
-        },
-        {
-          "match_rate": 0.9413,
-          "matched_item_index": 106.37,
-          "matched_products": 689,
-          "supermarket_code": "AEON",
-          "year_month": "2023-03"
-        },
-        {
-          "match_rate": 1.0,
-          "matched_item_index": 111.56,
-          "matched_products": 69,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2023-03"
-        },
-        {
-          "match_rate": 0.9885,
-          "matched_item_index": 106.97,
-          "matched_products": 1640,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2023-03"
-        },
-        {
-          "match_rate": 1.0,
-          "matched_item_index": 96.99,
-          "matched_products": 488,
-          "supermarket_code": "WATSONS",
-          "year_month": "2023-03"
-        },
-        {
-          "match_rate": 0.9245,
-          "matched_item_index": 106.48,
-          "matched_products": 722,
-          "supermarket_code": "AEON",
-          "year_month": "2023-04"
-        },
-        {
-          "match_rate": 1.0,
-          "matched_item_index": 111.18,
-          "matched_products": 65,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2023-04"
-        },
-        {
-          "match_rate": 0.9933,
-          "matched_item_index": 106.68,
-          "matched_products": 1634,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2023-04"
-        },
-        {
-          "match_rate": 0.9959,
-          "matched_item_index": 97.1,
-          "matched_products": 481,
-          "supermarket_code": "WATSONS",
-          "year_month": "2023-04"
-        },
-        {
-          "match_rate": 0.9366,
-          "matched_item_index": 106.02,
-          "matched_products": 768,
-          "supermarket_code": "AEON",
-          "year_month": "2023-05"
-        },
-        {
-          "match_rate": 0.7471,
-          "matched_item_index": 110.75,
-          "matched_products": 65,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2023-05"
-        },
-        {
-          "match_rate": 0.9769,
-          "matched_item_index": 106.19,
-          "matched_products": 1610,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2023-05"
-        },
-        {
-          "match_rate": 0.9694,
-          "matched_item_index": 97.19,
-          "matched_products": 475,
-          "supermarket_code": "WATSONS",
-          "year_month": "2023-05"
-        },
-        {
-          "match_rate": 0.9877,
-          "matched_item_index": 106.63,
-          "matched_products": 804,
-          "supermarket_code": "AEON",
-          "year_month": "2023-06"
-        },
-        {
-          "match_rate": 0.9884,
-          "matched_item_index": 110.75,
-          "matched_products": 85,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2023-06"
-        },
-        {
-          "match_rate": 0.9848,
-          "matched_item_index": 106.47,
-          "matched_products": 1615,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2023-06"
-        },
-        {
-          "match_rate": 0.9878,
-          "matched_item_index": 97.65,
-          "matched_products": 486,
-          "supermarket_code": "WATSONS",
-          "year_month": "2023-06"
-        },
-        {
-          "match_rate": 0.9876,
-          "matched_item_index": 107.12,
-          "matched_products": 797,
-          "supermarket_code": "AEON",
-          "year_month": "2023-07"
-        },
-        {
-          "match_rate": 1.0,
-          "matched_item_index": 110.75,
-          "matched_products": 86,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2023-07"
-        },
-        {
-          "match_rate": 0.989,
-          "matched_item_index": 107.01,
-          "matched_products": 1622,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2023-07"
-        },
-        {
-          "match_rate": 0.9939,
-          "matched_item_index": 97.38,
-          "matched_products": 489,
-          "supermarket_code": "WATSONS",
-          "year_month": "2023-07"
-        },
-        {
-          "match_rate": 0.99,
-          "matched_item_index": 106.86,
-          "matched_products": 789,
-          "supermarket_code": "AEON",
-          "year_month": "2023-08"
-        },
-        {
-          "match_rate": 0.7679,
-          "matched_item_index": 110.75,
-          "matched_products": 86,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2023-08"
-        },
-        {
-          "match_rate": 0.9902,
-          "matched_item_index": 107.07,
-          "matched_products": 1620,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2023-08"
-        },
-        {
-          "match_rate": 0.998,
-          "matched_item_index": 98.1,
-          "matched_products": 488,
-          "supermarket_code": "WATSONS",
-          "year_month": "2023-08"
-        },
-        {
-          "match_rate": 0.9849,
-          "matched_item_index": 106.81,
-          "matched_products": 781,
-          "supermarket_code": "AEON",
-          "year_month": "2023-09"
-        },
-        {
-          "match_rate": 1.0,
-          "matched_item_index": 110.75,
-          "matched_products": 92,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2023-09"
-        },
-        {
-          "match_rate": 0.987,
-          "matched_item_index": 106.9,
-          "matched_products": 1599,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2023-09"
-        },
-        {
-          "match_rate": 0.9918,
-          "matched_item_index": 97.85,
-          "matched_products": 482,
-          "supermarket_code": "WATSONS",
-          "year_month": "2023-09"
-        },
-        {
-          "match_rate": 0.9862,
-          "matched_item_index": 106.95,
-          "matched_products": 789,
-          "supermarket_code": "AEON",
-          "year_month": "2023-10"
-        },
-        {
-          "match_rate": 0.875,
-          "matched_item_index": 110.75,
-          "matched_products": 84,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2023-10"
-        },
-        {
-          "match_rate": 0.9816,
-          "matched_item_index": 107.03,
-          "matched_products": 1597,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2023-10"
-        },
-        {
-          "match_rate": 0.9918,
-          "matched_item_index": 98.15,
-          "matched_products": 483,
-          "supermarket_code": "WATSONS",
-          "year_month": "2023-10"
-        },
-        {
-          "match_rate": 0.9975,
-          "matched_item_index": 106.27,
-          "matched_products": 790,
-          "supermarket_code": "AEON",
-          "year_month": "2023-11"
-        },
-        {
-          "match_rate": 0.8857,
-          "matched_item_index": 110.75,
-          "matched_products": 93,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2023-11"
-        },
-        {
-          "match_rate": 0.9803,
-          "matched_item_index": 108.45,
-          "matched_products": 1592,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2023-11"
-        },
-        {
-          "match_rate": 0.9735,
-          "matched_item_index": 98.27,
-          "matched_products": 477,
-          "supermarket_code": "WATSONS",
-          "year_month": "2023-11"
-        },
-        {
-          "match_rate": 0.9038,
-          "matched_item_index": 105.07,
-          "matched_products": 216,
-          "supermarket_code": "AEON",
-          "year_month": "2023-12"
-        },
-        {
-          "match_rate": 0.9798,
-          "matched_item_index": 110.75,
-          "matched_products": 97,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2023-12"
-        },
-        {
-          "match_rate": 0.99,
-          "matched_item_index": 107.59,
-          "matched_products": 1590,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2023-12"
-        },
-        {
-          "match_rate": 0.9979,
-          "matched_item_index": 98.21,
-          "matched_products": 478,
-          "supermarket_code": "WATSONS",
-          "year_month": "2023-12"
-        },
-        {
-          "match_rate": 1.0,
-          "matched_item_index": 106.65,
-          "matched_products": 49,
-          "supermarket_code": "AEON",
-          "year_month": "2024-01"
-        },
-        {
-          "match_rate": 0.8491,
-          "matched_item_index": 114.51,
-          "matched_products": 90,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2024-01"
-        },
-        {
-          "match_rate": 0.9922,
-          "matched_item_index": 107.47,
-          "matched_products": 1523,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2024-01"
-        },
-        {
-          "match_rate": 0.9916,
-          "matched_item_index": 99.32,
-          "matched_products": 471,
-          "supermarket_code": "WATSONS",
-          "year_month": "2024-01"
-        },
-        {
-          "match_rate": 1.0,
-          "matched_item_index": 107.38,
-          "matched_products": 25,
-          "supermarket_code": "AEON",
-          "year_month": "2024-02"
-        },
-        {
-          "match_rate": 0.9722,
-          "matched_item_index": 99.76,
-          "matched_products": 70,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2024-02"
-        },
-        {
-          "match_rate": 0.9468,
-          "matched_item_index": 107.26,
-          "matched_products": 1514,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2024-02"
-        },
-        {
-          "match_rate": 0.985,
-          "matched_item_index": 99.13,
-          "matched_products": 461,
-          "supermarket_code": "WATSONS",
-          "year_month": "2024-02"
-        },
-        {
-          "match_rate": 0.9615,
-          "matched_item_index": 105.47,
-          "matched_products": 25,
-          "supermarket_code": "AEON",
-          "year_month": "2024-03"
-        },
-        {
-          "match_rate": 0.9333,
-          "matched_item_index": 99.78,
-          "matched_products": 70,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2024-03"
-        },
-        {
-          "match_rate": 0.9875,
-          "matched_item_index": 107.38,
-          "matched_products": 1580,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2024-03"
-        },
-        {
-          "match_rate": 0.9852,
-          "matched_item_index": 99.21,
-          "matched_products": 466,
-          "supermarket_code": "WATSONS",
-          "year_month": "2024-03"
-        },
-        {
-          "match_rate": 0.0619,
-          "matched_item_index": 106.58,
-          "matched_products": 26,
-          "supermarket_code": "AEON",
-          "year_month": "2024-04"
-        },
-        {
-          "match_rate": 1.0,
-          "matched_item_index": 99.85,
-          "matched_products": 49,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2024-04"
-        },
-        {
-          "match_rate": 0.9911,
-          "matched_item_index": 107.62,
-          "matched_products": 1561,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2024-04"
-        },
-        {
-          "match_rate": 0.9706,
-          "matched_item_index": 98.94,
-          "matched_products": 462,
-          "supermarket_code": "WATSONS",
-          "year_month": "2024-04"
-        },
-        {
-          "match_rate": 0.9829,
-          "matched_item_index": 106.07,
-          "matched_products": 402,
-          "supermarket_code": "AEON",
-          "year_month": "2024-05"
-        },
-        {
-          "match_rate": 0.7273,
-          "matched_item_index": 99.66,
-          "matched_products": 40,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2024-05"
-        },
-        {
-          "match_rate": 0.9707,
-          "matched_item_index": 107.07,
-          "matched_products": 1558,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2024-05"
-        },
-        {
-          "match_rate": 0.9979,
-          "matched_item_index": 99.78,
-          "matched_products": 465,
-          "supermarket_code": "WATSONS",
-          "year_month": "2024-05"
-        },
-        {
-          "match_rate": 0.9488,
-          "matched_item_index": 105.99,
-          "matched_products": 389,
-          "supermarket_code": "AEON",
-          "year_month": "2024-06"
-        },
-        {
-          "match_rate": 0.902,
-          "matched_item_index": 98.39,
-          "matched_products": 46,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2024-06"
-        },
-        {
-          "match_rate": 0.791,
-          "matched_item_index": 106.93,
-          "matched_products": 1582,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2024-06"
-        },
-        {
-          "match_rate": 0.9128,
-          "matched_item_index": 99.55,
-          "matched_products": 450,
-          "supermarket_code": "WATSONS",
-          "year_month": "2024-06"
-        },
-        {
-          "match_rate": 0.9805,
-          "matched_item_index": 105.71,
-          "matched_products": 402,
-          "supermarket_code": "AEON",
-          "year_month": "2024-07"
-        },
-        {
-          "match_rate": 0.9592,
-          "matched_item_index": 98.48,
-          "matched_products": 47,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2024-07"
-        },
-        {
-          "match_rate": 0.9688,
-          "matched_item_index": 106.7,
-          "matched_products": 1988,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2024-07"
-        },
-        {
-          "match_rate": 0.9045,
-          "matched_item_index": 99.05,
-          "matched_products": 464,
-          "supermarket_code": "WATSONS",
-          "year_month": "2024-07"
-        },
-        {
-          "match_rate": 0.9881,
-          "matched_item_index": 106.69,
-          "matched_products": 333,
-          "supermarket_code": "AEON",
-          "year_month": "2024-08"
-        },
-        {
-          "match_rate": 0.902,
-          "matched_item_index": 99.61,
-          "matched_products": 46,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2024-08"
-        },
-        {
-          "match_rate": 0.9879,
-          "matched_item_index": 106.97,
-          "matched_products": 2036,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2024-08"
-        },
-        {
-          "match_rate": 0.9711,
-          "matched_item_index": 98.74,
-          "matched_products": 470,
-          "supermarket_code": "WATSONS",
-          "year_month": "2024-08"
-        },
-        {
-          "match_rate": 0.893,
-          "matched_item_index": 106.2,
-          "matched_products": 317,
-          "supermarket_code": "AEON",
-          "year_month": "2024-09"
-        },
-        {
-          "match_rate": 0.9091,
-          "matched_item_index": 101.87,
-          "matched_products": 50,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2024-09"
-        },
-        {
-          "match_rate": 0.9941,
-          "matched_item_index": 106.98,
-          "matched_products": 2031,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2024-09"
-        },
-        {
-          "match_rate": 0.9684,
-          "matched_item_index": 98.59,
-          "matched_products": 459,
-          "supermarket_code": "WATSONS",
-          "year_month": "2024-09"
-        },
-        {
-          "match_rate": 0.9531,
-          "matched_item_index": 106.67,
-          "matched_products": 325,
-          "supermarket_code": "AEON",
-          "year_month": "2024-10"
-        },
-        {
-          "match_rate": 0.9412,
-          "matched_item_index": 103.45,
-          "matched_products": 48,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2024-10"
-        },
-        {
-          "match_rate": 0.9907,
-          "matched_item_index": 106.67,
-          "matched_products": 2020,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2024-10"
-        },
-        {
-          "match_rate": 0.9723,
-          "matched_item_index": 98.13,
-          "matched_products": 456,
-          "supermarket_code": "WATSONS",
-          "year_month": "2024-10"
-        },
-        {
-          "match_rate": 0.9403,
-          "matched_item_index": 107.74,
-          "matched_products": 315,
-          "supermarket_code": "AEON",
-          "year_month": "2024-11"
-        },
-        {
-          "match_rate": 0.9348,
-          "matched_item_index": 103.71,
-          "matched_products": 43,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2024-11"
-        },
-        {
-          "match_rate": 0.9898,
-          "matched_item_index": 106.38,
-          "matched_products": 2030,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2024-11"
-        },
-        {
-          "match_rate": 0.9912,
-          "matched_item_index": 97.91,
-          "matched_products": 450,
-          "supermarket_code": "WATSONS",
-          "year_month": "2024-11"
-        },
-        {
-          "match_rate": 0.9494,
-          "matched_item_index": 107.13,
-          "matched_products": 300,
-          "supermarket_code": "AEON",
-          "year_month": "2024-12"
-        },
-        {
-          "match_rate": 0.913,
-          "matched_item_index": 103.46,
-          "matched_products": 42,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2024-12"
-        },
-        {
-          "match_rate": 0.9941,
-          "matched_item_index": 106.13,
-          "matched_products": 2029,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2024-12"
-        },
-        {
-          "match_rate": 0.978,
-          "matched_item_index": 97.89,
-          "matched_products": 445,
-          "supermarket_code": "WATSONS",
-          "year_month": "2024-12"
-        },
-        {
-          "match_rate": 0.9071,
-          "matched_item_index": 107.84,
-          "matched_products": 283,
-          "supermarket_code": "AEON",
-          "year_month": "2025-01"
-        },
-        {
-          "match_rate": 0.9556,
-          "matched_item_index": 103.68,
-          "matched_products": 43,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2025-01"
-        },
-        {
-          "match_rate": 0.9936,
-          "matched_item_index": 106.18,
-          "matched_products": 2019,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2025-01"
-        },
-        {
-          "match_rate": 0.9868,
-          "matched_item_index": 98.41,
-          "matched_products": 447,
-          "supermarket_code": "WATSONS",
-          "year_month": "2025-01"
-        },
-        {
-          "match_rate": 0.9213,
-          "matched_item_index": 107.07,
-          "matched_products": 281,
-          "supermarket_code": "AEON",
-          "year_month": "2025-02"
-        },
-        {
-          "match_rate": 0.95,
-          "matched_item_index": 103.64,
-          "matched_products": 38,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2025-02"
-        },
-        {
-          "match_rate": 0.996,
-          "matched_item_index": 106.19,
-          "matched_products": 2011,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2025-02"
-        },
-        {
-          "match_rate": 0.9955,
-          "matched_item_index": 98.52,
-          "matched_products": 440,
-          "supermarket_code": "WATSONS",
-          "year_month": "2025-02"
-        },
-        {
-          "match_rate": 0.9123,
-          "matched_item_index": 107.53,
-          "matched_products": 281,
-          "supermarket_code": "AEON",
-          "year_month": "2025-03"
-        },
-        {
-          "match_rate": 0.9737,
-          "matched_item_index": 102.36,
-          "matched_products": 37,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2025-03"
-        },
-        {
-          "match_rate": 0.994,
-          "matched_item_index": 106.67,
-          "matched_products": 1993,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2025-03"
-        },
-        {
-          "match_rate": 0.9842,
-          "matched_item_index": 98.35,
-          "matched_products": 436,
-          "supermarket_code": "WATSONS",
-          "year_month": "2025-03"
-        },
-        {
-          "match_rate": 0.8107,
-          "matched_item_index": 107.27,
-          "matched_products": 304,
-          "supermarket_code": "AEON",
-          "year_month": "2025-04"
-        },
-        {
-          "match_rate": 0.881,
-          "matched_item_index": 103.83,
-          "matched_products": 37,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2025-04"
-        },
-        {
-          "match_rate": 0.9985,
-          "matched_item_index": 106.65,
-          "matched_products": 1988,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2025-04"
-        },
-        {
-          "match_rate": 1.0,
-          "matched_item_index": 98.09,
-          "matched_products": 422,
-          "supermarket_code": "WATSONS",
-          "year_month": "2025-04"
-        },
-        {
-          "match_rate": 0.9651,
-          "matched_item_index": 106.97,
-          "matched_products": 359,
-          "supermarket_code": "AEON",
-          "year_month": "2025-05"
-        },
-        {
-          "match_rate": 0.9524,
-          "matched_item_index": 101.88,
-          "matched_products": 40,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2025-05"
-        },
-        {
-          "match_rate": 0.9954,
-          "matched_item_index": 106.63,
-          "matched_products": 1965,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2025-05"
-        },
-        {
-          "match_rate": 0.9833,
-          "matched_item_index": 98.44,
-          "matched_products": 411,
-          "supermarket_code": "WATSONS",
-          "year_month": "2025-05"
-        },
-        {
-          "match_rate": 0.9429,
-          "matched_item_index": 106.51,
-          "matched_products": 363,
-          "supermarket_code": "AEON",
-          "year_month": "2025-06"
-        },
-        {
-          "match_rate": 1.0,
-          "matched_item_index": 99.55,
-          "matched_products": 41,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2025-06"
-        },
-        {
-          "match_rate": 0.9869,
-          "matched_item_index": 106.61,
-          "matched_products": 1957,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2025-06"
-        },
-        {
-          "match_rate": 0.9665,
-          "matched_item_index": 98.33,
-          "matched_products": 404,
-          "supermarket_code": "WATSONS",
-          "year_month": "2025-06"
-        },
-        {
-          "match_rate": 0.9867,
-          "matched_item_index": 106.61,
-          "matched_products": 371,
-          "supermarket_code": "AEON",
-          "year_month": "2025-07"
-        },
-        {
-          "match_rate": 0.9722,
-          "matched_item_index": 98.42,
-          "matched_products": 35,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2025-07"
-        },
-        {
-          "match_rate": 0.9944,
-          "matched_item_index": 106.25,
-          "matched_products": 1965,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2025-07"
-        },
-        {
-          "match_rate": 0.9927,
-          "matched_item_index": 97.48,
-          "matched_products": 409,
-          "supermarket_code": "WATSONS",
-          "year_month": "2025-07"
-        },
-        {
-          "match_rate": 0.9148,
-          "matched_item_index": 107.11,
-          "matched_products": 365,
-          "supermarket_code": "AEON",
-          "year_month": "2025-08"
-        },
-        {
-          "match_rate": 0.7333,
-          "matched_item_index": 98.86,
-          "matched_products": 33,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2025-08"
-        },
-        {
-          "match_rate": 0.9929,
-          "matched_item_index": 106.05,
-          "matched_products": 1958,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2025-08"
-        },
-        {
-          "match_rate": 0.9831,
-          "matched_item_index": 97.02,
-          "matched_products": 407,
-          "supermarket_code": "WATSONS",
-          "year_month": "2025-08"
-        },
-        {
-          "match_rate": 0.9656,
-          "matched_item_index": 106.47,
-          "matched_products": 393,
-          "supermarket_code": "AEON",
-          "year_month": "2025-09"
-        },
-        {
-          "match_rate": 0.9048,
-          "matched_item_index": 96.81,
-          "matched_products": 38,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2025-09"
-        },
-        {
-          "match_rate": 0.9928,
-          "matched_item_index": 106.27,
-          "matched_products": 1941,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2025-09"
-        },
-        {
-          "match_rate": 0.995,
-          "matched_item_index": 97.41,
-          "matched_products": 401,
-          "supermarket_code": "WATSONS",
-          "year_month": "2025-09"
-        },
-        {
-          "match_rate": 0.973,
-          "matched_item_index": 108.29,
-          "matched_products": 397,
-          "supermarket_code": "AEON",
-          "year_month": "2025-10"
-        },
-        {
-          "match_rate": 0.8857,
-          "matched_item_index": 96.88,
-          "matched_products": 31,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2025-10"
-        },
-        {
-          "match_rate": 0.9888,
-          "matched_item_index": 106.61,
-          "matched_products": 1943,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2025-10"
-        },
-        {
-          "match_rate": 0.9544,
-          "matched_item_index": 97.57,
-          "matched_products": 398,
-          "supermarket_code": "WATSONS",
-          "year_month": "2025-10"
-        },
-        {
-          "match_rate": 0.9706,
-          "matched_item_index": 108.65,
-          "matched_products": 396,
-          "supermarket_code": "AEON",
-          "year_month": "2025-11"
-        },
-        {
-          "match_rate": 1.0,
-          "matched_item_index": 97.26,
-          "matched_products": 31,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2025-11"
-        },
-        {
-          "match_rate": 0.9939,
-          "matched_item_index": 106.73,
-          "matched_products": 1951,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2025-11"
-        },
-        {
-          "match_rate": 0.9832,
-          "matched_item_index": 97.88,
-          "matched_products": 410,
-          "supermarket_code": "WATSONS",
-          "year_month": "2025-11"
-        },
-        {
-          "match_rate": 0.9685,
-          "matched_item_index": 107.64,
-          "matched_products": 400,
-          "supermarket_code": "AEON",
-          "year_month": "2025-12"
-        },
-        {
-          "match_rate": 0.9231,
-          "matched_item_index": 97.92,
-          "matched_products": 24,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2025-12"
-        },
-        {
-          "match_rate": 0.9868,
-          "matched_item_index": 106.53,
-          "matched_products": 1951,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2025-12"
-        },
-        {
-          "match_rate": 0.9514,
-          "matched_item_index": 97.5,
-          "matched_products": 411,
-          "supermarket_code": "WATSONS",
-          "year_month": "2025-12"
-        },
-        {
-          "match_rate": 0.9852,
-          "matched_item_index": 108.95,
-          "matched_products": 400,
-          "supermarket_code": "AEON",
-          "year_month": "2026-01"
-        },
-        {
-          "match_rate": 0.96,
-          "matched_item_index": 99.36,
-          "matched_products": 24,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2026-01"
-        },
-        {
-          "match_rate": 0.9894,
-          "matched_item_index": 106.53,
-          "matched_products": 1966,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2026-01"
-        },
-        {
-          "match_rate": 0.984,
-          "matched_item_index": 96.3,
-          "matched_products": 430,
-          "supermarket_code": "WATSONS",
-          "year_month": "2026-01"
-        },
-        {
-          "match_rate": 0.9796,
-          "matched_item_index": 107.85,
-          "matched_products": 384,
-          "supermarket_code": "AEON",
-          "year_month": "2026-02"
-        },
-        {
-          "match_rate": 1.0,
-          "matched_item_index": 99.57,
-          "matched_products": 24,
-          "supermarket_code": "DCHFOOD",
-          "year_month": "2026-02"
-        },
-        {
-          "match_rate": 0.999,
-          "matched_item_index": 105.64,
-          "matched_products": 1937,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2026-02"
-        },
-        {
-          "match_rate": 0.9835,
-          "matched_item_index": 96.67,
-          "matched_products": 416,
-          "supermarket_code": "WATSONS",
-          "year_month": "2026-02"
-        },
-        {
-          "match_rate": 0.9319,
-          "matched_item_index": 107.53,
-          "matched_products": 383,
-          "supermarket_code": "AEON",
-          "year_month": "2026-03"
-        },
-        {
-          "match_rate": 0.9717,
-          "matched_item_index": 106.16,
-          "matched_products": 1920,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2026-03"
-        },
-        {
-          "match_rate": 0.904,
-          "matched_item_index": 97.03,
-          "matched_products": 405,
-          "supermarket_code": "WATSONS",
-          "year_month": "2026-03"
-        },
-        {
-          "match_rate": 0.962,
-          "matched_item_index": 108.25,
-          "matched_products": 405,
-          "supermarket_code": "AEON",
-          "year_month": "2026-04"
-        },
-        {
-          "match_rate": 0.9869,
-          "matched_item_index": 106.03,
-          "matched_products": 1954,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2026-04"
-        },
-        {
-          "match_rate": 0.9651,
-          "matched_item_index": 96.68,
-          "matched_products": 443,
-          "supermarket_code": "WATSONS",
-          "year_month": "2026-04"
-        },
-        {
-          "match_rate": 0.837,
-          "matched_item_index": 108.9,
-          "matched_products": 421,
-          "supermarket_code": "AEON",
-          "year_month": "2026-05"
-        },
-        {
-          "match_rate": 0.9619,
-          "matched_item_index": 106.21,
-          "matched_products": 1968,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2026-05"
-        },
-        {
-          "match_rate": 0.9111,
-          "matched_item_index": 96.37,
-          "matched_products": 451,
-          "supermarket_code": "WATSONS",
-          "year_month": "2026-05"
-        },
-        {
-          "match_rate": 0.9058,
-          "matched_item_index": 108.54,
-          "matched_products": 500,
-          "supermarket_code": "AEON",
-          "year_month": "2026-06"
-        },
-        {
-          "match_rate": 0.9801,
-          "matched_item_index": 106.25,
-          "matched_products": 2020,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2026-06"
-        },
-        {
-          "match_rate": 0.9778,
-          "matched_item_index": 96.65,
-          "matched_products": 485,
-          "supermarket_code": "WATSONS",
-          "year_month": "2026-06"
-        },
-        {
-          "match_rate": 0.9701,
-          "matched_item_index": 109.1,
-          "matched_products": 552,
-          "supermarket_code": "AEON",
-          "year_month": "2026-07"
-        },
-        {
-          "match_rate": 0.9754,
-          "matched_item_index": 106.52,
-          "matched_products": 2024,
-          "supermarket_code": "PARKNSHOP",
-          "year_month": "2026-07"
-        },
-        {
-          "match_rate": 0.9319,
-          "matched_item_index": 96.22,
-          "matched_products": 479,
-          "supermarket_code": "WATSONS",
-          "year_month": "2026-07"
-        }
-      ],
+      "consumer_council_pricewatch_archive": [],
+      "consumer_council_pricewatch_matched_index": [],
       "kpi_cpi": [
         {
-          "latest": 110.4,
-          "period_change": 0.0,
-          "year_change": 0.012844,
-          "observation_date": "2026-06-01"
+          "latest": 110.7,
+          "period_change": 0.002717,
+          "year_change": 0.015596,
+          "observation_date": "2026-07-01"
         }
       ],
       "censtatd_cpi_headline_history": [
@@ -18445,6 +16311,11 @@
           "date": "2026-06",
           "value": 110.4,
           "is_provisional": false
+        },
+        {
+          "date": "2026-07",
+          "value": 110.7,
+          "is_provisional": false
         }
       ],
       "censtatd_cpi_by_category_history": [
@@ -19739,6 +17610,11 @@
           "value": 105.9
         },
         {
+          "date": "2026-07",
+          "series": "Food",
+          "value": 106.2
+        },
+        {
           "date": "2005-01",
           "series": "Housing & Utilities",
           "value": 58.7
@@ -21029,6 +18905,11 @@
           "value": 109.3
         },
         {
+          "date": "2026-07",
+          "series": "Housing & Utilities",
+          "value": 109.4
+        },
+        {
           "date": "2005-01",
           "series": "Transport",
           "value": 78.4
@@ -22317,66 +20198,71 @@
           "date": "2026-06",
           "series": "Transport",
           "value": 116.5
+        },
+        {
+          "date": "2026-07",
+          "series": "Transport",
+          "value": 117.7
         }
       ],
       "kpi_fehd": [
         {
-          "latest": 17142,
-          "observation_date": "2026-08-09"
+          "latest": 17244,
+          "observation_date": "2026-08-30"
         }
       ],
       "fehd_district_density": [
         {
           "district_name": "Yau Tsim",
-          "count": 1891
+          "count": 1896
         },
         {
           "district_name": "Central/Western",
-          "count": 1791
+          "count": 1789
         },
         {
           "district_name": "Wan Chai",
-          "count": 1756
+          "count": 1781
         },
         {
           "district_name": "Mong Kok",
-          "count": 1226
+          "count": 1234
         },
         {
           "district_name": "Kowloon City",
-          "count": 1017
+          "count": 1024
         },
         {
           "district_name": "Yuen Long",
-          "count": 1000
+          "count": 1009
         },
         {
           "district_name": "Sham Shui Po",
-          "count": 962
+          "count": 967
         },
         {
           "district_name": "Sha Tin",
-          "count": 909
+          "count": 910
         },
         {
           "district_name": "Eastern",
-          "count": 900
+          "count": 908
         },
         {
           "district_name": "Kwun Tong",
-          "count": 882
+          "count": 885
         },
         {
           "district_name": "Tsuen Wan",
-          "count": 763
+          "count": 775
         },
         {
           "district_name": "Tuen Mun",
-          "count": 743
+          "count": 744
         },
         {
           "district_name": "Sai Kung",
-          "count": 591
+          "count": 595
         },
         {
           "district_name": "Kwai Tsing",
@@ -22384,35 +20270,43 @@
         },
         {
           "district_name": "Islands",
-          "count": 517
+          "count": 522
         },
         {
           "district_name": "Wong Tai Sin",
-          "count": 499
+          "count": 503
         },
         {
           "district_name": "Tai Po",
-          "count": 441
+          "count": 440
         },
         {
           "district_name": "North",
-          "count": 384
+          "count": 392
         },
         {
           "district_name": "Southern",
           "count": 330
         }
       ],
-      "fehd_opened_closed": [],
+      "fehd_opened_closed": [
+        {
+          "generation_date": "2026-08-30",
+          "prior_generation_date": "2026-08-30",
+          "opened": 0,
+          "closed": 0,
+          "net_change": 0
+        }
+      ],
       "source_health": [
         {
           "source": "HKO Severe Weather Warnings & FRED Exchange Rate",
           "dataset": "HKO Severe Weather & FRED FX",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-01",
-          "records": 961,
-          "freshness": "39d old",
+          "latest_observation": "2026-08-01",
+          "records": 962,
+          "freshness": "29d old",
           "notes": "Monthly hours under Typhoon Signal 8+ & Red/Black Rainstorm warnings alongside HKD/RMB FX."
         },
         {
@@ -22420,9 +20314,9 @@
           "dataset": "Immigration Passenger Clearance",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-28",
-          "records": 2035,
-          "freshness": "12d old",
+          "latest_observation": "2026-08-29",
+          "records": 2067,
+          "freshness": "1d old",
           "notes": "Daily clearance across 17 control points for HK residents & Mainland visitors."
         },
         {
@@ -22430,9 +20324,9 @@
           "dataset": "SGE Gold Benchmark",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-27",
-          "records": 2497,
-          "freshness": "13d old",
+          "latest_observation": "2026-08-26",
+          "records": 2519,
+          "freshness": "4d old",
           "notes": "Daily AM/PM benchmark fixing."
         },
         {
@@ -22440,9 +20334,9 @@
           "dataset": "HK Consumer Ticker Valuations",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-30",
-          "records": 4015,
-          "freshness": "10d old",
+          "latest_observation": "2026-08-30",
+          "records": 4026,
+          "freshness": "0d old",
           "notes": "PE (TTM), PB, and market cap only; no dividend-yield indicator is available from this endpoint."
         },
         {
@@ -22450,9 +20344,9 @@
           "dataset": "Retail Sales Value/Volume Index",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-05-01",
-          "records": 6500,
-          "freshness": "100d old",
+          "latest_observation": "2026-06-01",
+          "records": 6525,
+          "freshness": "90d old",
           "notes": "25 outlet-type categories, monthly since 2004."
         },
         {
@@ -22460,9 +20354,9 @@
           "dataset": "Restaurant Receipts & Purchases Survey",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-03-31",
-          "records": 516,
-          "freshness": "131d old",
+          "latest_observation": "2026-06-30",
+          "records": 522,
+          "freshness": "61d old",
           "notes": "Sector-wide purchases only; per-type purchases are not published."
         },
         {
@@ -22474,16 +20368,6 @@
           "records": 11,
           "freshness": "Footprint snapshot (most brands: 1-2 dated snapshots so far, not yet a trend)",
           "notes": "10,747 total tracked locations across 11 companies."
-        },
-        {
-          "source": "Consumer Council Online Price Watch",
-          "dataset": "Online Price Watch historical archive",
-          "type": "Catalog",
-          "status": "Healthy",
-          "latest_observation": "2026-07",
-          "records": 4268,
-          "freshness": "Archive through 2026-07",
-          "notes": "75 months across 11 categories and 12 supermarket codes. Coverage only; no price index is rendered."
         }
       ],
       "source_coverage_active": [
@@ -22492,9 +20376,9 @@
           "dataset": "HKO Severe Weather & FRED FX",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-01",
-          "records": 961,
-          "freshness": "39d old",
+          "latest_observation": "2026-08-01",
+          "records": 962,
+          "freshness": "29d old",
           "notes": "Monthly hours under Typhoon Signal 8+ & Red/Black Rainstorm warnings alongside HKD/RMB FX."
         },
         {
@@ -22502,9 +20386,9 @@
           "dataset": "Immigration Passenger Clearance",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-28",
-          "records": 2035,
-          "freshness": "12d old",
+          "latest_observation": "2026-08-29",
+          "records": 2067,
+          "freshness": "1d old",
           "notes": "Daily clearance across 17 control points for HK residents & Mainland visitors."
         },
         {
@@ -22512,9 +20396,9 @@
           "dataset": "SGE Gold Benchmark",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-27",
-          "records": 2497,
-          "freshness": "13d old",
+          "latest_observation": "2026-08-26",
+          "records": 2519,
+          "freshness": "4d old",
           "notes": "Daily AM/PM benchmark fixing."
         },
         {
@@ -22522,9 +20406,9 @@
           "dataset": "HK Consumer Ticker Valuations",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-30",
-          "records": 4015,
-          "freshness": "10d old",
+          "latest_observation": "2026-08-30",
+          "records": 4026,
+          "freshness": "0d old",
           "notes": "PE (TTM), PB, and market cap only; no dividend-yield indicator is available from this endpoint."
         },
         {
@@ -22532,9 +20416,9 @@
           "dataset": "Retail Sales Value/Volume Index",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-05-01",
-          "records": 6500,
-          "freshness": "100d old",
+          "latest_observation": "2026-06-01",
+          "records": 6525,
+          "freshness": "90d old",
           "notes": "25 outlet-type categories, monthly since 2004."
         },
         {
@@ -22542,9 +20426,9 @@
           "dataset": "Restaurant Receipts & Purchases Survey",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-03-31",
-          "records": 516,
-          "freshness": "131d old",
+          "latest_observation": "2026-06-30",
+          "records": 522,
+          "freshness": "61d old",
           "notes": "Sector-wide purchases only; per-type purchases are not published."
         },
         {
@@ -22556,22 +20440,21 @@
           "records": 11,
           "freshness": "Footprint snapshot (most brands: 1-2 dated snapshots so far, not yet a trend)",
           "notes": "10,747 total tracked locations across 11 companies."
-        },
+        }
+      ],
+      "source_coverage_planned": [
         {
           "source": "Consumer Council Online Price Watch",
           "dataset": "Online Price Watch historical archive",
           "type": "Catalog",
-          "status": "Healthy",
-          "latest_observation": "2026-07",
-          "records": 4268,
-          "freshness": "Archive through 2026-07",
-          "notes": "75 months across 11 categories and 12 supermarket codes. Coverage only; no price index is rendered."
+          "status": "Unavailable locally",
+          "freshness": "—",
+          "notes": "Not marked Healthy: archive validation did not pass."
         }
       ],
-      "source_coverage_planned": [],
       "consumer_council_oilprice": [
         {
-          "date": "2026-07-29",
+          "date": "2026-08-30",
           "company": "PetroChina",
           "fuel_type": "Standard Petrol",
           "discounted_price_hkd": 25.67,
@@ -22579,23 +20462,23 @@
           "data_source": "live"
         },
         {
-          "date": "2026-07-29",
-          "company": "Sinopec",
-          "fuel_type": "Standard Petrol",
-          "discounted_price_hkd": 26.67,
-          "walkin_discount_hkd": 6.0,
-          "data_source": "live"
-        },
-        {
-          "date": "2026-07-29",
+          "date": "2026-08-30",
           "company": "Shell",
           "fuel_type": "Standard Petrol",
-          "discounted_price_hkd": 27.67,
-          "walkin_discount_hkd": 5.0,
+          "discounted_price_hkd": 25.67,
+          "walkin_discount_hkd": 7.0,
           "data_source": "live"
         },
         {
-          "date": "2026-07-29",
+          "date": "2026-08-30",
+          "company": "Sinopec",
+          "fuel_type": "Standard Petrol",
+          "discounted_price_hkd": 26.47,
+          "walkin_discount_hkd": 6.2,
+          "data_source": "live"
+        },
+        {
+          "date": "2026-08-30",
           "company": "Esso",
           "fuel_type": "Standard Petrol",
           "discounted_price_hkd": 31.07,
@@ -22603,7 +20486,7 @@
           "data_source": "live"
         },
         {
-          "date": "2026-07-29",
+          "date": "2026-08-30",
           "company": "Caltex",
           "fuel_type": "Standard Petrol",
           "discounted_price_hkd": 31.77,
@@ -22611,39 +20494,39 @@
           "data_source": "live"
         },
         {
-          "date": "2026-07-29",
+          "date": "2026-08-30",
           "company": "PetroChina",
+          "fuel_type": "Premium Petrol",
+          "discounted_price_hkd": 20.47,
+          "walkin_discount_hkd": 12.2,
+          "data_source": "live"
+        },
+        {
+          "date": "2026-08-30",
+          "company": "Shell",
           "fuel_type": "Premium Petrol",
           "discounted_price_hkd": 27.47,
           "walkin_discount_hkd": 7.0,
           "data_source": "live"
         },
         {
-          "date": "2026-07-29",
+          "date": "2026-08-30",
           "company": "Sinopec",
           "fuel_type": "Premium Petrol",
-          "discounted_price_hkd": 26.67,
-          "walkin_discount_hkd": 7.8,
+          "discounted_price_hkd": 20.48,
+          "walkin_discount_hkd": 13.99,
           "data_source": "live"
         },
         {
-          "date": "2026-07-29",
-          "company": "Shell",
-          "fuel_type": "Premium Petrol",
-          "discounted_price_hkd": 29.47,
-          "walkin_discount_hkd": 5.0,
-          "data_source": "live"
-        },
-        {
-          "date": "2026-07-29",
+          "date": "2026-08-30",
           "company": "Esso",
           "fuel_type": "Premium Petrol",
-          "discounted_price_hkd": 31.07,
+          "discounted_price_hkd": 32.87,
           "walkin_discount_hkd": 1.6,
           "data_source": "live"
         },
         {
-          "date": "2026-07-29",
+          "date": "2026-08-30",
           "company": "Caltex",
           "fuel_type": "Premium Petrol",
           "discounted_price_hkd": 33.57,
@@ -29990,86 +27873,8 @@
       "consumer_council_complaints": [
         {
           "period": "2024 1-12",
-          "category": "Cars & Car Services",
-          "amount": 458,
-          "data_source": "live"
-        },
-        {
-          "period": "2024 1-12",
-          "category": "Foods & Drinks",
-          "amount": 1289,
-          "data_source": "live"
-        },
-        {
-          "period": "2024 1-12",
-          "category": "Fuel",
-          "amount": 45,
-          "data_source": "live"
-        },
-        {
-          "period": "2024 1-12",
-          "category": "Furniture & Fixtures",
-          "amount": 779,
-          "data_source": "live"
-        },
-        {
-          "period": "2024 1-12",
-          "category": "Jewellery & Watches",
-          "amount": 554,
-          "data_source": "live"
-        },
-        {
-          "period": "2024 1-12",
-          "category": "Medicine & Health Foods",
-          "amount": 1373,
-          "data_source": "live"
-        },
-        {
-          "period": "2024 1-12",
-          "category": "Optical Products/Services",
-          "amount": 136,
-          "data_source": "live"
-        },
-        {
-          "period": "2024 1-12",
-          "category": "Pets & Pet Services",
-          "amount": 206,
-          "data_source": "live"
-        },
-        {
-          "period": "2024 1-12",
-          "category": "Photographic Equipment",
-          "amount": 298,
-          "data_source": "live"
-        },
-        {
-          "period": "2024 1-12",
-          "category": "Transportation Services",
-          "amount": 289,
-          "data_source": "live"
-        },
-        {
-          "period": "2024 1-12",
-          "category": "Baby Products",
-          "amount": 613,
-          "data_source": "live"
-        },
-        {
-          "period": "2024 1-12",
-          "category": "Public Utilities",
-          "amount": 61,
-          "data_source": "live"
-        },
-        {
-          "period": "2024 1-12",
-          "category": "Publishing / Educational Materials",
-          "amount": 124,
-          "data_source": "live"
-        },
-        {
-          "period": "2024 1-12",
-          "category": "Sporting Goods",
-          "amount": 496,
+          "category": "Food & Entertainment Services",
+          "amount": 5640,
           "data_source": "live"
         },
         {
@@ -30080,32 +27885,50 @@
         },
         {
           "period": "2024 1-12",
-          "category": "Telecommunication Equipment",
-          "amount": 707,
+          "category": "Telecommunication Services",
+          "amount": 3106,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Medical & Health Devices",
-          "amount": 212,
+          "category": "Electrical Appliances",
+          "amount": 2466,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Online Services & eCommerce Platforms",
-          "amount": 407,
+          "category": "Medicine & Health Foods",
+          "amount": 1373,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Shopping Mall, Chain Store and Reward Program",
-          "amount": 508,
+          "category": "Beauty Services",
+          "amount": 3028,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
           "category": "Clothing & Apparel",
           "amount": 1590,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Local Accommodation",
+          "amount": 840,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Personal Care Products",
+          "amount": 1443,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Foods & Drinks",
+          "amount": 1289,
           "data_source": "live"
         },
         {
@@ -30122,50 +27945,32 @@
         },
         {
           "period": "2024 1-12",
-          "category": "Agency Services",
-          "amount": 221,
+          "category": "Online Services & eCommerce Platforms",
+          "amount": 407,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Insurance",
-          "amount": 323,
+          "category": "Furniture & Fixtures",
+          "amount": 779,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Lawyer & Legal Services",
-          "amount": 34,
+          "category": "Telecommunication Equipment",
+          "amount": 707,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Photo Taking/Finishing",
-          "amount": 59,
+          "category": "Cars & Car Services",
+          "amount": 458,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Telecommunication Services",
-          "amount": 3106,
-          "data_source": "live"
-        },
-        {
-          "period": "2024 1-12",
-          "category": "Broadcasting Services",
-          "amount": 167,
-          "data_source": "live"
-        },
-        {
-          "period": "2024 1-12",
-          "category": "Medical Services",
-          "amount": 537,
-          "data_source": "live"
-        },
-        {
-          "period": "2024 1-12",
-          "category": "Personal Care Products",
-          "amount": 1443,
+          "category": "Recreation & Health Clubs",
+          "amount": 4936,
           "data_source": "live"
         },
         {
@@ -30176,26 +27981,32 @@
         },
         {
           "period": "2024 1-12",
-          "category": "Beauty Services",
-          "amount": 3028,
+          "category": "Household Products/Services",
+          "amount": 649,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Elderly Care",
-          "amount": 33,
+          "category": "Medical Services",
+          "amount": 537,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Food & Entertainment Services",
-          "amount": 5640,
+          "category": "Jewellery & Watches",
+          "amount": 554,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Local Accommodation",
-          "amount": 840,
+          "category": "Shopping Mall, Chain Store and Reward Program",
+          "amount": 508,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Toys",
+          "amount": 138,
           "data_source": "live"
         },
         {
@@ -30212,32 +28023,26 @@
         },
         {
           "period": "2024 1-12",
-          "category": "Recreation & Health Clubs",
-          "amount": 4936,
+          "category": "Agency Services",
+          "amount": 221,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Funeral Services",
-          "amount": 14,
+          "category": "Baby Products",
+          "amount": 613,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Household Products/Services",
-          "amount": 649,
+          "category": "Sporting Goods",
+          "amount": 496,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Wedding Services",
-          "amount": 87,
-          "data_source": "live"
-        },
-        {
-          "period": "2024 1-12",
-          "category": "Electrical Appliances",
-          "amount": 2467,
+          "category": "Transportation Services",
+          "amount": 289,
           "data_source": "live"
         },
         {
@@ -30248,14 +28053,92 @@
         },
         {
           "period": "2024 1-12",
+          "category": "Pets & Pet Services",
+          "amount": 206,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Photographic Equipment",
+          "amount": 298,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Insurance",
+          "amount": 323,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Broadcasting Services",
+          "amount": 167,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Medical & Health Devices",
+          "amount": 212,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Optical Products/Services",
+          "amount": 136,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Fuel",
+          "amount": 45,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Wedding Services",
+          "amount": 87,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Publishing / Educational Materials",
+          "amount": 124,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Public Utilities",
+          "amount": 61,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Photo Taking/Finishing",
+          "amount": 59,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Elderly Care",
+          "amount": 33,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
           "category": "Time Sharing",
           "amount": 25,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Toys",
-          "amount": 138,
+          "category": "Lawyer & Legal Services",
+          "amount": 34,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Funeral Services",
+          "amount": 14,
           "data_source": "live"
         },
         {
@@ -30267,91 +28150,13 @@
         {
           "period": "2024 1-12",
           "category": "Miscellaneous Goods",
-          "amount": 248,
+          "amount": 249,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Cars & Car Services",
-          "amount": 541,
-          "data_source": "live"
-        },
-        {
-          "period": "2025 1-12",
-          "category": "Foods & Drinks",
-          "amount": 1202,
-          "data_source": "live"
-        },
-        {
-          "period": "2025 1-12",
-          "category": "Fuel",
-          "amount": 36,
-          "data_source": "live"
-        },
-        {
-          "period": "2025 1-12",
-          "category": "Furniture & Fixtures",
-          "amount": 656,
-          "data_source": "live"
-        },
-        {
-          "period": "2025 1-12",
-          "category": "Jewellery & Watches",
-          "amount": 631,
-          "data_source": "live"
-        },
-        {
-          "period": "2025 1-12",
-          "category": "Medicine & Health Foods",
-          "amount": 1562,
-          "data_source": "live"
-        },
-        {
-          "period": "2025 1-12",
-          "category": "Optical Products/Services",
-          "amount": 93,
-          "data_source": "live"
-        },
-        {
-          "period": "2025 1-12",
-          "category": "Pets & Pet Services",
-          "amount": 197,
-          "data_source": "live"
-        },
-        {
-          "period": "2025 1-12",
-          "category": "Photographic Equipment",
-          "amount": 272,
-          "data_source": "live"
-        },
-        {
-          "period": "2025 1-12",
-          "category": "Transportation Services",
-          "amount": 358,
-          "data_source": "live"
-        },
-        {
-          "period": "2025 1-12",
-          "category": "Baby Products",
-          "amount": 411,
-          "data_source": "live"
-        },
-        {
-          "period": "2025 1-12",
-          "category": "Public Utilities",
-          "amount": 80,
-          "data_source": "live"
-        },
-        {
-          "period": "2025 1-12",
-          "category": "Publishing / Educational Materials",
-          "amount": 98,
-          "data_source": "live"
-        },
-        {
-          "period": "2025 1-12",
-          "category": "Sporting Goods",
-          "amount": 488,
+          "category": "Food & Entertainment Services",
+          "amount": 6689,
           "data_source": "live"
         },
         {
@@ -30362,32 +28167,50 @@
         },
         {
           "period": "2025 1-12",
-          "category": "Telecommunication Equipment",
-          "amount": 816,
+          "category": "Telecommunication Services",
+          "amount": 2661,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Medical & Health Devices",
-          "amount": 180,
+          "category": "Electrical Appliances",
+          "amount": 2176,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Online Services & eCommerce Platforms",
-          "amount": 461,
+          "category": "Medicine & Health Foods",
+          "amount": 1562,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Shopping Mall, Chain Store and Reward Program",
-          "amount": 657,
+          "category": "Beauty Services",
+          "amount": 1509,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
           "category": "Clothing & Apparel",
           "amount": 1448,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Local Accommodation",
+          "amount": 1101,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Personal Care Products",
+          "amount": 1182,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Foods & Drinks",
+          "amount": 1202,
           "data_source": "live"
         },
         {
@@ -30404,50 +28227,32 @@
         },
         {
           "period": "2025 1-12",
-          "category": "Agency Services",
-          "amount": 262,
+          "category": "Online Services & eCommerce Platforms",
+          "amount": 461,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Insurance",
-          "amount": 312,
+          "category": "Furniture & Fixtures",
+          "amount": 656,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Lawyer & Legal Services",
-          "amount": 27,
+          "category": "Telecommunication Equipment",
+          "amount": 816,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Photo Taking/Finishing",
-          "amount": 52,
+          "category": "Cars & Car Services",
+          "amount": 541,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Telecommunication Services",
-          "amount": 2661,
-          "data_source": "live"
-        },
-        {
-          "period": "2025 1-12",
-          "category": "Broadcasting Services",
-          "amount": 184,
-          "data_source": "live"
-        },
-        {
-          "period": "2025 1-12",
-          "category": "Medical Services",
-          "amount": 1872,
-          "data_source": "live"
-        },
-        {
-          "period": "2025 1-12",
-          "category": "Personal Care Products",
-          "amount": 1182,
+          "category": "Recreation & Health Clubs",
+          "amount": 588,
           "data_source": "live"
         },
         {
@@ -30458,26 +28263,32 @@
         },
         {
           "period": "2025 1-12",
-          "category": "Beauty Services",
-          "amount": 1509,
+          "category": "Household Products/Services",
+          "amount": 612,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Elderly Care",
-          "amount": 21,
+          "category": "Medical Services",
+          "amount": 1872,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Food & Entertainment Services",
-          "amount": 6689,
+          "category": "Jewellery & Watches",
+          "amount": 631,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Local Accommodation",
-          "amount": 1101,
+          "category": "Shopping Mall, Chain Store and Reward Program",
+          "amount": 657,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Toys",
+          "amount": 445,
           "data_source": "live"
         },
         {
@@ -30494,32 +28305,26 @@
         },
         {
           "period": "2025 1-12",
-          "category": "Recreation & Health Clubs",
-          "amount": 588,
+          "category": "Agency Services",
+          "amount": 262,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Funeral Services",
-          "amount": 7,
+          "category": "Baby Products",
+          "amount": 411,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Household Products/Services",
-          "amount": 612,
+          "category": "Sporting Goods",
+          "amount": 488,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Wedding Services",
-          "amount": 170,
-          "data_source": "live"
-        },
-        {
-          "period": "2025 1-12",
-          "category": "Electrical Appliances",
-          "amount": 2176,
+          "category": "Transportation Services",
+          "amount": 358,
           "data_source": "live"
         },
         {
@@ -30530,14 +28335,92 @@
         },
         {
           "period": "2025 1-12",
+          "category": "Pets & Pet Services",
+          "amount": 197,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Photographic Equipment",
+          "amount": 272,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Insurance",
+          "amount": 312,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Broadcasting Services",
+          "amount": 184,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Medical & Health Devices",
+          "amount": 180,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Optical Products/Services",
+          "amount": 93,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Fuel",
+          "amount": 36,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Wedding Services",
+          "amount": 170,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Publishing / Educational Materials",
+          "amount": 98,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Public Utilities",
+          "amount": 80,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Photo Taking/Finishing",
+          "amount": 52,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Elderly Care",
+          "amount": 21,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
           "category": "Time Sharing",
           "amount": 19,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Toys",
-          "amount": 445,
+          "category": "Lawyer & Legal Services",
+          "amount": 27,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Funeral Services",
+          "amount": 7,
           "data_source": "live"
         },
         {
@@ -30554,344 +28437,339 @@
         },
         {
           "period": "2026",
-          "category": "Cars & Car Services",
-          "amount": 281,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Foods & Drinks",
-          "amount": 466,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Fuel",
-          "amount": 44,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Furniture & Fixtures",
-          "amount": 312,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Jewellery & Watches",
-          "amount": 224,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Medicine & Health Foods",
-          "amount": 904,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Optical Products/Services",
-          "amount": 45,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Pets & Pet Services",
-          "amount": 100,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Photographic Equipment",
-          "amount": 93,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Transportation Services",
-          "amount": 149,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Baby Products",
-          "amount": 192,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Public Utilities",
-          "amount": 25,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Publishing / Educational Materials",
-          "amount": 26,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Sporting Goods",
-          "amount": 146,
+          "category": "Food & Entertainment Services",
+          "amount": 3159,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "Travel Matters",
-          "amount": 1563,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Telecommunication Equipment",
-          "amount": 265,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Medical & Health Devices",
-          "amount": 73,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Online Services & eCommerce Platforms",
-          "amount": 319,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Shopping Mall, Chain Store and Reward Program",
-          "amount": 209,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Clothing & Apparel",
-          "amount": 639,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Computer Products",
-          "amount": 406,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Bank and Financial Services",
-          "amount": 429,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Agency Services",
-          "amount": 175,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Insurance",
-          "amount": 91,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Lawyer & Legal Services",
-          "amount": 8,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Photo Taking/Finishing",
-          "amount": 23,
+          "amount": 2307,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "Telecommunication Services",
-          "amount": 1026,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Broadcasting Services",
-          "amount": 88,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Medical Services",
-          "amount": 256,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Personal Care Products",
-          "amount": 469,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Education Matters",
-          "amount": 231,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Beauty Services",
-          "amount": 696,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Elderly Care",
-          "amount": 11,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Food & Entertainment Services",
-          "amount": 2175,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Local Accommodation",
-          "amount": 495,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Storage, Postal & Courier Services",
-          "amount": 172,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Decoration/Renovation Services",
-          "amount": 168,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Recreation & Health Clubs",
-          "amount": 242,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Funeral Services",
-          "amount": 7,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Household Products/Services",
-          "amount": 257,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Wedding Services",
-          "amount": 36,
+          "amount": 1437,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "Electrical Appliances",
-          "amount": 983,
+          "amount": 1432,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Properties",
-          "amount": 99,
+          "category": "Medicine & Health Foods",
+          "amount": 1240,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Time Sharing",
-          "amount": 9,
+          "category": "Beauty Services",
+          "amount": 1003,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Clothing & Apparel",
+          "amount": 940,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Local Accommodation",
+          "amount": 722,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Personal Care Products",
+          "amount": 717,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Foods & Drinks",
+          "amount": 702,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Computer Products",
+          "amount": 683,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Bank and Financial Services",
+          "amount": 593,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Online Services & eCommerce Platforms",
+          "amount": 497,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Furniture & Fixtures",
+          "amount": 441,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Telecommunication Equipment",
+          "amount": 421,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Cars & Car Services",
+          "amount": 397,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Recreation & Health Clubs",
+          "amount": 390,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Education Matters",
+          "amount": 376,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Household Products/Services",
+          "amount": 373,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Medical Services",
+          "amount": 359,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Jewellery & Watches",
+          "amount": 307,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Shopping Mall, Chain Store and Reward Program",
+          "amount": 297,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "Toys",
-          "amount": 169,
+          "amount": 284,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Storage, Postal & Courier Services",
+          "amount": 266,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Decoration/Renovation Services",
+          "amount": 260,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Agency Services",
+          "amount": 255,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Baby Products",
+          "amount": 251,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Sporting Goods",
+          "amount": 233,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Transportation Services",
+          "amount": 201,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Properties",
+          "amount": 167,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Pets & Pet Services",
+          "amount": 152,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Photographic Equipment",
+          "amount": 147,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Insurance",
+          "amount": 126,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Broadcasting Services",
+          "amount": 123,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Medical & Health Devices",
+          "amount": 112,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Optical Products/Services",
+          "amount": 79,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Fuel",
+          "amount": 62,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Wedding Services",
+          "amount": 51,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Publishing / Educational Materials",
+          "amount": 46,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Public Utilities",
+          "amount": 36,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Photo Taking/Finishing",
+          "amount": 28,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Elderly Care",
+          "amount": 20,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Time Sharing",
+          "amount": 16,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Lawyer & Legal Services",
+          "amount": 13,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Funeral Services",
+          "amount": 11,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "Miscellaneous Services",
-          "amount": 100,
+          "amount": 167,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "Miscellaneous Goods",
-          "amount": 269,
+          "amount": 461,
           "data_source": "live"
         }
       ],
       "consumer_council_complaints_chart": [
         {
           "category": "Foods & Drinks",
-          "amount": 466
+          "amount": 702
         },
         {
           "category": "Personal Care Products",
-          "amount": 469
+          "amount": 717
         },
         {
           "category": "Local Accommodation",
-          "amount": 495
+          "amount": 722
         },
         {
           "category": "Clothing & Apparel",
-          "amount": 639
+          "amount": 940
         },
         {
           "category": "Beauty Services",
-          "amount": 696
+          "amount": 1003
         },
         {
           "category": "Medicine & Health Foods",
-          "amount": 904
+          "amount": 1240
         },
         {
           "category": "Electrical Appliances",
-          "amount": 983
+          "amount": 1432
         },
         {
           "category": "Telecommunication Services",
-          "amount": 1026
+          "amount": 1437
         },
         {
           "category": "Travel Matters",
-          "amount": 1563
+          "amount": 2307
         },
         {
           "category": "Food & Entertainment Services",
-          "amount": 2175
+          "amount": 3159
         }
       ],
       "consumer_council_complaints_history_chart": [
-        {
-          "period": "2024 1-12",
-          "category": "Travel Matters",
-          "amount": 2966
-        },
         {
           "period": "2024 1-12",
           "category": "Food & Entertainment Services",
           "amount": 5640
         },
         {
-          "period": "2025 1-12",
+          "period": "2024 1-12",
           "category": "Travel Matters",
-          "amount": 3262
+          "amount": 2966
         },
         {
           "period": "2025 1-12",
@@ -30899,14 +28777,19 @@
           "amount": 6689
         },
         {
-          "period": "2026",
+          "period": "2025 1-12",
           "category": "Travel Matters",
-          "amount": 1563
+          "amount": 3262
         },
         {
           "period": "2026",
           "category": "Food & Entertainment Services",
-          "amount": 2175
+          "amount": 3159
+        },
+        {
+          "period": "2026",
+          "category": "Travel Matters",
+          "amount": 2307
         }
       ],
       "immigration_checkpoint_snapshot": []
@@ -30922,7 +28805,7 @@
         "url": "https://oil-price.consumer.org.hk/en",
         "language": "JSON",
         "description": "Daily auto-fuel pump prices, walk-in discounts, and net prices across Caltex, PetroChina, Shell, Sinopec, and Esso.",
-        "executed_at": "2026-08-09T16:09:01.081916Z"
+        "executed_at": "2026-08-30T14:33:46.056311Z"
       }
     },
     {
@@ -30934,7 +28817,7 @@
         "url": "https://www.consumer.org.hk/node/32290/export-complaints/json?lang=en",
         "language": "JSON",
         "description": "Annual consumer complaints by category across Hong Kong consumer sectors.",
-        "executed_at": "2026-08-09T16:09:01.081916Z"
+        "executed_at": "2026-08-30T14:33:46.056311Z"
       }
     },
     {
@@ -30946,7 +28829,7 @@
         "url": "https://online-price-watch.consumer.org.hk/opw/opendata/pricewatch_en.csv",
         "language": "CSV / Parquet",
         "description": "Supermarket item prices and promotion offers. The dashboard currently reports only validated local archive coverage; it does not present an assortment-sensitive arithmetic mean as a price index.",
-        "executed_at": "2026-08-09T16:09:01.081916Z"
+        "executed_at": "2026-08-30T14:33:46.056311Z"
       }
     },
     {
@@ -30962,7 +28845,7 @@
           "Latest is the most recent published PM benchmark fixing.",
           "Day and year movements are latest divided by the prior trading day or the observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-08-09T16:09:01.081916Z"
+        "executed_at": "2026-08-30T14:33:46.056311Z"
       }
     },
     {
@@ -30978,7 +28861,7 @@
           "PE (TTM), PB, and market cap (HKD bn) are each ticker's latest published daily value.",
           "No dividend-yield indicator exists on this endpoint; yield is not reported here."
         ],
-        "executed_at": "2026-08-09T16:09:01.081916Z"
+        "executed_at": "2026-08-30T14:33:46.056311Z"
       }
     },
     {
@@ -30994,7 +28877,7 @@
           "All retail outlet is the classification group's own published total across all outlet types.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-08-09T16:09:01.081916Z"
+        "executed_at": "2026-08-30T14:33:46.056311Z"
       }
     },
     {
@@ -31010,7 +28893,7 @@
           "Purchases are only published sector-wide, not broken out by restaurant type.",
           "Quarter and year movements are latest divided by the prior quarter or the observation four quarters earlier, minus one."
         ],
-        "executed_at": "2026-08-09T16:09:01.081916Z"
+        "executed_at": "2026-08-30T14:33:46.056311Z"
       }
     },
     {
@@ -31026,7 +28909,7 @@
           "This is a current-state snapshot only -- the source has no issue-date or status-history field.",
           "Opened/closed counts compare this run's licence numbers against the most recently stored prior snapshot, and are unavailable until at least two runs have been persisted."
         ],
-        "executed_at": "2026-08-09T16:09:01.081916Z"
+        "executed_at": "2026-08-30T14:33:46.056311Z"
       }
     },
     {
@@ -31042,7 +28925,7 @@
           "Category sub-indices share the headline table's index basis but only start in 2005 -- thirty years shorter history.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-08-09T16:09:01.081916Z"
+        "executed_at": "2026-08-30T14:33:46.056311Z"
       }
     },
     {
@@ -31059,7 +28942,7 @@
           "Southbound (南下) flow is daily Mainland visitor arrivals across all 17 control points, since Mainland visitors legitimately arrive by air, rail, and sea, not just by land.",
           "7-day moving averages (7d MA) smooth out day-of-week seasonality (weekend shopping spikes)."
         ],
-        "executed_at": "2026-08-09T16:09:01.081916Z"
+        "executed_at": "2026-08-30T14:33:46.056311Z"
       }
     },
     {
@@ -31076,7 +28959,7 @@
           "Red/Black Rainstorm hours measures total duration under Red or Black rainstorm warnings.",
           "RMB per 100 HKD is derived from FRED daily DEXCHUS and DEXHKUS rates."
         ],
-        "executed_at": "2026-08-09T16:09:01.081916Z"
+        "executed_at": "2026-08-30T14:33:46.056311Z"
       }
     },
     {
@@ -31091,7 +28974,7 @@
           "Total stores is each company's own latest snapshot count (not a cross-company-comparable unit -- a POP MART Roboshop and a Chow Tai Fook boutique are both counted as one location).",
           "This is a footprint snapshot, not a trend: most companies only have 1-2 dated snapshots so far, so month-over-month change is not yet meaningful."
         ],
-        "executed_at": "2026-08-09T16:09:01.081916Z"
+        "executed_at": "2026-08-30T14:33:46.056311Z"
       }
     },
     {
@@ -31105,13 +28988,13 @@
           "Validated live measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-08-09T16:09:01.081916Z"
+        "executed_at": "2026-08-30T14:33:46.056311Z"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-local-consumer/",
-    "snapshotId": "d9891023da667880",
-    "dataAsOf": "2026-07-27"
+    "snapshotId": "d9047fb8f06fe98a",
+    "dataAsOf": "2026-08-26"
   }
 }

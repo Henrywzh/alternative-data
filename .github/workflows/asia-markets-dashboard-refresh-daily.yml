@@ -7,8 +7,8 @@ name: Asia Markets Dashboard Data Refresh Daily
 # scripts/build_hk_local_consumer_artifact.py and commits the refreshed
 # .generated/*.json artifact manifests + src/data/dashboard-status*.json.
 #
-# It deliberately does NOT run scripts/build-static-hub.mjs or
-# scripts/package-dashboard.mjs. The packaging step calls an external tool
+# It deliberately does NOT run scripts/build-static-hub.mjs or the portable
+# HTML mode of scripts/package-dashboard.mjs. The packaging step calls an external tool
 # (deliver_portable_artifact.mjs) that lives under a local Claude Code/Codex
 # plugin cache (${CODEX_HOME:-~/.codex}/plugins/cache/openai-curated-remote/
 # data-analytics/*/skills/build-report/scripts/) — a proprietary plugin
@@ -22,12 +22,10 @@ name: Asia Markets Dashboard Data Refresh Daily
 # exact plugin version from in a generic GitHub Actions runner, and vendoring
 # OpenAI's bundled proprietary plugin code into this repo isn't appropriate.
 #
-# Net effect: the .generated/*.html portable dashboards (and the -zh.json /
-# -zh.html localized variants, which are also produced by package-dashboard.mjs)
-# are NOT refreshed by this workflow and will be one manual-rebuild cycle
-# stale on charts specifically. The underlying JSON data and status files
-# ARE kept fresh daily. Run `npm run build` locally (where the plugin cache
-# exists) periodically to refresh the rendered HTML/zh artifacts.
+# Net effect: the portable HTML dashboards are not refreshed here. The
+# Streamlit-facing EN artifacts, ZH artifacts (via --localize-only), freshness
+# report and status files are kept in sync. Run `npm run build` locally (where
+# the plugin cache exists) when the separate static HTML surface must refresh.
 
 on:
   schedule:
@@ -50,7 +48,7 @@ permissions:
 jobs:
   refresh-dashboard-data:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     defaults:
       run:
         working-directory: apps/asia-markets-dashboard
@@ -83,6 +81,22 @@ jobs:
         working-directory: apps/asia-markets-dashboard
         run: npm run test:refresh-guard
 
+      - name: Refresh current-year Buildings Department history
+        working-directory: .
+        run: |
+          python -m hk_real_estate.cli run-bd-history-current-year \
+            || echo "::warning::BD current-year refresh failed; builder will retain and mark the last good history"
+
+      - name: Ingest HK Local Consumer source data
+        working-directory: .
+        run: |
+          # The artifact builder is intentionally read-only and consumes the
+          # latest normalized source run. A clean GitHub runner has no
+          # gitignored normalized cache, so ingestion must happen first or the
+          # refresh guard can only retain yesterday's artifact.
+          hk-local-consumer-data run-stage-1 --strict \
+            || echo "::warning::one or more local-consumer sources failed; refresh guard will preserve the last complete artifact"
+
       - name: Refresh HK Real Estate + HK Local Consumer artifacts
         # A single upstream publisher must not block the other sector
         # refreshes. The builder keeps the last committed artifact for the
@@ -101,6 +115,13 @@ jobs:
           HK_RE_SKIP_MIDLAND: "1"
         run: npm run refresh -- --tolerate-errors
 
+      - name: Localize Streamlit-facing artifacts
+        run: node scripts/package-dashboard.mjs --localize-only
+
+      - name: Write machine-readable freshness report
+        working-directory: .
+        run: python scripts/audit_asia_markets_freshness.py --report-only
+
       - name: Commit refreshed artifact manifests and status files
         working-directory: .
         run: |
@@ -115,6 +136,10 @@ jobs:
           # below fails with "You have unstaged changes" after the commit.
           # Keep disposable per-run caches ignored; these paths are the
           # committed dashboard outputs and durable source histories.
+          # The population artifact builder is fetch-first: a successful MPFA
+          # fetch is merged with and persisted back to the whitelisted cache
+          # directory, so the merged quarter history rides along with each
+          # daily run.
           git add \
             apps/asia-markets-dashboard/.generated/ \
             apps/asia-markets-dashboard/src/data/ \
@@ -137,3 +162,10 @@ jobs:
             sleep $((attempt * 5))
           done
           exit 1
+
+      - name: Enforce source-observation freshness
+        if: always()
+        working-directory: .
+        run: |
+          python scripts/audit_asia_markets_freshness.py \
+            --output /tmp/asia-markets-freshness-final.json

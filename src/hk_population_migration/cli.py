@@ -1,23 +1,54 @@
+"""CLI for the Hong Kong population and migration ingestion pipeline."""
+
+from __future__ import annotations
+
 import argparse
 import json
-import logging
+from typing import Any
+
+import pandas as pd
+
 from .pipeline import run_stage_1_pipeline
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+
+def _summary(results: dict[str, Any]) -> dict[str, Any]:
+    summary: dict[str, Any] = {}
+    for dataset_id, result in results.items():
+        if isinstance(result, pd.DataFrame):
+            summary[dataset_id] = {
+                "status": "success",
+                "records": len(result),
+            }
+        else:
+            summary[dataset_id] = {
+                "status": "error",
+                "error": str(result.get("error", "unknown error"))
+                if isinstance(result, dict)
+                else str(result),
+            }
+    return summary
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description="HK Population & Migration Pipeline CLI")
-    parser.add_argument("--run", action="store_true", help="Run Stage 1 data ingestion")
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="HK population and migration official-data pipeline",
+    )
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    update = subparsers.add_parser(
+        "run-update",
+        help="Refresh all active official sources into normalized storage",
+    )
+    update.add_argument(
+        "--strict",
+        action="store_true",
+        help="Exit non-zero if any active source refresh fails.",
+    )
     args = parser.parse_args()
 
-    if not args.run:
-        parser.error("--run is required to execute Stage 1 data ingestion")
-    res = run_stage_1_pipeline()
-    failed = [name for name, value in res.items() if isinstance(value, dict) and "error" in value]
-    print(f"Pipeline completed. Ingested {len(res) - len(failed)} sources; {len(failed)} failed.")
-    return 1 if failed else 0
+    if args.command == "run-update":
+        results = run_stage_1_pipeline(raise_on_failure=args.strict)
+        print(json.dumps(_summary(results), indent=2, ensure_ascii=False))
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()

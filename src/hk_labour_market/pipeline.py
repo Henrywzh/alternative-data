@@ -196,11 +196,19 @@ def run_update_pipeline(*, raise_on_failure: bool = False, build_marts: bool = T
         "stage_4": run_stage_4_pipeline(raise_on_failure=raise_on_failure),
     }
     result: dict[str, Any] = {"stages": stage_results}
-    all_success = all(
-        result.get("results") and all(item.get("status") == "success" for item in result["results"].values())
-        for result in stage_results.values()
-    )
-    if build_marts and all_success:
+    stage_success = {
+        stage_name: bool(stage_result.get("results"))
+        and all(item.get("status") == "success" for item in stage_result["results"].values())
+        for stage_name, stage_result in stage_results.items()
+    }
+    result["stage_success"] = stage_success
+    # The Streamlit marts consume Stage 1 core series and Stage 3 annual
+    # distributions. Stage 2 is deeper drill-down data and Stage 4 policy
+    # sources are already optional inside the policy mart. A transient failure
+    # in either optional group must remain visible in the audit, but must not
+    # freeze otherwise-current headline labour data.
+    mart_inputs_ready = stage_success["stage_1"] and stage_success["stage_3"]
+    if build_marts and mart_inputs_ready:
         from .marts import build_analysis_marts
 
         result["marts"] = build_analysis_marts()
@@ -209,4 +217,8 @@ def run_update_pipeline(*, raise_on_failure: bool = False, build_marts: bool = T
         result["audit"] = run_labour_market_audit()
         if raise_on_failure and result["audit"]["status"] != "pass":
             raise LabourMarketRunError("Labour-market audit failed after update")
+    elif build_marts:
+        result["marts_skipped_reason"] = (
+            "Stage 1 and Stage 3 must both complete successfully before marts are rebuilt"
+        )
     return result

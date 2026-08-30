@@ -385,25 +385,32 @@ def _display_number(value: Any) -> str:
     return str(value)
 
 
-def load_china_airline_traffic(path: Path | None = None) -> pd.DataFrame:
-    """Load the Cninfo-backed airline parquet, preferring source recovery.
+def load_china_airline_traffic(
+    path: Path | None = None,
+    *,
+    recovered_path: Path | None = None,
+) -> pd.DataFrame:
+    """Load the Cninfo-backed airline parquet with source-recovery overlays.
 
     The source-recovered layer has the same normalized monthly keys as the
-    processed raw layer, with only verified official-PDF rows overlaid.  It is
-    therefore safe for the dashboard's observed operating charts while the
-    separate imputed layer remains research-only.
+    processed raw layer, with only verified official-PDF rows overlaid. It can
+    lag the monthly scraper, however, so replacing the entire raw layer with
+    the recovered snapshot silently hid newer months. Merge raw first and
+    recovered second by observation key: audited recoveries win where present,
+    while newer issuer rows remain visible. The separate imputed layer remains
+    research-only.
     """
     if path is None:
-        path = (
-            CHINA_AIRLINE_SOURCE_RECOVERED_DATA_PATH
-            if CHINA_AIRLINE_SOURCE_RECOVERED_DATA_PATH.exists()
-            else CHINA_AIRLINE_DATA_PATH
-        )
+        path = CHINA_AIRLINE_DATA_PATH
+        recovered_path = CHINA_AIRLINE_SOURCE_RECOVERED_DATA_PATH
     columns = ["month", "date", "airline_code", "region", "metric", "value"]
     if not path.exists():
         return pd.DataFrame(columns=CHINA_AIRLINE_COLUMNS)
 
-    frame = pd.read_parquet(path)
+    frames = [pd.read_parquet(path)]
+    if recovered_path is not None and recovered_path.exists():
+        frames.append(pd.read_parquet(recovered_path))
+    frame = pd.concat(frames, ignore_index=True, sort=False)
     missing = sorted(set(columns).difference(frame.columns))
     if missing:
         raise ValueError(f"China airline traffic is missing columns: {missing}")
@@ -412,6 +419,10 @@ def load_china_airline_traffic(path: Path | None = None) -> pd.DataFrame:
     result["date"] = pd.to_datetime(result["date"], errors="coerce")
     result["month"] = result["date"].dt.strftime("%Y-%m")
     result["airline_code"] = result["airline_code"].astype(str).str.replace(r"\.0$", "", regex=True)
+    result = result.drop_duplicates(
+        subset=["month", "airline_code", "region", "metric"],
+        keep="last",
+    )
     result["airline"] = result["airline_code"].map(CHINA_AIRLINE_NAMES)
     result["reporting_scope"] = result["airline"].map(CHINA_AIRLINE_REPORTING_SCOPE)
     result["metric"] = result["metric"].astype(str)

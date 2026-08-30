@@ -58,6 +58,16 @@ replacement for the operating manual or generated source-status JSON.
   a previously non-empty dataset becomes empty or disappears, and core HKMA
   mortgage / Buildings Department history builders use committed-artifact
   fallbacks marked stale when CI has no normalized cache.
+- `scripts/audit_asia_markets_freshness.py` is the machine-readable freshness
+  gate for the Streamlit-facing sector artifacts. It checks observation periods
+  rather than build timestamps, validates Buildings Department history against
+  the latest parsed digest, and rejects EN/ZH snapshot drift. Its durable report
+  is `.generated/asia-markets-freshness.json`.
+- As of 2026-08-30 the verified headline periods are: labour force 2026-07,
+  median employment earnings 2026-Q2, vacancies and wage/payroll 2026-Q1
+  (their official Q2 releases are scheduled for 18 and 28 September),
+  MPFA permanent-departure claims 2026-Q2, Buildings Department aggregate
+  supply history 2026-06, and China-listed airline traffic 2026-07.
 - `STREAMLIT_PARITY_PROTOCOL.md` is the shared Cloudflare-to-Streamlit
   decision guide. The non-blocking GitHub Action
   `.github/workflows/streamlit-parity-reminder.yml` compares structural
@@ -772,9 +782,9 @@ replacement for the operating manual or generated source-status JSON.
   wired into the dashboard.
 - Buildings Department Md52–Md56 current XLS charts/tables remain project
   snapshots. A separate archive-backed `bd_supply_pipeline_history` now covers
-  2005-01 to 2026-05 as month/stage aggregates parsed from the official PDF
+  2005-01 to 2026-06 as month/stage aggregates parsed from the official PDF
   summary tables. The dashboard chart deliberately displays only the latest
-  ten-year lookback (currently 2016-05 to 2026-05) for readability; the
+  ten-year lookback (currently 2016-06 to 2026-06) for readability; the
   archive-backed normalized rows remain available for research. `Md52`
   demolition consents supply counts only; the history is not project-level
   stage linkage. `bd_monthly_stats` remains a distinct Md11–Md17 scratch

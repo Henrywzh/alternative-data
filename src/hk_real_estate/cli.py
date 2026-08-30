@@ -17,6 +17,7 @@ from .pipeline import (
     run_hk_commercial_controls_pipeline,
     run_midland_snapshot_pipeline,
     run_policy_event_research_pipeline,
+    run_bd_history_current_year_refresh,
     run_bd_project_history_backfill,
     run_bd_project_history_local_reparse,
     run_bd_project_history_audit_backfill,
@@ -75,6 +76,11 @@ def main(argv: list[str] | None = None):
     subparsers.add_parser("run-all", help="Run full pipeline across all data sources")
     subparsers.add_parser("run-stage-1", help="Run Stage 1 source ingestion")
     subparsers.add_parser("run-stage-2", help="Run Stage 2 financing & stock attribution ingestion")
+    bd_history_refresh_parser = subparsers.add_parser(
+        "run-bd-history-current-year",
+        help="Refresh the latest Buildings Department Section 1 history and merge it into retained history",
+    )
+    bd_history_refresh_parser.add_argument("--year", type=int)
     bd_project_history_parser = subparsers.add_parser(
         "run-bd-project-history-backfill",
         help="Backfill detailed Buildings Department Md52-Md56 project rows from monthly PDFs",
@@ -377,6 +383,12 @@ def main(argv: list[str] | None = None):
         elif args.command == "run-stage-2":
             results = run_stage_2_pipeline()
             print("\nStage 2 Ingestion completed:\n" + json.dumps(results, indent=2))
+        elif args.command == "run-bd-history-current-year":
+            results = run_bd_history_current_year_refresh(year=args.year)
+            print(
+                "\nBD current-year history refresh completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-bd-project-history-backfill":
             results = run_bd_project_history_backfill(
                 start_year=args.start_year,

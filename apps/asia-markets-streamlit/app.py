@@ -631,6 +631,49 @@ def source_health_frame(artifact: dict[str, Any]) -> pd.DataFrame:
     return pd.DataFrame(root_health) if isinstance(root_health, list) else pd.DataFrame()
 
 
+def localized_source_health_frame(
+    artifact: dict[str, Any],
+    label_artifact: dict[str, Any],
+    language: str,
+) -> pd.DataFrame:
+    """Use current EN health values with ZH presentation labels when aligned.
+
+    Data and status must always come from the current EN read contract.
+    Localized artifacts are presentation-only; if a ZH artifact ever drifts,
+    it must not make an old source date or status look current.
+    """
+    current = source_health_frame(artifact).reset_index(drop=True)
+    if language != "zh" or current.empty:
+        return current
+    localized = source_health_frame(label_artifact).reset_index(drop=True)
+    current_generated = artifact.get("snapshot", {}).get("generatedAt")
+    localized_generated = label_artifact.get("snapshot", {}).get("generatedAt")
+    if (
+        localized.empty
+        or len(localized) != len(current)
+        or not current_generated
+        or current_generated != localized_generated
+    ):
+        return current
+    result = localized.copy()
+    for field in ("status", "latest_observation", "records"):
+        if field in current.columns:
+            result[field] = current[field]
+    if "status" in result.columns:
+        result["status"] = result["status"].replace(
+            {
+                "Healthy": "健康",
+                "Ready": "可用",
+                "Degraded": "需留意",
+                "Stale": "陈旧",
+                "Partial": "部分可用",
+                "Unavailable": "不可用",
+                "Missing": "缺失",
+            }
+        )
+    return result
+
+
 def parse_period(value: Any) -> pd.Timestamp | pd.NaT:
     if pd.isna(value):
         return pd.NaT
@@ -3176,7 +3219,11 @@ def render_source_coverage(
     for sector_key, artifact in artifacts.items():
         sector_name = SECTORS[sector_key]["name_en"] if language == "en" else SECTORS[sector_key]["name_zh"]
         label_artifact = labels.get(sector_key, artifact)
-        health = source_health_frame(label_artifact)
+        health = localized_source_health_frame(
+            artifact,
+            label_artifact,
+            language,
+        )
         if not health.empty:
             health.insert(0, tr(language, "Sector", "板块"), sector_name)
             rows.extend(health.to_dict("records"))

@@ -45,6 +45,13 @@ jobs:
             --output .generated/hk-stablecoin-crypto-artifact.json \
             --status-output src/data/dashboard-status-hk-stablecoin-crypto.json
 
+      - name: Localize Streamlit-facing artifact
+        working-directory: apps/asia-markets-dashboard
+        run: node scripts/package-dashboard.mjs --localize-only --sector hk-stablecoin-crypto
+
+      - name: Write freshness report
+        run: python scripts/audit_asia_markets_freshness.py --report-only
+
       - name: Commit refreshed crypto data
         run: |
           git config user.name "github-actions[bot]"
@@ -52,6 +59,8 @@ jobs:
 
           git add \
             apps/asia-markets-dashboard/.generated/hk-stablecoin-crypto-artifact.json \
+            apps/asia-markets-dashboard/.generated/hk-stablecoin-crypto-artifact-zh.json \
+            apps/asia-markets-dashboard/.generated/asia-markets-freshness.json \
             apps/asia-markets-dashboard/src/data/dashboard-status-hk-stablecoin-crypto.json
 
           if git diff --staged --quiet; then

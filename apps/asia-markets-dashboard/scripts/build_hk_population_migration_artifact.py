@@ -35,6 +35,124 @@ from src.hk_population_migration.storage import load_latest_normalized
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
 
+# Refresh policy: every artifact build attempts a live fetch first.  A
+# committed normalized snapshot is a *fallback* for a failed fetch, never a
+# reason to skip the fetch.  The previous "use normalized if non-empty, only
+# bootstrap-fetch when absent" policy froze every series at whatever snapshot
+# happened to be committed, so e.g. MPFA stayed on its hand-cached 2026-Q1
+# vintage even after the 2026-Q2 digest was published.  A fallback snapshot
+# older than MAX_FALLBACK_AGE_DAYS is additionally flagged degraded in
+# source_health, matching the repo-wide 400-day staleness convention.
+MAX_FALLBACK_AGE_DAYS = 400
+
+# The MPFA fallback cache path is the one whitelisted in .gitignore
+# (mpfa_departure_claims/20260801_mpfa_cached_v2/).  A successful live fetch
+# is merged quarter-wise with this cache (fetch values win, cache fills
+# gaps such as quarters the 90-second fetch budget skipped) and the merged
+# frame is persisted back to the same path so the next degraded build starts
+# from the best data ever seen rather than the original hand cache.
+MPFA_CACHE_RUN_ID = "20260801_mpfa_cached_v2"
+
+# PUBLIC_SOURCES key -> "live" (successful fetch this build) or
+# "fallback" / "stale-fallback" (served the committed snapshot instead).
+_fetch_status = {}
+
+
+def _fallback_state(dataset_name):
+    """Classify the committed snapshot for dataset_name as stale or not."""
+    from src.hk_population_migration.config import NORMALIZED_DIR
+
+    dataset_dir = NORMALIZED_DIR / dataset_name
+    if not dataset_dir.is_dir():
+        return False
+    run_dirs = [path for path in dataset_dir.iterdir() if path.is_dir()]
+    if not run_dirs:
+        return False
+    newest_mtime = max(path.stat().st_mtime for path in run_dirs)
+    age_days = (datetime.now(timezone.utc).timestamp() - newest_mtime) / 86400
+    return age_days > MAX_FALLBACK_AGE_DAYS
+
+
+def _fetch_with_fallback(dataset_name, source_key, fetcher):
+    """Fetch-first, falling back to the committed snapshot on failure."""
+    try:
+        frame = fetcher()
+    except Exception as exc:
+        logger.warning("%s live fetch failed (%s); using committed snapshot", dataset_name, exc)
+    else:
+        if not frame.empty:
+            _fetch_status[source_key] = "live"
+            return frame
+        logger.warning("%s live fetch returned zero rows; using committed snapshot", dataset_name)
+    fallback = load_latest_normalized(dataset_name)
+    if fallback.empty:
+        raise RuntimeError(dataset_name + ": live fetch failed and no committed snapshot exists")
+    _fetch_status[source_key] = "stale-fallback" if _fallback_state(dataset_name) else "fallback"
+    return fallback
+
+
+def _persist_mpfa_cache(frame):
+    """Atomically refresh the gitignore-whitelisted MPFA cache directory."""
+    from src.hk_population_migration.config import NORMALIZED_DIR
+
+    cache_dir = NORMALIZED_DIR / "mpfa_departure_claims" / MPFA_CACHE_RUN_ID
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    parquet_path = cache_dir / "mpfa_departure_claims.parquet"
+    tmp_path = parquet_path.with_suffix(".parquet.tmp")
+    frame.to_parquet(tmp_path, index=False)
+    tmp_path.replace(parquet_path)
+    lineage = {
+        "dataset_name": "mpfa_departure_claims",
+        "run_id": MPFA_CACHE_RUN_ID,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "records": len(frame),
+        "columns": list(frame.columns),
+        "note": "refreshed by the population artifact builder fetch-first policy",
+    }
+    (cache_dir / "lineage.json").write_text(json.dumps(lineage, indent=2), encoding="utf-8")
+
+
+def _load_mpfa():
+    """Live MPFA fetch merged with the tracked fallback cache.
+
+    The fetcher's 90-second budget can legitimately skip some digests, so a
+    successful fetch is combined quarter-wise with the cache (fetch wins,
+    cache fills gaps) and the union is written back to the whitelisted cache
+    path.  Every successful build leaves the committed fallback at least as
+    complete as before; a failed fetch serves it and reports degraded.
+    """
+    try:
+        fetched = fetch_mpfa_permanent_departure_claims()
+    except Exception as exc:
+        logger.warning("MPFA live fetch failed (%s); using committed snapshot", exc)
+        fetched = pd.DataFrame()
+    cache = load_latest_normalized("mpfa_departure_claims")
+    if fetched.empty:
+        if cache.empty:
+            raise RuntimeError("mpfa_departure_claims: live fetch failed and no committed snapshot exists")
+        _fetch_status["mpfa"] = "stale-fallback" if _fallback_state("mpfa_departure_claims") else "fallback"
+        return cache
+    columns = ["quarter", "claims_count", "amount_mhkd", "source_agency"]
+    if not cache.empty:
+        keyed = (
+            fetched.reindex(columns=columns)
+            .set_index("quarter")
+            .combine_first(cache.reindex(columns=columns).set_index("quarter"))
+            .reset_index()
+        )
+        merged = keyed[columns].sort_values("quarter").reset_index(drop=True)
+        unchanged = merged[columns].equals(cache[columns].reset_index(drop=True))
+    else:
+        merged = fetched.reindex(columns=columns).sort_values("quarter").reset_index(drop=True)
+        unchanged = False
+    if not unchanged:
+        try:
+            _persist_mpfa_cache(merged)
+        except Exception:
+            logger.warning("could not persist merged MPFA cache", exc_info=True)
+    _fetch_status["mpfa"] = "live"
+    return merged
+
 # The normalized C&SD visitor-arrivals source retains the full history. The
 # portable artifact also carries a raw regional detail dataset for Data
 # Explorer, but the delivery runtime caps any one dataset at 2,000 rows. A
@@ -122,12 +240,6 @@ def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _load_normalized_or_fetch(dataset_name: str, fetcher) -> pd.DataFrame:
-    """Use a durable normalized run first; only bootstrap by fetching when absent."""
-    normalized = load_latest_normalized(dataset_name)
-    return normalized if not normalized.empty else fetcher()
-
-
 def _long_series_rows(
     rows: list[dict[str, Any]],
     *,
@@ -175,19 +287,24 @@ def build_artifact(
     *,
     now: datetime | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
+    # A process may build more than once in tests or interactive use. Fetch
+    # provenance belongs to this build only and must not leak from a prior run.
+    _fetch_status.clear()
     now = now or _utc_now()
     if now.tzinfo is None:
         now = now.replace(tzinfo=timezone.utc)
 
-    df_immd = raw_immd if raw_immd is not None else _load_normalized_or_fetch("immd_daily_traffic", fetch_immd_daily_traffic)
-    df_pop = raw_pop if raw_pop is not None else _load_normalized_or_fetch("csd_population_estimates", fetch_csd_population_estimates)
-    df_mpfa = raw_mpfa if raw_mpfa is not None else _load_normalized_or_fetch("mpfa_departure_claims", fetch_mpfa_permanent_departure_claims)
-    df_ugc = raw_ugc if raw_ugc is not None else _load_normalized_or_fetch("ugc_nonlocal_students", fetch_ugc_nonlocal_students)
-    df_td = raw_td if raw_td is not None else _load_normalized_or_fetch("td_cross_border_traffic", fetch_td_cross_border_traffic)
+    # Each dataset fetches live first and only serves the committed snapshot
+    # when the fetch fails (see _fetch_with_fallback / _load_mpfa).
+    df_immd = raw_immd if raw_immd is not None else _fetch_with_fallback("immd_daily_traffic", "immd", fetch_immd_daily_traffic)
+    df_pop = raw_pop if raw_pop is not None else _fetch_with_fallback("csd_population_estimates", "csd", fetch_csd_population_estimates)
+    df_mpfa = raw_mpfa if raw_mpfa is not None else _load_mpfa()
+    df_ugc = raw_ugc if raw_ugc is not None else _fetch_with_fallback("ugc_nonlocal_students", "ugc", fetch_ugc_nonlocal_students)
+    df_td = raw_td if raw_td is not None else _fetch_with_fallback("td_cross_border_traffic", "td", fetch_td_cross_border_traffic)
     df_visitor = (
         raw_visitor_arrivals
         if raw_visitor_arrivals is not None
-        else _load_normalized_or_fetch("censtatd_visitor_arrivals", fetch_visitor_arrivals_by_region)
+        else _fetch_with_fallback("censtatd_visitor_arrivals", "visitor_arrivals", fetch_visitor_arrivals_by_region)
     )
 
     generated_at = now.isoformat().replace("+00:00", "Z")
@@ -496,18 +613,38 @@ def build_artifact(
         "td": _latest_observation(td_rows, "month"),
         "visitor_arrivals": _latest_observation(visitor_rows, "date"),
     }
-    source_health = [
-        {
+    fetch_states = {key: _fetch_status.get(key, "unknown") for key in PUBLIC_SOURCES}
+    source_health = []
+    for key, s in PUBLIC_SOURCES.items():
+        row_count = source_row_counts[key]
+        fetch_state = fetch_states[key]
+        if row_count == 0:
+            status, freshness = "degraded", "unavailable"
+        elif fetch_state == "live":
+            status, freshness = "success", "dated"
+        elif fetch_state == "stale-fallback":
+            status, freshness = "degraded", "stale"
+        elif fetch_state == "fallback":
+            status, freshness = "degraded", "dated"
+        else:  # raw frames were injected (tests/CLI) without a fetch attempt
+            status, freshness = "success", "dated"
+        notes = s["query"]["description"]
+        if fetch_state == "fallback":
+            notes += " Live fetch failed this build; serving the committed snapshot."
+        elif fetch_state == "stale-fallback":
+            notes += (
+                f" Live fetch failed this build; serving the committed snapshot, which is older"
+                f" than {MAX_FALLBACK_AGE_DAYS} days."
+            )
+        source_health.append({
             "id": s["id"],
             "label": s["label"],
-            "status": "success" if source_row_counts[key] > 0 else "degraded",
-            "records": source_row_counts[key],
+            "status": status,
+            "records": row_count,
             "latest_observation": source_latest_observation[key],
-            "freshness": "dated" if source_row_counts[key] > 0 else "unavailable",
-            "notes": s["query"]["description"],
-        }
-        for key, s in PUBLIC_SOURCES.items()
-    ]
+            "freshness": freshness,
+            "notes": notes,
+        })
 
     datasets = {
         "immd_daily_traffic": immd_rows,
@@ -633,7 +770,7 @@ def build_artifact(
                 "status": "Healthy" if entry["status"] == "success" else "Degraded",
                 "latest_observation": entry["latest_observation"],
                 "records": entry["records"],
-                "freshness": "Dated snapshot" if entry["freshness"] == "dated" else "Unavailable",
+                "freshness": {"dated": "Dated snapshot", "stale": "Stale", "unavailable": "Unavailable"}[entry["freshness"]],
                 "notes": entry["notes"],
             }
             for entry in source_health

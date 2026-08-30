@@ -163,6 +163,22 @@ def fetch_announcements(code: str, org_id: str, searchkey: str, start_year: str 
     return sorted(results, key=lambda x: x["month"])
 
 
+def filter_announcements_from(
+    announcements: list[dict],
+    start_date: str,
+) -> list[dict]:
+    """Enforce the requested window when Cninfo ignores ``startDate``.
+
+    Cninfo occasionally returns every matching announcement despite receiving
+    a bounded ``startDate``. Parsing those PDFs makes a monthly incremental run
+    take many minutes and reintroduces historical download failures. Apply the
+    normalized month boundary locally before any PDF is downloaded.
+    """
+    parsed_start = dt.date.fromisoformat(start_date)
+    start_month = parsed_start.strftime("%Y-%m")
+    return [row for row in announcements if str(row.get("month", "")) >= start_month]
+
+
 def _announcement_metadata(announcement: dict, *, retrieved_at: str) -> dict:
     """Normalize Cninfo publication metadata into explicit local/PIT fields."""
     epoch_ms = announcement.get("announcement_time_epoch_ms")
@@ -1296,8 +1312,11 @@ def collect_airline_data(
         for searchkey in info["searchkey"]:
             for ann in fetch_announcements(code, org_id, searchkey, start_year=start_year):
                 by_month.setdefault(ann["month"], ann)
-        announcements = sorted(by_month.values(), key=lambda a: a["month"])
-        print(f"  Discovered {len(announcements)} monthly announcements back to {start_year[:4]}")
+        announcements = filter_announcements_from(
+            sorted(by_month.values(), key=lambda a: a["month"]),
+            start_year,
+        )
+        print(f"  Discovered {len(announcements)} monthly announcements from {start_year[:7]}")
 
         for ann in announcements:
             if release_registry_out is not None:
@@ -1338,10 +1357,44 @@ def collect_airline_data(
     return df.sort_values(["month", "airline_code", "metric", "region"]).reset_index(drop=True)
 
 
+def merge_incremental_rows(
+    existing: pd.DataFrame,
+    fetched: pd.DataFrame,
+    *,
+    keys: list[str],
+    sort_columns: list[str],
+) -> pd.DataFrame:
+    """Merge a bounded refresh into retained history, with fetched rows winning."""
+    if existing.empty:
+        combined = fetched.copy()
+    elif fetched.empty:
+        combined = existing.copy()
+    else:
+        combined = pd.concat([existing, fetched], ignore_index=True, sort=False)
+    # Historical snapshots predate explicit PIT metadata and may have inferred
+    # numeric dtypes for identifiers. Cninfo now returns those identifiers as
+    # strings. Normalize before Parquet serialization so a valid incremental
+    # refresh cannot fail only because old and new batches inferred different
+    # Arrow types.
+    for column in ("airline_code", "announcement_id"):
+        if column in combined.columns:
+            combined[column] = combined[column].astype("string")
+    return (
+        combined.drop_duplicates(subset=keys, keep="last")
+        .sort_values(sort_columns)
+        .reset_index(drop=True)
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Scrape China airline monthly traffic data.")
     parser.add_argument("--data-dir", default="data")
     parser.add_argument("--start-year", default="2015-01-01", help="Start date for historical announcements (YYYY-MM-DD)")
+    parser.add_argument(
+        "--replace",
+        action="store_true",
+        help="Replace retained history instead of merging the fetched window into it.",
+    )
     args = parser.parse_args()
 
     data_dir = Path(args.data_dir)
@@ -1361,6 +1414,13 @@ def main() -> None:
         release_registry_out=release_registry_rows,
     )
     if not df.empty:
+        if not args.replace and out_path.exists():
+            df = merge_incremental_rows(
+                pd.read_parquet(out_path),
+                df,
+                keys=["month", "airline_code", "region", "metric"],
+                sort_columns=["month", "airline_code", "metric", "region"],
+            )
         out_path.parent.mkdir(parents=True, exist_ok=True)
         df.to_parquet(out_path, index=False)
         print(f"\nSuccessfully wrote {out_path} ({len(df)} records)")
@@ -1369,20 +1429,43 @@ def main() -> None:
         print(summary)
         if event_rows:
             events = pd.DataFrame(event_rows)
-            events = events.drop_duplicates(subset=["month", "airline_code", "event_type"], keep="last")
-            events = events[AIRLINE_EVENT_COLUMNS + PIT_METADATA_COLUMNS].sort_values(
-                ["month", "airline_code", "event_type"]
-            ).reset_index(drop=True)
+            if not args.replace and event_path.exists():
+                events = merge_incremental_rows(
+                    pd.read_parquet(event_path),
+                    events,
+                    keys=["month", "airline_code", "event_type"],
+                    sort_columns=["month", "airline_code", "event_type"],
+                )
+            else:
+                events = merge_incremental_rows(
+                    pd.DataFrame(),
+                    events,
+                    keys=["month", "airline_code", "event_type"],
+                    sort_columns=["month", "airline_code", "event_type"],
+                )
+            events = events[AIRLINE_EVENT_COLUMNS + PIT_METADATA_COLUMNS]
             event_path.parent.mkdir(parents=True, exist_ok=True)
             events.to_parquet(event_path, index=False)
             print(f"\nSuccessfully wrote {event_path} ({len(events)} event rows)")
             print(events.groupby(["airline_code", "event_type"]).size().unstack(fill_value=0))
         if release_registry_rows:
             registry = pd.DataFrame(release_registry_rows)
-            registry = registry[RELEASE_REGISTRY_COLUMNS].drop_duplicates(
-                subset=["month", "airline_code"], keep="last"
-            ).sort_values(["month", "airline_code"]).reset_index(drop=True)
             registry_path = data_dir / "normalized" / "hk_transport" / "airline_operating_release_registry.csv"
+            if not args.replace and registry_path.exists():
+                registry = merge_incremental_rows(
+                    pd.read_csv(registry_path),
+                    registry,
+                    keys=["month", "airline_code"],
+                    sort_columns=["month", "airline_code"],
+                )
+            else:
+                registry = merge_incremental_rows(
+                    pd.DataFrame(),
+                    registry,
+                    keys=["month", "airline_code"],
+                    sort_columns=["month", "airline_code"],
+                )
+            registry = registry[RELEASE_REGISTRY_COLUMNS]
             registry_path.parent.mkdir(parents=True, exist_ok=True)
             registry.to_csv(registry_path, index=False)
             print(f"\nSuccessfully wrote {registry_path} ({len(registry)} release rows)")

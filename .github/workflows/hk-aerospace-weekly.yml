@@ -48,6 +48,13 @@ jobs:
             --output .generated/hk-commercial-aerospace-artifact.json \
             --status-output src/data/dashboard-status-hk-commercial-aerospace.json
 
+      - name: Localize Streamlit-facing artifact
+        working-directory: apps/asia-markets-dashboard
+        run: node scripts/package-dashboard.mjs --localize-only --sector hk-commercial-aerospace
+
+      - name: Write freshness report
+        run: python scripts/audit_asia_markets_freshness.py --report-only
+
       - name: Commit refreshed aerospace data
         run: |
           git config user.name "github-actions[bot]"
@@ -59,6 +66,8 @@ jobs:
           # the checkout dirty and make the subsequent pull --rebase fail.
           git add \
             apps/asia-markets-dashboard/.generated/hk-commercial-aerospace-artifact.json \
+            apps/asia-markets-dashboard/.generated/hk-commercial-aerospace-artifact-zh.json \
+            apps/asia-markets-dashboard/.generated/asia-markets-freshness.json \
             apps/asia-markets-dashboard/src/data/dashboard-status-hk-commercial-aerospace.json
           git add -u data/normalized/hk_commercial_aerospace/
 

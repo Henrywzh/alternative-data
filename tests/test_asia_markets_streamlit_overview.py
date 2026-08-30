@@ -18,6 +18,84 @@ def _artifact(slug: str) -> dict:
     return json.loads((ARTIFACT_ROOT / f"{slug}-artifact.json").read_text(encoding="utf-8"))
 
 
+def test_localized_source_health_keeps_current_observation_values() -> None:
+    current = {
+        "snapshot": {
+            "generatedAt": "2026-08-30T00:00:00Z",
+            "datasets": {
+                "source_health": [
+                    {
+                        "source": "Official source",
+                        "status": "Degraded",
+                        "latest_observation": "2026-07-31",
+                        "records": 12,
+                    }
+                ]
+            }
+        }
+    }
+    labels = {
+        "snapshot": {
+            "generatedAt": "2026-08-30T00:00:00Z",
+            "datasets": {
+                "source_health": [
+                    {
+                        "source": "官方来源",
+                        "status": "需留意",
+                        "latest_observation": "2026-05-31",
+                        "records": 8,
+                    }
+                ]
+            }
+        }
+    }
+
+    frame = asia_app.localized_source_health_frame(current, labels, "zh")
+
+    assert frame.iloc[0]["source"] == "官方来源"
+    assert frame.iloc[0]["status"] == "需留意"
+    assert frame.iloc[0]["latest_observation"] == "2026-07-31"
+    assert frame.iloc[0]["records"] == 12
+
+
+def test_localized_source_health_rejects_a_different_snapshot() -> None:
+    current = {
+        "snapshot": {
+            "generatedAt": "2026-08-30T00:00:00Z",
+            "datasets": {
+                "source_health": [
+                    {
+                        "source": "Current official source",
+                        "status": "Healthy",
+                        "latest_observation": "2026-07-31",
+                        "records": 12,
+                    }
+                ]
+            },
+        }
+    }
+    stale_labels = {
+        "snapshot": {
+            "generatedAt": "2026-08-01T00:00:00Z",
+            "datasets": {
+                "source_health": [
+                    {
+                        "source": "过时来源标签",
+                        "status": "健康",
+                        "latest_observation": "2026-05-31",
+                        "records": 8,
+                    }
+                ]
+            },
+        }
+    }
+
+    frame = asia_app.localized_source_health_frame(current, stale_labels, "zh")
+
+    assert frame.iloc[0]["source"] == "Current official source"
+    assert frame.iloc[0]["latest_observation"] == "2026-07-31"
+
+
 def test_overview_configuration_is_bounded() -> None:
     assert all(len(config.get("metrics", ())) <= 3 for config in asia_app.OVERVIEW_PULSE_CONFIG.values())
     assert len(asia_app.OVERVIEW_FEATURED_CHARTS) <= 2
@@ -37,8 +115,11 @@ def test_overview_helpers_read_real_artifact_values_and_dates() -> None:
         language="en",
     )
     assert label == "Unemployment rate"
-    assert unemployment == "3.7%"
-    assert unemployment_date == "30 Jun 2026"
+    _labour_kpi = labour["snapshot"]["datasets"]["kpi_labour_force"][-1]
+    assert unemployment == f"{_labour_kpi['unemployment_rate']:.1%}"
+    assert unemployment_date == datetime.strptime(
+        _labour_kpi["observation_date"], "%Y-%m-%d"
+    ).strftime("%d %b %Y")
 
     population_value, population_date = asia_app.latest_metric_reading(
         population,
@@ -90,7 +171,7 @@ def test_overview_helpers_read_real_artifact_values_and_dates() -> None:
     )
     assert len(labour_frame) > 1
     assert labour_title == "Unemployment rate history"
-    assert labour_latest == "3.7%"
+    assert labour_latest == unemployment
     assert "–" in labour_range
     assert labour_note == "Monthly rolling-three-month rate"
 

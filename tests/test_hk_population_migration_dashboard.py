@@ -40,7 +40,14 @@ def _inputs():
                 "net_movement_thousands": [20, 25],
             }
         ),
-        "raw_mpfa": pd.DataFrame({"quarter": ["2025-Q4", "2026-Q1"], "claims_count": [100, 110], "amount_mhkd": [300, 320]}),
+        "raw_mpfa": pd.DataFrame(
+            {
+                "quarter": ["2025-Q4", "2026-Q1"],
+                "claims_count": [100, 110],
+                "amount_mhkd": [300.0, 320.0],
+                "source_agency": ["MPFA", "MPFA"],
+            }
+        ),
         "raw_ugc": pd.DataFrame(
             {
                 "academic_year": ["2024/25", "2025/26"],
@@ -127,27 +134,151 @@ def test_builder_does_not_fetch_when_explicit_offline_inputs_are_supplied(monkey
     assert status["overall_status"] == "Healthy"
 
 
-def test_builder_prefers_normalized_inputs_before_network_fetch(monkeypatch):
+_BY_DATASET_KEYS = {
+    "immd_daily_traffic": "raw_immd",
+    "csd_population_estimates": "raw_pop",
+    "mpfa_departure_claims": "raw_mpfa",
+    "ugc_nonlocal_students": "raw_ugc",
+    "td_cross_border_traffic": "raw_td",
+    "censtatd_visitor_arrivals": "raw_visitor_arrivals",
+}
+
+_FETCHER_BY_DATASET = {
+    "immd_daily_traffic": "fetch_immd_daily_traffic",
+    "csd_population_estimates": "fetch_csd_population_estimates",
+    "ugc_nonlocal_students": "fetch_ugc_nonlocal_students",
+    "td_cross_border_traffic": "fetch_td_cross_border_traffic",
+    "censtatd_visitor_arrivals": "fetch_visitor_arrivals_by_region",
+}
+
+
+def _monkeypatch_live_fetch_success(monkeypatch):
+    """Every fetcher serves its canonical test frame; committed store is empty."""
     normalized = _inputs()
-    by_dataset = {
-        "immd_daily_traffic": normalized["raw_immd"],
-        "csd_population_estimates": normalized["raw_pop"],
-        "mpfa_departure_claims": normalized["raw_mpfa"],
-        "ugc_nonlocal_students": normalized["raw_ugc"],
-        "td_cross_border_traffic": normalized["raw_td"],
-        "censtatd_visitor_arrivals": normalized["raw_visitor_arrivals"],
-    }
-    monkeypatch.setattr(dashboard_export, "load_latest_normalized", lambda dataset: by_dataset.get(dataset, pd.DataFrame()))
-    monkeypatch.setattr(dashboard_export, "fetch_immd_daily_traffic", lambda: (_ for _ in ()).throw(AssertionError("unexpected fetch")))
-    monkeypatch.setattr(dashboard_export, "fetch_csd_population_estimates", lambda: (_ for _ in ()).throw(AssertionError("unexpected fetch")))
-    monkeypatch.setattr(dashboard_export, "fetch_mpfa_permanent_departure_claims", lambda: (_ for _ in ()).throw(AssertionError("unexpected fetch")))
-    monkeypatch.setattr(dashboard_export, "fetch_ugc_nonlocal_students", lambda: (_ for _ in ()).throw(AssertionError("unexpected fetch")))
-    monkeypatch.setattr(dashboard_export, "fetch_td_cross_border_traffic", lambda: (_ for _ in ()).throw(AssertionError("unexpected fetch")))
-    monkeypatch.setattr(dashboard_export, "fetch_visitor_arrivals_by_region", lambda: (_ for _ in ()).throw(AssertionError("unexpected fetch")))
+    monkeypatch.setattr(dashboard_export, "load_latest_normalized", lambda dataset: pd.DataFrame())
+    monkeypatch.setattr(dashboard_export, "fetch_mpfa_permanent_departure_claims", lambda: normalized["raw_mpfa"])
+    monkeypatch.setattr(dashboard_export, "_persist_mpfa_cache", lambda frame: None)
+    for dataset, fetcher_name in _FETCHER_BY_DATASET.items():
+        frame = normalized[_BY_DATASET_KEYS[dataset]]
+        monkeypatch.setattr(dashboard_export, fetcher_name, lambda frame=frame: frame.copy())
+
+
+def test_builder_fetches_live_first_and_reports_healthy_when_all_sources_succeed(monkeypatch):
+    dashboard_export._fetch_status.clear()
+    _monkeypatch_live_fetch_success(monkeypatch)
 
     artifact, status = dashboard_export.build_artifact(now=NOW)
+
     assert artifact["manifest"]["dataAsOf"] == "2026-07-29"
     assert status["overall_status"] == "Healthy"
+    assert all(entry["status"] == "Healthy" for entry in status["sources"])
+
+
+def test_builder_falls_back_to_committed_snapshot_when_live_fetch_fails(monkeypatch):
+    dashboard_export._fetch_status.clear()
+    normalized = _inputs()
+    by_dataset = {name: normalized[key].copy() for name, key in _BY_DATASET_KEYS.items()}
+    monkeypatch.setattr(dashboard_export, "load_latest_normalized", lambda dataset: by_dataset.get(dataset, pd.DataFrame()))
+    monkeypatch.setattr(dashboard_export, "_fallback_state", lambda dataset: False)
+
+    def _network_down():
+        raise RuntimeError("network down")
+
+    monkeypatch.setattr(dashboard_export, "fetch_mpfa_permanent_departure_claims", _network_down)
+    for fetcher_name in _FETCHER_BY_DATASET.values():
+        monkeypatch.setattr(dashboard_export, fetcher_name, _network_down)
+
+    artifact, status = dashboard_export.build_artifact(now=NOW)
+
+    assert artifact["manifest"]["dataAsOf"] == "2026-07-29"
+    assert status["overall_status"] == "Degraded"
+    by_id = {entry["dataset"]: entry for entry in status["sources"]}
+    assert all(entry["status"] == "Degraded" for entry in by_id.values())
+    assert all(entry["freshness"] == "Dated snapshot" for entry in by_id.values())
+    assert "committed snapshot" in by_id["immd"]["notes"]
+
+
+def test_builder_flags_stale_fallback_when_committed_snapshot_exceeds_max_age(monkeypatch):
+    dashboard_export._fetch_status.clear()
+    normalized = _inputs()
+    by_dataset = {name: normalized[key].copy() for name, key in _BY_DATASET_KEYS.items()}
+    monkeypatch.setattr(dashboard_export, "load_latest_normalized", lambda dataset: by_dataset.get(dataset, pd.DataFrame()))
+    monkeypatch.setattr(dashboard_export, "MAX_FALLBACK_AGE_DAYS", -1)
+    monkeypatch.setattr(dashboard_export, "_fallback_state", lambda dataset: True)
+
+    def _network_down():
+        raise RuntimeError("network down")
+
+    monkeypatch.setattr(dashboard_export, "fetch_mpfa_permanent_departure_claims", _network_down)
+    for fetcher_name in _FETCHER_BY_DATASET.values():
+        monkeypatch.setattr(dashboard_export, fetcher_name, _network_down)
+
+    _, status = dashboard_export.build_artifact(now=NOW)
+
+    by_id = {entry["dataset"]: entry for entry in status["sources"]}
+    assert all(entry["freshness"] == "Stale" for entry in by_id.values())
+    assert "older than -1 days" in by_id["immd"]["notes"]
+
+
+def test_mpfa_merge_prefers_fetched_quarters_and_fills_gaps_from_cache(monkeypatch, tmp_path):
+    dashboard_export._fetch_status.clear()
+    monkeypatch.setattr("src.hk_population_migration.config.NORMALIZED_DIR", tmp_path)
+    fetched = pd.DataFrame(
+        {
+            "quarter": ["2026-Q1", "2026-Q2"],
+            "claims_count": [222, 300],
+            "amount_mhkd": [999.0, 610.0],
+            "source_agency": ["MPFA", "MPFA"],
+        }
+    )
+    cache = pd.DataFrame(
+        {
+            "quarter": ["2025-Q4", "2026-Q1"],
+            "claims_count": [100, 110],
+            "amount_mhkd": [300.0, 320.0],
+            "source_agency": ["MPFA", "MPFA"],
+        }
+    )
+    monkeypatch.setattr(dashboard_export, "fetch_mpfa_permanent_departure_claims", lambda: fetched.copy())
+    monkeypatch.setattr(dashboard_export, "load_latest_normalized", lambda dataset: cache.copy())
+
+    merged = dashboard_export._load_mpfa()
+
+    assert list(merged["quarter"]) == ["2025-Q4", "2026-Q1", "2026-Q2"]
+    q1 = merged.loc[merged["quarter"] == "2026-Q1"].iloc[0]
+    q4 = merged.loc[merged["quarter"] == "2025-Q4"].iloc[0]
+    assert q1["claims_count"] == 222  # live fetch wins on overlap
+    assert q4["claims_count"] == 100  # cache fills the gap
+    assert dashboard_export._fetch_status["mpfa"] == "live"
+
+    persisted = pd.read_parquet(
+        tmp_path / "mpfa_departure_claims" / "20260801_mpfa_cached_v2" / "mpfa_departure_claims.parquet"
+    )
+    assert len(persisted) == 3
+
+
+def test_mpfa_fetch_failure_serves_committed_cache_and_reports_fallback(monkeypatch):
+    dashboard_export._fetch_status.clear()
+    cache = pd.DataFrame(
+        {
+            "quarter": ["2025-Q4", "2026-Q1"],
+            "claims_count": [100, 110],
+            "amount_mhkd": [300.0, 320.0],
+            "source_agency": ["MPFA", "MPFA"],
+        }
+    )
+
+    def _network_down():
+        raise RuntimeError("network down")
+
+    monkeypatch.setattr(dashboard_export, "fetch_mpfa_permanent_departure_claims", _network_down)
+    monkeypatch.setattr(dashboard_export, "load_latest_normalized", lambda dataset: cache.copy())
+    monkeypatch.setattr(dashboard_export, "_fallback_state", lambda dataset: False)
+
+    merged = dashboard_export._load_mpfa()
+
+    assert list(merged["quarter"]) == ["2025-Q4", "2026-Q1"]
+    assert dashboard_export._fetch_status["mpfa"] == "fallback"
 
 
 def test_visitor_arrivals_detail_keeps_full_source_count_but_windows_artifact_rows():
@@ -181,9 +312,9 @@ def test_published_artifact_retains_mpfa_departure_claims():
     artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
     rows = artifact["snapshot"]["datasets"]["mpfa_claims"]
     assert len(rows) >= 1
-    assert rows[-1]["quarter"] == "2026-Q1"
-    assert rows[-1]["claims_count"] == 5000
-    assert rows[-1]["amount_mhkd"] == 1188.0
+    assert rows[-1]["quarter"] == "2026-Q2"
+    assert rows[-1]["claims_count"] == 5200
+    assert rows[-1]["amount_mhkd"] == 1203.0
     source = next(row for row in artifact["source_health"] if row["id"] == "mpfa")
     assert source["status"] == "success"
     assert source["records"] == len(rows)

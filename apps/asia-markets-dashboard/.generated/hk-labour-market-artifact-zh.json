@@ -6,7 +6,7 @@
     "title": "香港劳动力市场与人才政策",
     "description": "劳动力、就业、失业、职位空缺、工资、就业收入及官方人才政策流量的来源快照。",
     "sector": "hk-labour-market",
-    "generatedAt": "2026-08-09T16:08:44.910278Z",
+    "generatedAt": "2026-08-30T14:11:48.789009Z",
     "cards": [
       {
         "id": "labour_force_card",
@@ -686,23 +686,23 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `cba9287a3610f8ab` · 生成于 2026-08-09T16:08:44.910278Z。"
+        "body": "**数据快照：** `66bebab253891ab7` · 生成于 2026-08-30T14:11:48.789009Z。"
       }
     ]
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-09T16:08:44.910278Z",
+    "generatedAt": "2026-08-30T14:11:48.789009Z",
     "status": "ready",
     "datasets": {
       "kpi_labour_force": [
         {
-          "labour_force_thousands": 3785.8,
-          "employed_thousands": 3646.1,
-          "unemployed_thousands": 139.7,
-          "unemployment_rate": 0.037,
-          "underemployment_rate": 0.016,
-          "observation_date": "2026-06-30"
+          "labour_force_thousands": 3793.3,
+          "employed_thousands": 3647.6,
+          "unemployed_thousands": 145.7,
+          "unemployment_rate": 0.038,
+          "underemployment_rate": 0.017,
+          "observation_date": "2026-07-31"
         }
       ],
       "kpi_labour_demand": [
@@ -724,7 +724,7 @@
       "kpi_income": [
         {
           "median_monthly_earnings": 21000,
-          "observation_date": "2026-05-31"
+          "observation_date": "2026-06-30"
         }
       ],
       "kpi_talent_policy": [
@@ -3224,73 +3224,73 @@
           "month": "2025-01",
           "date": "2025-01-31",
           "series": "就业人数",
-          "value": 3716.6
+          "value": 3692
         },
         {
           "month": "2025-02",
           "date": "2025-02-28",
           "series": "就业人数",
-          "value": 3709.5
+          "value": 3693
         },
         {
           "month": "2025-03",
           "date": "2025-03-31",
           "series": "就业人数",
-          "value": 3692.7
+          "value": 3685.4
         },
         {
           "month": "2025-04",
           "date": "2025-04-30",
           "series": "就业人数",
-          "value": 3677.1
+          "value": 3676
         },
         {
           "month": "2025-05",
           "date": "2025-05-31",
           "series": "就业人数",
-          "value": 3664.7
+          "value": 3668.4
         },
         {
           "month": "2025-06",
           "date": "2025-06-30",
           "series": "就业人数",
-          "value": 3657.3
+          "value": 3666.2
         },
         {
           "month": "2025-07",
           "date": "2025-07-31",
           "series": "就业人数",
-          "value": 3671.3
+          "value": 3669.9
         },
         {
           "month": "2025-08",
           "date": "2025-08-31",
           "series": "就业人数",
-          "value": 3680.6
+          "value": 3674
         },
         {
           "month": "2025-09",
           "date": "2025-09-30",
           "series": "就业人数",
-          "value": 3674.5
+          "value": 3666.2
         },
         {
           "month": "2025-10",
           "date": "2025-10-31",
           "series": "就业人数",
-          "value": 3672.7
+          "value": 3665.9
         },
         {
           "month": "2025-11",
           "date": "2025-11-30",
           "series": "就业人数",
-          "value": 3669.9
+          "value": 3665.4
         },
         {
           "month": "2025-12",
           "date": "2025-12-31",
           "series": "就业人数",
-          "value": 3667
+          "value": 3665.2
         },
         {
           "month": "2026-01",
@@ -3327,6 +3327,12 @@
           "date": "2026-06-30",
           "series": "就业人数",
           "value": 3646.1
+        },
+        {
+          "month": "2026-07",
+          "date": "2026-07-31",
+          "series": "就业人数",
+          "value": 3647.6
         },
         {
           "month": "1985-03",
@@ -5816,73 +5822,73 @@
           "month": "2025-01",
           "date": "2025-01-31",
           "series": "劳动力",
-          "value": 3826.7
+          "value": 3801.6
         },
         {
           "month": "2025-02",
           "date": "2025-02-28",
           "series": "劳动力",
-          "value": 3821.3
+          "value": 3804.6
         },
         {
           "month": "2025-03",
           "date": "2025-03-31",
           "series": "劳动力",
-          "value": 3815.5
+          "value": 3808
         },
         {
           "month": "2025-04",
           "date": "2025-04-30",
           "series": "劳动力",
-          "value": 3806.5
+          "value": 3805.3
         },
         {
           "month": "2025-05",
           "date": "2025-05-31",
           "series": "劳动力",
-          "value": 3800.5
+          "value": 3804.3
         },
         {
           "month": "2025-06",
           "date": "2025-06-30",
           "series": "劳动力",
-          "value": 3793.5
+          "value": 3803
         },
         {
           "month": "2025-07",
           "date": "2025-07-31",
           "series": "劳动力",
-          "value": 3816.2
+          "value": 3815.1
         },
         {
           "month": "2025-08",
           "date": "2025-08-31",
           "series": "劳动力",
-          "value": 3831.6
+          "value": 3825
         },
         {
           "month": "2025-09",
           "date": "2025-09-30",
           "series": "劳动力",
-          "value": 3830.1
+          "value": 3821.6
         },
         {
           "month": "2025-10",
           "date": "2025-10-31",
           "series": "劳动力",
-          "value": 3822.3
+          "value": 3815.4
         },
         {
           "month": "2025-11",
           "date": "2025-11-30",
           "series": "劳动力",
-          "value": 3814.3
+          "value": 3809.9
         },
         {
           "month": "2025-12",
           "date": "2025-12-31",
           "series": "劳动力",
-          "value": 3805.2
+          "value": 3803.7
         },
         {
           "month": "2026-01",
@@ -5919,6 +5925,12 @@
           "date": "2026-06-30",
           "series": "劳动力",
           "value": 3785.8
+        },
+        {
+          "month": "2026-07",
+          "date": "2026-07-31",
+          "series": "劳动力",
+          "value": 3793.3
         },
         {
           "month": "1985-03",
@@ -8408,7 +8420,7 @@
           "month": "2025-01",
           "date": "2025-01-31",
           "series": "失业人数",
-          "value": 110.1
+          "value": 109.7
         },
         {
           "month": "2025-02",
@@ -8420,31 +8432,31 @@
           "month": "2025-03",
           "date": "2025-03-31",
           "series": "失业人数",
-          "value": 122.8
+          "value": 122.7
         },
         {
           "month": "2025-04",
           "date": "2025-04-30",
           "series": "失业人数",
-          "value": 129.4
+          "value": 129.3
         },
         {
           "month": "2025-05",
           "date": "2025-05-31",
           "series": "失业人数",
-          "value": 135.8
+          "value": 135.9
         },
         {
           "month": "2025-06",
           "date": "2025-06-30",
           "series": "失业人数",
-          "value": 136.2
+          "value": 136.8
         },
         {
           "month": "2025-07",
           "date": "2025-07-31",
           "series": "失业人数",
-          "value": 145
+          "value": 145.2
         },
         {
           "month": "2025-08",
@@ -8456,13 +8468,13 @@
           "month": "2025-09",
           "date": "2025-09-30",
           "series": "失业人数",
-          "value": 155.6
+          "value": 155.3
         },
         {
           "month": "2025-10",
           "date": "2025-10-31",
           "series": "失业人数",
-          "value": 149.6
+          "value": 149.5
         },
         {
           "month": "2025-11",
@@ -8474,7 +8486,7 @@
           "month": "2025-12",
           "date": "2025-12-31",
           "series": "失业人数",
-          "value": 138.2
+          "value": 138.5
         },
         {
           "month": "2026-01",
@@ -8511,6 +8523,12 @@
           "date": "2026-06-30",
           "series": "失业人数",
           "value": 139.7
+        },
+        {
+          "month": "2026-07",
+          "date": "2026-07-31",
+          "series": "失业人数",
+          "value": 145.7
         }
       ],
       "labour_rate_history": [
@@ -11038,7 +11056,7 @@
           "month": "2025-07",
           "date": "2025-07-31",
           "series": "就业不足率",
-          "value": 0.014
+          "value": 0.015
         },
         {
           "month": "2025-08",
@@ -11105,6 +11123,12 @@
           "date": "2026-06-30",
           "series": "就业不足率",
           "value": 0.016
+        },
+        {
+          "month": "2026-07",
+          "date": "2026-07-31",
+          "series": "就业不足率",
+          "value": 0.017
         },
         {
           "month": "1985-03",
@@ -13697,6 +13721,12 @@
           "date": "2026-06-30",
           "series": "失业率",
           "value": 0.037
+        },
+        {
+          "month": "2026-07",
+          "date": "2026-07-31",
+          "series": "失业率",
+          "value": 0.038
         }
       ],
       "vacancy_history": [
@@ -22441,7 +22471,7 @@
         {
           "month": "2025-02",
           "date": "2025-02-28",
-          "value": 20200
+          "value": 20100
         },
         {
           "month": "2025-03",
@@ -22516,6 +22546,11 @@
         {
           "month": "2026-05",
           "date": "2026-05-31",
+          "value": 21000
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
           "value": 21000
         }
       ],
@@ -31020,7 +31055,7 @@
           "month": "2025-01",
           "date": "2025-01-31",
           "series": "建造",
-          "value": 23300
+          "value": 23100
         },
         {
           "month": "2025-01",
@@ -31080,19 +31115,19 @@
           "month": "2025-02",
           "date": "2025-02-28",
           "series": "制造",
-          "value": 21800
+          "value": 21500
         },
         {
           "month": "2025-02",
           "date": "2025-02-28",
           "series": "零售",
-          "value": 15700
+          "value": 15800
         },
         {
           "month": "2025-02",
           "date": "2025-02-28",
           "series": "总计",
-          "value": 20200
+          "value": 20100
         },
         {
           "month": "2025-02",
@@ -31164,13 +31199,13 @@
           "month": "2025-04",
           "date": "2025-04-30",
           "series": "制造",
-          "value": 21800
+          "value": 21600
         },
         {
           "month": "2025-04",
           "date": "2025-04-30",
           "series": "零售",
-          "value": 15800
+          "value": 16000
         },
         {
           "month": "2025-04",
@@ -31224,7 +31259,7 @@
           "month": "2025-05",
           "date": "2025-05-31",
           "series": "运输通讯",
-          "value": 21500
+          "value": 21600
         },
         {
           "month": "2025-06",
@@ -31248,7 +31283,7 @@
           "month": "2025-06",
           "date": "2025-06-30",
           "series": "制造",
-          "value": 22500
+          "value": 22100
         },
         {
           "month": "2025-06",
@@ -31290,13 +31325,13 @@
           "month": "2025-07",
           "date": "2025-07-31",
           "series": "制造",
-          "value": 22000
+          "value": 21900
         },
         {
           "month": "2025-07",
           "date": "2025-07-31",
           "series": "零售",
-          "value": 15700
+          "value": 15600
         },
         {
           "month": "2025-07",
@@ -31410,13 +31445,13 @@
           "month": "2025-10",
           "date": "2025-10-31",
           "series": "金融",
-          "value": 39500
+          "value": 39700
         },
         {
           "month": "2025-10",
           "date": "2025-10-31",
           "series": "制造",
-          "value": 22000
+          "value": 21800
         },
         {
           "month": "2025-10",
@@ -31458,7 +31493,7 @@
           "month": "2025-11",
           "date": "2025-11-30",
           "series": "制造",
-          "value": 22400
+          "value": 22100
         },
         {
           "month": "2025-11",
@@ -31500,7 +31535,7 @@
           "month": "2025-12",
           "date": "2025-12-31",
           "series": "制造",
-          "value": 21400
+          "value": 21100
         },
         {
           "month": "2025-12",
@@ -31729,12 +31764,54 @@
           "date": "2026-05-31",
           "series": "运输通讯",
           "value": 23000
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "建造",
+          "value": 23400
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "住宿餐饮",
+          "value": 17000
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "金融",
+          "value": 41300
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "制造",
+          "value": 22000
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "零售",
+          "value": 16600
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "总计",
+          "value": 21000
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "运输通讯",
+          "value": 22500
         }
       ],
       "earnings_by_industry_latest": [
         {
           "industry": "零售业",
-          "median_monthly_earnings": 16500
+          "median_monthly_earnings": 16600
         },
         {
           "industry": "住宿及膳食",
@@ -31746,7 +31823,11 @@
         },
         {
           "industry": "公共行政、社会及个人服务",
-          "median_monthly_earnings": 18700
+          "median_monthly_earnings": 18800
+        },
+        {
+          "industry": "地产及专业、商用服务",
+          "median_monthly_earnings": 21000
         },
         {
           "industry": "总计",
@@ -31754,19 +31835,19 @@
         },
         {
           "industry": "制造业",
-          "median_monthly_earnings": 21500
-        },
-        {
-          "industry": "地产及专业、商用服务",
-          "median_monthly_earnings": 21600
-        },
-        {
-          "industry": "建造业",
-          "median_monthly_earnings": 23000
+          "median_monthly_earnings": 22000
         },
         {
           "industry": "运输、仓储、速递及资讯通讯",
-          "median_monthly_earnings": 23000
+          "median_monthly_earnings": 22500
+        },
+        {
+          "industry": "建造业",
+          "median_monthly_earnings": 23400
+        },
+        {
+          "industry": "进出口及批发",
+          "median_monthly_earnings": 25000
         },
         {
           "industry": "其他行业",
@@ -31774,15 +31855,11 @@
         },
         {
           "industry": "金融、保险、地产及商用服务",
-          "median_monthly_earnings": 26000
-        },
-        {
-          "industry": "进出口及批发",
-          "median_monthly_earnings": 26000
+          "median_monthly_earnings": 25900
         },
         {
           "industry": "金融及保险",
-          "median_monthly_earnings": 40100
+          "median_monthly_earnings": 41300
         }
       ],
       "occupation_earnings_history": [
@@ -35672,25 +35749,25 @@
           "month": "2025-02",
           "date": "2025-02-28",
           "series": "专业",
-          "value": 46500
+          "value": 46400
         },
         {
           "month": "2025-02",
           "date": "2025-02-28",
           "series": "销售服务",
-          "value": 16000
+          "value": 16100
         },
         {
           "month": "2025-02",
           "date": "2025-02-28",
           "series": "总计",
-          "value": 20200
+          "value": 20100
         },
         {
           "month": "2025-03",
           "date": "2025-03-31",
           "series": "辅专业",
-          "value": 27700
+          "value": 27800
         },
         {
           "month": "2025-03",
@@ -35714,7 +35791,7 @@
           "month": "2025-03",
           "date": "2025-03-31",
           "series": "销售服务",
-          "value": 16500
+          "value": 16400
         },
         {
           "month": "2025-03",
@@ -35762,7 +35839,7 @@
           "month": "2025-05",
           "date": "2025-05-31",
           "series": "辅专业",
-          "value": 27500
+          "value": 27600
         },
         {
           "month": "2025-05",
@@ -35780,7 +35857,7 @@
           "month": "2025-05",
           "date": "2025-05-31",
           "series": "专业",
-          "value": 50000
+          "value": 49900
         },
         {
           "month": "2025-05",
@@ -35810,7 +35887,7 @@
           "month": "2025-06",
           "date": "2025-06-30",
           "series": "经理",
-          "value": 49400
+          "value": 50000
         },
         {
           "month": "2025-06",
@@ -35852,7 +35929,7 @@
           "month": "2025-07",
           "date": "2025-07-31",
           "series": "专业",
-          "value": 49400
+          "value": 49300
         },
         {
           "month": "2025-07",
@@ -35876,7 +35953,7 @@
           "month": "2025-08",
           "date": "2025-08-31",
           "series": "非技术",
-          "value": 5900
+          "value": 6000
         },
         {
           "month": "2025-08",
@@ -35924,7 +36001,7 @@
           "month": "2025-09",
           "date": "2025-09-30",
           "series": "专业",
-          "value": 49000
+          "value": 48900
         },
         {
           "month": "2025-09",
@@ -35996,7 +36073,7 @@
           "month": "2025-11",
           "date": "2025-11-30",
           "series": "专业",
-          "value": 47800
+          "value": 47700
         },
         {
           "month": "2025-11",
@@ -36032,7 +36109,7 @@
           "month": "2025-12",
           "date": "2025-12-31",
           "series": "专业",
-          "value": 47800
+          "value": 47700
         },
         {
           "month": "2025-12",
@@ -36225,6 +36302,42 @@
           "date": "2026-05-31",
           "series": "总计",
           "value": 21000
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "辅专业",
+          "value": 28500
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "非技术",
+          "value": 6000
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "经理",
+          "value": 50000
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "专业",
+          "value": 46400
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "销售服务",
+          "value": 16800
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "总计",
+          "value": 21000
         }
       ],
       "earnings_by_occupation_latest": [
@@ -36234,11 +36347,11 @@
         },
         {
           "occupation": "其他职业",
-          "median_monthly_earnings": 12500
+          "median_monthly_earnings": 14000
         },
         {
           "occupation": "服务工作及销售人员",
-          "median_monthly_earnings": 16600
+          "median_monthly_earnings": 16800
         },
         {
           "occupation": "文书支援人员",
@@ -36258,11 +36371,11 @@
         },
         {
           "occupation": "辅专业人员",
-          "median_monthly_earnings": 28800
+          "median_monthly_earnings": 28500
         },
         {
           "occupation": "专业人员",
-          "median_monthly_earnings": 47000
+          "median_monthly_earnings": 46400
         },
         {
           "occupation": "经理",
@@ -36902,8 +37015,8 @@
           "dataset": "劳动力月度数据",
           "type": "指标",
           "status": "健康",
-          "latest_observation": "2026-06-30",
-          "records": 13425,
+          "latest_observation": "2026-07-31",
+          "records": 13450,
           "freshness": "构建时实时",
           "notes": "每月三个月移动平均系列；年度估计另行保留。"
         },
@@ -36932,8 +37045,8 @@
           "dataset": "行业就业收入中位数",
           "type": "指标",
           "status": "健康",
-          "latest_observation": "2026-05-31",
-          "records": 3083,
+          "latest_observation": "2026-06-30",
+          "records": 3096,
           "freshness": "构建时实时",
           "notes": "每月就业收入中位数；主趋势图采用三个月移动平均系列。"
         },
@@ -37014,7 +37127,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-labour-market/",
-    "snapshotId": "cba9287a3610f8ab",
-    "dataAsOf": "2026-06-30"
+    "snapshotId": "66bebab253891ab7",
+    "dataAsOf": "2026-07-31"
   }
 }

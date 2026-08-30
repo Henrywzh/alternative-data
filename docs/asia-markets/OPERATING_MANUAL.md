@@ -184,6 +184,16 @@ fallback when the clean CI runner has no cache. Fallback data must be marked
 GitHub Action is therefore not sufficient evidence of fresh data: inspect the
 artifact row counts, manifest IDs and source-health status.
 
+Run `python scripts/audit_asia_markets_freshness.py` after refreshing the
+Streamlit-facing artifacts. It checks source observation periods against
+explicit monthly/quarterly release contracts, verifies that Buildings
+Department history includes the latest parsed digest, and requires the English
+and Chinese artifacts for each Streamlit sector to describe the same snapshot.
+It writes
+`apps/asia-markets-dashboard/.generated/asia-markets-freshness.json` and exits
+non-zero when a required contract is stale. `--report-only` is for diagnostics;
+scheduled publication must use the fail-closed default.
+
 Do not silently aggregate data to a month if doing so collapses distinct daily
 or weekly observations. Preserve the source grain, then format the axis
 separately.
@@ -219,11 +229,12 @@ PDF for current years) and parses the more stable Section 1 aggregate tables:
 Table 1.2 for Md52 demolition consents; 1.4 for Md53 approvals; 1.2/1.5 for
 Md54 consent-to-commence counts, units and area; 1.6 for Md55 notification
 units and area; and 1.3/1.7 for Md56 permit counts, units and area. It covers
-2005-01 through 2026-05 at a stage-month aggregate grain. It does not identify
+2005-01 through 2026-06 at a stage-month aggregate grain. It does not identify
 the same project across stages, infer a regional split, or invent Md52 units
-or floor area. Run it explicitly with `run_bd_history_backfill`; routine
-pipelines and dashboard builds read the latest normalized result and do not
-download the archive.
+or floor area. Run the complete archive explicitly with
+`run_bd_history_backfill`; the daily workflow uses
+`run-bd-history-current-year` to merge the latest direct current-year PDF into
+the retained archive without re-downloading older years.
 
 ### Transactions
 
@@ -297,10 +308,12 @@ For a data or dashboard change:
 
 6. Spot-check real values and chart/table counts in `.generated/*.json` and
    `dist/`.
-7. Run the relevant tests. For dashboard wiring, start with:
+7. Run the freshness contract and relevant tests. For dashboard wiring, start
+   with:
 
    ```bash
    cd /Users/henrywzh/Desktop/Quant/alternative-data
+   python scripts/audit_asia_markets_freshness.py
    pytest -q tests/test_asia_dashboard_artifacts.py tests/test_asia_markets_wiring.py
    ```
 

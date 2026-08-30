@@ -38,7 +38,7 @@ permissions:
 jobs:
   refresh-hk-transport:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
@@ -61,7 +61,15 @@ jobs:
         # artifact builder below still works off whatever parquet rows are
         # already committed, same "keep the last good data" philosophy as
         # the daily refresh workflow's --tolerate-errors flag.
-        run: python3 scripts/scrape_cn_airline_traffic.py || echo "::warning::airline scraper failed, continuing with existing parquet"
+        timeout-minutes: 20
+        run: |
+          START_DATE="$(python3 - <<'PY'
+          from datetime import date, timedelta
+          print((date.today() - timedelta(days=400)).isoformat())
+          PY
+          )"
+          python3 scripts/scrape_cn_airline_traffic.py --start-year "$START_DATE" \
+            || echo "::warning::airline scraper failed, continuing with existing parquet"
 
       - name: Refresh TD passenger and vehicle datasets
         run: |
@@ -85,6 +93,13 @@ jobs:
             --output .generated/hk-transport-artifact.json \
             --status-output src/data/dashboard-status-hk-transport.json
 
+      - name: Localize Streamlit-facing artifacts
+        working-directory: apps/asia-markets-dashboard
+        run: node scripts/package-dashboard.mjs --localize-only --sector hk-transport
+
+      - name: Write freshness report
+        run: python scripts/audit_asia_markets_freshness.py --report-only
+
       - name: Commit refreshed transport data
         run: |
           git config user.name "github-actions[bot]"
@@ -92,8 +107,12 @@ jobs:
 
           git add \
             data/processed/airline_traffic/china_airlines_monthly.parquet \
+            data/processed/airline_traffic/china_airlines_operating_events.parquet \
+            data/normalized/hk_transport/airline_operating_release_registry.csv \
             data/processed/transport/ \
             apps/asia-markets-dashboard/.generated/hk-transport-artifact.json \
+            apps/asia-markets-dashboard/.generated/hk-transport-artifact-zh.json \
+            apps/asia-markets-dashboard/.generated/asia-markets-freshness.json \
             apps/asia-markets-dashboard/src/data/dashboard-status-hk-transport.json
 
           if git diff --staged --quiet; then
@@ -110,3 +129,10 @@ jobs:
             sleep $((attempt * 5))
           done
           exit 1
+
+      - name: Enforce transport observation freshness
+        if: always()
+        run: |
+          python scripts/audit_asia_markets_freshness.py \
+            --sector hk-transport \
+            --output /tmp/hk-transport-freshness.json

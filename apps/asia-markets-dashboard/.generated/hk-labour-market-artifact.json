@@ -6,7 +6,7 @@
     "title": "Hong Kong Labour Market & Talent Policy",
     "description": "Hong Kong labour-force conditions, labour demand, wages, employment earnings and official talent-policy flows.",
     "sector": "hk-labour-market",
-    "generatedAt": "2026-08-09T16:08:44.910278Z",
+    "generatedAt": "2026-08-30T14:11:48.789009Z",
     "cards": [
       {
         "id": "labour_force_card",
@@ -309,7 +309,7 @@
       {
         "id": "earnings_by_industry_chart",
         "title": "Median monthly employment earnings by industry",
-        "subtitle": "Latest rolling-three-month comparison (2026-05); all sexes combined.",
+        "subtitle": "Latest rolling-three-month comparison (2026-06); all sexes combined.",
         "type": "horizontalBar",
         "intent": "comparison",
         "dataset": "earnings_by_industry_latest",
@@ -448,7 +448,7 @@
       {
         "id": "earnings_by_occupation_table",
         "title": "Median monthly employment earnings by occupation",
-        "subtitle": "Latest rolling-three-month observation (2026-05); all sexes combined.",
+        "subtitle": "Latest rolling-three-month observation (2026-06); all sexes combined.",
         "dataset": "earnings_by_occupation_latest",
         "sourceId": "censtatd_earnings",
         "density": "dense",
@@ -686,23 +686,23 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "## Snapshot\n\nData snapshot generated 2026-08-09T16:08:44.910278Z."
+        "body": "## Snapshot\n\nData snapshot generated 2026-08-30T14:11:48.789009Z."
       }
     ]
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-09T16:08:44.910278Z",
+    "generatedAt": "2026-08-30T14:11:48.789009Z",
     "status": "ready",
     "datasets": {
       "kpi_labour_force": [
         {
-          "labour_force_thousands": 3785.8,
-          "employed_thousands": 3646.1,
-          "unemployed_thousands": 139.7,
-          "unemployment_rate": 0.037,
-          "underemployment_rate": 0.016,
-          "observation_date": "2026-06-30"
+          "labour_force_thousands": 3793.3,
+          "employed_thousands": 3647.6,
+          "unemployed_thousands": 145.7,
+          "unemployment_rate": 0.038,
+          "underemployment_rate": 0.017,
+          "observation_date": "2026-07-31"
         }
       ],
       "kpi_labour_demand": [
@@ -724,7 +724,7 @@
       "kpi_income": [
         {
           "median_monthly_earnings": 21000.0,
-          "observation_date": "2026-05-31"
+          "observation_date": "2026-06-30"
         }
       ],
       "kpi_talent_policy": [
@@ -3224,73 +3224,73 @@
           "month": "2025-01",
           "date": "2025-01-31",
           "series": "Employed",
-          "value": 3716.6
+          "value": 3692.0
         },
         {
           "month": "2025-02",
           "date": "2025-02-28",
           "series": "Employed",
-          "value": 3709.5
+          "value": 3693.0
         },
         {
           "month": "2025-03",
           "date": "2025-03-31",
           "series": "Employed",
-          "value": 3692.7
+          "value": 3685.4
         },
         {
           "month": "2025-04",
           "date": "2025-04-30",
           "series": "Employed",
-          "value": 3677.1
+          "value": 3676.0
         },
         {
           "month": "2025-05",
           "date": "2025-05-31",
           "series": "Employed",
-          "value": 3664.7
+          "value": 3668.4
         },
         {
           "month": "2025-06",
           "date": "2025-06-30",
           "series": "Employed",
-          "value": 3657.3
+          "value": 3666.2
         },
         {
           "month": "2025-07",
           "date": "2025-07-31",
           "series": "Employed",
-          "value": 3671.3
+          "value": 3669.9
         },
         {
           "month": "2025-08",
           "date": "2025-08-31",
           "series": "Employed",
-          "value": 3680.6
+          "value": 3674.0
         },
         {
           "month": "2025-09",
           "date": "2025-09-30",
           "series": "Employed",
-          "value": 3674.5
+          "value": 3666.2
         },
         {
           "month": "2025-10",
           "date": "2025-10-31",
           "series": "Employed",
-          "value": 3672.7
+          "value": 3665.9
         },
         {
           "month": "2025-11",
           "date": "2025-11-30",
           "series": "Employed",
-          "value": 3669.9
+          "value": 3665.4
         },
         {
           "month": "2025-12",
           "date": "2025-12-31",
           "series": "Employed",
-          "value": 3667.0
+          "value": 3665.2
         },
         {
           "month": "2026-01",
@@ -3327,6 +3327,12 @@
           "date": "2026-06-30",
           "series": "Employed",
           "value": 3646.1
+        },
+        {
+          "month": "2026-07",
+          "date": "2026-07-31",
+          "series": "Employed",
+          "value": 3647.6
         },
         {
           "month": "1985-03",
@@ -5816,73 +5822,73 @@
           "month": "2025-01",
           "date": "2025-01-31",
           "series": "Labour force",
-          "value": 3826.7
+          "value": 3801.6
         },
         {
           "month": "2025-02",
           "date": "2025-02-28",
           "series": "Labour force",
-          "value": 3821.3
+          "value": 3804.6
         },
         {
           "month": "2025-03",
           "date": "2025-03-31",
           "series": "Labour force",
-          "value": 3815.5
+          "value": 3808.0
         },
         {
           "month": "2025-04",
           "date": "2025-04-30",
           "series": "Labour force",
-          "value": 3806.5
+          "value": 3805.3
         },
         {
           "month": "2025-05",
           "date": "2025-05-31",
           "series": "Labour force",
-          "value": 3800.5
+          "value": 3804.3
         },
         {
           "month": "2025-06",
           "date": "2025-06-30",
           "series": "Labour force",
-          "value": 3793.5
+          "value": 3803.0
         },
         {
           "month": "2025-07",
           "date": "2025-07-31",
           "series": "Labour force",
-          "value": 3816.2
+          "value": 3815.1
         },
         {
           "month": "2025-08",
           "date": "2025-08-31",
           "series": "Labour force",
-          "value": 3831.6
+          "value": 3825.0
         },
         {
           "month": "2025-09",
           "date": "2025-09-30",
           "series": "Labour force",
-          "value": 3830.1
+          "value": 3821.6
         },
         {
           "month": "2025-10",
           "date": "2025-10-31",
           "series": "Labour force",
-          "value": 3822.3
+          "value": 3815.4
         },
         {
           "month": "2025-11",
           "date": "2025-11-30",
           "series": "Labour force",
-          "value": 3814.3
+          "value": 3809.9
         },
         {
           "month": "2025-12",
           "date": "2025-12-31",
           "series": "Labour force",
-          "value": 3805.2
+          "value": 3803.7
         },
         {
           "month": "2026-01",
@@ -5919,6 +5925,12 @@
           "date": "2026-06-30",
           "series": "Labour force",
           "value": 3785.8
+        },
+        {
+          "month": "2026-07",
+          "date": "2026-07-31",
+          "series": "Labour force",
+          "value": 3793.3
         },
         {
           "month": "1985-03",
@@ -8408,7 +8420,7 @@
           "month": "2025-01",
           "date": "2025-01-31",
           "series": "Unemployed",
-          "value": 110.1
+          "value": 109.7
         },
         {
           "month": "2025-02",
@@ -8420,31 +8432,31 @@
           "month": "2025-03",
           "date": "2025-03-31",
           "series": "Unemployed",
-          "value": 122.8
+          "value": 122.7
         },
         {
           "month": "2025-04",
           "date": "2025-04-30",
           "series": "Unemployed",
-          "value": 129.4
+          "value": 129.3
         },
         {
           "month": "2025-05",
           "date": "2025-05-31",
           "series": "Unemployed",
-          "value": 135.8
+          "value": 135.9
         },
         {
           "month": "2025-06",
           "date": "2025-06-30",
           "series": "Unemployed",
-          "value": 136.2
+          "value": 136.8
         },
         {
           "month": "2025-07",
           "date": "2025-07-31",
           "series": "Unemployed",
-          "value": 145.0
+          "value": 145.2
         },
         {
           "month": "2025-08",
@@ -8456,13 +8468,13 @@
           "month": "2025-09",
           "date": "2025-09-30",
           "series": "Unemployed",
-          "value": 155.6
+          "value": 155.3
         },
         {
           "month": "2025-10",
           "date": "2025-10-31",
           "series": "Unemployed",
-          "value": 149.6
+          "value": 149.5
         },
         {
           "month": "2025-11",
@@ -8474,7 +8486,7 @@
           "month": "2025-12",
           "date": "2025-12-31",
           "series": "Unemployed",
-          "value": 138.2
+          "value": 138.5
         },
         {
           "month": "2026-01",
@@ -8511,6 +8523,12 @@
           "date": "2026-06-30",
           "series": "Unemployed",
           "value": 139.7
+        },
+        {
+          "month": "2026-07",
+          "date": "2026-07-31",
+          "series": "Unemployed",
+          "value": 145.7
         }
       ],
       "labour_rate_history": [
@@ -11038,7 +11056,7 @@
           "month": "2025-07",
           "date": "2025-07-31",
           "series": "Underemployment rate",
-          "value": 0.014
+          "value": 0.015
         },
         {
           "month": "2025-08",
@@ -11105,6 +11123,12 @@
           "date": "2026-06-30",
           "series": "Underemployment rate",
           "value": 0.016
+        },
+        {
+          "month": "2026-07",
+          "date": "2026-07-31",
+          "series": "Underemployment rate",
+          "value": 0.017
         },
         {
           "month": "1985-03",
@@ -13697,6 +13721,12 @@
           "date": "2026-06-30",
           "series": "Unemployment rate",
           "value": 0.037
+        },
+        {
+          "month": "2026-07",
+          "date": "2026-07-31",
+          "series": "Unemployment rate",
+          "value": 0.038
         }
       ],
       "vacancy_history": [
@@ -22441,7 +22471,7 @@
         {
           "month": "2025-02",
           "date": "2025-02-28",
-          "value": 20200.0
+          "value": 20100.0
         },
         {
           "month": "2025-03",
@@ -22516,6 +22546,11 @@
         {
           "month": "2026-05",
           "date": "2026-05-31",
+          "value": 21000.0
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
           "value": 21000.0
         }
       ],
@@ -31020,7 +31055,7 @@
           "month": "2025-01",
           "date": "2025-01-31",
           "series": "Const",
-          "value": 23300.0
+          "value": 23100.0
         },
         {
           "month": "2025-01",
@@ -31080,19 +31115,19 @@
           "month": "2025-02",
           "date": "2025-02-28",
           "series": "Mfg",
-          "value": 21800.0
+          "value": 21500.0
         },
         {
           "month": "2025-02",
           "date": "2025-02-28",
           "series": "Retail",
-          "value": 15700.0
+          "value": 15800.0
         },
         {
           "month": "2025-02",
           "date": "2025-02-28",
           "series": "Total",
-          "value": 20200.0
+          "value": 20100.0
         },
         {
           "month": "2025-02",
@@ -31164,13 +31199,13 @@
           "month": "2025-04",
           "date": "2025-04-30",
           "series": "Mfg",
-          "value": 21800.0
+          "value": 21600.0
         },
         {
           "month": "2025-04",
           "date": "2025-04-30",
           "series": "Retail",
-          "value": 15800.0
+          "value": 16000.0
         },
         {
           "month": "2025-04",
@@ -31224,7 +31259,7 @@
           "month": "2025-05",
           "date": "2025-05-31",
           "series": "Trans.",
-          "value": 21500.0
+          "value": 21600.0
         },
         {
           "month": "2025-06",
@@ -31248,7 +31283,7 @@
           "month": "2025-06",
           "date": "2025-06-30",
           "series": "Mfg",
-          "value": 22500.0
+          "value": 22100.0
         },
         {
           "month": "2025-06",
@@ -31290,13 +31325,13 @@
           "month": "2025-07",
           "date": "2025-07-31",
           "series": "Mfg",
-          "value": 22000.0
+          "value": 21900.0
         },
         {
           "month": "2025-07",
           "date": "2025-07-31",
           "series": "Retail",
-          "value": 15700.0
+          "value": 15600.0
         },
         {
           "month": "2025-07",
@@ -31410,13 +31445,13 @@
           "month": "2025-10",
           "date": "2025-10-31",
           "series": "Fin.",
-          "value": 39500.0
+          "value": 39700.0
         },
         {
           "month": "2025-10",
           "date": "2025-10-31",
           "series": "Mfg",
-          "value": 22000.0
+          "value": 21800.0
         },
         {
           "month": "2025-10",
@@ -31458,7 +31493,7 @@
           "month": "2025-11",
           "date": "2025-11-30",
           "series": "Mfg",
-          "value": 22400.0
+          "value": 22100.0
         },
         {
           "month": "2025-11",
@@ -31500,7 +31535,7 @@
           "month": "2025-12",
           "date": "2025-12-31",
           "series": "Mfg",
-          "value": 21400.0
+          "value": 21100.0
         },
         {
           "month": "2025-12",
@@ -31729,12 +31764,54 @@
           "date": "2026-05-31",
           "series": "Trans.",
           "value": 23000.0
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "Const",
+          "value": 23400.0
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "F&B",
+          "value": 17000.0
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "Fin.",
+          "value": 41300.0
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "Mfg",
+          "value": 22000.0
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "Retail",
+          "value": 16600.0
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "Total",
+          "value": 21000.0
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "Trans.",
+          "value": 22500.0
         }
       ],
       "earnings_by_industry_latest": [
         {
           "industry": "Retail",
-          "median_monthly_earnings": 16500.0
+          "median_monthly_earnings": 16600.0
         },
         {
           "industry": "Accommodation & food",
@@ -31746,7 +31823,11 @@
         },
         {
           "industry": "Public admin, social & personal",
-          "median_monthly_earnings": 18700.0
+          "median_monthly_earnings": 18800.0
+        },
+        {
+          "industry": "Real estate & professional/business",
+          "median_monthly_earnings": 21000.0
         },
         {
           "industry": "Total",
@@ -31754,19 +31835,19 @@
         },
         {
           "industry": "Manufacturing",
-          "median_monthly_earnings": 21500.0
-        },
-        {
-          "industry": "Real estate & professional/business",
-          "median_monthly_earnings": 21600.0
-        },
-        {
-          "industry": "Construction",
-          "median_monthly_earnings": 23000.0
+          "median_monthly_earnings": 22000.0
         },
         {
           "industry": "Transport, storage & ICT",
-          "median_monthly_earnings": 23000.0
+          "median_monthly_earnings": 22500.0
+        },
+        {
+          "industry": "Construction",
+          "median_monthly_earnings": 23400.0
+        },
+        {
+          "industry": "Import/export & wholesale",
+          "median_monthly_earnings": 25000.0
         },
         {
           "industry": "Other industries",
@@ -31774,15 +31855,11 @@
         },
         {
           "industry": "Finance, insurance, real estate & business",
-          "median_monthly_earnings": 26000.0
-        },
-        {
-          "industry": "Import/export & wholesale",
-          "median_monthly_earnings": 26000.0
+          "median_monthly_earnings": 25900.0
         },
         {
           "industry": "Finance & insurance",
-          "median_monthly_earnings": 40100.0
+          "median_monthly_earnings": 41300.0
         }
       ],
       "occupation_earnings_history": [
@@ -35672,25 +35749,25 @@
           "month": "2025-02",
           "date": "2025-02-28",
           "series": "Prof.",
-          "value": 46500.0
+          "value": 46400.0
         },
         {
           "month": "2025-02",
           "date": "2025-02-28",
           "series": "Sales",
-          "value": 16000.0
+          "value": 16100.0
         },
         {
           "month": "2025-02",
           "date": "2025-02-28",
           "series": "Total",
-          "value": 20200.0
+          "value": 20100.0
         },
         {
           "month": "2025-03",
           "date": "2025-03-31",
           "series": "Assoc. prof",
-          "value": 27700.0
+          "value": 27800.0
         },
         {
           "month": "2025-03",
@@ -35714,7 +35791,7 @@
           "month": "2025-03",
           "date": "2025-03-31",
           "series": "Sales",
-          "value": 16500.0
+          "value": 16400.0
         },
         {
           "month": "2025-03",
@@ -35762,7 +35839,7 @@
           "month": "2025-05",
           "date": "2025-05-31",
           "series": "Assoc. prof",
-          "value": 27500.0
+          "value": 27600.0
         },
         {
           "month": "2025-05",
@@ -35780,7 +35857,7 @@
           "month": "2025-05",
           "date": "2025-05-31",
           "series": "Prof.",
-          "value": 50000.0
+          "value": 49900.0
         },
         {
           "month": "2025-05",
@@ -35810,7 +35887,7 @@
           "month": "2025-06",
           "date": "2025-06-30",
           "series": "Mgrs",
-          "value": 49400.0
+          "value": 50000.0
         },
         {
           "month": "2025-06",
@@ -35852,7 +35929,7 @@
           "month": "2025-07",
           "date": "2025-07-31",
           "series": "Prof.",
-          "value": 49400.0
+          "value": 49300.0
         },
         {
           "month": "2025-07",
@@ -35876,7 +35953,7 @@
           "month": "2025-08",
           "date": "2025-08-31",
           "series": "Elementary",
-          "value": 5900.0
+          "value": 6000.0
         },
         {
           "month": "2025-08",
@@ -35924,7 +36001,7 @@
           "month": "2025-09",
           "date": "2025-09-30",
           "series": "Prof.",
-          "value": 49000.0
+          "value": 48900.0
         },
         {
           "month": "2025-09",
@@ -35996,7 +36073,7 @@
           "month": "2025-11",
           "date": "2025-11-30",
           "series": "Prof.",
-          "value": 47800.0
+          "value": 47700.0
         },
         {
           "month": "2025-11",
@@ -36032,7 +36109,7 @@
           "month": "2025-12",
           "date": "2025-12-31",
           "series": "Prof.",
-          "value": 47800.0
+          "value": 47700.0
         },
         {
           "month": "2025-12",
@@ -36225,6 +36302,42 @@
           "date": "2026-05-31",
           "series": "Total",
           "value": 21000.0
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "Assoc. prof",
+          "value": 28500.0
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "Elementary",
+          "value": 6000.0
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "Mgrs",
+          "value": 50000.0
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "Prof.",
+          "value": 46400.0
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "Sales",
+          "value": 16800.0
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "Total",
+          "value": 21000.0
         }
       ],
       "earnings_by_occupation_latest": [
@@ -36234,11 +36347,11 @@
         },
         {
           "occupation": "Other occupations",
-          "median_monthly_earnings": 12500.0
+          "median_monthly_earnings": 14000.0
         },
         {
           "occupation": "Services and sales workers",
-          "median_monthly_earnings": 16600.0
+          "median_monthly_earnings": 16800.0
         },
         {
           "occupation": "Clerical support workers",
@@ -36258,11 +36371,11 @@
         },
         {
           "occupation": "Associate professionals",
-          "median_monthly_earnings": 28800.0
+          "median_monthly_earnings": 28500.0
         },
         {
           "occupation": "Professionals",
-          "median_monthly_earnings": 47000.0
+          "median_monthly_earnings": 46400.0
         },
         {
           "occupation": "Managers",
@@ -36902,8 +37015,8 @@
           "dataset": "labour_force_monthly",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-06-30",
-          "records": 13425,
+          "latest_observation": "2026-07-31",
+          "records": 13450,
           "freshness": "Live at build time",
           "notes": "Monthly rolling-three-month series; annual estimates are retained."
         },
@@ -36932,8 +37045,8 @@
           "dataset": "median_earnings_by_industry",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-05-31",
-          "records": 3083,
+          "latest_observation": "2026-06-30",
+          "records": 3096,
           "freshness": "Live at build time",
           "notes": "Median monthly earnings; the dashboard uses the rolling-three-month series for the main trend."
         },
@@ -37014,7 +37127,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-labour-market/",
-    "snapshotId": "cba9287a3610f8ab",
-    "dataAsOf": "2026-06-30"
+    "snapshotId": "66bebab253891ab7",
+    "dataAsOf": "2026-07-31"
   }
 }

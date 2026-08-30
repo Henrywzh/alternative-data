@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-08-30T11:55:30.504319Z",
-  "snapshot_id": "e56b4b822b3e0c88",
+  "generated_at": "2026-08-30T14:27:22.177600Z",
+  "snapshot_id": "0ef3c5a031178e57",
   "data_as_of": "2026-08-01",
   "overall_status": "Healthy",
   "live_sources": 16,
@@ -22,7 +22,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "2026-07-01",
-      "records": 124,
+      "records": 134,
       "freshness": "Live",
       "notes": "HKIA airport monthly aircraft movements, passenger volume, and freight tonnage alongside Cathay Pacific passengers, RPK, ASK, passenger/cargo load factors, cargo tonnage, AFTK/RFTK and reported flight sectors, fetched directly from Cathay's own investor-relations traffic-figures PDFs discovered through the official archive."
     },
@@ -41,8 +41,8 @@
       "dataset": "china_airline_traffic",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-06-01",
-      "records": 34121,
+      "latest_observation": "2026-07-01",
+      "records": 34398,
       "freshness": "Live",
       "notes": "Monthly passenger and cargo operating data for six China-listed airline groups, plus sparse PDF-derived fleet additions/retirements, fleet totals and new-route events; passenger fields are split by domestic, international and regional operations. The display layer prefers the verified source-recovered parquet when available, with raw processed data as fallback."
     },

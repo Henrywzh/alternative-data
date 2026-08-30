@@ -21,8 +21,18 @@ def main():
     parser = argparse.ArgumentParser(description="HK Local Consumer Alternative Data Pipeline CLI")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
-    subparsers.add_parser("run-stage-1", help="Run Stage 1 ready-to-build ingestion")
-    subparsers.add_parser("run-all", help="Run full pipeline across Stage 1 sources")
+    stage_1_parser = subparsers.add_parser("run-stage-1", help="Run Stage 1 ready-to-build ingestion")
+    stage_1_parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Exit non-zero when any registered source fails or is invalid.",
+    )
+    all_parser = subparsers.add_parser("run-all", help="Run full pipeline across Stage 1 sources")
+    all_parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Exit non-zero when any registered source fails or is invalid.",
+    )
     subparsers.add_parser("run-afcd", help="Run AFCD food price ingestion")
     subparsers.add_parser("run-consumer-council", help="Run Consumer Council price watch ingestion")
     subparsers.add_parser("run-sge-gold", help="Run SGE gold benchmark ingestion")
@@ -37,7 +47,7 @@ def main():
 
     try:
         if args.command in ("run-stage-1", "run-all"):
-            results = run_stage_1_pipeline()
+            results = run_stage_1_pipeline(_raise_on_failure=args.strict)
             print("\nStage 1 Ingestion completed:\n" + json.dumps(results, indent=2))
         elif args.command == "run-dashboard-history":
             print(json.dumps(run_dashboard_history_sources(), indent=2))

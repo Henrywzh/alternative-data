@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-08-09T16:08:44.910278Z",
-  "snapshot_id": "cba9287a3610f8ab",
-  "data_as_of": "2026-06-30",
+  "generated_at": "2026-08-30T14:11:48.789009Z",
+  "snapshot_id": "66bebab253891ab7",
+  "data_as_of": "2026-07-31",
   "overall_status": "Healthy",
   "live_sources": 5,
   "planned_sources": 0,
@@ -11,8 +11,8 @@
       "dataset": "labour_force_monthly",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-06-30",
-      "records": 13425,
+      "latest_observation": "2026-07-31",
+      "records": 13450,
       "freshness": "Live at build time",
       "notes": "Monthly rolling-three-month series; annual estimates are retained."
     },
@@ -41,8 +41,8 @@
       "dataset": "median_earnings_by_industry",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-05-31",
-      "records": 3083,
+      "latest_observation": "2026-06-30",
+      "records": 3096,
       "freshness": "Live at build time",
       "notes": "Median monthly earnings; the dashboard uses the rolling-three-month series for the main trend."
     },
@@ -57,5 +57,5 @@
       "notes": "Applications/approvals and QMAS quota are policy-flow indicators; QMAS quota-allotted successful selection cases are included as the approval-equivalent display measure, not actual arrivals or employment."
     }
   ],
-  "attachment_filename": "hk-labour-market-dashboard-2026-08-09.html"
+  "attachment_filename": "hk-labour-market-dashboard-2026-08-30.html"
 }
