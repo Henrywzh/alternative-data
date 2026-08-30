@@ -37,6 +37,16 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e .[dev]
 
+      - name: Install a CJK font for the email charts
+        run: |
+          # Every chart title in the digest carries Chinese ("CSI 300 (沪深300)")
+          # and matplotlib's default DejaVu Sans has none of those glyphs. The
+          # runner ships no CJK font, so the charts arrived with boxes where the
+          # characters should be -- rendering fine, saying nothing, for as long
+          # as this job has been sending mail.
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk
+
       - name: Validate Gmail configuration
         id: gmail_config
         run: |

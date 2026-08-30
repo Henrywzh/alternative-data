@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import html
 import io
+import logging
 import os
 import re
 import smtplib
@@ -73,26 +74,84 @@ def _fmt_pct(value: float | None, digits: int = 2) -> str:
     return f"{value:+.{digits}f}%"
 
 
-def _configure_font() -> None:
-    candidates = (
-        "/System/Library/Fonts/Hiragino Sans GB.ttc",
-        "/System/Library/Fonts/STHeiti Medium.ttc",
-        "/Library/Fonts/Arial Unicode.ttf",
-        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
-        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.otf",
-    )
-    for candidate in candidates:
+# Font families that actually carry CJK glyphs, in preference order. Matched
+# against whatever is installed rather than against a fixed path, because the
+# same Noto package lands in different directories across distributions.
+CJK_FONT_FAMILIES = (
+    "Noto Sans CJK SC",
+    "Noto Sans CJK JP",
+    "Noto Sans SC",
+    "Source Han Sans SC",
+    "WenQuanYi Zen Hei",
+    "Hiragino Sans GB",
+    "Heiti SC",
+    "Arial Unicode MS",
+    "Microsoft YaHei",
+    "SimHei",
+)
+
+CJK_FONT_PATHS = (
+    "/System/Library/Fonts/Hiragino Sans GB.ttc",
+    "/System/Library/Fonts/STHeiti Medium.ttc",
+    "/Library/Fonts/Arial Unicode.ttf",
+    "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+    "/usr/share/fonts/opentype/noto/NotoSansCJK-SC-Regular.otf",
+    "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+    "/usr/share/fonts/opentype/noto/NotoSansSC-Regular.otf",
+)
+
+
+def _configure_font() -> str | None:
+    """Point matplotlib at a font with CJK coverage. Returns its name, or None.
+
+    Every chart title in the digest carries Chinese -- "CSI 300 (沪深300)" --
+    and DejaVu Sans, matplotlib's default, has none of those glyphs. The chart
+    still renders, so nothing fails; the characters just come out as boxes,
+    which is how this shipped in the email for as long as the runner has been
+    without a CJK font.
+    """
+    for candidate in CJK_FONT_PATHS:
         path = Path(candidate)
-        if path.exists():
-            try:
-                font_manager.fontManager.addfont(str(path))
-                font_name = font_manager.FontProperties(fname=str(path)).get_name()
-                plt.rcParams["font.sans-serif"] = [font_name, "DejaVu Sans", "sans-serif"]
-                plt.rcParams["font.family"] = font_name
-                break
-            except Exception:
-                pass
+        if not path.exists():
+            continue
+        try:
+            font_manager.fontManager.addfont(str(path))
+            font_name = font_manager.FontProperties(fname=str(path)).get_name()
+        except Exception:  # noqa: BLE001 - a broken font file is not fatal
+            continue
+        plt.rcParams["font.sans-serif"] = [font_name, "DejaVu Sans", "sans-serif"]
+        plt.rcParams["font.family"] = "sans-serif"
+        plt.rcParams["axes.unicode_minus"] = False
+        return font_name
+
+    # Nothing at a known path: ask matplotlib what is actually installed. This
+    # is what makes an apt-installed Noto work regardless of where it landed.
+    installed = {font.name for font in font_manager.fontManager.ttflist}
+    for family in CJK_FONT_FAMILIES:
+        if family in installed:
+            plt.rcParams["font.sans-serif"] = [family, "DejaVu Sans", "sans-serif"]
+            plt.rcParams["font.family"] = "sans-serif"
+            plt.rcParams["axes.unicode_minus"] = False
+            return family
+
     plt.rcParams["axes.unicode_minus"] = False
+    return None
+
+
+def _warn_if_cjk_unrenderable(title: str, font_name: str | None) -> None:
+    """Say so when the title needs glyphs the chosen font does not have.
+
+    The old code fell through silently, so a digest full of boxes looked
+    exactly like a healthy one from the logs.
+    """
+    if font_name is not None:
+        return
+    if any("\u4e00" <= ch <= "\u9fff" for ch in title):
+        logging.warning(
+            "No CJK font available; chart title %r will render its Chinese as "
+            "boxes. Install fonts-noto-cjk on this machine.",
+            title,
+        )
 
 
 def generate_sparkline_chart(
@@ -102,7 +161,7 @@ def generate_sparkline_chart(
     color: str = "#2563eb",
     days: int = 60,
 ) -> bytes | None:
-    _configure_font()
+    _warn_if_cjk_unrenderable(title, _configure_font())
     if df_prices is None or df_prices.empty or "exposure_id" not in df_prices.columns:
         return None
     series = df_prices[df_prices["exposure_id"] == exposure_id].sort_values("date").copy()

@@ -38,6 +38,13 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e .[dev]
 
+      - name: Install a CJK font for the email charts
+        run: |
+          # Same reason as the close job: the chart titles are Chinese and the
+          # runner ships no font that can draw them.
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk
+
       - name: Require Gmail configuration
         run: |
           # Unlike the close job, the digest is this workflow's only output --

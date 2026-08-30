@@ -2489,3 +2489,85 @@ def test_the_ftse100_exposure_carries_no_a_share_wrapper():
     from market_monitor.metadata import ETF_REGISTRY
 
     assert not [w for w in ETF_REGISTRY if str(w.get("exposure_id")) == "ftse100"]
+
+
+def test_the_email_charts_warn_when_chinese_cannot_be_drawn(monkeypatch, caplog):
+    """The digest rendered 沪深300 as boxes and said nothing about it.
+
+    matplotlib's default DejaVu Sans has no CJK glyphs, the runner shipped no
+    font that does, and the chart still came out -- 35KB of valid PNG with
+    tofu where the characters belong. Nothing in the logs distinguished that
+    from a healthy send.
+    """
+    import logging
+
+    from market_monitor import alerts
+
+    monkeypatch.setattr(alerts, "_configure_font", lambda: None)
+    dates = pd.date_range("2026-06-01", periods=70, freq="D")
+    prices = pd.DataFrame(
+        {
+            "exposure_id": "csi300",
+            "date": dates.strftime("%Y-%m-%d"),
+            "close": [3800.0 + i for i in range(len(dates))],
+        }
+    )
+
+    with caplog.at_level(logging.WARNING):
+        image = alerts.generate_sparkline_chart(prices, "csi300", "CSI 300 (沪深300) — 60D")
+
+    assert image, "the chart must still render; a missing font is not fatal"
+    assert any("CJK font" in record.message for record in caplog.records)
+
+
+def test_an_ascii_only_title_does_not_warn(monkeypatch, caplog):
+    import logging
+
+    from market_monitor import alerts
+
+    monkeypatch.setattr(alerts, "_configure_font", lambda: None)
+    dates = pd.date_range("2026-06-01", periods=70, freq="D")
+    prices = pd.DataFrame(
+        {
+            "exposure_id": "sp500",
+            "date": dates.strftime("%Y-%m-%d"),
+            "close": [5000.0 + i for i in range(len(dates))],
+        }
+    )
+
+    with caplog.at_level(logging.WARNING):
+        alerts.generate_sparkline_chart(prices, "sp500", "S&P 500 - 60D Trend")
+
+    assert not [r for r in caplog.records if "CJK font" in r.message]
+
+
+def test_font_discovery_finds_an_installed_family_without_a_known_path(monkeypatch):
+    """apt puts Noto in different directories across releases.
+
+    Matching only fixed paths is why installing the font would not necessarily
+    have been enough on its own.
+    """
+    from matplotlib import font_manager
+
+    from market_monitor import alerts
+
+    monkeypatch.setattr(alerts, "CJK_FONT_PATHS", ())
+
+    class _Font:
+        name = "Noto Sans CJK SC"
+
+    monkeypatch.setattr(font_manager.fontManager, "ttflist", [_Font()])
+
+    assert alerts._configure_font() == "Noto Sans CJK SC"
+
+
+def test_both_mail_sending_workflows_install_a_cjk_font():
+    """Discovery cannot help a runner that has no such font at all."""
+    import yaml
+
+    root = Path(__file__).resolve().parents[2] / ".github" / "workflows"
+    for name in ("market-monitor-daily.yml", "market-monitor-intraday.yml"):
+        spec = yaml.safe_load((root / name).read_text(encoding="utf-8"))
+        steps = list(spec["jobs"].values())[0]["steps"]
+        body = " ".join(str(step.get("run", "")) for step in steps)
+        assert "fonts-noto-cjk" in body, f"{name} sends mail without a CJK font"
