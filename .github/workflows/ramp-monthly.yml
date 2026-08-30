@@ -1,8 +1,16 @@
-name: Ramp Vendor Intelligence Monthly Update
+# Filename kept as ramp-monthly.yml so the existing run history stays attached
+# to this workflow; the cadence below is weekly.
+name: Ramp Vendor Intelligence Weekly Update
 
 on:
   schedule:
-    - cron: "0 5 5 * *"          # 05:00 UTC on the 5th — Ramp publishes monthly (spendMonth)
+    # Ramp's data is monthly, but its publication day is not fixed and the
+    # feeds do not land together -- in Aug 2026 the category charts carried
+    # July while the AI Index still stopped at June. A single monthly run
+    # therefore misses whichever feed publishes after it, and the miss costs a
+    # full month. Poll weekly instead: a run with nothing new is a no-op commit
+    # step, so the only cost of over-polling is a few minutes of CI.
+    - cron: "0 5 * * 1"          # 05:00 UTC every Monday
   workflow_dispatch:            # allow manual trigger / backfill
 
 permissions:
