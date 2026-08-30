@@ -97,3 +97,46 @@ def test_the_guard_reads_its_contract_from_the_dashboard_registry(
 
     spec = DATASET_REGISTRY[dataset_id]
     assert spec["natural_keys"] and spec["required_columns"]
+
+
+def _dated_frame(dates: list[str]) -> pd.DataFrame:
+    spec = DATASET_REGISTRY[DATASET_ID]
+    columns = {str(column): ["a"] * len(dates) for column in spec["required_columns"]}
+    for index, key in enumerate(spec["natural_keys"]):
+        columns[str(key)] = [f"k{row}-{index}" for row in range(len(dates))]
+    columns[str(spec["primary_date_column"])] = dates
+    return pd.DataFrame(columns)
+
+
+def test_a_structurally_perfect_but_frozen_dataset_is_a_failure(tmp_path: Path) -> None:
+    """Columns, key and rows all intact -- and ten days behind.
+
+    This is the state daily_cloud_infra_economics was actually in: its rebuild
+    step crashed every morning from 2026-08-21, continue-on-error reported
+    those failures to GitHub as successes, and every structural check passed on
+    the file the last working run had left behind.
+    """
+    frame = _dated_frame(["2026-08-19", "2026-08-20"])
+    path = _write(frame, tmp_path)
+    now = pd.Timestamp("2026-08-30", tz="UTC")
+
+    assert check_dataset(DATASET_ID, path, now=now) == []
+
+    failures = check_dataset(DATASET_ID, path, fresh_within_days=2, now=now)
+    assert len(failures) == 1
+    assert "2026-08-20" in failures[0]
+    assert "10 days behind" in failures[0]
+
+
+def test_freshness_tolerates_a_single_missed_day(tmp_path: Path) -> None:
+    """One bad day against ~100 third-party pages must stay quiet."""
+    path = _write(_dated_frame(["2026-08-28", "2026-08-29"]), tmp_path)
+    assert check_dataset(
+        DATASET_ID, path, fresh_within_days=2, now=pd.Timestamp("2026-08-30", tz="UTC")
+    ) == []
+
+
+def test_freshness_is_only_judged_when_it_is_asked_for(tmp_path: Path) -> None:
+    """Datasets behind a step that fails loudly keep the structural contract only."""
+    path = _write(_dated_frame(["2020-01-01", "2020-01-02"]), tmp_path)
+    assert check_dataset(DATASET_ID, path) == []

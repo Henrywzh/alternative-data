@@ -136,11 +136,27 @@ jobs:
       # Check the artifact rather than the step outcome, and do it after the
       # commit so a violation reports loudly without blocking the datasets that
       # did refresh correctly.
+      #
+      # Shape was not enough. The mart rebuild below crashed on every run from
+      # 2026-08-21 to 2026-08-30 -- a hard TypeError, which continue-on-error
+      # turns into a step GitHub reports as *success* -- and nothing noticed,
+      # because the stale file still had its columns, its key and its rows. Both
+      # artifacts of a continue-on-error producer now have to be current too. A
+      # two-day allowance tolerates one missed or bad day; a producer that has
+      # stopped producing cannot hide behind it.
       - name: Verify serving-provider dataset contract
         run: |
           python scripts/check_dataset_contract.py \
             cloud_infra_daily_activity \
-            data/normalized/openrouter/cloud_infra_daily_activity.parquet
+            data/normalized/openrouter/cloud_infra_daily_activity.parquet \
+            --fresh-within-days 2
+
+      - name: Verify serving-provider economics mart contract
+        run: |
+          python scripts/check_dataset_contract.py \
+            daily_cloud_infra_economics \
+            data/normalized/marts/daily_cloud_infra_economics.parquet \
+            --fresh-within-days 2
 
       - name: Upload normalized datasets
         continue-on-error: true

@@ -8,8 +8,17 @@ degrades.  This closes that gap by checking the artifact rather than the step
 outcome, so a transient bad sweep stays quiet while a dataset that no longer
 matches its contract is loud and stays loud until it is fixed.
 
-``dashboard.data.DATASET_REGISTRY`` is the single source of truth for both the
-required columns and the natural key; nothing is duplicated here.
+``dashboard.data.DATASET_REGISTRY`` is the single source of truth for the
+required columns, the natural key and the date column; nothing is duplicated
+here.
+
+Shape alone is not enough. A dataset can satisfy every structural rule and
+still be dead: daily_cloud_infra_economics kept its columns, its key and its
+38,816 rows while its rebuild step crashed every morning for nine days behind
+a continue-on-error that GitHub reports as a success. Pass
+``--fresh-within-days`` for any dataset produced by a step that is allowed to
+fail, so a producer that stops producing is caught by the artifact it left
+behind.
 """
 
 from __future__ import annotations
@@ -27,7 +36,12 @@ if str(REPO_ROOT) not in sys.path:
 from dashboard.data import DATASET_REGISTRY  # noqa: E402
 
 
-def check_dataset(dataset_id: str, path: Path) -> list[str]:
+def check_dataset(
+    dataset_id: str,
+    path: Path,
+    fresh_within_days: float | None = None,
+    now: pd.Timestamp | None = None,
+) -> list[str]:
     """Return one message per contract violation; empty means healthy."""
 
     spec = DATASET_REGISTRY.get(dataset_id)
@@ -64,6 +78,32 @@ def check_dataset(dataset_id: str, path: Path) -> list[str]:
 
     if frame.empty:
         failures.append(f"{dataset_id}: dataset is empty")
+        return failures
+
+    if fresh_within_days is not None:
+        date_column = str(spec.get("primary_date_column") or "")
+        if not date_column or date_column not in frame.columns:
+            failures.append(
+                f"{dataset_id}: freshness was requested but the registry's date "
+                f"column {date_column!r} is not in the data"
+            )
+        else:
+            dates = pd.to_datetime(frame[date_column], errors="coerce", utc=True).dropna()
+            if dates.empty:
+                failures.append(
+                    f"{dataset_id}: no parseable dates in {date_column}, so "
+                    "freshness cannot be established"
+                )
+            else:
+                latest = dates.max().normalize()
+                reference = (now or pd.Timestamp.now(tz="UTC")).normalize()
+                lag_days = (reference - latest).total_seconds() / 86400.0
+                if lag_days > fresh_within_days:
+                    failures.append(
+                        f"{dataset_id}: newest {date_column} is "
+                        f"{latest.date()}, {lag_days:.0f} days behind "
+                        f"{reference.date()} (limit {fresh_within_days:g})"
+                    )
     return failures
 
 
@@ -71,9 +111,19 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("dataset_id")
     parser.add_argument("path", type=Path)
+    parser.add_argument(
+        "--fresh-within-days",
+        type=float,
+        default=None,
+        help=(
+            "Fail when the newest date in the registry's primary date column is "
+            "more than this many days old. Use it for datasets whose producing "
+            "step is allowed to fail."
+        ),
+    )
     args = parser.parse_args(argv)
 
-    failures = check_dataset(args.dataset_id, args.path)
+    failures = check_dataset(args.dataset_id, args.path, args.fresh_within_days)
     if not failures:
         print(f"{args.dataset_id}: contract satisfied")
         return 0
