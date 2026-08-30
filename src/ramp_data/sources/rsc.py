@@ -25,6 +25,26 @@ _PUSH_RE = re.compile(r'self\.__next_f\.push\(\[1,\s*(".*?")\]\)', re.DOTALL)
 
 _DECODER = json.JSONDecoder()
 
+# React serializes a missing value as the string "$undefined" -- the payload has
+# no JSON `undefined`, so the framing token travels as ordinary text. Left
+# alone it lands in the data as a value: `is_publishable` on every one of the
+# 37 ramp_ai_pepm_spend rows read as the literal "$undefined", which is
+# *truthy*, so a filter on that column silently kept rows Ramp never marked
+# publishable. Numeric fields hid it better -- coercion turned it into NaN --
+# but only by accident of the column's type.
+_UNDEFINED = "$undefined"
+
+
+def _denull(value: Any) -> Any:
+    """Recursively turn React's ``"$undefined"`` sentinel into ``None``."""
+    if isinstance(value, str):
+        return None if value == _UNDEFINED else value
+    if isinstance(value, list):
+        return [_denull(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _denull(item) for key, item in value.items()}
+    return value
+
 
 def decode_payload(html: str) -> str:
     """Reconstruct the RSC payload string from a page's HTML.
@@ -80,7 +100,7 @@ def objects_containing(payload: str, marker: str, required_keys: set[str]) -> li
             if isinstance(obj, dict) and end > marker_pos:
                 seen_starts.add(brace)
                 if required_keys.issubset(obj.keys()):
-                    results.append(obj)
+                    results.append(_denull(obj))
                 break
             search_end = brace
     return results
@@ -104,4 +124,4 @@ def extract_array_after_key(payload: str, key: str) -> list[Any]:
         value, _ = _DECODER.raw_decode(payload, bracket)
     except json.JSONDecodeError:
         return []
-    return value if isinstance(value, list) else []
+    return _denull(value) if isinstance(value, list) else []

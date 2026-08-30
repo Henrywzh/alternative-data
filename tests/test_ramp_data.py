@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from ramp_data.models import RunContext, Snapshot
+from ramp_data.models import GenericRecord, RunContext, Snapshot
 from ramp_data.pipeline import RampPipeline, ValidationError
 from ramp_data.schemas import JOBS_IMPACT_DATASET
 from ramp_data.sources import rsc
@@ -377,3 +377,85 @@ def test_category_charts_extract_and_upsert(tmp_path: Path):
     merged_m = storage.upsert_dataset("ramp_category_adoption_monthly", monthly)
     assert len(merged_m) == 4
     assert set(merged_m.columns) >= {"category_slug", "spend_month", "vendor_name", "adoption_rate"}
+
+
+def test_rsc_undefined_sentinel_becomes_null():
+    # React has no JSON `undefined`, so a missing value arrives as the literal
+    # string "$undefined". It used to be stored verbatim: `is_publishable` on
+    # every ramp_ai_pepm_spend row read as a non-empty -- therefore truthy --
+    # string, so filtering on it kept everything.
+    payload = (
+        '{"spendPerEmployee":[{"date_month":"2026-07-01","median_pepm":11.95,'
+        '"raw_weighted_pepm":"$undefined","is_publishable":"$undefined"}]}'
+    )
+    rows = rsc.extract_array_after_key(payload, "spendPerEmployee")
+    assert rows[0]["is_publishable"] is None
+    assert rows[0]["raw_weighted_pepm"] is None
+    assert rows[0]["median_pepm"] == 11.95
+    assert rows[0]["date_month"] == "2026-07-01"
+
+
+def test_rsc_undefined_sentinel_is_normalized_when_nested():
+    payload = (
+        '{"cleanDomain":"cursor.com","name":"Cursor","pathname":"/vendors/cursor",'
+        '"keyStats":{"adoptionRateValue":"$undefined","tiers":["a","$undefined"]}}'
+    )
+    found = rsc.objects_containing(payload, '"cleanDomain":', {"cleanDomain", "name", "pathname"})
+    assert found[0]["keyStats"]["adoptionRateValue"] is None
+    assert found[0]["keyStats"]["tiers"] == ["a", None]
+    assert found[0]["name"] == "Cursor"
+
+
+def test_retired_category_dataset_does_not_block_its_healthy_siblings():
+    """A dataset Ramp stopped publishing must not discard the rest of the run.
+
+    Ramp removed the two optional secondary charts from every category page in
+    Aug 2026. The gate is all-or-nothing by design, so their unreachable
+    min_rows floor failed the whole batch and threw away 33 healthy adoption
+    CSVs on every run -- silently, because the step carried continue-on-error.
+    """
+    from ramp_data.schemas import CATEGORY_CHARTS_DATASETS
+
+    retired = [k for k, cfg in CATEGORY_CHARTS_DATASETS.items() if cfg.get("retired")]
+    assert set(retired) == {
+        "ramp_category_spend_share_quarterly",
+        "ramp_category_adoption_yoy_comparison",
+    }
+
+    extracted = {
+        "ramp_category_adoption_monthly": [
+            GenericRecord(
+                dataset_id="ramp_category_adoption_monthly",
+                source_url="https://datawrapper.dwcdn.net/a/1/dataset.csv",
+                source_run_id="test",
+                scraped_at="2026-08-30T00:00:00Z",
+                payload={
+                    "category_slug": "code-ai",
+                    "spend_month": "2026-07-01",
+                    "vendor_name": f"vendor-{i}",
+                    "adoption_rate": 0.5,
+                },
+            )
+            for i in range(CATEGORY_CHARTS_DATASETS["ramp_category_adoption_monthly"]["min_rows"])
+        ],
+        # Exactly what the live site now returns for both retired datasets.
+        "ramp_category_spend_share_quarterly": [],
+        "ramp_category_adoption_yoy_comparison": [],
+    }
+
+    report = RampPipeline._assert_category_charts_quality([], extracted)
+    assert report["ramp_category_adoption_monthly"]["rows"] > 0
+    assert report["ramp_category_spend_share_quarterly"]["retired"]
+
+
+def test_a_live_category_dataset_still_fails_the_gate_when_empty():
+    """Retiring two datasets must not disarm the gate for the one that remains."""
+    with pytest.raises(ValidationError, match="ramp_category_adoption_monthly"):
+        RampPipeline._assert_category_charts_quality(
+            [],
+            {
+                "ramp_category_adoption_monthly": [],
+                "ramp_category_spend_share_quarterly": [],
+                "ramp_category_adoption_yoy_comparison": [],
+            },
+        )

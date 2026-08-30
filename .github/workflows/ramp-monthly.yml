@@ -55,17 +55,28 @@ jobs:
           python -m ramp_data.cli --base-dir . filter-mode
 
       - name: Run Category-charts update
-        # Category-level adoption, spend share, and YoY comparison charts,
-        # dynamically scraped from Datawrapper widgets. continue-on-error so a
-        # gate failure here (e.g. Ramp temporarily dropping a category's
-        # optional secondary chart) can't block the vendor/ai-index/filter-mode
-        # datasets above -- which already succeeded -- from being committed.
-        continue-on-error: true
+        # Category-level adoption charts, dynamically scraped from Datawrapper
+        # widgets.
+        #
+        # This step used to carry continue-on-error, so that a gate failure
+        # here could not block the already-successful vendor/ai-index/
+        # filter-mode datasets above from being committed. That worked, and it
+        # also hid a real outage: Ramp retired the two optional secondary
+        # charts, the gate failed on every run from 2026-08-04 onward, the
+        # whole category-charts batch was discarded, and the job still went
+        # green. The retired datasets are now marked as such in schemas.py, so
+        # a failure here again means something genuinely broke -- let it fail.
+        # The commit step below runs on failure anyway, so a red step here no
+        # longer costs the datasets that did succeed.
         run: |
           python -m ramp_data.cli --base-dir . category-charts
 
 
       - name: Commit normalized datasets
+        # Runs even when a scrape step failed: each step gates its own write, so
+        # whatever reached disk is trustworthy and worth committing. The job
+        # still reports the failure.
+        if: ${{ !cancelled() }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -94,6 +105,7 @@ jobs:
           exit 1
 
       - name: Upload normalized datasets
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
           name: ramp-vendor-data
