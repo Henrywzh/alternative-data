@@ -3,15 +3,26 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+import pandas as pd
+
 from dashboard.data import (
     DATASET_REGISTRY,
     DatasetLoadResult,
     FreshnessInfo,
+    dataset_exists,
     dataset_ids,
     domain_dataset_ids,
-    dataset_source_for_domain,
-    normalized_root,
 )
+
+# A dataset is called stale once it is this many of its own publication
+# intervals behind, plus a week of grace. The cadence is measured from the
+# dataset's own dates rather than declared per dataset, so a daily feed is
+# judged on days and a monthly one on months without 96 registry entries to
+# keep in step with reality.
+STALENESS_INTERVALS = 2.0
+STALENESS_GRACE_DAYS = 7.0
+# Below this many distinct dates a median gap is not a cadence, just noise.
+STALENESS_MIN_POINTS = 6
 
 
 @dataclass(frozen=True)
@@ -33,11 +44,7 @@ def run_checks(
     expected_ids = expected_dataset_ids if expected_dataset_ids is not None else (list(datasets) if datasets else dataset_ids())
     for dataset_id in expected_ids:
         registry_entry = DATASET_REGISTRY.get(dataset_id, {})
-        domain = registry_entry.get("domain", "rankings")
-        source = dataset_source_for_domain(domain)
-        root = normalized_root(base_dir, source=source)
-        
-        if not ((root / f"{dataset_id}.parquet").exists() or (root / f"{dataset_id}.csv").exists()):
+        if not dataset_exists(dataset_id, base_dir):
             if registry_entry.get("optional", False):
                 continue
             missing_files.append(dataset_id)
@@ -70,6 +77,24 @@ def run_checks(
                 )
             )
 
+    for dataset_id, result in datasets.items():
+        # `optional` already means "absent or empty is not a fault here", which
+        # is exactly the contract of a feed that has been retired upstream.
+        if DATASET_REGISTRY.get(dataset_id, {}).get("optional", False):
+            continue
+        stale = _staleness(result)
+        if stale is not None:
+            days_behind, cadence_days = stale
+            checks.append(
+                CheckResult(
+                    "warning",
+                    f"{dataset_id} has stopped advancing",
+                    f"Latest row is {result.latest_date} — {days_behind:.0f} days back, "
+                    f"on a feed that normally publishes every {cadence_days:.0f} day(s).",
+                    result.domain,
+                )
+            )
+
     if freshness.latest_scraped_at is None:
         checks.append(CheckResult("warning", "Freshness unavailable", "No dataset-level scraped timestamps found.", "global"))
     if expected_dataset_ids is None and freshness.latest_manifest_path is None:
@@ -78,3 +103,32 @@ def run_checks(
     if not checks:
         checks.append(CheckResult("ok", "All checks passed", "Expected datasets are present and look internally consistent.", "global"))
     return checks
+
+
+def _staleness(result: DatasetLoadResult) -> tuple[float, float] | None:
+    """How far behind its own cadence a dataset is, or None if it is on time.
+
+    Presence, schema and duplicate checks all pass for a feed that quietly
+    stopped: the file is there, the columns are right, the rows are unique, and
+    the newest row is from March. That is the failure mode this dashboard keeps
+    hitting -- an upstream retirement or a red workflow nobody watched -- and
+    the panel had nothing to say about it. Note this measures the *data*, not
+    scraped_at: an upsert leaves the original scraped_at on rows it did not
+    change, so a current dataset can carry a month-old timestamp.
+    """
+    if result.latest_date is None or result.frame.empty:
+        return None
+    column = result.primary_date_column
+    if not column or column not in result.frame.columns:
+        return None
+    dates = pd.to_datetime(result.frame[column], errors="coerce", utc=True).dropna()
+    distinct = pd.Index(dates.dt.normalize().unique()).sort_values()
+    if len(distinct) < STALENESS_MIN_POINTS:
+        return None
+    cadence_days = float(pd.Series(distinct).diff().dropna().dt.total_seconds().median()) / 86400.0
+    if cadence_days <= 0:
+        return None
+    days_behind = (pd.Timestamp.now(tz="UTC").normalize() - distinct[-1]).total_seconds() / 86400.0
+    if days_behind > STALENESS_INTERVALS * cadence_days + STALENESS_GRACE_DAYS:
+        return days_behind, cadence_days
+    return None

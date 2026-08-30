@@ -1323,8 +1323,11 @@ def test_checks_flag_missing_and_duplicate_data_across_domains(tmp_path: Path) -
 
     assert "Missing datasets" in titles
     assert "top_models duplicate natural keys" in titles
-    assert "categories_programming is empty" in titles
+    assert "market_share is empty" in titles
     assert "apps_trending_snapshots is empty" in titles
+    # categories_programming is retired upstream and marked optional, so its
+    # emptiness is the expected state rather than something to report.
+    assert "categories_programming is empty" not in titles
 
 
 def test_checks_only_report_missing_files_for_provided_domain_dataset_subset(tmp_path: Path) -> None:
@@ -5279,3 +5282,125 @@ def test_pricing_columns_cover_what_the_revenue_estimators_join_on() -> None:
         "pricing_prompt",
         "pricing_completion",
     }
+
+
+def _dated_frame(dataset_id: str, dates: list[str], date_column: str) -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            date_column: dates,
+            "entity_id": [f"model-{i}" for i in range(len(dates))],
+            "metric_value": [1.0] * len(dates),
+            "rank": list(range(1, len(dates) + 1)),
+            "scraped_at": ["2026-08-30T00:00:00Z"] * len(dates),
+            "source_run_id": ["run"] * len(dates),
+            "source_url": ["https://example.test"] * len(dates),
+            "dataset_id": [dataset_id] * len(dates),
+        }
+    )
+
+
+def test_partitioned_dataset_is_not_reported_missing(tmp_path: Path) -> None:
+    """github_repo_* are directories of dated parquets, not <id>.parquet.
+
+    The health panel tested for the single-file shape only, so it called two
+    datasets missing that the loader reads without trouble -- 981k rows of
+    them, current to yesterday.
+    """
+    from dashboard.data import dataset_exists
+
+    partition_dir = tmp_path / "data" / "normalized" / "provider_adoption" / "github_repo_rollup_daily"
+    partition_dir.mkdir(parents=True)
+    pd.DataFrame({"observed_date": ["2026-08-29"], "repo_full_name": ["a/b"]}).to_parquet(
+        partition_dir / "2026-08-29.parquet"
+    )
+
+    assert dataset_exists("github_repo_rollup_daily", tmp_path)
+
+    checks = run_checks(
+        {}, load_latest_manifest(base_dir=tmp_path), base_dir=tmp_path,
+        expected_dataset_ids=["github_repo_rollup_daily"],
+    )
+    assert [c for c in checks if c.title == "Missing datasets"] == []
+
+
+def test_dataset_whose_source_differs_from_its_domain_is_not_reported_missing(tmp_path: Path) -> None:
+    """cloud_infra_daily_activity is grouped under a domain it does not live in.
+
+    load_dataset carries an explicit override for it; the health panel derived
+    the path from the domain alone and so looked in the wrong directory.
+    """
+    from dashboard.data import dataset_exists
+
+    root = tmp_path / "data" / "normalized" / "openrouter"
+    root.mkdir(parents=True)
+    pd.DataFrame({"usage_date": ["2026-08-30"], "serving_provider": ["x"]}).to_parquet(
+        root / "cloud_infra_daily_activity.parquet"
+    )
+
+    assert dataset_exists("cloud_infra_daily_activity", tmp_path)
+
+
+def test_checks_flag_a_feed_that_stopped_advancing(tmp_path: Path) -> None:
+    """A dataset present, well-formed, unique -- and four weeks behind.
+
+    Every other check passes for a feed whose workflow has been failing, which
+    is how the OpenRouter rankings sat a month stale behind a green dashboard.
+    """
+    root = tmp_path / "data" / "normalized" / "openrouter"
+    root.mkdir(parents=True)
+    weeks = pd.date_range("2026-05-04", periods=14, freq="7D").strftime("%Y-%m-%d").tolist()
+    _dated_frame("top_models", weeks, "week_start_date").to_csv(root / "top_models.csv", index=False)
+
+    datasets = load_domain_datasets("rankings", base_dir=tmp_path)
+    checks = run_checks(datasets, load_latest_manifest(base_dir=tmp_path), base_dir=tmp_path)
+
+    stale = [c for c in checks if c.title == "top_models has stopped advancing"]
+    assert len(stale) == 1
+    assert "every 7 day(s)" in stale[0].detail
+
+
+def test_checks_do_not_flag_a_feed_that_is_merely_between_publications(tmp_path: Path) -> None:
+    """A weekly feed six days after its last week is on time, not stale."""
+    root = tmp_path / "data" / "normalized" / "openrouter"
+    root.mkdir(parents=True)
+    last = pd.Timestamp.utcnow().normalize() - pd.Timedelta(days=6)
+    weeks = pd.date_range(end=last, periods=14, freq="7D").strftime("%Y-%m-%d").tolist()
+    _dated_frame("top_models", weeks, "week_start_date").to_csv(root / "top_models.csv", index=False)
+
+    datasets = load_domain_datasets("rankings", base_dir=tmp_path)
+    checks = run_checks(datasets, load_latest_manifest(base_dir=tmp_path), base_dir=tmp_path)
+
+    assert [c for c in checks if "stopped advancing" in c.title] == []
+
+
+def test_staleness_is_measured_per_feed_not_on_one_global_threshold(tmp_path: Path) -> None:
+    """A monthly feed two months behind is stale; a monthly feed one month behind is not.
+
+    A single day-count threshold cannot serve both a daily and a quarterly
+    dataset, so the cadence comes from each dataset's own dates.
+    """
+    root = tmp_path / "data" / "normalized" / "openrouter"
+    root.mkdir(parents=True)
+    now = pd.Timestamp.utcnow().normalize()
+
+    on_time = pd.date_range(end=now - pd.Timedelta(days=30), periods=12, freq="30D")
+    _dated_frame("top_models", on_time.strftime("%Y-%m-%d").tolist(), "week_start_date").to_csv(
+        root / "top_models.csv", index=False
+    )
+    checks = run_checks(
+        load_domain_datasets("rankings", base_dir=tmp_path),
+        load_latest_manifest(base_dir=tmp_path), base_dir=tmp_path,
+    )
+    assert [c for c in checks if "stopped advancing" in c.title] == []
+
+    behind = pd.date_range(end=now - pd.Timedelta(days=95), periods=12, freq="30D")
+    _dated_frame("top_models", behind.strftime("%Y-%m-%d").tolist(), "week_start_date").to_csv(
+        root / "top_models.csv", index=False
+    )
+    checks = run_checks(
+        load_domain_datasets("rankings", base_dir=tmp_path),
+        load_latest_manifest(base_dir=tmp_path), base_dir=tmp_path,
+    )
+    assert [c.title for c in checks if "stopped advancing" in c.title] == [
+        "top_models has stopped advancing"
+    ]

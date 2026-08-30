@@ -186,6 +186,11 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "primary_date_column": "week_start_date",
         "metric_column": "metric_value",
         "required_columns": ["week_start_date", "category_slug", "entity_id", "metric_value", "rank"],
+        # Retired upstream: OpenRouter deleted /rankings/programming, so nothing
+        # writes this any more (see openrouter_data/sources/rankings.py). The 104
+        # collected weeks stay readable; the dataset simply stops at 2026-08-03,
+        # which is a fact about the feed rather than a fault to report weekly.
+        "optional": True,
     },
     "vercel_model_leaderboard": {
         "label": "Vercel Model Leaderboard",
@@ -2784,6 +2789,29 @@ def dataset_parquet_path(dataset_id: str, base_dir: Path | None = None) -> Path:
     if dataset_id == "cloud_infra_daily_activity":
         source = "openrouter"
     return normalized_root(base_dir, source=source) / f"{dataset_id}.parquet"
+
+
+def dataset_exists(dataset_id: str, base_dir: Path | None = None) -> bool:
+    """Whether ``load_dataset`` would find bytes for this dataset locally.
+
+    Anything that answers "is this dataset here?" must ask it the way the
+    loader answers it, or it invents absences. The health panel used to test
+    ``<source>/<id>.parquet`` on the domain's default source, which misses both
+    of the loader's other shapes -- the partitioned datasets, which are
+    directories of dated parquets, and cloud_infra_daily_activity, whose domain
+    and physical source deliberately differ. Four of the six datasets it called
+    missing were loading fine, and the two genuine absences were buried in the
+    noise.
+    """
+    parquet_path = dataset_parquet_path(dataset_id, base_dir)
+    if parquet_path.exists() or parquet_path.with_suffix(".csv").exists():
+        return True
+    partition_dir = parquet_path.with_suffix("")
+    return (
+        dataset_id in PARTITIONED_DATASETS
+        and partition_dir.is_dir()
+        and any(partition_dir.glob("*.parquet"))
+    )
 
 
 @st.cache_data(ttl=3600, max_entries=8, show_spinner=False)
