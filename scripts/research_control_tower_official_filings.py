@@ -20,8 +20,14 @@ import pandas as pd
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+# src/ too, as scripts/build_research_control_tower.py already does: pyproject
+# maps these packages to the top level (package-dir = {"" = "src"}) and they
+# import each other by those names, so the repo root alone is not enough.
+SRC_ROOT = REPO_ROOT / "src"
+if str(SRC_ROOT) not in sys.path:
+    sys.path.insert(0, str(SRC_ROOT))
 
-from src.research_control_tower.official_filings import (  # noqa: E402
+from research_control_tower.official_filings import (  # noqa: E402
     collect_official_filings,
     load_source_identity,
 )
