@@ -512,3 +512,96 @@ def test_serving_provider_manifest_exposes_parse_omissions(tmp_path) -> None:
         "no-chart-a",
         "no-chart-b",
     ]
+
+
+def test_boolean_flags_survive_a_loader_that_hands_them_over_as_strings() -> None:
+    """The economics mart must build from string-typed flag columns.
+
+    Parquet stores these flags as real bools, but the dashboard's loader
+    normalizes object columns to pandas ``string``, so the mart received
+    "True"/"False"/<NA>. ``astype("boolean")`` raises TypeError on those, and
+    the workflow step that rebuilds the mart carries continue-on-error -- so
+    from 2026-08-21 the build crashed every day, GitHub reported the step as a
+    success, and daily_cloud_infra_economics silently stopped at 2026-08-20
+    while its inputs kept advancing.
+    """
+    activity = pd.DataFrame(
+        [
+            {
+                "usage_date": "2026-08-19",
+                "serving_provider": "coreweave",
+                "serving_provider_name": "CoreWeave",
+                "model_permaslug": "openai/gpt-5",
+                "total_tokens": 1000.0,
+                "is_first_party_route": "False",
+                "is_complete_day": "True",
+                "include_in_default_kpis": "True",
+            },
+            {
+                "usage_date": "2026-08-19",
+                "serving_provider": "openai",
+                "serving_provider_name": "OpenAI",
+                "model_permaslug": "openai/gpt-5",
+                "total_tokens": 2000.0,
+                "is_first_party_route": "True",
+                "is_complete_day": "True",
+                "include_in_default_kpis": "True",
+            },
+        ]
+    ).astype(
+        {
+            "is_first_party_route": "string",
+            "is_complete_day": "string",
+            "include_in_default_kpis": "string",
+        }
+    )
+    pricing = pd.DataFrame(
+        [
+            {
+                "snapshot_ts": "2026-08-18T00:00:00Z",
+                "model_id": "openai/gpt-5",
+                "canonical_slug": "openai/gpt-5",
+                "provider_prefix": "openai",
+                "pricing_prompt": 0.000001,
+                "pricing_completion": 0.000003,
+            }
+        ]
+    )
+
+    economics = build_serving_provider_economics(
+        activity, pricing, scraped_at="2026-08-21T00:00:00Z"
+    )
+
+    assert len(economics) == 2
+    flags = dict(zip(economics["serving_provider"], economics["is_first_party_route"]))
+    assert flags["openai"] is True or flags["openai"] == True  # noqa: E712
+    assert not flags["coreweave"]
+
+
+def test_as_boolean_reads_both_storage_shapes_and_keeps_missing_missing() -> None:
+    from openrouter_data.serving_provider import as_boolean
+
+    as_strings = as_boolean(pd.Series(["True", "false", "1", "0", pd.NA], dtype="string"))
+    assert list(as_strings[:4]) == [True, False, True, False]
+    assert pd.isna(as_strings.iloc[4])
+
+    as_bools = as_boolean(pd.Series([True, False, pd.NA], dtype="boolean"))
+    assert list(as_bools[:2]) == [True, False]
+    assert pd.isna(as_bools.iloc[2])
+
+
+def test_incomplete_day_flagging_accepts_string_typed_quality_columns() -> None:
+    frame = pd.DataFrame(
+        {
+            "usage_date": ["2026-08-18", "2026-08-19"],
+            "total_tokens": [10.0, 20.0],
+            "observation_status": pd.array(["complete", "complete"], dtype="string"),
+            "is_complete_day": pd.array(["True", "True"], dtype="string"),
+            "include_in_default_kpis": pd.array(["True", "True"], dtype="string"),
+        }
+    )
+
+    result = flag_latest_likely_incomplete_day(frame, usage_column="total_tokens")
+
+    assert str(result["is_complete_day"].dtype) == "boolean"
+    assert result["is_complete_day"].iloc[0]

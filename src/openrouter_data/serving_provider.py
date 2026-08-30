@@ -229,6 +229,26 @@ def is_first_party_route(model_permaslug: object, serving_provider: object) -> b
     return normalized_origin == normalized_serving
 
 
+def as_boolean(series: pd.Series) -> pd.Series:
+    """Coerce a flag column to nullable boolean, however it was stored.
+
+    Parquet round-trips these flags as real bools, but the dashboard's loader
+    normalizes object columns to pandas ``string``, so the same column arrives
+    as "True"/"False"/<NA> depending on who read it. ``astype("boolean")``
+    accepts the first and raises TypeError on the second -- which is what broke
+    the serving-provider economics mart: it crashed on every run from
+    2026-08-21, the workflow step's continue-on-error reported that failure as
+    a success, and the mart simply stopped advancing while the job stayed
+    green.
+    """
+    if pd.api.types.is_bool_dtype(series) or str(series.dtype) == "boolean":
+        return series.astype("boolean")
+    normalized = series.astype("string").str.strip().str.lower()
+    return normalized.map(
+        {"true": True, "false": False, "1": True, "0": False}
+    ).astype("boolean")
+
+
 def flag_latest_likely_incomplete_day(
     frame: pd.DataFrame,
     *,
@@ -256,12 +276,10 @@ def flag_latest_likely_incomplete_day(
     result["observation_status"] = (
         result["observation_status"].astype("string").fillna("complete")
     )
-    result["is_complete_day"] = (
-        result["is_complete_day"].astype("boolean").fillna(True)
-    )
-    result["include_in_default_kpis"] = (
-        result["include_in_default_kpis"].astype("boolean").fillna(True)
-    )
+    result["is_complete_day"] = as_boolean(result["is_complete_day"]).fillna(True)
+    result["include_in_default_kpis"] = as_boolean(
+        result["include_in_default_kpis"]
+    ).fillna(True)
 
     if result.empty or usage_column not in result.columns:
         return result

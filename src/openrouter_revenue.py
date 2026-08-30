@@ -8,6 +8,7 @@ import pandas as pd
 from pricing_model_aliases import canonical_provider_slug, clean_slug, derive_provider_prefix, generate_candidate_aliases
 from openrouter_data.serving_provider import (
     flag_latest_likely_incomplete_day,
+    as_boolean,
     route_metadata,
 )
 
@@ -1095,8 +1096,8 @@ def build_serving_provider_economics(
         if column not in activity.columns:
             activity[column] = route_fields[column]
         elif column == "is_first_party_route":
-            activity[column] = activity[column].astype("boolean").fillna(
-                route_fields[column].astype("boolean")
+            activity[column] = as_boolean(activity[column]).fillna(
+                as_boolean(route_fields[column])
             )
         else:
             activity[column] = activity[column].astype("string").fillna(
@@ -1198,7 +1199,7 @@ def build_serving_provider_economics(
         output["is_complete_day"].astype("boolean").fillna(True).astype(bool)
     )
     output["is_first_party_route"] = (
-        output["is_first_party_route"].astype("boolean").fillna(False).astype(bool)
+        as_boolean(output["is_first_party_route"]).fillna(False).astype(bool)
     )
     output["observation_status"] = output["observation_status"].fillna("complete")
     output = output.reindex(columns=SERVING_PROVIDER_ECONOMICS_COLUMNS)
