@@ -22,10 +22,10 @@ name: HK Transport Sector Data Refresh Monthly
 
 on:
   schedule:
-    # 20th of the month, 06:15 UTC -- after MTR/Cathay monthly IR figures
-    # and the airlines' Cninfo operating-data bulletins for the prior
-    # month have typically posted.
-    - cron: "15 6 20 * *"
+    # Airline bulletins usually arrive by the 20th, while MTR patronage can
+    # publish later and on an irregular date. Retry within the publication
+    # window so a post-20th MTR release is not missed until the next month.
+    - cron: "15 6 5,20,25,28 * *"
   workflow_dispatch:
 
 concurrency:

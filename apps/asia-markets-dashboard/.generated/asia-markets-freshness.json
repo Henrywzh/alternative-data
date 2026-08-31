@@ -1,7 +1,7 @@
 {
   "version": "asia-markets-freshness.v1",
-  "auditedAt": "2026-08-30T14:53:52.266382Z",
-  "asOf": "2026-08-30",
+  "auditedAt": "2026-08-31T06:45:39.130006Z",
+  "asOf": "2026-08-31",
   "status": "healthy",
   "requiredFailures": [],
   "checks": [
@@ -81,7 +81,7 @@
       "dataset": "kpi_northbound",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-08-28",
+      "expected_latest_period": "2026-08-29",
       "latest_observation": "2026-08-29",
       "notes": "Immigration passenger clearance is daily; allow a two-day publication/holiday lag."
     },
@@ -91,7 +91,7 @@
       "dataset": "consumer_council_oilprice",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-08-28",
+      "expected_latest_period": "2026-08-29",
       "latest_observation": "2026-08-30",
       "notes": "Consumer Council pump-price snapshot is fetched daily; allow a two-day publication lag."
     },
@@ -134,6 +134,16 @@
       "expected_latest_period": "2026-07",
       "latest_observation": "2026-07",
       "notes": "Listed airlines normally publish the prior month's operating bulletin before day 20."
+    },
+    {
+      "check_id": "transport.mtr_patronage",
+      "sector": "hk-transport",
+      "dataset": "mtr_history",
+      "required": true,
+      "status": "healthy",
+      "expected_latest_period": "2026-06",
+      "latest_observation": "2026-06",
+      "notes": "MTR monthly patronage is checked with a 35-day publication allowance because release dates vary around the latter part of the following month."
     },
     {
       "check_id": "market-monitor.localisation",

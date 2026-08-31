@@ -86,7 +86,10 @@ def _healthy_artifact_root(tmp_path: Path) -> Path:
     _write_pair(
         root,
         "hk-transport",
-        {"china_airline_passengers_history": [{"month": "2026-07"}]},
+        {
+            "china_airline_passengers_history": [{"month": "2026-07"}],
+            "mtr_history": [{"month": "2026-06"}],
+        },
     )
     for slug in ("market-monitor", "hk-commercial-aerospace", "hk-stablecoin-crypto"):
         _write_pair(root, slug, {"history": [{"date": "2026-08-29"}]})
@@ -103,6 +106,8 @@ def test_expected_periods_respect_release_lags() -> None:
     assert MODULE.expected_quarter(date(2026, 8, 30), release_lag_days=89) == "2026-Q1"
     assert MODULE.expected_month_by_lag(date(2026, 8, 30), release_lag_days=35) == "2026-06"
     assert MODULE.expected_month_by_lag(date(2026, 8, 31), release_lag_days=31) == "2026-07"
+    assert MODULE.expected_month_by_lag(date(2026, 8, 31), release_lag_days=35) == "2026-06"
+    assert MODULE.expected_month_by_lag(date(2026, 9, 4), release_lag_days=35) == "2026-07"
 
 
 def test_audit_is_healthy_when_core_sources_and_localisations_align(tmp_path: Path) -> None:
@@ -144,7 +149,10 @@ def test_audit_flags_stale_source_periods_and_localisation_drift(tmp_path: Path)
     _write_artifact(
         root,
         "hk-transport",
-        {"china_airline_passengers_history": [{"month": "2026-06"}]},
+        {
+            "china_airline_passengers_history": [{"month": "2026-06"}],
+            "mtr_history": [{"month": "2026-05"}],
+        },
     )
     _write_artifact(
         root,
@@ -164,8 +172,9 @@ def test_audit_flags_stale_source_periods_and_localisation_drift(tmp_path: Path)
         "labour.wages",
         "population.mpfa",
             "real_estate.bd_history",
-            "real_estate.hkma_mortgage",
+        "real_estate.hkma_mortgage",
         "transport.china_airlines",
+        "transport.mtr_patronage",
         "hk-commercial-aerospace.localisation",
     }.issubset(report["requiredFailures"])
 

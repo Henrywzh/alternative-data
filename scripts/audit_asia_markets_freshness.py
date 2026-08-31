@@ -394,6 +394,18 @@ def audit_artifacts(
             expected=expected_month(as_of, release_day=20),
             notes="Listed airlines normally publish the prior month's operating bulletin before day 20.",
         ),
+        _period_check(
+            artifact=transport,
+            check_id="transport.mtr_patronage",
+            sector="hk-transport",
+            dataset_id="mtr_history",
+            expected=expected_month_by_lag(as_of, release_lag_days=35),
+            notes=(
+                "MTR monthly patronage is checked with a 35-day publication "
+                "allowance because release dates vary around the latter part "
+                "of the following month."
+            ),
+        ),
     ]
     for slug in (
         "market-monitor",

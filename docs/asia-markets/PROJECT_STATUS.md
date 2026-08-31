@@ -63,11 +63,14 @@ replacement for the operating manual or generated source-status JSON.
   rather than build timestamps, validates Buildings Department history against
   the latest parsed digest, and rejects EN/ZH snapshot drift. Its durable report
   is `.generated/asia-markets-freshness.json`.
-- As of 2026-08-30 the verified headline periods are: labour force 2026-07,
+- As of 2026-08-31 the verified headline periods are: labour force 2026-07,
   median employment earnings 2026-Q2, vacancies and wage/payroll 2026-Q1
   (their official Q2 releases are scheduled for 18 and 28 September),
   MPFA permanent-departure claims 2026-Q2, Buildings Department aggregate
-  supply history 2026-06, and China-listed airline traffic 2026-07.
+  supply history 2026-06, China-listed airline traffic 2026-07, and MTR
+  patronage 2026-06. The MTR investor page still identifies June as its latest
+  official month on 2026-08-31; the transport workflow now retries on the 5th,
+  20th, 25th and 28th rather than missing releases posted after the 20th.
 - `STREAMLIT_PARITY_PROTOCOL.md` is the shared Cloudflare-to-Streamlit
   decision guide. The non-blocking GitHub Action
   `.github/workflows/streamlit-parity-reminder.yml` compares structural
