@@ -2723,3 +2723,39 @@ def test_a_benchmark_still_carries_its_index():
 
     assert exposure_role(ftse) == "benchmark"
     assert ftse["yf_symbol"] == "^FTSE"
+
+
+def test_a_custody_fee_the_issuer_contradicts_is_reconciled_too():
+    """Checking only the management fee let the sibling column drift unseen."""
+    from market_monitor.sources.eastmoney_fee import reconcile_fees
+
+    metadata = pd.DataFrame(
+        [{"fund_id": "513080", "management_fee": 0.0050, "custody_fee": 0.0020}]
+    )
+    observed = {"513080": {"management_fee": 0.0050, "custody_fee": 0.0015}}
+
+    problems = reconcile_fees(metadata, observed)
+
+    assert [p["field"] for p in problems] == ["custody_fee"]
+    assert problems[0]["stated"] == "0.2000%"
+    assert problems[0]["published"] == "0.1500%"
+
+
+def test_the_shipped_registry_states_the_fees_the_issuer_publishes():
+    """The registry is the thing under test; a stale placeholder fails here.
+
+    The published pairs below were read off the ``fund_fees`` snapshot of
+    2026-08-23. They are inlined because ``data/derived`` fee history is not
+    what CI checks out, and a fixture CI cannot see is a guard CI cannot run.
+    """
+    from market_monitor.metadata import build_metadata_frame
+    from market_monitor.sources.eastmoney_fee import reconcile_fees
+
+    published = {
+        "513080": {"management_fee": 0.0050, "custody_fee": 0.0015},
+        "513030": {"management_fee": 0.0080, "custody_fee": 0.0020},
+        "510300": {"management_fee": 0.0015, "custody_fee": 0.0005},
+        "513500": {"management_fee": 0.0060, "custody_fee": 0.0020},
+    }
+
+    assert reconcile_fees(build_metadata_frame(), published) == []
