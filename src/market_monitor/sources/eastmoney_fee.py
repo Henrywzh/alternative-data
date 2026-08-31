@@ -77,8 +77,15 @@ def _fetch_fund_fees_blocking(fund_id: str) -> dict[str, float | None]:
     return fees
 
 
+# Both fees the registry states and the issuer publishes. Checking only the
+# management fee left the custody fee free to drift unseen -- 513080 carried
+# 0.20% against a published 0.15% for as long as the row existed, and nothing
+# said so because nothing looked. ``detect_fee_changes`` already walks both.
+RECONCILED_FEE_COLUMNS = ("management_fee", "custody_fee")
+
+
 def reconcile_fees(metadata: pd.DataFrame, observed: dict[str, dict]) -> list[dict[str, str]]:
-    """Registry rows whose stated management fee the issuer contradicts.
+    """Registry rows whose stated fees the issuer contradicts.
 
     A fee the endpoint did not return is not a contradiction -- it is an
     absence -- and is skipped.
@@ -86,17 +93,20 @@ def reconcile_fees(metadata: pd.DataFrame, observed: dict[str, dict]) -> list[di
     problems: list[dict[str, str]] = []
     for row in metadata.itertuples():
         fund_id = str(row.fund_id).zfill(6)
-        published = (observed.get(fund_id) or {}).get("management_fee")
-        if published is None:
-            continue
-        stated = getattr(row, "management_fee", None)
-        if stated is None or pd.isna(stated):
-            problems.append(
-                {"fund_id": fund_id, "stated": "none", "published": f"{published:.4%}"}
-            )
-            continue
-        if abs(float(stated) - float(published)) > 1e-9:
-            problems.append(
-                {"fund_id": fund_id, "stated": f"{float(stated):.4%}", "published": f"{published:.4%}"}
-            )
+        for column in RECONCILED_FEE_COLUMNS:
+            published = (observed.get(fund_id) or {}).get(column)
+            if published is None:
+                continue
+            stated = getattr(row, column, None)
+            if stated is None or pd.isna(stated):
+                problems.append(
+                    {"fund_id": fund_id, "field": column, "stated": "none",
+                     "published": f"{published:.4%}"}
+                )
+                continue
+            if abs(float(stated) - float(published)) > 1e-9:
+                problems.append(
+                    {"fund_id": fund_id, "field": column,
+                     "stated": f"{float(stated):.4%}", "published": f"{published:.4%}"}
+                )
     return problems

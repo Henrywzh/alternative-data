@@ -379,7 +379,8 @@ def fee_mismatch_event(problem: dict[str, str]) -> dict[str, str]:
     """
 
     message = (
-        f"registry states {problem['fund_id']} management fee {problem['stated']}, "
+        f"registry states {problem['fund_id']} {problem.get('field', 'management_fee')} "
+        f"{problem['stated']}, "
         f"issuer publishes {problem['published']}"
     )
     return {

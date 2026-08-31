@@ -658,8 +658,10 @@ ETF_REGISTRY = (
         "venue": "SH",
         "currency": "CNY",
         "wrapper_type": "qdii",
-        "management_fee": 0.0080,
-        "custody_fee": 0.0020,
+        # Both fees read off the issuer's own published schedule; the row had
+        # carried the QDII placeholder pair 0.80%/0.20%.
+        "management_fee": 0.0050,
+        "custody_fee": 0.0015,
         "premium_regime": "qdii",
         "inception_date": "2020-05-29",
         "aum": None,
