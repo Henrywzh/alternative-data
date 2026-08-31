@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-08-24T07:21:14.609937Z",
-  "snapshot_id": "19e21caf5591f09e",
-  "data_as_of": "2026-08-24",
+  "generated_at": "2026-08-31T07:56:47.705700Z",
+  "snapshot_id": "6f3fa4662b2b2a1b",
+  "data_as_of": "2026-08-31",
   "overall_status": "Degraded",
   "live_sources": 11,
   "planned_sources": 0,
@@ -31,8 +31,8 @@
       "dataset": "official_china_launch_records",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-17",
-      "records": 614,
+      "latest_observation": "2026-08-25",
+      "records": 615,
       "freshness": "Live",
       "notes": "First-party Long March and Jielong event baseline; official records decide inclusion in the national/state-owned monthly series."
     },
@@ -41,7 +41,7 @@
       "dataset": "launch_library_2_national_enrichment",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-17",
+      "latest_observation": "2026-08-25",
       "records": 113,
       "freshness": "Live",
       "notes": "Structured fields for matching official Long March/Jielong events; LL2-only rows are never counted as official launches."
@@ -51,7 +51,7 @@
       "dataset": "celestrak",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-24",
+      "latest_observation": "2026-08-31",
       "records": 2,
       "freshness": "Live",
       "notes": "Active satellite counts for Qianfan (G60) and Jilin-1 constellations."
@@ -61,7 +61,7 @@
       "dataset": "google_patents",
       "type": "Measure",
       "status": "Degraded",
-      "latest_observation": "2026-08-24",
+      "latest_observation": "2026-08-31",
       "records": 0,
       "freshness": "Unavailable",
       "notes": "Estimated patent filing counts for Chinese commercial space companies."
@@ -71,7 +71,7 @@
       "dataset": "szse_aerospace_ipo",
       "type": "Measure",
       "status": "Degraded",
-      "latest_observation": "2026-08-24",
+      "latest_observation": "2026-08-31",
       "records": 0,
       "freshness": "Unavailable",
       "notes": "Current IPO projects classified by SZSE under rail, ship, aviation, aerospace and other transport equipment manufacturing."
@@ -81,7 +81,7 @@
       "dataset": "faa_commercial_space",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-24",
+      "latest_observation": "2026-08-31",
       "records": 6,
       "freshness": "Live",
       "notes": "Cumulative licensed launches, reentries, spaceport licenses, experimental launches, safety approvals and active launch licenses."
@@ -91,8 +91,8 @@
       "dataset": "usaspending_contracts",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-24",
-      "records": 124,
+      "latest_observation": "2026-08-31",
+      "records": 123,
       "freshness": "Live",
       "notes": "Recent federal awards discovered using commercial-space, commercial-satellite and launch-services keywords."
     },
@@ -131,11 +131,11 @@
       "dataset": "wikimedia_pageviews",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-23",
-      "records": 5524,
+      "latest_observation": "2026-08-30",
+      "records": 5776,
       "freshness": "Live",
       "notes": "Daily English Wikipedia pageviews for a curated aerospace page basket, aggregated into monthly and complete Monday-Sunday weekly views; user, search-engine spider, automated and all-agent traffic remain separate."
     }
   ],
-  "attachment_filename": "hk-commercial-aerospace-dashboard-2026-08-24.html"
+  "attachment_filename": "hk-commercial-aerospace-dashboard-2026-08-31.html"
 }
