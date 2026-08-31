@@ -9,15 +9,17 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: market-monitor-intraday
+  group: market-monitor
   cancel-in-progress: false
 
 permissions:
-  contents: read
+  # The only persisted output is the tiny alert delivery cursor. Intraday
+  # prices/quotes remain non-persistent and are never committed.
+  contents: write
 
 jobs:
   intraday:
-    name: Fetch live ETF snapshot and send midday digest
+    name: Fetch live ETF snapshot and evaluate event alert
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -47,18 +49,37 @@ jobs:
 
       - name: Require Gmail configuration
         run: |
-          # Unlike the close job, the digest is this workflow's only output --
-          # it writes no data and builds no artifact. Missing credentials would
-          # otherwise surface as a green run that produced nothing at all,
-          # because the CLI treats a send failure as best-effort.
+          # Unlike the close job, the alert is this workflow's only market
+          # output. The delivery cursor is persisted separately below; no
+          # quote history or dashboard artifact is written here.
           if test -z "$GMAIL_SENDER" || test -z "$GMAIL_APP_PASSWORD" || test -z "$GMAIL_RECIPIENTS"; then
             echo "::error::Gmail is not fully configured; the midday digest has no other output."
             exit 1
           fi
 
-      - name: Fetch live snapshot and send digest
+      - name: Fetch live snapshot and evaluate alert
         run: |
           python -m market_monitor.cli \
             --mode intraday \
             --send-report \
             --require-fresh
+
+      - name: Commit alert delivery cursor
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if test -f data/derived/market_monitor/alert_state.json; then
+            git add data/derived/market_monitor/alert_state.json
+          fi
+          if git diff --staged --quiet; then
+            echo "No alert-state changes to commit"
+            exit 0
+          fi
+          git commit -m "chore(market-monitor): persist alert delivery state [$(date -u +%Y-%m-%d)]"
+          for attempt in 1 2 3; do
+            if git pull --rebase origin main && git push; then
+              exit 0
+            fi
+            sleep $((attempt * 5))
+          done
+          exit 1

@@ -6,10 +6,18 @@ import argparse
 import json
 import os
 import sys
+from pathlib import Path
 
 import pandas as pd
 
 from .alerts import build_email_html, generate_sparkline_chart, send_report
+from .alert_policy import (
+    advance_alert_state,
+    evaluate_alert,
+    load_alert_state,
+    save_alert_state,
+    state_with_pending_events,
+)
 from .freshness import BLOCKING_FRESHNESS_STATUSES, market_date
 from .pipeline import run_intraday_snapshot, run_pipeline
 
@@ -82,7 +90,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--start-date", default=None, help="YYYYMMDD start for history")
     parser.add_argument("--no-write", action="store_true", help="Run without persisting snapshots")
     parser.add_argument("--allow-partial-write", action="store_true", help="Allow persisting partial/test runs to disk")
-    parser.add_argument("--send-report", action="store_true", help="Send the daily Gmail digest after running")
+    parser.add_argument("--send-report", action="store_true", help="Evaluate the Gmail alert policy after running")
+    parser.add_argument(
+        "--force-report",
+        action="store_true",
+        help="Send a report even when no material alert or weekly heartbeat is due",
+    )
+    parser.add_argument(
+        "--alert-state-path",
+        default=None,
+        help=argparse.SUPPRESS,
+    )
     parser.add_argument("--recipient", default=None, help="Override recipient email address")
     parser.add_argument(
         "--mode",
@@ -152,13 +170,53 @@ def main(argv: list[str] | None = None) -> int:
                 _emit_degraded_signal(blockers)
             else:
                 return 2
-    if args.send_report and not freshness_blocked:
+    send_requested = args.send_report or args.force_report
+    if send_requested and not freshness_blocked:
         # Use the current in-memory run, not load_latest_derived(), to
         # guarantee the email always matches the pipeline result that was
         # just computed (never silently mixes old/new snapshots from disk).
         technicals = results.get("exposure_technicals", pd.DataFrame())
         regime = results.get("relative_regime", pd.DataFrame())
         wrappers = results.get("wrapper_metrics", pd.DataFrame())
+        state_path = Path(args.alert_state_path) if args.alert_state_path else None
+        state = load_alert_state(state_path)
+        report_date = market_date()
+        decision = evaluate_alert(
+            report_date=report_date,
+            mode=args.mode,
+            state=state,
+            technicals=technicals,
+            index_prices=results.get("index_price_daily", pd.DataFrame()),
+            wrappers=wrappers,
+            premium_history=results.get("premium_history", pd.DataFrame()),
+            relative_pair_history=results.get("relative_pair_history", pd.DataFrame()),
+            freshness=results.get("freshness"),
+            force=args.force_report,
+        )
+        # Close runs persist the daily market snapshots; intraday runs persist
+        # only this small delivery cursor. A --no-write run stays side-effect
+        # free, which is important for partial/local tests and dry runs.
+        persist_alert_state = not args.no_write and (
+            args.mode == "intraday" or (should_write and not is_partial)
+        )
+        if not decision.should_send:
+            if persist_alert_state:
+                updated_state = advance_alert_state(
+                    state,
+                    mode=args.mode,
+                    observation_date=decision.observation_date,
+                    report_date=report_date,
+                    kind=decision.kind,
+                    sent=False,
+                )
+                # A second run on the same report date must not advance past a
+                # newly confirmed event and then lose it permanently. Keep the
+                # unsent event queued for the next healthy run.
+                if decision.kind == "deduped" and decision.events:
+                    updated_state = state_with_pending_events(updated_state, decision.events)
+                save_alert_state(updated_state, state_path)
+            print(f"Gmail alert skipped: {decision.reason_lines[0]}")
+            return 0
         try:
             prices = results.get("index_price_daily", pd.DataFrame())
             images = {}
@@ -169,7 +227,6 @@ def main(argv: list[str] | None = None) -> int:
                     )
                     if image:
                         images[f"chart_{exposure_id}"] = image
-            report_date = market_date()
             body = build_email_html(
                 report_date=report_date,
                 technicals=technicals,
@@ -178,23 +235,39 @@ def main(argv: list[str] | None = None) -> int:
                 charts=images.keys(),
                 mode=args.mode,
                 freshness=results.get("freshness"),
+                alert_reason=decision.reason_lines,
             )
+            # Write a pending queue before SMTP. If Gmail times out after the
+            # provider accepted the message, the next run may duplicate it;
+            # that is preferable to losing a fee/risk event silently. A
+            # successful send clears the queue and advances the mode cursor.
+            if persist_alert_state and decision.events:
+                save_alert_state(state_with_pending_events(state, decision.events), state_path)
             send_report(
-                subject=(
-                    f"Index & ETF Intraday Snapshot — {report_date}"
-                    if args.mode == "intraday"
-                    else f"Index & ETF Allocation Monitor — {report_date}"
-                ),
+                subject=f"{decision.subject_prefix} — {report_date}",
                 body_html=body,
                 recipient_override=args.recipient,
                 images=images,
             )
-            print("daily Gmail digest sent")
+            if persist_alert_state:
+                save_alert_state(
+                    advance_alert_state(
+                        state,
+                        mode=args.mode,
+                        observation_date=decision.observation_date,
+                        report_date=report_date,
+                        kind=decision.kind,
+                        sent=True,
+                        sent_events=decision.events,
+                    ),
+                    state_path,
+                )
+            print(f"Gmail alert sent: {decision.kind}")
         except Exception as exc:
             # Email is best-effort; pipeline/dashboard must never fail because
             # SMTP or Gmail credentials are unavailable.
-            print(f"Warning: Gmail digest not sent ({exc})", file=sys.stderr)
-    elif args.send_report and freshness_blocked:
+            print(f"Warning: Gmail alert not sent ({exc})", file=sys.stderr)
+    elif send_requested and freshness_blocked:
         print("Report skipped because required freshness was not satisfied.", file=sys.stderr)
     return 0
 

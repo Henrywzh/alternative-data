@@ -24,7 +24,13 @@ import matplotlib.pyplot as plt
 from matplotlib import font_manager
 import pandas as pd
 
-from .config import REPO_ROOT
+from .config import (
+    ALERT_CORE_EXPOSURES,
+    ALERT_MA20_BAND_PCT,
+    ALERT_RSI_OVERBOUGHT,
+    ALERT_RSI_OVERSOLD,
+    REPO_ROOT,
+)
 from .freshness import BLOCKING_FRESHNESS_STATUSES, freshness_note
 
 
@@ -239,18 +245,18 @@ def _get_tech_summary(tech_df: pd.DataFrame, exposure_id: str) -> dict[str, str]
     
     if pd.isna(ma20):
         ma_str = "震荡整理"
-    elif float(ma20) > 1.0:
+    elif float(ma20) > ALERT_MA20_BAND_PCT:
         ma_str = f"强势站上20日线 ({ma20:+.1f}%)"
-    elif float(ma20) < -1.0:
+    elif float(ma20) < -ALERT_MA20_BAND_PCT:
         ma_str = f"处于20日线下方承压 ({ma20:+.1f}%)"
     else:
         ma_str = f"贴近20日线窄幅震荡 ({ma20:+.1f}%)"
         
     if pd.isna(rsi):
         rsi_str = "中性"
-    elif float(rsi) >= 70:
+    elif float(rsi) >= ALERT_RSI_OVERBOUGHT:
         rsi_str = f"情绪过热预警 (RSI: {rsi:.0f})"
-    elif float(rsi) <= 35:
+    elif float(rsi) <= ALERT_RSI_OVERSOLD:
         rsi_str = f"超卖低估区间 (RSI: {rsi:.0f})"
     else:
         rsi_str = f"动量中性温和 (RSI: {rsi:.0f})"
@@ -288,7 +294,7 @@ def _fee_display(row: pd.Series) -> str:
 def _build_dynamic_summary(wrappers: pd.DataFrame) -> str:
     """Describe only same-index comparisons backed by current quote rows."""
     lines: list[str] = []
-    for exposure_id in ("csi500", "csi300", "sp500"):
+    for exposure_id in ALERT_CORE_EXPOSURES:
         cohort = _current_quote_cohort(wrappers, exposure_id)
         label = LABEL_ZH_MAP.get(exposure_id, exposure_id)
         if cohort.empty:
@@ -454,6 +460,7 @@ def build_email_html(
     charts: Collection[str] | None = None,
     mode: str = "close",
     freshness: dict[str, object] | None = None,
+    alert_reason: Collection[str] | None = None,
 ) -> str:
     """Render a clean, modular, decision-first email digest."""
     freshness = freshness or {}
@@ -510,6 +517,15 @@ def build_email_html(
     sp500_etfs = _render_etf_card(wrappers, "sp500", is_overseas=True)
     summary_html = _build_dynamic_summary(wrappers)
     cross_border_note = _build_cross_border_note(wrappers)
+    alert_reason_html = ""
+    if alert_reason:
+        reason_rows = "<br>".join(f"• {_esc(line)}" for line in alert_reason)
+        alert_reason_html = f"""
+            <div style="background:#fff7ed;border-left:4px solid #f97316;padding:10px 12px;border-radius:6px;margin-bottom:16px;font-size:12px;color:#9a3412;line-height:1.6;">
+              <div style="font-weight:700;margin-bottom:3px;">🔔 本次提醒原因</div>
+              <div>{reason_rows}</div>
+            </div>
+        """
 
     return f"""<!DOCTYPE html>
 <html>
@@ -541,6 +557,8 @@ def build_email_html(
               {('<br><span style="color:#b91c1c;"><b>区域/来源数据警告</b>：' + _esc(freshness_warning) + '</span>') if freshness_warning else ''}
               {('<br><span style="color:#b91c1c;"><b>数据警告</b>：' + _esc(str(len(fetch_errors))) + ' 个数据源请求失败，缺失值未用旧数据补齐。</span>') if fetch_errors else ''}
             </div>
+
+            {alert_reason_html}
 
             <!-- Summary Takeaways -->
             <div style="background:#f0fdf4;border-left:4px solid #16a34a;padding:12px 14px;border-radius:6px;margin-bottom:20px;">

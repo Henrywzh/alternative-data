@@ -701,7 +701,7 @@ ETF_REGISTRY = (
         "index_id": "KSA",
         "fund_id": "159329",
         "ticker": "159329.SZ",
-        "fund_name": "华泰柏瑞沙特ETF(QDII)",
+        "fund_name": "南方沙特ETF(QDII)",
         "venue": "SZ",
         "currency": "CNY",
         "wrapper_type": "qdii",
@@ -719,7 +719,7 @@ ETF_REGISTRY = (
         "index_id": "KSA",
         "fund_id": "520830",
         "ticker": "520830.SH",
-        "fund_name": "南方沙特ETF(QDII)",
+        "fund_name": "华泰柏瑞沙特ETF(QDII)",
         "venue": "SH",
         "currency": "CNY",
         "wrapper_type": "qdii",
@@ -767,10 +767,41 @@ EXPOSURE_NAME_TOKENS: dict[str, tuple[str, ...]] = {
     "russell2000": ("罗素2000", "罗素"),
     "kospi": ("韩国", "KOSPI"),
     "twii": ("台湾", "加权指数", "TAIEX"),
+    # ftse100 carries no wrapper today (see config.py), so this token has
+    # nothing to reconcile against. It is kept so that a future FTSE 100
+    # ETF cannot be filed here without passing the same name check.
     "ftse100": ("英国", "富时100", "FTSE"),
     "saudi": ("沙特", "Saudi", "中东"),
     "sp500": ("标普500",),
 }
+
+
+# The fund houses the registry actually names, plus the majors it is likely to
+# grow into. Checked in addition to the index token, because the index token
+# cannot see a swap: 159329 and 520830 both read 沙特, so the registry carried
+# those two issuers crossed for as long as the pair existed and nothing said
+# so. An issuer this list does not know is skipped rather than reported -- an
+# unrecognised name is an absence, not a contradiction, the same rule the
+# exposure check already applies to a fund the spot feed does not mention.
+FUND_HOUSE_TOKENS: tuple[str, ...] = (
+    "华泰柏瑞", "易方达", "华夏", "南方", "嘉实", "广发", "博时", "国泰",
+    "富国", "华安", "建信", "汇添富", "招商", "工银瑞信",
+    "中银", "银华", "鹏华", "天弘", "永赢", "景顺长城", "摩根", "汇安",
+    "平安", "大成", "浦银安盛", "兴业", "中欧", "交银施罗德", "华宝", "国投瑞银",
+)
+
+
+def _registry_fund_house(name: str) -> str | None:
+    """The fund house a registry name states, or None when it names none.
+
+    Longest match wins so 华泰柏瑞 is never read as a bare 华泰, and 景顺长城
+    is never read as 景顺.
+    """
+
+    matches = [token for token in FUND_HOUSE_TOKENS if token in name]
+    if not matches:
+        return None
+    return max(matches, key=len)
 
 
 def reconcile_registry_names(
@@ -811,6 +842,19 @@ def reconcile_registry_names(
                     "fund_id": str(row.fund_id),
                     "registry_name": str(row.fund_name),
                     "exchange_name": exchange_name,
+                    "reason": "exposure",
+                }
+            )
+            continue
+        issuer = _registry_fund_house(str(row.fund_name))
+        if issuer is not None and issuer not in exchange_name:
+            problems.append(
+                {
+                    "exposure_id": str(row.exposure_id),
+                    "fund_id": str(row.fund_id),
+                    "registry_name": str(row.fund_name),
+                    "exchange_name": exchange_name,
+                    "reason": "issuer",
                 }
             )
     return problems

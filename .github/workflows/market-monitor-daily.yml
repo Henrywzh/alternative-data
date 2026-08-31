@@ -1,4 +1,4 @@
-name: Index & ETF Allocation Monitor Daily
+name: Index & ETF Allocation Monitor Event Alerts
 
 on:
   schedule:
@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: market-monitor-daily
+  group: market-monitor
   cancel-in-progress: false
 
 permissions:
@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   monitor:
-    name: Fetch indices/ETFs and send daily digest
+    name: Fetch indices/ETFs and evaluate event alert
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
@@ -67,7 +67,8 @@ jobs:
           # Required stale/unavailable/invalid regional or source data, a
           # coverage regression or a failed fetch blocks the email, but not
           # the artifact build: the dashboard publishes technical data and
-          # its explicit freshness warning.
+          # its explicit freshness warning. A healthy run sends only when the
+          # event policy finds a confirmed change or the weekly heartbeat is due.
           python -m market_monitor.cli \
             --mode close \
             --send-report \
