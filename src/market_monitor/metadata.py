@@ -10,6 +10,26 @@ schema rewrite later:
 ``wrapper_type`` distinguishes domestic-listed (same market, IOPV clean) from
 QDII / cross-border wrappers whose premium interpretation differs (NAV lag,
 ES futures, FX, quota). The dashboard renders a caveat for cross-border rows.
+
+Every value here is hand-typed, and every hand-typed field that has ever been
+checked turned out to carry errors: 16 of 23 fees wrong in the first audit,
+513310 filed as an S&P 500 tracker, two 沙特 wrappers with their houses
+crossed, 513080 still on the placeholder fee pair. So it matters which fields
+are actually reconciled against a source each run and which are not:
+
+* checked -- ``fund_name`` against the venue's own name, for both the index
+  it is filed under and the fund house (``reconcile_registry_names``), and
+  ``management_fee`` / ``custody_fee`` against the issuer's published
+  schedule (``reconcile_fees``, whose numbers also win at read time).
+* unchecked -- ``inception_date`` above all. It is not merely unvalidated but
+  currently unvalidatable: the two endpoints that carry 成立日
+  (``fund_individual_basic_info_xq`` / ``fund_individual_detail_info_xq``)
+  answer ``KeyError: 'data'``, and our own price history starts long after
+  every stated date, so it cannot falsify one either. Treat these dates as
+  unverified. Identical dates across two funds are not evidence of a
+  copy-paste: mainland ETFs of a new category are approved and list in
+  batches, which is what 2013-02-06, 2019-06-25 and 2024-06-24 each are.
+* ``aum`` is a placeholder the spot feed overwrites, not a stated fact.
 """
 
 from __future__ import annotations
