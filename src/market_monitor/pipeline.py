@@ -2,7 +2,7 @@
 
 Flow:
     raw observations (immutable) -> normalized time series -> derived signals
-         -> dashboard artifact -> daily Gmail report
+         -> dashboard artifact -> event-driven Gmail report
 """
 
 from __future__ import annotations
@@ -21,6 +21,7 @@ from .config import (
     COVERAGE_MIN_ROW_RATIO,
     EXPOSURES,
     DERIVED_DIR,
+    FEE_CHANGE_RELATIVE_THRESHOLD,
     NORMALIZED_DIR,
     RAW_DIR,
 )
@@ -236,13 +237,24 @@ def _premium_rows_from_raw_snapshots(
                     for ticker, session_date in allowed_sessions
                     if session_date == snapshot_date
                 }
-            rows.extend(_premium_rows(spot[spot["ticker"].isin(eligible_tickers)], snapshot_date))
+            rows.extend(
+                _premium_rows(
+                    spot[spot["ticker"].isin(eligible_tickers)],
+                    snapshot_date,
+                    basis=None,
+                )
+            )
         except Exception as exc:  # noqa: BLE001 - a bad snapshot must not stop the run
             print(f"  [market_monitor] skipped raw spot snapshot {run_dir.name}: {exc}")
     return rows
 
 
-def _premium_rows(spot: pd.DataFrame, observation_date: str) -> list[dict]:
+def _premium_rows(
+    spot: pd.DataFrame,
+    observation_date: str,
+    *,
+    basis: str | None = "iopv",
+) -> list[dict]:
     if spot is None or spot.empty or "ticker" not in spot.columns:
         return []
     frame = spot.copy()
@@ -254,6 +266,15 @@ def _premium_rows(spot: pd.DataFrame, observation_date: str) -> list[dict]:
             "premium_pct": pd.to_numeric(row.get("premium_pct"), errors="coerce"),
             "spread_bp": pd.to_numeric(row.get("spread_bp"), errors="coerce"),
             "market_price": pd.to_numeric(row.get("market_price"), errors="coerce"),
+            "basis": (
+                basis
+                if basis is not None
+                else (
+                    "iopv"
+                    if pd.notna(row.get("source_observed_at_utc"))
+                    else "iopv_unverified"
+                )
+            ),
         }
         for _, row in frame.iterrows()
     ]
@@ -339,7 +360,35 @@ FEE_COLUMNS = ["fund_id", "management_fee", "custody_fee", "fetched_at"]
 
 # Minimum relative change (as a fraction of the old fee) that qualifies as a
 # real rate cut/raise rather than a data-provider rounding artefact.
-FEE_CHANGE_THRESHOLD = 0.05
+FEE_CHANGE_THRESHOLD = FEE_CHANGE_RELATIVE_THRESHOLD
+
+
+def fee_mismatch_event(problem: dict[str, str]) -> dict[str, str]:
+    """Describe a registry-vs-issuer fee disagreement as an event, not a failure.
+
+    The issuer's published schedule already wins over the registry when the
+    wrapper metrics are built, so this disagreement changes no number in the
+    email or on the dashboard -- it only says the hand-typed registry needs
+    updating. Routed through the failure channel it would block every alert
+    email until someone edited that registry by hand, which is the same
+    argument ``detect_fee_changes`` makes for tagging a rate cut as an event.
+
+    ``reconcile_registry_names`` deliberately stays a blocker: a fund name the
+    exchange contradicts can mean a ticker is filed under the wrong exposure,
+    which would corrupt the cohort an alert ranks.
+    """
+
+    message = (
+        f"registry states {problem['fund_id']} management fee {problem['stated']}, "
+        f"issuer publishes {problem['published']}"
+    )
+    return {
+        "dataset": "fund_fee",
+        "ticker": str(problem["fund_id"]),
+        "severity": "event",
+        "event_type": "fee_registry_mismatch",
+        "error": f"FeeMismatch: {message}",
+    }
 
 
 def detect_fee_changes(
@@ -466,6 +515,7 @@ def _build_premium_history(
     prices: pd.DataFrame | None = None,
     *,
     validate_observation_date: bool = False,
+    quote_status: str | None = None,
 ) -> pd.DataFrame:
     """Accumulate a per-fund premium series across runs.
 
@@ -523,9 +573,12 @@ def _build_premium_history(
         )
     )
     rows = raw_rows
-    rows.extend(row for row in _premium_rows(current_spot, observation_date) if row["ticker"] in tracked)
-    for row in rows:
-        row.setdefault("basis", "iopv")
+    current_basis = "iopv" if quote_status in (None, "Fresh") else "iopv_unverified"
+    rows.extend(
+        row
+        for row in _premium_rows(current_spot, observation_date, basis=current_basis)
+        if row["ticker"] in tracked
+    )
 
     # NAV rows are appended after the IOPV rows so that, where both describe
     # the same day, the fund's own end-of-day valuation wins the de-duplication
@@ -550,6 +603,11 @@ def _build_premium_history(
     history = history[history["ticker"].isin(tracked)]
     if allowed_sessions is not None:
         history = filter_premium_history_to_sessions(history, prices)
+    if quote_status not in (None, "Fresh"):
+        # If the live source was not verified today, an older persisted IOPV
+        # row for the same session must not survive as if it were current.
+        current_iopv = history["date"].eq(observation_date) & history["basis"].eq("iopv")
+        history.loc[current_iopv, "basis"] = "iopv_unverified"
     # Today's reading supersedes an earlier one for the same day.
     history = history.drop_duplicates(subset=["date", "ticker"], keep="last")
     return history.sort_values(["ticker", "date"]).reset_index(drop=True)
@@ -658,15 +716,9 @@ def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, 
         print(f"  [market_monitor] fee change: {change['error']}")
         fetch_errors.append(change)
     for problem in eastmoney_fee.reconcile_fees(meta, published_fees):
-        message = (
-            f"registry states {problem['fund_id']} management fee {problem['stated']}, "
-            f"issuer publishes {problem['published']}"
-        )
-        print(f"  [market_monitor] fee mismatch: {message}")
-        fetch_errors.append(
-            {"dataset": "fund_fee", "ticker": problem["fund_id"],
-             "error": f"FeeMismatch: {message}"}
-        )
+        record = fee_mismatch_event(problem)
+        print(f"  [market_monitor] fee mismatch: {record['error']}")
+        fetch_errors.append(record)
 
     # --- Registry reconciliation ---
     # The wrapper universe is hand-maintained, so the only thing that had been
@@ -674,9 +726,15 @@ def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, 
     # to the venue's own fund names on every run and report a contradiction
     # the same way a failed fetch is reported, so it reaches Source Health.
     for problem in reconcile_registry_names(meta, raw["etf_spot"]):
+        # An issuer contradiction reads identically to an exposure one unless
+        # it says so: both print two fund names that differ. Only the second
+        # means the ticker may be filed under the wrong index.
+        scope = (
+            "issuer" if problem.get("reason") == "issuer" else f"under {problem['exposure_id']}"
+        )
         message = (
             f"registry says {problem['fund_id']} is {problem['registry_name']} "
-            f"under {problem['exposure_id']}, exchange says {problem['exchange_name']}"
+            f"{scope}, exchange says {problem['exchange_name']}"
         )
         print(f"  [market_monitor] registry mismatch: {message}")
         fetch_errors.append(
@@ -752,6 +810,7 @@ def run_intraday_snapshot(*, now_utc: Any | None = None) -> dict[str, Any]:
 
     technicals = load_latest_derived("exposure_technicals")
     regime = load_latest_derived("relative_regime")
+    premium_history = load_latest_derived("premium_history")
     prices = load_latest_normalized("index_price_daily")
     daily_observation = None
     if not technicals.empty and "date" in technicals.columns:
@@ -767,6 +826,7 @@ def run_intraday_snapshot(*, now_utc: Any | None = None) -> dict[str, Any]:
         "exposure_technicals": technicals,
         "relative_regime": regime,
         "wrapper_metrics": ranked,
+        "premium_history": premium_history,
         "index_price_daily": prices,
         "freshness": {
             "quote": quote_freshness,
@@ -967,6 +1027,7 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
         as_of_date,
         prices=normalized_etf,
         validate_observation_date=True,
+        quote_status=str(quote_freshness.get("status") or ""),
     )
     results["premium_history"] = premium_history
 

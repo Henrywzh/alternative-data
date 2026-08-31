@@ -55,7 +55,7 @@ _ENTRY_COST_ANCHORS["qdii"] = _ENTRY_COST_ANCHORS["quota"]
 
 # The status bands are the anchors above read as percentages of premium, so a
 # score and its label can never disagree.
-_ENTRY_STATUS_BANDS: dict[str, tuple[float, float, float]] = {
+ENTRY_STATUS_BANDS: dict[str, tuple[float, float, float]] = {
     "domestic": (-0.1, 0.2, 1.0),
     "connect": (-0.1, 0.5, 1.5),
     "quota": (0.0, 1.5, 4.0),
@@ -70,11 +70,16 @@ _ENTRY_STATUS_BANDS: dict[str, tuple[float, float, float]] = {
 # not to the anchors, which left every QDII wrapper with a NaN buy_score and
 # rank 99 -- the sentinel that means "no quote", so the rows claimed to be
 # unmeasured while entry_status showed they had been measured.
-assert set(_ENTRY_STATUS_BANDS) == set(_ENTRY_COST_ANCHORS), (
-    "premium regimes must appear in both _ENTRY_STATUS_BANDS and "
-    f"_ENTRY_COST_ANCHORS; got {sorted(_ENTRY_STATUS_BANDS)} vs "
+assert set(ENTRY_STATUS_BANDS) == set(_ENTRY_COST_ANCHORS), (
+    "premium regimes must appear in both ENTRY_STATUS_BANDS and "
+    f"_ENTRY_COST_ANCHORS; got {sorted(ENTRY_STATUS_BANDS)} vs "
     f"{sorted(_ENTRY_COST_ANCHORS)}"
 )
+
+# Backwards-compatible alias for existing tests and downstream research
+# notebooks. New consumers should use the public name above so alert policies
+# and ranking share one source of truth.
+_ENTRY_STATUS_BANDS = ENTRY_STATUS_BANDS
 
 
 def premium_regime(frame: pd.DataFrame) -> pd.Series:
@@ -93,6 +98,24 @@ def premium_regime(frame: pd.DataFrame) -> pd.Series:
             return declared.fillna(legacy).astype(str)
     cross = frame["is_cross_border"] if "is_cross_border" in frame.columns else False
     return pd.Series(cross, index=frame.index).astype(bool).map({True: "quota", False: "domestic"})
+
+
+def classify_entry_status(premium_pct: float | None, regime: str) -> str:
+    """Classify one premium using the same absolute bands as wrapper ranking."""
+    if premium_pct is None or pd.isna(premium_pct):
+        return "UNAVAILABLE"
+    bands = ENTRY_STATUS_BANDS.get(str(regime))
+    if bands is None:
+        return "UNAVAILABLE"
+    attractive, fair, expensive = bands
+    premium = float(premium_pct)
+    if premium <= attractive:
+        return "ATTRACTIVE"
+    if premium <= fair:
+        return "FAIR"
+    if premium <= expensive:
+        return "EXPENSIVE"
+    return "AVOID"
 
 # Turnover on a log10 scale, deliberately saturating: the step from 1e6 to 1e7
 # CNY/day is the difference between untradeable and thin, the step from 1e9 to
@@ -288,24 +311,11 @@ def rank_wrappers(frame: pd.DataFrame, *, group_col: str = "exposure_id") -> pd.
             return "UNAVAILABLE"
         if pd.isna(row.get("premium_pct")):
             return "UNAVAILABLE"
-        p = row.get("premium_pct")
-        if pd.isna(p):
-            return "UNAVAILABLE"
-        p = float(p)
         declared = str(row.get("premium_regime") or "domestic")
         # An unrecognised regime must not be scored against domestic bands: a
         # QDII wrapper silently judged on a +/-0.1% band reads as AVOID for a
         # premium that is ordinary for its regime.
-        if declared not in _ENTRY_STATUS_BANDS:
-            return "UNAVAILABLE"
-        attractive, fair, expensive = _ENTRY_STATUS_BANDS[declared]
-        if p <= attractive:
-            return "ATTRACTIVE"
-        if p <= fair:
-            return "FAIR"
-        if p <= expensive:
-            return "EXPENSIVE"
-        return "AVOID"
+        return classify_entry_status(row.get("premium_pct"), declared)
 
     out["entry_status"] = out.apply(_calc_entry_status, axis=1)
     return out

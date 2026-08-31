@@ -33,6 +33,30 @@ COVERAGE_BOUNDARY_TOLERANCE_DAYS = 7
 # its first/last dates happen to look unchanged.
 COVERAGE_MIN_ROW_RATIO = 0.90
 
+# Event-driven email delivery policy.  These are deliberately named contract
+# values rather than renderer-local literals: the same thresholds are used by
+# the historical frequency analysis, the CLI and the Gmail explanation block.
+# The core email remains intentionally small; the full regional universe stays
+# available in the dashboard and can be added here without changing detection
+# code.
+ALERT_CORE_EXPOSURES = ("csi300", "csi500", "sp500")
+ALERT_CONFIRMATION_OBSERVATIONS = 2
+ALERT_PREMIUM_LEADER_MIN_GAP_PCT = 0.10
+ALERT_MA20_BAND_PCT = 1.0
+ALERT_RSI_OVERSOLD = 35.0
+ALERT_RSI_OVERBOUGHT = 70.0
+ALERT_DRAWDOWN_TRIGGER_PCT = -10.0
+ALERT_RELATIVE_ZSCORE_TRIGGER = 1.0
+ALERT_HEARTBEAT_WEEKDAY = "Friday"
+ALERT_MAX_EVENTS_IN_EMAIL = 8
+ALERT_STATE_MAX_EVENT_KEYS = 64
+ALERT_STATE_VERSION = 1
+ALERT_STATE_PATH = DERIVED_DIR / "alert_state.json"
+
+# Fee changes are infrequent operational events rather than daily market
+# signals, but their comparison rule is still part of the data contract.
+FEE_CHANGE_RELATIVE_THRESHOLD = 0.05
+
 
 # Identifiers used across the domain. Exposure groups indexes; index owns
 # wrappers; venue keeps the schema open to CN / HK / US listing venues.
@@ -317,11 +341,16 @@ EXPOSURES = (
         "index_id": "CAC40",
         "yf_symbol": "^FCHI",
     },
-    # UK FTSE 100: QDII wrapper (513970).
+    # UK FTSE 100: index only. 513970 was filed here as 建信富时100ETF(QDII);
+    # the venue's own spot feed calls that code 恒生消费ETF景顺, and a scan of
+    # all 1584 listed ETFs (2026-08-23) found no mainland-listed FTSE 100
+    # tracker at all -- only 富时A50 products, which are A-shares. So the
+    # index is real and worth carrying; the wrapper cohort is not.
     # yfinance ^FTSE for the index.
     {
         "exposure_id": "ftse100",
         "price_source": "yfinance",
+        "role": "benchmark",
         "label": "UK FTSE 100",
         "label_zh": "英国富时100",
         "region": "Europe",

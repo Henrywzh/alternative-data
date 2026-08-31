@@ -2452,3 +2452,156 @@ def test_a_fresh_borrowed_close_raises_no_midday_warning():
         },
     )
     assert "借用的收盘技术面" not in html
+
+
+def test_a_fee_registry_disagreement_is_tagged_as_an_event_not_a_failure():
+    """The tagging itself is the guard: an untagged dict blocks every alert."""
+    from market_monitor.pipeline import fee_mismatch_event
+
+    record = fee_mismatch_event({"fund_id": "510300", "stated": "0.5000%", "published": "0.1500%"})
+
+    assert record["severity"] == "event"
+    assert record["event_type"] == "fee_registry_mismatch"
+    assert record["ticker"] == "510300"
+    assert "0.5000%" in record["error"] and "0.1500%" in record["error"]
+
+
+def test_a_crossed_pair_of_fund_houses_is_a_contradiction():
+    """The registry carried 159329 and 520830 with their issuers swapped.
+
+    Both names read 沙特, so the exposure token matched and the check passed
+    them for as long as the pair existed. The venue is the authority on which
+    house runs which code.
+    """
+    from market_monitor.metadata import reconcile_registry_names
+
+    metadata = pd.DataFrame(
+        [
+            {"exposure_id": "saudi", "fund_id": "159329", "fund_name": "华泰柏瑞沙特ETF(QDII)"},
+            {"exposure_id": "saudi", "fund_id": "520830", "fund_name": "南方沙特ETF(QDII)"},
+        ]
+    )
+    spot = pd.DataFrame(
+        [
+            {"ticker": "159329", "fund_name": "沙特ETF南方"},
+            {"ticker": "520830", "fund_name": "沙特ETF华泰柏瑞"},
+        ]
+    )
+
+    problems = reconcile_registry_names(metadata, spot)
+
+    assert [p["fund_id"] for p in problems] == ["159329", "520830"]
+    assert {p["reason"] for p in problems} == {"issuer"}
+
+
+def test_the_corrected_saudi_pair_reconciles_clean():
+    from market_monitor.metadata import reconcile_registry_names
+
+    metadata = pd.DataFrame(
+        [
+            {"exposure_id": "saudi", "fund_id": "159329", "fund_name": "南方沙特ETF(QDII)"},
+            {"exposure_id": "saudi", "fund_id": "520830", "fund_name": "华泰柏瑞沙特ETF(QDII)"},
+        ]
+    )
+    spot = pd.DataFrame(
+        [
+            {"ticker": "159329", "fund_name": "沙特ETF南方"},
+            {"ticker": "520830", "fund_name": "沙特ETF华泰柏瑞"},
+        ]
+    )
+
+    assert reconcile_registry_names(metadata, spot) == []
+
+
+def test_a_longer_fund_house_name_is_not_read_as_a_shorter_one(monkeypatch):
+    """华泰柏瑞 must not be read as 华泰 once both houses are on the list.
+
+    Today's list holds no token that is a prefix of another, so this is a
+    guard on the next name added rather than on current behaviour -- which is
+    why it patches a list where the two genuinely collide instead of asserting
+    against the shipped one and passing for the wrong reason.
+    """
+    from market_monitor import metadata
+
+    monkeypatch.setattr(metadata, "FUND_HOUSE_TOKENS", ("华泰", "华泰柏瑞", "南方"))
+
+    assert metadata._registry_fund_house("华泰柏瑞沪深300ETF") == "华泰柏瑞"
+    assert metadata._registry_fund_house("南方中证500ETF") == "南方"
+    # A house the list does not know is an absence, not a contradiction.
+    assert metadata._registry_fund_house("某某基金沪深300ETF") is None
+
+
+def test_an_unknown_fund_house_is_not_reported_as_a_contradiction():
+    from market_monitor.metadata import reconcile_registry_names
+
+    metadata = pd.DataFrame(
+        [{"exposure_id": "csi300", "fund_id": "510300", "fund_name": "某某沪深300ETF"}]
+    )
+    spot = pd.DataFrame([{"ticker": "510300", "fund_name": "沪深300ETF华泰柏瑞"}])
+
+    assert reconcile_registry_names(metadata, spot) == []
+
+
+def test_the_shipped_registry_agrees_with_the_venue_on_every_fund_house():
+    """The registry itself is under test, so a re-swap fails here, not in prod.
+
+    The exchange names below were read off a captured ``etf_spot`` snapshot
+    (2026-08-23, 1584 funds). They are inlined rather than loaded from
+    ``data/raw`` because that path is gitignored: a fixture CI cannot see is a
+    guard CI cannot run.
+    """
+    from market_monitor.metadata import build_metadata_frame, reconcile_registry_names
+
+    venue_names = {
+        "159329": "沙特ETF南方",
+        "520830": "沙特ETF华泰柏瑞",
+        "513080": "法国ETF华安",
+        "513030": "德国ETF华安",
+        "513310": "中韩半导体ETF华泰柏瑞",
+        "510300": "沪深300ETF华泰柏瑞",
+        "159919": "沪深300ETF嘉实",
+        "510330": "沪深300ETF华夏",
+        "510500": "中证500ETF南方",
+        "512500": "中证500ETF华夏",
+        "159922": "中证500ETF嘉实",
+        "513500": "标普500ETF博时",
+        "513650": "标普500ETF南方",
+        "159655": "标普500ETF华夏",
+    }
+    spot = pd.DataFrame(
+        [{"ticker": code, "fund_name": name} for code, name in venue_names.items()]
+    )
+
+    problems = reconcile_registry_names(build_metadata_frame(), spot)
+
+    assert problems == []
+
+
+def test_no_exposure_claims_a_wrapper_cohort_it_does_not_have():
+    """An investable exposure with no wrapper is a promise the data cannot keep.
+
+    ftse100 carried exactly one wrapper, 513970, which the venue says is
+    恒生消费ETF景顺. Left investable it would have shown an empty cohort and
+    blocked every alert on a contradiction no registry edit could resolve.
+    """
+    from market_monitor.config import investable_exposures
+    from market_monitor.metadata import build_metadata_frame
+
+    filed = set(build_metadata_frame()["exposure_id"].astype(str))
+    empty = [
+        spec["exposure_id"]
+        for spec in investable_exposures()
+        if spec["exposure_id"] not in filed
+    ]
+
+    assert not empty, f"investable exposures with no wrapper filed: {empty}"
+
+
+def test_a_benchmark_still_carries_its_index():
+    """Demoting the cohort must not drop the ^FTSE series itself."""
+    from market_monitor.config import EXPOSURES, exposure_role
+
+    ftse = next(spec for spec in EXPOSURES if spec["exposure_id"] == "ftse100")
+
+    assert exposure_role(ftse) == "benchmark"
+    assert ftse["yf_symbol"] == "^FTSE"
