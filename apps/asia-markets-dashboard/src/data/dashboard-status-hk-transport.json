@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-08-30T14:27:22.177600Z",
-  "snapshot_id": "0ef3c5a031178e57",
+  "generated_at": "2026-08-31T13:52:02.215240Z",
+  "snapshot_id": "11436c7df469474f",
   "data_as_of": "2026-08-01",
   "overall_status": "Healthy",
   "live_sources": 16,
@@ -11,8 +11,8 @@
       "dataset": "mtr_patronage",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-06-01",
-      "records": 318,
+      "latest_observation": "2026-07-01",
+      "records": 319,
       "freshness": "Live",
       "notes": "Monthly patronage counts and daily averages by rail service: Domestic, Airport Express, Cross-boundary (Lo Wu & Lok Ma Chau), Light Rail & Bus, and High Speed Rail (HSR)."
     },
@@ -22,7 +22,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "2026-07-01",
-      "records": 134,
+      "records": 124,
       "freshness": "Live",
       "notes": "HKIA airport monthly aircraft movements, passenger volume, and freight tonnage alongside Cathay Pacific passengers, RPK, ASK, passenger/cargo load factors, cargo tonnage, AFTK/RFTK and reported flight sectors, fetched directly from Cathay's own investor-relations traffic-figures PDFs discovered through the official archive."
     },
@@ -133,7 +133,7 @@
       "status": "Healthy",
       "latest_observation": "2026-05-01",
       "records": 19304,
-      "freshness": "121d old",
+      "freshness": "122d old",
       "notes": "Monthly first registrations of private cars by make, fuel type, first-registration status and body type; a genuine time series from May 2016 onward."
     },
     {
@@ -143,7 +143,7 @@
       "status": "Healthy",
       "latest_observation": "2026-06-01",
       "records": 357,
-      "freshness": "90d old",
+      "freshness": "91d old",
       "notes": "Latest available monthly private-car make/model detail; used as a bounded lookup snapshot, while the make/fuel history above supplies the time-series chart."
     },
     {
@@ -167,5 +167,5 @@
       "notes": "Observed occupancy rate for sensor-backed metered/on-street parking spaces. The static inventory supplies the listed-space denominator and the live CSV marks each observed space occupied or vacant; sample_size and listed_spaces remain visible because a small number of status rows may be unmatched."
     }
   ],
-  "attachment_filename": "hk-transport-dashboard-2026-08-30.html"
+  "attachment_filename": "hk-transport-dashboard-2026-08-31.html"
 }

@@ -1,6 +1,6 @@
 {
   "version": "asia-markets-freshness.v1",
-  "auditedAt": "2026-08-31T08:57:07.426754Z",
+  "auditedAt": "2026-08-31T14:02:00.943593Z",
   "asOf": "2026-08-31",
   "status": "healthy",
   "requiredFailures": [],
@@ -52,7 +52,7 @@
       "required": true,
       "status": "healthy",
       "expected_latest_period": "2026-06",
-      "latest_observation": "2026-06",
+      "latest_observation": "2026-07",
       "notes": "C&SD retail sales are monthly and normally release about 32-35 days after month-end."
     },
     {
@@ -82,7 +82,7 @@
       "required": true,
       "status": "healthy",
       "expected_latest_period": "2026-08-29",
-      "latest_observation": "2026-08-29",
+      "latest_observation": "2026-08-30",
       "notes": "Immigration passenger clearance is daily; allow a two-day publication/holiday lag."
     },
     {
@@ -92,7 +92,7 @@
       "required": true,
       "status": "healthy",
       "expected_latest_period": "2026-08-29",
-      "latest_observation": "2026-08-30",
+      "latest_observation": "2026-08-31",
       "notes": "Consumer Council pump-price snapshot is fetched daily; allow a two-day publication lag."
     },
     {
@@ -142,7 +142,7 @@
       "required": true,
       "status": "healthy",
       "expected_latest_period": "2026-06",
-      "latest_observation": "2026-06",
+      "latest_observation": "2026-07",
       "notes": "MTR monthly patronage is checked with a 35-day publication allowance because release dates vary around the latter part of the following month."
     },
     {
@@ -171,8 +171,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-08-30T14:33:46.056311Z",
-      "latest_observation": "2026-08-30T14:33:46.056311Z",
+      "expected_latest_period": "2026-08-31T13:52:01.838383Z",
+      "latest_observation": "2026-08-31T13:52:01.838383Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -181,8 +181,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-08-30T14:13:37.476144Z",
-      "latest_observation": "2026-08-30T14:13:37.476144Z",
+      "expected_latest_period": "2026-08-31T13:52:02.206948Z",
+      "latest_observation": "2026-08-31T13:52:02.206948Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -201,8 +201,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-08-30T14:27:22.177600Z",
-      "latest_observation": "2026-08-30T14:27:22.177600Z",
+      "expected_latest_period": "2026-08-31T13:52:02.215240Z",
+      "latest_observation": "2026-08-31T13:52:02.215240Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -221,8 +221,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-08-31T08:51:15Z",
-      "latest_observation": "2026-08-31T08:51:15Z",
+      "expected_latest_period": "2026-08-31T13:52:02Z",
+      "latest_observation": "2026-08-31T13:52:02Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     }
   ]

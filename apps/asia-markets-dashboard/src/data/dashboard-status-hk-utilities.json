@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-08-30T11:55:30.430329Z",
-  "snapshot_id": "c59ef66a72495244",
+  "generated_at": "2026-08-31T13:52:01.564366Z",
+  "snapshot_id": "e82270926607022f",
   "data_as_of": "2026-07-31",
   "overall_status": "Healthy",
   "live_sources": 6,
@@ -21,8 +21,8 @@
       "dataset": "towngas_proxy",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-06-01",
-      "records": 570,
+      "latest_observation": "2026-07-01",
+      "records": 571,
       "freshness": "Live",
       "notes": "Monthly town gas consumption in Terajoules (TJ) by user type (Domestic, Commercial, Industrial) \u2014 de facto Towngas monopoly operational proxy."
     },
@@ -53,7 +53,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-31",
       "records": 49059,
-      "freshness": "30d old",
+      "freshness": "31d old",
       "notes": "Daily final-effluent flow and sparse laboratory observations (BOD, TSS, nitrogen, oil/grease, pH and E. coli) by sewage treatment works; treatment-works coverage changes over time."
     },
     {
@@ -61,11 +61,11 @@
       "dataset": "wsd_water_suspension",
       "type": "Event",
       "status": "Healthy",
-      "latest_observation": "2026-08-30",
-      "records": 110,
+      "latest_observation": "2026-08-31",
+      "records": 105,
       "freshness": "Live at build time",
       "notes": "Current planned and emergency water-suspension notices with district, affected address, start/resumption time, cause and current status; refreshed every five minutes and not a continuous consumption series."
     }
   ],
-  "attachment_filename": "hk-utilities-dashboard-2026-08-30.html"
+  "attachment_filename": "hk-utilities-dashboard-2026-08-31.html"
 }
