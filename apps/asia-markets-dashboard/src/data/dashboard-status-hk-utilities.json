@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-09-01T08:50:12.647524Z",
-  "snapshot_id": "cc7cb9cfed14efb6",
+  "generated_at": "2026-09-01T11:41:55.510960Z",
+  "snapshot_id": "3617e341d2e3714a",
   "data_as_of": "2026-07-31",
   "overall_status": "Healthy",
   "live_sources": 6,
@@ -62,7 +62,7 @@
       "type": "Event",
       "status": "Healthy",
       "latest_observation": "2026-09-01",
-      "records": 106,
+      "records": 109,
       "freshness": "Live at build time",
       "notes": "Current planned and emergency water-suspension notices with district, affected address, start/resumption time, cause and current status; refreshed every five minutes and not a continuous consumption series."
     }

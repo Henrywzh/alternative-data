@@ -1,6 +1,6 @@
 {
   "version": "asia-markets-freshness.v1",
-  "auditedAt": "2026-09-01T08:53:37.663441Z",
+  "auditedAt": "2026-09-01T11:51:54.542031Z",
   "asOf": "2026-09-01",
   "status": "healthy",
   "requiredFailures": [],
@@ -171,8 +171,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-09-01T08:50:12.946432Z",
-      "latest_observation": "2026-09-01T08:50:12.946432Z",
+      "expected_latest_period": "2026-09-01T11:41:55.697493Z",
+      "latest_observation": "2026-09-01T11:41:55.697493Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -181,8 +181,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-09-01T08:50:13.054691Z",
-      "latest_observation": "2026-09-01T08:50:13.054691Z",
+      "expected_latest_period": "2026-09-01T11:41:55.558458Z",
+      "latest_observation": "2026-09-01T11:41:55.558458Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -191,8 +191,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-09-01T08:51:37.995937Z",
-      "latest_observation": "2026-09-01T08:51:37.995937Z",
+      "expected_latest_period": "2026-09-01T11:43:24.278557Z",
+      "latest_observation": "2026-09-01T11:43:24.278557Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -201,8 +201,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-09-01T08:50:13.171990Z",
-      "latest_observation": "2026-09-01T08:50:13.171990Z",
+      "expected_latest_period": "2026-09-01T11:41:55.893584Z",
+      "latest_observation": "2026-09-01T11:41:55.893584Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {

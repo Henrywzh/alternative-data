@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-09-01T08:50:12.946432Z",
-  "snapshot_id": "7bd40e6a47760f9e",
+  "generated_at": "2026-09-01T11:41:55.697493Z",
+  "snapshot_id": "168d4a331950e43c",
   "data_as_of": "2026-08-30",
   "overall_status": "Healthy",
   "live_sources": 7,
@@ -41,9 +41,9 @@
       "dataset": "HK Consumer Ticker Valuations",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-31",
-      "records": 4015,
-      "freshness": "1d old",
+      "latest_observation": "2026-09-01",
+      "records": 4026,
+      "freshness": "0d old",
       "notes": "PE (TTM), PB, and market cap only; no dividend-yield indicator is available from this endpoint."
     },
     {

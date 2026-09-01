@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-09-01T08:51:37.995937Z",
-  "snapshot_id": "fde83442276db622",
+  "generated_at": "2026-09-01T11:43:24.278557Z",
+  "snapshot_id": "a16a20a25c9577ab",
   "data_as_of": "2026-08-24",
   "overall_status": "Degraded",
   "live_sources": 22,
@@ -133,7 +133,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "2026-06-30",
-      "records": 56,
+      "records": 42,
       "freshness": "63d old",
       "notes": "Bounded PDF text extraction of explicit units/areas/rates/milestones; not revenue or ownership."
     },
