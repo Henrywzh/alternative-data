@@ -4,8 +4,10 @@ from pathlib import Path
 import json
 
 import pandas as pd
+import pytest
 
-from taiwan_semiconductor_revenue_data.models import CompanyConfig, Snapshot
+from taiwan_semiconductor_revenue_data import cli
+from taiwan_semiconductor_revenue_data.models import CompanyConfig, MonthlyRevenuePoint, Snapshot
 from taiwan_semiconductor_revenue_data.pipeline import TaiwanSemiconductorRevenuePipeline, _fill_missing_mom
 from taiwan_semiconductor_revenue_data.sources.mops import (
     AI_SERVER_ODM_COMPANIES,
@@ -412,3 +414,81 @@ def test_missing_mom_is_derived_from_prior_revenue() -> None:
     enriched = _fill_missing_mom(previous + current, pd.DataFrame())
     assert enriched[-1].mom_pct == 10.0
     assert enriched[-1].mom_pct_is_derived is True
+
+
+def _revenue_points(months: list[tuple[str, float]]) -> list[MonthlyRevenuePoint]:
+    return [
+        MonthlyRevenuePoint(
+            dataset_id="tw_monthly_revenue",
+            company_code="2330",
+            company_name="TSMC",
+            market="TWSE",
+            industry="Foundry",
+            filing_date=f"{month}-10",
+            revenue_month=month,
+            monthly_revenue_ntd=value,
+            mom_pct=None,
+            yoy_pct=1.0,
+            ytd_revenue_ntd=value,
+            ytd_yoy_pct=1.0,
+            source_url="fixture://sii",
+            source_run_id="run-1",
+            scraped_at="2026-09-01T00:00:00Z",
+            parser_version="test-parser",
+        )
+        for month, value in months
+    ]
+
+def test_a_month_that_comes_back_empty_is_a_failure_not_a_quiet_no_op(tmp_path: Path) -> None:
+    """A scheduled run exists to bring a month back; empty-handed is failing.
+
+    Extraction failures only ever reached the run manifest, so a run that
+    parsed nothing exited 0 and committed nothing.  `validate --fail-on-issues`
+    then inspected the dataset already on disk -- which a failed fetch leaves
+    untouched -- and agreed.  The workflow went green either way, so a broken
+    month and a month with genuinely nothing new looked identical.
+    """
+    empty = Snapshot(
+        name="sii_2025_07",
+        source_url="fixture://sii/2025-07",
+        body="<html><body><table></table></body></html>",
+    )
+    pipeline = TaiwanSemiconductorRevenuePipeline(
+        tmp_path, source=FixtureSource({"2025-07": [empty]})
+    )
+
+    with pytest.raises(RuntimeError, match="no usable rows"):
+        pipeline.run_update_latest(revenue_month="2025-07")
+
+
+def test_a_month_missing_from_the_middle_of_a_company_history_is_reported(tmp_path: Path) -> None:
+    """The check that notices a month being removed rather than never arriving.
+
+    On 2026-08-17 a coverage-expansion commit rebuilt this dataset from a local
+    snapshot taken on 2026-08-07 and dropped July, which CI had already
+    collected on the 10th-12th.  A truncation at the end still looks like a
+    contiguous range, so nothing complained; the hole only becomes visible once
+    the next month lands, and this is what sees it then.
+    """
+    pipeline = TaiwanSemiconductorRevenuePipeline(tmp_path, source=FixtureSource({}))
+    pipeline.storage.upsert_dataset(
+        "tw_monthly_revenue",
+        _revenue_points([("2026-06", 100.0), ("2026-08", 120.0)]),
+    )
+
+    counts = pipeline.validate()
+
+    assert counts["month_gaps"] == 1
+
+    with pytest.raises(SystemExit, match="month_gaps=1"):
+        cli._raise_on_validation_issues(counts)
+
+
+def test_a_contiguous_history_reports_no_gaps(tmp_path: Path) -> None:
+    pipeline = TaiwanSemiconductorRevenuePipeline(tmp_path, source=FixtureSource({}))
+    pipeline.storage.upsert_dataset(
+        "tw_monthly_revenue",
+        _revenue_points([("2026-06", 100.0), ("2026-07", 110.0), ("2026-08", 120.0)]),
+    )
+
+    assert pipeline.validate()["month_gaps"] == 0

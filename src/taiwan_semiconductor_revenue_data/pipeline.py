@@ -58,6 +58,7 @@ class TaiwanSemiconductorRevenuePipeline:
                 "missing_monthly_revenue": 0,
                 "missing_yoy_pct": 0,
                 "missing_ytd_revenue": 0,
+                "month_gaps": 0,
             }
 
         return {
@@ -67,6 +68,7 @@ class TaiwanSemiconductorRevenuePipeline:
             "missing_monthly_revenue": int(dataframe["monthly_revenue_ntd"].isna().sum()),
             "missing_yoy_pct": int(dataframe["yoy_pct"].isna().sum()),
             "missing_ytd_revenue": int(dataframe["ytd_revenue_ntd"].isna().sum()),
+            "month_gaps": _count_month_gaps(dataframe),
         }
 
     def _run_months(
@@ -106,6 +108,20 @@ class TaiwanSemiconductorRevenuePipeline:
         )
         raw_run_dir = self.storage.write_raw_run(context.run_id, snapshots, manifest)
 
+        if not points:
+            # Every failure so far has gone into the manifest and nowhere else,
+            # so a run that fetched nothing at all exited 0, committed nothing,
+            # and left a green tick. `validate --fail-on-issues` then checked
+            # the dataset already on disk, which is untouched by a failed
+            # fetch, so it agreed. A scheduled run exists to bring a month
+            # back; coming back empty-handed is a failure, not a quiet no-op.
+            raise RuntimeError(
+                f"MOPS returned no usable rows for {', '.join(months)} "
+                f"({len(failures)} extraction failures"
+                + (f": {failures[0]}" if failures else "")
+                + ")"
+            )
+
         existing = self.storage.load_dataset("tw_monthly_revenue")
         points = _fill_missing_mom(points, existing)
         written = self.storage.upsert_dataset("tw_monthly_revenue", points)
@@ -144,6 +160,30 @@ class TaiwanSemiconductorRevenuePipeline:
             "failures": failures,
             "snapshots": [{"name": snapshot.name, "source_url": snapshot.source_url} for snapshot in snapshots],
         }
+
+
+def _count_month_gaps(dataframe: pd.DataFrame) -> int:
+    """Months absent from the middle of a company's own reported range.
+
+    MOPS publishes every month, so a company that reports January and March
+    but not February is missing data, not quiet.  This is the check that
+    notices a month being *removed*: on 2026-08-17 a coverage-expansion commit
+    rebuilt this dataset from a local snapshot taken on 2026-08-07 and dropped
+    July, which CI had collected on the 10th-12th.  A truncation at the end
+    looks like a contiguous range, so nothing complained -- until the next
+    month lands and the hole becomes interior, which is exactly when this
+    fires.
+    """
+    total = 0
+    months = pd.to_datetime(dataframe["revenue_month"], errors="coerce")
+    frame = dataframe.assign(_period=months.dt.to_period("M")).dropna(subset=["_period"])
+    for _, group in frame.groupby("company_code"):
+        observed = set(group["_period"])
+        if len(observed) < 2:
+            continue
+        expected = set(pd.period_range(min(observed), max(observed), freq="M"))
+        total += len(expected - observed)
+    return int(total)
 
 
 def _latest_closed_month() -> str:

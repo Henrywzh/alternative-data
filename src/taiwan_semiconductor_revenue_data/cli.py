@@ -98,6 +98,9 @@ def _raise_on_validation_issues(counts: dict[str, int]) -> None:
         problems.append(f"duplicate_keys={duplicate_keys}")
     if missing_monthly_revenue > 0:
         problems.append(f"missing_monthly_revenue={missing_monthly_revenue}")
+    month_gaps = int(counts.get("month_gaps") or 0)
+    if month_gaps > 0:
+        problems.append(f"month_gaps={month_gaps}")
 
     if problems:
         raise SystemExit(f"Taiwan semiconductor revenue validation failed: {', '.join(problems)}")

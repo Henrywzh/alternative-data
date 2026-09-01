@@ -477,9 +477,17 @@ national and Port-HS grain, covering 2010-01 through 2026-06. Census quantity
 fields are unavailable for this HS code; shipping weight is a physical-volume
 proxy. `data/normalized/taiwan_semiconductor_revenue/tw_monthly_revenue.parquet`
 contains 11 Taiwan foundry, memory, OSAT, controller and AI-server ODM names,
-covering 2014-01 through 2026-06 except Wiwynn, which starts in 2016-01. MOPS
+covering 2014-01 through 2026-07 except Wiwynn, which starts in 2016-01. MOPS
 JSON retrieval timestamps are stored in `scraped_at`; they are not historical
 filing dates, and derived MoM values are marked with `mom_pct_is_derived`.
+The scheduled refresh only runs on the 10th-12th of each month, so this
+dataset is rebuilt rarely and a lost month stays lost for weeks: a
+coverage-expansion commit on 2026-08-17 was built from a 2026-08-07 local
+snapshot and dropped July, which CI had collected on the 10th-12th, and the
+gap sat unnoticed until 2026-09-01. `validate` now counts months absent from
+the middle of a company's own reported range and `--fail-on-issues` refuses
+them, and a run whose fetch yields no rows for the month it targeted now
+fails instead of exiting green with nothing committed.
 
 The six-company mainland monthly KPI parquet now also retains the Cninfo
 publication date/time, announcement ID, issuer PDF URL, source-quality label
