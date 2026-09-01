@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-08-31T13:52:01.838383Z",
-  "snapshot_id": "00203c9fb88160b5",
-  "data_as_of": "2026-08-27",
+  "generated_at": "2026-09-01T08:14:27.245275Z",
+  "snapshot_id": "7bd40e6a47760f9e",
+  "data_as_of": "2026-08-30",
   "overall_status": "Healthy",
   "live_sources": 7,
   "planned_sources": 1,
@@ -11,9 +11,9 @@
       "dataset": "HKO Severe Weather & FRED FX",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-01",
-      "records": 962,
-      "freshness": "30d old",
+      "latest_observation": "2026-09-01",
+      "records": 963,
+      "freshness": "0d old",
       "notes": "Monthly hours under Typhoon Signal 8+ & Red/Black Rainstorm warnings alongside HKD/RMB FX."
     },
     {
@@ -21,8 +21,8 @@
       "dataset": "Immigration Passenger Clearance",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-30",
-      "records": 2068,
+      "latest_observation": "2026-08-31",
+      "records": 2069,
       "freshness": "1d old",
       "notes": "Daily clearance across 17 control points for HK residents & Mainland visitors."
     },
@@ -31,9 +31,9 @@
       "dataset": "SGE Gold Benchmark",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-27",
-      "records": 2520,
-      "freshness": "4d old",
+      "latest_observation": "2026-08-30",
+      "records": 2521,
+      "freshness": "2d old",
       "notes": "Daily AM/PM benchmark fixing."
     },
     {
@@ -42,8 +42,8 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "2026-08-31",
-      "records": 4026,
-      "freshness": "0d old",
+      "records": 4015,
+      "freshness": "1d old",
       "notes": "PE (TTM), PB, and market cap only; no dividend-yield indicator is available from this endpoint."
     },
     {
@@ -53,7 +53,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-01",
       "records": 6550,
-      "freshness": "61d old",
+      "freshness": "62d old",
       "notes": "25 outlet-type categories, monthly since 2004."
     },
     {
@@ -63,7 +63,7 @@
       "status": "Healthy",
       "latest_observation": "2026-06-30",
       "records": 522,
-      "freshness": "62d old",
+      "freshness": "63d old",
       "notes": "Sector-wide purchases only; per-type purchases are not published."
     },
     {
@@ -85,5 +85,5 @@
       "notes": "Not marked Healthy: archive validation did not pass."
     }
   ],
-  "attachment_filename": "hk-local-consumer-dashboard-2026-08-31.html"
+  "attachment_filename": "hk-local-consumer-dashboard-2026-09-01.html"
 }

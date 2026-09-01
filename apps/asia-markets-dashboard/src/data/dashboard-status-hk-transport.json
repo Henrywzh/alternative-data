@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-31T13:52:02.215240Z",
+  "generated_at": "2026-09-01T08:14:27.232410Z",
   "snapshot_id": "11436c7df469474f",
   "data_as_of": "2026-08-01",
   "overall_status": "Healthy",
@@ -133,7 +133,7 @@
       "status": "Healthy",
       "latest_observation": "2026-05-01",
       "records": 19304,
-      "freshness": "122d old",
+      "freshness": "123d old",
       "notes": "Monthly first registrations of private cars by make, fuel type, first-registration status and body type; a genuine time series from May 2016 onward."
     },
     {
@@ -143,7 +143,7 @@
       "status": "Healthy",
       "latest_observation": "2026-06-01",
       "records": 357,
-      "freshness": "91d old",
+      "freshness": "92d old",
       "notes": "Latest available monthly private-car make/model detail; used as a bounded lookup snapshot, while the make/fuel history above supplies the time-series chart."
     },
     {
@@ -167,5 +167,5 @@
       "notes": "Observed occupancy rate for sensor-backed metered/on-street parking spaces. The static inventory supplies the listed-space denominator and the live CSV marks each observed space occupied or vacant; sample_size and listed_spaces remain visible because a small number of status rows may be unmatched."
     }
   ],
-  "attachment_filename": "hk-transport-dashboard-2026-08-31.html"
+  "attachment_filename": "hk-transport-dashboard-2026-09-01.html"
 }

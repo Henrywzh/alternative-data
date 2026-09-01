@@ -6,9 +6,9 @@
     "title": "Hong Kong Population, Migration & Cross-Border Data Monitor",
     "description": "High-frequency passenger net flow, population estimates, MPF departure claims, Mainland student enrolment & GBA transport signals.",
     "sector": "hk-population-migration",
-    "generatedAt": "2026-08-31T13:52:02.206948Z",
-    "dataAsOf": "2026-08-30",
-    "liveSourcesCount": 5,
+    "generatedAt": "2026-09-01T08:14:26.871287Z",
+    "dataAsOf": "2026-08-31",
+    "liveSourcesCount": 6,
     "totalSourcesCount": 6,
     "cards": [
       {
@@ -344,7 +344,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `fa45bf6137c567b3` · generated 2026-08-31T13:52:02.206948Z.  This is a published snapshot, not a live connection. Official ImmD, C&SD, MPFA, UGC and TD open data."
+        "body": "**Data snapshot:** `3a3bde6f1a188d94` · generated 2026-09-01T08:14:26.871287Z.  This is a published snapshot, not a live connection. Official ImmD, C&SD, MPFA, UGC and TD open data."
       },
       {
         "id": "kpi_grid",
@@ -404,17 +404,10 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-31T13:52:02.206948Z",
-    "status": "partial",
+    "generatedAt": "2026-09-01T08:14:26.871287Z",
+    "status": "ready",
     "datasets": {
       "immd_daily_traffic": [
-        {
-          "date": "2025-08-31",
-          "hk_resident_net_flow": 225651.0,
-          "mainland_visitor_net_retention": -23262.0,
-          "hk_resident_departures_7d_ma": 329852.3,
-          "mainland_visitor_arrivals_7d_ma": 117288.4
-        },
         {
           "date": "2025-09-01",
           "hk_resident_net_flow": 31736.0,
@@ -2962,19 +2955,16 @@
           "mainland_visitor_net_retention": -17734.0,
           "hk_resident_departures_7d_ma": 347335.4,
           "mainland_visitor_arrivals_7d_ma": 121751.9
+        },
+        {
+          "date": "2026-08-31",
+          "hk_resident_net_flow": 115822.0,
+          "mainland_visitor_net_retention": 2797.0,
+          "hk_resident_departures_7d_ma": 341349.6,
+          "mainland_visitor_arrivals_7d_ma": 113432.0
         }
       ],
       "immd_net_flow_history": [
-        {
-          "date": "2025-08-31",
-          "series": "HK Resident Net Flow",
-          "value": 225651.0
-        },
-        {
-          "date": "2025-08-31",
-          "series": "Mainland Visitor Net Retention",
-          "value": -23262.0
-        },
         {
           "date": "2025-09-01",
           "series": "HK Resident Net Flow",
@@ -6614,6 +6604,16 @@
           "date": "2026-08-30",
           "series": "Mainland Visitor Net Retention",
           "value": -17734.0
+        },
+        {
+          "date": "2026-08-31",
+          "series": "HK Resident Net Flow",
+          "value": 115822.0
+        },
+        {
+          "date": "2026-08-31",
+          "series": "Mainland Visitor Net Retention",
+          "value": 2797.0
         }
       ],
       "csd_population": [
@@ -10537,11 +10537,6 @@
       ],
       "visitor_arrivals_by_region": [
         {
-          "date": "2016-09",
-          "region": "Africa",
-          "visitors": 11850.0
-        },
-        {
           "date": "2016-10",
           "region": "Africa",
           "visitors": 14033.0
@@ -11125,11 +11120,6 @@
           "date": "2026-06",
           "region": "Africa",
           "visitors": 8368.0
-        },
-        {
-          "date": "2016-09",
-          "region": "Australia, New Zealand and South Pacific",
-          "visitors": 62755.0
         },
         {
           "date": "2016-10",
@@ -11717,11 +11707,6 @@
           "visitors": 41782.0
         },
         {
-          "date": "2016-09",
-          "region": "Chinese Mainland",
-          "visitors": 3316227.0
-        },
-        {
           "date": "2016-10",
           "region": "Chinese Mainland",
           "visitors": 3698301.0
@@ -12305,11 +12290,6 @@
           "date": "2026-06",
           "region": "Chinese Mainland",
           "visitors": 2884732.0
-        },
-        {
-          "date": "2016-09",
-          "region": "Europe",
-          "visitors": 138201.0
         },
         {
           "date": "2016-10",
@@ -12897,11 +12877,6 @@
           "visitors": 99871.0
         },
         {
-          "date": "2016-09",
-          "region": "Macao",
-          "visitors": 72268.0
-        },
-        {
           "date": "2016-10",
           "region": "Macao",
           "visitors": 75864.0
@@ -13485,11 +13460,6 @@
           "date": "2026-06",
           "region": "Macao",
           "visitors": 81351.0
-        },
-        {
-          "date": "2016-09",
-          "region": "Middle East",
-          "visitors": 16070.0
         },
         {
           "date": "2016-10",
@@ -14077,11 +14047,6 @@
           "visitors": 6390.0
         },
         {
-          "date": "2016-09",
-          "region": "North Asia",
-          "visitors": 222867.0
-        },
-        {
           "date": "2016-10",
           "region": "North Asia",
           "visitors": 208275.0
@@ -14665,11 +14630,6 @@
           "date": "2026-06",
           "region": "North Asia",
           "visitors": 71927.0
-        },
-        {
-          "date": "2016-09",
-          "region": "Not identified",
-          "visitors": 12.0
         },
         {
           "date": "2016-10",
@@ -15257,11 +15217,6 @@
           "visitors": 6.0
         },
         {
-          "date": "2016-09",
-          "region": "South and Southeast Asia",
-          "visitors": 272247.0
-        },
-        {
           "date": "2016-10",
           "region": "South and Southeast Asia",
           "visitors": 308038.0
@@ -15847,11 +15802,6 @@
           "visitors": 263308.0
         },
         {
-          "date": "2016-09",
-          "region": "Taiwan",
-          "visitors": 172979.0
-        },
-        {
           "date": "2016-10",
           "region": "Taiwan",
           "visitors": 168426.0
@@ -16435,11 +16385,6 @@
           "date": "2026-06",
           "region": "Taiwan",
           "visitors": 122684.0
-        },
-        {
-          "date": "2016-09",
-          "region": "The Americas",
-          "visitors": 136965.0
         },
         {
           "date": "2016-10",
@@ -17029,11 +16974,6 @@
       ],
       "visitor_arrivals_mainland_vs_row": [
         {
-          "date": "2016-09",
-          "series": "Mainland China",
-          "value": 3316227.0
-        },
-        {
           "date": "2016-10",
           "series": "Mainland China",
           "value": 3698301.0
@@ -17617,11 +17557,6 @@
           "date": "2026-06",
           "series": "Mainland China",
           "value": 2884732.0
-        },
-        {
-          "date": "2016-09",
-          "series": "Rest of World",
-          "value": 1106214.0
         },
         {
           "date": "2016-10",
@@ -18300,7 +18235,7 @@
       "label": "Immigration Department Daily Passenger Traffic",
       "status": "success",
       "records": 365,
-      "latest_observation": "2026-08-30",
+      "latest_observation": "2026-08-31",
       "freshness": "dated",
       "notes": "Daily passenger clearance by control point, direction and residency, used to derive HK-resident net flow and Mainland-visitor net retention."
     },
@@ -18316,11 +18251,11 @@
     {
       "id": "mpfa",
       "label": "MPFA Statistical Digest",
-      "status": "degraded",
+      "status": "success",
       "records": 15,
       "latest_observation": "2026-Q2",
       "freshness": "dated",
-      "notes": "Quarterly MPF claims for permanent departure from Hong Kong (count and amount), parsed from the official Statistical Digest. Live fetch failed this build; serving the committed snapshot."
+      "notes": "Quarterly MPF claims for permanent departure from Hong Kong (count and amount), parsed from the official Statistical Digest."
     },
     {
       "id": "ugc",
@@ -18354,8 +18289,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-population-migration/",
     "sector_id": "hk-population-migration",
     "sector_name": "Hong Kong Population, Migration & Cross-Border Data Monitor",
-    "snapshotId": "fa45bf6137c567b3",
-    "generatedAt": "2026-08-31T13:52:02.206948Z",
-    "dataAsOf": "2026-08-30"
+    "snapshotId": "3a3bde6f1a188d94",
+    "generatedAt": "2026-09-01T08:14:26.871287Z",
+    "dataAsOf": "2026-08-31"
   }
 }
