@@ -548,7 +548,16 @@ def test_core_histories_fallback_to_last_committed_artifact(monkeypatch):
 
     bd_history = dashboard_export._load_bd_supply_history_from_committed_artifact()
     assert not bd_history.empty
-    assert bd_history["observation_month"].max() == "2026-05-01"
+    # Derived from the artifact, not pinned to a month: the published history
+    # advances every time the digest does, and a literal here just fails on
+    # whichever morning that happens. The reconstruction still has to earn it,
+    # since it merges two chart datasets and re-derives the month key from
+    # their YYYY-MM date strings.
+    published_units = dashboard_export._load_dataset_from_committed_artifact(
+        "bd_supply_pipeline_history_units"
+    )
+    latest_published = pd.to_datetime(published_units["date"]).max()
+    assert bd_history["observation_month"].max() == latest_published.strftime("%Y-%m-01")
     assert bd_history.attrs["dashboard_fallback_reason"] == "last committed artifact"
 
 

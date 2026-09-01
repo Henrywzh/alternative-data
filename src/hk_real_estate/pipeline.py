@@ -915,6 +915,18 @@ def run_bd_history_backfill(
     return _finalize_group(run_id, "bd_history_backfill", results, _raise_on_failure)
 
 
+def _distinct_months(frame: pd.DataFrame, period_column: str) -> int:
+    """Count the distinct months a history frame covers.
+
+    Row counts are the wrong yardstick for "did we lose history": a month can
+    carry a different number of permit stages from one digest to the next, so
+    a frame can gain rows while losing years.
+    """
+    if frame.empty or period_column not in frame.columns:
+        return 0
+    return int(pd.to_datetime(frame[period_column], errors="coerce").dropna().nunique())
+
+
 def run_bd_history_current_year_refresh(
     run_id: str | None = None,
     *,
@@ -928,6 +940,16 @@ def run_bd_history_current_year_refresh(
     as the latest immutable run would make downstream readers lose 2005-present
     history. This runner replaces the selected year's rows inside the latest
     non-empty normalized history and writes the merged result as one new run.
+
+    Refusing to write a shorter frame is the load-bearing part, not a nicety.
+    When the retained history was still gitignored, every CI run started with
+    no base, took the ``existing.empty`` branch and published the current year
+    on its own -- the dashboard's Buildings Department supply chart silently
+    went from 121 months to 6 and could never grow back, because the next run
+    began from nothing again. The base is committed now (see .gitignore), and
+    this raises rather than quietly degrading if it ever goes missing again:
+    the daily workflow catches the failure and keeps the last good artifact,
+    which is a visible warning instead of an invisible truncation.
     """
     run_id = run_id or str(uuid.uuid4())
     target_year = year or datetime.now(timezone.utc).year
@@ -940,17 +962,23 @@ def run_bd_history_current_year_refresh(
         if fresh.empty:
             raise ValueError(f"Buildings Department returned no history rows for {target_year}")
         existing = load_latest_normalized("bd_supply_pipeline_history")
-        if not existing.empty:
-            period_column = (
-                "observation_month"
-                if "observation_month" in existing.columns
-                else "date"
+        if existing.empty:
+            raise ValueError(
+                "No retained Buildings Department history to refresh against; "
+                "publishing only "
+                f"{target_year} would drop 2005-present coverage. Run "
+                "`hk-real-estate-data run-bd-history-backfill` to rebuild the "
+                "archive first."
             )
-            existing_period = pd.to_datetime(existing[period_column], errors="coerce")
-            existing = existing.loc[existing_period.dt.year.ne(target_year)].copy()
-            merged = pd.concat([existing, fresh], ignore_index=True, sort=False)
-        else:
-            merged = fresh.copy()
+        period_column = (
+            "observation_month"
+            if "observation_month" in existing.columns
+            else "date"
+        )
+        existing_months = _distinct_months(existing, period_column)
+        existing_period = pd.to_datetime(existing[period_column], errors="coerce")
+        retained = existing.loc[existing_period.dt.year.ne(target_year)].copy()
+        merged = pd.concat([retained, fresh], ignore_index=True, sort=False)
         merged = merged.drop_duplicates(
             subset=[
                 "observation_month",
@@ -961,6 +989,13 @@ def run_bd_history_current_year_refresh(
             ],
             keep="last",
         ).sort_values(["observation_month", "permit_stage"]).reset_index(drop=True)
+        merged_months = _distinct_months(merged, "observation_month")
+        if merged_months < existing_months:
+            raise ValueError(
+                "Refusing to publish a shorter Buildings Department history: "
+                f"the retained run covers {existing_months} months and the "
+                f"merge produced {merged_months}."
+            )
         merged.attrs.update(fresh.attrs)
         _record_many(run_id, results, {"bd_supply_pipeline_history": merged})
     except Exception as exc:

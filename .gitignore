@@ -330,6 +330,20 @@ data/normalized/hk_real_estate/*
 !data/normalized/hk_real_estate/shkp_indicative_sales_model_backtest/
 !data/normalized/hk_real_estate/shkp_indicative_sales_model_backtest/**
 
+# The same trap, hit again on 2026-08-30. run-bd-history-current-year fetches
+# only the current year's digest and merges it into the retained 2005-present
+# history, but a clean runner has no retained history to merge into, so it
+# published the current year alone: the dashboard's supply-pipeline chart went
+# from 121 months to 6 and could not recover, because the next run also began
+# from nothing. One complete run is committed as that merge base. Re-seeding it
+# after a full `run-bd-history-backfill` means un-ignoring the new run id here
+# too -- the path is pinned rather than the whole dataset directory so a local
+# backfill's dozen-odd intermediate runs don't land in a commit by accident.
+!data/normalized/hk_real_estate/bd_supply_pipeline_history/
+data/normalized/hk_real_estate/bd_supply_pipeline_history/*
+!data/normalized/hk_real_estate/bd_supply_pipeline_history/3e55204d-570f-4a1b-a64c-3f81f3850723/
+!data/normalized/hk_real_estate/bd_supply_pipeline_history/3e55204d-570f-4a1b-a64c-3f81f3850723/**
+
 # hk_real_estate developer/project registry: small, hand-curated reference table
 # required at test/runtime by DeveloperRegistry — must be committed, not regenerated.
 !data/registries/

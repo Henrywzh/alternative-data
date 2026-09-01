@@ -236,6 +236,17 @@ or floor area. Run the complete archive explicitly with
 `run-bd-history-current-year` to merge the latest direct current-year PDF into
 the retained archive without re-downloading older years.
 
+That merge needs a retained archive to merge *into*, and normalized
+`hk_real_estate` output is gitignored, so a clean CI runner has none. Between
+2026-08-30 and 2026-09-01 the refresh therefore published the current year on
+its own and the dashboard's supply-pipeline chart fell from 121 months to 6,
+with the workflow still reporting success. One complete run
+(`3e55204d-570f-4a1b-a64c-3f81f3850723`, 2005-01 to 2026-05) is now committed
+as the merge base — `.gitignore` un-ignores that exact path — and the refresh
+refuses to write a frame covering fewer months than the one it replaces
+rather than degrading quietly. Re-seeding after a fresh
+`run_bd_history_backfill` means un-ignoring the new run id as well.
+
 ### Transactions
 
 The agency transaction pulse is intentionally capped for display. A display

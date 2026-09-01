@@ -125,6 +125,121 @@ def test_bd_current_year_refresh_merges_new_digest_without_losing_history(monkey
         merged.loc[merged["observation_month"].eq("2026-05-01"), "total_domestic_units"].iloc[0]
         == 210
     )
+
+
+def test_bd_refresh_refuses_to_publish_the_current_year_on_its_own(monkeypatch):
+    """The branch that actually runs in CI, and the one that broke the chart.
+
+    A clean runner has no retained normalized history. Publishing the fetched
+    current year as the newest run made every downstream reader lose
+    2005-present coverage, and the next run started from nothing again, so the
+    loss was permanent. Fail loudly instead -- the daily workflow catches it
+    and keeps the last good artifact.
+    """
+    fresh = pd.DataFrame(
+        [
+            {
+                "observation_month": "2026-06-01",
+                "permit_stage": "Occupation",
+                "region": "All Hong Kong",
+                "property_category": "All",
+                "revision_status": "as_published",
+                "total_domestic_units": 220,
+            },
+        ]
+    )
+    captured: dict[str, pd.DataFrame] = {}
+    monkeypatch.setattr(re_pipeline, "fetch_bd_supply_pipeline_history", lambda **_: fresh)
+    monkeypatch.setattr(re_pipeline, "load_latest_normalized", lambda _: pd.DataFrame())
+    monkeypatch.setattr(
+        re_pipeline,
+        "_record_many",
+        lambda run_id, results, datasets: captured.update(datasets),
+    )
+
+    with pytest.raises(Exception):
+        re_pipeline.run_bd_history_current_year_refresh(year=2026, _raise_on_failure=True)
+
+    assert not captured, "a current-year-only frame must never reach storage"
+
+
+def test_bd_refresh_refuses_a_merge_that_covers_fewer_months(monkeypatch):
+    """A partial re-fetch of the target year must not shrink the record.
+
+    The merge drops every retained row in the target year before splicing the
+    fetch in, so a digest that came back covering only January silently erases
+    February through May. Row counts hide it -- three stages of one month
+    outnumber one stage of five -- so the guard counts distinct months.
+    """
+    existing = pd.DataFrame(
+        [
+            {
+                "observation_month": month,
+                "permit_stage": "Occupation",
+                "region": "All Hong Kong",
+                "property_category": "All",
+                "revision_status": "as_published",
+                "total_domestic_units": 100,
+            }
+            for month in (
+                "2024-02-01",
+                "2026-01-01",
+                "2026-02-01",
+                "2026-03-01",
+                "2026-04-01",
+                "2026-05-01",
+            )
+        ]
+    )
+    fresh = pd.DataFrame(
+        [
+            {
+                "observation_month": "2026-01-01",
+                "permit_stage": stage,
+                "region": "All Hong Kong",
+                "property_category": "All",
+                "revision_status": "as_published",
+                "total_domestic_units": 100,
+            }
+            for stage in ("Occupation", "Consent", "Commencement")
+        ]
+    )
+    captured: dict[str, pd.DataFrame] = {}
+    monkeypatch.setattr(re_pipeline, "fetch_bd_supply_pipeline_history", lambda **_: fresh)
+    monkeypatch.setattr(re_pipeline, "load_latest_normalized", lambda _: existing)
+    monkeypatch.setattr(
+        re_pipeline,
+        "_record_many",
+        lambda run_id, results, datasets: captured.update(datasets),
+    )
+
+    with pytest.raises(Exception):
+        re_pipeline.run_bd_history_current_year_refresh(year=2026, _raise_on_failure=True)
+
+    assert not captured
+
+
+def test_the_history_base_ci_merges_into_is_actually_committed():
+    """The merge base has to survive a clean checkout, or the guard above fires.
+
+    This reads the committed parquet by repo path rather than through
+    NORMALIZED_DIR, which the autouse isolate_storage fixture redirects to a
+    tmp dir. Committing it is the whole point: the runner is gitignored-cache
+    dependent, and .gitignore un-ignores exactly this run.
+    """
+    base = (
+        Path(__file__).resolve().parents[1]
+        / "data" / "normalized" / "hk_real_estate" / "bd_supply_pipeline_history"
+        / "3e55204d-570f-4a1b-a64c-3f81f3850723"
+        / "bd_supply_pipeline_history.parquet"
+    )
+    assert base.exists(), f"BD history merge base is missing from the checkout: {base}"
+
+    frame = pd.read_parquet(base)
+    months = pd.to_datetime(frame["observation_month"], errors="coerce").dropna()
+    assert months.dt.year.min() <= 2005
+    assert months.nunique() >= 120
+
 from src.hk_real_estate.sources.bd_history import (
     discover_bd_digest_archives,
     list_archive_pdf_members,
