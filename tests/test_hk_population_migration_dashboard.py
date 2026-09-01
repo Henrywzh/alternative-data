@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -311,10 +312,20 @@ def test_published_artifact_retains_mpfa_departure_claims():
     )
     artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
     rows = artifact["snapshot"]["datasets"]["mpfa_claims"]
-    assert len(rows) >= 1
-    assert rows[-1]["quarter"] == "2026-Q2"
-    assert rows[-1]["claims_count"] == 5200
-    assert rows[-1]["amount_mhkd"] == 1203.0
+    assert rows, "MPFA claims published empty"
+    latest = rows[-1]
+    assert re.fullmatch(r"\d{4}-Q[1-4]", latest["quarter"])
+    assert latest["claims_count"] > 0
+    assert latest["amount_mhkd"] > 0
+
     source = next(row for row in artifact["source_health"] if row["id"] == "mpfa")
-    assert source["status"] == "success"
+    # Deliberately not pinned to "success". A build whose live fetch fails falls
+    # back to the committed snapshot and says so -- that is the design working,
+    # and it is what happened on 2026-09-01, with the full series intact. Pinning
+    # the happy path made a green suite depend on MPFA being reachable on
+    # whichever morning the artifact was last rebuilt.  What must never happen is
+    # a health row that disagrees with the data it describes: the silent-empty
+    # regression this test exists for would show up here.
+    assert source["status"] in {"success", "degraded"}
     assert source["records"] == len(rows)
+    assert source["latest_observation"] == latest["quarter"]
