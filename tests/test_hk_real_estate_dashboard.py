@@ -110,7 +110,20 @@ def test_build_artifact_is_source_backed_and_deterministic():
     assert first["snapshot"]["status"] == "ready"
     assert first["snapshot"]["datasets"]["kpi_ccl"][0]["latest"] > 0
     assert first["snapshot"]["datasets"]["kpi_rvd_price"][0]["is_provisional"] is True
-    assert len(first["snapshot"]["datasets"]["source_health"]) == 6
+    # Seven, not six: this build has no sibling financial-data DuckDB, so the
+    # SHKP bridge is served from the last published artifact and reports itself
+    # Stale rather than vanishing.  A vanished dataset is what the refresh guard
+    # rejects, and rejecting it froze CI publishing of this dashboard for three
+    # weeks.
+    health = first["snapshot"]["datasets"]["source_health"]
+    assert len(health) == 7
+    bridge_health = next(
+        row for row in health
+        if row["source"] == dashboard_export.PUBLIC_SOURCES["shkp_financial_bridge"]["label"]
+    )
+    assert bridge_health["status"] == "Stale"
+    assert bridge_health["freshness"] == "Previous artifact snapshot"
+    assert bridge_health["records"] > 0
     hkma_health = next(
         row for row in first["snapshot"]["datasets"]["source_health"]
         if row["source"] == dashboard_export.PUBLIC_SOURCES["hkma_mortgage"]["label"]
@@ -822,3 +835,45 @@ def test_shkp_leading_indicators_and_28hse_reconciliation_are_monitoring_only():
         "shkp_leading_phase_latest_block",
         "shkp_28hse_reconciliation_block",
     } <= block_ids
+
+
+def test_a_build_without_the_sibling_repo_keeps_every_dataset_the_guard_checks():
+    """The exact CI shape: no financial-data DuckDB, no Midland, still publishable.
+
+    On a GitHub runner neither source can exist -- the sibling repo is never
+    checked out and Midland is skipped by HK_RE_SKIP_MIDLAND and WAF-blocked
+    anyway.  Rebuilding without them used to drop the dataset keys, which
+    artifact-refresh-guard.mjs reads as an empty-dataset regression, so it
+    threw the whole rebuild away and restored the previous file.  CI last
+    published this dashboard on 2026-08-12 because of it, and a Buildings
+    Department history repaired upstream still could not reach the chart.
+    """
+    artifact, _ = dashboard_export.build_artifact(
+        _frames(), raw_hkma=_hkma_frame(), raw_cnsd=_cnsd_frame(), now=NOW
+    )
+    datasets = artifact["snapshot"]["datasets"]
+
+    for dataset_key in dashboard_export.RUNNER_UNAVAILABLE_DATASETS:
+        assert datasets.get(dataset_key), (
+            f"{dataset_key} came back empty; the refresh guard would reject "
+            "this artifact and preserve the previous one"
+        )
+
+
+def test_a_carried_forward_dataset_says_so_rather_than_passing_as_fresh():
+    """Serving last week's rows silently would be worse than dropping them."""
+    artifact, _ = dashboard_export.build_artifact(
+        _frames(), raw_hkma=_hkma_frame(), raw_cnsd=_cnsd_frame(), now=NOW
+    )
+    coverage = artifact["snapshot"]["datasets"]["source_coverage"]
+
+    midland = next(row for row in coverage if row["dataset"] == "midland_top_estates")
+    assert midland["status"] == "Stale"
+    assert midland["freshness"] == "Previous artifact snapshot"
+    assert "unavailable in this build" in midland["notes"]
+
+    # And the SHKP bridge is listed exactly once: it reports through its own
+    # source_health row (which coverage already contains), so appending a
+    # second carried-forward row for it would double-count the same source.
+    bridge_label = dashboard_export.PUBLIC_SOURCES["shkp_financial_bridge"]["label"]
+    assert sum(row["source"] == bridge_label for row in coverage) == 1

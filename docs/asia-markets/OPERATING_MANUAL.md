@@ -247,6 +247,33 @@ refuses to write a frame covering fewer months than the one it replaces
 rather than degrading quietly. Re-seeding after a fresh
 `run_bd_history_backfill` means un-ignoring the new run id as well.
 
+### Why the real-estate artifact stopped publishing from CI
+
+`artifact-refresh-guard.mjs` restores the previous artifact whenever a rebuild
+drops a dataset it used to carry. That is the right rule, and it is what kept a
+half-built artifact off the dashboard. But two of this sector's datasets cannot
+be produced on a GitHub runner at all:
+
+- `shkp_hk_financial_bridge` reads the sibling `financial-data` DuckDB at
+  `../financial-data/data/databases/hk_financials.duckdb`, which CI never
+  checks out;
+- `midland_top_estates` comes from Midland, which this workflow deliberately
+  skips (`HK_RE_SKIP_MIDLAND: "1"`) and which WAF-blocks the runner anyway.
+
+So every CI rebuild lost both keys, the guard rejected the whole artifact, and
+`hk-real-estate-artifact.json` was last published by CI on 2026-08-12 — while
+`hk-local-consumer-artifact.json`, built in the same job, refreshed daily. The
+workflow reported success throughout. Every real-estate artifact commit after
+2026-08-12 was a hand-run local build.
+
+The builder now serves both datasets from the last committed artifact when
+their upstream is absent, the way it already does for HKMA, SRPE and the
+Buildings Department history, and marks them `Stale` /
+`Previous artifact snapshot` in source health and coverage so the dashboard
+does not present three-week-old rows as fresh. Adding a dataset with a similar
+CI-absent upstream means adding it to `RUNNER_UNAVAILABLE_DATASETS`, not
+loosening the guard.
+
 ### Transactions
 
 The agency transaction pulse is intentionally capped for display. A display

@@ -1753,6 +1753,10 @@ def build_artifact(
         timing_phase=df_shkp_sales_handover_phase,
         timing_annual=df_shkp_sales_handover_annual,
     )
+    carried_forward_datasets: dict[str, int] = {}
+    shkp_financial_bridge_rows = _carry_forward_if_runner_unavailable(
+        shkp_financial_bridge_rows, "shkp_hk_financial_bridge", carried_forward_datasets
+    )
     (
         srpe_developer_monthly_rows,
         srpe_sell_through_rows,
@@ -2068,11 +2072,29 @@ def build_artifact(
                 "source": PUBLIC_SOURCES["shkp_financial_bridge"]["label"],
                 "dataset": "SHKP HK business financial bridge",
                 "type": "Measure",
-                "status": "Healthy" if validation_status in {"valid", "available"} else "Degraded",
+                # Carried-forward rows are real, but they are not this build's
+                # rows, and a health table that calls them Healthy is worse than
+                # no health table.
+                "status": (
+                    "Stale"
+                    if "shkp_hk_financial_bridge" in carried_forward_datasets
+                    else "Healthy" if validation_status in {"valid", "available"} else "Degraded"
+                ),
                 "latest_observation": latest_bridge,
                 "records": len(shkp_financial_bridge_rows),
-                "freshness": "Research snapshot",
+                "freshness": (
+                    "Previous artifact snapshot"
+                    if "shkp_hk_financial_bridge" in carried_forward_datasets
+                    else "Research snapshot"
+                ),
                 "notes": (
+                    (
+                        f"{RUNNER_UNAVAILABLE_DATASETS['shkp_hk_financial_bridge'][1]} was unavailable "
+                        "in this build, so the last published rows were retained. "
+                    )
+                    if "shkp_hk_financial_bridge" in carried_forward_datasets
+                    else ""
+                ) + (
                     "Official group/segment facts, HK recurring portfolio facts, selected 0016.HK actuals, "
                     "consensus and PIT diagnostics; no project-level HK revenue split is inferred."
                 ),
@@ -2382,6 +2404,9 @@ def build_artifact(
                     "transaction_count": float(r["transaction_count"]) if pd.notna(r.get("transaction_count")) else None,
                 }
             )
+    midland_estate_rows = _carry_forward_if_runner_unavailable(
+        midland_estate_rows, "midland_top_estates", carried_forward_datasets
+    )
 
     additional_coverage = []
     for label, dataset_label, rows_or_frame, source_label in (
@@ -2427,6 +2452,30 @@ def build_artifact(
                     else ("Previous artifact snapshot" if fallback_reason else ("Live at build time" if record_count else "Fetch returned no rows"))
                 ),
                 "notes": coverage_notes,
+            }
+        )
+
+    for dataset_key, row_count in carried_forward_datasets.items():
+        # The SHKP bridge already owns a source_health row, marked Stale above.
+        # The coverage table is a source inventory, not a list of every surface
+        # using a source, so do not alias it here.
+        if dataset_key == "shkp_hk_financial_bridge":
+            continue
+        label, upstream = RUNNER_UNAVAILABLE_DATASETS[dataset_key]
+        additional_coverage.append(
+            {
+                "source": label,
+                "dataset": dataset_key,
+                "type": "Measure",
+                "status": "Stale",
+                "latest_observation": "—",
+                "records": row_count,
+                "freshness": "Previous artifact snapshot",
+                "notes": (
+                    f"{upstream} was unavailable in this build, so the last "
+                    "published rows were retained. The figures are real but "
+                    "not refreshed this run."
+                ),
             }
         )
 
@@ -3933,6 +3982,65 @@ def _load_dataset_from_committed_artifact(dataset_key: str) -> pd.DataFrame:
     except (FileNotFoundError, json.JSONDecodeError, KeyError, TypeError):
         return pd.DataFrame()
     return pd.DataFrame(rows) if isinstance(rows, list) else pd.DataFrame()
+
+
+# Datasets whose only upstream cannot exist on a GitHub runner. The SHKP
+# financial bridge reads the sibling financial-data DuckDB, which CI never
+# checks out; Midland is deliberately skipped there (HK_RE_SKIP_MIDLAND) and
+# WAF-blocked besides. Neither absence is a data problem to fix here -- but
+# rebuilding without them drops the dataset key outright, and the refresh
+# guard correctly reads a vanished dataset as a regression and rejects the
+# whole artifact. That is why CI last published this dashboard on 2026-08-12
+# while every other sector in the same job kept refreshing daily, and why a
+# Buildings Department history repaired upstream still could not reach the
+# published chart. Serve the last published rows for these two and mark them
+# stale, the way HKMA, SRPE and the BD history already do.
+RUNNER_UNAVAILABLE_DATASETS = {
+    "shkp_hk_financial_bridge": (
+        "SHKP financial bridge",
+        "sibling financial-data DuckDB (not checked out in CI)",
+    ),
+    "midland_top_estates": (
+        "Midland top estates",
+        "Midland market-insight scrape (skipped in CI, WAF-blocked)",
+    ),
+}
+
+
+def _load_rows_from_committed_artifact(dataset_key: str) -> list[dict[str, Any]]:
+    """Read a dataset out of the last committed artifact as raw JSON rows.
+
+    Deliberately not the DataFrame reader above: these rows go straight back
+    into the artifact, and a round-trip through pandas turns absent values into
+    NaN, which json.dumps writes as the literal ``NaN`` that no JSON parser
+    accepts.
+    """
+    try:
+        data = json.loads(_COMMITTED_ARTIFACT_PATH.read_text(encoding="utf-8"))
+        rows = data["snapshot"]["datasets"][dataset_key]
+    except (FileNotFoundError, json.JSONDecodeError, KeyError, TypeError):
+        return []
+    return [row for row in rows if isinstance(row, dict)] if isinstance(rows, list) else []
+
+
+def _carry_forward_if_runner_unavailable(
+    rows: list[dict[str, Any]],
+    dataset_key: str,
+    carried: dict[str, int],
+) -> list[dict[str, Any]]:
+    """Keep a structurally-absent dataset alive from the last published build."""
+    if rows:
+        return rows
+    previous = _load_rows_from_committed_artifact(dataset_key)
+    if not previous:
+        return rows
+    carried[dataset_key] = len(previous)
+    print(
+        f"  [hk_real_estate] {dataset_key} unavailable this build; "
+        f"serving {len(previous)} rows from the last committed artifact.",
+        file=sys.stderr,
+    )
+    return previous
 
 
 def _mark_artifact_fallback(frame: pd.DataFrame, reason: str) -> pd.DataFrame:

@@ -136,6 +136,22 @@ replacement for the operating manual or generated source-status JSON.
 
 ## Recent completed work
 
+- HK real-estate artifact had not been CI-published since 2026-08-12
+  (2026-09-01): `artifact-refresh-guard.mjs` rejected every rebuild because
+  two datasets vanish on a clean runner -- `shkp_hk_financial_bridge` needs
+  the sibling financial-data DuckDB, which CI never checks out, and
+  `midland_top_estates` needs Midland, which the workflow deliberately skips
+  and which WAF-blocks the runner. The guard preserved the previous artifact
+  and the job still reported success, so nothing surfaced; meanwhile
+  `hk-local-consumer-artifact.json`, built in the same job, refreshed daily.
+  Every real-estate artifact commit after 2026-08-12 was a hand-run local
+  build. This is also why the Buildings Department history fix landed
+  correctly in the pipeline (the CI refresh wrote 1,290 merged records) and
+  still could not reach the published chart. The builder now carries both
+  datasets forward from the last committed artifact and reports them as
+  `Stale` / `Previous artifact snapshot`, so the artifact stops losing keys
+  and CI can publish this sector again.
+
 - Two silent data defects caught by the test suite and fixed (2026-09-01):
 
   1. **Buildings Department supply history collapsed from 121 months to 6.**
