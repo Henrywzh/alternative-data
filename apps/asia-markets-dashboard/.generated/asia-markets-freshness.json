@@ -1,6 +1,6 @@
 {
   "version": "asia-markets-freshness.v1",
-  "auditedAt": "2026-09-01T08:24:26.364616Z",
+  "auditedAt": "2026-09-01T08:53:37.663441Z",
   "asOf": "2026-09-01",
   "status": "healthy",
   "requiredFailures": [],
@@ -171,8 +171,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-09-01T08:14:27.245275Z",
-      "latest_observation": "2026-09-01T08:14:27.245275Z",
+      "expected_latest_period": "2026-09-01T08:50:12.946432Z",
+      "latest_observation": "2026-09-01T08:50:12.946432Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -181,8 +181,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-09-01T08:14:26.871287Z",
-      "latest_observation": "2026-09-01T08:14:26.871287Z",
+      "expected_latest_period": "2026-09-01T08:50:13.054691Z",
+      "latest_observation": "2026-09-01T08:50:13.054691Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -191,8 +191,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-08-30T14:13:30.774323Z",
-      "latest_observation": "2026-08-30T14:13:30.774323Z",
+      "expected_latest_period": "2026-09-01T08:51:37.995937Z",
+      "latest_observation": "2026-09-01T08:51:37.995937Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -201,8 +201,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-09-01T08:14:27.232410Z",
-      "latest_observation": "2026-09-01T08:14:27.232410Z",
+      "expected_latest_period": "2026-09-01T08:50:13.171990Z",
+      "latest_observation": "2026-09-01T08:50:13.171990Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -211,8 +211,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-08-31T07:56:47.705700Z",
-      "latest_observation": "2026-08-31T07:56:47.705700Z",
+      "expected_latest_period": "2026-09-01T08:50:13.127832Z",
+      "latest_observation": "2026-09-01T08:50:13.127832Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -221,8 +221,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-09-01T08:14:27Z",
-      "latest_observation": "2026-09-01T08:14:27Z",
+      "expected_latest_period": "2026-09-01T08:50:12Z",
+      "latest_observation": "2026-09-01T08:50:12Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     }
   ]

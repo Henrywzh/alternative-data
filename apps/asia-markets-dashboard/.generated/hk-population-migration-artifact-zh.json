@@ -6,9 +6,9 @@
     "title": "香港人口、迁移与跨境数据监测",
     "description": "入境处高频每日出入境净流量、政府统计处人口估算与净移动、积金局永久离港强积金申索、教资会内地生入学人数及大湾区跨境车流/高铁客流。",
     "sector": "hk-population-migration",
-    "generatedAt": "2026-09-01T08:14:26.871287Z",
+    "generatedAt": "2026-09-01T08:50:13.054691Z",
     "dataAsOf": "2026-08-31",
-    "liveSourcesCount": 6,
+    "liveSourcesCount": 5,
     "totalSourcesCount": 6,
     "cards": [
       {
@@ -344,7 +344,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `3a3bde6f1a188d94` · 生成于 2026-09-01T08:14:26.871287Z。这是已发布快照，不是实时连接。"
+        "body": "**数据快照：** `3a3bde6f1a188d94` · 生成于 2026-09-01T08:50:13.054691Z。这是已发布快照，不是实时连接。"
       },
       {
         "id": "kpi_grid",
@@ -404,8 +404,8 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-09-01T08:14:26.871287Z",
-    "status": "ready",
+    "generatedAt": "2026-09-01T08:50:13.054691Z",
+    "status": "partial",
     "datasets": {
       "immd_daily_traffic": [
         {
@@ -18251,11 +18251,11 @@
     {
       "id": "mpfa",
       "label": "MPFA Statistical Digest",
-      "status": "success",
+      "status": "degraded",
       "records": 15,
       "latest_observation": "2026-Q2",
       "freshness": "dated",
-      "notes": "Quarterly MPF claims for permanent departure from Hong Kong (count and amount), parsed from the official Statistical Digest."
+      "notes": "Quarterly MPF claims for permanent departure from Hong Kong (count and amount), parsed from the official Statistical Digest. Live fetch failed this build; serving the committed snapshot."
     },
     {
       "id": "ugc",
@@ -18290,7 +18290,7 @@
     "sector_id": "hk-population-migration",
     "sector_name": "Hong Kong Population, Migration & Cross-Border Data Monitor",
     "snapshotId": "3a3bde6f1a188d94",
-    "generatedAt": "2026-09-01T08:14:26.871287Z",
+    "generatedAt": "2026-09-01T08:50:13.054691Z",
     "dataAsOf": "2026-08-31"
   }
 }

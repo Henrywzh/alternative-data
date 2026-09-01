@@ -6,7 +6,7 @@
     "title": "香港公用事业与基础设施监测",
     "description": "中电控股（CLP）季度售电量拆解、中华煤气（Towngas）代理数据、香港天文台日均气温、电能实业（Power Assets）分部业绩、渠务署污水流量/实验室数据及水务署停水通告。",
     "sector": "hk-utilities",
-    "generatedAt": "2026-09-01T08:14:26.958242Z",
+    "generatedAt": "2026-09-01T08:50:12.647524Z",
     "cards": [
       {
         "id": "clp_card",
@@ -397,7 +397,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-09-01T08:14:26.958242Z",
+    "generatedAt": "2026-09-01T08:50:12.647524Z",
     "status": "ready",
     "datasets": {
       "kpi_clp": [
@@ -4499,7 +4499,7 @@
       ],
       "kpi_water_suspension": [
         {
-          "active_notices": 25,
+          "active_notices": 24,
           "total_notices": 106,
           "recent_emergency_notices": 88,
           "observation_date": "2026-09-01"
@@ -12189,11 +12189,11 @@
           "nature": "紧急",
           "suspension_start": "2026-09-01 15:04",
           "suspension_date": "2026-09-01",
-          "actual_resumption": null,
+          "actual_resumption": "2026-09-01 16:04",
           "address": "AROUND SAN LAU STREET CLOSE TO LAMP POST EB2642",
           "cause": "Emergency repairing of water main/installation",
-          "status": "供水暂停中",
-          "is_active": true
+          "status": "供水已恢复",
+          "is_active": false
         },
         {
           "suspension_id": "2026090112712",
@@ -13393,7 +13393,7 @@
           "summary": "2026090112720 (2026-09-01 15:10): Yuen Long; Fresh And Salt Water; Emergency; Supply being suspended"
         },
         {
-          "summary": "2026090112718 (2026-09-01 15:04): North; Fresh Water; Emergency; Supply being suspended"
+          "summary": "2026090112718 (2026-09-01 15:04): North; Fresh Water; Emergency; Supply resumed"
         },
         {
           "summary": "2026090112712 (2026-09-01 14:39): North; Fresh Water; Emergency; Supply being suspended"
@@ -13738,7 +13738,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-utilities/",
-    "snapshotId": "f32884d201a880b0",
+    "snapshotId": "cc7cb9cfed14efb6",
     "dataAsOf": "2026-07-31"
   }
 }
