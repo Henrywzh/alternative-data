@@ -162,11 +162,26 @@ class StorageManager:
 
         existing = self.load_dataset(dataset_id)
         merged = pd.concat([existing, incoming], ignore_index=True) if not existing.empty else incoming.copy()
-        merged = self._coerce_types(merged, dataset_id)
-        merged = merged.drop_duplicates(subset=spec["natural_key"], keep="last")
-        merged = merged.sort_values(by=spec["sort_keys"], na_position="last").reset_index(drop=True)
+        merged = self._canonicalize(merged, dataset_id)
+        # Writing a parquet that says exactly what the one on disk already says
+        # still changes its bytes, and the refresh workflows commit whatever
+        # `git add` reports as changed. _run_pipeline re-upserts the whole
+        # backup frame on every run to apply comparison gaps, so a weekly
+        # official-source refresh -- which fetches no backup rows at all --
+        # produced a "chore: update semiconductor proxy datasets" commit every
+        # Monday carrying no data. Five of those in a row hid the fact that the
+        # backup dataset had not gained a row since 2026-06-20.
+        if parquet_path.exists() and merged.equals(self._canonicalize(existing, dataset_id)):
+            return merged
         merged.to_parquet(parquet_path, index=False)
         return merged
+
+    def _canonicalize(self, dataframe: pd.DataFrame, dataset_id: str) -> pd.DataFrame:
+        """Types, dedupe and sort -- the exact shape upsert_dataset persists."""
+        spec = DATASET_SPECS[dataset_id]
+        result = self._coerce_types(dataframe.copy(), dataset_id)
+        result = result.drop_duplicates(subset=spec["natural_key"], keep="last")
+        return result.sort_values(by=spec["sort_keys"], na_position="last").reset_index(drop=True)
 
     @staticmethod
     def _coerce_types(dataframe: pd.DataFrame, dataset_id: str) -> pd.DataFrame:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -627,3 +628,85 @@ def test_custom_csv_import(tmp_path: Path) -> None:
     r3 = df[df["period"] == "2026-03"].iloc[0]
     assert r3["value"] == 14000000000.0
     assert r3["partner_scope"] == "world"
+
+
+def _backup_point(period: str = "2026-03", value: float = 1_000_000_000.0) -> BackupCheckPoint:
+    return BackupCheckPoint(
+        dataset_id="semiconductor_backup_check_monthly",
+        source_region="korea",
+        country_name="South Korea",
+        metric_type="exports",
+        flow_code="X",
+        partner_scope="world",
+        period=period,
+        release_date="2026-04-30",
+        expected_release_window_days=45,
+        lag_days=30,
+        category_id="ic_only",
+        category_label="IC-only",
+        classification_system="HS",
+        classification_code="8542",
+        unit="usd",
+        currency="USD",
+        value=value,
+        yoy_pct=None,
+        mom_pct=None,
+        is_preliminary=True,
+        is_revised=False,
+        is_official_primary=False,
+        comparison_gap_pct=None,
+        source_name="UN Comtrade",
+        source_url="https://example.com/comtrade",
+        source_run_id="run-1",
+        scraped_at="2026-06-20T22:56:29Z",
+        parser_version="test-backup-v1",
+    )
+
+
+def test_rewriting_the_same_rows_does_not_touch_the_file(tmp_path: Path) -> None:
+    """A weekly commit that carries no data hides the weeks that carried none.
+
+    _run_pipeline re-upserts the whole backup frame every run to apply
+    comparison gaps, so an official-source refresh -- which fetches no backup
+    rows at all -- rewrote the parquet. Identical rows do not produce identical
+    bytes across runs: parquet stamps its writer into the file metadata, and
+    when CI's pyarrow went 24.0.0 -> 25.0.1 the file changed by 39 bytes with
+    no change in content. The workflow committed that, and five such commits in
+    a row made a dataset that had not gained a row since 2026-06-20 look like it
+    was refreshing weekly.
+
+    Asserting on bytes would be vacuous here -- two writes in one process use
+    one pyarrow and agree. The claim worth testing is that the second upsert
+    does not write at all.
+    """
+    storage = StorageManager(tmp_path)
+    dataset_id = "semiconductor_backup_check_monthly"
+    path = tmp_path / "data" / "normalized" / "semiconductor_proxies" / f"{dataset_id}.parquet"
+
+    storage.upsert_dataset(dataset_id, [_backup_point()])
+    assert path.exists()
+    pinned = 1_000_000_000
+    os.utime(path, (pinned, pinned))
+
+    written = storage.upsert_dataset(dataset_id, [_backup_point()])
+
+    assert int(path.stat().st_mtime) == pinned, "an identical upsert rewrote the file"
+    assert len(written) == 1
+
+
+def test_a_changed_value_is_still_written(tmp_path: Path) -> None:
+    """The skip must key on content, not on the row count staying the same."""
+    storage = StorageManager(tmp_path)
+    dataset_id = "semiconductor_backup_check_monthly"
+    path = tmp_path / "data" / "normalized" / "semiconductor_proxies" / f"{dataset_id}.parquet"
+
+    storage.upsert_dataset(dataset_id, [_backup_point()])
+    pinned = 1_000_000_000
+    os.utime(path, (pinned, pinned))
+
+    storage.upsert_dataset(dataset_id, [_backup_point(value=2_000_000_000.0)])
+
+    assert int(path.stat().st_mtime) != pinned
+    reloaded = pd.read_parquet(path)
+    assert len(reloaded) == 1
+    assert reloaded["value"].iloc[0] == 2_000_000_000.0
