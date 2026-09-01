@@ -50,7 +50,7 @@ reports (2026-08-29/31) are the catalyst that tests this.
 |---|---|---|
 | Unit economics | CASK 0.300 vs 0.345 (+14.7%), unit profit +0.039 vs +0.030 | `airline_unit_economics.csv` |
 | Yield pressure | validation limited (2025 only +0.66); direction modifier | `airline_yield_pressure_index.csv` |
-| Capacity pipeline | ASK +15.9% vs +0.8%; 4 routes/56wk vs 2/28; fleet net add +4 vs 0 | `airline_capacity_pipeline.csv` |
+| Capacity pipeline | ASK +14.7% vs +0.9%; 4 routes/56wk vs 2/28; fleet net add +4 vs +1 | `airline_capacity_pipeline.csv` |
 | Consensus reverse | Street implies RASK +3.2% (Spring) vs +11.8% (Juneyao) | `airline_consensus_reverse.csv` |
 | 3D sensitivity | Pair spread positive in 27/27 combos (min 1.07, med 1.60) | `airline_earnings_sensitivity.csv` |
 | Valuation | Spring implied EPS +42% vs consensus; Juneyao +93% | `airline_valuation_snapshot.csv` |

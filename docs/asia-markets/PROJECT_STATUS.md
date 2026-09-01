@@ -136,6 +136,43 @@ replacement for the operating manual or generated source-status JSON.
 
 ## Recent completed work
 
+- Two silent data defects caught by the test suite and fixed (2026-09-01):
+
+  1. **Buildings Department supply history collapsed from 121 months to 6.**
+     `run-bd-history-current-year` merges the fetched current year into the
+     retained 2005-present archive, but normalized `hk_real_estate` output is
+     gitignored, so a clean CI runner had nothing to merge into and took the
+     fallback branch that publishes the current year on its own. The daily
+     workflow then rebuilt and committed the artifact from that truncated run
+     and reported success, so nothing went red: between 2026-08-30 and
+     2026-09-01 the published supply-pipeline chart showed six months of
+     history instead of ten years, and could not recover, because each run
+     started from nothing again. Complete run
+     `3e55204d-570f-4a1b-a64c-3f81f3850723` (1,285 rows, 2005-01 to 2026-05)
+     is now committed as the merge base, and the refresh raises rather than
+     writing a frame that covers fewer months than the one it replaces.
+     Replaying the CI sequence against the committed base restores the chart
+     window to 121 months (2016-07 to 2026-07).
+
+  2. **"Trailing-12m ASK growth" was a single-month YoY print.**
+     `_ask_decomposition` compared the latest month against the same month a
+     year earlier while carrying the trailing-12m label. Mainland monthly ASK
+     YoY is extremely noisy — Spring's last six prints ran +22.7, +22.9,
+     +12.6, +15.0, +15.9, +8.0 — so the figure landed wherever the final
+     month happened to fall. The Spring/Juneyao pair spread that the trade
+     card underwrites read 4.6pp on a soft July against 13.8pp on the true
+     twelve-month windows, and four of six carriers were being reported as
+     contracting when none were. Now computed as a twelve-month sum ratio;
+     carriers without two clean consecutive years are dropped rather than
+     compared against a short window.
+
+  Both had pinned test expectations that failed as the data moved; those are
+  now derived or moved onto fixtures, so the suite tests the rule rather than
+  this month's prints. Related: the delivery-pace confidence label treated any
+  strictly-positive trailing net fleet add as evidence of a cadence, so a
+  single Juneyao airframe promoted the forward projection to "medium"; the
+  floor is now two aircraft.
+
 - Airline P1 data build-out (2026-08-10): HKG airport hub is now in
   `airline_airport_traffic.csv` (1,026 rows from the CAD monthly workbook,
   1998-01 to 2026-06, movements/passengers/freight; snapshot-dated because the

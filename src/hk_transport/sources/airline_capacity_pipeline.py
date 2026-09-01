@@ -28,7 +28,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
 
@@ -80,6 +79,15 @@ COMPANY_CODE_MAP = {
 # years at a steady pace; the trailing-12m net-add is used as the observed
 # pace anchor and capped by the remaining order book.
 DELIVERY_WINDOW_MONTHS = 36
+
+# How many trailing-12m net aircraft adds it takes to call an observed delivery
+# pace credible.  These are thresholds on a *rate*, not on the sign of the
+# number: Juneyao took one aircraft and retired none over a year on a fleet of
+# 130, and a strictly-positive test would read that single airframe as evidence
+# of a delivery cadence and stamp the forward projection "medium".  One
+# observation is not a pace, so the floor sits above it.
+MEDIUM_CONFIDENCE_NET_ADDS = 2
+HIGH_CONFIDENCE_NET_ADDS = 5
 
 
 def _num(value: Any) -> float | None:
@@ -181,9 +189,9 @@ def _fleet_delivery_events(
                     "capacity_impact_units": "aircraft",
                     "confidence": (
                         "high"
-                        if trailing >= 5
+                        if trailing >= HIGH_CONFIDENCE_NET_ADDS
                         else "medium"
-                        if trailing > 0
+                        if trailing >= MEDIUM_CONFIDENCE_NET_ADDS
                         else "low_no_recent_delivery_pace"
                     ),
                     "source": "wikipedia_fleet_on_order + operating_events_delivery_pace",
@@ -290,6 +298,43 @@ def _utilisation_events(caac: pd.DataFrame) -> list[dict[str, Any]]:
     return rows
 
 
+def _trailing_12m_growth_pct(sub: pd.DataFrame) -> float | None:
+    """Growth of the last twelve months against the twelve before them.
+
+    Deliberately *not* the latest month against the same month a year ago.
+    Chinese carriers publish one traffic print a month and single-month ASK
+    YoY swings violently with the timing of Spring Festival, a typhoon week or
+    a single wet-lease: Spring Airlines' last six monthly prints ran +22.7,
+    +22.9, +12.6, +15.0, +15.9, +8.0.  Reading whichever month happens to be
+    last therefore lands anywhere in a 15pp band, and the downstream pair
+    spread inherits all of it.  Summing both twelve-month windows keeps the
+    figure the field name already promises.
+
+    Returns ``None`` when the carrier has not published two clean consecutive
+    years, so a partly-covered carrier is dropped rather than compared against
+    a short window.
+    """
+    if sub.empty:
+        return None
+    months = sub["month_parsed"]
+    if months.isna().any():
+        return None
+    latest_month = months.max()
+    windows = []
+    for offset in (0, 12):
+        end = latest_month - pd.DateOffset(months=offset)
+        start = end - pd.DateOffset(months=11)
+        window = sub[months.ge(start) & months.le(end)]
+        values = pd.to_numeric(window["value"], errors="coerce")
+        if len(window) != 12 or values.isna().any():
+            return None
+        windows.append(float(values.sum()))
+    trailing, prior = windows
+    if prior <= 0:
+        return None
+    return (trailing / prior - 1.0) * 100.0
+
+
 def _ask_decomposition(
     monthly: pd.DataFrame,
     snapshot: pd.DataFrame,
@@ -307,15 +352,9 @@ def _ask_decomposition(
     today = pd.Timestamp.now().normalize()
     for company, code in COMPANY_CODE_MAP.items():
         sub = ask[ask["airline_code"].eq(code)].sort_values("month_parsed")
-        if len(sub) < 13:
+        ask_growth = _trailing_12m_growth_pct(sub)
+        if ask_growth is None:
             continue
-        latest = sub.iloc[-1]
-        prior = sub.iloc[-13]
-        ask_growth = (
-            (float(latest["value"]) / float(prior["value"]) - 1.0) * 100.0
-            if float(prior["value"]) > 0
-            else np.nan
-        )
         fleet_growth = 0.0
         if not snapshot.empty:
             fleet_rows = snapshot[snapshot["company"].eq(company)]

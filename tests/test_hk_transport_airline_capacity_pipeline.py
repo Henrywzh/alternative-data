@@ -84,10 +84,83 @@ def test_build_capacity_pipeline_covers_all_carriers() -> None:
         "route_launch",
         "ask_decomposition",
     }
-    # Juneyao's fleet delivery must carry the low-pace confidence label given
-    # its observed ~0 trailing net add.
-    juneyao_fleet = df[
-        df["company"].eq("Juneyao Airlines")
-        & df["event_category"].eq("fleet_delivery")
-    ]
-    assert (juneyao_fleet["confidence"] == "low_no_recent_delivery_pace").all()
+    # Every fleet-delivery row carries one of the three declared labels.  Which
+    # label a given carrier lands on is a property of this month's traffic
+    # prints, not of the pipeline: pinning "Juneyao is low-pace" here made the
+    # suite fail the day Juneyao took delivery of a single aircraft.  The
+    # labelling rule itself is guarded on fixtures in
+    # test_one_airframe_in_a_year_is_not_a_delivery_pace.
+    fleet = df[df["event_category"].eq("fleet_delivery")]
+    assert not fleet.empty
+    assert set(fleet["confidence"]) <= {
+        "high",
+        "medium",
+        "low_no_recent_delivery_pace",
+    }
+
+
+def test_ask_growth_reads_the_year_not_whichever_month_landed_last() -> None:
+    """The field says trailing-12m, so a soft final month must not define it."""
+    from src.hk_transport.sources.airline_capacity_pipeline import _ask_decomposition
+
+    months = pd.date_range("2024-08-01", periods=24, freq="MS")
+    # Flat prior year, a clearly stronger recent year, and one soft final print.
+    # Comparing the last month against the same month a year earlier reads 0%;
+    # comparing the two twelve-month windows reads +9.2%.
+    values = [100.0] * 12 + [110.0] * 11 + [100.0]
+    monthly = pd.DataFrame(
+        {
+            "month": months.strftime("%Y-%m-%d"),
+            "region": "Total",
+            "metric": "ask",
+            "airline_code": "601021",
+            "value": values,
+        }
+    )
+
+    rows = _ask_decomposition(monthly, pd.DataFrame(), pd.DataFrame())
+
+    assert len(rows) == 1
+    assert "+9.2%" in rows[0]["event_detail"]
+
+
+def test_a_carrier_without_two_clean_years_is_dropped_not_compared() -> None:
+    """A short series has no prior window to compare against."""
+    from src.hk_transport.sources.airline_capacity_pipeline import _ask_decomposition
+
+    months = pd.date_range("2025-08-01", periods=23, freq="MS")
+    monthly = pd.DataFrame(
+        {
+            "month": months.strftime("%Y-%m-%d"),
+            "region": "Total",
+            "metric": "ask",
+            "airline_code": "601021",
+            "value": [100.0] * 23,
+        }
+    )
+
+    assert _ask_decomposition(monthly, pd.DataFrame(), pd.DataFrame()) == []
+
+
+def test_one_airframe_in_a_year_is_not_a_delivery_pace() -> None:
+    """A single net add is one observation, not evidence of a cadence."""
+    snapshot = pd.DataFrame(
+        [{"company": "Juneyao Airlines", "aircraft_type": "A320neo", "on_order": 25.0}]
+    )
+    # Anchored to today so the trailing window keeps covering these rows: the
+    # bug this guards against was found by a fixture ageing out of its window.
+    recent = pd.Timestamp.now().normalize() - pd.DateOffset(months=2)
+    older = pd.Timestamp.now().normalize() - pd.DateOffset(months=8)
+    events = pd.DataFrame(
+        [
+            {"airline_code": "603885", "month": recent.strftime("%Y-%m-01"),
+             "event_type": "fleet_added_aircraft", "value": 2},
+            {"airline_code": "603885", "month": older.strftime("%Y-%m-01"),
+             "event_type": "fleet_retired_aircraft", "value": 1},
+        ]
+    )
+
+    rows = _fleet_delivery_events(snapshot, events)
+
+    assert rows
+    assert {row["confidence"] for row in rows} == {"low_no_recent_delivery_pace"}

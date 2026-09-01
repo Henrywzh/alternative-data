@@ -44,12 +44,19 @@ Spring is adding the most new route capacity (4 routes / 56 weekly), Juneyao
 
 | Carrier | Trailing-12m ASK growth |
 |---|---:|
-| Spring Airlines | **+15.9%** |
-| Juneyao Airlines | +0.8% |
-| China Southern | -0.9% |
-| China Eastern | -3.9% |
-| Air China | -6.1% |
-| Hainan Airlines | -6.9% |
+| Spring Airlines | **+14.7%** |
+| China Southern | +5.5% |
+| China Eastern | +3.6% |
+| Air China | +2.7% |
+| Hainan Airlines | +1.4% |
+| Juneyao Airlines | +0.9% |
+
+Growth is the last twelve months of ASK against the twelve before them.  It
+was previously computed as the latest month against the same month a year
+earlier while carrying this same "trailing-12m" label, which is why an earlier
+revision of this table showed four of the six carriers shrinking: single-month
+ASK YoY swings on Spring Festival timing and weather, and the month that
+happened to be last was a soft one everywhere.  Nobody was contracting.
 
 Industry utilisation: CAAC sector daily utilisation fell 8.9h -> 8.2h YoY
 (-0.7h), a sector-wide capacity-efficiency headwind that hits all carriers.
@@ -57,7 +64,7 @@ Industry utilisation: CAAC sector daily utilisation fell 8.9h -> 8.2h YoY
 ## Thesis implication
 
 The pair is not just unit economics (Spring CASK 0.300 vs Juneyao 0.345).  It
-is also forward capacity: Spring is growing ASK ~16% while keeping the lowest
+is also forward capacity: Spring is growing ASK ~15% while keeping the lowest
 unit cost, and adding the most new route licences; Juneyao's ASK is flat and
 its fleet delivery pace is unproven.  The forward capacity/mix/route economics
 support the durability of the Spring advantage rather than a one-period
@@ -69,4 +76,5 @@ earnings gap.
   schedules are lumpy and issuer-confirmed only at delivery.
 * Route licences are planned supply, not operated ASK.
 * Utilisation is sector-wide, not company-specific.
-* ASK decomposition is trailing-12m observed, not a forward forecast.
+* ASK decomposition is trailing-12m observed, not a forward forecast.  It
+  is a twelve-month sum ratio, deliberately not a single-month YoY print.
