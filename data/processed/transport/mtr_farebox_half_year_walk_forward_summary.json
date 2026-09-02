@@ -1,0 +1,60 @@
+{
+  "model_version": "mtr_half_year_walk_forward_oos_v1",
+  "model_id": "mtr_prior_same_half_yield_walk_forward_v1",
+  "input_bundle_id": "mtr_half_year_walk_forward_oos_v1-b40bbafcbf788567",
+  "pit_grade": "B_practical_pit",
+  "strict_pit_status": "not_eligible_until_patronage_release_registry_exists",
+  "training_rule": "latest_prior same-half actual only; actual_available_at <= target period end",
+  "h2_actual_rule": "official FY actual minus official H1 actual; available at FY release date",
+  "forecast_origin_rule": "target half-year end; period-end revenue nowcast, not beginning-of-period forecast",
+  "patronage_vintage_status": "not_captured",
+  "rows": 53,
+  "metrics": {
+    "H1": {
+      "n": 8,
+      "mape_pct": 8.100130442154978,
+      "wape_pct": 7.529137161121066,
+      "bias_hkdm": -255.975753035857
+    },
+    "H2": {
+      "n": 6,
+      "mape_pct": 9.469043764649578,
+      "wape_pct": 8.597479346921281,
+      "bias_hkdm": -319.55593259209644
+    }
+  },
+  "input_bundle": {
+    "schema": "mtr_half_year_walk_forward_input_bundle_v1",
+    "model_id": "mtr_prior_same_half_yield_walk_forward_v1",
+    "model_version": "mtr_half_year_walk_forward_oos_v1",
+    "model_code": {
+      "path": "scripts/build_mtr_half_year_walk_forward_oos.py",
+      "sha256": "ef52261dcf353c920616d4538ddfc05a9ae125e4080422b0e2e53bb906ba6741"
+    },
+    "actuals": {
+      "path": "data/normalized/hk_transport/mtr_transport_ops_actuals.csv",
+      "sha256": "2d01d99d4bc1becddc4bb0ced461d0428ec01737759c96fcf9bc98a157c8d09f"
+    },
+    "patronage": {
+      "fetched_at": "2026-08-12T22:37:26.988968+00:00",
+      "path": "data/raw/hk_transport/mtr_patronage_20260812_223726.json",
+      "rows": 318,
+      "sha256": "1f5f7b13236ccd20492dffde8ec8ce05331995a998b378f0db66a778b17031f2",
+      "source_url": "https://www.mtr.com.hk/en/corporate/investor/patronage.php"
+    },
+    "model_policy": {
+      "training": "latest_prior_same_half_actual_only",
+      "h2_actual": "official_fy_minus_official_h1;_available_at_fy_release",
+      "target_volume": "observed_target_half_volume_at_period_end",
+      "fam": "known_FAM_factor_between_anchor_and_target_year",
+      "pit_grade": "B_practical_pit",
+      "patronage_vintage": "not_captured"
+    }
+  },
+  "current_forecasts": [
+    {
+      "period_label": "2026 H1",
+      "predicted_value_hkdm": 11648.947922892386
+    }
+  ]
+}

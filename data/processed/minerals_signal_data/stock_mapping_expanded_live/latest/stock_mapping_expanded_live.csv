@@ -1,0 +1,152 @@
+mineral_name,normalized_mineral_id,ticker_raw,ticker_normalized,market,exposure_purity,mapping_note,is_primary_exposure,importance_rank,importance_tier
+Aluminum,aluminum,000807.SZ,000807.SZ,CN_A,Primary for smelters/alumina; downstream for rollers/fabricators,Separate bauxite/alumina/smelting from fabricated aluminum exposure.,False,31,Tier 3 - high
+Aluminum,aluminum,000933.SZ,000933.SZ,CN_A,Primary for smelters/alumina; downstream for rollers/fabricators,Separate bauxite/alumina/smelting from fabricated aluminum exposure.,False,31,Tier 3 - high
+Aluminum,aluminum,601600.SH,601600.SH,CN_A,Primary for smelters/alumina; downstream for rollers/fabricators,Separate bauxite/alumina/smelting from fabricated aluminum exposure.,False,31,Tier 3 - high
+Aluminum,aluminum,1378.HK,1378.HK,HK,Primary for smelters/alumina; downstream for rollers/fabricators,Separate bauxite/alumina/smelting from fabricated aluminum exposure.,False,31,Tier 3 - high
+Aluminum,aluminum,2600.HK,2600.HK,HK,Primary for smelters/alumina; downstream for rollers/fabricators,Separate bauxite/alumina/smelting from fabricated aluminum exposure.,False,31,Tier 3 - high
+Aluminum,aluminum,AA,AA,US,Primary for smelters/alumina; downstream for rollers/fabricators,Separate bauxite/alumina/smelting from fabricated aluminum exposure.,False,31,Tier 3 - high
+Aluminum,aluminum,CENX,CENX,US,Primary for smelters/alumina; downstream for rollers/fabricators,Separate bauxite/alumina/smelting from fabricated aluminum exposure.,False,31,Tier 3 - high
+Aluminum,aluminum,KALU,KALU,US,Primary for smelters/alumina; downstream for rollers/fabricators,Separate bauxite/alumina/smelting from fabricated aluminum exposure.,False,31,Tier 3 - high
+Antimony,antimony,002155.SZ,002155.SZ,CN_A,Primary for UAMY/Hunan Gold; byproduct for others,"China/HK exposure is stronger than US except UAMY, which is small-cap/high beta.",False,16,Tier 2 - very high
+Antimony,antimony,600497.SH,600497.SH,CN_A,Primary for UAMY/Hunan Gold; byproduct for others,"China/HK exposure is stronger than US except UAMY, which is small-cap/high beta.",False,16,Tier 2 - very high
+Antimony,antimony,601020.SH,601020.SH,CN_A,Primary for UAMY/Hunan Gold; byproduct for others,"China/HK exposure is stronger than US except UAMY, which is small-cap/high beta.",False,16,Tier 2 - very high
+Antimony,antimony,UAMY,UAMY,US,Primary for UAMY/Hunan Gold; byproduct for others,"China/HK exposure is stronger than US except UAMY, which is small-cap/high beta.",True,16,Tier 2 - very high
+Copper,copper,000630.SZ,000630.SZ,CN_A,Primary copper exposure,Copper has broad liquid public-equity coverage in both China/HK and US.,False,46,Tier 4 - moderate
+Copper,copper,600362.SH,600362.SH,CN_A,Primary copper exposure,Copper has broad liquid public-equity coverage in both China/HK and US.,False,46,Tier 4 - moderate
+Copper,copper,601899.SH,601899.SH,CN_A,Primary copper exposure,Copper has broad liquid public-equity coverage in both China/HK and US.,False,46,Tier 4 - moderate
+Copper,copper,603993.SH,603993.SH,CN_A,Primary copper exposure,Copper has broad liquid public-equity coverage in both China/HK and US.,False,46,Tier 4 - moderate
+Copper,copper,0358.HK,0358.HK,HK,Primary copper exposure,Copper has broad liquid public-equity coverage in both China/HK and US.,False,46,Tier 4 - moderate
+Copper,copper,2899.HK,2899.HK,HK,Primary copper exposure,Copper has broad liquid public-equity coverage in both China/HK and US.,False,46,Tier 4 - moderate
+Copper,copper,3993.HK,3993.HK,HK,Primary copper exposure,Copper has broad liquid public-equity coverage in both China/HK and US.,False,46,Tier 4 - moderate
+Copper,copper,FCX,FCX,US,Primary copper exposure,Copper has broad liquid public-equity coverage in both China/HK and US.,False,46,Tier 4 - moderate
+Copper,copper,HBM,HBM,US,Primary copper exposure,Copper has broad liquid public-equity coverage in both China/HK and US.,False,46,Tier 4 - moderate
+Copper,copper,SCCO,SCCO,US,Primary copper exposure,Copper has broad liquid public-equity coverage in both China/HK and US.,False,46,Tier 4 - moderate
+Copper,copper,TECK,TECK,US,Primary copper exposure,Copper has broad liquid public-equity coverage in both China/HK and US.,False,46,Tier 4 - moderate
+Graphite,graphite,600516.SH,600516.SH,CN_A,Primary for 2237/NMG/WWR/GPHOF; battery-anode downstream for BTR/Putailai/Shanshan,Separate natural graphite mining from synthetic graphite/anode processing.,False,5,Tier 1 - highest
+Graphite,graphite,600884.SH,600884.SH,CN_A,Primary for 2237/NMG/WWR/GPHOF; battery-anode downstream for BTR/Putailai/Shanshan,Separate natural graphite mining from synthetic graphite/anode processing.,False,5,Tier 1 - highest
+Graphite,graphite,603659.SH,603659.SH,CN_A,Primary for 2237/NMG/WWR/GPHOF; battery-anode downstream for BTR/Putailai/Shanshan,Separate natural graphite mining from synthetic graphite/anode processing.,False,5,Tier 1 - highest
+Graphite,graphite,835185.BJ,835185.BJ,CN_A,Primary for 2237/NMG/WWR/GPHOF; battery-anode downstream for BTR/Putailai/Shanshan,Separate natural graphite mining from synthetic graphite/anode processing.,False,5,Tier 1 - highest
+Graphite,graphite,2237.HK,2237.HK,HK,Primary for 2237/NMG/WWR/GPHOF; battery-anode downstream for BTR/Putailai/Shanshan,Separate natural graphite mining from synthetic graphite/anode processing.,True,5,Tier 1 - highest
+Graphite,graphite,GPHOF,GPHOF,US,Primary for 2237/NMG/WWR/GPHOF; battery-anode downstream for BTR/Putailai/Shanshan,Separate natural graphite mining from synthetic graphite/anode processing.,True,5,Tier 1 - highest
+Graphite,graphite,NMG,NMG,US,Primary for 2237/NMG/WWR/GPHOF; battery-anode downstream for BTR/Putailai/Shanshan,Separate natural graphite mining from synthetic graphite/anode processing.,True,5,Tier 1 - highest
+Graphite,graphite,WWR,WWR,US,Primary for 2237/NMG/WWR/GPHOF; battery-anode downstream for BTR/Putailai/Shanshan,Separate natural graphite mining from synthetic graphite/anode processing.,True,5,Tier 1 - highest
+Lead,lead,600497.SH,600497.SH,CN_A,Primary/secondary,Often co-mined with zinc/silver; check segment disclosure.,True,51,Tier 5 - lower/unknown
+Lead,lead,600531.SH,600531.SH,CN_A,Primary/secondary,Often co-mined with zinc/silver; check segment disclosure.,True,51,Tier 5 - lower/unknown
+Lead,lead,601168.SH,601168.SH,CN_A,Primary/secondary,Often co-mined with zinc/silver; check segment disclosure.,True,51,Tier 5 - lower/unknown
+Lead,lead,601899.SH,601899.SH,CN_A,Primary/secondary,Often co-mined with zinc/silver; check segment disclosure.,True,51,Tier 5 - lower/unknown
+Lead,lead,2899.HK,2899.HK,HK,Primary/secondary,Often co-mined with zinc/silver; check segment disclosure.,True,51,Tier 5 - lower/unknown
+Lead,lead,HL,HL,US,Primary/secondary,Often co-mined with zinc/silver; check segment disclosure.,True,51,Tier 5 - lower/unknown
+Lead,lead,NEXA,NEXA,US,Primary/secondary,Often co-mined with zinc/silver; check segment disclosure.,True,51,Tier 5 - lower/unknown
+Lead,lead,TECK,TECK,US,Primary/secondary,Often co-mined with zinc/silver; check segment disclosure.,True,51,Tier 5 - lower/unknown
+Lithium,lithium,000408.SZ,000408.SZ,CN_A,Primary lithium exposure,China names are very direct for lithium chemicals; US/ADR names add global project/resource exposure.,False,44,Tier 4 - moderate
+Lithium,lithium,000792.SZ,000792.SZ,CN_A,Primary lithium exposure,China names are very direct for lithium chemicals; US/ADR names add global project/resource exposure.,False,44,Tier 4 - moderate
+Lithium,lithium,002460.SZ,002460.SZ,CN_A,Primary lithium exposure,China names are very direct for lithium chemicals; US/ADR names add global project/resource exposure.,False,44,Tier 4 - moderate
+Lithium,lithium,002466.SZ,002466.SZ,CN_A,Primary lithium exposure,China names are very direct for lithium chemicals; US/ADR names add global project/resource exposure.,False,44,Tier 4 - moderate
+Lithium,lithium,1772.HK,1772.HK,HK,Primary lithium exposure,China names are very direct for lithium chemicals; US/ADR names add global project/resource exposure.,False,44,Tier 4 - moderate
+Lithium,lithium,9696.HK,9696.HK,HK,Primary lithium exposure,China names are very direct for lithium chemicals; US/ADR names add global project/resource exposure.,False,44,Tier 4 - moderate
+Lithium,lithium,ALB,ALB,US,Primary lithium exposure,China names are very direct for lithium chemicals; US/ADR names add global project/resource exposure.,False,44,Tier 4 - moderate
+Lithium,lithium,ALTM,ALTM,US,Primary lithium exposure,China names are very direct for lithium chemicals; US/ADR names add global project/resource exposure.,False,44,Tier 4 - moderate
+Lithium,lithium,LAC,LAC,US,Primary lithium exposure,China names are very direct for lithium chemicals; US/ADR names add global project/resource exposure.,False,44,Tier 4 - moderate
+Lithium,lithium,SGML,SGML,US,Primary lithium exposure,China names are very direct for lithium chemicals; US/ADR names add global project/resource exposure.,False,44,Tier 4 - moderate
+Lithium,lithium,SQM,SQM,US,Primary lithium exposure,China names are very direct for lithium chemicals; US/ADR names add global project/resource exposure.,False,44,Tier 4 - moderate
+Manganese,manganese,002125.SZ,002125.SZ,CN_A,Primary for 1091/002125; secondary for diversified miners,Use as battery/steel manganese screen; A-share/HK names are much purer than global diversified ADRs.,True,3,Tier 1 - highest
+Manganese,manganese,1091.HK,1091.HK,HK,Primary for 1091/002125; secondary for diversified miners,Use as battery/steel manganese screen; A-share/HK names are much purer than global diversified ADRs.,True,3,Tier 1 - highest
+Manganese,manganese,BHP,BHP,US,Primary for 1091/002125; secondary for diversified miners,Use as battery/steel manganese screen; A-share/HK names are much purer than global diversified ADRs.,False,3,Tier 1 - highest
+Manganese,manganese,ERMAF,ERMAF,US,Primary for 1091/002125; secondary for diversified miners,Use as battery/steel manganese screen; A-share/HK names are much purer than global diversified ADRs.,False,3,Tier 1 - highest
+Manganese,manganese,SHTLF,SHTLF,US,Primary for 1091/002125; secondary for diversified miners,Use as battery/steel manganese screen; A-share/HK names are much purer than global diversified ADRs.,False,3,Tier 1 - highest
+Manganese,manganese,SOUHY,SOUHY,US,Primary for 1091/002125; secondary for diversified miners,Use as battery/steel manganese screen; A-share/HK names are much purer than global diversified ADRs.,False,3,Tier 1 - highest
+Manganese,manganese,VALE,VALE,US,Primary for 1091/002125; secondary for diversified miners,Use as battery/steel manganese screen; A-share/HK names are much purer than global diversified ADRs.,False,3,Tier 1 - highest
+Neodymium,neodymium,000831.SZ,000831.SZ,CN_A,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,33,Tier 3 - high
+Neodymium,neodymium,000970.SZ,000970.SZ,CN_A,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,33,Tier 3 - high
+Neodymium,neodymium,300748.SZ,300748.SZ,CN_A,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,33,Tier 3 - high
+Neodymium,neodymium,600111.SH,600111.SH,CN_A,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,33,Tier 3 - high
+Neodymium,neodymium,600366.SH,600366.SH,CN_A,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,33,Tier 3 - high
+Neodymium,neodymium,600392.SH,600392.SH,CN_A,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,33,Tier 3 - high
+Neodymium,neodymium,6680.HK,6680.HK,HK,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,33,Tier 3 - high
+Neodymium,neodymium,MP,MP,US,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,33,Tier 3 - high
+Neodymium,neodymium,USA,USA,US,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,33,Tier 3 - high
+Neodymium,neodymium,USAR,USAR,US,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,33,Tier 3 - high
+Neodymium,neodymium,UUUU,UUUU,US,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,33,Tier 3 - high
+Nickel,nickel,002340.SZ,002340.SZ,CN_A,Primary/secondary,China listed exposure often appears through battery-material processors rather than pure mines.,True,48,Tier 4 - moderate
+Nickel,nickel,300919.SZ,300919.SZ,CN_A,Primary/secondary,China listed exposure often appears through battery-material processors rather than pure mines.,True,48,Tier 4 - moderate
+Nickel,nickel,603799.SH,603799.SH,CN_A,Primary/secondary,China listed exposure often appears through battery-material processors rather than pure mines.,True,48,Tier 4 - moderate
+Nickel,nickel,2362.HK,2362.HK,HK,Primary/secondary,China listed exposure often appears through battery-material processors rather than pure mines.,True,48,Tier 4 - moderate
+Nickel,nickel,BHP,BHP,US,Primary/secondary,China listed exposure often appears through battery-material processors rather than pure mines.,True,48,Tier 4 - moderate
+Nickel,nickel,TECK,TECK,US,Primary/secondary,China listed exposure often appears through battery-material processors rather than pure mines.,True,48,Tier 4 - moderate
+Nickel,nickel,TLOFF,TLOFF,US,Primary/secondary,China listed exposure often appears through battery-material processors rather than pure mines.,True,48,Tier 4 - moderate
+Nickel,nickel,VALE,VALE,US,Primary/secondary,China listed exposure often appears through battery-material processors rather than pure mines.,True,48,Tier 4 - moderate
+Palladium,palladium,601899.SH,601899.SH,CN_A,Primary for PGM miners,Treat with platinum/rhodium basket rather than single-metal purity.,False,42,Tier 3 - high
+Palladium,palladium,2362.HK,2362.HK,HK,Primary for PGM miners,Treat with platinum/rhodium basket rather than single-metal purity.,False,42,Tier 3 - high
+Palladium,palladium,2899.HK,2899.HK,HK,Primary for PGM miners,Treat with platinum/rhodium basket rather than single-metal purity.,False,42,Tier 3 - high
+Palladium,palladium,ANGPY,ANGPY,US,Primary for PGM miners,Treat with platinum/rhodium basket rather than single-metal purity.,False,42,Tier 3 - high
+Palladium,palladium,IMPUY,IMPUY,US,Primary for PGM miners,Treat with platinum/rhodium basket rather than single-metal purity.,False,42,Tier 3 - high
+Palladium,palladium,NGLOY,NGLOY,US,Primary for PGM miners,Treat with platinum/rhodium basket rather than single-metal purity.,False,42,Tier 3 - high
+Palladium,palladium,PLG,PLG,US,Primary for PGM miners,Treat with platinum/rhodium basket rather than single-metal purity.,False,42,Tier 3 - high
+Palladium,palladium,SBSW,SBSW,US,Primary for PGM miners,Treat with platinum/rhodium basket rather than single-metal purity.,False,42,Tier 3 - high
+Platinum,platinum,601899.SH,601899.SH,CN_A,Primary for PGM miners; secondary for diversified miners,US exposure mostly via South African PGM ADRs rather than US domestic production.,False,14,Tier 2 - very high
+Platinum,platinum,2362.HK,2362.HK,HK,Primary for PGM miners; secondary for diversified miners,US exposure mostly via South African PGM ADRs rather than US domestic production.,False,14,Tier 2 - very high
+Platinum,platinum,2899.HK,2899.HK,HK,Primary for PGM miners; secondary for diversified miners,US exposure mostly via South African PGM ADRs rather than US domestic production.,False,14,Tier 2 - very high
+Platinum,platinum,ANGPY,ANGPY,US,Primary for PGM miners; secondary for diversified miners,US exposure mostly via South African PGM ADRs rather than US domestic production.,False,14,Tier 2 - very high
+Platinum,platinum,IMPUY,IMPUY,US,Primary for PGM miners; secondary for diversified miners,US exposure mostly via South African PGM ADRs rather than US domestic production.,False,14,Tier 2 - very high
+Platinum,platinum,NGLOY,NGLOY,US,Primary for PGM miners; secondary for diversified miners,US exposure mostly via South African PGM ADRs rather than US domestic production.,False,14,Tier 2 - very high
+Platinum,platinum,PLG,PLG,US,Primary for PGM miners; secondary for diversified miners,US exposure mostly via South African PGM ADRs rather than US domestic production.,False,14,Tier 2 - very high
+Platinum,platinum,SBSW,SBSW,US,Primary for PGM miners; secondary for diversified miners,US exposure mostly via South African PGM ADRs rather than US domestic production.,False,14,Tier 2 - very high
+Silicon,silicon,600089.SH,600089.SH,CN_A,Primary for silicon metal/polysilicon producers,Split metallurgical silicon from polysilicon/solar supply chain.,False,43,Tier 3 - high
+Silicon,silicon,600438.SH,600438.SH,CN_A,Primary for silicon metal/polysilicon producers,Split metallurgical silicon from polysilicon/solar supply chain.,False,43,Tier 3 - high
+Silicon,silicon,603260.SH,603260.SH,CN_A,Primary for silicon metal/polysilicon producers,Split metallurgical silicon from polysilicon/solar supply chain.,False,43,Tier 3 - high
+Silicon,silicon,688303.SH,688303.SH,CN_A,Primary for silicon metal/polysilicon producers,Split metallurgical silicon from polysilicon/solar supply chain.,False,43,Tier 3 - high
+Silicon,silicon,3800.HK,3800.HK,HK,Primary for silicon metal/polysilicon producers,Split metallurgical silicon from polysilicon/solar supply chain.,False,43,Tier 3 - high
+Silicon,silicon,DQ,DQ,US,Primary for silicon metal/polysilicon producers,Split metallurgical silicon from polysilicon/solar supply chain.,False,43,Tier 3 - high
+Silicon,silicon,WKCMY,WKCMY,US,Primary for silicon metal/polysilicon producers,Split metallurgical silicon from polysilicon/solar supply chain.,False,43,Tier 3 - high
+Silver,silver,600531.SH,600531.SH,CN_A,Primary for silver miners/streamers; byproduct for base-metal smelters,SVM is US/Canada-listed but has China assets; good bridge name.,False,20,Tier 2 - very high
+Silver,silver,601899.SH,601899.SH,CN_A,Primary for silver miners/streamers; byproduct for base-metal smelters,SVM is US/Canada-listed but has China assets; good bridge name.,False,20,Tier 2 - very high
+Silver,silver,0815.HK,0815.HK,HK,Primary for silver miners/streamers; byproduct for base-metal smelters,SVM is US/Canada-listed but has China assets; good bridge name.,False,20,Tier 2 - very high
+Silver,silver,2899.HK,2899.HK,HK,Primary for silver miners/streamers; byproduct for base-metal smelters,SVM is US/Canada-listed but has China assets; good bridge name.,False,20,Tier 2 - very high
+Silver,silver,CDE,CDE,US,Primary for silver miners/streamers; byproduct for base-metal smelters,SVM is US/Canada-listed but has China assets; good bridge name.,False,20,Tier 2 - very high
+Silver,silver,HL,HL,US,Primary for silver miners/streamers; byproduct for base-metal smelters,SVM is US/Canada-listed but has China assets; good bridge name.,False,20,Tier 2 - very high
+Silver,silver,PAAS,PAAS,US,Primary for silver miners/streamers; byproduct for base-metal smelters,SVM is US/Canada-listed but has China assets; good bridge name.,False,20,Tier 2 - very high
+Silver,silver,SVM,SVM,US,Primary for silver miners/streamers; byproduct for base-metal smelters,SVM is US/Canada-listed but has China assets; good bridge name.,False,20,Tier 2 - very high
+Silver,silver,WPM,WPM,US,Primary for silver miners/streamers; byproduct for base-metal smelters,SVM is US/Canada-listed but has China assets; good bridge name.,False,20,Tier 2 - very high
+Tantalum,tantalum,000657.SZ,000657.SZ,CN_A,Primary for 000962; secondary/adjacent for 000657/NB,000962 is the closest China listed tantalum proxy; US listed pure-play coverage is weak.,False,1,Tier 1 - highest
+Tantalum,tantalum,000962.SZ,000962.SZ,CN_A,Primary for 000962; secondary/adjacent for 000657/NB,000962 is the closest China listed tantalum proxy; US listed pure-play coverage is weak.,True,1,Tier 1 - highest
+Tantalum,tantalum,NB,NB,US,Primary for 000962; secondary/adjacent for 000657/NB,000962 is the closest China listed tantalum proxy; US listed pure-play coverage is weak.,False,1,Tier 1 - highest
+Tin,tin,000426.SZ,000426.SZ,CN_A,Primary for 000960/AFMJF,Yunnan Tin is the cleanest China A-share tin proxy.,False,28,Tier 3 - high
+Tin,tin,000960.SZ,000960.SZ,CN_A,Primary for 000960/AFMJF,Yunnan Tin is the cleanest China A-share tin proxy.,True,28,Tier 3 - high
+Tin,tin,AFMJF,AFMJF,US,Primary for 000960/AFMJF,Yunnan Tin is the cleanest China A-share tin proxy.,True,28,Tier 3 - high
+Tin,tin,MLXEF,MLXEF,US,Primary for 000960/AFMJF,Yunnan Tin is the cleanest China A-share tin proxy.,False,28,Tier 3 - high
+Tin,tin,X,X,US,Primary for 000960/AFMJF,Yunnan Tin is the cleanest China A-share tin proxy.,False,28,Tier 3 - high
+Uranium,uranium,601985.SH,601985.SH,CN_A,Primary for uranium miners; utility exposure for 601985,US/Canada listed uranium universe is much deeper than China A/HK.,False,53,Tier 5 - lower/unknown
+Uranium,uranium,1164.HK,1164.HK,HK,Primary for uranium miners; utility exposure for 601985,US/Canada listed uranium universe is much deeper than China A/HK.,False,53,Tier 5 - lower/unknown
+Uranium,uranium,2302.HK,2302.HK,HK,Primary for uranium miners; utility exposure for 601985,US/Canada listed uranium universe is much deeper than China A/HK.,False,53,Tier 5 - lower/unknown
+Uranium,uranium,CCJ,CCJ,US,Primary for uranium miners; utility exposure for 601985,US/Canada listed uranium universe is much deeper than China A/HK.,False,53,Tier 5 - lower/unknown
+Uranium,uranium,DNN,DNN,US,Primary for uranium miners; utility exposure for 601985,US/Canada listed uranium universe is much deeper than China A/HK.,False,53,Tier 5 - lower/unknown
+Uranium,uranium,NXE,NXE,US,Primary for uranium miners; utility exposure for 601985,US/Canada listed uranium universe is much deeper than China A/HK.,False,53,Tier 5 - lower/unknown
+Uranium,uranium,UEC,UEC,US,Primary for uranium miners; utility exposure for 601985,US/Canada listed uranium universe is much deeper than China A/HK.,False,53,Tier 5 - lower/unknown
+Uranium,uranium,UUUU,UUUU,US,Primary for uranium miners; utility exposure for 601985,US/Canada listed uranium universe is much deeper than China A/HK.,False,53,Tier 5 - lower/unknown
+Vanadium,vanadium,000629.SZ,000629.SZ,CN_A,Primary/secondary,Vanadium exposure can be steel-alloy demand or vanadium-flow battery optionality.,True,47,Tier 4 - moderate
+Vanadium,vanadium,000709.SZ,000709.SZ,CN_A,Primary/secondary,Vanadium exposure can be steel-alloy demand or vanadium-flow battery optionality.,True,47,Tier 4 - moderate
+Vanadium,vanadium,002978.SZ,002978.SZ,CN_A,Primary/secondary,Vanadium exposure can be steel-alloy demand or vanadium-flow battery optionality.,True,47,Tier 4 - moderate
+Vanadium,vanadium,AMG,AMG,US,Primary/secondary,Vanadium exposure can be steel-alloy demand or vanadium-flow battery optionality.,True,47,Tier 4 - moderate
+Vanadium,vanadium,AMGNY,AMGNY,US,Primary/secondary,Vanadium exposure can be steel-alloy demand or vanadium-flow battery optionality.,True,47,Tier 4 - moderate
+Vanadium,vanadium,UUUU,UUUU,US,Primary/secondary,Vanadium exposure can be steel-alloy demand or vanadium-flow battery optionality.,True,47,Tier 4 - moderate
+Zinc,zinc,600497.SH,600497.SH,CN_A,Primary/secondary,"Zinc is often combined with lead, silver, germanium, indium byproducts.",True,32,Tier 3 - high
+Zinc,zinc,600961.SH,600961.SH,CN_A,Primary/secondary,"Zinc is often combined with lead, silver, germanium, indium byproducts.",True,32,Tier 3 - high
+Zinc,zinc,601168.SH,601168.SH,CN_A,Primary/secondary,"Zinc is often combined with lead, silver, germanium, indium byproducts.",True,32,Tier 3 - high
+Zinc,zinc,601899.SH,601899.SH,CN_A,Primary/secondary,"Zinc is often combined with lead, silver, germanium, indium byproducts.",True,32,Tier 3 - high
+Zinc,zinc,2899.HK,2899.HK,HK,Primary/secondary,"Zinc is often combined with lead, silver, germanium, indium byproducts.",True,32,Tier 3 - high
+Zinc,zinc,HBM,HBM,US,Primary/secondary,"Zinc is often combined with lead, silver, germanium, indium byproducts.",True,32,Tier 3 - high
+Zinc,zinc,HL,HL,US,Primary/secondary,"Zinc is often combined with lead, silver, germanium, indium byproducts.",True,32,Tier 3 - high
+Zinc,zinc,NEXA,NEXA,US,Primary/secondary,"Zinc is often combined with lead, silver, germanium, indium byproducts.",True,32,Tier 3 - high
+Zinc,zinc,TECK,TECK,US,Primary/secondary,"Zinc is often combined with lead, silver, germanium, indium byproducts.",True,32,Tier 3 - high
+Molybdenum,molybdenum,601958.SH,601958.SH,CN_A,Primary molybdenum producer,Jinduicheng Molybdenum is a China-listed molybdenum-focused producer.,True,49,Tier 4 - moderate
+Molybdenum,molybdenum,603993.SH,603993.SH,CN_A,Diversified molybdenum and tungsten producer,CMOC has integrated China molybdenum and tungsten mining and processing operations.,False,49,Tier 4 - moderate
+Molybdenum,molybdenum,3993.HK,3993.HK,HK,Diversified molybdenum and tungsten producer,HK listing of CMOC; same operating exposure as 603993.SH.,False,49,Tier 4 - moderate
+Tungsten,tungsten,000657.SZ,000657.SZ,CN_A,Primary for China tungsten names,China has far better listed tungsten depth than US markets.,False,49,Tier 4 - moderate
+Tungsten,tungsten,002378.SZ,002378.SZ,CN_A,Primary for China tungsten names,China has far better listed tungsten depth than US markets.,False,49,Tier 4 - moderate
+Tungsten,tungsten,002842.SZ,002842.SZ,CN_A,Primary China tungsten producer,Integrated tungsten products producer from concentrate through deep processing.,True,49,Tier 4 - moderate
+Tungsten,tungsten,600397.SH,600397.SH,CN_A,Adjacent Jiangxi tungsten-group exposure,Jiangxi Jiangwu Rare and Precious Equipment is a tungsten-group-linked equipment exposure rather than a pure tungsten producer.,False,49,Tier 4 - moderate
+Tungsten,tungsten,600549.SH,600549.SH,CN_A,Primary for China tungsten names,China has far better listed tungsten depth than US markets.,False,49,Tier 4 - moderate
+Tungsten,tungsten,603993.SH,603993.SH,CN_A,Primary for China tungsten names,China has far better listed tungsten depth than US markets.,False,49,Tier 4 - moderate
+Tungsten,tungsten,3993.HK,3993.HK,HK,Primary for China tungsten names,China has far better listed tungsten depth than US markets.,False,49,Tier 4 - moderate
+Tungsten,tungsten,ALM,ALM,US,Primary for China tungsten names,China has far better listed tungsten depth than US markets.,False,49,Tier 4 - moderate
+Tungsten,tungsten,ALMTF,ALMTF,US,Primary for China tungsten names,China has far better listed tungsten depth than US markets.,False,49,Tier 4 - moderate

@@ -1,0 +1,5 @@
+variable,logic,delta_hkdm,eps_impact_hkd,eps_pct_of_consensus_0y
+Property recognition timing (one package shift),"FY2025: 4 packages booked 11,084 post-tax -> 2,771 per package",2771.0,0.446,17.7
+Farebox volume +1% (revenue passthrough only),"transport revenue 23,595 x 1% -> pre-tax delta",236.0,0.038,1.5
+HIBOR +100bp (floating 60% of ~89bn debt),"ASSUMED sensitivity: 88,900 x 1% x 0.60",-533.0,-0.086,-3.4
+Mainland & intl revenue +10% (2% net margin),"20,686 x 10% x 2% assumed net margin",41.0,0.007,0.3

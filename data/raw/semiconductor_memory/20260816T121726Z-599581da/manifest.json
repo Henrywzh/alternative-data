@@ -1,0 +1,14 @@
+{
+  "run_id": "20260816T121726Z-599581da",
+  "mode": "fred-update",
+  "scraped_at": "2026-08-16T12:17:26.649692Z",
+  "parser_version": "0.1.0",
+  "series_fetched": [
+    "PCU335313335313",
+    "PCU3341123341121",
+    "PCU334111334111",
+    "PCU33423342",
+    "PCU33443344"
+  ],
+  "observations_count": 394
+}

@@ -1,0 +1,15 @@
+{
+  "type": "derived",
+  "run_scope": "full",
+  "dataset_name": "fund_fees",
+  "run_id": "20260823T063220-07d18038",
+  "created_at": "2026-08-23T06:36:08.107602+00:00",
+  "records": 33,
+  "columns": [
+    "fund_id",
+    "management_fee",
+    "custody_fee",
+    "fetched_at"
+  ],
+  "sha256": "5403e98c1ad376138cbbf86e4cb68a5cc1eb1e4880c6890403aeeb128c560876"
+}

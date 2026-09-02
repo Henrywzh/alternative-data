@@ -1,0 +1,29 @@
+{
+  "type": "normalized",
+  "run_scope": "full",
+  "source_id": "eastmoney:hsgt_hist",
+  "dataset_name": "southbound_market_flow",
+  "run_id": "20260823T063220-07d18038",
+  "created_at": "2026-08-23T06:36:08.094358+00:00",
+  "records": 2698,
+  "columns": [
+    "trade_date",
+    "net_buy_yi",
+    "buy_turnover_yi",
+    "sell_turnover_yi",
+    "cumulative_net_buy_trillion",
+    "inflow_yi",
+    "balance_yi",
+    "holding_market_value",
+    "leader_name",
+    "leader_change_pct",
+    "csi300",
+    "csi300_change_pct",
+    "leader_code",
+    "flow",
+    "source_id",
+    "source_url",
+    "retrieved_at_utc"
+  ],
+  "sha256": "3f8fc03df2006607cd194a20b248ecdfde45636ab31a430dd5eb87964de0cdaf"
+}

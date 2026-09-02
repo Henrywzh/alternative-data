@@ -1,0 +1,47 @@
+{
+  "manifest_version": "asia_backtest_metrics_manifest_v2",
+  "metric_policy_version": "asia_backtest_metrics_v2",
+  "long_form_rows": 5308,
+  "long_form_schema_columns": 47,
+  "contract_rows": 263,
+  "metrics_schema_columns": 48,
+  "metric_status_counts": {
+    "insufficient_sample": 239,
+    "diagnostic_only": 24
+  },
+  "headline_contracts": 0,
+  "headline_contract_ids": [],
+  "headline_metric_ids": [],
+  "metric_grain_counts": {
+    "per_entity": 211,
+    "pooled": 52
+  },
+  "headline_contracts_by_grain": {},
+  "pooled_rows_are_reference_only": true,
+  "interval_rows": 120,
+  "interval_grain_counts": {
+    "per_entity": 100,
+    "pooled": 20
+  },
+  "interval_status_counts": {
+    "insufficient_sample": 97,
+    "reference_only": 18,
+    "degenerate": 5
+  },
+  "baseline_coverage_threshold": 0.8,
+  "baseline_coverage_status_counts": {
+    "partial": 95,
+    "complete": 7,
+    "insufficient_coverage": 3,
+    "not_available": 1
+  },
+  "input_bundle_ids": [
+    "asia_backtest_input_bundle-b1ddb611566da708"
+  ],
+  "runtime": {
+    "python": "3.11.9",
+    "pandas": "2.3.1",
+    "pyarrow": "23.0.1",
+    "platform": "macOS-26.5.1-arm64-arm-64bit"
+  }
+}

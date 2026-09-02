@@ -1,0 +1,30 @@
+{
+  "dataset_name": "shkp_skeleton_historical_backtest",
+  "run_id": "shkp-skeleton-backtest-6c3134af-ac96-4379-bf17-8a7ea0f5f8d7",
+  "created_at": "2026-08-11T21:41:34.536468+00:00",
+  "raw_snapshot": null,
+  "source_url": null,
+  "raw_snapshots": [],
+  "source_urls": [],
+  "records": 9,
+  "columns": [
+    "fiscal_year_end",
+    "fiscal_label",
+    "actual_underlying_profit_hkd_m",
+    "model_underlying_profit_hkd_m",
+    "residential_model_profit_hkd_m",
+    "non_residential_model_runrate_hkd_m",
+    "non_residential_actual_hkd_m",
+    "non_residential_error_pct",
+    "underlying_error_pct",
+    "eps_model",
+    "eps_actual",
+    "eps_error",
+    "model_use",
+    "research_only",
+    "margin_mode",
+    "caveat"
+  ],
+  "lineage_type": "shkp_skeleton_historical_backtest",
+  "research_only": true
+}

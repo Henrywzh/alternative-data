@@ -1,0 +1,61 @@
+normalized_mineral_id,mineral_name,trackability_grade,price_source_type,price_symbol_or_series_id,price_currency,price_unit,publish_lag_assumption_days,is_active_for_v1,proxy_target,proxy_type,proxy_instrument,proxy_display_name,has_fetched_history,history_row_count,fetch_status
+aluminum,Aluminum,direct,yfinance_futures,ALI=F,USD,metric ton,1,True,,,,,True,1164,fetched
+antimony,Antimony,proxy,yfinance_futures,HG=F,USD,lb,2,True,copper,commodity_cross_proxy,HG=F,COMEX Copper Futures,True,1166,fetched
+copper,Copper,direct,yfinance_futures,HG=F,USD,lb,1,True,,,,,True,1166,fetched
+graphite,Graphite,proxy,yfinance_futures,LIT,USD,etf_share,2,True,lithium,etf,LIT,Global X Lithium & Battery Tech ETF,True,1163,fetched
+lead,Lead,direct,fred_series,PLEADUSDM,USD,metric ton,30,True,,,,,True,1189,fetched
+lithium,Lithium,proxy,yfinance_futures,LIT,USD,etf_share,1,True,,etf,LIT,Global X Lithium & Battery Tech ETF,True,1163,fetched
+manganese,Manganese,proxy,yfinance_futures,S32.AX,AUD,equity_proxy,1,True,south32_producer_equity,producer_equity,S32.AX,South32 Ltd,True,1172,fetched
+neodymium,Neodymium,proxy,yfinance_futures,REMX,USD,etf_share,1,True,,etf,REMX,VanEck Rare Earth/Strategic Metals ETF,True,1163,fetched
+nickel,Nickel,direct,yfinance_futures,NIY=F,USD,metric ton,1,True,,,,,True,1165,fetched
+palladium,Palladium,direct,yfinance_futures,PA=F,USD,oz,1,True,,,,,True,1164,fetched
+platinum,Platinum,direct,yfinance_futures,PL=F,USD,oz,1,True,,,,,True,1165,fetched
+silicon,Silicon,proxy,yfinance_futures,GSM,USD,equity_proxy,1,True,ferroglobe_producer_equity,producer_equity,GSM,Ferroglobe PLC,True,1163,fetched
+silver,Silver,direct,yfinance_futures,SI=F,USD,oz,1,True,,,,,True,1165,fetched
+tantalum,Tantalum,proxy,yfinance_futures,AMG.AS,EUR,equity_proxy,1,True,amg_producer_equity,producer_equity,AMG.AS,AMG Critical Materials N.V.,True,1186,fetched
+tin,Tin,direct,fred_series,PTINUSDM,USD,metric ton,30,True,,,,,True,1189,fetched
+uranium,Uranium,proxy,yfinance_futures,URA,USD,etf_share,1,True,,etf,URA,Global X Uranium ETF,True,1163,fetched
+vanadium,Vanadium,proxy,yfinance_futures,LGO,USD,equity_proxy,1,True,largo_producer_equity,producer_equity,LGO,Largo Inc.,True,1163,fetched
+zinc,Zinc,direct,fred_series,PZINCUSDM,USD,metric ton,30,True,,,,,True,1189,fetched
+arsenic,Arsenic,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+barite,Barite,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+beryllium,Beryllium,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+bismuth,Bismuth,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+boron,Boron,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+cerium,Cerium,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+cesium,Cesium,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+chromium,Chromium,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+cobalt,Cobalt,direct,investing_html,https://www.investing.com/commodities/cobalt-historical-data,USD,metric ton,1,True,,,,,False,0,available_but_unfetched
+dysprosium,Dysprosium,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+erbium,Erbium,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+europium,Europium,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+fluorspar,Fluorspar,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+gadolinium,Gadolinium,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+gallium,Gallium,direct,investing_html,https://www.investing.com/commodities/gallium-99.99-min-united-states-futures-historical-data,USD,kg,3,True,,,,,False,0,available_but_unfetched
+germanium,Germanium,direct,investing_html,https://www.investing.com/commodities/germanium-99.99-min-china-futures-historical-data,CNY,kg,3,True,,,,,False,0,available_but_unfetched
+hafnium,Hafnium,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+holmium,Holmium,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+indium,Indium,direct,investing_html,https://www.investing.com/commodities/indium-99.99-min-united-states-futures-historical-data,USD,kg,3,True,,,,,False,0,available_but_unfetched
+iridium,Iridium,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+lanthanum,Lanthanum,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+lutetium,Lutetium,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+magnesium,Magnesium,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+metallurgical_coal,Metallurgical coal,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+niobium,Niobium,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+phosphate_rock,Phosphate rock,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+potash,Potash,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+praseodymium,Praseodymium,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+rhenium,Rhenium,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+rhodium,Rhodium,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+rubidium,Rubidium,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+ruthenium,Ruthenium,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+samarium,Samarium,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+scandium,Scandium,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+tellurium,Tellurium,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+terbium,Terbium,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+thulium,Thulium,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+titanium,Titanium,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+tungsten,Tungsten,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+ytterbium,Ytterbium,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+yttrium,Yttrium,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
+zirconium,Zirconium,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
