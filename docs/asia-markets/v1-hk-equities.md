@@ -251,7 +251,7 @@ MTR, CLP, Towngas, Power Assets and CK Infrastructure are already in the HSI cor
 | 0808.HK | Prosperity REIT | 泓富产业信托 | 写字楼、工业及零售物业 | hk_local_property_reit |
 | 1200.HK | Midland Holdings | 美联集团 | 地产代理、住宅成交及楼市周期 | hk_property_services |
 
-Sun Hung Kai Properties, MTR, CK Asset, Sino Land, Wharf REIC, Hang Lung Properties and Link REIT are already in the HSI core.
+Sun Hung Kai Properties, MTR, CK Asset, Wharf REIC, Hang Lung Properties and Link REIT are already in the HSI core. Sino Land is a separate HK-local property addition, not an HSI-core constituent.
 
 The following are deliberately excluded from this HK-local property addition list: Yuexiu REIT, Spring REIT, CMC REIT, Beike, Hopefluent, E-House, C C Land, Tian An China, China Railway Group and China Communications Construction. They are mainland-focused, overseas-focused, mixed exposures or China-wide infrastructure rather than clean HK property exposures.
 
@@ -368,4 +368,3 @@ energy
 power_utilities
 research_only
 ```
-

@@ -17,6 +17,7 @@ SHKP-attributable sales without the existing phase-specific ownership gate.
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 import uuid
@@ -39,13 +40,43 @@ from .sources.shkp import (
 
 
 SHKP_TICKER = "0016.HK"
-FINANCIAL_DATA_DB_PATH = (
-    Path(__file__).resolve().parents[3]
-    / "financial-data"
-    / "data"
-    / "databases"
-    / "hk_financials.duckdb"
-)
+
+
+def _discover_financial_data_db_path() -> Path:
+    """Find the sibling DuckDB across the supported local checkout layouts.
+
+    The two repositories are commonly checked out either side-by-side under
+    ``~/Quant`` or under ``~/Desktop/Quant``.  CI and other machines can set
+    ``FINANCIAL_DATA_DB_PATH`` explicitly; otherwise choose the first existing
+    database and retain the side-by-side default for a useful error message.
+    """
+    override = os.environ.get("FINANCIAL_DATA_DB_PATH")
+    module_path = Path(__file__).resolve()
+    home = Path.home()
+    repo_roots = [
+        module_path.parents[3],
+        home / "Desktop" / "Quant",
+    ]
+    if override:
+        # An explicit path is authoritative, even when it is missing, so a
+        # typo cannot silently select a different database.
+        return Path(override).expanduser()
+    candidates: list[Path] = []
+    candidates.extend(
+        root / "financial-data" / "data" / "databases" / "hk_financials.duckdb"
+        for root in repo_roots
+    )
+    for candidate in candidates:
+        if candidate.is_file():
+            return candidate
+    return (
+        candidates[0]
+        if candidates
+        else Path("financial-data/data/databases/hk_financials.duckdb")
+    )
+
+
+FINANCIAL_DATA_DB_PATH = _discover_financial_data_db_path()
 
 SHKP_FINANCIAL_SUMMARY_URL = "https://www.shkp.com/en-US/investor-relations/financial-summary"
 SHKP_ANNUAL_RESULTS_2024_25_URL = (
@@ -2270,6 +2301,7 @@ def validate_shkp_financial_model_inputs(
     consensus: pd.DataFrame,
     price_history: pd.DataFrame | None = None,
     recurring_portfolio: pd.DataFrame | None = None,
+    require_financial_data: bool = True,
 ) -> dict[str, Any]:
     """Validate the first-stage model boundary without calculating forecasts."""
     errors: list[str] = []
@@ -2292,7 +2324,11 @@ def validate_shkp_financial_model_inputs(
         if disclosed_facts.loc[backlog, "metric"].astype("string").str.contains("revenue", case=False).any():
             errors.append("contracted sales backlog must not be labelled revenue")
     if financial_data_actuals.empty:
-        errors.append("financial_data_actuals is empty")
+        (errors if require_financial_data else warnings).append(
+            "financial_data_actuals is empty"
+            if require_financial_data
+            else "financial_data_actuals was not loaded; official-only model inputs are not a complete financial-data refresh"
+        )
     if not financial_data_actuals.empty and financial_data_actuals["ticker"].astype(str).ne(SHKP_TICKER).any():
         errors.append("financial_data_actuals contains a non-SHKP ticker")
     if not financial_data_actuals.empty and "announcement_date" in financial_data_actuals.columns:
@@ -2308,7 +2344,11 @@ def validate_shkp_financial_model_inputs(
     ):
         errors.append("financial_data_actuals contains duplicate fact_id values")
     if consensus.empty:
-        errors.append("consensus is empty")
+        (errors if require_financial_data else warnings).append(
+            "consensus is empty"
+            if require_financial_data
+            else "consensus was not loaded; official-only model inputs cannot support a consensus comparison"
+        )
     if not consensus.empty:
         consensus_key = ["ticker", "snapshot_date", "fiscal_year", "horizon", "metric", "statistic", "source"]
         if set(consensus_key).issubset(consensus.columns) and consensus.duplicated(consensus_key).any():
@@ -2375,6 +2415,7 @@ def validate_shkp_financial_model_inputs(
         "consensus_rows": int(len(consensus)),
         "price_history_rows": price_rows,
         "recurring_portfolio_rows": recurring_rows,
+        "financial_data_required": bool(require_financial_data),
         "ticker": SHKP_TICKER,
         "ownership_policy": "project activity remains non-attributable until an approved phase-specific effective interval exists",
     }
@@ -2513,25 +2554,42 @@ def build_shkp_financial_model_inputs(
     db_path: Path = FINANCIAL_DATA_DB_PATH,
     *,
     ticker: str = SHKP_TICKER,
+    load_financial_data: bool = True,
 ) -> dict[str, pd.DataFrame | dict[str, Any]]:
-    """Build all first-stage inputs from official disclosures and the sibling DB."""
+    """Build first-stage inputs from official disclosures and optionally sibling DB.
+
+    ``load_financial_data=False`` is the explicit official-only lane used by
+    CI environments that cannot access the private sibling repository.  It
+    preserves empty, schema-correct supplemental frames and labels the
+    validation result with warnings; it never substitutes a stale or
+    fabricated actual/consensus value.
+    """
     disclosed = build_shkp_disclosed_financial_facts()
     recurring_portfolio = build_shkp_recurring_portfolio_facts()
     asset_pipeline_capacity = build_shkp_asset_pipeline_capacity()
-    actuals = load_shkp_financial_data_actuals(db_path, ticker=ticker)
+    if load_financial_data:
+        actuals = load_shkp_financial_data_actuals(db_path, ticker=ticker)
+        consensus = load_shkp_consensus(db_path, ticker=ticker)
+        dividends = load_shkp_dividends(db_path, ticker=ticker)
+        market_snapshot = load_shkp_market_snapshot(db_path, ticker=ticker)
+        broker_forecasts = load_shkp_broker_forecasts(db_path, ticker=ticker)
+        consensus_revisions = load_shkp_consensus_revisions(db_path, ticker=ticker)
+        practical_vintages = build_shkp_practical_vintage_snapshots(db_path, ticker=ticker)
+    else:
+        actuals = pd.DataFrame(columns=SHKP_FINANCIAL_DATA_FACT_COLUMNS)
+        consensus = pd.DataFrame(columns=SHKP_CONSENSUS_COLUMNS)
+        dividends = pd.DataFrame(columns=SHKP_DIVIDEND_COLUMNS)
+        market_snapshot = pd.DataFrame(columns=SHKP_MARKET_SNAPSHOT_COLUMNS)
+        broker_forecasts = pd.DataFrame(columns=SHKP_BROKER_FORECAST_COLUMNS)
+        consensus_revisions = pd.DataFrame(columns=SHKP_CONSENSUS_REVISION_COLUMNS)
+        practical_vintages = pd.DataFrame(columns=SHKP_PRACTICAL_VINTAGE_COLUMNS)
     capital_inputs = build_shkp_capital_inputs(actuals)
     capital_input_quality = build_shkp_capital_input_quality(capital_inputs)
     financial_reconciliation = build_shkp_financial_reconciliation(
         disclosed_facts=disclosed,
         financial_data_actuals=actuals,
     )
-    consensus = load_shkp_consensus(db_path, ticker=ticker)
-    dividends = load_shkp_dividends(db_path, ticker=ticker)
-    market_snapshot = load_shkp_market_snapshot(db_path, ticker=ticker)
     price_history = load_shkp_price_history()
-    broker_forecasts = load_shkp_broker_forecasts(db_path, ticker=ticker)
-    consensus_revisions = load_shkp_consensus_revisions(db_path, ticker=ticker)
-    practical_vintages = build_shkp_practical_vintage_snapshots(db_path, ticker=ticker)
     corporate_documents = enrich_shkp_corporate_document_release_dates(
         load_latest_normalized("shkp_corporate_documents")
     )
@@ -2554,6 +2612,7 @@ def build_shkp_financial_model_inputs(
         consensus=consensus,
         price_history=price_history,
         recurring_portfolio=recurring_portfolio,
+        require_financial_data=load_financial_data,
     )
     return {
         "disclosed_facts": disclosed,
@@ -2575,6 +2634,7 @@ def build_shkp_financial_model_inputs(
         "filing_vintages": filing_vintages,
         "vintage_coverage": vintage_coverage,
         "validation": validation,
+        "financial_data_loaded": bool(load_financial_data),
     }
 
 
@@ -2585,6 +2645,7 @@ def run_shkp_financial_model(
     include_price_history: bool = False,
     price_start_date: str | None = DEFAULT_PRICE_HISTORY_START,
     price_end_date: str | None = None,
+    load_financial_data: bool = True,
 ) -> dict[str, Any]:
     """Build and persist the first-stage SHKP model input snapshots.
 
@@ -2593,7 +2654,10 @@ def run_shkp_financial_model(
     remains the canonical source database rather than being copied here.
     """
     model_run_id = run_id or f"shkp-financial-model-{uuid.uuid4()}"
-    inputs = build_shkp_financial_model_inputs(db_path)
+    inputs = build_shkp_financial_model_inputs(
+        db_path,
+        load_financial_data=load_financial_data,
+    )
     validation = inputs["validation"]
     if not isinstance(validation, dict) or validation.get("status") != "valid":
         raise ValueError(f"SHKP financial model input validation failed: {validation}")
@@ -2632,6 +2696,7 @@ def run_shkp_financial_model(
         consensus=consensus,
         price_history=price_history,
         recurring_portfolio=recurring_portfolio,
+        require_financial_data=load_financial_data,
     )
     if validation.get("status") != "valid":
         raise ValueError(f"SHKP financial model input validation failed: {validation}")
@@ -2654,6 +2719,7 @@ def run_shkp_financial_model(
         "completed_property_rows": int(len(completed_properties)),
         "derived_metric_rows": int(len(derived_metrics)),
         "financial_data_actual_rows": int(len(actuals)),
+        "financial_data_load_status": "loaded" if load_financial_data else "not_loaded_official_only",
         "capital_input_rows": int(len(capital_inputs)),
         "capital_input_quality_rows": int(len(capital_input_quality)),
         "financial_reconciliation_rows": int(len(financial_reconciliation)),
@@ -2778,10 +2844,13 @@ def run_shkp_financial_model(
                     if dataset_name == "shkp_financial_model_price_history"
                     else "official_company_disclosure"
                     if dataset_name in official_datasets
+                    else "official_only_financial_data_not_loaded"
+                    if not load_financial_data and dataset_name in financial_data_datasets
                     else "financial_data_sibling_duckdb_read_only"
                     if dataset_name in financial_data_datasets
                     else "derived_model_join_or_validation"
                 ),
+                "financial_data_load_status": "loaded" if load_financial_data else "not_loaded_official_only",
             },
         )
     return {

@@ -1,0 +1,180 @@
+name: HK Developer Tracking Refresh Weekly
+
+# The developer adapters are intentionally separate from the dashboard build:
+# this job refreshes the official SRPE index, a bounded recent Buildings
+# Department lifecycle history, then runs the company adapter and persists the
+# compact normalized catalog/events/queue/manifest/bridge layers. Raw PDFs and
+# JSON response bodies remain ignored; normalized lineage keeps the official
+# source URLs and the job log retains the run summary.
+
+on:
+  schedule:
+    - cron: "0 7 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: hk-developer-tracking-weekly-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-sino-land:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev]
+
+      - name: Refresh official SRPE development index
+        run: |
+          python -m src.hk_real_estate.cli run-srpe-index --timeout 30 > /tmp/srpe-index-refresh.json
+          tail -40 /tmp/srpe-index-refresh.json
+
+      - name: Refresh Sino Land developer-tracking layers
+        run: |
+          python -m src.hk_real_estate.cli run-sino-land-tracking \
+            --timeout 45 \
+            --max-site-projects 0 \
+            --max-srpe-manifest-projects 8 \
+            --max-srpe-transaction-documents 8 \
+            --max-srpe-price-list-documents 8 \
+            --srpe-request-delay 0.2 > /tmp/sino-land-tracking.json
+          tail -80 /tmp/sino-land-tracking.json
+
+      - name: Refresh recent Buildings Department lifecycle history
+        run: |
+          # Keep the weekly job bounded while retaining the recent OP evidence
+          # needed to calibrate active Sino phases. The local historical
+          # backfill remains available for deeper research runs.
+          current_year="$(date -u +%Y)"
+          python -m src.hk_real_estate.cli run-bd-project-history-backfill \
+            --start-year 2022 \
+            --end-year "${current_year}" > /tmp/bd-project-history-refresh.json
+          python - <<'PY'
+          from src.hk_real_estate.storage import load_latest_normalized
+
+          history = load_latest_normalized("bd_project_lifecycle_history")
+          occupation = history[history["permit_stage"].astype(str).str.contains("occupation", case=False, na=False)] if not history.empty else history
+          if history.empty or occupation.empty:
+              raise SystemExit("BD lifecycle refresh has no occupation-permit rows; refusing to build an uncalibrated bridge")
+          print({"bd_history_rows": len(history), "bd_occupation_rows": len(occupation)})
+          PY
+
+      - name: Build Sino residential contract-to-revenue timing bridge
+        run: |
+          python -m src.hk_real_estate.cli run-sino-residential-bridge > /tmp/sino-residential-bridge.json
+          tail -80 /tmp/sino-residential-bridge.json
+
+      - name: Refresh Sino Land official facts and H1 nowcast baselines
+        run: |
+          # These layers are official-report based and deliberately do not
+          # depend on the sibling financial-data DuckDB in Actions.
+          python -m src.hk_real_estate.cli run-sino-land-financial-model \
+            --skip-financial-data > /tmp/sino-land-financial-model.json
+          python -m src.hk_real_estate.cli run-sino-land-forecast-inputs \
+            --skip-financial-data > /tmp/sino-land-forecast-inputs.json
+          python -m src.hk_real_estate.cli run-sino-land-h1-history \
+            --timeout 60 > /tmp/sino-land-h1-history.json
+          python -m src.hk_real_estate.cli run-sino-land-h1-nowcast \
+            > /tmp/sino-land-h1-nowcast.json
+          tail -60 /tmp/sino-land-h1-history.json
+          tail -60 /tmp/sino-land-h1-nowcast.json
+
+      - name: Validate normalized developer outputs
+        run: |
+          python - <<'PY'
+          from src.hk_real_estate.storage import load_latest_normalized
+
+          catalog = load_latest_normalized("sino_land_property_catalog")
+          queue = load_latest_normalized("sino_land_sales_ingestion_queue")
+          manifest = load_latest_normalized("sino_land_srpe_document_manifest")
+          price_units = load_latest_normalized("sino_land_srpe_price_list_units")
+          price_coverage = load_latest_normalized("sino_land_srpe_price_list_coverage")
+          events = load_latest_normalized("sino_land_srpe_transaction_events")
+          coverage = load_latest_normalized("sino_land_srpe_transaction_coverage")
+          bridge_phase = load_latest_normalized("sino_land_hk_residential_bridge_phase")
+          bridge_schedule = load_latest_normalized("sino_land_hk_residential_recognition_schedule")
+          bridge_coverage = load_latest_normalized("sino_land_hk_residential_bridge_coverage")
+          official_facts = load_latest_normalized("sino_land_financial_model_official_facts")
+          h1_history = load_latest_normalized("sino_land_h1_history")
+          h1_history_audit = load_latest_normalized("sino_land_h1_history_audit")
+          h1_nowcast = load_latest_normalized("sino_land_h1_nowcast")
+          h1_segment = load_latest_normalized("sino_land_h1_segment_scenarios")
+          h1_quality = load_latest_normalized("sino_land_h1_nowcast_quality")
+          h1_backtest = load_latest_normalized("sino_land_h1_backtest")
+          h1_backtest_quality = load_latest_normalized("sino_land_h1_backtest_quality")
+          h1_residential_h2 = load_latest_normalized("sino_land_h1_residential_h2_scenario")
+          h1_residential_h2_quality = load_latest_normalized("sino_land_h1_residential_h2_quality")
+          bd_history = load_latest_normalized("bd_project_lifecycle_history")
+          if catalog.empty:
+              raise SystemExit("Sino catalog is empty; refusing to publish")
+          if queue.empty:
+              raise SystemExit("Sino sales queue is empty; refusing to publish")
+          if coverage.empty:
+              raise SystemExit("Sino transaction coverage is empty; refusing to publish")
+          if price_coverage.empty:
+              raise SystemExit("Sino price-list coverage is empty; refusing to publish")
+          if bridge_phase.empty or bridge_schedule.empty or bridge_coverage.empty:
+              raise SystemExit("Sino residential bridge is empty; refusing to publish")
+          if official_facts.empty or h1_history.empty or h1_history_audit.empty or h1_nowcast.empty or h1_segment.empty or h1_quality.empty or h1_backtest.empty or h1_backtest_quality.empty or h1_residential_h2.empty or h1_residential_h2_quality.empty:
+              raise SystemExit("Sino official/H1 nowcast layers are empty; refusing to publish")
+          if h1_history_audit["parse_status"].ne("pass").any():
+              raise SystemExit("Sino H1 history has a non-pass interim-report parse; refusing to publish")
+          if h1_quality["status"].eq("fail").any():
+              raise SystemExit("Sino H1 nowcast quality has a fail; refusing to publish")
+          if h1_backtest_quality["status"].eq("fail").any():
+              raise SystemExit("Sino H1 backtest quality has a fail; refusing to publish")
+          if h1_residential_h2_quality["status"].eq("fail").any():
+              raise SystemExit("Sino H1 residential H2 quality has a fail; refusing to publish")
+          if bd_history.empty:
+              raise SystemExit("BD lifecycle history is empty; refusing to publish an uncalibrated bridge")
+          if price_coverage["coverage_status"].eq("observed_price_list").any() and price_units.empty:
+              raise SystemExit("Sino price-list coverage says observed but unit output is empty; refusing to publish")
+          active = int(queue["queue_status"].eq("eligible_for_recent_srpe_queue").sum())
+          docs = int(manifest["manifest_status"].eq("manifest_document").sum()) if not manifest.empty else 0
+          bridge_metrics = bridge_coverage.iloc[0].to_dict()
+          print({"catalog_rows": len(catalog), "queue_rows": len(queue), "active_queue_rows": active, "manifest_documents": docs, "price_list_unit_rows": len(price_units), "transaction_event_rows": len(events), "price_coverage_status": price_coverage["coverage_status"].value_counts().to_dict(), "coverage_status": coverage["coverage_status"].value_counts().to_dict(), "bd_history_rows": len(bd_history), "bridge_phase_rows": len(bridge_phase), "bridge_schedule_rows": len(bridge_schedule), "official_fact_rows": len(official_facts), "h1_history_rows": len(h1_history), "h1_history_audit_status": h1_history_audit["parse_status"].value_counts().to_dict(), "h1_nowcast_rows": len(h1_nowcast), "h1_segment_scenario_rows": len(h1_segment), "h1_quality_status": h1_quality["status"].value_counts().to_dict(), "h1_backtest_rows": len(h1_backtest), "h1_backtest_quality_status": h1_backtest_quality["status"].value_counts().to_dict(), "h1_residential_h2_rows": len(h1_residential_h2), "h1_residential_h2_quality_status": h1_residential_h2_quality["status"].value_counts().to_dict(), "bridge_metrics": bridge_metrics})
+          PY
+
+      - name: Commit normalized developer-tracking snapshots
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # hk_real_estate normalized runs are ignored by default because most
+          # local backfills are disposable. This workflow deliberately keeps
+          # only the official SRPE index and generic Sino outputs durable.
+          git add -f \
+            data/normalized/hk_real_estate/srpe_development_index/ \
+            data/normalized/hk_real_estate/sino_land_*/
+
+          if git diff --staged --quiet; then
+            echo "No Sino developer-tracking changes to commit"
+            exit 0
+          fi
+
+          git commit -m "chore(hk-real-estate): refresh developer tracking [$(date -u +%Y-%m-%d)]"
+
+          for attempt in 1 2 3; do
+            if git pull --rebase origin "${{ github.event.repository.default_branch }}" && git push; then
+              exit 0
+            fi
+            sleep $((attempt * 5))
+          done
+          exit 1

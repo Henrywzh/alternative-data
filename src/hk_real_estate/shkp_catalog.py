@@ -29,6 +29,7 @@ from .shkp_high_recall import (
     enrich_indicative_ownership_with_high_recall,
     run_shkp_high_recall_phase_candidates,
 )
+from .shkp_srpe_backfill import build_shkp_phase_candidates, select_recent_shkp_phase_candidates
 from .storage import load_latest_normalized, save_normalized_dataset, save_raw_snapshot
 from .sources.srpe_pdf import build_srpe_sales_signals
 
@@ -61,6 +62,11 @@ CORE_DATASETS = (
     "shkp_ownership_review_queue",
     "shkp_future_project_identity_evidence",
     "shkp_future_project_resolution_plan",
+    # Append-only future-project event log and its current-state projection.
+    # These are first-class catalog outputs; a legacy machine may be missing
+    # them until its next live refresh, which the offline audit should surface.
+    "shkp_future_project_events",
+    "shkp_future_project_snapshot",
     "shkp_project_registry",
     "shkp_sales_ingestion_eligibility",
     "shkp_sales_ingestion_plan",
@@ -282,6 +288,39 @@ def _load_or_build_phase_attribution_decisions(
 
 def _empty(columns: list[str] | tuple[str, ...]) -> pd.DataFrame:
     return pd.DataFrame(columns=list(columns))
+
+
+def _reuse_latest_non_empty_snapshot(
+    dataset_name: str,
+    columns: list[str] | tuple[str, ...],
+    *,
+    reason: str,
+) -> pd.DataFrame:
+    """Reuse a prior non-empty source snapshot for a bounded refresh.
+
+    ``--skip-deep-documents`` and ``--skip-site-facts`` are refresh controls,
+    not instructions to erase the last usable evidence.  The old runner
+    materialised empty frames and then rebuilt downstream registries from
+    them, which made a lightweight run silently downgrade the catalog.  Keep
+    the prior rows, while tagging the frame so its lineage says that this
+    source was not fetched in the current run.
+    """
+    frame = load_latest_normalized(dataset_name)
+    if frame.empty:
+        return _empty(columns)
+    reused = frame.copy()
+    prior_lineage = _latest_lineage(dataset_name)
+    reused.attrs["lineage_metadata"] = {
+        **(reused.attrs.get("lineage_metadata") or {}),
+        "source_refresh_status": "skipped_reused_last_valid",
+        "source_refresh_reason": reason,
+        "source_refresh_dataset": dataset_name,
+        "source_refresh_prior_run_id": prior_lineage.get("run_id"),
+        "source_refresh_required": False,
+    }
+    if prior_lineage.get("run_id"):
+        reused.attrs["source_lineages"] = [prior_lineage]
+    return reused
 
 
 def _load_all_non_empty_snapshots(dataset_name: str) -> pd.DataFrame:
@@ -1159,6 +1198,11 @@ def run_shkp_current_manifest_backfill(
     *,
     max_developments: int = 25,
     timeout: float = 30,
+    recent_days: int = 90,
+    recent_years: int = 2,
+    refresh_after_days: int = 7,
+    include_older_active: bool = False,
+    allow_noop: bool = False,
 ) -> dict[str, Any]:
     """Append official SRPE filing metadata for current SHKP directory candidates.
 
@@ -1168,29 +1212,91 @@ def run_shkp_current_manifest_backfill(
     its ``catalog_run_id``.  The historical roster unions both layers when it
     is rebuilt.  Ambiguous current-directory crosswalks are retained as
     routing candidates only; no ownership or sales eligibility is inferred.
+    The full crosswalk is retained for coverage, but the network queue is
+    restricted to phases that SRPE still marks active and that have a recent
+    register/sales-arrangement/price-list filing or entered the directory in
+    the last ``recent_years``.  Existing phases are refreshed only after
+    ``refresh_after_days`` so a daily workflow does not redownload the same
+    metadata indefinitely.
     """
     if max_developments <= 0:
         raise ValueError("max_developments must be positive")
+    if refresh_after_days <= 0:
+        raise ValueError("refresh_after_days must be positive")
     crosswalk = load_latest_normalized("shkp_srpe_crosswalk")
     if crosswalk.empty or "srpe_development_id" not in crosswalk.columns:
         raise RuntimeError("current SHKP/SRPE crosswalk is missing; run the SHKP catalog first")
     allowed_statuses = {"matched", "matched_needs_review", "ambiguous"}
-    candidates = crosswalk.loc[
-        crosswalk.get("match_status", pd.Series(dtype="string")).astype("string").isin(allowed_statuses)
-    ]
-    candidate_ids = [
-        str(value).strip()
-        for value in candidates["srpe_development_id"].dropna().astype(str).drop_duplicates()
-        if str(value).strip()
-    ]
+    srpe_index = load_latest_normalized("srpe_development_index")
+    future_resolution = load_latest_normalized("shkp_future_project_resolution_plan")
+    # Use the same direct SHKP website -> SRPE crosswalk that powers the
+    # current queue.  Annual-report/high-recall evidence remains available for
+    # coverage audits, but should not silently turn a live transaction refresh
+    # into a broad speculative crawl.
+    candidates = build_shkp_phase_candidates(
+        srpe_index,
+        crosswalk,
+        None,
+        None,
+        future_resolution=future_resolution,
+    )
     prior = _load_all_non_empty_snapshots(CURRENT_MANIFEST_BACKFILL_DATASET)
     base = load_latest_normalized("shkp_srpe_document_manifest")
+    document_frames = [frame for frame in (prior, base) if frame is not None and not frame.empty]
+    document_evidence = pd.concat(document_frames, ignore_index=True) if document_frames else pd.DataFrame()
+    now = pd.Timestamp.now(tz="UTC")
+    recent_candidates = select_recent_shkp_phase_candidates(
+        candidates,
+        document_evidence,
+        now=now,
+        recent_days=recent_days,
+        recent_years=recent_years,
+        allowed_statuses=allowed_statuses,
+        include_older_active=include_older_active,
+    )
+    candidate_ids = recent_candidates["srpe_development_id"].astype(str).tolist()
     existing = set(prior.get("srpe_development_id", pd.Series(dtype="string")).dropna().astype(str))
     existing |= set(base.get("srpe_development_id", pd.Series(dtype="string")).dropna().astype(str))
-    pending_ids = [value for value in candidate_ids if value not in existing]
+    refresh_cutoff = now - pd.Timedelta(days=int(refresh_after_days))
+    recent_latest = recent_candidates.set_index("srpe_development_id").get("latest_document_submission", pd.Series(dtype="datetime64[ns, UTC]"))
+    pending_ids = [
+        value
+        for value in candidate_ids
+        if value not in existing
+        or pd.isna(recent_latest.get(value))
+        or recent_latest.get(value) < refresh_cutoff
+    ]
     selected_ids = pending_ids[:max_developments]
     if not selected_ids:
-        raise RuntimeError("no new current SHKP directory candidate phases require a manifest refresh")
+        if not allow_noop:
+            raise RuntimeError("no recent active SHKP directory candidate phases require a manifest refresh")
+        # A weekly run with no newly eligible filing is a healthy no-op, not a
+        # source failure.  Return the existing coverage explicitly so callers
+        # can distinguish it from an empty/failed manifest fetch.
+        return {
+            "mode": "no_op",
+            "run_id": f"shkp-current-manifest-noop-{uuid.uuid4()}",
+            "selected_phase_ids": [],
+            "eligible_recent_phase_count": int(len(recent_candidates)),
+            "eligible_recent_phase_ids": recent_candidates["srpe_development_id"].astype(str).tolist(),
+            "selection_policy": {
+                "active_only": True,
+                "recent_days": int(recent_days),
+                "recent_years": int(recent_years),
+                "refresh_after_days": int(refresh_after_days),
+                "include_older_active": bool(include_older_active),
+            },
+            "selected_development_count": 0,
+            "new_manifest_rows": 0,
+            "merged_manifest_rows": int(len(document_evidence)),
+            "manifest_phase_count": int(document_evidence.get("srpe_development_id", pd.Series(dtype="string")).nunique()),
+            "manifest_category_counts": document_evidence.get("document_category", pd.Series(dtype="string")).value_counts().to_dict(),
+            "skipped_items": [],
+            "normalized": None,
+            "ownership_inference": False,
+            "sales_promotion": False,
+            "no_op_reason": "no_recent_active_candidate_phase_requires_refresh",
+        }
 
     new_manifest = shkp.fetch_shkp_srpe_document_manifest(
         selected_ids,
@@ -1228,6 +1334,13 @@ def run_shkp_current_manifest_backfill(
             "candidate_source_dataset": "shkp_srpe_crosswalk",
             "selected_candidate_ids": selected_ids,
             "candidate_statuses": sorted(allowed_statuses),
+            "selection_policy": "active=Y and no complete-sales date and (recent filing within recent_days or SRPE publication within recent_years)",
+            "recent_days": int(recent_days),
+            "recent_years": int(recent_years),
+            "refresh_after_days": int(refresh_after_days),
+            "include_older_active": bool(include_older_active),
+            "eligible_recent_phase_count": int(len(recent_candidates)),
+            "eligible_lifecycle_counts": recent_candidates.get("lifecycle_status", pd.Series(dtype="string")).value_counts().to_dict(),
             "merged_prior_snapshot": not prior.empty,
             "base_live_manifest_phase_count": len(existing - set(prior.get("srpe_development_id", pd.Series(dtype="string")).dropna().astype(str))),
             "pdf_downloaded": False,
@@ -1238,6 +1351,15 @@ def run_shkp_current_manifest_backfill(
     return {
         "run_id": run_id,
         "selected_phase_ids": selected_ids,
+        "eligible_recent_phase_count": int(len(recent_candidates)),
+        "eligible_recent_phase_ids": recent_candidates["srpe_development_id"].astype(str).tolist(),
+        "selection_policy": {
+            "active_only": True,
+            "recent_days": int(recent_days),
+            "recent_years": int(recent_years),
+            "refresh_after_days": int(refresh_after_days),
+            "include_older_active": bool(include_older_active),
+        },
         "selected_development_count": len(selected_ids),
         "new_manifest_rows": int(len(new_manifest)),
         "merged_manifest_rows": int(len(merged)),
@@ -2033,9 +2155,17 @@ def run_shkp_catalog(
     )
 
     if skip_site_facts:
-        frames["shkp_project_site_vendor_facts"] = _empty(shkp.SHKP_PROJECT_SITE_VENDOR_FACT_COLUMNS)
+        frames["shkp_project_site_vendor_facts"] = _reuse_latest_non_empty_snapshot(
+            "shkp_project_site_vendor_facts",
+            shkp.SHKP_PROJECT_SITE_VENDOR_FACT_COLUMNS,
+            reason="skip_site_facts",
+        )
     elif site_project_limit == 0:
-        frames["shkp_project_site_vendor_facts"] = _empty(shkp.SHKP_PROJECT_SITE_VENDOR_FACT_COLUMNS)
+        frames["shkp_project_site_vendor_facts"] = _reuse_latest_non_empty_snapshot(
+            "shkp_project_site_vendor_facts",
+            shkp.SHKP_PROJECT_SITE_VENDOR_FACT_COLUMNS,
+            reason="site_project_limit_zero",
+        )
     else:
         residential = frames["shkp_property_catalog"].loc[
             frames["shkp_property_catalog"].get("asset_type", pd.Series(dtype="string")).eq("residential_for_sale")
@@ -2049,10 +2179,29 @@ def run_shkp_catalog(
     )
 
     if skip_deep_documents:
-        frames["shkp_annual_report_projects"] = _empty(shkp.ANNUAL_REPORT_PROJECT_COLUMNS)
-        frames["shkp_completed_properties"] = _empty(shkp.SHKP_COMPLETED_PROPERTY_COLUMNS)
-        frames["shkp_annual_principal_subsidiaries"] = _empty(shkp.SHKP_ANNUAL_PRINCIPAL_SUBSIDIARY_COLUMNS)
-        frames["shkp_completion_schedule_projects"] = _empty(shkp.SHKP_COMPLETION_SCHEDULE_COLUMNS)
+        # A bounded index/website refresh must not erase the last annual-report
+        # and completion-schedule evidence.  Reuse the last valid rows and
+        # carry an explicit skipped-source marker into the new catalog run.
+        frames["shkp_annual_report_projects"] = _reuse_latest_non_empty_snapshot(
+            "shkp_annual_report_projects",
+            shkp.ANNUAL_REPORT_PROJECT_COLUMNS,
+            reason="skip_deep_documents",
+        )
+        frames["shkp_completed_properties"] = _reuse_latest_non_empty_snapshot(
+            "shkp_completed_properties",
+            shkp.SHKP_COMPLETED_PROPERTY_COLUMNS,
+            reason="skip_deep_documents",
+        )
+        frames["shkp_annual_principal_subsidiaries"] = _reuse_latest_non_empty_snapshot(
+            "shkp_annual_principal_subsidiaries",
+            shkp.SHKP_ANNUAL_PRINCIPAL_SUBSIDIARY_COLUMNS,
+            reason="skip_deep_documents",
+        )
+        frames["shkp_completion_schedule_projects"] = _reuse_latest_non_empty_snapshot(
+            "shkp_completion_schedule_projects",
+            shkp.SHKP_COMPLETION_SCHEDULE_COLUMNS,
+            reason="skip_deep_documents",
+        )
     else:
         annual = shkp.fetch_shkp_annual_report_pipeline(session=client, timeout=max(timeout, 90))
         frames["shkp_annual_report_projects"] = annual
@@ -2104,7 +2253,11 @@ def run_shkp_catalog(
 
     frames["shkp_supporting_source_catalog"] = shkp.fetch_shkp_supporting_source_catalog()
     if skip_deep_documents:
-        frames["shkp_land_planning_documents"] = _empty(shkp.LAND_PLANNING_DOCUMENT_COLUMNS)
+        frames["shkp_land_planning_documents"] = _reuse_latest_non_empty_snapshot(
+            "shkp_land_planning_documents",
+            shkp.LAND_PLANNING_DOCUMENT_COLUMNS,
+            reason="skip_deep_documents",
+        )
     else:
         frames["shkp_land_planning_documents"] = shkp.fetch_shkp_land_planning_documents(
             session=client, timeout=timeout
@@ -2141,7 +2294,11 @@ def run_shkp_catalog(
         project_registry=frames["shkp_project_registry"],
     )
     if skip_deep_documents or max_manifest_developments == 0:
-        frames["shkp_srpe_document_manifest"] = _empty(shkp.SHKP_SRPE_MANIFEST_COLUMNS)
+        frames["shkp_srpe_document_manifest"] = _reuse_latest_non_empty_snapshot(
+            "shkp_srpe_document_manifest",
+            shkp.SHKP_SRPE_MANIFEST_COLUMNS,
+            reason=("skip_deep_documents" if skip_deep_documents else "max_manifest_developments_zero"),
+        )
     else:
         frames["shkp_srpe_document_manifest"] = shkp.fetch_shkp_srpe_document_manifest(
             ids, session=client, max_developments=max_manifest_developments, timeout=min(timeout, 30)
@@ -2193,14 +2350,57 @@ def run_shkp_catalog(
         frames["shkp_sales_ingestion_plan"],
         identity_evidence=frames["shkp_future_project_identity_evidence"],
     )
+    prior_future_events = _load_all_non_empty_snapshots("shkp_future_project_events")
+    frames["shkp_future_project_events"] = shkp.build_shkp_future_project_events(
+        frames["shkp_pipeline_disclosures"],
+        frames["shkp_pipeline_project_registry"],
+        frames["shkp_future_project_resolution_plan"],
+        frames["shkp_future_project_identity_evidence"],
+        frames["srpe_development_index"],
+        prior_events=prior_future_events,
+        ownership_observations=frames["shkp_legal_ownership_observations"],
+    )
+    frames["shkp_future_project_snapshot"] = shkp.build_shkp_future_project_snapshot(
+        frames["shkp_future_project_events"]
+    )
     frames["shkp_ownership_review_queue"] = shkp.build_shkp_ownership_review_queue(
         frames["shkp_project_registry"], frames["shkp_sales_ingestion_eligibility"]
     )
     if "shkp_corporate_documents" not in frames:
-        frames["shkp_corporate_documents"] = shkp.fetch_shkp_corporate_documents(session=client, timeout=timeout)
-    frames["shkp_history_milestones"] = shkp.fetch_shkp_history_milestones(
-        session=client, timeout=timeout
-    )
+        try:
+            frames["shkp_corporate_documents"] = shkp.fetch_shkp_corporate_documents(
+                session=client, timeout=timeout
+            )
+        except Exception as exc:
+            # Corporate/quarterly PDF discovery is useful context but is not
+            # required to refresh the official SRPE project universe.  Keep
+            # the last non-empty document index rather than turning a
+            # transient page-render/WAF failure into a failed catalog run.
+            fallback = load_latest_normalized("shkp_corporate_documents")
+            if fallback.empty:
+                raise
+            fallback.attrs["lineage_metadata"] = {
+                **(fallback.attrs.get("lineage_metadata") or {}),
+                "source_refresh_status": "failed_fallback_last_valid",
+                "source_refresh_error": f"{type(exc).__name__}: {exc}",
+                "source_refresh_required": True,
+            }
+            frames["shkp_corporate_documents"] = fallback
+    try:
+        frames["shkp_history_milestones"] = shkp.fetch_shkp_history_milestones(
+            session=client, timeout=timeout
+        )
+    except Exception as exc:
+        fallback = load_latest_normalized("shkp_history_milestones")
+        if fallback.empty:
+            raise
+        fallback.attrs["lineage_metadata"] = {
+            **(fallback.attrs.get("lineage_metadata") or {}),
+            "source_refresh_status": "failed_fallback_last_valid",
+            "source_refresh_error": f"{type(exc).__name__}: {exc}",
+            "source_refresh_required": True,
+        }
+        frames["shkp_history_milestones"] = fallback
     frames["shkp_historical_annual_report_index"] = shkp.build_shkp_historical_annual_report_index(
         frames["shkp_corporate_documents"]
     )

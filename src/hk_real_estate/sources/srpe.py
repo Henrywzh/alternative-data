@@ -1,6 +1,5 @@
 import json
 import os
-import re
 import time
 import requests
 from bs4 import BeautifulSoup
@@ -15,6 +14,7 @@ SRPE_API_BASE = "https://www.srpe.gov.hk/api/SrpeWebService"
 SRPE_DEVELOPMENT_INDEX_ENDPOINT = (
     f"{SRPE_API_BASE}/DistrictAreaSearch/getDistrictAreaSearchResult"
 )
+SRPE_DETAIL_ENDPOINT = f"{SRPE_API_BASE}/DevBldgSearch/getSelectedDevResult"
 
 # Maps each SRPE document category to the download action name used in its
 # real (reverse-engineered) download endpoint, e.g.
@@ -144,6 +144,39 @@ def _normalize_srpe_development_rows(
             }
         )
     return pd.DataFrame(normalized, columns=SRPE_DEVELOPMENT_INDEX_COLUMNS)
+
+
+def fetch_srpe_project_detail(
+    srpe_dev_id: str,
+    *,
+    session: requests.Session | None = None,
+    timeout: float = 30,
+) -> dict[str, Any]:
+    """Fetch one development's official SRPE document manifest.
+
+    This is a source-level primitive shared by developer adapters.  It only
+    returns the portal's manifest metadata; callers decide which documents to
+    download and how to interpret missing files.
+    """
+    client = session or requests.Session()
+    client.headers.update(
+        {
+            **DEFAULT_HEADERS,
+            "Accept": "application/json, text/plain, */*",
+            "Content-Type": "application/json",
+            "Origin": "https://www.srpe.gov.hk",
+            "Referer": "https://www.srpe.gov.hk/opip/",
+        }
+    )
+    bounded_timeout = max(float(timeout), 1.0)
+    response = client.post(
+        SRPE_DETAIL_ENDPOINT,
+        json={"timeStamp": int(time.time() * 1000), "devId": str(srpe_dev_id)},
+        timeout=(bounded_timeout, bounded_timeout),
+    )
+    response.raise_for_status()
+    result = response.json().get("resultData") or {}
+    return result.get("devInfoResp") or {}
 
 
 def fetch_srpe_development_index(

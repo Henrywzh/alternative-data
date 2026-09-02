@@ -10,7 +10,11 @@ from __future__ import annotations
 
 import hashlib
 import io
+import os
 import re
+import shutil
+import subprocess
+import tempfile
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
@@ -377,6 +381,11 @@ def _transaction_data_row(
     property_present = bool(block) and not summary_label and (
         property_detail_present if len(raw_row) >= 11 else True
     )
+    house_label_present = bool(
+        re.search(r"\bhouse\b|洋房|屋號|屋号", property_text, flags=re.IGNORECASE)
+    )
+    if house_label_present and not summary_label:
+        property_present = True
     if not property_present or price is None:
         return None
     return row, parsed_dates[0], parsed_dates[1], parsed_dates[2], price
@@ -476,6 +485,233 @@ def parse_srpe_transaction_tables(
     return result.drop(columns=["_row_no"], errors="ignore").reindex(columns=TRANSACTION_COLUMNS)
 
 
+_TEXT_DATE_RE = re.compile(r"\b(\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|\d{8})\b")
+_TEXT_PRICE_RE = re.compile(r"(?:HK\s*\$|\$)\s*(\d[\d,]*(?:\.\d+)?)|\b(\d{1,3}(?:,\d{3}){2,}(?:\.\d+)?)\b", re.IGNORECASE)
+_TEXT_HOUSE_RE = re.compile(r"\bHouse\s+(\d+[A-Za-z]?)\b", re.IGNORECASE)
+_TEXT_UNIT_RE = re.compile(r"\b(?:Unit|Flat)\s+([A-Za-z0-9]+)\b", re.IGNORECASE)
+_TEXT_FLOOR_RE = re.compile(r"\b(?:Floor|Lvl|Level)\s+(\d+[A-Za-z]?)\b", re.IGNORECASE)
+
+
+def _compact_date_token(token: str) -> str | None:
+    text = str(token or "").strip()
+    if re.fullmatch(r"\d{8}", text):
+        day, month, year = int(text[:2]), int(text[2:4]), int(text[4:])
+        if not (1 <= day <= 31 and 1 <= month <= 12 and 2013 <= year <= 2027):
+            return None
+        text = f"{text[:2]}-{text[2:4]}-{text[4:]}"
+    parsed = _parse_date(text)
+    if parsed is None:
+        return None
+    year = int(parsed[:4])
+    if year < 2013 or year > 2027:
+        return None
+    return parsed
+
+def _parse_transaction_text_line(line: str) -> dict[str, Any] | None:
+    """Parse one loosely extracted register line that still has date + price."""
+    compact = re.sub(r"\s+", " ", str(line or "")).strip()
+    if not compact:
+        return None
+    lowered = compact.lower()
+    if "date of pasp" in lowered or "information on transactions" in lowered:
+        return None
+    if "date & time of update" in lowered or "part 3" in lowered:
+        return None
+    prices = []
+    for match in _TEXT_PRICE_RE.finditer(compact):
+        raw = match.group(1) or match.group(2)
+        value = _parse_number(raw)
+        if value is not None and value >= 100_000:
+            prices.append((match.start(), value))
+    if not prices:
+        return None
+    date_tokens = []
+    for match in _TEXT_DATE_RE.finditer(compact):
+        parsed = _compact_date_token(match.group(1))
+        if parsed:
+            date_tokens.append((match.start(), parsed))
+    if not date_tokens:
+        return None
+    price_start, price = prices[0]
+    date_values = [value for start, value in date_tokens if start < price_start] or [value for _, value in date_tokens]
+    pasp = date_values[0]
+    asp = date_values[1] if len(date_values) > 1 else None
+    termination = date_values[2] if len(date_values) > 2 else None
+    house = _TEXT_HOUSE_RE.search(compact)
+    unit_match = _TEXT_UNIT_RE.search(compact)
+    floor_match = _TEXT_FLOOR_RE.search(compact)
+    block = f"House {house.group(1)}" if house else ""
+    unit = unit_match.group(1) if unit_match else (house.group(1) if house else "")
+    floor = floor_match.group(1) if floor_match else ""
+    if not (block or unit or floor):
+        residual = _TEXT_DATE_RE.sub(" ", compact)
+        residual = _TEXT_PRICE_RE.sub(" ", residual)
+        residual = re.sub(r"\bN/?A\b", " ", residual, flags=re.IGNORECASE)
+        residual = re.sub(r"[^A-Za-z0-9 /#.-]+", " ", residual)
+        residual = re.sub(r"\s+", " ", residual).strip(" -|,")
+        if re.search(r"\b(?:house|tower|block|unit|flat|floor|jardine|summit)\b|\b\d+\s+[A-Za-z]\b|\d+[A-Za-z]", residual, flags=re.IGNORECASE):
+            block = residual[:80]
+    if not (block or unit or floor):
+        return None
+    return {
+        "date_of_pasp": pasp,
+        "date_of_asp": asp,
+        "date_of_asp_termination": termination,
+        "block_name": block,
+        "floor": floor,
+        "unit": unit,
+        "car_parking_space": "",
+        "transaction_price_hkd": price,
+        "price_revision_details": "",
+        "payment_terms": "",
+        "related_party_flag": "",
+    }
+
+
+def parse_srpe_transaction_text(
+    page_texts: Iterable[tuple[int, str]],
+    *,
+    metadata: Mapping[str, Any] | None = None,
+    document_id: str | None = None,
+    document_serial_no: str | None = None,
+    document_hash: str | None = None,
+    source_document: str | None = None,
+) -> pd.DataFrame:
+    """Parse transaction events from page text when table extraction is empty."""
+    metadata = dict(metadata or {})
+    records: list[dict[str, Any]] = []
+    for page_no, text in page_texts:
+        for line in str(text or "").splitlines():
+            parsed = _parse_transaction_text_line(line)
+            if parsed is None:
+                continue
+            stable_key = "|".join(
+                str(value or "")
+                for value in (
+                    metadata.get("development_id"),
+                    metadata.get("development_name"),
+                    metadata.get("phase_name"),
+                    parsed["date_of_pasp"],
+                    parsed["date_of_asp"],
+                    parsed["date_of_asp_termination"],
+                    parsed["block_name"],
+                    parsed["floor"],
+                    parsed["unit"],
+                    parsed["car_parking_space"],
+                    f"{parsed['transaction_price_hkd']:.10f}",
+                    parsed["price_revision_details"],
+                )
+            )
+            records.append(
+                {
+                    "source_agency": "SRPE",
+                    "document_category": "register_of_transactions",
+                    "development_id": metadata.get("development_id"),
+                    "development_name": metadata.get("development_name"),
+                    "phase_name": metadata.get("phase_name"),
+                    "development_address": metadata.get("development_address"),
+                    "document_id": document_id,
+                    "document_serial_no": document_serial_no,
+                    "document_hash": document_hash,
+                    "source_document": source_document,
+                    "source_page": page_no,
+                    "is_cancelled": bool(parsed["date_of_asp_termination"]),
+                    "transaction_id": hashlib.sha256(stable_key.encode("utf-8")).hexdigest(),
+                    **parsed,
+                }
+            )
+    result = pd.DataFrame(records)
+    if result.empty:
+        return pd.DataFrame(columns=TRANSACTION_COLUMNS)
+    result = result.drop_duplicates(subset=["transaction_id"], keep="last")
+    return result.reindex(columns=TRANSACTION_COLUMNS)
+
+
+def _ocr_image_text(tesseract: str, image: Path) -> str:
+    ocr = subprocess.run(
+        [tesseract, str(image), "stdout", "-l", "eng", "--psm", "6"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return ocr.stdout or ""
+
+
+def _ocr_pdf_page_texts(content: bytes) -> list[tuple[int, str]]:
+    """OCR a scanned / image-only register when local tools are available."""
+    pdftoppm = shutil.which("pdftoppm")
+    tesseract = shutil.which("tesseract")
+    if not pdftoppm or not tesseract:
+        return []
+    pages: list[tuple[int, str]] = []
+    with tempfile.TemporaryDirectory(prefix="srpe-ocr-") as tmp:
+        pdf_path = Path(tmp) / "register.pdf"
+        pdf_path.write_bytes(content)
+        probe_prefix = Path(tmp) / "probe"
+        subprocess.run(
+            [pdftoppm, "-png", "-r", "70", "-f", "1", "-l", "1", str(pdf_path), str(probe_prefix)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        rotate = shutil.which("sips")
+        chosen_rotation = 0
+        probe_images = sorted(Path(tmp).glob("probe*.png"))
+        if probe_images and rotate:
+            best_score = -1
+            for degrees in (0, 90, 180, 270):
+                candidate = probe_images[0]
+                if degrees:
+                    rotated = candidate.with_name(f"{candidate.stem}_r{degrees}.png")
+                    rotated_run = subprocess.run(
+                        [rotate, "-r", str(degrees), str(candidate), "--out", str(rotated)],
+                        capture_output=True,
+                        text=True,
+                        check=False,
+                    )
+                    if rotated_run.returncode != 0 or not rotated.exists():
+                        continue
+                    candidate = rotated
+                sample = _ocr_image_text(tesseract, candidate)
+                score = 0
+                if "Register of Transactions" in sample:
+                    score += 5
+                if "Information on Transactions" in sample:
+                    score += 5
+                if "Date of PASP" in sample:
+                    score += 3
+                score += min(len(sample), 2000) / 400
+                if score > best_score:
+                    best_score = score
+                    chosen_rotation = degrees
+        prefix = Path(tmp) / "page"
+        rendered = subprocess.run(
+            [pdftoppm, "-png", "-r", "150", str(pdf_path), str(prefix)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if rendered.returncode != 0:
+            return []
+        images = sorted(Path(tmp).glob("page*.png"))
+        for index, image in enumerate(images, 1):
+            candidate = image
+            if chosen_rotation and rotate:
+                rotated = image.with_name(f"{image.stem}_r{chosen_rotation}.png")
+                rotated_run = subprocess.run(
+                    [rotate, "-r", str(chosen_rotation), str(image), "--out", str(rotated)],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                if rotated_run.returncode == 0 and rotated.exists():
+                    candidate = rotated
+            page_text = _ocr_image_text(tesseract, candidate)
+            if page_text.strip():
+                pages.append((index, page_text))
+    return pages
+
+
 def parse_srpe_transaction_pdf(
     source: bytes | bytearray | Path | str | Any,
     *,
@@ -499,15 +735,17 @@ def parse_srpe_transaction_pdf(
             "phase_name": phase_name or extracted.get("phase_name"),
             "development_address": development_address or extracted.get("development_address"),
         }
+        page_texts: list[tuple[int, str]] = []
 
         def iter_page_tables() -> Iterable[tuple[int, Sequence[Sequence[Sequence[Any]]]]]:
             for page_no, page in enumerate(pdf.pages, 1):
                 # Reuse the first extraction for metadata and parsing; later
                 # pages are extracted and released one at a time.
                 tables = first_tables if page_no == 1 else (page.extract_tables() or [])
+                page_texts.append((page_no, page.extract_text() or ""))
                 yield page_no, tables
 
-        return parse_srpe_transaction_tables(
+        parsed = parse_srpe_transaction_tables(
             iter_page_tables(),
             metadata=metadata,
             document_id=document_id,
@@ -515,6 +753,32 @@ def parse_srpe_transaction_pdf(
             document_hash=document_hash,
             source_document=source_document,
         )
+        if parsed.empty:
+            parsed = parse_srpe_transaction_text(
+                page_texts,
+                metadata=metadata,
+                document_id=document_id,
+                document_serial_no=document_serial_no,
+                document_hash=document_hash,
+                source_document=source_document,
+            )
+        # OCR is expensive and only useful for image-only / rotated scans.
+        # Skip it when the PDF already has a usable text layer.
+        text_layer = " ".join(page_text for _, page_text in page_texts)
+        usable_text = bool(re.search(r"[A-Za-z]{4,}", text_layer)) and len(text_layer.strip()) >= 200
+        needs_ocr = parsed.empty and not usable_text
+        if needs_ocr:
+            ocr_texts = _ocr_pdf_page_texts(content)
+            if ocr_texts:
+                parsed = parse_srpe_transaction_text(
+                    ocr_texts,
+                    metadata=metadata,
+                    document_id=document_id,
+                    document_serial_no=document_serial_no,
+                    document_hash=document_hash,
+                    source_document=source_document,
+                )
+        return parsed
 
 
 def _price_table(table: Sequence[Sequence[Any]]) -> bool:

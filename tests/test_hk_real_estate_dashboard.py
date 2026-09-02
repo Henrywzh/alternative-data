@@ -795,7 +795,7 @@ def test_shkp_leading_indicators_and_28hse_reconciliation_are_monitoring_only():
         raw_new_projects=pd.DataFrame(), raw_landreg=(pd.DataFrame(), pd.DataFrame()),
         raw_bd_monthly_stats=pd.DataFrame(), raw_bd_supply=pd.DataFrame(), raw_bd_supply_history=pd.DataFrame(),
         raw_unified_tx=pd.DataFrame(), raw_shkp_leading_signals=leading,
-        raw_28hse_reconciliation=reconciliation, now=NOW,
+        raw_28hse_reconciliation=reconciliation, raw_shkp_transaction_health=pd.DataFrame([{"srpe_development_id": "8225", "development_name": "TWENTY PEAK ROAD BY V", "situation": "situation_1_parsed", "current_event_rows": 4, "note": "recovered"}]), now=NOW,
     )
     datasets = artifact["snapshot"]["datasets"]
     assert len(datasets["shkp_leading_signal_history"]) == 2
@@ -805,7 +805,7 @@ def test_shkp_leading_indicators_and_28hse_reconciliation_are_monitoring_only():
     table_ids = {table["id"] for table in artifact["manifest"]["tables"]}
     block_ids = {block["id"] for block in artifact["manifest"]["blocks"]}
     assert {"shkp_leading_contract_sales_chart", "shkp_leading_active_units_chart", "shkp_leading_coverage_chart"} <= chart_ids
-    assert {"shkp_leading_phase_latest_table", "shkp_28hse_reconciliation_table"} <= table_ids
+    assert {"shkp_leading_phase_latest_table", "shkp_28hse_reconciliation_table", "shkp_srpe_transaction_health_table"} <= table_ids
     assert {
         "shkp_leading_contract_sales_block",
         "shkp_leading_active_units_block",

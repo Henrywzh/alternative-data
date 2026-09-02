@@ -1,6 +1,7 @@
 import argparse
 import json
 import sys
+import uuid
 from pathlib import Path
 
 from .pipeline import (
@@ -22,6 +23,7 @@ from .pipeline import (
     run_bd_project_history_audit_backfill,
 )
 from .srpe_pilot import run_srpe_pilot, SRPE_PROJECT_REGISTRY_PATH
+from .shkp_transaction_health import run_shkp_srpe_transaction_data_health
 from .shkp_catalog import (
     build_shkp_historical_phase_roster,
     run_shkp_current_manifest_backfill,
@@ -51,7 +53,10 @@ from .shkp_signals import (
     run_shkp_srpe_signal_contract,
 )
 from .shkp_indicative_sales_model import run_shkp_indicative_sales_model
-from .shkp_28hse_reconciliation import run_shkp_28hse_reconciliation, run_shkp_ownership_review_priority
+from .shkp_28hse_reconciliation import (
+    run_shkp_28hse_reconciliation,
+    run_shkp_ownership_review_priority,
+)
 from .shkp_commercial import run_shkp_commercial_recurring_contract
 from .shkp_commercial_model import run_shkp_commercial_model
 from .shkp_earnings_bridge import run_shkp_earnings_bridge
@@ -59,14 +64,29 @@ from .shkp_whole_company_model import run_shkp_whole_company_model
 from .shkp_handover_lag import run_shkp_handover_lag
 from .shkp_project_margin_model import run_shkp_project_margin_model
 from .shkp_margin_variant import run_shkp_margin_variant
-from .shkp_skeleton_backtest import run_shkp_skeleton_backtest, run_shkp_skeleton_margin_decomposition
+from .shkp_skeleton_backtest import (
+    run_shkp_skeleton_backtest,
+    run_shkp_skeleton_margin_decomposition,
+)
 from .shkp_bd_history import (
     run_shkp_bd_history_crosswalk,
     run_shkp_bd_history_entity_resolution_review,
 )
+from .shkp_refresh import run_shkp_refresh
+from .sources.sino_land import run_sino_land_tracking
+from .sino_residential_bridge import run_sino_residential_bridge
+from .sino_land_financial_model import run_sino_land_financial_model
+from .sino_land_h1_history import run_sino_land_h1_history
+from .sino_land_forecast_inputs import run_sino_land_forecast_inputs
+from .sino_land_h1_nowcast import run_sino_land_h1_nowcast
+from .sources.srpe import fetch_srpe_development_index
+from .storage import save_normalized_dataset
+
 
 def main(argv: list[str] | None = None):
-    parser = argparse.ArgumentParser(description="HK Real Estate Alternative Data Pipeline CLI")
+    parser = argparse.ArgumentParser(
+        description="HK Real Estate Alternative Data Pipeline CLI"
+    )
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     subparsers.add_parser("run-group-a", help="Run Group A data ingestion")
@@ -74,7 +94,9 @@ def main(argv: list[str] | None = None):
     subparsers.add_parser("run-group-c", help="Run Group C data ingestion")
     subparsers.add_parser("run-all", help="Run full pipeline across all data sources")
     subparsers.add_parser("run-stage-1", help="Run Stage 1 source ingestion")
-    subparsers.add_parser("run-stage-2", help="Run Stage 2 financing & stock attribution ingestion")
+    subparsers.add_parser(
+        "run-stage-2", help="Run Stage 2 financing & stock attribution ingestion"
+    )
     bd_project_history_parser = subparsers.add_parser(
         "run-bd-project-history-backfill",
         help="Backfill detailed Buildings Department Md52-Md56 project rows from monthly PDFs",
@@ -98,16 +120,30 @@ def main(argv: list[str] | None = None):
         "run-bd-project-history-local-reparse",
         help="Reparse the latest detailed BD history from existing local raw PDFs (no network fetch)",
     )
-    subparsers.add_parser("run-incomplete-5", help="Run digestion pipeline for the 5 incomplete data sources")
-    subparsers.add_parser("run-centaline-indices", help="Run Tranche 1 CCI/CRI/CSI ingestion only")
-    subparsers.add_parser("run-midland-monthly", help="Run Tranche 2 Midland monthly ingestion only")
-    subparsers.add_parser("run-rvd-commercial", help="Run Tranche 3 RVD office/retail ingestion only")
+    subparsers.add_parser(
+        "run-incomplete-5",
+        help="Run digestion pipeline for the 5 incomplete data sources",
+    )
+    subparsers.add_parser(
+        "run-centaline-indices", help="Run Tranche 1 CCI/CRI/CSI ingestion only"
+    )
+    subparsers.add_parser(
+        "run-midland-monthly", help="Run Tranche 2 Midland monthly ingestion only"
+    )
+    subparsers.add_parser(
+        "run-rvd-commercial", help="Run Tranche 3 RVD office/retail ingestion only"
+    )
     subparsers.add_parser(
         "run-hk-commercial-controls",
         help="Run SHKP Quarterly events, HK commercial asset master, RVD/C&SD/tourism controls",
     )
-    subparsers.add_parser("run-midland-snapshots", help="Run Tranche 4 Midland snapshot ingestion only")
-    subparsers.add_parser("run-policy-events", help="Run Tranche 5 policy-source and registry research contracts")
+    subparsers.add_parser(
+        "run-midland-snapshots", help="Run Tranche 4 Midland snapshot ingestion only"
+    )
+    subparsers.add_parser(
+        "run-policy-events",
+        help="Run Tranche 5 policy-source and registry research contracts",
+    )
     shkp_parser = subparsers.add_parser(
         "run-shkp-catalog",
         help="Refresh the bounded SHKP/SRPE project-universe and ownership-review catalog",
@@ -118,7 +154,134 @@ def main(argv: list[str] | None = None):
     shkp_parser.add_argument("--site-project-limit", type=int, default=50)
     shkp_parser.add_argument("--skip-site-facts", action="store_true")
     shkp_parser.add_argument("--skip-deep-documents", action="store_true")
-    shkp_parser.add_argument("--offline", action="store_true", help="Audit latest normalized snapshots without fetching")
+    shkp_parser.add_argument(
+        "--offline",
+        action="store_true",
+        help="Audit latest normalized snapshots without fetching",
+    )
+    shkp_refresh_parser = subparsers.add_parser(
+        "run-shkp-refresh",
+        help="Run the bounded SHKP project/transaction signal and financial-input refresh",
+    )
+    shkp_refresh_parser.add_argument("--timeout", type=float, default=45)
+    shkp_refresh_parser.add_argument("--max-pages", type=int)
+    shkp_refresh_parser.add_argument("--catalog-site-project-limit", type=int, default=0)
+    shkp_refresh_parser.add_argument("--catalog-max-manifest-developments", type=int, default=0)
+    shkp_refresh_parser.add_argument("--current-manifest-max-developments", type=int, default=25)
+    shkp_refresh_parser.add_argument("--recent-days", type=int, default=90)
+    shkp_refresh_parser.add_argument("--recent-years", type=int, default=2)
+    shkp_refresh_parser.add_argument("--refresh-after-days", type=int, default=7)
+    shkp_refresh_parser.add_argument("--include-older-active", action="store_true")
+    shkp_refresh_parser.add_argument("--transaction-max-phases", type=int, default=8)
+    shkp_refresh_parser.add_argument("--transaction-start-index", type=int, default=0)
+    shkp_refresh_parser.add_argument("--include-review", action="store_true")
+    shkp_refresh_parser.add_argument("--transaction-request-delay", type=float, default=0.25)
+    shkp_refresh_parser.add_argument("--financial-db", type=Path)
+    shkp_refresh_parser.add_argument(
+        "--skip-financial-data",
+        action="store_true",
+        help="Use the explicit official-only financial-input lane",
+    )
+    shkp_refresh_parser.add_argument("--include-price-history", action="store_true")
+    shkp_refresh_parser.add_argument(
+        "--no-strict",
+        action="store_true",
+        help="Return a status payload instead of failing the command on required-step errors",
+    )
+    sino_parser = subparsers.add_parser(
+        "run-sino-land-tracking",
+        help="Refresh the generic developer-tracking minimum viable dataset for Sino Land (0083.HK)",
+    )
+    sino_parser.add_argument("--timeout", type=float, default=60)
+    sino_parser.add_argument(
+        "--max-pages",
+        type=int,
+        help="Bound each official Sino catalog category to this many API pages; omit for full pagination",
+    )
+    sino_parser.add_argument(
+        "--max-site-projects",
+        type=int,
+        default=0,
+        help="Also fetch up to this many official project websites for role evidence (default: 0)",
+    )
+    sino_parser.add_argument(
+        "--max-srpe-manifest-projects",
+        type=int,
+        default=8,
+        help="Fetch SRPE document manifests for up to this many eligible recent projects (default: 8)",
+    )
+    sino_parser.add_argument(
+        "--max-srpe-transaction-documents",
+        type=int,
+        default=8,
+        help="Download and parse up to this many latest SRPE transaction registers (default: 8)",
+    )
+    sino_parser.add_argument(
+        "--max-srpe-price-list-documents",
+        type=int,
+        default=8,
+        help="Download and parse up to this many latest SRPE price lists (default: 8)",
+    )
+    sino_parser.add_argument(
+        "--srpe-request-delay",
+        type=float,
+        default=0.2,
+        help="Delay between SRPE manifest requests in seconds (default: 0.2)",
+    )
+    sino_parser.add_argument(
+        "--no-persist",
+        action="store_true",
+        help="Build the frames without writing normalized snapshots",
+    )
+    sino_bridge_parser = subparsers.add_parser(
+        "run-sino-residential-bridge",
+        help="Build the research-only Sino Hong Kong residential contract-to-revenue timing bridge",
+    )
+    sino_bridge_parser.add_argument("--no-persist", action="store_true")
+    sino_financial_parser = subparsers.add_parser(
+        "run-sino-land-financial-model",
+        help="Build issuer-specific Sino Land official facts, project comparison and data-quality checks",
+    )
+    sino_financial_parser.add_argument("--financial-db", type=Path)
+    sino_financial_parser.add_argument("--no-persist", action="store_true")
+    sino_financial_parser.add_argument(
+        "--skip-financial-data",
+        action="store_true",
+        help="Persist official facts and project QA without reading the sibling financial-data DuckDB",
+    )
+    sino_forecast_parser = subparsers.add_parser(
+        "run-sino-land-forecast-inputs",
+        help="Build the tagged Sino Land forecast-input contract without fitting a model",
+    )
+    sino_forecast_parser.add_argument("--financial-db", type=Path)
+    sino_forecast_parser.add_argument("--no-persist", action="store_true")
+    sino_forecast_parser.add_argument(
+        "--skip-financial-data",
+        action="store_true",
+        help="Build only official facts, Hong Kong scope controls and the research bridge",
+    )
+    sino_forecast_parser.add_argument(
+        "--use-persisted-financial-fallback",
+        action="store_true",
+        help="If the sibling DuckDB is unreadable, use latest non-empty normalized actual/consensus snapshots; these rows remain non-PIT-clean",
+    )
+    sino_nowcast_parser = subparsers.add_parser(
+        "run-sino-land-h1-nowcast",
+        help="Build transparent Sino Land H1-to-FY group baseline and segment shape scenarios",
+    )
+    sino_nowcast_parser.add_argument("--no-persist", action="store_true")
+    sino_h1_history_parser = subparsers.add_parser(
+        "run-sino-land-h1-history",
+        help="Fetch and parse the official Sino Land interim-report H1 history",
+    )
+    sino_h1_history_parser.add_argument("--timeout", type=float, default=60)
+    sino_h1_history_parser.add_argument("--no-persist", action="store_true")
+    srpe_index_parser = subparsers.add_parser(
+        "run-srpe-index",
+        help="Refresh and persist the official SRPE all-development index",
+    )
+    srpe_index_parser.add_argument("--timeout", type=float, default=30)
+    srpe_index_parser.add_argument("--no-persist", action="store_true")
     history_parser = subparsers.add_parser(
         "run-shkp-history-milestones",
         help="Fetch and persist the official SHKP History and Milestones project-evidence layer",
@@ -133,7 +296,9 @@ def main(argv: list[str] | None = None):
         help="Bounded official SHKP annual-report project evidence backfill",
     )
     annual_backfill_parser.add_argument("--max-reports", type=int, default=3)
-    annual_backfill_parser.add_argument("--report-id", action="append", dest="report_ids")
+    annual_backfill_parser.add_argument(
+        "--report-id", action="append", dest="report_ids"
+    )
     annual_backfill_parser.add_argument("--timeout", type=float, default=120)
     manifest_backfill_parser = subparsers.add_parser(
         "run-shkp-historical-phase-manifest-backfill",
@@ -152,13 +317,47 @@ def main(argv: list[str] | None = None):
     )
     current_manifest_parser.add_argument("--max-developments", type=int, default=25)
     current_manifest_parser.add_argument("--timeout", type=float, default=30)
+    current_manifest_parser.add_argument(
+        "--recent-days",
+        type=int,
+        default=90,
+        help="Keep phases with an SRPE register/price-list/sales-arrangement filing this many days (default: 90)",
+    )
+    current_manifest_parser.add_argument(
+        "--recent-years",
+        type=int,
+        default=2,
+        help="Also keep phases first published by SRPE within this many years (default: 2)",
+    )
+    current_manifest_parser.add_argument(
+        "--refresh-after-days",
+        type=int,
+        default=7,
+        help="Refresh an eligible phase when its latest known filing is older than this many days (default: 7)",
+    )
+    current_manifest_parser.add_argument(
+        "--include-older-active",
+        action="store_true",
+        help="Include every active phase; use only for an explicit coverage audit",
+    )
+    current_manifest_parser.add_argument(
+        "--allow-noop",
+        action="store_true",
+        help="Treat an up-to-date candidate queue as a successful no-op instead of an error",
+    )
+    health_parser = subparsers.add_parser(
+        "run-shkp-srpe-transaction-health",
+        help="Build the SHKP/SRPE transaction-register data-health monitor",
+    )
     transaction_backfill_parser = subparsers.add_parser(
         "run-shkp-historical-transaction-backfill",
         help="Parse all available SRPE transaction registers for routed inactive SHKP phases",
     )
     transaction_backfill_parser.add_argument("--max-phases", type=int, default=8)
     transaction_backfill_parser.add_argument("--timeout", type=float, default=30)
-    transaction_backfill_parser.add_argument("--request-delay", type=float, default=0.25)
+    transaction_backfill_parser.add_argument(
+        "--request-delay", type=float, default=0.25
+    )
     transaction_backfill_parser.add_argument(
         "--phase-ids",
         type=str,
@@ -186,6 +385,11 @@ def main(argv: list[str] | None = None):
         "--include-price-history",
         action="store_true",
         help="Fetch and persist Yahoo daily OHLCV/adjusted-close history in this model run",
+    )
+    model_parser.add_argument(
+        "--skip-financial-data",
+        action="store_true",
+        help="Build official SHKP model inputs without reading the private sibling financial-data DuckDB",
     )
     model_parser.add_argument("--price-start-date", default="2010-01-01")
     model_parser.add_argument("--price-end-date")
@@ -248,6 +452,23 @@ def main(argv: list[str] | None = None):
         "--include-review",
         action="store_true",
         help="Include matched_needs_review and ambiguous candidates after exact matches",
+    )
+    transaction_scratch_parser.add_argument(
+        "--recent-days",
+        type=int,
+        default=90,
+        help="Keep phases with a recent SRPE filing this many days (default: 90)",
+    )
+    transaction_scratch_parser.add_argument(
+        "--recent-years",
+        type=int,
+        default=2,
+        help="Also keep phases first published by SRPE within this many years (default: 2)",
+    )
+    transaction_scratch_parser.add_argument(
+        "--include-older-active",
+        action="store_true",
+        help="Include every active phase; use only for an explicit coverage audit",
     )
     transaction_scratch_parser.add_argument("--timeout", type=float, default=30)
     transaction_scratch_parser.add_argument("--request-delay", type=float, default=0.25)
@@ -339,10 +560,14 @@ def main(argv: list[str] | None = None):
         default="core_pilot",
         help="Registry pilot_group used when --projects is omitted",
     )
-    srpe_parser.add_argument("--registry-path", type=Path, default=SRPE_PROJECT_REGISTRY_PATH)
+    srpe_parser.add_argument(
+        "--registry-path", type=Path, default=SRPE_PROJECT_REGISTRY_PATH
+    )
     srpe_parser.add_argument("--since", help="Minimum PASP/price-list date, YYYY-MM-DD")
     srpe_parser.add_argument("--until", help="Maximum PASP/price-list date, YYYY-MM-DD")
-    srpe_parser.add_argument("--price-selection", choices=("first_latest", "all"), default="first_latest")
+    srpe_parser.add_argument(
+        "--price-selection", choices=("first_latest", "all"), default="first_latest"
+    )
     srpe_parser.add_argument("--max-price-documents", type=int, default=0)
     srpe_parser.add_argument(
         "--all-transaction-documents",
@@ -383,36 +608,65 @@ def main(argv: list[str] | None = None):
                 end_year=args.end_year,
                 months=args.months,
             )
+            print(
+                "\nBD detailed project-history backfill completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-bd-project-history-local-reparse":
             results = run_bd_project_history_local_reparse()
-            print("\nBD detailed project-history local reparse completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nBD detailed project-history local reparse completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-bd-project-history-audit":
             results = run_bd_project_history_audit_backfill(
                 start_year=args.start_year,
                 end_year=args.end_year,
             )
-            print("\nBD detailed project-history backfill completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nBD detailed project-history backfill completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-incomplete-5":
             results = run_all_incomplete_pipelines()
-            print("\nIncomplete 5 Ingestion completed:\n" + json.dumps(results, indent=2))
+            print(
+                "\nIncomplete 5 Ingestion completed:\n" + json.dumps(results, indent=2)
+            )
         elif args.command == "run-centaline-indices":
             results = run_centaline_indices_pipeline()
-            print("\nCentaline Tranche 1 ingestion completed:\n" + json.dumps(results, indent=2))
+            print(
+                "\nCentaline Tranche 1 ingestion completed:\n"
+                + json.dumps(results, indent=2)
+            )
         elif args.command == "run-midland-monthly":
             results = run_midland_monthly_pipeline()
-            print("\nMidland Tranche 2 ingestion completed:\n" + json.dumps(results, indent=2))
+            print(
+                "\nMidland Tranche 2 ingestion completed:\n"
+                + json.dumps(results, indent=2)
+            )
         elif args.command == "run-rvd-commercial":
             results = run_rvd_commercial_pipeline()
-            print("\nRVD Tranche 3 ingestion completed:\n" + json.dumps(results, indent=2))
+            print(
+                "\nRVD Tranche 3 ingestion completed:\n" + json.dumps(results, indent=2)
+            )
         elif args.command == "run-hk-commercial-controls":
             results = run_hk_commercial_controls_pipeline()
-            print("\nHK commercial controls ingestion completed:\n" + json.dumps(results, indent=2))
+            print(
+                "\nHK commercial controls ingestion completed:\n"
+                + json.dumps(results, indent=2)
+            )
         elif args.command == "run-midland-snapshots":
             results = run_midland_snapshot_pipeline()
-            print("\nMidland Tranche 4 ingestion completed:\n" + json.dumps(results, indent=2))
+            print(
+                "\nMidland Tranche 4 ingestion completed:\n"
+                + json.dumps(results, indent=2)
+            )
         elif args.command == "run-policy-events":
             results = run_policy_event_research_pipeline()
-            print("\nPolicy/event Tranche 5 ingestion completed:\n" + json.dumps(results, indent=2))
+            print(
+                "\nPolicy/event Tranche 5 ingestion completed:\n"
+                + json.dumps(results, indent=2)
+            )
         elif args.command == "run-shkp-catalog":
             results = run_shkp_catalog(
                 timeout=args.timeout,
@@ -423,30 +677,164 @@ def main(argv: list[str] | None = None):
                 skip_deep_documents=args.skip_deep_documents,
                 offline=args.offline,
             )
-            print("\nSHKP project-universe catalog completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP project-universe catalog completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
+        elif args.command == "run-shkp-refresh":
+            results = run_shkp_refresh(
+                timeout=args.timeout,
+                max_pages=args.max_pages,
+                catalog_site_project_limit=args.catalog_site_project_limit,
+                catalog_max_manifest_developments=args.catalog_max_manifest_developments,
+                current_manifest_max_developments=args.current_manifest_max_developments,
+                recent_days=args.recent_days,
+                recent_years=args.recent_years,
+                refresh_after_days=args.refresh_after_days,
+                include_older_active=args.include_older_active,
+                transaction_max_phases=args.transaction_max_phases,
+                transaction_start_index=args.transaction_start_index,
+                include_review=args.include_review,
+                transaction_request_delay=args.transaction_request_delay,
+                financial_db=args.financial_db,
+                load_financial_data=not args.skip_financial_data,
+                include_price_history=args.include_price_history,
+                strict=not args.no_strict,
+            )
+            print(
+                "\nSHKP bounded refresh completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
+        elif args.command == "run-sino-land-tracking":
+            results = run_sino_land_tracking(
+                timeout=args.timeout,
+                max_pages=args.max_pages,
+                max_site_projects=args.max_site_projects,
+                max_srpe_manifest_projects=args.max_srpe_manifest_projects,
+                max_srpe_transaction_documents=args.max_srpe_transaction_documents,
+                max_srpe_price_list_documents=args.max_srpe_price_list_documents,
+                srpe_request_delay=args.srpe_request_delay,
+                persist=not args.no_persist,
+            )
+            print(
+                "\nSino Land developer-tracking build completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
+        elif args.command == "run-sino-residential-bridge":
+            results = run_sino_residential_bridge(persist=not args.no_persist)
+            print(
+                "\nSino residential bridge completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
+        elif args.command == "run-sino-land-financial-model":
+            kwargs = {
+                "persist": not args.no_persist,
+                "load_financial_data": not args.skip_financial_data,
+            }
+            if args.financial_db:
+                kwargs["db_path"] = args.financial_db
+            results = run_sino_land_financial_model(**kwargs)
+            print(
+                "\nSino Land financial model input build completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
+        elif args.command == "run-sino-land-forecast-inputs":
+            kwargs = {
+                "persist": not args.no_persist,
+                "load_financial_data": not args.skip_financial_data,
+                "use_persisted_financial_fallback": args.use_persisted_financial_fallback,
+            }
+            if args.financial_db:
+                kwargs["db_path"] = args.financial_db
+            results = run_sino_land_forecast_inputs(**kwargs)
+            print(
+                "\nSino Land forecast-input contract build completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
+        elif args.command == "run-sino-land-h1-nowcast":
+            results = run_sino_land_h1_nowcast(persist=not args.no_persist)
+            print(
+                "\nSino Land H1 nowcast baseline completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
+        elif args.command == "run-sino-land-h1-history":
+            results = run_sino_land_h1_history(
+                persist=not args.no_persist,
+                timeout=args.timeout,
+            )
+            print(
+                "\nSino Land H1 history ingestion completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
+        elif args.command == "run-srpe-index":
+            frame = fetch_srpe_development_index(timeout=args.timeout)
+            if frame.empty:
+                raise RuntimeError(
+                    "SRPE development index returned zero rows; refusing to publish an empty refresh"
+                )
+            run_id = f"srpe-index-refresh-{uuid.uuid4()}"
+            normalized = None
+            if not args.no_persist:
+                normalized = save_normalized_dataset(
+                    "srpe_development_index",
+                    frame,
+                    run_id=run_id,
+                    raw_snapshots=list(frame.attrs.get("raw_snapshots") or []),
+                    source_urls=list(frame.attrs.get("source_urls") or []),
+                    lineage_metadata=frame.attrs.get("lineage_metadata"),
+                )
+            results = {
+                "run_id": run_id,
+                "rows": int(len(frame)),
+                "normalized": normalized,
+                "source_urls": list(frame.attrs.get("source_urls") or []),
+            }
+            print(
+                "\nSRPE development index refresh completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "build-shkp-historical-roster":
             results = build_shkp_historical_phase_roster()
-            print("\nSHKP historical phase roster completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP historical phase roster completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-historical-annual-backfill":
             results = run_shkp_historical_annual_backfill(
                 max_reports=args.max_reports,
                 report_ids=args.report_ids,
                 timeout=args.timeout,
             )
-            print("\nSHKP historical annual-report backfill completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP historical annual-report backfill completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-historical-phase-manifest-backfill":
             results = run_shkp_historical_phase_manifest_backfill(
                 max_developments=args.max_developments,
                 timeout=args.timeout,
                 include_unobserved=args.include_unobserved,
             )
-            print("\nSHKP historical phase manifest backfill completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP historical phase manifest backfill completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-current-manifest-backfill":
             results = run_shkp_current_manifest_backfill(
                 max_developments=args.max_developments,
                 timeout=args.timeout,
+                recent_days=args.recent_days,
+                recent_years=args.recent_years,
+                refresh_after_days=args.refresh_after_days,
+                include_older_active=args.include_older_active,
+                allow_noop=args.allow_noop,
             )
-            print("\nSHKP current manifest backfill completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP current manifest backfill completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
+        elif args.command == "run-shkp-srpe-transaction-health":
+            results = run_shkp_srpe_transaction_data_health()
         elif args.command == "run-shkp-historical-transaction-backfill":
             explicit_ids = (
                 [value.strip() for value in args.phase_ids.split(",") if value.strip()]
@@ -459,52 +847,89 @@ def main(argv: list[str] | None = None):
                 request_delay=args.request_delay,
                 phase_ids=explicit_ids,
             )
-            print("\nSHKP historical transaction backfill completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP historical transaction backfill completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-history-milestones":
             results = run_shkp_history_milestones(timeout=args.timeout)
-            print("\nSHKP History and Milestones ingestion completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP History and Milestones ingestion completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "import-shkp-land-registry":
             results = import_shkp_land_registry_csv(
                 args.csv_path,
                 last_verified_at=args.last_verified_at,
             )
-            print("\nSHKP Land Registry evidence import completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP Land Registry evidence import completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "import-shkp-phase-decisions":
             results = import_shkp_phase_attribution_decisions_csv(
                 args.csv_path,
                 last_verified_at=args.last_verified_at,
             )
-            print("\nSHKP phase-attribution decision import completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP phase-attribution decision import completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-financial-model":
             model_kwargs = {
                 "include_price_history": args.include_price_history,
                 "price_start_date": args.price_start_date,
                 "price_end_date": args.price_end_date,
+                "load_financial_data": not args.skip_financial_data,
             }
-            results = run_shkp_financial_model(db_path=args.financial_db, **model_kwargs) if args.financial_db else run_shkp_financial_model(**model_kwargs)
-            print("\nSHKP financial model input build completed:\n" + json.dumps(results, indent=2, default=str))
+            results = (
+                run_shkp_financial_model(db_path=args.financial_db, **model_kwargs)
+                if args.financial_db
+                else run_shkp_financial_model(**model_kwargs)
+            )
+            print(
+                "\nSHKP financial model input build completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-h1-backtest":
-            results = run_shkp_h1_backtest(timeout=args.timeout, request_delay=args.request_delay)
-            print("\nSHKP H1 actual/backtest build completed:\n" + json.dumps(results, indent=2, default=str))
+            results = run_shkp_h1_backtest(
+                timeout=args.timeout, request_delay=args.request_delay
+            )
+            print(
+                "\nSHKP H1 actual/backtest build completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-sales-handover-bridge":
             results = run_shkp_sales_handover_revenue_bridge()
-            print("\nSHKP sales/handover/revenue bridge build completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP sales/handover/revenue bridge build completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-price-history":
             results = run_shkp_price_history(
                 start_date=args.start_date,
                 end_date=args.end_date,
             )
-            print("\nSHKP price history ingestion completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP price history ingestion completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-forecast-backtest":
             results = run_shkp_forecast_backtest()
-            print("\nSHKP forecast/backtest research build completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP forecast/backtest research build completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-srpe-site-probe":
             results = run_shkp_srpe_site_probe(
                 max_phases=args.max_phases,
                 timeout=args.timeout,
                 request_delay=args.request_delay,
             )
-            print("\nSHKP SRPE site probe completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP SRPE site probe completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-srpe-rendered-site-probe":
             results = run_shkp_srpe_rendered_site_probe(
                 max_phases=args.max_phases,
@@ -513,76 +938,142 @@ def main(argv: list[str] | None = None):
                 request_delay=args.request_delay,
                 only_js_candidates=not args.all_candidates,
             )
-            print("\nSHKP SRPE rendered site probe completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP SRPE rendered site probe completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-srpe-transaction-scratch":
             results = run_shkp_srpe_transaction_scratch(
                 max_phases=args.max_phases,
                 start_index=args.start_index,
                 include_review=args.include_review,
+                recent_days=args.recent_days,
+                recent_years=args.recent_years,
+                include_older_active=args.include_older_active,
                 timeout=args.timeout,
                 request_delay=args.request_delay,
             )
-            print("\nSHKP SRPE transaction scratch completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP SRPE transaction scratch completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-srpe-signals":
             results = run_shkp_srpe_signal_contract()
-            print("\nSHKP SRPE signal contract completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP SRPE signal contract completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-indicative-signals":
             results = run_shkp_indicative_signal_contract()
-            print("\nSHKP indicative signal contract completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP indicative signal contract completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-all-history-signals":
             results = run_shkp_all_history_signal_contract()
-            print("\nSHKP all-history signal contract completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP all-history signal contract completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-indicative-sales-model":
             results = run_shkp_indicative_sales_model()
-            print("\nSHKP indicative sales model completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP indicative sales model completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-commercial-recurring":
             results = run_shkp_commercial_recurring_contract()
-            print("\nSHKP commercial recurring/Mainland coverage completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP commercial recurring/Mainland coverage completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-commercial-model":
             results = run_shkp_commercial_model()
-            print("\nSHKP commercial portfolio model completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP commercial portfolio model completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-earnings-bridge":
             results = run_shkp_earnings_bridge()
-            print("\nSHKP historical earnings bridge completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP historical earnings bridge completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-whole-company-model":
             results = run_shkp_whole_company_model()
-            print("\nSHKP whole-company earnings skeleton completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP whole-company earnings skeleton completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-handover-lag":
             results = run_shkp_handover_lag()
-            print("\nSHKP handover-lag analysis completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP handover-lag analysis completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-project-margin-model":
             results = run_shkp_project_margin_model()
-            print("\nSHKP project-mix margin model completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP project-mix margin model completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-margin-variant":
             results = run_shkp_margin_variant()
-            print("\nSHKP margin variant analysis completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP margin variant analysis completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-skeleton-backtest":
             results = run_shkp_skeleton_backtest()
-            print("\nSHKP skeleton backtest completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP skeleton backtest completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-skeleton-margin-decomposition":
             results = run_shkp_skeleton_margin_decomposition()
-            print("\nSHKP skeleton margin decomposition completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP skeleton margin decomposition completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-28hse-reconciliation":
             results = run_shkp_28hse_reconciliation()
-            print("\nSHKP 28Hse reconciliation completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP 28Hse reconciliation completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-ownership-priority":
             results = run_shkp_ownership_review_priority()
-            print("\nSHKP ownership review priority completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP ownership review priority completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-high-recall":
             results = run_shkp_high_recall_phase_candidates()
-            print("\nSHKP high-recall phase candidate layer completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP high-recall phase candidate layer completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-unknown-phase-probe":
             results = run_shkp_unknown_phase_probe(
                 timeout=args.timeout,
                 max_workers=args.max_workers,
             )
-            print("\nSHKP unknown-phase quick web probe completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP unknown-phase quick web probe completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-bd-history-crosswalk":
             results = run_shkp_bd_history_crosswalk()
-            print("\nSHKP historical BD crosswalk completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP historical BD crosswalk completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-shkp-bd-history-entity-review":
             results = run_shkp_bd_history_entity_resolution_review()
-            print("\nSHKP historical BD entity-resolution review completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSHKP historical BD entity-resolution review completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         elif args.command == "run-srpe-pilot":
             results = run_srpe_pilot(
                 registry_path=args.registry_path,
@@ -596,12 +1087,16 @@ def main(argv: list[str] | None = None):
                 transactions_only=args.transactions_only,
                 request_delay=args.request_delay,
             )
-            print("\nSRPE bounded pilot completed:\n" + json.dumps(results, indent=2, default=str))
+            print(
+                "\nSRPE bounded pilot completed:\n"
+                + json.dumps(results, indent=2, default=str)
+            )
         else:
             parser.print_help()
     except Exception as e:
         print(f"\nFATAL: Ingestion failed with error: {e}", file=sys.stderr)
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

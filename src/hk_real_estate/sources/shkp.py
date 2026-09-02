@@ -201,6 +201,10 @@ PIPELINE_DISCLOSURE_COLUMNS = [
     "publication_date",
     "evidence_status",
     "evidence_context",
+    "http_status",
+    "response_content_bytes",
+    "fetch_status",
+    "fetch_attempts",
     "source_url",
     "fetched_at",
 ]
@@ -1129,6 +1133,7 @@ SHKP_FUTURE_PROJECT_RESOLUTION_PLAN_COLUMNS = [
     "project_state",
     "asset_scope",
     "geography",
+    "publication_date",
     "source_url",
     "annual_document_url",
     "srpe_match_status",
@@ -1177,6 +1182,73 @@ SHKP_FUTURE_PROJECT_IDENTITY_EVIDENCE_COLUMNS = [
     "ownership_promotion_status",
     "next_step",
     "last_verified_at",
+]
+
+# Future-project evidence is intentionally event-sourced.  A new refresh adds
+# observations and never rewrites an older disclosure/identity/SRPE event.
+# Lifecycle states are separate from identity/ownership evidence so a failed
+# lookup or a missing SRPE row cannot be interpreted as a cancellation or zero
+# sales.
+SHKP_FUTURE_PROJECT_EVENT_COLUMNS = [
+    "event_id",
+    "event_key",
+    "canonical_project_id",
+    "project_label",
+    "aliases_json",
+    "asset_scope",
+    "event_type",
+    "event_date",
+    "event_date_semantics",
+    "state_before",
+    "state_after",
+    "lot_no",
+    "address",
+    "srpe_development_id",
+    "srpe_phase_name",
+    "units",
+    "gfa_sqft",
+    "expected_launch_window",
+    "expected_completion_window",
+    "ownership_low_pct",
+    "ownership_base_pct",
+    "ownership_high_pct",
+    "ownership_scenario_status",
+    "source_url",
+    "source_urls_json",
+    "source_dataset",
+    "evidence_status",
+    "evidence_key",
+    "sales_queue_status",
+    "observed_at",
+    "missing_data_policy",
+]
+
+SHKP_FUTURE_PROJECT_SNAPSHOT_COLUMNS = [
+    "canonical_project_id",
+    "project_label",
+    "aliases_json",
+    "asset_scope",
+    "current_state",
+    "state_event_date",
+    "state_event_type",
+    "lot_no",
+    "address",
+    "srpe_development_id",
+    "srpe_phase_name",
+    "units",
+    "gfa_sqft",
+    "expected_launch_window",
+    "expected_completion_window",
+    "ownership_low_pct",
+    "ownership_base_pct",
+    "ownership_high_pct",
+    "ownership_scenario_status",
+    "sales_queue_status",
+    "coverage_status",
+    "last_event_id",
+    "last_observed_at",
+    "source_urls_json",
+    "missing_data_policy",
 ]
 
 # A disclosure-level pipeline label is sometimes deliberately descriptive
@@ -4255,6 +4327,7 @@ def fetch_shkp_property_catalog(
     session: requests.Session | None = None,
     timeout: float = 60,
     max_pages: int | None = None,
+    tolerate_category_errors: bool = True,
 ) -> pd.DataFrame:
     """Fetch SHKP's current Hong Kong property-directory listings.
 
@@ -4279,91 +4352,118 @@ def fetch_shkp_property_catalog(
 
     for config in SHKP_LISTING_CONFIGS:
         landing_url = f"{SHKP_HK_PROPERTIES_BASE}/{config['path']}"
-        landing = client.get(landing_url, timeout=timeout)
-        landing.raise_for_status()
-        landing_raw = save_raw_snapshot(
-            f"shkp_{config['asset_type']}_{config['subtype']}_landing",
-            landing.content,
-            file_ext="html",
-            source_url=landing_url,
-        )
-        raw_snapshots.append(str(landing_raw))
-        source_urls.append(landing_url)
-        html = landing.text
-        page_href = _page_href(html, config["container_id"], landing_url)
-        total_pages = _page_total(html, config["container_id"])
-        if max_pages is not None:
-            total_pages = min(total_pages, max(1, int(max_pages)))
-
         category_rows = 0
-        for page_number in range(total_pages):
-            query = dict(config.get("query") or {})
-            query["page"] = page_number
-            query_text = urlencode(query)
-            endpoint_suffix = str(config.get("endpoint_suffix") or "").rstrip("/")
-            api_url = f"{page_href.rstrip('/')}{endpoint_suffix}/getList?{query_text}"
-            response = client.get(api_url, timeout=timeout)
-            response.raise_for_status()
-            raw_json = save_raw_snapshot(
-                f"shkp_{config['asset_type']}_{config['subtype']}_listing",
-                response.content,
-                file_ext="json",
-                source_url=api_url,
+        total_pages = 0
+        category_summary: dict[str, Any] = {
+            "asset_type": config["asset_type"],
+            "subtype": config["subtype"],
+            "pages_fetched": 0,
+            "rows_emitted": 0,
+            "source_page_url": landing_url,
+            "status": "failed",
+            "error_type": None,
+            "error": None,
+        }
+        try:
+            landing = client.get(landing_url, timeout=timeout)
+            # Save the body before status validation: a 999/403 HTML response
+            # is useful evidence of WAF/source drift and must not disappear.
+            landing_raw = save_raw_snapshot(
+                f"shkp_{config['asset_type']}_{config['subtype']}_landing",
+                getattr(landing, "content", getattr(landing, "text", "")),
+                file_ext="html",
+                source_url=landing_url,
             )
-            raw_snapshots.append(str(raw_json))
-            source_urls.append(api_url)
-            try:
-                payload = response.json()
-            except ValueError as first_error:
-                # The SHKP endpoint occasionally returns an HTML/empty 200
-                # response under transient WAF pressure.  Retry a bounded
-                # number of times, preserving the bad body in raw storage and
-                # failing with a useful endpoint preview if it persists.
-                payload = None
-                last_error: Exception = first_error
-                for retry in range(2):
-                    time.sleep(0.5 * (retry + 1))
-                    retry_response = client.get(api_url, timeout=timeout)
-                    retry_response.raise_for_status()
-                    retry_raw = save_raw_snapshot(
-                        f"shkp_{config['asset_type']}_{config['subtype']}_listing_retry",
-                        retry_response.content,
-                        file_ext="json",
-                        source_url=api_url,
-                    )
-                    raw_snapshots.append(str(retry_raw))
-                    try:
-                        payload = retry_response.json()
-                        break
-                    except ValueError as retry_error:
-                        last_error = retry_error
-                if payload is None:
-                    preview = response.text[:120].replace("\n", " ")
-                    raise ValueError(
-                        f"SHKP listing endpoint returned non-JSON after 3 attempts: "
-                        f"{api_url} (status={response.status_code}, preview={preview!r})"
-                    ) from last_error
-            if not isinstance(payload, list):
-                raise ValueError(f"SHKP listing endpoint returned non-list JSON: {api_url}")
-            normalized = _normalize_rows(
-                payload,
-                config=config,
-                source_page_url=landing_url,
-                source_url=api_url,
-                page_number=page_number,
-                fetched_at=fetched_at,
+            raw_snapshots.append(str(landing_raw))
+            source_urls.append(landing_url)
+            landing.raise_for_status()
+            html = landing.text
+            page_href = _page_href(html, config["container_id"], landing_url)
+            total_pages = _page_total(html, config["container_id"])
+            if max_pages is not None:
+                total_pages = min(total_pages, max(1, int(max_pages)))
+
+            for page_number in range(total_pages):
+                query = dict(config.get("query") or {})
+                query["page"] = page_number
+                query_text = urlencode(query)
+                endpoint_suffix = str(config.get("endpoint_suffix") or "").rstrip("/")
+                api_url = f"{page_href.rstrip('/')}{endpoint_suffix}/getList?{query_text}"
+                response = client.get(api_url, timeout=timeout)
+                raw_json = save_raw_snapshot(
+                    f"shkp_{config['asset_type']}_{config['subtype']}_listing",
+                    getattr(response, "content", getattr(response, "text", "")),
+                    file_ext="json",
+                    source_url=api_url,
+                )
+                raw_snapshots.append(str(raw_json))
+                source_urls.append(api_url)
+                response.raise_for_status()
+                try:
+                    payload = response.json()
+                except ValueError as first_error:
+                    # The SHKP endpoint occasionally returns an HTML/empty
+                    # 200 response under transient WAF pressure.  Retry a
+                    # bounded number of times while keeping each bad body.
+                    payload = None
+                    last_error: Exception = first_error
+                    for retry in range(2):
+                        time.sleep(0.5 * (retry + 1))
+                        retry_response = client.get(api_url, timeout=timeout)
+                        retry_raw = save_raw_snapshot(
+                            f"shkp_{config['asset_type']}_{config['subtype']}_listing_retry",
+                            getattr(retry_response, "content", getattr(retry_response, "text", "")),
+                            file_ext="json",
+                            source_url=api_url,
+                        )
+                        raw_snapshots.append(str(retry_raw))
+                        try:
+                            retry_response.raise_for_status()
+                            payload = retry_response.json()
+                            break
+                        except (ValueError, requests.RequestException) as retry_error:
+                            last_error = retry_error
+                    if payload is None:
+                        preview = str(getattr(response, "text", ""))[:120].replace("\n", " ")
+                        raise ValueError(
+                            f"SHKP listing endpoint returned non-JSON after 3 attempts: "
+                            f"{api_url} (status={getattr(response, 'status_code', None)}, preview={preview!r})"
+                        ) from last_error
+                if not isinstance(payload, list):
+                    raise ValueError(f"SHKP listing endpoint returned non-list JSON: {api_url}")
+                normalized = _normalize_rows(
+                    payload,
+                    config=config,
+                    source_page_url=landing_url,
+                    source_url=api_url,
+                    page_number=page_number,
+                    fetched_at=fetched_at,
+                )
+                records.extend(normalized)
+                category_rows += len(normalized)
+            category_summary.update(
+                {
+                    "pages_fetched": total_pages,
+                    "rows_emitted": category_rows,
+                    "status": "success",
+                }
             )
-            records.extend(normalized)
-            category_rows += len(normalized)
-        fetch_summary.append(
-            {
-                "asset_type": config["asset_type"],
-                "subtype": config["subtype"],
-                "pages_fetched": total_pages,
-                "rows_emitted": category_rows,
-                "source_page_url": landing_url,
-            }
-        )
+        except Exception as exc:
+            category_summary.update(
+                {
+                    "pages_fetched": total_pages,
+                    "rows_emitted": category_rows,
+                    "error_type": type(exc).__name__,
+                    "error": str(exc),
+                }
+            )
+            fetch_summary.append(category_summary)
+            if not tolerate_category_errors:
+                raise
+            # A single WAF/HTML/schema failure must not erase successful
+            # residential/office/mall categories from the same refresh.
+            continue
+        fetch_summary.append(category_summary)
 
     frame = pd.DataFrame(records, columns=CATALOG_COLUMNS)
     if not frame.empty:
@@ -4376,6 +4476,9 @@ def fetch_shkp_property_catalog(
         lineage_metadata={
             "lineage_type": "official_website_json_catalog",
             "fetch_summary": fetch_summary,
+            "partial_source_refresh": any(item.get("status") == "failed" for item in fetch_summary),
+            "failed_category_count": sum(item.get("status") == "failed" for item in fetch_summary),
+            "tolerate_category_errors": bool(tolerate_category_errors),
             "industrial_page_note": "static photo album; no project JSON endpoint emitted",
         },
     )
@@ -9248,6 +9351,7 @@ def build_shkp_future_project_resolution_plan(
                 "project_state": _text(record.get("project_state")),
                 "asset_scope": asset_scope,
                 "geography": _text(record.get("geography")),
+                "publication_date": _text(record.get("publication_date")),
                 "source_url": source_url,
                 "annual_document_url": annual_url,
                 "srpe_match_status": match_status,
@@ -9308,6 +9412,514 @@ def build_shkp_future_project_resolution_plan(
     if not frame.empty:
         frame = frame.sort_values(["resolution_priority", "pipeline_registry_key"], kind="stable").reset_index(drop=True)
     return frame
+
+
+def _future_clean_text(value: Any) -> str | None:
+    """Scalar text helper shared by the future-project event/snapshot builders."""
+    if value is None:
+        return None
+    try:
+        if pd.isna(value):
+            return None
+    except (TypeError, ValueError):
+        pass
+    value_text = str(value).strip()
+    return value_text or None
+
+
+def build_shkp_future_project_events(
+    pipeline_disclosures: pd.DataFrame | None,
+    pipeline_registry: pd.DataFrame | None,
+    resolution_plan: pd.DataFrame | None = None,
+    identity_evidence: pd.DataFrame | None = None,
+    srpe_index: pd.DataFrame | None = None,
+    *,
+    prior_events: pd.DataFrame | None = None,
+    ownership_observations: pd.DataFrame | None = None,
+    observed_at: str | None = None,
+) -> pd.DataFrame:
+    """Build an append-only event log for SHKP future projects.
+
+    The source layers deliberately have different grains: an issuer
+    disclosure is a project-level dated observation, an identity bridge may
+    only resolve a lot, and SRPE is a phase-level lifecycle snapshot.  This
+    function keeps those observations as separate events and only emits a
+    lifecycle state when the source explicitly supports one.  Missing SRPE,
+    units, GFA, ownership or sales documents remain ``not_observed``/null;
+    they are never converted into cancellation or zero sales.
+    """
+    pipeline = pipeline_registry.copy() if pipeline_registry is not None else pd.DataFrame()
+    disclosures = pipeline_disclosures.copy() if pipeline_disclosures is not None else pd.DataFrame()
+    resolution = resolution_plan.copy() if resolution_plan is not None else pd.DataFrame()
+    identity = identity_evidence.copy() if identity_evidence is not None else pd.DataFrame()
+    srpe = srpe_index.copy() if srpe_index is not None else pd.DataFrame()
+    prior = prior_events.copy() if prior_events is not None else pd.DataFrame()
+    now = observed_at or datetime.now(timezone.utc).isoformat()
+
+    def text(value: Any) -> str | None:
+        if value is None:
+            return None
+        try:
+            if pd.isna(value):
+                return None
+        except (TypeError, ValueError):
+            pass
+        value_text = str(value).strip()
+        return value_text or None
+
+    def split_ids(value: Any) -> list[str]:
+        raw = text(value)
+        if not raw:
+            return []
+        return list(dict.fromkeys(item.strip() for item in raw.split("|") if item.strip()))
+
+    def normalize_date(value: Any) -> str | None:
+        raw = text(value)
+        if not raw:
+            return None
+        parsed = pd.to_datetime(raw, errors="coerce", utc=True)
+        if pd.isna(parsed):
+            return raw[:10] if re.match(r"^\d{4}-\d{2}-\d{2}", raw) else None
+        return parsed.date().isoformat()
+
+    def lifecycle_state(value: Any) -> str | None:
+        status = (text(value) or "").casefold()
+        return {
+            "planned_launch_10m": "planned_launch",
+            "planned_sale_10m": "planned_launch",
+            "planned_launch": "planned_launch",
+            "under_development": "under_development",
+            "planned": "planned_launch",
+        }.get(status)
+
+    def srpe_lifecycle(row: Mapping[str, Any]) -> str:
+        if text(row.get("srpe_is_deleted") or row.get("isDeleted")) in {"Y", "y", "1", "true", "True"}:
+            return "deleted"
+        if text(row.get("srpe_date_complete_sales") or row.get("dateCompleteSales")):
+            return "completed"
+        if (text(row.get("active")) or "").upper() == "Y":
+            return "active"
+        if text(row.get("srpe_date_suspend_sales") or row.get("dateSuspendSales")):
+            return "suspended"
+        if (text(row.get("active")) or "").upper() == "N":
+            return "inactive"
+        return "unknown"
+
+    srpe_by_id = {
+        str(row.get("development_id") or "").strip(): row
+        for row in srpe.to_dict("records")
+        if text(row.get("development_id"))
+    }
+    resolution_by_key = {
+        text(row.get("pipeline_registry_key")): row
+        for row in resolution.to_dict("records")
+        if text(row.get("pipeline_registry_key"))
+    }
+    identity_by_label: dict[str, list[dict[str, Any]]] = {}
+    for row in identity.to_dict("records"):
+        key = _normalized_name(row.get("project_label"))
+        if key:
+            identity_by_label.setdefault(key, []).append(row)
+
+    # Numeric observations are deliberately labelled snapshots, not legal
+    # effective intervals.  They can populate a scenario band for review but
+    # never make the sales gate ready.
+    numeric_ownership: dict[str, tuple[float | None, float | None, float | None, str]] = {}
+    if ownership_observations is not None and not ownership_observations.empty:
+        for phase_id, group in ownership_observations.groupby(
+            ownership_observations.get("srpe_development_id", pd.Series(dtype="string")).astype(str),
+            dropna=False,
+        ):
+            values = pd.to_numeric(group.get("ownership_pct"), errors="coerce").dropna().tolist()
+            if not values or not text(phase_id):
+                continue
+            numeric_ownership[str(phase_id)] = (
+                float(min(values)),
+                float(pd.Series(values).median()),
+                float(max(values)),
+                "observed_snapshot_not_interval" if len(set(values)) == 1 else "observed_range_not_interval",
+            )
+
+    def ownership_fields(phase_id: str | None) -> tuple[float | None, float | None, float | None, str]:
+        return numeric_ownership.get(str(phase_id), (None, None, None, "not_observed"))
+
+    def project_id(label: Any, linked_id: Any = None) -> str:
+        phase_id = text(linked_id)
+        if phase_id:
+            return f"srpe:{phase_id}"
+        normalized = _normalized_name(label)
+        return f"pipeline:{normalized or 'unidentified'}"
+
+    def source_urls(*values: Any) -> list[str]:
+        urls: list[str] = []
+        for value in values:
+            if isinstance(value, (list, tuple, set)):
+                items = value
+            else:
+                items = [value]
+            for item in items:
+                candidate = text(item)
+                if candidate and candidate not in urls:
+                    urls.append(candidate)
+        return urls
+
+    rows: list[dict[str, Any]] = []
+
+    def append_event(
+        *,
+        canonical_id: str,
+        label: Any,
+        aliases: Iterable[Any] = (),
+        asset_scope: Any,
+        event_type: str,
+        event_date: Any,
+        event_date_semantics: str,
+        state_after: Any = None,
+        srpe_id: Any = None,
+        phase_name: Any = None,
+        lot_no: Any = None,
+        address: Any = None,
+        units: Any = None,
+        gfa_sqft: Any = None,
+        expected_launch_window: Any = None,
+        expected_completion_window: Any = None,
+        source_url: Any = None,
+        source_url_list: Iterable[Any] = (),
+        source_dataset: str,
+        evidence_status: Any,
+        evidence_key: Any,
+        sales_queue_status: Any,
+        ownership: tuple[float | None, float | None, float | None, str],
+        state_before: Any = None,
+    ) -> None:
+        urls = source_urls(source_url, source_url_list)
+        date_value = normalize_date(event_date)
+        event_payload = "|".join(
+            text(value) or ""
+            for value in (
+                canonical_id,
+                event_type,
+                date_value,
+                text(evidence_key),
+                text(source_url),
+                text(srpe_id),
+                text(state_after),
+            )
+        )
+        event_key = hashlib.sha256(event_payload.encode("utf-8")).hexdigest()
+        rows.append(
+            {
+                "event_id": f"shkp-future-event-{event_key[:20]}",
+                "event_key": event_key,
+                "canonical_project_id": canonical_id,
+                "project_label": text(label),
+                "aliases_json": json.dumps(
+                    list(dict.fromkeys(text(value) for value in aliases if text(value))),
+                    ensure_ascii=False,
+                ),
+                "asset_scope": text(asset_scope) or "residential_first_hand_or_unknown",
+                "event_type": event_type,
+                "event_date": date_value,
+                "event_date_semantics": event_date_semantics,
+                "state_before": text(state_before),
+                "state_after": text(state_after),
+                "lot_no": text(lot_no),
+                "address": text(address),
+                "srpe_development_id": text(srpe_id),
+                "srpe_phase_name": text(phase_name),
+                "units": units,
+                "gfa_sqft": gfa_sqft,
+                "expected_launch_window": text(expected_launch_window),
+                "expected_completion_window": text(expected_completion_window),
+                "ownership_low_pct": ownership[0],
+                "ownership_base_pct": ownership[1],
+                "ownership_high_pct": ownership[2],
+                "ownership_scenario_status": ownership[3],
+                "source_url": urls[0] if urls else None,
+                "source_urls_json": json.dumps(urls, ensure_ascii=False),
+                "source_dataset": source_dataset,
+                "evidence_status": text(evidence_status) or "not_observed",
+                "evidence_key": text(evidence_key),
+                "sales_queue_status": text(sales_queue_status) or "not_evaluated",
+                "observed_at": now,
+                "missing_data_policy": "unknown_is_not_zero; no_srpe_is_not_no_sales",
+            }
+        )
+
+    for record in pipeline.to_dict("records"):
+        registry_key = text(record.get("pipeline_registry_key"))
+        if not registry_key:
+            continue
+        plan = resolution_by_key.get(registry_key, {})
+        label = text(record.get("project_label"))
+        linked_id = text(plan.get("linked_srpe_development_id"))
+        candidate_ids = split_ids(record.get("srpe_candidate_ids"))
+        commercial = (text(plan.get("asset_scope")) or "").startswith("commercial")
+        asset_scope = text(plan.get("asset_scope")) or (
+            "commercial_investment_or_bot" if commercial else "residential_first_hand_or_unknown"
+        )
+        identity_rows = identity_by_label.get(_normalized_name(label), [])
+        aliases = [row.get("phase_label") for row in identity_rows]
+        aliases.extend(candidate_ids)
+        pipeline_state = lifecycle_state(record.get("project_state"))
+        evidence_status = text(record.get("evidence_status")) or "not_observed"
+        # ``not_found`` means the current HTML fetch did not expose the
+        # configured phrase; it is not evidence that the issuer withdrew the
+        # project.  Keep the disclosure's dated planned/development state in
+        # the event log, but keep the source gap visible and do not open the
+        # sales queue.  Only a genuinely unevaluated source suppresses the
+        # configured state.
+        if evidence_status in {"not_observed", "not_evaluated", ""}:
+            pipeline_state = None
+        pipeline_event_state = None if linked_id else ("commercial_under_development" if commercial else pipeline_state)
+        queue_status = (
+            "not_applicable_non_residential" if commercial else
+            "eligible_for_recent_srpe_queue" if linked_id else
+            "not_ready_srpe_pending" if evidence_status == "found" else
+            "not_evaluated_source_gap"
+        )
+        ownership = ownership_fields(linked_id)
+        append_event(
+            canonical_id=project_id(label, linked_id),
+            label=label,
+            aliases=aliases,
+            asset_scope=asset_scope,
+            event_type="pipeline_disclosure",
+            event_date=record.get("publication_date"),
+            event_date_semantics="issuer_publication_date",
+            state_after=pipeline_event_state,
+            srpe_id=linked_id,
+            phase_name=(srpe_by_id.get(linked_id) or {}).get("phase_name_en"),
+            lot_no=plan.get("identity_bridge_lot_nos"),
+            address=record.get("geography"),
+            expected_launch_window=(
+                "within_10_months_of_publication"
+                if text(record.get("project_state")) in {"planned_launch_10m", "planned_sale_10m"}
+                else None
+            ),
+            source_url=record.get("source_url"),
+            source_dataset="shkp_pipeline_project_registry",
+            evidence_status=evidence_status,
+            evidence_key=registry_key,
+            sales_queue_status=queue_status,
+            ownership=ownership,
+        )
+
+    # Identity events are retained even when they have no SRPE ID.  They are
+    # the bridge that lets a future refresh promote a project automatically.
+    for record in identity.to_dict("records"):
+        label = text(record.get("project_label"))
+        linked_id = text(record.get("srpe_development_id"))
+        commercial = (text(record.get("asset_scope")) or "").startswith("commercial")
+        append_event(
+            canonical_id=project_id(label, linked_id),
+            label=label,
+            aliases=[record.get("phase_label")],
+            asset_scope=record.get("asset_scope"),
+            event_type="identity_bridge",
+            event_date=record.get("evidence_date"),
+            event_date_semantics="identity_evidence_date",
+            state_after=None,
+            srpe_id=linked_id,
+            phase_name=record.get("phase_label"),
+            lot_no=record.get("lot_no_raw"),
+            address=record.get("address_raw"),
+            source_url=record.get("primary_source_url"),
+            source_url_list=[record.get("secondary_source_url")],
+            source_dataset="shkp_future_project_identity_evidence",
+            evidence_status="found",
+            evidence_key=record.get("identity_evidence_id"),
+            sales_queue_status=("not_applicable_non_residential" if commercial else "not_ready_srpe_pending"),
+            ownership=ownership_fields(linked_id),
+        )
+
+    # Every explicitly identified SRPE phase gets one lifecycle event.  This
+    # is the promotion hook: an active phase is queue-eligible even if the
+    # marketing directory has not yet listed it.
+    linked_ids = set()
+    for record in resolution.to_dict("records"):
+        linked = text(record.get("linked_srpe_development_id"))
+        if linked:
+            linked_ids.add(linked)
+    # Identity evidence can resolve a phase before the issuer disclosure
+    # resolver has a one-to-one link (for example a shared development with a
+    # phase-specific official site).  Once an SRPE id is known there too, use
+    # the same lifecycle/queue promotion hook.
+    for record in identity.to_dict("records"):
+        linked = text(record.get("srpe_development_id"))
+        if linked and not (text(record.get("asset_scope")) or "").startswith("commercial"):
+            linked_ids.add(linked)
+    for phase_id in sorted(linked_ids):
+        phase = srpe_by_id.get(phase_id)
+        if not phase:
+            continue
+        lifecycle = srpe_lifecycle(phase)
+        state = {
+            "active": "srpe_active_prelaunch",
+            "suspended": "sales_suspended",
+            "completed": "sales_completed",
+            "deleted": "deleted",
+            "inactive": "srpe_inactive",
+            "unknown": "srpe_lifecycle_unknown",
+        }.get(lifecycle, "srpe_lifecycle_unknown")
+        event_date = (
+            phase.get("srpe_date_complete_sales")
+            or phase.get("srpe_date_suspend_sales")
+            or phase.get("srpe_earliest_publication")
+        )
+        event_semantics = (
+            "srpe_completion_date" if phase.get("srpe_date_complete_sales") else
+            "srpe_suspension_date" if phase.get("srpe_date_suspend_sales") else
+            "srpe_earliest_publication"
+        )
+        labels = [phase.get("development_name_en"), phase.get("phase_name_en")]
+        linked_labels = resolution.loc[
+            resolution.get("linked_srpe_development_id", pd.Series(dtype="string")).astype("string").eq(phase_id)
+        ] if not resolution.empty and "linked_srpe_development_id" in resolution.columns else pd.DataFrame()
+        labels.extend(linked_labels.get("project_label", pd.Series(dtype="string")).tolist())
+        queue = "eligible_for_recent_srpe_queue" if lifecycle == "active" else "not_eligible_terminal_or_suspended"
+        append_event(
+            canonical_id=f"srpe:{phase_id}",
+            label=next((text(value) for value in labels if text(value)), phase_id),
+            aliases=labels,
+            asset_scope="residential_first_hand_or_unknown",
+            event_type="srpe_lifecycle_observation",
+            event_date=event_date,
+            event_date_semantics=event_semantics,
+            state_after=state,
+            srpe_id=phase_id,
+            phase_name=phase.get("phase_name_en"),
+            address=phase.get("address_en"),
+            source_url=phase.get("source_url") or "https://www.srpe.gov.hk/opip/all_development",
+            source_dataset="srpe_development_index",
+            evidence_status="found",
+            evidence_key=f"srpe:{phase_id}:{lifecycle}",
+            sales_queue_status=queue,
+            ownership=ownership_fields(phase_id),
+        )
+
+    current = pd.DataFrame(rows, columns=SHKP_FUTURE_PROJECT_EVENT_COLUMNS)
+    frames = [frame.reindex(columns=SHKP_FUTURE_PROJECT_EVENT_COLUMNS) for frame in (prior, current) if frame is not None and not frame.empty]
+    merged = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=SHKP_FUTURE_PROJECT_EVENT_COLUMNS)
+    if not merged.empty:
+        merged = merged.drop_duplicates(subset=["event_key"], keep="last").reset_index(drop=True)
+        merged = merged.sort_values(["event_date", "canonical_project_id", "event_id"], kind="stable", na_position="last").reset_index(drop=True)
+    merged.attrs.update(
+        lineage_metadata={
+            "lineage_type": "shkp_future_project_append_only_events",
+            "append_only": True,
+            "dedupe_key": "event_key",
+            "current_observation_rows": int(len(current)),
+            "prior_event_rows": int(len(prior)),
+            "merged_event_rows": int(len(merged)),
+            "missing_data_policy": "unknown_is_not_zero; no_srpe_is_not_no_sales",
+            "ownership_inference": False,
+            "sales_promotion": "active linked SRPE phases are marked queue-eligible; legal ownership remains gated",
+        },
+        source_urls=list(dict.fromkeys(
+            str(value)
+            for frame in (pipeline, disclosures, identity, srpe)
+            for value in frame.attrs.get("source_urls", [])
+            if value
+        )),
+    )
+    return merged
+
+
+def build_shkp_future_project_snapshot(events: pd.DataFrame | None) -> pd.DataFrame:
+    """Derive the latest future-project state without imputing missing sales."""
+    frame = events.copy() if events is not None else pd.DataFrame()
+    if frame.empty:
+        return pd.DataFrame(columns=SHKP_FUTURE_PROJECT_SNAPSHOT_COLUMNS)
+    for column in SHKP_FUTURE_PROJECT_EVENT_COLUMNS:
+        if column not in frame.columns:
+            frame[column] = pd.NA
+    state_events = frame.loc[frame["state_after"].notna()].copy()
+    rows: list[dict[str, Any]] = []
+    for canonical_id, group in frame.groupby("canonical_project_id", dropna=False, sort=True):
+        group = group.copy()
+        lifecycle = state_events.loc[state_events["canonical_project_id"].eq(canonical_id)].copy()
+        if lifecycle.empty:
+            latest_state = None
+            latest_state_event = None
+            identity_only = group.loc[group["event_type"].eq("identity_bridge")]
+            if not identity_only.empty and not (
+                group["asset_scope"].fillna("").astype(str).str.startswith("commercial").all()
+            ):
+                # A lot/alias bridge without an SRPE id is an explicit
+                # ``srpe_pending`` state, not an empty/zero-sales state.
+                latest_state_event = identity_only.sort_values(
+                    "observed_at", kind="stable", na_position="last"
+                ).iloc[-1].to_dict()
+                latest_state = "srpe_pending"
+        else:
+            lifecycle["_event_date"] = pd.to_datetime(lifecycle["event_date"], errors="coerce", utc=True)
+            lifecycle["_observed_at"] = pd.to_datetime(lifecycle["observed_at"], errors="coerce", utc=True)
+            lifecycle = lifecycle.sort_values(["_event_date", "_observed_at", "event_id"], kind="stable", na_position="last")
+            latest_state_event = lifecycle.iloc[-1].to_dict()
+            latest_state = _future_clean_text(latest_state_event.get("state_after"))
+        latest = group.sort_values("observed_at", kind="stable", na_position="last").iloc[-1].to_dict()
+        state_record = latest_state_event or latest
+        urls: list[str] = []
+        for value in group.get("source_urls_json", pd.Series(dtype="string")).tolist():
+            try:
+                parsed = json.loads(value) if value else []
+            except (TypeError, ValueError, json.JSONDecodeError):
+                parsed = []
+            if isinstance(parsed, list):
+                urls.extend(str(item) for item in parsed if _future_clean_text(item))
+        urls.extend(str(value) for value in group.get("source_url", pd.Series(dtype="string")).tolist() if _future_clean_text(value))
+        urls = list(dict.fromkeys(urls))
+        commercial = (_future_clean_text(latest.get("asset_scope")) or "").startswith("commercial") or (_future_clean_text(latest_state) or "").startswith("commercial")
+        if commercial:
+            coverage = "commercial_separate_registry"
+        elif latest_state in {"srpe_active_prelaunch"}:
+            coverage = "srpe_identity_known_sales_queue_candidate"
+        elif latest_state in {"planned_launch", "under_development", "srpe_pending", "srpe_lifecycle_unknown"}:
+            coverage = "future_project_srpe_pending_or_unresolved"
+        elif latest_state in {"sales_suspended", "sales_completed", "deleted", "srpe_inactive"}:
+            coverage = "terminal_or_suspended_not_queue"
+        else:
+            coverage = "identity_observed_state_unknown"
+        queue_values = [_future_clean_text(value) for value in group.get("sales_queue_status", pd.Series(dtype="string")).tolist() if _future_clean_text(value)]
+        queue = next((value for value in reversed(queue_values) if value == "eligible_for_recent_srpe_queue"), queue_values[-1] if queue_values else "not_evaluated")
+        rows.append(
+            {
+                "canonical_project_id": _future_clean_text(canonical_id),
+                "project_label": _future_clean_text(latest.get("project_label")) or _future_clean_text(state_record.get("project_label")),
+                "aliases_json": latest.get("aliases_json"),
+                "asset_scope": _future_clean_text(latest.get("asset_scope")) or "residential_first_hand_or_unknown",
+                "current_state": latest_state,
+                "state_event_date": state_record.get("event_date"),
+                "state_event_type": state_record.get("event_type"),
+                "lot_no": latest.get("lot_no"),
+                "address": latest.get("address"),
+                "srpe_development_id": latest.get("srpe_development_id") or state_record.get("srpe_development_id"),
+                "srpe_phase_name": latest.get("srpe_phase_name") or state_record.get("srpe_phase_name"),
+                "units": latest.get("units"),
+                "gfa_sqft": latest.get("gfa_sqft"),
+                "expected_launch_window": latest.get("expected_launch_window"),
+                "expected_completion_window": latest.get("expected_completion_window"),
+                "ownership_low_pct": latest.get("ownership_low_pct"),
+                "ownership_base_pct": latest.get("ownership_base_pct"),
+                "ownership_high_pct": latest.get("ownership_high_pct"),
+                "ownership_scenario_status": latest.get("ownership_scenario_status") or "not_observed",
+                "sales_queue_status": queue,
+                "coverage_status": coverage,
+                "last_event_id": state_record.get("event_id") or latest.get("event_id"),
+                "last_observed_at": latest.get("observed_at"),
+                "source_urls_json": json.dumps(urls, ensure_ascii=False),
+                "missing_data_policy": "unknown_is_not_zero; no_srpe_is_not_no_sales",
+            }
+        )
+    result = pd.DataFrame(rows, columns=SHKP_FUTURE_PROJECT_SNAPSHOT_COLUMNS)
+    result.attrs["lineage_metadata"] = {
+        "lineage_type": "derived_shkp_future_project_current_snapshot",
+        "source_dataset": "shkp_future_project_events",
+        "append_only_source": True,
+        "missing_data_policy": "unknown_is_not_zero; no_srpe_is_not_no_sales",
+    }
+    return result
 
 
 def build_shkp_future_project_identity_evidence(
@@ -10566,13 +11178,19 @@ def fetch_shkp_pipeline_disclosures(
     *,
     session: requests.Session | None = None,
     timeout: float = 60,
+    empty_body_retries: int = 2,
+    empty_body_retry_delay: float = 0.25,
 ) -> pd.DataFrame:
     """Capture project-level evidence phrases from official SHKP disclosures.
 
     The output is an evidence catalogue, not a legal project/ownership table:
     project labels are curated search anchors and the surrounding source text
     is retained for review.  A missing phrase is emitted as ``not_found`` so a
-    changed disclosure cannot silently become a zero or a deletion.
+    changed disclosure cannot silently become a zero or a deletion.  Empty
+    bodies are tracked separately as ``source_empty``: an upstream WAF,
+    transient response, or JavaScript-only page must not be represented as
+    evidence that a project is absent.  A small bounded retry is used only for
+    empty bodies, and every attempt is retained as a raw snapshot.
     """
     client = session or requests.Session()
     client.headers.update({**DEFAULT_HEADERS, "Accept": "text/html, */*"})
@@ -10582,21 +11200,56 @@ def fetch_shkp_pipeline_disclosures(
     source_urls: list[str] = []
     for disclosure in SHKP_PIPELINE_DISCLOSURES:
         url = str(disclosure["url"])
-        response = client.get(url, timeout=timeout)
-        response.raise_for_status()
-        raw_path = save_raw_snapshot(
-            f"{disclosure['disclosure_id']}_pipeline_page",
-            response.content,
-            file_ext="html",
-            source_url=url,
-        )
-        raw_snapshots.append(str(raw_path))
+        max_attempts = max(1, int(empty_body_retries) + 1)
+        response = None
+        raw_content: bytes = b""
+        response_text = ""
+        attempt = 0
+        attempt_paths: list[str] = []
+        while attempt < max_attempts:
+            attempt += 1
+            response = client.get(url, timeout=timeout)
+            response.raise_for_status()
+            candidate_content = getattr(response, "content", b"")
+            candidate_text = getattr(response, "text", "") or ""
+            if isinstance(candidate_content, str):
+                candidate_content = candidate_content.encode("utf-8")
+            elif candidate_content is None:
+                candidate_content = b""
+            raw_content = bytes(candidate_content)
+            response_text = str(candidate_text)
+            raw_path = save_raw_snapshot(
+                f"{disclosure['disclosure_id']}_pipeline_page_attempt_{attempt}",
+                raw_content,
+                file_ext="html",
+                source_url=url,
+            )
+            attempt_paths.append(str(raw_path))
+            has_body = bool(raw_content.strip()) or bool(response_text.strip())
+            if has_body or attempt >= max_attempts:
+                break
+            if empty_body_retry_delay > 0:
+                time.sleep(float(empty_body_retry_delay))
+        if response is None:  # pragma: no cover - defensive; the loop always runs
+            raise SHKPSourceUnavailable(f"No response received for {url}")
+        raw_snapshots.extend(attempt_paths)
         source_urls.append(url)
-        soup = BeautifulSoup(response.text, "html.parser")
+        response_status = getattr(response, "status_code", None)
+        response_content_bytes = len(raw_content)
+        body_is_empty = not raw_content.strip() and not response_text.strip()
+        fetch_status = "empty_body_after_retries" if body_is_empty else "ok"
+        soup = BeautifulSoup(response_text, "html.parser")
         text = re.sub(r"\s+", " ", soup.get_text(" ", strip=True)).strip()
         for project_label, status, geography, search_phrase in disclosure["items"]:
-            position = text.lower().find(search_phrase.lower())
-            if position >= 0:
+            position = text.lower().find(search_phrase.lower()) if text else -1
+            if body_is_empty:
+                context = (
+                    "Official disclosure endpoint returned an empty body after "
+                    f"{attempt} fetch attempt(s); this is a source/fetch gap, "
+                    "not evidence that the project is absent."
+                )
+                evidence_status = "source_empty"
+            elif position >= 0:
                 sentence_end = text.find(".", position)
                 if sentence_end < 0:
                     sentence_end = min(len(text), position + len(search_phrase) + 500)
@@ -10615,6 +11268,10 @@ def fetch_shkp_pipeline_disclosures(
                     "publication_date": disclosure.get("publication_date"),
                     "evidence_status": evidence_status,
                     "evidence_context": context,
+                    "http_status": response_status,
+                    "response_content_bytes": response_content_bytes,
+                    "fetch_status": fetch_status,
+                    "fetch_attempts": attempt,
                     "source_url": url,
                     "fetched_at": fetched_at,
                 }

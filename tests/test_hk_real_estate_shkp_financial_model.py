@@ -2,6 +2,7 @@ import pandas as pd
 import pytest
 
 from src.hk_real_estate.shkp_financial_model import (
+    _discover_financial_data_db_path,
     SHKP_TICKER,
     build_shkp_project_model_bridge,
     build_shkp_disclosed_financial_facts,
@@ -29,6 +30,13 @@ from src.hk_real_estate.shkp_price import (
     normalize_shkp_price_history,
 )
 from src.hk_real_estate.sources.shkp import enrich_shkp_corporate_document_release_dates
+
+
+def test_financial_data_db_path_honors_explicit_environment_override(tmp_path, monkeypatch):
+    expected = tmp_path / "financial-data.duckdb"
+    monkeypatch.setenv("FINANCIAL_DATA_DB_PATH", str(expected))
+
+    assert _discover_financial_data_db_path() == expected
 
 
 def test_disclosed_facts_keep_segment_and_contracted_sales_separate():
@@ -662,6 +670,18 @@ def test_financial_model_inputs_build_from_a_reviewed_duckdb_snapshot(tmp_path):
     assert len(inputs["dividends"]) == 1
     assert len(inputs["asset_pipeline_capacity"]) == 8
     assert inputs["filing_vintages"]["vintage_id"].is_unique
+
+
+def test_financial_model_inputs_official_only_lane_is_explicitly_incomplete():
+    """A CI run without the private sibling DB must fail visibly, not fabricate rows."""
+    inputs = build_shkp_financial_model_inputs(load_financial_data=False)
+
+    assert inputs["financial_data_loaded"] is False
+    assert inputs["validation"]["status"] == "valid"
+    assert inputs["validation"]["financial_data_required"] is False
+    assert inputs["financial_data_actuals"].empty
+    assert inputs["consensus"].empty
+    assert any("official-only" in warning for warning in inputs["validation"]["warnings"])
 
 
 def test_hk_property_sales_segment_history_13_years():

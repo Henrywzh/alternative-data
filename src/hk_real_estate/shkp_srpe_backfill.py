@@ -40,10 +40,16 @@ SHKP_PHASE_CANDIDATE_COLUMNS = [
     "address_en",
     "active",
     "official_website",
+    "srpe_earliest_publication",
+    "srpe_date_suspend_sales",
+    "srpe_date_complete_sales",
+    "srpe_is_deleted",
+    "lifecycle_status",
     "candidate_status",
     "candidate_tier",
     "candidate_sources_json",
     "candidate_context",
+    "candidate_recent_evidence_date",
     "last_verified_at",
 ]
 
@@ -115,6 +121,184 @@ _SHKP_TERMS = (
 # evidence row still records the robots status observed during its run.
 _ROBOTS_CACHE: dict[tuple[str, str], tuple[bool | None, str]] = {}
 
+RECENT_SRPE_DOCUMENT_CATEGORIES = frozenset(
+    {"register_of_transactions", "sales_arrangement", "price_list"}
+)
+
+
+def _srpe_flag_is_true(value: Any) -> bool:
+    """Return whether an SRPE boolean-ish flag is explicitly true."""
+    text = _text(value)
+    return bool(text and text.casefold() in {"1", "true", "yes", "y"})
+
+
+def classify_srpe_lifecycle(row: dict[str, Any] | pd.Series) -> str:
+    """Classify the official SRPE lifecycle fields without guessing ownership.
+
+    ``active=Y`` is the strongest current-directory signal.  A complete-sales
+    date wins over that flag because it is an explicit terminal event; a
+    suspension date only means suspended when the directory row is no longer
+    active.  Rows with neither state are kept as ``unknown`` rather than being
+    treated as currently selling.
+    """
+    complete = _text(row.get("srpe_date_complete_sales"))
+    if not complete:
+        complete = _text(row.get("dateCompleteSales"))
+    suspend = _text(row.get("srpe_date_suspend_sales"))
+    if not suspend:
+        suspend = _text(row.get("dateSuspendSales"))
+    active = (_text(row.get("active")) or "").upper()
+    if _srpe_flag_is_true(row.get("srpe_is_deleted")):
+        return "deleted"
+    if complete:
+        return "completed"
+    if active == "Y":
+        return "active"
+    if suspend:
+        return "suspended"
+    if active == "N":
+        return "inactive"
+    return "unknown"
+
+
+def _latest_document_submission_by_phase(documents: pd.DataFrame | None) -> pd.Series:
+    """Return the latest useful SRPE filing timestamp per phase.
+
+    Transaction registers commonly have no ``date_of_printing``.  Their
+    ``submission_time`` is therefore preferred, with printing date as a
+    fallback for older price-list/sales-arrangement rows.
+    """
+    if documents is None or documents.empty or "srpe_development_id" not in documents.columns:
+        return pd.Series(dtype="datetime64[ns, UTC]")
+    frame = documents.copy()
+    if "document_category" in frame.columns:
+        frame = frame.loc[frame["document_category"].isin(RECENT_SRPE_DOCUMENT_CATEGORIES)]
+    if frame.empty:
+        return pd.Series(dtype="datetime64[ns, UTC]")
+    submission = pd.to_datetime(
+        frame["submission_time"] if "submission_time" in frame.columns else pd.Series(pd.NaT, index=frame.index),
+        errors="coerce",
+        utc=True,
+    )
+    printed = pd.to_datetime(
+        frame["date_of_printing"] if "date_of_printing" in frame.columns else pd.Series(pd.NaT, index=frame.index),
+        errors="coerce",
+        utc=True,
+    )
+    latest = submission.fillna(printed)
+    frame = frame.assign(_latest_submission=latest)
+    frame = frame.loc[frame["_latest_submission"].notna()]
+    if frame.empty:
+        return pd.Series(dtype="datetime64[ns, UTC]")
+    return frame.groupby(frame["srpe_development_id"].astype(str))["_latest_submission"].max()
+
+
+def select_recent_shkp_phase_candidates(
+    candidates: pd.DataFrame,
+    documents: pd.DataFrame | None = None,
+    *,
+    now: pd.Timestamp | None = None,
+    recent_days: int = 90,
+    recent_years: int = 2,
+    allowed_statuses: set[str] | None = None,
+    include_older_active: bool = False,
+) -> pd.DataFrame:
+    """Select a bounded current-selling queue from the full SHKP candidate roster.
+
+    The full candidate roster remains useful for coverage audits.  Expensive
+    manifest/PDF/site work should use this selector instead: an SRPE phase must
+    be ``active=Y`` (and not have a completion date), and must either have a
+    recent official filing or have entered the SRPE directory recently.  A
+    suspended/completed/inactive phase is never promoted by a recent document.
+    """
+    if candidates is None or candidates.empty:
+        return pd.DataFrame(columns=list(candidates.columns) if candidates is not None else [])
+    if recent_days <= 0:
+        raise ValueError("recent_days must be positive")
+    if recent_years <= 0:
+        raise ValueError("recent_years must be positive")
+    frame = candidates.copy()
+    if "srpe_development_id" not in frame.columns:
+        return frame.iloc[0:0].copy()
+    frame["srpe_development_id"] = frame["srpe_development_id"].astype("string").str.strip()
+    frame = frame.loc[frame["srpe_development_id"].notna() & frame["srpe_development_id"].ne("")]
+    status_column = "candidate_status" if "candidate_status" in frame.columns else "match_status" if "match_status" in frame.columns else None
+    if allowed_statuses is not None and status_column:
+        frame = frame.loc[frame[status_column].isin(allowed_statuses)]
+    frame = frame.drop_duplicates(subset=["srpe_development_id"], keep="first").copy()
+    frame["lifecycle_status"] = frame.apply(classify_srpe_lifecycle, axis=1)
+    # The selector is intentionally strict about terminal and non-current
+    # rows.  This is what keeps old sold/suspended phases out of a live queue.
+    current = frame["lifecycle_status"].eq("active")
+    if include_older_active:
+        current = frame["lifecycle_status"].isin({"active"})
+    frame = frame.loc[current].copy()
+    if frame.empty:
+        frame["latest_document_submission"] = pd.NaT
+        frame["recent_phase_reason"] = pd.Series(dtype="string")
+        return frame
+
+    now_ts = pd.Timestamp.now(tz="UTC") if now is None else pd.Timestamp(now)
+    if now_ts.tzinfo is None:
+        now_ts = now_ts.tz_localize("UTC")
+    else:
+        now_ts = now_ts.tz_convert("UTC")
+    cutoff_doc = now_ts - pd.Timedelta(days=int(recent_days))
+    cutoff_publication = now_ts - pd.DateOffset(years=int(recent_years))
+    latest_docs = _latest_document_submission_by_phase(documents)
+    frame["latest_document_submission"] = pd.to_datetime(
+        frame["srpe_development_id"].map(latest_docs.to_dict()), errors="coerce", utc=True
+    )
+    earliest = pd.to_datetime(
+        frame["srpe_earliest_publication"]
+        if "srpe_earliest_publication" in frame.columns
+        else pd.Series(pd.NaT, index=frame.index),
+        errors="coerce",
+        utc=True,
+    )
+    recent_doc = frame["latest_document_submission"].notna() & (frame["latest_document_submission"] >= cutoff_doc)
+    recent_publication = earliest.notna() & (earliest >= cutoff_publication)
+    candidate_evidence = pd.to_datetime(
+        frame["candidate_recent_evidence_date"]
+        if "candidate_recent_evidence_date" in frame.columns
+        else pd.Series(pd.NaT, index=frame.index),
+        errors="coerce",
+        utc=True,
+    )
+    recent_candidate_evidence = candidate_evidence.notna() & (candidate_evidence >= cutoff_publication)
+    if include_older_active:
+        eligible = pd.Series(True, index=frame.index)
+    else:
+        eligible = recent_doc | recent_publication | recent_candidate_evidence
+    frame["recent_phase_reason"] = ""
+    frame.loc[recent_doc & recent_publication, "recent_phase_reason"] = "recent_document+recent_publication"
+    frame.loc[recent_doc & ~recent_publication, "recent_phase_reason"] = "recent_document"
+    frame.loc[~recent_doc & recent_publication, "recent_phase_reason"] = "recent_publication"
+    frame.loc[~recent_doc & ~recent_publication & recent_candidate_evidence, "recent_phase_reason"] = "recent_future_evidence"
+    frame = frame.loc[eligible].copy()
+    if frame.empty:
+        return frame
+    if "srpe_earliest_publication" not in frame.columns:
+        frame["srpe_earliest_publication"] = pd.NaT
+    status_rank = {"matched": 0, "matched_needs_review": 1, "ambiguous": 2}
+    status_values = frame[status_column] if status_column and status_column in frame.columns else pd.Series(index=frame.index, dtype="string")
+    frame["_candidate_status_rank"] = status_values.map(status_rank).fillna(9)
+    frame["_recent_doc_rank"] = frame["latest_document_submission"].notna().astype(int)
+    frame["_recent_publication_rank"] = earliest.notna().astype(int)
+    frame = frame.sort_values(
+        [
+            "_candidate_status_rank",
+            "_recent_doc_rank",
+            "_recent_publication_rank",
+            "latest_document_submission",
+            "srpe_earliest_publication",
+            "srpe_development_id",
+        ],
+        ascending=[True, False, False, False, False, True],
+        na_position="last",
+    ).drop(columns=["_candidate_status_rank", "_recent_doc_rank", "_recent_publication_rank"])
+    return frame.reset_index(drop=True)
+
 
 def _text(value: Any) -> str | None:
     if value is None:
@@ -149,6 +333,7 @@ def build_shkp_phase_candidates(
     shkp_crosswalk: pd.DataFrame | None = None,
     annual_srpe_crosswalk: pd.DataFrame | None = None,
     identity_evidence: pd.DataFrame | None = None,
+    future_resolution: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     """Build an SHKP candidate queue from current official evidence layers.
 
@@ -185,6 +370,7 @@ def build_shkp_phase_candidates(
                     "candidate_status": status,
                     "source": source,
                     "context": [],
+                    "recent_evidence_dates": [],
                 }
             target = evidence[phase_id]
             target["context"].extend(
@@ -197,6 +383,9 @@ def build_shkp_phase_candidates(
                 )
                 if _text(value)
             )
+            recent_date = _text(row.get("candidate_recent_evidence_date"))
+            if recent_date:
+                target.setdefault("recent_evidence_dates", []).append(recent_date)
             if source not in target.get("sources", []):
                 target.setdefault("sources", []).append(source)
             sequence += 1
@@ -217,6 +406,30 @@ def build_shkp_phase_candidates(
         rank_by_status={"phase_resolved_srpe": 2, "matched_needs_review": 3},
     )
 
+    # A future disclosure may identify a phase before it appears in the
+    # current SHKP marketing directory.  Once the resolution plan links that
+    # disclosure to an SRPE id, keep it in the same recent queue instead of
+    # waiting for a second website listing match.
+    if future_resolution is not None and not future_resolution.empty:
+        future_rows = future_resolution.copy()
+        future_rows["srpe_development_id"] = future_rows.get(
+            "linked_srpe_development_id", pd.Series(dtype="string")
+        )
+        future_rows["match_status"] = "matched_needs_review"
+        future_rows["candidate_recent_evidence_date"] = future_rows.get(
+            "publication_date", pd.Series(dtype="string")
+        )
+        future_rows = future_rows.loc[
+            future_rows["srpe_development_id"].notna()
+            & future_rows["srpe_development_id"].astype(str).str.strip().ne("")
+            & ~future_rows.get("asset_scope", pd.Series(dtype="string")).astype(str).str.startswith("commercial")
+        ].copy()
+        add(
+            future_rows,
+            "shkp_future_project_resolution_plan",
+            rank_by_status={"matched_needs_review": 1},
+        )
+
     rows: list[dict[str, Any]] = []
     for phase_id, meta in sorted(evidence.items(), key=lambda item: (item[1]["rank"], item[1]["sequence"])):
         srpe = srpe_by_id[phase_id]
@@ -229,10 +442,19 @@ def build_shkp_phase_candidates(
                 "address_en": srpe.get("address_en"),
                 "active": srpe.get("active"),
                 "official_website": srpe.get("official_website"),
+                "srpe_earliest_publication": srpe.get("srpe_earliest_publication"),
+                "srpe_date_suspend_sales": srpe.get("srpe_date_suspend_sales"),
+                "srpe_date_complete_sales": srpe.get("srpe_date_complete_sales"),
+                "srpe_is_deleted": srpe.get("srpe_is_deleted"),
+                "lifecycle_status": classify_srpe_lifecycle(srpe),
                 "candidate_status": meta["candidate_status"],
                 "candidate_tier": f"tier_{meta['rank'] + 1}",
                 "candidate_sources_json": _json_list(meta.get("sources", [meta["source"]])),
                 "candidate_context": " | ".join(dict.fromkeys(_text(value) for value in meta["context"] if _text(value))) or None,
+                "candidate_recent_evidence_date": max(
+                    (_text(value) for value in meta.get("recent_evidence_dates", []) if _text(value)),
+                    default=None,
+                ),
                 "last_verified_at": datetime.now(timezone.utc).isoformat(),
             }
         )
@@ -692,6 +914,9 @@ def run_shkp_srpe_transaction_scratch(
     max_phases: int | None = 17,
     start_index: int = 0,
     include_review: bool = False,
+    recent_days: int = 90,
+    recent_years: int = 2,
+    include_older_active: bool = False,
     timeout: float = 30,
     request_delay: float = 0.25,
 ) -> dict[str, Any]:
@@ -701,8 +926,22 @@ def run_shkp_srpe_transaction_scratch(
     candidates = build_shkp_phase_candidates(
         load_latest_normalized("srpe_development_index"),
         load_latest_normalized("shkp_srpe_crosswalk"),
-        load_latest_normalized("shkp_annual_srpe_crosswalk"),
-        load_latest_normalized("shkp_future_project_identity_evidence"),
+        None,
+        None,
+        future_resolution=load_latest_normalized("shkp_future_project_resolution_plan"),
+    )
+    current_manifest = load_latest_normalized("shkp_current_srpe_document_manifest_backfill")
+    base_manifest = load_latest_normalized("shkp_srpe_document_manifest")
+    document_frames = [frame for frame in (current_manifest, base_manifest) if frame is not None and not frame.empty]
+    document_evidence = pd.concat(document_frames, ignore_index=True) if document_frames else pd.DataFrame()
+    allowed_statuses = {"matched", "matched_needs_review", "ambiguous"} if include_review else {"matched"}
+    candidates = select_recent_shkp_phase_candidates(
+        candidates,
+        document_evidence,
+        recent_days=recent_days,
+        recent_years=recent_years,
+        allowed_statuses=allowed_statuses,
+        include_older_active=include_older_active,
     )
     registry = build_shkp_transaction_scratch_registry(
         candidates,
@@ -737,6 +976,13 @@ def run_shkp_srpe_transaction_scratch(
             if include_review
             else ["matched"],
             "scratch_candidate_rows": int(len(registry)),
+            "scratch_eligible_recent_phase_count": int(len(candidates)),
+            "scratch_selection_policy": {
+                "active_only": True,
+                "recent_days": int(recent_days),
+                "recent_years": int(recent_years),
+                "include_older_active": bool(include_older_active),
+            },
             "scratch_candidate_start_index": int(start_index),
             "scratch_candidate_ids": registry["srpe_development_id"].astype(str).tolist(),
             "ownership_attribution": "blocked_phase_specific_interval",

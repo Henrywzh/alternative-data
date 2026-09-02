@@ -1798,6 +1798,38 @@ def test_shkp_pipeline_disclosure_keeps_found_and_not_found_states(monkeypatch, 
     assert frame.loc[frame["project_label"] == "Found project", "evidence_context"].iloc[0]
 
 
+def test_shkp_pipeline_disclosure_marks_empty_body_as_source_gap(monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        shkp_source,
+        "save_raw_snapshot",
+        lambda *args, **kwargs: tmp_path / f"pipeline-{len(list(tmp_path.iterdir()))}.html",
+    )
+    monkeypatch.setitem(
+        shkp_source.SHKP_PIPELINE_DISCLOSURES[0],
+        "items",
+        (("Empty project", "planned_launch_10m", "Hong Kong", "phrase absent"),),
+    )
+
+    class _EmptyPipelineSession:
+        headers = {}
+
+        def get(self, url, timeout):
+            return _FakeHtmlResponse("")
+
+    frame = shkp_source.fetch_shkp_pipeline_disclosures(
+        session=_EmptyPipelineSession(),
+        empty_body_retries=1,
+        empty_body_retry_delay=0,
+    )
+
+    row = frame.iloc[0]
+    assert row["evidence_status"] == "source_empty"
+    assert row["fetch_status"] == "empty_body_after_retries"
+    assert row["fetch_attempts"] == 2
+    assert row["response_content_bytes"] == 0
+    assert "not evidence" in row["evidence_context"]
+
+
 def test_shkp_annual_handover_word_parser_preserves_jv_and_columns():
     def word(text, x0, top):
         return {"text": text, "x0": x0, "top": top}

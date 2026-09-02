@@ -11,6 +11,8 @@ from src.hk_real_estate.sources.srpe_pdf import (
     parse_srpe_price_list_metadata,
     parse_srpe_price_list_tables,
     parse_srpe_transaction_tables,
+    parse_srpe_transaction_text,
+    _parse_transaction_text_line,
 )
 from src.hk_real_estate.mapping.developer_registry import DeveloperRegistry
 
@@ -353,3 +355,27 @@ def test_srpe_project_registry_maps_park_yoho_alias_to_shkp():
     match, tier = DeveloperRegistry().match_project("PARK VISTA DEVELOPMENT")
     assert tier == "ALIAS"
     assert match["stock_code"] == "0016"
+
+def test_transaction_text_parses_house_rows_without_tables():
+    parsed = _parse_transaction_text_line("BNl 22-05-2023 House 1 $860,000,000 - BE S BRI - v")
+    assert parsed is not None
+    assert parsed["date_of_pasp"] == "2023-05-22"
+    assert parsed["block_name"] == "House 1"
+    assert parsed["transaction_price_hkd"] == 860000000
+
+    compact = _parse_transaction_text_line("T 22052023 House 2 $610,000,000")
+    assert compact["date_of_pasp"] == "2023-05-22"
+    assert compact["block_name"] == "House 2"
+
+    page_text = "Part 2: Information on Transactions" + chr(10) + "BNl 22-05-2023 House 1 $860,000,000" + chr(10) + "T 22052023 House 2 $610,000,000"
+    result = parse_srpe_transaction_text(
+        [(2, page_text)],
+        metadata={"development_id": "8225", "development_name": "TWENTY PEAK ROAD BY V"},
+    )
+    assert len(result) == 2
+    assert result["transaction_price_hkd"].tolist() == [860000000, 610000000]
+
+
+def test_transaction_text_ignores_noisy_ocr_without_property_label():
+    parsed = _parse_transaction_text_line("1102-2015, ( , m seem HRA ASEH OT EAL LOE $14,481,400")
+    assert parsed is None

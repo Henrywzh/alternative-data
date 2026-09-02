@@ -18,12 +18,14 @@ from typing import Any, Iterable
 import pandas as pd
 import requests
 
-from .config import DEFAULT_HEADERS, REGISTRY_DIR
+from .config import REGISTRY_DIR
 from .sources.srpe import (
     SRPE_API_BASE,
+    SRPE_DETAIL_ENDPOINT,
     SRPE_DOWNLOAD_ACTIONS,
     SRPEDocumentDownloadError,
     download_srpe_document,
+    fetch_srpe_project_detail,
 )
 from .sources.srpe_pdf import (
     PRICE_LIST_COLUMNS,
@@ -39,7 +41,6 @@ from .storage import RAW_DIR, save_normalized_dataset, save_raw_snapshot
 logger = logging.getLogger("hk_real_estate_srpe_pilot")
 
 SRPE_PROJECT_REGISTRY_PATH = REGISTRY_DIR / "hk_srpe_project_registry.csv"
-SRPE_DETAIL_ENDPOINT = f"{SRPE_API_BASE}/DevBldgSearch/getSelectedDevResult"
 
 REGISTRY_REQUIRED_COLUMNS = {
     "project_id",
@@ -150,39 +151,6 @@ def select_srpe_projects(
     if selected.empty:
         raise ValueError("SRPE project selection is empty")
     return selected.reset_index(drop=True)
-
-
-def fetch_srpe_project_detail(
-    srpe_dev_id: str,
-    *,
-    session: requests.Session | None = None,
-    timeout: float = 30,
-) -> dict[str, Any]:
-    """Fetch the full SRPE document manifest for one selected development."""
-    client = session or requests.Session()
-    client.headers.update(
-        {
-            **DEFAULT_HEADERS,
-            "Accept": "application/json, text/plain, */*",
-            "Content-Type": "application/json",
-            "Origin": "https://www.srpe.gov.hk",
-            "Referer": "https://www.srpe.gov.hk/opip/",
-        }
-    )
-    # Use an explicit connect/read tuple.  A scalar timeout is normally
-    # sufficient, but the SRPE endpoint has occasionally left a pooled TLS
-    # connection waiting indefinitely during a multi-phase batch; a bounded
-    # read timeout keeps one unavailable manifest from blocking all later
-    # phases.
-    bounded_timeout = max(float(timeout), 1.0)
-    response = client.post(
-        SRPE_DETAIL_ENDPOINT,
-        json={"timeStamp": int(time.time() * 1000), "devId": str(srpe_dev_id)},
-        timeout=(bounded_timeout, bounded_timeout),
-    )
-    response.raise_for_status()
-    result = response.json().get("resultData") or {}
-    return result.get("devInfoResp") or {}
 
 
 def _document_date(document: dict[str, Any]) -> pd.Timestamp:
@@ -440,7 +408,6 @@ def run_srpe_pilot(
                 run_id=run_id,
             )
             raw_snapshots.append(str(detail_raw))
-            dev_info = detail.get("dev") or {}
             # The original bounded pilot intentionally parsed only the latest
             # register.  Full-history scratch runs can opt into every
             # register version; raw hashes and unit-state reconciliation keep

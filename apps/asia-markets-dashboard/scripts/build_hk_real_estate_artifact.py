@@ -505,7 +505,7 @@ PLANNED_COVERAGE = [
         "latest_observation": "—",
         "records": 0,
         "freshness": "Content parser pending",
-        "notes": "The dashboard currently covers six explicit pilot phases; broader developer and phase coverage still requires registry expansion and backfill.",
+        "notes": "A bounded six-phase SRPE pilot is retained alongside the SHKP-wide candidate-phase signal layer; broader ownership attribution and historical document backfill still require registry expansion and review.",
     },
 ]
 
@@ -1549,6 +1549,7 @@ def build_artifact(
     raw_srpe_signals: pd.DataFrame | None = None,
     raw_shkp_leading_signals: pd.DataFrame | None = None,
     raw_28hse_reconciliation: pd.DataFrame | None = None,
+    raw_shkp_transaction_health: pd.DataFrame | None = None,
     *,
     now: datetime | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -1600,6 +1601,7 @@ def build_artifact(
     df_srpe_signals = raw_srpe_signals if raw_srpe_signals is not None else pd.DataFrame()
     df_shkp_leading_signals = raw_shkp_leading_signals if raw_shkp_leading_signals is not None else pd.DataFrame()
     df_28hse_reconciliation = raw_28hse_reconciliation if raw_28hse_reconciliation is not None else pd.DataFrame()
+    df_shkp_transaction_health = raw_shkp_transaction_health if raw_shkp_transaction_health is not None else pd.DataFrame()
 
     # New normalized tranches are deliberately kept optional.  A clean
     # checkout can still build the legacy artifact while a local or scheduled
@@ -2505,6 +2507,10 @@ def build_artifact(
         "srpe_project_signal_history": srpe_signal_history_rows,
         "shkp_leading_signal_history": shkp_leading_history_rows,
         "shkp_leading_phase_latest": shkp_leading_latest_rows,
+        "shkp_srpe_transaction_health": [
+            {key: (None if pd.isna(value) else value) for key, value in row.items()}
+            for row in df_shkp_transaction_health.to_dict("records")
+        ] if not df_shkp_transaction_health.empty else [],
         "shkp_28hse_reconciliation": [
             {
                 key: (None if pd.isna(value) else value)
@@ -3611,6 +3617,28 @@ def build_artifact(
             }
         )
 
+    if not df_shkp_transaction_health.empty:
+        tables.append({
+            "id": "shkp_srpe_transaction_health_table",
+            "title": "SHKP SRPE Transaction Data Health",
+            "subtitle": "Situation 1 = register file exists and still needs parsing; situation 2 = parsed/observed with no deals or no update; situation 3 = ready.",
+            "dataset": "shkp_srpe_transaction_health",
+            "sourceId": "srpe_sales",
+            "defaultSort": {"field": "situation", "direction": "asc"},
+            "density": "dense",
+            "layout": "full",
+            "columns": [
+                {"field": "srpe_development_id", "label": "SRPE Phase", "type": "text"},
+                {"field": "development_name", "label": "Development", "type": "text"},
+                {"field": "phase_name", "label": "Phase", "type": "text"},
+                {"field": "situation", "label": "Situation", "type": "text"},
+                {"field": "parse_status", "label": "Parse Status", "type": "text"},
+                {"field": "current_event_rows", "label": "Event Rows", "format": "number"},
+                {"field": "quality_status", "label": "Quality", "type": "text"},
+                {"field": "note", "label": "Note", "type": "text"},
+            ],
+        })
+
     if midland_estate_rows:
         tables.append(
             {
@@ -3837,6 +3865,8 @@ def build_artifact(
         blocks.append({"id": "shkp_leading_phase_latest_block", "type": "table", "tableId": "shkp_leading_phase_latest_table"})
     if not df_28hse_reconciliation.empty:
         blocks.append({"id": "shkp_28hse_reconciliation_block", "type": "table", "tableId": "shkp_28hse_reconciliation_table"})
+    if not df_shkp_transaction_health.empty:
+        blocks.append({"id": "shkp_srpe_transaction_health_block", "type": "table", "tableId": "shkp_srpe_transaction_health_table"})
     if shkp_quarterly_fact_rows:
         blocks.append({"id": "shkp_quarterly_numeric_facts_block", "type": "table", "tableId": "shkp_quarterly_numeric_facts_table"})
     if shkp_financial_bridge_rows:
@@ -4368,6 +4398,7 @@ def fetch_live_frames() -> dict[str, pd.DataFrame]:
         srpe_signals = _load_dataset_from_committed_artifact("srpe_project_signal_history")
     shkp_leading_signals = load_latest_normalized("shkp_srpe_project_month_signals")
     shkp_reconciliation = load_latest_normalized("shkp_28hse_reconciliation")
+    shkp_transaction_health = load_latest_normalized("shkp_srpe_transaction_data_health")
     bd_supply_history = load_latest_normalized("bd_supply_pipeline_history")
     if bd_supply_history.empty:
         bd_supply_history = _load_bd_supply_history_from_committed_artifact()
@@ -4413,6 +4444,7 @@ def fetch_live_frames() -> dict[str, pd.DataFrame]:
         "srpe_signals": srpe_signals,
         "shkp_leading_signals": shkp_leading_signals,
         "shkp_reconciliation": shkp_reconciliation,
+        "shkp_transaction_health": shkp_transaction_health,
         "bd_supply_history": bd_supply_history,
     }
 
@@ -4460,6 +4492,7 @@ def main() -> int:
     srpe_signals = live_frames.pop("srpe_signals", pd.DataFrame())
     shkp_leading_signals = live_frames.pop("shkp_leading_signals", pd.DataFrame())
     shkp_reconciliation = live_frames.pop("shkp_reconciliation", pd.DataFrame())
+    shkp_transaction_health = live_frames.pop("shkp_transaction_health", pd.DataFrame())
     new_series = {
         key: live_frames.pop(key, pd.DataFrame())
         for key in (
@@ -4499,6 +4532,7 @@ def main() -> int:
         raw_srpe_signals=srpe_signals,
         raw_shkp_leading_signals=shkp_leading_signals,
         raw_28hse_reconciliation=shkp_reconciliation,
+        raw_shkp_transaction_health=shkp_transaction_health,
     )
     _prune_unreferenced_portable_datasets(artifact)
     _atomic_json(args.output, artifact)

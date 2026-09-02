@@ -9,7 +9,9 @@ from src.hk_real_estate.shkp_srpe_backfill import (
     _extract_role_fields_from_html,
     build_shkp_phase_candidates,
     build_shkp_transaction_scratch_registry,
+    classify_srpe_lifecycle,
     fetch_shkp_phase_site_evidence_rendered,
+    select_recent_shkp_phase_candidates,
 )
 
 
@@ -143,3 +145,88 @@ def test_transaction_scratch_registry_is_routing_only():
     assert result["stock_code"].tolist() == ["0016"]
     assert result["ownership_pct"].tolist() == [0.0]
     assert result["ownership_attribution_ready"].tolist() == [False]
+
+
+def test_srpe_lifecycle_classification_separates_active_suspended_and_completed():
+    assert classify_srpe_lifecycle({"active": "Y"}) == "active"
+    assert classify_srpe_lifecycle({"active": "N", "srpe_date_suspend_sales": "2025-02-01"}) == "suspended"
+    assert classify_srpe_lifecycle({"active": "N", "srpe_date_complete_sales": "2025-03-01"}) == "completed"
+    assert classify_srpe_lifecycle({"active": "N"}) == "inactive"
+
+
+def test_recent_phase_selector_excludes_old_and_terminal_phases():
+    candidates = pd.DataFrame(
+        [
+            {
+                "srpe_development_id": "active-doc",
+                "active": "Y",
+                "srpe_earliest_publication": "2020-01-01",
+                "candidate_status": "matched",
+            },
+            {
+                "srpe_development_id": "active-new",
+                "active": "Y",
+                "srpe_earliest_publication": "2026-07-01",
+                "candidate_status": "matched",
+            },
+            {
+                "srpe_development_id": "active-old",
+                "active": "Y",
+                "srpe_earliest_publication": "2020-01-01",
+                "candidate_status": "matched",
+            },
+            {
+                "srpe_development_id": "suspended",
+                "active": "N",
+                "srpe_date_suspend_sales": "2026-08-01",
+                "candidate_status": "matched",
+            },
+            {
+                "srpe_development_id": "completed",
+                "active": "N",
+                "srpe_date_complete_sales": "2026-08-01",
+                "candidate_status": "matched",
+            },
+        ]
+    )
+    documents = pd.DataFrame(
+        [
+            {
+                "srpe_development_id": "active-doc",
+                "document_category": "register_of_transactions",
+                "submission_time": "2026-08-20T10:00:00+08:00",
+                "date_of_printing": None,
+            },
+            {
+                "srpe_development_id": "suspended",
+                "document_category": "register_of_transactions",
+                "submission_time": "2026-08-20T10:00:00+08:00",
+                "date_of_printing": None,
+            },
+        ]
+    )
+    result = select_recent_shkp_phase_candidates(
+        candidates,
+        documents,
+        now=pd.Timestamp("2026-08-24", tz="UTC"),
+        recent_days=90,
+        recent_years=2,
+    )
+    assert result["srpe_development_id"].tolist() == ["active-doc", "active-new"]
+    assert result["lifecycle_status"].tolist() == ["active", "active"]
+    assert result["recent_phase_reason"].tolist() == ["recent_document", "recent_publication"]
+
+
+def test_recent_phase_selector_can_explicitly_include_older_active_for_audit():
+    candidates = pd.DataFrame(
+        [
+            {"srpe_development_id": "old-active", "active": "Y", "candidate_status": "matched"},
+            {"srpe_development_id": "suspended", "active": "N", "srpe_date_suspend_sales": "2025-01-01", "candidate_status": "matched"},
+        ]
+    )
+    result = select_recent_shkp_phase_candidates(
+        candidates,
+        now=pd.Timestamp("2026-08-24", tz="UTC"),
+        include_older_active=True,
+    )
+    assert result["srpe_development_id"].tolist() == ["old-active"]

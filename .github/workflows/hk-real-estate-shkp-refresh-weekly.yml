@@ -1,0 +1,169 @@
+name: HK Real Estate SHKP Refresh Weekly
+
+# This workflow is the SHKP-specific source refresh.  It is intentionally
+# separate from the dashboard artifact job: project/transaction PDFs and the
+# financial-data sibling are slower, research-oriented inputs and should not
+# block the market-level dashboard refresh.
+
+on:
+  schedule:
+    - cron: "45 6 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: hk-real-estate-shkp-refresh-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-shkp:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev]
+
+      - name: Install PDF text extraction tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends poppler-utils
+          pdftotext -v
+
+      - name: Detect private financial-data access
+        id: financial-data-access
+        env:
+          FINANCIAL_DATA_REPO_TOKEN: ${{ secrets.FINANCIAL_DATA_REPO_TOKEN }}
+        run: |
+          if [[ -n "$FINANCIAL_DATA_REPO_TOKEN" ]]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check out private financial-data sibling when authorised
+        if: ${{ steps.financial-data-access.outputs.available == 'true' }}
+        uses: actions/checkout@v7
+        with:
+          repository: Henrywzh/financial-data
+          token: ${{ secrets.FINANCIAL_DATA_REPO_TOKEN }}
+          path: financial-data
+          fetch-depth: 1
+
+      - name: Run bounded SHKP project, transaction and financial refresh
+        env:
+          FINANCIAL_DATA_DB_PATH: ${{ github.workspace }}/financial-data/data/databases/hk_financials.duckdb
+        run: |
+          log_path="/tmp/shkp-refresh.json"
+          db_path="$GITHUB_WORKSPACE/financial-data/data/databases/hk_financials.duckdb"
+          if [[ -f "$db_path" ]]; then
+            python -m src.hk_real_estate.cli run-shkp-refresh \
+              --timeout 45 \
+              --current-manifest-max-developments 25 \
+              --transaction-max-phases 8 \
+              --financial-db "$db_path" > "$log_path"
+          else
+            echo "financial-data sibling not available; using explicit official-only lane"
+            python -m src.hk_real_estate.cli run-shkp-refresh \
+              --timeout 45 \
+              --current-manifest-max-developments 25 \
+              --transaction-max-phases 8 \
+              --skip-financial-data > "$log_path"
+          fi
+          tail -120 "$log_path"
+
+      - name: Validate SHKP refresh status contract
+        run: |
+          python - <<'PY'
+          from src.hk_real_estate.storage import load_latest_normalized
+
+          status = load_latest_normalized("shkp_developer_tracking_refresh_status")
+          if status.empty:
+              raise SystemExit("SHKP refresh status is empty; refusing to publish")
+          summary = status.loc[status["step"].eq("summary")]
+          if summary.empty:
+              raise SystemExit("SHKP refresh status has no summary row")
+          row = summary.iloc[-1]
+          if str(row.get("status")) == "failed":
+              raise SystemExit(f"SHKP refresh summary failed: {row.get('error')}")
+          print({
+              "refresh_run_id": row.get("refresh_run_id"),
+              "status": row.get("status"),
+              "warning": row.get("warning"),
+              "steps": int(len(status) - 1),
+          })
+          PY
+
+      - name: Commit durable SHKP refresh snapshots
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Keep the durable set compact: source indexes/registries, current
+          # manifest and recent transaction/signal layers, the refresh status,
+          # and official financial-input outputs. Raw PDFs remain ignored.
+          paths=(
+            data/normalized/hk_real_estate/srpe_development_index/
+            data/normalized/hk_real_estate/shkp_property_catalog/
+            data/normalized/hk_real_estate/shkp_srpe_crosswalk/
+            data/normalized/hk_real_estate/shkp_pipeline_disclosures/
+            data/normalized/hk_real_estate/shkp_pipeline_srpe_crosswalk/
+            data/normalized/hk_real_estate/shkp_pipeline_project_registry/
+            data/normalized/hk_real_estate/shkp_project_registry/
+            data/normalized/hk_real_estate/shkp_sales_ingestion_eligibility/
+            data/normalized/hk_real_estate/shkp_sales_ingestion_plan/
+            data/normalized/hk_real_estate/shkp_srpe_document_manifest/
+            data/normalized/hk_real_estate/shkp_current_srpe_document_manifest_backfill/
+            data/normalized/hk_real_estate/shkp_srpe_scratch_srpe_pilot_transaction_events/
+            data/normalized/hk_real_estate/shkp_srpe_scratch_srpe_pilot_document_audit/
+            data/normalized/hk_real_estate/shkp_srpe_project_transaction_events_dedup/
+            data/normalized/hk_real_estate/shkp_srpe_project_month_signals/
+            data/normalized/hk_real_estate/shkp_srpe_project_month_status/
+            data/normalized/hk_real_estate/shkp_srpe_signal_coverage/
+            data/normalized/hk_real_estate/shkp_srpe_transaction_date_gaps/
+            data/normalized/hk_real_estate/shkp_indicative_ownership_roster/
+            data/normalized/hk_real_estate/shkp_indicative_project_month_signals/
+            data/normalized/hk_real_estate/shkp_indicative_sales_model_monthly/
+            data/normalized/hk_real_estate/shkp_indicative_sales_model_annual/
+            data/normalized/hk_real_estate/shkp_indicative_sales_model_backtest/
+            data/normalized/hk_real_estate/shkp_developer_tracking_refresh_status/
+            data/normalized/hk_real_estate/shkp_financial_model_disclosed_facts/
+            data/normalized/hk_real_estate/shkp_financial_model_recurring_portfolio_facts/
+            data/normalized/hk_real_estate/shkp_financial_model_asset_pipeline_capacity/
+            data/normalized/hk_real_estate/shkp_financial_model_coverage/
+            data/normalized/hk_real_estate/shkp_financial_model_vintage_coverage/
+          )
+          for path in "${paths[@]}"; do
+            if [[ -e "$path" ]]; then
+              git add -f "$path"
+            fi
+          done
+
+          if git diff --staged --quiet; then
+            echo "No SHKP refresh snapshot changes to commit"
+            exit 0
+          fi
+
+          git commit -m "chore(hk-real-estate): refresh SHKP tracking [$(date -u +%Y-%m-%d)]"
+          for attempt in 1 2 3; do
+            if git pull --rebase origin "${{ github.event.repository.default_branch }}" && git push; then
+              exit 0
+            fi
+            sleep $((attempt * 5))
+          done
+          exit 1
