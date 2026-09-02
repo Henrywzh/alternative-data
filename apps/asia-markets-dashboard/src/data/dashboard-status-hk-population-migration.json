@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-09-01T11:41:55.558458Z",
-  "snapshot_id": "3a3bde6f1a188d94",
-  "data_as_of": "2026-08-31",
-  "overall_status": "Degraded",
-  "live_sources": 5,
+  "generated_at": "2026-09-02T11:20:39.031556Z",
+  "snapshot_id": "9adc0b0c7fc164a9",
+  "data_as_of": "2026-09-01",
+  "overall_status": "Healthy",
+  "live_sources": 6,
   "planned_sources": 0,
   "sources": [
     {
@@ -11,7 +11,7 @@
       "dataset": "immd",
       "type": "Monitor",
       "status": "Healthy",
-      "latest_observation": "2026-08-31",
+      "latest_observation": "2026-09-01",
       "records": 365,
       "freshness": "Dated snapshot",
       "notes": "Daily passenger clearance by control point, direction and residency, used to derive HK-resident net flow and Mainland-visitor net retention."
@@ -30,11 +30,11 @@
       "source": "MPFA Statistical Digest",
       "dataset": "mpfa",
       "type": "Monitor",
-      "status": "Degraded",
+      "status": "Healthy",
       "latest_observation": "2026-Q2",
       "records": 15,
       "freshness": "Dated snapshot",
-      "notes": "Quarterly MPF claims for permanent departure from Hong Kong (count and amount), parsed from the official Statistical Digest. Live fetch failed this build; serving the committed snapshot."
+      "notes": "Quarterly MPF claims for permanent departure from Hong Kong (count and amount), parsed from the official Statistical Digest."
     },
     {
       "source": "UGC Student Enrolment by Place of Origin",
@@ -67,5 +67,5 @@
       "notes": "Monthly visitor arrivals by nationality/region since 2004, a geographic companion/cross-check to ImmD's cross-border passenger data."
     }
   ],
-  "attachment_filename": "hk-population-migration-dashboard-2026-09-01.html"
+  "attachment_filename": "hk-population-migration-dashboard-2026-09-02.html"
 }

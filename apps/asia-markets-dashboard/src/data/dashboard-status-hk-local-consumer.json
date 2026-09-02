@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-09-01T11:41:55.697493Z",
-  "snapshot_id": "168d4a331950e43c",
-  "data_as_of": "2026-08-30",
+  "generated_at": "2026-09-02T11:20:39.458716Z",
+  "snapshot_id": "dd37be3f9f5e00b5",
+  "data_as_of": "2026-08-31",
   "overall_status": "Healthy",
   "live_sources": 7,
   "planned_sources": 1,
@@ -13,7 +13,7 @@
       "status": "Healthy",
       "latest_observation": "2026-09-01",
       "records": 963,
-      "freshness": "0d old",
+      "freshness": "1d old",
       "notes": "Monthly hours under Typhoon Signal 8+ & Red/Black Rainstorm warnings alongside HKD/RMB FX."
     },
     {
@@ -21,8 +21,8 @@
       "dataset": "Immigration Passenger Clearance",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-31",
-      "records": 2069,
+      "latest_observation": "2026-09-01",
+      "records": 2070,
       "freshness": "1d old",
       "notes": "Daily clearance across 17 control points for HK residents & Mainland visitors."
     },
@@ -31,8 +31,8 @@
       "dataset": "SGE Gold Benchmark",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-30",
-      "records": 2521,
+      "latest_observation": "2026-08-31",
+      "records": 2522,
       "freshness": "2d old",
       "notes": "Daily AM/PM benchmark fixing."
     },
@@ -41,7 +41,7 @@
       "dataset": "HK Consumer Ticker Valuations",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-09-01",
+      "latest_observation": "2026-09-02",
       "records": 4026,
       "freshness": "0d old",
       "notes": "PE (TTM), PB, and market cap only; no dividend-yield indicator is available from this endpoint."
@@ -53,7 +53,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-01",
       "records": 6550,
-      "freshness": "62d old",
+      "freshness": "63d old",
       "notes": "25 outlet-type categories, monthly since 2004."
     },
     {
@@ -63,7 +63,7 @@
       "status": "Healthy",
       "latest_observation": "2026-06-30",
       "records": 522,
-      "freshness": "63d old",
+      "freshness": "64d old",
       "notes": "Sector-wide purchases only; per-type purchases are not published."
     },
     {
@@ -71,10 +71,10 @@
       "dataset": "HK Retail/F&B Store Counts",
       "type": "Snapshot",
       "status": "Healthy",
-      "latest_observation": "2026-08-01",
+      "latest_observation": "2026-09-01",
       "records": 11,
       "freshness": "Footprint snapshot (most brands: 1-2 dated snapshots so far, not yet a trend)",
-      "notes": "10,747 total tracked locations across 11 companies."
+      "notes": "10,967 total tracked locations across 11 companies."
     },
     {
       "source": "Consumer Council Online Price Watch",
@@ -85,5 +85,5 @@
       "notes": "Not marked Healthy: archive validation did not pass."
     }
   ],
-  "attachment_filename": "hk-local-consumer-dashboard-2026-09-01.html"
+  "attachment_filename": "hk-local-consumer-dashboard-2026-09-02.html"
 }
