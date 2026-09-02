@@ -1377,8 +1377,8 @@ def main() -> int:
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.status_output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(artifact, indent=2, default=str), encoding="utf-8")
-    args.status_output.write_text(json.dumps(status, indent=2, default=str), encoding="utf-8")
+    args.output.write_text(json.dumps(artifact, separators=(",", ":"), default=str), encoding="utf-8")
+    args.status_output.write_text(json.dumps(status, separators=(",", ":"), default=str), encoding="utf-8")
     print(json.dumps({"ok": True, "artifact": str(args.output), "snapshot_id": status["snapshot_id"]}))
     return 0
 

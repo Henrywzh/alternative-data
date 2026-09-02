@@ -47,6 +47,8 @@ PARTITIONED_DATASETS: frozenset[str] = frozenset(
     {
         "github_repo_candidates_daily",
         "github_repo_rollup_daily",
+        "huggingface_models_daily",
+        "github_provider_signals_daily",
     }
 )
 
@@ -1926,6 +1928,19 @@ PROVIDER_ADOPTION_LOAD_COLUMNS: dict[str, list[str]] = {
         "repo_full_name",
         "signal_date",
         "matched_signal_count",
+    ],
+    # Registered for freshness/Data Health only; no section renders its rows.
+    # Partitioned like the rollup above, so it needs the same explicit
+    # projection instead of a full 52-column read per partition.
+    "github_provider_signals_daily": [
+        *CORE_COLUMNS,
+        "provider",
+        "provider_display_name",
+        "repo_full_name",
+        "signal_date",
+        "signal_type",
+        "matched_file_path",
+        "stargazers_count",
     ],
 }
 

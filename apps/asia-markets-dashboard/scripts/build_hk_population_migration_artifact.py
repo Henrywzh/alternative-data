@@ -109,7 +109,7 @@ def _persist_mpfa_cache(frame):
         "columns": list(frame.columns),
         "note": "refreshed by the population artifact builder fetch-first policy",
     }
-    (cache_dir / "lineage.json").write_text(json.dumps(lineage, indent=2), encoding="utf-8")
+    (cache_dir / "lineage.json").write_text(json.dumps(lineage, separators=(",", ":")), encoding="utf-8")
 
 
 def _load_mpfa():
@@ -805,11 +805,11 @@ def main() -> int:
 
     out_path = Path(args.output)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps(artifact_clean, indent=2, ensure_ascii=False), encoding="utf-8")
+    out_path.write_text(json.dumps(artifact_clean, separators=(",", ":"), ensure_ascii=False), encoding="utf-8")
 
     status_path = Path(args.status_output)
     status_path.parent.mkdir(parents=True, exist_ok=True)
-    status_path.write_text(json.dumps(status_clean, indent=2, ensure_ascii=False), encoding="utf-8")
+    status_path.write_text(json.dumps(status_clean, separators=(",", ":"), ensure_ascii=False), encoding="utf-8")
 
     print(json.dumps({"ok": True, "artifact": args.output, "snapshot_id": status_clean["snapshot_id"]}))
     return 0

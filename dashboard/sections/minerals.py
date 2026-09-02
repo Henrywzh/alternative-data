@@ -149,14 +149,25 @@ def _minerals_partition_dir(dataset: str) -> Path | None:
 
 
 @st.cache_data(ttl=3600, max_entries=8)
-def _load_minerals_csv(dataset: str) -> pd.DataFrame:
+def _load_minerals_dataset(dataset: str) -> pd.DataFrame:
+    """Load a minerals dataset from its `latest` (or newest) run partition.
+
+    Parquet is the committed format; the CSV twin of each dataset is written
+    for local convenience only and is no longer tracked, so a fresh checkout
+    has parquet alone.  The CSV fallback keeps stale local checkouts that
+    predate the split rendering until their next pipeline run.
+    """
     part = _minerals_partition_dir(dataset)
     if part is None:
         return pd.DataFrame()
-    path = part / f"{dataset}.csv"
-    if not path.exists():
+    parquet_path = part / f"{dataset}.parquet"
+    csv_path = part / f"{dataset}.csv"
+    if parquet_path.exists():
+        frame = pd.read_parquet(parquet_path)
+    elif csv_path.exists():
+        frame = pd.read_csv(csv_path)
+    else:
         return pd.DataFrame()
-    frame = pd.read_csv(path)
     for column in ("date", "signal_date", "as_of_date", "source_timestamp"):
         if column in frame.columns:
             frame[column] = pd.to_datetime(frame[column], errors="coerce")
@@ -374,16 +385,16 @@ def render_minerals_section() -> None:
         "with proxy minerals labeled by the actual tracked instrument."
     )
 
-    universe = _load_minerals_csv("mineral_price_universe_live")
-    base_prices = _load_minerals_csv("mineral_price_series_daily")
-    tungsten_prices = _load_minerals_csv("tungsten_price_daily")
-    molybdenum_prices = _load_minerals_csv("molybdenum_price_daily")
-    rare_earth_prices = _load_minerals_csv("rare_earth_price_daily")
+    universe = _load_minerals_dataset("mineral_price_universe_live")
+    base_prices = _load_minerals_dataset("mineral_price_series_daily")
+    tungsten_prices = _load_minerals_dataset("tungsten_price_daily")
+    molybdenum_prices = _load_minerals_dataset("molybdenum_price_daily")
+    rare_earth_prices = _load_minerals_dataset("rare_earth_price_daily")
     chinatungsten_prices = _build_chinatungsten_long_prices(tungsten_prices, molybdenum_prices, rare_earth_prices)
     prices = _merge_mineral_selector_prices(base_prices, chinatungsten_prices)
     universe = _merge_mineral_selector_universe(universe, chinatungsten_prices)
-    mapping = _load_minerals_csv("stock_mapping_expanded_live")
-    stock_prices = _load_minerals_csv("stock_price_series_daily")
+    mapping = _load_minerals_dataset("stock_mapping_expanded_live")
+    stock_prices = _load_minerals_dataset("stock_price_series_daily")
 
     if prices.empty:
         st.warning("No minerals price data is available in this deployment.")

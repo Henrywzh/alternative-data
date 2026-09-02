@@ -135,7 +135,7 @@ def test_render_minerals_section_uses_live_selector_and_proxy_labels(monkeypatch
     }
 
     monkeypatch.setattr(minerals, "st", fake_st)
-    monkeypatch.setattr(minerals, "_load_minerals_csv", lambda dataset: datasets.get(dataset, pd.DataFrame()))
+    monkeypatch.setattr(minerals, "_load_minerals_dataset", lambda dataset: datasets.get(dataset, pd.DataFrame()))
 
     minerals.render_minerals_section()
 

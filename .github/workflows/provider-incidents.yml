@@ -2,7 +2,10 @@ name: Provider Incident Tracker
 
 on:
   schedule:
-    - cron: "23 */2 * * *"
+    # Four refreshes a day catch status-page flaps without rewriting the
+    # ~830KB incident parquets twelve times a day (roughly 3MB/day of pure
+    # churn in a repo whose size is the deployment budget).
+    - cron: "23 */6 * * *"
   workflow_dispatch:
 
 concurrency:

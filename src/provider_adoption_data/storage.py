@@ -145,6 +145,10 @@ PARQUET_ONLY_DATASETS = {
 PARTITION_COLUMNS: dict[str, str] = {
     "github_repo_candidates_daily": "repo_created_date",
     "github_repo_rollup_daily": "signal_date",
+    # Same disease, smaller dose: these two rewrite a 3.7 MB and a 2.2 MB
+    # monolith every day for an append-only day of rows.
+    "huggingface_models_daily": "download_date",
+    "github_provider_signals_daily": "signal_date",
 }
 _UNPARTITIONED = "__unpartitioned__"
 

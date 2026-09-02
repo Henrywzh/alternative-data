@@ -305,10 +305,13 @@ data/processed/minerals_usgs/*
 !data/processed/minerals_usgs/**/*.parquet
 
 # minerals_signal_data: commit only the canonical `latest` run partition
+# The parquet twin is the committed source of truth; the CSV twin every run
+# rewrites in full costs ~9x the bytes and no reader depends on it.
 !data/processed/minerals_signal_data/
 data/processed/minerals_signal_data/*
 !data/processed/minerals_signal_data/**/
 !data/processed/minerals_signal_data/**/latest/**
+data/processed/minerals_signal_data/**/latest/**/*.csv
 # minerals raw: commit the tungsten scrape CSV/parquet, never the downloaded images
 !data/raw/minerals_signal_data/
 data/raw/minerals_signal_data/*

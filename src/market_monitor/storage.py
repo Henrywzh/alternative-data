@@ -191,6 +191,24 @@ def prune_runs(root: Path, dataset_name: str, *, keep: int) -> list[str]:
     return removed
 
 
+def prune_all_runs(keep: int = 20) -> list[str]:
+    """Prune stale run dirs across every persisted market_monitor dataset.
+
+    `prune_runs` existed but nothing called it, so the run directories the
+    daily workflow commits grew without bound and the deployed checkout paid
+    for every one of them.  Raw snapshots are pruned too: they are equally
+    complete, equally redundant, and untracked but not unbounded on disk.
+    """
+    removed: list[str] = []
+    for root in (RAW_DIR, NORMALIZED_DIR, DERIVED_DIR):
+        base = Path(root)
+        if not base.is_dir():
+            continue
+        for dataset_dir in sorted(path for path in base.iterdir() if path.is_dir()):
+            removed.extend(prune_runs(base, dataset_dir.name, keep=keep))
+    return removed
+
+
 def load_latest_normalized(dataset_name: str, scope: str | None = "full") -> pd.DataFrame:
     return load_latest(NORMALIZED_DIR, dataset_name, scope=scope)
 

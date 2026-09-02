@@ -1177,13 +1177,13 @@ def main() -> None:
         out_path = Path(args.output)
         out_path.parent.mkdir(parents=True, exist_ok=True)
         with open(out_path, "w", encoding="utf-8") as f:
-            json.dump(artifact_clean, f, indent=2, ensure_ascii=False)
+            json.dump(artifact_clean, f, separators=(",", ":"), ensure_ascii=False)
 
     if args.status_output:
         status_path = Path(args.status_output)
         status_path.parent.mkdir(parents=True, exist_ok=True)
         with open(status_path, "w", encoding="utf-8") as f:
-            json.dump(status_clean, f, indent=2, ensure_ascii=False)
+            json.dump(status_clean, f, separators=(",", ":"), ensure_ascii=False)
 
     print(json.dumps({"ok": True, "artifact": args.output or "stdout", "snapshot_id": status_clean["snapshot_id"]}))
 

@@ -368,7 +368,7 @@ def _atomic_json(path: Path, payload: dict[str, Any]) -> None:
     fd, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
-            json.dump(payload, handle, ensure_ascii=False, indent=2, allow_nan=False)
+            json.dump(payload, handle, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
             handle.write("\n")
         os.replace(temporary_name, path)
     except Exception:

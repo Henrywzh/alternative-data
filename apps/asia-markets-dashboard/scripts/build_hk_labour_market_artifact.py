@@ -885,8 +885,8 @@ def main() -> int:
     artifact, status = build_artifact()
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.status_output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(artifact, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
-    args.status_output.write_text(json.dumps(status, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
+    args.output.write_text(json.dumps(artifact, separators=(",", ":"), ensure_ascii=False, default=str), encoding="utf-8")
+    args.status_output.write_text(json.dumps(status, separators=(",", ":"), ensure_ascii=False, default=str), encoding="utf-8")
     print(json.dumps({"ok": True, "artifact": str(args.output), "snapshot_id": status["snapshot_id"], "data_as_of": status["data_as_of"]}))
     return 0
 

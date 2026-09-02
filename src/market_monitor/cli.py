@@ -20,6 +20,7 @@ from .alert_policy import (
 )
 from .freshness import BLOCKING_FRESHNESS_STATUSES, market_date
 from .pipeline import run_intraday_snapshot, run_pipeline
+from .storage import prune_all_runs
 
 
 # One entry per chart embedded in the digest. The email renders an ETF card
@@ -139,6 +140,10 @@ def main(argv: list[str] | None = None) -> int:
             start_date=args.start_date,
             write=should_write,
         )
+        if should_write:
+            removed_runs = prune_all_runs(keep=20)
+            if removed_runs:
+                print(f"Pruned {len(removed_runs)} stale market-monitor run directories")
     summary = {k: (int(v) if isinstance(v, int) else (len(v) if hasattr(v, "__len__") and not isinstance(v, str) else v)) for k, v in results.items() if k != "_run"}
     print(json.dumps(summary, ensure_ascii=False, indent=2, default=str))
     freshness_blocked = False
