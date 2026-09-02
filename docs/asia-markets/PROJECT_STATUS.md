@@ -602,18 +602,43 @@ replacement for the operating manual or generated source-status JSON.
   the Hong Kong sector pages it now has the Streamlit-native Index & ETF
   Allocation Monitor. Its flow is `src/market_monitor` sources -> immutable
   normalized/derived Parquet -> `market-monitor-artifact*.json` -> Plotly
-  views. The monitor currently covers 11 investable exposures and 29 ETF
-  wrappers, with source-declared Sina/Sina-HK/CSI/Yahoo routing, two-year ETF
+  views. The monitor currently covers 17 investable exposures and 37 ETF
+  wrappers, including 19 QDII wrappers across ten exposure groups, with source-declared Sina/Sina-HK/CSI/Yahoo routing, two-year ETF
   price and premium history, RSI/MA/drawdown, absolute entry status versus
-  peer rank, and 12 relative-strength pair histories. The artifact is
-  verified as ready at commit `9a096149`; 71 market-monitor tests and 64
-  Streamlit/wiring/history tests passed in the 2026-08-21 review. Do not
+  peer rank, and 12 relative-strength pair histories. The 2026-08-24
+  freshness review passed 196 targeted market-monitor/Streamlit tests; do not
   treat those counts as a permanent freshness guarantee.
-- The market-monitor review also recorded four follow-ups: ratio mode still
-  needs true reindexing if that remains the requested display, CSI source
-  health should use its own latest observation date, wrapper table columns
-  need fuller Chinese localization, and historical premium z-score/verified
-  NAV-based AUM/tracking difference remain V1.1.
+- The market-monitor review's remaining V1.1 follow-ups are ratio-mode
+  reindexing if that remains the requested display, fuller Chinese wrapper
+  table localization, historical premium z-score, verified NAV-based AUM and
+  tracking difference. Source-specific freshness and coverage regression
+  checks are now part of the production contract.
+- On 2026-08-30 the monitor's Gmail delivery changed from schedule-driven to
+  event-driven. The close and intraday workflows share a tiny committed
+  `data/derived/market_monitor/alert_state.json` delivery cursor: the first
+  healthy run establishes a baseline, confirmed signal changes and fee events
+  trigger an alert, same-day runs are deduplicated, and a quiet week gets one
+  heartbeat. A bounded event-key list and retry queue prevent a same-day or
+  failed-send edge case from losing a signal; market history is not copied
+  into this file. On 2026-08-24 the monitor gained
+  an explicit freshness contract. The close pipeline now carries
+  observation-date/freshness metadata, while the separate
+  `market-monitor-intraday.yml` workflow fetches a non-persistent midday ETF
+  spot snapshot and sends a distinct alert. The dashboard and email expose the
+  difference between retrieval time and market observation time. Missing or
+  last-close-reconstructed quotes no longer enter current entry-cost/status or
+  peer ranking; the raw context remains auditable. Retrieval-only Eastmoney
+  rows are `Unverified` rather than `Fresh`, and empty responses are
+  `Unavailable`; neither can drive a current premium comparison. Premium
+  history is validated against ETF trading sessions before persistence and
+  again at the artifact boundary. Daily freshness is exposed per region and
+  source, not only as a global maximum date. A fresh source fetch is still
+  required to refresh the committed artifact; Streamlit page navigation does
+  not call upstream providers. The daily workflow blocks the email on
+  unavailable/stale/invalid regional or source data, coverage regressions or
+  failed fetches, while retrieval-only `Unverified` quotes remain visibly
+  labelled and excluded from current comparisons. It can still publish a
+  clearly degraded technical artifact.
 - The crypto page keeps the long-run monthly Fear & Greed context plus the
   daily score and a derived trailing seven-calendar-day average for
   interactive research views. It also exposes the curated Wikimedia crypto
@@ -2012,3 +2037,34 @@ Still open: decide whether artifact-refresh-guard should merge
 per-dataset instead of reverting the whole artifact when one source
 fails; harden the SHKP quarterly fetch for CI IPs; make the SHKP
 quarterly fact extraction deterministic so its row count stops churning.
+
+### SHKP bounded refresh automation (2026-08-31)
+
+The SHKP workstream now has one operational entry point:
+`python -m src.hk_real_estate.cli run-shkp-refresh`. It refreshes the official
+SHKP directory, SRPE all-development index and pipeline, then routes recent
+active candidate phases through the current SRPE manifest and bounded
+transaction-register scratch queue. It consolidates persisted scratch batches
+into strict and indicative phase-month layers and runs the official SHKP
+financial-input model.
+
+The lightweight catalog path was hardened at the same time. Skipping deep
+annual-report, planning, site or manifest fetches now reuses the latest
+non-empty snapshot with an explicit `skipped_reused_last_valid` lineage marker
+instead of writing empty source frames and erasing downstream evidence. A
+current manifest queue with no stale candidate is an explicit `no_op`, not a
+failed refresh.
+
+`run-shkp-refresh` writes the per-step control dataset
+`shkp_developer_tracking_refresh_status`. Required failures are fatal in strict
+mode; expected no-ops and coverage/PIT/ownership gaps remain visible as
+warnings. The weekly GitHub Actions workflow is
+`.github/workflows/hk-real-estate-shkp-refresh-weekly.yml`. It commits only a
+compact set of SHKP indexes, manifests, transaction/signal layers, status and
+official financial inputs. A private `FINANCIAL_DATA_REPO_TOKEN` secret is
+needed to include sibling actual/consensus data; without it the workflow uses
+the explicit official-only lane and does not fabricate financial values.
+
+This closes the repeatable SHKP ingestion loop, not the research limitations:
+SRPE activity is still a contract/activity proxy, historical missing months are
+not zero, and legal ownership/JV intervals remain blocked until reviewed.

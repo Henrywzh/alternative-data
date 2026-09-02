@@ -117,6 +117,27 @@ src/market_monitor sources
 This shared artifact is a read contract only. It does not make the monitor a
 Cloudflare page or authorize adding it to the public sector roster.
 
+The market monitor has two timing contracts. The daily close workflow persists
+completed-session history and builds the artifact. The separate
+`.github/workflows/market-monitor-intraday.yml` workflow fetches only the
+midday ETF spot snapshot. Both workflows evaluate the same event-driven Gmail
+policy: a baseline is sent once, confirmed signal changes trigger an alert, and
+Friday sends a weekly no-change heartbeat when the week has been quiet. The
+intraday workflow may commit only the tiny
+`data/derived/market_monitor/alert_state.json` delivery cursor (including a
+bounded event-key dedupe list and retry queue); it must not write quote
+snapshots into Git or use a last-close reconstruction as a current quote. A
+failed event or weekly heartbeat remains pending for the next healthy run.
+Freshness status and observation dates are part of the artifact
+contract; a rebuild timestamp is not an observation timestamp. The daily CLI
+uses `--require-fresh` for the email and `--allow-stale-artifact` for the
+artifact step: unavailable/stale/invalid regional or source data, coverage
+regressions and failed fetches block the email but still permit a technical
+artifact with an explicit warning. The intraday fetch is intentionally
+non-persistent for market data; an empty provider response is `Unavailable`,
+while retrieval-only Eastmoney rows are `Unverified` and stay out of
+current-cost, alert and peer-ranking decisions.
+
 Important files:
 
 - `apps/asia-markets-dashboard/sectors.json`: single source of truth for live
@@ -300,7 +321,7 @@ For a data or dashboard change:
 7. Run the relevant tests. For dashboard wiring, start with:
 
    ```bash
-   cd /Users/henrywzh/Desktop/Quant/alternative-data
+   cd /Users/henrywzh/Quant/alternative-data
    pytest -q tests/test_asia_dashboard_artifacts.py tests/test_asia_markets_wiring.py
    ```
 
@@ -323,7 +344,7 @@ to inspect a source file when a focused artifact or test is enough.
 For the private Streamlit V1 local app:
 
 ```bash
-cd /Users/henrywzh/Desktop/Quant/alternative-data
+cd /Users/henrywzh/Quant/alternative-data
 streamlit run apps/asia-markets-streamlit/app.py
 ```
 
