@@ -6,6 +6,7 @@
   "scripts": {
     "refresh": "node scripts/run-artifact-builders.mjs",
     "test:refresh-guard": "node --test scripts/artifact-refresh-guard.test.mjs",
+    "localize": "node scripts/package-dashboard.mjs --localize-only",
     "build": "node scripts/run-artifact-builders.mjs --tolerate-errors && node scripts/build-static-hub.mjs && node scripts/package-dashboard.mjs",
     "dev": "npm run refresh && node scripts/build-static-hub.mjs && python3 -m http.server 4321 --directory dist",
     "preview": "python3 -m http.server 4321 --directory dist",

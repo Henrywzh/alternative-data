@@ -22,12 +22,11 @@ name: Asia Markets Dashboard Data Refresh Daily
 # exact plugin version from in a generic GitHub Actions runner, and vendoring
 # OpenAI's bundled proprietary plugin code into this repo isn't appropriate.
 #
-# Net effect: the .generated/*.html portable dashboards (and the -zh.json /
-# -zh.html localized variants, which are also produced by package-dashboard.mjs)
-# are NOT refreshed by this workflow and will be one manual-rebuild cycle
-# stale on charts specifically. The underlying JSON data and status files
-# ARE kept fresh daily. Run `npm run build` locally (where the plugin cache
-# exists) periodically to refresh the rendered HTML/zh artifacts.
+# Net effect: the .generated/*.html portable dashboards (and the -zh.html
+# localized variants, which still require package-dashboard.mjs) are NOT
+# refreshed by this workflow. The underlying JSON data, status files, and
+# localized -zh.json snapshots ARE kept fresh daily. Run `npm run build` locally
+# (where the plugin cache exists) periodically to refresh the rendered HTML.
 
 on:
   schedule:
@@ -100,6 +99,12 @@ jobs:
         env:
           HK_RE_SKIP_MIDLAND: "1"
         run: npm run refresh -- --tolerate-errors
+
+      - name: Refresh localized dashboard artifact JSON
+        # This does not require the proprietary portable renderer. Keeping the
+        # JSON snapshots in sync prevents the public ZH data view from serving
+        # an older vintage than the EN view after the daily refresh.
+        run: npm run localize
 
       - name: Commit refreshed artifact manifests and status files
         working-directory: .

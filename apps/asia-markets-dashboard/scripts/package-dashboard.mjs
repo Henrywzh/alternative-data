@@ -11,6 +11,7 @@ import { STATUS_ZH } from "./status-zh.mjs";
 
 const generatedDir = join(projectRoot, ".generated");
 const distDir = join(projectRoot, "dist");
+const LOCALIZE_ONLY = process.argv.includes("--localize-only");
 
 function findPortableBuilder() {
   if (process.env.DATA_ANALYTICS_PORTABLE_BUILDER) {
@@ -453,6 +454,20 @@ const HK_REAL_ESTATE_ZH = {
         handover_disclosure_status: "交付证据",
         completion_window: "完工窗口",
         bd_occupation_status: "屋宇署入伙纸快照",
+      },
+    },
+    shkp_srpe_transaction_health_table: {
+      title: "新鸿基 SRPE 成交纪录数据健康",
+      subtitle: "情况1=有文件、尚未完成解析；情况2=已解析但无成交/未更新；情况3=已就绪。",
+      columns: {
+        srpe_development_id: "SRPE 阶段",
+        development_name: "发展项目",
+        phase_name: "期数",
+        situation: "情况",
+        parse_status: "解析状态",
+        current_event_rows: "成交行数",
+        quality_status: "质量状态",
+        note: "说明",
       },
     },
     shkp_28hse_reconciliation_table: {
@@ -2294,11 +2309,33 @@ const SECTORS = LIVE_SECTORS.map((sector) => {
   return { ...sector, zh };
 });
 
+mkdirSync(generatedDir, { recursive: true });
+
+// The portable renderer is an optional local plugin.  Localization is not:
+// the JSON artifact is also consumed by the data-status/publication flow, and
+// leaving the previous -zh.json in place when the renderer is unavailable
+// silently serves a different vintage from the English artifact.  Generate
+// the localized JSON first so CI can keep both language snapshots aligned
+// even when it cannot package responsive HTML.
+for (const sector of SECTORS) {
+  const artifactFile = join(generatedDir, `${sector.id}-artifact.json`);
+  if (!existsSync(artifactFile)) continue;
+  const zhArtifactFile = join(generatedDir, `${sector.id}-artifact-zh.json`);
+  const rawArtifact = JSON.parse(readFileSync(artifactFile, "utf8"));
+  const zhArtifact = localizeArtifact(rawArtifact, sector.zh);
+  writeFileSync(zhArtifactFile, JSON.stringify(zhArtifact, null, 2));
+  process.stdout.write(`[package-dashboard] Localized ${sector.id} (ZH JSON).\n`);
+}
+
+if (LOCALIZE_ONLY) {
+  process.stdout.write("[package-dashboard] Localized artifacts only; portable packaging skipped.\n");
+  process.exit(0);
+}
+
 if (!existsSync(distDir)) {
   throw new Error("Run the static hub build step before packaging dashboards.");
 }
 
-mkdirSync(generatedDir, { recursive: true });
 let deliveryScript = null;
 let deliverPortableArtifact = null;
 let buildPortableArtifact = null;
@@ -2335,8 +2372,7 @@ for (const sector of SECTORS) {
   }
 
   const rawArtifact = JSON.parse(readFileSync(artifactFile, "utf8"));
-  const zhArtifact = localizeArtifact(rawArtifact, sector.zh);
-  writeFileSync(zhArtifactFile, JSON.stringify(zhArtifact, null, 2));
+  const zhArtifact = JSON.parse(readFileSync(zhArtifactFile, "utf8"));
 
   const sectorDistEn = join(distDir, "sectors", sectorSlug);
   const sectorDistZh = join(distDir, "zh", "sectors", sectorSlug);

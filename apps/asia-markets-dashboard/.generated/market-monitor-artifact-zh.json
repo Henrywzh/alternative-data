@@ -1,7 +1,7 @@
 {
   "manifest": {
     "version": 1,
-    "generatedAt": "2026-08-23T16:31:54.606945+00:00",
+    "generatedAt": "2026-08-24T03:40:57.739578+00:00",
     "cards": [],
     "charts": [
       {
@@ -174,7 +174,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-23T16:31:54.606945+00:00",
+    "generatedAt": "2026-08-24T03:40:57.739578+00:00",
     "status": "partial",
     "datasets": {
       "exposure_technicals": [
@@ -191,7 +191,7 @@
           "date": "2026-08-21",
           "label_zh": "沪深300",
           "index_id": "000300.SH",
-          "avg_premium_30d": -0.04,
+          "avg_premium_30d": -0.05,
           "avg_premium_days": 23
         },
         {
@@ -239,7 +239,7 @@
           "date": "2026-08-21",
           "label_zh": "上证红利",
           "index_id": "000015.SH",
-          "avg_premium_30d": -0.04,
+          "avg_premium_30d": -0.05,
           "avg_premium_days": 23
         },
         {
@@ -271,7 +271,7 @@
           "date": "2026-08-21",
           "label_zh": "恒生科技",
           "index_id": "HSTECH",
-          "avg_premium_30d": -0.69,
+          "avg_premium_30d": -0.71,
           "avg_premium_days": 23
         },
         {
@@ -287,7 +287,7 @@
           "date": "2026-08-21",
           "label_zh": "恒生指数",
           "index_id": "HSI",
-          "avg_premium_30d": -0.74,
+          "avg_premium_30d": -0.76,
           "avg_premium_days": 23
         },
         {
@@ -303,7 +303,7 @@
           "date": "2026-08-21",
           "label_zh": "纳斯达克100",
           "index_id": "NDX",
-          "avg_premium_30d": 10.1,
+          "avg_premium_30d": 9.95,
           "avg_premium_days": 22
         },
         {
@@ -319,7 +319,7 @@
           "date": "2026-08-21",
           "label_zh": "标普500",
           "index_id": "SPX",
-          "avg_premium_30d": 6.34,
+          "avg_premium_30d": 6.04,
           "avg_premium_days": 22
         },
         {
@@ -335,7 +335,7 @@
           "date": "2026-08-21",
           "label_zh": "港股红利",
           "index_id": "CSHKDIV",
-          "avg_premium_30d": -0.67,
+          "avg_premium_30d": -0.69,
           "avg_premium_days": 23
         },
         {
@@ -367,7 +367,7 @@
           "date": "2026-08-21",
           "label_zh": "日经225",
           "index_id": "N225",
-          "avg_premium_30d": 3.99,
+          "avg_premium_30d": 4.01,
           "avg_premium_days": 23
         },
         {
@@ -383,7 +383,7 @@
           "date": "2026-08-21",
           "label_zh": "中韩半导体",
           "index_id": "931643",
-          "avg_premium_30d": 13.8,
+          "avg_premium_30d": 13.81,
           "avg_premium_days": 23
         },
         {
@@ -399,7 +399,7 @@
           "date": "2026-08-21",
           "label_zh": "德国DAX",
           "index_id": "DAX",
-          "avg_premium_30d": 1.23,
+          "avg_premium_30d": 1.16,
           "avg_premium_days": 22
         },
         {
@@ -479,7 +479,7 @@
           "date": "2026-08-21",
           "label_zh": "法国CAC40",
           "index_id": "CAC40",
-          "avg_premium_30d": 0.26,
+          "avg_premium_30d": 0.27,
           "avg_premium_days": 22
         },
         {
@@ -495,7 +495,7 @@
           "date": "2026-08-21",
           "label_zh": "英国富时100",
           "index_id": "FTSE",
-          "avg_premium_30d": -0.66,
+          "avg_premium_30d": -0.64,
           "avg_premium_days": 23
         },
         {
@@ -511,7 +511,7 @@
           "date": "2026-08-21",
           "label_zh": "沙特阿拉伯",
           "index_id": "KSA",
-          "avg_premium_30d": -0.29,
+          "avg_premium_30d": -0.4,
           "avg_premium_days": 22
         },
         {
@@ -836,18 +836,20 @@
           "spread_bp": 5.5912776069,
           "aum": 1169855724,
           "aum_proxy": 1169855724,
-          "relative_premium_pct": 0.0,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 2277,
-          "entry_cost_bp": 19.8,
-          "buy_score": 71.7,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 60.5,
           "hold_score": 66.3,
-          "buy_rank": 1,
+          "buy_rank": 99,
           "hold_rank": 1,
-          "peer_rank": 1,
-          "entry_status": "FAIR",
-          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF"
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "csi1000",
@@ -875,18 +877,20 @@
           "spread_bp": 3.1580609506,
           "aum": 7583145875,
           "aum_proxy": 7583145875,
-          "relative_premium_pct": 0.12,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 1752,
-          "entry_cost_bp": 6.58,
-          "buy_score": 61.2,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 95.8,
           "hold_score": 87.0,
-          "buy_rank": 3,
+          "buy_rank": 99,
           "hold_rank": 2,
-          "peer_rank": 3,
-          "entry_status": "FAIR",
-          "premium_caveat": ""
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "csi1000",
@@ -914,18 +918,20 @@
           "spread_bp": 3.246226262,
           "aum": 20904630405,
           "aum_proxy": 20904630405,
-          "relative_premium_pct": -0.01,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 3615,
-          "entry_cost_bp": -6.38,
-          "buy_score": 72.0,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 97.0,
           "hold_score": 91.1,
-          "buy_rank": 1,
+          "buy_rank": 99,
           "hold_rank": 1,
-          "peer_rank": 1,
-          "entry_status": "FAIR",
-          "premium_caveat": ""
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "csi1000",
@@ -953,18 +959,20 @@
           "spread_bp": 3.1640563202,
           "aum": 6020509181,
           "aum_proxy": 6020509181,
-          "relative_premium_pct": 0.0,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 1844,
-          "entry_cost_bp": -5.42,
-          "buy_score": 71.2,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 90.3,
           "hold_score": 86.6,
-          "buy_rank": 2,
+          "buy_rank": 99,
           "hold_rank": 3,
-          "peer_rank": 2,
-          "entry_status": "FAIR",
-          "premium_caveat": ""
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "csi300",
@@ -992,18 +1000,20 @@
           "spread_bp": 2.045617265,
           "aum": 30628289962,
           "aum_proxy": 30628289962,
-          "relative_premium_pct": 0.0,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 5221,
-          "entry_cost_bp": 1.02,
-          "buy_score": 65.8,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 92.2,
           "hold_score": 91.6,
-          "buy_rank": 2,
+          "buy_rank": 99,
           "hold_rank": 3,
-          "peer_rank": 2,
-          "entry_status": "FAIR",
-          "premium_caveat": ""
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "csi300",
@@ -1031,18 +1041,20 @@
           "spread_bp": 2.1365238757,
           "aum": 111119054193,
           "aum_proxy": 111119054193,
-          "relative_premium_pct": -0.01,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 5200,
-          "entry_cost_bp": 0.07,
-          "buy_score": 66.6,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 97.7,
           "hold_score": 92.9,
-          "buy_rank": 1,
+          "buy_rank": 99,
           "hold_rank": 1,
-          "peer_rank": 1,
-          "entry_status": "FAIR",
-          "premium_caveat": ""
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "csi300",
@@ -1070,18 +1082,20 @@
           "spread_bp": 2.0489703924,
           "aum": 41496553260,
           "aum_proxy": 41496553260,
-          "relative_premium_pct": 0.04,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 4989,
-          "entry_cost_bp": 5.02,
-          "buy_score": 62.5,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 92.4,
           "hold_score": 91.9,
-          "buy_rank": 3,
+          "buy_rank": 99,
           "hold_rank": 2,
-          "peer_rank": 3,
-          "entry_status": "FAIR",
-          "premium_caveat": ""
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "csi500",
@@ -1109,18 +1123,20 @@
           "spread_bp": 3.1313605762,
           "aum": 8814407597,
           "aum_proxy": 8814407597,
-          "relative_premium_pct": 0.05,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 4946,
-          "entry_cost_bp": -1.43,
-          "buy_score": 67.9,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 85.8,
           "hold_score": 90.1,
-          "buy_rank": 3,
+          "buy_rank": 99,
           "hold_rank": 2,
-          "peer_rank": 3,
-          "entry_status": "FAIR",
-          "premium_caveat": ""
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "csi500",
@@ -1148,18 +1164,20 @@
           "spread_bp": 1.2712133732,
           "aum": 39878800626,
           "aum_proxy": 39878800626,
-          "relative_premium_pct": -0.05,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 4946,
-          "entry_cost_bp": -12.36,
-          "buy_score": 75.3,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 96.8,
           "hold_score": 91.9,
-          "buy_rank": 1,
+          "buy_rank": 99,
           "hold_rank": 1,
-          "peer_rank": 1,
-          "entry_status": "ATTRACTIVE",
-          "premium_caveat": ""
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "csi500",
@@ -1187,18 +1205,20 @@
           "spread_bp": 2.2469385462,
           "aum": 8170239160,
           "aum_proxy": 8170239160,
-          "relative_premium_pct": 0.0,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 4128,
-          "entry_cost_bp": -6.88,
-          "buy_score": 72.4,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 88.3,
           "hold_score": 89.9,
-          "buy_rank": 2,
+          "buy_rank": 99,
           "hold_rank": 3,
-          "peer_rank": 2,
-          "entry_status": "FAIR",
-          "premium_caveat": ""
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "dax",
@@ -1226,18 +1246,20 @@
           "spread_bp": 5.3036329886,
           "aum": 1904443209,
           "aum_proxy": 1904443209,
-          "relative_premium_pct": 0.0,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 4370,
-          "entry_cost_bp": 93.65,
-          "buy_score": 59.4,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 84.6,
           "hold_score": 58.9,
-          "buy_rank": 1,
+          "buy_rank": 99,
           "hold_rank": 1,
-          "peer_rank": 1,
-          "entry_status": "FAIR",
-          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF"
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "dividend",
@@ -1265,18 +1287,20 @@
           "spread_bp": 2.9520295203,
           "aum": 20251468028,
           "aum_proxy": 20251468028,
-          "relative_premium_pct": 0.0,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 7219,
-          "entry_cost_bp": -1.52,
-          "buy_score": 67.9,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 88.3,
           "hold_score": 75.3,
-          "buy_rank": 1,
+          "buy_rank": 99,
           "hold_rank": 1,
-          "peer_rank": 1,
-          "entry_status": "FAIR",
-          "premium_caveat": ""
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "ftse100",
@@ -1304,18 +1328,20 @@
           "spread_bp": 11.9688809096,
           "aum": 1220594283,
           "aum_proxy": 1220594283,
-          "relative_premium_pct": 0.0,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 2155,
-          "entry_cost_bp": -37.02,
-          "buy_score": 76.9,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 73.3,
           "hold_score": 66.2,
-          "buy_rank": 1,
+          "buy_rank": 99,
           "hold_rank": 1,
-          "peer_rank": 1,
-          "entry_status": "ATTRACTIVE",
-          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF"
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "growth",
@@ -1343,18 +1369,20 @@
           "spread_bp": 5.7290174735,
           "aum": 87020825939,
           "aum_proxy": 87020825939,
-          "relative_premium_pct": 0.0,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 2106,
-          "entry_cost_bp": -1.14,
-          "buy_score": 67.6,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 98.3,
           "hold_score": 90.4,
-          "buy_rank": 1,
+          "buy_rank": 99,
           "hold_rank": 1,
-          "peer_rank": 1,
-          "entry_status": "FAIR",
-          "premium_caveat": ""
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "growth",
@@ -1382,18 +1410,20 @@
           "spread_bp": 5.9084194978,
           "aum": 41575194630,
           "aum_proxy": 41575194630,
-          "relative_premium_pct": 0.0,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 2155,
-          "entry_cost_bp": -1.05,
-          "buy_score": 67.5,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 95.7,
           "hold_score": 89.7,
-          "buy_rank": 2,
+          "buy_rank": 99,
           "hold_rank": 2,
-          "peer_rank": 2,
-          "entry_status": "FAIR",
-          "premium_caveat": ""
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "hk_dividend",
@@ -1421,18 +1451,20 @@
           "spread_bp": 7.4990626172,
           "aum": 7069671352,
           "aum_proxy": 7069671352,
-          "relative_premium_pct": 0.66,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 860,
-          "entry_cost_bp": 70.75,
-          "buy_score": 47.3,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 77.0,
           "hold_score": 83.0,
-          "buy_rank": 3,
+          "buy_rank": 99,
           "hold_rank": 1,
-          "peer_rank": 3,
-          "entry_status": "EXPENSIVE",
-          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF"
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "hk_dividend",
@@ -1460,18 +1492,20 @@
           "spread_bp": 6.2363579669,
           "aum": 11872393541,
           "aum_proxy": 11872393541,
-          "relative_premium_pct": 0.0,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 989,
-          "entry_cost_bp": 4.12,
-          "buy_score": 70.0,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 81.9,
           "hold_score": 69.7,
-          "buy_rank": 2,
+          "buy_rank": 99,
           "hold_rank": 3,
-          "peer_rank": 2,
-          "entry_status": "FAIR",
-          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF"
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "hk_dividend",
@@ -1499,18 +1533,20 @@
           "spread_bp": 8.52151683,
           "aum": 3693166927,
           "aum_proxy": 3693166927,
-          "relative_premium_pct": -0.47,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 1921,
-          "entry_cost_bp": -41.74,
-          "buy_score": 77.7,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 78.0,
           "hold_score": 69.8,
-          "buy_rank": 1,
+          "buy_rank": 99,
           "hold_rank": 2,
-          "peer_rank": 1,
-          "entry_status": "ATTRACTIVE",
-          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF"
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "hk_internet",
@@ -1538,18 +1574,20 @@
           "spread_bp": 16.9061707523,
           "aum": 40199734518,
           "aum_proxy": 40199734518,
-          "relative_premium_pct": 0.0,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 1790,
-          "entry_cost_bp": -36.55,
-          "buy_score": 77.3,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 96.1,
           "hold_score": 89.1,
-          "buy_rank": 2,
+          "buy_rank": 99,
           "hold_rank": 1,
-          "peer_rank": 2,
-          "entry_status": "ATTRACTIVE",
-          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF"
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "hk_internet",
@@ -1577,18 +1615,20 @@
           "spread_bp": 10.4876769795,
           "aum": 6453181551,
           "aum_proxy": 6453181551,
-          "relative_premium_pct": 0.04,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 1168,
-          "entry_cost_bp": -35.76,
-          "buy_score": 77.2,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 90.2,
           "hold_score": 85.8,
-          "buy_rank": 3,
+          "buy_rank": 99,
           "hold_rank": 2,
-          "peer_rank": 3,
-          "entry_status": "ATTRACTIVE",
-          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF"
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "hk_internet",
@@ -1616,18 +1656,20 @@
           "spread_bp": 32.5732899023,
           "aum": 1572501320,
           "aum_proxy": 1572501320,
-          "relative_premium_pct": -0.33,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 286,
-          "entry_cost_bp": -61.71,
-          "buy_score": 79.5,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 75.1,
           "hold_score": 71.1,
-          "buy_rank": 1,
+          "buy_rank": 99,
           "hold_rank": 3,
-          "peer_rank": 1,
-          "entry_status": "ATTRACTIVE",
-          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF"
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "hsi",
@@ -1655,18 +1697,20 @@
           "spread_bp": 6.5638332786,
           "aum": 8869008172,
           "aum_proxy": 8869008172,
-          "relative_premium_pct": 0.035,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 5127,
-          "entry_cost_bp": -5.72,
-          "buy_score": 73.5,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 80.9,
           "hold_score": 69.7,
-          "buy_rank": 2,
+          "buy_rank": 99,
           "hold_rank": 2,
-          "peer_rank": 2,
-          "entry_status": "FAIR",
-          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF"
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "hsi",
@@ -1694,18 +1738,20 @@
           "spread_bp": 6.512536633,
           "aum": 2784490319,
           "aum_proxy": 2784490319,
-          "relative_premium_pct": -0.035,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 2991,
-          "entry_cost_bp": -12.74,
-          "buy_score": 75.2,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 66.5,
           "hold_score": 70.8,
-          "buy_rank": 1,
+          "buy_rank": 99,
           "hold_rank": 1,
-          "peer_rank": 1,
-          "entry_status": "ATTRACTIVE",
-          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF"
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "hstech",
@@ -1733,18 +1779,20 @@
           "spread_bp": 16.1943319838,
           "aum": 27457929770,
           "aum_proxy": 27457929770,
-          "relative_premium_pct": 0.0,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 2021,
-          "entry_cost_bp": -17.9,
-          "buy_score": 75.7,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 89.5,
           "hold_score": 86.9,
-          "buy_rank": 2,
+          "buy_rank": 99,
           "hold_rank": 2,
-          "peer_rank": 2,
-          "entry_status": "ATTRACTIVE",
-          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF"
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "hstech",
@@ -1772,18 +1820,20 @@
           "spread_bp": 16.9348010161,
           "aum": 33108644810,
           "aum_proxy": 33108644810,
-          "relative_premium_pct": 0.02,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 1917,
-          "entry_cost_bp": -15.53,
-          "buy_score": 75.5,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 96.4,
           "hold_score": 87.0,
-          "buy_rank": 3,
+          "buy_rank": 99,
           "hold_rank": 1,
-          "peer_rank": 3,
-          "entry_status": "ATTRACTIVE",
-          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF"
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "hstech",
@@ -1811,18 +1861,20 @@
           "spread_bp": 16.7084377611,
           "aum": 41605107868,
           "aum_proxy": 41605107868,
-          "relative_premium_pct": -0.17,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 1929,
-          "entry_cost_bp": -34.65,
-          "buy_score": 77.1,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 96.8,
           "hold_score": 72.0,
-          "buy_rank": 1,
+          "buy_rank": 99,
           "hold_rank": 3,
-          "peer_rank": 1,
-          "entry_status": "ATTRACTIVE",
-          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF"
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "kr_semis",
@@ -1850,18 +1902,20 @@
           "spread_bp": 2.0616431296,
           "aum": 11656620989,
           "aum_proxy": 11656620989,
-          "relative_premium_pct": 0.0,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 1676,
-          "entry_cost_bp": 1117.03,
-          "buy_score": 2.6,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 100.0,
           "hold_score": 61.3,
-          "buy_rank": 1,
+          "buy_rank": 99,
           "hold_rank": 1,
-          "peer_rank": 1,
-          "entry_status": "AVOID",
-          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF"
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "ndx",
@@ -1889,18 +1943,20 @@
           "spread_bp": 6.1180789232,
           "aum": 36837547638,
           "aum_proxy": 36837547638,
-          "relative_premium_pct": 0.0,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 4223,
-          "entry_cost_bp": 1062.06,
-          "buy_score": 4.3,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 94.0,
           "hold_score": 63.9,
-          "buy_rank": 2,
+          "buy_rank": 99,
           "hold_rank": 3,
-          "peer_rank": 2,
-          "entry_status": "AVOID",
-          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF"
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "ndx",
@@ -1928,18 +1984,20 @@
           "spread_bp": 4.5547711228,
           "aum": 20775917609,
           "aum_proxy": 20775917609,
-          "relative_premium_pct": 0.57,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 4848,
-          "entry_cost_bp": 1118.28,
-          "buy_score": 2.6,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 84.5,
           "hold_score": 69.3,
-          "buy_rank": 3,
+          "buy_rank": 99,
           "hold_rank": 1,
-          "peer_rank": 3,
-          "entry_status": "AVOID",
-          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF"
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "ndx",
@@ -1967,18 +2025,20 @@
           "spread_bp": 3.7530493526,
           "aum": 14137637437,
           "aum_proxy": 14137637437,
-          "relative_premium_pct": -1.64,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 2354,
-          "entry_cost_bp": 896.88,
-          "buy_score": 9.5,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 86.2,
           "hold_score": 67.0,
-          "buy_rank": 1,
+          "buy_rank": 99,
           "hold_rank": 2,
-          "peer_rank": 1,
-          "entry_status": "AVOID",
-          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF"
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "nikkei225",
@@ -2006,18 +2066,20 @@
           "spread_bp": 4.3888523151,
           "aum": 2275520187,
           "aum_proxy": 2275520187,
-          "relative_premium_pct": -0.175,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 2616,
-          "entry_cost_bp": 355.19,
-          "buy_score": 29.5,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 76.0,
           "hold_score": 83.5,
-          "buy_rank": 1,
+          "buy_rank": 99,
           "hold_rank": 2,
-          "peer_rank": 1,
-          "entry_status": "EXPENSIVE",
-          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF"
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "nikkei225",
@@ -2045,18 +2107,20 @@
           "spread_bp": 4.4081992506,
           "aum": 2434442170,
           "aum_proxy": 2434442170,
-          "relative_premium_pct": 0.175,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 2616,
-          "entry_cost_bp": 390.2,
-          "buy_score": 26.0,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 81.0,
           "hold_score": 83.6,
-          "buy_rank": 2,
+          "buy_rank": 99,
           "hold_rank": 1,
-          "peer_rank": 2,
-          "entry_status": "EXPENSIVE",
-          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF"
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "saudi",
@@ -2084,18 +2148,20 @@
           "spread_bp": 11.0071546505,
           "aum": 1095219779,
           "aum_proxy": 1095219779,
-          "relative_premium_pct": -0.095,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 790,
-          "entry_cost_bp": 30.5,
-          "buy_score": 69.9,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 41.6,
           "hold_score": 62.3,
-          "buy_rank": 1,
+          "buy_rank": 99,
           "hold_rank": 1,
-          "peer_rank": 1,
-          "entry_status": "FAIR",
-          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF"
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "saudi",
@@ -2123,18 +2189,20 @@
           "spread_bp": 11.1420612813,
           "aum": 1006764869,
           "aum_proxy": 1006764869,
-          "relative_premium_pct": 0.095,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 790,
-          "entry_cost_bp": 49.57,
-          "buy_score": 66.7,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 36.2,
           "hold_score": 62.1,
-          "buy_rank": 2,
+          "buy_rank": 99,
           "hold_rank": 2,
-          "peer_rank": 2,
-          "entry_status": "FAIR",
-          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF"
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "sp500",
@@ -2162,18 +2230,20 @@
           "spread_bp": 4.9912652857,
           "aum": 4324763509,
           "aum_proxy": 4324763509,
-          "relative_premium_pct": -0.34,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 1398,
-          "entry_cost_bp": 715.5,
-          "buy_score": 15.1,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 77.2,
           "hold_score": 64.9,
-          "buy_rank": 1,
+          "buy_rank": 99,
           "hold_rank": 3,
-          "peer_rank": 1,
-          "entry_status": "AVOID",
-          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF"
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "sp500",
@@ -2201,18 +2271,20 @@
           "spread_bp": 3.7418147802,
           "aum": 27272138318,
           "aum_proxy": 27272138318,
-          "relative_premium_pct": 1.62,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 4644,
-          "entry_cost_bp": 910.87,
-          "buy_score": 9.0,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 82.2,
           "hold_score": 69.6,
-          "buy_rank": 3,
+          "buy_rank": 99,
           "hold_rank": 1,
-          "peer_rank": 3,
-          "entry_status": "AVOID",
-          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF"
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         },
         {
           "exposure_id": "sp500",
@@ -2240,18 +2312,20 @@
           "spread_bp": 4.9838026414,
           "aum": 8725566179,
           "aum_proxy": 8725566179,
-          "relative_premium_pct": 0.0,
+          "relative_premium_pct": null,
           "premium_basis": "live",
           "fund_age_days": 2270,
-          "entry_cost_bp": 749.49,
-          "buy_score": 14.1,
+          "entry_cost_bp": null,
+          "buy_score": null,
           "liquidity_score": 84.9,
           "hold_score": 67.7,
-          "buy_rank": 2,
+          "buy_rank": 99,
           "hold_rank": 2,
-          "peer_rank": 2,
-          "entry_status": "AVOID",
-          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF"
+          "peer_rank": 99,
+          "entry_status": "UNAVAILABLE",
+          "premium_caveat": "cross-border wrapper; premium interpretation differs from domestic ETF",
+          "quote_basis": null,
+          "quote_status": "Unavailable"
         }
       ],
       "premium_history": [
@@ -107620,450 +107694,6 @@
           "ticker": "588080",
           "premium_pct": -0.0295420975,
           "basis": "nav"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "159329",
-          "premium_pct": 0.25,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "159545",
-          "premium_pct": 0.67,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "159655",
-          "premium_pct": 7.13,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "159792",
-          "premium_pct": -0.45,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "159845",
-          "premium_pct": 0.05,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "159919",
-          "premium_pct": 0.0,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "159920",
-          "premium_pct": -0.09,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "159922",
-          "premium_pct": -0.03,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "159941",
-          "premium_pct": 10.59,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "510300",
-          "premium_pct": -0.01,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "510330",
-          "premium_pct": 0.04,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "510500",
-          "premium_pct": -0.13,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "510880",
-          "premium_pct": -0.03,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "512100",
-          "premium_pct": -0.08,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "512500",
-          "premium_pct": -0.08,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "513000",
-          "premium_pct": 3.53,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "513010",
-          "premium_pct": -0.26,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "513030",
-          "premium_pct": 0.91,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "513040",
-          "premium_pct": -0.41,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "513080",
-          "premium_pct": 0.17,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "513100",
-          "premium_pct": 11.16,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "513130",
-          "premium_pct": -0.24,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "513180",
-          "premium_pct": -0.43,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "513300",
-          "premium_pct": 8.95,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "513310",
-          "premium_pct": 11.16,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "513500",
-          "premium_pct": 9.09,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "513520",
-          "premium_pct": 3.88,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "513630",
-          "premium_pct": 0.01,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "513650",
-          "premium_pct": 7.47,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "513660",
-          "premium_pct": -0.16,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "513690",
-          "premium_pct": -0.46,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "513970",
-          "premium_pct": -0.43,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "520650",
-          "premium_pct": -0.78,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "520830",
-          "premium_pct": 0.44,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "560010",
-          "premium_pct": -0.07,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "588000",
-          "premium_pct": -0.04,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-22",
-          "ticker": "588080",
-          "premium_pct": -0.04,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "159329",
-          "premium_pct": 0.25,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "159545",
-          "premium_pct": 0.67,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "159655",
-          "premium_pct": 7.13,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "159792",
-          "premium_pct": -0.45,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "159845",
-          "premium_pct": 0.05,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "159919",
-          "premium_pct": 0.0,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "159920",
-          "premium_pct": -0.09,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "159922",
-          "premium_pct": -0.03,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "159941",
-          "premium_pct": 10.59,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "510300",
-          "premium_pct": -0.01,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "510330",
-          "premium_pct": 0.04,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "510500",
-          "premium_pct": -0.13,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "510880",
-          "premium_pct": -0.03,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "512100",
-          "premium_pct": -0.08,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "512500",
-          "premium_pct": -0.08,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "513000",
-          "premium_pct": 3.53,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "513010",
-          "premium_pct": -0.26,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "513030",
-          "premium_pct": 0.91,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "513040",
-          "premium_pct": -0.41,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "513080",
-          "premium_pct": 0.17,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "513100",
-          "premium_pct": 11.16,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "513130",
-          "premium_pct": -0.24,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "513180",
-          "premium_pct": -0.43,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "513300",
-          "premium_pct": 8.95,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "513310",
-          "premium_pct": 11.16,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "513500",
-          "premium_pct": 9.09,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "513520",
-          "premium_pct": 3.88,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "513630",
-          "premium_pct": 0.01,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "513650",
-          "premium_pct": 7.47,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "513660",
-          "premium_pct": -0.16,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "513690",
-          "premium_pct": -0.46,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "513970",
-          "premium_pct": -0.43,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "520650",
-          "premium_pct": -0.78,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "520830",
-          "premium_pct": 0.44,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "560010",
-          "premium_pct": -0.07,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "588000",
-          "premium_pct": -0.04,
-          "basis": "iopv"
-        },
-        {
-          "date": "2026-08-23",
-          "ticker": "588080",
-          "premium_pct": -0.04,
-          "basis": "iopv"
         }
       ],
       "relative_pairs": [
@@ -325103,45 +324733,45 @@
       "source_health": [
         {
           "source": "Eastmoney ETF spot (premium / turnover / IOPV)",
-          "status": "Healthy",
-          "latest_observation": "run 2026-08-23 15:57Z",
+          "status": "Degraded",
+          "latest_observation": "—",
           "records": 37,
-          "notes": "Eastmoney ETF spot: all 37 / 37 wrappers observed."
+          "notes": "Eastmoney ETF spot: 37 / 37 wrappers observed; freshness=Unavailable (missing)."
         },
         {
           "source": "CSI index daily (Hong Kong Connect thematics)",
           "status": "Healthy",
           "latest_observation": "2026-08-21",
           "records": 2441,
-          "notes": "Daily OHLCV for 2 of 2 CSI-served exposures."
+          "notes": "Daily OHLCV for 2 of 2 CSI-served exposures.  Freshness: Last session through 2026-08-21."
         },
         {
           "source": "Sina HK index daily (Hang Seng / CSI Hong Kong)",
           "status": "Healthy",
           "latest_observation": "2026-08-21",
           "records": 6130,
-          "notes": "Daily OHLCV for 5 of 5 Hong Kong exposures."
+          "notes": "Daily OHLCV for 5 of 5 Hong Kong exposures.  Freshness: Last session through 2026-08-21."
         },
         {
           "source": "Sina index daily (CN)",
           "status": "Healthy",
           "latest_observation": "2026-08-21",
           "records": 9680,
-          "notes": "Daily OHLCV for all 8 Sina-owned exposures (CN/HK)."
+          "notes": "Daily OHLCV for all 8 Sina-owned exposures (CN/HK).  Freshness: Last session through 2026-08-21."
         },
         {
           "source": "Yahoo Finance (Nasdaq 100, S&P 500, Nikkei 225, Germany DAX, France CAC 40, UK FTSE 100, Saudi Arabia + 15 relative-strength benchmarks)",
           "status": "Healthy",
           "latest_observation": "2026-08-21",
           "records": 27533,
-          "notes": "US session history for 22 of 22 Yahoo-served exposures."
+          "notes": "US session history for 22 of 22 Yahoo-served exposures.  Freshness: Last session through 2026-08-21."
         },
         {
           "source": "Eastmoney aggregate southbound Stock Connect flow",
           "status": "Healthy",
           "latest_observation": "2026-08-21",
           "records": 2698,
-          "notes": "Daily aggregate southbound net buy / holding value, 2698 sessions through 2026-08-21."
+          "notes": "Daily aggregate southbound net buy / holding value, 2698 sessions through 2026-08-21.  Freshness: Last session through 2026-08-21."
         },
         {
           "source": "Upstream fetch errors",
@@ -325149,6 +324779,288 @@
           "latest_observation": "2026-08-21",
           "records": 3,
           "notes": "3 source call(s) failed this run: fund_fee: FeeMismatch: registry states 513080 management fee 0.8000%, issuer publishes 0.5000%; fund_fee: FeeMismatch: registry states 513970 management fee 0.8000%, issuer publishes 0.5000%; ftse100: RegistryMismatch: registry says 513970 is 建信富时100ETF(QDII) under ftse100, exchange says 恒生消费ETF景顺"
+        }
+      ],
+      "freshness": [
+        {
+          "scope": "ETF spot",
+          "status": "Unavailable",
+          "observed_at_utc": null,
+          "retrieved_at_utc": null,
+          "age_seconds": null,
+          "timestamp_basis": "missing",
+          "source_time_verified": false,
+          "observation_type": "intraday_quote"
+        },
+        {
+          "scope": "Index technicals",
+          "status": "Last session",
+          "observation_date": "2026-08-21",
+          "age_calendar_days": 3,
+          "observation_type": "daily_close"
+        },
+        {
+          "scope": "Southbound flow",
+          "status": "Last session",
+          "observation_date": "2026-08-21",
+          "age_calendar_days": 3,
+          "observation_type": "published_data"
+        },
+        {
+          "scope": "Region · APAC",
+          "status": "Last session",
+          "observation_date": "2026-08-21",
+          "age_calendar_days": 3,
+          "observation_type": "daily_close",
+          "group": "APAC",
+          "expected_count": 2,
+          "observed_count": 2,
+          "missing_exposures": [],
+          "invalid_exposures": [],
+          "latest_by_exposure": {
+            "kospi": "2026-08-21",
+            "twii": "2026-08-21"
+          }
+        },
+        {
+          "scope": "Region · China",
+          "status": "Last session",
+          "observation_date": "2026-08-21",
+          "age_calendar_days": 3,
+          "observation_type": "daily_close",
+          "group": "China",
+          "expected_count": 8,
+          "observed_count": 8,
+          "missing_exposures": [],
+          "invalid_exposures": [],
+          "latest_by_exposure": {
+            "csi300": "2026-08-21",
+            "csi500": "2026-08-21",
+            "csi1000": "2026-08-21",
+            "dividend": "2026-08-21",
+            "growth": "2026-08-21",
+            "chinext": "2026-08-21",
+            "cn_infotech": "2026-08-21",
+            "cn_staples": "2026-08-21"
+          }
+        },
+        {
+          "scope": "Region · China / Korea",
+          "status": "Last session",
+          "observation_date": "2026-08-21",
+          "age_calendar_days": 3,
+          "observation_type": "daily_close",
+          "group": "China / Korea",
+          "expected_count": 1,
+          "observed_count": 1,
+          "missing_exposures": [],
+          "invalid_exposures": [],
+          "latest_by_exposure": {
+            "kr_semis": "2026-08-21"
+          }
+        },
+        {
+          "scope": "Region · Europe",
+          "status": "Last session",
+          "observation_date": "2026-08-21",
+          "age_calendar_days": 3,
+          "observation_type": "daily_close",
+          "group": "Europe",
+          "expected_count": 3,
+          "observed_count": 3,
+          "missing_exposures": [],
+          "invalid_exposures": [],
+          "latest_by_exposure": {
+            "dax": "2026-08-21",
+            "cac40": "2026-08-21",
+            "ftse100": "2026-08-21"
+          }
+        },
+        {
+          "scope": "Region · HK",
+          "status": "Last session",
+          "observation_date": "2026-08-21",
+          "age_calendar_days": 3,
+          "observation_type": "daily_close",
+          "group": "HK",
+          "expected_count": 5,
+          "observed_count": 5,
+          "missing_exposures": [],
+          "invalid_exposures": [],
+          "latest_by_exposure": {
+            "hsi": "2026-08-21",
+            "hk_dividend": "2026-08-21",
+            "hk_internet": "2026-08-21",
+            "hk_midcap": "2026-08-21",
+            "hk_hshares": "2026-08-21"
+          }
+        },
+        {
+          "scope": "Region · HK / China",
+          "status": "Last session",
+          "observation_date": "2026-08-21",
+          "age_calendar_days": 3,
+          "observation_type": "daily_close",
+          "group": "HK / China",
+          "expected_count": 1,
+          "observed_count": 1,
+          "missing_exposures": [],
+          "invalid_exposures": [],
+          "latest_by_exposure": {
+            "hstech": "2026-08-21"
+          }
+        },
+        {
+          "scope": "Region · Japan",
+          "status": "Last session",
+          "observation_date": "2026-08-21",
+          "age_calendar_days": 3,
+          "observation_type": "daily_close",
+          "group": "Japan",
+          "expected_count": 1,
+          "observed_count": 1,
+          "missing_exposures": [],
+          "invalid_exposures": [],
+          "latest_by_exposure": {
+            "nikkei225": "2026-08-21"
+          }
+        },
+        {
+          "scope": "Region · Middle East",
+          "status": "Last session",
+          "observation_date": "2026-08-21",
+          "age_calendar_days": 3,
+          "observation_type": "daily_close",
+          "group": "Middle East",
+          "expected_count": 1,
+          "observed_count": 1,
+          "missing_exposures": [],
+          "invalid_exposures": [],
+          "latest_by_exposure": {
+            "saudi": "2026-08-21"
+          }
+        },
+        {
+          "scope": "Region · US",
+          "status": "Last session",
+          "observation_date": "2026-08-21",
+          "age_calendar_days": 3,
+          "observation_type": "daily_close",
+          "group": "US",
+          "expected_count": 15,
+          "observed_count": 15,
+          "missing_exposures": [],
+          "invalid_exposures": [],
+          "latest_by_exposure": {
+            "ndx": "2026-08-21",
+            "sp500": "2026-08-21",
+            "dow": "2026-08-21",
+            "russell2000": "2026-08-21",
+            "us_broad": "2026-08-21",
+            "us_equal_weight": "2026-08-21",
+            "us_small": "2026-08-21",
+            "us_growth": "2026-08-21",
+            "us_value": "2026-08-21",
+            "us_tech": "2026-08-21",
+            "us_discretionary": "2026-08-21",
+            "us_communication": "2026-08-21",
+            "us_staples": "2026-08-21",
+            "us_utilities": "2026-08-21",
+            "us_healthcare": "2026-08-21"
+          }
+        },
+        {
+          "scope": "Source · csindex",
+          "status": "Last session",
+          "observation_date": "2026-08-21",
+          "age_calendar_days": 3,
+          "observation_type": "daily_close",
+          "group": "csindex",
+          "expected_count": 2,
+          "observed_count": 2,
+          "missing_exposures": [],
+          "invalid_exposures": [],
+          "latest_by_exposure": {
+            "hk_internet": "2026-08-21",
+            "kr_semis": "2026-08-21"
+          }
+        },
+        {
+          "scope": "Source · sina",
+          "status": "Last session",
+          "observation_date": "2026-08-21",
+          "age_calendar_days": 3,
+          "observation_type": "daily_close",
+          "group": "sina",
+          "expected_count": 8,
+          "observed_count": 8,
+          "missing_exposures": [],
+          "invalid_exposures": [],
+          "latest_by_exposure": {
+            "csi300": "2026-08-21",
+            "csi500": "2026-08-21",
+            "csi1000": "2026-08-21",
+            "dividend": "2026-08-21",
+            "growth": "2026-08-21",
+            "chinext": "2026-08-21",
+            "cn_infotech": "2026-08-21",
+            "cn_staples": "2026-08-21"
+          }
+        },
+        {
+          "scope": "Source · sina_hk",
+          "status": "Last session",
+          "observation_date": "2026-08-21",
+          "age_calendar_days": 3,
+          "observation_type": "daily_close",
+          "group": "sina_hk",
+          "expected_count": 5,
+          "observed_count": 5,
+          "missing_exposures": [],
+          "invalid_exposures": [],
+          "latest_by_exposure": {
+            "hstech": "2026-08-21",
+            "hsi": "2026-08-21",
+            "hk_dividend": "2026-08-21",
+            "hk_midcap": "2026-08-21",
+            "hk_hshares": "2026-08-21"
+          }
+        },
+        {
+          "scope": "Source · yfinance",
+          "status": "Last session",
+          "observation_date": "2026-08-21",
+          "age_calendar_days": 3,
+          "observation_type": "daily_close",
+          "group": "yfinance",
+          "expected_count": 22,
+          "observed_count": 22,
+          "missing_exposures": [],
+          "invalid_exposures": [],
+          "latest_by_exposure": {
+            "ndx": "2026-08-21",
+            "sp500": "2026-08-21",
+            "nikkei225": "2026-08-21",
+            "dax": "2026-08-21",
+            "dow": "2026-08-21",
+            "russell2000": "2026-08-21",
+            "kospi": "2026-08-21",
+            "twii": "2026-08-21",
+            "cac40": "2026-08-21",
+            "ftse100": "2026-08-21",
+            "saudi": "2026-08-21",
+            "us_broad": "2026-08-21",
+            "us_equal_weight": "2026-08-21",
+            "us_small": "2026-08-21",
+            "us_growth": "2026-08-21",
+            "us_value": "2026-08-21",
+            "us_tech": "2026-08-21",
+            "us_discretionary": "2026-08-21",
+            "us_communication": "2026-08-21",
+            "us_staples": "2026-08-21",
+            "us_utilities": "2026-08-21",
+            "us_healthcare": "2026-08-21"
+          }
         }
       ]
     }
@@ -325188,9 +325100,279 @@
     }
   ],
   "package_info": {
-    "snapshotId": "54dfddfc1608c2f2",
+    "snapshotId": "4ddd4b9842bb7f89",
     "dataAsOf": "2026-08-21",
     "pipelineRunId": "20260823T155707-17549c0e",
-    "runConsistent": true
+    "runConsistent": true,
+    "freshness": {
+      "quote": {
+        "status": "Unavailable",
+        "observed_at_utc": null,
+        "retrieved_at_utc": null,
+        "age_seconds": null,
+        "timestamp_basis": "missing",
+        "source_time_verified": false,
+        "observation_type": "intraday_quote"
+      },
+      "daily_close": {
+        "status": "Last session",
+        "observation_date": "2026-08-21",
+        "age_calendar_days": 3,
+        "observation_type": "daily_close"
+      },
+      "daily_close_by_region": {
+        "China": {
+          "status": "Last session",
+          "observation_date": "2026-08-21",
+          "age_calendar_days": 3,
+          "observation_type": "daily_close",
+          "group": "China",
+          "expected_count": 8,
+          "observed_count": 8,
+          "missing_exposures": [],
+          "invalid_exposures": [],
+          "latest_by_exposure": {
+            "csi300": "2026-08-21",
+            "csi500": "2026-08-21",
+            "csi1000": "2026-08-21",
+            "dividend": "2026-08-21",
+            "growth": "2026-08-21",
+            "chinext": "2026-08-21",
+            "cn_infotech": "2026-08-21",
+            "cn_staples": "2026-08-21"
+          }
+        },
+        "HK / China": {
+          "status": "Last session",
+          "observation_date": "2026-08-21",
+          "age_calendar_days": 3,
+          "observation_type": "daily_close",
+          "group": "HK / China",
+          "expected_count": 1,
+          "observed_count": 1,
+          "missing_exposures": [],
+          "invalid_exposures": [],
+          "latest_by_exposure": {
+            "hstech": "2026-08-21"
+          }
+        },
+        "HK": {
+          "status": "Last session",
+          "observation_date": "2026-08-21",
+          "age_calendar_days": 3,
+          "observation_type": "daily_close",
+          "group": "HK",
+          "expected_count": 5,
+          "observed_count": 5,
+          "missing_exposures": [],
+          "invalid_exposures": [],
+          "latest_by_exposure": {
+            "hsi": "2026-08-21",
+            "hk_dividend": "2026-08-21",
+            "hk_internet": "2026-08-21",
+            "hk_midcap": "2026-08-21",
+            "hk_hshares": "2026-08-21"
+          }
+        },
+        "US": {
+          "status": "Last session",
+          "observation_date": "2026-08-21",
+          "age_calendar_days": 3,
+          "observation_type": "daily_close",
+          "group": "US",
+          "expected_count": 15,
+          "observed_count": 15,
+          "missing_exposures": [],
+          "invalid_exposures": [],
+          "latest_by_exposure": {
+            "ndx": "2026-08-21",
+            "sp500": "2026-08-21",
+            "dow": "2026-08-21",
+            "russell2000": "2026-08-21",
+            "us_broad": "2026-08-21",
+            "us_equal_weight": "2026-08-21",
+            "us_small": "2026-08-21",
+            "us_growth": "2026-08-21",
+            "us_value": "2026-08-21",
+            "us_tech": "2026-08-21",
+            "us_discretionary": "2026-08-21",
+            "us_communication": "2026-08-21",
+            "us_staples": "2026-08-21",
+            "us_utilities": "2026-08-21",
+            "us_healthcare": "2026-08-21"
+          }
+        },
+        "Japan": {
+          "status": "Last session",
+          "observation_date": "2026-08-21",
+          "age_calendar_days": 3,
+          "observation_type": "daily_close",
+          "group": "Japan",
+          "expected_count": 1,
+          "observed_count": 1,
+          "missing_exposures": [],
+          "invalid_exposures": [],
+          "latest_by_exposure": {
+            "nikkei225": "2026-08-21"
+          }
+        },
+        "China / Korea": {
+          "status": "Last session",
+          "observation_date": "2026-08-21",
+          "age_calendar_days": 3,
+          "observation_type": "daily_close",
+          "group": "China / Korea",
+          "expected_count": 1,
+          "observed_count": 1,
+          "missing_exposures": [],
+          "invalid_exposures": [],
+          "latest_by_exposure": {
+            "kr_semis": "2026-08-21"
+          }
+        },
+        "Europe": {
+          "status": "Last session",
+          "observation_date": "2026-08-21",
+          "age_calendar_days": 3,
+          "observation_type": "daily_close",
+          "group": "Europe",
+          "expected_count": 3,
+          "observed_count": 3,
+          "missing_exposures": [],
+          "invalid_exposures": [],
+          "latest_by_exposure": {
+            "dax": "2026-08-21",
+            "cac40": "2026-08-21",
+            "ftse100": "2026-08-21"
+          }
+        },
+        "APAC": {
+          "status": "Last session",
+          "observation_date": "2026-08-21",
+          "age_calendar_days": 3,
+          "observation_type": "daily_close",
+          "group": "APAC",
+          "expected_count": 2,
+          "observed_count": 2,
+          "missing_exposures": [],
+          "invalid_exposures": [],
+          "latest_by_exposure": {
+            "kospi": "2026-08-21",
+            "twii": "2026-08-21"
+          }
+        },
+        "Middle East": {
+          "status": "Last session",
+          "observation_date": "2026-08-21",
+          "age_calendar_days": 3,
+          "observation_type": "daily_close",
+          "group": "Middle East",
+          "expected_count": 1,
+          "observed_count": 1,
+          "missing_exposures": [],
+          "invalid_exposures": [],
+          "latest_by_exposure": {
+            "saudi": "2026-08-21"
+          }
+        }
+      },
+      "daily_close_by_source": {
+        "sina": {
+          "status": "Last session",
+          "observation_date": "2026-08-21",
+          "age_calendar_days": 3,
+          "observation_type": "daily_close",
+          "group": "sina",
+          "expected_count": 8,
+          "observed_count": 8,
+          "missing_exposures": [],
+          "invalid_exposures": [],
+          "latest_by_exposure": {
+            "csi300": "2026-08-21",
+            "csi500": "2026-08-21",
+            "csi1000": "2026-08-21",
+            "dividend": "2026-08-21",
+            "growth": "2026-08-21",
+            "chinext": "2026-08-21",
+            "cn_infotech": "2026-08-21",
+            "cn_staples": "2026-08-21"
+          }
+        },
+        "sina_hk": {
+          "status": "Last session",
+          "observation_date": "2026-08-21",
+          "age_calendar_days": 3,
+          "observation_type": "daily_close",
+          "group": "sina_hk",
+          "expected_count": 5,
+          "observed_count": 5,
+          "missing_exposures": [],
+          "invalid_exposures": [],
+          "latest_by_exposure": {
+            "hstech": "2026-08-21",
+            "hsi": "2026-08-21",
+            "hk_dividend": "2026-08-21",
+            "hk_midcap": "2026-08-21",
+            "hk_hshares": "2026-08-21"
+          }
+        },
+        "yfinance": {
+          "status": "Last session",
+          "observation_date": "2026-08-21",
+          "age_calendar_days": 3,
+          "observation_type": "daily_close",
+          "group": "yfinance",
+          "expected_count": 22,
+          "observed_count": 22,
+          "missing_exposures": [],
+          "invalid_exposures": [],
+          "latest_by_exposure": {
+            "ndx": "2026-08-21",
+            "sp500": "2026-08-21",
+            "nikkei225": "2026-08-21",
+            "dax": "2026-08-21",
+            "dow": "2026-08-21",
+            "russell2000": "2026-08-21",
+            "kospi": "2026-08-21",
+            "twii": "2026-08-21",
+            "cac40": "2026-08-21",
+            "ftse100": "2026-08-21",
+            "saudi": "2026-08-21",
+            "us_broad": "2026-08-21",
+            "us_equal_weight": "2026-08-21",
+            "us_small": "2026-08-21",
+            "us_growth": "2026-08-21",
+            "us_value": "2026-08-21",
+            "us_tech": "2026-08-21",
+            "us_discretionary": "2026-08-21",
+            "us_communication": "2026-08-21",
+            "us_staples": "2026-08-21",
+            "us_utilities": "2026-08-21",
+            "us_healthcare": "2026-08-21"
+          }
+        },
+        "csindex": {
+          "status": "Last session",
+          "observation_date": "2026-08-21",
+          "age_calendar_days": 3,
+          "observation_type": "daily_close",
+          "group": "csindex",
+          "expected_count": 2,
+          "observed_count": 2,
+          "missing_exposures": [],
+          "invalid_exposures": [],
+          "latest_by_exposure": {
+            "hk_internet": "2026-08-21",
+            "kr_semis": "2026-08-21"
+          }
+        }
+      },
+      "southbound": {
+        "status": "Last session",
+        "observation_date": "2026-08-21",
+        "age_calendar_days": 3,
+        "observation_type": "published_data"
+      }
+    }
   }
 }
