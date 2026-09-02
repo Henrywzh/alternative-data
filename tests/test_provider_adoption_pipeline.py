@@ -796,7 +796,8 @@ def test_github_signal_records_include_provider_display_name(tmp_path: Path) -> 
 
     pipeline.run_github_daily_update(target_date="2026-04-05", provider_slugs=["openai", "anthropic", "google"])
 
-    signals = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "github_provider_signals_daily.csv")
+    # Partitioned dataset: read through the storage interface, not a flat CSV.
+    signals = pipeline.storage.load_dataset("github_provider_signals_daily")
     rollup = pipeline.storage.load_dataset("github_repo_rollup_daily")
     gold = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "github_provider_adoption_daily.csv")
 
@@ -913,7 +914,7 @@ def test_huggingface_pipeline_first_snapshot_is_blank_and_same_day_rerun_is_idem
     first = pipeline.run_huggingface_daily_update(target_date="2026-04-05", provider_slugs=["openai"])
     second = pipeline.run_huggingface_daily_update(target_date="2026-04-05", provider_slugs=["openai"])
 
-    hf = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "huggingface_models_daily.csv")
+    hf = pipeline.storage.load_dataset("huggingface_models_daily")
 
     assert first.datasets_written["huggingface_models_daily"] == second.datasets_written["huggingface_models_daily"]
     assert hf[["provider", "author", "model_id", "download_date"]].duplicated().sum() == 0
@@ -973,7 +974,7 @@ def test_huggingface_pipeline_uses_latest_prior_snapshot_only(tmp_path: Path) ->
     pipeline.run_huggingface_daily_update(target_date="2026-04-06", provider_slugs=["openai"])
     pipeline.run_huggingface_daily_update(target_date="2026-04-04", provider_slugs=["openai"])
 
-    hf = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "huggingface_models_daily.csv")
+    hf = pipeline.storage.load_dataset("huggingface_models_daily")
     by_date = hf.set_index("download_date")
 
     assert pd.isna(by_date.loc["2026-04-04", "hf_downloads_daily_est"])
