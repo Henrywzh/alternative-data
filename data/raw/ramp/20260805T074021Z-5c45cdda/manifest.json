@@ -1,0 +1,18 @@
+{
+  "run_id": "20260805T074021Z-5c45cdda",
+  "mode": "update",
+  "scraped_at": "2026-08-05T07:40:21.034792Z",
+  "status": "success",
+  "datasets": [
+    {
+      "dataset_id": "ramp_category_vendors",
+      "status": "ok",
+      "rows": 246
+    },
+    {
+      "dataset_id": "ramp_vendor_adoption_monthly",
+      "status": "ok",
+      "rows": 5517
+    }
+  ]
+}

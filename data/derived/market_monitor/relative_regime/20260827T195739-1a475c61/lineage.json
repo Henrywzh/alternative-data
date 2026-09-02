@@ -1,0 +1,18 @@
+{
+  "type": "derived",
+  "run_scope": "full",
+  "dataset_name": "relative_regime",
+  "run_id": "20260827T195739-1a475c61",
+  "created_at": "2026-08-27T19:57:48.728300+00:00",
+  "records": 4,
+  "columns": [
+    "label",
+    "left",
+    "right",
+    "spread_20d_zscore",
+    "spread_5d_pct",
+    "spread_20d_pct",
+    "trend"
+  ],
+  "sha256": "b1e6d71feefeefd8bd85f69ed33a08305b6447b61f9753d0fb6f0a9d5ebeaf36"
+}

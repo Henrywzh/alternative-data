@@ -1,0 +1,33 @@
+{
+  "dataset_name": "shkp_commercial_backtest",
+  "run_id": "shkp-commercial-model-03e05b4f-d08a-4495-91ee-61d3d0c7780b",
+  "created_at": "2026-08-09T20:04:15.953637+00:00",
+  "raw_snapshot": null,
+  "source_url": null,
+  "raw_snapshots": [],
+  "source_urls": [
+    "https://www.rvd.gov.hk/en/property_market_statistics/index.html",
+    "https://www.shkp.com/en-US/investor-relations/financial-reports"
+  ],
+  "records": 15,
+  "columns": [
+    "fiscal_year_end",
+    "fiscal_label",
+    "method",
+    "fit_start_year",
+    "fit_end_year",
+    "fit_n_obs",
+    "actual_rental_revenue_hkd_m",
+    "forecast_rental_revenue_hkd_m",
+    "error_hkd_m",
+    "absolute_percentage_error",
+    "rvd_office_yoy_pct",
+    "caveat"
+  ],
+  "lineage_type": "shkp_commercial_portfolio_model",
+  "ticker": "0016.HK",
+  "design": "portfolio-level log-difference distributed lag on RVD indices",
+  "asset_level_policy": "attribution_only_not_revenue_prediction",
+  "research_only": true,
+  "contract_dataset": "shkp_commercial_backtest"
+}

@@ -1,0 +1,54 @@
+{
+  "model_version": "mtr_walk_forward_oos_v1",
+  "model_id": "mtr_prior_yield_fam_walk_forward_v1",
+  "input_bundle_id": "mtr_walk_forward_oos_v1-de0096e4d17e73a6",
+  "pit_grade": "B_practical_pit",
+  "strict_pit_status": "not_eligible_until_patronage_release_registry_exists",
+  "chronological_training_rule": "same-period prior actuals only; actual_available_at <= target period end",
+  "forecast_origin_rule": "target period end; period-end revenue nowcast, not beginning-of-period forecast",
+  "patronage_vintage_status": "not_captured",
+  "fy_valid_rows": 6,
+  "h1_valid_rows": 8,
+  "monthly_rows": 90,
+  "metrics": {
+    "FY": {
+      "n": 6,
+      "wape_pct": 8.71085067680551,
+      "mape_pct": 9.321459247287384,
+      "bias_hkdm": -535.2828765135422
+    },
+    "H1": {
+      "n": 8,
+      "wape_pct": 7.529137161121066,
+      "mape_pct": 8.100130442154978,
+      "bias_hkdm": -255.975753035857
+    }
+  },
+  "input_bundle": {
+    "schema": "mtr_walk_forward_input_bundle_v1",
+    "model_id": "mtr_prior_yield_fam_walk_forward_v1",
+    "model_version": "mtr_walk_forward_oos_v1",
+    "model_code": {
+      "path": "scripts/build_mtr_walk_forward_oos.py",
+      "sha256": "924aff14bc8b9bd9a939bc9d450eb0daf24ddc82d92823572abde945516a27cb"
+    },
+    "actuals": {
+      "path": "data/normalized/hk_transport/mtr_transport_ops_actuals.csv",
+      "sha256": "2d01d99d4bc1becddc4bb0ced461d0428ec01737759c96fcf9bc98a157c8d09f"
+    },
+    "patronage": {
+      "fetched_at": "2026-08-12T22:37:26.988968+00:00",
+      "path": "data/raw/hk_transport/mtr_patronage_20260812_223726.json",
+      "rows": 318,
+      "sha256": "1f5f7b13236ccd20492dffde8ec8ce05331995a998b378f0db66a778b17031f2",
+      "source_url": "https://www.mtr.com.hk/en/corporate/investor/patronage.php"
+    },
+    "model_policy": {
+      "training": "prior_completed_same_period_actual_only",
+      "target_volume": "observed_target_period_volume_at_period_end",
+      "fam": "known_FAM_factor_between_prior_and_target_year",
+      "pit_grade": "B_practical_pit",
+      "patronage_vintage": "not_captured"
+    }
+  }
+}

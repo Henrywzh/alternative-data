@@ -1,0 +1,31 @@
+{
+  "run_id": "20260826T072836Z-f0d5540b",
+  "mode": "huggingface-daily-update",
+  "scraped_at": "2026-08-26T07:28:36.884247Z",
+  "target_date": "2026-08-25",
+  "providers": [
+    "openai",
+    "anthropic",
+    "google",
+    "deepseek",
+    "meta",
+    "mistral",
+    "qwen",
+    "moonshot",
+    "minimax",
+    "zai",
+    "langchain",
+    "pydantic_ai"
+  ],
+  "datasets": [
+    "pypi_downloads_daily",
+    "npm_downloads_daily",
+    "github_repo_candidates_daily",
+    "github_provider_signals_daily",
+    "github_repo_rollup_daily",
+    "github_provider_adoption_daily",
+    "provider_momentum_daily",
+    "huggingface_models_daily"
+  ],
+  "parser_version": "0.1.0"
+}

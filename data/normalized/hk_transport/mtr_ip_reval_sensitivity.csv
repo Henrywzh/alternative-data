@@ -1,0 +1,6 @@
+cap_rate_move,ip_value_change_pre_tax_hkdm,eps_impact_hkd
++10bp (收益率上行),-2452.0,-0.324
++25bp,-6131.0,-0.809
+-10bp (收益率下行),2452.0,0.324
+-25bp,6131.0,0.809
+-15bp (consensus 隐含 ~+30亿),3678.0,0.485
