@@ -65,7 +65,12 @@ jobs:
           git commit -m "chore: update OpenRouter derived metrics [$(date -u +%Y-%m-%d)]"
 
           for attempt in 1 2 3; do
-            if git push; then
+            # Rebase before each retry: a bare `git push` cannot recover from
+            # a concurrent commit landing on main while this job builds (the
+            # 2026-09-02 failure), it just rejects the same non-fast-forward
+            # three times and exits 1.  The rebase is conflict-free in
+            # practice because only this workflow writes these two marts.
+            if git pull --rebase origin "${{ github.event.repository.default_branch }}" && git push; then
               exit 0
             fi
             sleep $((attempt * 5))
