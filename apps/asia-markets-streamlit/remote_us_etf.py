@@ -1,7 +1,8 @@
 """Remote artifact loader for US Sector & Sub-industry ETFs.
 
-Supports fetching from Cloudflare R2 / Public CDN with automatic fallback to
-git-ignored local cache or on-demand fetch.
+The Streamlit surface is a reader of published artifacts. It may read the
+remote R2 artifact or an existing local cache, but it must not start a live
+yfinance fetch when the artifact is missing.
 """
 
 from __future__ import annotations
@@ -23,12 +24,12 @@ logger = logging.getLogger(__name__)
 
 @st.cache_data(ttl=1800, show_spinner=False)
 def load_us_sector_artifact() -> dict[str, Any]:
-    """Fetch US Sector & Sub-industry artifact from R2, local cache, or live fallback."""
+    """Load the US sector artifact from R2 or local cache only."""
     cache_key = "us_sector_latest.json"
 
     # 1. Cloudflare R2 / public CDN
     try:
-        from src.market_monitor.us_etf.storage_r2 import get_r2_config
+        from market_monitor.us_etf.storage_r2 import get_r2_config
         cfg = get_r2_config()
         public_url = cfg.get("R2_PUBLIC_URL")
         if public_url:
@@ -44,7 +45,7 @@ def load_us_sector_artifact() -> dict[str, Any]:
 
     # 2. Git-ignored local cache, carrying its own age
     try:
-        from src.market_monitor.us_etf.storage_r2 import (
+        from market_monitor.us_etf.storage_r2 import (
             load_local_cache_json,
             local_cache_age_hours,
         )
@@ -56,18 +57,7 @@ def load_us_sector_artifact() -> dict[str, Any]:
     except Exception as exc:
         logger.warning("Local cache read failed: %s", exc)
 
-    # 3. Live generation fallback if yfinance is installed
-    try:
-        from src.market_monitor.us_etf.fetch import (
-            build_us_sector_artifact,
-            fetch_us_etf_history,
-        )
-        df = fetch_us_etf_history(period="2y")
-        if not df.empty:
-            artifact = build_us_sector_artifact(df)
-            artifact["source"] = "live"
-            return artifact
-    except Exception as exc:
-        logger.error("Live fallback generation failed or dependency missing: %s", exc)
-
+    # A missing artifact is an honest unavailable state. The scheduled builder
+    # owns source access; navigation must never turn a private page load into a
+    # new upstream request or an unpersisted alternative dataset.
     return {"as_of": "—", "sectors": [], "sub_industries": {}, "source": "unavailable"}

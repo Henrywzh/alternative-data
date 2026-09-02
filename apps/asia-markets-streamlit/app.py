@@ -26,6 +26,17 @@ import streamlit as st
 REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+# The domain packages live under src/ and pyproject maps them to the top level
+# (package-dir = {"" = "src"}), so market_monitor is the real module name.
+# Importing them as src.market_monitor only ever worked by accident: src has no
+# __init__.py, so it resolves as a PEP 420 namespace package, and any installed
+# distribution shipping a top-level src wins over the repo directory. That is
+# what took the deployed app down with an ImportError.
+SRC_ROOT = REPO_ROOT / "src"
+if str(SRC_ROOT) not in sys.path:
+    sys.path.insert(0, str(SRC_ROOT))
+
+from market_monitor.freshness import STATUS_LABELS_ZH
 
 ARTIFACT_ROOT = REPO_ROOT / "apps" / "asia-markets-dashboard" / ".generated"
 
@@ -4008,6 +4019,23 @@ def render_market_index_detail(
     else:
         display_df["_prem_display"] = "—"
 
+    # A last-close reconstruction remains visible in the raw artifact for
+    # auditability, but it must not be presented as today's premium or used as
+    # a current entry signal. The artifact builder stamps this row-level status
+    # when the persisted snapshot has no trustworthy quote timestamp.
+    has_quote_gate = "quote_status" in display_df.columns or "quote_basis" in display_df.columns
+    if has_quote_gate:
+        quote_is_current = pd.Series(True, index=display_df.index)
+        if "quote_status" in display_df.columns:
+            quote_is_current &= display_df["quote_status"].astype(str).eq("Fresh")
+        if "quote_basis" in display_df.columns:
+            quote_is_current &= ~display_df["quote_basis"].astype(str).eq("last_close")
+        quote_is_displayable = quote_is_current.copy()
+        if "quote_status" in display_df.columns:
+            quote_is_displayable |= display_df["quote_status"].astype(str).eq("Unverified")
+        quote_is_displayable &= ~display_df.get("quote_basis", pd.Series("", index=display_df.index)).astype(str).eq("last_close")
+        display_df.loc[~quote_is_displayable, "_prem_display"] = "—（暂无最新报价）"
+
     # 同类相对溢价
     if "relative_premium_pct" in display_df.columns:
         display_df["_rel_prem_display"] = display_df["relative_premium_pct"].apply(
@@ -4032,6 +4060,13 @@ def render_market_index_detail(
     else:
         display_df["_cost_display"] = "—"
 
+    # Re-apply the quote gate after all derived display columns have been
+    # formatted. This keeps relative premium and entry cost from being
+    # overwritten by their normal formatters above.
+    if has_quote_gate:
+        display_df.loc[~quote_is_current, "_rel_prem_display"] = "—"
+        display_df.loc[~quote_is_current, "_cost_display"] = "—"
+
     # 状态翻译与徽章化
     status_map_zh = {
         "ATTRACTIVE": "折价机会 (优先)",
@@ -4047,6 +4082,19 @@ def render_market_index_detail(
     else:
         display_df["_status_display"] = "—"
 
+    if has_quote_gate:
+        unverified = (
+            display_df.get("quote_status", pd.Series("", index=display_df.index))
+            .astype(str)
+            .eq("Unverified")
+        )
+        display_df.loc[unverified, "_status_display"] = (
+            "已抓取（源端时间未验证）" if language == "zh" else "Retrieved (source time unverified)"
+        )
+        display_df.loc[~quote_is_current & ~unverified, "_status_display"] = (
+            "不可用（无最新报价）" if language == "zh" else "Unavailable (no fresh quote)"
+        )
+
     # 买入优选排名
     if "peer_rank" in display_df.columns:
         display_df["_rank_display"] = display_df["peer_rank"].apply(
@@ -4054,6 +4102,8 @@ def render_market_index_detail(
         )
     else:
         display_df["_rank_display"] = "—"
+    if has_quote_gate:
+        display_df.loc[~quote_is_current, "_rank_display"] = "—"
 
     # 列映射定义
     col_mapping_zh = {
@@ -4086,7 +4136,19 @@ def render_market_index_detail(
     st.dataframe(table_to_show, hide_index=True, width="stretch")
 
     if "entry_cost_bp" in cohort.columns and cohort["entry_cost_bp"].notna().any():
-        render_market_entry_cost_chart(cohort, language, key_prefix=f"{key_prefix}_{exposure_id}")
+        chart_cohort = cohort
+        if has_quote_gate:
+            chart_cohort = cohort.loc[quote_is_current].copy()
+        if not chart_cohort.empty and chart_cohort["entry_cost_bp"].notna().any():
+            render_market_entry_cost_chart(chart_cohort, language, key_prefix=f"{key_prefix}_{exposure_id}")
+        elif has_quote_gate:
+            st.caption(
+                tr(
+                    language,
+                    "Entry-cost chart hidden until a fresh ETF quote is available.",
+                    "暂无最新 ETF 行情，暂不绘制综合买入成本图。",
+                )
+            )
 
     if "premium_caveat" in cohort.columns:
         caveats = [str(x) for x in cohort["premium_caveat"].dropna().unique().tolist() if x]
@@ -4146,6 +4208,69 @@ def render_market_entry_cost_chart(cohort: pd.DataFrame, language: str, key_pref
         config={"displaylogo": False, "responsive": True},
         key=f"{key_prefix}_entry_cost_chart",
     )
+
+
+def render_market_freshness(artifact: dict[str, Any], language: str) -> None:
+    """Show observation dates and quote freshness without fetching live data."""
+    package_info = artifact.get("package_info", {})
+    freshness = package_info.get("freshness") or {}
+    if not freshness:
+        data_as_of = package_info.get("dataAsOf")
+        if data_as_of:
+            st.caption(
+                tr(language, "Daily technicals as of", "日频技术面截至")
+                + f" {data_as_of} · "
+                + tr(language, "the artifact is a local snapshot", "当前页面读取本地快照")
+            )
+        return
+
+    def _status_text(record: dict[str, Any], label_en: str, label_zh: str) -> str:
+        label = tr(language, label_en, label_zh)
+        status = str(record.get("status") or "Unavailable")
+        status_zh = STATUS_LABELS_ZH.get(status, status)
+        if status in {"Fresh", "Unverified"} and record.get("timestamp_basis") == "retrieved_at":
+            status = (
+                "Recently retrieved (source time unavailable)"
+                if language == "en"
+                else "已抓取（源端时间未提供）"
+            )
+        else:
+            status = status if language == "en" else status_zh
+        if record.get("observation_date"):
+            detail = str(record["observation_date"])
+        elif record.get("retrieved_at_utc"):
+            detail = tr(language, "retrieved", "抓取") + " " + str(record["retrieved_at_utc"])
+        else:
+            detail = tr(language, "no observation", "无可用观察")
+        return f"{label}: {status} · {detail}"
+
+    quote = freshness.get("quote") or {}
+    daily = freshness.get("daily_close") or {}
+    southbound = freshness.get("southbound") or {}
+    lines = [
+        _status_text(quote, "ETF quote snapshot", "ETF 行情快照"),
+        _status_text(daily, "Daily technicals", "日频技术面"),
+        _status_text(southbound, "Southbound flow", "南向资金"),
+    ]
+    daily_by_region = freshness.get("daily_close_by_region") or {}
+    if daily_by_region:
+        region_lines = " · ".join(
+            f"{group}: {STATUS_LABELS_ZH.get(str(record.get('status')), str(record.get('status'))) if language != 'en' else str(record.get('status'))}"
+            f" {record.get('observation_date') or '—'}"
+            for group, record in sorted(daily_by_region.items())
+        )
+        lines.append(
+            tr(language, "Regional technicals", "分地区技术面") + ": " + region_lines
+        )
+    statuses = {
+        str(record.get("status"))
+        for record in (quote, daily, southbound, *daily_by_region.values())
+    }
+    message = " · ".join(lines)
+    if statuses & {"Stale", "Unavailable", "Invalid", "Unverified"}:
+        st.warning(message)
+    else:
+        st.caption(message)
 
 
 def render_us_sector_tab(language: str) -> None:
@@ -4481,7 +4606,7 @@ def render_scoped_index_section(
     show_wrappers: bool = True,
 ) -> None:
     """Render single-index technical detail and ETF wrappers with dynamic sub-category filtering."""
-    from src.market_monitor.config import EXPOSURES
+    from market_monitor.config import EXPOSURES
     
     available = [e for e in label_by_exposure if e in scoped_eids and not prices.empty and e in set(prices["exposure_id"])]
     if not available:
@@ -4604,10 +4729,11 @@ def render_scoped_index_section(
 
 def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: str, window: str) -> None:
     """Index & ETF Allocation Monitor: fully modular regional tabs."""
-    from src.market_monitor.config import market_tab_exposures
+    from market_monitor.config import market_tab_exposures
 
     st.markdown(f'<div class="am-page-title">{tr(language, SECTORS["market"]["name_en"], SECTORS["market"]["name_zh"])}</div>', unsafe_allow_html=True)
     st.caption(tr(language, "Global Multi-Asset & ETF Monitor. Regional segmentation with clean data separation.", "全球多资产与 ETF 监控看板。按地域严格分层，无跨区干扰。"))
+    render_market_freshness(artifact, language)
 
     datasets = artifact.get("snapshot", {}).get("datasets", {})
 
@@ -5408,6 +5534,247 @@ def render_real_estate_residential(artifact: dict[str, Any], labels: dict[str, A
     with st.container(border=True):
         render_table(artifact, labels, "bd_supply_detail_table", language, max_rows=30)
 
+def _srpe_developer_options(language: str) -> list[tuple[str, str, str]]:
+    return [
+        ("shkp", tr(language, "Sun Hung Kai Properties (0016.HK)", "新鸿基地产 (0016.HK)"), "complete"),
+        ("sino", tr(language, "Sino Land (0083.HK)", "信和置业 (0083.HK)"), "partial"),
+    ]
+
+
+def _srpe_load(dataset_name: str) -> pd.DataFrame:
+    try:
+        from hk_real_estate.storage import load_latest_normalized
+    except Exception:
+        return pd.DataFrame()
+    frame = load_latest_normalized(dataset_name)
+    return pd.DataFrame() if frame is None else frame
+
+
+def _srpe_phase_label(row: pd.Series) -> str:
+    phase_id = str(row.get("srpe_development_id") or row.get("development_id") or "")
+    name = str(row.get("development_name") or row.get("development_name_en") or "").strip()
+    phase = str(row.get("phase_name") or row.get("phase_name_en") or "").strip()
+    phase_no = str(row.get("phase_no") or "").strip()
+    junk = {"", "nan", "none", "--", "n/a", "not applicable"}
+    parts = []
+    if name:
+        parts.append(name)
+    if phase and phase.lower() not in junk and phase.lower() != name.lower():
+        parts.append(phase)
+    if phase_no and phase_no.lower() not in junk and phase_no.lower() not in {part.lower() for part in parts}:
+        parts.append(phase_no)
+    label = " / ".join(parts) if parts else f"SRPE {phase_id}"
+    return f"{label} ({phase_id})"
+
+
+def _srpe_phase_stats(monthly: pd.DataFrame, events: pd.DataFrame, phase_id: str, language: str) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
+    id_col = "srpe_development_id" if "srpe_development_id" in monthly.columns else "development_id"
+    month = monthly.loc[monthly[id_col].astype(str).eq(phase_id)].copy() if not monthly.empty and id_col in monthly.columns else pd.DataFrame()
+    if not month.empty:
+        month["period"] = pd.to_datetime(month["period"], errors="coerce")
+        month = month.sort_values("period")
+    deals = events.loc[events["development_id"].astype(str).eq(phase_id)].copy() if not events.empty and "development_id" in events.columns else pd.DataFrame()
+    if not deals.empty:
+        if "date_of_pasp" in deals.columns:
+            deals["date_of_pasp"] = pd.to_datetime(deals["date_of_pasp"], errors="coerce")
+        if "is_cancelled" in deals.columns:
+            deals["is_cancelled"] = deals["is_cancelled"].fillna(False).astype(bool)
+        else:
+            deals["is_cancelled"] = False
+        deals["transaction_price_hkd"] = pd.to_numeric(deals.get("transaction_price_hkd"), errors="coerce")
+        deals = deals.sort_values(["date_of_pasp", "date_of_asp"], ascending=False, na_position="last")
+    observed = month.loc[month.get("month_status", pd.Series(dtype=object)).isin(["observed_transactions", "observed_zero_transactions"])] if not month.empty else month
+    units = pd.to_numeric(observed.get("sales_units_gross"), errors="coerce").fillna(0).sum() if not observed.empty else 0
+    value = pd.to_numeric(observed.get("sales_value_gross_hkd"), errors="coerce").fillna(0).sum() if not observed.empty else 0
+    last = observed.dropna(subset=["period"]).tail(1) if not observed.empty else observed
+    last_active = pd.to_numeric(last.get("active_units_eom"), errors="coerce").iloc[0] if not last.empty and last["active_units_eom"].notna().any() else None
+    last_period = last["period"].iloc[0] if not last.empty else None
+    usable = deals.copy() if not deals.empty else pd.DataFrame()
+    if not usable.empty:
+        usable = usable.loc[~usable["is_cancelled"]]
+        if "date_of_pasp" in usable.columns:
+            usable = usable.loc[usable["date_of_pasp"].notna()]
+    prices = pd.to_numeric(usable.get("transaction_price_hkd"), errors="coerce").dropna() if not usable.empty else pd.Series(dtype=float)
+    stats = {
+        "units": int(units),
+        "value": float(value),
+        "avg_price": float(prices.mean()) if not prices.empty else None,
+        "median_price": float(prices.median()) if not prices.empty else None,
+        "deal_rows": int(len(deals)),
+        "usable_deal_rows": int(len(usable)) if usable is not None else 0,
+        "last_active": None if last_active is None or pd.isna(last_active) else float(last_active),
+        "last_period": last_period,
+    }
+    return month, deals, stats
+
+
+def _srpe_monthly_from_normalized(dataset_name: str) -> pd.DataFrame:
+    try:
+        from hk_real_estate.storage import load_latest_normalized
+    except Exception:
+        return pd.DataFrame()
+    frame = load_latest_normalized(dataset_name)
+    if frame is None or frame.empty:
+        return pd.DataFrame()
+    keep = [c for c in ["development_id", "development_name", "phase_name", "period", "sales_units_gross", "sales_value_gross_hkd", "active_units_eom"] if c in frame.columns]
+    out = frame[keep].copy()
+    if "period" in out.columns:
+        out["period"] = pd.to_datetime(out["period"], errors="coerce")
+        out = out.dropna(subset=["period"])
+    return out.sort_values("period") if "period" in out.columns else out
+
+
+def _render_srpe_monthly_chart(frame: pd.DataFrame, language: str, value_field: str, title: str, y_label: str, height: int = 380) -> None:
+    st.markdown(f'<div class="am-chart-title">{title}</div>', unsafe_allow_html=True)
+    if frame.empty or value_field not in frame.columns:
+        st.info(tr(language, "No SRPE monthly rows are available for this developer yet.", "这个发展商暂时没有 SRPE 月度成交数据。"))
+        return
+    plot = frame.copy()
+    plot["value_mhkd"] = pd.to_numeric(plot[value_field], errors="coerce")
+    if value_field == "sales_value_gross_hkd":
+        plot["value_mhkd"] = plot["value_mhkd"] / 1_000_000
+    monthly = plot.groupby("period", as_index=False)["value_mhkd"].sum()
+    fig = px.line(monthly, x="period", y="value_mhkd", markers=True)
+    fig.update_layout(xaxis_title=tr(language, "Month", "月份"), yaxis_title=y_label, height=height, margin=dict(l=10, r=10, t=10, b=10))
+    fig = chart_theme(fig, "number", date_axis=True, height=height)
+    st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True})
+
+
+def render_real_estate_srpe(artifact: dict[str, Any], labels: dict[str, Any], language: str, window: str) -> None:
+    options = _srpe_developer_options(language)
+    labels_map = {item[0]: item[1] for item in options}
+    completeness = {item[0]: item[2] for item in options}
+    selected = st.selectbox(
+        tr(language, "Developer", "发展商"),
+        [item[0] for item in options],
+        format_func=lambda key: labels_map[key],
+        key="srpe_developer",
+    )
+    if completeness[selected] == "complete":
+        st.caption(tr(language, "SHKP currently has the most complete SRPE contract-activity coverage. These are raw first-hand contracts, not booked revenue.", "目前新鸿基的 SRPE 合约活动覆盖最完整。这里是一手合约活动，不是入账收入。"))
+        card_h, chart_h = get_pair_heights(None, None, "line", "line")
+        left, right = st.columns(2)
+        with left:
+            with st.container(height=card_h, border=True):
+                render_line_chart(artifact, labels, "shkp_leading_contract_sales_chart", language, window, views=("Level",), periods_per_year=12, height=chart_h)
+        with right:
+            with st.container(height=card_h, border=True):
+                render_line_chart(artifact, labels, "shkp_leading_active_units_chart", language, window, views=("Level",), periods_per_year=12, height=chart_h)
+        with st.container(border=True):
+            render_table(artifact, labels, "shkp_leading_phase_latest_table", language, max_rows=40)
+        monthly_all = _srpe_load("shkp_srpe_project_month_signals")
+        events_all = _srpe_load("shkp_srpe_project_transaction_events_dedup")
+        if monthly_all.empty:
+            st.info(tr(language, "No SHKP SRPE monthly phase data is available.", "暂时没有新鸿基 SRPE 月度项目数据。"))
+        else:
+            phase_index = monthly_all.sort_values(["development_name", "phase_name", "srpe_development_id"], na_position="last").drop_duplicates("srpe_development_id")
+            official = _srpe_load("srpe_development_index")
+            if not official.empty and "development_id" in official.columns:
+                keep = [c for c in ["development_id", "phase_no", "phase_name_en", "development_name_en", "address_en"] if c in official.columns]
+                official = official[keep].copy()
+                official["development_id"] = official["development_id"].astype(str)
+                phase_index = phase_index.copy()
+                phase_index["srpe_development_id"] = phase_index["srpe_development_id"].astype(str)
+                phase_index = phase_index.merge(official, how="left", left_on="srpe_development_id", right_on="development_id")
+            phase_ids = [str(value) for value in phase_index["srpe_development_id"].tolist()]
+            phase_labels = {str(row["srpe_development_id"]): _srpe_phase_label(row) for _, row in phase_index.iterrows()}
+            selected_phase = st.selectbox(tr(language, "Phase / project", "期数／项目"), phase_ids, format_func=lambda key: phase_labels.get(str(key), str(key)), key="srpe_shkp_phase")
+            month, deals, stats = _srpe_phase_stats(monthly_all, events_all, str(selected_phase), language)
+            units_label = f"{int(stats.get('units') or 0):,}"
+            value_label = f"HK${float(stats.get('value') or 0)/1_000_000:,.1f}m"
+            avg = stats.get("avg_price")
+            avg_label = "—" if avg is None else f"HK${avg/1_000_000:,.2f}m"
+            last_active = stats.get("last_active")
+            active_label = "—" if last_active is None else f"{int(last_active):,}"
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric(tr(language, "Observed units", "已观察单位"), units_label)
+            m2.metric(tr(language, "Observed value", "已观察金额"), value_label)
+            m3.metric(tr(language, "Average price", "平均成交价"), avg_label)
+            m4.metric(tr(language, "Cumulative contracted units", "累计已见合约单位"), active_label)
+            last_period = stats.get("last_period")
+            last_period_label = last_period.strftime("%Y-%m") if last_period is not None and not pd.isna(last_period) else "—"
+            st.caption(tr(language, "Average price uses uncancelled deals with a PASP date (" + str(int(stats.get("usable_deal_rows") or 0)) + " of " + str(int(stats.get("deal_rows") or 0)) + "). Cumulative contracted units are not remaining inventory. Last covered month: " + last_period_label + ".", "平均价只计有 PASP 且未取消的成交（" + str(int(stats.get("usable_deal_rows") or 0)) + "/" + str(int(stats.get("deal_rows") or 0)) + "）。累计已见合约单位不是剩余库存。最后覆盖月份：" + last_period_label + "。"))
+            month_plot = month.loc[month.get("month_status", pd.Series(dtype=object)).ne("not_covered")].copy() if not month.empty else month
+            c1, c2 = st.columns(2)
+            with c1:
+                _render_srpe_monthly_chart(month_plot, language, "sales_value_gross_hkd", tr(language, "Monthly contract sales", "每月合约销售额"), tr(language, "HK$ million", "百万港元"), height=360)
+            with c2:
+                _render_srpe_monthly_chart(month_plot, language, "sales_units_gross", tr(language, "Monthly contract units", "每月合约单位数"), tr(language, "Units", "单位数"), height=360)
+            month_cols = [c for c in ["period", "month_status", "sales_units_gross", "sales_value_gross_hkd", "median_transaction_price_hkd", "weighted_avg_transaction_price_hkd", "active_units_eom"] if c in month.columns]
+            st.dataframe(month[month_cols], hide_index=True, width="stretch")
+            deal_cols = [c for c in ["date_of_pasp", "date_of_asp", "block_name", "floor", "unit", "transaction_price_hkd", "is_cancelled"] if c in deals.columns]
+            if deal_cols and not deals.empty:
+                st.dataframe(deals[deal_cols].head(250), hide_index=True, width="stretch")
+            else:
+                st.caption(tr(language, "No unit-level register rows are available for this phase yet.", "这个期数暂时没有单位级成交纪录。"))
+
+        section_heading(language, "SRPE register data health", "SRPE 成交纪录数据健康", "Situation 1 still needs parsing; situation 2 is parsed/observed with no deals or no update; situation 3 is ready.", "情况1=有文件、尚未完成解析；情况2=已解析但无成交/未更新；情况3=已就绪。")
+        with st.container(border=True):
+            render_table(artifact, labels, "shkp_srpe_transaction_health_table", language, value_maps={"situation": {"situation_1_parsed": tr(language, "1 pending parse", "情况1 待解析"), "situation_2_no_deals_or_no_update": tr(language, "2 no deals / no update", "情况2 无成交/未更新"), "situation_3_ready": tr(language, "3 ready", "情况3 已就绪")}})
+        return
+    st.caption(tr(language, "Sino Land coverage is partial: recent eligible phases only. Missing registers are not treated as zero sales.", "信和置业目前只有部分近期合资格期数。没有成交纪录不代表零销售。"))
+    monthly = _srpe_monthly_from_normalized("sino_land_srpe_monthly_signals")
+    card_h, chart_h = get_pair_heights(None, None, "line", "line")
+    left, right = st.columns(2)
+    with left:
+        with st.container(height=card_h, border=True):
+            _render_srpe_monthly_chart(monthly, language, "sales_value_gross_hkd", tr(language, "Sino Land SRPE contract sales", "信和置业 SRPE 合约销售额"), tr(language, "HK$ million", "百万港元"), height=chart_h)
+    with right:
+        with st.container(height=card_h, border=True):
+            _render_srpe_monthly_chart(monthly, language, "sales_units_gross", tr(language, "Sino Land SRPE contract units", "信和置业 SRPE 合约单位数"), tr(language, "Units", "单位数"), height=chart_h)
+    coverage_frame = pd.DataFrame()
+    try:
+        from hk_real_estate.storage import load_latest_normalized
+        coverage_frame = load_latest_normalized("sino_land_srpe_transaction_coverage")
+    except Exception:
+        coverage_frame = pd.DataFrame()
+    if not coverage_frame.empty:
+        keep = [c for c in ["project_label", "srpe_development_id", "coverage_status", "parsed_event_rows", "last_document_submission_time"] if c in coverage_frame.columns]
+        st.dataframe(coverage_frame[keep], hide_index=True, width="stretch")
+    events_all = _srpe_load("sino_land_srpe_transaction_events")
+    monthly_all = monthly.copy()
+    if not monthly_all.empty and "srpe_development_id" not in monthly_all.columns and "development_id" in monthly_all.columns:
+        monthly_all = monthly_all.rename(columns={"development_id": "srpe_development_id"})
+    if not monthly_all.empty:
+        phase_index = monthly_all.sort_values(["development_name", "phase_name", "srpe_development_id"], na_position="last").drop_duplicates("srpe_development_id")
+        official = _srpe_load("srpe_development_index")
+        if not official.empty and "development_id" in official.columns:
+            keep = [c for c in ["development_id", "phase_no", "phase_name_en", "development_name_en", "address_en"] if c in official.columns]
+            official = official[keep].copy()
+            official["development_id"] = official["development_id"].astype(str)
+            phase_index = phase_index.copy()
+            phase_index["srpe_development_id"] = phase_index["srpe_development_id"].astype(str)
+            phase_index = phase_index.merge(official, how="left", left_on="srpe_development_id", right_on="development_id")
+        phase_ids = [str(value) for value in phase_index["srpe_development_id"].tolist()]
+        phase_labels = {str(row["srpe_development_id"]): _srpe_phase_label(row) for _, row in phase_index.iterrows()}
+        selected_phase = st.selectbox(tr(language, "Phase / project", "期数／项目"), phase_ids, format_func=lambda key: phase_labels.get(str(key), str(key)), key="srpe_sino_phase")
+        month, deals, stats = _srpe_phase_stats(monthly_all, events_all, str(selected_phase), language)
+        units_label = f"{int(stats.get('units') or 0):,}"
+        value_label = f"HK${float(stats.get('value') or 0)/1_000_000:,.1f}m"
+        avg = stats.get("avg_price")
+        avg_label = "—" if avg is None else f"HK${avg/1_000_000:,.2f}m"
+        last_active = stats.get("last_active")
+        active_label = "—" if last_active is None else f"{int(last_active):,}"
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric(tr(language, "Observed units", "已观察单位"), units_label)
+        m2.metric(tr(language, "Observed value", "已观察金额"), value_label)
+        m3.metric(tr(language, "Average price", "平均成交价"), avg_label)
+        m4.metric(tr(language, "Cumulative contracted units", "累计已见合约单位"), active_label)
+        month_plot = month.loc[month.get("month_status", pd.Series(dtype=object)).ne("not_covered")].copy() if not month.empty else month
+        c1, c2 = st.columns(2)
+        with c1:
+            _render_srpe_monthly_chart(month_plot, language, "sales_value_gross_hkd", tr(language, "Monthly contract sales", "每月合约销售额"), tr(language, "HK$ million", "百万港元"), height=360)
+        with c2:
+            _render_srpe_monthly_chart(month_plot, language, "sales_units_gross", tr(language, "Monthly contract units", "每月合约单位数"), tr(language, "Units", "单位数"), height=360)
+        month_cols = [c for c in ["period", "month_status", "sales_units_gross", "sales_value_gross_hkd", "median_transaction_price_hkd", "weighted_avg_transaction_price_hkd", "active_units_eom"] if c in month.columns]
+        if month_cols:
+            st.dataframe(month[month_cols], hide_index=True, width="stretch")
+        deal_cols = [c for c in ["date_of_pasp", "date_of_asp", "block_name", "floor", "unit", "transaction_price_hkd", "is_cancelled"] if c in deals.columns]
+        if deal_cols and not deals.empty:
+            st.dataframe(deals[deal_cols].head(250), hide_index=True, width="stretch")
+
+
+
 
 def render_real_estate_cross_source(artifact: dict[str, Any], labels: dict[str, Any], language: str, window: str) -> None:
     section_heading(
@@ -5613,13 +5980,16 @@ def render_real_estate_tabs(artifact: dict[str, Any], labels: dict[str, Any], la
             "板块级住宅、跨来源／情绪指标及商业地产／土地供应信号。个股自下而上分析另行追踪，不在此页面内。",
         ),
     )
-    residential_tab, cross_source_tab, commercial_tab = st.tabs([
+    residential_tab, srpe_tab, cross_source_tab, commercial_tab = st.tabs([
         tr(language, "Residential Market", "住宅市场"),
+        tr(language, "SRPE First-hand Sales", "SRPE 一手成交"),
         tr(language, "Cross-Source & Sentiment", "跨来源与市场情绪"),
         tr(language, "Commercial & Land Supply", "商业地产与土地供应"),
     ])
     with residential_tab:
         render_real_estate_residential(artifact, labels, language, window)
+    with srpe_tab:
+        render_real_estate_srpe(artifact, labels, language, window)
     with cross_source_tab:
         render_real_estate_cross_source(artifact, labels, language, window)
     with commercial_tab:

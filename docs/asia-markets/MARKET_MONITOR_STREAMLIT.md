@@ -56,12 +56,18 @@ Investable V1 exposures currently are:
 | Japan | Nikkei 225 | 日经225 | 2 |
 | China / Korea | CN-KR Semiconductor | 中韩半导体 | 1 |
 | Europe | Germany DAX | 德国DAX | 1 |
+| Europe | France CAC 40 | 法国CAC40 | 1 |
+| Middle East | Saudi Arabia | 沙特 | 2 |
 
-The current tracked cohort therefore has 14 investable exposures and 33 ETF
-wrappers. The last three are QDII wrappers: they carry `premium_regime`
-`qdii`, which shares the quota-constrained scoring curve rather than the
-domestic one, because NAV timing, FX and quota make a small premium ordinary
-for them and abnormal for a mainland ETF. Relative-strength-only benchmark legs are fetched and stored for
+The current tracked cohort therefore has 16 investable exposures and 36 ETF
+wrappers. UK FTSE 100 is carried as a benchmark leg rather than an exposure:
+the venue's own feed says its one filed wrapper, 513970, is 恒生消费ETF景顺,
+and no mainland-listed FTSE 100 tracker exists. Eighteen wrappers are marked
+QDII across nine exposure groups; they
+carry `premium_regime` `qdii`, which shares the quota-constrained scoring curve
+rather than the domestic one, because NAV timing, FX and quota make a small
+premium ordinary for them and abnormal for a mainland ETF. Hong Kong Connect
+wrappers are separately marked `premium_regime` `connect`. Relative-strength-only benchmark legs are fetched and stored for
 pair calculations but are not shown as extra ETF-selection cards. They
 include ChiNext, China information/consumer-staples baskets, HK mid-cap and
 H-shares, S&P 500 equal-weight, Russell small/growth/value and US sector
@@ -77,7 +83,8 @@ Provider ownership is declared per exposure and routed explicitly:
 - CSI index daily: HK Internet (`931637`) and CN-KR Semiconductor (`931643`),
   using each index's own official family rather than a proxy series.
 - Yahoo Finance: Nasdaq 100, S&P 500, Nikkei 225 (`^N225`), Germany DAX
-  (`^GDAXI`) and US relative-strength benchmark legs. The provider symbol is
+  (`^GDAXI`), France CAC 40 (`^FCHI`), UK FTSE 100 (`^FTSE`), Saudi Arabia
+  (`KSA`) and US relative-strength benchmark legs. The provider symbol is
   declared per exposure as `yf_symbol`; deriving it from `index_id` once
   produced a request for "SPX", which returns an empty frame rather than an
   error.
@@ -91,6 +98,65 @@ baselines and two years of ETF price/premium chart history. Historical premium
 rows are primarily close versus published NAV; the latest days can use live
 IOPV until the fund publishes NAV. The artifact carries `basis` so these
 measurements are not silently presented as identical observations.
+
+### Freshness contract and report modes
+
+There are two deliberately separate report modes:
+
+- `close` runs the persisted daily pipeline. Index technicals, relative
+  strength and historical premium charts use completed sessions. A run date is
+  never substituted for an observation date; weekends and exchange holidays
+  therefore read as `Last session`, while a provider that stops moving beyond
+  the configured safety window reads as `Stale`.
+- `intraday` fetches only the Eastmoney ETF spot snapshot for the midday Gmail
+  alert. It does not write raw/normalized/derived history or update the daily
+  artifact, and never reconstructs a missing quote from the last close.
+  Technical indicators in that email are explicitly previous-close context.
+
+### Event-driven Gmail delivery
+
+The close and intraday jobs use `src/market_monitor/alert_policy.py` rather
+than sending on every successful schedule. The first healthy run establishes a
+baseline; a new ETF entry-status extreme, same-index lowest-premium leader,
+technical threshold, relative-strength extreme or published fee change must
+be confirmed by the configured number of observations before it triggers an
+email. Same-day deliveries are deduplicated. If no event occurs during the
+week, the configured heartbeat weekday sends one weekly digest.
+
+`data/derived/market_monitor/alert_state.json` stores only the close/intraday
+observation cursors, delivery metadata, a bounded event-key dedupe list and a
+small retry queue. It does not contain price or premium history. The intraday
+workflow is allowed to commit this metadata file so a midday alert and the
+later close run share one delivery cursor; quote data itself remains
+non-persistent. A failed event or weekly heartbeat remains pending until a
+healthy later run can deliver it.
+
+The shared freshness policy lives in `src/market_monitor/freshness.py` and is
+carried in both pipeline results and `package_info.freshness` in the artifact.
+The current policy treats a quote as fresh for 15 minutes, daily closes as
+stale after seven calendar days, and published southbound data as stale after
+14 calendar days. These are safety gates, not claims that a source publishes
+on a fixed schedule. ETF spot rows also carry retrieval provenance; the public
+Eastmoney spot frame does not provide a stable per-row exchange timestamp, so
+the UI calls this out as a retrieval-based snapshot.
+
+When the provider supplies only a retrieval time, the quote is classified as
+`Unverified`, not `Fresh`: it can be displayed as a recently fetched raw
+premium, but it cannot define a current entry cost, same-index peer rank or
+relative-premium comparison. A source-observation timestamp is required for
+`Fresh`. An empty response is `Unavailable` and has no invented timestamp.
+The email and Streamlit caption therefore say `已抓取（未验证源端时间）` for
+retrieval-only rows. This keeps a direct fetch visible without pretending the
+provider supplied a stronger timestamp than it did.
+
+`quote_basis=last_close` remains available for auditability but is excluded
+from current entry cost, entry status and peer ranking. The dashboard renders
+its premium as unavailable until a fresh spot snapshot exists. This prevents a
+successful artifact rebuild from making an old premium look current.
+The close pipeline also appends a spot premium to history only when the ETF
+daily-price layer confirms that fund traded on the requested observation date;
+otherwise it leaves the historical series unchanged and lets published NAV
+rows carry the dates they actually report.
 
 ## Current Streamlit views
 
@@ -131,15 +197,20 @@ Three properties of that board are load-bearing and easy to undo:
 - Missing metrics stay null. A fund without 20 sessions has no MA20; filling
   that with the latest close renders it as sitting exactly on its own average.
 
-The loader tries R2, then the git-ignored local cache, then a live fetch, and
-stamps which tier answered plus the cache age. A stale local read and a fresh
-publish must not look alike.
+The loader tries R2, then the git-ignored local cache, and never performs a
+live fetch during Streamlit navigation. The scheduled artifact builder owns
+Yahoo Finance access. The loader stamps which tier answered plus the cache
+age, so a stale local read and a fresh publish cannot look alike and a missing
+artifact remains visibly unavailable.
 
-At the last artifact check (`status: ready`, generated 2026-08-22), the
-snapshot contained 14 technical rows, 33 wrapper rows, 12 pair summaries,
-5,889 pair-history rows, 15,679 ETF price chart rows, 6,874 index price rows,
-15,703 premium-history rows and 5 source-health rows. These are a verification
-snapshot, not a promise that every future daily run has the same row count.
+At the last artifact check (`status: partial`, generated 2026-08-24), the
+snapshot contained 37 technical rows across investable and benchmark series,
+37 wrapper rows, 12 pair summaries, 5,889 pair-history rows, 17,573 ETF price
+chart rows, 14,312 index price rows, 17,561 premium-history rows and 7
+source-health rows. The partial status is expected when the non-persistent ETF
+spot snapshot is unavailable on a non-trading day; it prevents old quotes from
+being presented as current. These are a verification snapshot, not a promise
+that every future daily run has the same row count.
 
 ## Important semantics and caveats
 
@@ -155,8 +226,11 @@ snapshot, not a promise that every future daily run has the same row count.
 - QDII/cross-border premium is not interpreted with the same thresholds as a
   domestic ETF. NAV timing, FX, futures and quota effects remain visible in
   the wrapper caveat.
-- The index and wrapper data are daily/session data, not intraday execution
-  data. A run timestamp and an observation date are different things.
+- The close artifact is daily/session data, not intraday execution data. A run
+  timestamp and an observation date are different things. Use the separate
+  `market-monitor-intraday.yml` workflow for the non-persistent midday quote
+  alert; it is not a second history store. Only its tiny alert cursor may be
+  committed.
 - SSE Dividend currently has only one tracked wrapper; HSI and STAR 50 have
   two. This is a cohort-coverage limitation, not evidence that rank #1 is
   informative.
