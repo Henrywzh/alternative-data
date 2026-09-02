@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-09-02T11:21:40.185951Z",
-  "snapshot_id": "84856c7cb66aaee5",
-  "data_as_of": "2026-08-24",
+  "generated_at": "2026-09-02T12:08:13.843221Z",
+  "snapshot_id": "85206a89e5d85999",
+  "data_as_of": "2026-08-31",
   "overall_status": "Degraded",
   "live_sources": 22,
   "planned_sources": 1,
@@ -22,9 +22,9 @@
       "dataset": "Midland MHPI",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-24",
-      "records": 546,
-      "freshness": "9d old",
+      "latest_observation": "2026-08-31",
+      "records": 547,
+      "freshness": "2d old",
       "notes": "Latest observation is published without a provisional flag."
     },
     {
@@ -32,9 +32,9 @@
       "dataset": "Midland Confidence Index",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-24",
-      "records": 448,
-      "freshness": "9d old",
+      "latest_observation": "2026-08-31",
+      "records": 449,
+      "freshness": "2d old",
       "notes": "Latest observation is published without a provisional flag."
     },
     {
@@ -61,11 +61,11 @@
       "source": "HKMA Residential Mortgage Survey",
       "dataset": "HKMA residential mortgage survey",
       "type": "Measure",
-      "status": "Stale",
+      "status": "Healthy",
       "latest_observation": "2026-06-01",
       "records": 115,
-      "freshness": "Previous artifact snapshot",
-      "notes": "Live fetch returned no usable rows; reused last committed artifact."
+      "freshness": "93d old",
+      "notes": "Official monthly residential mortgage survey; the source may revise the latest month."
     },
     {
       "source": "Centaline CCI — Residential Price Index",
@@ -133,7 +133,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "2026-06-30",
-      "records": 10,
+      "records": 21,
       "freshness": "64d old",
       "notes": "Bounded PDF text extraction of explicit units/areas/rates/milestones; not revenue or ownership."
     },
@@ -243,7 +243,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "—",
-      "records": 199,
+      "records": 300,
       "freshness": "Live at build time",
       "notes": "Deduplicated agency transaction feeds; see the chart/table above."
     },
@@ -263,7 +263,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "—",
-      "records": 256,
+      "records": 240,
       "freshness": "Live at build time",
       "notes": "Buildings Department Monthly Digest / Project Lifecycle; see the chart/table above."
     },
@@ -286,16 +286,6 @@
       "records": 0,
       "freshness": "Fetch returned no rows",
       "notes": "Sales of First-hand Residential Properties Electronic Platform (SRPE); live fetch returned no usable rows this run."
-    },
-    {
-      "source": "Midland top estates",
-      "dataset": "midland_top_estates",
-      "type": "Measure",
-      "status": "Stale",
-      "latest_observation": "—",
-      "records": 10,
-      "freshness": "Previous artifact snapshot",
-      "notes": "Midland market-insight scrape (skipped in CI, WAF-blocked) was unavailable in this build, so the last published rows were retained. The figures are real but not refreshed this run."
     },
     {
       "source": "SRPE expansion",
