@@ -1,0 +1,28 @@
+year,farebox_revenue_hkdm,transport_ops_revenue_hkdm,source_url,release_source_url,actual_definition,actual_available_at,period_status,coverage_end,coverage_pct,model_error_pct,covid_flag,residual_hkdm,ridge_residual_adj_hkdm,ridge_adjusted_revenue_hkdm,ridge_error_pct
+2000,5769.192961338575,,,,,,reported_fy,2000-12-31,,,0,,0.0,5769.192961338575,
+2001,5627.91911936661,,,,,,reported_fy,2001-12-31,,,0,,0.0,5627.91911936661,
+2002,5718.93858358107,,,,,,reported_fy,2002-12-31,,,0,,0.0,5718.93858358107,
+2003,5575.214775734462,,,,,,reported_fy,2003-12-31,,,0,,0.0,5575.214775734462,
+2004,6068.986285869272,,,,,,reported_fy,2004-12-31,,,0,,0.0,6068.986285869272,
+2005,6261.563614210878,,,,,,reported_fy,2005-12-31,,,0,,0.0,6261.563614210878,
+2006,6386.796683072442,,,,,,reported_fy,2006-12-31,,,0,,0.0,6386.796683072442,
+2007,7006.006198183432,,,,,,reported_fy,2007-12-31,,,0,,0.0,7006.006198183432,
+2008,11639.51094872248,,,,,,reported_fy,2008-12-31,,,0,,0.0,11639.51094872248,
+2009,11720.517325121802,,,,,,reported_fy,2009-12-31,,,0,,0.0,11720.517325121802,
+2010,12527.815736067629,,,,,,reported_fy,2010-12-31,,,0,,0.0,12527.815736067629,
+2011,13425.655697021723,,,,,,reported_fy,2011-12-31,,,0,,0.0,13425.655697021723,
+2012,14820.391972165933,,,,,,reported_fy,2012-12-31,,,0,,0.0,14820.391972165933,
+2013,15648.401779814561,,,,,,reported_fy,2013-12-31,,,0,,0.0,15648.401779814561,
+2014,16882.567434970373,,,,,,reported_fy,2014-12-31,,,0,,0.0,16882.567434970373,
+2015,17902.8926405398,,,,,,reported_fy,2015-12-31,,,0,,0.0,17902.8926405398,
+2016,18425.06674596629,,,,,,reported_fy,2016-12-31,,,0,,0.0,18425.06674596629,
+2017,18853.175749614362,,,,,,reported_fy,2017-12-31,,,0,,0.0,18853.175749614362,
+2018,20582.868913852228,,,,,,reported_fy,2018-12-31,,,0,,0.0,20582.868913852228,
+2019,21103.933990486978,19938.0,https://www.mtr.com.hk/archive/corporate/en/press_release/PR-20-019-E.pdf,https://www.mtr.com.hk/archive/corporate/en/press_release/PR-20-019-E.pdf,Hong Kong Transport Operations / Total Revenue; calendar year; HK$m,2020-03-05,reported_fy,2019-12-31,105.84779812662744,5.847798126627433,0,-1165.9339904869776,108.75179562296285,21212.68578610994,6.393247999347686
+2020,11089.950531908644,11896.0,https://www.mtr.com.hk/archive/corporate/en/press_release/PR-21-016-E.pdf,https://www.mtr.com.hk/archive/corporate/en/press_release/PR-21-016-E.pdf,Hong Kong Transport Operations / Total Revenue; calendar year; HK$m,2021-03-11,reported_fy,2020-12-31,93.22419747737595,-6.775802522624043,1,806.0494680913562,381.34283611648385,11471.293368025128,-3.570163348813651
+2021,12953.499275610791,13177.0,https://www.mtr.com.hk/archive/corporate/en/press_release/PR-22-020-E.pdf,https://www.mtr.com.hk/archive/corporate/en/press_release/PR-22-020-E.pdf,Hong Kong Transport Operations / Total Revenue; calendar year; HK$m,2022-03-10,reported_fy,2021-12-31,98.30385729385134,-1.6961427061486585,1,223.5007243892087,593.1787429172648,13546.678018528057,2.8054793847465795
+2022,12223.99402656841,13404.0,https://www.mtr.com.hk/archive/corporate/en/press_release/PR-23-016-E.pdf,https://www.mtr.com.hk/archive/corporate/en/press_release/PR-23-016-E.pdf,Hong Kong Transport Operations / Total Revenue; calendar year; HK$m,2023-03-09,reported_fy,2022-12-31,91.19661314957035,-8.803386850429641,1,1180.0059734315892,245.35865235639915,12469.35267892481,-6.972898545771337
+2023,20283.08719620297,20131.0,https://www.mtr.com.hk/archive/corporate/en/press_release/PR-24-013-E.pdf,https://www.mtr.com.hk/archive/corporate/en/press_release/PR-24-013-E.pdf,Hong Kong Transport Operations / Total Revenue; calendar year; HK$m,2024-03-07,reported_fy,2023-12-31,100.75548753764329,0.755487537643289,0,-152.08719620297052,-259.91976593485776,20023.167430268113,-0.5356543129098749
+2024,22908.0,23013.0,https://www.mtr.com.hk/archive/corporate/en/press_release/PR-25-013-E.pdf,https://www.mtr.com.hk/archive/corporate/en/press_release/PR-25-013-E.pdf,Hong Kong Transport Operations / Total Revenue; calendar year; HK$m,2025-03-06,reported_fy,2024-12-31,99.5437361491331,-0.4562638508669013,0,105.0,0.0,22908.0,-0.4562638508669013
+2025,23696.23440731192,23595.0,https://www.mtr.com.hk/archive/corporate/en/press_release/PR-26-020-E.pdf,https://www.mtr.com.hk/archive/corporate/en/press_release/PR-26-020-E.pdf,Hong Kong Transport Operations / Total Revenue; calendar year; HK$m,2026-03-12,reported_fy,2025-12-31,100.42905025349404,0.42905025349404635,0,-101.23440731192022,0.0,23696.23440731192,0.42905025349404635
+2026,11976.685623054635,,,,,,partial_ytd,2026-06-30,,,0,,0.0,11976.685623054635,

@@ -1,0 +1,32 @@
+{
+  "registry_version": "asia_backtest_registry_v2",
+  "scope": "forecast_accuracy_metadata_only",
+  "headline_eligibility_scope": "candidate_pre_metric_policy",
+  "model_calculation_changed": false,
+  "dashboard_changed": false,
+  "wide_tables_replaced": false,
+  "outputs": {
+    "target_registry": "asia_backtest_target_registry.csv",
+    "row_status": "asia_backtest_row_status.csv",
+    "document_registry": "asia_backtest_document_registry.csv"
+  },
+  "target_rows": 55,
+  "row_status_rows": 2951,
+  "document_rows": 96,
+  "default_model_selection": {
+    "method": "per_entity_skill_vs_baseline_majority_vote",
+    "note": "Diagnostic-grade prior evidence only, not a validated ranking: every contract measured so far is metric_status=insufficient_sample (headline_contracts == 0). See default_model_selection_confidence and default_model_id_by_entity per row for the evidence behind each declared default.",
+    "metrics_available": true,
+    "metrics_source": "data/registries/asia_backtest_metrics.csv",
+    "evidence_fingerprint": "selection_evidence-484711b93fb9451e",
+    "input_bundle_id": "asia_backtest_input_bundle-b1ddb611566da708",
+    "latest_run_id": "asia_backtest_engine_v1_11-cad038e2087e2f15"
+  },
+  "known_gaps": [
+    "SHKP input dataset run set is not captured as one dependency bundle.",
+    "Airline historical v4 and live v4 use separate predictor implementations.",
+    "MTR actual availability dates are sourced from official results announcements and propagated to the row contract; legacy MTR replay rows remain structural unless their model contract supplies chronological inputs.",
+    "Same-period-last-year baseline predictions and scaled_RMSE are materialized in the additive long-form/metrics outputs; this Step 1 registry remains metadata-only.",
+    "default_model_id is now derived per-entity from the previous run's measured skill_vs_baseline where available (see default_model_selection below); it falls back to the pre-metrics heuristic chain, labelled assumed_heuristic_fallback, wherever no measured evidence exists yet."
+  ]
+}

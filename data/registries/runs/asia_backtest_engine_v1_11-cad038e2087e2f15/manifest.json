@@ -1,0 +1,119 @@
+{
+  "engine_version": "asia_backtest_engine_v1_11",
+  "run_id": "asia_backtest_engine_v1_11-cad038e2087e2f15",
+  "created_at": "2026-08-13T22:43:04.818929+00:00",
+  "status": "ready",
+  "config": {
+    "mode": "long_form_emitter",
+    "schema": "asia_backtest_long_form_v1_9",
+    "metric_policy": "asia_backtest_metrics_v2",
+    "input_bundle_id": "asia_backtest_input_bundle-5f1168f5880e219d",
+    "reconciliation_status": "ready",
+    "runtime": {
+      "python": "3.11.9",
+      "pandas": "2.3.1",
+      "pyarrow": "23.0.1",
+      "platform": "macOS-26.5.1-arm64-arm-64bit"
+    }
+  },
+  "input_fingerprints": {
+    "data/normalized/hk_real_estate/shkp_commercial_backtest/shkp-commercial-model-066f8e0d-8950-4de6-8fdf-2aee471076cb/lineage.json": "af3fd2c115acaf0eff1b1e718cb1478880e7519028460c03d3ec488b9c919c62",
+    "data/normalized/hk_real_estate/shkp_commercial_backtest/shkp-commercial-model-066f8e0d-8950-4de6-8fdf-2aee471076cb/shkp_commercial_backtest.parquet": "e8c580f36a1f6d940b7c928313f6796340e2e6d02ad08ea94d6ee306ad73dc96",
+    "data/normalized/hk_real_estate/shkp_indicative_sales_model_backtest/shkp-indicative-sales-model-7eacb288-81ae-4de0-8433-dcf06c078a9d/lineage.json": "0a8804cbcde78f3dd5b4dbe6b477a2446ea0030805890407462351a74049e974",
+    "data/normalized/hk_real_estate/shkp_indicative_sales_model_backtest/shkp-indicative-sales-model-7eacb288-81ae-4de0-8433-dcf06c078a9d/shkp_indicative_sales_model_backtest.parquet": "ef604815f1a7cea43b5dbbb33d7527957fafb343ae67b47ddf3c4788a4d52abd",
+    "data/normalized/hk_real_estate/shkp_skeleton_historical_backtest/shkp-skeleton-backtest-6c3134af-ac96-4379-bf17-8a7ea0f5f8d7/lineage.json": "4a2183eaf8018b166e9b1ae5bac8b54fc785f8b2c37530d3beb9f76a9c165ad2",
+    "data/normalized/hk_real_estate/shkp_skeleton_historical_backtest/shkp-skeleton-backtest-6c3134af-ac96-4379-bf17-8a7ea0f5f8d7/shkp_skeleton_historical_backtest.parquet": "a9841064a1daee82f219b9a10b7fb2cfa4029a9be33e4b91b31805a2ceb2055e",
+    "data/normalized/hk_transport/airline_cost_engine_v2.csv": "f8c2939a65707955d16afcb25e8704888b7e2e9a99391e80926200f356e33f21",
+    "data/normalized/hk_transport/airline_earnings_model_v4.csv": "b740fa3c8d11dbba87b1083ec680361fd4495935072b6ee7f95327859f605b9a",
+    "data/normalized/hk_transport/airline_h1_kpi_backtest.csv": "33489a7933475f0049e683bf004178bdacee88f33111ea0bcb9357164fdadc33",
+    "data/normalized/hk_transport/airline_period_kpi_backtest.csv": "f3d831f7056996335d08486e6f34584856de3d1126887ffac6369122491b1096",
+    "data/normalized/hk_transport/mtr_transport_ops_actuals.csv": "2d01d99d4bc1becddc4bb0ced461d0428ec01737759c96fcf9bc98a157c8d09f",
+    "data/processed/transport/mtr_farebox_monthly_nowcast.csv": "e38c7e6a5232dd128a0d049159ecca61cb18ee59f158de2a51f97417fd7537a2",
+    "data/processed/transport/mtr_farebox_revenue_annual_backtest.csv": "6045aeee5d84f4ac3c61707f8977b991aca0856e69d6d5aa28daecaff52e6c50",
+    "data/processed/transport/mtr_farebox_revenue_h1_backtest.csv": "7ce70a5c2a39ac5aaf083e1d4e6a128dc679ff0dbe5633d997d022edc4eefed1",
+    "data/processed/transport/mtr_farebox_walk_forward_oos.csv": "ab5c4b471be26606ed87e2fd7615d5ff621f1384e5d2d2f88473fb07fdb9f1ac",
+    "data/raw/hk_population_migration/immd_daily_traffic_20260812_221931.csv": "732a4ad8fba02862819b3d268cb472b3d259e1ed1a4ad9492c1005756bfbc02e",
+    "data/raw/hk_transport/mtr_patronage_20260812_223726.json": "1f5f7b13236ccd20492dffde8ec8ce05331995a998b378f0db66a778b17031f2",
+    "data/registries/asia_backtest_row_status.csv": "e2160139464e1caab82b0416e95410d389b2ccc8905b7971f95348b050fb1bae",
+    "data/registries/asia_backtest_target_registry.csv": "4cf4a1f338cc52a3cdc3717a600a00902598dac9903048f597c5d2eea466519e",
+    "scripts/build_mtr_walk_forward_oos.py": "924aff14bc8b9bd9a939bc9d450eb0daf24ddc82d92823572abde945516a27cb"
+  },
+  "parent_run_ids": [
+    "shkp-commercial-model-066f8e0d-8950-4de6-8fdf-2aee471076cb",
+    "shkp-indicative-sales-model-7eacb288-81ae-4de0-8433-dcf06c078a9d",
+    "shkp-skeleton-backtest-6c3134af-ac96-4379-bf17-8a7ea0f5f8d7"
+  ],
+  "artifacts": {
+    "input_bundle": {
+      "path": "input_bundle.json",
+      "sha256": "966b583f76202c94de576144740277e339df616d16f1f118c41f52f017bd9635",
+      "bytes": 6911
+    },
+    "long_form_csv": {
+      "path": "asia_backtest_long_form.csv",
+      "sha256": "a107ac8bf8c64c2f7af344df3106a67fffa8c7c6353ec5b558a0ce9a5b0780f2",
+      "bytes": 6988156
+    },
+    "long_form_parquet": {
+      "path": "asia_backtest_long_form.parquet",
+      "sha256": "a9c6b445390511ec0c2d15ecc84b50ee79526119e280a05b15105d3ead1b9e06",
+      "bytes": 593699
+    },
+    "metric_intervals_csv": {
+      "path": "asia_backtest_metric_intervals.csv",
+      "sha256": "9afe5e9ffd025bb0cb098e15a4e10a3ace894a435adf7e320314704e3ab378d6",
+      "bytes": 35078
+    },
+    "metric_intervals_parquet": {
+      "path": "asia_backtest_metric_intervals.parquet",
+      "sha256": "cda7a761e1c77c08e12e915577053771f2878cd762217213c83dbcc53c24b9eb",
+      "bytes": 16241
+    },
+    "metrics_csv": {
+      "path": "asia_backtest_metrics.csv",
+      "sha256": "85a90b5148fb27fa00faf33abf5cba26d7f4c49e73a37dcd2c9e7c6cf78144c3",
+      "bytes": 209701
+    },
+    "metrics_manifest": {
+      "path": "asia_backtest_metrics_manifest.json",
+      "sha256": "010d12a4418b4cd15aecb80cb02f2b7fce7bae1bbd7cd801ab2009a39310faef",
+      "bytes": 1165
+    },
+    "metrics_parquet": {
+      "path": "asia_backtest_metrics.parquet",
+      "sha256": "f01987293c5d15c255d3cd618763d84be1e44dd4896c08396cdccd6b71ca0618",
+      "bytes": 44722
+    },
+    "reconciliation": {
+      "path": "reconciliation.json",
+      "sha256": "71eb7188ca255a6d954e7e48be653d9b7dbbab3d5789fdda431fe158e2990b7b",
+      "bytes": 13399
+    }
+  },
+  "schema": {
+    "long_form": "asia_backtest_long_form_v1_9",
+    "metrics": "asia_backtest_metrics_v2"
+  },
+  "runtime": {
+    "python": "3.11.9",
+    "pandas": "2.3.1",
+    "pyarrow": "23.0.1",
+    "platform": "macOS-26.5.1-arm64-arm-64bit"
+  },
+  "counts": {
+    "rows": 5308,
+    "primary_rows": 2788,
+    "baseline_rows": 2357,
+    "dedup_value_checks": 319,
+    "dedup_violations": 0,
+    "metrics_rows": 263,
+    "interval_rows": 120
+  },
+  "caveats": [
+    "Additive long-form emission; wide tables and dashboards are unchanged.",
+    "Baseline rows use prior-period actuals and are flagged is_baseline=True."
+  ],
+  "model_calculation_changed": false,
+  "dashboard_changed": false,
+  "wide_tables_replaced": false
+}

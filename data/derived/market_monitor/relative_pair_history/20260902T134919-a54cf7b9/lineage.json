@@ -1,0 +1,16 @@
+{
+  "type": "derived",
+  "run_scope": "full",
+  "dataset_name": "relative_pair_history",
+  "run_id": "20260902T134919-a54cf7b9",
+  "created_at": "2026-09-02T13:49:43.046243+00:00",
+  "records": 14687,
+  "columns": [
+    "date",
+    "pair_id",
+    "ratio",
+    "ratio_ma",
+    "zscore"
+  ],
+  "sha256": "c22ac222ea4db097f2fb274579ff4dd3a269d7eca9c26eda525cc077a9da2801"
+}
