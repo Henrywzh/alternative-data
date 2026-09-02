@@ -371,8 +371,8 @@ def _apply_comparison_gaps(
     join_keys = ["source_region", "metric_type", "category_id", "flow_code", "period", "partner_scope"]
     official = official_df.copy()
     backup = backup_df.copy()
-    joined = official[join_keys + ["value"]].merge(
-        backup[join_keys + ["value"]],
+    joined = official[join_keys + ["value", "unit", "currency"]].merge(
+        backup[join_keys + ["value", "unit", "currency"]],
         on=join_keys,
         how="inner",
         suffixes=("_official", "_backup"),
@@ -380,8 +380,18 @@ def _apply_comparison_gaps(
     if joined.empty:
         return official, backup
 
-    joined["comparison_gap_pct"] = (
-        (joined["value_official"] - joined["value_backup"]).abs() / joined["value_official"].abs()
+    # Compare in USD only. Korea reports thousands of USD while Comtrade
+    # reports dollars, and Hong Kong / Japan report their own currencies:
+    # mixing those scales without normalizing produced gaps of 99,900%,
+    # 12,700%, and 674% for rows that actually agree. Cross-currency pairs
+    # get no gap (NaN) rather than a wrong number; a monthly FX join can
+    # replace this later without changing the stored contract.
+    official_usd = _value_in_usd(joined["value_official"], joined["unit_official"], joined["currency_official"])
+    backup_usd = _value_in_usd(joined["value_backup"], joined["unit_backup"], joined["currency_backup"])
+    comparable = official_usd.notna() & backup_usd.notna() & (official_usd != 0)
+    joined["comparison_gap_pct"] = pd.Series(float("nan"), index=joined.index)
+    joined.loc[comparable, "comparison_gap_pct"] = (
+        (official_usd[comparable] - backup_usd[comparable]).abs() / official_usd[comparable].abs()
     ) * 100.0
     gap_map = joined.set_index(join_keys)["comparison_gap_pct"].to_dict()
 
@@ -394,6 +404,21 @@ def _apply_comparison_gaps(
         return updated
 
     return _assign_gap(official), _assign_gap(backup)
+
+
+_USD_UNIT_SCALES = {"usd": 1.0, "usd_thousand": 1_000.0}
+
+
+def _value_in_usd(values: pd.Series, units: pd.Series, currencies: pd.Series) -> pd.Series:
+    """Convert a value series to USD, or NaN where the unit is not USD-based."""
+    unit_key = units.astype(str).str.strip().str.lower()
+    is_usd = currencies.astype(str).str.strip().str.upper().eq("USD")
+    scale = unit_key.map(_USD_UNIT_SCALES)
+    numeric = pd.to_numeric(values, errors="coerce")
+    result = pd.Series(float("nan"), index=values.index, dtype=float)
+    usable = is_usd & scale.notna() & numeric.notna()
+    result.loc[usable] = numeric.loc[usable] * scale.loc[usable].astype(float)
+    return result
 
 
 def _apply_catalog_latest_periods(

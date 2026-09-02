@@ -69,6 +69,25 @@ point-in-time publication date. `mom_pct` is derived from adjacent monthly
 revenue when MOPS does not publish it, and is marked with
 `mom_pct_is_derived`.
 
+As of 2026-08-25, the MOPS normalized dataset has been refreshed through
+2026-07 for all 11 tracked companies. Census national and Port-HS datasets
+remain through 2026-06: a 2026-07 retry returned an empty response for Korea
+(`5800`), so the pipeline retained the previous normalized data and kept the
+empty raw response plus manifest for audit.
+
+A 2026-09-02 retry of Census 2026-07 still returned no rows for all four
+partner countries; Census monthly trade typically lands roughly six weeks
+after month end, so 2026-07 is expected in early September and the fetch
+should be retried then.
+
+The official-vs-backup `comparison_gap_pct` column was repaired on
+2026-09-02. It had compared Korea's thousands-USD figures directly against
+Comtrade dollars (and HKD/JPY thousands against dollars with no FX step),
+reporting 99,900% / 12,700% / 674% gaps for rows that agree. Gaps are now
+computed in USD after unit normalization; Korea's 50 comparable months show a
+maximum gap of 0.00001%, and cross-currency Hong Kong/Japan rows carry no gap
+until a monthly FX join is added.
+
 ## Deferred sources
 
 KCS and KOSIS remain optional adapters from the earlier prototype, but they are

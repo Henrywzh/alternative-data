@@ -7,13 +7,70 @@ import pandas as pd
 import pytest
 
 from semiconductor_proxy_data.models import BackupCheckPoint, OfficialMonthlyPoint, Snapshot, SourceCatalogPoint
-from semiconductor_proxy_data.pipeline import SemiconductorProxyPipeline
+from semiconductor_proxy_data.pipeline import SemiconductorProxyPipeline, _apply_comparison_gaps
 from semiconductor_proxy_data.sources.comtrade import ComtradeSource
 from semiconductor_proxy_data.sources.hongkong_censtatd import HongKongCenstatdSource
 from semiconductor_proxy_data.sources.japan_customs import JapanCustomsSource
 from semiconductor_proxy_data.sources.korea_customs import KoreaCustomsSource
 from semiconductor_proxy_data.sources.nbs import NbsSource
 from semiconductor_proxy_data.storage import StorageManager
+
+
+def test_comparison_gaps_normalize_units_and_skip_cross_currency() -> None:
+    """Korea's official series is USD thousands; Comtrade answers in dollars.
+
+    Before normalization this join reported a 99,900% gap for rows that agree
+    to within rounding, and Hong Kong / Japan cross-currency rows showed
+    12,700% / 674% gaps that were pure unit-and-FX artifacts. Same-currency
+    rows must be normalized to a common scale; cross-currency rows must carry
+    no gap instead of a wrong one.
+    """
+    join = {
+        "source_region": ["korea", "korea", "hongkong"],
+        "metric_type": ["exports", "exports", "exports"],
+        "category_id": ["ic_only", "ic_only", "ic_only"],
+        "flow_code": ["X", "X", "X"],
+        "period": ["2025-12", "2025-11", "2025-12"],
+        "partner_scope": ["world", "world", "world"],
+    }
+    official = pd.DataFrame(
+        {
+            **join,
+            "value": [16_726_110.0, 15_000_000.0, 90_000_000.0],
+            "unit": ["usd_thousand", "usd_thousand", "hkd_thousand"],
+            "currency": ["USD", "USD", "HKD"],
+            "comparison_gap_pct": [99_899.99, 99_899.99, 12_695.0],
+        }
+    )
+    backup = pd.DataFrame(
+        {
+            **join,
+            "value": [16_726_109_703.0, 16_000_000_000.0, 11_500_000_000.0],
+            "unit": ["usd", "usd", "usd"],
+            "currency": ["USD", "USD", "USD"],
+            "comparison_gap_pct": [99_899.99, 99_899.99, 12_695.0],
+        }
+    )
+
+    official_out, backup_out = _apply_comparison_gaps(official, backup)
+
+    def gaps(frame: pd.DataFrame) -> dict[str, float]:
+        return {
+            row["period"] if row["source_region"] == "korea" else "hk": row["comparison_gap_pct"]
+            for _, row in frame.iterrows()
+        }
+
+    official_gaps = gaps(official_out)
+    backup_gaps = gaps(backup_out)
+    # Same economic quantity, one in thousands: effectively zero gap.
+    assert official_gaps["2025-12"] == pytest.approx(0.0, abs=1e-4)
+    assert backup_gaps["2025-12"] == pytest.approx(0.0, abs=1e-4)
+    # A real 6.67% disagreement stays visible after normalization.
+    assert official_gaps["2025-11"] == pytest.approx(20.0 / 3.0, rel=1e-6)
+    assert backup_gaps["2025-11"] == pytest.approx(20.0 / 3.0, rel=1e-6)
+    # Cross-currency rows lose their bogus gap instead of keeping it.
+    assert pd.isna(official_gaps["hk"])
+    assert pd.isna(backup_gaps["hk"])
 
 
 class MockResponse:
