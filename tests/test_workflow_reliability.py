@@ -121,7 +121,12 @@ fi
 git commit -m "chore: update OpenRouter derived metrics [$(date -u +%Y-%m-%d)]"
 
 for attempt in 1 2 3; do
-  if git push; then
+  # Rebase before each retry: a bare `git push` cannot recover from
+  # a concurrent commit landing on main while this job builds (the
+  # 2026-09-02 failure), it just rejects the same non-fast-forward
+  # three times and exits 1.  The rebase is conflict-free in
+  # practice because only this workflow writes these two marts.
+  if git pull --rebase origin "${{ github.event.repository.default_branch }}" && git push; then
     exit 0
   fi
   sleep $((attempt * 5))
@@ -351,14 +356,34 @@ def test_openrouter_derived_workflow_builds_only_after_successful_sync() -> None
 
 
 def test_openrouter_derived_workflow_has_no_sync_after_build() -> None:
+    # The commit step is the one sanctioned exception: after a rejected
+    # push (a concurrent commit landed mid-build) it must recover with the
+    # same `git pull --rebase && git push` retry loop every other OpenRouter
+    # write workflow uses -- a bare `git push` retry loop is what turned a
+    # routine race into the 2026-09-02 failed run.  Steps after the commit
+    # (drift guard, issue notification) still must never sync.
     steps = _derived_build_steps(_openrouter_derived_workflow())
     build_index = next(
         index
         for index, step in enumerate(steps)
         if step["name"] == "Build compact derived marts from committed inputs"
     )
+    commit_index = next(
+        index
+        for index, step in enumerate(steps)
+        if step["name"] == "Commit compact derived marts"
+    )
+
+    commit_run = str(steps[commit_index].get("run", ""))
+    assert "for attempt in 1 2 3; do" in commit_run
+    assert (
+        'git pull --rebase origin "${{ github.event.repository.default_branch }}"'
+        " && git push"
+    ) in " ".join(commit_run.split())
 
     for step in steps[build_index + 1 :]:
+        if step["name"] == "Commit compact derived marts":
+            continue
         run = str(step.get("run", "")).lower()
         assert "git pull" not in run
         assert "git rebase" not in run
