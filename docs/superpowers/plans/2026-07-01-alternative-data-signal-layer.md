@@ -2733,7 +2733,7 @@ run_id=<timestamp>
 metric_signals: <nonzero> rows written
 asset_signals: <nonzero> rows written
 theme_signals: <nonzero> rows written
-output_dir=/Users/henrywzh/Desktop/Quant/alternative-data/data/processed/signals
+output_dir=/Users/henrywzh/Quant/alternative-data/data/processed/signals
 ```
 
 - [ ] **Step 3: Inspect output quality states**

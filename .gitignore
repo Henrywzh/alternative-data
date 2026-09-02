@@ -479,3 +479,6 @@ data/raw/hk_transport/*
 # Staging output from scripts/build_research_control_tower.py (--publish writes
 # into apps/research-control-tower/.generated instead).
 .rct-staging/
+
+# Local scratch output (e.g. SRPE PDF page previews) that never belongs in git.
+/tmp/
