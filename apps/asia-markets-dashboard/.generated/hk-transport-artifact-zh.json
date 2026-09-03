@@ -6,7 +6,7 @@
     "title": "香港交通与航空监测",
     "description": "港铁月度客运量（本地/跨境/高铁）、国泰航空及香港国际机场流量、六家中国上市航空公司客运与货运运营数据、运输署公共交通/私家车/电动车登记、C&SD跨境移动及传感器停车位占用率数据。",
     "sector": "hk-transport",
-    "generatedAt": "2026-09-02T11:20:39.497438Z",
+    "generatedAt": "2026-09-03T11:16:27.635165Z",
     "cards": [
       {
         "id": "mtr_card",
@@ -2025,7 +2025,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-09-02T11:20:39.497438Z",
+    "generatedAt": "2026-09-03T11:16:27.635165Z",
     "status": "ready",
     "datasets": {
       "kpi_mtr": [
