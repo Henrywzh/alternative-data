@@ -1,13 +1,17 @@
 {
   "baseline_initialized": true,
   "last_evaluated_by_mode": {
-    "close": "2026-09-02",
+    "close": "2026-09-03",
     "intraday": "2026-09-02"
   },
-  "last_sent_kind": "baseline",
-  "last_sent_report_date": "2026-08-31",
+  "last_sent_kind": "event",
+  "last_sent_report_date": "2026-09-03",
   "last_sent_week": "2026-W36",
   "pending_events": [],
-  "sent_event_keys": [],
+  "sent_event_keys": [
+    "drawdown|csi300|2026-09-03|沪深300：60日回撤进入风险区间（当前 -10.02%）。",
+    "trend_reversal|csi300|2026-09-03|沪深300：20日均线由 均线附近 转为 跌破均线，相对均线 -1.70%。",
+    "trend_reversal|csi500|2026-09-03|中证500：20日均线由 均线附近 转为 跌破均线，相对均线 -1.94%。"
+  ],
   "version": 1
 }
