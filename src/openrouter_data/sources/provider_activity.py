@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
+from urllib.parse import parse_qs, urlparse
 
 import pandas as pd
 import requests
@@ -40,6 +42,8 @@ PROVIDER_SLUGS: dict[str, str] = {
 
 PROVIDER_ACTIVITY_DATASET_ID = "provider_daily_activity"
 SYNTHETIC_MODEL_BUCKETS = {"Others"}
+MODEL_ACTIVITY_FALLBACK_PROVIDERS = frozenset({"meta"})
+MODEL_ACTIVITY_SNAPSHOT_PREFIX = "provider_model_activity_"
 
 
 class ProviderActivitySource(SourceExtractor):
@@ -55,6 +59,8 @@ class ProviderActivitySource(SourceExtractor):
 
     name = "openrouter_provider_activity"
     BASE_URL = "https://openrouter.ai"
+    MODELS_API_URL = f"{BASE_URL}/api/v1/models"
+    MODEL_ACTIVITY_API_URL = f"{BASE_URL}/api/frontend/v1/stats/model-activity"
 
     def __init__(self, timeout: int = 30) -> None:
         self.timeout = timeout
@@ -70,9 +76,16 @@ class ProviderActivitySource(SourceExtractor):
         )
 
     def fetch_snapshots(self, provider_slugs: dict[str, str] | None = None) -> list[Snapshot]:
-        """Fetch provider pages. Defaults to the full PROVIDER_SLUGS config."""
+        """Fetch provider pages and targeted model-API fallbacks when needed.
+
+        OpenRouter occasionally removes a company-level activity chart while
+        retaining per-model activity in its frontend API.  The fallback is
+        intentionally allow-listed so a broad upstream outage cannot turn one
+        daily provider run into hundreds of surprise API requests.
+        """
         slugs = provider_slugs or PROVIDER_SLUGS
         snapshots: list[Snapshot] = []
+        fallback_providers: list[str] = []
         for slug, display_name in slugs.items():
             url = f"{self.BASE_URL}/{slug}"
             try:
@@ -85,14 +98,27 @@ class ProviderActivitySource(SourceExtractor):
                         body=response.text,
                     )
                 )
+                if (
+                    slug in MODEL_ACTIVITY_FALLBACK_PROVIDERS
+                    and self._find_activity_chart(response.text, slug) is None
+                ):
+                    fallback_providers.append(slug)
             except Exception as exc:
                 print(f"Warning: Failed to fetch provider page for {slug} ({display_name}): {exc}")
+                if slug in MODEL_ACTIVITY_FALLBACK_PROVIDERS:
+                    fallback_providers.append(slug)
+
+        if fallback_providers:
+            snapshots.extend(self._fetch_model_activity_fallbacks(fallback_providers))
         return snapshots
 
     def extract(self, snapshots: list[Snapshot], context: RunContext) -> dict[str, list[DatasetRecord]]:
         records: list[DatasetRecord] = []
+        providers_with_page_charts: set[str] = set()
 
         for snapshot in snapshots:
+            if snapshot.name.startswith(MODEL_ACTIVITY_SNAPSHOT_PREFIX):
+                continue
             # Derive provider slug from snapshot name (e.g. "provider_z-ai" -> "z-ai")
             provider_slug = snapshot.name.removeprefix("provider_")
             provider_display = PROVIDER_SLUGS.get(provider_slug, provider_slug)
@@ -102,6 +128,7 @@ class ProviderActivitySource(SourceExtractor):
                 print(f"Warning: No daily activity chart found for provider '{provider_slug}'")
                 continue
 
+            providers_with_page_charts.add(provider_slug)
             for point in chart.get("data", []):
                 raw_date = point.get("x", "")
                 # Dates come as "2026-01-16 00:00:00" — normalise to YYYY-MM-DD
@@ -131,6 +158,14 @@ class ProviderActivitySource(SourceExtractor):
                             rank=None,
                         )
                     )
+
+        for snapshot in snapshots:
+            if not snapshot.name.startswith(MODEL_ACTIVITY_SNAPSHOT_PREFIX):
+                continue
+            provider_slug = self._fallback_provider_slug(snapshot)
+            if not provider_slug or provider_slug in providers_with_page_charts:
+                continue
+            records.extend(self._extract_model_activity_fallback(snapshot, context, provider_slug))
 
         return {PROVIDER_ACTIVITY_DATASET_ID: records}
 
@@ -220,6 +255,122 @@ class ProviderActivitySource(SourceExtractor):
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
+
+    def _fetch_model_activity_fallbacks(self, provider_slugs: list[str]) -> list[Snapshot]:
+        """Fetch current catalog models for an allow-listed missing provider chart."""
+        try:
+            response = self.session.get(self.MODELS_API_URL, timeout=self.timeout)
+            response.raise_for_status()
+            payload = response.json()
+        except Exception as exc:
+            print(f"Warning: Failed to discover provider model-activity fallbacks: {exc}")
+            return []
+
+        models = payload.get("data", []) if isinstance(payload, dict) else []
+        requested_providers = set(provider_slugs)
+        model_slugs: list[str] = []
+        seen: set[str] = set()
+        for item in models:
+            if not isinstance(item, dict):
+                continue
+            model_slug = item.get("canonical_slug") or item.get("id")
+            if not isinstance(model_slug, str) or "/" not in model_slug:
+                continue
+            provider_slug = model_slug.split("/", 1)[0]
+            if provider_slug not in requested_providers or model_slug in seen:
+                continue
+            seen.add(model_slug)
+            model_slugs.append(model_slug)
+
+        snapshots: list[Snapshot] = []
+        for model_slug in model_slugs:
+            provider_slug = model_slug.split("/", 1)[0]
+            try:
+                response = self.session.get(
+                    self.MODEL_ACTIVITY_API_URL,
+                    params={"permaslug": model_slug, "variant": "standard"},
+                    timeout=self.timeout,
+                )
+                response.raise_for_status()
+                snapshots.append(
+                    Snapshot(
+                        name=(
+                            f"{MODEL_ACTIVITY_SNAPSHOT_PREFIX}{provider_slug}__"
+                            f"{model_slug.split('/', 1)[1].replace('/', '__')}"
+                        ),
+                        source_url=response.url,
+                        body=response.text,
+                    )
+                )
+            except Exception as exc:
+                print(f"Warning: Failed provider fallback activity for {model_slug}: {exc}")
+        return snapshots
+
+    @staticmethod
+    def _fallback_provider_slug(snapshot: Snapshot) -> str | None:
+        suffix = snapshot.name.removeprefix(MODEL_ACTIVITY_SNAPSHOT_PREFIX)
+        provider_slug = suffix.split("__", 1)[0].strip()
+        return provider_slug or None
+
+    @staticmethod
+    def _requested_permaslug(source_url: str) -> str | None:
+        try:
+            value = parse_qs(urlparse(source_url).query).get("permaslug", [None])[0]
+        except (TypeError, ValueError):
+            return None
+        return value.strip() if isinstance(value, str) and value.strip() else None
+
+    def _extract_model_activity_fallback(
+        self,
+        snapshot: Snapshot,
+        context: RunContext,
+        provider_slug: str,
+    ) -> list[DatasetRecord]:
+        try:
+            payload = json.loads(snapshot.body)
+        except json.JSONDecodeError:
+            print(f"Warning: Invalid model-activity fallback JSON for provider '{provider_slug}'")
+            return []
+
+        analytics = payload.get("data", {}).get("analytics", []) if isinstance(payload, dict) else []
+        records: list[DatasetRecord] = []
+        requested_model = self._requested_permaslug(snapshot.source_url)
+        for item in analytics:
+            if not isinstance(item, dict):
+                continue
+            raw_date = str(item.get("date", ""))
+            usage_date = raw_date.split(" ")[0] if raw_date else None
+            model_slug = item.get("model_permaslug") or item.get("variant_permaslug") or requested_model
+            if (
+                not usage_date
+                or not isinstance(model_slug, str)
+                or not model_slug.startswith(f"{provider_slug}/")
+            ):
+                continue
+            prompt_tokens = float(item.get("total_prompt_tokens", 0) or 0)
+            completion_tokens = float(item.get("total_completion_tokens", 0) or 0)
+            records.append(
+                DatasetRecord(
+                    dataset_id=PROVIDER_ACTIVITY_DATASET_ID,
+                    source_url=snapshot.source_url,
+                    source_run_id=context.run_id,
+                    scraped_at=context.scraped_at_iso,
+                    usage_date=usage_date,
+                    model_permaslug=model_slug,
+                    category_slug=provider_slug,
+                    entity_id=provider_slug,
+                    entity_name=PROVIDER_SLUGS.get(provider_slug, provider_slug),
+                    total_tokens=prompt_tokens + completion_tokens,
+                    # Preserve the provider-page dataset contract: this source
+                    # reports total tokens only, even when its fallback API
+                    # exposes richer model-level fields.
+                    prompt_tokens=0.0,
+                    completion_tokens=0.0,
+                    request_count=None,
+                    rank=None,
+                )
+            )
+        return records
 
     def _find_activity_chart(self, html: str, provider_slug: str) -> dict[str, Any] | None:
         """Walk the Next.js RSC payload to find the stacked daily chart."""

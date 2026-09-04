@@ -378,6 +378,161 @@ def test_provider_activity_source_parses_newline_delimited_next_f_chunks() -> No
     assert records[-1].total_tokens == 12400.0
 
 
+def test_provider_activity_source_fetches_meta_model_api_fallback_when_company_chart_is_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class FakeResponse:
+        def __init__(self, *, url: str, text: str = "", payload: dict | None = None) -> None:
+            self.url = url
+            self.text = text
+            self._payload = payload
+
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict:
+            assert self._payload is not None
+            return self._payload
+
+    requested_activity_slugs: list[str] = []
+
+    def fake_get(url: str, *, timeout: int, params: dict | None = None) -> FakeResponse:
+        if url == "https://openrouter.ai/meta":
+            return FakeResponse(url=url, text="<html><body>No activity chart</body></html>")
+        if url == "https://openrouter.ai/api/v1/models":
+            return FakeResponse(
+                url=url,
+                payload={
+                    "data": [
+                        {"canonical_slug": "meta/muse-spark-1.3-20260902"},
+                        # Duplicate catalog routes must not duplicate API calls.
+                        {"canonical_slug": "meta/muse-spark-1.3-20260902"},
+                        {"canonical_slug": "meta/muse-glimmer-30b-20260810"},
+                        # meta-llama is a separate page scrape, not part of Meta's fallback.
+                        {"canonical_slug": "meta-llama/llama-4-maverick"},
+                    ]
+                },
+            )
+        assert url == "https://openrouter.ai/api/frontend/v1/stats/model-activity"
+        assert params is not None
+        slug = str(params["permaslug"])
+        requested_activity_slugs.append(slug)
+        return FakeResponse(
+            url=f"{url}?permaslug={slug}",
+            text=json.dumps(
+                {
+                    "data": {
+                        "analytics": [
+                            {
+                                "date": "2026-09-04 00:00:00",
+                                "model_permaslug": slug,
+                                "total_prompt_tokens": 1_000,
+                                "total_completion_tokens": 250,
+                                "count": 10,
+                            }
+                        ]
+                    }
+                }
+            ),
+        )
+
+    source = ProviderActivitySource()
+    monkeypatch.setattr(source.session, "get", fake_get)
+
+    snapshots = source.fetch_snapshots({"meta": "Meta"})
+
+    assert requested_activity_slugs == [
+        "meta/muse-spark-1.3-20260902",
+        "meta/muse-glimmer-30b-20260810",
+    ]
+    assert [snapshot.name for snapshot in snapshots] == [
+        "provider_meta",
+        "provider_model_activity_meta__muse-spark-1.3-20260902",
+        "provider_model_activity_meta__muse-glimmer-30b-20260810",
+    ]
+
+
+def test_provider_activity_source_extracts_meta_model_api_fallback_as_provider_rows() -> None:
+    payload = {
+        "data": {
+            "analytics": [
+                {
+                    "date": "2026-09-04 00:00:00",
+                    "model_permaslug": "meta/muse-spark-1.3-20260902",
+                    "total_prompt_tokens": 1_000,
+                    "total_completion_tokens": 250,
+                    "count": 10,
+                }
+            ]
+        }
+    }
+    source = ProviderActivitySource()
+    context = RunContext(
+        run_id="provider-meta-fallback-test",
+        scraped_at=pd.Timestamp("2026-09-04T00:00:00Z").to_pydatetime(),
+    )
+
+    records = source.extract(
+        [
+            Snapshot(
+                name="provider_meta",
+                source_url="https://openrouter.ai/meta",
+                body="<html><body>No activity chart</body></html>",
+            ),
+            Snapshot(
+                name="provider_model_activity_meta__muse-spark-1.3-20260902",
+                source_url=(
+                    "https://openrouter.ai/api/frontend/v1/stats/model-activity"
+                    "?permaslug=meta%2Fmuse-spark-1.3-20260902&variant=standard"
+                ),
+                body=json.dumps(payload),
+            ),
+        ],
+        context,
+    )["provider_daily_activity"]
+
+    assert len(records) == 1
+    assert records[0].entity_id == "meta"
+    assert records[0].entity_name == "Meta"
+    assert records[0].model_permaslug == "meta/muse-spark-1.3-20260902"
+    assert records[0].total_tokens == 1250.0
+    assert records[0].prompt_tokens == 0.0
+    assert records[0].completion_tokens == 0.0
+    assert records[0].request_count is None
+
+
+def test_provider_activity_source_does_not_use_model_fallback_when_meta_chart_exists(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    payload = [
+        "$",
+        "$L53",
+        None,
+        {
+            "data": [
+                {"x": f"2026-09-{day:02d} 00:00:00", "ys": {"meta/muse-spark-1.3": day}}
+                for day in range(1, 6)
+            ],
+        },
+    ]
+    html = f"<html><body>{_make_next_f_script('44', payload)}</body></html>"
+
+    class FakeResponse:
+        url = "https://openrouter.ai/meta"
+        text = html
+
+        @staticmethod
+        def raise_for_status() -> None:
+            return None
+
+    source = ProviderActivitySource()
+    monkeypatch.setattr(source.session, "get", lambda url, *, timeout: FakeResponse())
+
+    snapshots = source.fetch_snapshots({"meta": "Meta"})
+
+    assert [snapshot.name for snapshot in snapshots] == ["provider_meta"]
+
+
 def test_provider_activity_validation_accepts_healthy_provider_rows() -> None:
     records = [
         DatasetRecord(
