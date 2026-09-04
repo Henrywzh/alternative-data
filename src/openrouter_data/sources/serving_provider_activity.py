@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
+import json
 import math
 from typing import Any, Iterable
 
@@ -14,7 +15,7 @@ from openrouter_data.exceptions import ExtractionError
 from openrouter_data.models import DatasetRecord, RunContext, Snapshot
 from openrouter_data.serving_provider import flag_latest_likely_incomplete_day, route_metadata
 from openrouter_data.sources.base import SourceExtractor
-from openrouter_data.utils import iter_next_f_objects, walk_json
+from openrouter_data.utils import iter_next_f_decoded_strings, iter_next_f_objects, walk_json
 
 
 CLOUD_INFRA_ACTIVITY_DATASET_ID = "cloud_infra_daily_activity"
@@ -149,20 +150,53 @@ class ServingProviderActivitySource(SourceExtractor):
                 if not isinstance(node, dict):
                     continue
                 data = node.get("data")
-                if not isinstance(data, list) or len(data) < 2:
+                if not isinstance(data, list):
+                    # Current provider pages expose the same point structure
+                    # under chartData. Keep data support for historical raw
+                    # snapshots and tolerate either upstream field name.
+                    data = node.get("chartData")
+                if ServingProviderActivitySource._is_activity_chart_data(data):
+                    return {"data": data}
+
+        # Large provider pages often place model descriptions in Next.js
+        # length-prefixed text chunks immediately before the provider payload.
+        # Those chunks are not standalone JSON, so the general RSC iterator
+        # intentionally skips them and may not see the following chart node.
+        # The chartData value itself is JSON; decode that bounded field rather
+        # than using a broad regex over the full HTML.
+        decoder = json.JSONDecoder()
+        marker = '"chartData":'
+        for decoded in iter_next_f_decoded_strings(html):
+            cursor = 0
+            while True:
+                marker_index = decoded.find(marker, cursor)
+                if marker_index < 0:
+                    break
+                payload_start = marker_index + len(marker)
+                try:
+                    data, payload_end = decoder.raw_decode(decoded, payload_start)
+                except json.JSONDecodeError:
+                    cursor = payload_start
                     continue
-                first = data[0]
-                if not isinstance(first, dict) or "x" not in first or "ys" not in first:
-                    continue
-                ys = first.get("ys")
-                if not isinstance(ys, dict) or not ys:
-                    continue
-                # Serving pages can contain models from many owner prefixes.
-                # Requiring slash-bearing keys avoids selecting unrelated
-                # numeric or ranking payloads, while retaining `Others`.
-                if any(key == "Others" or "/" in str(key) for key in ys):
-                    return node
+                if ServingProviderActivitySource._is_activity_chart_data(data):
+                    return {"data": data}
+                cursor = payload_end
         return None
+
+    @staticmethod
+    def _is_activity_chart_data(data: Any) -> bool:
+        if not isinstance(data, list) or len(data) < 2:
+            return False
+        first = data[0]
+        if not isinstance(first, dict) or "x" not in first or "ys" not in first:
+            return False
+        ys = first.get("ys")
+        if not isinstance(ys, dict) or not ys:
+            return False
+        # Serving pages can contain models from many owner prefixes.
+        # Requiring slash-bearing keys avoids selecting unrelated numeric or
+        # ranking payloads, while retaining the synthetic `Others` bucket.
+        return any(key == "Others" or "/" in str(key) for key in ys)
 
     def extract(self, snapshots: list[Snapshot], context: RunContext) -> dict[str, list[DatasetRecord]]:
         records: list[DatasetRecord] = []

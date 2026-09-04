@@ -158,6 +158,52 @@ def test_serving_provider_source_extracts_owner_and_serving_dimensions() -> None
     assert not any(record.is_first_party_route for record in records)
 
 
+def test_serving_provider_source_extracts_current_chart_data_payload() -> None:
+    """Parse chartData after a non-JSON length-prefixed RSC text chunk."""
+    payload = {
+        "providerSlug": "coreweave",
+        "chartData": [
+            {"x": "2026-09-02 00:00:00", "ys": {"openai/gpt-5": 100}},
+            {"x": "2026-09-03 00:00:00", "ys": {"openai/gpt-5": 120}},
+            {"x": "2026-09-04 00:00:00", "ys": {"openai/gpt-5": 110}},
+        ],
+    }
+    # Large provider pages concatenate the next JSON chunk directly after a
+    # length-prefixed text chunk, so the generic newline chunk iterator cannot
+    # discover the payload boundary.
+    decoded = f"43:T4,test41:{json.dumps(payload, separators=(',', ':'))}"
+    encoded = json.dumps(decoded)
+    html = f"<script>self.__next_f.push([1,{encoded}])</script>"
+    source = ServingProviderActivitySource()
+    source.provider_metadata["coreweave"] = {
+        "slug": "coreweave",
+        "name": "CoreWeave",
+        "headquarters": "US",
+        "datacenters": ["US"],
+    }
+    context = RunContext(
+        run_id="serving-provider-chart-data-test",
+        scraped_at=pd.Timestamp("2026-09-04T12:00:00Z").to_pydatetime(),
+    )
+
+    records = source.extract(
+        [
+            Snapshot(
+                name="serving_provider_coreweave",
+                source_url="fixture://provider/coreweave",
+                body=html,
+            )
+        ],
+        context,
+    )["cloud_infra_daily_activity"]
+
+    assert len(records) == 3
+    assert records[-1].usage_date == "2026-09-04"
+    assert records[-1].serving_provider == "coreweave"
+    assert records[-1].model_permaslug == "openai/gpt-5"
+    assert records[-1].total_tokens == 110.0
+
+
 def test_serving_provider_economics_never_fabricates_unpriced_revenue() -> None:
     activity = pd.DataFrame(
         [
