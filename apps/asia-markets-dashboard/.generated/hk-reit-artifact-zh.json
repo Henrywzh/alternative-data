@@ -6,7 +6,7 @@
     "title": "香港房地产信托（REITs）基本面监测",
     "description": "领展（Link REIT）、冠君（Champion REIT）、置富（Fortune REIT）、繁荣（Prosperity REIT）、阳光（Sunlight REIT）及富豪（Regal REIT）的每单位资产净值（NAV）、每基金单位分派（DPU）、出租率、租金检讨调升率及酒店 KPI 快照。",
     "sector": "hk-reit",
-    "generatedAt": "2026-09-03T11:16:27.600763Z",
+    "generatedAt": "2026-09-04T11:19:38.234642Z",
     "dataAsOf": "2026-03-31",
     "liveSourcesCount": 6,
     "totalSourcesCount": 7,
@@ -498,7 +498,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `3c9f3385dde09fe1` · 生成于 2026-09-03T11:16:27.600763Z。"
+        "body": "**数据快照：** `3c9f3385dde09fe1` · 生成于 2026-09-04T11:19:38.234642Z。"
       },
       {
         "id": "kpi_grid",
@@ -553,7 +553,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-09-03T11:16:27.600763Z",
+    "generatedAt": "2026-09-04T11:19:38.234642Z",
     "status": "ready",
     "datasets": {
       "kpi_linkreit": [
@@ -2044,7 +2044,7 @@
     "sector_id": "hk-reit",
     "sector_name": "Hong Kong REITs Sector Monitor",
     "snapshotId": "3c9f3385dde09fe1",
-    "generatedAt": "2026-09-03T11:16:27.600763Z",
+    "generatedAt": "2026-09-04T11:19:38.234642Z",
     "dataAsOf": "2026-03-31"
   }
 }

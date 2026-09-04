@@ -6,7 +6,7 @@
     "title": "香港电讯监测",
     "description": "香港电讯（HKT）、数码通（SmarTone）及和记电讯（3 HK）的半年度用户与 ARPU 披露数据，以及通讯办全运营商手机号码段配额快照。",
     "sector": "hk-telecom",
-    "generatedAt": "2026-09-03T11:16:27.632193Z",
+    "generatedAt": "2026-09-04T11:19:38.073298Z",
     "cards": [
       {
         "id": "hkt_card",
@@ -298,7 +298,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-09-03T11:16:27.632193Z",
+    "generatedAt": "2026-09-04T11:19:38.073298Z",
     "status": "ready",
     "datasets": {
       "kpi_hkt": [
@@ -315,11 +315,11 @@
       ],
       "kpi_smartone": [
         {
-          "latest_arpu": 224,
-          "postpaid_subscribers_thousands": 3158,
+          "latest_arpu": 220,
+          "postpaid_subscribers_thousands": null,
           "arpu_5g_to_4g_ratio": 2,
-          "period_change": 0.009009,
-          "observation_date": "2025-12-31"
+          "period_change": -0.017857,
+          "observation_date": "2026-06-30"
         }
       ],
       "kpi_hutchison": [
@@ -410,6 +410,14 @@
           "month": "2023-12"
         },
         {
+          "period": "2024-06-30",
+          "date": "2024-06-30",
+          "postpaid_subscribers_thousands": null,
+          "postpaid_arpu_hkd": 224,
+          "arpu_5g_to_4g_ratio": null,
+          "month": "2024-06"
+        },
+        {
           "period": "2024-12-31",
           "date": "2024-12-31",
           "postpaid_subscribers_thousands": 2873,
@@ -418,12 +426,28 @@
           "month": "2024-12"
         },
         {
+          "period": "2025-06-30",
+          "date": "2025-06-30",
+          "postpaid_subscribers_thousands": null,
+          "postpaid_arpu_hkd": 222,
+          "arpu_5g_to_4g_ratio": null,
+          "month": "2025-06"
+        },
+        {
           "period": "2025-12-31",
           "date": "2025-12-31",
           "postpaid_subscribers_thousands": 3158,
           "postpaid_arpu_hkd": 224,
           "arpu_5g_to_4g_ratio": 2,
           "month": "2025-12"
+        },
+        {
+          "period": "2026-06-30",
+          "date": "2026-06-30",
+          "postpaid_subscribers_thousands": null,
+          "postpaid_arpu_hkd": 220,
+          "arpu_5g_to_4g_ratio": 2,
+          "month": "2026-06"
         }
       ],
       "hutchison_history": [
@@ -535,7 +559,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-telecom/",
-    "snapshotId": "e3b26efe103a01a8",
+    "snapshotId": "c272326cd2b48d33",
     "dataAsOf": "2026-06-30"
   }
 }
