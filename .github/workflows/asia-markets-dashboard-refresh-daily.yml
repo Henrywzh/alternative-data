@@ -2,9 +2,10 @@ name: Asia Markets Dashboard Data Refresh Daily
 
 # LIMITATION (read before touching schedule/steps):
 # This workflow only runs the LIVE DATA half of `npm run build` for
-# apps/asia-markets-dashboard/ — i.e. `npm run refresh`, which runs
-# scripts/build_hk_real_estate_artifact.py and
-# scripts/build_hk_local_consumer_artifact.py and commits the refreshed
+# apps/asia-markets-dashboard/ — i.e. `npm run refresh`, which runs every
+# live-sector artifact builder listed in sectors.json (real estate, local
+# consumer, utilities, transport, telecom, labour, REIT, aerospace,
+# stablecoin/crypto, population/migration) and commits the refreshed
 # .generated/*.json artifact manifests + src/data/dashboard-status*.json.
 #
 # It deliberately does NOT run scripts/build-static-hub.mjs or the portable
@@ -155,8 +156,14 @@ jobs:
 
           git commit -m "chore(dashboard): refresh all sector data [$(date -u +%Y-%m-%d)]"
 
+          # Sector-specific workflows (transport, labour, stablecoin, aerospace)
+          # and this daily refresh both regenerate the same .generated
+          # artifacts. When two runs overlap, a plain rebase cannot resolve the
+          # conflicting regenerated JSON. -X theirs prefers THIS run's freshly
+          # rebuilt artifacts on conflicting hunks; non-conflicting upstream
+          # changes still merge normally.
           for attempt in 1 2 3; do
-            if git pull --rebase origin "${{ github.event.repository.default_branch }}" && git push; then
+            if git pull --rebase -X theirs origin "${{ github.event.repository.default_branch }}" && git push; then
               exit 0
             fi
             sleep $((attempt * 5))
