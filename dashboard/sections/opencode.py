@@ -16,12 +16,17 @@ DEEPDIVES_ID = "opencode_model_deepdives"
 
 DEFAULT_TIER = "All Users"
 DAILY_TIMEFRAME = "1D"
+WEEKLY_TIMEFRAME = "1W"
 MONTHLY_TIMEFRAME = "1M"
 
 # (timeframe code, display label) for the over-time chart's window selector.
 # Only day-granularity timeframes are listed here — "ALL"/"YTD" bucket by
 # month instead of day and aren't useful for a daily trend line.
-OVER_TIME_WINDOWS = [("1M", "30 days"), ("3M", "90 days")]
+OVER_TIME_WINDOWS = [
+    ("1W", "Current published history"),
+    ("1M", "30 days (archived)"),
+    ("3M", "90 days (archived)"),
+]
 
 
 def _frame(datasets: dict[str, DatasetLoadResult], dataset_id: str) -> pd.DataFrame:
@@ -59,14 +64,77 @@ def _prepare(datasets: dict[str, DatasetLoadResult]) -> dict[str, pd.DataFrame]:
     }
 
 
+def _latest_published_timeframe(
+    frame: pd.DataFrame,
+    supported: tuple[str, ...],
+) -> str | None:
+    """Return the supported source window with the freshest successful scrape."""
+    if frame.empty or "timeframe" not in frame.columns:
+        return None
+    scoped = frame[frame["timeframe"].astype(str).isin(supported)].copy()
+    if scoped.empty:
+        return None
+    if "scraped_at" in scoped.columns:
+        scoped["_scraped_at"] = pd.to_datetime(scoped["scraped_at"], errors="coerce", utc=True)
+        latest_by_timeframe = scoped.groupby("timeframe")["_scraped_at"].max()
+        if latest_by_timeframe.notna().any():
+            freshest = latest_by_timeframe.max()
+            candidates = set(latest_by_timeframe[latest_by_timeframe == freshest].index.astype(str))
+            for timeframe in supported:
+                if timeframe in candidates:
+                    return timeframe
+    observed = set(scoped["timeframe"].dropna().astype(str))
+    return next((timeframe for timeframe in supported if timeframe in observed), None)
+
+
+def _timeframe_label(timeframe: str | None) -> str:
+    return {
+        "1D": "daily",
+        "1W": "weekly",
+        "1M": "30-day",
+        "2W": "two-week",
+        "2M": "60-day",
+        "3M": "90-day",
+    }.get(str(timeframe), str(timeframe or "available"))
+
+
+def _latest_market_share_snapshot(market_share: pd.DataFrame) -> pd.DataFrame:
+    timeframe = _latest_published_timeframe(
+        market_share,
+        (DAILY_TIMEFRAME, WEEKLY_TIMEFRAME, MONTHLY_TIMEFRAME, "2W", "2M", "3M"),
+    )
+    scoped = market_share[market_share["timeframe"] == timeframe].copy() if timeframe else pd.DataFrame()
+    if scoped.empty:
+        return scoped
+    scoped["scraped_at_dt"] = pd.to_datetime(scoped["scraped_at"], errors="coerce", utc=True)
+    reference = scoped["scraped_at_dt"].max()
+    if pd.notna(reference):
+        scoped["date_dt"] = scoped["usage_date"].apply(
+            lambda value: _parse_usage_date(value, reference.year, reference.month)
+        )
+        if scoped["date_dt"].notna().any():
+            scoped = scoped[scoped["date_dt"] == scoped["date_dt"].max()]
+    return scoped.sort_values("scraped_at_dt").groupby("author", as_index=False).tail(1)
+
+
 def _latest_leaderboard(leaderboard: pd.DataFrame) -> pd.DataFrame:
     if leaderboard.empty:
         return leaderboard
-    latest_date = leaderboard["snapshot_date"].max()
+    timeframe = _latest_published_timeframe(
+        leaderboard[leaderboard["user_tier"] == DEFAULT_TIER],
+        (DAILY_TIMEFRAME, WEEKLY_TIMEFRAME, MONTHLY_TIMEFRAME, "2W", "2M", "3M"),
+    )
+    if timeframe is None:
+        return leaderboard.iloc[0:0]
+    scoped = leaderboard[
+        (leaderboard["user_tier"] == DEFAULT_TIER)
+        & (leaderboard["timeframe"] == timeframe)
+    ]
+    latest_date = scoped["snapshot_date"].max()
     scoped = leaderboard[
         (leaderboard["snapshot_date"] == latest_date)
         & (leaderboard["user_tier"] == DEFAULT_TIER)
-        & (leaderboard["timeframe"] == DAILY_TIMEFRAME)
+        & (leaderboard["timeframe"] == timeframe)
     ]
     return scoped.sort_values("rank")
 
@@ -76,11 +144,15 @@ def _render_kpis(leaderboard: pd.DataFrame, country: pd.DataFrame) -> None:
     top_model = str(latest_lb.iloc[0]["model_slug"]) if not latest_lb.empty else "—"
     total_tokens = float(latest_lb["tokens"].sum()) if not latest_lb.empty else 0.0
     latest_date = str(leaderboard["snapshot_date"].max()) if not leaderboard.empty else "—"
+    latest_timeframe = str(latest_lb.iloc[0]["timeframe"]) if not latest_lb.empty else None
 
     top_country = "—"
+    country_timeframe = _latest_published_timeframe(
+        country,
+        (MONTHLY_TIMEFRAME, WEEKLY_TIMEFRAME, DAILY_TIMEFRAME, "2W", "2M", "3M"),
+    )
     if not country.empty:
-        monthly = country[country["timeframe"] == MONTHLY_TIMEFRAME]
-        scoped = monthly if not monthly.empty else country
+        scoped = country[country["timeframe"] == country_timeframe] if country_timeframe else country
         latest_country_date = scoped["snapshot_date"].max()
         scoped = scoped[scoped["snapshot_date"] == latest_country_date].sort_values("share_pct", ascending=False)
         if not scoped.empty:
@@ -89,9 +161,9 @@ def _render_kpis(leaderboard: pd.DataFrame, country: pd.DataFrame) -> None:
     st.markdown(
         kpi_grid_html(
             kpi_card_html("Latest Snapshot", latest_date, delta="daily scrape of opencode.ai/data"),
-            kpi_card_html("Top Coding Model", top_model, delta=f"{DEFAULT_TIER} · {DAILY_TIMEFRAME} leaderboard"),
-            kpi_card_html("Daily Token Volume", format_metric(total_tokens), delta="top-ranked models, latest day"),
-            kpi_card_html("Top Adoption Country", top_country, delta=f"{MONTHLY_TIMEFRAME} window, by token share"),
+            kpi_card_html("Top Coding Model", top_model, delta=f"{DEFAULT_TIER} · {_timeframe_label(latest_timeframe)} leaderboard"),
+            kpi_card_html("Latest Token Volume", format_metric(total_tokens), delta=f"top-ranked models, latest {_timeframe_label(latest_timeframe)} window"),
+            kpi_card_html("Top Adoption Country", top_country, delta=f"{_timeframe_label(country_timeframe)} window, by token share"),
         ),
         unsafe_allow_html=True,
     )
@@ -99,20 +171,18 @@ def _render_kpis(leaderboard: pd.DataFrame, country: pd.DataFrame) -> None:
 
 def _render_market_share(market_share: pd.DataFrame) -> None:
     st.markdown('<div class="section-title">Model Author Market Share</div>', unsafe_allow_html=True)
+    timeframe = _latest_published_timeframe(
+        market_share,
+        (DAILY_TIMEFRAME, WEEKLY_TIMEFRAME, MONTHLY_TIMEFRAME, "2W", "2M", "3M"),
+    )
     st.markdown(
-        '<div class="section-subtitle">Share of OpenCode coding-agent token volume by model author, latest day.</div>',
+        f'<div class="section-subtitle">Share of OpenCode coding-agent token volume by model author, latest {_timeframe_label(timeframe)} published snapshot.</div>',
         unsafe_allow_html=True,
     )
-    scoped = market_share[market_share["timeframe"] == DAILY_TIMEFRAME].copy()
+    scoped = _latest_market_share_snapshot(market_share)
     if scoped.empty:
-        st.info("No daily market share snapshot is available yet.")
+        st.info("No current market share snapshot is available yet.")
         return
-    # opencode_market_share accumulates one "1D" row per author per scrape day
-    # (that history is what _render_usage_over_time charts). This bar chart is
-    # a latest-day snapshot, so keep only each author's most recent row --
-    # otherwise every prior day's bar keeps overlapping the current one.
-    scoped["scraped_at_dt"] = pd.to_datetime(scoped["scraped_at"], errors="coerce", utc=True)
-    scoped = scoped.sort_values("scraped_at_dt").groupby("author", as_index=False).tail(1)
     scoped = scoped.sort_values("share_pct", ascending=True)
     figure = go.Figure(go.Bar(
         x=scoped["share_pct"], y=scoped["author"], orientation="h",
@@ -150,15 +220,19 @@ def _parse_usage_date(usage_date: object, reference_year: int, reference_month: 
 def _render_usage_over_time(market_share: pd.DataFrame) -> None:
     st.markdown('<div class="section-title">Token Volume Over Time</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="section-subtitle">Daily coding-agent token volume by model author. '
-        'opencode.ai publishes this history directly, so it\'s available from day one rather '
-        'than something we have to accumulate across our own daily scrapes.</div>',
+        '<div class="section-subtitle">Coding-agent token volume by model author. '
+        'The current OpenCode payload is labelled 1W; archived windows remain available where present.</div>',
         unsafe_allow_html=True,
     )
-    window_codes = [code for code, _ in OVER_TIME_WINDOWS]
-    window_labels = dict(OVER_TIME_WINDOWS)
+    available = set(market_share["timeframe"].dropna().astype(str))
+    windows = [item for item in OVER_TIME_WINDOWS if item[0] in available]
+    window_codes = [code for code, _ in windows]
+    window_labels = dict(windows)
+    if not window_codes:
+        st.info("No historical market share data is available yet.")
+        return
     window = st.radio(
-        "Window", window_codes, index=1, horizontal=True,
+        "Window", window_codes, index=0, horizontal=True,
         format_func=lambda code: window_labels[code], key="opencode_usage_over_time_window",
     )
 
@@ -194,11 +268,12 @@ def _render_usage_over_time(market_share: pd.DataFrame) -> None:
 
 def _render_leaderboard(leaderboard: pd.DataFrame) -> None:
     st.markdown('<div class="section-title">Coding Agent Leaderboard</div>', unsafe_allow_html=True)
+    latest_lb = _latest_leaderboard(leaderboard)
+    latest_timeframe = str(latest_lb.iloc[0]["timeframe"]) if not latest_lb.empty else None
     st.markdown(
-        '<div class="section-subtitle">Top models by token volume across coding-agent sessions, latest day.</div>',
+        f'<div class="section-subtitle">Top models by token volume across coding-agent sessions, latest {_timeframe_label(latest_timeframe)} published window.</div>',
         unsafe_allow_html=True,
     )
-    latest_lb = _latest_leaderboard(leaderboard)
     if latest_lb.empty:
         st.info("No leaderboard snapshot is available yet.")
         return
@@ -216,13 +291,16 @@ def _render_leaderboard(leaderboard: pd.DataFrame) -> None:
 
 
 def _render_country_usage(country: pd.DataFrame) -> None:
+    timeframe = _latest_published_timeframe(
+        country,
+        (MONTHLY_TIMEFRAME, WEEKLY_TIMEFRAME, DAILY_TIMEFRAME, "2W", "2M", "3M"),
+    )
     st.markdown('<div class="section-title">Geographic Developer Adoption</div>', unsafe_allow_html=True)
     st.markdown(
-        f'<div class="section-subtitle">Top countries by coding-agent token volume, {MONTHLY_TIMEFRAME} window.</div>',
+        f'<div class="section-subtitle">Top countries by coding-agent token volume, latest {_timeframe_label(timeframe)} published window.</div>',
         unsafe_allow_html=True,
     )
-    monthly = country[country["timeframe"] == MONTHLY_TIMEFRAME]
-    scoped = monthly if not monthly.empty else country
+    scoped = country[country["timeframe"] == timeframe] if timeframe else country
     if scoped.empty:
         st.info("No country adoption snapshot is available yet.")
         return
@@ -241,7 +319,9 @@ def _render_country_usage(country: pd.DataFrame) -> None:
         xaxis=dict(gridcolor=GRID, title="Trillion tokens"), yaxis=dict(showgrid=False),
     )
     st.plotly_chart(figure, width="stretch", config={"displayModeBar": False})
-    st.caption("Bar labels show token share of the window total, not the bar's own axis.")
+    st.caption(
+        f"Bar labels show token share of the {_timeframe_label(timeframe)} window, not the bar's own axis."
+    )
 
 
 def _render_model_economics(deepdives: pd.DataFrame) -> None:
@@ -297,4 +377,24 @@ def render(domain_states, datasets: dict[str, DatasetLoadResult]) -> None:
     _render_usage_over_time(market_share)
     _render_country_usage(country)
     _render_model_economics(deepdives)
-    st.caption("Source: opencode.ai/data (unofficial usage dashboard) · refreshed daily. History accumulates day over day; trend views will follow once enough daily snapshots exist.")
+    latest_lb_scrape = pd.to_datetime(
+        leaderboard["scraped_at"], errors="coerce", utc=True
+    ).max() if "scraped_at" in leaderboard.columns else pd.NaT
+    latest_deepdive_scrape = pd.to_datetime(
+        deepdives["scraped_at"], errors="coerce", utc=True
+    ).max() if "scraped_at" in deepdives.columns else pd.NaT
+    if (
+        pd.notna(latest_lb_scrape)
+        and pd.notna(latest_deepdive_scrape)
+        and latest_deepdive_scrape < latest_lb_scrape
+    ):
+        lag_days = (latest_lb_scrape.normalize() - latest_deepdive_scrape.normalize()).days
+        if lag_days > 1:
+            st.warning(
+                f"Model session economics are {lag_days} days behind the latest leaderboard. "
+                "Market-share and leaderboard figures above are current."
+            )
+    st.caption(
+        "Source: opencode.ai/data (unofficial usage dashboard) · refreshed daily. "
+        "Current source payloads may be weekly; older published periods are retained for history."
+    )

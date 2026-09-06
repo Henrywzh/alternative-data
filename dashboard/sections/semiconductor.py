@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import hmac
 import inspect
-import os
 import re
 import sys
 from datetime import datetime
@@ -21,7 +19,7 @@ from dashboard.data import (
 from openrouter_revenue import (build_price_context, build_conservative_provider_economics, estimate_usage_revenue, summarize_economics_coverage)
 from semiconductor_memory_data.sources.config import AI_DEMAND_PPI_WEIGHTS
 from dashboard.theme import (ACCENT, BG, SIDEBAR, CARD, BORDER, TEXT, MUTED, GREEN, RED, YELLOW, GRID, TICK, MODEL_COLORS)
-from dashboard.components import (format_metric, _empty_dataset_frame, _styler_applymap_compat, WEEKLY_MONTHLY_OTHER_PROVIDERS, DAILY_OTHER_PROVIDERS, US_PROVIDER_ORDER, CHINA_PROVIDER_ORDER, order_provider_columns, regroup_provider_pivot_for_display, render_dataset_guard, format_scraped_at_display, dataframe_for_display, make_stacked_bar, make_stacked_area_chart, make_line_chart, kpi_card_html, kpi_grid_html, _top_n_with_others)
+from dashboard.components import (format_metric, _empty_dataset_frame, _styler_applymap_compat, WEEKLY_MONTHLY_OTHER_PROVIDERS, DAILY_OTHER_PROVIDERS, US_PROVIDER_ORDER, CHINA_PROVIDER_ORDER, order_provider_columns, regroup_provider_pivot_for_display, format_scraped_at_display, dataframe_for_display, make_stacked_bar, make_stacked_area_chart, make_line_chart, kpi_card_html, kpi_grid_html, _top_n_with_others)
 
 
 AI_DEMAND_PPI_COMPONENT_COLUMNS = {
@@ -42,41 +40,17 @@ AI_DEMAND_PPI_LABELS = {
 }
 
 
-PRIVATE_PANEL_ACCESS_KEY = "PRIVATE_PANEL_ACCESS_CODE"
+TAIWAN_COMPANY_DISPLAY_NAMES = {
+    # MOPS publishes this issuer under the terse short name "世界", which is
+    # ambiguous outside Taiwan. Keep the raw data untouched and expand it only
+    # in dashboard presentation.
+    "5347": "世界先進 (VIS)",
+}
 
 
-def _private_panel_expected_code(secrets: object, environ: dict[str, str]) -> str:
-    try:
-        secret_value = secrets.get(PRIVATE_PANEL_ACCESS_KEY, "") if secrets is not None else ""
-    except Exception:
-        secret_value = ""
-    return str(secret_value or environ.get(PRIVATE_PANEL_ACCESS_KEY, "") or "")
-
-
-def _private_panel_code_matches(submitted_code: str, expected_code: str) -> bool:
-    submitted = str(submitted_code or "")
-    expected = str(expected_code or "")
-    return bool(submitted and expected and hmac.compare_digest(submitted, expected))
-
-
-def _render_private_panel_gate() -> bool:
-    if st.session_state.get("private_panel_unlocked"):
-        return True
-
-    expected_code = _private_panel_expected_code(st.secrets, os.environ)
-    st.markdown('<div class="section-title">TODO</div>', unsafe_allow_html=True)
-    if not expected_code:
-        st.info("Private view is not configured for this environment.")
-        return False
-
-    submitted_code = st.text_input("Access code", type="password", key="private_panel_access_code")
-    unlock_clicked = st.button("Unlock", key="private_panel_unlock")
-    if unlock_clicked and _private_panel_code_matches(submitted_code, expected_code):
-        st.session_state["private_panel_unlocked"] = True
-        st.rerun()
-    elif unlock_clicked:
-        st.error("Access denied.")
-    return False
+def _taiwan_company_display_name(company_code: object, company_name: object) -> str:
+    code = str(company_code or "").strip()
+    return TAIWAN_COMPANY_DISPLAY_NAMES.get(code, str(company_name or "").strip())
 
 
 @st.cache_data(ttl=3600, max_entries=8, hash_funcs={LazyDatasetMap: lambda mapping: mapping.cache_key})
@@ -205,6 +179,12 @@ def compute_semiconductor_views(datasets: dict[str, DatasetLoadResult]) -> dict[
     taiwan_yoy_pivot = pd.DataFrame()
     if not taiwan_revenue_df.empty:
         taiwan_revenue_df["revenue_month"] = taiwan_revenue_df["revenue_month"].astype(str)
+        taiwan_revenue_df["company_name"] = taiwan_revenue_df.apply(
+            lambda row: _taiwan_company_display_name(
+                row.get("company_code"), row.get("company_name")
+            ),
+            axis=1,
+        )
         taiwan_revenue_df = taiwan_revenue_df.sort_values(["revenue_month", "company_code"]).reset_index(drop=True)
         latest_taiwan_revenue_month = taiwan_revenue_df["revenue_month"].max()
         latest_taiwan_revenue = (
@@ -435,7 +415,7 @@ def _render_trade_yoy_chart(
     )
 
 
-def _render_private_company_revenue(semi_views: dict[str, object], cutoff_month: str | None) -> None:
+def _render_company_revenue(semi_views: dict[str, object], cutoff_month: str | None) -> None:
     taiwan_revenue_df = semi_views.get("taiwan_revenue_df", pd.DataFrame())
     latest_taiwan_revenue_month = semi_views.get("latest_taiwan_revenue_month")
     latest_taiwan_revenue = semi_views.get("latest_taiwan_revenue", pd.DataFrame())
@@ -450,10 +430,10 @@ def _render_private_company_revenue(semi_views: dict[str, object], cutoff_month:
             taiwan_yoy_pivot = taiwan_yoy_pivot[taiwan_yoy_pivot.index >= min_date].copy()
 
     if taiwan_revenue_df.empty:
-        st.warning("No private company revenue data available.")
+        st.warning("No Taiwan company revenue data available.")
         return
 
-    st.markdown('<div class="section-title">Company Revenue Tracker</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Taiwan Company Revenue Tracker</div>', unsafe_allow_html=True)
     st.caption(
         "Authoritative monthly operating revenue disclosures for selected semiconductor companies. "
         "Figures are reported in thousands of New Taiwan dollars."
@@ -560,7 +540,15 @@ def _render_us_import_demand(datasets: dict[str, DatasetLoadResult], cutoff_mont
     Korea, Taiwan, Japan and China is the part worth looking at.
     """
     national_result = datasets.get("us_census_memory_imports_monthly")
-    if not render_dataset_guard(national_result):
+    if (
+        national_result is None
+        or national_result.source_path is None
+        or national_result.frame.empty
+    ):
+        st.info(
+            "US Census memory-import tracking is not configured in this deployment yet. "
+            "It requires a free Census Data API key; no import values are being inferred or shown as zero."
+        )
         return
     national = national_result.frame.copy()
     national["partner_display"] = national["partner_country_name"].map(_display_partner_name)
@@ -687,10 +675,10 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
     }
     _cutoff = _cutoffs.get(_ppi_range)
 
-    tab_ppi, tab_private, tab_trade, tab_us_imports = st.tabs(
+    tab_ppi, tab_company_revenue, tab_trade, tab_us_imports = st.tabs(
         [
             "AI Demand PPI (FRED)",
-            "TODO",
+            "Taiwan Company Revenue",
             "Tiered Trade & Production Tracker",
             "US Import Demand (Census)",
         ]
@@ -755,7 +743,15 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
             )
 
             if partial_month:
-                missing_label = latest_proxy_missing or "one basket component"
+                missing_ids = [
+                    item.strip()
+                    for item in str(latest_proxy_missing or "").split(",")
+                    if item.strip()
+                ]
+                missing_label = ", ".join(
+                    AI_DEMAND_PPI_LABELS.get(series_id, series_id)
+                    for series_id in missing_ids
+                ) or "one basket component"
                 st.caption(
                     f"⚠️ {active_month} AI Demand PPI is **partial ({latest_proxy_coverage} of 5 components)** — "
                     f"FRED has not yet published **{missing_label}**. The renormalized value is provisional "
@@ -807,9 +803,8 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
                     width="stretch",
                 )
 
-    with tab_private:
-        if _render_private_panel_gate():
-            _render_private_company_revenue(semi_views, _cutoff)
+    with tab_company_revenue:
+        _render_company_revenue(semi_views, _cutoff)
 
     with tab_trade:
         official_df = semi_views.get("official_df", pd.DataFrame())
@@ -1006,7 +1001,7 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
                 )
 
             if category_choice == "Company Revenue":
-                st.info("Use the TODO tab for company-level monthly revenue disclosures.")
+                st.info("Use the Taiwan Company Revenue tab for company-level monthly revenue disclosures.")
 
     with tab_us_imports:
         _render_us_import_demand(datasets, _cutoff)

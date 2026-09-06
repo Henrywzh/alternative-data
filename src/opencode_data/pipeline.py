@@ -88,6 +88,7 @@ def run_opencode_scrape(base_dir: Path, top_models_count: int = 15) -> dict[str,
 
     deepdive_rows = []
     raw_deepdives = {}
+    deepdive_failures = []
     for provider, slug in models_to_fetch:
         model_url = f"https://opencode.ai/data/{provider}/{slug}"
         print(f"Fetching model deepdive: {model_url}")
@@ -98,7 +99,18 @@ def run_opencode_scrape(base_dir: Path, top_models_count: int = 15) -> dict[str,
             deepdive_row = extract_model_deepdive(m_payload, scraped_at)
             deepdive_rows.append(deepdive_row)
         except Exception as e:
+            deepdive_failures.append(
+                {"provider": provider, "model_slug": slug, "error": str(e)}
+            )
             print(f"Notice: Model page {provider}/{slug} may not have a dedicated deepdive page: {e}")
+
+    if models_to_fetch and not deepdive_rows:
+        first = deepdive_failures[0]
+        raise ValueError(
+            f"All {len(models_to_fetch)} selected OpenCode model deepdives failed; "
+            "aborting before preserving a stale model-economics snapshot. "
+            f"First failure: {first['provider']}/{first['model_slug']}: {first['error']}"
+        )
 
     if raw_deepdives:
         save_raw_snapshot(base_dir, "model_deepdives", raw_deepdives, scraped_at)
@@ -123,5 +135,6 @@ def run_opencode_scrape(base_dir: Path, top_models_count: int = 15) -> dict[str,
         "catalog_models_count": len(catalog_rows),
         "benchmark_records": len(benchmark_rows),
         "model_deepdives_count": len(deepdive_rows),
+        "model_deepdives_failed": len(deepdive_failures),
     }
     return summary

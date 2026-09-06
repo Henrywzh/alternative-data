@@ -74,10 +74,7 @@ from dashboard.sections.openrouter import (
     _market_share_weekly_totals,
     model_explorer_state,
 )
-from dashboard.sections.semiconductor import (
-    _private_panel_code_matches,
-    _private_panel_expected_code,
-)
+from dashboard.sections.semiconductor import _taiwan_company_display_name
 
 
 def _base_row(dataset_id: str) -> dict:
@@ -1969,17 +1966,9 @@ def test_compute_semiconductor_views_includes_taiwan_monthly_revenue() -> None:
     assert float(result["taiwan_yoy_pivot"].loc["2026-05", "聯電"]) == 17.78
 
 
-def test_private_panel_expected_code_uses_neutral_secret_or_env_name() -> None:
-    assert _private_panel_expected_code({"PRIVATE_PANEL_ACCESS_CODE": "secret"}, {}) == "secret"
-    assert _private_panel_expected_code({}, {"PRIVATE_PANEL_ACCESS_CODE": "local"}) == "local"
-    assert _private_panel_expected_code({}, {}) == ""
-
-
-def test_private_panel_code_matches_requires_configured_exact_match() -> None:
-    assert _private_panel_code_matches("secret", "secret") is True
-    assert _private_panel_code_matches("secret", "other") is False
-    assert _private_panel_code_matches("secret", "") is False
-    assert _private_panel_code_matches("", "secret") is False
+def test_taiwan_company_display_name_expands_ambiguous_mops_short_name() -> None:
+    assert _taiwan_company_display_name("5347", "世界") == "世界先進 (VIS)"
+    assert _taiwan_company_display_name("2330", "台積電") == "台積電"
 
 
 def test_compute_semiconductor_views_preserves_empty_semiconductor_schema() -> None:

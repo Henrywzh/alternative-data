@@ -82,6 +82,14 @@ def test_fred_workflow_accepts_the_existing_semiconductor_fred_secret() -> None:
     assert "secrets.FRED_API_KEY || secrets.SEMICONDUCTOR_FRED_API_KEY" in workflow
 
 
+def test_semiconductor_weekly_schedule_refreshes_official_and_backup_sources() -> None:
+    workflow = (WORKFLOWS / "semiconductor-proxy-monthly.yml").read_text(encoding="utf-8")
+
+    assert "github.event_name == 'schedule' ||" in workflow
+    assert "--sources all --regions japan,korea,hongkong --categories ic_only backfill" in workflow
+    assert "--sources all --regions japan,korea,hongkong --categories ic_only validate --fail-on-issues" in workflow
+
+
 _DERIVED_BUILD_COMMAND = "openrouter-derived-data --base-dir . build"
 _DERIVED_TEST_COMMAND = """python -m pytest -q \\
   tests/test_openrouter_derived_data.py \\

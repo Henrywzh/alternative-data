@@ -410,6 +410,10 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
     "us_census_memory_imports_monthly": {
         "label": "US Memory Imports (Census)",
         "domain": "us_census_trade",
+        # The code path is ready, but this deployment has no Census API key or
+        # scheduled producer yet. Absence is a visible "not configured" state
+        # inside the section, not a broken global dataset.
+        "optional": True,
         "natural_keys": ["period", "partner_country_code", "hs_code"],
         "primary_date_column": "period",
         "metric_column": "general_import_value_usd",
@@ -426,6 +430,7 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
     "us_census_memory_imports_port_monthly": {
         "label": "US Memory Imports by Port (Census)",
         "domain": "us_census_trade",
+        "optional": True,
         "natural_keys": ["period", "partner_country_code", "hs_code", "port_code"],
         "primary_date_column": "period",
         "metric_column": "general_import_value_usd",

@@ -16,7 +16,7 @@ from opencode_data.extract import (
     extract_usage_daily,
     extract_users_daily,
 )
-from opencode_data.source import parse_solid_hydration
+from opencode_data.source import extract_model_payload, parse_solid_hydration
 from opencode_data.storage import save_normalized_dataset, save_raw_snapshot
 
 
@@ -299,3 +299,42 @@ def test_parse_solid_hydration_raises_clearly_when_page_structure_changes():
     html_without_hydration_scripts = "<html><body><script>var x = 1;</script></body></html>"
     with pytest.raises(ValueError, match="hydration-related script tags"):
         parse_solid_hydration(html_without_hydration_scripts)
+
+
+def test_extract_model_payload_accepts_nested_stats_payload(monkeypatch):
+    stats = {
+        "slug": "deepseek-v4-flash",
+        "totals": {"tokens": 123, "sessions": 4},
+        "tokenMix": [{"label": "Input", "tokens": 100}],
+    }
+    monkeypatch.setattr(
+        "opencode_data.source.parse_solid_hydration",
+        lambda _html: [{"idx": 1, "value": {"catalog": {"entry": {}}, "stats": stats}}],
+    )
+
+    assert extract_model_payload("<html />") is stats
+
+
+def test_pipeline_fails_when_all_selected_model_deepdives_fail(monkeypatch, tmp_path):
+    """A green workflow must not silently preserve stale deepdive economics."""
+    from opencode_data import pipeline
+
+    stats_home = {
+        "updatedAt": "2026-09-06T04:15:00.000Z",
+        "market": [{"date": "SEP 6", "total": 1.0, "authors": [{"author": "DeepSeek", "share": 100.0, "tokens": 1.0}]}],
+        "usage": [{"date": "SEP 6", "segments": [{"model": "deepseek-v4-flash", "value": 100}]}],
+        "leaderboard": [{
+            "model": "deepseek-v4-flash", "provider": "deepseek", "author": "DeepSeek",
+            "tokens": 100, "rank": 1, "change": 0,
+        }],
+    }
+    monkeypatch.setattr(pipeline, "fetch_html", lambda _url: "<html />")
+    monkeypatch.setattr(pipeline, "extract_home_payload", lambda _html: (stats_home, None))
+    monkeypatch.setattr(
+        pipeline,
+        "extract_model_payload",
+        lambda _html: (_ for _ in ()).throw(ValueError("model page changed")),
+    )
+
+    with pytest.raises(ValueError, match="All 1 selected OpenCode model deepdives failed"):
+        pipeline.run_opencode_scrape(tmp_path, top_models_count=1)

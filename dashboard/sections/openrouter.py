@@ -6766,7 +6766,7 @@ def _load_cloud_infra_economics(datasets: dict[str, DatasetLoadResult]) -> pd.Da
 
 
 def render_cloud_infra_section(datasets: dict[str, DatasetLoadResult]) -> None:
-    st.markdown('<div class="section-title">☁️ Cloud & Inference Infrastructure Providers</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Cloud &amp; Inference Infrastructure Providers</div>', unsafe_allow_html=True)
     df = _load_cloud_infra_economics(datasets)
     if df.empty:
         st.warning("Serving-provider economics dataset is not available yet. Run the daily OpenRouter serving-provider workflow.")
@@ -6882,46 +6882,54 @@ def render_cloud_infra_section(datasets: dict[str, DatasetLoadResult]) -> None:
         kpi_card_html("Top Infra by Tokens", top_tok_prov, delta=f"Rev Leader: {top_rev_prov}", delta_class="flat"),
         kpi_card_html("CoreWeave", f"{cw_tokens/1e12:.2f}T Tokens", delta=f"{cw_revenue_display} covered · Top: {cw_top_model_clean}", delta_class="flat"),
     ]
-    st.markdown(kpi_grid_html(*kpi_cards), unsafe_allow_html=True)
+    kpi_cols = st.columns(4, gap="small")
+    for col, card in zip(kpi_cols, kpi_cards, strict=False):
+        with col:
+            st.markdown(card, unsafe_allow_html=True)
 
     # 2. Main Market Trajectory (Stacked Flow Area Chart)
-    st.markdown('<div class="section-title">🌊 Inference & Cloud Infrastructure Volume Trajectory</div>', unsafe_allow_html=True)
-    c1, c2, c3, c4 = st.columns([1.4, 1.1, 0.9, 1.0])
-    with c1:
-        scope = st.radio(
-            "Provider Scope",
-            [
-                f"Cloud & Inference Infra ({infra_provider_count})",
-                f"All Providers ({provider_count})",
-                f"1st-Party Model Labs ({first_party_provider_count})",
-            ],
-            horizontal=True,
-            key="infra_scope_radio",
+    st.markdown('<div class="section-title">Provider Volume &amp; Revenue Trajectory</div>', unsafe_allow_html=True)
+    scope_labels = ["Cloud & Inference", "All Providers", "1st-Party Labs"]
+    scope_counts = {
+        "Cloud & Inference": infra_provider_count,
+        "All Providers": provider_count,
+        "1st-Party Labs": first_party_provider_count,
+    }
+    controls_left, controls_right = st.columns([1.25, 1.0])
+    with controls_left:
+        scope = st.segmented_control(
+            "Provider scope",
+            scope_labels,
+            default=scope_labels[0],
+            key="infra_scope_select_v2",
         )
-    with c2:
+        st.caption(" · ".join(f"{label}: {scope_counts[label]}" for label in scope_labels))
+    with controls_right:
         metric = st.selectbox(
             "Metric",
             ["Estimated Revenue ($)", "Tokens", "Revenue Share (%)", "Token Share (%)"],
-            key="infra_metric_select",
-        )
-    with c3:
-        window = st.radio(
-            "Window",
-            ["Daily (Raw)", "7-Day Moving Avg"],
-            horizontal=True,
-            key="infra_window_radio",
-        )
-    with c4:
-        chart_style = st.radio(
-            "Chart Style",
-            ["Stacked Area (Flow)", "Multi-Line"],
-            horizontal=True,
-            key="infra_chart_style_radio",
+            key="infra_metric_select_v2",
         )
 
-    if "Inference Infra" in scope:
+    window_col, style_col = st.columns([1.0, 1.0])
+    with window_col:
+        window = st.segmented_control(
+            "Window",
+            ["Daily (Raw)", "7-Day Moving Avg"],
+            default="Daily (Raw)",
+            key="infra_window_select_v2",
+        )
+    with style_col:
+        chart_style = st.segmented_control(
+            "Chart style",
+            ["Stacked Area (Flow)", "Multi-Line"],
+            default="Stacked Area (Flow)",
+            key="infra_chart_style_select_v2",
+        )
+
+    if scope == "Cloud & Inference":
         filtered_df = analysis_df[analysis_df["is_infra"]].copy()
-    elif "1st-Party" in scope:
+    elif scope == "1st-Party Labs":
         filtered_df = analysis_df[analysis_df["serving_provider_type"] == "first_party_lab"].copy()
     else:
         filtered_df = analysis_df.copy()
@@ -6933,6 +6941,10 @@ def render_cloud_infra_section(datasets: dict[str, DatasetLoadResult]) -> None:
         values=val_col,
         aggfunc="sum",
     ).fillna(0).sort_index()
+    pivot_daily = _filter_pivot_by_history_range(
+        pivot_daily,
+        render_history_range_control("infra_history_range", default="1Y"),
+    )
 
     if window == "7-Day Moving Avg":
         pivot_chart = pivot_daily.rolling(7, min_periods=1).mean()
@@ -6962,45 +6974,51 @@ def render_cloud_infra_section(datasets: dict[str, DatasetLoadResult]) -> None:
 
     if selected_provs:
         chart_df = pivot_chart[[p for p in selected_provs if p in pivot_chart.columns]].copy()
-        fig = go.Figure()
         is_stacked = ("Stacked" in chart_style) or ("Share" in metric)
-        for idx, col in enumerate(chart_df.columns):
-            color = MODEL_COLORS[idx % len(MODEL_COLORS)]
-            y_vals = chart_df[col]
-            hover_suffix = "$%{y:,.2f}" if metric == "Estimated Revenue ($)" else ("%{y:,.0f} tokens" if metric == "Tokens" else "%{y:.1f}% share")
-            fig.add_trace(go.Scatter(
-                x=chart_df.index,
-                y=y_vals,
-                name=col,
-                mode="lines",
-                stackgroup="one" if is_stacked else None,
-                line=dict(width=0.8 if is_stacked else 2.5, color=color),
-                hovertemplate=f"<b>{col}</b><br>%{{x}}<br>{hover_suffix}<extra></extra>",
-            ))
-
         y_title = (
             "Estimated Daily Revenue ($)" if metric == "Estimated Revenue ($)" else
-            "Daily Tokens" if metric == "Tokens" else
-            "Share (%)"
+            "Daily Tokens" if metric == "Tokens" else metric
         )
-        fig.update_layout(
-            height=480,
-            plot_bgcolor="rgba(0,0,0,0)",
-            paper_bgcolor="rgba(0,0,0,0)",
-            hovermode="x unified",
-            margin=dict(l=10, r=20, t=20, b=40),
-            xaxis=dict(showgrid=False),
-            yaxis=dict(title=y_title, gridcolor=GRID),
-            legend=dict(orientation="h", y=-0.18),
-        )
+        if metric == "Estimated Revenue ($)":
+            value_format, hover_prefix, hover_suffix = ",.2f", "$", ""
+        elif metric == "Tokens":
+            value_format, hover_prefix, hover_suffix = ",.0f", "", "tokens"
+        else:
+            value_format, hover_prefix, hover_suffix = ".1f", "", "%"
+        if is_stacked:
+            fig = make_stacked_area_chart(
+                chart_df,
+                list(chart_df.index),
+                MODEL_COLORS,
+                x_title="Usage date",
+                y_title=y_title,
+                height=400,
+                value_format=value_format,
+                hover_prefix=hover_prefix,
+                hover_suffix=hover_suffix,
+            )
+        else:
+            fig = make_line_chart(
+                chart_df,
+                MODEL_COLORS,
+                x_title="Usage date",
+                y_title=y_title,
+                height=400,
+                value_format=value_format,
+                hover_suffix=hover_suffix,
+            )
         st.plotly_chart(fig, width="stretch", theme=None)
+        st.caption(
+            "Stacked area shows provider flow; multi-line isolates each provider. "
+            "The latest incomplete UTC day is excluded from default KPIs."
+        )
     else:
         st.info("Please select at least one provider to view chart.")
 
     st.markdown("---")
 
     # 3. NEW: Routing & Infrastructure Breakdown per LLM Lab (Model Origin)
-    st.markdown('<div class="section-title">🏢 Hosting & Infrastructure Breakdown per LLM Lab</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Hosting &amp; Infrastructure Breakdown by LLM Company</div>', unsafe_allow_html=True)
     st.markdown(
         '<div class="section-subtitle">For any LLM creator (DeepSeek, Meta Llama, OpenAI, Anthropic, MiniMax, Z.ai, Qwen, etc.), examine how their token volume is routed between 1st-party endpoints and 3rd-party Cloud & Inference Infra (CoreWeave, DeepInfra, Bedrock, Azure, Novita, etc.).</div>',
         unsafe_allow_html=True,
@@ -7144,29 +7162,27 @@ def render_cloud_infra_section(datasets: dict[str, DatasetLoadResult]) -> None:
 
     st.markdown("---")
 
-    # 4. Provider Deep Dive Explorer
-    st.markdown('<div class="section-title">🔍 Single Provider Deep Dive & Hosted Models</div>', unsafe_allow_html=True)
-    st.markdown('<div class="section-subtitle">Examine model portfolio, daily token trajectory, and covered model-list-price economics for any specific hosting provider.</div>', unsafe_allow_html=True)
-
-    all_provider_options = sorted(df["serving_provider_name"].dropna().unique().tolist())
-    cw_default_idx = all_provider_options.index("CoreWeave") if "CoreWeave" in all_provider_options else 0
-    target_provider = st.selectbox(
-        "Select Provider to Inspect",
-        options=all_provider_options,
-        index=cw_default_idx,
-        key="infra_deepdive_select",
+    # 4. Company-level deep dive. Model names are deliberately not the primary
+    # grain here; this page answers which infrastructure serves each LLM lab.
+    st.markdown('<div class="section-title">LLM Company Deep Dive</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-subtitle">Inspect one model-origin company and aggregate its full portfolio by serving infrastructure.</div>',
+        unsafe_allow_html=True,
+    )
+    company_options = available_labs
+    target_company = st.selectbox(
+        "Select LLM Company to Inspect",
+        options=company_options,
+        index=0,
+        key="infra_company_deepdive_select",
     )
 
-    single_df = analysis_df[analysis_df["serving_provider_name"] == target_provider].copy()
+    single_df = analysis_df[analysis_df["model_origin_company"] == target_company].copy()
     if not single_df.empty:
-        raw_hq = single_df["headquarters"].iloc[0]
-        raw_dc = single_df["datacenters"].iloc[0]
-        p_hq = str(raw_hq) if pd.notna(raw_hq) and str(raw_hq).strip() else "N/A"
-        p_dc = str(raw_dc) if pd.notna(raw_dc) and str(raw_dc).strip() else "N/A"
         p_tokens = single_df["total_tokens"].sum()
         p_rev = pd.to_numeric(single_df["estimated_revenue"], errors="coerce").sum(min_count=1)
         p_implied_price = (p_rev / p_tokens * 1e6) if p_tokens > 0 and pd.notna(p_rev) else np.nan
-        p_models_count = single_df["model_permaslug"].nunique()
+        p_provider_count = single_df["serving_provider_name"].nunique()
         p_first_date = single_df["usage_date"].min()
         p_last_date = single_df["usage_date"].max()
 
@@ -7184,53 +7200,48 @@ def render_cloud_infra_section(datasets: dict[str, DatasetLoadResult]) -> None:
                 delta="per 1M observed tokens",
                 delta_class="flat",
             ),
-            kpi_card_html("Hosted Models", f"{p_models_count} models", delta=f"HQ: {p_hq} · DC: {p_dc}", delta_class="flat"),
+            kpi_card_html("Serving Providers", f"{p_provider_count}", delta="first-party + external routes", delta_class="flat"),
         ]
         st.markdown(kpi_grid_html(*p_cards), unsafe_allow_html=True)
 
         col_left, col_right = st.columns([1.6, 1.0])
         with col_left:
-            st.markdown(f"**{target_provider} Daily Token Breakdown by Model**")
-            model_pivot = single_df.pivot_table(index="usage_date", columns="model_permaslug", values="total_tokens", aggfunc="sum").fillna(0).sort_index()
-            top_models_single = model_pivot.sum().sort_values(ascending=False).head(6).index.tolist()
-            model_chart_df = model_pivot[top_models_single].copy()
-            other_cols = [c for c in model_pivot.columns if c not in top_models_single]
+            st.markdown(f"**{target_company} Daily Token Breakdown by Serving Provider**")
+            provider_pivot = single_df.pivot_table(
+                index="usage_date",
+                columns="serving_provider_name",
+                values="total_tokens",
+                aggfunc="sum",
+            ).fillna(0).sort_index()
+            top_providers_single = provider_pivot.sum().sort_values(ascending=False).head(7).index.tolist()
+            provider_chart_df = provider_pivot[top_providers_single].copy()
+            other_cols = [c for c in provider_pivot.columns if c not in top_providers_single]
             if other_cols:
-                model_chart_df["Other Models"] = model_pivot[other_cols].sum(axis=1)
-
-            fig_single = go.Figure()
-            for idx, c in enumerate(model_chart_df.columns):
-                clean_name = c.split("/")[-1].split("-202")[0]
-                fig_single.add_trace(go.Scatter(
-                    x=model_chart_df.index,
-                    y=model_chart_df[c],
-                    name=clean_name,
-                    mode="lines",
-                    stackgroup="one",
-                    line=dict(width=0.5, color=MODEL_COLORS[idx % len(MODEL_COLORS)]),
-                    hovertemplate=f"<b>{clean_name}</b><br>%{{x}}<br>%{{y:,.0f}} tokens<extra></extra>",
-                ))
-            fig_single.update_layout(
+                provider_chart_df["Other Providers"] = provider_pivot[other_cols].sum(axis=1)
+            fig_single = make_stacked_area_chart(
+                provider_chart_df,
+                list(provider_chart_df.index),
+                MODEL_COLORS,
+                x_title="Usage date",
+                y_title="Daily Tokens",
                 height=360,
-                plot_bgcolor="rgba(0,0,0,0)",
-                paper_bgcolor="rgba(0,0,0,0)",
-                hovermode="x unified",
-                margin=dict(l=10, r=20, t=10, b=30),
-                xaxis=dict(showgrid=False),
-                yaxis=dict(title="Daily Tokens", gridcolor=GRID),
-                legend=dict(orientation="h", y=-0.2),
+                value_format=",.0f",
+                hover_suffix="tokens",
             )
             st.plotly_chart(fig_single, width="stretch", theme=None)
 
         with col_right:
-            st.markdown(f"**Top Hosted Models on {target_provider}**")
-            model_summary = single_df.groupby("model_permaslug").agg(
+            st.markdown(f"**Serving Provider Mix for {target_company}**")
+            provider_summary = single_df.groupby(
+                ["serving_provider_name", "category"], dropna=False
+            ).agg(
                 total_tokens=("total_tokens", "sum"),
                 total_revenue=("estimated_revenue", lambda values: values.sum(min_count=1)),
+                observed_days=("usage_date", "nunique"),
             ).sort_values("total_tokens", ascending=False).reset_index()
-            model_summary["Share"] = (model_summary["total_tokens"] / p_tokens * 100).map(lambda v: f"{v:.1f}%")
-            model_summary["Tokens"] = model_summary["total_tokens"].map(lambda v: f"{v/1e12:.2f}T" if v>=1e12 else f"{v/1e9:.2f}B" if v>=1e9 else f"{v/1e6:.1f}M")
-            model_summary["Est Revenue"] = model_summary["total_revenue"].map(
+            provider_summary["Share"] = (provider_summary["total_tokens"] / p_tokens * 100).map(lambda v: f"{v:.1f}%")
+            provider_summary["Tokens"] = provider_summary["total_tokens"].map(lambda v: f"{v/1e12:.2f}T" if v>=1e12 else f"{v/1e9:.2f}B" if v>=1e9 else f"{v/1e6:.1f}M")
+            provider_summary["Est Revenue"] = provider_summary["total_revenue"].map(
                 lambda v: (
                     "—"
                     if pd.isna(v)
@@ -7241,15 +7252,22 @@ def render_cloud_infra_section(datasets: dict[str, DatasetLoadResult]) -> None:
                     else f"${v:.1f}"
                 )
             )
-            model_summary["$/M"] = (
-                model_summary["total_revenue"]
-                .div(model_summary["total_tokens"].replace(0, np.nan))
+            provider_summary["$/M"] = (
+                provider_summary["total_revenue"]
+                .div(provider_summary["total_tokens"].replace(0, np.nan))
                 .mul(1e6)
                 .map(lambda v: f"${v:.3f}" if pd.notna(v) else "—")
             )
-            model_summary["Model"] = model_summary["model_permaslug"].map(lambda v: v.split("/")[-1].split("-202")[0])
             st.dataframe(
-                model_summary[["Model", "Tokens", "Est Revenue", "$/M", "Share"]],
+                provider_summary[
+                    ["serving_provider_name", "category", "Tokens", "Est Revenue", "$/M", "Share", "observed_days"]
+                ].rename(
+                    columns={
+                        "serving_provider_name": "Serving Provider",
+                        "category": "Type",
+                        "observed_days": "Observed Days",
+                    }
+                ),
                 width="stretch",
                 hide_index=True,
                 height=340,

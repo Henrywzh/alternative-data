@@ -78,7 +78,7 @@ jobs:
           python -m pip install -e .[dev]
 
       - name: Require Comtrade API key for backup-enabled runs
-        if: github.event_name == 'workflow_dispatch' && (github.event.inputs.command == 'update-latest' || github.event.inputs.command == 'backfill' || github.event.inputs.command == 'compare-backup') && github.event.inputs.sources != 'official'
+        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.command == 'update-latest' || github.event.inputs.command == 'backfill' || github.event.inputs.command == 'compare-backup') && github.event.inputs.sources != 'official')
         run: |
           set -euo pipefail
           if [ -z "${COMTRADE_API_KEY}" ]; then
@@ -105,8 +105,8 @@ jobs:
           PY
           )
           EOF
-          echo "Refreshing official semiconductor observations from ${start_month} through ${end_month}"
-          semiconductor-proxy-data --base-dir . --sources official --regions japan,korea,hongkong backfill \
+          echo "Refreshing official and backup semiconductor observations from ${start_month} through ${end_month}"
+          semiconductor-proxy-data --base-dir . --sources all --regions japan,korea,hongkong --categories ic_only backfill \
             --start-month "${start_month}" --end-month "${end_month}"
 
       - name: Run manual latest update
@@ -164,7 +164,7 @@ jobs:
         run: |
           set -euo pipefail
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            semiconductor-proxy-data --base-dir . --sources official --regions japan,korea,hongkong validate --fail-on-issues
+            semiconductor-proxy-data --base-dir . --sources all --regions japan,korea,hongkong --categories ic_only validate --fail-on-issues
           else
             ARGS="--sources ${{ github.event.inputs.sources }}"
             if [ -n "${{ github.event.inputs.regions }}" ]; then

@@ -119,12 +119,20 @@ def extract_home_payload(html: str) -> tuple[dict[str, Any], dict[str, Any] | No
 
 
 def extract_model_payload(html: str) -> dict[str, Any]:
-    """Extract model deepdive object from a model page HTML."""
+    """Extract model stats from either historical or current page hydration."""
     extracted = parse_solid_hydration(html)
     for item in extracted:
         val = item.get("value")
         if isinstance(val, dict):
             if "totals" in val and "tokenMix" in val and "slug" in val:
                 return val
+            stats = val.get("stats")
+            if (
+                isinstance(stats, dict)
+                and "totals" in stats
+                and "tokenMix" in stats
+                and "slug" in stats
+            ):
+                return stats
 
     raise ValueError("Could not find model deepdive payload in model page HTML state.")
