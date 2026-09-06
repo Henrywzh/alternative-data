@@ -1,0 +1,44 @@
+{
+  "run_id": "20260906T080323Z-6f1b47de",
+  "mode": "daily-update",
+  "scraped_at": "2026-09-06T08:03:23.219679Z",
+  "status": "success",
+  "datasets": [
+    {
+      "dataset_id": "vercel_model_leaderboard",
+      "status": "ok",
+      "rows": 8428,
+      "source_urls": [
+        "https://vercel.com/api/ai/leaderboard-export?dataset=models&format=json&modality=all",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=models&format=json&modality=image",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=models&format=json&modality=text",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=models&format=json&modality=video"
+      ],
+      "new_entities": [
+        "GPT-6 Astra",
+        "Muse Spark 1.3 Contributor",
+        "private/longcat-2.0"
+      ]
+    },
+    {
+      "dataset_id": "vercel_lab_leaderboard",
+      "status": "ok",
+      "rows": 17216,
+      "source_urls": [
+        "https://vercel.com/api/ai/leaderboard-export?dataset=labs&format=json&modality=all",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=labs&format=json&modality=image",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=labs&format=json&modality=text",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=labs&format=json&modality=video"
+      ],
+      "new_entities": []
+    },
+    {
+      "dataset_id": "vercel_models",
+      "status": "ok",
+      "rows": 373,
+      "source_urls": [
+        "https://ai-gateway.vercel.sh/v1/models"
+      ]
+    }
+  ]
+}
