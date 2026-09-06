@@ -9,7 +9,11 @@ import pandas as pd
 import pytest
 
 from dashboard import data as dashboard_data
-from openrouter_revenue import build_conservative_provider_economics, estimate_usage_revenue
+from openrouter_revenue import (
+    build_conservative_provider_economics,
+    build_provider_revenue_estimates,
+    estimate_usage_revenue,
+)
 from pricing_model_aliases import generate_candidate_aliases
 from research_data.api import monthly_model_releases, provider_revenue_daily
 from research_data.cli import main as research_cli_main
@@ -779,6 +783,76 @@ def test_conservative_economics_breaks_pricing_ties_by_lowest_alias_priority() -
     # No prompt/completion split, so revenue uses the blended rate.
     blended = 0.002 * 0.977 + 0.003 * 0.023
     assert row["estimated_revenue"] == pytest.approx(1_000_000.0 * blended)
+
+
+def test_route_specific_prices_do_not_contaminate_shared_canonical_slug() -> None:
+    provider_activity = pd.DataFrame(
+        [
+            {
+                "usage_date": "2026-08-26",
+                "entity_id": "minimax",
+                "entity_name": "MiniMax",
+                "model_permaslug": model,
+                "total_tokens": 1_000_000.0,
+                "prompt_tokens": 0.0,
+                "completion_tokens": 0.0,
+            }
+            for model in [
+                "minimax/minimax-m3-20260531",
+                "minimax/minimax-m3-20260531:batch",
+                "minimax/minimax-m3-20260531:free",
+            ]
+        ]
+    )
+    pricing = pd.DataFrame(
+        [
+            {
+                "snapshot_ts": "2026-08-25T00:00:00Z",
+                "model_id": "minimax/minimax-m3",
+                "canonical_slug": "minimax/minimax-m3-20260531",
+                "provider_prefix": "minimax",
+                "pricing_prompt": 0.0000003,
+                "pricing_completion": 0.0000012,
+            },
+            {
+                "snapshot_ts": "2026-08-25T00:00:00Z",
+                "model_id": "minimax/minimax-m3:batch",
+                "canonical_slug": "minimax/minimax-m3-20260531",
+                "provider_prefix": "minimax",
+                "pricing_prompt": 0.00000015,
+                "pricing_completion": 0.0000006,
+            },
+            {
+                "snapshot_ts": "2026-08-25T00:00:00Z",
+                "model_id": "minimax/minimax-m3:free",
+                "canonical_slug": "minimax/minimax-m3-20260531",
+                "provider_prefix": "minimax",
+                "pricing_prompt": 0.0,
+                "pricing_completion": 0.0,
+            },
+        ]
+    )
+
+    conservative = build_conservative_provider_economics(provider_activity, pricing).set_index(
+        "model_permaslug"
+    )
+    estimated = build_provider_revenue_estimates(provider_activity, pricing).set_index(
+        "model_permaslug"
+    )
+
+    paid_blended = (0.0000003 * 0.977) + (0.0000012 * 0.023)
+    batch_blended = (0.00000015 * 0.977) + (0.0000006 * 0.023)
+    for frame in [conservative, estimated]:
+        assert frame.loc["minimax/minimax-m3-20260531", "estimated_revenue"] == pytest.approx(
+            1_000_000.0 * paid_blended
+        )
+        assert frame.loc[
+            "minimax/minimax-m3-20260531:batch", "estimated_revenue"
+        ] == pytest.approx(1_000_000.0 * batch_blended)
+        assert (
+            frame.loc["minimax/minimax-m3-20260531:free", "estimated_revenue"]
+            == 0.0
+        )
 
 
 def test_estimate_usage_revenue_uses_asof_snapshot_for_historical_usage() -> None:

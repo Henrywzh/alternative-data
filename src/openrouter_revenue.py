@@ -83,6 +83,59 @@ def _clean_model_id(series: pd.Series) -> pd.Series:
     return series.astype("string").str.strip()
 
 
+def _model_route_suffix(value: object) -> str | None:
+    """Return an OpenRouter route suffix such as ``:free`` or ``:batch``."""
+
+    slug = clean_slug(value)
+    if slug is None:
+        return None
+    model_segment = slug.rsplit("/", 1)[-1]
+    if ":" not in model_segment:
+        return None
+    return ":" + model_segment.split(":", 1)[1]
+
+
+def _candidate_aliases_preserving_route(value: object) -> list[str]:
+    """Generate aliases without allowing a route variant to match its base."""
+
+    slug = clean_slug(value)
+    if slug is None:
+        return []
+    route_suffix = _model_route_suffix(slug)
+    aliases = generate_candidate_aliases(slug)
+    if route_suffix is None:
+        return aliases
+    return [
+        alias
+        for alias in aliases
+        if _model_route_suffix(alias) == route_suffix
+    ]
+
+
+def _pricing_identity_aliases(model_id: object, canonical_slug: object) -> list[str]:
+    """Return aliases for one price row while preserving its route identity.
+
+    OpenRouter uses the same ``canonical_slug`` for paid, ``:free`` and
+    ``:batch`` catalog rows.  The route suffix lives only on ``model_id``.
+    Reapply it to the canonical slug before generating aliases so a zero-price
+    free route or discounted batch route cannot price the paid base model.
+    """
+
+    model = clean_slug(model_id)
+    canonical = clean_slug(canonical_slug)
+    route_suffix = _model_route_suffix(model) or _model_route_suffix(canonical)
+    canonical_route = canonical
+    if canonical is not None and route_suffix is not None:
+        canonical_route = canonical.split(":", 1)[0] + route_suffix
+
+    aliases: list[str] = []
+    for value in [canonical_route, model]:
+        for alias in _candidate_aliases_preserving_route(value):
+            if alias not in aliases:
+                aliases.append(alias)
+    return aliases
+
+
 def _to_datetime(series: pd.Series, *, utc: bool = False) -> pd.Series:
     return pd.to_datetime(series, errors="coerce", utc=utc)
 
@@ -106,9 +159,11 @@ def canonical_model_key(value: object, *, preserve_free: bool = False) -> str | 
     slug = clean_slug(value)
     if slug is None:
         return None
-    if preserve_free and slug.endswith(":free"):
-        return slug
-    aliases = generate_candidate_aliases(slug)
+    aliases = (
+        _candidate_aliases_preserving_route(slug)
+        if preserve_free or _model_route_suffix(slug) is not None
+        else generate_candidate_aliases(slug)
+    )
     if not aliases:
         return slug
     return aliases[-1]
@@ -167,13 +222,12 @@ def _prepare_price_rows(pricing: pd.DataFrame) -> pd.DataFrame:
     prepared["pricing_prompt"] = pd.to_numeric(prepared["pricing_prompt"], errors="coerce")
     prepared["pricing_completion"] = pd.to_numeric(prepared["pricing_completion"], errors="coerce")
     prepared = prepared.dropna(subset=["model_id", "snapshot_ts"]).copy()
-    key_source = prepared["canonical_slug"].where(prepared["canonical_slug"].notna(), prepared["model_id"])
-    preserve_free = prepared["model_id"].astype(str).str.endswith(":free")
-    key_pairs = list(zip(key_source, preserve_free))
-    resolved_keys = {
-        pair: canonical_model_key(pair[0], preserve_free=pair[1]) for pair in set(key_pairs)
-    }
-    prepared["canonical_model_key"] = [resolved_keys[pair] for pair in key_pairs]
+    identity_pairs = list(zip(prepared["model_id"], prepared["canonical_slug"]))
+    resolved_keys: dict[tuple[object, object], str | None] = {}
+    for pair in set(identity_pairs):
+        aliases = _pricing_identity_aliases(pair[0], pair[1])
+        resolved_keys[pair] = aliases[-1] if aliases else canonical_model_key(pair[0])
+    prepared["canonical_model_key"] = [resolved_keys[pair] for pair in identity_pairs]
     prepared["pricing_blended"] = blended_unit_price_series(prepared["pricing_prompt"], prepared["pricing_completion"])
     prepared = prepared.dropna(subset=["canonical_model_key"]).copy()
     return prepared
@@ -198,14 +252,10 @@ def _alias_map_from_rows(prepared: pd.DataFrame) -> dict[str, str]:
         if pd.isna(model_id) or pd.isna(model_key):
             continue
 
-        if str(model_id).endswith(":free"):
-            aliases = [str(model_id)]
-        else:
-            aliases: list[str] = []
-            for raw in [row.get("model_id"), row.get("canonical_slug"), row.get("canonical_model_key")]:
-                for alias in generate_candidate_aliases(raw):
-                    if alias not in aliases:
-                        aliases.append(alias)
+        aliases = _pricing_identity_aliases(
+            row.get("model_id"),
+            row.get("canonical_slug"),
+        )
 
         for priority, alias in enumerate(aliases):
             if alias not in alias_to_model_key or priority < alias_priority[alias]:
@@ -360,14 +410,7 @@ def _price_contexts_by_cutoff(pricing_with_dates: pd.DataFrame) -> dict[pd.Times
             model_id, canonical_slug, model_key = triple
             if pd.isna(model_id) or pd.isna(model_key):
                 continue
-            if str(model_id).endswith(":free"):
-                aliases = [str(model_id)]
-            else:
-                aliases = []
-                for raw in (model_id, canonical_slug, model_key):
-                    for alias in generate_candidate_aliases(raw):
-                        if alias not in aliases:
-                            aliases.append(alias)
+            aliases = _pricing_identity_aliases(model_id, canonical_slug)
             for priority, alias in enumerate(aliases):
                 if alias not in alias_to_model_key or priority < alias_priority[alias]:
                     alias_to_model_key[alias] = str(model_key)
@@ -439,7 +482,7 @@ def resolve_model_key(value: object, alias_to_model_key: dict[str, str], slug_st
         return None
     if slug_strategy == "strict":
         return alias_to_model_key.get(slug)
-    for alias in generate_candidate_aliases(slug):
+    for alias in _candidate_aliases_preserving_route(slug):
         if alias in alias_to_model_key:
             return alias_to_model_key[alias]
     return None
@@ -760,13 +803,10 @@ def _prepare_pricing_aliases(pricing: pd.DataFrame) -> pd.DataFrame:
 
     rows: list[dict[str, object]] = []
     for row in prepared.to_dict(orient="records"):
-        aliases: list[str] = []
-        for value in [row.get("canonical_slug"), row.get("model_id")]:
-            if pd.isna(value):
-                continue
-            for alias in generate_candidate_aliases(value):
-                if alias not in aliases:
-                    aliases.append(alias)
+        aliases = _pricing_identity_aliases(
+            row.get("model_id"),
+            row.get("canonical_slug"),
+        )
         for priority, alias in enumerate(aliases):
             rows.append({**row, "pricing_lookup_key": alias, "alias_priority": priority})
 
@@ -792,7 +832,11 @@ def _attach_latest_prior_pricing(usage: pd.DataFrame, pricing: pd.DataFrame) -> 
     pricing_keys = set(aliases["pricing_lookup_key"].dropna().astype(str))
     unique_usage_slugs = usage["model_permaslug"].dropna().unique()
     candidates_lookup = {
-        slug: [alias for alias in generate_candidate_aliases(slug) if alias in pricing_keys]
+        slug: [
+            alias
+            for alias in _candidate_aliases_preserving_route(slug)
+            if alias in pricing_keys
+        ]
         for slug in unique_usage_slugs
     }
 
@@ -898,7 +942,7 @@ def _forward_fill_target_route_pricing(priced: pd.DataFrame, pricing: pd.DataFra
         if model_id in candidate_tables:
             return candidate_tables[model_id]
         pieces = []
-        for priority, alias in enumerate(generate_candidate_aliases(model_id)):
+        for priority, alias in enumerate(_candidate_aliases_preserving_route(model_id)):
             group = by_alias.get(alias)
             if group is None:
                 continue
