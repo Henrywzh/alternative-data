@@ -124,11 +124,6 @@ def fetch_etf_daily(symbol: str, start_date: str | date | None = None, end_date:
 
 def fetch_index_daily(symbol: str, start_date: str | None = None, end_date: str | None = None) -> pd.DataFrame:
     """Daily OHLCV for one index (000300.SH, 000905.SH, HSTECH-ish via EM code)."""
-    import akshare as ak
-
-    start = _fmt_start(start_date, em=True) or "19900101"
-    end = _fmt_start(end_date, em=True) or market_date().replace("-", "")
-    code = _coerce_symbol(symbol)
     sina_symbol = SINA_INDEX_SYMBOLS.get(symbol)
     if symbol not in SINA_INDEX_SYMBOLS and symbol not in SINA_HK_INDEX_SYMBOLS and not symbol[:1].isdigit():
         # _coerce_symbol zero-pads, so a non-numeric ticker that reaches the
@@ -140,6 +135,12 @@ def fetch_index_daily(symbol: str, start_date: str | None = None, end_date: str 
             f"{symbol!r} has no Sina mapping and is not an Eastmoney numeric code; "
             "add it to SINA_INDEX_SYMBOLS or route it to another source"
         )
+
+    import akshare as ak
+
+    start = _fmt_start(start_date, em=True) or "19900101"
+    end = _fmt_start(end_date, em=True) or market_date().replace("-", "")
+    code = _coerce_symbol(symbol)
     if symbol in SINA_HK_INDEX_SYMBOLS:
         # Hong Kong indexes via Sina's HK index endpoint.
         df = ak.stock_hk_index_daily_sina(symbol=symbol)
