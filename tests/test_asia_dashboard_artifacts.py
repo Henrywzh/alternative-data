@@ -200,6 +200,12 @@ def test_transport_artifact_exposes_source_recovery_and_h1_calibration_views():
     )
     datasets = artifact["snapshot"]["datasets"]
     assert len(datasets) <= 50
+    assert "kpi_parking" not in datasets
+    parking_card = next(
+        card for card in artifact["manifest"]["cards"] if card["id"] == "parking_card"
+    )
+    assert parking_card["dataset"] == "hk_parking_vacancy_history"
+    assert parking_card["metrics"][0]["field"] == "value"
     assert len(datasets["airline_h1_revenue_mae_comparison"]) == 12
     assert len(datasets["airline_h1_cost_mae_comparison"]) == 12
     assert len(datasets["airline_period_backtest_summary"]) == 18
@@ -404,8 +410,11 @@ def test_parking_vacancy_views_exclude_unknown_counts_and_keep_history():
 
     views = builder.build_parking_vacancy_views(frame)
 
-    assert views["kpi_parking"][0]["available_spaces"] == 7
-    assert views["kpi_parking"][0]["parks_reporting_exact"] == 1
-    assert views["kpi_parking"][0]["parks_with_unknown_count"] == 1
+    assert "kpi_parking" not in views
     assert len(views["hk_parking_vacancy_history"]) == 2
+    latest = views["hk_parking_vacancy_history"][-1]
+    assert latest["value"] == 7
+    assert latest["parks_reporting_exact"] == 1
+    assert latest["parks_with_unknown_count"] == 1
+    assert latest["participating_parks"] == 2
     assert "Central" in views["hk_parking_current_district"][0]["summary"]

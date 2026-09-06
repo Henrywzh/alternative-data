@@ -1558,7 +1558,6 @@ def build_private_car_model_views(frame: pd.DataFrame) -> dict[str, list[dict[st
 
 def build_parking_vacancy_views(frame: pd.DataFrame) -> dict[str, list[dict[str, Any]]]:
     empty = {
-        "kpi_parking": [],
         "hk_parking_vacancy_history": [],
         "hk_parking_current_district": [],
     }
@@ -1576,6 +1575,7 @@ def build_parking_vacancy_views(frame: pd.DataFrame) -> dict[str, list[dict[str,
         .agg(
             value=("vacancy", lambda values: float(values[data.loc[values.index, "exact_count"]].sum())),
             parks_reporting_exact=("park_id", lambda values: int(values[data.loc[values.index, "exact_count"]].nunique())),
+            parks_with_unknown_count=("park_id", lambda values: int(values[~data.loc[values.index, "exact_count"]].nunique())),
             participating_parks=("park_id", "nunique"),
         )
         .sort_values("snapshot_at")
@@ -1588,6 +1588,7 @@ def build_parking_vacancy_views(frame: pd.DataFrame) -> dict[str, list[dict[str,
             "month": row["month"],
             "value": round(float(row["value"]), 1),
             "parks_reporting_exact": int(row["parks_reporting_exact"]),
+            "parks_with_unknown_count": int(row["parks_with_unknown_count"]),
             "participating_parks": int(row["participating_parks"]),
         }
         for _, row in history.iterrows()
@@ -1596,15 +1597,6 @@ def build_parking_vacancy_views(frame: pd.DataFrame) -> dict[str, list[dict[str,
     latest_snapshot = data["snapshot_at"].max()
     current = data[data["snapshot_at"].eq(latest_snapshot)].copy()
     exact = current[current["exact_count"]]
-    unknown = current[~current["exact_count"]]
-    kpi = {
-        "available_spaces": int(exact["vacancy"].sum()),
-        "parks_reporting_exact": int(exact["park_id"].nunique()),
-        "parks_with_unknown_count": int(unknown["park_id"].nunique()),
-        "participating_parks": int(current["park_id"].nunique()),
-        "snapshot_at": latest_snapshot.strftime("%Y-%m-%d %H:%M"),
-        "observation_date": latest_snapshot.strftime("%Y-%m-%d"),
-    }
     district = (
         exact.assign(district_en=exact["district_en"].replace("", "Unknown"))
         .groupby("district_en", as_index=False)
@@ -1621,7 +1613,6 @@ def build_parking_vacancy_views(frame: pd.DataFrame) -> dict[str, list[dict[str,
         for _, row in district.head(18).iterrows()
     ]
     return {
-        "kpi_parking": [kpi],
         "hk_parking_vacancy_history": history_rows,
         "hk_parking_current_district": district_rows,
     }
@@ -2120,15 +2111,15 @@ def build_artifact(
                 ],
             }
         )
-    if parking_views["kpi_parking"]:
+    if parking_views["hk_parking_vacancy_history"]:
         cards.append(
             {
                 "id": "parking_card",
                 "description": "Current Transport Department parking-vacancy snapshot; exact counts exclude operators that report only availability/no-data status.",
-                "dataset": "kpi_parking",
+                "dataset": "hk_parking_vacancy_history",
                 "sourceId": "td_parking_vacancy",
                 "metrics": [
-                    {"label": "Exact Vacant Spaces", "field": "available_spaces", "format": "number"},
+                    {"label": "Exact Vacant Spaces", "field": "value", "format": "number"},
                     {"label": "Parks with Exact Counts", "field": "parks_reporting_exact", "format": "number"},
                     {"label": "Parks in Feed", "field": "participating_parks", "format": "number"},
                 ],
@@ -3251,7 +3242,7 @@ def build_artifact(
         "hk_private_car_net_growth": net_growth["date"].max().strftime("%Y-%m-%d") if not net_growth.empty else "—",
         "hk_private_car_first_reg": private_car_first_reg["date"].max().strftime("%Y-%m-%d") if not private_car_first_reg.empty else "—",
         "hk_private_car_first_reg_details": private_car_first_reg_models["observation_date"].max().strftime("%Y-%m-%d") if not private_car_first_reg_models.empty else "—",
-        "td_parking_vacancy": parking_views["kpi_parking"][0]["snapshot_at"] if parking_views["kpi_parking"] else "—",
+        "td_parking_vacancy": parking_views["hk_parking_vacancy_history"][-1]["date"] if parking_views["hk_parking_vacancy_history"] else "—",
         "td_carpark_occupancy": carpark_occupancy["snapshot_at"].max().strftime("%Y-%m-%d %H:%M") if not carpark_occupancy.empty else "—",
     }
     freshness = {
