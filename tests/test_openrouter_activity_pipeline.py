@@ -378,6 +378,50 @@ def test_provider_activity_source_parses_newline_delimited_next_f_chunks() -> No
     assert records[-1].total_tokens == 12400.0
 
 
+def test_provider_activity_source_parses_chart_after_length_prefixed_text_chunk() -> None:
+    """Current company pages concatenate chart JSON after a Flight T chunk."""
+    payload = [
+        "$",
+        "$L53",
+        None,
+        {
+            "data": [
+                {
+                    "x": f"2026-09-{day:02d} 00:00:00",
+                    "ys": {"meta/muse-spark-1.3-20260902": day * 1_000},
+                }
+                for day in range(1, 6)
+            ],
+        },
+    ]
+    schema_text = '{"name":"Meta 模型"}'
+    schema_bytes = len(schema_text.encode("utf-8"))
+    decoded = (
+        f"46:T{schema_bytes:x},{schema_text}"
+        f"45:{json.dumps(payload, separators=(',', ':'))}"
+    )
+    html = (
+        "<html><body><script>self.__next_f.push([1,"
+        f"{json.dumps(decoded)}"
+        "])</script></body></html>"
+    )
+    source = ProviderActivitySource()
+    context = RunContext(
+        run_id="provider-meta-rsc-text-test",
+        scraped_at=pd.Timestamp("2026-09-05T04:00:00Z").to_pydatetime(),
+    )
+
+    records = source.extract(
+        [Snapshot(name="provider_meta", source_url="fixture://meta", body=html)],
+        context,
+    )["provider_daily_activity"]
+
+    assert len(records) == 5
+    assert records[-1].usage_date == "2026-09-05"
+    assert records[-1].model_permaslug == "meta/muse-spark-1.3-20260902"
+    assert records[-1].total_tokens == 5_000.0
+
+
 def test_provider_activity_source_fetches_meta_model_api_fallback_when_company_chart_is_missing(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
