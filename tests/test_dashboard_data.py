@@ -5393,3 +5393,23 @@ def test_staleness_is_measured_per_feed_not_on_one_global_threshold(tmp_path: Pa
     assert [c.title for c in checks if "stopped advancing" in c.title] == [
         "top_models has stopped advancing"
     ]
+
+
+def test_monthly_staleness_uses_period_end_for_month_start_stamps(tmp_path: Path) -> None:
+    """A month stamped on day one represents the whole month, not one instant."""
+    root = tmp_path / "data" / "normalized" / "openrouter"
+    root.mkdir(parents=True)
+    current_month = pd.Timestamp.now(tz="UTC").normalize().replace(day=1)
+    latest_month = current_month - pd.DateOffset(months=3)
+    months = pd.date_range(end=latest_month, periods=12, freq="MS")
+    _dated_frame("top_models", months.strftime("%Y-%m-%d").tolist(), "week_start_date").to_csv(
+        root / "top_models.csv", index=False
+    )
+
+    checks = run_checks(
+        load_domain_datasets("rankings", base_dir=tmp_path),
+        load_latest_manifest(base_dir=tmp_path),
+        base_dir=tmp_path,
+    )
+
+    assert [c for c in checks if "stopped advancing" in c.title] == []

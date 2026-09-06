@@ -128,7 +128,18 @@ def _staleness(result: DatasetLoadResult) -> tuple[float, float] | None:
     cadence_days = float(pd.Series(distinct).diff().dropna().dt.total_seconds().median()) / 86400.0
     if cadence_days <= 0:
         return None
-    days_behind = (pd.Timestamp.now(tz="UTC").normalize() - distinct[-1]).total_seconds() / 86400.0
+    latest = pd.Timestamp(distinct[-1])
+    # Monthly observations are conventionally stamped on the first day of the
+    # represented month. Measuring from that stamp overstates their age by
+    # almost a full month and can flag a normally lagged publication as stale.
+    # Use month-end only for genuine month-start series; daily/weekly feeds
+    # retain their exact observation date.
+    freshness_reference = latest
+    if cadence_days >= 27.0 and latest.day == 1:
+        freshness_reference = latest + pd.offsets.MonthEnd(0)
+    days_behind = (
+        pd.Timestamp.now(tz="UTC").normalize() - freshness_reference
+    ).total_seconds() / 86400.0
     if days_behind > STALENESS_INTERVALS * cadence_days + STALENESS_GRACE_DAYS:
         return days_behind, cadence_days
     return None
