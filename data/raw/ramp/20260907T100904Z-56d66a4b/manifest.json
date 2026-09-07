@@ -1,0 +1,8 @@
+{
+  "run_id": "20260907T100904Z-56d66a4b",
+  "mode": "ai-index",
+  "scraped_at": "2026-09-07T10:09:04.149426Z",
+  "status": "failed",
+  "datasets": [],
+  "error": "ramp_ai_spend_share_by_category: only 0 rows (expected >= 40) \u2014 possible layout change; ramp_ai_spend_breakdown: only 0 rows (expected >= 60) \u2014 possible layout change"
+}
