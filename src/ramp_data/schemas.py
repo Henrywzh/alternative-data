@@ -183,6 +183,10 @@ FILTER_MODE_DATASETS: dict[str, dict] = {
         "sort_keys": ["date_month", *FILTER_DIMS, "pepm_spend_type"],
         "numeric": ["spend_share"],
         "min_rows": 5000,
+        # Ramp removed this endpoint (HTTP 404) between the 2026-08-31 and
+        # 2026-09-07 weekly runs, alongside the AI-Index spend-share keys.
+        # modelShare and spendPerEmployee remain live; committed history stays.
+        "retired": "2026-09-08: Ramp removed the filter-mode spendShare endpoint",
     },
     "ramp_ai_filter_model_share": {
         "endpoint": "modelShare",

@@ -243,6 +243,12 @@ class RampPipeline:
             records = extracted.get(dataset_id, [])
             rows = len(records)
             report[dataset_id] = {"rows": rows}
+            if cfg.get("retired"):
+                # Ramp removed this endpoint outright (404), so it can never
+                # meet a row floor and would otherwise discard the write of
+                # its healthy siblings. Committed history is left untouched.
+                report[dataset_id]["retired"] = cfg["retired"]
+                continue
             if rows < cfg["min_rows"]:
                 failures.append(
                     f"{dataset_id}: only {rows} rows (expected >= {cfg['min_rows']}) "

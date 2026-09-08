@@ -87,6 +87,9 @@ class RampFilterModeSource(SourceExtractor):
 
         snapshots: list[Snapshot] = []
         for dataset_id, cfg in FILTER_MODE_DATASETS.items():
+            if cfg.get("retired"):
+                # Endpoint is gone (404) -- skip the doomed retries entirely.
+                continue
             url = f"{FILTER_MODE_ENDPOINT_BASE}/{cfg['endpoint']}?version={version}"
             response = self._get(url)
             if response is None:
