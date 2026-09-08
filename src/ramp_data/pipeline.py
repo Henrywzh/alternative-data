@@ -267,6 +267,13 @@ class RampPipeline:
             records = extracted.get(dataset_id, [])
             rows = len(records)
             report[dataset_id] = {"rows": rows}
+            if cfg.get("retired"):
+                # A dataset Ramp no longer embeds in the AI Index payload cannot
+                # meet a row floor, and this gate is all-or-nothing by design --
+                # without this branch one retired sibling discards the write of
+                # every healthy dataset in the run. Committed history is untouched.
+                report[dataset_id]["retired"] = cfg["retired"]
+                continue
             if rows < cfg["min_rows"]:
                 failures.append(f"{dataset_id}: only {rows} rows (expected >= {cfg['min_rows']}) — possible layout change")
                 continue

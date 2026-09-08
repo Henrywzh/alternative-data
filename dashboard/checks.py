@@ -38,6 +38,7 @@ def run_checks(
     freshness: FreshnessInfo,
     base_dir: Path | None = None,
     expected_dataset_ids: list[str] | None = None,
+    now: pd.Timestamp | None = None,
 ) -> list[CheckResult]:
     checks: list[CheckResult] = []
     missing_files = []
@@ -82,7 +83,7 @@ def run_checks(
         # is exactly the contract of a feed that has been retired upstream.
         if DATASET_REGISTRY.get(dataset_id, {}).get("optional", False):
             continue
-        stale = _staleness(result)
+        stale = _staleness(result, now=now)
         if stale is not None:
             days_behind, cadence_days = stale
             checks.append(
@@ -105,7 +106,9 @@ def run_checks(
     return checks
 
 
-def _staleness(result: DatasetLoadResult) -> tuple[float, float] | None:
+def _staleness(
+    result: DatasetLoadResult, *, now: pd.Timestamp | None = None
+) -> tuple[float, float] | None:
     """How far behind its own cadence a dataset is, or None if it is on time.
 
     Presence, schema and duplicate checks all pass for a feed that quietly
@@ -137,9 +140,8 @@ def _staleness(result: DatasetLoadResult) -> tuple[float, float] | None:
     freshness_reference = latest
     if cadence_days >= 27.0 and latest.day == 1:
         freshness_reference = latest + pd.offsets.MonthEnd(0)
-    days_behind = (
-        pd.Timestamp.now(tz="UTC").normalize() - freshness_reference
-    ).total_seconds() / 86400.0
+    reference_now = now or pd.Timestamp.now(tz="UTC")
+    days_behind = (reference_now.normalize() - freshness_reference).total_seconds() / 86400.0
     if days_behind > STALENESS_INTERVALS * cadence_days + STALENESS_GRACE_DAYS:
         return days_behind, cadence_days
     return None
