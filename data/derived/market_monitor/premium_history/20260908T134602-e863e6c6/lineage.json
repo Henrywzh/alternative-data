@@ -2,9 +2,9 @@
   "type": "derived",
   "run_scope": "full",
   "dataset_name": "premium_history",
-  "run_id": "20260901T141641-b51bf237",
-  "created_at": "2026-09-01T14:17:06.595631+00:00",
-  "records": 17130,
+  "run_id": "20260908T134602-e863e6c6",
+  "created_at": "2026-09-08T13:46:23.935003+00:00",
+  "records": 17135,
   "columns": [
     "date",
     "fund_id",
@@ -14,5 +14,5 @@
     "market_price",
     "basis"
   ],
-  "sha256": "2d606cb61d4159d02d6b2a3ceeb7b0fe6e7a8c53f4d15e12b125cc349c92149f"
+  "sha256": "dc3cb0476492aa521bd65409e871c962e112213c053cc76cf07db102091ce6c0"
 }

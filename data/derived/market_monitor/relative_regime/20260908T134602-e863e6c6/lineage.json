@@ -2,8 +2,8 @@
   "type": "derived",
   "run_scope": "full",
   "dataset_name": "relative_regime",
-  "run_id": "20260901T141641-b51bf237",
-  "created_at": "2026-09-01T14:17:06.582528+00:00",
+  "run_id": "20260908T134602-e863e6c6",
+  "created_at": "2026-09-08T13:46:23.920255+00:00",
   "records": 4,
   "columns": [
     "label",
@@ -14,5 +14,5 @@
     "spread_20d_pct",
     "trend"
   ],
-  "sha256": "2206a0554b2bd707e76943db4ebe1d3b63a6f27db45e384c79f07faa4e1c90c1"
+  "sha256": "d9a7d983d8c852da23b13778c53fa9ea84b6be6d3d6e5843698098935fa75cbf"
 }
