@@ -11,6 +11,7 @@ requires-python = ">=3.11"
 dependencies = [
   "beautifulsoup4>=4.12",
   "lxml>=5.2",
+  "jsonschema>=4.23",
   # Capped below 3.0 deliberately -- see the note in requirements.txt: pandas 3
   # changes default string inference so a None becomes a truthy NaN, which
   # breaks `str(value or "")` idioms across this codebase.
@@ -22,6 +23,7 @@ dependencies = [
   "scikit-learn>=1.5",
   "pdfplumber>=0.11",
   "pypdf>=5.0",
+  "PyYAML>=6.0.2",
   "requests>=2.32",
   "streamlit>=1.56.0",
   "plotly>=5.24",
@@ -36,7 +38,6 @@ package-mode = false
 
 [project.optional-dependencies]
 dev = [
-  "PyYAML>=6.0.2",
   "pytest>=8.2",
   "pytest-xdist>=3.6",
   "pytest-timeout>=2.3",

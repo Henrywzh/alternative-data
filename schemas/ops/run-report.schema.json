@@ -1,0 +1,299 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Henrywzh/alternative-data/schemas/ops/run-report.schema.json",
+  "title": "Alternative Data Pipeline Run Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "pipeline_id",
+    "job_id",
+    "workflow",
+    "run_id",
+    "run_attempt",
+    "commit_sha",
+    "started_at",
+    "finished_at",
+    "execution",
+    "collection",
+    "data_health",
+    "publication",
+    "evidence_quality",
+    "derived_state",
+    "checks",
+    "outputs",
+    "evidence",
+    "shadow"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "pipeline_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "job_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "workflow": {
+      "type": "string",
+      "minLength": 1
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "run_attempt": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "commit_sha": {
+      "type": "string",
+      "minLength": 1
+    },
+    "started_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "finished_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "execution": {
+      "enum": [
+        "success",
+        "failure",
+        "cancelled",
+        "unknown"
+      ]
+    },
+    "collection": {
+      "enum": [
+        "complete",
+        "partial",
+        "failed",
+        "unknown"
+      ]
+    },
+    "data_health": {
+      "enum": [
+        "fresh",
+        "stale",
+        "regressed",
+        "missing",
+        "invalid",
+        "unknown"
+      ]
+    },
+    "publication": {
+      "enum": [
+        "published",
+        "retained_previous",
+        "blocked",
+        "failed",
+        "not_applicable"
+      ]
+    },
+    "evidence_quality": {
+      "enum": [
+        "verified",
+        "incomplete",
+        "conflicting"
+      ]
+    },
+    "derived_state": {
+      "enum": [
+        "HEALTHY",
+        "DEGRADED_RETAINED",
+        "STALE",
+        "REGRESSED",
+        "FAILED_ACTIONABLE",
+        "UNKNOWN_EVIDENCE"
+      ]
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/check"
+      }
+    },
+    "outputs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/output"
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/evidence"
+      }
+    },
+    "shadow": {
+      "const": true
+    }
+  },
+  "$defs": {
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "check_id",
+        "status",
+        "required",
+        "message",
+        "expected",
+        "observed",
+        "details"
+      ],
+      "properties": {
+        "check_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": [
+            "healthy",
+            "stale",
+            "regressed",
+            "missing",
+            "invalid",
+            "unknown"
+          ]
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "message": {
+          "type": "string"
+        },
+        "expected": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "observed": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "details": {
+          "type": "object"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "output_id",
+        "path",
+        "required",
+        "exists",
+        "size_bytes",
+        "row_count",
+        "latest_observation"
+      ],
+      "properties": {
+        "output_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "exists": {
+          "type": "boolean"
+        },
+        "size_bytes": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "row_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "latest_observation": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "path",
+        "observed_at",
+        "description",
+        "run_url",
+        "commit_sha",
+        "check_id",
+        "references"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "observed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "description": {
+          "type": "string"
+        },
+        "run_url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "commit_sha": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "check_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "references": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

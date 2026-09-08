@@ -1,0 +1,99 @@
+version: 1
+phase: 0
+pipelines:
+  openrouter-provider-activity:
+    workflow: openrouter-provider-activity-daily.yml
+    cadence:
+      kind: daily
+      expected_interval_hours: 24
+    criticality: high
+    jobs:
+      scrape-provider-activity:
+        outputs:
+          - id: provider-daily-activity
+            path: data/normalized/openrouter/provider_daily_activity.parquet
+            required: true
+            validator: dataset_contract
+            dataset_id: provider_daily_activity
+            freshness:
+              mode: max_age_days
+              max_age_days: 2
+          - id: cloud-infra-daily-activity
+            path: data/normalized/openrouter/cloud_infra_daily_activity.parquet
+            required: true
+            validator: dataset_contract
+            dataset_id: cloud_infra_daily_activity
+            freshness:
+              mode: max_age_days
+              max_age_days: 2
+          - id: daily-provider-economics
+            path: data/normalized/marts/daily_provider_economics.parquet
+            required: true
+            validator: dataset_contract
+            dataset_id: daily_provider_economics
+            freshness:
+              mode: max_age_days
+              max_age_days: 2
+          - id: daily-provider-revenue-estimates
+            path: data/normalized/marts/daily_provider_revenue_estimates.parquet
+            required: true
+            validator: dataset_contract
+            dataset_id: daily_provider_revenue_estimates
+            freshness:
+              mode: max_age_days
+              max_age_days: 2
+          - id: daily-cloud-infra-economics
+            path: data/normalized/marts/daily_cloud_infra_economics.parquet
+            required: true
+            validator: dataset_contract
+            dataset_id: daily_cloud_infra_economics
+            freshness:
+              mode: max_age_days
+              max_age_days: 2
+
+  asia-markets-dashboard-refresh:
+    workflow: asia-markets-dashboard-refresh-daily.yml
+    cadence:
+      kind: daily
+      expected_interval_hours: 24
+    criticality: high
+    jobs:
+      refresh-dashboard-data:
+        outputs:
+          - id: asia-markets-freshness
+            path: apps/asia-markets-dashboard/.generated/asia-markets-freshness.json
+            artifact_root: apps/asia-markets-dashboard/.generated
+            required: true
+            validator: asia_markets_freshness
+
+  semiconductor-memory-monthly:
+    workflow: semiconductor-memory-monthly.yml
+    cadence:
+      kind: monthly_windows
+      schedule_windows:
+        - days: 1-5
+          purpose: adata
+        - days: 14-16
+          purpose: fred
+    criticality: medium
+    jobs:
+      adata-update:
+        outputs:
+          - id: semiconductor-memory-regime-monthly
+            path: data/normalized/semiconductor_memory/semiconductor_memory_regime_monthly.parquet
+            required: true
+            validator: dataset_contract
+            dataset_id: semiconductor_memory_regime_monthly
+            freshness:
+              mode: monthly_release_lag
+              release_lag_days: 5
+      fred-update:
+        outputs:
+          - id: fred-semiconductor-ppi-monthly
+            path: data/normalized/semiconductor_memory/fred_semiconductor_ppi_monthly.parquet
+            required: true
+            validator: dataset_contract
+            dataset_id: fred_semiconductor_ppi_monthly
+            freshness:
+              mode: monthly_release_lag
+              release_lag_days: 45
