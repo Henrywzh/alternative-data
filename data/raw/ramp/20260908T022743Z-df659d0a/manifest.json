@@ -1,0 +1,8 @@
+{
+  "run_id": "20260908T022743Z-df659d0a",
+  "mode": "filter-mode",
+  "scraped_at": "2026-09-08T02:27:43.290133Z",
+  "status": "failed",
+  "datasets": [],
+  "error": "ramp_ai_filter_spend_share: only 0 rows (expected >= 5000) \u2014 filter-mode endpoint empty or version token stale"
+}
