@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "香港本地消费监测",
     "description": "极端天气干扰时长、港元/人民币汇率、跨境出入境人流（北上/南下）、黄金原料成本、零售销售、餐饮收益及消费股估值的来源快照。",
-    "generatedAt": "2026-09-07T12:33:41.683280Z",
+    "generatedAt": "2026-09-08T11:20:41.763712Z",
     "cards": [
       {
         "id": "northbound_card",
@@ -1234,7 +1234,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `e73177494a7743aa` · 生成于 2026-09-07T12:33:41.683280Z。"
+        "body": "**数据快照：** `d3ce84a81f6af1f3` · 生成于 2026-09-08T11:20:41.763712Z。"
       },
       {
         "id": "demand_signals_section",
@@ -1458,7 +1458,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-09-07T12:33:41.683280Z",
+    "generatedAt": "2026-09-08T11:20:41.763712Z",
     "status": "ready",
     "datasets": {
       "kpi_weather": [
@@ -2330,18 +2330,18 @@
       "severe_weather_log": [],
       "kpi_northbound": [
         {
-          "latest": 299667.3,
-          "period_change": -0.011841,
-          "year_change": 0.101381,
-          "observation_date": "2026-09-06"
+          "latest": 303941.6,
+          "period_change": 0.014263,
+          "year_change": 0.184206,
+          "observation_date": "2026-09-07"
         }
       ],
       "kpi_southbound": [
         {
-          "latest": 105837.7,
-          "period_change": 0.035213,
-          "year_change": 0.294974,
-          "observation_date": "2026-09-06"
+          "latest": 105957.1,
+          "period_change": 0.001128,
+          "year_change": 0.368424,
+          "observation_date": "2026-09-07"
         }
       ],
       "immigration_trend_history": [
@@ -3029,21 +3029,21 @@
       "immigration_checkpoint_history": [],
       "kpi_gold": [
         {
-          "latest": 963.44,
-          "period_change": 0.007077,
-          "year_change": 0.175715,
-          "observation_date": "2026-09-03"
+          "latest": 949.09,
+          "period_change": -0.014895,
+          "year_change": 0.141996,
+          "observation_date": "2026-09-06"
         }
       ],
       "kpi_median_pe": [
         {
-          "latest": 11.09
+          "latest": 11.01
         }
       ],
       "gold_history": [
         {
           "month": "2016-09",
-          "value": 285.97
+          "value": 286.04
         },
         {
           "month": "2016-10",
@@ -3523,81 +3523,81 @@
         },
         {
           "month": "2026-09",
-          "value": 951.84
+          "value": 951.15
         }
       ],
       "valuation_table": [
         {
           "ticker": "00709.HK",
           "company_name": "Giordano International",
-          "pe_ttm": 11.09,
-          "pb_ratio": 1.13,
-          "market_cap_hkd_b": 2.263,
-          "date": "2026-09-07"
+          "pe_ttm": 11.01,
+          "pb_ratio": 1.12,
+          "market_cap_hkd_b": 2.247,
+          "date": "2026-09-08"
         },
         {
           "ticker": "00341.HK",
           "company_name": "Café de Coral Holdings",
-          "pe_ttm": 18.85,
-          "pb_ratio": 1.14,
-          "market_cap_hkd_b": 3.092,
-          "date": "2026-09-07"
+          "pe_ttm": 18.61,
+          "pb_ratio": 1.12,
+          "market_cap_hkd_b": 3.052,
+          "date": "2026-09-08"
         },
         {
           "ticker": "01929.HK",
           "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 13.12,
-          "pb_ratio": 3.81,
-          "market_cap_hkd_b": 118.1,
-          "date": "2026-09-07"
+          "pe_ttm": 13.46,
+          "pb_ratio": 3.91,
+          "market_cap_hkd_b": 121.159,
+          "date": "2026-09-08"
         },
         {
           "ticker": "00178.HK",
           "company_name": "Sa Sa International",
-          "pe_ttm": 15.79,
-          "pb_ratio": 2.47,
-          "market_cap_hkd_b": 3.165,
-          "date": "2026-09-07"
+          "pe_ttm": 15.63,
+          "pb_ratio": 2.44,
+          "market_cap_hkd_b": 3.134,
+          "date": "2026-09-08"
         },
         {
           "ticker": "01910.HK",
           "company_name": "Samsonite",
-          "pe_ttm": 8.51,
-          "pb_ratio": 1.48,
-          "market_cap_hkd_b": 17.47,
-          "date": "2026-09-07"
+          "pe_ttm": 8.43,
+          "pb_ratio": 1.46,
+          "market_cap_hkd_b": 17.307,
+          "date": "2026-09-08"
         },
         {
           "ticker": "00590.HK",
           "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.19,
-          "pb_ratio": 0.84,
-          "market_cap_hkd_b": 12.67,
-          "date": "2026-09-07"
+          "pe_ttm": 6.29,
+          "pb_ratio": 0.86,
+          "market_cap_hkd_b": 12.869,
+          "date": "2026-09-08"
         },
         {
           "ticker": "00116.HK",
           "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 3.24,
-          "pb_ratio": 0.59,
-          "market_cap_hkd_b": 9.626,
-          "date": "2026-09-07"
+          "pe_ttm": 3.19,
+          "pb_ratio": 0.58,
+          "market_cap_hkd_b": 9.478,
+          "date": "2026-09-08"
         },
         {
           "ticker": "01913.HK",
           "company_name": "Prada",
-          "pe_ttm": 14.42,
-          "pb_ratio": 2.49,
-          "market_cap_hkd_b": 102.251,
-          "date": "2026-09-07"
+          "pe_ttm": 14.47,
+          "pb_ratio": 2.5,
+          "market_cap_hkd_b": 102.609,
+          "date": "2026-09-08"
         },
         {
           "ticker": "00052.HK",
           "company_name": "Fairwood Holdings",
-          "pe_ttm": 14.79,
-          "pb_ratio": 0.92,
-          "market_cap_hkd_b": 0.615,
-          "date": "2026-09-07"
+          "pe_ttm": 15.03,
+          "pb_ratio": 0.93,
+          "market_cap_hkd_b": 0.624,
+          "date": "2026-09-08"
         },
         {
           "ticker": "01255.HK",
@@ -3605,68 +3605,60 @@
           "pe_ttm": -66.7,
           "pb_ratio": -9.14,
           "market_cap_hkd_b": 0.503,
-          "date": "2026-09-07"
+          "date": "2026-09-08"
         },
         {
           "ticker": "06811.HK",
           "company_name": "Tai Hing Group",
-          "pe_ttm": 10.04,
-          "pb_ratio": 1.53,
-          "market_cap_hkd_b": 1.428,
-          "date": "2026-09-07"
+          "pe_ttm": 10.32,
+          "pb_ratio": 1.57,
+          "market_cap_hkd_b": 1.467,
+          "date": "2026-09-08"
         }
       ],
       "valuation_pe_chart": [
         {
           "company_name": "Giordano International",
-          "pe_ttm": 11.09
+          "pe_ttm": 11.01
         },
         {
           "company_name": "Café de Coral Holdings",
-          "pe_ttm": 18.85
+          "pe_ttm": 18.61
         },
         {
           "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 13.12
+          "pe_ttm": 13.46
         },
         {
           "company_name": "Sa Sa International",
-          "pe_ttm": 15.79
+          "pe_ttm": 15.63
         },
         {
           "company_name": "Samsonite",
-          "pe_ttm": 8.51
+          "pe_ttm": 8.43
         },
         {
           "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.19
+          "pe_ttm": 6.29
         },
         {
           "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 3.24
+          "pe_ttm": 3.19
         },
         {
           "company_name": "Prada",
-          "pe_ttm": 14.42
+          "pe_ttm": 14.47
         },
         {
           "company_name": "Fairwood Holdings",
-          "pe_ttm": 14.79
+          "pe_ttm": 15.03
         },
         {
           "company_name": "Tai Hing Group",
-          "pe_ttm": 10.04
+          "pe_ttm": 10.32
         }
       ],
       "valuation_history": [
-        {
-          "date": "2025-09-07",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 10.2,
-          "pb_ratio": 2.1,
-          "market_cap_hkd_b": 23.568
-        },
         {
           "date": "2025-09-08",
           "ticker": "01910.HK",
@@ -6588,12 +6580,12 @@
           "market_cap_hkd_b": 17.47
         },
         {
-          "date": "2025-09-07",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 16.46,
-          "pb_ratio": 2.88,
-          "market_cap_hkd_b": 112.23
+          "date": "2026-09-08",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 8.43,
+          "pb_ratio": 1.46,
+          "market_cap_hkd_b": 17.307
         },
         {
           "date": "2025-09-08",
@@ -9516,12 +9508,12 @@
           "market_cap_hkd_b": 102.251
         },
         {
-          "date": "2025-09-07",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 26.72,
-          "pb_ratio": 5.98,
-          "market_cap_hkd_b": 158.036
+          "date": "2026-09-08",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 14.47,
+          "pb_ratio": 2.5,
+          "market_cap_hkd_b": 102.609
         },
         {
           "date": "2025-09-08",
@@ -12442,6 +12434,14 @@
           "pe_ttm": 13.12,
           "pb_ratio": 3.81,
           "market_cap_hkd_b": 118.1
+        },
+        {
+          "date": "2026-09-08",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 13.46,
+          "pb_ratio": 3.91,
+          "market_cap_hkd_b": 121.159
         }
       ],
       "kpi_retail": [
@@ -20217,18 +20217,18 @@
       ],
       "kpi_fehd": [
         {
-          "latest": 17243,
-          "observation_date": "2026-09-07"
+          "latest": 17246,
+          "observation_date": "2026-09-08"
         }
       ],
       "fehd_district_density": [
         {
           "district_name": "油尖",
-          "count": 1893
+          "count": 1891
         },
         {
           "district_name": "中西区",
-          "count": 1785
+          "count": 1786
         },
         {
           "district_name": "湾仔",
@@ -20240,7 +20240,7 @@
         },
         {
           "district_name": "九龙城",
-          "count": 1028
+          "count": 1030
         },
         {
           "district_name": "元朗",
@@ -20252,19 +20252,19 @@
         },
         {
           "district_name": "沙田",
-          "count": 911
+          "count": 912
         },
         {
           "district_name": "东区",
-          "count": 907
+          "count": 906
         },
         {
           "district_name": "观塘",
-          "count": 888
+          "count": 889
         },
         {
           "district_name": "荃湾",
-          "count": 774
+          "count": 775
         },
         {
           "district_name": "屯门",
@@ -20272,19 +20272,19 @@
         },
         {
           "district_name": "西贡",
-          "count": 593
+          "count": 594
         },
         {
           "district_name": "葵青",
-          "count": 542
+          "count": 541
         },
         {
           "district_name": "离岛",
-          "count": 525
+          "count": 524
         },
         {
           "district_name": "黄大仙",
-          "count": 501
+          "count": 502
         },
         {
           "district_name": "大埔",
@@ -20301,8 +20301,8 @@
       ],
       "fehd_opened_closed": [
         {
-          "generation_date": "2026-09-07",
-          "prior_generation_date": "2026-09-07",
+          "generation_date": "2026-09-08",
+          "prior_generation_date": "2026-09-08",
           "opened": 0,
           "closed": 0,
           "net_change": 0
@@ -20316,7 +20316,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 963,
-          "freshness": "6 天前",
+          "freshness": "7 天前",
           "notes": "每月八号或以上风球及红色/黑色暴雨警告时长，并列港元/人民币汇率。"
         },
         {
@@ -20324,8 +20324,8 @@
           "dataset": "出入境旅客通关",
           "type": "指标",
           "status": "健康",
-          "latest_observation": "2026-09-06",
-          "records": 2075,
+          "latest_observation": "2026-09-07",
+          "records": 2076,
           "freshness": "1 天前",
           "notes": "覆盖17个管制站的香港居民及内地访客每日通关量。"
         },
@@ -20334,9 +20334,9 @@
           "dataset": "上海黄金交易所黄金基准价",
           "type": "指标",
           "status": "健康",
-          "latest_observation": "2026-09-03",
-          "records": 2525,
-          "freshness": "4 天前",
+          "latest_observation": "2026-09-06",
+          "records": 2526,
+          "freshness": "2 天前",
           "notes": "每日上午/下午基准价。"
         },
         {
@@ -20344,7 +20344,7 @@
           "dataset": "香港消费股估值",
           "type": "指标",
           "status": "健康",
-          "latest_observation": "2026-09-07",
+          "latest_observation": "2026-09-08",
           "records": 4026,
           "freshness": "0 天前",
           "notes": "仅提供市盈率（TTM）、市净率和市值；该接口没有股息率指标。"
@@ -20356,7 +20356,7 @@
           "status": "健康",
           "latest_observation": "2026-07-01",
           "records": 6550,
-          "freshness": "68 天前",
+          "freshness": "69 天前",
           "notes": "25个零售类别，自2004年起按月统计。"
         },
         {
@@ -20366,7 +20366,7 @@
           "status": "健康",
           "latest_observation": "2026-06-30",
           "records": 522,
-          "freshness": "69 天前",
+          "freshness": "70 天前",
           "notes": "仅提供全行业购货额；未公布分类型购货额。"
         },
         {
@@ -20388,7 +20388,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 963,
-          "freshness": "6 天前",
+          "freshness": "7 天前",
           "notes": "每月八号或以上风球及红色/黑色暴雨警告时长，并列港元/人民币汇率。"
         },
         {
@@ -20396,8 +20396,8 @@
           "dataset": "出入境旅客通关",
           "type": "指标",
           "status": "健康",
-          "latest_observation": "2026-09-06",
-          "records": 2075,
+          "latest_observation": "2026-09-07",
+          "records": 2076,
           "freshness": "1 天前",
           "notes": "覆盖17个管制站的香港居民及内地访客每日通关量。"
         },
@@ -20406,9 +20406,9 @@
           "dataset": "上海黄金交易所黄金基准价",
           "type": "指标",
           "status": "健康",
-          "latest_observation": "2026-09-03",
-          "records": 2525,
-          "freshness": "4 天前",
+          "latest_observation": "2026-09-06",
+          "records": 2526,
+          "freshness": "2 天前",
           "notes": "每日上午/下午基准价。"
         },
         {
@@ -20416,7 +20416,7 @@
           "dataset": "香港消费股估值",
           "type": "指标",
           "status": "健康",
-          "latest_observation": "2026-09-07",
+          "latest_observation": "2026-09-08",
           "records": 4026,
           "freshness": "0 天前",
           "notes": "仅提供市盈率（TTM）、市净率和市值；该接口没有股息率指标。"
@@ -20428,7 +20428,7 @@
           "status": "健康",
           "latest_observation": "2026-07-01",
           "records": 6550,
-          "freshness": "68 天前",
+          "freshness": "69 天前",
           "notes": "25个零售类别，自2004年起按月统计。"
         },
         {
@@ -20438,7 +20438,7 @@
           "status": "健康",
           "latest_observation": "2026-06-30",
           "records": 522,
-          "freshness": "69 天前",
+          "freshness": "70 天前",
           "notes": "仅提供全行业购货额；未公布分类型购货额。"
         },
         {
@@ -20464,7 +20464,15 @@
       ],
       "consumer_council_oilprice": [
         {
-          "date": "2026-09-07",
+          "date": "2026-09-08",
+          "company": "Esso",
+          "fuel_type": "普通汽油",
+          "discounted_price_hkd": 21.67,
+          "walkin_discount_hkd": 11,
+          "data_source": "live"
+        },
+        {
+          "date": "2026-09-08",
           "company": "PetroChina",
           "fuel_type": "普通汽油",
           "discounted_price_hkd": 25.67,
@@ -20472,7 +20480,15 @@
           "data_source": "live"
         },
         {
-          "date": "2026-09-07",
+          "date": "2026-09-08",
+          "company": "Shell",
+          "fuel_type": "普通汽油",
+          "discounted_price_hkd": 25.92,
+          "walkin_discount_hkd": 7,
+          "data_source": "live"
+        },
+        {
+          "date": "2026-09-08",
           "company": "Sinopec",
           "fuel_type": "普通汽油",
           "discounted_price_hkd": 26.67,
@@ -20480,23 +20496,7 @@
           "data_source": "live"
         },
         {
-          "date": "2026-09-07",
-          "company": "Shell",
-          "fuel_type": "普通汽油",
-          "discounted_price_hkd": 27.67,
-          "walkin_discount_hkd": 5,
-          "data_source": "live"
-        },
-        {
-          "date": "2026-09-07",
-          "company": "Esso",
-          "fuel_type": "普通汽油",
-          "discounted_price_hkd": 31.07,
-          "walkin_discount_hkd": 1.6,
-          "data_source": "live"
-        },
-        {
-          "date": "2026-09-07",
+          "date": "2026-09-08",
           "company": "Caltex",
           "fuel_type": "普通汽油",
           "discounted_price_hkd": 31.77,
@@ -20504,7 +20504,15 @@
           "data_source": "live"
         },
         {
-          "date": "2026-09-07",
+          "date": "2026-09-08",
+          "company": "Esso",
+          "fuel_type": "高级汽油",
+          "discounted_price_hkd": 21.97,
+          "walkin_discount_hkd": 12.5,
+          "data_source": "live"
+        },
+        {
+          "date": "2026-09-08",
           "company": "PetroChina",
           "fuel_type": "高级汽油",
           "discounted_price_hkd": 27.47,
@@ -20512,31 +20520,23 @@
           "data_source": "live"
         },
         {
-          "date": "2026-09-07",
-          "company": "Sinopec",
-          "fuel_type": "高级汽油",
-          "discounted_price_hkd": 22.95,
-          "walkin_discount_hkd": 11.52,
-          "data_source": "live"
-        },
-        {
-          "date": "2026-09-07",
+          "date": "2026-09-08",
           "company": "Shell",
           "fuel_type": "高级汽油",
-          "discounted_price_hkd": 29.47,
-          "walkin_discount_hkd": 5,
+          "discounted_price_hkd": 27.72,
+          "walkin_discount_hkd": 7,
           "data_source": "live"
         },
         {
-          "date": "2026-09-07",
-          "company": "Esso",
+          "date": "2026-09-08",
+          "company": "Sinopec",
           "fuel_type": "高级汽油",
-          "discounted_price_hkd": 32.87,
-          "walkin_discount_hkd": 1.6,
+          "discounted_price_hkd": 22.08,
+          "walkin_discount_hkd": 12.39,
           "data_source": "live"
         },
         {
-          "date": "2026-09-07",
+          "date": "2026-09-08",
           "company": "Caltex",
           "fuel_type": "高级汽油",
           "discounted_price_hkd": 33.57,
@@ -28815,7 +28815,7 @@
         "url": "https://oil-price.consumer.org.hk/en",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 消费者委员会油价计算机。",
-        "executed_at": "2026-09-07T12:33:41.683280Z"
+        "executed_at": "2026-09-08T11:20:41.763712Z"
       }
     },
     {
@@ -28827,7 +28827,7 @@
         "url": "https://www.consumer.org.hk/node/32290/export-complaints/json?lang=en",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 消费者委员会投诉数据接口。",
-        "executed_at": "2026-09-07T12:33:41.683280Z"
+        "executed_at": "2026-09-08T11:20:41.763712Z"
       }
     },
     {
@@ -28839,7 +28839,7 @@
         "url": "https://online-price-watch.consumer.org.hk/opw/opendata/pricewatch_en.csv",
         "language": "CSV / Parquet",
         "description": "构建时从公开来源读取并校验 Consumer Council Online Price Watch。",
-        "executed_at": "2026-09-07T12:33:41.683280Z"
+        "executed_at": "2026-09-08T11:20:41.763712Z"
       }
     },
     {
@@ -28855,7 +28855,7 @@
           "Latest is the most recent published PM benchmark fixing.",
           "Day and year movements are latest divided by the prior trading day or the observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-09-07T12:33:41.683280Z"
+        "executed_at": "2026-09-08T11:20:41.763712Z"
       }
     },
     {
@@ -28871,7 +28871,7 @@
           "PE (TTM), PB, and market cap (HKD bn) are each ticker's latest published daily value.",
           "No dividend-yield indicator exists on this endpoint; yield is not reported here."
         ],
-        "executed_at": "2026-09-07T12:33:41.683280Z"
+        "executed_at": "2026-09-08T11:20:41.763712Z"
       }
     },
     {
@@ -28887,7 +28887,7 @@
           "All retail outlet is the classification group's own published total across all outlet types.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-09-07T12:33:41.683280Z"
+        "executed_at": "2026-09-08T11:20:41.763712Z"
       }
     },
     {
@@ -28903,7 +28903,7 @@
           "Purchases are only published sector-wide, not broken out by restaurant type.",
           "Quarter and year movements are latest divided by the prior quarter or the observation four quarters earlier, minus one."
         ],
-        "executed_at": "2026-09-07T12:33:41.683280Z"
+        "executed_at": "2026-09-08T11:20:41.763712Z"
       }
     },
     {
@@ -28919,7 +28919,7 @@
           "This is a current-state snapshot only -- the source has no issue-date or status-history field.",
           "Opened/closed counts compare this run's licence numbers against the most recently stored prior snapshot, and are unavailable until at least two runs have been persisted."
         ],
-        "executed_at": "2026-09-07T12:33:41.683280Z"
+        "executed_at": "2026-09-08T11:20:41.763712Z"
       }
     },
     {
@@ -28935,7 +28935,7 @@
           "Category sub-indices share the headline table's index basis but only start in 2005 -- thirty years shorter history.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-09-07T12:33:41.683280Z"
+        "executed_at": "2026-09-08T11:20:41.763712Z"
       }
     },
     {
@@ -28952,7 +28952,7 @@
           "Southbound (南下) flow is daily Mainland visitor arrivals across all 17 control points, since Mainland visitors legitimately arrive by air, rail, and sea, not just by land.",
           "7-day moving averages (7d MA) smooth out day-of-week seasonality (weekend shopping spikes)."
         ],
-        "executed_at": "2026-09-07T12:33:41.683280Z"
+        "executed_at": "2026-09-08T11:20:41.763712Z"
       }
     },
     {
@@ -28969,7 +28969,7 @@
           "Red/Black Rainstorm hours measures total duration under Red or Black rainstorm warnings.",
           "RMB per 100 HKD is derived from FRED daily DEXCHUS and DEXHKUS rates."
         ],
-        "executed_at": "2026-09-07T12:33:41.683280Z"
+        "executed_at": "2026-09-08T11:20:41.763712Z"
       }
     },
     {
@@ -28984,7 +28984,7 @@
           "Total stores is each company's own latest snapshot count (not a cross-company-comparable unit -- a POP MART Roboshop and a Chow Tai Fook boutique are both counted as one location).",
           "This is a footprint snapshot, not a trend: most companies only have 1-2 dated snapshots so far, so month-over-month change is not yet meaningful."
         ],
-        "executed_at": "2026-09-07T12:33:41.683280Z"
+        "executed_at": "2026-09-08T11:20:41.763712Z"
       }
     },
     {
@@ -28998,13 +28998,13 @@
           "Validated live measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-09-07T12:33:41.683280Z"
+        "executed_at": "2026-09-08T11:20:41.763712Z"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-local-consumer/",
-    "snapshotId": "e73177494a7743aa",
-    "dataAsOf": "2026-09-03"
+    "snapshotId": "d3ce84a81f6af1f3",
+    "dataAsOf": "2026-09-06"
   }
 }
