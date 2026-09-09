@@ -2078,6 +2078,42 @@ def _build_quarterly_financial_pivot(frame: pd.DataFrame, n_periods: int = 8, pr
     return pd.DataFrame(result_rows)
 
 
+def _build_segment_chart_frame(piv_chart: pd.DataFrame, profile=None) -> pd.DataFrame:
+    """Build canonical segment series while preserving source metric history.
+
+    Issuers can rename a segment without changing the underlying business (for
+    example, Tencent's ``Online Advertising`` became ``Marketing Services``).
+    Profile specs map both source metrics to one display label.  Coalescing
+    non-null periods keeps that history continuous without summing two labels
+    that represent the same segment.
+    """
+    if piv_chart.empty:
+        return pd.DataFrame(index=piv_chart.index)
+
+    profile = profile or get_company_profile(None)
+    present_metrics = set(piv_chart.columns)
+    preferred = list(profile.segment_metrics) if profile.segment_metrics else []
+    if not preferred:
+        extra = [
+            column
+            for column in piv_chart.columns
+            if str(column).startswith('revenue_') and str(column) != 'revenue_total'
+        ]
+        preferred = [SegmentSpec(metric, segment_label(metric, profile)) for metric in extra]
+
+    series_by_label: dict[str, pd.Series] = {}
+    for spec in preferred:
+        if spec.metric not in present_metrics:
+            continue
+        current = pd.to_numeric(piv_chart[spec.metric], errors='coerce')
+        if spec.label in series_by_label:
+            series_by_label[spec.label] = series_by_label[spec.label].combine_first(current)
+        else:
+            series_by_label[spec.label] = current.copy()
+
+    return pd.DataFrame(series_by_label, index=piv_chart.index)
+
+
 # Intermediate column name shared between the revenue frame and its chart.
 REVENUE_CHART_COLUMN = 'Total revenue'
 
@@ -2894,17 +2930,7 @@ def _render_fundamentals_tab(
         if 'revenue_total' in piv_chart.columns:
             piv_chart = piv_chart.dropna(subset=['revenue_total'])
         if len(piv_chart) >= 4:
-            seg_chart_df = pd.DataFrame(index=piv_chart.index)
-            seen_labels = set()
-            preferred = list(profile.segment_metrics)
-            if not preferred:
-                extra = [c for c in piv_chart.columns if str(c).startswith('revenue_') and str(c) != 'revenue_total']
-                preferred = [SegmentSpec(metric, segment_label(metric, profile)) for metric in extra]
-            for spec in preferred:
-                if spec.metric not in piv_chart.columns or spec.label in seen_labels:
-                    continue
-                seen_labels.add(spec.label)
-                seg_chart_df[spec.label] = piv_chart[spec.metric]
+            seg_chart_df = _build_segment_chart_frame(piv_chart, profile)
             if not seg_chart_df.empty and seg_chart_df.notna().any().any():
                 share_frame = seg_chart_df.copy()
                 share_frame.index.name = 'period'

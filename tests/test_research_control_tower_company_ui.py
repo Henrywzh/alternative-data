@@ -1400,6 +1400,31 @@ def test_segment_share_chart_is_percent_stacked() -> None:
     }
 
 
+def test_segment_chart_coalesces_source_metric_rename_without_summing() -> None:
+    from control_tower.company_profiles import CompanyProfile, SegmentSpec
+    from control_tower.pages.company import _build_segment_chart_frame
+
+    profile = CompanyProfile(
+        entity_id="TENCENT",
+        segment_metrics=(
+            SegmentSpec("revenue_marketing_services", "Marketing Services (Ads)"),
+            SegmentSpec("revenue_online_advertising", "Marketing Services (Ads)"),
+        ),
+    )
+    pivot = pd.DataFrame(
+        {
+            "revenue_online_advertising": [21.82, 22.50, None],
+            "revenue_marketing_services": [None, None, 43.565],
+        },
+        index=["2024Q1", "2024Q2", "2024Q3"],
+    )
+
+    result = _build_segment_chart_frame(pivot, profile)
+
+    assert list(result.columns) == ["Marketing Services (Ads)"]
+    assert result["Marketing Services (Ads)"].tolist() == [21.82, 22.50, 43.565]
+
+
 def test_dual_axis_revenue_yoy_chart_uses_independent_scales() -> None:
     from control_tower.pages.company import _dual_axis_revenue_yoy_chart
 
