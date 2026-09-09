@@ -8,7 +8,6 @@ from pathlib import Path
 import pandas as pd
 import pytest
 import dashboard.app as dashboard_app
-import dashboard.checks as dashboard_checks
 
 from dashboard.app import (
     _compute_revenue_views,
@@ -5396,17 +5395,19 @@ def test_staleness_is_measured_per_feed_not_on_one_global_threshold(tmp_path: Pa
     ]
 
 
-def test_monthly_staleness_uses_period_end_for_month_start_stamps(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """A month stamped on day one represents the whole month, not one instant."""
+def test_monthly_staleness_uses_period_end_for_month_start_stamps(tmp_path: Path) -> None:
+    """A month stamped on day one represents the whole month, not one instant.
+
+    The dates are pinned, not derived from the wall clock: with a fixed now of
+    2026-09-15 and a latest stamp of 2026-07-01, measuring from the stamp gives
+    76 days (stale at the 69-day monthly threshold) while measuring from the
+    July period end gives 46 days (fresh). A wall-clock-derived latest month
+    made this assertion flip partway through every month, so the test failed
+    on 2026-09-07+ runs despite the fix it was written to guard.
+    """
     root = tmp_path / "data" / "normalized" / "openrouter"
     root.mkdir(parents=True)
-    as_of = pd.Timestamp("2026-09-01", tz="UTC")
-    monkeypatch.setattr(dashboard_checks, "_utc_today", lambda: as_of)
-    current_month = as_of.normalize().replace(day=1)
-    latest_month = current_month - pd.DateOffset(months=3)
+    latest_month = pd.Timestamp("2026-07-01", tz="UTC")
     months = pd.date_range(end=latest_month, periods=12, freq="MS")
     _dated_frame("top_models", months.strftime("%Y-%m-%d").tolist(), "week_start_date").to_csv(
         root / "top_models.csv", index=False
@@ -5416,6 +5417,7 @@ def test_monthly_staleness_uses_period_end_for_month_start_stamps(
         load_domain_datasets("rankings", base_dir=tmp_path),
         load_latest_manifest(base_dir=tmp_path),
         base_dir=tmp_path,
+        now=pd.Timestamp("2026-09-15", tz="UTC"),
     )
 
     assert [c for c in checks if "stopped advancing" in c.title] == []

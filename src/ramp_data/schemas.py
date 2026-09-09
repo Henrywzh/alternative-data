@@ -84,6 +84,16 @@ AI_INDEX_DATASETS: dict[str, dict] = {
         "sort_keys": ["date_month", "dimension_type", "dimension_value", "spend_category_display_order"],
         "numeric": ["display_order", "spend_category_display_order", "spend_share"],
         "min_rows": 40,
+        # Retired upstream. Ramp dropped the spend-share-by-category payload
+        # from the AI Index RSC payload between the 2026-08-31 and 2026-09-07
+        # runs: `spendShareCurated` (and its `spendBreakdown` history twin)
+        # vanished while every sibling key -- adoptionOverall, modelShareCurated,
+        # spendPerEmployee(Curated), adoptionUsEstimate -- is still served. The
+        # page copy still describes "Product Categories", but no chart data
+        # ships in the payload and the filter-mode flags list only modelBreakdown
+        # and spendPerEmployee, so there is nothing left to fetch. Keep the
+        # schema so the committed history (through 2026-07) stays readable.
+        "retired": "2026-09-07: Ramp removed the spend-share payload from the AI Index page",
     },
     "ramp_ai_provider_model_share": {
         "payload_key": "modelShareCurated",
@@ -108,6 +118,13 @@ AI_INDEX_DATASETS: dict[str, dict] = {
         "sort_keys": ["date_month", "spend_category"],
         "numeric": ["spend_usd", "business_count"],
         "min_rows": 60,
+        # Retired upstream alongside spend_share_by_category -- the monthly
+        # history array disappeared from the same payload in the same window.
+        # Without this flag its unreachable min_rows floor fails the whole
+        # ai-index run, discarding the eight healthy sibling datasets (and,
+        # because the workflow steps run in sequence, skipping filter-mode and
+        # category-charts too). Committed history through 2026-07 stays as-is.
+        "retired": "2026-09-07: Ramp removed the spend-breakdown payload from the AI Index page",
     },
     "ramp_ai_model_breakdown": {
         "payload_key": "modelBreakdown",
@@ -166,6 +183,10 @@ FILTER_MODE_DATASETS: dict[str, dict] = {
         "sort_keys": ["date_month", *FILTER_DIMS, "pepm_spend_type"],
         "numeric": ["spend_share"],
         "min_rows": 5000,
+        # Ramp removed this endpoint (HTTP 404) between the 2026-08-31 and
+        # 2026-09-07 weekly runs, alongside the AI-Index spend-share keys.
+        # modelShare and spendPerEmployee remain live; committed history stays.
+        "retired": "2026-09-08: Ramp removed the filter-mode spendShare endpoint",
     },
     "ramp_ai_filter_model_share": {
         "endpoint": "modelShare",

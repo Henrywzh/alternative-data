@@ -223,6 +223,109 @@ def test_ai_index_gate_rejects_thin_extraction():
         pipeline._assert_ai_index_quality([], {dsid: [] for dsid in ("ramp_ai_adoption_overall",)})
 
 
+def test_retired_ai_index_dataset_does_not_block_its_healthy_siblings():
+    """A dataset Ramp stopped embedding must not discard the rest of the run.
+
+    Ramp removed `spendShareCurated` and `spendBreakdown` from the AI Index
+    RSC payload between the 2026-08-31 and 2026-09-07 weekly runs while every
+    sibling key kept shipping. The all-or-nothing gate therefore failed the
+    whole ai-index step -- and, in the workflow, skipped the filter-mode and
+    category-charts steps after it -- over data that no longer exists.
+    """
+    from ramp_data.schemas import AI_INDEX_DATASETS
+
+    retired = [k for k, cfg in AI_INDEX_DATASETS.items() if cfg.get("retired")]
+    assert set(retired) == {
+        "ramp_ai_spend_share_by_category",
+        "ramp_ai_spend_breakdown",
+    }
+
+    # Minimal healthy payloads for every live dataset in the gate.
+    extracted = {}
+    for dsid, cfg in AI_INDEX_DATASETS.items():
+        if cfg.get("retired"):
+            # Exactly what the live page now returns for both retired datasets.
+            extracted[dsid] = []
+            continue
+        payload = {field: 1.0 for field in cfg["numeric"]}
+        payload["date_month"] = "2026-07-01"
+        if "adoption_rate_pct" in cfg["fields"]:
+            payload["adoption_rate_pct"] = 12.5
+        extracted[dsid] = [
+            GenericRecord(
+                dataset_id=dsid,
+                source_url="https://ramp.com/data/ai-index",
+                source_run_id="test",
+                scraped_at="2026-09-08T00:00:00Z",
+                payload=payload,
+            )
+            for _ in range(cfg["min_rows"])
+        ]
+
+    report = RampPipeline._assert_ai_index_quality([], extracted)
+    assert report["ramp_ai_adoption_overall"]["rows"] > 0
+    assert report["ramp_ai_spend_share_by_category"]["retired"]
+    assert report["ramp_ai_spend_breakdown"]["retired"]
+
+
+def test_a_live_ai_index_dataset_still_fails_the_gate_when_empty():
+    """Retiring two datasets must not disarm the gate for the live siblings."""
+    with pytest.raises(ValidationError, match="ramp_ai_adoption_overall"):
+        RampPipeline._assert_ai_index_quality(
+            [],
+            {
+                "ramp_ai_adoption_overall": [],
+                "ramp_ai_spend_share_by_category": [],
+                "ramp_ai_spend_breakdown": [],
+            },
+        )
+
+
+def test_retired_filter_mode_dataset_does_not_block_its_healthy_siblings():
+    """Ramp 404'd the filter-mode spendShare endpoint; modelShare and
+    spendPerEmployee keep shipping and must still be written."""
+    from ramp_data.schemas import FILTER_MODE_DATASETS
+
+    retired = [k for k, cfg in FILTER_MODE_DATASETS.items() if cfg.get("retired")]
+    assert retired == ["ramp_ai_filter_spend_share"]
+
+    extracted = {}
+    for dsid, cfg in FILTER_MODE_DATASETS.items():
+        if cfg.get("retired"):
+            extracted[dsid] = []
+            continue
+        payload = {field: 1.0 for field in cfg["numeric"]}
+        payload["date_month"] = "2026-07-01"
+        extracted[dsid] = [
+            GenericRecord(
+                dataset_id=dsid,
+                source_url="https://ramp.com/data/ai-index/filter-mode",
+                source_run_id="test",
+                scraped_at="2026-09-08T00:00:00Z",
+                payload=payload,
+            )
+            for _ in range(cfg["min_rows"])
+        ]
+
+    report = RampPipeline._assert_filter_mode_quality([], extracted)
+    assert report["ramp_ai_filter_model_share"]["rows"] > 0
+    assert report["ramp_ai_filter_pepm"]["rows"] > 0
+    assert report["ramp_ai_filter_spend_share"]["retired"]
+
+
+def test_a_live_filter_mode_dataset_still_fails_the_gate_when_empty():
+    """Retiring spendShare must not disarm the gate for its live siblings."""
+    with pytest.raises(ValidationError, match="ramp_ai_filter_model_share"):
+        RampPipeline._assert_filter_mode_quality(
+            [],
+            {
+                "ramp_ai_filter_spend_share": [],
+                "ramp_ai_filter_model_share": [],
+                "ramp_ai_filter_pepm": [],
+            },
+        )
+
+
 # --------------------------------------------------------------- Jobs Impact
 
 
