@@ -28,9 +28,11 @@ if str(SCRIPTS_DIR) not in sys.path:
 
 from src.market_monitor.config import (
     DERIVED_DIR,
+    ETF_ACTIVITY_ARTIFACT_MAX_ROWS,
     EXPOSURES,
     NORMALIZED_DIR,
     charted_exposures,
+    etf_activity_exposures,
     exposures_by_price_source,
     investable_exposures,
 )
@@ -43,6 +45,7 @@ from src.market_monitor.freshness import (
 )
 from src.market_monitor.pipeline import coverage_regressions  # noqa: E402
 from src.market_monitor.ranking import rank_wrappers
+from src.market_monitor.sources.eastmoney_hsgt import normalize_southbound_market_flow
 from src.market_monitor.storage import load_lineage_history, load_latest_with_lineage  # noqa: E402
 from src.market_monitor.wrapper import filter_premium_history_to_sessions  # noqa: E402
 from history_policy import history_window  # noqa: E402
@@ -111,6 +114,102 @@ def _chart_series(
     return _records(projected)
 
 
+# The activity panel needs more than one value per row: the renderer shows the
+# latest share count, change, NAV-backed flow and the status explaining whether
+# the flow is actually validated. Keep the export projection explicit so a
+# future source column cannot inflate every generated artifact by accident.
+ETF_ACTIVITY_ARTIFACT_COLUMNS: tuple[str, ...] = (
+    "observation_date",
+    "fund_id",
+    "exposure_id",
+    "fund_name",
+    "venue",
+    "shares_outstanding",
+    "shares_change",
+    "prior_observation_date",
+    "observation_gap_days",
+    "nav",
+    "estimated_flow_cny",
+    "flow_pct_aum",
+    "flow_status",
+)
+
+
+def _activity_records(frame: pd.DataFrame) -> list[dict[str, Any]]:
+    """Ship a bounded, human-readable activity history."""
+    if frame is None or frame.empty or not {"observation_date", "fund_id"}.issubset(frame.columns):
+        return []
+    windowed = history_window(frame, "observation_date", years=CHART_HISTORY_YEARS)
+    if windowed.empty:
+        return []
+    columns = [column for column in ETF_ACTIVITY_ARTIFACT_COLUMNS if column in windowed.columns]
+    ordered = windowed[columns].sort_values(["observation_date", "fund_id"])
+    if len(ordered) > ETF_ACTIVITY_ARTIFACT_MAX_ROWS:
+        latest_date = ordered["observation_date"].max()
+        latest = ordered[ordered["observation_date"].eq(latest_date)]
+        if len(latest) >= ETF_ACTIVITY_ARTIFACT_MAX_ROWS:
+            ordered = latest.tail(ETF_ACTIVITY_ARTIFACT_MAX_ROWS)
+        else:
+            prior = ordered[ordered["observation_date"].lt(latest_date)].tail(
+                ETF_ACTIVITY_ARTIFACT_MAX_ROWS - len(latest)
+            )
+            ordered = pd.concat([prior, latest], ignore_index=True)
+    return _records(ordered.sort_values(["observation_date", "fund_id"]))
+
+
+def _activity_summary(
+    activity: pd.DataFrame | None,
+    source_notices: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Summarize activity without mistaking retained rows for a fresh fetch."""
+    rows = int(len(activity)) if activity is not None and not activity.empty else 0
+    validated = (
+        int(activity["flow_status"].astype(str).eq("validated").sum())
+        if rows and "flow_status" in activity.columns
+        else 0
+    )
+    latest = "—"
+    if rows and "observation_date" in activity.columns:
+        parsed_dates = pd.to_datetime(
+            activity["observation_date"], errors="coerce"
+        ).dropna()
+        if not parsed_dates.empty:
+            latest = parsed_dates.max().strftime("%Y-%m-%d")
+
+    if rows == 0:
+        status = "Unavailable"
+        notes = "Official exchange ETF share-count history is not available in this snapshot."
+    elif source_notices:
+        detail = "; ".join(
+            str(notice.get("error") or "source notice")
+            for notice in source_notices[:3]
+        )
+        status = "Degraded"
+        notes = (
+            f"Current run reported {len(source_notices)} optional share-source notice(s); "
+            f"retained {rows} previously accepted rows through {latest}. {detail}"
+        )
+    elif validated == 0:
+        status = "Degraded"
+        notes = (
+            f"{rows} share-count rows through {latest}; "
+            "no same-date NAV-backed flow is validated yet."
+        )
+    else:
+        status = "Healthy"
+        notes = (
+            f"{rows} share-count rows through {latest}; "
+            f"{validated} rows have NAV-backed estimated flow."
+        )
+    return {
+        "status": status,
+        "latest_observation": latest,
+        "records": rows,
+        "validated_records": validated,
+        "notes": notes,
+    }
+
+
 @dataclass(frozen=True)
 class ProviderDelivery:
     """What each price provider actually delivered this run.
@@ -146,6 +245,8 @@ class ProviderDelivery:
     yahoo_latest: str
     southbound_rows: int
     southbound_latest: str
+    southbound_status: str = "Healthy"
+    southbound_quality_note: str = ""
 
 
 def _source_health_rows(delivery: ProviderDelivery) -> list[dict[str, Any]]:
@@ -207,12 +308,12 @@ def _source_health_rows(delivery: ProviderDelivery) -> list[dict[str, Any]]:
         # dataset in the artifact gets a row that can say "Unavailable".
         {
             "source": "Eastmoney aggregate southbound Stock Connect flow",
-            "status": "Healthy" if d.southbound_rows else "Unavailable",
+            "status": d.southbound_status if d.southbound_rows else "Unavailable",
             "latest_observation": d.southbound_latest,
             "records": d.southbound_rows,
             "notes": (
                 f"Daily aggregate southbound net buy / holding value, {d.southbound_rows} sessions "
-                f"through {d.southbound_latest}."
+                f"through {d.southbound_latest}. {d.southbound_quality_note}".strip()
                 if d.southbound_rows
                 else "Southbound flow fetch returned no rows; the panel has no data this run."
             ),
@@ -269,6 +370,20 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     pair_hist, _pair_hist_lineage = load_latest_with_lineage(DERIVED_DIR, "relative_pair_history", scope="full")
     etf_px, etf_px_lineage = load_latest_with_lineage(NORMALIZED_DIR, "etf_price_daily", scope="full")
     southbound, southbound_lineage = load_latest_with_lineage(NORMALIZED_DIR, "southbound_market_flow", scope="full")
+    activity, activity_lineage = load_latest_with_lineage(
+        NORMALIZED_DIR, "etf_fund_activity_daily", scope="full"
+    )
+    # Reapply source normalization to persisted snapshots.  This repairs old
+    # local parquet written before the zero-as-missing rule without requiring a
+    # fresh upstream call just to rebuild the portable artifact.
+    southbound = normalize_southbound_market_flow(southbound)
+    activity_scope = etf_activity_exposures()
+    if activity.empty or "exposure_id" not in activity.columns:
+        activity = pd.DataFrame()
+    else:
+        activity = activity[
+            activity["exposure_id"].astype(str).isin(activity_scope)
+        ].copy()
 
     # Re-validate the persisted history at the artifact boundary as well as in
     # the close pipeline. This protects a rebuild from an older derived file
@@ -326,6 +441,7 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         data_as_of = str(pd.to_datetime(technicals["date"], errors="coerce").max().date())
 
     investable_ids = [spec["exposure_id"] for spec in investable_exposures()]
+    activity_records = _activity_records(activity)
     datasets: dict[str, list[dict[str, Any]]] = {
         "exposure_technicals": _records(technicals),
         "relative_regime": _records(regime),
@@ -340,6 +456,7 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         # year of baseline on the first day shown, not so all five are drawn.
         "relative_pair_history": _chart_series(pair_hist, "pair_id", "ratio", keep=("ratio_ma", "zscore")),
         "etf_price_daily_tail": _chart_series(etf_px, "fund_id", "close", id_as="ticker"),
+        "etf_fund_activity_daily": activity_records,
         # Only the four fields render_southbound_market_flow reads. The full
         # 17-column dump was 1.5 MB of a 3.7 MB artifact, of which source_id /
         # source_url / retrieved_at_utc / flow were one constant value repeated
@@ -391,6 +508,10 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     if not wrappers.empty and "retrieved_at_utc" in wrappers.columns:
         retrieved_values = wrappers["retrieved_at_utc"].dropna().astype(str)
         spot_retrieved_at = retrieved_values.iloc[0] if not retrieved_values.empty else None
+    spot_observed_at = None
+    if not wrappers.empty and "source_observed_at_utc" in wrappers.columns:
+        observed_values = wrappers["source_observed_at_utc"].dropna().astype(str)
+        spot_observed_at = observed_values.iloc[0] if not observed_values.empty else None
     # Older committed wrapper snapshots do not carry row-level retrieval time;
     # those are intentionally reported as unknown rather than being treated as
     # current because the artifact happened to be rebuilt today.
@@ -401,7 +522,7 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     )
     spot_freshness = classify_intraday_quote(
         retrieved_at_utc=spot_retrieved_at,
-        source_observed_at_utc=None,
+        source_observed_at_utc=spot_observed_at,
         quote_available=has_quote_rows,
     )
     # Older wrapper snapshots may contain a premium but no row-level quote
@@ -541,6 +662,33 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     else:
         southbound_latest = "—"
 
+    southbound_status = "Healthy" if southbound_rows else "Unavailable"
+    southbound_quality_note = ""
+    if southbound_rows:
+        latest_southbound = southbound[
+            pd.to_datetime(southbound["trade_date"], errors="coerce").dt.strftime("%Y-%m-%d")
+            == southbound_latest
+        ]
+        latest_net_valid = (
+            "net_buy_yi" in latest_southbound.columns
+            and pd.to_numeric(latest_southbound["net_buy_yi"], errors="coerce").notna().any()
+        )
+        latest_holding_valid = (
+            "holding_market_value" in latest_southbound.columns
+            and pd.to_numeric(latest_southbound["holding_market_value"], errors="coerce").gt(0).any()
+        )
+        if not latest_net_valid or not latest_holding_valid:
+            southbound_status = "Degraded"
+            missing = []
+            if not latest_net_valid:
+                missing.append("net buy")
+            if not latest_holding_valid:
+                missing.append("holding market value")
+            southbound_quality_note = (
+                f"Latest session {southbound_latest} has no valid {', '.join(missing)}; "
+                "the renderer leaves it missing instead of filling from an older session."
+            )
+
     latest_by_exposure = {}
     if not technicals.empty and {"exposure_id", "date"}.issubset(technicals.columns):
         latest_by_exposure = {
@@ -602,7 +750,36 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
             yahoo_latest=yahoo_latest,
             southbound_rows=southbound_rows,
             southbound_latest=southbound_latest,
+            southbound_status=southbound_status,
+            southbound_quality_note=southbound_quality_note,
         )
+    )
+    # The latest index lineage is written by the same pipeline run as the
+    # optional activity fetch, so it carries the current run's optional source
+    # notices even when activity itself reuses the prior non-empty snapshot.
+    current_cov = (index_lineage or {}).get("coverage") or {}
+    reported = current_cov.get("fetch_errors") or []
+    activity_notices = [
+        err
+        for err in reported
+        if err.get("dataset") == "etf_share_daily"
+        and err.get("severity") == "optional"
+    ]
+    activity_summary = _activity_summary(activity, activity_notices)
+    activity_rows = activity_summary["records"]
+    activity_latest = activity_summary["latest_observation"]
+    activity_freshness = classify_daily_observation(
+        activity_latest if activity_latest != "—" else None,
+        observation_type="published_data",
+    )
+    source_health_rows.append(
+        {
+            "source": "Official exchange ETF shares / estimated creation-redemption",
+            "status": activity_summary["status"],
+            "latest_observation": activity_latest,
+            "records": activity_rows,
+            "notes": activity_summary["notes"],
+        }
     )
     datasets["source_health"] = _apply_daily_source_freshness(
         source_health_rows,
@@ -613,6 +790,7 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         {"scope": "ETF spot", **spot_freshness},
         {"scope": "Index technicals", **daily_freshness},
         {"scope": "Southbound flow", **southbound_freshness},
+        {"scope": "ETF fund activity", **activity_freshness},
         *(
             {"scope": f"Region · {group}", **record}
             for group, record in sorted(daily_close_by_region.items())
@@ -651,11 +829,13 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
             }
         )
 
-    reported = current_cov.get("fetch_errors") or []
     # Entries marked as events are things that happened upstream and are worth
     # seeing -- a fund cutting its management fee -- not calls that failed.
     # Only real failures may degrade the run.
-    fetch_errors = [err for err in reported if err.get("severity") != "event"]
+    fetch_errors = [
+        err for err in reported if err.get("severity") not in {"event", "optional"}
+    ]
+    optional_notices = [err for err in reported if err.get("severity") == "optional"]
     upstream_events = [err for err in reported if err.get("severity") == "event"]
     if fetch_errors:
         detail = "; ".join(
@@ -669,6 +849,22 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
                 "latest_observation": current_cov.get("last_date") or "—",
                 "records": len(fetch_errors),
                 "notes": f"{len(fetch_errors)} source call(s) failed this run: {detail}",
+            }
+        )
+    if optional_notices:
+        detail = "; ".join(
+            f"{err.get('source') or err.get('dataset')}: {err.get('error')}"
+            for err in optional_notices[:6]
+        )
+        datasets["source_health"].append(
+            {
+                "source": "Optional data notices",
+                "status": "Degraded",
+                "latest_observation": activity_latest,
+                "records": len(optional_notices),
+                "notes": (
+                    f"{len(optional_notices)} optional source notice(s); core index/ETF outputs remain usable: {detail}"
+                ),
             }
         )
     if upstream_events:
@@ -698,6 +894,8 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         )
     sources = [
         {"id": "eastmoney_etf_spot", "label": "Eastmoney ETF snapshot (premium / spread / turnover / IOPV)", "href": "https://quote.eastmoney.com/center/gridlist.html#fund_etf", "query": {"engine": "akshare fund_etf_spot_em"}},
+        {"id": "sse_etf_scale", "label": "Shanghai Stock Exchange ETF published share counts", "href": "https://www.sse.com.cn/assortment/fund/etf/list/scale/", "query": {"engine": "akshare fund_etf_scale_sse"}},
+        {"id": "szse_etf_scale", "label": "Shenzhen Stock Exchange ETF daily share counts", "href": "https://www.szse.cn/market/fund/volume/etf/index.html", "query": {"engine": "akshare fund_scale_daily_szse"}},
         {"id": "eastmoney_hsgt_southbound", "label": "Eastmoney aggregate southbound Stock Connect flow", "href": "https://data.eastmoney.com/hsgt/hsgtV2.html", "query": {"engine": "akshare stock_hsgt_hist_em(南向资金)"}},
         {"id": "sina_index_daily", "label": "Sina Finance index / ETF daily OHLCV", "href": "https://finance.sina.com.cn/", "query": {"engine": "akshare stock_zh_index_daily / fund_etf_hist_sina"}},
         {"id": "yfinance_spx", "label": "Yahoo Finance S&P 500 index", "href": "https://finance.yahoo.com/quote/%5EGSPC/", "query": {"engine": "yfinance ^GSPC"}},
@@ -778,6 +976,38 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     )
     blocks.append({"id": "wrapper_selection_block", "type": "table", "tableId": "wrapper_selection_table"})
 
+    # --- Optional ETF fund-activity panel --------------------------------
+    tables.append(
+        {
+            "id": "etf_fund_activity_table",
+            "title": "China & HK Listed ETF Fund Activity",
+            "dataset": "etf_fund_activity_daily",
+            "columns": [
+                {"field": "observation_date", "label": "Date", "format": "date"},
+                {"field": "fund_id", "label": "Fund", "format": "text"},
+                {"field": "exposure_id", "label": "Index", "format": "text"},
+                {"field": "shares_outstanding", "label": "Shares", "format": "number"},
+                {"field": "shares_change", "label": "Shares Change", "format": "number"},
+                {"field": "estimated_flow_cny", "label": "Est. Flow (CNY)", "format": "number"},
+                {"field": "flow_pct_aum", "label": "Flow / AUM %", "format": "pct"},
+                {"field": "flow_status", "label": "Status", "format": "text"},
+            ],
+        }
+    )
+    blocks.append({"id": "etf_fund_activity_block", "type": "table", "tableId": "etf_fund_activity_table"})
+    charts.append(
+        {
+            "id": "etf_fund_activity_chart",
+            "title": "China & HK Listed ETF Creation / Redemption Estimate",
+            "dataset": "etf_fund_activity_daily",
+            "encodings": {
+                "x": {"field": "observation_date", "type": "temporal", "label": "Date"},
+                "y": {"field": "estimated_flow_cny", "type": "quantitative", "label": "Estimated Flow (CNY)"},
+                "color": {"field": "exposure_id", "type": "nominal", "label": "Index"},
+            },
+        }
+    )
+
     overall_healthy = overall_healthy and coverage_ok and not fetch_errors
 
     snapshot_id = hashlib.sha1(json.dumps(datasets, sort_keys=True, default=str).encode()).hexdigest()[:16]
@@ -797,12 +1027,21 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
             "dataAsOf": data_as_of,
             "pipelineRunId": latest_run_id,
             "runConsistent": run_consistent,
+            "activity_artifact": {
+                "source_rows": int(len(activity)) if activity is not None else 0,
+                "published_rows": len(activity_records),
+                "max_rows": ETF_ACTIVITY_ARTIFACT_MAX_ROWS,
+                "truncated": int(len(activity)) > ETF_ACTIVITY_ARTIFACT_MAX_ROWS if activity is not None else False,
+                "source_notice_count": len(activity_notices),
+                "scope": sorted(activity_scope),
+            },
             "freshness": {
                 "quote": spot_freshness,
                 "daily_close": daily_freshness,
                 "daily_close_by_region": daily_close_by_region,
                 "daily_close_by_source": daily_close_by_source,
                 "southbound": southbound_freshness,
+                "etf_fund_activity": activity_freshness,
             },
         },
     }

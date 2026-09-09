@@ -1,0 +1,24 @@
+{
+  "run_scope": "full",
+  "retrieved_at": "2026-09-05T10:10:28.423103Z",
+  "dataset_name": "fomc_history",
+  "run_id": "20260905T101028-6b1713f4",
+  "created_at": "2026-09-05T10:10:55.579221Z",
+  "records": 32,
+  "columns": [
+    "date",
+    "hold_prob",
+    "hike_25",
+    "hike_50",
+    "cut_25",
+    "cut_50",
+    "hike_prob",
+    "cut_prob",
+    "event_id",
+    "meeting_date",
+    "slug",
+    "source",
+    "distribution_complete"
+  ],
+  "sha256": "4c8dbc159257013eb4b56dfcab59367801241779d8735a689175f1bd37925dff"
+}

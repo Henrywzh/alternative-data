@@ -16,6 +16,7 @@ from typing import Any
 import pandas as pd
 import requests
 
+from .activity import build_etf_fund_activity
 from .config import (
     COVERAGE_BOUNDARY_TOLERANCE_DAYS,
     COVERAGE_MIN_ROW_RATIO,
@@ -24,6 +25,7 @@ from .config import (
     FEE_CHANGE_RELATIVE_THRESHOLD,
     NORMALIZED_DIR,
     RAW_DIR,
+    etf_activity_exposures,
 )
 from .freshness import (
     classify_daily_groups,
@@ -40,7 +42,7 @@ from .relative_strength import (
     build_relative_regime,
     compute_spread_metrics,
 )
-from .sources import akshare_etf, csindex, eastmoney_fee, eastmoney_nav, eastmoney_hsgt, yfinance
+from .sources import akshare_etf, csindex, eastmoney_fee, eastmoney_hsgt, eastmoney_nav, etf_shares, yfinance
 from .storage import (
     load_lineage_history,
     load_latest_derived,
@@ -614,6 +616,27 @@ def _build_premium_history(
     return history.sort_values(["ticker", "date"]).reset_index(drop=True)
 
 
+def _activity_metadata(
+    metadata: pd.DataFrame,
+    *,
+    limit_exposures: tuple[str, ...] | None = None,
+    etf_only: tuple[str, ...] | None = None,
+) -> pd.DataFrame:
+    """Apply the pipeline scope once for both activity fetch and derivation."""
+    scoped = metadata.copy()
+    scoped = scoped[scoped["exposure_id"].isin(etf_activity_exposures())]
+    if limit_exposures:
+        scoped = scoped[scoped["exposure_id"].isin(limit_exposures)]
+    if etf_only:
+        requested_ids = {
+            str(value).split(".")[0].zfill(6) for value in etf_only
+        }
+        fund_ids = scoped["fund_id"].astype(str).str.split(".").str[0].str.zfill(6)
+        ticker_ids = scoped["ticker"].astype(str).str.split(".").str[0].str.zfill(6)
+        scoped = scoped[fund_ids.isin(requested_ids) | ticker_ids.isin(requested_ids)]
+    return scoped
+
+
 def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, ...] | None = None, etf_only: tuple[str, ...] | None = None) -> dict[str, Any]:
     """Call the source layers; return raw frames keyed by dataset name."""
     # Indices reach back five years for the z-score baseline; the ETF loop
@@ -693,6 +716,38 @@ def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, 
                  "error": f"{type(exc).__name__}: {exc}"}
             )
     raw["etf_close"] = pd.concat(etf_frames, ignore_index=True) if etf_frames else pd.DataFrame()
+
+    # --- Official ETF share counts / scale activity ----------------------
+    # This is supplementary to the core price/premium pipeline.  A provider
+    # outage must remain visible, but it must not suppress the core email: the
+    # activity panel is allowed to say "unavailable" while the index and ETF
+    # quote contracts remain healthy.
+    activity_metadata = _activity_metadata(
+        meta,
+        limit_exposures=limit_exposures,
+        etf_only=etf_only,
+    )
+    try:
+        previous_activity = load_latest_normalized("etf_fund_activity_daily")
+        raw["etf_share_daily"], activity_errors = etf_shares.fetch_etf_share_history(
+            activity_metadata,
+            raw["etf_close"].get("date", pd.Series(dtype="object")),
+            previous=previous_activity,
+            as_of_date=market_end,
+        )
+        for error in activity_errors:
+            error.setdefault("severity", "optional")
+            fetch_errors.append(error)
+    except Exception as exc:  # noqa: BLE001 - optional source must be observable
+        print(f"  [market_monitor] ETF share activity fetch failed: {exc}")
+        raw["etf_share_daily"] = pd.DataFrame()
+        fetch_errors.append(
+            {
+                "dataset": "etf_share_daily",
+                "severity": "optional",
+                "error": f"{type(exc).__name__}: {exc}",
+            }
+        )
 
     # --- ETF spot / premium snapshot ---
     try:
@@ -922,7 +977,7 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
     # response was written before the email gate could inspect it.
     raw_write: dict[str, dict[str, str] | None] = {}
     if write:
-        for dataset_name in ("index_close", "etf_close", "etf_spot"):  # not _fetch_errors
+        for dataset_name in ("index_close", "etf_close", "etf_spot", "etf_share_daily"):  # not _fetch_errors
             raw_write[dataset_name] = save_raw(dataset_name, raw[dataset_name], metadata={"type": "raw", "run_scope": run_scope}, run_id=shared_run_id) if dataset_name in raw and not raw[dataset_name].empty else None
         results["_raw_run"] = raw_write
 
@@ -1032,6 +1087,29 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
     )
     results["premium_history"] = premium_history
 
+    # Derived: official shares plus NAV-backed estimated net creation /
+    # redemption.  Keep the prior activity history because exchange share
+    # endpoints return a bounded window or a dated snapshot, not an immutable
+    # all-history file.
+    activity_metadata = _activity_metadata(
+        meta,
+        limit_exposures=limit_exposures,
+        etf_only=etf_only,
+    )
+    previous_activity = load_latest_normalized("etf_fund_activity_daily")
+    if not previous_activity.empty and "fund_id" in previous_activity.columns:
+        allowed_activity_ids = set(activity_metadata["fund_id"].astype(str).str.zfill(6))
+        previous_activity = previous_activity[
+            previous_activity["fund_id"].astype(str).str.zfill(6).isin(allowed_activity_ids)
+        ]
+    results["etf_fund_activity_daily"] = build_etf_fund_activity(
+        raw.get("etf_share_daily"),
+        activity_metadata,
+        prices=normalized_etf,
+        premium_history=premium_history,
+        previous=previous_activity,
+    )
+
     if write:
         run_id = shared_run_id
         run_info: dict[str, Any] = {}
@@ -1047,6 +1125,18 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
         run_info["relative_regime"] = save_derived("relative_regime", results["relative_regime"], metadata={"type": "derived", "run_scope": run_scope}, run_id=run_id) if not results["relative_regime"].empty else None
         run_info["wrapper_metrics"] = save_derived("wrapper_metrics", ranked, metadata={"type": "derived", "run_scope": run_scope}, run_id=run_id) if not ranked.empty else None
         run_info["premium_history"] = save_derived("premium_history", premium_history, metadata={"type": "derived", "run_scope": run_scope}, run_id=run_id) if not premium_history.empty else None
+        activity = results["etf_fund_activity_daily"]
+        # If the optional source is down and no new observation arrived, keep
+        # the previous immutable snapshot instead of writing a redundant copy
+        # whose only new fact would be the failed retrieval.
+        has_new_activity_rows = not raw.get("etf_share_daily", pd.DataFrame()).empty
+        should_save_activity = not activity.empty and has_new_activity_rows
+        run_info["etf_fund_activity_daily"] = save_normalized(
+            "etf_fund_activity_daily",
+            activity,
+            metadata={"type": "normalized", "run_scope": run_scope, "source_id": "official_exchange_etf_shares"},
+            run_id=run_id,
+        ) if should_save_activity else None
         fee_frame = pd.DataFrame(list((raw.get("_published_fees") or {}).values()))
         if not fee_frame.empty:
             fee_frame = fee_frame.reindex(columns=FEE_COLUMNS)
@@ -1057,7 +1147,7 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
         # Bounded retention. Every run writes the complete history rather than
         # a delta, so old snapshots are pure duplication; see prune_runs.
         pruned: dict[str, list[str]] = {}
-        for root, datasets in ((NORMALIZED_DIR, ("index_price_daily", "etf_price_daily", "southbound_market_flow")),
+        for root, datasets in ((NORMALIZED_DIR, ("index_price_daily", "etf_price_daily", "southbound_market_flow", "etf_fund_activity_daily")),
                                # premium_history was missing here, so the one
                                # dataset that carries a full 11k-row series
                                # kept every run it had ever written while the
@@ -1065,7 +1155,7 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
                                (DERIVED_DIR, ("exposure_technicals", "relative_regime", "wrapper_metrics",
                                               "premium_history", "relative_pairs", "relative_pair_history",
                                               "fund_fees")),
-                               (RAW_DIR, ("index_close", "etf_close", "etf_spot"))):
+                               (RAW_DIR, ("index_close", "etf_close", "etf_spot", "etf_share_daily"))):
             for dataset_name in datasets:
                 dropped = prune_runs(root, dataset_name, keep=RUN_RETENTION)
                 if dropped:

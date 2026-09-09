@@ -409,10 +409,10 @@ def _render_etf_card(w_df: pd.DataFrame, exposure_id: str, is_overseas: bool = F
         if not quote_ok:
             if quote_basis == "last_close":
                 badge = '<span style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:700;">上一收盘 · 非实时</span>'
-                detail_str = f'折溢价: <b style="color:#92400e;font-family:monospace;">{_fmt_pct(prem)}</b> · 费率: <span style="color:#64748b;">{fee_str}</span>'
+                detail_str = f'折溢价: <b style="color:#92400e;font-family:monospace;">—</b> · 费率: <span style="color:#64748b;">{fee_str}</span>'
             elif quote_status == "Stale":
                 badge = '<span style="background:#fee2e2;color:#b91c1c;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:700;">报价已过期</span>'
-                detail_str = f'折溢价: <b style="color:#b91c1c;font-family:monospace;">{_fmt_pct(prem)}</b> · 费率: <span style="color:#64748b;">{fee_str}</span>'
+                detail_str = f'折溢价: <b style="color:#b91c1c;font-family:monospace;">—</b> · 费率: <span style="color:#64748b;">{fee_str}</span>'
             elif quote_status == "Unverified" and displayable_quote:
                 badge = '<span style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:700;">已抓取 · 时间未验证</span>'
                 detail_str = f'折溢价: <b style="color:#92400e;font-family:monospace;">{_fmt_pct(prem)}</b> · 费率: <span style="color:#64748b;">{fee_str}</span>'

@@ -702,7 +702,7 @@ def _detect_relative_events(pair_history: pd.DataFrame, *, after_date: str | Non
 def _operational_events(freshness: Mapping[str, Any] | None, report_date: str) -> list[AlertEvent]:
     events: list[AlertEvent] = []
     for error in (freshness or {}).get("fetch_errors", []) or []:
-        if not isinstance(error, Mapping) or error.get("severity") != "event":
+        if not isinstance(error, Mapping) or error.get("severity") not in {"event", "optional"}:
             continue
         dataset = str(error.get("dataset") or "data")
         ticker = _normalise_ticker(error.get("ticker")) or dataset
@@ -771,7 +771,7 @@ def _freshness_blockers(
     regressions = freshness.get("coverage_regressions") or []
     blockers.extend(f"coverage regression: {item}" for item in regressions[:6])
     for error in freshness.get("fetch_errors", []) or []:
-        if isinstance(error, Mapping) and error.get("severity") != "event":
+        if isinstance(error, Mapping) and error.get("severity") not in {"event", "optional"}:
             dataset = str(error.get("dataset") or "data")
             blockers.append(f"fetch error: {dataset}")
     return tuple(blockers)

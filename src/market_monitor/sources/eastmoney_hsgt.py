@@ -37,6 +37,20 @@ MARKET_COLUMNS = {
 }
 
 
+_MARKET_NUMERIC_COLUMNS = (
+    "net_buy_yi",
+    "buy_turnover_yi",
+    "sell_turnover_yi",
+    "cumulative_net_buy_trillion",
+    "inflow_yi",
+    "balance_yi",
+    "holding_market_value",
+    "leader_change_pct",
+    "csi300",
+    "csi300_change_pct",
+)
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -75,25 +89,38 @@ def fetch_southbound_market_flow() -> pd.DataFrame:
     raw = ak.stock_hsgt_hist_em(symbol="南向资金")
     if raw is None or raw.empty:
         return pd.DataFrame()
-    frame = raw.rename(columns=MARKET_COLUMNS).copy()
-    frame["trade_date"] = pd.to_datetime(frame["trade_date"], errors="coerce")
-    for column in (
-        "net_buy_yi",
-        "buy_turnover_yi",
-        "sell_turnover_yi",
-        "cumulative_net_buy_trillion",
-        "inflow_yi",
-        "balance_yi",
-        "holding_market_value",
-        "leader_change_pct",
-        "csi300",
-        "csi300_change_pct",
-    ):
-        if column in frame.columns:
-            frame[column] = pd.to_numeric(frame[column], errors="coerce")
-    frame = frame.dropna(subset=["trade_date"]).sort_values("trade_date").reset_index(drop=True)
+
+    frame = normalize_southbound_market_flow(raw)
+    if frame.empty:
+        return frame
     frame["flow"] = "southbound"
     frame["source_id"] = "eastmoney:hsgt_hist"
     frame["source_url"] = "https://data.eastmoney.com/hsgt/hsgtV2.html"
     frame["retrieved_at_utc"] = _now()
+    return frame
+
+
+def normalize_southbound_market_flow(raw: pd.DataFrame | None) -> pd.DataFrame:
+    """Normalize the aggregate Stock Connect feed at every read boundary.
+
+    Eastmoney has historically used ``0`` as a placeholder for market-wide
+    holding value before that field was populated, and it can repeat the
+    placeholder in a current response.  A zero holding value is not a valid
+    market-wide observation, so preserve it as missing rather than drawing a
+    fake collapse to HK$0 or treating it as a fresh value.  The function also
+    accepts an already-normalized frame so artifact rebuilds repair older local
+    snapshots without needing a new network call.
+    """
+    if raw is None or raw.empty:
+        return pd.DataFrame()
+
+    frame = raw.rename(columns=MARKET_COLUMNS).copy()
+    frame["trade_date"] = pd.to_datetime(frame["trade_date"], errors="coerce")
+    for column in _MARKET_NUMERIC_COLUMNS:
+        if column in frame.columns:
+            frame[column] = pd.to_numeric(frame[column], errors="coerce")
+    if "holding_market_value" in frame.columns:
+        holding_value = frame["holding_market_value"]
+        frame["holding_market_value"] = holding_value.where(holding_value.gt(0))
+    frame = frame.dropna(subset=["trade_date"]).sort_values("trade_date").reset_index(drop=True)
     return frame

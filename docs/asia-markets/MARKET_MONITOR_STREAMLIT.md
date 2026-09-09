@@ -75,7 +75,9 @@ Provider ownership is declared per exposure and routed explicitly:
 - Sina HK index daily: Hang Seng / Hong Kong index exposures and HK benchmark
   legs.
 - CSI index daily: HK Internet (`931637`) and CN-KR Semiconductor (`931643`),
-  using each index's own official family rather than a proxy series.
+  using each index's own official family rather than a proxy series. The
+  latter is a cross-border QDII theme and stays in the China/HK view; the
+  APAC ex-CN/HK view contains only actual Japan, Korea and Taiwan benchmarks.
 - Yahoo Finance: Nasdaq 100, S&P 500, Nikkei 225 (`^N225`), Germany DAX
   (`^GDAXI`) and US relative-strength benchmark legs. The provider symbol is
   declared per exposure as `yf_symbol`; deriving it from `index_id` once
@@ -85,6 +87,10 @@ Provider ownership is declared per exposure and routed explicitly:
   bid/ask and market-cap proxy.
 - Eastmoney published NAV endpoint: historical close-vs-NAV premium backfill.
 - Eastmoney issuer fee endpoint: management and custody fee reconciliation.
+- Shanghai and Shenzhen Stock Exchange ETF scale feeds: official published
+  share-count observations for tracked A-share wrappers. SSE's source field is
+  published in units of ten-thousand shares and is normalized to actual shares;
+  SZSE's daily feed is already actual shares.
 
 The pipeline stores five years of index history for rolling relative-signal
 baselines and two years of ETF price/premium chart history. Historical premium
@@ -96,16 +102,22 @@ measurements are not silently presented as identical observations.
 
 The market page has four functional layers:
 
-1. **Market Leadership / 市场领导力** — tabbed: core broad-based indices,
-   China/HK themes, US 11 GICS sectors, and all exposures. Series are rebased
-   to 100, or compared through an interactive A/B ratio selector.
+1. **Market Leadership / 市场领导力** — a regional selector for China/HK +
+   QDII, US, APAC ex-CN/HK, EMEA and Global. Only the selected region is
+   rendered. The visible leadership basket stays to actual core benchmarks;
+   style/theme and QDII exposures remain available in **By Index / 按指数查看**.
+   Series are rebased to 100, or compared through an interactive A/B ratio
+   selector.
 2. **Relative Regime / 相对强弱** — 12 configured pair summaries and their
    daily ratio history, including size, growth/value, risk-appetite, HK, US
    breadth and China-versus-US comparisons.
 3. **By Index / 按指数查看** — select one exposure and see RSI, distance to
    MA20, average premium, 60-day drawdown, index price + MA20 + RSI subplot,
    all ETF wrapper prices rebased to 100, premium history and the wrapper
-   table.
+   table. Only the China/HK/QDII tab also shows official ETF share counts and
+   a separate NAV-validated estimated creation/redemption panel; US, APAC,
+   EMEA and Global/All views remain actual-index views without this listed-
+   wrapper activity panel.
 4. **Wrapper selection** — entry cost is premium plus half the bid/ask spread
    in basis points; peer rank is within the same exposure; liquidity is shown
    separately; hold rank uses management plus custody fee, size proxy and age.
@@ -157,37 +169,31 @@ snapshot, not a promise that every future daily run has the same row count.
   the wrapper caveat.
 - The index and wrapper data are daily/session data, not intraday execution
   data. A run timestamp and an observation date are different things.
+- Only quotes with a verified current observation enter premium comparisons and
+  ranks. A recent but unverified quote may be shown with an explicit status;
+  stale and previous-close premiums are shown as unavailable in both the
+  dashboard and email. Published management/custody fees remain visible even
+  when a market quote is unavailable.
+- ETF fund activity is an optional A-share pilot. It is scoped to the
+  China/HK/QDII tab, even when the underlying index is foreign. A share change is an official
+  exchange observation; estimated CNY flow is only `shares_change * same-day
+  published NAV` when two observations and that NAV are available. Missing NAV
+  remains `shares_only` and is not filled with IOPV, turnover or a provider's
+  main-force-flow field. The activity source is non-blocking for the core
+  market email and its absence is surfaced as degraded/unavailable health.
 - SSE Dividend currently has only one tracked wrapper; HSI and STAR 50 have
   two. This is a cohort-coverage limitation, not evidence that rank #1 is
   informative.
 
-## Known follow-ups found during the latest review
+## Remaining planned enhancements
 
-These are real implementation gaps and should not be forgotten:
+These are deliberate V1.1 items, not current rendering or data-integrity bugs:
 
-1. `render_market_ratio_chart()` describes a reindexed ratio but currently
-   plots raw `A / B`; if the product requirement remains “reindexed ratio”,
-   rebase that ratio to 100 and update the title/caption together.
-2. ~~The CSI source-health row uses the Sina latest-date variable.~~ Closed
-   on 2026-08-22. The Sina HK row had the same defect, which this note did not
-   record; both now date themselves by their own observations, so a stalled
-   HK or CSI feed can no longer read as fresh for as long as the mainland one
-   keeps updating.
-3. Chinese exposure labels and controls are localized, but the wrapper table
-   still exposes many English field names and ETF chart labels/fund names are
-   not fully bilingual. Complete this as a UI localization task, not by
-   changing the source identifiers.
-4. Historical premium z-scores for each wrapper, verified NAV-based AUM and
-   tracking difference remain V1.1 work.
-5. ~~The US sector universe has no fee reconciliation.~~ Closed on
-   2026-08-22. The concern was well founded: verifying the 27 entries against
-   the issuers found **17 stale**, including all eleven SPDR sectors at 0.09%
-   where State Street publishes 0.08%, and SOXX 0.35% against a published
-   0.33%. `src/market_monitor/us_etf/reconcile.py` now checks the registry
-   against the provider and reports a disagreement as an event rather than
-   applying it silently. Eleven funds sharing one figure remains the shape
-   that hides this: the fee component of the score differentiates nothing, so
-   nothing looks wrong.
+1. Historical premium z-scores for each wrapper, verified NAV-based AUM and
+   tracking difference.
+2. More independently validated US sub-industry data; the current board
+   clearly marks partial/stale coverage and does not present fallback data as
+   complete.
 
 ## Required validation after changes
 

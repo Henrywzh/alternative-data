@@ -675,6 +675,17 @@ replacement for the operating manual or generated source-status JSON.
   verified as ready at commit `9a096149`; 71 market-monitor tests and 64
   Streamlit/wiring/history tests passed in the 2026-08-21 review. Do not
   treat those counts as a permanent freshness guarantee.
+- The market monitor now has an optional ETF fund-activity pilot for tracked
+  A-share wrappers. It stores official SSE/SZSE published share counts in
+  separate run-scoped raw/normalized datasets and derives a CNY flow only from
+  share changes multiplied by same-day published NAV. Missing NAV is retained
+  as shares-only; the optional source cannot block the core market email and
+  is reported in source health. The artifact and Streamlit detail view keep
+  the panel scoped to China/HK cohorts so it does not contaminate US, APAC or
+  EMEA actual-index views or the Global/All view. The source adapter rejects
+  exchange rows whose published date is outside the known ETF-session window,
+  and an empty current response marks retained activity as degraded rather
+  than healthy.
 - The market-monitor review also recorded four follow-ups: ratio mode still
   needs true reindexing if that remains the requested display, CSI source
   health should use its own latest observation date, wrapper table columns
@@ -2078,3 +2089,22 @@ Still open: decide whether artifact-refresh-guard should merge
 per-dataset instead of reverting the whole artifact when one source
 fails; harden the SHKP quarterly fetch for CI IPs; make the SHKP
 quarterly fact extraction deterministic so its row count stops churning.
+
+## Global market regime radar
+
+The Streamlit-only defensive radar is backed by
+`src/global_market_regime/` and
+`apps/asia-markets-dashboard/.generated/global-market-regime-artifact.json`.
+Its daily workflow runs at 22:30 UTC on weekdays, after the US cash
+close in both EST and EDT. It monitors persistent Brent and US 10-year
+thresholds, Atlanta Fed three-month-average SOFR probabilities,
+Polymarket next-meeting hike/hold/cut token histories, shared-date
+high-yield-OAS/VIX stress and weekly CFTC positioning.
+
+All persisted datasets in an artifact must share one full-run ID.
+Stale conditions remain visible with their own freshness labels but are
+excluded from the aggregate regime state and state-change email logic.
+Polymarket outcome history is built from each outcome token's own price
+history; a current snapshot price is never projected backwards. Gmail
+delivery is non-blocking and cannot prevent refreshed data and artifacts
+from being committed.

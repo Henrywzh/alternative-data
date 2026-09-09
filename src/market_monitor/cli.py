@@ -153,7 +153,7 @@ def main(argv: list[str] | None = None) -> int:
         fetch_errors = [
             error
             for error in (freshness.get("fetch_errors") or [])
-            if error.get("severity") != "event"
+            if error.get("severity") not in {"event", "optional"}
         ]
         if fetch_errors:
             blockers.append(f"{len(fetch_errors)} fetch error(s)")

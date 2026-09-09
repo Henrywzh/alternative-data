@@ -57,6 +57,35 @@ ALERT_STATE_PATH = DERIVED_DIR / "alert_state.json"
 # signals, but their comparison rule is still part of the data contract.
 FEE_CHANGE_RELATIVE_THRESHOLD = 0.05
 
+# ETF fund-activity collection is deliberately bounded.  The exchange feeds
+# publish share counts rather than a universal live flow series: SZSE exposes
+# a daily range (capped by the provider at six months), while SSE exposes a
+# dated snapshot.  A first run therefore bootstraps a useful, bounded window;
+# later runs refresh a small overlap and append the newest published snapshot.
+# These are contract values so the source adapter and tests share one policy.
+ETF_ACTIVITY_BOOTSTRAP_DAYS = 180
+ETF_ACTIVITY_REFRESH_TAIL_DAYS = 10
+ETF_ACTIVITY_SSE_BOOTSTRAP_SESSIONS = 60
+ETF_ACTIVITY_SSE_REFRESH_SESSIONS = 10
+# The full activity history stays in local run-scoped Parquet.  The portable
+# dashboard artifact only needs a bounded recent slice; keeping the limit in
+# the domain contract prevents a renderer change from silently growing the
+# GitHub-tracked JSON without bound.
+ETF_ACTIVITY_ARTIFACT_MAX_ROWS = 2_000
+
+# The activity panel is supplementary context.  It must never turn an
+# unavailable optional source into a false "healthy" trading signal.
+ETF_ACTIVITY_METHOD_SHARE_DELTA_NAV = "official_share_delta_nav"
+ETF_ACTIVITY_METHOD_SHARE_DELTA_NO_NAV = "official_share_delta_without_nav"
+ETF_ACTIVITY_STATUS_VALIDATED = "validated"
+ETF_ACTIVITY_STATUS_SHARES_ONLY = "shares_only"
+ETF_ACTIVITY_STATUS_INSUFFICIENT_HISTORY = "insufficient_history"
+ETF_ACTIVITY_STATUS_UNAVAILABLE = "unavailable"
+# The exchange share-count feeds cover listed wrappers, not the underlying
+# foreign index itself.  Keep their activity panel on the China/HK/QDII tab;
+# regional tabs for the underlying markets use their actual index series.
+ETF_ACTIVITY_MARKET_TAB = "china"
+
 
 # Identifiers used across the domain. Exposure groups indexes; index owns
 # wrappers; venue keeps the schema open to CN / HK / US listing venues.
@@ -593,27 +622,31 @@ def exposure_by_id(exposure_id: str) -> dict:
 # Which exposures each regional tab of the ETF Monitor shows.
 #
 # This is a curation, not something `region` can produce: the China tab
-# deliberately carries S&P 500, Nasdaq 100, Nikkei and DAX because those are
-# reachable from the mainland through QDII wrappers, and Global is a
-# cross-region digest. It lives here because it was previously written out
-# three times -- as five set literals in the Streamlit app, and again as an
-# inline `isin({...})` in the artifact builder deciding which price series to
-# export. The three had already drifted: us_growth, us_small and us_value were
-# listed in the US tab but their price series were never exported, so the tab
-# silently offered four of its seven indices.
+# deliberately carries overseas/QDII exposures because those are reachable
+# from the mainland through listed wrappers, and Global is a cross-region
+# digest. The China leadership basket is intentionally narrower: it contains
+# only core broad benchmarks, while dividend, technology and cross-border
+# themes remain available in the By Index section. It lives here because it
+# was previously written out three times -- as five set literals in the
+# Streamlit app, and again as an inline `isin({...})` in the artifact builder
+# deciding which price series to export. Style and ETF-proxy legs used only
+# for relative-strength pairs stay in EXPOSURES but do not masquerade as
+# additional actual indices in a regional leadership board.
 MARKET_TABS: dict[str, tuple[str, ...]] = {
     "china": (
         "csi300", "csi500", "csi1000", "chinext", "growth", "dividend",
         "hsi", "hstech", "hk_dividend", "hk_internet", "hk_midcap", "hk_hshares",
-        "cn_infotech", "cn_staples", "sp500", "ndx", "nikkei225", "dax", "saudi",
+        "cn_infotech", "cn_staples", "kr_semis", "sp500", "ndx", "nikkei225", "dax", "saudi",
     ),
     "china_core": (
-        "csi300", "csi500", "csi1000", "chinext", "growth", "dividend",
-        "hsi", "hstech", "hk_dividend", "hk_internet", "hk_midcap", "hk_hshares",
-        "cn_infotech", "cn_staples",
+        "csi300", "csi500", "csi1000", "hsi",
     ),
-    "us": ("sp500", "ndx", "dow", "russell2000", "us_small", "us_growth", "us_value"),
-    "apac": ("nikkei225", "kospi", "twii", "kr_semis"),
+    "us": ("sp500", "ndx", "dow", "russell2000"),
+    # CN-KR Semiconductor is a cross-border QDII theme, not an APAC
+    # ex-China/HK country benchmark. It is therefore available on `china`
+    # with the other QDII tools, while this tab stays to actual Japan/Korea/
+    # Taiwan index series.
+    "apac": ("nikkei225", "kospi", "twii"),
     "emea": ("dax", "ftse100", "cac40", "saudi"),
     "global": (
         "csi300", "sp500", "ndx", "dow", "russell2000", "hsi", "nikkei225",
@@ -625,6 +658,16 @@ MARKET_TABS: dict[str, tuple[str, ...]] = {
 def market_tab_exposures(tab: str) -> set[str]:
     """Exposure ids shown by one regional tab."""
     return set(MARKET_TABS[tab])
+
+
+def market_tab_exposure_order(tab: str) -> tuple[str, ...]:
+    """Stable display order for one regional tab."""
+    return MARKET_TABS[tab]
+
+
+def etf_activity_exposures() -> set[str]:
+    """Exposure ids allowed to consume listed-wrapper share-count activity."""
+    return market_tab_exposures(ETF_ACTIVITY_MARKET_TAB)
 
 
 def charted_exposures() -> set[str]:

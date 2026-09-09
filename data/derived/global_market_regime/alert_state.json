@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "last_states": {
+    "brent": "Normal",
+    "us10y": "Normal",
+    "hike_prob": "Escalating",
+    "credit_vix": "Normal",
+    "fomc_hike": "Normal"
+  },
+  "last_overall": "Escalating",
+  "sent_event_keys": [],
+  "last_sent_at": null,
+  "last_evaluation_at": "2026-09-05T10:10:55.610743Z",
+  "last_run_id": "20260905T101028-6b1713f4",
+  "last_decision": "quiet",
+  "last_component_events": [],
+  "alert_mode": "preview"
+}

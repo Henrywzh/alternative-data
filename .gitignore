@@ -73,6 +73,10 @@ data/derived/market_monitor/test_scope_ds/
 # versioned: the dashboard reads the trailing window embedded in the published
 # artifact, which the daily workflow does commit.
 data/normalized/market_monitor/etf_price_daily/
+# etf_fund_activity_daily is an accumulated local source history too.  The
+# portable artifact publishes a bounded recent projection, so committing the
+# full run-scoped copy would grow the repository on every refresh.
+data/normalized/market_monitor/etf_fund_activity_daily/
 !data/normalized/provider_adoption/
 data/normalized/provider_adoption/*
 !data/normalized/provider_adoption/*.csv
@@ -244,6 +248,18 @@ data/normalized/provider_incidents/*
 !data/normalized/ai_hiring/
 data/normalized/ai_hiring/*
 !data/normalized/ai_hiring/*.parquet
+
+# global_market_regime: commit normalized/derived snapshots; raw Atlanta workbook stays local.
+!data/normalized/global_market_regime/
+data/normalized/global_market_regime/**
+!data/normalized/global_market_regime/**/
+!data/normalized/global_market_regime/**/*.parquet
+!data/normalized/global_market_regime/**/*.json
+!data/derived/global_market_regime/
+data/derived/global_market_regime/**
+!data/derived/global_market_regime/**/
+!data/derived/global_market_regime/**/*.parquet
+!data/derived/global_market_regime/**/*.json
 
 # fred_macro: commit normalized parquet files only (CSVs ignored by the repo-size rule)
 !data/normalized/fred_macro/

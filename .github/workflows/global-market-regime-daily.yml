@@ -1,0 +1,71 @@
+name: Global Market Regime Daily Radar
+
+on:
+  schedule:
+    # 22:30 UTC is after the US cash close in both EST and EDT; FRED H.15 and
+    # Atlanta MPT may still carry the previous completed session.
+    - cron: "30 22 * * 1-5"
+  workflow_dispatch:
+
+concurrency:
+  group: global-market-regime
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  regime:
+    name: Fetch FRED + Atlanta MPT and refresh radar
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev]
+
+      - name: Run offline unit tests
+        run: python -m pytest tests/global_market_regime -q
+
+      - name: Fetch and derive regime states
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY || secrets.SEMICONDUCTOR_FRED_API_KEY }}
+        run: |
+          python -m global_market_regime.cli --alert-mode preview
+
+      - name: Build Streamlit artifact
+        working-directory: apps/asia-markets-dashboard
+        run: |
+          python scripts/build_global_market_regime_artifact.py \
+            --output .generated/global-market-regime-artifact.json
+
+      - name: Commit refreshed data + artifact
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            data/normalized/global_market_regime \
+            data/derived/global_market_regime \
+            apps/asia-markets-dashboard/.generated/global-market-regime-artifact.json \
+            apps/asia-markets-dashboard/.generated/global-market-regime-artifact-zh.json
+          if git diff --staged --quiet; then
+            echo "No global-market-regime changes to commit"
+            exit 0
+          fi
+          git commit -m "chore(global-market-regime): refresh defensive radar [$(date -u +%Y-%m-%d)]"
+          for attempt in 1 2 3; do
+            if git pull --rebase origin main && git push; then
+              exit 0
+            fi
+            sleep $((attempt * 5))
+          done
+          exit 1

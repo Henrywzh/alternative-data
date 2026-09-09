@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import ast
+import json
 from pathlib import Path
+import sys
 
 import pandas as pd
 import pytest
@@ -11,40 +12,14 @@ from streamlit.testing.v1 import AppTest
 
 
 APP_PATH = Path(__file__).resolve().parents[1] / "apps" / "asia-markets-streamlit" / "app.py"
+APP_DIR = APP_PATH.parent
+if str(APP_DIR) not in sys.path:
+    sys.path.insert(0, str(APP_DIR))
+
+from am.page_registry import PAGE_DEFINITIONS
 
 
-def _dispatched_pages() -> list[str]:
-    """Every page ``main()`` can route to, read out of the dispatch itself.
-
-    A hand-maintained list is the thing that failed: the smoke test ran two
-    pages in both languages while eight others -- including the ETF monitor,
-    whose Chinese half raised KeyError in production -- had never been
-    rendered by any test. Deriving the list means a page cannot be added
-    without being covered.
-    """
-    tree = ast.parse(APP_PATH.read_text(encoding="utf-8"))
-    main = next(
-        node
-        for node in tree.body
-        if isinstance(node, ast.FunctionDef) and node.name == "main"
-    )
-    pages = {
-        comparator.value
-        for node in ast.walk(main)
-        if isinstance(node, ast.Compare)
-        and isinstance(node.left, ast.Name)
-        and node.left.id == "page"
-        for comparator in node.comparators
-        if isinstance(comparator, ast.Constant) and isinstance(comparator.value, str)
-    }
-    # If the dispatch is ever refactored into a table this parse returns
-    # nothing, and a test that silently covers zero pages is worse than no
-    # test at all. Fail loudly instead, so whoever refactors updates this.
-    assert len(pages) >= 10, f"page discovery found only {sorted(pages)}"
-    return sorted(pages)
-
-
-DISPATCHED_PAGES = _dispatched_pages()
+DISPATCHED_PAGES = [definition.key for definition in PAGE_DEFINITIONS]
 
 
 @pytest.mark.parametrize("page", DISPATCHED_PAGES)
@@ -64,6 +39,32 @@ def test_every_page_renders_in_both_languages(page: str, language_choice: str) -
     assert not app.exception, [str(error) for error in app.exception]
 
 
+@pytest.mark.parametrize("market_region", ["china", "us", "apac", "emea", "global"])
+@pytest.mark.parametrize("language_choice", ["English", "中文"])
+def test_every_market_region_renders_in_both_languages(
+    market_region: str,
+    language_choice: str,
+) -> None:
+    """The outer page smoke test must also exercise every inner region."""
+    app = AppTest.from_file(str(APP_PATH), default_timeout=120)
+    app.session_state["page"] = "market"
+    app.session_state["language_choice"] = language_choice
+    app.session_state["market_region"] = market_region
+    app.run()
+
+    assert not app.exception, [str(error) for error in app.exception]
+
+
+def test_new_session_defaults_to_chinese() -> None:
+    """The bilingual switch remains available, but Chinese is the default UI."""
+    app = AppTest.from_file(str(APP_PATH), default_timeout=120)
+    app.session_state["page"] = "market"
+    app.run()
+
+    assert not app.exception, [str(error) for error in app.exception]
+    assert app.session_state["language_choice"] == "中文"
+
+
 def _app_module():
     """Import app.py as a module so its helpers can be tested directly."""
     import importlib.util
@@ -76,6 +77,150 @@ def _app_module():
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def test_localized_artifact_failure_keeps_current_english_data(monkeypatch) -> None:
+    """A presentation-only ZH failure must not discard valid current data."""
+    app = _app_module()
+    current_by_slug: dict[str, dict] = {}
+
+    def fake_load(slug: str, language: str, artifact_mtime_ns: int = 0) -> dict:
+        if language == "zh":
+            raise json.JSONDecodeError("broken localized artifact", "", 0)
+        return current_by_slug.setdefault(
+            slug,
+            {
+                "manifest": {"title": slug},
+                "snapshot": {"datasets": {"current": [{"value": 1}]}},
+            },
+        )
+
+    monkeypatch.setattr(app.am.artifacts, "load_artifact", fake_load)
+    monkeypatch.setattr(app.am.artifacts, "artifact_mtime_ns", lambda *_args: 0)
+
+    artifacts, labels, errors = app.load_sector_artifacts("zh")
+
+    assert errors
+    for key, config in app.SECTORS.items():
+        assert artifacts[key] is current_by_slug[config["slug"]]
+        assert labels[key] is artifacts[key]
+        assert artifacts[key]["snapshot"]["datasets"]["current"] == [{"value": 1}]
+
+
+def test_load_artifact_rejects_non_row_array_dataset(tmp_path, monkeypatch) -> None:
+    """Every snapshot dataset must be a row array, not an arbitrary object."""
+    app = _app_module()
+    core = app.am.core
+    payload = {
+        "manifest": {},
+        "snapshot": {"datasets": {"bad": {"value": 1}}},
+    }
+    (tmp_path / "bad-artifact.json").write_text(json.dumps(payload), encoding="utf-8")
+    monkeypatch.setattr(core, "ARTIFACT_ROOT", tmp_path)
+    core.load_artifact.clear()
+
+    with pytest.raises(ValueError, match="row array"):
+        core.load_artifact("bad", "en", 0)
+
+    core.load_artifact.clear()
+
+
+def test_load_artifact_rejects_non_object_rows(tmp_path, monkeypatch) -> None:
+    """A dataset list must contain row objects, not scalar values."""
+    app = _app_module()
+    core = app.am.core
+    payload = {
+        "manifest": {},
+        "snapshot": {"datasets": {"bad": [{"value": 1}, "not-a-row"]}},
+    }
+    (tmp_path / "bad-artifact.json").write_text(json.dumps(payload), encoding="utf-8")
+    monkeypatch.setattr(core, "ARTIFACT_ROOT", tmp_path)
+    core.load_artifact.clear()
+
+    with pytest.raises(ValueError, match="row array"):
+        core.load_artifact("bad", "en", 0)
+
+    core.load_artifact.clear()
+
+
+def test_partial_regulatory_news_schema_degrades_without_crashing(monkeypatch) -> None:
+    """A row array can still be incomplete; renderers must guard required columns."""
+    app = _app_module()
+
+    class QuietStreamlit:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def container(self, **_kwargs):
+            return self
+
+        def expander(self, *_args, **_kwargs):
+            return self
+
+        def columns(self, count):
+            return [self] * count
+
+        def markdown(self, *_args, **_kwargs):
+            return None
+
+        def metric(self, *_args, **_kwargs):
+            return None
+
+        def caption(self, *_args, **_kwargs):
+            return None
+
+        def info(self, *_args, **_kwargs):
+            return None
+
+    monkeypatch.setattr(app.am.crypto, "st", QuietStreamlit())
+    monkeypatch.setattr(app.am.crypto, "render_table", lambda *_args, **_kwargs: None)
+    artifact = {
+        "snapshot": {
+            "datasets": {
+                "market_kpi_summary": [],
+                "hkma_issuers": [],
+                "sfc_vatps": [],
+                "regulatory_news": [{"issue_date": "2026-09-01"}],
+            }
+        }
+    }
+
+    app.am.crypto.render_crypto_policy_pulse(artifact, artifact, "en")
+
+
+def test_partial_regime_threshold_schema_degrades_without_crashing() -> None:
+    """Missing indicator identity must hide the cards rather than raise KeyError."""
+    app = _app_module()
+    artifact = {
+        "snapshot": {
+            "datasets": {
+                "threshold_monitor": [{"current_value": 100}],
+            }
+        }
+    }
+
+    app.am.regime.render_regime_threshold_cards(artifact, "en")
+
+
+def test_dataset_index_ignores_malformed_dataset_values() -> None:
+    app = _app_module()
+    artifacts = {
+        "market": {
+            "snapshot": {
+                "datasets": {
+                    "valid": [{"value": 1}],
+                    "malformed": {"value": 2},
+                }
+            }
+        }
+    }
+
+    options = app.am.explorer.combined_dataset_index(artifacts, "en")
+
+    assert [item[0] for item in options] == ["market:valid"]
 
 
 def test_index_style_pills_have_one_entry_per_category() -> None:
@@ -204,6 +349,30 @@ def test_every_region_tab_can_show_the_ratio_view_at_once() -> None:
     assert not app.exception, [str(error) for error in app.exception]
 
 
+def test_market_multiseries_charts_use_svg_rendering() -> None:
+    """Hidden regional tabs must not exhaust the browser's WebGL contexts.
+
+    Plotly Express switches large multi-series lines to ``scattergl`` by
+    default.  The market page evaluates all five tab bodies, including their
+    hidden charts, so one visible chart could lose its curve layer while its
+    axes and legend remained.  These charts are small enough for SVG and do
+    not need WebGL.
+    """
+    app = AppTest.from_file(str(APP_PATH), default_timeout=120)
+    app.session_state["page"] = "market"
+    app.session_state["language_choice"] = "中文"
+    app.run()
+
+    assert not app.exception, [str(error) for error in app.exception]
+    chart_types = {
+        trace.get("type")
+        for chart in app.get("plotly_chart")
+        for trace in json.loads(chart.proto.spec).get("data", [])
+    }
+    assert chart_types
+    assert "scattergl" not in chart_types
+
+
 # --- render-layer data transforms -------------------------------------
 # These four turn raw artifact records into the frames every ETF Monitor chart
 # reads. They had no tests: the only coverage over the render layer was
@@ -241,6 +410,101 @@ def test_market_price_frame_is_empty_when_the_dataset_lacks_its_columns() -> Non
     assert app._market_price_frame(
         {"index_price_daily_tail": [{"exposure_id": "csi300", "date": "2026-08-21"}]}
     ).empty
+
+
+def test_market_price_frame_rejects_nonpositive_and_duplicate_closes() -> None:
+    app = _app_module()
+    frame = app._market_price_frame(
+        {
+            "index_price_daily_tail": [
+                {"exposure_id": "csi300", "date": "2026-08-21", "close": 4100},
+                # A repeated source row must not draw the same session twice.
+                {"exposure_id": "csi300", "date": "2026-08-21", "close": 4101},
+                {"exposure_id": "csi300", "date": "2026-08-20", "close": 0},
+            ]
+        }
+    )
+    assert len(frame) == 1
+    assert frame.iloc[0]["close"] == 4101
+
+
+def test_market_activity_frame_rejects_placeholder_shares_and_deduplicates() -> None:
+    app = _app_module()
+    frame = app._market_etf_activity_frame(
+        {
+            "etf_fund_activity_daily": [
+                {
+                    "fund_id": "510300",
+                    "observation_date": "2026-08-21",
+                    "shares_outstanding": 0,
+                },
+                {
+                    "fund_id": "510300",
+                    "observation_date": "2026-08-22",
+                    "shares_outstanding": 1_001,
+                },
+                {
+                    "fund_id": "510300",
+                    "observation_date": "2026-08-22",
+                    "shares_outstanding": 1_002,
+                },
+                {
+                    "fund_id": None,
+                    "observation_date": "2026-08-22",
+                    "shares_outstanding": 1_003,
+                },
+            ]
+        }
+    )
+    assert len(frame) == 1
+    assert frame.iloc[0]["shares_outstanding"] == 1_002
+
+
+def test_market_coverage_localizes_months_and_availability() -> None:
+    app = _app_module()
+    assert app.localize_coverage(
+        "Sep 2024 – Sep 2026 · all available", "zh"
+    ) == "2024年9月 – 2026年9月 · 全部可用"
+
+
+def test_observation_date_label_preserves_quarter_and_academic_year_labels() -> None:
+    app = _app_module()
+
+    assert app.observation_date_label("2024-Q1", "en") == "2024-Q1"
+    assert app.observation_date_label("2024/25", "zh") == "2024/25"
+
+
+def test_southbound_date_is_metadata_not_a_directional_metric_delta(monkeypatch) -> None:
+    app = _app_module()
+    recorder = _RecordingStreamlit()
+    monkeypatch.setattr(app.am.market_us, "st", recorder)
+
+    app.render_southbound_market_flow(
+        pd.DataFrame(
+            [{
+                "trade_date": "2026-09-04",
+                "net_buy_yi": -76.3,
+                "balance_yi": None,
+                "holding_market_value": 12.39e12,
+            }]
+        ),
+        "zh",
+        "1 year",
+    )
+
+    assert recorder.metrics[0][2] is None
+    assert any(
+        "观察日" in caption and "2026-09-04" in caption
+        for caption in recorder.captions
+    )
+
+
+def test_computed_rsi_handles_one_direction_and_flat_series() -> None:
+    app = _app_module()
+    rising = app._compute_rsi_series(pd.Series([1, 2, 3, 4, 5], dtype=float))
+    flat = app._compute_rsi_series(pd.Series([5, 5, 5, 5, 5], dtype=float))
+    assert rising.iloc[-1] == 100.0
+    assert flat.iloc[-1] == 50.0
 
 
 def test_market_pair_history_frame_coerces_every_numeric_column() -> None:
@@ -296,6 +560,8 @@ class _RecordingStreamlit:
         self.infos: list[str] = []
         self.captions: list[str] = []
         self.options: dict[str, list] = {}
+        self.dataframes: list[pd.DataFrame] = []
+        self.metrics: list[tuple] = []
 
     def _pick(self, label, options, key=None, **kwargs):
         options = list(options)
@@ -320,6 +586,12 @@ class _RecordingStreamlit:
 
     def caption(self, text, **kwargs):
         self.captions.append(str(text))
+
+    def dataframe(self, frame, **kwargs):
+        self.dataframes.append(frame.copy())
+
+    def metric(self, label, value, delta=None, **kwargs):
+        self.metrics.append((label, value, delta, kwargs))
 
     def columns(self, spec, **kwargs):
         count = spec if isinstance(spec, int) else len(list(spec))
@@ -385,7 +657,7 @@ def test_relative_regime_orders_markets_china_first(monkeypatch) -> None:
     """
     app = _app_module()
     recorder = _RecordingStreamlit()
-    monkeypatch.setattr(app, "st", recorder)
+    monkeypatch.setattr(app.am.market, "st", recorder)
     summary, history = _regime_fixture()
 
     app.render_relative_regime(summary, history, "en", "1 year")
@@ -398,7 +670,7 @@ def test_relative_regime_charts_only_the_selected_pair(monkeypatch) -> None:
     """The cohort filter is what keeps one market's pair out of another's."""
     app = _app_module()
     recorder = _RecordingStreamlit(selections={"market_pair_region": "HK"})
-    monkeypatch.setattr(app, "st", recorder)
+    monkeypatch.setattr(app.am.market, "st", recorder)
     summary, history = _regime_fixture()
 
     app.render_relative_regime(summary, history, "en", "1 year")
@@ -407,11 +679,23 @@ def test_relative_regime_charts_only_the_selected_pair(monkeypatch) -> None:
     assert recorder.figures, "the selected pair should have produced a chart"
 
 
+def test_relative_regime_explains_pair_direction_with_reader_labels(monkeypatch) -> None:
+    app = _app_module()
+    recorder = _RecordingStreamlit(selections={"market_pair_region": "China"})
+    monkeypatch.setattr(app.am.market, "st", recorder)
+    summary, history = _regime_fixture()
+
+    app.render_relative_regime(summary, history, "en", "1 year")
+
+    assert any("CSI 500 outperforming CSI 300" in text for text in recorder.captions)
+    assert not any("numerator" in text.lower() for text in recorder.captions)
+
+
 def test_relative_regime_says_so_when_a_pair_has_no_history(monkeypatch) -> None:
     """Empty history used to be indistinguishable from a flat line."""
     app = _app_module()
     recorder = _RecordingStreamlit()
-    monkeypatch.setattr(app, "st", recorder)
+    monkeypatch.setattr(app.am.market, "st", recorder)
     summary, _ = _regime_fixture()
 
     app.render_relative_regime(summary, pd.DataFrame(), "en", "1 year")
@@ -458,7 +742,7 @@ def test_index_detail_plots_only_the_requested_exposure(monkeypatch) -> None:
     """
     app = _app_module()
     recorder = _RecordingStreamlit()
-    monkeypatch.setattr(app, "st", recorder)
+    monkeypatch.setattr(app.am.market, "st", recorder)
     prices, technicals, wrappers = _detail_fixture()
 
     app.render_market_index_detail(
@@ -492,7 +776,7 @@ def test_index_detail_names_the_window_its_premium_average_covers(monkeypatch) -
     labels = {}
     for exposure in ("csi300", "csi500"):
         recorder = _RecordingStreamlit()
-        monkeypatch.setattr(app, "st", recorder)
+        monkeypatch.setattr(app.am.market, "st", recorder)
         captured: list[str] = []
         recorder.metric = lambda label, *a, **k: captured.append(str(label))
         app.render_market_index_detail(
@@ -505,10 +789,75 @@ def test_index_detail_names_the_window_its_premium_average_covers(monkeypatch) -
     assert not any("30D" in text for text in labels["csi500"])
 
 
+def test_index_detail_hides_stale_quote_values_but_keeps_fee(monkeypatch) -> None:
+    app = _app_module()
+    recorder = _RecordingStreamlit()
+    monkeypatch.setattr(app.am.market, "st", recorder)
+    prices, technicals, _ = _detail_fixture()
+    wrappers = pd.DataFrame(
+        [
+            {
+                "exposure_id": "csi300",
+                "fund_id": "159655",
+                "ticker": "159655",
+                "fund_name": "S&P 500 ETF",
+                "premium_pct": 7.13,
+                "relative_premium_pct": 0.34,
+                "entry_cost_bp": 715.0,
+                "entry_status": "FAIR",
+                "peer_rank": 1,
+                "aum_proxy": 1_000_000_000,
+                "management_fee": 0.005,
+                "custody_fee": 0.001,
+                "quote_basis": "intraday_quote",
+                "quote_status": "Stale",
+            }
+        ]
+    )
+
+    app.render_market_index_detail(
+        "csi300", "CSI 300", prices, technicals, wrappers, "zh", "1 year"
+    )
+
+    table = next(frame for frame in recorder.dataframes if "折溢价率" in frame.columns)
+    row = table.iloc[0]
+    assert row["折溢价率"] == "—"
+    assert row["同类相对溢价"] == "—"
+    assert row["综合买入成本"] == "—"
+    assert row["买入优选"] == "—"
+    assert row["基金规模"] == "—"
+    assert row["总费率"] == "0.60%/年"
+    assert row["报价状态"] == "报价已过期"
+    assert row["建仓建议"] == "暂无最新报价"
+    assert recorder.infos == []
+
+
+def test_leadership_chart_contains_nonempty_series(monkeypatch) -> None:
+    """The blank chart regression must be visible in the chart payload itself."""
+    app = _app_module()
+    recorder = _RecordingStreamlit()
+    monkeypatch.setattr(app.am.market, "st", recorder)
+    prices, _, _ = _detail_fixture()
+
+    app.render_market_leadership_chart(
+        prices,
+        {"csi300": "CSI 300", "csi500": "CSI 500"},
+        "en",
+        "1 year",
+    )
+
+    assert recorder.figures
+    assert any(
+        pd.Series(trace.y).notna().any()
+        for trace in recorder.figures[0].data
+        if getattr(trace, "y", None) is not None
+    )
+
+
 def test_index_detail_survives_an_exposure_with_no_technicals(monkeypatch) -> None:
     app = _app_module()
     recorder = _RecordingStreamlit()
-    monkeypatch.setattr(app, "st", recorder)
+    monkeypatch.setattr(app.am.market, "st", recorder)
     prices, _, wrappers = _detail_fixture()
 
     app.render_market_index_detail(
@@ -516,6 +865,67 @@ def test_index_detail_survives_an_exposure_with_no_technicals(monkeypatch) -> No
     )
 
     assert recorder.figures
+
+
+def test_index_detail_activity_chart_is_scoped_to_selected_wrapper_cohort(monkeypatch) -> None:
+    """The new activity chart must not aggregate another index's ETF rows."""
+    app = _app_module()
+    recorder = _RecordingStreamlit()
+    monkeypatch.setattr(app.am.market, "st", recorder)
+    prices, technicals, wrappers = _detail_fixture()
+    activity = pd.DataFrame(
+        [
+            {
+                "observation_date": "2026-01-01",
+                "fund_id": "510300",
+                "exposure_id": "csi300",
+                "shares_outstanding": 1_000.0,
+                "shares_change": None,
+                "nav": 4.0,
+                "estimated_flow_cny": None,
+                "flow_status": "insufficient_history",
+            },
+            {
+                "observation_date": "2026-01-02",
+                "fund_id": "510300",
+                "exposure_id": "csi300",
+                "shares_outstanding": 1_100.0,
+                "shares_change": 100.0,
+                "nav": 4.0,
+                "estimated_flow_cny": 400.0,
+                "flow_status": "validated",
+            },
+            {
+                "observation_date": "2026-01-02",
+                "fund_id": "510500",
+                "exposure_id": "csi500",
+                "shares_outstanding": 2_000.0,
+                "shares_change": 500.0,
+                "nav": 5.0,
+                "estimated_flow_cny": 9_999_999.0,
+                "flow_status": "validated",
+            },
+        ]
+    )
+
+    app.render_market_index_detail(
+        "csi300",
+        "CSI 300",
+        prices,
+        technicals,
+        wrappers,
+        "en",
+        "1 year",
+        fund_activity=activity,
+    )
+
+    activity_figures = [
+        figure
+        for figure in recorder.figures
+        if any(getattr(trace, "type", None) == "bar" for trace in figure.data)
+    ]
+    assert len(activity_figures) == 1
+    assert list(activity_figures[0].data[0].y) == [400.0 / app.ETF_ACTIVITY_CNY_PER_YI]
 
 
 def test_the_deployed_app_imports_domain_packages_by_their_real_name() -> None:

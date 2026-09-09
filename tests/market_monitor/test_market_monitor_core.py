@@ -724,6 +724,24 @@ def test_coverage_regression_catches_the_2026_08_19_history_collapse():
     assert not any(note.startswith("sp500") for note in notes)
 
 
+def test_activity_summary_does_not_call_retained_rows_healthy_after_source_notice():
+    builder = _load_builder()
+    activity = pd.DataFrame(
+        {
+            "observation_date": ["2026-08-21"],
+            "flow_status": ["validated"],
+        }
+    )
+    summary = builder._activity_summary(
+        activity,
+        [{"dataset": "etf_share_daily", "severity": "optional", "error": "empty response"}],
+    )
+
+    assert summary["status"] == "Degraded"
+    assert summary["records"] == 1
+    assert "retained" in summary["notes"]
+
+
 def test_coverage_regression_tolerates_calendar_wobble_and_first_runs():
     builder = _load_builder()
     steady = {"rows_by_exposure": {"csi300": 879}, "missing_exposures": []}
@@ -806,6 +824,43 @@ def test_qdii_email_comparison_ignores_last_close_anchor():
     # The old 0.10% row must not make both current rows look expensive.
     assert html.count("同类溢价最低") == 1
     assert "比最低高 +0.34%" in html
+
+
+def test_email_hides_stale_and_previous_close_premiums_but_keeps_fee():
+    from market_monitor.alerts import _render_etf_card
+
+    wrappers = pd.DataFrame(
+        [
+            {
+                "exposure_id": "csi300",
+                "ticker": "stale",
+                "fund_name": "过期报价",
+                "premium_pct": 7.13,
+                "quote_basis": "intraday_quote",
+                "quote_status": "Stale",
+                "management_fee": 0.005,
+                "custody_fee": 0.001,
+            },
+            {
+                "exposure_id": "csi300",
+                "ticker": "close",
+                "fund_name": "上一收盘",
+                "premium_pct": 0.10,
+                "quote_basis": "last_close",
+                "quote_status": "Unavailable",
+                "management_fee": 0.0015,
+                "custody_fee": 0.0005,
+            },
+        ]
+    )
+
+    html = _render_etf_card(wrappers, "csi300")
+
+    assert "报价已过期" in html
+    assert "上一收盘 · 非实时" in html
+    assert "7.13%" not in html
+    assert "0.10%" not in html
+    assert "0.60%/年" in html
 
 
 def test_merge_premium_does_not_mutate_the_caller_frame():
@@ -1108,12 +1163,12 @@ def test_avg_premium_reports_how_many_days_it_averaged():
     source = inspect.getsource(builder.build_artifact)
     assert "avg_premium_days" in source, "the window size must reach the renderer"
 
-    app_source = (
+    market_page_source = (
         Path(__file__).resolve().parents[2]
-        / "apps" / "asia-markets-streamlit" / "app.py"
+        / "apps" / "asia-markets-streamlit" / "am" / "market.py"
     ).read_text(encoding="utf-8")
-    assert "Premium (today)" in app_source
-    assert 'f"Avg premium {premium_days}D"' in app_source
+    assert "Premium (today)" in market_page_source
+    assert 'f"Avg premium {premium_days}D"' in market_page_source
 
 
 def test_chart_series_ships_a_date_window_not_a_row_count():
@@ -2154,7 +2209,8 @@ def test_eastmoney_hsgt_normalizes_southbound_columns(monkeypatch: pytest.Monkey
     ]
     assert frame["net_buy_yi"].tolist() == [21.3208, 120.5]
     assert frame["balance_yi"].tolist() == [87.32, 300.0]
-    assert frame["holding_market_value"].tolist() == [0.0, 4.2e12]
+    assert pd.isna(frame["holding_market_value"].iloc[0])
+    assert frame["holding_market_value"].iloc[1] == 4.2e12
     assert pd.api.types.is_numeric_dtype(frame["net_buy_yi"])
     assert frame["leader_name"].tolist() == ["上海医药", "腾讯控股"]
     assert set(frame["flow"]) == {"southbound"}
@@ -2202,7 +2258,18 @@ def test_southbound_flow_has_a_source_health_row() -> None:
     assert matching, f"no southbound source_health row in {sorted(health)}"
     row = matching[0]
     assert row["records"] == len(southbound_rows)
-    assert row["status"] == ("Healthy" if southbound_rows else "Unavailable")
+    if not southbound_rows:
+        expected_status = "Unavailable"
+    else:
+        latest = southbound_rows[-1]
+        latest_net = pd.to_numeric(latest.get("net_buy_yi"), errors="coerce")
+        latest_holding = pd.to_numeric(latest.get("holding_market_value"), errors="coerce")
+        expected_status = (
+            "Healthy"
+            if pd.notna(latest_net) and pd.notna(latest_holding) and latest_holding > 0
+            else "Degraded"
+        )
+    assert row["status"] == expected_status
 
 
 def test_every_exposure_is_either_charted_or_a_pair_leg() -> None:
@@ -2238,6 +2305,24 @@ def test_market_tabs_only_name_exposures_that_exist() -> None:
         unknown = sorted(set(ids) - known)
         assert not unknown, f"tab {tab!r} names unknown exposures: {unknown}"
         assert len(set(ids)) == len(ids), f"tab {tab!r} lists an exposure twice"
+
+
+def test_market_tab_boundaries_keep_core_and_regional_leadership_clean() -> None:
+    """Leadership baskets must not mix themes or cross-border proxies."""
+    from market_monitor.config import MARKET_TABS
+
+    assert MARKET_TABS["china_core"] == ("csi300", "csi500", "csi1000", "hsi")
+    assert not {
+        "dividend",
+        "growth",
+        "hstech",
+        "hk_dividend",
+        "hk_internet",
+        "kr_semis",
+    }.intersection(MARKET_TABS["china_core"])
+    assert MARKET_TABS["apac"] == ("nikkei225", "kospi", "twii")
+    assert "kr_semis" in MARKET_TABS["china"]
+    assert "kr_semis" not in MARKET_TABS["apac"]
 
 
 def test_artifact_exports_a_price_series_for_every_charted_exposure() -> None:
