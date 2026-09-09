@@ -6,6 +6,7 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from datetime import timedelta
 from html import escape
+from io import StringIO
 import re
 import unicodedata
 import json
@@ -2744,7 +2745,11 @@ def _load_vendor_financials_cached(
     """Cache the labelled vendor overlay; official actuals are never touched."""
 
     del fingerprint
-    listings = pd.read_json(listings_json, dtype=False) if listings_json else pd.DataFrame()
+    listings = (
+        pd.read_json(StringIO(listings_json), dtype=False)
+        if listings_json
+        else pd.DataFrame()
+    )
     result = load_vendor_financials(
         entity_id=entity_id,
         listing_id=listing_id,
@@ -2774,7 +2779,7 @@ def _vendor_financials_for_view(view: CompanyView) -> VendorLoadResult:
         )
     except (OSError, ValueError) as exc:
         return VendorLoadResult(pd.DataFrame(), 'error', f'vendor financials failed: {exc}', 'local_mart')
-    frame = pd.read_json(payload, dtype=False) if payload else pd.DataFrame()
+    frame = pd.read_json(StringIO(payload), dtype=False) if payload else pd.DataFrame()
     return VendorLoadResult(frame, status, detail, source_kind)
 
 

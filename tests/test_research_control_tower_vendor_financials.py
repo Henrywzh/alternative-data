@@ -2,11 +2,17 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import pandas as pd
 
+APP_ROOT = Path(__file__).resolve().parents[1] / "apps" / "research-control-tower"
+if str(APP_ROOT) not in sys.path:
+    sys.path.insert(0, str(APP_ROOT))
+
 from src.research_control_tower.vendor_financials import (
+    VENDOR_COLUMNS,
     VendorLoadResult,
     _latest_observation_file,
     _map_akshare,
@@ -241,6 +247,68 @@ def test_latest_observation_file_skips_tiny_newer_manifests(tmp_path: Path):
     assert chosen == complete
 
 
+def test_company_cached_loader_accepts_nonzero_listing_index(tmp_path: Path):
+    """The Streamlit cache wrapper must parse JSON as JSON, not a file path."""
+
+    from control_tower.pages.company import _load_vendor_financials_cached
+
+    mart = tmp_path / "vendor_financials_v1.parquet"
+    row = {column: pd.NA for column in VENDOR_COLUMNS}
+    row.update(
+        {
+            "entity_id": "TENCENT",
+            "listing_id": "0700_HK",
+            "canonical_ticker": "0700.HK",
+            "provider": "yfinance",
+            "source_id": "financial_data:yfinance:financial_observations",
+            "source_label": "yfinance via financial-data",
+            "metric": "revenue_total",
+            "source_metric": "revenue",
+            "period_type": "annual",
+            "period_label": "FY2026",
+            "period_end": pd.Timestamp("2026-03-31"),
+            "reported_value": 1.0,
+            "currency": "CNY",
+            "unit": "currency",
+            "interim_is_ytd": False,
+            "accounting_basis": "Vendor reported (unverified)",
+            "metric_basis": "PROVIDER_UNVERIFIED",
+            "source_quality": "provider_unverified",
+            "pit_class": "vendor_historical_replay",
+            "source_license_class": "personal_use_terms_unverified",
+            "retrieved_at_utc": pd.Timestamp("2026-07-26T16:10:38Z"),
+            "source_path": "fixture.parquet",
+            "source_note": "fixture",
+        }
+    )
+    pd.DataFrame([row], columns=VENDOR_COLUMNS).to_parquet(mart, index=False)
+    listings = pd.DataFrame(
+        [
+            {
+                "listing_id": "0700_HK",
+                "entity_id": "TENCENT",
+                "exchange": "HKEX",
+                "native_ticker": "0700",
+                "canonical_ticker": "0700.HK",
+            }
+        ],
+        index=[10],
+    )
+
+    status, detail, source_kind, payload = _load_vendor_financials_cached(
+        "TENCENT",
+        "0700_HK",
+        listings.to_json(date_format="iso", default_handler=str),
+        str(mart),
+        (mart.stat().st_size, mart.stat().st_mtime_ns),
+    )
+
+    assert status == "available"
+    assert source_kind == "local_mart"
+    assert "vendor_financials_v1.parquet" in detail
+    assert "TENCENT" in payload
+
+
 def test_company_page_keeps_vendor_overlay_labelled_and_separate():
     source = Path('apps/research-control-tower/control_tower/pages/company.py').read_text()
     assert 'Vendor financials overlay (not official)' in source
@@ -251,4 +319,3 @@ def test_company_page_keeps_vendor_overlay_labelled_and_separate():
     assert 'except Exception:' not in overlay_fn
     assert 'except (OSError, ValueError)' in overlay_fn
     assert source.index('_company_earnings_actuals(snapshot, view)') < source.index('_render_vendor_financials_overlay(view)')
-
