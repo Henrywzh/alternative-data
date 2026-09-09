@@ -1399,6 +1399,7 @@ dependencies = [
     { name = "akshare" },
     { name = "beautifulsoup4" },
     { name = "duckdb" },
+    { name = "jsonschema" },
     { name = "lxml" },
     { name = "matplotlib" },
     { name = "openpyxl" },
@@ -1408,6 +1409,7 @@ dependencies = [
     { name = "plotly" },
     { name = "pyarrow" },
     { name = "pypdf" },
+    { name = "pyyaml" },
     { name = "requests" },
     { name = "scikit-learn" },
     { name = "streamlit" },
@@ -1421,7 +1423,6 @@ dev = [
     { name = "pytest" },
     { name = "pytest-timeout" },
     { name = "pytest-xdist" },
-    { name = "pyyaml" },
 ]
 
 [package.metadata]
@@ -1430,6 +1431,7 @@ requires-dist = [
     { name = "beautifulsoup4", specifier = ">=4.12" },
     { name = "duckdb", specifier = ">=1.1,<2" },
     { name = "duckdb", marker = "extra == 'dev'", specifier = ">=1.0" },
+    { name = "jsonschema", specifier = ">=4.23" },
     { name = "lxml", specifier = ">=5.2" },
     { name = "matplotlib", specifier = ">=3.8" },
     { name = "openpyxl", specifier = ">=3.1" },
@@ -1442,7 +1444,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.2" },
     { name = "pytest-timeout", marker = "extra == 'dev'", specifier = ">=2.3" },
     { name = "pytest-xdist", marker = "extra == 'dev'", specifier = ">=3.6" },
-    { name = "pyyaml", marker = "extra == 'dev'", specifier = ">=6.0.2" },
+    { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "requests", specifier = ">=2.32" },
     { name = "scikit-learn", specifier = ">=1.5" },
     { name = "streamlit", specifier = ">=1.56.0" },

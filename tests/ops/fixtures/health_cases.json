@@ -1,0 +1,92 @@
+[
+  {
+    "name": "green_workflow_with_stale_data",
+    "execution": "success",
+    "checks": [
+      {
+        "check_id": "provider-activity.freshness",
+        "status": "stale",
+        "required": true,
+        "message": "Latest observation is outside the freshness allowance."
+      }
+    ],
+    "expected": {
+      "collection": "complete",
+      "data_health": "stale",
+      "publication": "retained_previous",
+      "derived_state": "STALE"
+    }
+  },
+  {
+    "name": "failed_collection_with_valid_retained_output",
+    "execution": "failure",
+    "checks": [
+      {
+        "check_id": "asia-markets.output",
+        "status": "healthy",
+        "required": true,
+        "message": "The previously published artifact remains valid."
+      }
+    ],
+    "expected": {
+      "collection": "partial",
+      "data_health": "fresh",
+      "publication": "retained_previous",
+      "derived_state": "DEGRADED_RETAINED"
+    }
+  },
+  {
+    "name": "observation_period_regressed",
+    "execution": "success",
+    "checks": [
+      {
+        "check_id": "semiconductor.latest-period",
+        "status": "regressed",
+        "required": true,
+        "message": "Latest observation moved from 2026-07 to 2026-06."
+      }
+    ],
+    "expected": {
+      "collection": "complete",
+      "data_health": "regressed",
+      "publication": "failed",
+      "derived_state": "REGRESSED"
+    }
+  },
+  {
+    "name": "required_provider_missing",
+    "execution": "success",
+    "checks": [
+      {
+        "check_id": "openrouter.meta",
+        "status": "missing",
+        "required": true,
+        "message": "The configured Meta provider was not observed."
+      }
+    ],
+    "expected": {
+      "collection": "failed",
+      "data_health": "missing",
+      "publication": "failed",
+      "derived_state": "FAILED_ACTIONABLE"
+    }
+  },
+  {
+    "name": "all_required_outputs_healthy",
+    "execution": "success",
+    "checks": [
+      {
+        "check_id": "provider-activity.contract",
+        "status": "healthy",
+        "required": true,
+        "message": "Dataset contract satisfied."
+      }
+    ],
+    "expected": {
+      "collection": "complete",
+      "data_health": "fresh",
+      "publication": "published",
+      "derived_state": "HEALTHY"
+    }
+  }
+]

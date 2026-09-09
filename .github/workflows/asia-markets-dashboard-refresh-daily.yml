@@ -44,6 +44,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
+  actions: read
   contents: write
 
 jobs:
@@ -83,22 +84,33 @@ jobs:
         run: npm run test:refresh-guard
 
       - name: Refresh current-year Buildings Department history
+        id: bd_history
         working-directory: .
         run: |
-          python -m hk_real_estate.cli run-bd-history-current-year \
-            || echo "::warning::BD current-year refresh failed; builder will retain and mark the last good history"
+          if python -m hk_real_estate.cli run-bd-history-current-year; then
+            echo "producer_outcome=success" >> "$GITHUB_OUTPUT"
+          else
+            echo "producer_outcome=failure" >> "$GITHUB_OUTPUT"
+            echo "::warning::BD current-year refresh failed; builder will retain and mark the last good history"
+          fi
 
       - name: Ingest HK Local Consumer source data
+        id: local_consumer_ingest
         working-directory: .
         run: |
           # The artifact builder is intentionally read-only and consumes the
           # latest normalized source run. A clean GitHub runner has no
           # gitignored normalized cache, so ingestion must happen first or the
           # refresh guard can only retain yesterday's artifact.
-          hk-local-consumer-data run-stage-1 --strict \
-            || echo "::warning::one or more local-consumer sources failed; refresh guard will preserve the last complete artifact"
+          if hk-local-consumer-data run-stage-1 --strict; then
+            echo "producer_outcome=success" >> "$GITHUB_OUTPUT"
+          else
+            echo "producer_outcome=failure" >> "$GITHUB_OUTPUT"
+            echo "::warning::one or more local-consumer sources failed; refresh guard will preserve the last complete artifact"
+          fi
 
       - name: Refresh HK Real Estate + HK Local Consumer artifacts
+        id: sector_builders
         # A single upstream publisher must not block the other sector
         # refreshes. The builder keeps the last committed artifact for the
         # failed sector and reports the failure in the job log; successful
@@ -114,7 +126,15 @@ jobs:
         # that is no longer the primary reason to skip it.
         env:
           HK_RE_SKIP_MIDLAND: "1"
-        run: npm run refresh -- --tolerate-errors
+        run: |
+          set -o pipefail
+          log_path="$RUNNER_TEMP/asia-market-sector-builders.log"
+          npm run refresh -- --tolerate-errors 2>&1 | tee "$log_path"
+          if grep -q '^\[run-artifact-builders\].*\(exited with code\|timed out after\)' "$log_path"; then
+            echo "producer_outcome=failure" >> "$GITHUB_OUTPUT"
+          else
+            echo "producer_outcome=success" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Localize Streamlit-facing artifacts
         run: node scripts/package-dashboard.mjs --localize-only
@@ -176,3 +196,110 @@ jobs:
         run: |
           python scripts/audit_asia_markets_freshness.py \
             --output /tmp/asia-markets-freshness-final.json
+
+      - name: Fetch previous Phase 0 baseline
+        if: always()
+        continue-on-error: true
+        working-directory: .
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python scripts/ops/fetch_baseline.py \
+            --artifact-prefix ops-shadow-asia-markets-dashboard-refresh- \
+            --output /tmp/ops-baseline-asia-markets-dashboard-refresh.json
+
+      - name: Emit Phase 0 shadow run report
+        if: always()
+        continue-on-error: true
+        working-directory: .
+        env:
+          OPS_JOB_STATUS: ${{ job.status }}
+        run: |
+          python scripts/ops/finalize_pipeline.py \
+            --pipeline-id asia-markets-dashboard-refresh \
+            --job-id refresh-dashboard-data \
+            --execution "$OPS_JOB_STATUS" \
+            --producer-outcome "bd-history=${{ steps.bd_history.outputs.producer_outcome }}" \
+            --producer-outcome "local-consumer-ingest=${{ steps.local_consumer_ingest.outputs.producer_outcome }}" \
+            --producer-outcome "sector-builders=${{ steps.sector_builders.outputs.producer_outcome }}" \
+            --baseline-report /tmp/ops-baseline-asia-markets-dashboard-refresh.json \
+            --output artifacts/ops/asia-markets-dashboard-refresh/run-report.json \
+            --evidence-output artifacts/ops/asia-markets-dashboard-refresh/evidence-manifest.json
+
+      - name: Ensure Phase 0 fallback telemetry exists
+        if: always()
+        continue-on-error: true
+        uses: actions/github-script@v7
+        env:
+          OPS_PIPELINE_ID: asia-markets-dashboard-refresh
+          OPS_JOB_ID: refresh-dashboard-data
+          OPS_JOB_STATUS: ${{ job.status }}
+          OPS_REPORT_PATH: artifacts/ops/asia-markets-dashboard-refresh/run-report.json
+          OPS_EVIDENCE_PATH: artifacts/ops/asia-markets-dashboard-refresh/evidence-manifest.json
+        with:
+          script: |
+            const fs = require("fs");
+            const path = require("path");
+            const reportPath = process.env.OPS_REPORT_PATH;
+            const observedAt = new Date().toISOString();
+            const runId = process.env.GITHUB_RUN_ID || `fallback-${observedAt}`;
+            const runUrl = process.env.GITHUB_SERVER_URL && process.env.GITHUB_REPOSITORY
+              ? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${runId}` : null;
+            const allowed = new Set(["success", "failure", "cancelled"]);
+            const execution = allowed.has(process.env.OPS_JOB_STATUS) ? process.env.OPS_JOB_STATUS : "unknown";
+            const message = "Repository finalizer was unavailable; emitted runner-level fallback telemetry.";
+            const required = ["pipeline_id", "job_id", "run_id", "finished_at", "execution",
+              "collection", "data_health", "publication", "evidence_quality", "derived_state",
+              "checks", "outputs", "evidence"];
+            let report = null;
+            try {
+              const candidate = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+              if (candidate.schema_version !== 1 || candidate.shadow !== true
+                  || required.some((key) => !(key in candidate))
+                  || !Array.isArray(candidate.checks) || !Array.isArray(candidate.outputs)
+                  || !Array.isArray(candidate.evidence)) throw new Error("invalid run report");
+              report = candidate;
+            } catch {}
+            if (!report) {
+              const evidence = [{kind: "finalizer-error", path: null, observed_at: observedAt,
+                description: message, run_url: runUrl, commit_sha: process.env.GITHUB_SHA || "unknown",
+                check_id: "ops-shadow-finalizer", references: runUrl ? [runUrl] : []}];
+              report = {
+                schema_version: 1, pipeline_id: process.env.OPS_PIPELINE_ID,
+                job_id: process.env.OPS_JOB_ID, workflow: process.env.GITHUB_WORKFLOW || "unknown",
+                run_id: runId, run_attempt: Math.max(Number(process.env.GITHUB_RUN_ATTEMPT) || 1, 1),
+                commit_sha: process.env.GITHUB_SHA || "unknown", started_at: null,
+                finished_at: observedAt, execution, collection: "unknown", data_health: "unknown",
+                publication: "failed", evidence_quality: "incomplete",
+                derived_state: "UNKNOWN_EVIDENCE",
+                checks: [{check_id: "ops-shadow-finalizer", status: "unknown", required: true,
+                  message, expected: null, observed: null, details: {}}],
+                outputs: [], evidence, shadow: true
+              };
+              fs.mkdirSync(path.dirname(reportPath), {recursive: true});
+              fs.writeFileSync(reportPath, JSON.stringify(report, null, 2) + "\n");
+            }
+            const manifest = {version: 1, pipeline_id: report.pipeline_id, job_id: report.job_id,
+              run_id: report.run_id, run_url: runUrl, commit_sha: report.commit_sha,
+              observed_at: report.finished_at, evidence: report.evidence};
+            let manifestValid = false;
+            try {
+              const existing = JSON.parse(fs.readFileSync(process.env.OPS_EVIDENCE_PATH, "utf8"));
+              manifestValid = existing.version === 1 && existing.pipeline_id === report.pipeline_id
+                && existing.job_id === report.job_id && existing.run_id === report.run_id
+                && Array.isArray(existing.evidence);
+            } catch {}
+            if (!manifestValid) {
+              fs.mkdirSync(path.dirname(process.env.OPS_EVIDENCE_PATH), {recursive: true});
+              fs.writeFileSync(process.env.OPS_EVIDENCE_PATH, JSON.stringify(manifest, null, 2) + "\n");
+            }
+
+      - name: Upload Phase 0 shadow telemetry
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v7
+        with:
+          name: ops-shadow-asia-markets-dashboard-refresh-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/ops/asia-markets-dashboard-refresh/
+          if-no-files-found: warn
+          retention-days: 30
