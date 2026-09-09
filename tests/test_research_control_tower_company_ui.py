@@ -1098,7 +1098,10 @@ def test_company_page_renders_four_tabs_cleanly_via_apptest(tmp_path: Path, monk
     assert "Thesis & Catalysts" in text
     assert "Evidence" in text
 
-    # 3. Answer-first executive summary from bundle rows
+    # 3. Setup + official changes sit above the executive summary
+    assert "Setup state" in text
+    assert "Official changes" in text
+    assert "not a buy/sell recommendation" in text or "This is a setup label, not a buy/sell recommendation." in text
     assert "Executive summary &amp; recent changes · Tencent Holdings · 0700.HK" in text
     assert "Latest fundamentals · 2026Q2" in text
     assert "Revenue Total: CNY 204,785 million (IFRS)" in text

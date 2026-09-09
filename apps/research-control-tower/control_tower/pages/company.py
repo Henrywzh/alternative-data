@@ -28,6 +28,11 @@ from ..charts import (
 
 from ..company_profiles import SegmentSpec, get_company_profile, segment_label
 
+from research_control_tower.company_setup import (
+    OfficialChangeCard,
+    build_official_change_cards,
+    classify_company_setup,
+)
 from research_control_tower.eligibility import listing_eligibility_reason
 from research_control_tower.southbound_holdings import hkex_security_code, southbound_mart_path
 from research_control_tower.live_refresh import (
@@ -1909,7 +1914,7 @@ def _render_price_history(view: CompanyView, snapshot: ControlTowerSnapshot) -> 
         return
     frame = bars.copy()
     frame['bar_date'] = pd.to_datetime(frame['bar_date'], errors='coerce')
-    frame = frame.loc[frame['bar_date'].notna()]
+    frame = frame.loc[frame['bar_date'].notna()].sort_values('bar_date')
     adjusted = frame['adj_close'].notna().any() if 'adj_close' in frame.columns else False
     series_column = 'adj_close' if adjusted else 'close'
     basis = 'adjusted close' if adjusted else 'unadjusted close'
@@ -1917,14 +1922,125 @@ def _render_price_history(view: CompanyView, snapshot: ControlTowerSnapshot) -> 
     if frame.empty:
         st.warning('Price history unavailable · rows carry no usable close price.')
         return
+    close = pd.Series(
+        pd.to_numeric(frame[series_column], errors='coerce').to_numpy(),
+        index=pd.DatetimeIndex(frame['bar_date']),
+        dtype=float,
+    ).dropna()
     currency = _text(frame.iloc[-1].get('currency')) or ''
-    chart = frame.set_index('bar_date')[[series_column]].rename(columns={series_column: f'{currency} {basis}'.strip()})
-    _render_plotly(_plotly_line_chart(chart, y_title=f'{currency} {basis}'.strip(), value_format=',.2f', height=280))
-    first = frame['bar_date'].min().date()
-    last = frame['bar_date'].max().date()
-    sources = ', '.join(sorted({_text(v) for v in frame['source_id'] if _text(v)}))
+    price_title = f'{currency} {basis}'.strip()
+    chart = pd.DataFrame({price_title: close})
+    if len(close) >= 20:
+        from market_monitor.technicals import compute_technical_history
+        tech = compute_technical_history(close)
+        if 'ma20' in tech.columns:
+            chart[f'{currency} 20-day average'.strip()] = tech['ma20']
+    _render_plotly(_plotly_line_chart(chart, y_title=price_title, value_format=',.2f', height=280))
+    first = close.index.min().date()
+    last = close.index.max().date()
+    sources = ', '.join(sorted({_text(v) for v in frame['source_id'] if _text(v)})) if 'source_id' in frame.columns else ''
     span_days = (last - first).days
-    st.caption(f'{len(frame):,} daily bars · {first} to {last} ({span_days} calendar days) · {basis} · source: {sources or "unattributed"} · read from the published artifact, no provider was queried')
+    st.caption(f'{len(close):,} daily bars · {first} to {last} ({span_days} calendar days) · {basis} · source: {sources or "unattributed"} · 20-day average overlaid when history allows · read from the published artifact, no provider was queried')
+
+
+def _render_setup_module(view: CompanyView, snapshot: ControlTowerSnapshot) -> None:
+    _render_section_heading(4, 'Setup state', f'setup-state-{_slugify(view.entity_id)}')
+    if view.entity_type == 'private':
+        st.info(f'Not applicable · {_text(view.display_name)} is private; setup state is not labelled for unlisted names.')
+        return
+    setup = classify_company_setup(
+        view.price_bars,
+        events=view.events,
+        now_utc=getattr(snapshot, 'now_utc', None),
+    )
+    tone = {
+        'washout': 'var(--ct-accent)',
+        'extended': 'var(--ct-hard)',
+        'chop': 'var(--ct-provisional)',
+        'event_window': 'var(--ct-thesis)',
+        'neutral': 'var(--ct-observed)',
+        'unavailable': 'var(--ct-muted)',
+    }.get(setup.state, 'var(--ct-muted)')
+    evidence = []
+    if setup.rsi is not None:
+        evidence.append(f'RSI {setup.rsi:.1f}')
+    if setup.ma20_pct is not None:
+        evidence.append(f'{setup.ma20_pct:+.1f}% vs 20-day average')
+    if setup.drawdown_60d is not None:
+        evidence.append(f'60-day drawdown {setup.drawdown_60d:.1f}%')
+    as_of = f' as of {escape(setup.as_of)}' if setup.as_of else ''
+    event_line = f'<div class="ct-subtle">Upcoming: {escape(setup.next_event_title)}</div>' if setup.next_event_title else ''
+    evidence_txt = ' · '.join(escape(item) for item in evidence) or 'Technical evidence unavailable'
+    html = (
+        f'<div class="ct-change" style="padding:0.85rem 1rem;border-left:4px solid {tone};">'
+        f'<div class="ct-badge" style="color:{tone};border-color:{tone};">{escape(setup.label)}</div>'
+        f'<div style="font-size:1.05rem;font-weight:750;margin:0.35rem 0;">{escape(setup.reason)}</div>'
+        f'<div class="ct-subtle">{evidence_txt}{as_of}</div>'
+        f'{event_line}'
+        f'<div class="ct-source-line">{escape(setup.source_note)}</div>'
+        '</div>'
+    )
+    st.markdown(html, unsafe_allow_html=True)
+
+
+def _official_change_card_html(card: OfficialChangeCard) -> str:
+    tone = 'results' if card.needs_review else ('buyback' if card.bucket == 'routine' else 'other')
+    review = ' · needs review' if card.needs_review else ''
+    link = (
+        f'<a class="ct-inline-link" href="{escape(card.source_url)}" target="_blank" rel="noopener">Open ↗</a>'
+        if card.source_url else 'link unavailable'
+    )
+    return (
+        f'<div class="ct-thesis-card ct-news-card ct-news-card--{tone}">'
+        f'<div class="ct-subtle">{escape(card.event_class)}{escape(review)}</div>'
+        f'<div style="font-weight:700;margin:0.25rem 0;">{escape(card.fact)}</div>'
+        f'<div class="ct-source-line">{link}</div>'
+        '</div>'
+    )
+
+
+def _official_filings_for_view(view: CompanyView, snapshot: ControlTowerSnapshot) -> pd.DataFrame:
+    filings = getattr(snapshot, 'official_filings', pd.DataFrame())
+    if filings is None or filings.empty or 'entity_id' not in filings.columns:
+        return view.official_documents
+    scoped = filings.loc[filings['entity_id'].astype('string').eq(view.entity_id)].copy()
+    if view.selected_listing_id and 'listing_id' in scoped.columns:
+        listing_scoped = scoped.loc[scoped['listing_id'].astype('string').eq(view.selected_listing_id)]
+        if not listing_scoped.empty:
+            scoped = listing_scoped
+    if scoped.empty:
+        return view.official_documents
+    return scoped
+
+
+def _render_official_change_inbox(view: CompanyView, snapshot: ControlTowerSnapshot) -> None:
+    _render_section_heading(4, 'Official changes', f'official-changes-{_slugify(view.entity_id)}')
+    st.caption('Official facts only. Routine buybacks are folded. This is not thesis impact and not vendor news.')
+    live = pd.DataFrame()
+    try:
+        live = load_local_hkex_overlay(
+            entity_id=view.entity_id,
+            listing_id=view.selected_listing_id,
+            repo_root=_control_tower_repo_root(),
+        )
+    except (OSError, ValueError):
+        live = pd.DataFrame()
+    cards = build_official_change_cards(
+        filings=_official_filings_for_view(view, snapshot),
+        corporate_actions=view.corporate_actions,
+        live_overlay=live,
+        limit=8,
+    )
+    if not cards:
+        st.info('No official change cards for this company in the current snapshot or live HKEXnews overlay.')
+        return
+    priority = [card for card in cards if card.bucket != 'routine']
+    routine = [card for card in cards if card.bucket == 'routine']
+    if priority:
+        st.markdown(''.join(_official_change_card_html(card) for card in priority), unsafe_allow_html=True)
+    if routine:
+        with st.expander(f'{len(routine)} routine buyback / share-scheme facts', expanded=False):
+            st.markdown(''.join(_official_change_card_html(card) for card in routine), unsafe_allow_html=True)
 
 
 def _render_overview_tab(
@@ -1932,6 +2048,8 @@ def _render_overview_tab(
     snapshot: ControlTowerSnapshot,
     viewer_timezone: str,
 ) -> None:
+    _render_setup_module(view, snapshot)
+    _render_official_change_inbox(view, snapshot)
     _render_answer_first_summary(view, snapshot)
     _render_section_heading(4, 'Latest market quote', f'latest-quote-{_slugify(view.entity_id)}')
     if view.entity_type == 'private':

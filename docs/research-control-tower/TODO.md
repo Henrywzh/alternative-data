@@ -26,6 +26,14 @@
 - [ ] Stage 1.5（Cathay/MTR/SHKP/Midland）复用同一管线解锁
 - [ ] 部署前 licensing/privacy 审计 + Streamlit Cloud 灰度
 
+## Tencent cockpit finish (2026-09-09)
+
+- [x] Overview setup state (`washout` / `extended` / `chop` / `event_window` / `neutral`) from delayed daily bars; not a buy/sell signal
+- [x] Official-change inbox on Overview: official facts only, routine buybacks folded, results marked `needs review`
+- [x] Price history overlays the 20-day average when history allows
+- [ ] Audited `valuation_snapshots` remain empty; labelled vendor forward P/E stays display-only
+- [ ] Today page is still generation-delta, not the 15-30 minute company inbox
+
 ## Known debt（实现过程中顺手修）
 
 - [ ] quote_snapshots SLA 应感知 latency_class（delayed 不适用 5 分钟阈值）
