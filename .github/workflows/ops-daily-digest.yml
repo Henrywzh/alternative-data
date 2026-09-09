@@ -1,0 +1,67 @@
+name: Ops Daily Digest
+
+on:
+  schedule:
+    - cron: "0 1 * * *"   # 09:00 Asia/Taipei
+  workflow_dispatch:
+    inputs:
+      send_email:
+        description: "Send the digest email"
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ops-daily-digest
+  cancel-in-progress: false
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev]
+
+      - name: Build daily digest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPS_INCIDENT_REPO: ${{ secrets.OPS_INCIDENT_REPO }}
+          OPS_INCIDENT_TOKEN: ${{ secrets.OPS_INCIDENT_TOKEN }}
+          GMAIL_SENDER: ${{ secrets.GMAIL_SENDER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          GMAIL_RECIPIENTS: ${{ secrets.GMAIL_RECIPIENTS }}
+        run: |
+          extra=""
+          weekday=$(TZ=Asia/Taipei date +%u)
+          if [ "$weekday" = "1" ]; then
+            extra="--weekly"
+          fi
+          send=""
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ] || [ "${{ inputs.send_email }}" = "true" ]; then
+            send="--send-email"
+          fi
+          python scripts/ops/daily_digest.py $extra $send --output artifacts/ops/daily-digest.txt
+
+      - name: Upload digest
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v7
+        with:
+          name: ops-daily-digest-${{ github.run_id }}
+          path: artifacts/ops/daily-digest.txt
+          if-no-files-found: warn
+          retention-days: 30

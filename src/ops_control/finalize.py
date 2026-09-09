@@ -7,10 +7,13 @@ from pathlib import Path
 from typing import Any
 
 from .health import derive_dimensions, evaluate_job
+from .incidents import incident_from_report, mark_recovered
 from .models import CheckResult, Evidence, OutputObservation, RunReport
 from .redaction import redact_text, redact_value
 from .registry import load_registry
+from .retry import maybe_retry_incident
 from .schema import validate_run_report
+from .store import IncidentStore
 
 
 def finalize_run(
@@ -94,6 +97,7 @@ def finalize_run(
     validate_run_report(report.to_dict(), schema_path)
     _write_json(output_path, report.to_dict())
     _write_evidence_manifest(evidence_output_path, report)
+    _maybe_record_incident(report, pipeline=pipeline, now=now)
     return report
 
 
@@ -262,3 +266,38 @@ def _run_url(run_id: str) -> str | None:
     if not server or not repository or run_id.startswith("local-"):
         return None
     return f"{server.rstrip('/')}/{repository}/actions/runs/{run_id}"
+
+
+def _maybe_record_incident(report: RunReport, *, pipeline, now: datetime | None) -> None:
+    incident_repo = os.environ.get("OPS_INCIDENT_REPO", "").strip()
+    token = os.environ.get("OPS_INCIDENT_TOKEN") or os.environ.get("GITHUB_TOKEN", "")
+    if not incident_repo or not token:
+        return
+    try:
+        schema_path = Path(
+            os.environ.get(
+                "OPS_INCIDENT_SCHEMA",
+                str(Path(__file__).resolve().parents[2] / "schemas" / "ops" / "incident.schema.json"),
+            )
+        )
+        store = IncidentStore(repository=incident_repo, token=token, schema_path=schema_path)
+        if report.derived_state == "HEALTHY":
+            for existing in store.find_open_for_job(report.pipeline_id, report.job_id):
+                store.upsert(mark_recovered(existing, now=now or datetime.now(timezone.utc), run_id=report.run_id))
+            return
+        incident = incident_from_report(report, pipeline=pipeline, now=now)
+        if incident is None:
+            return
+        stored = store.upsert(incident)
+        producer_repo = os.environ.get("GITHUB_REPOSITORY", "")
+        if stored.retry_eligible and producer_repo:
+            updated, retried = maybe_retry_incident(
+                incident=stored,
+                repository=producer_repo,
+                token=token,
+                now=now,
+            )
+            if retried:
+                store.upsert(updated)
+    except Exception as exc:
+        print(f"::warning::Phase 1 incident recording failed: {type(exc).__name__}")

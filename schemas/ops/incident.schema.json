@@ -1,0 +1,237 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://alternative-data.local/schemas/ops/incident.schema.json",
+  "title": "Ops incident",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "incident_id",
+    "fingerprint",
+    "pipeline_id",
+    "job_id",
+    "status",
+    "severity",
+    "title",
+    "summary",
+    "failed_check",
+    "error_class",
+    "derived_state",
+    "retry_eligible",
+    "retry_attempted",
+    "needs_human",
+    "needs_local",
+    "opened_at",
+    "updated_at",
+    "last_seen_at",
+    "occurrence_count",
+    "run_ids",
+    "evidence",
+    "observed",
+    "inferred",
+    "unknown"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "incident_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "fingerprint": {
+      "type": "string",
+      "minLength": 1
+    },
+    "pipeline_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "job_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": [
+        "DETECTED",
+        "RETRYING",
+        "TRIAGING_CLOUD",
+        "NEEDS_LOCAL",
+        "NEEDS_HUMAN",
+        "VALIDATING",
+        "RECOVERED",
+        "CLOSED"
+      ]
+    },
+    "severity": {
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "failed_check": {
+      "type": "string",
+      "minLength": 1
+    },
+    "error_class": {
+      "type": "string",
+      "minLength": 1
+    },
+    "derived_state": {
+      "enum": [
+        "HEALTHY",
+        "DEGRADED_RETAINED",
+        "STALE",
+        "REGRESSED",
+        "FAILED_ACTIONABLE",
+        "UNKNOWN_EVIDENCE",
+        "MISSED_SCHEDULE"
+      ]
+    },
+    "retry_eligible": {
+      "type": "boolean"
+    },
+    "retry_attempted": {
+      "type": "boolean"
+    },
+    "needs_human": {
+      "type": "boolean"
+    },
+    "needs_local": {
+      "type": "boolean"
+    },
+    "opened_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_seen_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "recovered_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "occurrence_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "run_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "issue_url": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/evidence"
+      }
+    },
+    "observed": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "inferred": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "unknown": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "$defs": {
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "path",
+        "observed_at",
+        "description",
+        "run_url",
+        "commit_sha",
+        "check_id",
+        "references"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "observed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "description": {
+          "type": "string"
+        },
+        "run_url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "commit_sha": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "check_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "references": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,51 @@
+name: Ops Reconciliation
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: ops-reconcile
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev]
+
+      - name: Reconcile registered pipelines
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPS_INCIDENT_REPO: ${{ secrets.OPS_INCIDENT_REPO }}
+          OPS_INCIDENT_TOKEN: ${{ secrets.OPS_INCIDENT_TOKEN }}
+        run: |
+          python scripts/ops/reconcile_all.py \
+            --output artifacts/ops/reconciliation.json
+
+      - name: Upload reconciliation snapshot
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v7
+        with:
+          name: ops-reconciliation-${{ github.run_id }}
+          path: artifacts/ops/reconciliation.json
+          if-no-files-found: warn
+          retention-days: 30

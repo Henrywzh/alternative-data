@@ -214,6 +214,8 @@ jobs:
         working-directory: .
         env:
           OPS_JOB_STATUS: ${{ job.status }}
+          OPS_INCIDENT_REPO: ${{ secrets.OPS_INCIDENT_REPO }}
+          OPS_INCIDENT_TOKEN: ${{ secrets.OPS_INCIDENT_TOKEN }}
         run: |
           python scripts/ops/finalize_pipeline.py \
             --pipeline-id asia-markets-dashboard-refresh \
