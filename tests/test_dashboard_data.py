@@ -8,6 +8,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 import dashboard.app as dashboard_app
+import dashboard.checks as dashboard_checks
 
 from dashboard.app import (
     _compute_revenue_views,
@@ -5395,11 +5396,16 @@ def test_staleness_is_measured_per_feed_not_on_one_global_threshold(tmp_path: Pa
     ]
 
 
-def test_monthly_staleness_uses_period_end_for_month_start_stamps(tmp_path: Path) -> None:
+def test_monthly_staleness_uses_period_end_for_month_start_stamps(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """A month stamped on day one represents the whole month, not one instant."""
     root = tmp_path / "data" / "normalized" / "openrouter"
     root.mkdir(parents=True)
-    current_month = pd.Timestamp.now(tz="UTC").normalize().replace(day=1)
+    as_of = pd.Timestamp("2026-09-01", tz="UTC")
+    monkeypatch.setattr(dashboard_checks, "_utc_today", lambda: as_of)
+    current_month = as_of.normalize().replace(day=1)
     latest_month = current_month - pd.DateOffset(months=3)
     months = pd.date_range(end=latest_month, periods=12, freq="MS")
     _dated_frame("top_models", months.strftime("%Y-%m-%d").tolist(), "week_start_date").to_csv(

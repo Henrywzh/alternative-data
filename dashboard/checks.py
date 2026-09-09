@@ -25,6 +25,10 @@ STALENESS_GRACE_DAYS = 7.0
 STALENESS_MIN_POINTS = 6
 
 
+def _utc_today() -> pd.Timestamp:
+    return pd.Timestamp.now(tz="UTC").normalize()
+
+
 @dataclass(frozen=True)
 class CheckResult:
     status: str
@@ -138,7 +142,7 @@ def _staleness(result: DatasetLoadResult) -> tuple[float, float] | None:
     if cadence_days >= 27.0 and latest.day == 1:
         freshness_reference = latest + pd.offsets.MonthEnd(0)
     days_behind = (
-        pd.Timestamp.now(tz="UTC").normalize() - freshness_reference
+        _utc_today() - freshness_reference
     ).total_seconds() / 86400.0
     if days_behind > STALENESS_INTERVALS * cadence_days + STALENESS_GRACE_DAYS:
         return days_behind, cadence_days
