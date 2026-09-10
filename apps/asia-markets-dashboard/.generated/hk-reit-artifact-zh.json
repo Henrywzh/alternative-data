@@ -6,8 +6,8 @@
     "title": "香港房地产信托（REITs）基本面监测",
     "description": "领展（Link REIT）、冠君（Champion REIT）、置富（Fortune REIT）、繁荣（Prosperity REIT）、阳光（Sunlight REIT）及富豪（Regal REIT）的每单位资产净值（NAV）、每基金单位分派（DPU）、出租率、租金检讨调升率及酒店 KPI 快照。",
     "sector": "hk-reit",
-    "generatedAt": "2026-09-08T11:20:41.828065Z",
-    "dataAsOf": "2026-03-31",
+    "generatedAt": "2026-09-10T11:20:52.624060Z",
+    "dataAsOf": "2026-06-30",
     "liveSourcesCount": 6,
     "totalSourcesCount": 7,
     "cards": [
@@ -498,7 +498,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `3c9f3385dde09fe1` · 生成于 2026-09-08T11:20:41.828065Z。"
+        "body": "**数据快照：** `fdb4974eab3c277c` · 生成于 2026-09-10T11:20:52.624060Z。"
       },
       {
         "id": "kpi_grid",
@@ -553,7 +553,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-09-08T11:20:41.828065Z",
+    "generatedAt": "2026-09-10T11:20:52.624060Z",
     "status": "ready",
     "datasets": {
       "kpi_linkreit": [
@@ -613,14 +613,14 @@
       ],
       "kpi_regalreit": [
         {
-          "nav_per_unit_hkd": 3.898,
-          "dpu_hkd": 0.0088,
+          "nav_per_unit_hkd": 3.844,
+          "dpu_hkd": null,
           "dpu_period_change": null,
-          "observation_date": "2025-12-31",
-          "period": "Annual 2025",
-          "hotel_occupancy_pct": 73,
-          "average_daily_rate_hkd": 926.44,
-          "revpar_hkd": 675.96
+          "observation_date": "2026-06-30",
+          "period": "Interim 2026",
+          "hotel_occupancy_pct": 74.3,
+          "average_daily_rate_hkd": 922.89,
+          "revpar_hkd": 685.75
         }
       ],
       "nav_history": [
@@ -765,12 +765,6 @@
         {
           "date": "2025-12-31",
           "month": "2025-12",
-          "series": "1881",
-          "value": 3.898
-        },
-        {
-          "date": "2025-12-31",
-          "month": "2025-12",
           "series": "2778",
           "value": 6.45
         },
@@ -779,6 +773,12 @@
           "month": "2026-03",
           "series": "0823",
           "value": 57.75
+        },
+        {
+          "date": "2026-06-30",
+          "month": "2026-06",
+          "series": "1881",
+          "value": 3.844
         }
       ],
       "dpu_history": [
@@ -919,12 +919,6 @@
           "month": "2025-12",
           "series": "0808",
           "value": 0.1156
-        },
-        {
-          "date": "2025-12-31",
-          "month": "2025-12",
-          "series": "1881",
-          "value": 0.0088
         },
         {
           "date": "2025-12-31",
@@ -1081,12 +1075,6 @@
         {
           "date": "2025-12-31",
           "month": "2025-12",
-          "series": "1881",
-          "value": 100
-        },
-        {
-          "date": "2025-12-31",
-          "month": "2025-12",
           "series": "2778",
           "value": 78.1818
         },
@@ -1095,6 +1083,12 @@
           "month": "2026-03",
           "series": "0823",
           "value": 74.9027
+        },
+        {
+          "date": "2026-06-30",
+          "month": "2026-06",
+          "series": "1881",
+          "value": 100
         }
       ],
       "dpu_history_rebased": [
@@ -1235,12 +1229,6 @@
           "month": "2025-12",
           "series": "0808",
           "value": 65.5701
-        },
-        {
-          "date": "2025-12-31",
-          "month": "2025-12",
-          "series": "1881",
-          "value": 100
         },
         {
           "date": "2025-12-31",
@@ -1453,22 +1441,22 @@
       ],
       "regal_hotel_kpi_history": [
         {
-          "date": "2025-12-31",
-          "month": "2025-12",
+          "date": "2026-06-30",
+          "month": "2026-06",
           "series": "平均房价 ADR (港元)",
-          "value": 926.44
+          "value": 922.89
         },
         {
-          "date": "2025-12-31",
-          "month": "2025-12",
+          "date": "2026-06-30",
+          "month": "2026-06",
           "series": "出租率 (%)",
-          "value": 73
+          "value": 74.3
         },
         {
-          "date": "2025-12-31",
-          "month": "2025-12",
+          "date": "2026-06-30",
+          "month": "2026-06",
           "series": "RevPAR (港元)",
-          "value": 675.96
+          "value": 685.75
         }
       ],
       "reit_comparison": [
@@ -1536,13 +1524,13 @@
           "reit_name": "Regal REIT",
           "ticker": "1881.HK",
           "business_type": "酒店",
-          "nav_per_unit_hkd": 3.898,
-          "dpu_hkd": 0.0088,
-          "occupancy_pct": 73,
+          "nav_per_unit_hkd": 3.844,
+          "dpu_hkd": null,
+          "occupancy_pct": 74.3,
           "rental_reversion_pct": null,
-          "average_daily_rate_hkd": 926.44,
-          "revpar_hkd": 675.96,
-          "as_of_date": "2025-12-31"
+          "average_daily_rate_hkd": 922.89,
+          "revpar_hkd": 685.75,
+          "as_of_date": "2026-06-30"
         }
       ],
       "reit_spot_quotes": [],
@@ -1860,15 +1848,15 @@
       ],
       "regalreit": [
         {
-          "date": "2025-12-31",
-          "period": "Annual 2025",
+          "date": "2026-06-30",
+          "period": "Interim 2026",
           "ticker": "1881.HK",
           "reit_name": "Regal REIT",
-          "nav_per_unit_hkd": 3.898,
-          "dpu_hkd": 0.0088,
-          "hotel_occupancy_pct": 73,
-          "average_daily_rate_hkd": 926.44,
-          "revpar_hkd": 675.96,
+          "nav_per_unit_hkd": 3.844,
+          "dpu_hkd": null,
+          "hotel_occupancy_pct": 74.3,
+          "average_daily_rate_hkd": 922.89,
+          "revpar_hkd": 685.75,
           "source_agency": "Regal REIT Investor Relations"
         }
       ]
@@ -2021,7 +2009,7 @@
       "label": "Regal REIT (1881.HK) Hotel Performance Disclosures",
       "status": "success",
       "records": 1,
-      "latest_observation": "2025-12-31",
+      "latest_observation": "2026-06-30",
       "freshness": "live",
       "notes": "Hotel portfolio KPIs: occupancy (%), average daily rate (ADR, HK$), RevPAR (HK$), DPU, and NAV/unit."
     },
@@ -2043,8 +2031,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-reit/",
     "sector_id": "hk-reit",
     "sector_name": "Hong Kong REITs Sector Monitor",
-    "snapshotId": "3c9f3385dde09fe1",
-    "generatedAt": "2026-09-08T11:20:41.828065Z",
-    "dataAsOf": "2026-03-31"
+    "snapshotId": "fdb4974eab3c277c",
+    "generatedAt": "2026-09-10T11:20:52.624060Z",
+    "dataAsOf": "2026-06-30"
   }
 }
