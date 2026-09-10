@@ -219,7 +219,7 @@ VINTAGE_DATASETS: dict[str, dict] = {
             "top_10_percent_median_pepm", "top_1_percent_median_pepm",
         ],
         "metric_fields": [
-            "is_latest_complete_month", "median_pepm", "p90_pepm", "p99_pepm",
+            "median_pepm", "p90_pepm", "p99_pepm",
             "top_10_percent_median_pepm", "top_1_percent_median_pepm",
         ],
         "min_rows": 1,

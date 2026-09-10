@@ -615,3 +615,38 @@ def test_pepm_upsert_keeps_latest_print_and_appends_revised_vintages(tmp_path: P
     assert list(july_prints["top_1_percent_median_pepm"].astype(float)) == [7400.50, 7975.84]
     assert len(vintages.loc[vintages["date_month"] == "2026-08-01"]) == 1
 
+def _filter_pepm_record(run_id: str, scraped_at: str, date_month: str, median: float, latest: bool) -> GenericRecord:
+    return GenericRecord(
+        dataset_id="ramp_ai_filter_pepm",
+        source_url="https://ramp.com/data/ai-index",
+        source_run_id=run_id,
+        scraped_at=scraped_at,
+        payload={
+            "business_office_state": "ALL",
+            "fte_segment": "ALL",
+            "naics_sector": "ALL",
+            "company_financing_status": "ALL",
+            "date_month": date_month,
+            "is_latest_complete_month": latest,
+            "median_pepm": median,
+            "p90_pepm": 100.0,
+            "p99_pepm": 1000.0,
+            "top_10_percent_median_pepm": 200.0,
+            "top_1_percent_median_pepm": 7000.0,
+        },
+    )
+
+
+def test_filter_pepm_vintages_ignore_latest_complete_month_flag(tmp_path: Path):
+    storage = StorageManager(tmp_path)
+    first = [_filter_pepm_record("run-a", "2026-08-31T00:00:00Z", "2026-07-01", 11.95, True)]
+    current = storage.upsert_dataset("ramp_ai_filter_pepm", first)
+    vintages = storage.append_vintages("ramp_ai_filter_pepm", current)
+    assert vintages is not None and len(vintages) == 1
+
+    rolled = [_filter_pepm_record("run-b", "2026-09-10T00:00:00Z", "2026-07-01", 11.95, False)]
+    current = storage.upsert_dataset("ramp_ai_filter_pepm", rolled)
+    vintages = storage.append_vintages("ramp_ai_filter_pepm", current)
+    assert len(vintages) == 1
+    assert str(current.iloc[0]["is_latest_complete_month"]).lower() == "false"
+
