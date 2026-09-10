@@ -5068,6 +5068,10 @@ def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrou
                     value_format=value_format,
                     hover_prefix=hover_prefix,
                     hover_suffix=hover_suffix,
+                    # Weekly/monthly points are sparse enough that a
+                    # marker on every point reads as clutter; daily keeps
+                    # its (visually blended) markers exactly as before.
+                    show_markers=granularity == "daily",
                 ),
                 width="stretch", theme=None,
             )

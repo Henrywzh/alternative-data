@@ -207,6 +207,7 @@ def make_stacked_area_chart(
     value_format: str = ",.2f",
     hover_prefix: str = "",
     hover_suffix: str = "",
+    show_markers: bool = True,
 ) -> go.Figure:
     """Stacked area chart factory for time-series metrics."""
     fig = go.Figure()
@@ -214,7 +215,7 @@ def make_stacked_area_chart(
     for i, col in enumerate(pivot_df.columns):
         fig.add_trace(go.Scatter(
             x=display_index, y=pivot_df[col], name=col,
-            mode="lines+markers", stackgroup="one",
+            mode="lines+markers" if show_markers else "lines", stackgroup="one",
             line=dict(width=0.5, color=colors[i % len(colors)]),
             hovertemplate=f"<b>{col}</b><br>%{{x}}<br>{hover_prefix}%{{y:{value_format}}}{suffix}<extra></extra>",
         ))
