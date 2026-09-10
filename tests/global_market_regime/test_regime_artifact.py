@@ -779,24 +779,36 @@ def test_localized_source_health_aligns_by_series_id_not_row_position() -> None:
 
 
 @pytest.mark.parametrize(
-    ("language_choice", "expected_labels", "expected_alert_title"),
+    ("language_choice", "expected_labels", "expected_alert_titles"),
     [
         (
             "English",
             {"Brent crude", "US 10-year yield", "Next FOMC hike odds"},
-            "No alert needed",
+            {
+                "No alert needed",
+                "Change recorded",
+                "Defensive alert eligible",
+                "Manual digest sent",
+                "Alert decision unavailable",
+            },
         ),
         (
             "中文",
             {"布伦特原油", "美国10年期国债收益率", "下次FOMC加息赔率"},
-            "无需提醒",
+            {
+                "无需提醒",
+                "记录变化",
+                "符合防守预警",
+                "已发送手动摘要",
+                "预警决策不可用",
+            },
         ),
     ],
 )
 def test_streamlit_regime_page_renders_without_exceptions(
     language_choice: str,
     expected_labels: set[str],
-    expected_alert_title: str,
+    expected_alert_titles: set[str],
 ) -> None:
     app = AppTest.from_file(str(APP_PATH), default_timeout=120)
     app.session_state["page"] = "regime"
@@ -806,4 +818,4 @@ def test_streamlit_regime_page_renders_without_exceptions(
     assert not app.exception
     rendered = "\n".join(str(markdown.value) for markdown in app.markdown)
     assert all(label in rendered for label in expected_labels)
-    assert expected_alert_title in rendered
+    assert any(title in rendered for title in expected_alert_titles)

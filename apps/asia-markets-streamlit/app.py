@@ -31,6 +31,7 @@ from am.core import style_app
 from am.page_registry import (
     PAGE_DEFINITIONS,
     build_streamlit_pages,
+    run_page,
     selected_page_key,
 )
 from am.sidebar import render_sidebar
@@ -65,6 +66,8 @@ _LAZY_EXPORTS: dict[str, tuple[str, str]] = {
         "am.regime_evidence",
         "cross_asset_return_heatmap_frame",
     ),
+    "date_hover_format": ("am.core", "date_hover_format"),
+    "date_tick_format": ("am.core", "date_tick_format"),
     "index_style_key": ("am.market_page", "index_style_key"),
     "latest_metric_reading": ("am.core", "latest_metric_reading"),
     "latest_series_reading": ("am.core", "latest_series_reading"),
@@ -127,17 +130,15 @@ def main() -> None:
 
     pages = build_streamlit_pages()
     selected = st.navigation(list(pages.values()), position="hidden")
-    current_page_key = selected_page_key(selected, pages)
+    nav_page_key = selected_page_key(selected, pages)
+    current_page_key = nav_page_key
 
-    # Migrate the former session-state router once.  This preserves existing
-    # bookmarked test/session state while URL-backed pages become canonical.
+    # Honor the former session-state router. AppTest cannot follow
+    # st.switch_page() for callable st.Page targets, so render the
+    # requested page function directly when tests bookmark it.
     legacy_page_key = st.session_state.pop("page", None)
-    if (
-        isinstance(legacy_page_key, str)
-        and legacy_page_key in pages
-        and legacy_page_key != current_page_key
-    ):
-        st.switch_page(pages[legacy_page_key])
+    if isinstance(legacy_page_key, str) and legacy_page_key in pages:
+        current_page_key = legacy_page_key
 
     language_hint = st.session_state.get("language_choice", "中文")
     initial_language = "zh" if language_hint == "中文" else "en"
@@ -147,7 +148,10 @@ def main() -> None:
         pages,
         PAGE_DEFINITIONS,
     )
-    selected.run()
+    if current_page_key == nav_page_key:
+        selected.run()
+    else:
+        run_page(current_page_key)
 
 
 if __name__ == "__main__":
