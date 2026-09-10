@@ -13,6 +13,7 @@ from ramp_data.schemas import (
     JOBS_IMPACT,
     JOBS_IMPACT_DATASET,
     CATEGORY_CHARTS_DATASETS,
+    VINTAGE_DATASETS,
 )
 from ramp_data.sources.ai_index import RampAiIndexSource
 from ramp_data.sources.filter_mode import RampFilterModeSource
@@ -146,7 +147,15 @@ class RampPipeline:
             for dataset_id in dataset_ids:
                 records = extracted.get(dataset_id, [])
                 if records:
-                    datasets_written[dataset_id] = len(self.storage.upsert_dataset(dataset_id, records))
+                    current = self.storage.upsert_dataset(dataset_id, records)
+                    datasets_written[dataset_id] = len(current)
+                    vintage = self.storage.append_vintages(dataset_id, current)
+                    if vintage is not None:
+                        vintage_id = next(
+                            vid for vid, cfg in VINTAGE_DATASETS.items()
+                            if cfg["source_dataset"] == dataset_id
+                        )
+                        datasets_written[vintage_id] = len(vintage)
                 else:
                     datasets_written[dataset_id] = len(self.storage.load_dataset(dataset_id))
 

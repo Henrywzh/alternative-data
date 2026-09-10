@@ -153,6 +153,79 @@ AI_INDEX_DATASETS: dict[str, dict] = {
     },
 }
 
+
+# Point-in-time vintages for series Ramp later revises. The current
+# datasets above stay latest-print (one row per natural key) so existing
+# charts keep a clean current line. These append-only twins keep every
+# scrape that actually changed a metric, keyed on the observation month
+# plus the scrape timestamp.
+VINTAGE_DATASETS: dict[str, dict] = {
+    "ramp_ai_pepm_spend_vintages": {
+        "source_dataset": "ramp_ai_pepm_spend",
+        "fields": [
+            "date_month", "vintage_scraped_at",
+            "median_pepm", "p90_pepm", "p99_pepm",
+            "p99_winsorized_weighted_pepm", "raw_weighted_pepm",
+            "top_10_percent_median_pepm", "top_1_percent_median_pepm",
+            "business_count", "spend_usd", "total_fte_denominator", "is_publishable",
+        ],
+        "natural_keys": ["date_month", "vintage_scraped_at"],
+        "sort_keys": ["date_month", "vintage_scraped_at"],
+        "numeric": [
+            "median_pepm", "p90_pepm", "p99_pepm", "p99_winsorized_weighted_pepm",
+            "raw_weighted_pepm", "top_10_percent_median_pepm", "top_1_percent_median_pepm",
+            "business_count", "spend_usd", "total_fte_denominator",
+        ],
+        "metric_fields": [
+            "median_pepm", "p90_pepm", "p99_pepm",
+            "p99_winsorized_weighted_pepm", "raw_weighted_pepm",
+            "top_10_percent_median_pepm", "top_1_percent_median_pepm",
+            "business_count", "spend_usd", "total_fte_denominator", "is_publishable",
+        ],
+        "min_rows": 1,
+    },
+    "ramp_ai_pepm_spend_by_dimension_vintages": {
+        "source_dataset": "ramp_ai_pepm_spend_by_dimension",
+        "fields": [
+            "date_month", "dimension_type", "dimension_value", "dimension_label",
+            "display_order", "vintage_scraped_at",
+            "median_pepm", "p99_winsorized_weighted_pepm",
+        ],
+        "natural_keys": ["date_month", "dimension_type", "dimension_value", "vintage_scraped_at"],
+        "sort_keys": ["date_month", "dimension_type", "dimension_value", "vintage_scraped_at"],
+        "numeric": ["display_order", "median_pepm", "p99_winsorized_weighted_pepm"],
+        "metric_fields": ["median_pepm", "p99_winsorized_weighted_pepm", "dimension_label", "display_order"],
+        "min_rows": 1,
+    },
+    "ramp_ai_filter_pepm_vintages": {
+        "source_dataset": "ramp_ai_filter_pepm",
+        "fields": [
+            "date_month", "business_office_state", "fte_segment", "naics_sector",
+            "company_financing_status", "is_latest_complete_month",
+            "vintage_scraped_at",
+            "median_pepm", "p90_pepm", "p99_pepm",
+            "top_10_percent_median_pepm", "top_1_percent_median_pepm",
+        ],
+        "natural_keys": [
+            "date_month", "business_office_state", "fte_segment", "naics_sector",
+            "company_financing_status", "vintage_scraped_at",
+        ],
+        "sort_keys": [
+            "date_month", "business_office_state", "fte_segment", "naics_sector",
+            "company_financing_status", "vintage_scraped_at",
+        ],
+        "numeric": [
+            "median_pepm", "p90_pepm", "p99_pepm",
+            "top_10_percent_median_pepm", "top_1_percent_median_pepm",
+        ],
+        "metric_fields": [
+            "is_latest_complete_month", "median_pepm", "p90_pepm", "p99_pepm",
+            "top_10_percent_median_pepm", "top_1_percent_median_pepm",
+        ],
+        "min_rows": 1,
+    },
+}
+
 # --------------------------------------------------------------- Filter mode
 #
 # The AI Index "Filter mode" (a dropdown option under each breakdown chart) loads

@@ -562,3 +562,56 @@ def test_a_live_category_dataset_still_fails_the_gate_when_empty():
                 "ramp_category_adoption_yoy_comparison": [],
             },
         )
+
+
+def _pepm_record(run_id: str, scraped_at: str, date_month: str, median: float, top1: float) -> GenericRecord:
+    return GenericRecord(
+        dataset_id="ramp_ai_pepm_spend",
+        source_url="https://ramp.com/data/ai-index",
+        source_run_id=run_id,
+        scraped_at=scraped_at,
+        payload={
+            "date_month": date_month,
+            "median_pepm": median,
+            "p90_pepm": 100.0,
+            "p99_pepm": 1000.0,
+            "p99_winsorized_weighted_pepm": 10.0,
+            "raw_weighted_pepm": None,
+            "top_10_percent_median_pepm": 200.0,
+            "top_1_percent_median_pepm": top1,
+            "business_count": None,
+            "spend_usd": None,
+            "total_fte_denominator": None,
+            "is_publishable": None,
+        },
+    )
+
+
+def test_pepm_upsert_keeps_latest_print_and_appends_revised_vintages(tmp_path: Path):
+    storage = StorageManager(tmp_path)
+    first = [
+        _pepm_record("run-a", "2026-08-31T00:00:00Z", "2026-07-01", 11.95, 7400.50),
+    ]
+    current = storage.upsert_dataset("ramp_ai_pepm_spend", first)
+    vintages = storage.append_vintages("ramp_ai_pepm_spend", current)
+    assert list(current["top_1_percent_median_pepm"]) == [7400.50]
+    assert vintages is not None
+    assert len(vintages) == 1
+
+    unchanged = storage.upsert_dataset("ramp_ai_pepm_spend", first)
+    again = storage.append_vintages("ramp_ai_pepm_spend", unchanged)
+    assert len(again) == 1
+
+    revised = [
+        _pepm_record("run-b", "2026-09-10T00:00:00Z", "2026-07-01", 11.88, 7975.84),
+        _pepm_record("run-b", "2026-09-10T00:00:00Z", "2026-08-01", 12.50, 7205.13),
+    ]
+    current = storage.upsert_dataset("ramp_ai_pepm_spend", revised)
+    vintages = storage.append_vintages("ramp_ai_pepm_spend", current)
+    assert set(current["date_month"]) == {"2026-07-01", "2026-08-01"}
+    july = current.loc[current["date_month"] == "2026-07-01"].iloc[0]
+    assert float(july["top_1_percent_median_pepm"]) == 7975.84
+    july_prints = vintages.loc[vintages["date_month"] == "2026-07-01"].sort_values("vintage_scraped_at")
+    assert list(july_prints["top_1_percent_median_pepm"].astype(float)) == [7400.50, 7975.84]
+    assert len(vintages.loc[vintages["date_month"] == "2026-08-01"]) == 1
+

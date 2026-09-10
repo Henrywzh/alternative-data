@@ -15,6 +15,7 @@ from ramp_data.schemas import (
     JOBS_IMPACT,
     JOBS_IMPACT_DATASET,
     CATEGORY_CHARTS_DATASETS,
+    VINTAGE_DATASETS,
 )
 
 NATURAL_KEYS: dict[str, list[str]] = {
@@ -71,7 +72,7 @@ REPLACE_DATASETS = {"ramp_category_vendors"}
 # Register the config-driven datasets (AI Index + Jobs Impact) from schemas.py so
 # there is a single source of truth for their columns/keys. AI Index datasets are
 # history/append (keyed on date_month); Jobs Impact is a static REPLACE snapshot.
-for _dsid, _cfg in {**AI_INDEX_DATASETS, **FILTER_MODE_DATASETS, **CATEGORY_CHARTS_DATASETS}.items():
+for _dsid, _cfg in {**AI_INDEX_DATASETS, **FILTER_MODE_DATASETS, **CATEGORY_CHARTS_DATASETS, **VINTAGE_DATASETS}.items():
     DATASET_COLUMNS[_dsid] = [*CORE_COLUMNS, *_cfg["fields"]]
     NATURAL_KEYS[_dsid] = _cfg["natural_keys"]
     SORT_KEYS[_dsid] = _cfg["sort_keys"]
@@ -203,3 +204,86 @@ class StorageManager:
             else:
                 dataframe[column] = dataframe[column].astype("string")
         return dataframe
+
+    def append_vintages(self, source_dataset_id: str, current: pd.DataFrame) -> pd.DataFrame | None:
+        """Keep a point-in-time print when Ramp revises a current-series row.
+
+        Current datasets stay latest-print. Vintage twins append only when a
+        metric actually changed, so a later restatement does not erase what we
+        observed at the time.
+        """
+        vintage_id = next(
+            (vid for vid, cfg in VINTAGE_DATASETS.items() if cfg["source_dataset"] == source_dataset_id),
+            None,
+        )
+        if vintage_id is None or current is None or current.empty:
+            return None
+
+        incoming = self._vintages_from_current(vintage_id, current)
+        incoming["dataset_id"] = vintage_id
+        if incoming.empty:
+            return self.load_dataset(vintage_id)
+
+        existing = self.load_dataset(vintage_id)
+        if existing.empty:
+            return self.upsert_dataset(vintage_id, records_from_frame(incoming))
+
+        entity_keys = [key for key in NATURAL_KEYS[vintage_id] if key != "vintage_scraped_at"]
+        metrics = list(VINTAGE_DATASETS[vintage_id]["metric_fields"])
+        latest = existing.sort_values("vintage_scraped_at").drop_duplicates(subset=entity_keys, keep="last")
+        compared = incoming.merge(
+            latest[entity_keys + metrics],
+            on=entity_keys,
+            how="left",
+            suffixes=("", "_prev"),
+        )
+        changed = pd.Series(False, index=compared.index)
+        for column in metrics:
+            previous = compared.get(f"{column}_prev", pd.Series(pd.NA, index=compared.index))
+            current_values = compared[column]
+            both_missing = current_values.isna() & previous.isna()
+            changed = changed | (
+                ~both_missing
+                & (current_values.astype("string").fillna("") != previous.astype("string").fillna(""))
+            )
+        to_append = incoming.loc[changed.to_numpy()].copy()
+        if to_append.empty:
+            return existing
+        combined = pd.concat([existing, to_append], ignore_index=True)
+        combined = combined.drop_duplicates(subset=NATURAL_KEYS[vintage_id], keep="last")
+        combined["dataset_id"] = vintage_id
+        return self.upsert_dataset(vintage_id, records_from_frame(combined))
+
+    def _vintages_from_current(self, vintage_id: str, current: pd.DataFrame) -> pd.DataFrame:
+        frame = current.copy()
+        if "vintage_scraped_at" not in frame.columns:
+            frame["vintage_scraped_at"] = frame.get("scraped_at")
+        frame["dataset_id"] = vintage_id
+        if "scraped_at" not in frame.columns or frame["scraped_at"].isna().all():
+            frame["scraped_at"] = frame["vintage_scraped_at"]
+        columns = DATASET_COLUMNS[vintage_id]
+        for column in columns:
+            if column not in frame.columns:
+                frame[column] = pd.NA
+        return self._coerce_types(frame[columns])
+
+
+def records_from_frame(frame: pd.DataFrame) -> list[GenericRecord]:
+    records: list[GenericRecord] = []
+    for row in frame.to_dict(orient="records"):
+        payload = {
+            key: value
+            for key, value in row.items()
+            if key not in {"dataset_id", "source_url", "source_run_id", "scraped_at"}
+        }
+        records.append(
+            GenericRecord(
+                dataset_id=str(row.get("dataset_id") or ""),
+                source_url=str(row.get("source_url") or ""),
+                source_run_id=str(row.get("source_run_id") or ""),
+                scraped_at=str(row.get("scraped_at") or row.get("vintage_scraped_at") or ""),
+                payload=payload,
+            )
+        )
+    return records
+

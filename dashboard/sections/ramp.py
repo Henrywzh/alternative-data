@@ -405,9 +405,41 @@ def _render_ai_index(datasets) -> None:
                 return
             frame = result.frame.copy()
             frame["date_month"] = frame["date_month"].astype(str)
-            cols = {"median_pepm": "Median", "p90_pepm": "90th pct", "p99_pepm": "99th pct"}
-            pivot = frame.set_index("date_month")[list(cols)].rename(columns=cols).sort_index()
-            caption = "Monthly AI spend per employee (PEPM) across businesses on Ramp."
+            cols = {
+                "median_pepm": "Median",
+                "p90_pepm": "90th pct",
+                "p99_pepm": "99th pct",
+                "top_10_percent_median_pepm": "Top 10%",
+                "top_1_percent_median_pepm": "Top 1%",
+            }
+            include_tails = st.checkbox("Show top 10% / top 1% (more volatile)", value=False, key="ramp_pepm_tails")
+            selected_cols = list(cols) if include_tails else [c for c in cols if not c.startswith("top_")]
+            available = [c for c in selected_cols if c in frame.columns]
+            pivot = frame.set_index("date_month")[available].rename(columns=cols).sort_index()
+            vintages = datasets.get("ramp_ai_pepm_spend_vintages")
+            vintage_frame = vintages.frame.copy() if vintages and not vintages.frame.empty else pd.DataFrame()
+            fig = make_line_chart(pivot, colors=PALETTE, y_title="AI spend per employee ($/mo)",
+                                  x_title="Month", hover_suffix="", connect_gaps=True)
+            prior = _previous_print(vintage_frame, ["date_month"])
+            if not prior.empty:
+                prior_available = [c for c in available if c in prior.columns]
+                if prior_available:
+                    prior_cols = {k: f"{v} (previous print)" for k, v in cols.items() if k in prior_available}
+                    prior_pivot = prior.set_index("date_month")[prior_available].rename(columns=prior_cols).sort_index()
+                    for i, col in enumerate(prior_pivot.columns):
+                        fig.add_trace(go.Scatter(
+                            x=prior_pivot.index,
+                            y=prior_pivot[col],
+                            name=col,
+                            mode="lines",
+                            line=dict(width=2, dash="dash", color=PALETTE[i % len(PALETTE)]),
+                            connectgaps=True,
+                            hovertemplate=f"<b>{col}</b><br>%{{x}}<br>%{{y:,.2f}}<extra></extra>",
+                        ))
+            st.plotly_chart(fig, width="stretch", theme=None)
+            st.caption("Monthly AI spend per employee (PEPM) across businesses on Ramp. Latest print vs previous scrape.")
+            _render_pepm_revisions(frame, vintage_frame, keys=["date_month"])
+            return
         else:
             # PEPM is a level, so by-dimension IS a genuine monthly time series.
             result = datasets.get("ramp_ai_pepm_spend_by_dimension")
@@ -424,6 +456,11 @@ def _render_ai_index(datasets) -> None:
                               x_title="Month", hover_suffix="", connect_gaps=True)
         st.plotly_chart(fig, width="stretch", theme=None)
         st.caption(caption)
+        vintages = datasets.get("ramp_ai_pepm_spend_by_dimension_vintages")
+        vintage_frame = pd.DataFrame()
+        if vintages and not vintages.frame.empty:
+            vintage_frame = vintages.frame[vintages.frame["dimension_type"] == dim_type].copy()
+        _render_pepm_revisions(frame, vintage_frame, keys=["date_month", "dimension_type", "dimension_value"])
 
     elif view == "Spend share":
         dim_label = st.selectbox("Breakdown", [*SPEND_DIMENSIONS, FILTER_MODE_LABEL], key="ramp_spendshare_dim")
@@ -482,6 +519,67 @@ _FILTER_MODE_DATASETS = {
     "model": "ramp_ai_filter_model_share",
     "pepm": "ramp_ai_filter_pepm",
 }
+
+
+
+PEPM_SERIES = {
+    "median_pepm": "Median",
+    "p90_pepm": "90th pct",
+    "p99_pepm": "99th pct",
+    "top_10_percent_median_pepm": "Top 10%",
+    "top_1_percent_median_pepm": "Top 1%",
+}
+
+
+def _pepm_month_label(value: object) -> str:
+    stamp = pd.to_datetime(value, errors="coerce")
+    if pd.isna(stamp):
+        return str(value)
+    return stamp.strftime("%b %Y")
+
+
+def _previous_print(vintages: pd.DataFrame, keys: list[str]) -> pd.DataFrame:
+    if vintages is None or vintages.empty:
+        return pd.DataFrame()
+    frame = vintages.copy()
+    frame["vintage_scraped_at"] = frame["vintage_scraped_at"].astype(str)
+    ordered = frame.sort_values("vintage_scraped_at")
+    latest_at = ordered["vintage_scraped_at"].iloc[-1]
+    prior = ordered[ordered["vintage_scraped_at"] < latest_at]
+    if prior.empty:
+        return pd.DataFrame()
+    return prior.drop_duplicates(subset=keys, keep="last")
+
+
+def _render_pepm_revisions(current: pd.DataFrame, vintages: pd.DataFrame, *, keys: list[str]) -> None:
+    prior = _previous_print(vintages, keys)
+    if prior.empty:
+        return
+    merged = current.merge(prior, on=keys, how="inner", suffixes=("_current", "_prior"))
+    if merged.empty:
+        return
+    rows = []
+    for _, row in merged.iterrows():
+        for column, label in PEPM_SERIES.items():
+            before = pd.to_numeric(pd.Series([row.get(f"{column}_prior")]), errors="coerce").iloc[0]
+            after = pd.to_numeric(pd.Series([row.get(f"{column}_current")]), errors="coerce").iloc[0]
+            if pd.isna(before) or pd.isna(after) or abs(float(after) - float(before)) < 1e-9:
+                continue
+            rows.append({
+                "Month": _pepm_month_label(row["date_month"]),
+                "Series": label,
+                "Previous print": before,
+                "Current print": after,
+                "Revision": after - before,
+            })
+    if not rows:
+        return
+    table = pd.DataFrame(rows)
+    st.caption(
+        "Ramp restates earlier months when more card transactions arrive. "
+        "Solid lines are the latest print; dashed lines are the previous scrape."
+    )
+    st.dataframe(dataframe_for_display(table), width="stretch", hide_index=True)
 
 
 def _render_filter_mode(datasets, *, kind: str) -> None:
@@ -546,7 +644,14 @@ def _render_filter_mode(datasets, *, kind: str) -> None:
         fig = make_line_chart(pivot, colors=PALETTE, y_title="AI spend per employee ($/mo)",
                               x_title="Month", hover_suffix="", connect_gaps=True)
         st.plotly_chart(fig, width="stretch", theme=None)
-        st.caption(f"Monthly AI spend per employee (PEPM) for **{cohort_label}**.")
+        st.caption(f"Monthly AI spend per employee (PEPM) for **{cohort_label}**. Latest print.")
+        vintages = datasets.get("ramp_ai_filter_pepm_vintages")
+        vintage_frame = pd.DataFrame()
+        if vintages and not vintages.frame.empty:
+            vintage_frame = vintages.frame.copy()
+            for dim, value in selected.items():
+                vintage_frame = vintage_frame[vintage_frame[dim] == value]
+        _render_pepm_revisions(cohort, vintage_frame, keys=["date_month", *FILTER_DIM_ORDER])
 
 
 def _ordered_dim_values(cohort: pd.DataFrame, dim_type: str) -> list[str]:
