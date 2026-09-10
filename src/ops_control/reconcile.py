@@ -25,14 +25,13 @@ def expected_jobs_due(pipeline: PipelineSpec, *, now: datetime) -> list[JobSpec]
         return []
     due: list[JobSpec] = []
     for window in cadence.get("schedule_windows", []):
-        days = str(window.get("days", "")).strip()
-        if not days:
-            continue
-        start = int(days.split("-")[0])
-        end = int(days.split("-")[-1])
         job_id = str(window.get("job_id") or "")
-        if job_id and start <= now.day <= end and job_id in pipeline.jobs:
-            due.append(pipeline.jobs[job_id])
+        if not job_id or job_id not in pipeline.jobs:
+            continue
+        job = pipeline.jobs[job_id]
+        deadline = schedule_deadline(pipeline, job, now=now)
+        if deadline is not None and now >= deadline:
+            due.append(job)
     return due
 
 

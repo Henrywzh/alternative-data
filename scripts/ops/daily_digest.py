@@ -29,7 +29,7 @@ def main(argv: list[str] | None = None) -> int:
     from ops_control.reporting import build_digest, send_digest_email
     from ops_control.store import IncidentStore
 
-    token = os.environ.get("OPS_INCIDENT_TOKEN") or os.environ.get("GITHUB_TOKEN", "")
+    token = os.environ.get("OPS_INCIDENT_TOKEN", "").strip()
     if not args.incident_repo or not token:
         raise SystemExit("OPS_INCIDENT_REPO and GITHUB_TOKEN are required")
     registry = load_registry(args.registry, repo_root=REPO_ROOT)

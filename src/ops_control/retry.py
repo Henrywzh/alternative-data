@@ -31,10 +31,12 @@ def maybe_retry_incident(
     *,
     incident: Incident,
     repository: str,
-    token: str,
+    token: str | None,
     now: datetime | None = None,
 ) -> tuple[Incident, bool]:
     if not incident.retry_eligible or incident.retry_attempted:
+        return incident, False
+    if not token:
         return incident, False
     run_id = next((item for item in reversed(incident.run_ids) if item.isdigit()), None)
     if run_id is None:

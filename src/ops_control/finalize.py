@@ -270,8 +270,9 @@ def _run_url(run_id: str) -> str | None:
 
 def _maybe_record_incident(report: RunReport, *, pipeline, now: datetime | None) -> None:
     incident_repo = os.environ.get("OPS_INCIDENT_REPO", "").strip()
-    token = os.environ.get("OPS_INCIDENT_TOKEN") or os.environ.get("GITHUB_TOKEN", "")
-    if not incident_repo or not token:
+    incident_token = os.environ.get("OPS_INCIDENT_TOKEN", "").strip()
+    producer_token = os.environ.get("GITHUB_TOKEN", "").strip()
+    if not incident_repo or not incident_token:
         return
     try:
         schema_path = Path(
@@ -280,9 +281,11 @@ def _maybe_record_incident(report: RunReport, *, pipeline, now: datetime | None)
                 str(Path(__file__).resolve().parents[2] / "schemas" / "ops" / "incident.schema.json"),
             )
         )
-        store = IncidentStore(repository=incident_repo, token=token, schema_path=schema_path)
+        store = IncidentStore(repository=incident_repo, token=incident_token, schema_path=schema_path)
         if report.derived_state == "HEALTHY":
             for existing in store.find_open_for_job(report.pipeline_id, report.job_id):
+                if existing.status == "RETRYING":
+                    continue
                 store.upsert(mark_recovered(existing, now=now or datetime.now(timezone.utc), run_id=report.run_id))
             return
         incident = incident_from_report(report, pipeline=pipeline, now=now)
@@ -290,11 +293,11 @@ def _maybe_record_incident(report: RunReport, *, pipeline, now: datetime | None)
             return
         stored = store.upsert(incident)
         producer_repo = os.environ.get("GITHUB_REPOSITORY", "")
-        if stored.retry_eligible and producer_repo:
+        if stored.retry_eligible and producer_repo and producer_token:
             updated, retried = maybe_retry_incident(
                 incident=stored,
                 repository=producer_repo,
-                token=token,
+                token=producer_token,
                 now=now,
             )
             if retried:

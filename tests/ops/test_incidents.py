@@ -130,3 +130,16 @@ def test_healthy_report_marks_existing_incident_recovered() -> None:
     assert recovered.derived_state == "HEALTHY"
     assert recovered.needs_human is False
     assert "999" in recovered.run_ids
+
+
+def test_retry_helper_skips_without_producer_token() -> None:
+    registry = load_registry(ROOT / "config" / "ops" / "pipelines.yaml", repo_root=ROOT)
+    incident = incident_from_report(_report(), pipeline=registry.pipelines["openrouter-provider-activity"], now=NOW)
+    updated, retried = maybe_retry_incident(
+        incident=incident,
+        repository="Henrywzh/alternative-data",
+        token="",
+        now=NOW,
+    )
+    assert retried is False
+    assert updated.retry_attempted is False

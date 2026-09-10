@@ -49,6 +49,18 @@ def request_json(
     return parsed
 
 
+def _list_batch(payload: Any) -> list[Any]:
+    if isinstance(payload, list):
+        return payload
+    if not isinstance(payload, dict):
+        return []
+    for key in ("items", "artifacts", "workflow_runs"):
+        batch = payload.get(key)
+        if isinstance(batch, list):
+            return batch
+    return []
+
+
 def paginate(
     url: str,
     *,
@@ -61,9 +73,10 @@ def paginate(
     page = 1
     while True:
         query["page"] = page
-        joined = f"{url}?{urlencode(query)}"
+        separator = "&" if "?" in url else "?"
+        joined = f"{url}{separator}{urlencode(query)}"
         payload = request_json(joined, token=token)
-        batch = payload if isinstance(payload, list) else payload.get("items") or payload.get("artifacts") or payload.get("workflow_runs") or []
+        batch = _list_batch(payload)
         if not isinstance(batch, list):
             raise GitHubAPIError(f"Unexpected GitHub list payload from {joined}")
         items.extend(batch)

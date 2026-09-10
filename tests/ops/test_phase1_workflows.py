@@ -29,6 +29,7 @@ def test_reconcile_runs_every_six_hours() -> None:
     names = [step.get("name") for step in job["steps"]]
     assert "Reconcile registered pipelines" in names
     assert workflow["permissions"]["contents"] == "read"
+    assert workflow["permissions"]["actions"] == "write"
     assert "self-hosted" not in str(workflow)
 
 

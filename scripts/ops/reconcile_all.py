@@ -32,13 +32,14 @@ def main(argv: list[str] | None = None) -> int:
     from ops_control.retry import maybe_retry_incident
     from ops_control.store import IncidentStore
 
-    token = os.environ.get("OPS_INCIDENT_TOKEN") or os.environ.get("GITHUB_TOKEN", "")
-    if not args.producer_repo or not token:
+    producer_token = os.environ.get("GITHUB_TOKEN", "").strip()
+    incident_token = os.environ.get("OPS_INCIDENT_TOKEN", "").strip()
+    if not args.producer_repo or not producer_token:
         raise SystemExit("GITHUB_REPOSITORY and GITHUB_TOKEN are required")
     registry = load_registry(args.registry, repo_root=REPO_ROOT)
     artifacts = paginate(
         f"https://api.github.com/repos/{args.producer_repo}/actions/artifacts",
-        token=token,
+        token=producer_token,
         params={"per_page": 100},
     )
 
@@ -49,7 +50,7 @@ def main(argv: list[str] | None = None) -> int:
             f"https://api.github.com/repos/{args.producer_repo}/actions/artifacts/{artifact['id']}/zip",
             headers={
                 "Accept": "application/vnd.github+json",
-                "Authorization": f"Bearer {token}",
+                "Authorization": f"Bearer {producer_token}",
                 "User-Agent": "alternative-data-ops-control",
             },
         )
@@ -60,14 +61,14 @@ def main(argv: list[str] | None = None) -> int:
     now = datetime.now(timezone.utc)
     incidents = reconcile_registry(registry=registry, reports=reports, now=now)
     stored = []
-    if args.incident_repo:
-        store = IncidentStore(repository=args.incident_repo, token=token, schema_path=args.schema)
+    if args.incident_repo and incident_token:
+        store = IncidentStore(repository=args.incident_repo, token=incident_token, schema_path=args.schema)
         for incident in incidents:
             current = store.upsert(incident)
             current, retried = maybe_retry_incident(
                 incident=current,
                 repository=args.producer_repo,
-                token=token,
+                token=producer_token,
                 now=now,
             )
             if retried:

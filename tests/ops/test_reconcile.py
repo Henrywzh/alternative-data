@@ -84,3 +84,21 @@ def test_monday_digest_includes_weekly_section() -> None:
     body = build_digest(registry=registry, incidents=[], now=monday)
     assert "All registered pilot jobs look healthy." in body
     assert "Weekly reliability:" in body
+
+
+def test_monthly_window_is_checked_after_grace_not_during_the_window() -> None:
+    from ops_control.reconcile import expected_jobs_due
+    registry = load_registry(ROOT / "config" / "ops" / "pipelines.yaml", repo_root=ROOT)
+    pipeline = registry.pipelines["semiconductor-memory-monthly"]
+    during = datetime(2026, 9, 3, 12, 0, tzinfo=timezone.utc)
+    after = datetime(2026, 9, 6, 6, 0, tzinfo=timezone.utc)
+    assert expected_jobs_due(pipeline, now=during) == []
+    due = expected_jobs_due(pipeline, now=after)
+    assert [job.job_id for job in due] == ["adata-update"]
+    incidents = reconcile_registry(registry=registry, reports={}, now=after)
+    assert any(
+        item.pipeline_id == "semiconductor-memory-monthly"
+        and item.job_id == "adata-update"
+        and item.error_class == "missed_schedule"
+        for item in incidents
+    )
