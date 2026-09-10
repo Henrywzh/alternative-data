@@ -1,17 +1,19 @@
 {
   "baseline_initialized": true,
   "last_evaluated_by_mode": {
-    "close": "2026-09-09",
+    "close": "2026-09-10",
     "intraday": "2026-09-09"
   },
   "last_sent_kind": "event",
-  "last_sent_report_date": "2026-09-03",
-  "last_sent_week": "2026-W36",
+  "last_sent_report_date": "2026-09-10",
+  "last_sent_week": "2026-W37",
   "pending_events": [],
   "sent_event_keys": [
     "drawdown|csi300|2026-09-03|沪深300：60日回撤进入风险区间（当前 -10.02%）。",
     "trend_reversal|csi300|2026-09-03|沪深300：20日均线由 均线附近 转为 跌破均线，相对均线 -1.70%。",
-    "trend_reversal|csi500|2026-09-03|中证500：20日均线由 均线附近 转为 跌破均线，相对均线 -1.94%。"
+    "trend_reversal|csi500|2026-09-03|中证500：20日均线由 均线附近 转为 跌破均线，相对均线 -1.94%。",
+    "data_event|etf_share_daily|重要数据事件：KeyError: \"None of [Index(['序号', '基金代码', '基金简称', 'ETF类型', '统计日期', '基金份额'], dtype='object')] are in the [columns]\"。",
+    "data_event|etf_share_daily|重要数据事件：ConnectionError: ('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))。"
   ],
   "version": 1
 }

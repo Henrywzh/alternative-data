@@ -120,15 +120,28 @@
       "us_utilities": 1253,
       "us_value": 1253
     },
-    "first_date": "2021-09-04",
-    "last_date": "2026-09-03",
+    "first_date": "2021-09-11",
+    "last_date": "2026-09-10",
     "requested_start_date": null,
-    "fetch_errors": [],
+    "fetch_errors": [
+      {
+        "dataset": "etf_share_daily",
+        "severity": "optional",
+        "source": "sse:fund_etf_scale_sse",
+        "error": "KeyError: \"None of [Index(['序号', '基金代码', '基金简称', 'ETF类型', '统计日期', '基金份额'], dtype='object')] are in the [columns]\""
+      },
+      {
+        "dataset": "etf_share_daily",
+        "severity": "optional",
+        "source": "szse:fund_scale_daily_szse",
+        "error": "ConnectionError: ('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))"
+      }
+    ],
     "regressions": []
   },
   "dataset_name": "index_price_daily",
-  "run_id": "20260903T134242-8ef7387f",
-  "created_at": "2026-09-03T13:43:03.686860+00:00",
+  "run_id": "20260910T134818-f2ff03d0",
+  "created_at": "2026-09-10T13:48:38.747824+00:00",
   "records": 45759,
   "columns": [
     "date",
@@ -142,5 +155,5 @@
     "retrieved_at_utc",
     "observation_type"
   ],
-  "sha256": "7ee0d4e3415922cd6b0424163664c071e3ad555aabca47d88c14dc710b91418c"
+  "sha256": "8f320b4d9b63c8f33ea77e19b478893f94bf070ff992d4df018680270414af92"
 }
