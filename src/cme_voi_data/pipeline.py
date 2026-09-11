@@ -28,5 +28,5 @@ class CmeVoiPipeline:
         # make impossible. Failing loudly is the honest alternative.
         raise NotImplementedError(
             "CmeVoiPipeline has no in-package collector. Run:\n"
-            "  python3 scripts/backfill_free_institutional_data.py --sources cme"
+            "  python3 scripts/backfill_free_institutional_data.py --source cme"
         )

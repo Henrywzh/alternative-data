@@ -35,21 +35,27 @@ class SpPmiClient:
     def _region_code(value: str) -> str:
         normalized = re.sub(r"\s+", " ", value).strip().upper()
         mapping = {
-            "UNITED STATES": "US",
-            "EUROZONE": "EUROZONE",
-            "UNITED KINGDOM": "UK",
-            "GLOBAL": "GLOBAL",
-            "CHINA": "CN",
-            "JAPAN": "JP",
-            "ASIA": "ASIA",
-            "AUSTRALIA": "AU",
-            "INDIA": "IN",
-            "SOUTH KOREA": "KR",
-            "KOREA": "KR",
-            "TAIWAN": "TW",
-            "CANADA": "CA",
-            "BRAZIL": "BR",
-            "MEXICO": "MX",
+            # S&P Global publishes a PMI for far more economies than the
+            # original 15-entry map covered, and an unmapped name fell through
+            # to the raw uppercased string -- so 38 of 53 stored rows read
+            # "HONG KONG" or "CZECH REPUBLIC" where the rest read ISO-2.
+            "UNITED STATES": "US", "USA": "US", "EUROZONE": "EUROZONE", "GLOBAL": "GLOBAL",
+            "UNITED KINGDOM": "UK", "UK": "UK", "ASIA": "ASIA",
+            "CHINA": "CN", "JAPAN": "JP", "SOUTH KOREA": "KR", "KOREA": "KR",
+            "TAIWAN": "TW", "HONG KONG": "HK", "SINGAPORE": "SG", "INDIA": "IN",
+            "INDONESIA": "ID", "MALAYSIA": "MY", "PHILIPPINES": "PH", "THAILAND": "TH",
+            "VIETNAM": "VN", "MYANMAR": "MM", "AUSTRALIA": "AU", "NEW ZEALAND": "NZ",
+            "CANADA": "CA", "BRAZIL": "BR", "MEXICO": "MX", "COLOMBIA": "CO",
+            "CHILE": "CL", "PERU": "PE", "ARGENTINA": "AR",
+            "GERMANY": "DE", "FRANCE": "FR", "ITALY": "IT", "SPAIN": "ES",
+            "NETHERLANDS": "NL", "IRELAND": "IE", "AUSTRIA": "AT", "GREECE": "GR",
+            "SWITZERLAND": "CH", "DENMARK": "DK", "SWEDEN": "SE", "NORWAY": "NO",
+            "FINLAND": "FI", "POLAND": "PL", "CZECH REPUBLIC": "CZ", "CZECHIA": "CZ",
+            "HUNGARY": "HU", "ROMANIA": "RO", "RUSSIA": "RU", "TURKEY": "TR",
+            "ISRAEL": "IL", "SAUDI ARABIA": "SA", "UNITED ARAB EMIRATES": "AE",
+            "UAE": "AE", "QATAR": "QA", "KUWAIT": "KW", "LEBANON": "LB", "EGYPT": "EG",
+            "SOUTH AFRICA": "ZA", "NIGERIA": "NG", "KENYA": "KE", "GHANA": "GH",
+            "UGANDA": "UG", "ZAMBIA": "ZM", "MOZAMBIQUE": "MZ", "MOROCCO": "MA",
         }
         return mapping.get(normalized, normalized)
 
@@ -62,6 +68,11 @@ class SpPmiClient:
             return "SERVICES"
         if "MANUFACTURING" in normalized or "MANUFACT" in normalized:
             return "MANUFACTURING"
+        # For economies without a sector split S&P publishes a single
+        # whole-economy index, and its card is labelled just "PMI". Passing
+        # that through stored sector="PMI", which is not a sector at all.
+        if "WHOLE ECONOMY" in normalized or normalized.strip() in {"PMI", "PMI®", ""}:
+            return "WHOLE_ECONOMY"
         return normalized.strip() or "UNKNOWN"
 
     @staticmethod

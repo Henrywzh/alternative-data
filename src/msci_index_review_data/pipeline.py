@@ -28,5 +28,5 @@ class MsciIndexReviewPipeline:
         # make impossible. Failing loudly is the honest alternative.
         raise NotImplementedError(
             "MsciIndexReviewPipeline has no in-package collector. Run:\n"
-            "  python3 scripts/backfill_free_institutional_data.py --sources msci"
+            "  python3 scripts/backfill_free_institutional_data.py --source msci"
         )
