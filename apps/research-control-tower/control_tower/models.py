@@ -155,9 +155,28 @@ class EventFilters:
         object.__setattr__(self, "now_utc", reference)
 
 
+PageScopeKind = Literal["global", "global_ai", "company"]
+
+
+@dataclass(frozen=True, slots=True)
+class PageFilterContext:
+    """Explicit separation between app-wide filters and page-local scope."""
+
+    page_scope: str
+    scope_kind: PageScopeKind
+    scope_label: str
+    global_filters: EventFilters
+    effective_filters: EventFilters
+    overridden_dimensions: tuple[str, ...] = ()
+    selected_entity_id: str | None = None
+    selected_listing_id: str | None = None
+
+
 __all__ = [
     "ControlTowerSnapshot",
     "EventFilters",
     "Horizon",
+    "PageFilterContext",
+    "PageScopeKind",
     "RepositoryStatus",
 ]

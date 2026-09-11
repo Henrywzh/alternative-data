@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from html import escape
 from typing import Literal
 
@@ -11,12 +11,8 @@ import streamlit as st
 
 from ..filters import apply_event_filters
 from ..models import ControlTowerSnapshot, EventFilters
-from .timeline import (
-    CatalystView,
-    catalyst_view_for_event,
-    is_active_catalyst,
-    select_next_catalyst,
-)
+from ..semantics import catalyst_state_for_row
+from .timeline import CatalystView, catalyst_view_for_event, select_next_catalyst
 
 
 @dataclass(frozen=True, slots=True)
@@ -88,18 +84,34 @@ def _revision_metric(snapshot: ControlTowerSnapshot, filters: EventFilters) -> B
             "unavailable",
             "Not applicable to selected scope",
         )
-    frame = snapshot.consensus_revisions
-    if "consensus_revisions" in snapshot.missing_optional or frame.empty:
-        if "consensus_revisions" in snapshot.missing_optional:
-            return BreadthMetric("Revisions", None, None, "unavailable", "Revision unavailable")
+    if "consensus_revisions" in snapshot.missing_optional and snapshot.consensus_revisions.empty:
+        return BreadthMetric("Revisions", None, None, "unavailable", "Revision unavailable")
+    if snapshot.consensus_revisions.empty:
+        return BreadthMetric("Revisions", None, None, "degraded", "No comparable history")
+
+    from ..pages.today import _filter_frame_universe, _selected_universe
+
+    selected_entities, selected_listings, selected_baskets = _selected_universe(snapshot, filters)
+    restricted = bool(filters.basket_id or filters.country or filters.membership_tier)
+    frame = _filter_frame_universe(
+        snapshot.consensus_revisions,
+        selected_entities,
+        selected_listings,
+        selected_baskets,
+        restricted=restricted,
+        active_only=True,
+    )
+    if frame.empty:
         return BreadthMetric("Revisions", None, None, "degraded", "No comparable history")
     current = frame.get("current_value", pd.Series(pd.NA, index=frame.index)).notna()
     comparable = current & frame.get("prior_value", pd.Series(pd.NA, index=frame.index)).notna()
-    covered = int(current.sum())
+    current_count = int(current.sum())
     comparable_count = int(comparable.sum())
     if comparable_count == 0:
         return BreadthMetric("Revisions", None, None, "degraded", "No comparable history")
-    return BreadthMetric("Revisions", covered, comparable_count, "available", "Current rows · comparable prior rows")
+    status = "available" if comparable_count == current_count else "degraded"
+    detail = f"{comparable_count} comparable prior-vintage rows · {current_count} current rows"
+    return BreadthMetric("Revisions", comparable_count, current_count, status, detail)
 
 
 def build_flight_deck(
@@ -108,14 +120,29 @@ def build_flight_deck(
     filters: EventFilters,
     viewer_timezone: str,
 ) -> FlightDeckViewModel:
-    filtered = apply_event_filters(snapshot.events, filters)
+    from ..pages.today import _filter_frame_universe, _selected_universe
+
+    selected_entities, selected_listings, selected_baskets = _selected_universe(snapshot, filters)
+    restricted = bool(filters.basket_id or filters.country or filters.membership_tier)
+    event_filters = replace(filters, basket_id=(), country=(), membership_tier=())
+    filtered = _filter_frame_universe(
+        apply_event_filters(snapshot.events, event_filters),
+        selected_entities,
+        selected_listings,
+        selected_baskets,
+        restricted=restricted,
+        active_only=True,
+        selected_countries=set(filters.country),
+        selected_membership_tiers=set(filters.membership_tier),
+    )
     row = select_next_catalyst(filtered, snapshot.now_utc)
     catalyst = catalyst_view_for_event(snapshot, row, now_utc=snapshot.now_utc, viewer_timezone=viewer_timezone) if row is not None else None
     timing_state: Literal["active", "future", "none"] = "none"
     if catalyst is not None:
-        if is_active_catalyst(catalyst.starts_at, catalyst.ends_at, snapshot.now_utc):
+        lifecycle = catalyst_state_for_row(row.to_dict(), snapshot.now_utc)
+        if lifecycle == "active":
             timing_state = "active"
-        else:
+        elif lifecycle == "future":
             timing_state = "future"
     return FlightDeckViewModel(
         universe_label=_universe_label(snapshot, filters),

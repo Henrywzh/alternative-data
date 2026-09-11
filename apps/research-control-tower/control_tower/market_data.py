@@ -7,9 +7,9 @@ It operates as a pure data utility and does not touch global models or app UI.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import math
-from typing import Any, Iterable, Literal, Mapping, Sequence
+from typing import Any, Literal, Mapping, Sequence
 
 import pandas as pd
 

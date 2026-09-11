@@ -480,9 +480,13 @@ def source_health_counts(classified: pd.DataFrame) -> dict[str, int]:
     issue_rows = raw_status.isin(_EXPLICIT_ERROR_GAP_STATUSES) | display_status.isin(
         {"conflicted", "review_required", "entitlement_error", "clock_skew"}
     )
+    available_mask = (
+        display_status.isin({"healthy", "unclassified"})
+        & raw_status.isin({"available", "success", "ok"})
+    )
     return {
         "sources": int(len(classified)),
-        "available": int(raw_status.eq("available").sum()),
+        "available": int(available_mask.sum()),
         "healthy": int(display_status.eq("healthy").sum()),
         "freshness_unclassified": int(display_status.eq("unclassified").sum()),
         "stale": int(display_status.eq("stale").sum()),

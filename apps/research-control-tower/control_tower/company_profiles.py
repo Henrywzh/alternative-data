@@ -39,8 +39,10 @@ class SegmentSpec:
 @dataclass(frozen=True)
 class CompanyProfile:
     entity_id: str
-    reporting_currency_symbol: str = "¥"
-    reporting_currency: str = "CNY"
+    # Unknown companies must not inherit a currency from a profile template.
+    # Known overlays provide their reporting currency explicitly below.
+    reporting_currency_symbol: str = ""
+    reporting_currency: str = ""
     segment_metrics: tuple[SegmentSpec, ...] = ()
     openrouter: OpenRouterFilter | None = None
     southbound: SouthboundSpec | None = None

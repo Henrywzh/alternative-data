@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 import pandas as pd
 
 from .models import EventFilters
+from .semantics import catalyst_state_for_row, resolve_catalyst_interval
 
 
 _IMPORTANCE_RANK = {"high": 0, "medium": 1, "low": 2}
@@ -64,10 +63,21 @@ def _normalise_relation_column(frame: pd.DataFrame, column: str, *, upper: bool 
     frame[column] = result
 
 
-def _catalyst_mask(frame: pd.DataFrame) -> pd.Series:
+def _catalyst_mask(
+    frame: pd.DataFrame,
+    *,
+    now_utc: object | None = None,
+) -> pd.Series:
     event_type = frame.get("event_type", pd.Series("", index=frame.index)).astype("string").str.strip().str.lower()
     status = frame.get("status", pd.Series("", index=frame.index)).astype("string").str.strip().str.lower()
-    return event_type.ne("coverage_gap") & ~status.isin({"unavailable", "cancelled"})
+    mask = event_type.ne("coverage_gap") & ~status.isin({"unavailable", "cancelled"})
+    if now_utc is not None:
+        mask &= frame.apply(
+            lambda row: catalyst_state_for_row(row.to_dict(), now_utc)
+            in {"future", "active"},
+            axis=1,
+        )
+    return mask
 
 
 def superseded_event_ids(events: pd.DataFrame) -> set[str]:
@@ -96,23 +106,37 @@ def superseded_event_ids(events: pd.DataFrame) -> set[str]:
 
 
 def _horizon_mask(frame: pd.DataFrame, filters: EventFilters) -> pd.Series:
-    starts = frame["starts_at"].map(_as_utc) if "starts_at" in frame.columns else pd.Series(pd.NaT, index=frame.index)
-    ends = frame["ends_at"].map(_as_utc) if "ends_at" in frame.columns else pd.Series(pd.NaT, index=frame.index)
-    ends = ends.where(ends.notna(), starts)
-    usable = starts.notna()
+    intervals = frame.apply(
+        lambda row: resolve_catalyst_interval(
+            row.get("starts_at"),
+            row.get("ends_at"),
+            date_precision=row.get("date_precision"),
+            source_tz=row.get("source_timezone"),
+        ),
+        axis=1,
+    )
+    starts = intervals.map(lambda interval: interval.start_utc)
+    ends = intervals.map(lambda interval: interval.end_utc)
+    usable = intervals.map(lambda interval: interval.valid and interval.start_utc is not None)
     if filters.horizon == "all":
         return usable
 
     assert filters.now_utc is not None
-    now = filters.now_utc
+    now = _as_utc(filters.now_utc)
+    if now is pd.NaT:
+        return pd.Series(False, index=frame.index)
     if filters.horizon == "long_range":
         cutoff = now + pd.Timedelta(days=90)
-        return usable & ends.gt(cutoff)
+        # An open-ended event has no evidence that it extends beyond the
+        # long-range boundary; keep it out of this specialised horizon.
+        return usable & ends.notna() & ends.gt(cutoff)
 
     cutoff = now + pd.Timedelta(days=_HORIZON_DAYS[filters.horizon])
     # Half-open horizon: [now, cutoff). An event ending exactly at the upper
-    # bound remains visible only when its start is before that bound.
-    return usable & starts.lt(cutoff) & ends.ge(now)
+    # bound remains visible only when its start is before that bound.  Open
+    # ended events remain visible; inferred date-only ends are already
+    # represented as half-open intervals by the canonical resolver.
+    return usable & starts.lt(cutoff) & (ends.isna() | ends.ge(now))
 
 
 def _confidence_mask(frame: pd.DataFrame, filters: EventFilters) -> pd.Series:
@@ -139,9 +163,10 @@ def apply_event_filters(events: pd.DataFrame, filters: EventFilters) -> pd.DataF
     """Apply global filters and return one stably ordered row per event.
 
     Coverage gaps/unavailable/cancelled rows remain in the repository snapshot
-    but are never timeline-eligible. Long-range uses the explicit event end
-    (or start for an exact event) beyond the 90-day cutoff; it does not invent
-    a second row or truncate the original range.
+    but are never timeline-eligible. With a reference time, expired and
+    completed rows are also retained only for explicit audit views. Long-range
+    uses an explicit event end beyond the 90-day cutoff; it does not invent a
+    second row or truncate the original range.
     """
 
     frame = events.copy(deep=True)
@@ -155,7 +180,7 @@ def apply_event_filters(events: pd.DataFrame, filters: EventFilters) -> pd.DataF
     ):
         _normalise_relation_column(frame, column, upper=upper)
 
-    eligible = _catalyst_mask(frame)
+    eligible = _catalyst_mask(frame, now_utc=filters.now_utc)
     # Superseded ledger rows are excluded from every catalyst presentation
     # (timeline, next catalyst, flight deck). The explicit False audit view
     # keeps the original eligible semantics for excluded rows.

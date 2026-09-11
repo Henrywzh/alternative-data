@@ -10,7 +10,6 @@ bodies.  The Company page calls ``render_filings_earnings_sections`` once.
 from __future__ import annotations
 
 from html import escape
-from typing import Any
 
 import pandas as pd
 import streamlit as st

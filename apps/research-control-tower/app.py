@@ -62,6 +62,11 @@ def _ensure_session_state() -> None:
         "ct_theme": "Light",
         "ct_focus_bootstrapped": False,
         "ct_company_entity": query_entity or "TENCENT",
+        # Track the last URL value we observed separately from the widget
+        # value.  This lets a deliberate mid-session deep-link change win over
+        # stale Streamlit widget state without undoing a normal selectbox
+        # change before the URL has been synchronised below.
+        "ct_company_last_query_entity": query_entity or None,
         "ct_company_listing": None,
         "ct_horizon": "30d",
         "ct_basket_ids": (),
@@ -233,7 +238,8 @@ def _filter_controls(snapshot: ControlTowerSnapshot) -> EventFilters:
     )
 
 
-def _header(snapshot: ControlTowerSnapshot, timezone: str) -> None:
+def _header(snapshot: ControlTowerSnapshot, timezone: str, page: str | None = None) -> None:
+    current_page = page or st.session_state.get("ct_page", "")
     try:
         as_of = snapshot.as_of_utc.tz_convert(timezone).strftime("%d %b %Y %H:%M %Z")
     except Exception:
@@ -241,12 +247,12 @@ def _header(snapshot: ControlTowerSnapshot, timezone: str) -> None:
     st.markdown('<div class="ct-shell">', unsafe_allow_html=True)
     st.markdown('<div class="ct-header-block"><p class="ct-eyebrow">Private research terminal</p></div>', unsafe_allow_html=True)
     page_slug = "research-control-tower-" + "-".join(
-        part for part in st.session_state["ct_page"].casefold().replace("&", "and").split()
+        part for part in current_page.casefold().replace("&", "and").split()
         if part
     )
-    st.title(f"Research Control Tower · {st.session_state['ct_page']}", anchor=page_slug)
+    st.title(f"Research Control Tower · {current_page}", anchor=page_slug)
     st.caption(f"As of {as_of} · build {snapshot.build_id} · {snapshot.status}")
-    if snapshot.status == "degraded":
+    if snapshot.status == "degraded" and current_page in {"Today", "Unified Timeline", "Source Health"}:
         details = "; ".join(f"{_degraded_label(name)}: {reason.replace('_', ' ')}" for name, reason in snapshot.degraded_reasons.items())
         st.warning(f"Degraded data coverage · {details or 'optional source unavailable'}")
 

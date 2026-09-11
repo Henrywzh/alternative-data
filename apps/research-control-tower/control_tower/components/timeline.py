@@ -11,6 +11,11 @@ import streamlit as st
 from ..filters import apply_event_filters
 from ..formatting import format_t_minus
 from ..models import ControlTowerSnapshot, EventFilters
+from ..semantics import (
+    catalyst_state_for_row,
+    parse_timestamp_utc,
+    resolve_catalyst_interval,
+)
 from .source_badges import (
     SourceBadgeView,
     certainty_label,
@@ -131,8 +136,34 @@ def is_active_catalyst(
     starts_at: object,
     ends_at: object,
     now_utc: object,
+    *,
+    date_precision: object = None,
+    source_timezone: object | None = None,
+    status: object = None,
+    event_type: object = None,
 ) -> bool:
-    """Check if an event is currently active: starts_at <= now_utc <= (ends_at or starts_at)."""
+    """Return whether a catalyst is active.
+
+    The three positional arguments preserve the legacy exact-instant helper
+    contract used by older callers.  Row-aware callers should pass lifecycle
+    metadata (or use :func:`catalyst_state_for_row`) so date-only and
+    open-ended intervals use the canonical semantics.
+    """
+    if any(value is not None for value in (date_precision, source_timezone, status, event_type)):
+        return (
+            catalyst_state_for_row(
+                {
+                    "starts_at": starts_at,
+                    "ends_at": ends_at,
+                    "date_precision": date_precision,
+                    "source_timezone": source_timezone,
+                    "status": status,
+                    "event_type": event_type,
+                },
+                now_utc,
+            )
+            == "active"
+        )
     start = _utc(starts_at)
     if start is None:
         return False
@@ -177,7 +208,13 @@ def resolve_ticker_chips(snapshot: ControlTowerSnapshot | None, event: Mapping[s
         return ()
     listings = snapshot.listings
     entities = snapshot.entities
-    event_start = _utc(event.get("starts_at"))
+    event_interval = resolve_catalyst_interval(
+        event.get("starts_at"),
+        event.get("ends_at"),
+        date_precision=event.get("date_precision"),
+        source_tz=event.get("source_timezone"),
+    )
+    event_start = event_interval.start_utc
     if event_start is None:
         event_start = _utc(getattr(snapshot, "as_of_utc", None))
     event_date = event_start.tz_localize(None).normalize() if event_start is not None else None
@@ -265,10 +302,19 @@ def catalyst_view_for_event(
     now_utc: pd.Timestamp,
     viewer_timezone: str,
 ) -> CatalystView | None:
-    start = _utc(event.get("starts_at"))
-    if start is None:
+    interval = resolve_catalyst_interval(
+        event.get("starts_at"),
+        event.get("ends_at"),
+        date_precision=event.get("date_precision"),
+        source_tz=event.get("source_timezone"),
+    )
+    if not interval.valid or interval.start_utc is None:
         return None
-    end = _utc(event.get("ends_at"))
+    start = interval.start_utc
+    end = parse_timestamp_utc(
+        event.get("ends_at"),
+        source_tz=event.get("source_timezone"),
+    )
     event_id = _text(event.get("event_id"))
     return CatalystView(
         event_id=event_id,
@@ -308,13 +354,19 @@ def select_next_catalyst(events: pd.DataFrame, now_utc: pd.Timestamp) -> pd.Seri
     )
     candidates: list[tuple[tuple[Any, ...], int, pd.Series]] = []
     for position, (_, row) in enumerate(filtered.iterrows()):
-        start = _utc(row.get("starts_at"))
-        if start is None:
+        interval = resolve_catalyst_interval(
+            row.get("starts_at"),
+            row.get("ends_at"),
+            date_precision=row.get("date_precision"),
+            source_tz=row.get("source_timezone"),
+        )
+        start = interval.start_utc
+        if not interval.valid or start is None:
             continue
-        end = _utc(row.get("ends_at")) or start
-        if end < now:
+        lifecycle = catalyst_state_for_row(row.to_dict(), now)
+        if lifecycle not in {"future", "active"}:
             continue
-        active = is_active_catalyst(start, end, now)
+        active = lifecycle == "active"
         importance = _IMPORTANCE_ORDER.get(_text(row.get("importance")).lower(), 3)
         certainty = _CERTAINTY_ORDER.get(_text(row.get("certainty_class")).lower(), 9)
         key = (importance, certainty, 0 if active else 1, start, _text(row.get("event_id")), position)

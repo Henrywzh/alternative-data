@@ -15,10 +15,16 @@ import streamlit as st
 from ..components import ct_dataframe
 from ..components.flight_deck import build_flight_deck, render_flight_deck
 from ..models import ControlTowerSnapshot, EventFilters
+from ..semantics import (
+    GLOBAL_AI_BASKET_ID,
+    catalyst_state_for_row,
+    filter_snapshot_to_as_of,
+    page_filter_context,
+)
 from .source_health import classify_source_health
 
 
-AI_BASKET_ID = "AI_BOTTLENECKS_GLOBAL"
+AI_BASKET_ID = GLOBAL_AI_BASKET_ID
 
 LAYER_LABELS = {
     "accelerators_custom_silicon": "Accelerators & custom silicon",
@@ -39,7 +45,6 @@ _LAYER_ALIASES = {
     "hbm_memory": "hbm_memory",
     "hbm memory": "hbm_memory",
     "hbm & memory": "hbm_memory",
-    "hbm_memory": "hbm_memory",
     "ai_bottlenecks_global": "__basket__",
 }
 
@@ -162,9 +167,13 @@ def _active(row: Any, as_of: pd.Timestamp) -> bool:
 
 
 def _active_for_event(row: Any, event: Any, *, fallback: pd.Timestamp) -> bool:
-    event_start = _timestamp(event.get("starts_at")) or fallback
-    event_end = _timestamp(event.get("ends_at"))
     source_timezone = _source_timezone(event)
+    event_start = _interval_timestamp(
+        event.get("starts_at"), source_timezone=source_timezone
+    ) or fallback
+    event_end = _interval_timestamp(
+        event.get("ends_at"), source_timezone=source_timezone
+    )
     link_start = _interval_timestamp(
         row.get("active_from"), source_timezone=source_timezone
     )
@@ -355,6 +364,7 @@ def build_theme_summary(
 ) -> ThemeSummary:
     """Build a theme view from versioned registry relations and snapshot marts."""
 
+    snapshot = filter_snapshot_to_as_of(snapshot)
     normalized, basket_id, primary_layer = _normalize_cluster(cluster_id)
     as_of = snapshot.as_of_utc
     basket_rows = snapshot.baskets.loc[snapshot.baskets["basket_id"].astype("string").str.upper().eq(basket_id)] if not snapshot.baskets.empty else snapshot.baskets
@@ -434,7 +444,6 @@ def build_theme_summary(
     members = pd.DataFrame(member_rows, columns=THEME_MEMBER_COLUMNS) if member_rows else _empty(THEME_MEMBER_COLUMNS)
     if "latest_evidence_at" in members.columns:
         members["latest_evidence_at"] = pd.to_datetime(members["latest_evidence_at"], utc=True, errors="coerce")
-    member_ids = set(members["entity_id"].astype("string")) if not members.empty else set()
     aggregation_ids = set(members.loc[members["membership_tier"].ne("watch_only"), "entity_id"].astype("string")) if not members.empty else set()
     events = (
         _relevant_events(
@@ -499,11 +508,24 @@ def build_theme_summary(
         ).intersection(aggregation_ids)
         latest = _latest_observation(event)
         source = source_meta(event.get("source_id"), event.get("evidence_class"), event.get("source_url"))
-        if event_id in set(visible_events["event_id"].astype("string")) and _text(event.get("event_type")).lower() != "coverage_gap" and _text(event.get("status")).lower() not in {"unavailable", "cancelled"} and _timestamp(event.get("starts_at")) is not None:
+        event_timezone = _source_timezone(event)
+        event_start = _interval_timestamp(
+            event.get("starts_at"), source_timezone=event_timezone
+        )
+        event_end = _interval_timestamp(
+            event.get("ends_at"), source_timezone=event_timezone
+        )
+        lifecycle = catalyst_state_for_row(event.to_dict(), snapshot.now_utc)
+        if event_id in set(visible_events["event_id"].astype("string")) and lifecycle in {"future", "active"} and event_start is not None:
             question_count = int(snapshot.event_watch_questions.loc[snapshot.event_watch_questions["event_id"].astype("string").eq(event_id)].shape[0]) if not snapshot.event_watch_questions.empty else 0
+            catalyst_payload = {
+                **{column: event.get(column, pd.NA) for column in THEME_CATALYST_COLUMNS[:21]},
+                "starts_at": event_start,
+                "ends_at": event_end if event_end is not None else pd.NaT,
+            }
             catalyst_rows.append(
                 {
-                    **{column: event.get(column, pd.NA) for column in THEME_CATALYST_COLUMNS[:21]},
+                    **catalyst_payload,
                     "source_url": source["source_url"],
                     "watch_question_count": question_count,
                     "latest_observation": latest,
@@ -598,6 +620,8 @@ def build_theme_summary(
     else:
         source_coverage = classified.iloc[0:0].copy()
     missing_sources = relevant_sources - set(source_coverage.get("source_id", pd.Series(dtype="string")).astype("string"))
+    available_cols = [c for c in THEME_SOURCE_COLUMNS if c in source_coverage.columns]
+    source_coverage = source_coverage.loc[:, available_cols] if not source_coverage.empty else pd.DataFrame(columns=THEME_SOURCE_COLUMNS)
     if missing_sources:
         missing_rows = pd.DataFrame(
             [
@@ -623,7 +647,14 @@ def build_theme_summary(
             ],
             columns=THEME_SOURCE_COLUMNS,
         )
-        source_coverage = pd.concat([source_coverage, missing_rows], ignore_index=True)
+        if source_coverage.empty:
+            source_coverage = missing_rows
+        elif not missing_rows.empty:
+            for c in THEME_SOURCE_COLUMNS:
+                if c in source_coverage.columns and c in missing_rows.columns:
+                    if str(source_coverage[c].dtype) in {"Float64", "Int64"}:
+                        missing_rows[c] = missing_rows[c].astype(source_coverage[c].dtype)
+            source_coverage = pd.concat([source_coverage, missing_rows], ignore_index=True)
     source_coverage = source_coverage.loc[:, [column for column in THEME_SOURCE_COLUMNS if column in source_coverage.columns]] if not source_coverage.empty else _empty(THEME_SOURCE_COLUMNS)
     unavailable: list[str] = []
     if members.empty:
@@ -736,12 +767,27 @@ def _source_coverage_frame(source_coverage: pd.DataFrame) -> pd.DataFrame:
     return source_coverage.loc[:, available].rename(columns={column: columns[column] for column in available})
 
 
-def _compact_catalyst_frame(catalysts: pd.DataFrame) -> pd.DataFrame:
+def _compact_catalyst_frame(
+    catalysts: pd.DataFrame,
+    *,
+    now_utc: pd.Timestamp | None = None,
+) -> pd.DataFrame:
     """Collapse duplicate representations of one source observation."""
 
     if catalysts.empty:
         return catalysts
     frame = catalysts.copy()
+    if now_utc is not None:
+        reference = _timestamp(now_utc)
+        frame = frame.loc[
+            frame.apply(
+                lambda row: catalyst_state_for_row(row.to_dict(), reference)
+                in {"future", "active"},
+                axis=1,
+            )
+        ].copy()
+        if frame.empty:
+            return frame
     if not {"starts_at", "source_id"}.issubset(frame.columns):
         return frame
     relation_columns = ("related_entity_ids", "related_basket_ids")
@@ -792,6 +838,46 @@ def _compact_evidence_frame(evidence: pd.DataFrame) -> pd.DataFrame:
     return frame.loc[~pd.Series(groups, index=frame.index).duplicated(keep="first")].reset_index(drop=True)
 
 
+def _market_data_flags(snapshot: ControlTowerSnapshot, members: pd.DataFrame) -> tuple[bool, bool]:
+    """Return selected-member market and earnings coverage independently."""
+
+    if members is None or members.empty:
+        return False, False
+    quotes = getattr(snapshot, "quote_snapshots", pd.DataFrame())
+    bars = getattr(snapshot, "price_bars", pd.DataFrame())
+    earnings = getattr(snapshot, "earnings_actuals", pd.DataFrame())
+    member_listings: set[str] = set()
+    for column in ("listing_ids", "verified_listing_ids"):
+        if column in members.columns:
+            for ids in members[column]:
+                member_listings.update(_tokens(ids))
+    member_entities = set(members["entity_id"].dropna().astype("string")) if "entity_id" in members.columns else set()
+
+    def scoped_match(frame: pd.DataFrame) -> bool:
+        if frame is None or frame.empty:
+            return False
+        listing_match = (
+            bool(member_listings & set(frame["listing_id"].dropna().astype("string")))
+            if member_listings and "listing_id" in frame.columns
+            else False
+        )
+        entity_match = (
+            bool(member_entities & set(frame["entity_id"].dropna().astype("string")))
+            if member_entities and "entity_id" in frame.columns
+            else False
+        )
+        return listing_match or entity_match
+
+    return scoped_match(quotes) or scoped_match(bars), scoped_match(earnings)
+
+
+def _has_market_data(snapshot: ControlTowerSnapshot, members: pd.DataFrame) -> bool:
+    """Backward-compatible aggregate coverage predicate for callers/tests."""
+
+    has_market, has_earnings = _market_data_flags(snapshot, members)
+    return has_market or has_earnings
+
+
 def render_ai_bottlenecks_page(
     snapshot: ControlTowerSnapshot,
     *,
@@ -800,7 +886,18 @@ def render_ai_bottlenecks_page(
 ) -> ThemeSummary:
     """Render the evidence-first AI Bottlenecks surface."""
 
-    render_flight_deck(build_flight_deck(snapshot, filters=filters, viewer_timezone=viewer_timezone))
+    page_context = page_filter_context("AI Bottlenecks", filters)
+    st.caption(
+        "Page scope · Global AI Bottlenecks · the app-wide Stage 1 basket, "
+        "region, scope and membership filters are intentionally overridden."
+    )
+    render_flight_deck(
+        build_flight_deck(
+            snapshot,
+            filters=page_context.effective_filters,
+            viewer_timezone=viewer_timezone,
+        )
+    )
     layer_options = list(LAYER_LABELS)
     selected_layer = st.selectbox(
         "Primary bottleneck layer",
@@ -818,7 +915,14 @@ def render_ai_bottlenecks_page(
     st.caption(f"{summary.member_count} registry member(s) · tier counts {summary.tier_counts or 'unavailable'} · evidence change is the ranking primitive")
     if summary.unavailable_reasons:
         st.warning("Data unavailable or degraded · " + "; ".join(summary.unavailable_reasons))
-    st.info("Market data and earnings actuals are not in this bundle yet; no placeholder values are shown.")
+    has_market_data, has_earnings_actuals = _market_data_flags(snapshot, summary.members)
+    missing_data = []
+    if not has_market_data:
+        missing_data.append("market prices/bars")
+    if not has_earnings_actuals:
+        missing_data.append("earnings actuals")
+    if missing_data:
+        st.info("Missing selected-member data: " + ", ".join(missing_data) + "; no placeholder values are shown.")
 
     left, right = st.columns([1.35, 1])
     with left:
@@ -850,7 +954,7 @@ def render_ai_bottlenecks_page(
             st.caption("Shared-layer cohort only; no supplier, customer, competitor or causal edge is inferred.")
 
     st.markdown("#### Upcoming catalysts")
-    visible_catalysts = _compact_catalyst_frame(summary.catalysts)
+    visible_catalysts = _compact_catalyst_frame(summary.catalysts, now_utc=snapshot.now_utc)
     visible_evidence = _compact_evidence_frame(summary.evidence_changes)
     if "display_status" in visible_evidence.columns:
         visible_evidence = visible_evidence.loc[
