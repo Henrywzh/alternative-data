@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import calendar
+import io
 import re
 from typing import Any
 from urllib.parse import urljoin
@@ -167,6 +168,16 @@ class SpPmiClient:
     # Sponsor branding in a PMI headline is not a region. "S&P Global US
     # Services PMI" must resolve to US: an earliest-position scan otherwise
     # matches the GLOBAL in the vendor's own name first.
+    # Shared by the HTML and PDF release parsers so the two cannot drift.
+    _REGION_CANDIDATES: list[tuple[str, str]] = [
+            (r"\bUNITED STATES\b", "UNITED STATES"), (r"(?<![A-Z])U\.S\.(?![A-Z])", "UNITED STATES"), (r"\bUS\b", "UNITED STATES"),
+            (r"\bEUROZONE\b", "EUROZONE"), (r"\bUNITED KINGDOM\b", "UNITED KINGDOM"), (r"\bUK\b", "UNITED KINGDOM"),
+            (r"\bCHINA\b", "CHINA"), (r"\bJAPAN\b", "JAPAN"), (r"\bTAIWAN\b", "TAIWAN"),
+            (r"\bAUSTRALIA\b", "AUSTRALIA"), (r"\bINDIA\b", "INDIA"), (r"\bSOUTH KOREA\b", "SOUTH KOREA"),
+            (r"\bKOREA\b", "KOREA"), (r"\bCANADA\b", "CANADA"), (r"\bBRAZIL\b", "BRAZIL"),
+            (r"\bMEXICO\b", "MEXICO"), (r"\bGLOBAL\b", "GLOBAL"),
+    ]
+
     _VENDOR_TOKENS = ("S&P GLOBAL", "S&P/", "HCOB", "CAIXIN", "AU JIBUN BANK", "JIBUN BANK", "JUDO BANK")
 
     @classmethod
@@ -215,14 +226,7 @@ class SpPmiClient:
         # Eurozone manufacturing release was stored as region=US,
         # sector=COMPOSITE -- wrong, and silently so.
         headline = cls._strip_vendor(title or combined.split("\n", 1)[0])
-        region_candidates = [
-            (r"\bUNITED STATES\b", "UNITED STATES"), (r"(?<![A-Z])U\.S\.(?![A-Z])", "UNITED STATES"), (r"\bUS\b", "UNITED STATES"),
-            (r"\bEUROZONE\b", "EUROZONE"), (r"\bUNITED KINGDOM\b", "UNITED KINGDOM"),
-            (r"\bCHINA\b", "CHINA"), (r"\bJAPAN\b", "JAPAN"), (r"\bTAIWAN\b", "TAIWAN"),
-            (r"\bAUSTRALIA\b", "AUSTRALIA"), (r"\bINDIA\b", "INDIA"), (r"\bSOUTH KOREA\b", "SOUTH KOREA"),
-            (r"\bKOREA\b", "KOREA"), (r"\bCANADA\b", "CANADA"), (r"\bBRAZIL\b", "BRAZIL"),
-            (r"\bMEXICO\b", "MEXICO"), (r"\bGLOBAL\b", "GLOBAL"),
-        ]
+        region_candidates = cls._REGION_CANDIDATES
         region = cls._first_in_text(headline, region_candidates) or cls._first_in_text(upper, region_candidates) or "GLOBAL"
         sector = cls._sector_code(headline)
         month_match = re.search(
@@ -275,6 +279,128 @@ class SpPmiClient:
             fetched_at=fetched,
             source_url=source_url,
         )
+
+
+    @staticmethod
+    def looks_like_pdf(payload: bytes) -> bool:
+        return payload[:4] == b"%PDF"
+
+    @classmethod
+    def parse_release_pdf(
+        cls,
+        payload: bytes,
+        source_url: str,
+        *,
+        fetched_at: str | None = None,
+    ) -> SpPmiObservation | None:
+        """Parse a press release delivered as a PDF.
+
+        S&P serves /Public/Home/PressRelease/<id> as a PDF with HTTP 200, not
+        as HTML. Feeding those bytes to BeautifulSoup produced an empty parse,
+        which was recorded as a WAF block -- the releases were captured
+        successfully all along and simply never parsed.
+
+        Only the headline index is recoverable: the free release states the
+        headline and its prior month, and describes every sub-index in prose
+        ("employment growth hits highest since January 2025") with no figure.
+        The sub-index values are part of S&P's paid PMI service, so they stay
+        null here rather than being inferred.
+        """
+        try:
+            import pdfplumber
+        except ImportError as exc:  # pragma: no cover - dependency is in pyproject
+            raise RuntimeError("pdfplumber is required for S&P PMI release parsing") from exc
+
+        with pdfplumber.open(io.BytesIO(payload)) as pdf:
+            text = "\n".join((page.extract_text() or "") for page in pdf.pages)
+        if not text.strip():
+            return None
+        flat = re.sub(r"\s+", " ", text)
+
+        # Sponsor names vary by market (HBL for Pakistan, RatingDog for China).
+        title_match = re.search(
+            r"(S&P Global|HCOB|Caixin|au Jibun Bank|Jibun Bank|Judo Bank|HBL|RatingDog)"
+            r"\s+(.{3,70}?PMI)\b", flat
+        )
+        if not title_match:
+            return None
+        headline_text = cls._strip_vendor(title_match.group(0))
+        region = cls._first_in_text(headline_text, cls._REGION_CANDIDATES) or "GLOBAL"
+        # "Flash UK PMI" is a UK release, not a sector called "FLASH UK PMI".
+        sector = cls._sector_code(re.sub(r"\bFLASH\b|\bGENERAL\b", " ", headline_text.upper()))
+        if sector not in {"MANUFACTURING", "SERVICES", "COMPOSITE", "WHOLE_ECONOMY"}:
+            # A flash release carries the composite, manufacturing and services
+            # indices in one PDF, so there is no single sector for it and the
+            # title degrades to things like "US PMI". Emitting one row with a
+            # made-up sector is worse than emitting none; the homepage cards
+            # already cover the same month per sector.
+            return None
+
+        # "Index posted 56.5 in August, up from 54.6 in July."
+        # S&P phrases the headline half a dozen ways across markets and across
+        # flash vs final, so each observed form gets its own pattern rather
+        # than one loose catch-all that would bind to a neighbouring figure.
+        headline = month_text = None
+        for pattern in (
+            r"(?:posted|registered|recorded|rose to|fell to)\s+(\d{2}\.\d)\s+in\s+([A-Z][a-z]+)",
+            r"\bAt\s+(\d{2}\.\d)\s+in\s+([A-Z][a-z]+)",
+            r"(?:rose|increased|fell|declined|climbed|dropped)(?:\s+from\s+[\d.]+\s+in\s+[A-Z][a-z]+)?"
+            r"\s+to\s+(\d{2}\.\d)\s+in\s+([A-Z][a-z]+)",
+            r"PMI[^:\n]{0,40}?(?:at|:)\s*(\d{2}\.\d)\s*\(\s*([A-Z][a-z]{2})",
+        ):
+            match = re.search(pattern, flat)
+            if match:
+                headline, month_text = float(match.group(1)), match.group(2)
+                break
+        if headline is None:
+            return None
+        value_match_month = month_text
+
+        # "Embargoed until 0945 EDT 3 September 2026"
+        release_date = ""
+        embargo = re.search(r"Embargoed until.{0,60}?(\d{1,2}\s+[A-Z][a-z]+\s+20\d{2})", flat)
+        if embargo:
+            for fmt in ("%d %B %Y", "%d %b %Y"):
+                try:
+                    release_date = datetime.strptime(embargo.group(1), fmt).date().isoformat()
+                    break
+                except ValueError:
+                    continue
+
+        period = cls._period_from_month(value_match_month, cls._year_for_release(release_date, value_match_month))
+        if not period:
+            return None
+        return cls.derive_subindex_signals(
+            period=period, region=region, sector=sector, headline=headline,
+            new_orders=None, inventory=None, output=None, input_prices=None,
+            output_prices=None, employment=None,
+            # From the title only: "flash" appears in the body of final
+            # releases too, when they compare against the earlier flash.
+            is_flash="FLASH" in headline_text.upper(),
+            release_date=release_date,
+            fetched_at=fetched_at or datetime.now(timezone.utc).isoformat(),
+            source_url=source_url,
+        )
+
+    @staticmethod
+    def _year_for_release(release_date: str, month_text: str) -> int | None:
+        """Calendar year for a reference month, anchored on the release date.
+
+        Deriving it from datetime.now() makes an archived snapshot parse into a
+        different period months later, which defeats keeping the snapshot.
+        """
+        if not release_date:
+            return None
+        released = datetime.strptime(release_date, "%Y-%m-%d").date()
+        month = next(
+            (i for i in range(1, 13)
+             if month_text.lower() in (calendar.month_name[i].lower(), calendar.month_abbr[i].lower())),
+            None,
+        )
+        if month is None:
+            return None
+        # A release always reports a month at or before its own.
+        return released.year if month <= released.month else released.year - 1
 
     @staticmethod
     def derive_subindex_signals(

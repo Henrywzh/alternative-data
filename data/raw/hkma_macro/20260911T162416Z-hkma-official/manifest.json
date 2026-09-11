@@ -1,0 +1,35 @@
+{
+  "manifest_version": 1,
+  "source": "hkma_macro",
+  "run_id": "20260911T162416Z-hkma-official",
+  "started_at_utc": "2026-09-11T16:24:16.724164+00:00",
+  "finished_at_utc": "2026-09-11T16:24:16.724164+00:00",
+  "status": "ok",
+  "errors": {},
+  "coverage": {
+    "records": 6326,
+    "min_date": "2002-01-02",
+    "max_date": "2026-09-11",
+    "note": "Official HKMA daily interbank liquidity API; supersedes the Jin10 mirror for the tenors it carries."
+  },
+  "normalized_outputs": {
+    "hkma_observations.parquet": "data/normalized/hkma_macro/hkma_observations.parquet"
+  },
+  "entries": [
+    {
+      "path": "20260911T162416Z-hkma-official/interbank_liquidity.json.gz",
+      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/daily-monetary-statistics/daily-figures-interbank-liquidity",
+      "status_code": 200,
+      "byte_size": 412569,
+      "payload_sha256": "2ac11c521e6eef66bc2524324ade606d84fb779a37c240e3ec4275204a651f3a",
+      "stored_sha256": "5e17e3e96e744e7570b6514306b2a9cbbf6076f4f7bd984ec9a08d12534b8149",
+      "gzip_payload": true,
+      "rows": 6326,
+      "coverage": {},
+      "metadata": {
+        "pagesize": 1000
+      },
+      "captured_at_utc": "2026-09-11T16:24:16.724164+00:00"
+    }
+  ]
+}

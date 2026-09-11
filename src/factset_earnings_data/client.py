@@ -91,6 +91,31 @@ class FactsetEarningsClient:
                 images.append(src)
         return {"title": title, "text": text, "report_date": report_date, "image_urls": images}
 
+    _URL_DATE_RE = re.compile(
+        r"(january|february|march|april|may|june|july|august|september|october|november|december)"
+        r"-(\d{1,2})-(20\d{2})",
+        re.IGNORECASE,
+    )
+
+    @classmethod
+    def report_date_from_url(cls, url: str) -> str:
+        """Publication date taken from the article slug, when it carries one.
+
+        extract_article_metadata takes the first date-like string in the page
+        text, which can belong to a sidebar teaser rather than the article --
+        one row came out a full year off that way. The slug is unambiguous, so
+        it wins wherever it exists.
+        """
+        match = cls._URL_DATE_RE.search(url or "")
+        if not match:
+            return ""
+        try:
+            return datetime.strptime(
+                f"{match.group(1)} {match.group(2)} {match.group(3)}", "%B %d %Y"
+            ).date().isoformat()
+        except ValueError:
+            return ""
+
     @staticmethod
     def parse_summary_metrics(
         text: str,
@@ -110,11 +135,17 @@ class FactsetEarningsClient:
             except ValueError:
                 return None
 
-        def find_first(patterns: list[str]) -> float | None:
+        def find_first(patterns: list[str], bounds: tuple[float, float] | None = None) -> float | None:
             for pattern in patterns:
                 value = find_float(pattern)
-                if value is not None:
-                    return value
+                if value is None:
+                    continue
+                # A value outside the plausible range means the pattern bound
+                # to the wrong number, not that the index reached it. Keep
+                # looking rather than storing it.
+                if bounds and not (bounds[0] <= value <= bounds[1]):
+                    continue
+                return value
             return None
 
         def find_forward_pe_average() -> float | None:
@@ -131,42 +162,64 @@ class FactsetEarningsClient:
                         return value
             return None
 
+        # Patterns are anchored on FactSet's actual sentence structure, verified
+        # against the 3,274 retained articles. The originals assumed the figure
+        # came before the subject ("X% of S&P 500 companies have reported ...
+        # above EPS estimates") while the report writes "Of these companies,
+        # 86% have reported actual EPS above estimates" -- so eps_beat_rate
+        # filled on 6 of 218 rows and the two revenue fields on none at all.
+        # Several also used re.DOTALL with .*?, letting a capture span the
+        # whole article and pick up an unrelated number.
         return FactsetEarningsObservation(
             report_date=report_date,
             reference_quarter=ref_quarter,
             blended_earnings_growth_yoy=find_first([
-                r"(?:blended\s+)?earnings growth rate of\s*([+-]?[\d.]+)%",
-                r"blended earnings growth of\s*([+-]?[\d.]+)%",
+                r"(?:blended\s+)?earnings growth rate (?:of|for the index (?:of|is))\s*([+-]?\d+(?:\.\d+)?)%",
+                r"blended earnings growth (?:rate )?of\s*([+-]?\d+(?:\.\d+)?)%",
             ]),
             blended_revenue_growth_yoy=find_first([
-                r"(?:blended\s+)?revenue growth rate of\s*([+-]?[\d.]+)%",
-                r"blended revenue growth of\s*([+-]?[\d.]+)%",
+                r"(?:blended\s+)?revenue growth rate (?:of|for the index (?:of|is))\s*([+-]?\d+(?:\.\d+)?)%",
+                r"blended revenue growth (?:rate )?of\s*([+-]?\d+(?:\.\d+)?)%",
             ]),
             eps_beat_rate=find_first([
-                r"([+-]?[\d.]+)% of S&P 500 companies have reported.*?above EPS estimates",
-                r"([+-]?[\d.]+)% of S&P 500 companies.*?beating EPS estimates",
-                r"([+-]?[\d.]+)% of S&P 500 companies reported actual EPS above\s+estimated EPS",
+                r"[Oo]f these companies,?\s*(\d+(?:\.\d+)?)%\s*have reported actual EPS above estimates",
+                r"(\d+(?:\.\d+)?)%\s*of S&P 500 companies have reported actual EPS above (?:EPS )?estimates",
+                r"(\d+(?:\.\d+)?)%\s*of S&P 500 companies have reported a positive EPS surprise",
             ]),
             eps_surprise_pct=find_first([
-                r"earnings (?:are )?reporting\s*([+-]?[\d.]+)% above estimates",
-                r"reported earnings.*?([+-]?[\d.]+)% above estimates",
+                r"companies are reporting earnings that are\s*([+-]?\d+(?:\.\d+)?)%",
+                r"reporting earnings that are\s*([+-]?\d+(?:\.\d+)?)%",
+                r"earnings are reporting\s*([+-]?\d+(?:\.\d+)?)%\s*(?:above|below) estimates",
             ]),
-            revenue_beat_rate=find_first([r"([+-]?[\d.]+)% of S&P 500 companies.*?above revenue estimates"]),
-            revenue_surprise_pct=find_first([r"revenues? (?:are )?reporting\s*([+-]?[\d.]+)% above estimates"]),
+            revenue_beat_rate=find_first([
+                r"[Oo]f these companies,?\s*(\d+(?:\.\d+)?)%\s*have reported actual revenues? above estimates",
+                r"(\d+(?:\.\d+)?)%\s*of S&P 500 companies have reported actual revenues? above estimates",
+            ]),
+            revenue_surprise_pct=find_first([
+                r"companies are reporting revenues? that are\s*([+-]?\d+(?:\.\d+)?)%",
+                r"reporting revenues? that are\s*([+-]?\d+(?:\.\d+)?)%",
+            ]),
             forward_12m_pe=find_first([
-                r"forward\s+12-month\s+P/E\s+ratio\s+(?:is|was|of)\s*([\d]+(?:\.[\d]+)?)",
-                r"forward\s+12-month\s+P/E\s+ratio\s+of\s+the\s+S&P\s+500\s+(?:is|was)\s*([\d]+(?:\.[\d]+)?)",
-                r"forward\s+12-month\s+P/E\s+ratio\s+for\s+the\s+S&P\s+500\s+(?:is|was)\s*([\d]+(?:\.[\d]+)?)",
-                r"forward\s+12-month\s+P/E\s+ratio\s+for\s+the\s+S&P\s+500\s+(?:has\s+)?(?:increased|decreased|rose|fell|declined|dropped|climbed|reduced)\s+to\s*([\d]+(?:\.[\d]+)?)",
-                r"forward\s+12-month\s+P/E\s+ratio\s+(?:has\s+)?(?:increased|decreased|rose|fell|declined|dropped|climbed|reduced)\s+to\s*([\d]+(?:\.[\d]+)?)",
-                r"forward\s+12-month\s+P/E\s+ratio\s+(?:has\s+increased\s+to|increased\s+to|stood\s+at|is\s+currently\s+at)\s*([\d]+(?:\.[\d]+)?)",
-            ]),
-            forward_12m_pe_10y_avg=find_forward_pe_average(),
+                # The verb is required. Without it the optional "for the S&P
+                # 500" lets the capture land on the constituent count.
+                r"forward 12-month P/E ratio (?:for the S&P 500 )?"
+                r"(?:is|was|of|at|stands at|declined to|dropped to|fell to|rose to|increased to|climbed to)"
+                r"\s*(\d+(?:\.\d+)?)",
+                # No loose "[^\d]{0,40}" fallback here: the only thing it
+                # reliably caught was the 500 in "S&P 500", which stored a
+                # forward P/E of 500.0.
+                r"forward 12-month P/E (?:ratio )?(?:is|of|at)\s*(\d+(?:\.\d+)?)",
+            ], bounds=(5.0, 40.0)),
+            forward_12m_pe_10y_avg=find_first([
+                r"10-year average\s*\(\s*(\d+(?:\.\d+)?)\s*\)",
+                r"10-year average (?:P/E ratio )?(?:of|is)\s*(\d+(?:\.\d+)?)",
+            ], bounds=(5.0, 40.0)),
             revision_breadth_score=None,
             sector_growth_json=None,
             fetched_at=fetched_at,
             source_url=source_url,
         )
+
 
     @staticmethod
     def infer_reference_quarter(text: str, title: str = "", report_date: str = "") -> str:

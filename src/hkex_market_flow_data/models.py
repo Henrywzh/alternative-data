@@ -21,6 +21,12 @@ class HkexDailyFlowObservation:
     short_selling_turnover_rmb_mln: float | None = None
     short_selling_security_count: int | None = None
     short_selling_turnover_shares: float | None = None
+    # The turnover columns on HKEX's Stock Connect short-selling file are
+    # structurally zero across 2019-2026 -- the file publishes eligibility, not
+    # realized shorting. "Remaining" (lendable inventory still available) is
+    # the column that actually carries data, so it gets its own field rather
+    # than being read into a turnover column it is not.
+    short_selling_shares_available: float | None = None
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)

@@ -25,6 +25,7 @@ class HkexMarketFlowStorage:
         "short_selling_turnover_hkd_mln", "short_selling_ratio_pct", "fetched_at",
         "northbound_total_turnover_rmb_mln", "short_selling_turnover_rmb_mln",
         "short_selling_security_count", "short_selling_turnover_shares",
+        "short_selling_shares_available",
     ]
 
     def __init__(self, base_dir: Path) -> None:
@@ -63,6 +64,8 @@ class HkexMarketFlowStorage:
             "short_selling_ratio_pct",
             "northbound_total_turnover_rmb_mln", "short_selling_turnover_rmb_mln",
             "short_selling_security_count", "short_selling_turnover_shares",
+            "short_selling_shares_available",
+        "short_selling_shares_available",
         ]:
             merged[col] = pd.to_numeric(merged[col], errors="coerce")
         # Combine same-day rows field by field instead of letting the last one

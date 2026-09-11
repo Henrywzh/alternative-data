@@ -105,6 +105,48 @@ class HkexMarketFlowClient:
             result["northbound_total_turnover_rmb_mln"] = round(northbound_total, 6)
         return result
 
+    # The short-selling table carries a two-row header: the first row names the
+    # column groups, the second names the sub-columns. HKEX dropped the
+    # "Maximum" sub-column from the shares-available group during 2024, which
+    # shifted every later column left by one:
+    #
+    #   2019-2023  [Suspension, Code, Name, Maximum, Remaining, Shares, Value, ...]
+    #   2024-      [Suspension, Code, Name,          Remaining, Shares, Value, ...]
+    #
+    # Reading fixed offsets stored "Remaining" -- the lendable inventory -- as
+    # short-selling turnover shares for every pre-2024 row, a different metric
+    # at a plausible magnitude, which is the kind of error nothing downstream
+    # would flag. Offsets are resolved from the header instead.
+    _LEADING_COLUMNS = 3  # Suspension, Stock Code, Stock Name
+
+    @classmethod
+    def _short_selling_offsets(cls, table: dict[str, Any]) -> tuple[int, int, int | None] | None:
+        """(shares, value, remaining) column indices for this table's layout."""
+        sub_header: list[str] = []
+        for row in table.get("tr", []):
+            if not row.get("tableTitle"):
+                continue
+            cells = row.get("td", [])
+            if not cells or not isinstance(cells[0], list):
+                continue
+            labels = [str(c) for c in cells[0]]
+            if any(lbl.lower().startswith("shares") for lbl in labels):
+                sub_header = labels
+        if not sub_header:
+            return None
+        shares = value = remaining = None
+        for position, label in enumerate(sub_header):
+            normalized = label.lower().strip("* ")
+            if normalized == "shares" and shares is None:
+                shares = cls._LEADING_COLUMNS + position
+            elif normalized.startswith("value") and value is None:
+                value = cls._LEADING_COLUMNS + position
+            elif normalized.startswith("remaining") and remaining is None:
+                remaining = cls._LEADING_COLUMNS + position
+        if shares is None or value is None:
+            return None
+        return shares, value, remaining
+
     @classmethod
     def parse_short_selling_metrics(cls, javascript: str | bytes) -> dict[str, float | int | str | None]:
         result: dict[str, float | int | str | None] = {
@@ -112,8 +154,9 @@ class HkexMarketFlowClient:
             "short_selling_turnover_rmb_mln": None,
             "short_selling_turnover_shares": None,
             "short_selling_security_count": 0,
+            "short_selling_shares_available": None,
         }
-        total_value = total_shares = 0.0
+        total_value = total_shares = total_remaining = 0.0
         count = 0
         for item in cls._parse_js_array(javascript):
             if item.get("date"):
@@ -122,25 +165,36 @@ class HkexMarketFlowClient:
                 table = content.get("table", {})
                 if table.get("classname") != "shortSellingTable":
                     continue
+                offsets = cls._short_selling_offsets(table)
+                if offsets is None:
+                    continue
+                shares_index, value_index, remaining_index = offsets
                 for row in table.get("tr", []):
                     if row.get("tableTitle"):
                         continue
                     cells = row.get("td", [])
-                    if not cells or not isinstance(cells[0], list) or len(cells[0]) < 8:
+                    if not cells or not isinstance(cells[0], list):
                         continue
                     values = cells[0]
-                    shares = cls._number(values[4])
-                    value = cls._number(values[5])
+                    if len(values) <= max(shares_index, value_index):
+                        continue
+                    shares = cls._number(values[shares_index])
+                    value = cls._number(values[value_index])
                     if shares is not None:
                         total_shares += shares
                     if value is not None:
                         total_value += value
+                    if remaining_index is not None and len(values) > remaining_index:
+                        remaining = cls._number(values[remaining_index])
+                        if remaining is not None:
+                            total_remaining += remaining
                     count += 1
         result["short_selling_turnover_shares"] = round(total_shares, 6)
-        # HKEX displays value in RMB (not HKD); this conversion is deliberately
-        # not performed here.
+        # HKEX reports this column in RMB, not HKD; the name records that and
+        # no conversion is applied here.
         result["short_selling_turnover_rmb_mln"] = round(total_value / 1_000_000, 6)
         result["short_selling_security_count"] = count
+        result["short_selling_shares_available"] = round(total_remaining, 6)
         return result
 
     @staticmethod
@@ -155,6 +209,7 @@ class HkexMarketFlowClient:
         short_turnover_rmb: float | None = None,
         short_selling_security_count: int | None = None,
         short_turnover_shares: float | None = None,
+        short_shares_available: float | None = None,
         northbound_total_rmb: float | None = None,
     ) -> HkexDailyFlowObservation:
         sb_net = (sb_buy_hkd - sb_sell_hkd) if (sb_buy_hkd is not None and sb_sell_hkd is not None) else None
@@ -179,4 +234,5 @@ class HkexMarketFlowClient:
             short_selling_turnover_rmb_mln=short_turnover_rmb,
             short_selling_security_count=short_selling_security_count,
             short_selling_turnover_shares=short_turnover_shares,
+            short_selling_shares_available=short_shares_available,
         )

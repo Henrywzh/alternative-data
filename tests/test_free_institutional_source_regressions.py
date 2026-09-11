@@ -211,3 +211,78 @@ def test_a_pipeline_without_a_collector_fails_instead_of_reporting_success(
     pipeline = getattr(importlib.import_module(module), attribute)(base_dir=tmp_path)
     with pytest.raises(NotImplementedError, match="backfill_free_institutional_data"):
         pipeline.run()
+
+
+def test_factset_beat_rate_matches_the_reports_actual_sentence_order() -> None:
+    """The report writes the subject first, then the figure.
+
+    The original pattern expected "X% of S&P 500 companies have reported ...
+    above EPS estimates", so eps_beat_rate filled on 6 of 218 rows and both
+    revenue fields on none. Verified against the 3,274 retained articles.
+    """
+    from factset_earnings_data.client import FactsetEarningsClient
+
+    text = (
+        "To date, 92% of the companies in the S&P 500 have reported actual results for "
+        "Q2 2026. Of these companies, 86% have reported actual EPS above estimates, which "
+        "is above the 5-year average of 78%. In aggregate, companies are reporting earnings "
+        "that are 18.2% above estimates. In terms of revenues, 76% of S&P 500 companies "
+        "have reported actual revenues above estimates. In aggregate, companies are "
+        "reporting revenues that are 2.1% above estimates. The forward 12-month P/E ratio "
+        "for the S&P 500 is 22.4. This P/E ratio is above the 10-year average (18.6)."
+    )
+    obs = FactsetEarningsClient.parse_summary_metrics(text, "2026-08-15", "2026Q2")
+    assert obs.eps_beat_rate == 86.0
+    assert obs.eps_surprise_pct == 18.2
+    assert obs.revenue_beat_rate == 76.0
+    assert obs.revenue_surprise_pct == 2.1
+    assert obs.forward_12m_pe == 22.4
+    assert obs.forward_12m_pe_10y_avg == 18.6
+
+
+def test_factset_report_date_prefers_the_article_slug() -> None:
+    # extract_article_metadata takes the first date in the page text, which can
+    # belong to a sidebar teaser -- one row came out a year off that way.
+    from factset_earnings_data.client import FactsetEarningsClient
+
+    assert FactsetEarningsClient.report_date_from_url(
+        "https://insight.factset.com/sp-500-earnings-season-update-january-16-2025"
+    ) == "2025-01-16"
+    assert FactsetEarningsClient.report_date_from_url("https://insight.factset.com/topic/earnings") == ""
+
+
+def test_pmi_release_payloads_are_detected_as_pdf() -> None:
+    """S&P serves press releases as PDF with HTTP 200, not as HTML.
+
+    Feeding those bytes to BeautifulSoup produced an empty parse that was
+    recorded as a WAF block, so 11 successfully captured releases were never
+    read and every sub-index column stayed null.
+    """
+    from sp_pmi_data.client import SpPmiClient
+
+    assert SpPmiClient.looks_like_pdf(b"%PDF-1.7\n...") is True
+    assert SpPmiClient.looks_like_pdf(b"<html><body>hi</body></html>") is False
+
+
+def test_pmi_release_year_is_anchored_on_the_release_date() -> None:
+    # Deriving the year from datetime.now() makes an archived snapshot parse
+    # into a different period months later, defeating the point of keeping it.
+    from sp_pmi_data.client import SpPmiClient
+
+    assert SpPmiClient._year_for_release("2026-01-05", "December") == 2025
+    assert SpPmiClient._year_for_release("2026-09-03", "August") == 2026
+    assert SpPmiClient._year_for_release("", "August") is None
+
+
+def test_pmi_card_regions_and_sectors_are_normalized() -> None:
+    # 38 of 53 stored rows read raw country names, and a bare "PMI" card -- the
+    # whole-economy index for economies with no sector split -- stored
+    # sector="PMI", which is not a sector.
+    from sp_pmi_data.client import SpPmiClient
+
+    assert SpPmiClient._region_code("Hong Kong") == "HK"
+    assert SpPmiClient._region_code("Czech Republic") == "CZ"
+    assert SpPmiClient._region_code("United Arab Emirates") == "AE"
+    assert SpPmiClient._sector_code("PMI") == "WHOLE_ECONOMY"
+    assert SpPmiClient._sector_code("Whole Economy PMI") == "WHOLE_ECONOMY"
+    assert SpPmiClient._sector_code("Manufacturing PMI") == "MANUFACTURING"
