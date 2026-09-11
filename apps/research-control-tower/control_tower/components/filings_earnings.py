@@ -9,6 +9,7 @@ bodies.  The Company page calls ``render_filings_earnings_sections`` once.
 
 from __future__ import annotations
 
+from collections.abc import Collection
 from html import escape
 
 import pandas as pd
@@ -81,16 +82,26 @@ def render_official_filings(
     entity_id: str,
     listing_id: str | None,
     viewer_timezone: str,
+    listing_ids: Collection[str] | None = None,
 ) -> None:
     st.markdown("#### Official filings and announcements metadata")
     if snapshot.official_filings.empty:
         st.info("No official filing/announcement metadata rows in the current snapshot.")
         return
-    frame = snapshot.official_filings.loc[
-        snapshot.official_filings["entity_id"].astype("string").eq(entity_id)
-    ].copy()
-    if listing_id:
-        frame = frame.loc[frame["listing_id"].astype("string").eq(listing_id)]
+    official = snapshot.official_filings
+    entity_mask = official["entity_id"].astype("string").eq(entity_id)
+    if listing_ids is not None:
+        # CompanyView treats official documents as entity-scoped, while still
+        # allowing rows that are only keyed to one of the entity's active
+        # listings. This keeps Evidence consistent for a secondary listing.
+        scoped_listing_ids = {_text(value) for value in listing_ids}
+        scoped_listing_ids.discard("")
+        listing_mask = official["listing_id"].astype("string").isin(scoped_listing_ids)
+        frame = official.loc[entity_mask | listing_mask].copy()
+    else:
+        frame = official.loc[entity_mask].copy()
+        if listing_id:
+            frame = frame.loc[frame["listing_id"].astype("string").eq(listing_id)]
     if frame.empty:
         st.info("No official filing/announcement metadata rows for this entity/listing.")
         return
@@ -157,11 +168,16 @@ def render_filings_earnings_sections(
     entity_id: str,
     listing_id: str | None,
     viewer_timezone: str,
+    listing_ids: Collection[str] | None = None,
 ) -> None:
     """Single Company-page integration point for the Batch 2/3 sections."""
 
     render_official_filings(
-        snapshot, entity_id=entity_id, listing_id=listing_id, viewer_timezone=viewer_timezone
+        snapshot,
+        entity_id=entity_id,
+        listing_id=listing_id,
+        viewer_timezone=viewer_timezone,
+        listing_ids=listing_ids,
     )
     render_earnings_calendar(snapshot, entity_id=entity_id, listing_id=listing_id)
     render_earnings_actuals(

@@ -540,7 +540,38 @@ def compute_tencent_valuation_snapshots(
     fiscal_year: int | None = None,
     statistic: str = "mean",
 ) -> pd.DataFrame:
-    """Compute Tencent forward P/E from causal quote, EPS, and FX vintages.
+    """Backwards-compatible wrapper computing Tencent (0700_HK) valuation."""
+
+    return compute_listing_valuation_snapshots(
+        quote_snapshots_df=quote_snapshots_df,
+        consensus_snapshots_df=consensus_snapshots_df,
+        listing_id="0700_HK",
+        earnings_actuals_df=earnings_actuals_df,
+        fx_rates_df=fx_rates_df,
+        as_of_utc=as_of_utc,
+        consensus_health_df=consensus_health_df,
+        max_consensus_age_days=max_consensus_age_days,
+        fiscal_period=fiscal_period,
+        fiscal_year=fiscal_year,
+        statistic=statistic,
+    )
+
+
+def compute_listing_valuation_snapshots(
+    quote_snapshots_df: pd.DataFrame | None,
+    consensus_snapshots_df: pd.DataFrame | None,
+    listing_id: str,
+    earnings_actuals_df: pd.DataFrame | None = None,
+    fx_rates_df: pd.DataFrame | None = None,
+    as_of_utc: datetime | str | pd.Timestamp | None = None,
+    *,
+    consensus_health_df: pd.DataFrame | None = None,
+    max_consensus_age_days: int = 14,
+    fiscal_period: str = "annual",
+    fiscal_year: int | None = None,
+    statistic: str = "mean",
+) -> pd.DataFrame:
+    """Compute listing forward P/E from causal quote, EPS, and FX vintages.
 
     Automated consensus must be accompanied by its Task 3 provider-policy
     health sidecar. Raw normalized exports are never selected without an
@@ -548,6 +579,9 @@ def compute_tencent_valuation_snapshots(
     """
 
     del earnings_actuals_df
+    cleaned_listing_id = str(listing_id or "").strip()
+    if not cleaned_listing_id:
+        return empty_frame(VALUATION_SNAPSHOTS_ARROW_SCHEMA)
     if as_of_utc is None:
         raise ValueError("as_of_utc is required for deterministic PIT selection")
     as_of = pd.Timestamp(as_of_utc)
@@ -578,11 +612,11 @@ def compute_tencent_valuation_snapshots(
             provider_keys.isin(accepted_providers)
         ].copy()
     quote = _latest_quote(
-        quote_snapshots_df, listing_id="0700_HK", as_of=as_of
+        quote_snapshots_df, listing_id=cleaned_listing_id, as_of=as_of
     )
     consensus = _latest_consensus_eps(
         filtered_consensus,
-        listing_id="0700_HK",
+        listing_id=cleaned_listing_id,
         as_of=as_of,
         fiscal_period=fiscal_period,
         fiscal_year=fiscal_year,
@@ -610,7 +644,7 @@ def compute_tencent_valuation_snapshots(
         return empty_frame(VALUATION_SNAPSHOTS_ARROW_SCHEMA)
     pit_class = str(consensus["pit_class"]).strip()
     input_row = ValuationInput(
-        listing_id="0700_HK",
+        listing_id=cleaned_listing_id,
         valuation_at=as_of.to_pydatetime(),
         metric_name="forward_pe",
         accounting_basis=accounting_basis,
@@ -649,6 +683,87 @@ def compute_tencent_valuation_snapshots(
     if issues:
         raise ValueError(f"valuation output validation failed: {issues}")
     return result
+
+
+def compute_valuation_snapshots(
+    quote_snapshots_df: pd.DataFrame | None,
+    consensus_snapshots_df: pd.DataFrame | None,
+    earnings_actuals_df: pd.DataFrame | None = None,
+    fx_rates_df: pd.DataFrame | None = None,
+    as_of_utc: datetime | str | pd.Timestamp | None = None,
+    *,
+    listing_ids: Sequence[str] | str | None = None,
+    consensus_health_df: pd.DataFrame | None = None,
+    max_consensus_age_days: int = 14,
+    fiscal_period: str = "annual",
+    fiscal_year: int | None = None,
+    statistic: str = "mean",
+) -> pd.DataFrame:
+    """Compute forward P/E valuation snapshots across selected or discovered listings."""
+
+    resolved_listings: list[str] = []
+    if listing_ids is not None:
+        raw_items: list[str] = []
+        if isinstance(listing_ids, str):
+            listing_seq = [listing_ids]
+        else:
+            listing_seq = list(listing_ids)
+        for element in listing_seq:
+            if element is None:
+                continue
+            try:
+                if pd.isna(element):
+                    continue
+            except (TypeError, ValueError):
+                pass
+            for item in str(element).split(","):
+                cleaned = item.strip()
+                if cleaned:
+                    raw_items.append(cleaned)
+        resolved_listings = list(dict.fromkeys(raw_items))
+    else:
+        candidates: set[str] = set()
+        if (
+            quote_snapshots_df is not None
+            and not quote_snapshots_df.empty
+            and "listing_id" in quote_snapshots_df.columns
+        ):
+            candidates.update(
+                quote_snapshots_df["listing_id"].dropna().astype(str).str.strip()
+            )
+        if (
+            consensus_snapshots_df is not None
+            and not consensus_snapshots_df.empty
+            and "listing_id" in consensus_snapshots_df.columns
+        ):
+            candidates.update(
+                consensus_snapshots_df["listing_id"].dropna().astype(str).str.strip()
+            )
+        candidates.discard("")
+        resolved_listings = sorted(candidates)
+
+    if not resolved_listings:
+        return empty_frame(VALUATION_SNAPSHOTS_ARROW_SCHEMA)
+
+    frames: list[pd.DataFrame] = []
+    for listing in resolved_listings:
+        listing_frame = compute_listing_valuation_snapshots(
+            quote_snapshots_df=quote_snapshots_df,
+            consensus_snapshots_df=consensus_snapshots_df,
+            listing_id=listing,
+            earnings_actuals_df=earnings_actuals_df,
+            fx_rates_df=fx_rates_df,
+            as_of_utc=as_of_utc,
+            consensus_health_df=consensus_health_df,
+            max_consensus_age_days=max_consensus_age_days,
+            fiscal_period=fiscal_period,
+            fiscal_year=fiscal_year,
+            statistic=statistic,
+        )
+        if not listing_frame.empty:
+            frames.append(listing_frame)
+
+    return _combine_valuations(*frames)
 
 
 def build_explicit_valuation_inputs(frame: pd.DataFrame | None) -> pd.DataFrame:
@@ -715,12 +830,23 @@ def main(argv: Sequence[str] | None = None) -> int:
         type=Path,
         default=Path("config/research_control_tower/internal_estimates.csv"),
     )
+    parser.add_argument(
+        "--listing-ids",
+        help=(
+            "Optional comma-separated listing IDs to derive valuations for "
+            "(defaults to all listings discovered in quotes and consensus)"
+        ),
+    )
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--as-of", required=True)
     parser.add_argument("--fiscal-period", default="annual")
     parser.add_argument("--fiscal-year", type=int)
     parser.add_argument("--statistic", default="mean")
     args = parser.parse_args(argv)
+    if args.listing_ids is not None and not any(
+        item.strip() for item in args.listing_ids.split(",")
+    ):
+        parser.error("--listing-ids must contain at least one non-empty listing ID")
 
     logging.basicConfig(level=logging.INFO)
     as_of = pd.Timestamp(args.as_of)
@@ -738,12 +864,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     if internal_issues:
         raise ValueError(f"internal estimates validation failed: {internal_issues}")
 
-    derived = compute_tencent_valuation_snapshots(
+    derived = compute_valuation_snapshots(
         quotes,
         consensus,
         earnings,
         fx_rates,
         as_of,
+        listing_ids=args.listing_ids,
         consensus_health_df=consensus_health,
         max_consensus_age_days=args.max_consensus_age_days,
         fiscal_period=args.fiscal_period,

@@ -24,6 +24,7 @@ from control_tower.models import ControlTowerSnapshot, EventFilters
 from control_tower.pages.company import (
     COMPANY_CLAIM_EVIDENCE_LINK_COLUMNS,
     COMPANY_CORPORATE_ACTION_COLUMNS,
+    COMPANY_DOCUMENT_COLUMNS,
     COMPANY_EVIDENCE_ITEM_COLUMNS,
     COMPANY_INTERNAL_ESTIMATES_COLUMNS,
     COMPANY_LISTING_COLUMNS,
@@ -1383,8 +1384,8 @@ def test_news_filings_section_renders_precise_unlinked_warning(tmp_path: Path, m
 
     text = _app_text(app)
     assert "Vendor news overlay (not official filings)" in text
-    assert "Published news/filing metadata (generation artifact)" in text
-    assert "related_entity_ids are still blank" in text
+    assert "Linked news/filing metadata" in text
+    assert "No entity-linked rows in news_filings.parquet" in text
 
 
 def test_openrouter_daily_frame_sums_models_without_running_total() -> None:
@@ -2522,3 +2523,405 @@ def test_newer_local_quotes_marks_overlay_provenance(
 
     assert float(out.iloc[0]["last_price"]) == 410.0
     assert str(out.iloc[0]["is_local_overlay"]).casefold() == "true"
+
+
+def test_official_filings_visible_in_company_view_with_blank_news_filings() -> None:
+    """Official filings are bound to CompanyView even when news_filings has blank relation arrays.
+
+    Caveat and source-health unavailable markers for official_documents must not be emitted
+    when official_filings has rows for the entity.
+    """
+    snapshot = _make_tencent_snapshot()
+
+    entities = pd.concat([
+        snapshot.entities,
+        pd.DataFrame([{
+            "entity_id": "ALIBABA",
+            "legal_name": "Alibaba Group Holding Limited",
+            "display_name": "Alibaba",
+            "country": "CN",
+            "sector": "Consumer Discretionary",
+            "industry": "Internet Retail",
+            "active_status": "active",
+            "active_from": "2014-09-19",
+            "active_to": None,
+            "registry_version": "v1",
+            "source_or_research_note": "China internet",
+            "entity_type": "public",
+        }])
+    ], ignore_index=True)
+
+    listings = pd.concat([
+        snapshot.listings,
+        pd.DataFrame([{
+            "listing_id": "9988_HK",
+            "entity_id": "ALIBABA",
+            "exchange": "HKEX",
+            "native_ticker": "9988",
+            "canonical_ticker": "9988.HK",
+            "financial_data_security_id": "sec-9988",
+            "financial_data_issuer_group_id": "grp-alibaba",
+            "mapping_status": "verified",
+            "mapping_verified_at": "2026-08-21",
+            "mapping_source_url": "https://www.hkex.com.hk",
+            "collection_eligible": True,
+            "listing_role": "primary",
+            "vendor_tickers": "yfinance:9988.HK;akshare:09988",
+            "currency": "HKD",
+            "primary_listing": True,
+            "active_from": "2019-11-26",
+            "active_to": None,
+            "listing_status": "active",
+            "registry_version": "v1",
+            "source_url": "https://www.hkex.com.hk",
+            "source_or_research_note": "Primary HK line",
+        }])
+    ], ignore_index=True)
+
+    unlinked_news = pd.DataFrame([{
+        "document_id": "NEWS-1",
+        "document_type": "news_article",
+        "source_id": "news_marketaux",
+        "headline": "Generic market news",
+        "publisher": "MarketAux",
+        "published_at": pd.Timestamp("2026-08-15T10:00:00Z"),
+        "first_observed_at": pd.Timestamp("2026-08-15T10:00:00Z"),
+        "source_url": "https://example.com/news1",
+        "language": "en",
+        "related_entity_ids": "",
+        "related_listing_ids": "",
+        "related_basket_ids": "",
+        "event_class": "general",
+        "importance": "low",
+        "source_quality": "vendor_news",
+        "pit_class": "snapshot_from_live_source",
+        "source_license_class": "commercial_licensed",
+    }])
+
+    official_filings = pd.DataFrame([
+        {
+            "document_id": "HKEX-700-1",
+            "document_type": "filing",
+            "event_class": "general",
+            "source_id": "filings:hkexnews",
+            "headline": "Next-Day Disclosure Return - Share Repurchase",
+            "publisher": "HKEXnews",
+            "published_at": pd.Timestamp("2026-08-18T10:00:00Z"),
+            "accepted_at": pd.Timestamp("2026-08-18T10:00:00Z"),
+            "retrieved_at_utc": pd.Timestamp("2026-08-18T10:30:00Z"),
+            "source_url": "https://www1.hkexnews.hk/0700",
+            "language": "zh",
+            "entity_id": "TENCENT",
+            "listing_id": "0700_HK",
+            "canonical_ticker": "0700.HK",
+            "date_precision": "minute",
+            "source_timezone": "Asia/Hong_Kong",
+            "event_status": "observed",
+            "source_quality": "official_metadata",
+            "pit_class": "snapshot_from_live_source",
+            "source_license_class": "official_public_metadata",
+            "source_note": "official hkex filing",
+            "registry_version": "v1",
+        },
+        {
+            "document_id": "HKEX-9988-1",
+            "document_type": "filing",
+            "event_class": "general",
+            "source_id": "filings:hkexnews",
+            "headline": "Alibaba Share Repurchase Update",
+            "publisher": "HKEXnews",
+            "published_at": pd.Timestamp("2026-08-18T11:00:00Z"),
+            "accepted_at": pd.Timestamp("2026-08-18T11:00:00Z"),
+            "retrieved_at_utc": pd.Timestamp("2026-08-18T11:30:00Z"),
+            "source_url": "https://www1.hkexnews.hk/9988",
+            "language": "zh",
+            "entity_id": "ALIBABA",
+            "listing_id": "9988_HK",
+            "canonical_ticker": "9988.HK",
+            "date_precision": "minute",
+            "source_timezone": "Asia/Hong_Kong",
+            "event_status": "observed",
+            "source_quality": "official_metadata",
+            "pit_class": "snapshot_from_live_source",
+            "source_license_class": "official_public_metadata",
+            "source_note": "official hkex filing",
+            "registry_version": "v1",
+        },
+    ])
+
+    test_snapshot = replace(
+        snapshot,
+        entities=entities,
+        listings=listings,
+        news_filings=unlinked_news,
+        official_filings=official_filings,
+    )
+
+    # 1. Tencent view
+    view_tencent = build_company_view(test_snapshot, entity_id="TENCENT")
+    assert not view_tencent.official_documents.empty
+    assert len(view_tencent.official_documents) == 1
+    assert view_tencent.official_documents.iloc[0]["document_id"] == "HKEX-700-1"
+    assert view_tencent.official_documents.iloc[0]["headline"] == "Next-Day Disclosure Return - Share Repurchase"
+    assert tuple(view_tencent.official_documents.columns) == COMPANY_DOCUMENT_COLUMNS
+    assert not any("Official documents unavailable" in c for c in view_tencent.caveats)
+    assert "official_documents" not in set(view_tencent.source_health["source_id"].astype("string"))
+
+    # 2. Alibaba view
+    view_alibaba = build_company_view(test_snapshot, entity_id="ALIBABA")
+    assert not view_alibaba.official_documents.empty
+    assert len(view_alibaba.official_documents) == 1
+    assert view_alibaba.official_documents.iloc[0]["document_id"] == "HKEX-9988-1"
+    assert view_alibaba.official_documents.iloc[0]["headline"] == "Alibaba Share Repurchase Update"
+    assert not any("Official documents unavailable" in c for c in view_alibaba.caveats)
+    assert "official_documents" not in set(view_alibaba.source_health["source_id"].astype("string"))
+
+
+def test_official_filings_render_entity_scope_for_secondary_listing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from control_tower.components import filings_earnings
+
+    snapshot = _make_tencent_snapshot()
+    official = pd.DataFrame(
+        [
+            {
+                "document_id": "HKEX-0700-1",
+                "entity_id": "TENCENT",
+                "listing_id": "0700_HK",
+                "document_type": "filing",
+                "event_class": "general",
+                "headline": "Primary listing filing",
+            },
+            {
+                "document_id": "HKEX-TCEHY-1",
+                "entity_id": "TENCENT",
+                "listing_id": "TCEHY_US",
+                "document_type": "filing",
+                "event_class": "general",
+                "headline": "Secondary listing filing",
+            },
+        ]
+    )
+    altered = replace(
+        snapshot,
+        official_filings=official,
+    )
+    captured: dict[str, pd.DataFrame] = {}
+    monkeypatch.setattr(filings_earnings.st, "markdown", lambda *args, **kwargs: None)
+    monkeypatch.setattr(filings_earnings.st, "info", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        filings_earnings,
+        "ct_dataframe",
+        lambda frame, **kwargs: captured.setdefault("frame", frame.copy()),
+    )
+
+    filings_earnings.render_official_filings(
+        altered,
+        entity_id="TENCENT",
+        listing_id="TCEHY_US",
+        listing_ids={"0700_HK", "TCEHY_US"},
+        viewer_timezone="Asia/Taipei",
+    )
+
+    assert len(captured["frame"]) == 2
+    assert set(captured["frame"]["headline"]) == set(official["headline"])
+
+
+def test_generic_news_filings_remain_separate_from_official_documents() -> None:
+    """Generic news_filings rows are not mixed into official_documents."""
+    snapshot = _make_tencent_snapshot()
+    news = pd.DataFrame([{
+        "document_id": "NEWS-TENCENT-1",
+        "document_type": "news_article",
+        "source_id": "news_marketaux",
+        "headline": "Vendor Marketaux article about Tencent",
+        "publisher": "MarketAux",
+        "published_at": pd.Timestamp("2026-08-15T10:00:00Z"),
+        "first_observed_at": pd.Timestamp("2026-08-15T10:00:00Z"),
+        "source_url": "https://example.com/news-tencent",
+        "language": "en",
+        "related_entity_ids": "TENCENT",
+        "related_listing_ids": "0700_HK",
+        "related_basket_ids": "",
+        "event_class": "general",
+        "importance": "low",
+        "source_quality": "vendor_news",
+        "pit_class": "snapshot_from_live_source",
+        "source_license_class": "commercial_licensed",
+    }])
+    official = pd.DataFrame([{
+        "document_id": "HKEX-700-OFFICIAL",
+        "document_type": "filing",
+        "event_class": "general",
+        "source_id": "filings:hkexnews",
+        "headline": "Official HKEX Announcement",
+        "publisher": "HKEXnews",
+        "published_at": pd.Timestamp("2026-08-18T10:00:00Z"),
+        "accepted_at": pd.Timestamp("2026-08-18T10:00:00Z"),
+        "retrieved_at_utc": pd.Timestamp("2026-08-18T10:30:00Z"),
+        "source_url": "https://www1.hkexnews.hk/0700",
+        "language": "zh",
+        "entity_id": "TENCENT",
+        "listing_id": "0700_HK",
+        "canonical_ticker": "0700.HK",
+        "date_precision": "minute",
+        "source_timezone": "Asia/Hong_Kong",
+        "event_status": "observed",
+        "source_quality": "official_metadata",
+        "pit_class": "snapshot_from_live_source",
+        "source_license_class": "official_public_metadata",
+        "source_note": "official hkex filing",
+        "registry_version": "v1",
+    }])
+    test_snapshot = replace(snapshot, news_filings=news, official_filings=official)
+    view = build_company_view(test_snapshot, entity_id="TENCENT")
+    assert not view.official_documents.empty
+    assert len(view.official_documents) == 1
+    assert view.official_documents.iloc[0]["document_id"] == "HKEX-700-OFFICIAL"
+    assert "NEWS-TENCENT-1" not in set(view.official_documents["document_id"])
+    assert not view.news_documents.empty
+    assert len(view.news_documents) == 1
+    assert view.news_documents.iloc[0]["document_id"] == "NEWS-TENCENT-1"
+    assert "HKEX-700-OFFICIAL" not in set(view.news_documents["document_id"])
+    assert tuple(view.news_documents.columns) == COMPANY_DOCUMENT_COLUMNS
+
+
+def test_minimal_company_view_defaults_news_documents() -> None:
+    """Backward compatibility: legacy/minimal CompanyView construction defaults news_documents to empty DataFrame."""
+    view = _minimal_company_view()
+    assert hasattr(view, "news_documents")
+    assert view.news_documents.empty
+    assert isinstance(view.news_documents, pd.DataFrame)
+
+
+def test_vendor_financials_overlay_in_memory_json_round_trip(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Vendor financials overlay round-trips in-memory JSON buffers without treating strings as file paths.
+
+    Validates rows for both Tencent and Alibaba.
+    """
+    from control_tower.pages.company import _vendor_financials_for_view
+    import streamlit as st
+
+    mart = tmp_path / "vendor_financials_v1.parquet"
+    pd.DataFrame([
+        {
+            "entity_id": "TENCENT",
+            "listing_id": "0700_HK",
+            "canonical_ticker": "0700.HK",
+            "provider": "yfinance",
+            "source_id": "financial_data:yfinance:financial_observations",
+            "source_label": "yfinance via financial-data",
+            "metric": "revenue_total",
+            "source_metric": "revenue",
+            "source_metric_label": "Total Revenue",
+            "period_type": "annual",
+            "period_label": "FY2025",
+            "period_end": "2025-12-31",
+            "reported_value": 609015000000.0,
+            "currency": "CNY",
+            "currency_semantics": "reporting_currency",
+            "unit": "currency",
+            "interim_is_ytd": False,
+            "accounting_basis": "Vendor reported (unverified)",
+            "metric_basis": "PROVIDER_UNVERIFIED",
+            "source_quality": "provider_unverified",
+            "pit_class": "vendor_historical_replay",
+            "source_license_class": "personal_use_terms_unverified",
+            "announcement_date": pd.NaT,
+            "retrieved_at_utc": pd.Timestamp("2026-07-26T16:10:38Z"),
+            "source_path": "fixture.parquet",
+            "source_note": "fixture",
+        },
+        {
+            "entity_id": "ALIBABA",
+            "listing_id": "9988_HK",
+            "canonical_ticker": "9988.HK",
+            "provider": "yfinance",
+            "source_id": "financial_data:yfinance:financial_observations",
+            "source_label": "yfinance via financial-data",
+            "metric": "revenue_total",
+            "source_metric": "revenue",
+            "source_metric_label": "Total Revenue",
+            "period_type": "annual",
+            "period_label": "FY2026",
+            "period_end": "2026-03-31",
+            "reported_value": 1023670000000.0,
+            "currency": "CNY",
+            "currency_semantics": "reporting_currency",
+            "unit": "currency",
+            "interim_is_ytd": False,
+            "accounting_basis": "Vendor reported (unverified)",
+            "metric_basis": "PROVIDER_UNVERIFIED",
+            "source_quality": "provider_unverified",
+            "pit_class": "vendor_historical_replay",
+            "source_license_class": "personal_use_terms_unverified",
+            "announcement_date": pd.NaT,
+            "retrieved_at_utc": pd.Timestamp("2026-07-26T16:10:38Z"),
+            "source_path": "fixture.parquet",
+            "source_note": "fixture",
+        },
+    ]).to_parquet(mart, index=False)
+
+    st.cache_data.clear()
+    monkeypatch.setattr("control_tower.pages.company.default_local_mart_path", lambda root: mart)
+
+    snapshot = _make_tencent_snapshot()
+    entities = pd.concat([
+        snapshot.entities,
+        pd.DataFrame([{
+            "entity_id": "ALIBABA",
+            "legal_name": "Alibaba Group Holding Limited",
+            "display_name": "Alibaba",
+            "country": "CN",
+            "sector": "Consumer Discretionary",
+            "industry": "Internet Retail",
+            "active_status": "active",
+            "active_from": "2014-09-19",
+            "active_to": None,
+            "registry_version": "v1",
+            "source_or_research_note": "China internet",
+            "entity_type": "public",
+        }])
+    ], ignore_index=True)
+    listings = pd.concat([
+        snapshot.listings,
+        pd.DataFrame([{
+            "listing_id": "9988_HK",
+            "entity_id": "ALIBABA",
+            "exchange": "HKEX",
+            "native_ticker": "9988",
+            "canonical_ticker": "9988.HK",
+            "financial_data_security_id": "sec-9988",
+            "financial_data_issuer_group_id": "grp-alibaba",
+            "mapping_status": "verified",
+            "mapping_verified_at": "2026-08-21",
+            "mapping_source_url": "https://www.hkex.com.hk",
+            "collection_eligible": True,
+            "listing_role": "primary",
+            "vendor_tickers": "yfinance:9988.HK;akshare:09988",
+            "currency": "HKD",
+            "primary_listing": True,
+            "active_from": "2019-11-26",
+            "active_to": None,
+            "listing_status": "active",
+            "registry_version": "v1",
+            "source_url": "https://www.hkex.com.hk",
+            "source_or_research_note": "Primary HK line",
+        }])
+    ], ignore_index=True)
+    test_snapshot = replace(snapshot, entities=entities, listings=listings)
+
+    view_700 = build_company_view(test_snapshot, entity_id="TENCENT")
+    result_700 = _vendor_financials_for_view(view_700)
+    assert result_700.status == "available"
+    assert not result_700.frame.empty
+    assert len(result_700.frame) == 1
+    assert float(result_700.frame.iloc[0]["reported_value"]) == 609015000000.0
+
+    view_baba = build_company_view(test_snapshot, entity_id="ALIBABA")
+    result_baba = _vendor_financials_for_view(view_baba)
+    assert result_baba.status == "available"
+    assert not result_baba.frame.empty
+    assert len(result_baba.frame) == 1
+    assert float(result_baba.frame.iloc[0]["reported_value"]) == 1023670000000.0

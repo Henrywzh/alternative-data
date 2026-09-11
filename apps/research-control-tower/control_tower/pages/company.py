@@ -6,9 +6,10 @@ from pathlib import Path
 from dataclasses import dataclass, field, replace
 from datetime import timedelta
 from html import escape
+import io
+import json
 import re
 import unicodedata
-import json
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -190,6 +191,7 @@ class CompanyView:
     thesis_watch_questions: pd.DataFrame = field(default_factory=pd.DataFrame)
     evidence_items: pd.DataFrame = field(default_factory=pd.DataFrame)
     claim_evidence_links: pd.DataFrame = field(default_factory=pd.DataFrame)
+    news_documents: pd.DataFrame = field(default_factory=pd.DataFrame)
 
     @property
     def scope_listing_id(self) -> str | None:
@@ -700,10 +702,17 @@ def _event_relation(snapshot: ControlTowerSnapshot, event: Any, entity_id: str, 
 
 
 def _document_matches(snapshot: ControlTowerSnapshot, row: Any, entity_id: str, listing_ids: set[str], basket_ids: set[str]) -> bool:
+    row_entity = _text(row.get("entity_id"))
+    row_listing = _text(row.get("listing_id"))
+    related_entities = set(_ids(row.get("related_entity_ids")))
+    related_listings = set(_ids(row.get("related_listing_ids")))
+    related_baskets = set(_ids(row.get("related_basket_ids")))
     return bool(
-        entity_id in set(_ids(row.get("related_entity_ids")))
-        or listing_ids.intersection(set(_ids(row.get("related_listing_ids"))))
-        or basket_ids.intersection(set(_ids(row.get("related_basket_ids"))))
+        (row_entity and row_entity == entity_id)
+        or (row_listing and row_listing in listing_ids)
+        or (entity_id in related_entities)
+        or bool(listing_ids.intersection(related_listings))
+        or bool(basket_ids.intersection(related_baskets))
     )
 
 
@@ -1026,14 +1035,45 @@ def build_company_view(
     events = pd.DataFrame(event_rows, columns=COMPANY_EVENT_COLUMNS) if event_rows else _empty(COMPANY_EVENT_COLUMNS)
     events, superseded_event_ids = _collapse_superseded_event_rows(events)
 
-    documents = snapshot.news_filings.loc[
-        snapshot.news_filings.apply(lambda row: _document_matches(snapshot, row, requested_entity, listing_ids, basket_ids), axis=1)
-    ].copy() if not snapshot.news_filings.empty else snapshot.news_filings.copy()
+    filings_source = getattr(snapshot, "official_filings", pd.DataFrame())
+    if filings_source is not None and not filings_source.empty:
+        documents = filings_source.loc[
+            filings_source.apply(lambda row: _document_matches(snapshot, row, requested_entity, listing_ids, basket_ids), axis=1)
+        ].copy()
+    else:
+        documents = pd.DataFrame()
     official_documents = documents.loc[:, [column for column in COMPANY_DOCUMENT_COLUMNS if column in documents.columns]].copy() if not documents.empty else _empty(COMPANY_DOCUMENT_COLUMNS)
     for column in COMPANY_DOCUMENT_COLUMNS:
         if column not in official_documents.columns:
-            official_documents[column] = pd.NA
+            if column == "first_observed_at" and "retrieved_at_utc" in documents.columns:
+                official_documents["first_observed_at"] = documents["retrieved_at_utc"]
+            elif column == "related_entity_ids" and "entity_id" in documents.columns:
+                official_documents["related_entity_ids"] = documents["entity_id"]
+            elif column == "related_listing_ids" and "listing_id" in documents.columns:
+                official_documents["related_listing_ids"] = documents["listing_id"]
+            else:
+                official_documents[column] = pd.NA
     official_documents = official_documents.loc[:, COMPANY_DOCUMENT_COLUMNS]
+
+    news_source = getattr(snapshot, "news_filings", pd.DataFrame())
+    if news_source is not None and not news_source.empty:
+        matched_news = news_source.loc[
+            news_source.apply(lambda row: _document_matches(snapshot, row, requested_entity, listing_ids, basket_ids), axis=1)
+        ].copy()
+    else:
+        matched_news = pd.DataFrame()
+    news_documents = matched_news.loc[:, [column for column in COMPANY_DOCUMENT_COLUMNS if column in matched_news.columns]].copy() if not matched_news.empty else _empty(COMPANY_DOCUMENT_COLUMNS)
+    for column in COMPANY_DOCUMENT_COLUMNS:
+        if column not in news_documents.columns:
+            if column == "first_observed_at" and "retrieved_at_utc" in matched_news.columns:
+                news_documents["first_observed_at"] = matched_news["retrieved_at_utc"]
+            elif column == "related_entity_ids" and "entity_id" in matched_news.columns:
+                news_documents["related_entity_ids"] = matched_news["entity_id"]
+            elif column == "related_listing_ids" and "listing_id" in matched_news.columns:
+                news_documents["related_listing_ids"] = matched_news["listing_id"]
+            else:
+                news_documents[column] = pd.NA
+    news_documents = news_documents.loc[:, COMPANY_DOCUMENT_COLUMNS]
 
     consensus = _scope_listing_rows(
         snapshot.consensus_snapshots,
@@ -1212,6 +1252,7 @@ def build_company_view(
 
     if filters is not None and filters.scope and "company" not in filters.scope:
         official_documents = _empty(COMPANY_DOCUMENT_COLUMNS)
+        news_documents = _empty(COMPANY_DOCUMENT_COLUMNS)
         consensus = _empty(COMPANY_CONSENSUS_COLUMNS)
         revisions = _empty(COMPANY_REVISION_COLUMNS)
         corp_actions = _empty(COMPANY_CORPORATE_ACTION_COLUMNS)
@@ -1238,7 +1279,7 @@ def build_company_view(
     watch_questions = watch_questions.loc[:, COMPANY_QUESTION_COLUMNS]
     invalidation_evidence = _empty(COMPANY_INVALIDATION_COLUMNS)
 
-    source_ids = _source_relevance(events) | _source_relevance(official_documents)
+    source_ids = _source_relevance(events) | _source_relevance(official_documents) | _source_relevance(news_documents)
     source_ids |= _source_relevance(quote_snapshots)
     if not consensus.empty:
         source_ids |= {f"provider:{value}" for value in consensus["provider"].map(_text) if value}
@@ -1263,7 +1304,7 @@ def build_company_view(
                 [
                     {
                         "source_id": "official_documents",
-                        "input_path": "news_filings.parquet",
+                        "input_path": "official_filings.parquet",
                         "source_kind": "official_document_metadata",
                         "status": "unavailable",
                         "required": False,
@@ -1367,6 +1408,7 @@ def build_company_view(
         thesis_watch_questions=thesis_questions,
         evidence_items=evidence_items,
         claim_evidence_links=claim_links,
+        news_documents=news_documents,
     )
 
 
@@ -3312,7 +3354,7 @@ def _load_vendor_financials_cached(
     """Cache the labelled vendor overlay; official actuals are never touched."""
 
     del fingerprint
-    listings = pd.read_json(listings_json, dtype=False) if listings_json else pd.DataFrame()
+    listings = pd.read_json(io.StringIO(listings_json), dtype=False) if listings_json else pd.DataFrame()
     result = load_vendor_financials(
         entity_id=entity_id,
         listing_id=listing_id,
@@ -3342,7 +3384,7 @@ def _vendor_financials_for_view(view: CompanyView) -> VendorLoadResult:
         )
     except (OSError, ValueError) as exc:
         return VendorLoadResult(pd.DataFrame(), 'error', f'vendor financials failed: {exc}', 'local_mart')
-    frame = pd.read_json(payload, dtype=False) if payload else pd.DataFrame()
+    frame = pd.read_json(io.StringIO(payload), dtype=False) if payload else pd.DataFrame()
     return VendorLoadResult(frame, status, detail, source_kind)
 
 
@@ -4065,12 +4107,24 @@ def _render_evidence_tab(
                     y_format=',.0f',
                 )
             )
-    render_official_filings(snapshot, entity_id=view.entity_id, listing_id=view.selected_listing_id, viewer_timezone=viewer_timezone)
-    _render_section_heading(4, 'Published news/filing metadata (generation artifact)', f'news-filing-metadata-{_slugify(view.entity_id)}')
-    if view.official_documents.empty:
-        st.caption('This empty state is the published news_filings.parquet artifact, whose related_entity_ids are still blank. Vendor Marketaux/Finnhub headlines are in the overlay at the top of this tab, not this generation table.')
+    official_listing_ids = set()
+    if not view.listings.empty and "listing_id" in view.listings.columns:
+        official_listing_ids = {
+            _text(value) for value in view.listings["listing_id"]
+        }
+        official_listing_ids.discard("")
+    render_official_filings(
+        snapshot,
+        entity_id=view.entity_id,
+        listing_id=view.selected_listing_id,
+        viewer_timezone=viewer_timezone,
+        listing_ids=official_listing_ids,
+    )
+    _render_section_heading(4, 'Linked news/filing metadata', f'linked-news-filing-metadata-{_slugify(view.entity_id)}')
+    if view.news_documents.empty:
+        st.caption('No entity-linked rows in news_filings.parquet for this entity scope. Official statutory filings are rendered separately above, and vendor headlines are displayed in the overlay.')
     else:
-        ct_dataframe(_friendly_document_frame(view.official_documents, viewer_timezone), width='stretch', hide_index=True)
+        ct_dataframe(_friendly_document_frame(view.news_documents, viewer_timezone), width='stretch', hide_index=True)
     _render_section_heading(4, 'Internal estimates & management guidance', f'internal-estimates-{_slugify(view.entity_id)}')
     if view.internal_estimates.empty:
         st.info('No internal estimates or management guidance registered for this entity.')

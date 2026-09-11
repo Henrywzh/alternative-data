@@ -464,6 +464,12 @@ def _write_synthetic_populated_task7_bundle(root: Path) -> None:
     ]
     frames["news_filings.parquet"] = documents
 
+    official = frames["official_filings.parquet"]
+    official.loc[official["entity_id"].eq("E1"), ["entity_id", "listing_id", "canonical_ticker"]] = [
+        "SK_HYNIX", "000660_KR", "000660.KS",
+    ]
+    frames["official_filings.parquet"] = official
+
     consensus = frames["consensus_snapshots.parquet"]
     consensus.loc[consensus["snapshot_id"].eq("S1"), ["provider", "entity_id", "listing_id", "financial_data_security_id", "canonical_ticker", "source_url", "pit_class", "source_run_id", "calculation_origin", "coverage_reason"]] = [
         "yfinance", "SK_HYNIX", "000660_KR", "000660_KR", "000660.KS", "https://example.test/synthetic/yfinance", "snapshot_from_live_source", "synthetic-yf-run-1", "synthetic_fixture", "synthetic provider row",
@@ -1190,6 +1196,7 @@ def test_task9_company_view_respects_global_scope_and_country_filters(generated_
     assert macro_only.consensus.empty
     assert macro_only.consensus_revisions.empty
     assert macro_only.official_documents.empty
+    assert macro_only.news_documents.empty
 
 
 def test_task7_source_health_marks_stale_and_retrieval_only_not_healthy() -> None:
@@ -1464,6 +1471,7 @@ def test_task7_synthetic_populated_acceptance_uses_stable_sk_hynix_ids(tmp_path:
     assert tuple(default_view.memberships.columns) == COMPANY_MEMBERSHIP_COLUMNS
     assert tuple(default_view.events.columns) == COMPANY_EVENT_COLUMNS
     assert tuple(default_view.official_documents.columns) == COMPANY_DOCUMENT_COLUMNS
+    assert tuple(default_view.news_documents.columns) == COMPANY_DOCUMENT_COLUMNS
     assert tuple(default_view.consensus.columns) == COMPANY_CONSENSUS_COLUMNS
     assert tuple(default_view.consensus_revisions.columns) == COMPANY_REVISION_COLUMNS
     assert tuple(default_view.watch_questions.columns) == COMPANY_QUESTION_COLUMNS

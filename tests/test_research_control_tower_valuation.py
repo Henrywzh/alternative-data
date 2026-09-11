@@ -11,7 +11,9 @@ import pytest
 from scripts.research_control_tower_valuation import (
     _combine_valuations,
     build_explicit_valuation_inputs,
+    compute_listing_valuation_snapshots,
     compute_tencent_valuation_snapshots,
+    compute_valuation_snapshots,
     main,
 )
 from src.research_control_tower.valuation import (
@@ -895,3 +897,486 @@ def test_arrow_empty_frames_keep_exact_columns() -> None:
     estimates = empty_frame(INTERNAL_ESTIMATES_ARROW_SCHEMA)
     assert list(valuations.columns) == VALUATION_SNAPSHOTS_COLUMNS
     assert list(estimates.columns) == INTERNAL_ESTIMATES_COLUMNS
+
+
+def test_generalized_valuation_produces_forward_pe_for_multiple_listings_same_currency() -> None:
+    quotes = pd.DataFrame(
+        [
+            _quote(
+                quote_id="quote-0700-hkd",
+                listing_id="0700_HK",
+                canonical_ticker="0700.HK",
+                currency="HKD",
+                last_price=380.0,
+            ),
+            _quote(
+                quote_id="quote-9988-hkd",
+                listing_id="9988_HK",
+                canonical_ticker="9988.HK",
+                currency="HKD",
+                last_price=80.0,
+                source_url="https://finance.yahoo.com/quote/9988.HK",
+            ),
+        ]
+    )
+    consensus = pd.DataFrame(
+        [
+            _consensus(
+                snapshot_id="consensus-0700-eps",
+                listing_id="0700_HK",
+                canonical_ticker="0700.HK",
+                currency="HKD",
+                value=38.0,
+                accounting_basis="NON_IFRS_MANAGEMENT",
+            ),
+            _consensus(
+                snapshot_id="consensus-9988-eps",
+                listing_id="9988_HK",
+                canonical_ticker="9988.HK",
+                entity_id="ALIBABA",
+                currency="HKD",
+                value=8.0,
+                accounting_basis="GAAP_REPORTED",
+                source_url="https://finance.yahoo.com/quote/9988.HK/analysis",
+            ),
+        ]
+    )
+    health = _consensus_health()
+
+    # Single listing derivation for Alibaba
+    baba_result = compute_listing_valuation_snapshots(
+        quotes,
+        consensus,
+        listing_id="9988_HK",
+        consensus_health_df=health,
+        as_of_utc=AS_OF,
+        fiscal_year=2026,
+    )
+    assert len(baba_result) == 1
+    baba_row = baba_result.iloc[0]
+    assert baba_row["listing_id"] == "9988_HK"
+    assert baba_row["numerator_ref"] == "quote-9988-hkd"
+    assert baba_row["denominator_ref"] == "consensus-9988-eps"
+    assert baba_row["accounting_basis"] == "GAAP_REPORTED"
+    assert baba_row["metric_basis"] == "GAAP_REPORTED"
+    assert baba_row["ratio_value"] == pytest.approx(80.0 / 8.0)
+    assert pd.isna(baba_row["fx_rate_applied"])
+    assert not validate_valuation_snapshots_df(baba_result)
+
+    # Single listing derivation for Tencent
+    tencent_result = compute_listing_valuation_snapshots(
+        quotes,
+        consensus,
+        listing_id="0700_HK",
+        consensus_health_df=health,
+        as_of_utc=AS_OF,
+        fiscal_year=2026,
+    )
+    assert len(tencent_result) == 1
+    tencent_row = tencent_result.iloc[0]
+    assert tencent_row["listing_id"] == "0700_HK"
+    assert tencent_row["ratio_value"] == pytest.approx(380.0 / 38.0)
+    assert pd.isna(tencent_row["fx_rate_applied"])
+    assert not validate_valuation_snapshots_df(tencent_result)
+
+    # Multi-listing iteration across both listings
+    combined = compute_valuation_snapshots(
+        quotes,
+        consensus,
+        consensus_health_df=health,
+        as_of_utc=AS_OF,
+        fiscal_year=2026,
+    )
+    assert len(combined) == 2
+    assert set(combined["listing_id"]) == {"0700_HK", "9988_HK"}
+    assert not validate_valuation_snapshots_df(combined)
+
+
+def test_generalized_valuation_handles_cross_currency_with_fx_for_alibaba() -> None:
+    quotes = pd.DataFrame(
+        [
+            _quote(
+                quote_id="quote-9988-hkd",
+                listing_id="9988_HK",
+                currency="HKD",
+                last_price=80.0,
+            )
+        ]
+    )
+    consensus = pd.DataFrame(
+        [
+            _consensus(
+                snapshot_id="consensus-9988-cny",
+                listing_id="9988_HK",
+                currency="CNY",
+                value=7.0,
+                accounting_basis="GAAP_REPORTED",
+            )
+        ]
+    )
+    result = compute_listing_valuation_snapshots(
+        quotes,
+        consensus,
+        listing_id="9988_HK",
+        consensus_health_df=_consensus_health(),
+        fx_rates_df=_fx_rows(),
+        as_of_utc=AS_OF,
+        fiscal_year=2026,
+    )
+    assert len(result) == 1
+    row = result.iloc[0]
+    assert row["listing_id"] == "9988_HK"
+    assert row["numerator_currency"] == "HKD"
+    assert row["denominator_currency"] == "CNY"
+    assert row["fx_base_currency"] == "CNY"
+    assert row["fx_quote_currency"] == "HKD"
+    assert row["fx_rate_applied"] == pytest.approx(7.8 / 7.0)
+    assert row["ratio_value"] == pytest.approx(80.0 / (7.0 * 7.8 / 7.0))
+    assert not validate_valuation_snapshots_df(result)
+
+
+@pytest.mark.parametrize("unspecified_basis", ["unspecified", "UNSPECIFIED", "unspecified_basis"])
+def test_consensus_unspecified_accounting_basis_fails_closed(
+    unspecified_basis: str,
+) -> None:
+    result = compute_listing_valuation_snapshots(
+        pd.DataFrame([_quote(listing_id="9988_HK")]),
+        pd.DataFrame([_consensus(listing_id="9988_HK", accounting_basis=unspecified_basis)]),
+        listing_id="9988_HK",
+        consensus_health_df=_consensus_health(),
+        fx_rates_df=_fx_rows(),
+        as_of_utc=AS_OF,
+        fiscal_year=2026,
+    )
+    assert result.empty
+    assert list(result.columns) == VALUATION_SNAPSHOTS_COLUMNS
+
+
+def test_generalized_valuation_rejects_mismatched_listing_or_lineage() -> None:
+    quotes = pd.DataFrame([_quote(listing_id="0700_HK")])
+    consensus = pd.DataFrame([_consensus(listing_id="9988_HK")])
+
+    # 0700_HK has quote but no consensus
+    res_0700 = compute_listing_valuation_snapshots(
+        quotes,
+        consensus,
+        listing_id="0700_HK",
+        consensus_health_df=_consensus_health(),
+        fx_rates_df=_fx_rows(),
+        as_of_utc=AS_OF,
+        fiscal_year=2026,
+    )
+    assert res_0700.empty
+
+    # 9988_HK has consensus but no quote
+    res_9988 = compute_listing_valuation_snapshots(
+        quotes,
+        consensus,
+        listing_id="9988_HK",
+        consensus_health_df=_consensus_health(),
+        fx_rates_df=_fx_rows(),
+        as_of_utc=AS_OF,
+        fiscal_year=2026,
+    )
+    assert res_9988.empty
+
+    # Combined valuation across all discovered listings finds no complete pairs
+    combined = compute_valuation_snapshots(
+        quotes,
+        consensus,
+        consensus_health_df=_consensus_health(),
+        fx_rates_df=_fx_rows(),
+        as_of_utc=AS_OF,
+        fiscal_year=2026,
+    )
+    assert combined.empty
+
+
+def test_compute_valuation_snapshots_listing_ids_filtering() -> None:
+    quotes = pd.DataFrame(
+        [
+            _quote(listing_id="0700_HK", currency="HKD", last_price=380.0),
+            _quote(listing_id="9988_HK", currency="HKD", last_price=80.0),
+        ]
+    )
+    consensus = pd.DataFrame(
+        [
+            _consensus(listing_id="0700_HK", currency="HKD", value=38.0),
+            _consensus(listing_id="9988_HK", currency="HKD", value=8.0),
+        ]
+    )
+    health = _consensus_health()
+
+    # Filter by comma-separated string
+    res_str = compute_valuation_snapshots(
+        quotes,
+        consensus,
+        listing_ids="9988_HK",
+        consensus_health_df=health,
+        as_of_utc=AS_OF,
+        fiscal_year=2026,
+    )
+    assert len(res_str) == 1
+    assert res_str.iloc[0]["listing_id"] == "9988_HK"
+
+    # Filter by list
+    res_list = compute_valuation_snapshots(
+        quotes,
+        consensus,
+        listing_ids=["0700_HK"],
+        consensus_health_df=health,
+        as_of_utc=AS_OF,
+        fiscal_year=2026,
+    )
+    assert len(res_list) == 1
+    assert res_list.iloc[0]["listing_id"] == "0700_HK"
+
+    # Filter by multiple
+    res_both = compute_valuation_snapshots(
+        quotes,
+        consensus,
+        listing_ids=["0700_HK", "9988_HK"],
+        consensus_health_df=health,
+        as_of_utc=AS_OF,
+        fiscal_year=2026,
+    )
+    assert len(res_both) == 2
+
+    # Nonexistent listing
+    res_none = compute_valuation_snapshots(
+        quotes,
+        consensus,
+        listing_ids=["9999_HK"],
+        consensus_health_df=health,
+        as_of_utc=AS_OF,
+        fiscal_year=2026,
+    )
+    assert res_none.empty
+
+
+def test_cli_derives_multiple_listings_and_respects_listing_ids_flag(
+    tmp_path: Path,
+) -> None:
+    quotes_path = tmp_path / "quotes.parquet"
+    consensus_path = tmp_path / "consensus.parquet"
+    consensus_health_path = tmp_path / "consensus-health.parquet"
+    fx_path = tmp_path / "fx.parquet"
+    estimates_path = tmp_path / "internal_estimates.csv"
+    output_dir = tmp_path / "out_multi"
+
+    quotes = pd.DataFrame(
+        [
+            _quote(listing_id="0700_HK", quote_id="q-0700"),
+            _quote(listing_id="9988_HK", quote_id="q-9988"),
+        ]
+    )
+    consensus = pd.DataFrame(
+        [
+            _consensus(listing_id="0700_HK", snapshot_id="c-0700"),
+            _consensus(listing_id="9988_HK", snapshot_id="c-9988"),
+        ]
+    )
+    quotes.to_parquet(quotes_path, index=False)
+    consensus.to_parquet(consensus_path, index=False)
+    _consensus_health().to_parquet(consensus_health_path, index=False)
+    _fx_rows().to_parquet(fx_path, index=False)
+    estimates_path.write_text(",".join(INTERNAL_ESTIMATES_COLUMNS) + "\n", encoding="utf-8")
+
+    # Run CLI with no listing-ids specified -> derives both listings
+    assert (
+        main(
+            [
+                "--quotes",
+                str(quotes_path),
+                "--consensus",
+                str(consensus_path),
+                "--consensus-health",
+                str(consensus_health_path),
+                "--fx-rates",
+                str(fx_path),
+                "--internal-estimates",
+                str(estimates_path),
+                "--output-dir",
+                str(output_dir),
+                "--as-of",
+                AS_OF.isoformat(),
+                "--fiscal-year",
+                "2026",
+            ]
+        )
+        == 0
+    )
+    valuation_path = output_dir / "valuation_snapshots.parquet"
+    df = pd.read_parquet(valuation_path)
+    assert len(df) == 2
+    assert set(df["listing_id"]) == {"0700_HK", "9988_HK"}
+
+    # Run CLI with --listing-ids 9988_HK
+    output_dir_single = tmp_path / "out_single"
+    assert (
+        main(
+            [
+                "--quotes",
+                str(quotes_path),
+                "--consensus",
+                str(consensus_path),
+                "--consensus-health",
+                str(consensus_health_path),
+                "--fx-rates",
+                str(fx_path),
+                "--internal-estimates",
+                str(estimates_path),
+                "--listing-ids",
+                "9988_HK",
+                "--output-dir",
+                str(output_dir_single),
+                "--as-of",
+                AS_OF.isoformat(),
+                "--fiscal-year",
+                "2026",
+            ]
+        )
+        == 0
+    )
+    df_single = pd.read_parquet(output_dir_single / "valuation_snapshots.parquet")
+    assert len(df_single) == 1
+    assert df_single.iloc[0]["listing_id"] == "9988_HK"
+
+
+def test_cli_rejects_blank_listing_ids_before_overwriting_output(tmp_path: Path) -> None:
+    output_dir = tmp_path / "existing-output"
+    output_dir.mkdir()
+    sentinel = pd.DataFrame({"sentinel": [1]})
+    sentinel.to_parquet(output_dir / "valuation_snapshots.parquet", index=False)
+
+    with pytest.raises(SystemExit) as exc_info:
+        main(
+            [
+                "--listing-ids",
+                " , ",
+                "--output-dir",
+                str(output_dir),
+                "--as-of",
+                AS_OF.isoformat(),
+            ]
+        )
+
+    assert exc_info.value.code == 2
+    pd.testing.assert_frame_equal(
+        pd.read_parquet(output_dir / "valuation_snapshots.parquet"), sentinel
+    )
+
+
+def test_compute_valuation_snapshots_deduplicates_listing_ids_preserving_first_order() -> None:
+    quotes = pd.DataFrame(
+        [
+            _quote(listing_id="0700_HK", currency="HKD", last_price=380.0),
+            _quote(listing_id="9988_HK", currency="HKD", last_price=80.0),
+        ]
+    )
+    consensus = pd.DataFrame(
+        [
+            _consensus(listing_id="0700_HK", currency="HKD", value=38.0),
+            _consensus(listing_id="9988_HK", currency="HKD", value=8.0),
+        ]
+    )
+    health = _consensus_health()
+
+    # Comma-separated duplicates should not raise duplicate valuation_id error
+    res_str_dups = compute_valuation_snapshots(
+        quotes,
+        consensus,
+        listing_ids="0700_HK,0700_HK",
+        consensus_health_df=health,
+        as_of_utc=AS_OF,
+        fiscal_year=2026,
+    )
+    assert len(res_str_dups) == 1
+    assert res_str_dups.iloc[0]["listing_id"] == "0700_HK"
+
+    # Multi-item duplicates preserve first-seen order
+    res_multi_dups = compute_valuation_snapshots(
+        quotes,
+        consensus,
+        listing_ids="9988_HK, 0700_HK, 9988_HK, 0700_HK",
+        consensus_health_df=health,
+        as_of_utc=AS_OF,
+        fiscal_year=2026,
+    )
+    assert len(res_multi_dups) == 2
+    assert set(res_multi_dups["listing_id"]) == {"0700_HK", "9988_HK"}
+
+    # Sequence with duplicate entries and nested commas
+    res_seq_dups = compute_valuation_snapshots(
+        quotes,
+        consensus,
+        listing_ids=["9988_HK,0700_HK", "9988_HK", "0700_HK"],
+        consensus_health_df=health,
+        as_of_utc=AS_OF,
+        fiscal_year=2026,
+    )
+    assert len(res_seq_dups) == 2
+    assert set(res_seq_dups["listing_id"]) == {"0700_HK", "9988_HK"}
+
+
+def test_as_of_utc_validation_contract_and_empty_discovery() -> None:
+    quotes = pd.DataFrame([_quote(listing_id="0700_HK")])
+    consensus = pd.DataFrame([_consensus(listing_id="0700_HK")])
+    health = _consensus_health()
+
+    # Explicit listing with missing as_of_utc raises ValueError
+    with pytest.raises(ValueError, match="as_of_utc is required"):
+        compute_valuation_snapshots(
+            quotes,
+            consensus,
+            listing_ids="0700_HK",
+            consensus_health_df=health,
+            as_of_utc=None,
+        )
+
+    # Explicit listing with naive timestamp raises ValueError
+    with pytest.raises(ValueError, match="as_of_utc must be timezone-aware"):
+        compute_valuation_snapshots(
+            quotes,
+            consensus,
+            listing_ids="0700_HK",
+            consensus_health_df=health,
+            as_of_utc="2026-08-21 12:00:00",
+        )
+
+    # Discovered listings with missing as_of_utc raises ValueError
+    with pytest.raises(ValueError, match="as_of_utc is required"):
+        compute_valuation_snapshots(
+            quotes,
+            consensus,
+            consensus_health_df=health,
+            as_of_utc=None,
+        )
+
+    # Discovered listings with naive as_of_utc raises ValueError
+    with pytest.raises(ValueError, match="as_of_utc must be timezone-aware"):
+        compute_valuation_snapshots(
+            quotes,
+            consensus,
+            consensus_health_df=health,
+            as_of_utc=pd.Timestamp("2026-08-21 12:00:00"),
+        )
+
+    # Empty discovery (None inputs or empty frames with no listing_ids) returns typed empty frame without error
+    empty_discovered = compute_valuation_snapshots(
+        None,
+        None,
+        as_of_utc=None,
+    )
+    assert empty_discovered.empty
+    assert list(empty_discovered.columns) == VALUATION_SNAPSHOTS_COLUMNS
+
+    # Intentionally empty / blank listing_ids returns typed empty frame without error
+    empty_explicit = compute_valuation_snapshots(
+        quotes,
+        consensus,
+        listing_ids=["", "  ", None],
+        as_of_utc=None,
+    )
+    assert empty_explicit.empty
+    assert list(empty_explicit.columns) == VALUATION_SNAPSHOTS_COLUMNS
