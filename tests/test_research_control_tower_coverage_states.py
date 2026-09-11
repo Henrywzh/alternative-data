@@ -1018,7 +1018,7 @@ def test_source_health_classifier_distinguishes_no_records_from_unavailable() ->
     counts = source_health_counts(classified)
     assert counts["no_records"] == 1
     assert counts["not_applicable"] == 1
-    assert counts["available"] == 2
+    assert counts["available"] == 1
     assert counts["unavailable_degraded"] == 1
     assert counts["errors_gaps"] == 1
 

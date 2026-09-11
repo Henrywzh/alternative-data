@@ -37,10 +37,71 @@ from control_tower.pages.company import (
     CompanyView,
     _answer_first_summary_lines,
     _company_earnings_actuals,
+    _corporate_action_dates,
+    _corporate_action_has_knowledge_clock,
+    _corporate_action_missing_knowledge_clock_count,
+    _friendly_corporate_actions_frame,
     _latest_reported_kpi,
+    _render_styled_bullet_card,
+    _spot_forward_pe_payload,
+    _newer_local_quotes,
     build_company_view,
     render_company_page,
 )
+
+
+def test_corporate_action_date_resolution_uses_available_source_field() -> None:
+    frame = pd.DataFrame([
+        {"execution_date": "2026-08-21", "filing_date": "2026-08-22", "published_at": "2026-08-22T09:00:00Z"},
+        {"execution_date": None, "filing_date": "2026-08-22", "published_at": "2026-08-22T09:00:00Z"},
+        {"execution_date": None, "filing_date": None, "published_at": "2026-08-22T09:00:00Z"},
+    ])
+
+    dates = _corporate_action_dates(frame)
+
+    assert dates.dt.strftime("%Y-%m-%d").tolist() == ["2026-08-21", "2026-08-22", "2026-08-22"]
+
+
+def test_corporate_actions_mark_rows_without_knowledge_clocks() -> None:
+    frame = pd.DataFrame(
+        [
+            {
+                "execution_date": "2026-09-15",
+                "filing_date": None,
+                "published_at": None,
+                "retrieved_at_utc": None,
+                "pit_class": "snapshot_from_official_source",
+            },
+            {
+                "execution_date": "2026-08-21",
+                "filing_date": "2026-08-22",
+                "published_at": None,
+                "retrieved_at_utc": None,
+                "pit_class": "snapshot_from_official_source",
+            },
+        ]
+    )
+
+    assert _corporate_action_has_knowledge_clock(frame).tolist() == [False, True]
+    assert _corporate_action_missing_knowledge_clock_count(frame) == 1
+    friendly = _friendly_corporate_actions_frame(frame, "Asia/Taipei")
+    assert friendly["QA status"].tolist() == ["unverified timing", "timing available"]
+
+
+def test_summary_links_do_not_claim_vendor_sources_are_official(monkeypatch: pytest.MonkeyPatch) -> None:
+    import streamlit as st
+
+    rendered: list[str] = []
+    monkeypatch.setattr(st, "markdown", lambda html, **_: rendered.append(html))
+
+    _render_styled_bullet_card(
+        "Expectation context · Eps: USD 10 · 0y · source: yfinance · "
+        "https://finance.yahoo.com/quote/TEST/analysis"
+    )
+
+    assert rendered
+    assert "Open source ↗" in rendered[0]
+    assert "Official Source ↗" not in rendered[0]
 from control_tower.config import ARTIFACT_COLUMNS, SCHEMA_VERSION
 from control_tower.components import get_control_tower_css
 
@@ -1263,6 +1324,44 @@ def test_event_relation_precedence_explicit_links_isolate_company_events() -> No
     assert "EV_BASKET_ONLY_MACRO" in bytedance_event_ids
 
 
+def test_company_registry_scope_keeps_direct_entity_event_without_basket_copy() -> None:
+    snapshot = _make_tencent_snapshot()
+    direct = snapshot.events.iloc[0].copy()
+    direct["event_id"] = "EV_TENCENT_DIRECT_NO_BASKET"
+    direct["event_key"] = direct["event_id"]
+    direct["title"] = "Tencent direct entity checkpoint"
+    direct["related_basket_ids"] = ()
+    direct_link = pd.DataFrame([
+        {
+            "event_id": direct["event_id"],
+            "target_type": "entity",
+            "target_id": "TENCENT",
+            "link_role": "primary",
+            "automated": True,
+            "active_from": "2026-01-01",
+            "active_to": None,
+            "link_note": "",
+            "registry_version": "v1",
+        }
+    ])
+    altered = replace(
+        snapshot,
+        events=pd.concat([snapshot.events, pd.DataFrame([direct])], ignore_index=True),
+        event_entity_links=pd.concat(
+            [snapshot.event_entity_links, direct_link], ignore_index=True
+        ),
+    )
+    filters = EventFilters(
+        horizon="all",
+        basket_id=("RESEARCH_STAGE_1_CHINA_INTERNET",),
+        now_utc=snapshot.now_utc,
+    )
+
+    view = build_company_view(altered, entity_id="TENCENT", filters=filters)
+
+    assert "EV_TENCENT_DIRECT_NO_BASKET" in set(view.events["event_id"])
+
+
 def test_news_filings_section_renders_precise_unlinked_warning(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     from streamlit.testing.v1 import AppTest
     import streamlit as st
@@ -1510,7 +1609,7 @@ def test_spot_forward_pe_payload_uses_same_currency_quote_and_fy1_eps() -> None:
     from control_tower.pages.company import _spot_forward_pe_payload
 
     view = _minimal_company_view(
-        quote_snapshots=pd.DataFrame([{"last_price": 442.4, "currency": "HKD"}]),
+        quote_snapshots=pd.DataFrame([{"last_price": 442.4, "currency": "HKD", "quote_timestamp": "2026-08-21T08:00:00Z", "freshness": "delayed"}]),
         consensus=pd.DataFrame(
             [
                 {
@@ -1533,7 +1632,7 @@ def test_spot_forward_pe_payload_uses_same_currency_quote_and_fy1_eps() -> None:
     assert payload["price_ccy"] == "HKD"
 
     mismatched = _minimal_company_view(
-        quote_snapshots=pd.DataFrame([{"last_price": 442.4, "currency": "HKD"}]),
+        quote_snapshots=pd.DataFrame([{"last_price": 442.4, "currency": "HKD", "quote_timestamp": "2026-08-21T08:00:00Z", "freshness": "delayed"}]),
         consensus=pd.DataFrame(
             [{"metric": "eps", "horizon": "0y", "value": 29.12, "currency": "CNY", "provider": "yfinance"}]
         ),
@@ -1552,7 +1651,7 @@ def test_spot_forward_pe_ignores_next_year_eps_captured_in_the_same_snapshot() -
 
     shared_capture = pd.Timestamp("2026-08-23T05:57:56Z")
     view = _minimal_company_view(
-        quote_snapshots=pd.DataFrame([{"last_price": 457.0, "currency": "HKD"}]),
+        quote_snapshots=pd.DataFrame([{"last_price": 457.0, "currency": "HKD", "quote_timestamp": "2026-08-21T08:00:00Z", "freshness": "delayed"}]),
         consensus=pd.DataFrame(
             [
                 # +1y deliberately first, exactly as the mart stores it.
@@ -1594,7 +1693,7 @@ def test_spot_forward_pe_falls_back_to_earliest_annual_and_says_so() -> None:
     from control_tower.pages.company import _spot_forward_pe_payload
 
     view = _minimal_company_view(
-        quote_snapshots=pd.DataFrame([{"last_price": 457.0, "currency": "HKD"}]),
+        quote_snapshots=pd.DataFrame([{"last_price": 457.0, "currency": "HKD", "quote_timestamp": "2026-08-21T08:00:00Z", "freshness": "delayed"}]),
         consensus=pd.DataFrame(
             [
                 {"metric": "eps", "horizon": "+2y", "fiscal_period": "annual", "fiscal_year": 2028,
@@ -1845,6 +1944,97 @@ def test_company_selectbox_is_not_reset_by_stale_query_entity(tmp_path: Path, mo
     assert "Tencent Holdings" in text
     assert "private / no listing" not in text
 
+    # A deliberate mid-session deep-link edit must be adopted even though the
+    # selectbox widget still has the previous entity in Streamlit session
+    # state.  This was the subtle case that a fresh-load-only test missed.
+    app.query_params["entity"] = "BYTEDANCE"
+    app = app.run()
+    assert not app.exception
+    assert app.session_state["ct_company_entity"] == "BYTEDANCE"
+    assert "ByteDance" in _app_text(app)
+
+
+def test_announced_future_corporate_action_survives_snapshot_filter() -> None:
+    """Future execution dates must not hide an action published by as-of."""
+    snapshot = _make_tencent_snapshot()
+    action = snapshot.corporate_actions.iloc[0].copy()
+    action["action_id"] = "act-0700-dividend-announced"
+    action["action_type"] = "dividend_distribution"
+    action["filing_date"] = pd.Timestamp("2026-08-20").date()
+    action["published_at"] = pd.Timestamp("2026-08-20T09:00:00Z")
+    action["execution_date"] = pd.Timestamp("2026-09-15").date()
+    action["retrieved_at_utc"] = pd.Timestamp("2026-08-20T09:05:00Z")
+    view = build_company_view(
+        replace(
+            snapshot,
+            corporate_actions=pd.DataFrame([action]),
+        ),
+        entity_id="TENCENT",
+    )
+
+    assert "act-0700-dividend-announced" in set(view.corporate_actions["action_id"])
+
+
+def test_company_direct_unknown_query_does_not_fall_back_to_previous_company(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An invalid deep link must show an explicit state, never stale company data."""
+    from streamlit.testing.v1 import AppTest
+    import streamlit as st
+
+    root = tmp_path / "company-invalid-query"
+    snapshot = _make_tencent_snapshot()
+    _write_test_bundle(root, snapshot)
+
+    monkeypatch.setenv("CONTROL_TOWER_ARTIFACT_ROOT", str(root))
+    st.cache_data.clear()
+
+    app = AppTest.from_file(str(APP_PATH), default_timeout=30)
+    app.query_params["page"] = "Company"
+    app.query_params["entity"] = "NOT_IN_REGISTRY"
+    app = app.run()
+
+    assert not app.exception
+    text = _app_text(app)
+    assert "Company unavailable" in text
+    assert "NOT_IN_REGISTRY" in text
+    assert "No previous company is shown" in text
+    assert "Choose an active company to continue" in text
+    assert "Recovery action: remove the stale deep-link parameter" in text
+    assert "Executive summary" not in text
+
+
+def test_company_audit_view_separates_terminal_events_from_forward_catalysts() -> None:
+    snapshot = _make_tencent_snapshot()
+
+    audit_view = build_company_view(
+        snapshot,
+        entity_id="TENCENT",
+        filters=EventFilters(
+            horizon="all",
+            now_utc=snapshot.now_utc,
+            catalyst_eligible=False,
+        ),
+    )
+
+    audit_ids = set(audit_view.events["event_id"])
+    assert "EV_TENCENT_2Q2026_RESULTS" in audit_ids
+    assert "EV_TENCENT_3Q2026_WINDOW" not in audit_ids
+
+    forward_view = build_company_view(
+        snapshot,
+        entity_id="TENCENT",
+        filters=EventFilters(
+            horizon="all",
+            now_utc=snapshot.now_utc,
+            catalyst_eligible=True,
+        ),
+    )
+    forward_ids = set(forward_view.events["event_id"])
+    assert "EV_TENCENT_3Q2026_WINDOW" in forward_ids
+    assert "EV_TENCENT_2Q2026_RESULTS" not in forward_ids
+
 def test_consensus_revision_chart_uses_percent_units_and_lookback_groups() -> None:
     from control_tower.pages.company import _consensus_revision_chart_frame
 
@@ -2022,3 +2212,313 @@ def test_company_earnings_actuals_are_issuer_level_not_listing_filtered() -> Non
     value, note = _latest_reported_kpi(frame, ("revenue", "revenue_total"))
     assert value == 1.02e12
     assert "FY2026" in note
+
+
+def test_cross_entity_source_health_leak_is_prevented() -> None:
+    """Ensure source-health table on Company page only shows sources relevant to the entity."""
+    snapshot = _make_tencent_snapshot()
+    health_rows = pd.concat(
+        [
+            snapshot.source_health,
+            pd.DataFrame([
+                {
+                    "source_id": "earnings:tencent_hkex_financials",
+                    "input_path": "tencent_hkex_financials.parquet",
+                    "source_kind": "official_financials",
+                    "status": "available",
+                    "required": False,
+                    "row_count": 224,
+                    "cadence": "quarterly",
+                    "pit_class": "point_in_time",
+                    "source_license_class": "official_public",
+                    "detail": "tencent official financials",
+                },
+                {
+                    "source_id": "other:fnguide_ir_press_release",
+                    "input_path": "other.parquet",
+                    "source_kind": "official_document_metadata",
+                    "status": "available",
+                    "required": False,
+                    "row_count": 10,
+                    "cadence": "irregular",
+                    "pit_class": "point_in_time",
+                    "source_license_class": "official_public",
+                    "detail": "unrelated entity",
+                }
+            ]),
+        ],
+        ignore_index=True,
+    )
+    empty_consensus = snapshot.consensus_snapshots.iloc[0:0].copy()
+    empty_events = snapshot.events.iloc[0:0].copy()
+    empty_docs = snapshot.news_filings.iloc[0:0].copy()
+    empty_quotes = snapshot.quote_snapshots.iloc[0:0].copy()
+    entities = pd.concat(
+        [
+            snapshot.entities,
+            pd.DataFrame([
+                {
+                    "entity_id": "MINIMAX",
+                    "legal_name": "MiniMax Inc.",
+                    "display_name": "MiniMax",
+                    "country": "CN",
+                    "sector": "Technology",
+                    "industry": "AI",
+                    "active_status": "active",
+                    "entity_type": "private",
+                }
+            ]),
+        ],
+        ignore_index=True,
+    )
+    custom_snapshot = replace(
+        snapshot,
+        entities=_typed(entities),
+        source_health=health_rows,
+        consensus_snapshots=empty_consensus,
+        events=empty_events,
+        news_filings=empty_docs,
+        quote_snapshots=empty_quotes,
+    )
+    view = build_company_view(custom_snapshot, entity_id="MINIMAX")
+    source_ids = set(view.source_health["source_id"].astype("string"))
+    assert "earnings:tencent_hkex_financials" not in source_ids
+    assert "other:fnguide_ir_press_release" not in source_ids
+    # Empty-consensus MiniMax still keeps the four Task-3 provider availability
+    # rows (unavailable placeholders), which are entity-scoped by construction.
+    for provider in ("yfinance", "akshare", "fnguide", "futu"):
+        assert {f"provider:{provider}", f"consensus:{provider}"} & {value.casefold() for value in source_ids}
+
+
+def test_latest_reported_kpi_basis_and_period_semantics() -> None:
+    """Ensure _latest_reported_kpi deterministically picks ONE accounting basis and notes it honestly."""
+    q_labels = ["3Q2025", "4Q2025", "1Q2026", "2Q2026"]
+    dates = ["2025-09-30", "2025-12-31", "2026-03-31", "2026-06-30"]
+    rows = []
+    for q, d in zip(q_labels, dates):
+        rows.append({
+            "metric": "net_profit_attributable",
+            "period_label": q,
+            "period_end": d,
+            "reported_value": 50e9,
+            "accounting_basis": "IFRS",
+        })
+        rows.append({
+            "metric": "net_profit_attributable",
+            "period_label": q,
+            "period_end": d,
+            "reported_value": 60e9,
+            "accounting_basis": "Non-IFRS management measure",
+        })
+    df = pd.DataFrame(rows)
+    val, note = _latest_reported_kpi(df, ("net_profit_attributable", "net_income"))
+    assert val == pytest.approx(200e9)
+    assert note == "LTM to 2Q2026 · IFRS"
+
+    annual_df = pd.DataFrame([
+        {
+            "metric": "revenue_total",
+            "period_label": "FY2025",
+            "period_end": "2025-12-31",
+            "reported_value": 100e9,
+            "accounting_basis": "US-GAAP",
+        }
+    ])
+    val, note = _latest_reported_kpi(annual_df, ("revenue_total", "revenue"))
+    assert val == pytest.approx(100e9)
+    assert note == "FY2025 official · US-GAAP · quarterly coverage incomplete"
+
+    yyyyq = pd.DataFrame([
+        {"metric": "revenue_total", "period_label": label, "period_end": end, "reported_value": 10e9, "accounting_basis": "IFRS"}
+        for label, end in (("2025Q3", "2025-09-30"), ("2025Q4", "2025-12-31"), ("2026Q1", "2026-03-31"), ("2026Q2", "2026-06-30"))
+    ])
+    val, note = _latest_reported_kpi(yyyyq, ("revenue_total", "revenue"))
+    assert val == pytest.approx(40e9)
+    assert note == "LTM to 2026Q2 · IFRS"
+
+
+def test_currency_symbol_helper_and_dynamic_derivation() -> None:
+    """Verify currency symbol derivation from currency codes."""
+    from control_tower.pages.company import _currency_symbol
+    assert _currency_symbol("CNY") == "¥"
+    assert _currency_symbol("RMB") == "¥"
+    assert _currency_symbol("HKD") == "HK$"
+    assert _currency_symbol("USD") == "$"
+    assert _currency_symbol("EUR") == "€"
+    assert _currency_symbol("KRW") == "₩"
+    assert _currency_symbol("JPY") == "¥"
+    assert _currency_symbol("$") == "$"
+
+
+def test_answer_first_summary_picks_fy1_consensus() -> None:
+    """Verify _answer_first_summary_lines picks FY1 (0y / earliest annual) consensus."""
+    snapshot = _make_tencent_snapshot()
+    consensus = pd.DataFrame([
+        {
+            "entity_id": "TENCENT",
+            "listing_id": "0700_HK",
+            "metric": "eps",
+            "fiscal_period": "annual",
+            "fiscal_year": 2027,
+            "horizon": "+1y",
+            "value": 25.0,
+            "currency": "CNY",
+            "unit": "per_share",
+            "snapshot_at": "2026-08-20T00:00:00Z",
+            "provider": "futu",
+            "source_url": "https://example.com",
+        },
+        {
+            "entity_id": "TENCENT",
+            "listing_id": "0700_HK",
+            "metric": "eps",
+            "fiscal_period": "annual",
+            "fiscal_year": 2026,
+            "horizon": "0y",
+            "value": 20.0,
+            "currency": "CNY",
+            "unit": "per_share",
+            "snapshot_at": "2026-08-20T00:00:00Z",
+            "provider": "futu",
+            "source_url": "https://example.com",
+        },
+    ])
+    snapshot = replace(snapshot, consensus_snapshots=_typed(consensus))
+    view = build_company_view(snapshot, entity_id="TENCENT")
+    summary = "\n".join(_answer_first_summary_lines(view, snapshot))
+    assert "Expectation context · Eps: CNY 20 per_share · 0y" in summary
+
+
+def test_filtered_entity_ids_excludes_archived_entities() -> None:
+    """Verify _filtered_entity_ids returns only active entities when filters is None or active."""
+    from control_tower.pages.company import _filtered_entity_ids
+    entities = pd.DataFrame([
+        {"entity_id": "ACTIVE_1", "active_status": "active", "country": "CN"},
+        {"entity_id": "ACTIVE_2", "active_status": "active", "country": "US"},
+        {"entity_id": "ARCHIVED_1", "active_status": "archived", "country": "CN"},
+        {"entity_id": "ARCHIVED_2", "active_status": "archived", "country": "HK"},
+    ])
+    memberships = pd.DataFrame([
+        {"entity_id": "ACTIVE_1", "basket_id": "B1", "membership_tier": "core"},
+        {"entity_id": "ARCHIVED_1", "basket_id": "B1", "membership_tier": "core"},
+    ])
+    snapshot = replace(
+        _make_tencent_snapshot(),
+        entities=_typed(entities),
+        basket_memberships=_typed(memberships),
+    )
+    active_ids = _filtered_entity_ids(snapshot, None)
+    assert active_ids == {"ACTIVE_1", "ACTIVE_2"}
+
+    filtered_ids = _filtered_entity_ids(snapshot, EventFilters(country=("CN",), now_utc=snapshot.now_utc))
+    assert filtered_ids == {"ACTIVE_1"}
+
+    basket_ids = _filtered_entity_ids(snapshot, EventFilters(basket_id=("B1",), now_utc=snapshot.now_utc))
+    assert basket_ids == {"ACTIVE_1"}
+
+
+def test_quarterly_financial_pivot_yoy_qoq_handles_missing_quarters() -> None:
+    """Verify _build_quarterly_financial_pivot uses calendar quarter matching rather than positional row shift."""
+    from control_tower.pages.company import _build_quarterly_financial_pivot
+    frame = pd.DataFrame([
+        {"period_label": "1Q2025", "period_end": "2025-03-31", "metric": "revenue_total", "accounting_basis": "IFRS", "reported_value": 100e9},
+        {"period_label": "2Q2025", "period_end": "2025-06-30", "metric": "revenue_total", "accounting_basis": "IFRS", "reported_value": 110e9},
+        {"period_label": "4Q2025", "period_end": "2025-12-31", "metric": "revenue_total", "accounting_basis": "IFRS", "reported_value": 130e9},
+        {"period_label": "1Q2026", "period_end": "2026-03-31", "metric": "revenue_total", "accounting_basis": "IFRS", "reported_value": 200e9},
+        {"period_label": "2Q2026", "period_end": "2026-06-30", "metric": "revenue_total", "accounting_basis": "IFRS", "reported_value": 220e9},
+    ])
+    piv = _build_quarterly_financial_pivot(frame, n_periods=5)
+    yoy_row = piv.loc[piv["Metric"].str.startswith("YoY Revenue Growth")].iloc[0]
+    qoq_row = piv.loc[piv["Metric"].str.startswith("QoQ Revenue Growth")].iloc[0]
+
+    assert yoy_row["1Q2026"] == "+100.0%"
+    assert yoy_row["2Q2026"] == "+100.0%"
+    assert yoy_row["4Q2025"] == "-"
+
+    assert qoq_row["4Q2025"] == "-"
+    assert qoq_row["1Q2026"] == "+53.8%"
+
+    zero_periods = [
+        ("1Q2025", "2025-03-31"),
+        ("2Q2025", "2025-06-30"),
+        ("3Q2025", "2025-09-30"),
+        ("4Q2025", "2025-12-31"),
+    ]
+    zero_profit = pd.DataFrame([
+        {"period_label": label, "period_end": end, "metric": metric, "accounting_basis": basis, "reported_value": value}
+        for label, end in zero_periods
+        for metric, basis, value in (
+            ("revenue_total", "IFRS", 100e9),
+            ("operating_profit", "Non-IFRS management measure", 0.0),
+            ("net_profit_attributable", "Non-IFRS management measure", 0.0),
+        )
+    ])
+    zero_piv = _build_quarterly_financial_pivot(zero_profit, n_periods=4)
+    zero_op_margin = zero_piv.loc[zero_piv["Metric"].eq("Non-IFRS Operating Margin (%)")].iloc[0]
+    zero_net_margin = zero_piv.loc[zero_piv["Metric"].eq("Non-IFRS Net Margin (%)")].iloc[0]
+    assert zero_op_margin["4Q2025"] == "0.0%"
+    assert zero_net_margin["4Q2025"] == "0.0%"
+
+
+def test_newer_local_quotes_recomputes_freshness() -> None:
+    """Verify _newer_local_quotes re-computes freshness classification when overlay is merged."""
+    from control_tower.pages.company import _newer_local_quotes
+    now_utc = pd.Timestamp("2026-08-22T00:00:00Z")
+    stale_quotes = pd.DataFrame([
+        {
+            "listing_id": "0700_HK",
+            "quote_timestamp": pd.Timestamp("2026-08-17T00:00:00Z"),
+            "last_price": 380.0,
+            "currency": "HKD",
+            "freshness": "stale",
+            "source_id": "market:hkex",
+            "retrieved_at_utc": pd.Timestamp("2026-08-17T00:00:00Z"),
+        }
+    ])
+    out = _newer_local_quotes(stale_quotes, now_utc=now_utc)
+    assert "freshness" in out.columns
+
+
+def test_newer_local_quotes_marks_overlay_provenance(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import control_tower.pages.company as company_page
+
+    overlay_path = tmp_path / "quote_snapshots_v1.parquet"
+    pd.DataFrame(
+        [
+            {
+                "listing_id": "0700_HK",
+                "quote_timestamp": pd.Timestamp("2026-08-21T13:00:00Z"),
+                "last_price": 410.0,
+                "currency": "HKD",
+                "source_id": "market:yfinance",
+                "retrieved_at_utc": pd.Timestamp("2026-08-21T13:01:00Z"),
+            }
+        ]
+    ).to_parquet(overlay_path, index=False)
+    monkeypatch.setattr(company_page, "_local_quote_overlay_path", lambda: overlay_path)
+    monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+    monkeypatch.delenv("CONTROL_TOWER_DISABLE_LOCAL_QUOTE_OVERLAY", raising=False)
+
+    published = pd.DataFrame(
+        [
+            {
+                "listing_id": "0700_HK",
+                "quote_timestamp": pd.Timestamp("2026-08-21T08:00:00Z"),
+                "last_price": 400.0,
+                "currency": "HKD",
+                "freshness": "delayed",
+                "source_id": "market:yfinance",
+            }
+        ]
+    )
+    out = _newer_local_quotes(
+        published,
+        now_utc=pd.Timestamp("2026-08-22T00:00:00Z"),
+        as_of_utc=pd.Timestamp("2026-08-22T00:00:00Z"),
+    )
+
+    assert float(out.iloc[0]["last_price"]) == 410.0
+    assert str(out.iloc[0]["is_local_overlay"]).casefold() == "true"

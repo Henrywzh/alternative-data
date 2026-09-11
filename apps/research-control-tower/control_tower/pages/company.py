@@ -3,7 +3,7 @@
 from __future__ import annotations
 from pathlib import Path
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import timedelta
 from html import escape
 import re
@@ -47,14 +47,19 @@ from research_control_tower.vendor_financials import (
 from ..filters import apply_event_filters
 from ..formatting import format_t_minus
 from ..components import ct_dataframe
-from ..components.timeline import format_event_window, is_active_catalyst, select_next_catalyst
+from ..components.timeline import format_event_window, select_next_catalyst
 from ..market_data import QUOTE_SNAPSHOT_COLUMNS, classify_quote_freshness, format_quote_age
 from ..models import ControlTowerSnapshot, EventFilters
+from ..semantics import (
+    catalyst_state_for_row,
+    filter_frame_to_as_of,
+    filter_snapshot_to_as_of,
+    parse_timestamp_utc,
+    resolve_catalyst_interval,
+)
 from ..components.filings_earnings import (
     render_official_filings,
     render_earnings_calendar,
-    render_earnings_actuals,
-    render_filings_earnings_sections,
 )
 from .source_health import classify_source_health
 
@@ -109,14 +114,14 @@ COMPANY_REVISION_COLUMNS = (
     "source_url", "pit_class", "source_run_id", "prior_analyst_count", "revision_value", "revision_pct",
     "analyst_count_change", "dispersion", "alignment_status",
 )
-COMPANY_QUOTE_COLUMNS = (*QUOTE_SNAPSHOT_COLUMNS, "freshness")
+COMPANY_QUOTE_COLUMNS = (*QUOTE_SNAPSHOT_COLUMNS, "freshness", "is_local_overlay")
 COMPANY_QUESTION_COLUMNS = ("event_id", "question_id", "question", "question_type", "priority", "registry_version")
 COMPANY_INVALIDATION_COLUMNS = (
     "evidence_id", "event_id", "entity_id", "question_id", "question_type", "source_id", "observed_at",
     "title", "detail", "source_url", "evidence_class", "pit_class", "source_license_class", "status",
 )
 COMPANY_CORPORATE_ACTION_COLUMNS = (
-    "action_id", "listing_id", "action_type", "filing_date", "execution_date",
+    "action_id", "listing_id", "action_type", "filing_date", "execution_date", "published_at",
     "shares_affected", "price_min", "price_max", "price_avg", "total_amount_paid",
     "currency", "cancellation_status", "coverage_reason", "source_url",
     "retrieved_at_utc", "pit_class",
@@ -202,6 +207,196 @@ def _text(value: object) -> str:
     except (TypeError, ValueError):
         pass
     return str(value).strip()
+
+
+def _currency_symbol(currency: object) -> str:
+    code = _text(currency).upper()
+    mapping = {
+        "CNY": "¥",
+        "RMB": "¥",
+        "JPY": "¥",
+        "HKD": "HK$",
+        "USD": "$",
+        "EUR": "€",
+        "GBP": "£",
+        "KRW": "₩",
+        "TWD": "NT$",
+        "SGD": "S$",
+    }
+    if code in mapping.values():
+        return code
+    return mapping.get(code, code)
+
+
+def _corporate_action_dates(frame: pd.DataFrame) -> pd.Series:
+    """Resolve one usable action date without assuming a single vendor field.
+
+    Exchange feeds do not always populate the same date field.  Prefer the
+    economic execution date, then the filing/publication date, while keeping
+    the result UTC-normalized so mixed vendor dtypes cannot break the view.
+    """
+
+    dates = pd.Series(pd.NaT, index=frame.index, dtype="datetime64[ns, UTC]")
+    for column in ("execution_date", "filing_date", "published_at"):
+        if column not in frame.columns:
+            continue
+        parsed = pd.to_datetime(frame[column], utc=True, errors="coerce")
+        dates = dates.where(dates.notna(), parsed)
+    return dates
+
+
+_CORPORATE_ACTION_KNOWLEDGE_CLOCKS = (
+    "filing_date",
+    "published_at",
+    "retrieved_at_utc",
+)
+
+
+def _corporate_action_has_knowledge_clock(frame: pd.DataFrame) -> pd.Series:
+    """Return a row-level marker for timing evidence on corporate actions.
+
+    ``execution_date`` is deliberately not included.  It describes when the
+    economic action happened (or is expected to happen), not when the row was
+    knowable to an investor.  A row with no parseable filing, publication, or
+    retrieval clock is kept for lineage but must be visibly marked as timing
+    unverified.
+    """
+
+    if frame is None:
+        return pd.Series(dtype="boolean")
+    observed = pd.Series(False, index=frame.index, dtype="boolean")
+    for column in _CORPORATE_ACTION_KNOWLEDGE_CLOCKS:
+        if column in frame.columns:
+            observed |= pd.to_datetime(frame[column], errors="coerce", utc=True).notna()
+    return observed.fillna(False)
+
+
+def _corporate_action_missing_knowledge_clock_count(frame: pd.DataFrame) -> int:
+    if frame is None or frame.empty:
+        return 0
+    return int((~_corporate_action_has_knowledge_clock(frame)).sum())
+
+
+def _buyback_actions(frame: pd.DataFrame) -> pd.DataFrame:
+    """Return only executed repurchases for buyback-specific KPIs/charts."""
+
+    if frame is None or frame.empty or "action_type" not in frame.columns:
+        return frame.iloc[0:0].copy() if isinstance(frame, pd.DataFrame) else pd.DataFrame()
+    action_types = (
+        frame["action_type"]
+        .astype("string")
+        .str.strip()
+        .str.casefold()
+        .str.replace(r"[ -]+", "_", regex=True)
+    )
+    return frame.loc[action_types.eq("buyback_execution")].copy()
+
+
+def _accounting_basis_family(value: object) -> str:
+    """Classify source accounting labels without requiring one issuer's wording."""
+
+    normalized = re.sub(r"[^A-Z0-9]+", " ", _text(value).upper()).strip()
+    if not normalized:
+        return ""
+    if (
+        "NON IFRS" in normalized
+        or "NON GAAP" in normalized
+        or "ADJUSTED" in normalized
+        or "MANAGEMENT" in normalized
+    ):
+        return "adjusted"
+    if (
+        "IFRS" in normalized
+        or "GAAP" in normalized
+        or "STATUTORY" in normalized
+        or "REPORTED" in normalized
+    ):
+        return "reported"
+    return ""
+
+
+def _basis_mask(frame: pd.DataFrame, family: str) -> pd.Series:
+    values = frame.get("accounting_basis", pd.Series("", index=frame.index, dtype="string"))
+    return values.map(_accounting_basis_family).eq(family)
+
+
+def _basis_display_label(frame: pd.DataFrame, family: str, fallback: str) -> str:
+    values = [
+        _text(value)
+        for value in frame.get("accounting_basis", pd.Series(dtype="string")).tolist()
+        if _text(value) and _accounting_basis_family(value) == family
+    ]
+    normalized = [re.sub(r"[^A-Z0-9]+", " ", value.upper()).strip() for value in values]
+    if family == "reported":
+        if any("US GAAP" in value for value in normalized):
+            return "US-GAAP"
+        if any("IFRS" in value for value in normalized):
+            return "IFRS"
+        if any("GAAP" in value for value in normalized):
+            return "GAAP"
+        return "Reported"
+    if family == "adjusted":
+        if any("NON IFRS" in value for value in normalized):
+            return "Non-IFRS"
+        if any("NON GAAP" in value for value in normalized):
+            return "Non-GAAP"
+        return "Adjusted / management"
+    return fallback
+
+
+_FY1_HORIZON_ALIASES = frozenset({
+    "0y", "0 y", "fy1", "fy 1", "fy_1", "fy1e", "current", "current year",
+    "current_year", "this year", "this_year",
+})
+
+
+def _select_fy1_consensus(
+    consensus: pd.DataFrame,
+    metric: str = "eps",
+) -> tuple[pd.DataFrame, bool]:
+    """Select the nearest annual estimate, retaining all provider rows."""
+
+    if consensus is None or consensus.empty:
+        return pd.DataFrame(), False
+    metrics = consensus.get("metric", pd.Series("", index=consensus.index, dtype="string")).astype("string").str.casefold().str.strip()
+    periods = (
+        consensus.get("fiscal_period", pd.Series("", index=consensus.index, dtype="string"))
+        .astype("string")
+        .str.casefold()
+        .str.replace(r"[_-]+", " ", regex=True)
+        .str.replace(r"\s+", " ", regex=True)
+        .str.strip()
+    )
+    # Providers use both ``annual`` and FY labels (including FY1/FY2027).
+    # Keep the annual gate here so a quarterly +1q row can never become a
+    # forward annual EPS merely because it has a fiscal year attached.
+    annual_mask = periods.isin({"annual", "annualized", "full year", "fy"}) | periods.str.match(r"^fy\s*\d{1,4}$", na=False)
+    rows = consensus.loc[metrics.eq(metric.casefold()) & annual_mask].copy()
+    if rows.empty:
+        return rows, False
+    horizons = (
+        rows.get("horizon", pd.Series("", index=rows.index, dtype="string"))
+        .astype("string")
+        .str.casefold()
+        .str.replace(r"[_-]+", " ", regex=True)
+        .str.replace(r"\s+", " ", regex=True)
+        .str.strip()
+    )
+    fy1 = rows.loc[horizons.isin(_FY1_HORIZON_ALIASES)].copy()
+    is_fy1 = not fy1.empty
+    if is_fy1:
+        selected = fy1
+    else:
+        fiscal_year = pd.to_numeric(rows.get("fiscal_year", pd.Series(pd.NA, index=rows.index)), errors="coerce")
+        if fiscal_year.notna().any():
+            selected = rows.loc[fiscal_year.eq(fiscal_year.dropna().min())].copy()
+        else:
+            estimate_end = pd.to_datetime(rows.get("estimate_period_end", pd.Series(pd.NaT, index=rows.index)), errors="coerce")
+            selected = rows.loc[estimate_end.eq(estimate_end.dropna().min())].copy() if estimate_end.notna().any() else rows
+    if "snapshot_at" in selected.columns:
+        selected = selected.assign(__snapshot_at=pd.to_datetime(selected["snapshot_at"], errors="coerce", utc=True))
+        selected = selected.sort_values(["__snapshot_at"], ascending=False, na_position="last", kind="mergesort").drop(columns=["__snapshot_at"])
+    return selected.reset_index(drop=True), is_fy1
 
 
 def _timestamp(value: object) -> pd.Timestamp | None:
@@ -376,9 +571,13 @@ def _safe_quote_descriptors(frame: pd.DataFrame) -> pd.DataFrame:
 
 
 def _active_for_event(row: Any, event: Any, fallback: pd.Timestamp) -> bool:
-    event_start = _timestamp(event.get("starts_at")) or fallback
-    event_end = _timestamp(event.get("ends_at"))
     source_timezone = _source_timezone(event)
+    event_start = _interval_timestamp(
+        event.get("starts_at"), source_timezone=source_timezone
+    ) or fallback
+    event_end = _interval_timestamp(
+        event.get("ends_at"), source_timezone=source_timezone
+    )
     link_start = _interval_timestamp(
         row.get("active_from"), source_timezone=source_timezone
     )
@@ -536,18 +735,26 @@ def _provider_source_rows(
     classified: pd.DataFrame,
     consensus: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Return explicit provider health rows without upgrading missing health."""
+    """Return entity/listing-scoped provider health rows.
+
+    The published source-health mart is global.  Its ``consensus:<provider>``
+    rows describe the whole collection run and must not suppress or stand in
+    for the selected company's provider coverage.
+    """
 
     providers = ("yfinance", "akshare", "fnguide", "futu")
     existing = classified.copy(deep=True)
+    provider_source_ids = {
+        source_id
+        for provider in providers
+        for source_id in (f"provider:{provider}", f"consensus:{provider}")
+    }
+    if not existing.empty and "source_id" in existing.columns:
+        existing = existing.loc[
+            ~existing["source_id"].astype("string").str.casefold().isin(provider_source_ids)
+        ].copy()
     raw_rows: list[dict[str, object]] = []
-    export_rows = existing.loc[
-        existing["source_id"].astype("string").str.contains("consensus_export", case=False, na=False)
-    ] if not existing.empty else existing
     for provider in providers:
-        provider_mask = existing["source_id"].astype("string").str.contains(provider, case=False, na=False) if not existing.empty else pd.Series(dtype="boolean")
-        if provider_mask.any():
-            continue
         provider_rows = consensus.loc[
             consensus.get("provider", pd.Series("", index=consensus.index)).astype("string").str.casefold().eq(provider)
         ] if not consensus.empty else consensus
@@ -559,7 +766,7 @@ def _provider_source_rows(
                     "source_id": f"provider:{provider}",
                     "input_path": "consensus provider rows",
                     "source_kind": "consensus_provider",
-                    "status": "degraded",
+                    "status": "available",
                     "required": False,
                     "row_count": len(provider_rows),
                     "latest_observation_at": latest.max() if not latest.empty else pd.NaT,
@@ -571,27 +778,7 @@ def _provider_source_rows(
                     "source_license_class": "",
                     "schema_version": "",
                     "missing_geographies": "",
-                    "detail": "provider rows present; provider-specific source-health row unavailable",
-                }
-            )
-        elif not export_rows.empty:
-            export = export_rows.iloc[0]
-            raw_rows.append(
-                {
-                    "source_id": f"provider:{provider}",
-                    "input_path": _text(export.get("input_path")) or "consensus export",
-                    "source_kind": "consensus_provider",
-                    "status": _text(export.get("status")) or "unavailable",
-                    "required": False,
-                    "row_count": 0,
-                    "retrieved_at_utc": export.get("retrieved_at_utc", pd.NaT),
-                    "cadence": _text(export.get("cadence")),
-                    "source_url": _text(export.get("source_url")),
-                    "pit_class": _text(export.get("pit_class")),
-                    "source_license_class": _text(export.get("source_license_class")),
-                    "schema_version": _text(export.get("schema_version")),
-                    "missing_geographies": _text(export.get("missing_geographies")),
-                    "detail": f"{provider} provider export unavailable; {_text(export.get('detail')) or 'no provider-specific export row'}",
+                    "detail": "entity/listing-scoped provider rows present",
                 }
             )
         else:
@@ -609,7 +796,7 @@ def _provider_source_rows(
                     "source_license_class": "",
                     "schema_version": "",
                     "missing_geographies": "",
-                    "detail": f"{provider} provider export unavailable; no local provider-specific source-health row",
+                    "detail": f"No {provider} consensus rows for the selected entity/listing; global provider health is not used as entity coverage.",
                 }
             )
     if not raw_rows:
@@ -627,6 +814,11 @@ def build_company_view(
 ) -> CompanyView:
     """Build one company view using only explicit registry and mart relations."""
 
+    # A view may be built from an in-memory/test snapshot or from a repository
+    # snapshot.  Applying the same predicate here makes the contract hold for
+    # both paths and prevents optional/live-added rows from leaking into a
+    # frozen company page.
+    snapshot = filter_snapshot_to_as_of(snapshot)
     requested_entity = _text(entity_id)
     entity_rows = snapshot.entities.loc[snapshot.entities["entity_id"].astype("string").eq(requested_entity)] if not snapshot.entities.empty else snapshot.entities
     if entity_rows.empty:
@@ -786,6 +978,11 @@ def build_company_view(
                 na_position="last",
                 kind="mergesort",
             ).reset_index(drop=True)
+    quote_snapshots = _newer_local_quotes(
+        quote_snapshots,
+        snapshot.now_utc,
+        as_of_utc=as_of,
+    )
     if _text(entity.get("entity_type")).lower() == "private":
         quote_status = "not_applicable"
     elif quote_snapshots.empty:
@@ -799,7 +996,25 @@ def build_company_view(
 
     event_rows: list[dict[str, object]] = []
     question_counts = snapshot.event_watch_questions["event_id"].astype("string").value_counts().to_dict() if not snapshot.event_watch_questions.empty else {}
-    event_frame = apply_event_filters(snapshot.events, filters) if filters is not None else snapshot.events
+    # Basket/country/tier are resolved from the company registry below. If
+    # they are passed into the denormalised event filter first, a valid event
+    # linked directly to this entity can disappear merely because it does not
+    # repeat the selected basket on the event row.
+    event_filters = replace(filters, basket_id=(), country=(), membership_tier=()) if filters is not None else None
+    # A company view is also the selected entity's event lineage, so its
+    # unbounded view must retain historical observed rows.  Forward-looking
+    # surfaces (timeline/next-catalyst) pass an explicit reference time and
+    # use the canonical Future/Active predicate.  Keep that predicate when a
+    # caller explicitly requests catalyst_eligible=True.  An explicit False
+    # is reserved for the historical/audit surface and must keep its
+    # reference time so terminal lifecycle states can be selected.
+    if (
+        event_filters is not None
+        and event_filters.horizon == "all"
+        and event_filters.catalyst_eligible is None
+    ):
+        event_filters = replace(event_filters, now_utc=None)
+    event_frame = apply_event_filters(snapshot.events, event_filters) if event_filters is not None else snapshot.events
     for _, event in event_frame.iterrows():
         relation = _event_relation(snapshot, event, requested_entity, listing_ids)
         if relation is None:
@@ -854,12 +1069,26 @@ def build_company_view(
             include_entity_only=True,
         )
         if not corp_actions.empty:
+            # Snapshot filtering uses knowledge clocks (published/filing and
+            # retrieval dates), not the economic execution date.  A buyback or
+            # dividend can be announced before its future execution/pay date;
+            # dropping it here would hide exactly the information the frozen
+            # view is meant to preserve.  Keep execution dates only for
+            # display ordering and the event's economic context.
+            corp_actions = filter_frame_to_as_of(
+                corp_actions,
+                as_of,
+                timestamp_columns=("filing_date", "published_at", "retrieved_at_utc"),
+            )
             for col in COMPANY_CORPORATE_ACTION_COLUMNS:
                 if col not in corp_actions.columns:
                     corp_actions[col] = pd.NA
             corp_actions = corp_actions.loc[:, [col for col in COMPANY_CORPORATE_ACTION_COLUMNS if col in corp_actions.columns]]
-            if "execution_date" in corp_actions.columns:
-                corp_actions = corp_actions.sort_values("execution_date", ascending=False)
+            corp_actions = corp_actions.assign(
+                __action_date=_corporate_action_dates(corp_actions)
+            ).sort_values(
+                "__action_date", ascending=False, na_position="last", kind="mergesort"
+            ).drop(columns="__action_date")
         else:
             corp_actions = _empty(COMPANY_CORPORATE_ACTION_COLUMNS)
     else:
@@ -993,6 +1222,8 @@ def build_company_view(
         evidence_items = _empty(COMPANY_EVIDENCE_ITEM_COLUMNS)
         claim_links = _empty(COMPANY_CLAIM_EVIDENCE_LINK_COLUMNS)
 
+    corporate_action_unverified_count = _corporate_action_missing_knowledge_clock_count(corp_actions)
+
     event_ids_for_questions = {
         _text(row.get("event_id"))
         for row in event_rows
@@ -1014,16 +1245,15 @@ def build_company_view(
     classified = classify_source_health(snapshot.source_health, now_utc=snapshot.now_utc)
     classified = _provider_source_rows(snapshot, classified, consensus)
     source_ids_lower = {value.casefold() for value in source_ids}
-    stable_provider_sources = classified["source_id"].astype("string").str.contains(
-        "fnguide|futu|yfinance|akshare|provider:|dart|krx|official|ir|research|hkex",
-        case=False,
-        regex=True,
-        na=False,
-    ) if not classified.empty else pd.Series(dtype="boolean")
-    if source_ids or not classified.empty:
+    # Keep the four Task-3 provider availability rows even when the build
+    # spelled them as consensus:<name> rather than provider:<name>. The rows
+    # are explicit provider placeholders/observations from the view contract;
+    # unrelated source IDs are still excluded by the exact match below.
+    for provider in ("yfinance", "akshare", "fnguide", "futu"):
+        source_ids_lower.add(f"provider:{provider}")
+    if source_ids_lower:
         source_health = classified.loc[
             classified["source_id"].astype("string").str.casefold().isin(source_ids_lower)
-            | stable_provider_sources
         ].copy()
     else:
         source_health = classified.iloc[0:0].copy()
@@ -1065,6 +1295,10 @@ def build_company_view(
         caveats.extend(("FnGuide consensus unavailable — no local export", "Futu consensus unavailable — no local export"))
     if invalidation_evidence.empty:
         caveats.append("invalidation_evidence_unavailable")
+    if corporate_action_unverified_count:
+        caveats.append(
+            f"{corporate_action_unverified_count} corporate action row(s) lack filing, publication, and retrieval timestamps; timing is unverified for the frozen snapshot"
+        )
     if superseded_event_ids:
         caveats.append("Superseded event lineage retained: " + ", ".join(superseded_event_ids))
     event_pit = events.get("pit_class", pd.Series("", index=events.index, dtype="string"))
@@ -1114,7 +1348,7 @@ def build_company_view(
         selection_mode=selection_mode,
         listings=listings,
         memberships=memberships,
-        quote_snapshots=_newer_local_quotes(quote_snapshots),
+        quote_snapshots=quote_snapshots,
         price_bars=price_bars,
         quote_status=quote_status,
         events=events,
@@ -1151,27 +1385,94 @@ def _format_time(value: object, timezone: str) -> str:
 def _filtered_entity_ids(snapshot: ControlTowerSnapshot, filters: EventFilters | None) -> set[str]:
     """Resolve global basket/country/tier filters before rendering the selector."""
 
+    if snapshot.entities.empty:
+        return set()
+    as_of = snapshot.as_of_utc
+    if "active_status" in snapshot.entities.columns:
+        base_entities = snapshot.entities.loc[
+            snapshot.entities["active_status"].astype("string").fillna("").str.strip().str.lower().isin({"", "active"})
+            & snapshot.entities.apply(lambda row: _active(row, as_of), axis=1)
+        ]
+    else:
+        base_entities = snapshot.entities.loc[
+            snapshot.entities.apply(lambda row: _active(row, as_of), axis=1)
+        ]
+    entity_ids = set(base_entities["entity_id"].astype("string"))
     if filters is None:
-        return set(snapshot.entities.get("entity_id", pd.Series(dtype="string")).astype("string"))
-    entity_ids = set(snapshot.entities.get("entity_id", pd.Series(dtype="string")).astype("string"))
+        return entity_ids
     memberships = snapshot.basket_memberships
     if filters.basket_id or filters.membership_tier:
         if memberships.empty:
             return set()
         rows = memberships.copy()
+        rows = rows.loc[rows.apply(lambda row: _active(row, as_of), axis=1)]
         if filters.basket_id:
-            rows = rows.loc[rows["basket_id"].astype("string").isin(filters.basket_id)]
+            rows = rows.loc[
+                rows["basket_id"].astype("string").str.upper().isin(
+                    {value.upper() for value in filters.basket_id}
+                )
+            ]
         if filters.membership_tier:
             rows = rows.loc[rows["membership_tier"].astype("string").str.lower().isin(filters.membership_tier)]
         entity_ids &= set(rows["entity_id"].astype("string"))
-    if filters.country and not snapshot.entities.empty:
+    if filters.country and not base_entities.empty:
         entity_ids &= set(
-            snapshot.entities.loc[
-                snapshot.entities["country"].astype("string").str.upper().isin(filters.country),
+            base_entities.loc[
+                base_entities["country"].astype("string").str.upper().isin(filters.country),
                 "entity_id",
             ].astype("string")
         )
     return entity_ids
+
+
+def _company_option_label(snapshot: ControlTowerSnapshot, entity_id: object) -> str:
+    entity_text = _text(entity_id)
+    if not entity_text or snapshot.entities.empty or "entity_id" not in snapshot.entities.columns:
+        return entity_text
+    rows = snapshot.entities.loc[snapshot.entities["entity_id"].astype("string").eq(entity_text)]
+    if rows.empty:
+        return entity_text
+    display_name = _text(rows.iloc[0].get("display_name")) or _text(rows.iloc[0].get("legal_name"))
+    return f"{display_name} · {entity_text}" if display_name else entity_text
+
+
+def _render_invalid_company_recovery(
+    snapshot: ControlTowerSnapshot,
+    entity_options: list[str],
+) -> None:
+    """Give an invalid deep link a deliberate recovery path.
+
+    The page must not silently replace an invalid ``?entity=`` with a stale
+    session company.  The recovery control is intentionally separate from the
+    normal company widget so the invalid state remains visible until the user
+    chooses a valid active entity or clears the link.
+    """
+
+    if entity_options:
+        st.caption("Choose an active company to continue:")
+        recovery_entity = st.selectbox(
+            "Available companies",
+            [""] + entity_options,
+            key="ct_company_recovery_entity",
+            format_func=lambda value: "Choose an active company…" if not value else _company_option_label(snapshot, value),
+        )
+        if recovery_entity:
+            st.session_state["ct_company_entity"] = recovery_entity
+            st.session_state["ct_company_listing"] = None
+            st.session_state["ct_company_last_query_entity"] = recovery_entity
+            st.query_params["entity"] = recovery_entity
+            st.rerun()
+    else:
+        st.caption("No active company remains under the current filters. Clear the link or change the filters to recover.")
+
+    st.caption("Recovery action: remove the stale deep-link parameter below to return to the default company.")
+    if st.button("Clear invalid company link", key="ct_company_clear_invalid_link"):
+        st.session_state.pop("ct_company_entity", None)
+        st.session_state.pop("ct_company_listing", None)
+        st.session_state.pop("ct_company_last_query_entity", None)
+        if st.query_params.get("entity"):
+            del st.query_params["entity"]
+        st.rerun()
 
 
 def _friendly_listing_frame(frame: pd.DataFrame) -> pd.DataFrame:
@@ -1312,6 +1613,7 @@ def _friendly_corporate_actions_frame(frame: pd.DataFrame, viewer_timezone: str)
     columns = {
         "execution_date": "Execution date",
         "filing_date": "Filing date",
+        "published_at": "Published",
         "action_type": "Action type",
         "shares_affected": "Shares affected",
         "price_min": "Price min",
@@ -1323,7 +1625,11 @@ def _friendly_corporate_actions_frame(frame: pd.DataFrame, viewer_timezone: str)
         "source_url": "Source link",
     }
     available = [col for col in columns if col in frame.columns]
-    return frame.loc[:, available].rename(columns={col: columns[col] for col in available}).copy()
+    result = frame.loc[:, available].rename(columns={col: columns[col] for col in available}).copy()
+    result["QA status"] = _corporate_action_has_knowledge_clock(frame).map(
+        {True: "timing available", False: "unverified timing"}
+    ).to_numpy()
+    return result
 
 
 def _friendly_valuation_frame(frame: pd.DataFrame) -> pd.DataFrame:
@@ -1453,29 +1759,69 @@ def _format_listing_option(snapshot: ControlTowerSnapshot, listing_id: str | Non
 def _latest_reported_kpi(frame: pd.DataFrame, metrics: tuple[str, ...]) -> tuple[float | None, str]:
     """Pick a display KPI from official actuals without inventing a period."""
 
-    if frame is None or frame.empty or 'metric' not in frame.columns:
+    if frame is None or frame.empty or 'metric' not in frame.columns or 'reported_value' not in frame.columns:
         return None, 'unavailable'
     work = frame.copy()
     work['metric'] = work['metric'].astype('string')
     work = work.loc[work['metric'].isin(list(metrics))].copy()
     if work.empty:
         return None, 'unavailable'
+    for m in metrics:
+        m_work = work.loc[work['metric'].eq(m)]
+        if not m_work.empty:
+            work = m_work.copy()
+            break
     work['period_end'] = pd.to_datetime(work.get('period_end'), errors='coerce')
+    work['reported_value'] = pd.to_numeric(work['reported_value'], errors='coerce')
     work = work.dropna(subset=['period_end', 'reported_value'])
     if work.empty:
         return None, 'unavailable'
+
+    work['accounting_basis'] = work.get('accounting_basis', pd.Series('', index=work.index)).astype('string')
+    basis_family = work['accounting_basis'].map(_accounting_basis_family)
+    if basis_family.eq('reported').any():
+        chosen_family = 'reported'
+    elif basis_family.eq('adjusted').any():
+        chosen_family = 'adjusted'
+    else:
+        chosen_family = ''
+    if chosen_family:
+        work = work.loc[basis_family.eq(chosen_family)].copy()
+    chosen_basis = _basis_display_label(work, chosen_family, '') if chosen_family else ''
+
     work['period_label'] = work.get('period_label', pd.Series('', index=work.index)).astype('string')
-    quarterly = work.loc[work['period_label'].str.match(r'^([1-4]Q|Q[1-4]|1H)', na=False)]
+    sort_cols = [c for c in ('period_end', 'filing_at', 'version') if c in work.columns]
+    if sort_cols:
+        work = work.sort_values(sort_cols, ascending=True, na_position='first')
+    dedupe_cols = [c for c in ('period_label', 'metric', 'accounting_basis') if c in work.columns]
+    work = work.drop_duplicates(dedupe_cols, keep='last')
+
+    basis_suffix = f' · {chosen_basis}' if chosen_basis else ''
+
+    quarterly = work.loc[
+        work['period_label'].str.match(
+            r'^(?:[1-4]Q|Q[1-4]|\d{4}Q[1-4]|\d{4}-[1-4]Q)', na=False
+        )
+    ].copy()
     if len(quarterly['period_label'].dropna().unique()) >= 4:
-        latest = quarterly.sort_values('period_end').drop_duplicates(['period_label', 'metric'], keep='last')
-        labels = latest['period_label'].drop_duplicates().tail(4)
-        subset = latest.loc[latest['period_label'].isin(labels)]
-        return float(subset['reported_value'].sum()), 'sum of latest disclosed quarters'
-    annual = work.loc[work['period_label'].str.startswith('FY', na=False)]
-    source = annual if not annual.empty else work
-    row = source.sort_values('period_end').drop_duplicates(['period_label', 'metric'], keep='last').iloc[-1]
-    label = str(row.get('period_label') or 'latest period')
-    return float(row['reported_value']), f'{label} official'
+        quarterly['__quarter'] = quarterly['period_end'].dt.to_period('Q')
+        latest = quarterly.sort_values('period_end').drop_duplicates('__quarter', keep='last')
+        latest_q = latest['__quarter'].max()
+        expected = {latest_q - offset for offset in range(4)} if pd.notna(latest_q) else set()
+        if expected and set(latest['__quarter'].dropna()) >= expected:
+            subset = latest.loc[latest['__quarter'].isin(expected)]
+            latest_row = latest.loc[latest['__quarter'].eq(latest_q)].iloc[-1]
+            latest_label = _text(latest_row.get('period_label')) or str(latest_q)
+            return float(subset['reported_value'].sum()), f'LTM to {latest_label}{basis_suffix}'
+    annual = work.loc[
+        work['period_label'].str.match(r'^(?:FY|\d{4}$)', na=False)
+    ].copy()
+    if not annual.empty:
+        source = annual
+        row = source.sort_values('period_end').iloc[-1]
+        label = _text(row.get('period_label')) or 'latest annual period'
+        return float(row['reported_value']), f'{label} official{basis_suffix} · quarterly coverage incomplete'
+    return None, 'unavailable · quarterly coverage incomplete'
 
 def _company_earnings_actuals(
     snapshot: ControlTowerSnapshot,
@@ -1614,21 +1960,18 @@ def _answer_first_summary_lines(
         lines.append("Recent corporate action unavailable · no selected-listing rows.")
     else:
         actions = view.corporate_actions.copy()
-        sort_column = next(
-            (
-                column
-                for column in ("execution_date", "filing_date", "retrieved_at_utc")
-                if column in actions.columns and actions[column].notna().any()
-            ),
-            None,
+        actions = actions.assign(
+            __action_date=_corporate_action_dates(actions)
+        ).sort_values(
+            "__action_date", ascending=False, na_position="last", kind="mergesort"
         )
-        if sort_column:
-            actions = actions.sort_values(sort_column, ascending=False, na_position="last")
         action = actions.iloc[0]
         action_type = _text(action.get("action_type")).replace("_", " ").strip().title()
         action_date = _summary_date(action.get("execution_date"))
         if not action_date:
             action_date = _summary_date(action.get("filing_date"))
+        if not action_date:
+            action_date = _summary_date(action.get("published_at"))
         shares = _format_number(action.get("shares_affected"), decimals=0)
         amount = _format_number(action.get("total_amount_paid"))
         currency = _text(action.get("currency"))
@@ -1649,9 +1992,13 @@ def _answer_first_summary_lines(
         lines.append("Expectation context unavailable · no provider consensus rows.")
     else:
         consensus = view.consensus.copy()
-        if "snapshot_at" in consensus.columns and consensus["snapshot_at"].notna().any():
-            consensus = consensus.sort_values("snapshot_at", ascending=False, na_position="last")
-        row = consensus.iloc[0]
+        eps_rows, _ = _select_fy1_consensus(consensus, "eps")
+        if not eps_rows.empty:
+            row = eps_rows.iloc[0]
+        else:
+            if "snapshot_at" in consensus.columns and consensus["snapshot_at"].notna().any():
+                consensus = consensus.sort_values("snapshot_at", ascending=False, na_position="last")
+            row = consensus.iloc[0]
         metric = _text(row.get("metric")).replace("_", " ").strip().title()
         value = _format_number(row.get("value"))
         currency = _text(row.get("currency"))
@@ -1699,15 +2046,21 @@ def _answer_first_summary_lines(
     if event is None:
         lines.append("Upcoming catalyst unavailable · no future linked event rows.")
     else:
-        start = pd.to_datetime(event.get("starts_at"), errors="coerce", utc=True)
-        end = pd.to_datetime(event.get("ends_at"), errors="coerce", utc=True)
-        if pd.isna(start):
-            start = None
-        if pd.isna(end):
-            end = start
+        interval = resolve_catalyst_interval(
+            event.get("starts_at"),
+            event.get("ends_at"),
+            date_precision=event.get("date_precision"),
+            source_tz=event.get("source_timezone"),
+        )
+        start = interval.start_utc
+        end = parse_timestamp_utc(
+            event.get("ends_at"),
+            source_tz=event.get("source_timezone"),
+        )
         precision = _text(event.get("date_precision")) or "day"
         window_label = format_event_window(start, end, precision, "UTC")
-        is_active = is_active_catalyst(event.get("starts_at"), event.get("ends_at"), snapshot.now_utc)
+        lifecycle = catalyst_state_for_row(event.to_dict(), snapshot.now_utc)
+        is_active = lifecycle == "active"
         catalyst_prefix = "Active catalyst" if is_active else "Upcoming catalyst"
         lines.append(
             f"{catalyst_prefix} · {_text(event.get('title')) or 'title unavailable'} · "
@@ -1773,7 +2126,7 @@ def _render_company_hero_card(
     if not view.quote_snapshots.empty and view.entity_type != 'private':
         qrow = view.quote_snapshots.iloc[0]
         last_price = qrow.get('last_price')
-        qccy = _text(qrow.get('currency')) or currency or 'HKD'
+        qccy = _text(qrow.get('currency')) or currency
         price_val_str = f'{qccy} {last_price:,.2f}'.strip() if pd.notna(last_price) else ''
         day_change = qrow.get('day_change_pct')
         if pd.notna(day_change) and isinstance(day_change, (int, float)):
@@ -1785,9 +2138,23 @@ def _render_company_hero_card(
         qtime = qrow.get('quote_timestamp')
         age_str = format_quote_age(qtime, snapshot.now_utc)
         freshness = _text(qrow.get('freshness')) or 'delayed'
+        is_local_overlay = _text(qrow.get('is_local_overlay')).casefold() in {'true', '1', 'yes'}
         if price_val_str:
             change_badge = f'<span class="ct-hero-change {change_class}">{escape(change_str)}</span>' if change_str else ''
-            price_html = f'<div class="ct-hero-price-box"><div class="ct-hero-price">{escape(price_val_str)}</div>{change_badge}<div class="ct-subtle" style="font-size: 0.76rem; margin-left: 0.2rem;">{escape(freshness)} ({escape(age_str)})</div></div>'
+            overlay_badge = (
+                '<span class="ct-badge" style="color: var(--ct-warning); border-color: var(--ct-warning); font-weight: 750;">⚡ Local quote overlay</span>'
+                if is_local_overlay else ''
+            )
+            quote_origin = (
+                'Local quote overlay · outside frozen published generation'
+                if is_local_overlay else f'Published quote snapshot · {snapshot.build_id}'
+            )
+            price_html = (
+                f'<div class="ct-hero-price-box"><div class="ct-hero-price">{escape(price_val_str)}</div>{change_badge}'
+                f'<div class="ct-subtle" style="font-size: 0.76rem; margin-left: 0.2rem;">{escape(freshness)} ({escape(age_str)})</div>'
+                f'<div style="margin-top: 0.3rem;">{overlay_badge}</div>'
+                f'<div class="ct-subtle" style="font-size: 0.7rem; margin-left: 0.2rem; margin-top: 0.2rem;">{escape(quote_origin)}</div></div>'
+            )
 
     actuals = _company_earnings_actuals(snapshot, view)
     ltm_rev_str = 'Unavailable'
@@ -1796,23 +2163,44 @@ def _render_company_hero_card(
     buyback_str = 'Unavailable'
     ltm_rev_sub = 'Official issuer actuals'
     ltm_profit_sub = 'Official issuer actuals'
+    ltm_fcf_sub = 'Latest Reported Period'
     if not actuals.empty:
+        actuals_curr = _text(actuals['currency'].dropna().iloc[0]) if ('currency' in actuals.columns and not actuals['currency'].dropna().empty) else ""
+        profile = get_company_profile(view.entity_id)
+        if not actuals_curr and profile:
+            actuals_curr = _text(profile.reporting_currency)
+        curr_sym = _currency_symbol(actuals_curr) if actuals_curr else (profile.reporting_currency_symbol if (profile and profile.reporting_currency_symbol) else "")
+
         rev_val, rev_note = _latest_reported_kpi(actuals, ('revenue_total', 'revenue'))
         if rev_val is not None:
-            ltm_rev_str = f'¥{rev_val/1e9:,.1f}B' if abs(rev_val) >= 1e9 else f'¥{rev_val:,.0f}'
+            ltm_rev_str = f'{curr_sym}{rev_val/1e9:,.1f}B' if abs(rev_val) >= 1e9 else f'{curr_sym}{rev_val:,.0f}'
             ltm_rev_sub = rev_note
         profit_val, profit_note = _latest_reported_kpi(actuals, ('net_profit_attributable', 'net_income'))
         if profit_val is not None:
-            ltm_profit_str = f'¥{profit_val/1e9:,.1f}B' if abs(profit_val) >= 1e9 else f'¥{profit_val:,.0f}'
+            ltm_profit_str = f'{curr_sym}{profit_val/1e9:,.1f}B' if abs(profit_val) >= 1e9 else f'{curr_sym}{profit_val:,.0f}'
             ltm_profit_sub = profit_note
         fcf_val, fcf_note = _latest_reported_kpi(actuals, ('free_cash_flow',))
         if fcf_val is not None:
-            ltm_fcf_str = f'¥{fcf_val/1e9:,.1f}B' if abs(fcf_val) >= 1e9 else f'¥{fcf_val:,.0f}'
+            ltm_fcf_str = f'{curr_sym}{fcf_val/1e9:,.1f}B' if abs(fcf_val) >= 1e9 else f'{curr_sym}{fcf_val:,.0f}'
+            if fcf_note != 'unavailable':
+                ltm_fcf_sub = fcf_note
 
-    if not view.corporate_actions.empty:
-        tot_bb = view.corporate_actions['total_amount_paid'].dropna().sum()
-        if tot_bb > 0:
-            buyback_str = f'HK$ {tot_bb/1e9:,.1f}B YTD'
+    buybacks = _buyback_actions(view.corporate_actions)
+    if not buybacks.empty:
+        ca_df = buybacks.copy()
+        ca_dates = _corporate_action_dates(ca_df)
+        ca_curr = _text(ca_df['currency'].dropna().iloc[0]) if ('currency' in ca_df.columns and not ca_df['currency'].dropna().empty) else ""
+        ca_sym = _currency_symbol(ca_curr) if ca_curr else "reported currency"
+        if ca_dates.notna().any():
+            latest_year = ca_dates.dropna().dt.year.max()
+            ytd_mask = ca_dates.dt.year.eq(latest_year)
+            tot_bb = pd.to_numeric(ca_df.loc[ytd_mask, 'total_amount_paid'], errors='coerce').dropna().sum()
+            if tot_bb > 0:
+                buyback_str = f'{ca_sym} {tot_bb/1e9:,.1f}B FY{latest_year} YTD'
+        else:
+            tot_bb = pd.to_numeric(ca_df['total_amount_paid'], errors='coerce').dropna().sum()
+            if tot_bb > 0:
+                buyback_str = f'{ca_sym} {tot_bb/1e9:,.1f}B Cumulative'
 
     ticker_badge = f'<span class="ct-hero-ticker">{escape(ticker)}</span>' if ticker else ''
     profile = get_company_profile(view.entity_id)
@@ -1828,7 +2216,7 @@ def _render_company_hero_card(
     sector_badge = f'<span class="ct-badge">{escape(view.sector)}</span>' if view.sector else ''
     industry_badge = f'<span class="ct-badge">{escape(view.industry)}</span>' if view.industry else ''
     buyback_sub = 'Selected-listing statutory filings'
-    hero_html = f'<div class="ct-hero-card"><div class="ct-hero-top"><div><div class="ct-hero-title">{escape(view.display_name)} {ticker_badge} {exchange_badge}</div><div class="ct-subtle" style="margin-top: 0.25rem;">{escape(view.legal_name)} · {escape(view.country)} {sector_badge} {industry_badge}</div></div>{price_html}</div><div class="ct-kpi-grid"><div class="ct-kpi-card"><div class="ct-kpi-label">Latest Revenue</div><div class="ct-kpi-value">{escape(ltm_rev_str)}</div><div class="ct-kpi-sub">{escape(ltm_rev_sub)}</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Latest Net Profit</div><div class="ct-kpi-value">{escape(ltm_profit_str)}</div><div class="ct-kpi-sub">{escape(ltm_profit_sub)}</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Free Cash Flow</div><div class="ct-kpi-value">{escape(ltm_fcf_str)}</div><div class="ct-kpi-sub">Latest Reported Period</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Capital Return / Buybacks</div><div class="ct-kpi-value">{escape(buyback_str)}</div><div class="ct-kpi-sub">{escape(buyback_sub)}</div></div></div></div>'
+    hero_html = f'<div class="ct-hero-card"><div class="ct-hero-top"><div><div class="ct-hero-title">{escape(view.display_name)} {ticker_badge} {exchange_badge}</div><div class="ct-subtle" style="margin-top: 0.25rem;">{escape(view.legal_name)} · {escape(view.country)} {sector_badge} {industry_badge}</div></div>{price_html}</div><div class="ct-kpi-grid"><div class="ct-kpi-card"><div class="ct-kpi-label">Latest Revenue</div><div class="ct-kpi-value">{escape(ltm_rev_str)}</div><div class="ct-kpi-sub">{escape(ltm_rev_sub)}</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Latest Net Profit</div><div class="ct-kpi-value">{escape(ltm_profit_str)}</div><div class="ct-kpi-sub">{escape(ltm_profit_sub)}</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Free Cash Flow</div><div class="ct-kpi-value">{escape(ltm_fcf_str)}</div><div class="ct-kpi-sub">{escape(ltm_fcf_sub)}</div></div><div class="ct-kpi-card"><div class="ct-kpi-label">Capital Return / Buybacks</div><div class="ct-kpi-value">{escape(buyback_str)}</div><div class="ct-kpi-sub">{escape(buyback_sub)}</div></div></div></div>'
     st.markdown(hero_html, unsafe_allow_html=True)
     if actuals.empty:
         st.caption('Official LTM cards stay unavailable when issuer actuals are absent. A labelled yfinance/akshare overlay, if present, is on Fundamentals and is not written into these KPIs.')
@@ -1869,7 +2257,10 @@ def _render_styled_bullet_card(line: str) -> None:
     if url_match:
         url = url_match.group(0)
         clean_line = line.replace(url, "").strip(" ·").strip()
-        source_link_html = f' · <a class="ct-inline-link" href="{escape(url)}" target="_blank" rel="noopener">Official Source ↗</a>'
+        # Summary lines can point to issuer filings, vendor consensus, or
+        # market-data pages.  A generic label keeps provenance honest; the
+        # source/provider text remains visible in ``clean_line``.
+        source_link_html = f' · <a class="ct-inline-link" href="{escape(url)}" target="_blank" rel="noopener">Open source ↗</a>'
     card_html = f'<div class="ct-change" style="padding: 0.6rem 0.85rem; background: var(--ct-surface); border-radius: 9px; margin-bottom: 0.5rem; border: 1px solid var(--ct-border);"><div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.25rem;"><span class="ct-badge" style="{badge_style}; padding: 0.12rem 0.45rem; font-size: 0.72rem; font-weight: 750;">{icon} {escape(label)}</span></div><div style="font-size: 0.86rem; line-height: 1.45; color: var(--ct-ink);">{escape(clean_line)}{source_link_html}</div></div>'
     st.markdown(card_html, unsafe_allow_html=True)
 
@@ -1976,27 +2367,71 @@ def _render_overview_tab(
 
 
 def _build_quarterly_financial_pivot(frame: pd.DataFrame, n_periods: int = 8, profile=None) -> pd.DataFrame:
-    if frame.empty:
+    if frame is None or frame.empty or not {"period_label", "period_end", "metric", "reported_value"}.issubset(frame.columns):
         return pd.DataFrame()
     df = frame.copy()
     df['period_end'] = pd.to_datetime(df['period_end'], errors='coerce')
+    df['period_label'] = df['period_label'].astype('string')
+    df['metric'] = df['metric'].astype('string')
+    df['reported_value'] = pd.to_numeric(df['reported_value'], errors='coerce')
+    df['accounting_basis'] = df.get(
+        'accounting_basis', pd.Series('', index=df.index, dtype='string')
+    ).astype('string')
+    df['__basis_family'] = df['accounting_basis'].map(_accounting_basis_family)
     period_map = df[['period_label', 'period_end']].dropna().drop_duplicates().sort_values('period_end')
     if period_map.empty:
         return pd.DataFrame()
     all_periods = period_map['period_label'].tolist()
     recent_periods = period_map.tail(n_periods)['period_label'].tolist()
-    tot_rev = {}
-    non_ifrs_op = {}
-    non_ifrs_np = {}
+
+    def _metric_map(metric: str, family: str) -> dict[str, float | None]:
+        subset = df.loc[
+            df['metric'].eq(metric) & df['__basis_family'].eq(family),
+            ['period_label', 'period_end', 'reported_value'],
+        ].copy()
+        if subset.empty:
+            return {}
+        sort_columns = [column for column in ('period_end', 'filing_at', 'version') if column in df.columns]
+        if sort_columns:
+            subset = df.loc[
+                df['metric'].eq(metric) & df['__basis_family'].eq(family)
+            ].copy()
+            subset['reported_value'] = pd.to_numeric(subset['reported_value'], errors='coerce')
+            subset = subset.sort_values(sort_columns, ascending=True, na_position='first')
+        subset = subset.dropna(subset=['reported_value']).drop_duplicates('period_label', keep='last')
+        return {
+            _text(row['period_label']): float(row['reported_value'])
+            for _, row in subset.iterrows()
+            if _text(row['period_label']) and pd.notna(row['reported_value'])
+        }
+
+    tot_rev = _metric_map('revenue_total', 'reported')
+    adjusted_op = _metric_map('operating_profit', 'adjusted')
+    adjusted_np = _metric_map('net_profit_attributable', 'adjusted')
+
+    period_to_q = {}
+    q_to_rev = {}
     for p in all_periods:
-        sub_rev = df[(df['period_label'] == p) & (df['metric'] == 'revenue_total') & (df['accounting_basis'] == 'IFRS')]
-        tot_rev[p] = float(sub_rev.iloc[0]['reported_value']) if not sub_rev.empty and pd.notna(sub_rev.iloc[0]['reported_value']) else None
-        sub_op = df[(df['period_label'] == p) & (df['metric'] == 'operating_profit') & (df['accounting_basis'] == 'Non-IFRS management measure')]
-        non_ifrs_op[p] = float(sub_op.iloc[0]['reported_value']) if not sub_op.empty and pd.notna(sub_op.iloc[0]['reported_value']) else None
-        sub_np = df[(df['period_label'] == p) & (df['metric'] == 'net_profit_attributable') & (df['accounting_basis'] == 'Non-IFRS management measure')]
-        non_ifrs_np[p] = float(sub_np.iloc[0]['reported_value']) if not sub_np.empty and pd.notna(sub_np.iloc[0]['reported_value']) else None
+        sub_map = period_map.loc[period_map['period_label'] == p]
+        p_end = sub_map['period_end'].iloc[0] if not sub_map.empty else None
+        q = None
+        try:
+            q = pd.Period(p, freq='Q')
+        except (TypeError, ValueError):
+            if p_end is not None and pd.notna(p_end):
+                try:
+                    q = pd.Period(p_end, freq='Q')
+                except (TypeError, ValueError):
+                    q = None
+        if q is not None:
+            period_to_q[p] = q
+            if tot_rev.get(p) is not None:
+                q_to_rev[q] = tot_rev[p]
+
     profile = profile or get_company_profile(None)
-    symbol = profile.reporting_currency_symbol or '¥'
+    df_curr = _text(df['currency'].dropna().iloc[0]) if ('currency' in df.columns and not df['currency'].dropna().empty) else ""
+    symbol = _currency_symbol(df_curr) if df_curr else (profile.reporting_currency_symbol if profile else '')
+    curr_code = df_curr or (profile.reporting_currency if profile else '') or 'currency unavailable'
     present_metrics = set(df.get('metric', pd.Series(dtype='string')).astype('string'))
     segment_rows = []
     seen_labels = set()
@@ -2015,60 +2450,71 @@ def _build_quarterly_financial_pivot(frame: pd.DataFrame, n_periods: int = 8, pr
     formatted_segments = []
     for idx, (metric, label) in enumerate(segment_rows):
         prefix = '  └─ ' if idx == len(segment_rows) - 1 else '  ├─ '
-        formatted_segments.append((f'{prefix}{label}', metric, 'IFRS', 1e9, symbol + '{:.1f}B'))
+        formatted_segments.append((f'{prefix}{label}', metric, 'reported', 1e9, symbol + '{:.1f}B'))
+    reported_label = _basis_display_label(df, 'reported', 'Reported')
+    adjusted_label = _basis_display_label(df, 'adjusted', 'Adjusted / management')
     row_specs = [
-        (f'Revenue: Total ({profile.reporting_currency} B)', 'revenue_total', 'IFRS', 1e9, symbol + '{:.1f}B'),
+        (f'Revenue: Total ({curr_code} B)', 'revenue_total', 'reported', 1e9, symbol + '{:.1f}B'),
         *formatted_segments,
         ('YoY Revenue Growth (%)', '__yoy_rev__', '', 1.0, '{:+.1f}%'),
         ('QoQ Revenue Growth (%)', '__qoq_rev__', '', 1.0, '{:+.1f}%'),
-        (f'Operating Profit (Non-IFRS, {profile.reporting_currency} B)', 'operating_profit', 'Non-IFRS management measure', 1e9, symbol + '{:.1f}B'),
-        ('Non-IFRS Operating Margin (%)', '__non_ifrs_op_margin__', '', 1.0, '{:.1f}%'),
-        (f'Operating Profit (IFRS, {profile.reporting_currency} B)', 'operating_profit', 'IFRS', 1e9, symbol + '{:.1f}B'),
-        (f'Net Profit (Non-IFRS, {profile.reporting_currency} B)', 'net_profit_attributable', 'Non-IFRS management measure', 1e9, symbol + '{:.1f}B'),
-        ('Non-IFRS Net Margin (%)', '__non_ifrs_net_margin__', '', 1.0, '{:.1f}%'),
-        (f'Net Profit (IFRS, {profile.reporting_currency} B)', 'net_profit_attributable', 'IFRS', 1e9, symbol + '{:.1f}B'),
-        (f'Diluted EPS (Non-IFRS, {profile.reporting_currency})', 'diluted_eps', 'Non-IFRS management measure', 1.0, symbol + '{:.2f}'),
-        (f'Free Cash Flow ({profile.reporting_currency} B)', 'free_cash_flow', 'Non-IFRS management measure', 1e9, symbol + '{:.1f}B'),
-        (f'CapEx ({profile.reporting_currency} B)', 'capex', 'IFRS', 1e9, symbol + '{:.1f}B'),
+        (f'Operating Profit ({adjusted_label}, {curr_code} B)', 'operating_profit', 'adjusted', 1e9, symbol + '{:.1f}B'),
+        (f'{adjusted_label} Operating Margin (%)', '__adjusted_op_margin__', '', 1.0, '{:.1f}%'),
+        (f'Operating Profit ({reported_label}, {curr_code} B)', 'operating_profit', 'reported', 1e9, symbol + '{:.1f}B'),
+        (f'Net Profit ({adjusted_label}, {curr_code} B)', 'net_profit_attributable', 'adjusted', 1e9, symbol + '{:.1f}B'),
+        (f'{adjusted_label} Net Margin (%)', '__adjusted_net_margin__', '', 1.0, '{:.1f}%'),
+        (f'Net Profit ({reported_label}, {curr_code} B)', 'net_profit_attributable', 'reported', 1e9, symbol + '{:.1f}B'),
+        (f'Diluted EPS ({adjusted_label}, {curr_code})', 'diluted_eps', 'adjusted', 1.0, symbol + '{:.2f}'),
+        (f'Free Cash Flow ({curr_code} B)', 'free_cash_flow', 'adjusted', 1e9, symbol + '{:.1f}B'),
+        (f'CapEx ({curr_code} B)', 'capex', 'reported', 1e9, symbol + '{:.1f}B'),
     ]
     result_rows = []
     for label, metric, basis, scale, fmt in row_specs:
         row_data = {'Metric': label}
         for period in recent_periods:
-            p_idx = all_periods.index(period)
+            q = period_to_q.get(period)
             if metric == '__yoy_rev__':
-                if p_idx >= 4 and tot_rev.get(period) and tot_rev.get(all_periods[p_idx-4]):
-                    cur = tot_rev[period]
-                    prior = tot_rev[all_periods[p_idx-4]]
-                    row_data[period] = fmt.format(((cur / prior) - 1.0) * 100.0)
+                prior_q = (q - 4) if q is not None else None
+                prior_val = q_to_rev.get(prior_q) if prior_q is not None else None
+                cur_val = tot_rev.get(period)
+                if cur_val is not None and prior_val is not None and prior_val != 0:
+                    growth = ((cur_val / prior_val) - 1.0) * 100.0
+                    row_data[period] = fmt.format(growth) if pd.notna(growth) else '-'
                 else:
                     row_data[period] = '-'
             elif metric == '__qoq_rev__':
-                if p_idx >= 1 and tot_rev.get(period) and tot_rev.get(all_periods[p_idx-1]):
-                    cur = tot_rev[period]
-                    prior = tot_rev[all_periods[p_idx-1]]
-                    row_data[period] = fmt.format(((cur / prior) - 1.0) * 100.0)
+                prior_q = (q - 1) if q is not None else None
+                prior_val = q_to_rev.get(prior_q) if prior_q is not None else None
+                cur_val = tot_rev.get(period)
+                if cur_val is not None and prior_val is not None and prior_val != 0:
+                    growth = ((cur_val / prior_val) - 1.0) * 100.0
+                    row_data[period] = fmt.format(growth) if pd.notna(growth) else '-'
                 else:
                     row_data[period] = '-'
-            elif metric == '__non_ifrs_op_margin__':
-                if tot_rev.get(period) and non_ifrs_op.get(period):
-                    row_data[period] = fmt.format((non_ifrs_op[period] / tot_rev[period]) * 100.0)
+            elif metric == '__adjusted_op_margin__':
+                if tot_rev.get(period) is not None and adjusted_op.get(period) is not None and tot_rev.get(period) != 0:
+                    margin = (adjusted_op[period] / tot_rev[period]) * 100.0
+                    row_data[period] = fmt.format(margin) if pd.notna(margin) else '-'
                 else:
                     row_data[period] = '-'
-            elif metric == '__non_ifrs_net_margin__':
-                if tot_rev.get(period) and non_ifrs_np.get(period):
-                    row_data[period] = fmt.format((non_ifrs_np[period] / tot_rev[period]) * 100.0)
+            elif metric == '__adjusted_net_margin__':
+                if tot_rev.get(period) is not None and adjusted_np.get(period) is not None and tot_rev.get(period) != 0:
+                    margin = (adjusted_np[period] / tot_rev[period]) * 100.0
+                    row_data[period] = fmt.format(margin) if pd.notna(margin) else '-'
                 else:
                     row_data[period] = '-'
             else:
                 subset = df[(df['period_label'] == period) & (df['metric'] == metric)]
                 if basis:
-                    subset = subset[subset['accounting_basis'] == basis]
+                    subset = subset[subset['__basis_family'] == basis]
                 if not subset.empty:
                     val = subset.iloc[0]['reported_value']
                     if pd.notna(val):
-                        scaled = float(val) / scale
-                        row_data[period] = fmt.format(scaled)
+                        try:
+                            scaled = float(val) / scale
+                            row_data[period] = fmt.format(scaled)
+                        except (TypeError, ValueError):
+                            row_data[period] = '-'
                     else:
                         row_data[period] = '-'
                 else:
@@ -2199,29 +2645,54 @@ def _quarterly_profitability_frame(frame: pd.DataFrame) -> pd.DataFrame:
     """Derive quarterly operating/net margins from issuer actuals.
 
     Gross margin is omitted because gross profit is not in the earnings-actuals mart.
+    Adjusted operating/net profit is preferred when the issuer reports it;
+    reported GAAP/IFRS values are the explicit fallback for companies without
+    a separate management measure.
     """
     empty = pd.DataFrame(columns=[
         'period', 'period_end', 'revenue_rmb_b', 'operating_profit_non_ifrs_rmb_b',
         'net_profit_non_ifrs_rmb_b', 'operating_margin_pct', 'net_margin_pct', 'ifrs_operating_margin_pct',
+        'operating_basis_label', 'net_basis_label', 'revenue_basis_label',
     ])
-    if frame is None or frame.empty:
+    if frame is None or frame.empty or not {'period_label', 'period_end', 'metric', 'reported_value'}.issubset(frame.columns):
         return empty
     df = frame.copy()
     df['period_end'] = pd.to_datetime(df['period_end'], errors='coerce')
+    df['period_label'] = df['period_label'].astype('string')
+    df['metric'] = df['metric'].astype('string')
+    df['reported_value'] = pd.to_numeric(df['reported_value'], errors='coerce')
+    df['accounting_basis'] = df.get(
+        'accounting_basis', pd.Series('', index=df.index, dtype='string')
+    ).astype('string')
+    df['__basis_family'] = df['accounting_basis'].map(_accounting_basis_family)
     df = df.dropna(subset=['period_end'])
     if df.empty:
         return empty
 
-    def _series(metric: str, basis: str) -> pd.Series:
+    def _series(metric: str, family: str) -> pd.Series:
         subset = df.loc[
-            df['metric'].astype('string').eq(metric) & df['accounting_basis'].astype('string').eq(basis),
+            df['metric'].eq(metric) & df['__basis_family'].eq(family),
             ['period_label', 'period_end', 'reported_value'],
         ].copy()
         if subset.empty:
             return pd.Series(dtype='float64')
-        subset['reported_value'] = pd.to_numeric(subset['reported_value'], errors='coerce')
         subset = subset.sort_values('period_end').drop_duplicates('period_label', keep='last')
         return subset.set_index('period_label')['reported_value']
+
+    def _preferred_family(metric: str) -> str:
+        available = set(df.loc[df['metric'].eq(metric), '__basis_family'].dropna())
+        if 'adjusted' in available:
+            return 'adjusted'
+        if 'reported' in available:
+            return 'reported'
+        return ''
+
+    revenue_family = _preferred_family('revenue_total')
+    op_family = _preferred_family('operating_profit')
+    np_family = _preferred_family('net_profit_attributable')
+    revenue_label = _basis_display_label(df, revenue_family, 'Basis unavailable') if revenue_family else 'Basis unavailable'
+    op_label = _basis_display_label(df, op_family, 'Basis unavailable') if op_family else 'Basis unavailable'
+    np_label = _basis_display_label(df, np_family, 'Basis unavailable') if np_family else 'Basis unavailable'
 
     periods = (
         df[['period_label', 'period_end']]
@@ -2230,10 +2701,10 @@ def _quarterly_profitability_frame(frame: pd.DataFrame) -> pd.DataFrame:
         .rename(columns={'period_label': 'period'})
     )
     out = periods.set_index('period')
-    out['revenue'] = _series('revenue_total', 'IFRS')
-    out['op_non_ifrs'] = _series('operating_profit', 'Non-IFRS management measure')
-    out['np_non_ifrs'] = _series('net_profit_attributable', 'Non-IFRS management measure')
-    out['op_ifrs'] = _series('operating_profit', 'IFRS')
+    out['revenue'] = _series('revenue_total', revenue_family) if revenue_family else pd.Series(dtype='float64')
+    out['op_non_ifrs'] = _series('operating_profit', op_family) if op_family else pd.Series(dtype='float64')
+    out['np_non_ifrs'] = _series('net_profit_attributable', np_family) if np_family else pd.Series(dtype='float64')
+    out['op_ifrs'] = _series('operating_profit', 'reported')
     out = out.reset_index()
     out['revenue_rmb_b'] = pd.to_numeric(out['revenue'], errors='coerce') / 1e9
     out['operating_profit_non_ifrs_rmb_b'] = pd.to_numeric(out['op_non_ifrs'], errors='coerce') / 1e9
@@ -2242,28 +2713,35 @@ def _quarterly_profitability_frame(frame: pd.DataFrame) -> pd.DataFrame:
     out['operating_margin_pct'] = (pd.to_numeric(out['op_non_ifrs'], errors='coerce') / revenue * 100.0).where(revenue > 0)
     out['net_margin_pct'] = (pd.to_numeric(out['np_non_ifrs'], errors='coerce') / revenue * 100.0).where(revenue > 0)
     out['ifrs_operating_margin_pct'] = (pd.to_numeric(out['op_ifrs'], errors='coerce') / revenue * 100.0).where(revenue > 0)
+    out['operating_basis_label'] = op_label
+    out['net_basis_label'] = np_label
+    out['revenue_basis_label'] = revenue_label
     keep = [
         'period', 'period_end', 'revenue_rmb_b', 'operating_profit_non_ifrs_rmb_b',
         'net_profit_non_ifrs_rmb_b', 'operating_margin_pct', 'net_margin_pct', 'ifrs_operating_margin_pct',
+        'operating_basis_label', 'net_basis_label', 'revenue_basis_label',
     ]
     return out.loc[:, keep].dropna(subset=['operating_profit_non_ifrs_rmb_b', 'operating_margin_pct'], how='all')
 
 
-def _profit_margin_chart(frame: pd.DataFrame, currency: str = 'CNY'):
+def _profit_margin_chart(frame: pd.DataFrame, currency: str = ''):
     # The financial matrix reads its currency from the company profile; these
     # axis titles said RMB regardless, so a non-CNY reporter would have had a
     # currency-aware table sitting above a chart contradicting it.
     plot = frame.copy().set_index('period')
+    currency_label = currency or 'currency unavailable'
+    op_label = _text(frame.get('operating_basis_label', pd.Series(dtype='string')).iloc[0]) if 'operating_basis_label' in frame.columns and not frame['operating_basis_label'].empty else 'Adjusted / management'
+    net_label = _text(frame.get('net_basis_label', pd.Series(dtype='string')).iloc[0]) if 'net_basis_label' in frame.columns and not frame['net_basis_label'].empty else op_label
     return dual_axis_bar_line(
         plot,
         bar_column='operating_profit_non_ifrs_rmb_b',
         line_columns=['operating_margin_pct', 'net_margin_pct'],
-        bar_title=f'Non-IFRS operating profit ({currency} B)',
+        bar_title=f'{op_label} operating profit ({currency_label} B)',
         line_title='Margin (%)',
-        bar_name=f'Non-IFRS operating profit ({currency} B)',
+        bar_name=f'{op_label} operating profit ({currency_label} B)',
         line_names={
-            'operating_margin_pct': 'Non-IFRS operating margin',
-            'net_margin_pct': 'Non-IFRS net margin',
+            'operating_margin_pct': f'{op_label} operating margin',
+            'net_margin_pct': f'{net_label} net margin',
         },
         bar_format=',.1f',
         line_format='.1f',
@@ -2281,31 +2759,17 @@ def _spot_forward_pe_payload(view: CompanyView) -> dict[str, Any] | None:
     if view.quote_snapshots.empty or view.consensus.empty:
         return None
     quote = view.quote_snapshots.iloc[0]
+    quote_timestamp = _timestamp(quote.get('quote_timestamp'))
+    freshness = _text(quote.get('freshness')).casefold()
+    if quote_timestamp is None or freshness not in {'live', 'delayed', 'stale'}:
+        return None
     price = pd.to_numeric(pd.Series([quote.get('last_price')]), errors='coerce').iloc[0]
     price_ccy = _text(quote.get('currency'))
     if pd.isna(price) or float(price) <= 0 or not price_ccy:
         return None
-    cons = view.consensus.copy()
-    metrics = cons.get('metric', pd.Series('', index=cons.index, dtype='string')).astype('string').str.lower()
-    horizons = cons.get('horizon', pd.Series('', index=cons.index, dtype='string')).astype('string').str.lower()
-    periods = cons.get('fiscal_period', pd.Series('', index=cons.index, dtype='string')).astype('string').str.lower()
-    annual = cons.loc[metrics.eq('eps') & (horizons.eq('0y') | periods.eq('annual'))].copy()
-    if annual.empty:
+    eps, is_fy1 = _select_fy1_consensus(view.consensus, "eps")
+    if eps.empty:
         return None
-    # FY1 is the `0y` horizon. `fiscal_period == 'annual'` on its own also
-    # matches +1y/+2y rows, and one capture stamps every fiscal year with the
-    # same snapshot_at, so ordering by snapshot_at alone returned whichever
-    # year happened to be stored first -- FY2 for every real generation. Pin
-    # 0y, and fall back to the earliest annual year only when no 0y row exists.
-    fy1 = annual.loc[horizons.reindex(annual.index).eq('0y')]
-    is_fy1 = not fy1.empty
-    eps = fy1 if is_fy1 else annual
-    if not is_fy1 and 'fiscal_year' in eps.columns:
-        eps = eps.assign(__fiscal_year=pd.to_numeric(eps['fiscal_year'], errors='coerce'))
-        eps = eps.sort_values('__fiscal_year', na_position='last', kind='mergesort')
-    if 'snapshot_at' in eps.columns and eps['snapshot_at'].notna().any():
-        # Stable, so the fiscal-year order above survives inside one capture.
-        eps = eps.sort_values('snapshot_at', ascending=False, na_position='last', kind='mergesort')
     row = eps.iloc[0]
     eps_value = pd.to_numeric(pd.Series([row.get('value')]), errors='coerce').iloc[0]
     eps_ccy = _text(row.get('currency'))
@@ -2317,6 +2781,8 @@ def _spot_forward_pe_payload(view: CompanyView) -> dict[str, Any] | None:
     pe_value = float(price) / eps_num if eps_num > 0 else None
     return {
         'price': float(price),
+        'quote_timestamp': quote_timestamp,
+        'freshness': freshness or 'unclassified',
         'eps': eps_num,
         'pe': pe_value,
         'price_ccy': price_ccy,
@@ -2327,21 +2793,23 @@ def _spot_forward_pe_payload(view: CompanyView) -> dict[str, Any] | None:
         'provider': _text(row.get('provider')) or 'unattributed',
         'analyst_count': row.get('analyst_count'),
         'source_url': _text(row.get('source_url')),
+        'is_local_overlay': _text(quote.get('is_local_overlay')).casefold() in {'true', '1', 'yes'},
     }
 
 
-def _dual_axis_revenue_yoy_chart(frame: pd.DataFrame, currency: str = 'CNY'):
+def _dual_axis_revenue_yoy_chart(frame: pd.DataFrame, currency: str = ''):
     plot = frame.rename(columns={
         REVENUE_CHART_COLUMN: 'revenue_rmb_b',
         'YoY Growth (%)': 'yoy_pct',
     })
+    currency_label = currency or 'currency unavailable'
     return dual_axis_bar_line(
         plot,
         bar_column='revenue_rmb_b',
         line_columns=['yoy_pct'],
-        bar_title=f'Total Revenue ({currency} B)',
+        bar_title=f'Total Revenue ({currency_label} B)',
         line_title='YoY Growth (%)',
-        bar_name=f'Total revenue ({currency} B)',
+        bar_name=f'Total revenue ({currency_label} B)',
         line_names={'yoy_pct': 'YoY growth'},
         bar_format=',.1f',
         line_format='+.1f',
@@ -2350,7 +2818,12 @@ def _dual_axis_revenue_yoy_chart(frame: pd.DataFrame, currency: str = 'CNY'):
     )
 
 
-def _openrouter_daily_frame(raw: pd.DataFrame, profile=None) -> pd.DataFrame:
+def _openrouter_daily_frame(
+    raw: pd.DataFrame,
+    profile=None,
+    *,
+    as_of_utc: Any = None,
+) -> pd.DataFrame:
     """Sum OpenRouter activity for one company profile into a daily series."""
     empty_cols = ['usage_date', 'total_tokens', 'estimated_revenue', 'model_count', 'is_complete']
     filt = None if profile is None else profile.openrouter
@@ -2359,6 +2832,19 @@ def _openrouter_daily_frame(raw: pd.DataFrame, profile=None) -> pd.DataFrame:
     frame = raw.copy()
     if 'model_permaslug' not in frame.columns:
         return pd.DataFrame(columns=empty_cols)
+    if as_of_utc is not None:
+        # This mart is deliberately kept outside the published generation, but
+        # its observation dates still obey the selected frozen-vintage boundary
+        # when rendered alongside a generation snapshot.  The source only
+        # publishes day-grain observations, so the date is interpreted as
+        # midnight UTC by the shared predicate.
+        frame = filter_frame_to_as_of(
+            frame,
+            as_of_utc,
+            timestamp_columns=('usage_date',),
+        )
+        if frame.empty:
+            return pd.DataFrame(columns=empty_cols)
     slugs = frame['model_permaslug'].astype('string')
     origin = frame['model_origin_company'].astype('string') if 'model_origin_company' in frame.columns else pd.Series('', index=frame.index, dtype='string')
     entity = frame['entity_id'].astype('string').str.lower() if 'entity_id' in frame.columns else pd.Series('', index=frame.index, dtype='string')
@@ -2481,34 +2967,54 @@ def _local_quote_overlay_path() -> Path:
     return _control_tower_repo_root() / 'data' / 'normalized' / 'marts' / 'quote_snapshots_v1.parquet'
 
 
-def _newer_local_quotes(snapshot_quotes: pd.DataFrame) -> pd.DataFrame:
+def _newer_local_quotes(
+    snapshot_quotes: pd.DataFrame,
+    now_utc: Any = None,
+    *,
+    as_of_utc: Any = None,
+) -> pd.DataFrame:
     """Replace published quotes with a newer local mart, listing by listing.
 
     This does not rewrite the generation and never widens company scope to
     other tickers. Pytest keeps the snapshot fixture by skipping the overlay.
     """
     import os
-    if os.environ.get('PYTEST_CURRENT_TEST') or os.environ.get('CONTROL_TOWER_DISABLE_LOCAL_QUOTE_OVERLAY'):
-        return snapshot_quotes
     if snapshot_quotes is None or snapshot_quotes.empty or 'listing_id' not in snapshot_quotes.columns:
         return snapshot_quotes
+    published = snapshot_quotes.copy()
+    if 'quote_timestamp' not in published.columns:
+        return published
+    if 'is_local_overlay' not in published.columns:
+        published['is_local_overlay'] = False
+    published['quote_timestamp'] = pd.to_datetime(published['quote_timestamp'], errors='coerce', utc=True)
+    as_of = _timestamp(as_of_utc)
+    if as_of is not None:
+        # Both the frozen generation and the optional local overlay are
+        # evidence.  A live collector can contain rows newer than the
+        # generation's as-of time; those rows must not enter a historical
+        # company view or its display-only valuation ratio.
+        published = published.loc[
+            published['quote_timestamp'].isna() | published['quote_timestamp'].le(as_of)
+        ].copy()
+    if os.environ.get('PYTEST_CURRENT_TEST') or os.environ.get('CONTROL_TOWER_DISABLE_LOCAL_QUOTE_OVERLAY'):
+        return published
     path = _local_quote_overlay_path()
     if not path.is_file():
-        return snapshot_quotes
+        return published
     try:
         local = pd.read_parquet(path)
     except (OSError, ValueError):
-        return snapshot_quotes
+        return published
     if local.empty or 'listing_id' not in local.columns or 'quote_timestamp' not in local.columns:
-        return snapshot_quotes
+        return published
     local = local.copy()
     local['quote_timestamp'] = pd.to_datetime(local['quote_timestamp'], errors='coerce', utc=True)
-    published = snapshot_quotes.copy()
-    published['quote_timestamp'] = pd.to_datetime(published['quote_timestamp'], errors='coerce', utc=True)
+    if as_of is not None:
+        local = local.loc[local['quote_timestamp'].isna() | local['quote_timestamp'].le(as_of)].copy()
     wanted = set(published['listing_id'].astype('string'))
     local = local.loc[local['listing_id'].astype('string').isin(wanted)]
     if local.empty:
-        return snapshot_quotes
+        return published
     rows = []
     for listing_id, group in published.groupby(published['listing_id'].astype('string'), dropna=False):
         overlay = local.loc[local['listing_id'].astype('string').eq(str(listing_id))]
@@ -2518,13 +3024,39 @@ def _newer_local_quotes(snapshot_quotes: pd.DataFrame) -> pd.DataFrame:
         pub_ts = group['quote_timestamp'].max()
         loc_ts = overlay['quote_timestamp'].max()
         if pd.notna(loc_ts) and (pd.isna(pub_ts) or loc_ts > pub_ts):
-            rows.append(overlay.loc[overlay['quote_timestamp'].eq(loc_ts)].head(1))
+            overlay_row = overlay.loc[overlay['quote_timestamp'].eq(loc_ts)].head(1).copy()
+            overlay_row['is_local_overlay'] = True
+            rows.append(overlay_row)
         else:
             rows.append(group)
-    return pd.concat(rows, ignore_index=True)
+    merged = pd.concat(rows, ignore_index=True)
+    if not merged.empty:
+        merged = _safe_quote_descriptors(merged)
+        if now_utc is not None:
+            merged["freshness"] = merged.apply(
+                lambda row: classify_quote_freshness(
+                    row.get("quote_timestamp"),
+                    now_utc,
+                    "delayed",
+                ),
+                axis=1,
+            )
+        merged = merged.loc[
+            :, [column for column in COMPANY_QUOTE_COLUMNS if column in merged.columns]
+        ].copy()
+        for column in COMPANY_QUOTE_COLUMNS:
+            if column not in merged.columns:
+                merged[column] = pd.NA
+        merged = merged.loc[:, COMPANY_QUOTE_COLUMNS].sort_values(
+            ["listing_id", "quote_timestamp"],
+            ascending=[True, False],
+            na_position="last",
+            kind="mergesort",
+        ).reset_index(drop=True)
+    return merged
 
 
-def _load_southbound_holdings(spec) -> pd.DataFrame:
+def _load_southbound_holdings(spec, *, as_of_utc: Any = None) -> pd.DataFrame:
     if spec is None:
         return pd.DataFrame()
     if not isinstance(spec, dict):
@@ -2551,6 +3083,18 @@ def _load_southbound_holdings(spec) -> pd.DataFrame:
             if frame.empty:
                 continue
             frame = frame.copy()
+            if as_of_utc is not None:
+                # Eastmoney's individual Stock Connect mart is a daily
+                # observation series.  Filter its economic observation date,
+                # not the collector's batch retrieval time, so an old frozen
+                # view can still use historical rows from a later backfill.
+                frame = filter_frame_to_as_of(
+                    frame,
+                    as_of_utc,
+                    timestamp_columns=('hold_date',),
+                )
+                if frame.empty:
+                    continue
             frame['hold_date'] = pd.to_datetime(frame['hold_date'], errors='coerce')
             frame = frame.dropna(subset=['hold_date']).sort_values('hold_date').reset_index(drop=True)
             for column in ('holding_shares', 'holding_market_value', 'holding_share_pct'):
@@ -2588,7 +3132,12 @@ def _render_plotly(fig) -> None:
     st.plotly_chart(fig, width='stretch', theme=None, config={'displayModeBar': False})
 
 
-def _render_openrouter_module(view: CompanyView, profile) -> None:
+def _render_openrouter_module(
+    view: CompanyView,
+    profile,
+    *,
+    as_of_utc: Any = None,
+) -> None:
     filt = profile.openrouter
     if filt is None:
         return
@@ -2601,7 +3150,7 @@ def _render_openrouter_module(view: CompanyView, profile) -> None:
     # handles; a TypeError in the plotting path should surface.
     try:
         raw, source_path = _load_openrouter_raw()
-        daily = _openrouter_daily_frame(raw, profile)
+        daily = _openrouter_daily_frame(raw, profile, as_of_utc=as_of_utc)
     except (OSError, KeyError, ValueError) as exc:
         st.caption(f'OpenRouter signal temporarily unavailable: {exc}')
         return
@@ -2650,18 +3199,28 @@ def _render_openrouter_module(view: CompanyView, profile) -> None:
     else:
         _render_plotly(_plotly_bar_chart(token_plot / 1e9, y_title='Tokens (billions)', value_format=',.1f', hover_suffix='B', height=340, partial_mask=partial_mask))
         _render_plotly(_plotly_bar_chart(revenue_plot, colors=[ACCENT], y_title='Estimated revenue (USD)', value_format='$,.0f', height=300, partial_mask=partial_mask))
-    note = f'{granularity} {signal_name} and estimated-revenue totals, all models summed · {start} to {end} · source: {source_name}.'
+    as_of_label = ''
+    if as_of_utc is not None:
+        as_of_point = _timestamp(as_of_utc)
+        if as_of_point is not None:
+            as_of_label = f' · observations ≤ {as_of_point.strftime("%Y-%m-%d %H:%M UTC")}'
+    note = f'{granularity} {signal_name} and estimated-revenue totals, all models summed · {start} to {end}{as_of_label} · source: {source_name} (local mart; outside published generation).'
     if partial_n:
         note += f' Lighter bars are incomplete {granularity.lower()} periods shown as observed totals only; they are not nowcast.'
     st.caption(note + ' ' + (filt.caption or 'Estimated revenue is a priced-route reconstruction, not issuer billed revenue.'))
 
 
-def _render_southbound_module(view: CompanyView, profile) -> None:
+def _render_southbound_module(
+    view: CompanyView,
+    profile,
+    *,
+    as_of_utc: Any = None,
+) -> None:
     spec = _southbound_spec_from_view(view, profile)
     if spec is None:
         return
     _render_section_heading(4, '🌊 HKEX Southbound Stock Connect (港股通南向资金) Liquidity Signal', f'{_slugify(view.entity_id)}-southbound-flow')
-    holdings = _load_southbound_holdings(spec)
+    holdings = _load_southbound_holdings(spec, as_of_utc=as_of_utc)
     ticker = spec['canonical_ticker']
     if holdings.empty:
         code = spec['security_code']
@@ -2711,10 +3270,19 @@ def _render_southbound_module(view: CompanyView, profile) -> None:
     _render_plotly(_plotly_line_chart(pct_plot, colors=['#8B5CF6'], y_title='Holding share %', value_format='.2f', hover_suffix='%', height=240))
     start = holdings['hold_date'].min().strftime('%Y-%m-%d')
     end = holdings['hold_date'].max().strftime('%Y-%m-%d')
-    st.caption(f'{ticker} southbound ownership from Eastmoney/akshare stock_hsgt_individual_em · {start} to {end} · {len(holdings):,} daily rows. Rolling window only; this is not the 2014-onward market-wide southbound series.')
+    as_of_label = ''
+    if as_of_utc is not None:
+        as_of_point = _timestamp(as_of_utc)
+        if as_of_point is not None:
+            as_of_label = f' · observations ≤ {as_of_point.strftime("%Y-%m-%d %H:%M UTC")}'
+    st.caption(f'{ticker} southbound ownership from Eastmoney/akshare stock_hsgt_individual_em · {start} to {end} · {len(holdings):,} daily rows{as_of_label}. Local alternative-data mart is outside the published generation. Rolling window only; this is not the 2014-onward market-wide southbound series.')
 
 
-def _render_alternative_data_tab(view: CompanyView) -> None:
+def _render_alternative_data_tab(
+    view: CompanyView,
+    *,
+    as_of_utc: Any = None,
+) -> None:
     profile = get_company_profile(view.entity_id)
     _render_section_heading(4, 'Alternative data signals', f'alternative-data-{_slugify(view.entity_id)}')
     southbound_spec = _southbound_spec_from_view(view, profile)
@@ -2727,8 +3295,8 @@ def _render_alternative_data_tab(view: CompanyView) -> None:
         return
     if profile.alt_data_caption:
         st.caption(profile.alt_data_caption)
-    _render_openrouter_module(view, profile)
-    _render_southbound_module(view, profile)
+    _render_openrouter_module(view, profile, as_of_utc=as_of_utc)
+    _render_southbound_module(view, profile, as_of_utc=as_of_utc)
 
 
 
@@ -2836,10 +3404,11 @@ def _render_vendor_financials_overlay(view: CompanyView) -> VendorLoadResult:
                 on='period_end',
                 how='left',
             )
-        currency = _text(annual_rev.iloc[-1].get('currency')) or 'CNY'
+        currency = _text(annual_rev.iloc[-1].get('currency'))
+        currency_label = currency or 'source-reported currency unavailable'
         values = plot.set_index('period_end').apply(pd.to_numeric, errors='coerce') / 1e9
-        st.caption(f'yfinance annual statements via financial-data · values in {currency} billions · vendor reported, unverified · zeros dropped')
-        _render_plotly(_plotly_bar_chart(values, y_title=f'{currency} billions', value_format=',.1f', height=300, tickformat='%Y'))
+        st.caption(f'yfinance annual statements via financial-data · values in {currency_label} billions · vendor reported, unverified · zeros dropped')
+        _render_plotly(_plotly_bar_chart(values, y_title=f'{currency_label} billions', value_format=',.1f', height=300, tickformat='%Y'))
     display_columns = [
         column for column in (
             'provider', 'source_label', 'period_label', 'period_type', 'interim_is_ytd', 'metric',
@@ -2875,15 +3444,20 @@ def _render_fundamentals_tab(
         st.info('No earnings-actuals rows for this entity/listing in the current snapshot; values are only shown from official issuer disclosure metadata.')
     else:
         profile = get_company_profile(view.entity_id)
+        frame_currency = _text(frame['currency'].dropna().iloc[0]) if ('currency' in frame.columns and not frame['currency'].dropna().empty) else ''
+        display_currency = frame_currency or _text(profile.reporting_currency) or 'currency unavailable'
         pivoted_model = _build_quarterly_financial_pivot(frame, n_periods=8, profile=profile)
         if not pivoted_model.empty:
-            st.caption(f'Multi-period quarterly financial trajectory (LTM 8 quarters in {profile.reporting_currency} billions) · GAAP vs Non-IFRS dual track · YoY & QoQ growth metrics')
+            st.caption(f'Multi-period quarterly financial trajectory (LTM 8 quarters in {display_currency} billions) · GAAP vs Non-IFRS dual track · YoY & QoQ growth metrics')
             ct_dataframe(pivoted_model, width='stretch', hide_index=True)
         act_dt = frame.copy()
         act_dt['period_end'] = pd.to_datetime(act_dt['period_end'], errors='coerce')
         act_dt = act_dt.dropna(subset=['period_end']).sort_values('period_end')
         act_dt['quarter_label'] = act_dt['period_end'].dt.year.astype(str) + 'Q' + act_dt['period_end'].dt.quarter.astype(str)
-        piv_chart = act_dt[act_dt['accounting_basis'] == 'IFRS'].pivot_table(index='quarter_label', columns='metric', values='reported_value', aggfunc='first') / 1e9
+        act_dt['__basis_family'] = act_dt.get(
+            'accounting_basis', pd.Series('', index=act_dt.index, dtype='string')
+        ).map(_accounting_basis_family)
+        piv_chart = act_dt[act_dt['__basis_family'] == 'reported'].pivot_table(index='quarter_label', columns='metric', values='reported_value', aggfunc='first') / 1e9
         period_order = act_dt[['quarter_label', 'period_end']].drop_duplicates().sort_values('period_end')['quarter_label'].tolist()
         piv_chart = piv_chart.reindex(period_order)
         if 'revenue_total' in piv_chart.columns:
@@ -2914,11 +3488,11 @@ def _render_fundamentals_tab(
             # its next four quarters compared against the wrong period.
             rev_growth_df['YoY Growth (%)'] = _quarterly_yoy(piv_chart['revenue_total'])
             st.caption('Quarterly topline and YoY growth · left axis revenue, right axis YoY')
-            _render_plotly(_dual_axis_revenue_yoy_chart(rev_growth_df, profile.reporting_currency))
+            _render_plotly(_dual_axis_revenue_yoy_chart(rev_growth_df, display_currency))
             profit_frame = _quarterly_profitability_frame(frame)
             if not profit_frame.empty:
                 st.caption('Quarterly Non-IFRS operating profit and margins. Gross margin is unavailable because gross profit is not in the current earnings-actuals mart.')
-                _render_plotly(_profit_margin_chart(profit_frame, profile.reporting_currency))
+                _render_plotly(_profit_margin_chart(profit_frame, display_currency))
         metrics = frame.get('metric', pd.Series('', index=frame.index, dtype='string')).astype('string')
         has_segments = metrics.str.startswith('revenue_') & ~metrics.eq('revenue_total')
         if has_segments.any():
@@ -2950,20 +3524,31 @@ def _render_fundamentals_tab(
     if view.corporate_actions.empty:
         st.info('No statutory corporate-action rows for the selected listing in the current snapshot.')
     else:
-        total_spent = view.corporate_actions['total_amount_paid'].dropna().sum() if 'total_amount_paid' in view.corporate_actions.columns else 0.0
-        total_shares = view.corporate_actions['shares_affected'].dropna().sum() if 'shares_affected' in view.corporate_actions.columns else 0
-        ccy = _text(view.corporate_actions.iloc[0].get('currency')) or 'HKD'
-        spent_html = f'{ccy} {total_spent/1e9:,.2f}B' if total_spent else 'Unavailable'
-        shares_html = f'{int(total_shares):,}' if total_shares else 'Unavailable'
-        bb_tracker_html = (
-            '<div class="ct-buyback-tracker">'
-            '<div class="ct-panel-heading"><h3 style="font-size: 0.95rem; font-weight: 750;">🛡️ Statutory capital returns</h3></div>'
-            '<div class="ct-kpi-grid" style="margin-top: 0.5rem;">'
-            f'<div class="ct-kpi-card"><div class="ct-kpi-label">Recorded amount</div><div class="ct-kpi-value">{spent_html}</div><div class="ct-kpi-sub">{len(view.corporate_actions)} selected-listing rows</div></div>'
-            f'<div class="ct-kpi-card"><div class="ct-kpi-label">Shares affected</div><div class="ct-kpi-value">{shares_html}</div><div class="ct-kpi-sub">From local corporate-actions mart</div></div>'
-            '</div></div>'
-        )
-        st.markdown(bb_tracker_html, unsafe_allow_html=True)
+        buybacks = _buyback_actions(view.corporate_actions)
+        if buybacks.empty:
+            st.info('No executed buyback rows are available; dividend/distribution rows are not included in repurchase KPIs.')
+        else:
+            total_spent = pd.to_numeric(buybacks.get('total_amount_paid', pd.Series(dtype='float64')), errors='coerce').sum()
+            total_shares = pd.to_numeric(buybacks.get('shares_affected', pd.Series(dtype='float64')), errors='coerce').sum()
+            currencies = buybacks.get('currency', pd.Series(dtype='string')).map(_text)
+            ccy = currencies.loc[currencies.ne('')].iloc[0] if currencies.loc[currencies.ne('')].any() else ''
+            spent_html = f'{ccy} {total_spent/1e9:,.2f}B'.strip() if pd.notna(total_spent) and total_spent else 'Unavailable'
+            shares_html = f'{int(total_shares):,}' if pd.notna(total_shares) and total_shares else 'Unavailable'
+            bb_tracker_html = (
+                '<div class="ct-buyback-tracker">'
+                '<div class="ct-panel-heading"><h3 style="font-size: 0.95rem; font-weight: 750;">🛡️ Statutory capital returns</h3></div>'
+                '<div class="ct-kpi-grid" style="margin-top: 0.5rem;">'
+                f'<div class="ct-kpi-card"><div class="ct-kpi-label">Recorded amount</div><div class="ct-kpi-value">{spent_html}</div><div class="ct-kpi-sub">{len(buybacks)} executed buyback rows</div></div>'
+                f'<div class="ct-kpi-card"><div class="ct-kpi-label">Shares affected</div><div class="ct-kpi-value">{shares_html}</div><div class="ct-kpi-sub">Buyback executions only</div></div>'
+                '</div></div>'
+            )
+            st.markdown(bb_tracker_html, unsafe_allow_html=True)
+        unverified_timing = _corporate_action_missing_knowledge_clock_count(view.corporate_actions)
+        if unverified_timing:
+            st.warning(
+                f"Data-quality notice · {unverified_timing} corporate-action row(s) lack a parseable filing, publication, or retrieval timestamp. "
+                "They are retained for lineage and ordered by execution date, but their timing is unverified for the frozen snapshot."
+            )
         ct_dataframe(_friendly_corporate_actions_frame(view.corporate_actions, viewer_timezone), width='stretch', hide_index=True)
     _render_section_heading(4, 'Valuation multiples & return yields', f'valuation-multiples-{_slugify(view.entity_id)}')
     spot = _spot_forward_pe_payload(view)
@@ -2978,10 +3563,14 @@ def _render_fundamentals_tab(
         else:
             year_label = spot['horizon'] or 'fiscal year unavailable'
         eps_label = 'FY1 consensus EPS' if spot['is_fy1'] else f'Consensus EPS · {year_label}'
+        quote_origin = (
+            'Local quote overlay · outside published generation'
+            if spot.get('is_local_overlay') else 'Published generation quote snapshot'
+        )
         st.markdown(
             (
                 '<div class="ct-kpi-grid">'
-                f'<div class="ct-kpi-card"><div class="ct-kpi-label">Last delayed price</div><div class="ct-kpi-value">{spot["price_ccy"]} {spot["price"]:,.2f}</div><div class="ct-kpi-sub">Quote snapshot</div></div>'
+                f'<div class="ct-kpi-card"><div class="ct-kpi-label">Last delayed price</div><div class="ct-kpi-value">{spot["price_ccy"]} {spot["price"]:,.2f}</div><div class="ct-kpi-sub">{escape(quote_origin)}</div></div>'
                 f'<div class="ct-kpi-card"><div class="ct-kpi-label">{escape(eps_label)}</div><div class="ct-kpi-value">{spot["eps_ccy"]} {spot["eps"]:.2f}</div><div class="ct-kpi-sub">{escape(year_label)} · {escape(spot["provider"])} · {escape(analyst_label)}</div></div>'
                 f'<div class="ct-kpi-card"><div class="ct-kpi-label">Spot forward P/E</div><div class="ct-kpi-value">{spot_pe_html}</div><div class="ct-kpi-sub">Price / {escape(year_label)} EPS · vendor display-only, not official valuation_snapshots</div></div>'
                 '<div class="ct-kpi-card"><div class="ct-kpi-label">Trailing / historical P/E</div><div class="ct-kpi-value">Unavailable</div><div class="ct-kpi-sub">No share-count or historical EPS vintage in the valuation mart</div></div>'
@@ -3033,31 +3622,109 @@ def _render_thesis_catalysts_tab(
             card_html = f'<div class="ct-thesis-card {card_class}"><div class="ct-panel-heading"><h3 style="font-size: 1.02rem; font-weight: 800; color: var(--ct-ink); margin: 0;">{escape(title)}</h3><span class="ct-badge" style="color: {badge_color}; border-color: {badge_color}; font-weight: 750;">[{escape(status)}]</span></div><div class="ct-subtle" style="margin-bottom: 0.5rem;">Human-authored thesis · status: <strong>{escape(status.lower())}</strong> (never automatically promoted to active or mutated by AI)</div><div style="font-size: 0.9rem; line-height: 1.5; color: var(--ct-ink); margin-bottom: 0.65rem;">{escape(claim_text)}</div><div class="ct-alert-strip" style="margin: 0.5rem 0; font-size: 0.82rem;"><strong>🚨 Invalidation Rule:</strong> {escape(rule)}</div><div class="ct-source-line">Reviewed by: {escape(reviewed_by)} · Last reviewed: {escape(reviewed_at)}</div></div>'
             st.markdown(card_html, unsafe_allow_html=True)
     _render_section_heading(4, 'Active & upcoming catalysts', f'catalysts-{_slugify(view.entity_id)}')
-    if view.events.empty:
-        st.info('No explicitly linked events are available for this company.')
+    forward_events: list[pd.Series] = []
+    historical_events: list[pd.Series] = []
+    event_keys: set[str] = set()
+
+    def _event_key(row: Any) -> str:
+        event_id = _text(row.get('event_id'))
+        return event_id or '|'.join(
+            (_text(row.get('event_type')), _text(row.get('title')), _text(row.get('starts_at')))
+        )
+
+    for _, row in view.events.iterrows():
+        key = _event_key(row)
+        if key:
+            event_keys.add(key)
+        lifecycle = catalyst_state_for_row(row.to_dict(), snapshot.now_utc)
+        if lifecycle in {'future', 'active'}:
+            forward_events.append(row)
+        else:
+            historical_events.append(row)
+
+    # ``view.events`` may be filtered to the forward surface by the caller.
+    # Build an explicit, as-of-safe audit view so terminal rows remain
+    # discoverable without contaminating the forward-looking catalyst list.
+    audit_view = build_company_view(
+        snapshot,
+        entity_id=view.entity_id,
+        listing_id=view.selected_listing_id,
+        filters=EventFilters(
+            horizon='all',
+            now_utc=snapshot.now_utc,
+            catalyst_eligible=False,
+        ),
+    )
+    for _, row in audit_view.events.iterrows():
+        key = _event_key(row)
+        if key and key in event_keys:
+            continue
+        if key:
+            event_keys.add(key)
+        lifecycle = catalyst_state_for_row(row.to_dict(), snapshot.now_utc)
+        if lifecycle not in {'future', 'active'}:
+            historical_events.append(row)
+
+    if not forward_events:
+        st.info('No active or upcoming catalysts in the current horizon.')
     else:
-        for _, row in view.events.iterrows():
+        for row in forward_events:
             source_link = 'source link available' if _text(row.get('source_url')).startswith(('http://', 'https://')) else 'source link unavailable'
             certainty = _text(row.get('certainty_class')).replace('_', ' ')
-            precision = str(row.get('date_precision') or 'day').lower()
-            start = pd.to_datetime(row.get('starts_at'), errors='coerce', utc=True)
-            end = pd.to_datetime(row.get('ends_at'), errors='coerce', utc=True)
-            if pd.isna(start):
-                start = None
-            if pd.isna(end):
-                end = start
-            window_str = format_event_window(row.get('starts_at'), row.get('ends_at'), precision, viewer_timezone)
-            is_active = is_active_catalyst(row.get('starts_at'), row.get('ends_at'), snapshot.now_utc)
-            is_upcoming = (start is not None and start > snapshot.now_utc)
-            status_label = 'Active window' if is_active else ('Upcoming' if is_upcoming else 'Observed / Past')
+            precision = _text(row.get('date_precision')).lower() or 'day'
+            interval = resolve_catalyst_interval(
+                row.get('starts_at'),
+                row.get('ends_at'),
+                date_precision=row.get('date_precision'),
+                source_tz=row.get('source_timezone'),
+            )
+            start = interval.start_utc
+            end = parse_timestamp_utc(
+                row.get('ends_at'),
+                source_tz=row.get('source_timezone'),
+            )
+            window_str = format_event_window(start, end, precision, viewer_timezone)
+            lifecycle = catalyst_state_for_row(row.to_dict(), snapshot.now_utc)
+            status_label = 'Active window' if lifecycle == 'active' else 'Upcoming'
             if precision in ('day', 'exact', 'hour', 'minute'):
-                t_minus = format_t_minus(row.get('starts_at'), viewer_timezone, snapshot.now_utc)
+                t_minus = format_t_minus(start, viewer_timezone, snapshot.now_utc)
                 timing_str = f'{window_str} ({t_minus})'
             else:
                 timing_str = f'{window_str} · {status_label}'
             st.markdown(f'**{escape(_text(row.get("title")))}** · {escape(_text(row.get("relation_role")))} · *{escape(certainty)}* · `{escape(precision)}` · {timing_str} · {escape(source_link)}')
-        with st.expander('Event lineage details', expanded=False):
-            ct_dataframe(view.events, width='stretch', hide_index=True)
+        with st.expander('Forward catalyst rows', expanded=False):
+            ct_dataframe(pd.DataFrame([row.to_dict() for row in forward_events]), width='stretch', hide_index=True)
+
+    if historical_events:
+        with st.expander(f'Historical event lineage & audit ({len(historical_events)})', expanded=False):
+            st.caption('Expired, completed, cancelled, unavailable, and otherwise terminal rows are retained here for thesis verification; they are excluded from the forward-looking catalyst cards.')
+            records: list[dict[str, str]] = []
+            for row in historical_events:
+                precision = _text(row.get('date_precision')).lower() or 'day'
+                interval = resolve_catalyst_interval(
+                    row.get('starts_at'),
+                    row.get('ends_at'),
+                    date_precision=row.get('date_precision'),
+                    source_tz=row.get('source_timezone'),
+                )
+                end = parse_timestamp_utc(
+                    row.get('ends_at'),
+                    source_tz=row.get('source_timezone'),
+                )
+                records.append(
+                    {
+                        'Title': _text(row.get('title')) or _text(row.get('event_id')) or 'Untitled event',
+                        'Lifecycle': catalyst_state_for_row(row.to_dict(), snapshot.now_utc),
+                        'Window': format_event_window(interval.start_utc, end, precision, viewer_timezone),
+                        'Role': _text(row.get('relation_role')) or _text(row.get('scope')) or 'unclassified',
+                        'Certainty': _text(row.get('certainty_class')).replace('_', ' ') or 'unclassified',
+                        'Observed': _format_time(row.get('first_observed_at'), viewer_timezone),
+                        'Verified': _format_time(row.get('last_verified_at'), viewer_timezone),
+                        'Evidence': _text(row.get('evidence_class')).replace('_', ' ') or 'unclassified',
+                        'Source': _summary_source(row),
+                    }
+                )
+            ct_dataframe(pd.DataFrame(records), width='stretch', hide_index=True)
     _render_section_heading(4, 'Operational watch questions & falsification criteria', f'watch-questions-{_slugify(view.entity_id)}')
     if not view.thesis_watch_questions.empty:
         ct_dataframe(_friendly_thesis_questions_frame(view.thesis_watch_questions), width='stretch', hide_index=True)
@@ -3325,21 +3992,34 @@ def _render_evidence_tab(
     if view.consensus.empty:
         st.warning(f'Consensus unavailable · {view.consensus_status} · provider rows are not blended.')
     else:
-        c_eps = view.consensus[view.consensus['metric'] == 'eps']
-        c_rev = view.consensus[view.consensus['metric'] == 'revenue']
+        consensus = view.consensus.copy()
+        def _fy1_metric(name: str) -> pd.DataFrame:
+            rows, _ = _select_fy1_consensus(consensus, name)
+            return rows
+        c_eps = _fy1_metric('eps')
+        c_rev = _fy1_metric('revenue')
         if not c_eps.empty or not c_rev.empty:
             cols = st.columns(3)
             if not c_eps.empty:
                 eps_val = c_eps.iloc[0]['value']
-                eps_ccy = _text(c_eps.iloc[0].get('currency')) or 'HKD'
+                eps_ccy = _text(c_eps.iloc[0].get('currency'))
                 eps_n = c_eps.iloc[0].get('analyst_count', '')
-                cols[0].metric('Consensus EPS', f'{eps_ccy} {float(eps_val):.2f}' if pd.notna(eps_val) else 'Unavailable', f'{eps_n} analysts' if eps_n else '')
+                eps_num = pd.to_numeric(pd.Series([eps_val]), errors='coerce').iloc[0]
+                eps_display = f'{eps_ccy} {float(eps_num):.2f}'.strip() if pd.notna(eps_num) else 'Unavailable'
+                cols[0].metric('Consensus EPS', eps_display, f'{eps_n} analysts' if eps_n else '')
             if not c_rev.empty:
                 rev_val = c_rev.iloc[0]['value']
-                rev_ccy = _text(c_rev.iloc[0].get('currency')) or 'HKD'
+                rev_ccy = _text(c_rev.iloc[0].get('currency'))
                 rev_n = c_rev.iloc[0].get('analyst_count', '')
-                cols[1].metric('Consensus Revenue', f'{rev_ccy} {float(rev_val)/1e9:.1f}B' if pd.notna(rev_val) and float(rev_val) >= 1e9 else f'{rev_ccy} {float(rev_val):,.0f}', f'{rev_n} analysts' if rev_n else '')
-            cols[2].metric('Provider Source', 'yfinance', 'Mean Consensus')
+                rev_num = pd.to_numeric(pd.Series([rev_val]), errors='coerce').iloc[0]
+                if pd.notna(rev_num):
+                    rev_display = f'{rev_ccy} {float(rev_num)/1e9:.1f}B' if float(rev_num) >= 1e9 else f'{rev_ccy} {float(rev_num):,.0f}'
+                    rev_display = rev_display.strip()
+                else:
+                    rev_display = 'Unavailable'
+                cols[1].metric('Consensus Revenue', rev_display, f'{rev_n} analysts' if rev_n else '')
+            provider_names = sorted({_text(value) for value in consensus.get('provider', pd.Series(dtype='string')).map(_text) if _text(value)})
+            cols[2].metric('Provider Source', ', '.join(provider_names) or 'unavailable', 'Mean Consensus')
         ct_dataframe(_friendly_consensus_frame(view.consensus, viewer_timezone), width='stretch', hide_index=True)
     _render_section_heading(4, 'Consensus revisions', f'consensus-revisions-{_slugify(view.entity_id)}')
     if view.consensus_revisions.empty:
@@ -3359,25 +4039,29 @@ def _render_evidence_tab(
                 )
             )
         ct_dataframe(_friendly_revision_frame(view.consensus_revisions, viewer_timezone), width='stretch', hide_index=True)
-    if not view.corporate_actions.empty:
-        ca_df = view.corporate_actions.copy()
-        ca_df['date'] = pd.to_datetime(ca_df['filing_date'], errors='coerce').dt.date
+    buybacks = _buyback_actions(view.corporate_actions)
+    if not buybacks.empty:
+        ca_df = buybacks.copy()
+        ca_df['date'] = _corporate_action_dates(ca_df).dt.date
         ca_df = ca_df.dropna(subset=['date']).sort_values('date')
         if not ca_df.empty:
             plot = ca_df.copy()
             plot['usage_date'] = pd.to_datetime(plot['date'], errors='coerce')
             plot = plot.dropna(subset=['usage_date'])
-            plot['daily_repurchase_hkd_m'] = pd.to_numeric(plot['total_amount_paid'], errors='coerce') / 1e6
+            ca_curr = _text(plot['currency'].dropna().iloc[0]) if ('currency' in plot.columns and not plot['currency'].dropna().empty) else ""
+            ca_sym = _currency_symbol(ca_curr) if ca_curr else "reported currency"
+            plot_col = f"daily_repurchase_{ca_curr.lower()}_m" if ca_curr else "daily_repurchase_amount_m"
+            plot[plot_col] = pd.to_numeric(plot['total_amount_paid'], errors='coerce') / 1e6
             start = plot['usage_date'].min().strftime('%Y-%m-%d')
             end = plot['usage_date'].max().strftime('%Y-%m-%d')
             n_days = int(plot['usage_date'].nunique())
-            st.caption(f'{n_days}-Day Statutory Repurchase Intensity (HK$ Millions per trading day · {start} to {end})')
+            st.caption(f'{n_days}-Day Statutory Repurchase Intensity ({ca_sym} Millions per trading day · {start} to {end})')
             _render_plotly(
                 _bar_chart_with_year_axis(
                     plot,
                     x='usage_date',
-                    y='daily_repurchase_hkd_m',
-                    y_title='Daily repurchase (HK$ millions)',
+                    y=plot_col,
+                    y_title=f'Daily repurchase ({ca_sym} millions)',
                     y_format=',.0f',
                 )
             )
@@ -3421,30 +4105,73 @@ def render_company_page(
     *,
     viewer_timezone: str,
     filters: EventFilters | None = None,
-) -> CompanyView:
+) -> CompanyView | None:
+    snapshot = filter_snapshot_to_as_of(snapshot)
     entity_ids = _filtered_entity_ids(snapshot, filters)
     entity_options = sorted(entity_ids)
+    query_entity = _text(st.query_params.get('entity'))
     if not entity_options:
+        if query_entity:
+            all_entity_ids = set(snapshot.entities.get('entity_id', pd.Series(dtype='string')).astype('string'))
+            reason = (
+                'archived or excluded by the active filters'
+                if query_entity in all_entity_ids
+                else 'unknown to the current registry snapshot'
+            )
+            st.warning(
+                f'Company unavailable · {escape(query_entity)} · {reason}. '
+                'No previous company is shown.'
+            )
+            _render_invalid_company_recovery(snapshot, [])
+            return None
         st.info('No company matches the active basket, country or membership filters.')
-        raise ValueError('company registry is empty')
-    query_entity = st.query_params.get('entity')
-    session_entity = st.session_state.get('ct_company_entity')
-    if session_entity not in entity_options:
+        # An empty filtered universe is a valid user state (for example after
+        # selecting a country/basket combination with no members), not a
+        # startup failure.  Keep the page exception-free so the user can
+        # change the filters and recover without a stale company view.
+        return None
+    if query_entity and query_entity not in entity_options:
+        all_entity_ids = set(snapshot.entities.get('entity_id', pd.Series(dtype='string')).astype('string'))
+        if query_entity in all_entity_ids:
+            reason = 'archived or excluded by the active filters'
+        else:
+            reason = 'unknown to the current registry snapshot'
+        st.warning(
+            f'Company unavailable · {escape(query_entity)} · {reason}. '
+            'No previous company is shown.'
+        )
+        _render_invalid_company_recovery(snapshot, entity_options)
+        return None
+    session_entity = _text(st.session_state.get('ct_company_entity'))
+    last_query_entity = _text(st.session_state.get('ct_company_last_query_entity'))
+    # A URL edit is an explicit navigation intent.  Compare it with the last
+    # URL value observed, rather than merely with the widget state: after a
+    # selectbox change the widget is newer than the old URL for one rerun, and
+    # should not be overwritten before the URL-sync below completes.
+    if query_entity in entity_options and query_entity != last_query_entity:
+        if query_entity != session_entity:
+            st.session_state['ct_company_listing'] = None
+        st.session_state['ct_company_entity'] = query_entity
+        session_entity = query_entity
+    elif session_entity not in entity_options:
         if query_entity in entity_options:
             st.session_state['ct_company_entity'] = query_entity
+            session_entity = query_entity
         else:
             st.session_state['ct_company_entity'] = 'TENCENT' if 'TENCENT' in entity_options else entity_options[0]
+            session_entity = st.session_state['ct_company_entity']
         st.session_state['ct_company_listing'] = None
     selected_entity = st.selectbox(
         'Company',
         entity_options,
         key='ct_company_entity',
-        format_func=lambda value: _text(snapshot.entities.loc[snapshot.entities['entity_id'].astype('string').eq(value), 'display_name'].iloc[0]) if not snapshot.entities.loc[snapshot.entities['entity_id'].astype('string').eq(value)].empty else value,
+        format_func=lambda value: _company_option_label(snapshot, value),
     )
     if selected_entity != session_entity:
         st.session_state['ct_company_listing'] = None
     if st.query_params.get('entity') != selected_entity:
         st.query_params['entity'] = selected_entity
+    st.session_state['ct_company_last_query_entity'] = selected_entity
     as_of_point = snapshot.as_of_utc
     entity_row = snapshot.entities.loc[
         snapshot.entities['entity_id'].astype('string').eq(selected_entity)
@@ -3483,7 +4210,7 @@ def render_company_page(
     with tab_fundamentals:
         _render_fundamentals_tab(view, snapshot, viewer_timezone)
     with tab_alt:
-        _render_alternative_data_tab(view)
+        _render_alternative_data_tab(view, as_of_utc=snapshot.as_of_utc)
     with tab_thesis:
         _render_thesis_catalysts_tab(view, snapshot, viewer_timezone)
     with tab_evidence:

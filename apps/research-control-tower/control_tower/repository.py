@@ -15,7 +15,6 @@ from .config import (
     ARTIFACT_COLUMNS,
     ARTIFACT_NAMES,
     ArtifactResolutionError,
-    EVENT_OPTIONAL_COLUMNS,
     LEGACY_EARNINGS_ACTUALS_COLUMNS,
     OPTIONAL_ARTIFACT_NAMES,
     REQUIRED_ARTIFACT_NAMES,
@@ -25,6 +24,7 @@ from .config import (
     resolve_artifact_root,
 )
 from .models import ControlTowerSnapshot
+from .semantics import filter_loaded_frames_to_as_of
 
 
 class ControlTowerStartupError(RuntimeError):
@@ -672,6 +672,9 @@ class ControlTowerRepository:
                 raise
             raise _manifest_error("build_manifest.json has invalid byte_size") from exc
 
+        built_at = _timestamp(manifest["built_at_utc"], "built_at_utc")
+        as_of = _timestamp(manifest["as_of_utc"], "as_of_utc")
+
         loaded: dict[str, pd.DataFrame] = {}
         missing_optional: set[str] = set()
         degraded_reasons: dict[str, str] = {}
@@ -748,6 +751,11 @@ class ControlTowerRepository:
                 continue
             loaded[name] = frame
 
+        # Apply the frozen-vintage boundary before relation enrichment and
+        # referential-integrity checks.  Dependent links/questions are removed
+        # by the semantic helper when their future parent row is excluded.
+        loaded = filter_loaded_frames_to_as_of(loaded, as_of)
+
         events = loaded["events.parquet"]
         importance_present = "importance" in events.columns
         if importance_present:
@@ -783,8 +791,6 @@ class ControlTowerRepository:
 
         source_health = loaded["source_health.parquet"].copy(deep=True)
 
-        built_at = _timestamp(manifest["built_at_utc"], "built_at_utc")
-        as_of = _timestamp(manifest["as_of_utc"], "as_of_utc")
         previous = _timestamp(manifest.get("previous_build_at"), "previous_build_at", allow_none=True)
         status = "degraded" if manifest["status"] == "degraded" or missing_optional else "success"
         return ControlTowerSnapshot(

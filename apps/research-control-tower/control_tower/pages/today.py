@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from html import escape
 
 import pandas as pd
@@ -48,41 +48,65 @@ class TodayViewModel:
 
 
 def bundle_latest_data_at(snapshot: ControlTowerSnapshot) -> pd.Timestamp | None:
-    """Return the newest observation timestamp anywhere in the snapshot."""
+    """Return the newest source-observation timestamp in the snapshot.
+
+    Retrieval timestamps describe when a collector wrote a row, not when the
+    underlying source changed.  Prefer source-observation/publication fields
+    so an ingestion run cannot make the bundle look newer than its evidence.
+    Retrieval is used only as a row-level fallback when a mart has no
+    observation timestamp at all.
+    """
 
     series: list[pd.Series] = []
-    for frame, columns in (
-        (snapshot.events, ("source_published_at", "first_observed_at")),
+    as_of = _utc(snapshot.as_of_utc)
+    mart_timestamps = (
+        (getattr(snapshot, "events", pd.DataFrame()), ("source_published_at", "first_observed_at", "last_verified_at")),
         (snapshot.news_filings, ("first_observed_at", "published_at")),
-        (
-            snapshot.consensus_snapshots,
-            ("snapshot_at", "provider_asof"),
-        ),
-        (
-            snapshot.consensus_revisions,
-            ("current_snapshot_at", "provider_asof"),
-        ),
-        (
-            snapshot.quote_snapshots,
-            ("quote_timestamp",),
-        ),
-        (
-            snapshot.macro_observations,
-            ("release_at", "observation_date"),
-        ),
-        (
-            snapshot.source_health,
-            ("latest_observation_at", "source_latest_at"),
-        ),
-    ):
-        if frame.empty:
+        (getattr(snapshot, "official_filings", pd.DataFrame()), ("published_at", "accepted_at")),
+        (snapshot.consensus_snapshots, ("snapshot_at", "provider_asof")),
+        (snapshot.consensus_revisions, ("current_snapshot_at", "provider_asof")),
+        (snapshot.quote_snapshots, ("quote_timestamp",)),
+        (getattr(snapshot, "price_bars", pd.DataFrame()), ("bar_date",)),
+        (getattr(snapshot, "earnings_calendar", pd.DataFrame()), ("published_at",)),
+        (getattr(snapshot, "earnings_actuals", pd.DataFrame()), ("filing_at", "published_at")),
+        (getattr(snapshot, "corporate_actions", pd.DataFrame()), ("filing_date", "execution_date", "published_at")),
+        (getattr(snapshot, "valuation_snapshots", pd.DataFrame()), ("valuation_at", "valuation_date")),
+        (getattr(snapshot, "internal_estimates", pd.DataFrame()), ("recorded_at_utc", "reviewed_at_utc")),
+        (getattr(snapshot, "evidence_items", pd.DataFrame()), ("published_at", "observed_at_utc")),
+        (snapshot.macro_observations, ("release_at", "observation_date", "first_observed_at", "source_published_at")),
+        (snapshot.source_health, ("latest_observation_at", "source_latest_at")),
+    )
+    for frame, columns in mart_timestamps:
+        if frame is None or frame.empty:
             continue
+        observations: list[pd.Series] = []
         for column in columns:
             if column not in frame.columns:
                 continue
-            parsed = pd.to_datetime(frame[column], utc=True, errors="coerce").dropna()
-            if not parsed.empty:
-                series.append(parsed)
+            parsed = pd.to_datetime(frame[column], utc=True, errors="coerce")
+            if as_of is not None:
+                parsed = parsed.loc[parsed.le(as_of)]
+            valid = parsed.dropna()
+            if not valid.empty:
+                observations.append(valid)
+        if observations:
+            # Each column is an independent observation clock. Taking the
+            # maximum across them preserves a newer first-observed/publication
+            # timestamp even when an older source-published value is present in
+            # the same row. Retrieval is deliberately not used row-by-row once
+            # a mart has any valid observation clock.
+            resolved = pd.concat(observations, ignore_index=True)
+        else:
+            fallback = pd.to_datetime(
+                frame.get("retrieved_at_utc", pd.Series(pd.NaT, index=frame.index)),
+                utc=True,
+                errors="coerce",
+            ).dropna()
+            if as_of is not None:
+                fallback = fallback.loc[fallback.le(as_of)]
+            resolved = fallback
+        if not resolved.empty:
+            series.append(resolved)
     if not series:
         return None
     return pd.concat(series).max()
@@ -141,8 +165,13 @@ def _empty_changes() -> pd.DataFrame:
 
 
 def _text(value: object) -> str:
-    if value is None or value is pd.NA or (isinstance(value, float) and pd.isna(value)):
+    if value is None or value is pd.NA or value is pd.NaT:
         return ""
+    try:
+        if pd.isna(value):
+            return ""
+    except (TypeError, ValueError):
+        pass
     return str(value).strip()
 
 
@@ -156,6 +185,45 @@ def _utc(value: object) -> pd.Timestamp | None:
     if pd.isna(parsed) or parsed.tzinfo is None or parsed.utcoffset() is None:
         return None
     return parsed.tz_convert("UTC")
+
+
+def _interval_active_at(row: object, as_of: object) -> bool:
+    """Return whether a registry row is active at the snapshot date.
+
+    Registry intervals are date-effective, not intraday market timestamps.
+    Invalid non-empty boundaries fail closed; missing boundaries remain open.
+    """
+
+    point = _utc(as_of)
+    if point is None:
+        return False
+    point_date = point.tz_localize(None).normalize()
+
+    def boundary(value: object) -> pd.Timestamp | None | bool:
+        if value is None or value is pd.NaT:
+            return None
+        try:
+            if pd.isna(value):
+                return None
+        except (TypeError, ValueError):
+            pass
+        if not _text(value):
+            return None
+        try:
+            parsed = pd.Timestamp(value)
+        except (TypeError, ValueError, OverflowError):
+            return False
+        if pd.isna(parsed):
+            return False
+        if parsed.tzinfo is not None and parsed.utcoffset() is not None:
+            parsed = parsed.tz_convert("UTC").tz_localize(None)
+        return parsed.normalize()
+
+    start = boundary(row.get("active_from"))
+    end = boundary(row.get("active_to"))
+    if start is False or end is False:
+        return False
+    return (start is None or point_date >= start) and (end is None or point_date < end)
 
 
 def _within(value: object, *, since: pd.Timestamp, as_of: pd.Timestamp) -> bool:
@@ -448,6 +516,9 @@ def _filter_change_rows(
     restricted: bool,
     allowed_event_ids: set[str],
     include_company_content: bool,
+    active_only: bool = False,
+    selected_countries: set[str] | None = None,
+    selected_membership_tiers: set[str] | None = None,
 ) -> pd.DataFrame:
     if changes.empty:
         return changes
@@ -463,20 +534,45 @@ def _filter_change_rows(
             "change_kind", pd.Series("", index=changes.index, dtype="string")
         ).astype("string")
         event_mask &= ~change_kinds.isin(company_kinds)
-    if not restricted:
-        return changes.loc[event_mask].reset_index(drop=True)
-    def any_relation(column: str, selected: set[str]) -> pd.Series:
-        if not selected:
+    def _has_id(column: str) -> pd.Series:
+        if column not in changes.columns:
             return pd.Series(False, index=changes.index)
-        values = changes.get(column, pd.Series("", index=changes.index, dtype="string"))
-        return values.map(lambda value: bool(set(_tuple_values(value)) & selected))
-    relation_keep = (
-        any_relation("related_entity_ids", selected_entities)
-        | any_relation("related_listing_ids", selected_listings)
-        | any_relation("related_basket_ids", selected_baskets)
-        | changes.get("entity_id", pd.Series("", index=changes.index)).astype("string").isin(selected_entities)
-        | changes.get("listing_id", pd.Series("", index=changes.index)).astype("string").isin(selected_listings)
+        vals = changes[column]
+        if column in {"entity_id", "listing_id"}:
+            return vals.astype("string").fillna("").str.strip().ne("")
+        return vals.map(lambda v: bool(_tuple_values(v)))
+
+    def _matches_set(column: str, target_set: set[str]) -> pd.Series:
+        if not target_set or column not in changes.columns:
+            return pd.Series(False, index=changes.index)
+        vals = changes[column]
+        if column in {"entity_id", "listing_id"}:
+            return vals.astype("string").isin(target_set)
+        return vals.map(lambda v: bool(set(_tuple_values(v)) & target_set))
+
+    has_entity_listing = (
+        _has_id("entity_id")
+        | _has_id("listing_id")
+        | _has_id("related_entity_ids")
+        | _has_id("related_listing_ids")
     )
+    entity_listing_match = (
+        _matches_set("entity_id", selected_entities)
+        | _matches_set("listing_id", selected_listings)
+        | _matches_set("related_entity_ids", selected_entities)
+        | _matches_set("related_listing_ids", selected_listings)
+    )
+    basket_match = _matches_set("related_basket_ids", selected_baskets)
+    country_match = _matches_set("related_countries", selected_countries or set())
+    tier_match = _matches_set("membership_tiers", selected_membership_tiers or set())
+    relation_keep = entity_listing_match | (~has_entity_listing & (basket_match | country_match | tier_match))
+    if not restricted:
+        relation_keep = pd.Series(True, index=changes.index)
+    if active_only:
+        # Global rows without an explicit entity/listing remain visible. A row
+        # that names an entity or listing must resolve to the active selected
+        # universe, even when it also carries a basket-level relation.
+        relation_keep &= ~has_entity_listing | entity_listing_match
     return changes.loc[event_mask & relation_keep].reset_index(drop=True)
 
 
@@ -498,11 +594,19 @@ def _windowed_frame(frame: pd.DataFrame, timestamp_columns: tuple[str, ...], sna
 def _source_alerts(snapshot: ControlTowerSnapshot) -> pd.DataFrame:
     if snapshot.source_health.empty:
         return snapshot.source_health.iloc[0:0].copy()
+    raw = snapshot.source_health.reset_index(drop=True)
+    classified = classify_source_health(raw, now_utc=snapshot.now_utc)
     bad = {
         "stale", "failed", "conflicted", "unavailable", "review_required",
-        "degraded", "partial", "no_records",
+        "degraded", "partial", "no_records", "entitlement_error", "clock_skew",
     }
-    return snapshot.source_health.loc[snapshot.source_health["status"].astype("string").str.lower().isin(bad)].copy().reset_index(drop=True)
+    raw_status = raw.get("status", pd.Series("", index=raw.index, dtype="string")).astype("string").str.lower()
+    display_status = classified.get("display_status", pd.Series("", index=raw.index, dtype="string")).astype("string").str.lower()
+    mask = raw_status.isin(bad) | display_status.isin(bad)
+    # Return the classified rows, not the raw rows. The renderer must not
+    # display ``available`` when classification found an entitlement error,
+    # clock skew, or an evidence-derived review state.
+    return classified.loc[mask].copy().reset_index(drop=True)
 
 
 def _tuple_values(value: object) -> tuple[str, ...]:
@@ -517,12 +621,27 @@ def _tuple_values(value: object) -> tuple[str, ...]:
 def _selected_universe(snapshot: ControlTowerSnapshot, filters: EventFilters) -> tuple[set[str], set[str], set[str]]:
     selected_baskets = set(filters.basket_id)
     memberships = snapshot.basket_memberships
-    entities = set(snapshot.entities.get("entity_id", pd.Series(dtype="string")).astype("string"))
+    as_of = snapshot.as_of_utc
+    if snapshot.entities.empty or "entity_id" not in snapshot.entities.columns:
+        entities = set()
+    else:
+        active_entities = snapshot.entities.loc[
+            snapshot.entities.apply(lambda row: _interval_active_at(row, as_of), axis=1)
+            & snapshot.entities.get(
+                "active_status", pd.Series("", index=snapshot.entities.index, dtype="string")
+            ).astype("string").fillna("").str.strip().str.lower().isin({"", "active"})
+        ]
+        entities = set(active_entities["entity_id"].astype("string"))
     if selected_baskets:
         if memberships.empty:
             entities = set()
         else:
-            membership_rows = memberships.loc[memberships["basket_id"].astype("string").isin(selected_baskets)].copy()
+            membership_rows = memberships.loc[
+                memberships["basket_id"].astype("string").str.upper().isin(
+                    {value.upper() for value in selected_baskets}
+                )
+                & memberships.apply(lambda row: _interval_active_at(row, as_of), axis=1)
+            ].copy()
             if filters.membership_tier:
                 membership_rows = membership_rows.loc[membership_rows["membership_tier"].astype("string").str.lower().isin(filters.membership_tier)]
             entities &= set(membership_rows["entity_id"].astype("string"))
@@ -532,24 +651,14 @@ def _selected_universe(snapshot: ControlTowerSnapshot, filters: EventFilters) ->
         if memberships.empty:
             entities = set()
         else:
-            entities &= set(memberships.loc[memberships["membership_tier"].astype("string").str.lower().isin(filters.membership_tier), "entity_id"].astype("string"))
+            membership_rows = memberships.loc[
+                memberships["membership_tier"].astype("string").str.lower().isin(filters.membership_tier)
+                & memberships.apply(lambda row: _interval_active_at(row, as_of), axis=1)
+            ]
+            entities &= set(membership_rows["entity_id"].astype("string"))
     if snapshot.listings.empty:
         listings = set()
     else:
-        point = snapshot.now_utc.tz_convert("UTC").tz_localize(None).normalize()
-
-        def active_interval(row: pd.Series) -> bool:
-            try:
-                start = pd.Timestamp(row.get("active_from"))
-                end = pd.Timestamp(row.get("active_to")) if _text(row.get("active_to")) else None
-            except (TypeError, ValueError, OverflowError):
-                return False
-            if start.tzinfo is not None:
-                start = start.tz_localize(None)
-            if end is not None and end.tzinfo is not None:
-                end = end.tz_localize(None)
-            return (pd.isna(start) or point >= start.normalize()) and (end is None or point < end.normalize())
-
         entity_frame = snapshot.entities.set_index("entity_id", drop=False) if not snapshot.entities.empty else pd.DataFrame()
         listing_mask = (
             snapshot.listings["entity_id"].astype("string").isin(entities)
@@ -562,15 +671,18 @@ def _selected_universe(snapshot: ControlTowerSnapshot, filters: EventFilters) ->
                 axis=1,
             )
         )
-        if not entity_frame.empty and "active_status" in entity_frame.columns:
+        if not entity_frame.empty:
             entity_type = entity_frame.get(
                 "entity_type", pd.Series("", index=entity_frame.index, dtype="string")
             ).astype("string").fillna("").str.lower()
             public_active_ids = set(
                 entity_frame.loc[
-                    entity_frame["active_status"].astype("string").str.lower().eq("active")
+                    entity_frame.index.to_series().astype("string").isin(entities)
                     & entity_type.ne("private")
-                    & entity_frame.apply(active_interval, axis=1),
+                    & entity_frame.apply(lambda row: _interval_active_at(row, as_of), axis=1)
+                    & entity_frame.get(
+                        "active_status", pd.Series("", index=entity_frame.index, dtype="string")
+                    ).astype("string").fillna("").str.strip().str.lower().isin({"", "active"}),
                     "entity_id",
                 ].astype("string")
             )
@@ -586,24 +698,49 @@ def _filter_frame_universe(
     baskets: set[str],
     *,
     restricted: bool,
+    active_only: bool = False,
+    selected_countries: set[str] | None = None,
+    selected_membership_tiers: set[str] | None = None,
 ) -> pd.DataFrame:
     if frame.empty:
         return frame.copy()
-    if not restricted:
-        return frame.copy().reset_index(drop=True)
-    masks: list[pd.Series] = []
-    if "entity_id" in frame.columns:
-        masks.append(frame["entity_id"].astype("string").isin(entities))
-    if "listing_id" in frame.columns:
-        masks.append(frame["listing_id"].astype("string").isin(listings))
-    for column, selected in (("related_entity_ids", entities), ("related_listing_ids", listings), ("related_basket_ids", baskets)):
-        if column in frame.columns:
-            masks.append(frame[column].map(lambda value: bool(set(_tuple_values(value)) & selected)))
-    if not masks:
-        return frame.iloc[0:0].copy()
-    mask = masks[0]
-    for item in masks[1:]:
-        mask |= item
+    def _has_id(column: str) -> pd.Series:
+        if column not in frame.columns:
+            return pd.Series(False, index=frame.index)
+        vals = frame[column]
+        if column in {"entity_id", "listing_id"}:
+            return vals.astype("string").fillna("").str.strip().ne("")
+        return vals.map(lambda v: bool(_tuple_values(v)))
+
+    def _matches_set(column: str, target_set: set[str]) -> pd.Series:
+        if not target_set or column not in frame.columns:
+            return pd.Series(False, index=frame.index)
+        vals = frame[column]
+        if column in {"entity_id", "listing_id"}:
+            return vals.astype("string").isin(target_set)
+        return vals.map(lambda v: bool(set(_tuple_values(v)) & target_set))
+
+    has_entity_listing = (
+        _has_id("entity_id")
+        | _has_id("listing_id")
+        | _has_id("related_entity_ids")
+        | _has_id("related_listing_ids")
+    )
+    entity_listing_match = (
+        _matches_set("entity_id", entities)
+        | _matches_set("listing_id", listings)
+        | _matches_set("related_entity_ids", entities)
+        | _matches_set("related_listing_ids", listings)
+    )
+    basket_match = _matches_set("related_basket_ids", baskets)
+    country_match = _matches_set("related_countries", selected_countries or set())
+    tier_match = _matches_set("membership_tiers", selected_membership_tiers or set())
+    if restricted:
+        mask = entity_listing_match | (~has_entity_listing & (basket_match | country_match | tier_match))
+    else:
+        mask = pd.Series(True, index=frame.index)
+    if active_only:
+        mask &= ~has_entity_listing | entity_listing_match
     return frame.loc[mask].copy().reset_index(drop=True)
 
 
@@ -613,9 +750,23 @@ def build_today_view(
     filters: EventFilters,
     viewer_timezone: str,
 ) -> TodayViewModel:
-    filtered_events = apply_event_filters(snapshot.events, filters)
     selected_entities, selected_listings, selected_baskets = _selected_universe(snapshot, filters)
     restricted = bool(filters.basket_id or filters.country or filters.membership_tier)
+    # Registry-backed universe dimensions are applied below. Remove their
+    # denormalised event-column predicates first, otherwise a valid entity
+    # relation with no duplicated basket/country/tier value would be dropped
+    # before registry resolution can include it.
+    event_filters = replace(filters, basket_id=(), country=(), membership_tier=())
+    filtered_events = _filter_frame_universe(
+        apply_event_filters(snapshot.events, event_filters),
+        selected_entities,
+        selected_listings,
+        selected_baskets,
+        restricted=restricted,
+        active_only=True,
+        selected_countries=set(filters.country),
+        selected_membership_tiers=set(filters.membership_tier),
+    )
     include_company_content = not filters.scope or "company" in filters.scope
     allowed_event_ids = set(filtered_events.get("event_id", pd.Series(dtype="string")).astype("string"))
     changes = _filter_change_rows(
@@ -626,13 +777,16 @@ def build_today_view(
         restricted=restricted,
         allowed_event_ids=allowed_event_ids,
         include_company_content=include_company_content,
+        active_only=True,
+        selected_countries=set(filters.country),
+        selected_membership_tiers=set(filters.membership_tier),
     )
     enriched_revisions = enrich_consensus_revisions(
         snapshot.consensus_revisions,
         snapshot.consensus_snapshots,
     )
-    revisions = _filter_frame_universe(_windowed_frame(enriched_revisions, ("current_snapshot_at", "retrieved_at_utc"), snapshot), selected_entities, selected_listings, selected_baskets, restricted=restricted)
-    filings = _filter_frame_universe(_windowed_frame(snapshot.news_filings, ("first_observed_at",), snapshot), selected_entities, selected_listings, selected_baskets, restricted=restricted)
+    revisions = _filter_frame_universe(_windowed_frame(enriched_revisions, ("current_snapshot_at", "retrieved_at_utc"), snapshot), selected_entities, selected_listings, selected_baskets, restricted=restricted, active_only=True, selected_countries=set(filters.country), selected_membership_tiers=set(filters.membership_tier))
+    filings = _filter_frame_universe(_windowed_frame(snapshot.news_filings, ("first_observed_at",), snapshot), selected_entities, selected_listings, selected_baskets, restricted=restricted, active_only=True, selected_countries=set(filters.country), selected_membership_tiers=set(filters.membership_tier))
     if not include_company_content:
         revisions = revisions.iloc[0:0].copy()
         filings = filings.iloc[0:0].copy()
@@ -705,9 +859,43 @@ def _render_table(frame: pd.DataFrame, columns: tuple[str, ...], *, timezone: st
 def _change_ticker_label(snapshot: ControlTowerSnapshot, row: pd.Series) -> str:
     from ..components.timeline import resolve_ticker_chips
 
-    chips = resolve_ticker_chips(snapshot, row.to_dict())
+    row_dict = row.to_dict() if isinstance(row, pd.Series) else dict(row)
+    chips = resolve_ticker_chips(snapshot, row_dict)
     if chips:
         return chips[0].label
+
+    entity_id = _text(row_dict.get("entity_id"))
+    listing_id = _text(row_dict.get("listing_id"))
+    canonical_ticker = _text(row_dict.get("canonical_ticker"))
+
+    if entity_id and not snapshot.entities.empty and "entity_id" in snapshot.entities.columns:
+        entity_rows = snapshot.entities.loc[snapshot.entities["entity_id"].astype("string").eq(entity_id)]
+        if not entity_rows.empty:
+            display_name = _text(entity_rows.iloc[0].get("display_name")) or entity_id
+            ticker = canonical_ticker
+            if not ticker and not snapshot.listings.empty and "entity_id" in snapshot.listings.columns:
+                listing_rows = snapshot.listings.loc[snapshot.listings["entity_id"].astype("string").eq(entity_id)]
+                if not listing_rows.empty:
+                    prim = listing_rows.loc[listing_rows.get("primary_listing", pd.Series(False, index=listing_rows.index)).fillna(False).astype(bool)]
+                    l_row = prim.iloc[0] if not prim.empty else listing_rows.iloc[0]
+                    ticker = _text(l_row.get("canonical_ticker")) or _text(l_row.get("native_ticker"))
+            if display_name and ticker and display_name != ticker:
+                return f"{display_name} · {ticker}"
+            if display_name:
+                return display_name
+            if ticker:
+                return ticker
+
+    if listing_id and not snapshot.listings.empty and "listing_id" in snapshot.listings.columns:
+        listing_rows = snapshot.listings.loc[snapshot.listings["listing_id"].astype("string").eq(listing_id)]
+        if not listing_rows.empty:
+            ticker = _text(listing_rows.iloc[0].get("canonical_ticker")) or _text(listing_rows.iloc[0].get("native_ticker"))
+            if ticker:
+                return ticker
+
+    if canonical_ticker:
+        return canonical_ticker
+
     return "ticker unavailable · registry unresolved"
 
 
@@ -1029,7 +1217,11 @@ def render_today_page(
             _render_table(model.guidance_changes, ("headline", "publisher", "first_observed_at", "source_url"), timezone=viewer_timezone)
 
     if not model.source_alerts.empty:
-        alerts = "; ".join(f"{_source_display_label(row.get('source_id'))}: {_text(row.get('status')).replace('_', ' ')}" for _, row in model.source_alerts.head(8).iterrows())
+        alerts = "; ".join(
+            f"{_source_display_label(row.get('source_id'))}: "
+            f"{(_text(row.get('display_label')) or _text(row.get('display_status')) or _text(row.get('status')) or 'unclassified')}"
+            for _, row in model.source_alerts.head(8).iterrows()
+        )
         st.markdown(f'<div class="ct-alert-strip"><strong>Global source alerts</strong> · These alerts are not universe-filtered. · {escape(alerts)}</div>', unsafe_allow_html=True)
     return model
 

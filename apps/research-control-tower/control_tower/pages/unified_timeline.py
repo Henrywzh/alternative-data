@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, replace
 
 import pandas as pd
 import streamlit as st
 
 from ..components.flight_deck import FlightDeckViewModel, build_flight_deck, render_flight_deck
 from ..components.timeline import (
+    CatalystView,
     TimelineMonthGroup,
     catalyst_view_for_event,
     group_timeline_events,
@@ -32,7 +32,21 @@ def build_timeline_view(
     filters: EventFilters,
     viewer_timezone: str,
 ) -> TimelineViewModel:
-    filtered = apply_event_filters(snapshot.events, filters)
+    from .today import _filter_frame_universe, _selected_universe
+
+    selected_entities, selected_listings, selected_baskets = _selected_universe(snapshot, filters)
+    restricted = bool(filters.basket_id or filters.country or filters.membership_tier)
+    event_filters = replace(filters, basket_id=(), country=(), membership_tier=())
+    filtered = _filter_frame_universe(
+        apply_event_filters(snapshot.events, event_filters),
+        selected_entities,
+        selected_listings,
+        selected_baskets,
+        restricted=restricted,
+        active_only=True,
+        selected_countries=set(filters.country),
+        selected_membership_tiers=set(filters.membership_tier),
+    )
     base_groups = group_timeline_events(filtered, now_utc=snapshot.now_utc, viewer_timezone=viewer_timezone)
     by_event = filtered.set_index("event_id", drop=False) if not filtered.empty else pd.DataFrame()
     groups: list[TimelineMonthGroup] = []

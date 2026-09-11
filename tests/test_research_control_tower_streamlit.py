@@ -599,6 +599,45 @@ def test_timeline_groups_horizon_excludes_gap_and_preserves_metadata(generated_r
     assert "L1" not in {chip.label for chip in hard.ticker_chips}
 
 
+def test_registry_universe_filter_keeps_direct_entity_relations_without_denormalized_basket(
+    generated_root: Path,
+) -> None:
+    from control_tower.components.flight_deck import build_flight_deck
+    from control_tower.models import EventFilters
+    from control_tower.pages.today import build_today_view
+    from control_tower.pages.unified_timeline import build_timeline_view
+
+    snapshot = _snapshot(generated_root)
+    filters = EventFilters(
+        horizon="all",
+        basket_id=("AI_BOTTLENECKS_GLOBAL",),
+        now_utc=snapshot.now_utc,
+    )
+
+    # EV_THESIS is explicitly linked to E2, a member of the selected basket,
+    # but deliberately carries no denormalized related_basket_ids value. The
+    # registry relation is authoritative and must work on all surfaces.
+    timeline = build_timeline_view(
+        snapshot, filters=filters, viewer_timezone="Europe/London"
+    )
+    visible = {
+        event.event_id
+        for group in timeline.month_groups
+        for event in group.events
+    }
+    assert "EV_THESIS" in visible
+
+    today = build_today_view(
+        snapshot, filters=filters, viewer_timezone="Europe/London"
+    )
+    assert "EV_THESIS" in set(today.recent_events["event_id"])
+
+    deck = build_flight_deck(
+        snapshot, filters=filters, viewer_timezone="Europe/London"
+    )
+    assert deck.next_catalyst is not None
+
+
 def test_visible_metadata_and_importance_are_not_raw_ids(generated_root: Path) -> None:
     from control_tower.components.timeline import catalyst_html, catalyst_view_for_event
 
@@ -1966,8 +2005,8 @@ def test_task9_stale_bundle_today_shows_stale_state_and_recent_events(
     )
     assert fresh_model.bundle_stale is False
 
-    # Latest source observation is 2026-08-13T11:00:00Z; move the previous
-    # build after it so the delta window contains no new source data.
+    # The latest evidence clock is last_verified_at at 11:30Z; move the
+    # previous build after it so the delta window contains no new source data.
     _rewrite_manifest(
         generated_root,
         lambda manifest: manifest.update(
@@ -1975,7 +2014,7 @@ def test_task9_stale_bundle_today_shows_stale_state_and_recent_events(
         ),
     )
     snapshot = _snapshot(generated_root)
-    assert bundle_latest_data_at(snapshot) == pd.Timestamp("2026-08-13T11:00:00Z")
+    assert bundle_latest_data_at(snapshot) == pd.Timestamp("2026-08-13T11:30:00Z")
     model = build_today_view(
         snapshot,
         filters=EventFilters(now_utc=snapshot.now_utc),
@@ -2593,3 +2632,263 @@ def test_app_and_company_page_import_from_app_dir_without_pythonpath() -> None:
         text=True,
     )
     assert proc_company.returncode == 0, f"Import company page from app_dir failed: {proc_company.stderr}"
+
+
+def test_compact_catalyst_frame_date_filtering() -> None:
+    from control_tower.pages.ai_bottlenecks import _compact_catalyst_frame
+
+    now = pd.Timestamp("2026-08-15T00:00:00Z")
+    frame = pd.DataFrame([
+        {
+            "event_id": "past",
+            "starts_at": "2026-08-01T00:00:00Z",
+            "ends_at": "2026-08-10T00:00:00Z",
+            "source_id": "official_source",
+            "related_entity_ids": ("TSMC",),
+            "related_basket_ids": ("AI_BOTTLENECKS_GLOBAL",),
+        },
+        {
+            "event_id": "future",
+            "starts_at": "2026-08-20T00:00:00Z",
+            "ends_at": "2026-08-25T00:00:00Z",
+            "source_id": "official_source",
+            "related_entity_ids": ("TSMC",),
+            "related_basket_ids": ("AI_BOTTLENECKS_GLOBAL",),
+        },
+        {
+            "event_id": "ongoing",
+            "starts_at": "2026-08-10T00:00:00Z",
+            "ends_at": "2026-08-20T00:00:00Z",
+            "source_id": "official_source",
+            "related_entity_ids": ("TSMC",),
+            "related_basket_ids": ("AI_BOTTLENECKS_GLOBAL",),
+        },
+    ])
+    result = _compact_catalyst_frame(frame, now_utc=now)
+    assert set(result["event_id"]) == {"future", "ongoing"}
+    assert len(_compact_catalyst_frame(pd.DataFrame(), now_utc=now)) == 0
+
+    # Date-only source fields are local-calendar dates, not naive UTC
+    # timestamps.  They should remain visible through the source-local day,
+    # and a terminal status must not turn an open-ended row into a permanent
+    # upcoming catalyst.
+    date_only = pd.DataFrame([
+        {
+            "event_id": "date_only",
+            "starts_at": "2026-08-15",
+            "ends_at": pd.NaT,
+            "date_precision": "date",
+            "source_timezone": "Asia/Taipei",
+            "source_id": "official_source",
+        },
+        {
+            "event_id": "completed_open_ended",
+            "starts_at": "2026-08-01",
+            "ends_at": pd.NaT,
+            "date_precision": "date",
+            "status": "completed",
+            "source_timezone": "Asia/Taipei",
+            "source_id": "official_source",
+        },
+    ])
+    assert set(_compact_catalyst_frame(date_only, now_utc=pd.Timestamp("2026-08-15T12:00:00Z"))["event_id"]) == {"date_only"}
+    assert _compact_catalyst_frame(date_only, now_utc=pd.Timestamp("2026-08-15T16:00:00Z")).empty
+
+
+def test_source_health_counts_excludes_entitlement_error_and_clock_skew_from_available() -> None:
+    from control_tower.pages.source_health import source_health_counts
+
+    frame = pd.DataFrame([
+        {"source_id": "s1", "status": "available", "display_status": "healthy"},
+        {"source_id": "s2", "status": "available", "display_status": "unclassified"},
+        {"source_id": "s3", "status": "available", "display_status": "entitlement_error"},
+        {"source_id": "s4", "status": "available", "display_status": "clock_skew"},
+        {"source_id": "s5", "status": "unavailable", "display_status": "unavailable"},
+        {"source_id": "s6", "status": "success", "display_status": "healthy"},
+    ])
+    counts = source_health_counts(frame)
+    assert counts["sources"] == 6
+    assert counts["available"] == 3
+    assert counts["healthy"] == 2
+    assert counts["freshness_unclassified"] == 1
+    assert counts["errors_gaps"] == 2
+    assert counts["unavailable_degraded"] == 1
+
+
+def test_header_page_aware_degraded_banner(generated_root: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import streamlit as st
+    from control_tower.models import ControlTowerSnapshot
+    from dataclasses import replace
+    from app import _header
+
+    snapshot = _snapshot(generated_root)
+    degraded_snapshot = replace(snapshot, status="degraded", degraded_reasons={"news_filings": "source_unavailable"})
+
+    warned_pages = []
+    def mock_warning(msg: str) -> None:
+        warned_pages.append(st.session_state.get("ct_page"))
+
+    monkeypatch.setattr(st, "warning", mock_warning)
+
+    for page in ("Today", "Unified Timeline", "Source Health"):
+        st.session_state["ct_page"] = page
+        _header(degraded_snapshot, timezone="UTC", page=page)
+        assert page in warned_pages
+
+    warned_pages.clear()
+    for page in ("Company", "AI Bottlenecks"):
+        st.session_state["ct_page"] = page
+        _header(degraded_snapshot, timezone="UTC", page=page)
+        assert page not in warned_pages
+
+
+def test_universe_filter_or_leak_prevention() -> None:
+    from control_tower.pages.today import _filter_frame_universe, _filter_change_rows
+
+    # 1. Frame universe filtering
+    df = pd.DataFrame([
+        # Row 0: US entity with related basket in CHINA_TECH -> should NOT pass CN universe
+        {"entity_id": "US_AAPL", "listing_id": "L_AAPL", "related_entity_ids": (), "related_listing_ids": (), "related_basket_ids": ("CHINA_TECH",), "title": "AAPL in China Basket"},
+        # Row 1: Related US entity with related basket in CHINA_TECH -> should NOT pass CN universe
+        {"entity_id": "", "listing_id": "", "related_entity_ids": ("US_MSFT",), "related_listing_ids": (), "related_basket_ids": ("CHINA_TECH",), "title": "MSFT related in China Basket"},
+        # Row 2: Pure basket-level event (no entity or listing IDs) -> SHOULD pass CHINA_TECH basket
+        {"entity_id": "", "listing_id": "", "related_entity_ids": (), "related_listing_ids": (), "related_basket_ids": ("CHINA_TECH",), "title": "China Tech Macro Index Rebalance"},
+        # Row 3: CN entity -> SHOULD pass CN universe
+        {"entity_id": "CN_TENCENT", "listing_id": "L_0700", "related_entity_ids": (), "related_listing_ids": (), "related_basket_ids": ("GLOBAL_TECH",), "title": "Tencent Earnings"},
+    ])
+
+    entities = {"CN_TENCENT"}
+    listings = {"L_0700"}
+    baskets = {"CHINA_TECH"}
+
+    filtered = _filter_frame_universe(df, entities, listings, baskets, restricted=True)
+    assert set(filtered["title"]) == {"China Tech Macro Index Rebalance", "Tencent Earnings"}
+
+    # Unrestricted keeps all
+    unrestricted = _filter_frame_universe(df, entities, listings, baskets, restricted=False)
+    assert len(unrestricted) == len(df)
+
+    # 2. Change rows filtering
+    changes = pd.DataFrame([
+        {"event_id": "", "change_kind": "consensus_revision", "entity_id": "US_AAPL", "listing_id": "L_AAPL", "related_entity_ids": (), "related_listing_ids": (), "related_basket_ids": ("CHINA_TECH",)},
+        {"event_id": "", "change_kind": "official_filing", "entity_id": "", "listing_id": "", "related_entity_ids": ("US_MSFT",), "related_listing_ids": (), "related_basket_ids": ("CHINA_TECH",)},
+        {"event_id": "", "change_kind": "macro_event", "entity_id": "", "listing_id": "", "related_entity_ids": (), "related_listing_ids": (), "related_basket_ids": ("CHINA_TECH",)},
+        {"event_id": "", "change_kind": "consensus_revision", "entity_id": "CN_TENCENT", "listing_id": "L_0700", "related_entity_ids": (), "related_listing_ids": (), "related_basket_ids": ()},
+    ])
+
+    filtered_changes = _filter_change_rows(
+        changes,
+        selected_entities=entities,
+        selected_listings=listings,
+        selected_baskets=baskets,
+        restricted=True,
+        allowed_event_ids=set(),
+        include_company_content=True,
+    )
+    assert len(filtered_changes) == 2
+    assert set(filtered_changes["change_kind"]) == {"macro_event", "consensus_revision"}
+    assert set(filtered_changes["entity_id"].fillna("")) == {"", "CN_TENCENT"}
+
+
+def test_change_ticker_label_fallbacks(generated_root: Path) -> None:
+    from control_tower.pages.today import _change_ticker_label
+
+    snapshot = _snapshot(generated_root)
+
+    # Row with entity_id resolved via snapshot.entities + snapshot.listings.
+    # This fixture intentionally uses generic E1/L1 identities; production
+    # Tencent identity belongs in the production-generation acceptance test.
+    row_entity = pd.Series({"entity_id": "E1", "canonical_ticker": ""})
+    label = _change_ticker_label(snapshot, row_entity)
+    assert "Entity One" in label or "EONE" in label
+
+    # Row with only listing_id
+    row_listing = pd.Series({"listing_id": "L1"})
+    assert _change_ticker_label(snapshot, row_listing) == "EONE"
+
+    # Row with only canonical_ticker
+    row_ticker = pd.Series({"canonical_ticker": "CUSTOM.TICKER"})
+    assert _change_ticker_label(snapshot, row_ticker) == "CUSTOM.TICKER"
+
+    # Row with no registry match
+    row_empty = pd.Series({})
+    assert _change_ticker_label(snapshot, row_empty) == "ticker unavailable · registry unresolved"
+
+
+def test_flight_deck_revision_metric_universe_scoping(generated_root: Path) -> None:
+    from control_tower.components.flight_deck import _revision_metric
+    from control_tower.models import EventFilters
+
+    snapshot = _snapshot(generated_root)
+
+    # All universe -> counts revisions
+    all_metric = _revision_metric(snapshot, EventFilters(now_utc=snapshot.now_utc))
+    assert all_metric.status == "available"
+    assert all_metric.covered is not None and all_metric.covered > 0
+
+    # Empty/non-matching universe -> degraded with No comparable history
+    empty_filter = EventFilters(country=("NONEXISTENT_COUNTRY",), now_utc=snapshot.now_utc)
+    empty_metric = _revision_metric(snapshot, empty_filter)
+    assert empty_metric.status == "degraded"
+    assert empty_metric.detail == "No comparable history"
+
+    # Non-company scope -> unavailable
+    macro_metric = _revision_metric(snapshot, EventFilters(scope=("macro",), now_utc=snapshot.now_utc))
+    assert macro_metric.status == "unavailable"
+    assert macro_metric.detail == "Not applicable to selected scope"
+
+
+def test_source_alerts_includes_entitlement_error_and_clock_skew(generated_root: Path) -> None:
+    from control_tower.pages.today import _source_alerts
+
+    snapshot = _snapshot(generated_root)
+    health = pd.DataFrame([
+        {"source_id": "s1", "status": "healthy"},
+        {"source_id": "s2", "status": "entitlement_error"},
+        {"source_id": "s3", "status": "clock_skew"},
+        {"source_id": "s4", "status": "stale"},
+        {"source_id": "s5", "status": "available", "source_latest_at": "2026-08-14T13:00:00Z"},
+        {"source_id": "s6", "status": "available", "entitlement_status": "denied"},
+    ])
+    custom_snapshot = replace(snapshot, source_health=health)
+    alerts = _source_alerts(custom_snapshot)
+    assert set(alerts["source_id"]) == {"s2", "s3", "s4", "s5", "s6"}
+
+
+def test_bundle_latest_data_at_marts(generated_root: Path) -> None:
+    from control_tower.pages.today import bundle_latest_data_at
+
+    snapshot = _snapshot(generated_root)
+    base_latest = bundle_latest_data_at(snapshot)
+    assert base_latest is not None
+
+    # Add an official filing with newer timestamp
+    newer_ts = pd.Timestamp("2026-09-01T12:00:00Z")
+    filings = pd.DataFrame([
+        {"document_id": "D1", "published_at": "2026-09-01T12:00:00Z", "retrieved_at_utc": "2026-09-01T12:00:00Z"}
+    ])
+    newer_snapshot = replace(
+        snapshot,
+        official_filings=filings,
+        as_of_utc=pd.Timestamp("2026-09-02T00:00:00Z"),
+    )
+    assert bundle_latest_data_at(newer_snapshot) == newer_ts
+
+    # A future-dated row is invalid for the frozen manifest vintage and must
+    # not move the bundle's freshness marker into the future.
+    future_snapshot = replace(snapshot, official_filings=filings)
+    assert bundle_latest_data_at(future_snapshot) <= snapshot.as_of_utc
+
+    # A later first-observed timestamp must win over an older source-published
+    # timestamp in the same mart; row-level fallback ordering would return the
+    # older publication time instead.
+    observed = snapshot.events.iloc[[0]].copy()
+    observed["source_published_at"] = "2026-08-13T10:00:00Z"
+    observed["first_observed_at"] = "2026-08-13T13:00:00Z"
+    observed["last_verified_at"] = "2026-08-13T13:00:00Z"
+    observed_snapshot = replace(
+        snapshot,
+        events=observed,
+        as_of_utc=pd.Timestamp("2026-08-13T14:00:00Z"),
+    )
+    assert bundle_latest_data_at(observed_snapshot) == pd.Timestamp("2026-08-13T13:00:00Z")
