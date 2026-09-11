@@ -1,0 +1,39 @@
+{
+  "manifest_version": "free_public_data_snapshot.v1",
+  "source": "factset_earnings",
+  "run_id": "20260911T122151Z-factset-pe-average-repair",
+  "started_at_utc": "2026-09-11T12:21:51.706553+00:00",
+  "finished_at_utc": "2026-09-11T12:21:51.729803+00:00",
+  "status": "partial",
+  "errors": {
+    "https://insight.factset.com/market-is-punishing-negative-eps-surprises-more-than-average-for-q1": "unexpected parsed values pe=None avg=None"
+  },
+  "coverage": {
+    "parent_raw_run": "20260911T120436Z-58a90ab8",
+    "rows_considered": 66,
+    "rows_repaired": 65,
+    "repair_scope": "legacy forward P/E average values >= 60"
+  },
+  "normalized_outputs": {
+    "factset_sp500_earnings_regime.parquet": "/Users/henrywzh/Desktop/Quant/alternative-data/data/normalized/factset_earnings/factset_sp500_earnings_regime.parquet",
+    "factset_sp500_earnings_regime.csv": "/Users/henrywzh/Desktop/Quant/alternative-data/data/normalized/factset_earnings/factset_sp500_earnings_regime.csv"
+  },
+  "entries": [
+    {
+      "path": "20260911T122151Z-factset-pe-average-repair/repair_observations.json",
+      "source_url": "local://factset-raw-repair",
+      "status_code": null,
+      "byte_size": 17825,
+      "payload_sha256": "3d0e10b677cc8b3cd6de2e6c07d7c8fe0919d4c667b3f0f71dd623464e980d27",
+      "stored_sha256": "3d0e10b677cc8b3cd6de2e6c07d7c8fe0919d4c667b3f0f71dd623464e980d27",
+      "gzip_payload": false,
+      "rows": 65,
+      "coverage": {},
+      "metadata": {
+        "repair_type": "parser-correction",
+        "reason": "constrain forward-P/E 10-year average to P/E context"
+      },
+      "captured_at_utc": "2026-09-11T12:21:51.706553+00:00"
+    }
+  ]
+}

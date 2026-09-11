@@ -1,0 +1,72 @@
+{
+  "manifest_version": "free_public_data_snapshot.v1",
+  "source": "eia_grid_hourly",
+  "run_id": "20260911T112038Z-75b4ff8b",
+  "started_at_utc": "2026-09-11T11:23:16.958882+00:00",
+  "finished_at_utc": "2026-09-11T11:23:17.140163+00:00",
+  "status": "ok",
+  "errors": {},
+  "coverage": {
+    "respondents": [
+      "PJM",
+      "ERCOT",
+      "CISO",
+      "NYIS",
+      "MISO"
+    ],
+    "respondent_rows": {
+      "CISO": 523350,
+      "PJM": 539319,
+      "MISO": 471968,
+      "NYIS": 539286
+    },
+    "rows_fetched": 2073923,
+    "requested_start": "2019-01-01T00",
+    "requested_end": "2026-09-11T23",
+    "normalized_rows_total": 2073923,
+    "period_field_note": "EIA API period is an hourly wall-clock label; retained in the legacy timestamp_utc column without inventing a timezone.",
+    "transport": "official EIA no-key bulk EBA.zip",
+    "min_period": "2019-01-01T00",
+    "max_period": "2026-09-10T06",
+    "raw_full_bulk_topic": true
+  },
+  "normalized_outputs": {
+    "eia_grid_hourly.parquet": "data/normalized/eia_energy/eia_grid_hourly.parquet",
+    "eia_grid_hourly.csv": "data/normalized/eia_energy/eia_grid_hourly.csv"
+  },
+  "entries": [
+    {
+      "path": "20260911T112038Z-75b4ff8b/bulk/EBA.zip",
+      "source_url": "https://www.eia.gov/opendata/bulk/EBA.zip",
+      "status_code": 200,
+      "byte_size": 688313538,
+      "payload_sha256": "f68ef4047f5662bf7491856c5a1a972b21c1c6f6bc94ff909935a1580206820f",
+      "stored_sha256": "f68ef4047f5662bf7491856c5a1a972b21c1c6f6bc94ff909935a1580206820f",
+      "gzip_payload": false,
+      "rows": 2073923,
+      "coverage": {
+        "member": "EBA.txt",
+        "series_counts": {
+          "CISO": 8,
+          "PJM": 8,
+          "MISO": 8,
+          "NYIS": 8
+        },
+        "min_period": "2019-01-01T00",
+        "max_period": "2026-09-10T06"
+      },
+      "metadata": {
+        "transport": "official EIA no-key bulk EBA.zip",
+        "full_topic_raw": true,
+        "normalized_respondents": [
+          "PJM",
+          "ERCOT",
+          "CISO",
+          "NYIS",
+          "MISO"
+        ]
+      },
+      "captured_at_utc": "2026-09-11T11:23:16.958882+00:00"
+    }
+  ]
+}

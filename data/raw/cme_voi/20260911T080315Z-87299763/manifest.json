@@ -1,0 +1,53 @@
+{
+  "manifest_version": "free_public_data_snapshot.v1",
+  "source": "cme_volume_open_interest",
+  "run_id": "20260911T080315Z-87299763",
+  "started_at_utc": "2026-09-11T08:04:19.206052+00:00",
+  "finished_at_utc": "2026-09-11T08:04:19.206065+00:00",
+  "status": "failed",
+  "errors": {
+    "availability": "CME free public history is limited to the current Daily Bulletin; historical detailed daily files require CME DataMine/entitlement.",
+    "section_equity": "HTTPError: 403 Client Error: Forbidden for url: https://www.cmegroup.com/daily_bulletin/current/Section01C_Summary_Volume_And_Open_Interest_Equity_Index_Futures_And_Options.pdf",
+    "section_rates": "HTTPError: 403 Client Error: Forbidden for url: https://www.cmegroup.com/daily_bulletin/current/Section02A_Summary_Volume_And_Open_Interest_Int_Rates_Futures_And_Options.pdf",
+    "section_metals": "HTTPError: 403 Client Error: Forbidden for url: https://www.cmegroup.com/daily_bulletin/current/Section02B_Summary_Volume_And_Open_Interest_Metals_Futures_And_Options.pdf",
+    "section_energy": "HTTPError: 403 Client Error: Forbidden for url: https://www.cmegroup.com/daily_bulletin/current/Section02C_Summary_Volume_And_Open_Interest_Energy_Futures_And_Options.pdf"
+  },
+  "coverage": {
+    "sections": {
+      "equity": {
+        "status": "failed",
+        "error": "HTTPError: 403 Client Error: Forbidden for url: https://www.cmegroup.com/daily_bulletin/current/Section01C_Summary_Volume_And_Open_Interest_Equity_Index_Futures_And_Options.pdf"
+      },
+      "rates": {
+        "status": "failed",
+        "error": "HTTPError: 403 Client Error: Forbidden for url: https://www.cmegroup.com/daily_bulletin/current/Section02A_Summary_Volume_And_Open_Interest_Int_Rates_Futures_And_Options.pdf"
+      },
+      "metals": {
+        "status": "failed",
+        "error": "HTTPError: 403 Client Error: Forbidden for url: https://www.cmegroup.com/daily_bulletin/current/Section02B_Summary_Volume_And_Open_Interest_Metals_Futures_And_Options.pdf"
+      },
+      "energy": {
+        "status": "failed",
+        "error": "HTTPError: 403 Client Error: Forbidden for url: https://www.cmegroup.com/daily_bulletin/current/Section02C_Summary_Volume_And_Open_Interest_Energy_Futures_And_Options.pdf"
+      }
+    },
+    "rows_fetched": 0,
+    "min_trade_date": null,
+    "max_trade_date": null,
+    "products_requested": [
+      "ES",
+      "NQ",
+      "SR3",
+      "ZN",
+      "GC",
+      "CL",
+      "HG"
+    ],
+    "free_history_limitation": true
+  },
+  "normalized_outputs": {
+    "cme_futures_voi.parquet": "data/normalized/cme_voi/cme_futures_voi.parquet",
+    "cme_futures_voi.csv": "data/normalized/cme_voi/cme_futures_voi.csv"
+  },
+  "entries": []
+}

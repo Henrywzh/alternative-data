@@ -1,0 +1,37 @@
+{
+  "manifest_version": "free_public_data_snapshot.v1",
+  "source": "factset_earnings",
+  "run_id": "20260911T121654Z-factset-pe-repair",
+  "started_at_utc": "2026-09-11T12:16:54.570445+00:00",
+  "finished_at_utc": "2026-09-11T12:16:54.593901+00:00",
+  "status": "ok",
+  "errors": {},
+  "coverage": {
+    "parent_raw_run": "20260911T120436Z-58a90ab8",
+    "rows_considered": 8,
+    "rows_repaired": 8,
+    "repair_scope": "legacy forward P/E parser outliers only"
+  },
+  "normalized_outputs": {
+    "factset_sp500_earnings_regime.parquet": "/Users/henrywzh/Desktop/Quant/alternative-data/data/normalized/factset_earnings/factset_sp500_earnings_regime.parquet",
+    "factset_sp500_earnings_regime.csv": "/Users/henrywzh/Desktop/Quant/alternative-data/data/normalized/factset_earnings/factset_sp500_earnings_regime.csv"
+  },
+  "entries": [
+    {
+      "path": "20260911T121654Z-factset-pe-repair/repair_observations.json",
+      "source_url": "local://factset-raw-repair",
+      "status_code": null,
+      "byte_size": 3630,
+      "payload_sha256": "d1ce1f7cd1b38aec19aca1fe7f16c601f7f5093ca88e5045529e74db730fe850",
+      "stored_sha256": "d1ce1f7cd1b38aec19aca1fe7f16c601f7f5093ca88e5045529e74db730fe850",
+      "gzip_payload": false,
+      "rows": 8,
+      "coverage": {},
+      "metadata": {
+        "repair_type": "parser-correction",
+        "reason": "replace legacy forward P/E values >= 100"
+      },
+      "captured_at_utc": "2026-09-11T12:16:54.570445+00:00"
+    }
+  ]
+}

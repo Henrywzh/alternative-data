@@ -1,0 +1,36 @@
+{
+  "manifest_version": "free_public_data_snapshot.v1",
+  "source": "eia_grid_hourly",
+  "run_id": "20260911T111952Z-12bba3e8",
+  "started_at_utc": "2026-09-11T11:20:03.113125+00:00",
+  "finished_at_utc": "2026-09-11T11:20:03.113142+00:00",
+  "status": "failed",
+  "errors": {
+    "bulk_fetch_or_normalize": "HTTPError: 406 Client Error: Not Acceptable for url: https://www.eia.gov/opendata/bulk/EBA.zip",
+    "api_fallback": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.eia.gov/v2/electricity/rto/fuel-type-data/data?frequency=hourly&data%5B0%5D=value&facets%5Brespondent%5D%5B0%5D=PJM&start=2019-01-01T00&end=2026-09-11T23&sort%5B0%5D%5Bcolumn%5D=period&sort%5B0%5D%5Bdirection%5D=asc&length=5000&offset=0&api_key=DEMO_KEY"
+  },
+  "coverage": {
+    "respondents": [
+      "PJM",
+      "ERCOT",
+      "CISO",
+      "NYIS",
+      "MISO"
+    ],
+    "respondent_rows": {},
+    "rows_fetched": 0,
+    "requested_start": "2019-01-01T00",
+    "requested_end": "2026-09-11T23",
+    "normalized_rows_total": 50000,
+    "period_field_note": "EIA API period is an hourly wall-clock label; retained in the legacy timestamp_utc column without inventing a timezone.",
+    "transport": "official EIA no-key bulk EBA.zip",
+    "min_period": null,
+    "max_period": null,
+    "raw_full_bulk_topic": true
+  },
+  "normalized_outputs": {
+    "eia_grid_hourly.parquet": "data/normalized/eia_energy/eia_grid_hourly.parquet",
+    "eia_grid_hourly.csv": "data/normalized/eia_energy/eia_grid_hourly.csv"
+  },
+  "entries": []
+}

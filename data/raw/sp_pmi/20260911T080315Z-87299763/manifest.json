@@ -1,0 +1,232 @@
+{
+  "manifest_version": "free_public_data_snapshot.v1",
+  "source": "sp_global_pmi",
+  "run_id": "20260911T080315Z-87299763",
+  "started_at_utc": "2026-09-11T10:22:31.170880+00:00",
+  "finished_at_utc": "2026-09-11T10:31:40.065642+00:00",
+  "status": "partial",
+  "errors": {
+    "release_12": "RuntimeError: S&P PMI response is an AWS WAF challenge page, not release content",
+    "release_13": "RuntimeError: S&P PMI response is an AWS WAF challenge page, not release content",
+    "release_14": "RuntimeError: S&P PMI response is an AWS WAF challenge page, not release content",
+    "release_15": "RuntimeError: S&P PMI response is an AWS WAF challenge page, not release content",
+    "release_16": "RuntimeError: S&P PMI response is an AWS WAF challenge page, not release content",
+    "release_fetch_stop": "Stopped after 12 consecutive public release-page failures; homepage headline cards remain available.",
+    "release_fetch_summary": {
+      "attempted": 170,
+      "failed": 12,
+      "sample_errors_recorded": 5
+    }
+  },
+  "coverage": {
+    "homepage_cards": 53,
+    "release_links": 170,
+    "release_records_parsed": 0,
+    "rows_fetched": 53,
+    "min_period": "2026-08",
+    "max_period": "2026-08",
+    "frequency": "monthly public headline/release pages",
+    "coverage_note": "Public pages expose headline readings and commentary; S&P Global's underlying full PMI dataset is not treated as free/public here."
+  },
+  "normalized_outputs": {
+    "sp_pmi_subindices.parquet": "data/normalized/sp_pmi/sp_pmi_subindices.parquet",
+    "sp_pmi_subindices.csv": "data/normalized/sp_pmi/sp_pmi_subindices.csv"
+  },
+  "entries": [
+    {
+      "path": "20260911T080315Z-87299763/home/index.html.gz",
+      "source_url": "https://pmi.spglobal.com/Public/Home/Index?language=en&_=1789122149720",
+      "status_code": 200,
+      "byte_size": 5941,
+      "payload_sha256": "2449be8f4570414701b2d26f55481dec654a84118138acb45c71ab1b8152775f",
+      "stored_sha256": "359224759f2e6e87e8a535a68ad1564de373d71f9492b52f9947b0c52be46184",
+      "gzip_payload": true,
+      "rows": null,
+      "coverage": {},
+      "metadata": {
+        "public_scope": "latest headline cards"
+      },
+      "captured_at_utc": "2026-09-11T10:22:31.170880+00:00"
+    },
+    {
+      "path": "20260911T080315Z-87299763/release_calendar/index.html.gz",
+      "source_url": "https://pmi.spglobal.com/Public/Release/PressReleases?language=en&_=1789122151228",
+      "status_code": 200,
+      "byte_size": 8381,
+      "payload_sha256": "e66d581b8e94b75f460a61f83ad1d0d71c31a4784cdb73493f5cc33af4b8267e",
+      "stored_sha256": "e5340ac417c2c5730143f9e7d115cc417fddfc1214bfd79fdde27ad0d4a6d1a3",
+      "gzip_payload": true,
+      "rows": null,
+      "coverage": {},
+      "metadata": {
+        "public_scope": "release links"
+      },
+      "captured_at_utc": "2026-09-11T10:22:31.855482+00:00"
+    },
+    {
+      "path": "20260911T080315Z-87299763/releases/0001_c447735500ea.html.gz",
+      "source_url": "https://www.pmi.spglobal.com/Public/Home/PressRelease/851836381ace416982e3230c80ebfc64?_=1789122151899",
+      "status_code": 200,
+      "byte_size": 87857,
+      "payload_sha256": "9ddbed8d9326fea94afcfbbeecb7781a74c02264d23836cd4bbe266a09e678bd",
+      "stored_sha256": "c31ed46ece09c2f14f0546781285581116ee87e2ef27b2a42ea224c6ffac647e",
+      "gzip_payload": true,
+      "rows": null,
+      "coverage": {},
+      "metadata": {
+        "release_url": "https://www.pmi.spglobal.com/Public/Home/PressRelease/851836381ace416982e3230c80ebfc64"
+      },
+      "captured_at_utc": "2026-09-11T10:22:33.459657+00:00"
+    },
+    {
+      "path": "20260911T080315Z-87299763/releases/0002_bbaff6da7183.html.gz",
+      "source_url": "https://www.pmi.spglobal.com/Public/Home/PressRelease/577726f5cdab43de8bab0ac5d4d84b97?_=1789122153496",
+      "status_code": 200,
+      "byte_size": 97759,
+      "payload_sha256": "772a1a6aebd203ec3b1aa0759ea3b8c0894606605d46dcb68c48629efeafd8b6",
+      "stored_sha256": "a300250ba0aa36b1bf7e7652ad26d70bfdf9778d11ae8858341a18fe9fa5039f",
+      "gzip_payload": true,
+      "rows": null,
+      "coverage": {},
+      "metadata": {
+        "release_url": "https://www.pmi.spglobal.com/Public/Home/PressRelease/577726f5cdab43de8bab0ac5d4d84b97"
+      },
+      "captured_at_utc": "2026-09-11T10:22:34.063539+00:00"
+    },
+    {
+      "path": "20260911T080315Z-87299763/releases/0003_40beaf69ad2e.html.gz",
+      "source_url": "https://www.pmi.spglobal.com/Public/Home/PressRelease/0a3fb112708046bba18d27b555ce7ecb?_=1789122154101",
+      "status_code": 200,
+      "byte_size": 89509,
+      "payload_sha256": "4de7c33c96b01f1a63e52b7d3d7df3f9023f5e97b4c27a95c0ff82a5f19c08d9",
+      "stored_sha256": "2e67f3f3f45279f1c38c2e7c8edfac86e0213a566290ce29882ec95476f748f2",
+      "gzip_payload": true,
+      "rows": null,
+      "coverage": {},
+      "metadata": {
+        "release_url": "https://www.pmi.spglobal.com/Public/Home/PressRelease/0a3fb112708046bba18d27b555ce7ecb"
+      },
+      "captured_at_utc": "2026-09-11T10:22:34.578839+00:00"
+    },
+    {
+      "path": "20260911T080315Z-87299763/releases/0004_aba8d243d4dc.html.gz",
+      "source_url": "https://www.pmi.spglobal.com/Public/Home/PressRelease/55b418e617f34269b3e1b0f056317a30",
+      "status_code": 200,
+      "byte_size": 91154,
+      "payload_sha256": "0e3443cb38fb5edec7813324b480849f10dcaf8b72afd63b182b2276c147003c",
+      "stored_sha256": "e8cb5b1c32647bfbaa7b6247dcf23235965f8be43f988e404f9170de6c370d5f",
+      "gzip_payload": true,
+      "rows": null,
+      "coverage": {},
+      "metadata": {
+        "release_url": "https://www.pmi.spglobal.com/Public/Home/PressRelease/55b418e617f34269b3e1b0f056317a30"
+      },
+      "captured_at_utc": "2026-09-11T10:31:28.954505+00:00"
+    },
+    {
+      "path": "20260911T080315Z-87299763/releases/0005_be45b05161d8.html.gz",
+      "source_url": "https://www.pmi.spglobal.com/Public/Home/PressRelease/d3399079f4c84a81a19620a062eecbb4?_=1789122688996",
+      "status_code": 200,
+      "byte_size": 84605,
+      "payload_sha256": "7c90cd126aa21f2fa8f4580fdf79cda2168fb11afd3094591977bb842add2f54",
+      "stored_sha256": "388c726d78b6ff49cc916ed0902df9532f75b26ea1679109bb341a860a167ed4",
+      "gzip_payload": true,
+      "rows": null,
+      "coverage": {},
+      "metadata": {
+        "release_url": "https://www.pmi.spglobal.com/Public/Home/PressRelease/d3399079f4c84a81a19620a062eecbb4"
+      },
+      "captured_at_utc": "2026-09-11T10:31:29.573586+00:00"
+    },
+    {
+      "path": "20260911T080315Z-87299763/releases/0006_beb691a81b8a.html.gz",
+      "source_url": "https://www.pmi.spglobal.com/Public/Home/PressRelease/b0f45bd0a1fe40c484bd9e988e2aa430?_=1789122689610",
+      "status_code": 200,
+      "byte_size": 90876,
+      "payload_sha256": "5fd8acd616e61c211e1c78fddf63ad462d5b8f47420bbe5ed9c4b797d4aa0347",
+      "stored_sha256": "c312252cde0559fedcd6f963a9b27edcf6a440c3a36e895b0dd913ade2624ce3",
+      "gzip_payload": true,
+      "rows": null,
+      "coverage": {},
+      "metadata": {
+        "release_url": "https://www.pmi.spglobal.com/Public/Home/PressRelease/b0f45bd0a1fe40c484bd9e988e2aa430"
+      },
+      "captured_at_utc": "2026-09-11T10:31:30.119927+00:00"
+    },
+    {
+      "path": "20260911T080315Z-87299763/releases/0007_d767c2ecab07.html.gz",
+      "source_url": "https://www.pmi.spglobal.com/Public/Home/PressRelease/5b84a776ef4c4856862237d28c4eea57?_=1789122690152",
+      "status_code": 200,
+      "byte_size": 88405,
+      "payload_sha256": "85497dac271e300d0f40923da8b2eccdeba282c240ed34a1e21a8d02eec47061",
+      "stored_sha256": "bf5b56e3d2d7b40b3e9b9daaaef16f0cf4899e3aa918e60373648089bb7ecd1a",
+      "gzip_payload": true,
+      "rows": null,
+      "coverage": {},
+      "metadata": {
+        "release_url": "https://www.pmi.spglobal.com/Public/Home/PressRelease/5b84a776ef4c4856862237d28c4eea57"
+      },
+      "captured_at_utc": "2026-09-11T10:31:30.666140+00:00"
+    },
+    {
+      "path": "20260911T080315Z-87299763/releases/0008_f1bac4faecae.html.gz",
+      "source_url": "https://www.pmi.spglobal.com/Public/Home/PressRelease/ce551a2735084a878bf38f7e1ad6c907?_=1789122690702",
+      "status_code": 200,
+      "byte_size": 135514,
+      "payload_sha256": "cf2a467367c9cdec817a009f646d2e427bc10f3b4c07e02c5b56b0ca5c01bbfb",
+      "stored_sha256": "a4c3f7eef30eca6e3e985a341f8e9d8adcea8e3893530b5f6e138046af884a42",
+      "gzip_payload": true,
+      "rows": null,
+      "coverage": {},
+      "metadata": {
+        "release_url": "https://www.pmi.spglobal.com/Public/Home/PressRelease/ce551a2735084a878bf38f7e1ad6c907"
+      },
+      "captured_at_utc": "2026-09-11T10:31:31.239714+00:00"
+    },
+    {
+      "path": "20260911T080315Z-87299763/releases/0009_27d784bc8b7c.html.gz",
+      "source_url": "https://www.pmi.spglobal.com/Public/Home/PressRelease/a6bac56fe01e4e07b2fdb451bbe1b56e?_=1789122691282",
+      "status_code": 200,
+      "byte_size": 87531,
+      "payload_sha256": "870523a0a735ef49af34bc025c83bca081d3782f28bad1fe76ff10f8c48359e8",
+      "stored_sha256": "3bbf5fa86be1782c726987ca8fce180599dfc334aa67df58f88816ae7759fbb8",
+      "gzip_payload": true,
+      "rows": null,
+      "coverage": {},
+      "metadata": {
+        "release_url": "https://www.pmi.spglobal.com/Public/Home/PressRelease/a6bac56fe01e4e07b2fdb451bbe1b56e"
+      },
+      "captured_at_utc": "2026-09-11T10:31:31.736057+00:00"
+    },
+    {
+      "path": "20260911T080315Z-87299763/releases/0010_2917e2ce1f55.html.gz",
+      "source_url": "https://www.pmi.spglobal.com/Public/Home/PressRelease/552d682e429640fcb8af7da17ad060c3?_=1789122691765",
+      "status_code": 200,
+      "byte_size": 102521,
+      "payload_sha256": "8391856200d9ac21c9a593599184f8c1aeeabaff574c6fbdb8c3edfca9f231f4",
+      "stored_sha256": "ed6b5845aeb3966dba13d2f3644acdc71bdc559a64e189201d2674c247baee93",
+      "gzip_payload": true,
+      "rows": null,
+      "coverage": {},
+      "metadata": {
+        "release_url": "https://www.pmi.spglobal.com/Public/Home/PressRelease/552d682e429640fcb8af7da17ad060c3"
+      },
+      "captured_at_utc": "2026-09-11T10:31:32.196160+00:00"
+    },
+    {
+      "path": "20260911T080315Z-87299763/releases/0011_05731728d721.html.gz",
+      "source_url": "https://www.pmi.spglobal.com/Public/Home/PressRelease/cd324ddf91f64bdb8c119dad8bfe7912?_=1789122692235",
+      "status_code": 200,
+      "byte_size": 105413,
+      "payload_sha256": "a43e571e568855f7f826986e9ea0029745df5f1b8f7f9a3ec90dbd94a0d4b166",
+      "stored_sha256": "5f40d4bdd4e02304c62602d53e5757b6d9eecc91dd0cb2c1af2b20f98dfbc55a",
+      "gzip_payload": true,
+      "rows": null,
+      "coverage": {},
+      "metadata": {
+        "release_url": "https://www.pmi.spglobal.com/Public/Home/PressRelease/cd324ddf91f64bdb8c119dad8bfe7912"
+      },
+      "captured_at_utc": "2026-09-11T10:31:32.745063+00:00"
+    }
+  ]
+}
