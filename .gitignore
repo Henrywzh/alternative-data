@@ -512,3 +512,63 @@ data/raw/hk_transport/*
 # Staging output from scripts/build_research_control_tower.py (--publish writes
 # into apps/research-control-tower/.generated instead).
 .rct-staging/
+
+# Free institutional-data lanes (Phase 1-4). Normalized panels are published;
+# raw snapshots stay ignored except their manifests, which carry the SHA-256
+# lineage that makes a published panel auditable. Without these rules the
+# backfill writes 363 MB that git silently ignores -- the run reports success
+# and nothing is committable.
+!data/normalized/bis_macro/
+data/normalized/bis_macro/*
+!data/normalized/bis_macro/*.parquet
+!data/normalized/hkma_macro/
+data/normalized/hkma_macro/*
+!data/normalized/hkma_macro/*.parquet
+!data/normalized/factset_earnings/
+data/normalized/factset_earnings/*
+!data/normalized/factset_earnings/*.parquet
+!data/normalized/sp_pmi/
+data/normalized/sp_pmi/*
+!data/normalized/sp_pmi/*.parquet
+!data/normalized/msci_reviews/
+data/normalized/msci_reviews/*
+!data/normalized/msci_reviews/*.parquet
+!data/normalized/hkex_market_flow/
+data/normalized/hkex_market_flow/*
+!data/normalized/hkex_market_flow/*.parquet
+!data/normalized/cme_voi/
+data/normalized/cme_voi/*
+!data/normalized/cme_voi/*.parquet
+# eia_energy is stored as one parquet per observation date: 2.5M rows as a
+# single 11.5 MB table would be rewritten in full every daily refresh, which
+# git cannot delta. Day partitions cost 25 MB once and 5 KB per new day.
+!data/normalized/eia_energy/
+data/normalized/eia_energy/*
+!data/normalized/eia_energy/*/
+!data/normalized/eia_energy/*/*.parquet
+# Raw manifests only -- the payloads themselves stay out of git.
+!data/raw/bis_macro/
+!data/raw/hkma_macro/
+!data/raw/eia_energy/
+!data/raw/cme_voi/
+!data/raw/factset_earnings/
+!data/raw/sp_pmi/
+!data/raw/msci_reviews/
+!data/raw/hkex_market_flow/
+data/raw/bis_macro/**
+data/raw/hkma_macro/**
+data/raw/eia_energy/**
+data/raw/cme_voi/**
+data/raw/factset_earnings/**
+data/raw/sp_pmi/**
+data/raw/msci_reviews/**
+data/raw/hkex_market_flow/**
+!data/raw/*/*/
+!data/raw/bis_macro/*/manifest.json
+!data/raw/hkma_macro/*/manifest.json
+!data/raw/eia_energy/*/manifest.json
+!data/raw/cme_voi/*/manifest.json
+!data/raw/factset_earnings/*/manifest.json
+!data/raw/sp_pmi/*/manifest.json
+!data/raw/msci_reviews/*/manifest.json
+!data/raw/hkex_market_flow/*/manifest.json
