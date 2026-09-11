@@ -8,6 +8,7 @@ from typing import Any
 import pandas as pd
 
 from ai_hiring_data.models import Snapshot
+from common.partitioned_parquet import PartitionSpec, PartitionedParquetStore
 
 
 DATASET_COLUMNS: dict[str, list[str]] = {
@@ -76,6 +77,24 @@ MODES = {
 }
 
 PARTITIONS = {"hiring_demand_daily": ["snapshot_date"]}
+
+# Distinct from PARTITIONS above, which selects rows to replace on upsert.
+# This one controls the on-disk layout: one parquet file per event_date instead
+# of a single table.
+#
+# hiring_job_events is an append-only log -- measured across two consecutive
+# commits (2026-09-08 -> 2026-09-09) it went 85,903 -> 88,087 rows, gained one
+# event_date, and exactly one of its 54 dates differed. The single-file layout
+# rewrote the whole parquet for that 2% change, and parquet is compressed
+# binary that git cannot delta, so every run added the full file to history --
+# 10.7 MB over the last 90 days.
+#
+# Its sibling hiring_jobs is deliberately NOT here. That table mutates old rows
+# as postings close (closed_at, missing_since_at, last_changed_at), so 80-91%
+# of partitions would be rewritten every run: all of the file-count cost and
+# none of the benefit. Measure before adding a dataset here; see
+# src/common/partitioned_parquet.py.
+PARTITION_COLUMNS: dict[str, str] = {"hiring_job_events": "event_date"}
 META_COLUMNS = {
     "dataset_id", "source_url", "source_run_id", "scraped_at",
     "status_code", "response_ms", "content_bytes", "etag", "last_modified",
@@ -95,12 +114,36 @@ class HiringStorage:
         self.raw_root.mkdir(parents=True, exist_ok=True)
         self.normalized_root.mkdir(parents=True, exist_ok=True)
 
+    def partition_store(self, dataset_id: str) -> PartitionedParquetStore | None:
+        """The partitioned store for this dataset, or None if it is single-file."""
+        column = PARTITION_COLUMNS.get(dataset_id)
+        if column is None:
+            return None
+        columns = DATASET_COLUMNS[dataset_id]
+        return PartitionedParquetStore(
+            self.normalized_root / dataset_id,
+            PartitionSpec(
+                column=column,
+                columns=columns,
+                bool_columns=frozenset(BOOLEAN_COLUMNS) & set(columns),
+                numeric_columns=frozenset(NUMERIC_COLUMNS) & set(columns),
+            ),
+        )
+
     def load(self, dataset_id: str) -> pd.DataFrame:
         columns = DATASET_COLUMNS[dataset_id]
         path = self.normalized_root / f"{dataset_id}.parquet"
-        if not path.exists():
+        store = self.partition_store(dataset_id)
+        partitioned = store.load() if store else None
+        if partitioned is not None:
+            # A leftover single file would silently double every row, so the
+            # partition directory wins once it exists. A pre-migration checkout
+            # has no directory and falls through to the single file.
+            frame = partitioned
+        elif not path.exists():
             return pd.DataFrame(columns=columns)
-        frame = pd.read_parquet(path)
+        else:
+            frame = pd.read_parquet(path)
         for column in columns:
             if column not in frame.columns:
                 frame[column] = pd.NA
@@ -177,6 +220,14 @@ class HiringStorage:
         merged = self._merge(dataset_id, existing, incoming)
         merged = self._coerce(merged).sort_values(SORT_KEYS[dataset_id], na_position="last").reset_index(drop=True)
         path = self.normalized_root / f"{dataset_id}.parquet"
+        store = self.partition_store(dataset_id)
+        if store is not None:
+            store.write(merged)
+            # The pre-partition file is now a stale duplicate of the whole
+            # dataset; leaving it would double-count on any reader that still
+            # prefers it.
+            path.unlink(missing_ok=True)
+            return merged
         temporary = path.with_suffix(".tmp.parquet")
         merged.to_parquet(temporary, index=False)
         os.replace(temporary, path)
