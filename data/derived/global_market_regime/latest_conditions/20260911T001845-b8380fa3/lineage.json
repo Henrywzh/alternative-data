@@ -1,9 +1,9 @@
 {
   "run_scope": "full",
-  "retrieved_at": "2026-09-04T10:33:41.770732Z",
+  "retrieved_at": "2026-09-11T00:18:45.973677Z",
   "dataset_name": "latest_conditions",
-  "run_id": "20260904T103341-d454ffba",
-  "created_at": "2026-09-04T10:34:08.168122Z",
+  "run_id": "20260911T001845-b8380fa3",
+  "created_at": "2026-09-11T00:19:05.192185Z",
   "records": 5,
   "columns": [
     "indicator_id",
@@ -19,7 +19,9 @@
     "hold_prob",
     "hy_z",
     "vix_z",
-    "consecutive_breach"
+    "consecutive_breach",
+    "meeting_date",
+    "event_slug"
   ],
-  "sha256": "4aa98fb3d86885223f8b10be455f6ecdc41c9abfe519de26c716aeccd74dcd73"
+  "sha256": "65a146c6f1b941f48c16d1f35c0803cdf3e8d6c97521c07d270e3ce262c305a2"
 }

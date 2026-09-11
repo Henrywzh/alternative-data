@@ -1,8 +1,8 @@
 {
   "version": 1,
   "last_states": {
-    "brent": "Normal",
-    "us10y": "Normal",
+    "brent": "Confirmed",
+    "us10y": "Watch",
     "hike_prob": "Escalating",
     "credit_vix": "Normal",
     "fomc_hike": "Normal"
@@ -10,9 +10,32 @@
   "last_overall": "Escalating",
   "sent_event_keys": [],
   "last_sent_at": null,
-  "last_evaluation_at": "2026-09-05T10:10:55.610743Z",
-  "last_run_id": "20260905T101028-6b1713f4",
-  "last_decision": "quiet",
-  "last_component_events": [],
+  "last_evaluation_at": "2026-09-11T00:19:05.210286Z",
+  "last_run_id": "20260911T001845-b8380fa3",
+  "last_decision": "defensive_eligible",
+  "last_component_events": [
+    {
+      "indicator_id": "brent",
+      "domain_id": "inflation_supply",
+      "label_zh": "布伦特原油",
+      "label_en": "Brent crude",
+      "from_state": "Normal",
+      "to_state": "Confirmed",
+      "value": 109.51,
+      "observation_date": "2026-09-09",
+      "event_key": "brent|Normal|Confirmed|2026-09-09"
+    },
+    {
+      "indicator_id": "us10y",
+      "domain_id": "rates_policy",
+      "label_zh": "美国10年期国债收益率",
+      "label_en": "US 10-year yield",
+      "from_state": "Normal",
+      "to_state": "Watch",
+      "value": 4.83,
+      "observation_date": "2026-09-09",
+      "event_key": "us10y|Normal|Watch|2026-09-09"
+    }
+  ],
   "alert_mode": "preview"
 }
