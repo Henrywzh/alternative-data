@@ -244,7 +244,15 @@ def run_all(max_file_mb: float) -> int:
 
 HOOK_BODY = """#!/bin/sh
 # Installed by scripts/check_repo_size_budget.py --install-hook
-exec python3 "$(git rev-parse --show-toplevel)/scripts/check_repo_size_budget.py" --staged
+#
+# Hooks live in .git/, which is shared across branches, but this checker lives
+# in the working tree -- so it is absent on any branch that predates it. A hook
+# that hard-fails when the script is missing blocks every commit on those
+# branches, which is far worse than not checking, so treat absence as a skip.
+root="$(git rev-parse --show-toplevel)"
+checker="$root/scripts/check_repo_size_budget.py"
+[ -f "$checker" ] || exit 0
+exec python3 "$checker" --staged
 """
 
 
