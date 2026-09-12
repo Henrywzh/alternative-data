@@ -395,3 +395,38 @@ def test_openrouter_derived_workflow_has_no_sync_after_build() -> None:
         run = str(step.get("run", "")).lower()
         assert "git pull" not in run
         assert "git rebase" not in run
+
+
+def _commit_step_script(workflow: str, step_name: str) -> str:
+    """The `run:` body of a named step in a workflow."""
+    import yaml
+
+    spec = yaml.safe_load(Path(f".github/workflows/{workflow}").read_text(encoding="utf-8"))
+    for job in spec["jobs"].values():
+        for step in job.get("steps", []):
+            if step.get("name") == step_name:
+                return step.get("run", "")
+    raise AssertionError(f"{workflow} has no step named {step_name!r}")
+
+
+@pytest.mark.parametrize(
+    ("workflow", "step"),
+    [
+        ("openrouter-task-spend-daily.yml", "Commit normalized dataset"),
+        ("openrouter-provider-activity-daily.yml", "Commit normalized datasets"),
+    ],
+)
+def test_partitioned_dataset_commit_steps_stage_deletions(workflow: str, step: str) -> None:
+    """A dataset that migrates to partitions deletes its old single file.
+
+    These steps build a path list before committing. Selecting paths purely on
+    existence dropped the tracked-but-deleted single file, so its deletion was
+    never staged: the commit succeeded without it, and the `git pull --rebase`
+    that follows aborted with "You have unstaged changes" -- which is how both
+    workflows failed on 2026-09-12.
+    """
+    script = _commit_step_script(workflow, step)
+    assert "git ls-files --error-unmatch" in script, (
+        "path selection must include tracked-but-deleted files, not just existing ones"
+    )
+    assert "git add -A --" in script, "git add must stage deletions"
