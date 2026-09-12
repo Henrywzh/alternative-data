@@ -1,0 +1,63 @@
+{
+  "manifest_version": "free_public_data_snapshot.v1",
+  "source": "hkma_macro",
+  "run_id": "20260911T080315Z-87299763",
+  "started_at_utc": "2026-09-11T08:03:40.967399+00:00",
+  "finished_at_utc": "2026-09-11T08:03:44.054782+00:00",
+  "status": "partial",
+  "errors": {
+    "official_interbank_liquidity": "ReadTimeout: HTTPSConnectionPool(host='api.hkma.gov.hk', port=443): Read timed out. (read timeout=10.0)",
+    "official_hibor": "ReadTimeout: HTTPSConnectionPool(host='api.hkma.gov.hk', port=443): Read timed out. (read timeout=10.0)",
+    "hibor_provenance": "Official HKMA HIBOR endpoint unavailable; normalized history uses the documented public aggregator fallback."
+  },
+  "coverage": {
+    "series_count": 8,
+    "rows_fetched": 18640,
+    "min_date": "2017-03-20",
+    "max_date": "2026-09-11",
+    "official_hibor": false,
+    "fallback_used": true
+  },
+  "normalized_outputs": {
+    "hkma_series_meta.parquet": "data/normalized/hkma_macro/hkma_series_meta.parquet",
+    "hkma_series_meta.csv": "data/normalized/hkma_macro/hkma_series_meta.csv",
+    "hkma_observations.parquet": "data/normalized/hkma_macro/hkma_observations.parquet",
+    "hkma_observations.csv": "data/normalized/hkma_macro/hkma_observations.csv"
+  },
+  "entries": [
+    {
+      "path": "20260911T080315Z-87299763/fallback/hibor_history_jin10.json.gz",
+      "source_url": "https://cdn.jin10.com/data_center/reports/il_2.json",
+      "status_code": 200,
+      "byte_size": 117060,
+      "payload_sha256": "04806da029196415151549f1dd3aaf6ed01b2a4ea6cf908f00f7f9fcfde0f208",
+      "stored_sha256": "4cdd6b3c6990a9ef1e25d68cc4ea2c84d13c4eaaa33541ebd783ec66a565b3c2",
+      "gzip_payload": true,
+      "rows": 2329,
+      "coverage": {
+        "min_date": "2017-03-20",
+        "max_date": "2026-09-10"
+      },
+      "metadata": {
+        "provenance": "public aggregator fallback behind AkShare macro_china_hk_market_info",
+        "official_equivalent": false
+      },
+      "captured_at_utc": "2026-09-11T08:03:40.967399+00:00"
+    },
+    {
+      "path": "20260911T080315Z-87299763/reference/hkab_hibor_current.html.gz",
+      "source_url": "https://www.hkab.org.hk/en/rates/hibor",
+      "status_code": 200,
+      "byte_size": 46894,
+      "payload_sha256": "728597289ab6d247128e5ae6211d7e9602ed1efd110d488f746ae8b081012b02",
+      "stored_sha256": "0be4babacf365e81168c7400fc0c76839a57314579b6a4a759a85ef23d6f0ba3",
+      "gzip_payload": true,
+      "rows": null,
+      "coverage": {},
+      "metadata": {
+        "publication_time": "11:15 HKT current fixing page"
+      },
+      "captured_at_utc": "2026-09-11T08:03:43.845299+00:00"
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "manifest_version": "free_public_data_snapshot.v1",
+  "source": "bis_credit_gap",
+  "run_id": "20260911T080315Z-87299763",
+  "started_at_utc": "2026-09-11T08:03:17.444670+00:00",
+  "finished_at_utc": "2026-09-11T08:03:17.684543+00:00",
+  "status": "ok",
+  "errors": {},
+  "coverage": {
+    "target_areas": [
+      "US",
+      "CN",
+      "HK",
+      "JP",
+      "XM",
+      "GB",
+      "KR"
+    ],
+    "series_count": 7,
+    "rows_fetched": 1241,
+    "min_period": "1957-Q4",
+    "max_period": "2025-Q4",
+    "frequency": "quarterly"
+  },
+  "normalized_outputs": {
+    "bis_series_meta.parquet": "data/normalized/bis_macro/bis_series_meta.parquet",
+    "bis_series_meta.csv": "data/normalized/bis_macro/bis_series_meta.csv",
+    "bis_observations.parquet": "data/normalized/bis_macro/bis_observations.parquet",
+    "bis_observations.csv": "data/normalized/bis_macro/bis_observations.csv"
+  },
+  "entries": [
+    {
+      "path": "20260911T080315Z-87299763/credit_gap/WS_CREDIT_GAP_csv_flat.zip",
+      "source_url": "https://data.bis.org/static/bulk/WS_CREDIT_GAP_csv_flat.zip",
+      "status_code": 200,
+      "byte_size": 252401,
+      "payload_sha256": "860e606dfb25c06b902e4b90b20763c551745017615983be2f66bf5c72bee91c",
+      "stored_sha256": "860e606dfb25c06b902e4b90b20763c551745017615983be2f66bf5c72bee91c",
+      "gzip_payload": false,
+      "rows": null,
+      "coverage": {},
+      "metadata": {
+        "artifact": "official BIS full-topic bulk ZIP",
+        "format": "CSV inside ZIP"
+      },
+      "captured_at_utc": "2026-09-11T08:03:17.444670+00:00"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "manifest_version": "free_public_data_snapshot.v1",
+  "source": "factset_earnings",
+  "run_id": "20260911T122242Z-factset-pe-average-cleanup",
+  "started_at_utc": "2026-09-11T12:22:42.458627+00:00",
+  "finished_at_utc": "2026-09-11T12:22:42.481080+00:00",
+  "status": "ok",
+  "errors": {},
+  "coverage": {
+    "parent_raw_run": "20260911T120436Z-58a90ab8",
+    "rows_considered": 5,
+    "rows_repaired": 5,
+    "repair_scope": "forward P/E average values >= 30"
+  },
+  "normalized_outputs": {
+    "factset_sp500_earnings_regime.parquet": "/Users/henrywzh/Desktop/Quant/alternative-data/data/normalized/factset_earnings/factset_sp500_earnings_regime.parquet",
+    "factset_sp500_earnings_regime.csv": "/Users/henrywzh/Desktop/Quant/alternative-data/data/normalized/factset_earnings/factset_sp500_earnings_regime.csv"
+  },
+  "entries": [
+    {
+      "path": "20260911T122242Z-factset-pe-average-cleanup/repair_observations.json",
+      "source_url": "local://factset-raw-repair",
+      "status_code": null,
+      "byte_size": 1557,
+      "payload_sha256": "0d86e335e3b326ee722ccac2f8adf5ab144d611f98d838455c0cf5b9f9412fdd",
+      "stored_sha256": "0d86e335e3b326ee722ccac2f8adf5ab144d611f98d838455c0cf5b9f9412fdd",
+      "gzip_payload": false,
+      "rows": 5,
+      "coverage": {},
+      "metadata": {
+        "repair_type": "parser-correction",
+        "reason": "clear forward-P/E average values >= 30 unless supported by P/E-local parser"
+      },
+      "captured_at_utc": "2026-09-11T12:22:42.458627+00:00"
+    }
+  ]
+}

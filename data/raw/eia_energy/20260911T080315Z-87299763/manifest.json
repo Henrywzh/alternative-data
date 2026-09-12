@@ -1,0 +1,247 @@
+{
+  "manifest_version": "free_public_data_snapshot.v1",
+  "source": "eia_grid_hourly",
+  "run_id": "20260911T080315Z-87299763",
+  "started_at_utc": "2026-09-11T08:03:47.372278+00:00",
+  "finished_at_utc": "2026-09-11T08:04:18.310792+00:00",
+  "status": "partial",
+  "errors": {
+    "fetch_or_normalize": "HTTPError: 429 Client Error: Too Many Requests for url: https://api.eia.gov/v2/electricity/rto/fuel-type-data/data?frequency=hourly&data%5B0%5D=value&facets%5Brespondent%5D%5B0%5D=PJM&start=2019-01-01T00&end=2026-09-11T23&sort%5B0%5D%5Bcolumn%5D=period&sort%5B0%5D%5Bdirection%5D=asc&length=5000&offset=50000&api_key=DEMO_KEY"
+  },
+  "coverage": {
+    "respondents": [
+      "PJM",
+      "ERCOT",
+      "CISO",
+      "NYIS",
+      "MISO"
+    ],
+    "respondent_rows": {
+      "PJM": 50000
+    },
+    "rows_fetched": 50000,
+    "requested_start": "2019-01-01T00",
+    "requested_end": "2026-09-11T23",
+    "normalized_rows_total": 50000,
+    "period_field_note": "EIA API period is an hourly wall-clock label; retained in the legacy timestamp_utc column without inventing a timezone.",
+    "api_key_source": "public DEMO_KEY",
+    "min_period_seen_in_final_buffer": "2019-01-01T00",
+    "max_period_seen_in_final_buffer": "2019-09-18T09"
+  },
+  "normalized_outputs": {
+    "eia_grid_hourly.parquet": "data/normalized/eia_energy/eia_grid_hourly.parquet",
+    "eia_grid_hourly.csv": "data/normalized/eia_energy/eia_grid_hourly.csv"
+  },
+  "entries": [
+    {
+      "path": "20260911T080315Z-87299763/api/PJM/000000000.json.gz",
+      "source_url": "https://api.eia.gov/v2/electricity/rto/fuel-type-data/data/",
+      "status_code": 200,
+      "byte_size": 31069,
+      "payload_sha256": "15bef726555e9e7af17a777bdb3e362f64967b8aa4ff4b321695a600d66987d2",
+      "stored_sha256": "362bc38c1a3cdfc3ea672eeb1c52508e284a30ffceae0aca9319b6cf3c66f771",
+      "gzip_payload": true,
+      "rows": 5000,
+      "coverage": {
+        "min_period": "2019-01-01T00",
+        "max_period": "2019-01-27T00"
+      },
+      "metadata": {
+        "respondent": "PJM",
+        "offset": 0,
+        "api_key_source": "public DEMO_KEY",
+        "total": "539319"
+      },
+      "captured_at_utc": "2026-09-11T08:03:47.372278+00:00"
+    },
+    {
+      "path": "20260911T080315Z-87299763/api/PJM/000005000.json.gz",
+      "source_url": "https://api.eia.gov/v2/electricity/rto/fuel-type-data/data/",
+      "status_code": 200,
+      "byte_size": 31248,
+      "payload_sha256": "94a813a3b5d90a6fb1fb2abab81a5511fdb5e9064d9845a45174ad9832023243",
+      "stored_sha256": "cc81eda0b2631aef82862aed1bee541d667088016cfc5ee0c3c62a1861550d77",
+      "gzip_payload": true,
+      "rows": 5000,
+      "coverage": {
+        "min_period": "2019-01-27T01",
+        "max_period": "2019-02-22T01"
+      },
+      "metadata": {
+        "respondent": "PJM",
+        "offset": 5000,
+        "api_key_source": "public DEMO_KEY",
+        "total": "539319"
+      },
+      "captured_at_utc": "2026-09-11T08:03:50.539047+00:00"
+    },
+    {
+      "path": "20260911T080315Z-87299763/api/PJM/000010000.json.gz",
+      "source_url": "https://api.eia.gov/v2/electricity/rto/fuel-type-data/data/",
+      "status_code": 200,
+      "byte_size": 31369,
+      "payload_sha256": "0230d159183a620b2463d95ec8836ebc711074fe67ffe8915b03e832303b82cd",
+      "stored_sha256": "85937fe0da74cd4eefc6872dae14a3c710c873890e039e801a3d0537dad1e4b1",
+      "gzip_payload": true,
+      "rows": 5000,
+      "coverage": {
+        "min_period": "2019-02-22T02",
+        "max_period": "2019-03-20T02"
+      },
+      "metadata": {
+        "respondent": "PJM",
+        "offset": 10000,
+        "api_key_source": "public DEMO_KEY",
+        "total": "539319"
+      },
+      "captured_at_utc": "2026-09-11T08:03:53.105044+00:00"
+    },
+    {
+      "path": "20260911T080315Z-87299763/api/PJM/000015000.json.gz",
+      "source_url": "https://api.eia.gov/v2/electricity/rto/fuel-type-data/data/",
+      "status_code": 200,
+      "byte_size": 31473,
+      "payload_sha256": "990ff6d26b3f4d51939129680f18b539f68a87a54bd1d3c9a285e427d23a844f",
+      "stored_sha256": "7b9ee80918220e12917b0d3d1af501adede2fff5f4a5d73d029c8758c8b8fe0c",
+      "gzip_payload": true,
+      "rows": 5000,
+      "coverage": {
+        "min_period": "2019-03-20T03",
+        "max_period": "2019-04-15T03"
+      },
+      "metadata": {
+        "respondent": "PJM",
+        "offset": 15000,
+        "api_key_source": "public DEMO_KEY",
+        "total": "539319"
+      },
+      "captured_at_utc": "2026-09-11T08:03:56.487401+00:00"
+    },
+    {
+      "path": "20260911T080315Z-87299763/api/PJM/000020000.json.gz",
+      "source_url": "https://api.eia.gov/v2/electricity/rto/fuel-type-data/data/",
+      "status_code": 200,
+      "byte_size": 31525,
+      "payload_sha256": "3292ed600391ecc5437d10ef57dedb214f86a2d115dbd6572eb55365b1088436",
+      "stored_sha256": "7f6dea97cefb2debda62cdb511e559a86ca65beb00819c2b6a15b87e415b88a9",
+      "gzip_payload": true,
+      "rows": 5000,
+      "coverage": {
+        "min_period": "2019-04-15T04",
+        "max_period": "2019-05-11T04"
+      },
+      "metadata": {
+        "respondent": "PJM",
+        "offset": 20000,
+        "api_key_source": "public DEMO_KEY",
+        "total": "539319"
+      },
+      "captured_at_utc": "2026-09-11T08:03:59.547238+00:00"
+    },
+    {
+      "path": "20260911T080315Z-87299763/api/PJM/000025000.json.gz",
+      "source_url": "https://api.eia.gov/v2/electricity/rto/fuel-type-data/data/",
+      "status_code": 200,
+      "byte_size": 31897,
+      "payload_sha256": "546d5327fe73767cd25a517df3219a88f67fad92667efe534b6cd459c09155db",
+      "stored_sha256": "b84ceb3e9c342a38feda1ebaabc5fb9e38ad6de600f7ca74e5db31a58e3c22bb",
+      "gzip_payload": true,
+      "rows": 5000,
+      "coverage": {
+        "min_period": "2019-05-11T05",
+        "max_period": "2019-06-06T05"
+      },
+      "metadata": {
+        "respondent": "PJM",
+        "offset": 25000,
+        "api_key_source": "public DEMO_KEY",
+        "total": "539319"
+      },
+      "captured_at_utc": "2026-09-11T08:04:03.599380+00:00"
+    },
+    {
+      "path": "20260911T080315Z-87299763/api/PJM/000030000.json.gz",
+      "source_url": "https://api.eia.gov/v2/electricity/rto/fuel-type-data/data/",
+      "status_code": 200,
+      "byte_size": 31738,
+      "payload_sha256": "3aa1f4ef2ddafbc89d327ef5b8a7fa768fe3d6a5039b2660f6230a057e832a69",
+      "stored_sha256": "627667791e74992bf261e547db13151a46796044645d91ec2f5befe58371b472",
+      "gzip_payload": true,
+      "rows": 5000,
+      "coverage": {
+        "min_period": "2019-06-06T06",
+        "max_period": "2019-07-02T06"
+      },
+      "metadata": {
+        "respondent": "PJM",
+        "offset": 30000,
+        "api_key_source": "public DEMO_KEY",
+        "total": "539319"
+      },
+      "captured_at_utc": "2026-09-11T08:04:06.979577+00:00"
+    },
+    {
+      "path": "20260911T080315Z-87299763/api/PJM/000035000.json.gz",
+      "source_url": "https://api.eia.gov/v2/electricity/rto/fuel-type-data/data/",
+      "status_code": 200,
+      "byte_size": 32517,
+      "payload_sha256": "171b180853b6bc0c9dad95f7b1e4d41585bd864035fedd6a328aebde4119c4da",
+      "stored_sha256": "2360bc1c405da9f6108601108d8f016a1a6c7f4471b2c7120e0d328e8dacad8f",
+      "gzip_payload": true,
+      "rows": 5000,
+      "coverage": {
+        "min_period": "2019-07-02T07",
+        "max_period": "2019-07-28T07"
+      },
+      "metadata": {
+        "respondent": "PJM",
+        "offset": 35000,
+        "api_key_source": "public DEMO_KEY",
+        "total": "539319"
+      },
+      "captured_at_utc": "2026-09-11T08:04:10.386813+00:00"
+    },
+    {
+      "path": "20260911T080315Z-87299763/api/PJM/000040000.json.gz",
+      "source_url": "https://api.eia.gov/v2/electricity/rto/fuel-type-data/data/",
+      "status_code": 200,
+      "byte_size": 32222,
+      "payload_sha256": "bf72cea9ec5300ee9b8fa527bf25c29a24dafa81b62b8307701c8d43882ebf96",
+      "stored_sha256": "ebef1b059660c3e9ba51ae407c950bebacfdc3cb5aaa4b959c500a24a389d501",
+      "gzip_payload": true,
+      "rows": 5000,
+      "coverage": {
+        "min_period": "2019-07-28T08",
+        "max_period": "2019-08-23T08"
+      },
+      "metadata": {
+        "respondent": "PJM",
+        "offset": 40000,
+        "api_key_source": "public DEMO_KEY",
+        "total": "539319"
+      },
+      "captured_at_utc": "2026-09-11T08:04:13.803991+00:00"
+    },
+    {
+      "path": "20260911T080315Z-87299763/api/PJM/000045000.json.gz",
+      "source_url": "https://api.eia.gov/v2/electricity/rto/fuel-type-data/data/",
+      "status_code": 200,
+      "byte_size": 31932,
+      "payload_sha256": "d2414d0e20cfd17496f7e380b54d6c50736176c54407ea480a35be42fd784a08",
+      "stored_sha256": "a88fc26f75940ae8e259acd43c5b48a6d208712e05ada9c1d6632496ea7011dc",
+      "gzip_payload": true,
+      "rows": 5000,
+      "coverage": {
+        "min_period": "2019-08-23T09",
+        "max_period": "2019-09-18T09"
+      },
+      "metadata": {
+        "respondent": "PJM",
+        "offset": 45000,
+        "api_key_source": "public DEMO_KEY",
+        "total": "539319"
+      },
+      "captured_at_utc": "2026-09-11T08:04:16.680391+00:00"
+    }
+  ]
+}
