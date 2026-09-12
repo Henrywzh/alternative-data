@@ -144,6 +144,14 @@ class OpenRouterDerivedPipeline:
         for dataset_id, relative_path in _INPUTS.items():
             path = self.base_dir / relative_path
             if not path.exists():
+                # Inputs stored as one parquet per observation date live in a
+                # directory named after the dataset, beside where the single
+                # file used to be. Missing that would not raise here -- it
+                # would raise FileNotFoundError on a dataset that exists.
+                partitioned = path.with_suffix("")
+                if partitioned.is_dir() and any(partitioned.glob("*.parquet")):
+                    loaded[dataset_id] = _read_parquet_serial(partitioned)
+                    continue
                 raise FileNotFoundError(path)
             loaded[dataset_id] = _read_parquet_serial(path)
         return loaded
@@ -339,5 +347,16 @@ def _read_parquet_serial(path: Path) -> pd.DataFrame:
     exception`` / exit 134 after an otherwise successful build.  These marts
     are small, so deterministic single-threaded reads are a better reliability
     tradeoff than parallel I/O.
+
+    A directory is read as a set of date partitions, one file per observation
+    date, concatenated in name order -- still one serial read per file.
     """
+    if path.is_dir():
+        return pd.concat(
+            [
+                pd.read_parquet(part, engine="pyarrow", use_threads=False)
+                for part in sorted(path.glob("*.parquet"))
+            ],
+            ignore_index=True,
+        )
     return pd.read_parquet(path, engine="pyarrow", use_threads=False)

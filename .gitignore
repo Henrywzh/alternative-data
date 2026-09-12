@@ -275,6 +275,12 @@ data/normalized/sec_edgar/*
 !data/normalized/marts/
 data/normalized/marts/*
 !data/normalized/marts/*.parquet
+# A mart stored as one parquet per observation date lives in a directory, so
+# the *.parquet rule above does not reach it. Without these two the partitions
+# are silently ignored: the refresh job writes them, `git add` skips them, and
+# the published mart quietly stops updating.
+!data/normalized/marts/*/
+!data/normalized/marts/*/*.parquet
 # ...except the on-demand refresh scratch. The Refresh button on the company
 # page writes these on a single operator's machine from an ad-hoc fetch. The
 # rule above un-ignores every mart parquet, so without these the first click

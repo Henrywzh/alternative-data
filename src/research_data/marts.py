@@ -13,6 +13,7 @@ from openrouter_revenue import (
     build_provider_revenue_estimates,
     build_serving_provider_economics,
 )
+from common.partitioned_parquet import PartitionSpec, PartitionedParquetStore
 from supplement_pricing import supplement_pricing_df
 from .clean import clean_model_id, mean_of_available, percentile_rank, to_datetime
 from .joins import latest_huggingface_snapshot, latest_pricing_snapshot
@@ -75,8 +76,90 @@ def mart_paths(mart_name: str, base_dir: str | Path | None = None) -> tuple[Path
     return root / f"{mart_name}.csv", root / f"{mart_name}.parquet"
 
 
+# daily_provider_economics is rebuilt from source every run, and the rebuild is
+# almost entirely stable: measured across two consecutive commits (2026-09-08 ->
+# 2026-09-09) only 5 of its 366 usage_date groups differed. The single-file
+# layout still rewrote the whole parquet, and parquet is compressed binary that
+# git cannot delta -- 24.2 MB of history over the last 90 days for a 1% change.
+# Writing one file per usage_date, and skipping partitions whose bytes did not
+# move, reduces that to the days that actually changed.
+#
+# The partition column is the mart's own primary_date_column from MART_REGISTRY.
+# Readers must go through read_mart()/mart_frame_paths() rather than opening
+# "<mart>.parquet": a reader that does not know a mart is partitioned does not
+# fail, it misses the file and returns zero rows.
+PARTITIONED_MARTS: frozenset[str] = frozenset({"daily_provider_economics"})
+
+
+def mart_partition_dir(mart_name: str, base_dir: str | Path | None = None) -> Path:
+    return marts_root(base_dir=base_dir) / mart_name
+
+
+def mart_frame_paths(mart_name: str, base_dir: str | Path | None = None) -> list[Path]:
+    """Every file that makes up this mart, newest layout first.
+
+    One entry for a single-file mart, one per partition for a partitioned one,
+    and an empty list when it has not been built. Consumers that fingerprint
+    the mart for caching should hash this list rather than a single path.
+    """
+    csv_path, parquet_path = mart_paths(mart_name, base_dir=base_dir)
+    if mart_name in PARTITIONED_MARTS:
+        directory = mart_partition_dir(mart_name, base_dir=base_dir)
+        if directory.is_dir():
+            partitions = sorted(directory.glob("*.parquet"))
+            if partitions:
+                return partitions
+    if parquet_path.exists():
+        return [parquet_path]
+    if csv_path.exists():
+        return [csv_path]
+    return []
+
+
+def _mart_partition_store(
+    mart_name: str, frame: pd.DataFrame, base_dir: str | Path | None = None
+) -> PartitionedParquetStore | None:
+    """The partitioned store for this mart, or None if it is single-file."""
+    if mart_name not in PARTITIONED_MARTS or frame.empty:
+        return None
+    column = MART_REGISTRY.get(mart_name, {}).get("primary_date_column")
+    if not column or column not in frame.columns:
+        return None
+    # Dtype kinds are normalised rather than copied, so int64-vs-float64 drift
+    # between rebuilds cannot change the written bytes for unchanged days.
+    bools = {str(c) for c in frame.columns if frame[c].dtype.kind == "b"}
+    numerics = {str(c) for c in frame.columns if frame[c].dtype.kind in "iuf"}
+    return PartitionedParquetStore(
+        mart_partition_dir(mart_name, base_dir=base_dir),
+        PartitionSpec(
+            column=str(column),
+            columns=[str(c) for c in frame.columns],
+            bool_columns=frozenset(bools),
+            numeric_columns=frozenset(numerics),
+            # Month, not day. This mart holds ~110 rows per usage_date across
+            # 366 days, so per-file parquet overhead dominates at day
+            # granularity: 366 files and 5.73 MB on disk, for a 136 KB daily
+            # delta. By month it is 13 files and 1.14 MB for a 125 KB delta --
+            # better on both axes. Datasets with far more rows per day (e.g.
+            # openrouter_task_spend) measure the other way round.
+            granularity="month",
+        ),
+    )
+
+
 def read_mart(mart_name: str, base_dir: str | Path | None = None) -> pd.DataFrame:
     csv_path, parquet_path = mart_paths(mart_name, base_dir=base_dir)
+    if mart_name in PARTITIONED_MARTS:
+        directory = mart_partition_dir(mart_name, base_dir=base_dir)
+        if directory.is_dir():
+            partitions = sorted(directory.glob("*.parquet"))
+            if partitions:
+                # A leftover single file would double every row, so the
+                # partition directory is authoritative once it exists. A
+                # pre-migration checkout has none and falls through.
+                return pd.concat(
+                    [pd.read_parquet(path) for path in partitions], ignore_index=True
+                )
     if parquet_path.exists():
         return pd.read_parquet(parquet_path)
     if csv_path.exists():
@@ -95,6 +178,15 @@ def write_mart(mart_name: str, frame: pd.DataFrame, base_dir: str | Path | None 
     # identical content, which is invisible to `git diff` but not to anything
     # watching mtimes, and it happens to a human opening the notebook too.
     if frame.equals(read_mart(mart_name, base_dir=base_dir)):
+        return frame
+    store = _mart_partition_store(mart_name, frame, base_dir=base_dir)
+    if store is not None:
+        store.write(frame)
+        # The pre-partition files are now stale duplicates of the whole mart;
+        # either one left behind would double-count on a reader that still
+        # prefers it.
+        parquet_path.unlink(missing_ok=True)
+        csv_path.unlink(missing_ok=True)
         return frame
     frame.to_csv(csv_path, index=False)
     frame.to_parquet(parquet_path, index=False)

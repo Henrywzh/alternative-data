@@ -2600,6 +2600,19 @@ SOUTHBOUND_MART_COLUMNS: tuple[str, ...] = (
 
 
 def _parquet_fingerprint(path: Path) -> tuple[int, int]:
+    """Cache key for a mart, whether it is one file or a directory of partitions.
+
+    A partitioned mart has no single file to stat, so the whole directory is
+    summarised: total bytes and the newest mtime. A refresh that rewrites one
+    partition moves both, which is what the cache needs to notice.
+    """
+    if path.is_dir():
+        parts = sorted(path.glob("*.parquet"))
+        stats = [part.stat() for part in parts]
+        return (
+            sum(stat.st_size for stat in stats),
+            max((stat.st_mtime_ns for stat in stats), default=0),
+        )
     stat = path.stat()
     return (stat.st_size, stat.st_mtime_ns)
 
@@ -2618,12 +2631,23 @@ def _read_mart_projected(
     """
     del fingerprint  # cache key only
     path = Path(path_str)
-    if columns:
-        available = set(pq.ParquetFile(path).schema_arrow.names)
-        wanted = [column for column in columns if column in available]
-        if wanted:
-            return pd.read_parquet(path, columns=wanted)
-    return pd.read_parquet(path)
+    # A partitioned mart is a directory of one parquet per observation date.
+    # Each is read with the same projection and concatenated in name order.
+    sources = sorted(path.glob("*.parquet")) if path.is_dir() else [path]
+    frames: list[pd.DataFrame] = []
+    for source in sources:
+        if columns:
+            available = set(pq.ParquetFile(source).schema_arrow.names)
+            wanted = [column for column in columns if column in available]
+            if wanted:
+                frames.append(pd.read_parquet(source, columns=wanted))
+                continue
+        frames.append(pd.read_parquet(source))
+    if not frames:
+        return pd.DataFrame()
+    if len(frames) == 1:
+        return frames[0]
+    return pd.concat(frames, ignore_index=True)
 
 
 def _bar_chart_with_year_axis(
@@ -3149,6 +3173,10 @@ def _load_southbound_holdings(spec, *, as_of_utc: Any = None) -> pd.DataFrame:
 def _load_openrouter_raw() -> tuple[pd.DataFrame, Path | None]:
     repo_root = _control_tower_repo_root()
     candidates = [
+        # The partition directory is checked before the single file: after a
+        # migration both can briefly exist, and the directory is authoritative.
+        repo_root / 'data/normalized/marts/daily_provider_economics',
+        Path('data/normalized/marts/daily_provider_economics'),
         repo_root / 'data/normalized/marts/daily_provider_economics.parquet',
         Path('data/normalized/marts/daily_provider_economics.parquet'),
         repo_root / 'data/normalized/marts/daily_cloud_infra_economics.parquet',
@@ -3156,13 +3184,21 @@ def _load_openrouter_raw() -> tuple[pd.DataFrame, Path | None]:
         repo_root / 'data/normalized/openrouter/cloud_infra_daily_activity.parquet',
         Path('data/normalized/openrouter/cloud_infra_daily_activity.parquet'),
     ]
+    def _usable(path: Path) -> bool:
+        # An empty partition directory still "exists"; treating it as usable
+        # would return an empty frame instead of falling through to the
+        # single-file candidate behind it.
+        if path.is_dir():
+            return any(path.glob('*.parquet'))
+        return path.is_file()
+
     seen: set[str] = set()
     for path in candidates:
         key = str(path.resolve()) if path.exists() else str(path)
         if key in seen:
             continue
         seen.add(key)
-        if path.exists():
+        if _usable(path):
             return _read_mart_projected(str(path), _parquet_fingerprint(path), OPENROUTER_MART_COLUMNS), path
     return pd.DataFrame(), None
 

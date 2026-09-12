@@ -102,25 +102,35 @@ jobs:
 
       - name: Commit normalized datasets
         run: |
-          if git diff --quiet -- \
+          # daily_provider_economics is stored as one parquet per usage_date in
+          # a directory, not a single file. Both spellings are listed because a
+          # pre-migration checkout still has the file, and `git add` fails hard
+          # on a pathspec that matches nothing -- so only existing ones are used.
+          PATHS=""
+          for candidate in \
             data/normalized/openrouter/provider_daily_activity.parquet \
             data/normalized/openrouter/cloud_infra_daily_activity.parquet \
+            data/normalized/marts/daily_provider_economics \
             data/normalized/marts/daily_provider_economics.parquet \
             data/normalized/marts/daily_provider_revenue_estimates.parquet \
             data/normalized/marts/daily_cloud_infra_economics.parquet \
-            data/normalized/overview/overview_signal_series.parquet; then
+            data/normalized/overview/overview_signal_series.parquet; do
+            [ -e "$candidate" ] && PATHS="$PATHS $candidate"
+          done
+
+          # `git status --porcelain`, not `git diff`: a new usage_date is a new
+          # untracked partition file, and git diff only reports tracked paths,
+          # so a diff-based check would silently skip committing a fresh day.
+          # shellcheck disable=SC2086
+          if [ -z "$(git status --porcelain -- $PATHS)" ]; then
             echo "No provider activity or economics changes to commit"
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/normalized/openrouter/provider_daily_activity.parquet
-          git add data/normalized/openrouter/cloud_infra_daily_activity.parquet
-          git add data/normalized/marts/daily_provider_economics.parquet
-          git add data/normalized/marts/daily_provider_revenue_estimates.parquet
-          git add data/normalized/marts/daily_cloud_infra_economics.parquet
-          git add data/normalized/overview/overview_signal_series.parquet
+          # shellcheck disable=SC2086
+          git add $PATHS
           git commit -m "chore: update provider activity and economics data [$(date -u +%Y-%m-%d)]"
 
           for attempt in 1 2 3; do
@@ -169,6 +179,7 @@ jobs:
           path: |
             data/normalized/openrouter/provider_daily_activity.parquet
             data/normalized/openrouter/cloud_infra_daily_activity.parquet
+            data/normalized/marts/daily_provider_economics/
             data/normalized/marts/daily_provider_economics.parquet
             data/normalized/marts/daily_provider_revenue_estimates.parquet
             data/normalized/marts/daily_cloud_infra_economics.parquet
