@@ -93,6 +93,11 @@ _LAZY_EXPORTS: dict[str, tuple[str, str]] = {
         "am.market_us",
         "render_southbound_market_flow",
     ),
+    # Both live in am.core and are used by the chart-axis helpers; without an
+    # entry here the module's __getattr__ raises AttributeError rather than
+    # falling through to the defining module.
+    "date_hover_format": ("am.core", "date_hover_format"),
+    "date_tick_format": ("am.core", "date_tick_format"),
     "sparkline_context": ("am.core", "sparkline_context"),
     "view_label": ("am.core", "view_label"),
 }
