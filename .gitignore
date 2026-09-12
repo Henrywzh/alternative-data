@@ -36,6 +36,15 @@ data/normalized/*
 data/normalized/openrouter/*
 !data/normalized/openrouter/*.csv
 !data/normalized/openrouter/*.parquet
+# A dataset stored as one parquet per observation date lives in a directory,
+# so the *.parquet rule above does not reach it. Git cannot re-include a file
+# whose parent directory is excluded, so the directory itself has to be
+# un-ignored before the parts inside it. Without these the daily job deletes
+# the tracked single file, commits that deletion, and the partitions it wrote
+# are silently ignored -- the dataset disappears from the repository with no
+# error anywhere. That is exactly what happened to openrouter_task_spend.
+!data/normalized/openrouter/*/
+!data/normalized/openrouter/*/*.parquet
 
 # documented OpenRouter API datasets + compact landing-page mart
 !data/normalized/openrouter_official/
@@ -248,6 +257,8 @@ data/normalized/provider_incidents/*
 !data/normalized/ai_hiring/
 data/normalized/ai_hiring/*
 !data/normalized/ai_hiring/*.parquet
+!data/normalized/ai_hiring/*/
+!data/normalized/ai_hiring/*/*.parquet
 
 # global_market_regime: commit normalized/derived snapshots; raw Atlanta workbook stays local.
 !data/normalized/global_market_regime/
