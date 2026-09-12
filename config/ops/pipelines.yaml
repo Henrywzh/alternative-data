@@ -100,3 +100,108 @@ pipelines:
             freshness:
               mode: monthly_release_lag
               release_lag_days: 45
+
+  # The free institutional lanes. Each was backfilled once and then went
+  # unwatched: nothing in this registry covered them, so a lane whose source
+  # stopped answering would have kept its complete, valid, frozen dataset and
+  # reported success forever. max_age_days is set from each source's own
+  # publication cadence plus slack for one missed release, so a single bad day
+  # stays quiet and a lane that has actually stopped goes loud and stays loud.
+  free-institutional-daily:
+    workflow: free-institutional-daily.yml
+    cadence:
+      kind: daily
+      expected_interval_hours: 24
+    criticality: medium
+    jobs:
+      refresh:
+        outputs:
+          - id: hkex-market-flow-daily
+            path: data/normalized/hkex_market_flow/hkex_market_flow_daily.parquet
+            required: true
+            validator: observation_freshness
+            date_column: trade_date
+            freshness:
+              # HK holidays run to four consecutive sessions at Lunar New Year.
+              mode: max_age_days
+              max_age_days: 7
+          - id: eia-grid-hourly
+            path: data/normalized/eia_energy/eia_grid_hourly
+            required: true
+            validator: observation_freshness
+            date_column: timestamp_utc
+            freshness:
+              # EIA's bulk file lags real time by a couple of days.
+              mode: max_age_days
+              max_age_days: 5
+          - id: hkma-observations
+            path: data/normalized/hkma_macro/hkma_observations.parquet
+            required: true
+            validator: observation_freshness
+            date_column: date
+            freshness:
+              mode: max_age_days
+              max_age_days: 7
+
+  free-institutional-weekly:
+    workflow: free-institutional-weekly.yml
+    cadence:
+      kind: weekly
+      expected_interval_hours: 168
+    criticality: low
+    jobs:
+      refresh:
+        outputs:
+          - id: factset-sp500-earnings-regime
+            path: data/normalized/factset_earnings/factset_sp500_earnings_regime.parquet
+            required: true
+            validator: observation_freshness
+            date_column: report_date
+            freshness:
+              # Weekly publication; three weeks tolerates two missed reports.
+              mode: max_age_days
+              max_age_days: 21
+
+  free-institutional-monthly:
+    workflow: free-institutional-monthly.yml
+    cadence:
+      kind: monthly_windows
+      schedule_windows:
+        - days: "6"
+          purpose: monthly publication sweep
+    criticality: low
+    jobs:
+      refresh:
+        outputs:
+          - id: sp-pmi-subindices
+            path: data/normalized/sp_pmi/sp_pmi_subindices.parquet
+            required: true
+            validator: observation_freshness
+            date_column: period
+            freshness:
+              # `period` is a YYYY-MM month, so the newest value is already a
+              # month behind on the day it publishes; 75 days allows for that
+              # plus one missed release.
+              mode: max_age_days
+              max_age_days: 75
+          - id: msci-rebalance-events
+            path: data/normalized/msci_reviews/msci_rebalance_events.parquet
+            required: true
+            validator: observation_freshness
+            date_column: announcement_date
+            freshness:
+              # Index reviews are quarterly; 150 days spans one missed cycle.
+              mode: max_age_days
+              max_age_days: 150
+          - id: bis-observations
+            path: data/normalized/bis_macro/bis_observations.parquet
+            required: false
+            validator: file
+            freshness: {}
+            # Existence only. `period` is a quarter label ("2025-Q4"), which
+            # does parse -- to the quarter's FIRST day -- but BIS publishes the
+            # credit gap about two quarters in arrears, so that date is ~6
+            # months behind reality the moment it lands. A max_age_days loose
+            # enough to avoid false alarms would let the lane sit dead for a
+            # year before complaining, which is not monitoring. Give it a real
+            # published_at column and this becomes observation_freshness.

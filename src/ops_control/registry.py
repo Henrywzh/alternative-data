@@ -55,6 +55,11 @@ class OutputSpec:
     dataset_id: str | None = None
     artifact_root: str | None = None
     freshness: dict[str, Any] = field(default_factory=dict)
+    # Which column carries the observation date. dataset_contract takes this
+    # from dashboard.data.DATASET_REGISTRY, but a lane that feeds no dashboard
+    # is not registered there and still needs to be watched for going stale,
+    # so observation_freshness lets the registry name the column directly.
+    date_column: str | None = None
 
 
 @dataclass(frozen=True)
@@ -200,7 +205,7 @@ def _parse_output(
     _validate_relative_path(path, label=f"Output {output_id!r}")
 
     validator = str(payload.get("validator", "")).strip()
-    allowed = {"file", "dataset_contract", "asia_markets_freshness"}
+    allowed = {"file", "dataset_contract", "asia_markets_freshness", "observation_freshness"}
     if validator not in allowed:
         raise RegistryError(
             f"Output {output_id!r} uses unsupported validator {validator!r}"
@@ -212,6 +217,12 @@ def _parse_output(
                 f"Output {output_id!r} references unknown dataset contract {dataset_id!r}"
             )
 
+    date_column = _optional_string(payload.get("date_column"))
+    if validator == "observation_freshness" and not date_column:
+        raise RegistryError(
+            f"Output {output_id!r} requires date_column for observation freshness"
+        )
+
     artifact_root = _optional_string(payload.get("artifact_root"))
     if artifact_root is not None:
         _validate_relative_path(artifact_root, label=f"Output {output_id!r} artifact_root")
@@ -222,7 +233,7 @@ def _parse_output(
     _validate_freshness(
         freshness,
         output_id=output_id,
-        required=validator == "dataset_contract",
+        required=validator in ("dataset_contract", "observation_freshness"),
     )
     if validator == "asia_markets_freshness" and artifact_root is None:
         raise RegistryError(
@@ -237,6 +248,7 @@ def _parse_output(
         dataset_id=dataset_id,
         artifact_root=artifact_root,
         freshness=dict(freshness),
+        date_column=date_column,
     )
 
 
@@ -250,7 +262,10 @@ def _validate_cadence(payload: Any, *, pipeline_id: str) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise RegistryError(f"Pipeline {pipeline_id!r} cadence must be a mapping")
     kind = str(payload.get("kind", "")).strip()
-    if kind == "daily":
+    # "weekly" shares daily's shape -- a fixed expected gap between runs -- and
+    # differs only in size, so it validates the same field rather than earning
+    # a branch of its own.
+    if kind in ("daily", "weekly"):
         interval = payload.get("expected_interval_hours")
         if (
             isinstance(interval, bool)

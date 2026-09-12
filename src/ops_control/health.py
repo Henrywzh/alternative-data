@@ -186,6 +186,10 @@ def evaluate_output(
                 as_of=as_of,
                 observation=observation,
             )
+        elif spec.validator == "observation_freshness":
+            checks = _evaluate_observation_freshness(
+                spec=spec, as_of=as_of, observation=observation
+            )
         elif spec.validator == "asia_markets_freshness":
             checks = _evaluate_asia_markets(
                 spec=spec,
@@ -223,7 +227,9 @@ def _observe_output(spec: OutputSpec, path: Path) -> OutputObservation:
     if parts:
         frame = read_dataset(path)
         latest: str | None = None
-        date_column = _primary_date_column(spec.dataset_id)
+        # An explicitly declared column wins: a lane outside the dashboard
+        # registry has no contract to look the column up in.
+        date_column = spec.date_column or _primary_date_column(spec.dataset_id)
         if date_column and date_column in frame.columns:
             values = frame[date_column].dropna().astype(str)
             if not values.empty:
@@ -347,6 +353,67 @@ def _evaluate_dataset_contract(
             )
         )
     return checks
+
+
+def _evaluate_observation_freshness(
+    *,
+    spec: OutputSpec,
+    as_of: date,
+    observation: OutputObservation,
+) -> list[CheckResult]:
+    """Age-check a lane that feeds no dashboard, from its newest observation.
+
+    dataset_contract cannot serve these: it resolves the date column through
+    dashboard.data.DATASET_REGISTRY, and the free institutional lanes are not
+    registered there. Without this they could only be checked for existence,
+    which is exactly the failure that hides -- a lane whose source quietly
+    stopped answering leaves a complete, structurally valid, frozen dataset
+    behind and every run still reports success.
+    """
+    latest = observation.latest_observation
+    if not latest:
+        return [
+            CheckResult(
+                check_id=f"{spec.output_id}.freshness",
+                status="unknown",
+                required=spec.required,
+                message=(
+                    f"Output {spec.path} has no readable value in "
+                    f"{spec.date_column!r}, so its age cannot be established."
+                ),
+            )
+        ]
+
+    max_age_days = float(spec.freshness["max_age_days"])
+    observed = pd.to_datetime(latest, errors="coerce")
+    if pd.isna(observed):
+        return [
+            CheckResult(
+                check_id=f"{spec.output_id}.freshness",
+                status="unknown",
+                required=spec.required,
+                message=f"Newest {spec.date_column} value {latest!r} is not a date.",
+                observed=latest,
+            )
+        ]
+
+    age_days = (pd.Timestamp(as_of) - observed.normalize()).days
+    stale = age_days > max_age_days
+    return [
+        CheckResult(
+            check_id=f"{spec.output_id}.freshness",
+            status="stale" if stale else "healthy",
+            required=spec.required,
+            message=(
+                f"Newest observation {latest} is {age_days} days old, past the "
+                f"{max_age_days:g}-day contract."
+                if stale
+                else f"Newest observation {latest} is {age_days} days old."
+            ),
+            expected=f"within {max_age_days:g} days of {as_of.isoformat()}",
+            observed=latest,
+        )
+    ]
 
 
 def _evaluate_asia_markets(

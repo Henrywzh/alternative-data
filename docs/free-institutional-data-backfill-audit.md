@@ -16,8 +16,43 @@ official/public endpoint -> immutable raw snapshot -> source parser
 -> normalized parquet/csv -> source manifest with hashes, coverage, and errors
 ```
 
-The one-shot runner is
-`scripts/backfill_free_institutional_data.py`. It has no scheduler or daemon.
+The runner is `scripts/backfill_free_institutional_data.py`.
+
+## Scheduled refresh
+
+These lanes were backfilled once and then sat still: until 2026-09-12 no
+workflow referenced any of them, so every dataset here was last written by the
+backfill or by a bug fix, never by a refresh. Three workflows now drive them,
+grouped by how often the sources actually publish.
+
+| Workflow | Cron (UTC) | Sources | Registry pipeline |
+| --- | --- | --- | --- |
+| `free-institutional-daily.yml` | `10 5 * * *` | hkex, eia, hkma | `free-institutional-daily` |
+| `free-institutional-weekly.yml` | `40 5 * * 1` | factset | `free-institutional-weekly` |
+| `free-institutional-monthly.yml` | `10 6 6 * *` | sp_pmi, bis, msci | `free-institutional-monthly` |
+
+Scheduled runs pass `--resume`. Only two lanes walk a date range, and their
+backfill defaults are wrong for a schedule: `--hkex-start 2019-01-01` is ~1,750
+trading days of fetches per run, and `--eia-start 2019-01-01T00` re-merges
+2,800 partitions. `--resume` starts each just *behind* the newest stored
+observation -- behind, not after, because EIA revises recent hours and a missed
+publication would otherwise leave a permanent hole. The remaining lanes re-read
+whatever the source currently publishes and upsert it, so they are already
+incremental. An explicit `--eia-start` / `--hkex-start` overrides `--resume`,
+and `full_backfill: true` on a manual dispatch refetches from 2019.
+
+`cme` is deliberately unscheduled: cmegroup.com answers HTTP 403 to the runner,
+so a scheduled job would fail every day and train everyone to ignore the alert.
+It stays available through `workflow_dispatch` and starts working the moment
+access changes.
+
+Each lane is registered in `config/ops/pipelines.yaml` with a `max_age_days`
+contract, so a source that quietly stops answering is reported `STALE` rather
+than leaving a complete, structurally valid, frozen dataset that passes an
+existence check forever. `bis_observations` is the exception and is checked for
+existence only -- its `period` is a quarter label parsed to the quarter's first
+day, and BIS publishes about two quarters in arrears, so any threshold loose
+enough to be quiet would let the lane die for a year unnoticed.
 
 ## Source results
 

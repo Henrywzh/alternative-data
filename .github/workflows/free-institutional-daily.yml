@@ -1,0 +1,113 @@
+name: Free Institutional Data Daily
+
+# The daily-cadence lanes of the free institutional sources.
+#
+# These lanes were backfilled once and then never refreshed: every dataset
+# under data/normalized/{hkex_market_flow,eia_energy,hkma_macro} was last
+# written by the backfill or by a bug fix, never by a scheduled run.
+#
+# The runner defaults exist for that one-shot backfill and are wrong for a
+# schedule -- --hkex-start 2019-01-01 is ~1,750 trading days of fetches, and
+# --eia-start 2019-01-01T00 re-merges 2,800 partitions. --resume starts each
+# ranged lane just behind what is already stored. The other lanes here fetch
+# whatever the source currently publishes, so they are incremental already.
+#
+# cme is deliberately absent: cmegroup.com answers 403 to the runner, so a
+# scheduled job would fail every day and teach everyone to ignore it. It stays
+# available through workflow_dispatch below and starts working the moment
+# access changes.
+
+on:
+  schedule:
+    - cron: "10 5 * * *"        # 05:10 UTC daily — clear of the 03:30-04:15 block
+  workflow_dispatch:
+    inputs:
+      sources:
+        description: "Space-separated source list (default: hkex eia hkma)"
+        required: false
+        default: ""
+      full_backfill:
+        description: "Ignore stored coverage and refetch from 2019"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: free-institutional-daily
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+
+      - name: Refresh daily institutional lanes
+        id: refresh
+        env:
+          EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
+          SOURCES: ${{ github.event.inputs.sources }}
+          FULL_BACKFILL: ${{ github.event.inputs.full_backfill }}
+        run: |
+          set -euo pipefail
+          ARGS=""
+          for source in ${SOURCES:-hkex eia hkma}; do
+            ARGS="$ARGS --source $source"
+          done
+          # --resume unless the operator explicitly asked to refetch history.
+          if [ "${FULL_BACKFILL:-false}" != "true" ]; then
+            ARGS="$ARGS --resume"
+          fi
+          # shellcheck disable=SC2086
+          python scripts/backfill_free_institutional_data.py $ARGS
+
+      - name: Commit refreshed datasets
+        run: |
+          bash scripts/ci/commit_dataset_paths.sh \
+            "chore: refresh daily institutional lanes [$(date -u +%Y-%m-%d)]" \
+            data/normalized/hkex_market_flow \
+            data/normalized/eia_energy \
+            data/normalized/hkma_macro
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+
+      # Freshness is checked against the artifact, not the step outcome: a lane
+      # whose fetch quietly stopped returning rows leaves a complete, valid,
+      # stale dataset behind and the job still reports success.
+      - name: Emit shadow run report
+        if: always()
+        continue-on-error: true
+        env:
+          OPS_JOB_STATUS: ${{ job.status }}
+        run: |
+          python scripts/ops/finalize_pipeline.py \
+            --pipeline-id free-institutional-daily \
+            --job-id refresh \
+            --execution "$OPS_JOB_STATUS" \
+            --output artifacts/ops/free-institutional-daily/run-report.json \
+            --evidence-output artifacts/ops/free-institutional-daily/evidence-manifest.json
+
+      - name: Upload run report
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v7
+        with:
+          name: ops-shadow-free-institutional-daily-${{ github.run_id }}
+          path: artifacts/ops/free-institutional-daily/
+          if-no-files-found: warn

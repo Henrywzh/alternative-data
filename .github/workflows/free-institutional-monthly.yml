@@ -1,0 +1,104 @@
+name: Free Institutional Data Monthly
+
+# The slow lanes. S&P Global releases PMI in the first days of a month, BIS
+# publishes the credit gap quarterly, and MSCI announces index reviews four
+# times a year -- none of them walk a date range, so each run simply re-reads
+# what the source currently publishes and upserts it.
+#
+# The 6th is late enough for the PMI release to be out and early enough that a
+# missed run still has three more weeks of chances before the next release.
+
+on:
+  schedule:
+    - cron: "10 6 6 * *"        # 06:10 UTC on the 6th of each month
+  workflow_dispatch:
+    inputs:
+      sources:
+        description: "Space-separated source list (default: sp_pmi bis msci)"
+        required: false
+        default: ""
+      full_backfill:
+        description: "Ignore stored coverage and refetch from 2019"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: free-institutional-monthly
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+
+      - name: Refresh monthly institutional lanes
+        id: refresh
+        env:
+          EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
+          SOURCES: ${{ github.event.inputs.sources }}
+          FULL_BACKFILL: ${{ github.event.inputs.full_backfill }}
+        run: |
+          set -euo pipefail
+          ARGS=""
+          for source in ${SOURCES:-sp_pmi bis msci}; do
+            ARGS="$ARGS --source $source"
+          done
+          # --resume unless the operator explicitly asked to refetch history.
+          if [ "${FULL_BACKFILL:-false}" != "true" ]; then
+            ARGS="$ARGS --resume"
+          fi
+          # shellcheck disable=SC2086
+          python scripts/backfill_free_institutional_data.py $ARGS
+
+      - name: Commit refreshed datasets
+        run: |
+          bash scripts/ci/commit_dataset_paths.sh \
+            "chore: refresh monthly institutional lanes [$(date -u +%Y-%m)]" \
+            data/normalized/sp_pmi \
+            data/normalized/bis_macro \
+            data/normalized/msci_reviews
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+
+      # Freshness is checked against the artifact, not the step outcome: a lane
+      # whose fetch quietly stopped returning rows leaves a complete, valid,
+      # stale dataset behind and the job still reports success.
+      - name: Emit shadow run report
+        if: always()
+        continue-on-error: true
+        env:
+          OPS_JOB_STATUS: ${{ job.status }}
+        run: |
+          python scripts/ops/finalize_pipeline.py \
+            --pipeline-id free-institutional-monthly \
+            --job-id refresh \
+            --execution "$OPS_JOB_STATUS" \
+            --output artifacts/ops/free-institutional-monthly/run-report.json \
+            --evidence-output artifacts/ops/free-institutional-monthly/evidence-manifest.json
+
+      - name: Upload run report
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v7
+        with:
+          name: ops-shadow-free-institutional-monthly-${{ github.run_id }}
+          path: artifacts/ops/free-institutional-monthly/
+          if-no-files-found: warn

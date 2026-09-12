@@ -83,6 +83,22 @@ RUN_SOURCES = (
     "msci",
     "hkex",
 )
+# Only two lanes walk a date range; the other six fetch whatever the source
+# currently publishes and upsert it, so they are already incremental. Starting
+# those two at 2019 on every scheduled run would re-fetch ~1,750 HKEX trading
+# days and re-merge 2,800 EIA partitions daily, which is why the backfill
+# defaults are wrong for a schedule and --resume exists.
+#
+# A resumed run re-fetches a short window *behind* the newest stored
+# observation rather than starting after it: EIA revises recent hours and a
+# missed publication would otherwise leave a permanent hole, because nothing
+# ever looks back. Upserts dedupe on the natural key, so the overlap costs
+# requests, not duplicate rows.
+EIA_RESUME_LOOKBACK_DAYS = 3
+HKEX_RESUME_LOOKBACK_DAYS = 7
+EIA_BACKFILL_START = "2019-01-01T00"
+HKEX_BACKFILL_START = "2019-01-01"
+
 HKAB_HIBOR_URL = "https://www.hkab.org.hk/en/rates/hibor"
 FACTSET_TOPIC_URL = "https://insight.factset.com/topic/earnings"
 MSCI_REVIEW_URLS = (
@@ -167,6 +183,42 @@ def _as_numeric(value: object) -> float | None:
         return float(text)
     except ValueError:
         return None
+
+
+def _latest_partition_day(storage: Any) -> str | None:
+    """Newest observation day from partition names, without reading the rows.
+
+    eia_grid_hourly is 2.5M rows across 2,800 partitions; the newest day is in
+    the last filename, so resuming must not pay a full read to find it.
+    """
+    paths = storage.partition_store().paths()
+    # UNPARTITIONED sorts after the digits, so the last name is not necessarily
+    # a date. Null observation dates are real data, but they are not a resume
+    # point.
+    days = [path.stem for path in paths if re.fullmatch(r"\d{4}-\d{2}-\d{2}", path.stem)]
+    return max(days) if days else None
+
+
+def _latest_column_value(frame: pd.DataFrame, column: str) -> str | None:
+    if frame.empty or column not in frame.columns:
+        return None
+    values = frame[column].dropna().astype(str)
+    return str(values.max()) if not values.empty else None
+
+
+def resume_start_eia(base_dir: Path, *, lookback_days: int = EIA_RESUME_LOOKBACK_DAYS) -> str:
+    latest = _latest_partition_day(EiaEnergyStorage(base_dir))
+    if latest is None:
+        return EIA_BACKFILL_START
+    start = date.fromisoformat(latest) - timedelta(days=lookback_days)
+    return f"{start.isoformat()}T00"
+
+
+def resume_start_hkex(base_dir: Path, *, lookback_days: int = HKEX_RESUME_LOOKBACK_DAYS) -> str:
+    latest = _latest_column_value(HkexMarketFlowStorage(base_dir).load_observations(), "trade_date")
+    if latest is None:
+        return HKEX_BACKFILL_START
+    return (date.fromisoformat(latest[:10]) - timedelta(days=lookback_days)).isoformat()
 
 
 def backfill_bis(base_dir: Path, run_id: str) -> dict[str, Any]:
@@ -1164,9 +1216,16 @@ def backfill_hkex(base_dir: Path, run_id: str, start: str, end: str, workers: in
 
     if unexpected_errors:
         errors["unexpected_fetch_errors"] = unexpected_errors
-    if daily_success == 0:
+    # "Nothing came back" is an outage only when the dates were actually
+    # available to come back. A resumed run covers a handful of recent days,
+    # and over a holiday week every one of them is a legitimate 404 -- which
+    # the old unconditional check reported as the source having gone away,
+    # every day, until someone stopped believing the alert.
+    all_dates_expected_missing = bool(trade_dates) and expected_missing["daily"] >= len(trade_dates)
+    if daily_success == 0 and not all_dates_expected_missing:
         errors["daily_availability"] = "No official HKEX daily Stock Connect files were fetched."
-    if short_success == 0:
+    all_short_expected_missing = bool(trade_dates) and expected_missing["short"] >= len(trade_dates)
+    if short_success == 0 and not all_short_expected_missing:
         errors["short_availability"] = "No official HKEX short-selling files were fetched."
     if short_success and parsed_short_nonzero == 0:
         errors["short_quality_note"] = "All fetched short-selling value aggregates are zero; shares/security counts are retained, but this needs source-level validation before signal use."
@@ -1201,7 +1260,22 @@ def backfill_hkex(base_dir: Path, run_id: str, start: str, end: str, workers: in
     }
 
 
-def _write_master_manifest(base_dir: Path, run_id: str, started_at: str, results: dict[str, Any], args: argparse.Namespace) -> Path:
+def _write_master_manifest(
+    base_dir: Path,
+    run_id: str,
+    started_at: str,
+    results: dict[str, Any],
+    args: argparse.Namespace,
+    *,
+    eia_start: str,
+    hkex_start: str,
+) -> Path:
+    """Record the run, including the ranges actually fetched.
+
+    The resolved starts are passed in rather than read off ``args``: under
+    --resume those attributes are None, and a manifest that reports a null
+    range is provenance pointing at nothing.
+    """
     root = base_dir / "data" / "raw" / "free_institutional_backfill" / run_id
     root.mkdir(parents=True, exist_ok=True)
     manifest = {
@@ -1212,11 +1286,12 @@ def _write_master_manifest(base_dir: Path, run_id: str, started_at: str, results
         "status": "ok" if all(item.get("status") == "ok" for item in results.values()) else ("partial" if any(item.get("rows_fetched", 0) for item in results.values()) else "failed"),
         "scope": {
             "sources": list(results),
-            "eia_start": args.eia_start,
+            "eia_start": eia_start,
             "eia_end": args.eia_end,
-            "hkex_start": args.hkex_start,
+            "hkex_start": hkex_start,
             "hkex_end": args.end_date,
             "workers": args.workers,
+            "resumed": bool(args.resume),
         },
         "source_manifests": {source: result.get("manifest") for source, result in results.items()},
         "results": results,
@@ -1239,16 +1314,44 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Backfill the new free institutional-data lanes with raw manifests.")
     parser.add_argument("--base-dir", type=Path, default=Path("."))
     parser.add_argument("--source", action="append", choices=RUN_SOURCES, help="Run only this source; repeat for multiple sources. Default: all.")
-    parser.add_argument("--eia-start", default="2019-01-01T00")
+    # Left unset so --resume can tell "the caller asked for this range" from
+    # "the caller took the default"; an explicit range always wins.
+    parser.add_argument("--eia-start", default=None)
     parser.add_argument("--eia-end", default=f"{date.today().isoformat()}T23")
-    parser.add_argument("--hkex-start", default="2019-01-01")
+    parser.add_argument("--hkex-start", default=None)
     parser.add_argument("--end-date", default=date.today().isoformat())
     parser.add_argument("--workers", type=int, default=6)
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help=(
+            "Start the ranged lanes (eia, hkex) just behind what is already "
+            "stored instead of at the 2019 backfill origin. This is what a "
+            "scheduled refresh wants; an explicit --eia-start/--hkex-start "
+            "overrides it."
+        ),
+    )
     args = parser.parse_args()
     base_dir = args.base_dir.resolve()
     sources = args.source or list(RUN_SOURCES)
     if args.workers < 1:
         raise SystemExit("--workers must be positive")
+
+    eia_start = args.eia_start
+    hkex_start = args.hkex_start
+    if eia_start is None:
+        eia_start = resume_start_eia(base_dir) if args.resume else EIA_BACKFILL_START
+    if hkex_start is None:
+        hkex_start = resume_start_hkex(base_dir) if args.resume else HKEX_BACKFILL_START
+    # A stored observation dated ahead of --end-date (a clock skew, or an
+    # end-date deliberately pinned to the past) would otherwise make
+    # _date_range raise on a start after its end.
+    if hkex_start > args.end_date:
+        hkex_start = args.end_date
+    if eia_start > args.eia_end:
+        eia_start = args.eia_end
+    if args.resume:
+        LOGGER.info("Resuming ranged lanes from eia=%s hkex=%s", eia_start, hkex_start)
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid4().hex[:8]
     started_at = utc_now()
     results: dict[str, Any] = {}
@@ -1261,7 +1364,7 @@ def main() -> None:
             elif source == "hkma":
                 result = backfill_hkma(base_dir, run_id)
             elif source == "eia":
-                result = backfill_eia(base_dir, run_id, args.eia_start, args.eia_end)
+                result = backfill_eia(base_dir, run_id, eia_start, args.eia_end)
             elif source == "cme":
                 result = backfill_cme(base_dir, run_id)
             elif source == "factset":
@@ -1271,7 +1374,7 @@ def main() -> None:
             elif source == "msci":
                 result = backfill_msci(base_dir, run_id, args.workers)
             elif source == "hkex":
-                result = backfill_hkex(base_dir, run_id, args.hkex_start, args.end_date, args.workers)
+                result = backfill_hkex(base_dir, run_id, hkex_start, args.end_date, args.workers)
             else:  # pragma: no cover
                 raise ValueError(f"unknown source {source}")
         except Exception as exc:
@@ -1279,7 +1382,9 @@ def main() -> None:
             result = {"status": "failed", "rows_fetched": 0, "errors": {"runner": f"{type(exc).__name__}: {exc}"}}
         results[source] = result
         LOGGER.info("Finished source %s: %s rows, status=%s", source, result.get("rows_fetched", 0), result.get("status"))
-    manifest = _write_master_manifest(base_dir, run_id, started_at, results, args)
+    manifest = _write_master_manifest(
+        base_dir, run_id, started_at, results, args, eia_start=eia_start, hkex_start=hkex_start
+    )
     print(json.dumps({"run_id": run_id, "manifest": _relative_to_base(base_dir, manifest), "results": results}, ensure_ascii=False, indent=2, default=str))
 
 
