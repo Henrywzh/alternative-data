@@ -49,7 +49,76 @@ import pyarrow.parquet as pq
 # arbitrary date.
 UNPARTITIONED = "__unpartitioned__"
 
-__all__ = ["PartitionSpec", "PartitionedParquetStore", "UNPARTITIONED"]
+__all__ = [
+    "PartitionSpec",
+    "PartitionedParquetStore",
+    "UNPARTITIONED",
+    "dataset_parts",
+    "read_dataset",
+    "resolve_dataset_path",
+]
+
+
+def _partition_directory(path: Path) -> Path:
+    # Only a ``.parquet`` suffix is stripped: a dataset directory may itself
+    # carry a dot (``foo.v2``), and ``with_suffix("")`` would silently turn
+    # that into a different dataset.
+    return path.with_suffix("") if path.suffix == ".parquet" else path
+
+
+def _single_file(path: Path) -> Path:
+    return path if path.suffix == ".parquet" else path.with_name(path.name + ".parquet")
+
+
+def resolve_dataset_path(path: Path) -> Path | None:
+    """Where a dataset actually lives, given either spelling of its name.
+
+    A dataset is stored either as one ``name.parquet`` file or, once migrated,
+    as a ``name/`` directory holding one parquet per observation date. Callers
+    hold whichever spelling was written down when they were last touched -- a
+    pipeline registry entry, a workflow path list, a hard-coded reader -- so
+    both are accepted here instead of at each call site. Returns ``None`` when
+    neither layout holds data.
+
+    The directory wins when both exist. A migration writes the partitions
+    before removing the single file, so for one run both are on disk and the
+    stale file is the wrong answer. An empty directory does not count as the
+    dataset: it would otherwise mask a single file that is still the truth.
+    """
+    directory = _partition_directory(path)
+    if directory.is_dir() and any(directory.glob("*.parquet")):
+        return directory
+    single = _single_file(path)
+    return single if single.is_file() else None
+
+
+def dataset_parts(path: Path) -> list[Path]:
+    """Every parquet file holding this dataset, in partition-name order.
+
+    One element for the single-file layout, one per partition otherwise, and
+    an empty list when the dataset is absent -- so ``if not dataset_parts(p)``
+    is the layout-agnostic spelling of "this output does not exist".
+    """
+    resolved = resolve_dataset_path(path)
+    if resolved is None:
+        return []
+    return sorted(resolved.glob("*.parquet")) if resolved.is_dir() else [resolved]
+
+
+def read_dataset(path: Path, *, reader: Any = None) -> pd.DataFrame:
+    """Read a dataset whole, whichever layout it uses.
+
+    ``reader`` overrides ``pd.read_parquet`` for callers that need particular
+    read semantics -- ``openrouter_derived_data`` reads single-threaded
+    because PyArrow's thread pool can outlive the interpreter on Linux.
+    """
+    read = reader or pd.read_parquet
+    parts = dataset_parts(path)
+    if not parts:
+        raise FileNotFoundError(path)
+    if len(parts) == 1:
+        return read(parts[0])
+    return pd.concat([read(part) for part in parts], ignore_index=True)
 
 
 @dataclass(frozen=True)

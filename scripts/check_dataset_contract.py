@@ -30,9 +30,14 @@ from pathlib import Path
 import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+# The repo root reaches `dashboard`; `src` reaches the installable packages,
+# and is added explicitly so this runs from a plain checkout that has not been
+# pip-installed -- which is how a worktree and a fresh clone both behave.
+for _import_root in (REPO_ROOT, REPO_ROOT / "src"):
+    if str(_import_root) not in sys.path:
+        sys.path.insert(0, str(_import_root))
 
+from common.partitioned_parquet import dataset_parts, read_dataset  # noqa: E402
 from dashboard.data import DATASET_REGISTRY  # noqa: E402
 
 
@@ -47,10 +52,14 @@ def check_dataset(
     spec = DATASET_REGISTRY.get(dataset_id)
     if spec is None:
         return [f"{dataset_id} is not registered in dashboard.data.DATASET_REGISTRY"]
-    if not path.is_file():
+    # A migrated dataset is a directory of one parquet per observation date,
+    # so existence is "does any part resolve", not "is this a file". Both
+    # spellings of the name are accepted, because a caller written before the
+    # migration still passes ``<name>.parquet``.
+    if not dataset_parts(path):
         return [f"{dataset_id}: {path} does not exist"]
 
-    frame = pd.read_parquet(path)
+    frame = read_dataset(path)
     failures: list[str] = []
 
     required = [str(column) for column in spec.get("required_columns", [])]

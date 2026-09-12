@@ -10,6 +10,8 @@ from typing import Any
 
 import pandas as pd
 
+from common.partitioned_parquet import dataset_parts, read_dataset
+
 from .models import (
     CheckResult,
     Evidence,
@@ -212,6 +214,32 @@ def evaluate_output(
 
 
 def _observe_output(spec: OutputSpec, path: Path) -> OutputObservation:
+    # A parquet output is one file or a directory of date partitions, and the
+    # registry may name either spelling, so ask the shared resolver rather
+    # than `is_file()`. Judging a migrated dataset missing is not a cosmetic
+    # error: a required output that does not exist makes the whole run
+    # FAILED_ACTIONABLE, which is the loudest state the control tower has.
+    parts = dataset_parts(path)
+    if parts:
+        frame = read_dataset(path)
+        latest: str | None = None
+        date_column = _primary_date_column(spec.dataset_id)
+        if date_column and date_column in frame.columns:
+            values = frame[date_column].dropna().astype(str)
+            if not values.empty:
+                latest = str(values.max())[:10]
+        return OutputObservation(
+            output_id=spec.output_id,
+            path=spec.path,
+            required=spec.required,
+            exists=True,
+            # Summed, so the reported size stays comparable across a
+            # migration instead of collapsing to one partition.
+            size_bytes=sum(part.stat().st_size for part in parts),
+            row_count=len(frame),
+            latest_observation=latest,
+        )
+
     if not path.is_file():
         return OutputObservation(
             output_id=spec.output_id,
@@ -223,17 +251,8 @@ def _observe_output(spec: OutputSpec, path: Path) -> OutputObservation:
             latest_observation=None,
         )
 
-    row_count: int | None = None
-    latest: str | None = None
-    if path.suffix == ".parquet":
-        frame = pd.read_parquet(path)
-        row_count = len(frame)
-        date_column = _primary_date_column(spec.dataset_id)
-        if date_column and date_column in frame.columns:
-            values = frame[date_column].dropna().astype(str)
-            if not values.empty:
-                latest = str(values.max())[:10]
-    elif path.suffix == ".json":
+    latest = None
+    if path.suffix == ".json":
         try:
             import json
 
@@ -248,7 +267,7 @@ def _observe_output(spec: OutputSpec, path: Path) -> OutputObservation:
         required=spec.required,
         exists=True,
         size_bytes=path.stat().st_size,
-        row_count=row_count,
+        row_count=None,
         latest_observation=latest,
     )
 

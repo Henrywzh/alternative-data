@@ -584,7 +584,10 @@ def backfill_eia(base_dir: Path, run_id: str, start: str, end: str) -> dict[str,
         raw_run,
         row_count=sum(respondent_counts.values()),
         errors=errors,
-        normalized_outputs=_output_map(storage, ["eia_grid_hourly.parquet", "eia_grid_hourly.csv"]),
+        # The partition directory, not the single file and CSV twin the
+        # store deletes on write: a manifest that names outputs the same run
+        # removed is provenance that points at nothing.
+        normalized_outputs=_output_map(storage, ["eia_grid_hourly"]),
         coverage={
             "respondents": DEFAULT_RESPONDENTS,
             "respondent_rows": respondent_counts,

@@ -29,6 +29,7 @@ from ..charts import (
 
 from ..company_profiles import SegmentSpec, get_company_profile, segment_label
 
+from common.partitioned_parquet import dataset_parts, resolve_dataset_path
 from research_control_tower.eligibility import listing_eligibility_reason
 from research_control_tower.southbound_holdings import hkex_security_code, southbound_mart_path
 from research_control_tower.live_refresh import (
@@ -2606,15 +2607,11 @@ def _parquet_fingerprint(path: Path) -> tuple[int, int]:
     summarised: total bytes and the newest mtime. A refresh that rewrites one
     partition moves both, which is what the cache needs to notice.
     """
-    if path.is_dir():
-        parts = sorted(path.glob("*.parquet"))
-        stats = [part.stat() for part in parts]
-        return (
-            sum(stat.st_size for stat in stats),
-            max((stat.st_mtime_ns for stat in stats), default=0),
-        )
-    stat = path.stat()
-    return (stat.st_size, stat.st_mtime_ns)
+    stats = [part.stat() for part in dataset_parts(path)]
+    return (
+        sum(stat.st_size for stat in stats),
+        max((stat.st_mtime_ns for stat in stats), default=0),
+    )
 
 
 @st.cache_data(show_spinner=False, max_entries=8)
@@ -2633,7 +2630,7 @@ def _read_mart_projected(
     path = Path(path_str)
     # A partitioned mart is a directory of one parquet per observation date.
     # Each is read with the same projection and concatenated in name order.
-    sources = sorted(path.glob("*.parquet")) if path.is_dir() else [path]
+    sources = dataset_parts(path)
     frames: list[pd.DataFrame] = []
     for source in sources:
         if columns:
@@ -3172,33 +3169,25 @@ def _load_southbound_holdings(spec, *, as_of_utc: Any = None) -> pd.DataFrame:
 
 def _load_openrouter_raw() -> tuple[pd.DataFrame, Path | None]:
     repo_root = _control_tower_repo_root()
+    # One entry per mart, in preference order. Each name is resolved to
+    # whichever layout is on disk -- a single parquet or a directory of date
+    # partitions, the directory winning while a migration leaves both -- so
+    # the two spellings are not enumerated here.
     candidates = [
-        # The partition directory is checked before the single file: after a
-        # migration both can briefly exist, and the directory is authoritative.
         repo_root / 'data/normalized/marts/daily_provider_economics',
         Path('data/normalized/marts/daily_provider_economics'),
-        repo_root / 'data/normalized/marts/daily_provider_economics.parquet',
-        Path('data/normalized/marts/daily_provider_economics.parquet'),
-        repo_root / 'data/normalized/marts/daily_cloud_infra_economics.parquet',
-        Path('data/normalized/marts/daily_cloud_infra_economics.parquet'),
-        repo_root / 'data/normalized/openrouter/cloud_infra_daily_activity.parquet',
-        Path('data/normalized/openrouter/cloud_infra_daily_activity.parquet'),
+        repo_root / 'data/normalized/marts/daily_cloud_infra_economics',
+        Path('data/normalized/marts/daily_cloud_infra_economics'),
+        repo_root / 'data/normalized/openrouter/cloud_infra_daily_activity',
+        Path('data/normalized/openrouter/cloud_infra_daily_activity'),
     ]
-    def _usable(path: Path) -> bool:
-        # An empty partition directory still "exists"; treating it as usable
-        # would return an empty frame instead of falling through to the
-        # single-file candidate behind it.
-        if path.is_dir():
-            return any(path.glob('*.parquet'))
-        return path.is_file()
 
-    seen: set[str] = set()
-    for path in candidates:
-        key = str(path.resolve()) if path.exists() else str(path)
-        if key in seen:
-            continue
-        seen.add(key)
-        if _usable(path):
+    for candidate in candidates:
+        # The first mart that resolves wins, so the de-duplication the old
+        # loop carried never fired -- the repo-root and relative spellings of
+        # one mart can only both be reached if neither resolves.
+        path = resolve_dataset_path(candidate)
+        if path is not None:
             return _read_mart_projected(str(path), _parquet_fingerprint(path), OPENROUTER_MART_COLUMNS), path
     return pd.DataFrame(), None
 

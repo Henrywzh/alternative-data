@@ -27,7 +27,10 @@ pipelines:
               mode: max_age_days
               max_age_days: 2
           - id: daily-provider-economics
-            path: data/normalized/marts/daily_provider_economics.parquet
+            # One parquet per usage month, not a single file: the path names
+            # the partition directory. Either spelling resolves, but the
+            # registry states what is actually on disk.
+            path: data/normalized/marts/daily_provider_economics
             required: true
             validator: dataset_contract
             dataset_id: daily_provider_economics
