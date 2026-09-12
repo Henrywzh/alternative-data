@@ -30,17 +30,24 @@ class HkexMarketFlowClient:
             raise ValueError(f"HKEX returned a non-data page for {trade_date}: {url}")
         return url, response.content
 
+    # A single-quoted scalar that contains no double quote or backslash is
+    # safe to requote. The previous code special-cased the literal '15:15',
+    # which is the snapshot time on one HKEX report -- any other time, and any
+    # other single-quoted field, broke json.loads outright.
+    _SINGLE_QUOTED = re.compile(r"'([^'\"\\\n]*)'")
+
     @staticmethod
     def _parse_js_array(javascript: str | bytes) -> list[dict[str, Any]]:
         text = javascript.decode("utf-8-sig") if isinstance(javascript, bytes) else javascript.lstrip("\ufeff")
-        if "=" not in text:
-            raise ValueError("HKEX JavaScript payload does not contain an assignment")
-        array_text = text.split("=", 1)[1].strip().rstrip(";")
-        # Short-selling files contain a quoted time written with single
-        # quotes; the rest of the payload is JSON-compatible.  Restrict the
-        # replacement to that known literal rather than rewriting arbitrary
-        # names or apostrophes in security names.
-        array_text = array_text.replace("'15:15'", '"15:15"')
+        # Start at the array itself rather than splitting on the first "=" in
+        # the file: any comment or earlier assignment ahead of tabData shifted
+        # that split onto the wrong token.
+        start = text.find("[")
+        end = text.rfind("]")
+        if start == -1 or end == -1 or end < start:
+            raise ValueError("HKEX payload contains no JSON array")
+        array_text = text[start : end + 1]
+        array_text = HkexMarketFlowClient._SINGLE_QUOTED.sub(r'"\1"', array_text)
         array_text = re.sub(r",\s*([}\]])", r"\1", array_text)
         payload = json.loads(array_text)
         if not isinstance(payload, list):

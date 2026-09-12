@@ -6,6 +6,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from .client import HkmaMacroClient
+from .config import INTERBANK_LIQUIDITY_PATH
 from .storage import HkmaMacroStorage
 
 logger = logging.getLogger(__name__)
@@ -25,10 +26,13 @@ class HkmaMacroPipeline:
         errors: dict[str, str] = {}
 
         try:
-            meta_liq, obs_liq = self.client.get_interbank_liquidity()
+            # Fetch and retain first, parse second: a snapshot written only on
+            # the success path is missing exactly when it is needed.
+            raw_liq = self.client.fetch_endpoint(INTERBANK_LIQUIDITY_PATH)
+            self.storage.write_raw_payload(run_id, "interbank_liquidity_raw", raw_liq)
+            meta_liq, obs_liq = self.client.parse_interbank_liquidity(raw_liq)
             meta_records.append(meta_liq)
             obs_records.extend(obs_liq)
-            self.storage.write_raw_payload(run_id, "interbank_liquidity", [o.to_dict() for o in obs_liq])
         except Exception as exc:
             logger.error("Error fetching HKMA interbank liquidity: %s", exc)
             errors["interbank_liquidity"] = str(exc)

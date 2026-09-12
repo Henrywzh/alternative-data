@@ -153,8 +153,19 @@ class HkmaMacroClient:
         return results
 
     def get_interbank_liquidity(self) -> tuple[HkmaSeriesMeta, list[HkmaObservation]]:
+        """Fetch and parse in one call, for callers that do not retain the raw."""
+        return self.parse_interbank_liquidity(self.fetch_endpoint(INTERBANK_LIQUIDITY_PATH))
+
+    def parse_interbank_liquidity(
+        self, data: dict[str, Any]
+    ) -> tuple[HkmaSeriesMeta, list[HkmaObservation]]:
+        """Parse an already-fetched payload.
+
+        Split out from the fetch so a pipeline can persist the raw response
+        before parsing it; previously the snapshot was written only after a
+        successful parse.
+        """
         fetched_at = datetime.now(timezone.utc).isoformat()
-        data = self.fetch_endpoint(INTERBANK_LIQUIDITY_PATH)
         meta = HkmaSeriesMeta(
             series_id="HKMA_AGGREGATE_BALANCE",
             title="HKMA Aggregate Balance (Interbank Liquidity)",

@@ -25,6 +25,9 @@ class BisObservation:
     value: float | None
     release_date: str
     fetched_at: str
+    # Set by the parser from BIS's own observation status; it was previously
+    # declared here and written by nothing, so every row read False whether or
+    # not the value was an estimate.
     is_projected: bool = False
 
     def to_dict(self) -> dict[str, object]:

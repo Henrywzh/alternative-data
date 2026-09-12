@@ -11,8 +11,19 @@ from scripts.build_mtr_walk_forward_oos import build_walk_forward
 def test_walk_forward_is_chronological_and_auditable() -> None:
     walk, monthly, summary = build_walk_forward()
 
-    assert len(walk) == 16
-    assert len(monthly) == 90
+    # Row counts are floors, not equalities. Both frames grow whenever MTR
+    # publishes: `monthly` gained a row the month 2026-07 landed and the
+    # frozen `== 90` began failing every run, which says nothing about whether
+    # the walk-forward is chronological or auditable. A floor still catches the
+    # regression that mattered -- rows silently disappearing -- and the
+    # integrity checks below cover what the count was standing in for.
+    assert len(walk) >= 16
+    assert len(monthly) >= 90
+
+    monthly_periods = pd.PeriodIndex(pd.to_datetime(monthly["month"].astype(str)), freq="M")
+    assert not monthly_periods.duplicated().any(), "a month appears twice in the monthly track"
+    assert monthly_periods.is_monotonic_increasing, "the monthly track is not in chronological order"
+    assert monthly["target_volume_mn"].notna().all()
     assert summary["strict_pit_status"] == "not_eligible_until_patronage_release_registry_exists"
     assert summary["input_bundle"]["model_code"]["path"] == "scripts/build_mtr_walk_forward_oos.py"
     assert len(summary["input_bundle"]["model_code"]["sha256"]) == 64

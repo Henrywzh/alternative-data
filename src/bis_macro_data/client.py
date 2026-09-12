@@ -46,9 +46,19 @@ class BisMacroClient:
     @staticmethod
     def read_credit_gap_bulk(payload: bytes) -> pd.DataFrame:
         with zipfile.ZipFile(io.BytesIO(payload)) as archive:
-            csv_members = [name for name in archive.namelist() if name.lower().endswith(".csv")]
+            csv_members = sorted(
+                name for name in archive.namelist() if name.lower().endswith(".csv")
+            )
             if not csv_members:
                 raise ValueError("BIS credit-gap ZIP contains no CSV member")
+            if len(csv_members) > 1:
+                # Picking whichever member happened to come first made the
+                # parsed panel depend on archive ordering rather than on the
+                # file's contents.
+                raise ValueError(
+                    f"BIS credit-gap ZIP has {len(csv_members)} CSV members {csv_members}; "
+                    "the expected layout is a single flat file, so the archive shape has changed"
+                )
             with archive.open(csv_members[0]) as handle:
                 return pd.read_csv(handle)
 
@@ -86,15 +96,30 @@ class BisMacroClient:
             return meta_list, obs_list
         area_codes = normalized[area_column].astype(str).map(self._short_code)
         filtered = normalized[area_codes.isin(areas)].copy()
-        if "CG_DTYPE" in filtered.columns:
-            dtype_codes = filtered["CG_DTYPE"].astype(str).map(self._short_code)
-            if (dtype_codes == "C").any():
-                filtered = filtered[dtype_codes == "C"]
-        for dimension, expected in (("TC_BORROWERS", "P"), ("TC_LENDERS", "A")):
-            if dimension in filtered.columns:
-                codes = filtered[dimension].astype(str).map(self._short_code)
-                if (codes == expected).any():
-                    filtered = filtered[codes == expected]
+        # Each of these dimensions must actually select rows. The bulk file
+        # carries the credit level, the HP trend and the gap under one
+        # BORROWERS_CTY, so skipping a filter does not yield fewer columns --
+        # it stacks three different series into one, and the (series_id,
+        # period) dedupe downstream then keeps an arbitrary one. Guarding with
+        # `.any()` meant a renamed BIS code silently produced that mixture
+        # instead of failing, which is the one outcome worth refusing.
+        for dimension, expected, label in (
+            ("CG_DTYPE", "C", "actual-trend credit gap"),
+            ("TC_BORROWERS", "P", "private non-financial sector"),
+            ("TC_LENDERS", "A", "all lenders"),
+        ):
+            if dimension not in filtered.columns:
+                continue
+            codes = filtered[dimension].astype(str).map(self._short_code)
+            selected = filtered[codes == expected]
+            if selected.empty:
+                observed = sorted(codes.unique())[:8]
+                raise ValueError(
+                    f"BIS {dimension} has no {expected!r} ({label}) rows for the requested "
+                    f"areas; observed codes: {observed}. The bulk file's dimension coding "
+                    "has changed -- refusing to emit a mix of level, trend and gap series."
+                )
+            filtered = selected
         filtered["_area_code"] = filtered[area_column].astype(str).map(self._short_code)
         for area, group in filtered.groupby("_area_code"):
             series_id = f"BIS_CREDIT_GAP_{area}"
@@ -122,9 +147,25 @@ class BisMacroClient:
                             value=value,
                             release_date=self._derive_quarterly_release_date(period),
                             fetched_at=fetched_at,
+                            is_projected=self._is_projected(row),
                         )
                     )
         return meta_list, obs_list
+
+    @staticmethod
+    def _is_projected(row: pd.Series) -> bool:
+        """True when BIS flags the observation as an estimate or forecast.
+
+        SDMX carries this in OBS_STATUS ("E" estimated, "F" forecast, "P"
+        provisional). The field was declared on the model and written by
+        nothing, so every row claimed to be a final reading.
+        """
+        for column in ("OBS_STATUS", "obs_status"):
+            if column in row.index:
+                code = str(row.get(column) or "").split(":", 1)[0].strip().upper()
+                if code in {"E", "F", "P"}:
+                    return True
+        return False
 
     @staticmethod
     def _derive_quarterly_release_date(period: str) -> str:

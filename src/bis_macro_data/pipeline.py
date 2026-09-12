@@ -26,15 +26,14 @@ class BisMacroPipeline:
         errors: dict[str, str] = {}
         try:
             bulk_payload = self.client.fetch_credit_gap_bulk()
+            # Retain the payload before parsing it. Writing the snapshot after
+            # a successful parse meant the one run whose parse failed was also
+            # the one run with nothing to debug.
+            self.storage.write_raw_bytes(run_id, "credit_gap_raw.zip", bulk_payload)
             df_cg = self.client.read_credit_gap_bulk(bulk_payload)
             meta_cg, obs_cg = self.client.parse_credit_gap_records(df_cg, target_areas=target_areas)
             meta_records.extend(meta_cg)
             obs_records.extend(obs_cg)
-            # Keep the full-dimensional official ZIP rather than only the
-            # filtered normalized rows.  The one-shot runner stores the same
-            # bytes with a shared hash manifest; this local pipeline remains
-            # useful for a single-source refresh.
-            self.storage.write_raw_bytes(run_id, "credit_gap_raw.zip", bulk_payload)
         except Exception as exc:
             logger.error("Error fetching BIS credit gap: %s", exc)
             errors["credit_gap"] = str(exc)
