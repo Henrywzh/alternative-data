@@ -66,7 +66,12 @@ def migrate(base_dir: Path, *, dry_run: bool = False) -> int:
         frame = frame[columns]
 
         if dry_run:
-            buckets = frame[PARTITION_COLUMNS[dataset_id]].nunique(dropna=False)
+            # Count the partition stems the store would actually write, not the
+            # distinct column values: at month granularity an hourly or daily
+            # column collapses many values into one file, and reporting the
+            # raw nunique told the operator to expect 366 files where the run
+            # produces 13.
+            buckets = frame[PARTITION_COLUMNS[dataset_id]].map(store._name).nunique(dropna=False)
             size_mb = monolith.stat().st_size / (1024 * 1024)
             print(f"{dataset_id}: would write {buckets} partitions from {len(frame):,} rows "
                   f"(replacing a {size_mb:.1f} MB single file)")
