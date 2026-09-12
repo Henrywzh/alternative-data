@@ -1,10 +1,10 @@
 {
   "run_scope": "full",
-  "retrieved_at": "2026-09-04T15:36:56.114595Z",
+  "retrieved_at": "2026-09-12T00:26:19.883680Z",
   "dataset_name": "fred_observations",
-  "run_id": "20260904T153656-b1669c69",
-  "created_at": "2026-09-04T15:37:22.793399Z",
-  "records": 18380,
+  "run_id": "20260912T002619-37029c4e",
+  "created_at": "2026-09-12T00:26:38.478925Z",
+  "records": 18411,
   "columns": [
     "date",
     "series_id",
@@ -16,5 +16,5 @@
     "realtime_start",
     "realtime_end"
   ],
-  "sha256": "e3f8e39dd82a7908dc6680bb1d48edefd56ecb3d782b441c8806f661ef0b5a4e"
+  "sha256": "27d395b22dbb35ec0ce0e5160e9200a654aee9a99cab5b6486ab4811c7e9f488"
 }

@@ -1,10 +1,10 @@
 {
   "run_scope": "full",
-  "retrieved_at": "2026-09-04T15:36:56.114595Z",
+  "retrieved_at": "2026-09-12T00:26:19.883680Z",
   "dataset_name": "condition_states",
-  "run_id": "20260904T153656-b1669c69",
-  "created_at": "2026-09-04T15:37:22.825462Z",
-  "records": 7549,
+  "run_id": "20260912T002619-37029c4e",
+  "created_at": "2026-09-12T00:26:38.513381Z",
+  "records": 7565,
   "columns": [
     "date",
     "value",
@@ -34,7 +34,8 @@
     "event_id",
     "meeting_date_src",
     "slug",
-    "source"
+    "source",
+    "distribution_complete"
   ],
-  "sha256": "b4a0688385dcb1f43c76063d5fa3aed5bd613f9508d6c2f5fe518458efe9821d"
+  "sha256": "bcd92e0e988525fe446b871c40e1d6273d7fad52641e0b69efb38b82740b122c"
 }

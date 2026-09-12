@@ -1,9 +1,9 @@
 {
   "run_scope": "full",
-  "retrieved_at": "2026-09-04T15:36:56.114595Z",
+  "retrieved_at": "2026-09-12T00:26:19.883680Z",
   "dataset_name": "fomc_history",
-  "run_id": "20260904T153656-b1669c69",
-  "created_at": "2026-09-04T15:37:22.818627Z",
+  "run_id": "20260912T002619-37029c4e",
+  "created_at": "2026-09-12T00:26:38.502919Z",
   "records": 32,
   "columns": [
     "date",
@@ -17,7 +17,8 @@
     "event_id",
     "meeting_date",
     "slug",
-    "source"
+    "source",
+    "distribution_complete"
   ],
-  "sha256": "a00dc71879bf349785272ac24217473b2c4d89de1d83ac909509b0a6d579141e"
+  "sha256": "ae7b024926a569effd43db02dc909e74c03f63633bd3acf87f726ee3f4a4d1a4"
 }
