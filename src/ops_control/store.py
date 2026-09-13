@@ -62,7 +62,7 @@ class IncidentStore:
 
     def find_by_fingerprint(self, fingerprint: str) -> Incident | None:
         query = (
-            f'repo:{self.repository} label:ops-incident '
+            f'repo:{self.repository} is:issue label:ops-incident '
             f'"fingerprint: {fingerprint}" in:body'
         )
         items = paginate(
