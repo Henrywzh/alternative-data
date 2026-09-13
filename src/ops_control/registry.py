@@ -66,6 +66,7 @@ class OutputSpec:
 class JobSpec:
     job_id: str
     outputs: tuple[OutputSpec, ...]
+    artifact_prefix: str | None = None
 
 
 @dataclass(frozen=True)
@@ -75,6 +76,9 @@ class PipelineSpec:
     cadence: dict[str, Any]
     criticality: str
     jobs: dict[str, JobSpec]
+    artifact_prefix: str | None = None
+    github_workflow_name: str | None = None
+    retry: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -140,6 +144,9 @@ def load_registry(path: Path, *, repo_root: Path) -> PipelineRegistry:
         if not isinstance(raw_jobs, dict) or not raw_jobs:
             raise RegistryError(f"Pipeline {pipeline_id!r} has no jobs")
         jobs: dict[str, JobSpec] = {}
+        pipeline_artifact_prefix = _optional_string(raw_pipeline.get("artifact_prefix"))
+        github_workflow_name = _optional_string(raw_pipeline.get("github_workflow_name"))
+        retry = _validate_retry(raw_pipeline.get("retry"), pipeline_id=str(pipeline_id))
         for job_id, raw_job in raw_jobs.items():
             if not isinstance(raw_job, dict):
                 raise RegistryError(
@@ -170,7 +177,12 @@ def load_registry(path: Path, *, repo_root: Path) -> PipelineRegistry:
                 raise RegistryError(
                     f"Pipeline {pipeline_id!r} job {job_id!r} has duplicate output IDs"
                 )
-            jobs[str(job_id)] = JobSpec(job_id=str(job_id), outputs=outputs)
+            job_artifact_prefix = _optional_string(raw_job.get("artifact_prefix"))
+            jobs[str(job_id)] = JobSpec(
+                job_id=str(job_id),
+                outputs=outputs,
+                artifact_prefix=job_artifact_prefix or pipeline_artifact_prefix,
+            )
 
         pipelines[str(pipeline_id)] = PipelineSpec(
             pipeline_id=str(pipeline_id),
@@ -178,6 +190,9 @@ def load_registry(path: Path, *, repo_root: Path) -> PipelineRegistry:
             cadence=cadence,
             criticality=criticality,
             jobs=jobs,
+            artifact_prefix=pipeline_artifact_prefix,
+            github_workflow_name=github_workflow_name,
+            retry=retry,
         )
 
     return PipelineRegistry(
@@ -301,6 +316,11 @@ def _validate_cadence(payload: Any, *, pipeline_id: str) -> dict[str, Any]:
                     f"Pipeline {pipeline_id!r} has missing or duplicate window purpose"
                 )
             purposes.add(purpose)
+            job_id = _optional_string(window.get("job_id"))
+            if job_id is not None and not job_id:
+                raise RegistryError(
+                    f"Pipeline {pipeline_id!r} schedule window has empty job_id"
+                )
     else:
         raise RegistryError(
             f"Pipeline {pipeline_id!r} has unsupported cadence kind {kind!r}"
@@ -341,6 +361,24 @@ def _validate_freshness(
         raise RegistryError(
             f"Output {output_id!r} uses unsupported freshness mode {mode!r}"
         )
+
+
+def _validate_retry(payload: Any, *, pipeline_id: str) -> dict[str, Any]:
+    if payload is None:
+        return {"automatic": False, "max_attempts": 0}
+    if not isinstance(payload, dict):
+        raise RegistryError(f"Pipeline {pipeline_id!r} retry must be a mapping")
+    automatic = bool(payload.get("automatic", False))
+    max_attempts = payload.get("max_attempts", 1 if automatic else 0)
+    if isinstance(max_attempts, bool) or not isinstance(max_attempts, int) or max_attempts < 0:
+        raise RegistryError(
+            f"Pipeline {pipeline_id!r} retry.max_attempts must be a non-negative integer"
+        )
+    if automatic and max_attempts < 1:
+        raise RegistryError(
+            f"Pipeline {pipeline_id!r} automatic retry requires max_attempts >= 1"
+        )
+    return {"automatic": automatic, "max_attempts": max_attempts}
 
 
 def _dataset_registry(repo_root: Path) -> dict[str, Any]:

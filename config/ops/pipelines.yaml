@@ -1,12 +1,18 @@
 version: 1
-phase: 0
+phase: 1
 pipelines:
   openrouter-provider-activity:
     workflow: openrouter-provider-activity-daily.yml
+    artifact_prefix: ops-shadow-openrouter-provider-activity-
+    github_workflow_name: OpenRouter Provider Activity Daily
     cadence:
       kind: daily
       expected_interval_hours: 24
+      grace_hours: 6
     criticality: high
+    retry:
+      automatic: true
+      max_attempts: 1
     jobs:
       scrape-provider-activity:
         outputs:
@@ -56,10 +62,16 @@ pipelines:
 
   asia-markets-dashboard-refresh:
     workflow: asia-markets-dashboard-refresh-daily.yml
+    artifact_prefix: ops-shadow-asia-markets-dashboard-refresh-
+    github_workflow_name: Asia Markets Dashboard Data Refresh Daily
     cadence:
       kind: daily
       expected_interval_hours: 24
+      grace_hours: 6
     criticality: high
+    retry:
+      automatic: true
+      max_attempts: 1
     jobs:
       refresh-dashboard-data:
         outputs:
@@ -71,16 +83,24 @@ pipelines:
 
   semiconductor-memory-monthly:
     workflow: semiconductor-memory-monthly.yml
+    github_workflow_name: Semiconductor Memory Monthly
     cadence:
       kind: monthly_windows
       schedule_windows:
         - days: 1-5
           purpose: adata
+          job_id: adata-update
         - days: 14-16
           purpose: fred
+          job_id: fred-update
+      grace_hours: 6
     criticality: medium
+    retry:
+      automatic: true
+      max_attempts: 1
     jobs:
       adata-update:
+        artifact_prefix: ops-shadow-semiconductor-memory-adata-
         outputs:
           - id: semiconductor-memory-regime-monthly
             path: data/normalized/semiconductor_memory/semiconductor_memory_regime_monthly.parquet
@@ -91,6 +111,7 @@ pipelines:
               mode: monthly_release_lag
               release_lag_days: 5
       fred-update:
+        artifact_prefix: ops-shadow-semiconductor-memory-fred-
         outputs:
           - id: fred-semiconductor-ppi-monthly
             path: data/normalized/semiconductor_memory/fred_semiconductor_ppi_monthly.parquet
