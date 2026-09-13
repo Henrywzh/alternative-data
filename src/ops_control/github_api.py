@@ -4,6 +4,7 @@ import json
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlencode
+import urllib.request
 from urllib.request import Request, urlopen
 
 
@@ -33,8 +34,16 @@ def request_bytes(
     if payload is not None:
         headers["Content-Type"] = "application/json"
     request = Request(url, data=body, method=method, headers=headers)
+    # urlopen follows 302 and forwards Authorization onto Azure Blob, which
+    # then rejects the GitHub bearer token. Disable automatic redirects and
+    # replay the signed Location without that header.
+    class _NoRedirect(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, req, fp, code, msg, headers, newurl):  # type: ignore[override]
+            return None
+
+    opener = urllib.request.build_opener(_NoRedirect())
     try:
-        with urlopen(request, timeout=timeout) as response:
+        with opener.open(request, timeout=timeout) as response:
             return response.read()
     except HTTPError as exc:
         if 300 <= exc.code < 400:
