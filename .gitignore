@@ -580,7 +580,20 @@ data/raw/factset_earnings/**
 data/raw/sp_pmi/**
 data/raw/msci_reviews/**
 data/raw/hkex_market_flow/**
-!data/raw/*/*/
+# Descend into each lane's run directories so the manifest re-includes below
+# can reach them. Scoped to these eight lanes, not `!data/raw/*/*/`: that
+# wildcard un-ignored every second-level directory under data/raw, which made
+# 180 MB of local PDF and image caches (hk_transport, minerals_signal_data)
+# committable by a plain `git add -A`. They are each under the per-file size
+# budget, so the size guard would not have caught it either.
+!data/raw/bis_macro/*/
+!data/raw/hkma_macro/*/
+!data/raw/eia_energy/*/
+!data/raw/cme_voi/*/
+!data/raw/factset_earnings/*/
+!data/raw/sp_pmi/*/
+!data/raw/msci_reviews/*/
+!data/raw/hkex_market_flow/*/
 !data/raw/bis_macro/*/manifest.json
 !data/raw/hkma_macro/*/manifest.json
 !data/raw/eia_energy/*/manifest.json
