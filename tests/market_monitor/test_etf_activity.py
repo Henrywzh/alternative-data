@@ -244,3 +244,37 @@ def test_activity_keeps_share_change_when_nav_is_not_available() -> None:
 
     assert activity.iloc[1]["flow_status"] == "shares_only"
     assert pd.isna(activity.iloc[1]["estimated_flow_cny"])
+
+
+def test_share_adapters_accept_vendor_column_aliases() -> None:
+    sse = etf_shares._normalise_sse(
+        pd.DataFrame(
+            {
+                "代码": [510300],
+                "证券简称": ["沪深300ETF"],
+                "份额": [1_234_500.0],
+                "数据日期": ["2026-08-21"],
+            }
+        ),
+        retrieved_at_utc="2026-08-21T10:00:00+00:00",
+    )
+    assert sse.loc[0, "fund_id"] == "510300"
+    assert sse.loc[0, "shares_outstanding"] == 1_234_500.0
+    assert sse.loc[0, "observation_date"] == "2026-08-21"
+
+
+def test_unrecognised_share_schema_is_optional_not_a_crash() -> None:
+    class _BadSchema:
+        def fund_etf_scale_sse(self, *, date: str) -> pd.DataFrame:
+            return pd.DataFrame({"foo": [1], "bar": [2]})
+
+    shares, errors = etf_shares.fetch_etf_share_history(
+        _metadata().iloc[[0]],
+        ["2026-08-21"],
+        as_of_date="2026-08-21",
+        ak_module=_BadSchema(),
+    )
+    assert shares.empty
+    assert errors
+    assert all(error.get("severity") == "optional" for error in errors)
+    assert any("not recognised" in error["error"] or "KeyError" in error["error"] for error in errors)

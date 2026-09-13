@@ -52,17 +52,36 @@ def _normalise_ids(values: pd.Series) -> pd.Series:
     return values.astype(str).str.replace(r"\.0$", "", regex=True).str.zfill(6)
 
 
+def _first_present(frame: pd.DataFrame, names: tuple[str, ...]) -> str | None:
+    lookup = {str(column).strip(): column for column in frame.columns}
+    for name in names:
+        if name in lookup:
+            return lookup[name]
+    return None
+
+
+def _rename_share_columns(frame: pd.DataFrame, mapping: dict[str, tuple[str, ...]]) -> pd.DataFrame:
+    """Map vendor column aliases without requiring a frozen schema."""
+    renamed = {}
+    for target, aliases in mapping.items():
+        source = _first_present(frame, aliases)
+        if source is not None:
+            renamed[source] = target
+    return frame.rename(columns=renamed).copy()
+
+
 def _normalise_sse(frame: pd.DataFrame, *, retrieved_at_utc: str) -> pd.DataFrame:
     if frame is None or frame.empty:
         return _empty()
-    source = frame.rename(
-        columns={
-            "基金代码": "fund_id",
-            "基金简称": "fund_name",
-            "基金份额": "shares_outstanding",
-            "统计日期": "observation_date",
-        }
-    ).copy()
+    source = _rename_share_columns(
+        frame,
+        {
+            "fund_id": ("基金代码", "代码", "证券代码", "fund_id"),
+            "fund_name": ("基金简称", "证券简称", "名称", "fund_name"),
+            "shares_outstanding": ("基金份额", "份额", "最新份额", "shares_outstanding"),
+            "observation_date": ("统计日期", "日期", "数据日期", "observation_date"),
+        },
+    )
     required = {"fund_id", "fund_name", "shares_outstanding", "observation_date"}
     if not required.issubset(source.columns):
         return _empty()
@@ -87,14 +106,15 @@ def _normalise_sse(frame: pd.DataFrame, *, retrieved_at_utc: str) -> pd.DataFram
 def _normalise_szse(frame: pd.DataFrame, *, retrieved_at_utc: str) -> pd.DataFrame:
     if frame is None or frame.empty:
         return _empty()
-    source = frame.rename(
-        columns={
-            "基金代码": "fund_id",
-            "基金简称": "fund_name",
-            "基金份额": "shares_outstanding",
-            "日期": "observation_date",
-        }
-    ).copy()
+    source = _rename_share_columns(
+        frame,
+        {
+            "fund_id": ("基金代码", "代码", "证券代码", "fund_id"),
+            "fund_name": ("基金简称", "证券简称", "名称", "fund_name"),
+            "shares_outstanding": ("基金份额", "份额", "最新份额", "shares_outstanding"),
+            "observation_date": ("日期", "统计日期", "数据日期", "observation_date"),
+        },
+    )
     required = {"fund_id", "fund_name", "shares_outstanding", "observation_date"}
     if not required.issubset(source.columns):
         return _empty()
@@ -227,6 +247,11 @@ def fetch_etf_share_history(
             try:
                 raw = ak.fund_etf_scale_sse(date=requested.replace("-", ""))
                 normalised = _normalise_sse(raw, retrieved_at_utc=retrieved_at_utc)
+                if normalised.empty and raw is not None and not getattr(raw, "empty", True):
+                    raise KeyError(
+                        "SSE share-count columns were not recognised: "
+                        + ", ".join(map(str, list(raw.columns)))
+                    )
                 if not normalised.empty:
                     normalised, rejected = _keep_known_observation_dates(
                         normalised,
@@ -273,6 +298,11 @@ def fetch_etf_share_history(
                 symbol="ETF",
             )
             normalised = _normalise_szse(raw, retrieved_at_utc=retrieved_at_utc)
+            if normalised.empty and raw is not None and not getattr(raw, "empty", True):
+                raise KeyError(
+                    "SZSE share-count columns were not recognised: "
+                    + ", ".join(map(str, list(raw.columns)))
+                )
             if not normalised.empty:
                 allowed_szse_dates = {
                     value for value in sessions if start_date <= value <= end_date_text

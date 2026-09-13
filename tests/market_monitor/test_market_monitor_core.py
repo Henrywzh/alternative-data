@@ -2844,3 +2844,32 @@ def test_the_shipped_registry_states_the_fees_the_issuer_publishes():
     }
 
     assert reconcile_fees(build_metadata_frame(), published) == []
+
+
+def test_optional_share_errors_are_not_counted_as_email_data_warnings():
+    from market_monitor.alerts import build_email_html
+
+    html = build_email_html(
+        report_date="2026-09-10",
+        technicals=pd.DataFrame(),
+        regime=pd.DataFrame(),
+        wrappers=pd.DataFrame(),
+        freshness={
+            "quote": {"status": "Fresh"},
+            "daily_close": {"status": "Fresh"},
+            "fetch_errors": [
+                {
+                    "dataset": "etf_share_daily",
+                    "severity": "optional",
+                    "error": "KeyError: missing share columns",
+                },
+                {
+                    "dataset": "etf_spot",
+                    "error": "ConnectionError: reset",
+                },
+            ],
+        },
+    )
+    assert "1 个数据源请求失败" in html
+    assert "2 个数据源请求失败" not in html
+    assert "KeyError" not in html
