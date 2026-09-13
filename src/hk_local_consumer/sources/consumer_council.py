@@ -5,6 +5,7 @@ import requests
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional, Union
 
+from ..http import get_with_retry
 from ..config import CONSUMER_COUNCIL_PRICE_WATCH_URL, DEFAULT_HEADERS
 from ..storage import save_raw_snapshot
 
@@ -65,7 +66,7 @@ def fetch_consumer_council_prices(custom_url: Optional[str] = None) -> pd.DataFr
     url = custom_url or CONSUMER_COUNCIL_PRICE_WATCH_URL
     raw_path = None
     try:
-        resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=15)
+        resp = get_with_retry(url)
         if resp.status_code == 200:
             payload = resp.json()
             raw_path = save_raw_snapshot("consumer_council_prices", payload, file_ext="json", source_url=url)

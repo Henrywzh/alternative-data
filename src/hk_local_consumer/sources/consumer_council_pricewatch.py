@@ -7,6 +7,8 @@ from pathlib import Path
 import pandas as pd
 import requests
 
+from ..http import get_with_retry
+
 from hk_local_consumer.config import (
     CONSUMER_COUNCIL_PRICE_WATCH_URL,
     DATA_SOURCE_FALLBACK,
@@ -59,12 +61,10 @@ def fetch_consumer_council_pricewatch() -> pd.DataFrame:
     source_label: DataSourceLabel = DATA_SOURCE_LIVE
 
     try:
-        resp = requests.get(
+        resp = get_with_retry(
             CONSUMER_COUNCIL_PRICE_WATCH_URL,
             headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"},
-            timeout=20,
         )
-        resp.raise_for_status()
         df = pd.read_csv(io.BytesIO(resp.content))
 
         # Rename columns to standard snake_case

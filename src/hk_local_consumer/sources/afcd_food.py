@@ -5,6 +5,7 @@ import requests
 from datetime import datetime, timezone
 from typing import Optional
 
+from ..http import get_with_retry
 from ..config import AFCD_DAILY_WHOLESALE_URL, DEFAULT_HEADERS
 from ..storage import save_raw_snapshot
 
@@ -58,7 +59,7 @@ def fetch_afcd_food_prices(custom_url: Optional[str] = None) -> pd.DataFrame:
     url = custom_url or AFCD_DAILY_WHOLESALE_URL
     raw_path = None
     try:
-        resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=15)
+        resp = get_with_retry(url)
         if resp.status_code == 200:
             csv_text = resp.text
             raw_path = save_raw_snapshot("afcd_food_prices", csv_text, file_ext="csv", source_url=url)

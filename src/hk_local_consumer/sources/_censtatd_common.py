@@ -26,6 +26,7 @@ from typing import Any
 import pandas as pd
 import requests
 
+from ..http import get_with_retry
 from ..config import CENSTATD_DATA_BASE_URL, DEFAULT_HEADERS
 
 logger = logging.getLogger(__name__)
@@ -37,15 +38,13 @@ def fetch_mdt_csv(theme_id: str, table_id: str, stat_var: str, stat_pres: str) -
     filename_stat_pres = stat_pres.replace("%", "percent").replace("/", "slash")
     filename = f"MDT_{theme_id}_{table_id}_{stat_var}_{filename_stat_pres}.csv"
     url = f"{CENSTATD_DATA_BASE_URL}/{filename}"
-    resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=15)
-    resp.raise_for_status()
+    resp = get_with_retry(url)
     return pd.read_csv(io.StringIO(resp.text))
 
 
 def fetch_table_lang(table_id: str) -> dict[str, Any]:
     url = f"{CENSTATD_DATA_BASE_URL}/en/table_{table_id}_lang.json"
-    resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=15)
-    resp.raise_for_status()
+    resp = get_with_retry(url)
     return resp.json()
 
 
@@ -53,8 +52,7 @@ def fetch_sd_lang() -> dict[str, Any]:
     global _sd_lang_cache
     if _sd_lang_cache is None:
         url = f"{CENSTATD_DATA_BASE_URL}/en/sd_lang.json"
-        resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=15)
-        resp.raise_for_status()
+        resp = get_with_retry(url)
         _sd_lang_cache = resp.json()
     return _sd_lang_cache
 

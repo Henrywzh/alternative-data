@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 import pandas as pd
 import requests
 
+from ..http import get_with_retry
+
 from hk_local_consumer.config import (
     DATA_SOURCE_FALLBACK,
     DATA_SOURCE_LIVE,
@@ -58,12 +60,10 @@ def fetch_consumer_council_oilprice() -> pd.DataFrame:
     records = []
 
     try:
-        resp = requests.get(
+        resp = get_with_retry(
             CONSUMER_COUNCIL_OILPRICE_URL,
             headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"},
-            timeout=15,
         )
-        resp.raise_for_status()
 
         match = re.search(r"var\s+barChartData\s*=\s*(\{.*?\}\});", resp.text, re.DOTALL)
         if not match:
@@ -147,13 +147,13 @@ def fetch_consumer_council_oilprice_history(
         ]
         params.extend(("company[]", company) for company in _OIL_COMPANIES)
         try:
-            response = requests.get(
+            response = get_with_retry(
                 CONSUMER_COUNCIL_OILPRICE_TREND_URL,
                 params=params,
                 headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"},
-                timeout=60,
+                # The trend endpoint is slow; keep the generous read budget.
+                timeout=(8.0, 60.0),
             )
-            response.raise_for_status()
             raw = pd.read_csv(io.StringIO(response.content.decode("utf-8-sig")))
         except Exception as exc:
             logger.warning("Failed to fetch Consumer Council oil-price trend for %s: %s", fuel_type, exc)

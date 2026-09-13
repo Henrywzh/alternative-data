@@ -58,6 +58,8 @@ def _session() -> requests.Session:
 def get_with_retry(
     url: str,
     *,
+    params: dict | None = None,
+    headers: dict | None = None,
     timeout: tuple[float, float] = (8.0, 30.0),
     attempts: int = DEFAULT_ATTEMPTS,
     backoff_seconds: float = DEFAULT_BACKOFF_SECONDS,
@@ -72,7 +74,12 @@ def get_with_retry(
     last_error: Exception | None = None
     for attempt in range(1, max(1, attempts) + 1):
         try:
-            response = _session().get(url, headers=DEFAULT_HEADERS, timeout=timeout)
+            response = _session().get(
+                url,
+                params=params,
+                headers=headers or DEFAULT_HEADERS,
+                timeout=timeout,
+            )
             response.raise_for_status()
             _ = response.content
             return response

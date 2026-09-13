@@ -16,6 +16,7 @@ import logging
 import pandas as pd
 import requests
 
+from ..http import get_with_retry
 from ..config import DEFAULT_HEADERS, IMMIGRATION_PASSENGER_TRAFFIC_URL
 from ..storage import save_raw_snapshot
 
@@ -49,8 +50,7 @@ SCHEMA_COLUMNS = [
 def fetch_immigration_flow() -> pd.DataFrame:
     """Fetch and aggregate HK Immigration Department daily passenger clearance statistics."""
     try:
-        resp = requests.get(IMMIGRATION_PASSENGER_TRAFFIC_URL, headers=DEFAULT_HEADERS, timeout=15)
-        resp.raise_for_status()
+        resp = get_with_retry(IMMIGRATION_PASSENGER_TRAFFIC_URL)
         csv_text = resp.content.decode("utf-8-sig")
         df = pd.read_csv(pd.io.common.StringIO(csv_text))
     except Exception as exc:

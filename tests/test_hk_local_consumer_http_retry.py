@@ -134,3 +134,33 @@ def test_the_fehd_source_goes_through_the_retry_path(monkeypatch) -> None:
         fehd.fetch_fehd_licensed_premises()
 
     assert seen["url"] == fehd.FEHD_RESTAURANTS_XML_URL
+
+
+# --- no source may fetch without retries ----------------------------------
+
+
+def test_no_source_fetches_without_retries() -> None:
+    """`--strict` makes every source fatal, so one bare GET is a daily outage.
+
+    run_stage_1_pipeline has no required/optional split: any dataset failure
+    raises. With a dozen sources against free public endpoints, a single
+    un-retried fetch is enough to keep the Asia Markets refresh permanently in
+    DEGRADED_RETAINED and its incident permanently open -- which is how a real
+    alert becomes background noise.
+    """
+    import re
+    from pathlib import Path
+
+    package = Path(__file__).resolve().parents[1] / "src" / "hk_local_consumer"
+    offenders = []
+    for path in sorted(package.rglob("*.py")):
+        if path.name == "http.py":
+            continue
+        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            if re.search(r"\brequests\.(get|post)\s*\(", line):
+                offenders.append(f"{path.relative_to(package)}:{number}")
+
+    assert not offenders, (
+        "these fetch without retries; route them through "
+        "hk_local_consumer.http.get_with_retry: " + ", ".join(offenders)
+    )
