@@ -43,6 +43,13 @@ REGIME_EXPOSURE_LABELS = {
     "hstech": ("Hang Seng TECH", "恒生科技"),
     "nikkei225": ("Nikkei 225", "日经225"),
     "kospi": ("KOSPI", "韩国综合指数"),
+    "us_broad": ("S&P 500 (SPY)", "标普500 (SPY)"),
+    "us_tech": ("US Technology", "美国科技"),
+    "us_discretionary": ("US Discretionary", "美国可选消费"),
+    "us_communication": ("US Communication", "美国通信服务"),
+    "us_healthcare": ("US Health Care", "美国医疗保健"),
+    "us_staples": ("US Staples", "美国日常消费"),
+    "us_utilities": ("US Utilities", "美国公用事业"),
 }
 REGIME_RETURN_HORIZONS = (
     ("return_1d_pct", "1 session", "1个交易日"),

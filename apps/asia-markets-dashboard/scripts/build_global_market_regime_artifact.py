@@ -40,6 +40,11 @@ from src.global_market_regime.presentation import (
     build_state_transitions,
     build_threshold_monitor,
 )
+from src.global_market_regime.treasury import (
+    build_treasury_curve_snapshots,
+    build_treasury_yield_changes,
+)
+from src.global_market_regime.sector_leadership import build_sector_leadership
 from src.global_market_regime.storage import atomic_write_texts, load_latest_with_lineage
 from src.global_market_regime.validation import (
     build_event_forward_returns,
@@ -298,6 +303,10 @@ def _localized_zh_artifact(artifact: dict[str, Any]) -> dict[str, Any]:
             "跨资产表现背景",
             "复用现有市场监控指数收盘价作为背景参考，不作为第二价格存储。",
         ),
+        "treasury_curve_chart": (
+            "美国国债收益率曲线",
+            "最新公布、一周前、一个月前与年初的固定期限收益率。缺数据的期限留空，不做插值。",
+        ),
     }
     for chart in localized.get("manifest", {}).get("charts", []):
         meta = chart_meta.get(str(chart.get("id")))
@@ -306,6 +315,8 @@ def _localized_zh_artifact(artifact: dict[str, Any]) -> dict[str, Any]:
     table_titles = {
         "regime_state_table": "当前防守状态",
         "cot_latest_table": "CFTC 管理／杠杆资金持仓",
+        "treasury_yield_table": "国债收益率水平与变化（基点）",
+        "sector_leadership_table": "美股行业相对标普500",
     }
     for table in localized.get("manifest", {}).get("tables", []):
         title = table_titles.get(str(table.get("id")))
@@ -330,6 +341,15 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         cot = cot_history.sort_values("date").groupby("contract_id", as_index=False).tail(1)
         cot_lineage = cot_history_lineage
     fomc, fomc_lineage = _load("fomc_history")
+    curve, curve_lineage = _load("treasury_curve_snapshots", derived=True)
+    yield_changes, yield_changes_lineage = _load("treasury_yield_changes", derived=True)
+    if curve.empty:
+        curve = build_treasury_curve_snapshots(fred)
+    if yield_changes.empty:
+        yield_changes = build_treasury_yield_changes(fred)
+    leadership, leadership_lineage = _load("sector_leadership", derived=True)
+    if leadership.empty:
+        leadership = build_sector_leadership(prices)
 
     required_lineages = (
         fred_lineage,
@@ -495,6 +515,54 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         "source_health": _records(health, ("source", "series_id", "status", "latest_observation", "records", "notes")),
         "cross_asset_prices": _records(prices_chart, ("date", "exposure_id", "close")),
         "cross_asset_returns": _records(cross_asset_returns),
+        "treasury_curve_snapshots": _records(
+            curve,
+            (
+                "snapshot_id",
+                "label_en",
+                "label_zh",
+                "as_of",
+                "indicator_id",
+                "maturity",
+                "tenor_months",
+                "maturity_en",
+                "maturity_zh",
+                "yield_pct",
+                "observation_date",
+            ),
+        ),
+        "treasury_yield_changes": _records(
+            yield_changes,
+            (
+                "row_kind",
+                "indicator_id",
+                "maturity",
+                "tenor_months",
+                "maturity_en",
+                "maturity_zh",
+                "as_of",
+                "yield_pct",
+                "change_1d_bp",
+                "change_1w_bp",
+                "change_1m_bp",
+                "change_ytd_bp",
+                "us10y_vs_threshold_bp",
+            ),
+        ),
+        "sector_leadership": _records(
+            leadership,
+            (
+                "exposure_id",
+                "benchmark_id",
+                "date",
+                "return_20d_pct",
+                "return_60d_pct",
+                "rel_20d_pct",
+                "rel_60d_pct",
+                "sma200_slope_ann_pct",
+                "rank_20d",
+            ),
+        ),
         "signal_episodes": _records(signal_episodes),
         "threshold_sensitivity": _records(threshold_sensitivity),
         "event_forward_returns": _records(event_forward_returns),
@@ -635,6 +703,21 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
             "valueFormat": "number",
             "layout": "full",
         },
+        {
+            "id": "treasury_curve_chart",
+            "title": "US Treasury yield curve",
+            "subtitle": "Latest published constant-maturity yields versus one week ago, one month ago and the start of the year. Missing tenors stay blank; the chart does not interpolate.",
+            "type": "line",
+            "dataset": "treasury_curve_snapshots",
+            "sourceId": "us10y",
+            "encodings": {
+                "x": {"field": "tenor_months", "type": "quantitative", "label": "Maturity"},
+                "y": {"field": "yield_pct", "type": "quantitative", "label": "Percent"},
+                "color": {"field": "label_en", "type": "nominal", "label": "Snapshot"},
+            },
+            "valueFormat": "number",
+            "layout": "full",
+        },
     ]
     tables = [
         {
@@ -661,6 +744,31 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
                 {"field": "percentile", "label": "History percentile", "format": "number"},
                 {"field": "position_label", "label": "Reading", "format": "text"},
                 {"field": "report", "label": "Report", "format": "text"},
+            ],
+        },
+        {
+            "id": "treasury_yield_table",
+            "title": "Treasury yields — level and change (bps)",
+            "dataset": "treasury_yield_changes",
+            "columns": [
+                {"field": "maturity_en", "label": "Maturity", "format": "text"},
+                {"field": "yield_pct", "label": "Yield", "format": "number"},
+                {"field": "change_1d_bp", "label": "1D (bps)", "format": "number"},
+                {"field": "change_1w_bp", "label": "1W (bps)", "format": "number"},
+                {"field": "change_1m_bp", "label": "1M (bps)", "format": "number"},
+                {"field": "change_ytd_bp", "label": "YTD (bps)", "format": "number"},
+            ],
+        },
+        {
+            "id": "sector_leadership_table",
+            "title": "US sector leadership vs SPY",
+            "dataset": "sector_leadership",
+            "columns": [
+                {"field": "exposure_id", "label": "Sector", "format": "text"},
+                {"field": "rel_20d_pct", "label": "20D vs SPY", "format": "number"},
+                {"field": "rel_60d_pct", "label": "60D vs SPY", "format": "number"},
+                {"field": "return_20d_pct", "label": "20D return", "format": "number"},
+                {"field": "sma200_slope_ann_pct", "label": "200D slope", "format": "number"},
             ],
         }
     ]

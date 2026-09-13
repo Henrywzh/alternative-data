@@ -59,6 +59,87 @@ FRED_SERIES = (
         "href": "https://fred.stlouisfed.org/series/DGS2",
     },
     {
+        "series_id": "DGS1MO",
+        "indicator_id": "us1m",
+        "label_en": "US 1-month yield",
+        "label_zh": "美国1个月国债收益率",
+        "unit": "percent",
+        "source": "FRED / Treasury H.15",
+        "href": "https://fred.stlouisfed.org/series/DGS1MO",
+    },
+    {
+        "series_id": "DGS3MO",
+        "indicator_id": "us3m",
+        "label_en": "US 3-month yield",
+        "label_zh": "美国3个月国债收益率",
+        "unit": "percent",
+        "source": "FRED / Treasury H.15",
+        "href": "https://fred.stlouisfed.org/series/DGS3MO",
+    },
+    {
+        "series_id": "DGS6MO",
+        "indicator_id": "us6m",
+        "label_en": "US 6-month yield",
+        "label_zh": "美国6个月国债收益率",
+        "unit": "percent",
+        "source": "FRED / Treasury H.15",
+        "href": "https://fred.stlouisfed.org/series/DGS6MO",
+    },
+    {
+        "series_id": "DGS1",
+        "indicator_id": "us1y",
+        "label_en": "US 1-year yield",
+        "label_zh": "美国1年期国债收益率",
+        "unit": "percent",
+        "source": "FRED / Treasury H.15",
+        "href": "https://fred.stlouisfed.org/series/DGS1",
+    },
+    {
+        "series_id": "DGS3",
+        "indicator_id": "us3y",
+        "label_en": "US 3-year yield",
+        "label_zh": "美国3年期国债收益率",
+        "unit": "percent",
+        "source": "FRED / Treasury H.15",
+        "href": "https://fred.stlouisfed.org/series/DGS3",
+    },
+    {
+        "series_id": "DGS5",
+        "indicator_id": "us5y",
+        "label_en": "US 5-year yield",
+        "label_zh": "美国5年期国债收益率",
+        "unit": "percent",
+        "source": "FRED / Treasury H.15",
+        "href": "https://fred.stlouisfed.org/series/DGS5",
+    },
+    {
+        "series_id": "DGS7",
+        "indicator_id": "us7y",
+        "label_en": "US 7-year yield",
+        "label_zh": "美国7年期国债收益率",
+        "unit": "percent",
+        "source": "FRED / Treasury H.15",
+        "href": "https://fred.stlouisfed.org/series/DGS7",
+    },
+    {
+        "series_id": "DGS20",
+        "indicator_id": "us20y",
+        "label_en": "US 20-year yield",
+        "label_zh": "美国20年期国债收益率",
+        "unit": "percent",
+        "source": "FRED / Treasury H.15",
+        "href": "https://fred.stlouisfed.org/series/DGS20",
+    },
+    {
+        "series_id": "DGS30",
+        "indicator_id": "us30y",
+        "label_en": "US 30-year yield",
+        "label_zh": "美国30年期国债收益率",
+        "unit": "percent",
+        "source": "FRED / Treasury H.15",
+        "href": "https://fred.stlouisfed.org/series/DGS30",
+    },
+    {
         "series_id": "VIXCLS",
         "indicator_id": "vix",
         "label_en": "VIX",
@@ -229,4 +310,38 @@ CROSS_ASSET_EXPOSURES = (
     "hstech",
     "nikkei225",
     "kospi",
+)
+# US sector ETFs reused from market-monitor for the Regime leadership table.
+# These are wrappers (XLK/XLF-style), not official SPY weights.
+SECTOR_LEADERSHIP_EXPOSURES = (
+    "us_tech",
+    "us_discretionary",
+    "us_communication",
+    "us_healthcare",
+    "us_staples",
+    "us_utilities",
+)
+SECTOR_LEADERSHIP_BENCHMARK = "us_broad"
+
+# Constant-maturity Treasury curve for the Fixed Income tab. These points are
+# the standard FRED H.15 tenors. Shepherd's 1.5M / 2M / 4M par-curve knots are
+# omitted in V1; the 2Y-10Y shape does not depend on them.
+TREASURY_CURVE_POINTS = (
+    {"indicator_id": "us1m", "maturity": "1M", "tenor_months": 1, "label_en": "1 Mo", "label_zh": "1个月"},
+    {"indicator_id": "us3m", "maturity": "3M", "tenor_months": 3, "label_en": "3 Mo", "label_zh": "3个月"},
+    {"indicator_id": "us6m", "maturity": "6M", "tenor_months": 6, "label_en": "6 Mo", "label_zh": "6个月"},
+    {"indicator_id": "us1y", "maturity": "1Y", "tenor_months": 12, "label_en": "1 Yr", "label_zh": "1年"},
+    {"indicator_id": "us2y", "maturity": "2Y", "tenor_months": 24, "label_en": "2 Yr", "label_zh": "2年"},
+    {"indicator_id": "us3y", "maturity": "3Y", "tenor_months": 36, "label_en": "3 Yr", "label_zh": "3年"},
+    {"indicator_id": "us5y", "maturity": "5Y", "tenor_months": 60, "label_en": "5 Yr", "label_zh": "5年"},
+    {"indicator_id": "us7y", "maturity": "7Y", "tenor_months": 84, "label_en": "7 Yr", "label_zh": "7年"},
+    {"indicator_id": "us10y", "maturity": "10Y", "tenor_months": 120, "label_en": "10 Yr", "label_zh": "10年"},
+    {"indicator_id": "us20y", "maturity": "20Y", "tenor_months": 240, "label_en": "20 Yr", "label_zh": "20年"},
+    {"indicator_id": "us30y", "maturity": "30Y", "tenor_months": 360, "label_en": "30 Yr", "label_zh": "30年"},
+)
+TREASURY_CURVE_SNAPSHOT_LABELS = (
+    {"snapshot_id": "latest", "label_en": "Latest published", "label_zh": "最新公布"},
+    {"snapshot_id": "week_ago", "label_en": "1 week ago", "label_zh": "一周前"},
+    {"snapshot_id": "month_ago", "label_en": "1 month ago", "label_zh": "一个月前"},
+    {"snapshot_id": "year_start", "label_en": "Start of year", "label_zh": "年初"},
 )
