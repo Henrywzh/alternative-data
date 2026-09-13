@@ -8,6 +8,8 @@ from typing import Any, Iterable
 from urllib.request import Request, urlopen
 from zipfile import ZipFile
 
+from .github_api import request_bytes, request_json
+
 
 GITHUB_API = "https://api.github.com"
 
@@ -66,7 +68,7 @@ def fetch_previous_report(
     )
     if artifact is None:
         return None
-    archive = _request_bytes(
+    archive = request_bytes(
         f"{GITHUB_API}/repos/{repository}/actions/artifacts/{artifact['id']}/zip",
         token=token,
     )
@@ -102,21 +104,7 @@ def write_previous_report(
 
 
 def _request_json(url: str, *, token: str) -> dict[str, Any]:
-    payload = json.loads(_request_bytes(url, token=token).decode("utf-8"))
+    payload = request_json(url, token=token)
     if not isinstance(payload, dict):
         raise ValueError("GitHub API response must be a JSON object")
     return payload
-
-
-def _request_bytes(url: str, *, token: str) -> bytes:
-    request = Request(
-        url,
-        headers={
-            "Accept": "application/vnd.github+json",
-            "Authorization": f"Bearer {token}",
-            "User-Agent": "alternative-data-ops-control",
-            "X-GitHub-Api-Version": "2022-11-28",
-        },
-    )
-    with urlopen(request, timeout=30) as response:
-        return response.read()
