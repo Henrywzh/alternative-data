@@ -738,3 +738,36 @@ def test_a_queued_condition_keeps_its_identity_through_a_failed_send():
 
     assert restored is not None
     assert restored.event_key == original.event_key
+
+
+def test_optional_share_fetch_errors_do_not_create_tactical_events():
+    from market_monitor.alert_policy import evaluate_alert
+
+    decision = evaluate_alert(
+        report_date="2026-09-10",
+        mode="close",
+        state=_state(),
+        technicals=pd.DataFrame(),
+        index_prices=pd.DataFrame([{"date": "2026-09-10", "exposure_id": "csi500", "close": 100.0}]),
+        wrappers=pd.DataFrame(),
+        premium_history=pd.DataFrame(),
+        relative_pair_history=pd.DataFrame(),
+        freshness={
+            "quote": {"status": "Fresh"},
+            "daily_close": {"status": "Fresh"},
+            "fetch_errors": [
+                {
+                    "dataset": "etf_share_daily",
+                    "severity": "optional",
+                    "error": "KeyError: None of [Index(['序号', '基金代码'], dtype='object')] are in the [columns]",
+                },
+                {
+                    "dataset": "etf_share_daily",
+                    "severity": "optional",
+                    "error": "ConnectionError: Connection reset by peer",
+                },
+            ],
+        },
+    )
+    assert all(event.event_type != "data_event" for event in decision.events)
+    assert not any("KeyError" in line or "ConnectionError" in line for line in decision.reason_lines)

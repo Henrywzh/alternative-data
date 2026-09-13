@@ -702,7 +702,10 @@ def _detect_relative_events(pair_history: pd.DataFrame, *, after_date: str | Non
 def _operational_events(freshness: Mapping[str, Any] | None, report_date: str) -> list[AlertEvent]:
     events: list[AlertEvent] = []
     for error in (freshness or {}).get("fetch_errors", []) or []:
-        if not isinstance(error, Mapping) or error.get("severity") not in {"event", "optional"}:
+        # Optional source notices (ETF share counts, empty vendor payloads)
+        # stay in lineage and the dashboard health row. They must not mint a
+        # tactical email whose "reason" is a pandas KeyError.
+        if not isinstance(error, Mapping) or error.get("severity") != "event":
             continue
         dataset = str(error.get("dataset") or "data")
         ticker = _normalise_ticker(error.get("ticker")) or dataset
