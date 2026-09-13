@@ -16,10 +16,18 @@ def parse_iso(value: str | None) -> datetime | None:
     return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(timezone.utc)
 
 
+# Cadences whose deadline is "a fixed number of hours since the last run".
+_INTERVAL_CADENCES = frozenset({"daily", "weekly"})
+
+
 def expected_jobs_due(pipeline: PipelineSpec, *, now: datetime) -> list[JobSpec]:
     cadence = pipeline.cadence or {}
     kind = str(cadence.get("kind", ""))
-    if kind == "daily":
+    # "weekly" is the same shape as "daily" -- a fixed expected gap between
+    # runs, differing only in size -- so it is due the same way. Leaving it out
+    # was worse than not supporting it: registry.py accepted the cadence, so a
+    # weekly pipeline looked monitored while being silently skipped here.
+    if kind in _INTERVAL_CADENCES:
         return list(pipeline.jobs.values())
     if kind != "monthly_windows":
         return []
@@ -39,7 +47,7 @@ def schedule_deadline(pipeline: PipelineSpec, job: JobSpec, *, now: datetime) ->
     cadence = pipeline.cadence or {}
     grace = timedelta(hours=float(cadence.get("grace_hours", 6)))
     kind = str(cadence.get("kind", ""))
-    if kind == "daily":
+    if kind in _INTERVAL_CADENCES:
         interval = timedelta(hours=float(cadence.get("expected_interval_hours", 24)))
         return now - interval - grace
     if kind != "monthly_windows":

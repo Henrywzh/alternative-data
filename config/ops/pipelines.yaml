@@ -130,9 +130,19 @@ pipelines:
   # stays quiet and a lane that has actually stopped goes loud and stays loud.
   free-institutional-daily:
     workflow: free-institutional-daily.yml
+    # The reconciler finds a job's last successful run through this prefix.
+    # Without it collect_latest_reports skips the job entirely, last_finished
+    # reads as None, and every reconciliation opens a missed-schedule incident
+    # for a pipeline that ran perfectly.
+    artifact_prefix: ops-shadow-free-institutional-daily-
+    github_workflow_name: Free Institutional Data Daily
     cadence:
       kind: daily
       expected_interval_hours: 24
+      # GitHub queues scheduled runs and can start them hours late -- this
+      # workflow's 05:10 cron first fired at 10:09. The window has to tolerate
+      # that or the monitor reports a delay as a miss.
+      grace_hours: 8
     criticality: medium
     jobs:
       refresh:
@@ -166,6 +176,12 @@ pipelines:
 
   free-institutional-weekly:
     workflow: free-institutional-weekly.yml
+    # The reconciler finds a job's last successful run through this prefix.
+    # Without it collect_latest_reports skips the job entirely, last_finished
+    # reads as None, and every reconciliation opens a missed-schedule incident
+    # for a pipeline that ran perfectly.
+    artifact_prefix: ops-shadow-free-institutional-weekly-
+    github_workflow_name: Free Institutional Data Weekly
     cadence:
       kind: weekly
       expected_interval_hours: 168
@@ -185,10 +201,19 @@ pipelines:
 
   free-institutional-monthly:
     workflow: free-institutional-monthly.yml
+    # The reconciler finds a job's last successful run through this prefix.
+    # Without it collect_latest_reports skips the job entirely, last_finished
+    # reads as None, and every reconciliation opens a missed-schedule incident
+    # for a pipeline that ran perfectly.
+    artifact_prefix: ops-shadow-free-institutional-monthly-
+    github_workflow_name: Free Institutional Data Monthly
     cadence:
       kind: monthly_windows
       schedule_windows:
+        # job_id is required: expected_jobs_due matches windows to jobs by it,
+        # and a window without one is skipped, leaving the pipeline unchecked.
         - days: "6"
+          job_id: refresh
           purpose: monthly publication sweep
     criticality: low
     jobs:
