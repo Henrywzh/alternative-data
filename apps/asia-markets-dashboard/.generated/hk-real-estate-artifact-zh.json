@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "香港房地产市场监测",
     "description": "基于来源的住宅价格、租金和市场信心指标快照。",
-    "generatedAt": "2026-09-13T14:06:54.960212Z",
+    "generatedAt": "2026-09-13T14:27:33.005673Z",
     "cards": [
       {
         "id": "ccl_card",
@@ -1868,7 +1868,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `609436cfb537dd64` · 生成于 2026-09-13T14:06:54.960212Z。这是已发布快照，不是实时连接；RVD 标记为 provisional 的观测可能会修订。"
+        "body": "**数据快照：** `ab8bb88586471ce9` · 生成于 2026-09-13T14:27:33.005673Z。这是已发布快照，不是实时连接；RVD 标记为 provisional 的观测可能会修订。"
       },
       {
         "id": "market_regime_intro",
@@ -2132,7 +2132,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-09-13T14:06:54.960212Z",
+    "generatedAt": "2026-09-13T14:27:33.005673Z",
     "status": "ready",
     "datasets": {
       "kpi_ccl": [
@@ -47172,7 +47172,7 @@
           "event_type": "sales_response",
           "asset_class": "residential",
           "geography": "hong_kong",
-          "project": "Sierra Sea",
+          "project": "SIERRA SEA",
           "title": "Phase 2A and Phase 2B of Sai Sha Residences “SIERRA SEA” attract overwhelming market responses",
           "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2026q1/tc/PDF/SHKPQTY_2026q1_ENTC_12-15.pdf",
           "date_semantics": "quarter_end_label_proxy"
@@ -47271,7 +47271,7 @@
           "event_type": "completion_or_opening",
           "asset_class": "residential",
           "geography": "hong_kong",
-          "project": "Sierra Sea",
+          "project": "SIERRA SEA",
           "title": "Completion and handover of SIERRA SEA",
           "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2025q4/tc/PDF/SHKPQTY_2025q4_ENTC_9-13.pdf",
           "date_semantics": "quarter_end_label_proxy"
@@ -47348,7 +47348,7 @@
           "event_type": "project_update",
           "asset_class": "residential",
           "geography": "hong_kong",
-          "project": "Sierra Sea",
+          "project": "SIERRA SEA",
           "title": "SIERRA SEA – the first batch of SHKP’s largest private residential development to date",
           "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2025q2/tc/PDF/SHKPQTY_2025q2_ENTC_2-9.pdf",
           "date_semantics": "quarter_end_label_proxy"
@@ -47359,7 +47359,7 @@
           "event_type": "project_update",
           "asset_class": "residential",
           "geography": "hong_kong",
-          "project": "Sierra Sea",
+          "project": "SIERRA SEA",
           "title": "Phase 1A(2) of Sai Sha private residential development officially named SIERRA SEA",
           "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2025q1/tc/PDF/SHKPQTY_2025q1_ENTC_10-13.pdf",
           "date_semantics": "quarter_end_label_proxy"
@@ -48009,19 +48009,6 @@
         {
           "date": "2026-06-30",
           "quarter": "2026Q2",
-          "project": "—",
-          "asset_class": "office",
-          "fact_type": "area_sqft",
-          "value": 2600000,
-          "unit": "sqft",
-          "confidence": "high",
-          "fact_text": "Their strategic move to IGC reflects 合共提供約260萬平方呎甲級寫字樓空間。西班牙桑坦德 a shared belief in the district’s long-term growth and 銀行租用其中一座的全層，樓面面積約37,000平方呎。 global relevance.” Located above the High Speed Rail West Kowloon Terminus, IGC comprises four Grade-A office blocks of approximately 2.6 million square feet.",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2026q2/tc/PDF/SHKPQTY_2026q2_ENTC_8.pdf",
-          "page": 1
-        },
-        {
-          "date": "2026-06-30",
-          "quarter": "2026Q2",
           "project": "Lime Spark",
           "asset_class": "residential",
           "fact_type": "area_sqft",
@@ -48044,19 +48031,6 @@
           "fact_text": "The name, area (including an indoor residents' clubhouse of approximately 3,939 square feet 何何其其他他業業權權契契據據中中顯顯示示。。住住客客會會所所及及//或或康康樂樂設設施施之之名名稱稱、、面面積積（（包包括括面面 a ap nd p r a o n x im ou a t t d e o ly o 2 r 0 re ,1 s 9 id 5 e s n q t u s' a c re lu f b e h e o t) u a s n e d , c o o t m he m r o in n f o g r a m rd a e ti n o , n o r r e p g l a a r y d g in ro g u t n h d e ( r c e o s v id e e re n d ts ' a c n lu d b u h n o c u o s v e e a re n d d ) / o o r f 積積 會會所所 約約 、、 33,, 公公 9933 用用 99平平 花花 方方 園園 呎呎 或或 的的 遊遊 室室 樂樂 內內 地地 住住 方方 客客 （（ 會會 有有上上 所所，， 蓋蓋 以以 及及 及及 沒沒 面面 有有 積積 上上 近近 蓋蓋 22 遮遮 00,,11 蓋蓋 9955 ）） 平平 ））及及 方方 其其 呎呎 他他 的的 資資 室室 料料 外外 僅僅 住住客客 供供 recreational facilities are for refere",
           "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2026q2/tc/PDF/SHKPQTY_2026q2_ENTC_2-7.pdf",
           "page": 5
-        },
-        {
-          "date": "2026-06-30",
-          "quarter": "2026Q2",
-          "project": "—",
-          "asset_class": "office",
-          "fact_type": "area_sqft",
-          "value": 37000,
-          "unit": "sqft",
-          "confidence": "high",
-          "fact_text": "Banco Santander occupies an entire floor in one of the towers, spanning a GFA of approximately 37,000 square feet.",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2026q2/tc/PDF/SHKPQTY_2026q2_ENTC_8.pdf",
-          "page": 1
         },
         {
           "date": "2026-06-30",
@@ -48334,7 +48308,7 @@
         {
           "date": "2025-12-31",
           "quarter": "2025Q4",
-          "project": "Sierra Sea",
+          "project": "SIERRA SEA",
           "asset_class": "residential",
           "fact_type": "area_sqft",
           "value": 1400000,
@@ -48347,7 +48321,7 @@
         {
           "date": "2025-12-31",
           "quarter": "2025Q4",
-          "project": "Sierra Sea",
+          "project": "SIERRA SEA",
           "asset_class": "residential",
           "fact_type": "area_sqft",
           "value": 1480000,
@@ -48373,7 +48347,7 @@
         {
           "date": "2025-12-31",
           "quarter": "2025Q4",
-          "project": "Sierra Sea",
+          "project": "SIERRA SEA",
           "asset_class": "residential",
           "fact_type": "area_sqft",
           "value": 79000,
@@ -48529,7 +48503,7 @@
         {
           "date": "2025-06-30",
           "quarter": "2025Q2",
-          "project": "Sierra Sea",
+          "project": "SIERRA SEA",
           "asset_class": "residential",
           "fact_type": "area_sqft",
           "value": 79000,
@@ -48542,7 +48516,7 @@
         {
           "date": "2025-06-30",
           "quarter": "2025Q2",
-          "project": "Sierra Sea",
+          "project": "SIERRA SEA",
           "asset_class": "residential",
           "fact_type": "area_sqft",
           "value": 702,
@@ -48555,7 +48529,7 @@
         {
           "date": "2025-06-30",
           "quarter": "2025Q2",
-          "project": "Sierra Sea",
+          "project": "SIERRA SEA",
           "asset_class": "residential",
           "fact_type": "area_sqft",
           "value": 46000,
@@ -48568,7 +48542,7 @@
         {
           "date": "2025-06-30",
           "quarter": "2025Q2",
-          "project": "Sierra Sea",
+          "project": "SIERRA SEA",
           "asset_class": "residential",
           "fact_type": "area_sqft",
           "value": 56000,
@@ -48581,7 +48555,7 @@
         {
           "date": "2025-06-30",
           "quarter": "2025Q2",
-          "project": "Sierra Sea",
+          "project": "SIERRA SEA",
           "asset_class": "residential",
           "fact_type": "area_sqft",
           "value": 1400000,
@@ -48594,7 +48568,7 @@
         {
           "date": "2025-06-30",
           "quarter": "2025Q2",
-          "project": "Sierra Sea",
+          "project": "SIERRA SEA",
           "asset_class": "residential",
           "fact_type": "area_sqft",
           "value": 1480000,
@@ -48620,7 +48594,7 @@
         {
           "date": "2025-06-30",
           "quarter": "2025Q2",
-          "project": "Sierra Sea",
+          "project": "SIERRA SEA",
           "asset_class": "residential",
           "fact_type": "area_sqft",
           "value": 1479000,
@@ -48646,7 +48620,7 @@
         {
           "date": "2025-06-30",
           "quarter": "2025Q2",
-          "project": "Sierra Sea",
+          "project": "SIERRA SEA",
           "asset_class": "residential",
           "fact_type": "unit_count",
           "value": 3781,
@@ -48659,7 +48633,7 @@
         {
           "date": "2025-06-30",
           "quarter": "2025Q2",
-          "project": "Sierra Sea",
+          "project": "SIERRA SEA",
           "asset_class": "residential",
           "fact_type": "unit_count",
           "value": 794,
@@ -48698,33 +48672,7 @@
         {
           "date": "2025-03-31",
           "quarter": "2025Q1",
-          "project": "GO PARK Sai Sha",
-          "asset_class": "residential",
-          "fact_type": "area_sqft",
-          "value": 1300000,
-          "unit": "sqft",
-          "confidence": "high",
-          "fact_text": "Spanning 1.3 million square feet, constructing multiple infrastructural facilities, including GO PARK Sai Sha comprises two main areas – the one widening Sai Sha Road.",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2025q1/tc/PDF/SHKPQTY_2025q1_ENTC_2-9.pdf",
-          "page": 1
-        },
-        {
-          "date": "2025-03-31",
-          "quarter": "2025Q1",
-          "project": "GO PARK Sai Sha",
-          "asset_class": "residential",
-          "fact_type": "area_sqft",
-          "value": 40000,
-          "unit": "sqft",
-          "confidence": "high",
-          "fact_text": "Feature GO PARK Sai Sha includes three large children’s Promoting Hong Kong’s sports industry on playgrounds covering over 40,000 square feet, equipped all fronts with various play facilities that help stimulate children’s Spanning over one million square feet, the diverse development.",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2025q1/tc/PDF/SHKPQTY_2025q1_ENTC_2-9.pdf",
-          "page": 2
-        },
-        {
-          "date": "2025-03-31",
-          "quarter": "2025Q1",
-          "project": "Sierra Sea",
+          "project": "SIERRA SEA",
           "asset_class": "residential",
           "fact_type": "area_sqft",
           "value": 6708400,
@@ -48737,7 +48685,7 @@
         {
           "date": "2025-03-31",
           "quarter": "2025Q1",
-          "project": "Sierra Sea",
+          "project": "SIERRA SEA",
           "asset_class": "residential",
           "fact_type": "area_sqft",
           "value": 6700000,
@@ -48758,7 +48706,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Sha Tin",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/shopping-malls/getList?page=0",
@@ -48773,7 +48721,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Central",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/shopping-malls/getList?page=0",
@@ -48788,7 +48736,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Mong Kok",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/shopping-malls/getList?page=0",
@@ -48803,7 +48751,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Kwun Tong",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/shopping-malls/getList?page=0",
@@ -48818,7 +48766,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Yuen Long",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/shopping-malls/getList?page=0",
@@ -48833,7 +48781,7 @@
           "source_layer": "issuer_current_directory",
           "district": "West Kowloon",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/shopping-malls/getList?page=0",
@@ -48848,7 +48796,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Kai Tak",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/shopping-malls/getList?page=0",
@@ -48863,7 +48811,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Sheung Shui",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/shopping-malls/getList?page=0",
@@ -48878,7 +48826,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Kwai Fong",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/shopping-malls/getList?page=0",
@@ -48893,7 +48841,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Tai Po",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/shopping-malls/getList?page=0",
@@ -48908,7 +48856,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Tseung Kwan O",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/shopping-malls/getList?page=0",
@@ -48923,7 +48871,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Tuen Mun",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/shopping-malls/getList?page=0",
@@ -48938,7 +48886,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Tsuen Wan",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/shopping-malls/getList?page=0",
@@ -48953,7 +48901,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Sha Tin",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/shopping-malls/getList?page=0",
@@ -48968,7 +48916,7 @@
           "source_layer": "issuer_current_directory",
           "district": "West Kowloon",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/shopping-malls/getList?page=0",
@@ -48983,7 +48931,7 @@
           "source_layer": "issuer_current_directory",
           "district": "North Point",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/shopping-malls/getList?page=0",
@@ -48998,7 +48946,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Causeway Bay",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/shopping-malls/getList?page=1",
@@ -49013,7 +48961,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Sheung Shui",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/shopping-malls/getList?page=1",
@@ -49028,7 +48976,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Tai Po",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/shopping-malls/getList?page=1",
@@ -49043,7 +48991,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Yuen Long",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/shopping-malls/getList?page=1",
@@ -49058,7 +49006,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Chai Wan",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/shopping-malls/getList?page=1",
@@ -49073,7 +49021,7 @@
           "source_layer": "issuer_current_directory",
           "district": "San Po Kong",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/shopping-malls/getList?page=1",
@@ -49088,7 +49036,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Tseung Kwan O",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/shopping-malls/getList?page=1",
@@ -49103,7 +49051,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Tseung Kwan O",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/shopping-malls/getList?page=1",
@@ -49118,7 +49066,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Tuen Mun",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/shopping-malls/getList?page=1",
@@ -49133,7 +49081,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Sai Sha",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/shopping-malls/getList?page=1",
@@ -49148,7 +49096,7 @@
           "source_layer": "issuer_current_directory",
           "district": "West Kowloon",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/offices/getList?page=0",
@@ -49163,7 +49111,7 @@
           "source_layer": "issuer_current_directory",
           "district": "West Kowloon",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/offices/getList?page=0",
@@ -49178,7 +49126,7 @@
           "source_layer": "issuer_current_directory",
           "district": "West Kowloon",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/offices/getList?page=0",
@@ -49193,7 +49141,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Central",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/offices/getList?page=0",
@@ -49208,7 +49156,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Wan Chai",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/offices/getList?page=0",
@@ -49223,7 +49171,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Wan Chai",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/offices/getList?page=0",
@@ -49238,7 +49186,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Wan Chai",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/offices/getList?page=0",
@@ -49253,7 +49201,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Wan Chai",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/offices/getList?page=0",
@@ -49268,7 +49216,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Causeway Bay",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/offices/getList?page=0",
@@ -49283,7 +49231,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Kwun Tong",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/offices/getList?page=0",
@@ -49298,7 +49246,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Kwun Tong",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/offices/getList?page=0",
@@ -49313,7 +49261,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Kwun Tong",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/offices/getList?page=0",
@@ -49328,7 +49276,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Tsim Sha Tsui",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/offices/getList?page=0",
@@ -49343,7 +49291,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Mong Kok",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/offices/getList?page=0",
@@ -49358,7 +49306,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Kwai Chung",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/offices/getList?page=0",
@@ -49373,7 +49321,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Kwai Chung",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/offices/getList?page=0",
@@ -49388,7 +49336,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Kwai Chung",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/offices/getList?page=0",
@@ -49403,7 +49351,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Kwai Fong",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/offices/getList?page=0",
@@ -49418,7 +49366,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Tsuen Wan",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/offices/getList?page=0",
@@ -49433,7 +49381,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Sha Tin",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/offices/getList?page=0",
@@ -49448,7 +49396,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Shatin",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/offices/getList?page=0",
@@ -49463,7 +49411,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Sheung Shui",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/offices/getList?page=0",
@@ -49478,7 +49426,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Sheung Wan",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/offices/getList?page=0",
@@ -49493,7 +49441,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Sheung Wan",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/offices/getList?page=0",
@@ -49508,7 +49456,7 @@
           "source_layer": "issuer_current_directory",
           "district": "East Tsim Sha Tsui",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/hotels-and-serviced-suites/getList?hoteltype=typea&page=0",
@@ -49523,7 +49471,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Mong Kok",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/hotels-and-serviced-suites/getList?hoteltype=typea&page=0",
@@ -49538,7 +49486,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Tseung Kwan O",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/hotels-and-serviced-suites/getList?hoteltype=typea&page=0",
@@ -49553,7 +49501,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Sha Tin",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/hotels-and-serviced-suites/getList?hoteltype=typea&page=0",
@@ -49568,7 +49516,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Sha Tin",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/hotels-and-serviced-suites/getList?hoteltype=typea&page=0",
@@ -49583,7 +49531,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Central",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/hotels-and-serviced-suites/getList?hoteltype=typeb&page=0",
@@ -49598,7 +49546,7 @@
           "source_layer": "issuer_current_directory",
           "district": "West Kowloon",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/hotels-and-serviced-suites/getList?hoteltype=typeb&page=0",
@@ -49613,7 +49561,7 @@
           "source_layer": "issuer_current_directory",
           "district": "West Kowloon",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/hotels-and-serviced-suites/getList?hoteltype=typeb&page=0",
@@ -49628,7 +49576,7 @@
           "source_layer": "issuer_current_directory",
           "district": "North Point",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/hotels-and-serviced-suites/getList?hoteltype=typeb&page=0",
@@ -49643,7 +49591,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Tsuen Wan",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/hotels-and-serviced-suites/getList?hoteltype=typeb&page=0",
@@ -49658,7 +49606,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Central",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/hotels-and-serviced-suites/ss/getList?page=0",
@@ -49673,7 +49621,7 @@
           "source_layer": "issuer_current_directory",
           "district": "West Kowloon",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/hotels-and-serviced-suites/ss/getList?page=0",
@@ -49688,7 +49636,7 @@
           "source_layer": "issuer_current_directory",
           "district": "Tseung Kwan O",
           "group_interest_pct": null,
-          "as_of_date": "2026-09-13T14:05:50.872833+00:00",
+          "as_of_date": "2026-09-13T14:26:40.638394+00:00",
           "completion_window": null,
           "total_gfa_sqft": null,
           "source_url": "https://www.shkp.com/en-US/our-business/hong-kong-properties/hotels-and-serviced-suites/ss/getList?page=0",
@@ -71770,9 +71718,9 @@
           "location_district": "元朗",
           "status": "開售中",
           "estimated_total_units": 566,
-          "remaining_units": 173,
-          "on_sale_units": 124,
-          "sold_units": 393,
+          "remaining_units": 170,
+          "on_sale_units": 121,
+          "sold_units": 396,
           "estimated_move_in_year": 2027
         },
         {
@@ -84692,7 +84640,7 @@
           "type": "指标",
           "status": "健康",
           "latest_observation": "2026-06-30",
-          "records": 58,
+          "records": 54,
           "freshness": "75 天前",
           "notes": "Bounded PDF text extraction of explicit units/areas/rates/milestones; not revenue or ownership."
         },
@@ -84914,7 +84862,7 @@
           "type": "指标",
           "status": "健康",
           "latest_observation": "2026-06-30",
-          "records": 58,
+          "records": 54,
           "freshness": "75 天前",
           "notes": "Bounded PDF text extraction of explicit units/areas/rates/milestones; not revenue or ownership."
         },
@@ -85101,7 +85049,7 @@
         "url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/banking/residential-mortgage-survey",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 香港金管局住宅按揭统计调查。",
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     },
     {
@@ -85113,7 +85061,7 @@
         "url": "https://www.censtatd.gov.hk/api/get.php?id=615-66001&lang=en&full_series=1",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 政府统计处建筑工程总值统计。",
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     },
     {
@@ -85125,7 +85073,7 @@
         "url": "https://www.censtatd.gov.hk/en/data/stat_report/product/D7000004/att/D7000004.xlsx",
         "language": "XLSX",
         "description": "构建时从公开来源读取并校验 政府统计处表 E704 — 政府卖地统计。",
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     },
     {
@@ -85141,7 +85089,7 @@
           "CCL latest is the most recent published weekly Centaline City Leading Index observation.",
           "Weekly and yearly movements are latest divided by the prior observation or latest observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     },
     {
@@ -85153,7 +85101,7 @@
         "url": "https://hk.centanet.com/CCI/api/Index/CCI",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 中原 CCI — 住宅价格指数。",
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     },
     {
@@ -85165,7 +85113,7 @@
         "url": "https://hk.centanet.com/CCI/api/Index/CRI",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 中原 CRI — 住宅租金指数。",
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     },
     {
@@ -85177,7 +85125,7 @@
         "url": "https://hk.centanet.com/CCI/api/Index/CSI",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 中原 CSI — 市场情绪。",
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     },
     {
@@ -85193,7 +85141,7 @@
           "MHPI latest is the most recent published overall weekly Midland Hong Kong Property Price Index observation.",
           "Weekly and yearly movements are latest divided by the prior observation or latest observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     },
     {
@@ -85208,7 +85156,7 @@
         "metric_definitions": [
           "The confidence series is a supporting market-sentiment measure published by Midland Realty."
         ],
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     },
     {
@@ -85224,7 +85172,7 @@
           "RVD price latest is the All Classes monthly private domestic price index.",
           "Monthly and yearly movements are latest divided by the prior month or observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     },
     {
@@ -85240,7 +85188,7 @@
           "RVD rent latest is the All Classes monthly private domestic rental index.",
           "Monthly and yearly movements are latest divided by the prior month or observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     },
     {
@@ -85252,7 +85200,7 @@
         "url": "https://www.rvd.gov.hk/datagovhk/2.3M.csv",
         "language": "CSV",
         "description": "构建时从公开来源读取并校验 差饷物业估价署 — 写字楼租金指数。",
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     },
     {
@@ -85264,7 +85212,7 @@
         "url": "https://www.rvd.gov.hk/datagovhk/3.2M.csv",
         "language": "CSV",
         "description": "构建时从公开来源读取并校验 差饷物业估价署 — 零售租金／价格指数。",
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     },
     {
@@ -85276,7 +85224,7 @@
         "url": "https://www.rvd.gov.hk/datagovhk/Com_Stock_Completions_and_Vacancy_by_District_Eng.csv",
         "language": "CSV",
         "description": "构建时从公开来源读取并校验 Rating and Valuation Department — Commercial stock / vacancy / completions。",
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     },
     {
@@ -85288,7 +85236,7 @@
         "url": "https://www.censtatd.gov.hk/data/MDT_75_620-67002_VAL_IDX_RS_Raw_1dp_idx_n.csv",
         "language": "CSV",
         "description": "构建时从公开来源读取并校验 C&SD — Monthly Retail Sales Control。",
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     },
     {
@@ -85300,7 +85248,7 @@
         "url": "https://www.tourism.gov.hk/datagovhk/hotelroomoccupancy/hotel_room_occupancy_rate_monthly_by_cat_en.csv",
         "language": "CSV",
         "description": "构建时从公开来源读取并校验 Culture, Sports and Tourism Bureau — Hotel occupancy / room-rate controls。",
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     },
     {
@@ -85312,7 +85260,7 @@
         "url": "https://www.shkp.com/en-US/investor-relations/shkp-quarterly",
         "language": "HTML/PDF",
         "description": "构建时从公开来源读取并校验 SHKP Quarterly — issuer project and commercial events。",
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     },
     {
@@ -85324,7 +85272,7 @@
         "url": "https://www.shkp.com/en-US/our-business/hong-kong-properties",
         "language": "Python",
         "description": "构建时从公开来源读取并校验 SHKP — Hong Kong commercial asset observation master。",
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     },
     {
@@ -85336,7 +85284,7 @@
         "url": "https://www.shkp.com/en-US/investor-relations/financial-results-reports",
         "language": "PDF/Parquet/DuckDB",
         "description": "构建时从公开来源读取并校验 新鸿基香港业务财务桥接。",
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     },
     {
@@ -85348,7 +85296,7 @@
         "url": "https://www.srpe.gov.hk/opip/all_development",
         "language": "Parquet/Python",
         "description": "构建时从公开来源读取并校验 新鸿基销售／交付／收入时序桥接。",
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     },
     {
@@ -85367,7 +85315,7 @@
           "RVD 1.4M.csv",
           "RVD 1.3M.csv"
         ],
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     },
     {
@@ -85379,7 +85327,7 @@
         "url": "https://www.28hse.com/epi/historical_data/doaction",
         "language": "HTML (embedded in a JSON envelope)",
         "description": "构建时从公开来源读取并校验 28Hse 屋苑价格及租金指数。",
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     },
     {
@@ -85391,7 +85339,7 @@
         "url": "https://www.28hse.com/new-properties",
         "language": "HTML",
         "description": "构建时从公开来源读取并校验 28Hse 新盘目录。",
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     },
     {
@@ -85406,7 +85354,7 @@
           "Midland data.midland.com.hk/info/v1/transactions/buildings",
           "Centaline hk.centanet.com/findproperty/api/Transaction/Search"
         ],
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     },
     {
@@ -85418,7 +85366,7 @@
         "url": "https://www.landreg.gov.hk/json/monthly_stat/monthly/t1.json",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 土地注册处月度统计。",
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     },
     {
@@ -85430,7 +85378,7 @@
         "url": "https://www.bd.gov.hk/doc/en/whats-new/monthly-digests/Md11.xls",
         "language": "XLS",
         "description": "构建时从公开来源读取并校验 屋宇署月报摘要。",
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     },
     {
@@ -85449,7 +85397,7 @@
           "Md55.xls",
           "Md56.xls"
         ],
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     },
     {
@@ -85469,7 +85417,7 @@
           "Table 1.6",
           "Table 1.7"
         ],
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     },
     {
@@ -85485,7 +85433,7 @@
           "Monthly attributable contract sales are gross transaction price multiplied by the listed-company ownership percentage in the phase registry.",
           "Sell-through uses unique active units from the transaction-register history divided by the phase's published total residential properties."
         ],
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     },
     {
@@ -85499,13 +85447,13 @@
           "Validated core measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-09-13T14:06:54.960212Z"
+        "executed_at": "2026-09-13T14:27:33.005673Z"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-real-estate/",
-    "snapshotId": "609436cfb537dd64",
+    "snapshotId": "ab8bb88586471ce9",
     "dataAsOf": "2026-09-07"
   }
 }
