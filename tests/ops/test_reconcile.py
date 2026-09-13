@@ -5,7 +5,11 @@ from pathlib import Path
 
 from ops_control.incidents import missed_schedule_incident
 from ops_control.models import RunReport, CheckResult
-from ops_control.reconcile import missed_schedule, reconcile_registry
+from ops_control.reconcile import (
+    missed_schedule,
+    reconcile_registry,
+    recover_resolved_incidents,
+)
 from ops_control.registry import load_registry
 from ops_control.reporting import build_digest
 
@@ -102,3 +106,63 @@ def test_monthly_window_is_checked_after_grace_not_during_the_window() -> None:
         and item.error_class == "missed_schedule"
         for item in incidents
     )
+
+
+def test_healthy_report_recovers_old_incident_when_job_is_now_clear() -> None:
+    registry = load_registry(ROOT / "config" / "ops" / "pipelines.yaml", repo_root=ROOT)
+    pipeline = registry.pipelines["openrouter-provider-activity"]
+    existing = missed_schedule_incident(
+        pipeline=pipeline,
+        job_id="scrape-provider-activity",
+        now=datetime(2026, 9, 8, 12, 0, tzinfo=timezone.utc),
+        last_finished_at=None,
+    )
+    report = _healthy_report(
+        "openrouter-provider-activity",
+        "scrape-provider-activity",
+        "2026-09-09T11:30:00Z",
+    )
+
+    recovered = recover_resolved_incidents(
+        open_incidents=[existing],
+        reports={(report.pipeline_id, report.job_id): report},
+        current_incidents=[],
+        now=NOW,
+    )
+
+    assert len(recovered) == 1
+    assert recovered[0].fingerprint == existing.fingerprint
+    assert recovered[0].status == "RECOVERED"
+    assert recovered[0].derived_state == "HEALTHY"
+    assert report.run_id in recovered[0].run_ids
+
+
+def test_stale_healthy_report_does_not_recover_job_with_current_incident() -> None:
+    registry = load_registry(ROOT / "config" / "ops" / "pipelines.yaml", repo_root=ROOT)
+    pipeline = registry.pipelines["openrouter-provider-activity"]
+    existing = missed_schedule_incident(
+        pipeline=pipeline,
+        job_id="scrape-provider-activity",
+        now=datetime(2026, 9, 8, 12, 0, tzinfo=timezone.utc),
+        last_finished_at=None,
+    )
+    current = missed_schedule_incident(
+        pipeline=pipeline,
+        job_id="scrape-provider-activity",
+        now=NOW,
+        last_finished_at="2026-09-07T01:30:00Z",
+    )
+    report = _healthy_report(
+        "openrouter-provider-activity",
+        "scrape-provider-activity",
+        "2026-09-07T01:30:00Z",
+    )
+
+    recovered = recover_resolved_incidents(
+        open_incidents=[existing],
+        reports={(report.pipeline_id, report.job_id): report},
+        current_incidents=[current],
+        now=NOW,
+    )
+
+    assert recovered == []

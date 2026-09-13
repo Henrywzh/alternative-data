@@ -27,7 +27,11 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     from ops_control.github_api import paginate
-    from ops_control.reconcile import collect_latest_reports, reconcile_registry
+    from ops_control.reconcile import (
+        collect_latest_reports,
+        recover_resolved_incidents,
+        reconcile_registry,
+    )
     from ops_control.registry import load_registry
     from ops_control.retry import maybe_retry_incident
     from ops_control.store import IncidentStore
@@ -56,6 +60,7 @@ def main(argv: list[str] | None = None) -> int:
     stored = []
     if args.incident_repo and incident_token:
         store = IncidentStore(repository=args.incident_repo, token=incident_token, schema_path=args.schema)
+        open_incidents = store.list_open()
         for incident in incidents:
             current = store.upsert(incident)
             current, retried = maybe_retry_incident(
@@ -67,6 +72,13 @@ def main(argv: list[str] | None = None) -> int:
             if retried:
                 current = store.upsert(current)
             stored.append(current.to_dict())
+        for recovered in recover_resolved_incidents(
+            open_incidents=open_incidents,
+            reports=reports,
+            current_incidents=incidents,
+            now=now,
+        ):
+            stored.append(store.upsert(recovered).to_dict())
     else:
         stored = [item.to_dict() for item in incidents]
     payload = {"generated_at": now.isoformat().replace("+00:00", "Z"), "incident_count": len(stored), "incidents": stored}
