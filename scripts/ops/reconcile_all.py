@@ -26,7 +26,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", type=Path)
     args = parser.parse_args(argv)
 
-    from ops_control.github_api import paginate, request_json
+    from ops_control.github_api import paginate
     from ops_control.reconcile import collect_latest_reports, reconcile_registry
     from ops_control.registry import load_registry
     from ops_control.retry import maybe_retry_incident
@@ -44,18 +44,11 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     def download_artifact(artifact: dict) -> bytes:
-        from ops_control.github_api import request_json as _unused
-        from urllib.request import Request, urlopen
-        request = Request(
+        from ops_control.github_api import request_bytes
+        return request_bytes(
             f"https://api.github.com/repos/{args.producer_repo}/actions/artifacts/{artifact['id']}/zip",
-            headers={
-                "Accept": "application/vnd.github+json",
-                "Authorization": f"Bearer {producer_token}",
-                "User-Agent": "alternative-data-ops-control",
-            },
+            token=producer_token,
         )
-        with urlopen(request, timeout=30) as response:
-            return response.read()
 
     reports = collect_latest_reports(registry=registry, artifacts=artifacts, download_artifact=download_artifact)
     now = datetime.now(timezone.utc)

@@ -14,6 +14,48 @@ class GitHubAPIError(RuntimeError):
     """Raised when a GitHub API call fails."""
 
 
+def request_bytes(
+    url: str,
+    *,
+    token: str | None = None,
+    method: str = "GET",
+    payload: dict[str, Any] | None = None,
+    timeout: int = 30,
+) -> bytes:
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "alternative-data-ops-control",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    body = None if payload is None else json.dumps(payload).encode("utf-8")
+    if payload is not None:
+        headers["Content-Type"] = "application/json"
+    request = Request(url, data=body, method=method, headers=headers)
+    try:
+        with urlopen(request, timeout=timeout) as response:
+            return response.read()
+    except HTTPError as exc:
+        if 300 <= exc.code < 400:
+            location = exc.headers.get("Location")
+            if not location:
+                raise GitHubAPIError(
+                    f"GitHub API {method} {url} redirected without Location"
+                ) from exc
+            # Artifact zip downloads 302 to a signed blob URL. Forwarding the
+            # GitHub bearer token to that host returns 401, so follow unsigned.
+            redirect = Request(location, method="GET")
+            with urlopen(redirect, timeout=timeout) as response:
+                return response.read()
+        detail = exc.read().decode("utf-8", errors="replace")
+        raise GitHubAPIError(
+            f"GitHub API {method} {url} failed: {exc.code} {detail}"
+        ) from exc
+    except URLError as exc:
+        raise GitHubAPIError(f"GitHub API {method} {url} failed: {exc.reason}") from exc
+
+
 def request_json(
     url: str,
     *,
@@ -22,27 +64,9 @@ def request_json(
     payload: dict[str, Any] | None = None,
     timeout: int = 30,
 ) -> Any:
-    body = None if payload is None else json.dumps(payload).encode("utf-8")
-    request = Request(
-        url,
-        data=body,
-        method=method,
-        headers={
-            "Accept": "application/vnd.github+json",
-            "Authorization": f"Bearer {token}",
-            "User-Agent": "alternative-data-ops-control",
-            "X-GitHub-Api-Version": "2022-11-28",
-            **({"Content-Type": "application/json"} if body is not None else {}),
-        },
+    raw = request_bytes(
+        url, token=token, method=method, payload=payload, timeout=timeout
     )
-    try:
-        with urlopen(request, timeout=timeout) as response:
-            raw = response.read()
-    except HTTPError as exc:
-        detail = exc.read().decode("utf-8", errors="replace")
-        raise GitHubAPIError(f"GitHub API {method} {url} failed: {exc.code} {detail}") from exc
-    except URLError as exc:
-        raise GitHubAPIError(f"GitHub API {method} {url} failed: {exc.reason}") from exc
     if not raw:
         return None
     parsed = json.loads(raw.decode("utf-8"))
