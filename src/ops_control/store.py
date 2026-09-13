@@ -61,6 +61,13 @@ class IncidentStore:
         return merged
 
     def find_by_fingerprint(self, fingerprint: str) -> Incident | None:
+        # `is:issue` is mandatory: GitHub's search/issues endpoint rejects a
+        # query without `is:issue` or `is:pull-request` with
+        #   422 Query must include 'is:issue' or 'is:pull-request'
+        # which took every Ops Reconciliation run down. It is also the right
+        # filter on its own -- an incident is never a pull request, and
+        # without it a PR whose body quoted a fingerprint would be parsed as
+        # one.
         query = (
             f'repo:{self.repository} is:issue label:ops-incident '
             f'"fingerprint: {fingerprint}" in:body'
