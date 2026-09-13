@@ -5,7 +5,12 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from .baseline import extract_run_report, select_previous_artifact
-from .incidents import Incident, incident_from_report, missed_schedule_incident
+from .incidents import (
+    Incident,
+    incident_from_report,
+    mark_recovered,
+    missed_schedule_incident,
+)
 from .models import RunReport
 from .registry import JobSpec, PipelineRegistry, PipelineSpec
 
@@ -105,3 +110,32 @@ def reconcile_registry(*, registry: PipelineRegistry, reports: dict[tuple[str, s
             if incident is not None:
                 incidents.append(incident)
     return incidents
+
+
+def recover_resolved_incidents(
+    *,
+    open_incidents: list[Incident],
+    reports: dict[tuple[str, str], RunReport],
+    current_incidents: list[Incident],
+    now: datetime,
+) -> list[Incident]:
+    """Create recovery updates for open issues whose job is healthy again.
+
+    ``reconcile_registry`` only returns current failures, so an incident that
+    disappears from that list would otherwise remain open in the issue store
+    forever. A healthy report is sufficient evidence to close a prior issue,
+    except when the same job still has a current incident (for example, a
+    stale report has crossed its schedule deadline).
+    """
+
+    current_keys = {
+        (incident.pipeline_id, incident.job_id) for incident in current_incidents
+    }
+    recovered: list[Incident] = []
+    for incident in open_incidents:
+        key = (incident.pipeline_id, incident.job_id)
+        report = reports.get(key)
+        if key in current_keys or report is None or report.derived_state != "HEALTHY":
+            continue
+        recovered.append(mark_recovered(incident, now=now, run_id=report.run_id))
+    return recovered
