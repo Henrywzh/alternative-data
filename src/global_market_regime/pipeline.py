@@ -20,6 +20,8 @@ from .config import (
     COT_STALE_AFTER_CALENDAR_DAYS,
     CONDITION_RULES,
     CROSS_ASSET_EXPOSURES,
+    SECTOR_LEADERSHIP_BENCHMARK,
+    SECTOR_LEADERSHIP_EXPOSURES,
     DERIVED_DIR,
     FOMC_STALE_AFTER_CALENDAR_DAYS,
     FRED_SERIES,
@@ -44,6 +46,8 @@ from .sources import (
     safe_error_message,
 )
 from .storage import new_run_id, prune_runs, save_derived, save_normalized, utc_now
+from .treasury import build_treasury_curve_snapshots, build_treasury_yield_changes
+from .sector_leadership import build_sector_leadership
 
 
 def _iso(value: Any) -> str | None:
@@ -373,7 +377,8 @@ def load_cross_asset_prices() -> pd.DataFrame:
         return pd.DataFrame()
     if prices.empty or "exposure_id" not in prices.columns:
         return pd.DataFrame()
-    keep = prices[prices["exposure_id"].isin(CROSS_ASSET_EXPOSURES)].copy()
+    wanted = set(CROSS_ASSET_EXPOSURES) | set(SECTOR_LEADERSHIP_EXPOSURES) | {SECTOR_LEADERSHIP_BENCHMARK}
+    keep = prices[prices["exposure_id"].isin(wanted)].copy()
     keep["date"] = pd.to_datetime(keep["date"], errors="coerce")
     keep["close"] = pd.to_numeric(keep["close"], errors="coerce")
     result = (
@@ -497,6 +502,9 @@ def run_pipeline(
             snapshot.loc[mask, "event_slug"] = fomc_snapshot.get("slug")
     panel = build_condition_panel(states)
     cross_asset = load_cross_asset_prices()
+    sector_leadership = build_sector_leadership(cross_asset)
+    curve_snapshots = build_treasury_curve_snapshots(fred_frame)
+    yield_changes = build_treasury_yield_changes(fred_frame)
     health = source_health_rows(
         fred=fred_frame,
         mpt=mpt_frame,
@@ -536,6 +544,9 @@ def run_pipeline(
         "latest_conditions": snapshot,
         "source_health": health,
         "cross_asset_prices": cross_asset,
+        "treasury_curve_snapshots": curve_snapshots,
+        "treasury_yield_changes": yield_changes,
+        "sector_leadership": sector_leadership,
         "overall_state": overall_state(current_states) if current_states else "Unavailable",
         "fred_errors": fred_errors,
         "mpt_error": mpt_error,
@@ -576,6 +587,30 @@ def run_pipeline(
         if not health.empty:
             save_derived("source_health", health, metadata=metadata, run_id=run_id)
             prune_runs(DERIVED_DIR, "source_health")
+        if not sector_leadership.empty:
+            save_derived(
+                "sector_leadership",
+                sector_leadership,
+                metadata=metadata,
+                run_id=run_id,
+            )
+            prune_runs(DERIVED_DIR, "sector_leadership")
+        if not curve_snapshots.empty:
+            save_derived(
+                "treasury_curve_snapshots",
+                curve_snapshots,
+                metadata=metadata,
+                run_id=run_id,
+            )
+            prune_runs(DERIVED_DIR, "treasury_curve_snapshots")
+        if not yield_changes.empty:
+            save_derived(
+                "treasury_yield_changes",
+                yield_changes,
+                metadata=metadata,
+                run_id=run_id,
+            )
+            prune_runs(DERIVED_DIR, "treasury_yield_changes")
         if not cross_asset.empty:
             cross_asset_metadata = {
                 **metadata,

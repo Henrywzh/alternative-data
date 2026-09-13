@@ -17,6 +17,7 @@ import streamlit as st
 from .config import ETF_ACTIVITY_CNY_PER_YI, ETF_ACTIVITY_SHARES_PER_WAN, PALETTE
 
 from .core import apply_line_hover, chart_theme, date_hover_format, date_tick_format, history_window, localize_coverage, section_heading, tr
+from .technicals import RATIO_DEFAULTS, macd_frame, ratio_default_index
 
 
 def _market_price_frame(datasets: dict[str, Any]) -> pd.DataFrame:
@@ -288,12 +289,24 @@ def render_relative_regime(
         fig.add_trace(
             go.Scatter(
                 x=windowed["_date"], y=windowed["ratio_ma"], mode="lines",
-                name=tr(language, "60D mean", "60日均值"), line=dict(width=1.0),
-                hovertemplate=tr(language, "60D mean", "60日均值") + ": %{y:.3f}<extra></extra>",
+                name=tr(language, "60D MA", "60日均线"), line=dict(width=1.0),
+                hovertemplate=tr(language, "60D MA", "60日均线") + ": %{y:.3f}<extra></extra>",
             ),
             row=1, col=1,
         )
-    fig.update_yaxes(title=tr(language, "Ratio (rebased)", "比值（归一）"), row=1, col=1)
+    ratio_series = pd.to_numeric(windowed["ratio"], errors="coerce")
+    windowed = windowed.copy()
+    windowed["ratio_ma200"] = ratio_series.rolling(200).mean()
+    if windowed["ratio_ma200"].notna().any():
+        fig.add_trace(
+            go.Scatter(
+                x=windowed["_date"], y=windowed["ratio_ma200"], mode="lines",
+                name=tr(language, "200D MA", "200日均线"), line=dict(width=1.0, color=PALETTE[9]),
+                hovertemplate=tr(language, "200D MA", "200日均线") + ": %{y:.3f}<extra></extra>",
+            ),
+            row=1, col=1,
+        )
+    fig.update_yaxes(title=tr(language, "Ratio", "比值"), row=1, col=1)
 
     if has_z:
         fig.add_trace(
@@ -602,6 +615,7 @@ def render_market_leadership_chart(
     )
 
 
+
 def render_market_ratio_chart(
     prices: pd.DataFrame,
     technicals: pd.DataFrame,
@@ -645,20 +659,23 @@ def render_market_ratio_chart(
             )
         )
         return
+    tab_key = key_prefix.removeprefix("market_") if key_prefix.startswith("market_") else key_prefix
+    preferred_num, preferred_den = RATIO_DEFAULTS.get(tab_key, (eids[0], eids[1] if len(eids) > 1 else eids[0]))
     col1, col2 = st.columns(2)
     with col1:
         numerator = st.selectbox(
             tr(language, "Numerator (A)", "分子 (A)"),
             eids,
-            index=eids.index("csi1000") if "csi1000" in eids else 0,
+            index=ratio_default_index(eids, preferred_num, 0),
             key=f"{key_prefix}_ratio_num",
             format_func=lambda e: labels.get(e, e),
         )
     with col2:
+        den_fallback = 1 if eids[ratio_default_index(eids, preferred_num, 0)] != eids[ratio_default_index(eids, preferred_den, 1)] else min(1, len(eids) - 1)
         denominator = st.selectbox(
             tr(language, "Denominator (B)", "分母 (B)"),
             eids,
-            index=eids.index("csi300") if "csi300" in eids else min(1, len(eids) - 1),
+            index=ratio_default_index(eids, preferred_den, den_fallback),
             key=f"{key_prefix}_ratio_den",
             format_func=lambda e: labels.get(e, e),
         )
@@ -707,16 +724,45 @@ def render_market_ratio_chart(
         )
     )
 
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=series.index, y=series.values, mode="lines", name=title, line=dict(color=PALETTE[0], width=2)))
-    ma20 = series.rolling(20).mean()
+    macd = macd_frame(series)
+    fig = make_subplots(
+        rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.07,
+        row_heights=[0.68, 0.32],
+    )
+    fig.add_trace(
+        go.Scatter(x=series.index, y=series.values, mode="lines", name=title, line=dict(color=PALETTE[0], width=2)),
+        row=1, col=1,
+    )
     ma60 = series.rolling(60).mean()
-    fig.add_trace(go.Scatter(x=ma20.index, y=ma20.values, mode="lines", name=tr(language, "20D MA", "20日均线"), line=dict(color=PALETTE[1], width=1, dash="dot")))
-    fig.add_trace(go.Scatter(x=ma60.index, y=ma60.values, mode="lines", name=tr(language, "60D MA", "60日均线"), line=dict(color=PALETTE[2], width=1, dash="dash")))
-    fig.update_yaxes(title=tr(language, "Ratio", "比值"))
+    ma200 = series.rolling(200).mean()
+    fig.add_trace(
+        go.Scatter(x=ma60.index, y=ma60.values, mode="lines", name=tr(language, "60D MA", "60日均线"), line=dict(color=PALETTE[3], width=1.2)),
+        row=1, col=1,
+    )
+    fig.add_trace(
+        go.Scatter(x=ma200.index, y=ma200.values, mode="lines", name=tr(language, "200D MA", "200日均线"), line=dict(color=PALETTE[9], width=1.2)),
+        row=1, col=1,
+    )
+    if not macd.empty:
+        hist_color = [PALETTE[2] if value >= 0 else PALETTE[1] for value in macd["histogram"]]
+        fig.add_trace(
+            go.Bar(x=macd.index, y=macd["histogram"], name=tr(language, "MACD hist", "MACD柱"), marker_color=hist_color, opacity=0.7),
+            row=2, col=1,
+        )
+        fig.add_trace(
+            go.Scatter(x=macd.index, y=macd["macd"], mode="lines", name="MACD", line=dict(color=PALETTE[0], width=1.3)),
+            row=2, col=1,
+        )
+        fig.add_trace(
+            go.Scatter(x=macd.index, y=macd["signal"], mode="lines", name=tr(language, "Signal", "信号线"), line=dict(color=PALETTE[3], width=1.1)),
+            row=2, col=1,
+        )
+        fig.add_hline(y=0, line_dash="dot", line_color="#D1D5DB", line_width=0.8, row=2, col=1)
+    fig.update_yaxes(title=tr(language, "Ratio", "比值"), row=1, col=1)
+    fig.update_yaxes(title="MACD", row=2, col=1)
     fig.update_xaxes(title=None, tickformat="%b %Y")
     st.plotly_chart(
-        chart_theme(fig, "number", date_axis=True, height=380),
+        chart_theme(fig, "number", date_axis=True, height=520),
         width="stretch",
         config={"displaylogo": False, "responsive": True},
         key=f"{key_prefix}_ratio_chart",

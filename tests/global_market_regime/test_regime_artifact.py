@@ -783,7 +783,7 @@ def test_localized_source_health_aligns_by_series_id_not_row_position() -> None:
     [
         (
             "English",
-            {"Brent crude", "US 10-year yield", "Next FOMC hike odds"},
+            {"Brent crude", "US 10-year yield", "Next FOMC hike odds", "US Treasuries"},
             {
                 "No alert needed",
                 "Change recorded",
@@ -794,7 +794,7 @@ def test_localized_source_health_aligns_by_series_id_not_row_position() -> None:
         ),
         (
             "中文",
-            {"布伦特原油", "美国10年期国债收益率", "下次FOMC加息赔率"},
+            {"布伦特原油", "美国10年期国债收益率", "下次FOMC加息赔率", "美国国债"},
             {
                 "无需提醒",
                 "记录变化",
@@ -819,3 +819,31 @@ def test_streamlit_regime_page_renders_without_exceptions(
     rendered = "\n".join(str(markdown.value) for markdown in app.markdown)
     assert all(label in rendered for label in expected_labels)
     assert any(title in rendered for title in expected_alert_titles)
+
+def test_artifact_includes_treasury_curve_contract(monkeypatch) -> None:
+    builder = _load_builder()
+    frames, lineages = _complete_builder_inputs()
+    frames["fred_observations"] = pd.DataFrame(
+        [
+            {"date": "2026-01-02", "indicator_id": "us2y", "value": 3.47, "unit": "percent"},
+            {"date": "2026-01-02", "indicator_id": "us10y", "value": 4.19, "unit": "percent"},
+            {"date": "2026-09-09", "indicator_id": "us2y", "value": 4.43, "unit": "percent"},
+            {"date": "2026-09-09", "indicator_id": "us10y", "value": 4.83, "unit": "percent"},
+        ]
+    )
+    monkeypatch.setattr(
+        builder,
+        "_load",
+        lambda name, derived=False: (frames.get(name, pd.DataFrame()), lineages.get(name)),
+    )
+
+    artifact, _status = builder.build_artifact()
+    chart_ids = {chart["id"] for chart in artifact["manifest"]["charts"]}
+    table_ids = {table["id"] for table in artifact["manifest"]["tables"]}
+    assert "treasury_curve_chart" in chart_ids
+    assert "treasury_yield_table" in table_ids
+    snapshots = artifact["snapshot"]["datasets"]["treasury_curve_snapshots"]
+    changes = artifact["snapshot"]["datasets"]["treasury_yield_changes"]
+    assert any(row.get("indicator_id") == "us10y" and row.get("snapshot_id") == "latest" for row in snapshots)
+    ten_year = next(row for row in changes if row.get("indicator_id") == "us10y")
+    assert ten_year["us10y_vs_threshold_bp"] == 1.0
