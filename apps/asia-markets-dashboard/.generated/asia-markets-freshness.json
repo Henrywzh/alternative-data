@@ -1,6 +1,6 @@
 {
   "version": "asia-markets-freshness.v1",
-  "auditedAt": "2026-09-14T07:45:03.177385Z",
+  "auditedAt": "2026-09-14T08:09:04.920554Z",
   "asOf": "2026-09-14",
   "status": "healthy",
   "requiredFailures": [],
@@ -221,8 +221,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-09-13T13:43:54Z",
-      "latest_observation": "2026-09-13T13:43:54Z",
+      "expected_latest_period": "2026-09-14T08:03:15Z",
+      "latest_observation": "2026-09-14T08:03:15Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     }
   ]
