@@ -22,10 +22,10 @@
   ],
   "grain": "Curated Wikipedia aerospace page basket × agent × complete Monday-Sunday week",
   "history_start": "2015-06-29",
-  "history_end": "2026-08-31",
-  "records": 2336,
+  "history_end": "2026-09-07",
+  "records": 2340,
   "source_status": "live",
   "source_granularity": "daily",
   "caveat": "Weekly totals are derived from daily page loads; they are not unique people or domestic mainland-China demand.",
-  "fetched_at": "2026-09-13T14:30:03.621797+00:00"
+  "fetched_at": "2026-09-14T07:41:05.344574+00:00"
 }
