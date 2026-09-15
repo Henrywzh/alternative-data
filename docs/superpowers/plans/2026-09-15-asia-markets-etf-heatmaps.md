@@ -31,7 +31,7 @@
 
 **Interfaces:**
 - Consumes: daily rows with `date`, `ticker`, `close`; universe rows with `ticker`, `name_en`, `name_zh`, `category`, `currency`.
-- Produces: `HEATMAP_ETFS`; `build_return_snapshot(prices: pd.DataFrame, universe: Sequence[Mapping[str, Any]], *, as_of: str | None = None) -> pd.DataFrame`.
+- Produces: `market_monitor.us_etf.universe.HEATMAP_ETFS`; `build_return_snapshot(prices: pd.DataFrame, universe: Sequence[Mapping[str, Any]], *, as_of: str | None = None) -> pd.DataFrame`.
 
 - [ ] **Step 1: Write failing universe and return tests**
 
@@ -61,7 +61,8 @@ Expected: collection fails because `market_monitor.heatmaps` and `HEATMAP_ETFS` 
 
 - [ ] **Step 3: Add the curated universe**
 
-Add `HEATMAP_ETFS` with unique tickers and bilingual names:
+Add `HEATMAP_ETFS` to `src/market_monitor/us_etf/universe.py` with unique
+tickers and bilingual names:
 
 ```python
 HEATMAP_ETFS = [
@@ -184,7 +185,7 @@ git commit -m "feat(market-monitor): aggregate validated ETF fund flows"
 
 **Interfaces:**
 - Consumes: `build_return_snapshot`, `build_flow_snapshot`, full-run ETF prices and activity.
-- Produces artifact datasets `etf_heatmap_returns`, `etf_heatmap_flows`, and `heatmap_etf_price_daily`.
+- Produces `build_heatmap_health(expected: int, observed: int, latest_date: str | None) -> dict[str, Any]` and artifact datasets `etf_heatmap_returns`, `etf_heatmap_flows`, and `heatmap_etf_price_daily`.
 
 - [ ] **Step 1: Write failing artifact-contract tests**
 
@@ -195,7 +196,7 @@ def test_market_artifact_includes_heatmap_datasets():
     assert {"etf_heatmap_returns", "etf_heatmap_flows", "heatmap_etf_price_daily"} <= datasets.keys()
 
 def test_optional_flow_run_cannot_make_core_artifact_healthy():
-    status = heatmap_health(expected=3, observed=1, latest_date="2026-09-14")
+    status = build_heatmap_health(expected=3, observed=1, latest_date="2026-09-14")
     assert status["status"] == "Degraded"
     assert status["coverage"] == "1/3"
 ```

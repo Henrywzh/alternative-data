@@ -43,6 +43,12 @@ from src.market_monitor.freshness import (
     classify_daily_observation,
     classify_intraday_quote,
 )
+from src.market_monitor.heatmaps import (
+    build_flow_snapshot,
+    build_heatmap_health,
+    build_return_snapshot,
+)
+from src.market_monitor.us_etf.universe import HEATMAP_ETFS
 from src.market_monitor.pipeline import coverage_regressions  # noqa: E402
 from src.market_monitor.ranking import rank_wrappers
 from src.market_monitor.sources.eastmoney_hsgt import normalize_southbound_market_flow
@@ -373,6 +379,9 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     activity, activity_lineage = load_latest_with_lineage(
         NORMALIZED_DIR, "etf_fund_activity_daily", scope="full"
     )
+    heatmap_px, _heatmap_lineage = load_latest_with_lineage(
+        NORMALIZED_DIR, "heatmap_etf_price_daily", scope="full"
+    )
     # Reapply source normalization to persisted snapshots.  This repairs old
     # local parquet written before the zero-as-missing rule without requiring a
     # fresh upstream call just to rebuild the portable artifact.
@@ -440,6 +449,42 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     if not technicals.empty and "date" in technicals.columns:
         data_as_of = str(pd.to_datetime(technicals["date"], errors="coerce").max().date())
 
+    # These are independent calendars.  Do not clip US ETF returns to the
+    # latest Asia index close (the US session can be one trading day ahead),
+    # and let fund-flow rows use their own per-fund latest observation date.
+    heatmap_as_of = None
+    if heatmap_px is not None and not heatmap_px.empty and "date" in heatmap_px.columns:
+        heatmap_dates = pd.to_datetime(heatmap_px["date"], errors="coerce").dropna()
+        if not heatmap_dates.empty:
+            heatmap_as_of = heatmap_dates.max().strftime("%Y-%m-%d")
+    return_snapshot = build_return_snapshot(heatmap_px, HEATMAP_ETFS, as_of=heatmap_as_of)
+
+    # Assign categories to China ETF metadata for flow heatmap aggregation.
+    china_categories = {
+        "csi300": "broad_equity",
+        "csi500": "broad_equity",
+        "csi1000": "broad_equity",
+        "dividend": "broad_equity",
+        "growth": "broad_equity",
+        "hstech": "sector",
+        "hk_internet": "sector",
+        "kr_semis": "sector",
+        "hsi": "international",
+        "hk_dividend": "international",
+        "sp500": "international",
+        "ndx": "international",
+        "nikkei225": "international",
+        "cac40": "international",
+        "dax": "international",
+        "saudi": "international",
+    }
+    meta_frame = build_metadata_frame()
+    meta_with_cat = meta_frame.copy() if meta_frame is not None and not meta_frame.empty else pd.DataFrame()
+    if not meta_with_cat.empty:
+        if "category" not in meta_with_cat.columns:
+            meta_with_cat["category"] = meta_with_cat["exposure_id"].map(china_categories).fillna("broad_equity")
+    flow_snapshot = build_flow_snapshot(activity, meta_with_cat)
+
     investable_ids = [spec["exposure_id"] for spec in investable_exposures()]
     activity_records = _activity_records(activity)
     datasets: dict[str, list[dict[str, Any]]] = {
@@ -457,6 +502,13 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         "relative_pair_history": _chart_series(pair_hist, "pair_id", "ratio", keep=("ratio_ma", "zscore")),
         "etf_price_daily_tail": _chart_series(etf_px, "fund_id", "close", id_as="ticker"),
         "etf_fund_activity_daily": activity_records,
+        "etf_heatmap_returns": _records(return_snapshot),
+        "etf_heatmap_flows": _records(flow_snapshot),
+        "heatmap_etf_price_daily": _records(
+            history_window(heatmap_px, "date", years=CHART_HISTORY_YEARS)
+            if heatmap_px is not None and not heatmap_px.empty
+            else heatmap_px
+        ),
         # Only the four fields render_southbound_market_flow reads. The full
         # 17-column dump was 1.5 MB of a 3.7 MB artifact, of which source_id /
         # source_url / retrieved_at_utc / flow were one constant value repeated
@@ -781,6 +833,37 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
             "notes": activity_summary["notes"],
         }
     )
+    expected_heatmap_count = len(HEATMAP_ETFS)
+    observed_heatmap_count = (
+        int(heatmap_px["ticker"].nunique())
+        if heatmap_px is not None and not heatmap_px.empty and "ticker" in heatmap_px.columns
+        else 0
+    )
+    heatmap_latest = (
+        str(pd.to_datetime(heatmap_px["date"], errors="coerce").max().date())
+        if heatmap_px is not None and not heatmap_px.empty and "date" in heatmap_px.columns
+        else "—"
+    )
+    heatmap_health = build_heatmap_health(
+        expected=expected_heatmap_count,
+        observed=observed_heatmap_count,
+        latest_date=heatmap_latest,
+    )
+    heatmap_errors = [
+        err
+        for err in reported
+        if err.get("dataset") == "heatmap_etf_price_daily"
+    ]
+    if heatmap_errors:
+        # The pipeline deliberately retains the last non-empty history when
+        # this optional source fails.  Keep that history visible, but never
+        # describe the current fetch as healthy.
+        heatmap_health["status"] = "Degraded" if observed_heatmap_count else "Unavailable"
+        detail = "; ".join(str(err.get("error") or "fetch failed") for err in heatmap_errors[:2])
+        heatmap_health["notes"] = (
+            f"{heatmap_health['notes']} Current fetch failed; retained history is stale. {detail}"
+        )
+    source_health_rows.append(heatmap_health)
     datasets["source_health"] = _apply_daily_source_freshness(
         source_health_rows,
         daily_close_by_source,
@@ -897,9 +980,10 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         {"id": "sse_etf_scale", "label": "Shanghai Stock Exchange ETF published share counts", "href": "https://www.sse.com.cn/assortment/fund/etf/list/scale/", "query": {"engine": "akshare fund_etf_scale_sse"}},
         {"id": "szse_etf_scale", "label": "Shenzhen Stock Exchange ETF daily share counts", "href": "https://www.szse.cn/market/fund/volume/etf/index.html", "query": {"engine": "akshare fund_scale_daily_szse"}},
         {"id": "eastmoney_hsgt_southbound", "label": "Eastmoney aggregate southbound Stock Connect flow", "href": "https://data.eastmoney.com/hsgt/hsgtV2.html", "query": {"engine": "akshare stock_hsgt_hist_em(南向资金)"}},
-        {"id": "sina_index_daily", "label": "Sina Finance index / ETF daily OHLCV", "href": "https://finance.sina.com.cn/", "query": {"engine": "akshare stock_zh_index_daily / fund_etf_hist_sina"}},
-        {"id": "yfinance_spx", "label": "Yahoo Finance S&P 500 index", "href": "https://finance.yahoo.com/quote/%5EGSPC/", "query": {"engine": "yfinance ^GSPC"}},
-    ]
+       {"id": "sina_index_daily", "label": "Sina Finance index / ETF daily OHLCV", "href": "https://finance.sina.com.cn/", "query": {"engine": "akshare stock_zh_index_daily / fund_etf_hist_sina"}},
+       {"id": "yfinance_spx", "label": "Yahoo Finance S&P 500 index", "href": "https://finance.yahoo.com/quote/%5EGSPC/", "query": {"engine": "yfinance ^GSPC"}},
+        {"id": "yfinance_heatmap_etfs", "label": "Yahoo Finance US & Cross-Asset ETF daily OHLCV", "href": "https://finance.yahoo.com/", "query": {"engine": "yfinance download"}},
+   ]
 
     charts: list[dict[str, Any]] = []
     tables: list[dict[str, Any]] = []

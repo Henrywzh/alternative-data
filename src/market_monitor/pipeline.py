@@ -54,6 +54,8 @@ from .storage import (
     save_raw,
 )
 from .technicals import compute_technicals
+from .us_etf.fetch import fetch_us_etf_history
+from .us_etf.universe import HEATMAP_ETFS
 from .wrapper import (
     filter_premium_history_to_sessions,
     fill_premium_from_last_close,
@@ -810,6 +812,29 @@ def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, 
         print(f"  [market_monitor] southbound flow fetch failed: {exc}")
         raw["southbound_market_flow"] = pd.DataFrame()
         fetch_errors.append({"dataset": "southbound_market_flow", "error": f"{type(exc).__name__}: {exc}"})
+
+    # --- US & Cross-Asset ETF prices for Heat Maps (optional) ---
+    heatmap_tickers = [item["ticker"] for item in HEATMAP_ETFS]
+    try:
+        raw["heatmap_etf_price_daily"] = fetch_us_etf_history(period="2y", tickers=heatmap_tickers)
+        if raw["heatmap_etf_price_daily"].empty:
+            fetch_errors.append(
+                {
+                    "dataset": "heatmap_etf_price_daily",
+                    "severity": "optional",
+                    "error": "empty heatmap ETF price history",
+                }
+            )
+    except Exception as exc:  # noqa: BLE001
+        print(f"  [market_monitor] heatmap ETF price fetch failed: {exc}")
+        raw["heatmap_etf_price_daily"] = pd.DataFrame()
+        fetch_errors.append(
+            {
+                "dataset": "heatmap_etf_price_daily",
+                "severity": "optional",
+                "error": f"{type(exc).__name__}: {exc}",
+            }
+        )
     return raw
 
 
@@ -958,10 +983,10 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
         "requested_start_date": start_date,
         "fetch_errors": raw.get("_fetch_errors") or [],
     }
-    # Compare before writing this run, so a later CLI freshness gate can stop
-    # the email even when the artifact builder has not run yet. Partial test
-    # runs are intentionally excluded: they asked for a smaller universe and
-    # must not be compared with the full scheduled run.
+   # Compare before writing this run, so a later CLI freshness gate can stop
+   # the email even when the artifact builder has not run yet. Partial test
+   # runs are intentionally excluded: they asked for a smaller universe and
+   # must not be compared with the full scheduled run.
     previous_history = (
         load_lineage_history(NORMALIZED_DIR, "index_price_daily", scope="full", limit=1)
         if run_scope == "full"
@@ -973,11 +998,11 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
 
     # Persist raw observations only after the coverage check has been
     # calculated. The raw layer is local and gitignored, but a failed full
-    # fetch must not look like a healthy run simply because its incomplete raw
+   # fetch must not look like a healthy run simply because its incomplete raw
     # response was written before the email gate could inspect it.
     raw_write: dict[str, dict[str, str] | None] = {}
     if write:
-        for dataset_name in ("index_close", "etf_close", "etf_spot", "etf_share_daily"):  # not _fetch_errors
+        for dataset_name in ("index_close", "etf_close", "etf_spot", "etf_share_daily", "heatmap_etf_price_daily"):  # not _fetch_errors
             raw_write[dataset_name] = save_raw(dataset_name, raw[dataset_name], metadata={"type": "raw", "run_scope": run_scope}, run_id=shared_run_id) if dataset_name in raw and not raw[dataset_name].empty else None
         results["_raw_run"] = raw_write
 
@@ -985,6 +1010,17 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
     normalized_etf = raw["etf_close"].copy() if not raw["etf_close"].empty else pd.DataFrame()
     results["etf_price_daily"] = normalized_etf
     results["southbound_market_flow"] = raw.get("southbound_market_flow", pd.DataFrame())
+
+    # Normalized: heatmap ETF prices (optional)
+    heatmap_px = raw.get("heatmap_etf_price_daily")
+    if heatmap_px is None or heatmap_px.empty:
+        previous_heatmap_px = load_latest_normalized("heatmap_etf_price_daily")
+        heatmap_px = (
+            previous_heatmap_px
+            if previous_heatmap_px is not None and not previous_heatmap_px.empty
+            else pd.DataFrame()
+        )
+    results["heatmap_etf_price_daily"] = heatmap_px
 
     # Derived: per-exposure technical snapshot (latest row).
     #
@@ -1137,6 +1173,22 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
             metadata={"type": "normalized", "run_scope": run_scope, "source_id": "official_exchange_etf_shares"},
             run_id=run_id,
         ) if should_save_activity else None
+        heatmap_df = results["heatmap_etf_price_daily"]
+        has_new_heatmap_rows = (
+            raw.get("heatmap_etf_price_daily") is not None
+            and not raw.get("heatmap_etf_price_daily").empty
+        )
+        should_save_heatmap = not heatmap_df.empty and has_new_heatmap_rows
+        run_info["heatmap_etf_price_daily"] = (
+            save_normalized(
+                "heatmap_etf_price_daily",
+                heatmap_df,
+                metadata={"type": "normalized", "run_scope": run_scope, "source_id": "yfinance_heatmap_etf"},
+                run_id=run_id,
+            )
+            if should_save_heatmap
+            else None
+        )
         fee_frame = pd.DataFrame(list((raw.get("_published_fees") or {}).values()))
         if not fee_frame.empty:
             fee_frame = fee_frame.reindex(columns=FEE_COLUMNS)
@@ -1147,7 +1199,7 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
         # Bounded retention. Every run writes the complete history rather than
         # a delta, so old snapshots are pure duplication; see prune_runs.
         pruned: dict[str, list[str]] = {}
-        for root, datasets in ((NORMALIZED_DIR, ("index_price_daily", "etf_price_daily", "southbound_market_flow", "etf_fund_activity_daily")),
+        for root, datasets in ((NORMALIZED_DIR, ("index_price_daily", "etf_price_daily", "southbound_market_flow", "etf_fund_activity_daily", "heatmap_etf_price_daily")),
                                # premium_history was missing here, so the one
                                # dataset that carries a full 11k-row series
                                # kept every run it had ever written while the
@@ -1155,7 +1207,7 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
                                (DERIVED_DIR, ("exposure_technicals", "relative_regime", "wrapper_metrics",
                                               "premium_history", "relative_pairs", "relative_pair_history",
                                               "fund_fees")),
-                               (RAW_DIR, ("index_close", "etf_close", "etf_spot", "etf_share_daily"))):
+                               (RAW_DIR, ("index_close", "etf_close", "etf_spot", "etf_share_daily", "heatmap_etf_price_daily"))):
             for dataset_name in datasets:
                 dropped = prune_runs(root, dataset_name, keep=RUN_RETENTION)
                 if dropped:

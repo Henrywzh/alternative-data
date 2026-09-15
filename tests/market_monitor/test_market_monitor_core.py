@@ -2873,3 +2873,54 @@ def test_optional_share_errors_are_not_counted_as_email_data_warnings():
     assert "1 个数据源请求失败" in html
     assert "2 个数据源请求失败" not in html
     assert "KeyError" not in html
+
+
+def test_market_artifact_includes_heatmap_datasets():
+    builder = _load_builder()
+    artifact, _labels = builder.build_artifact()
+    datasets = artifact["snapshot"]["datasets"]
+    assert {"etf_heatmap_returns", "etf_heatmap_flows", "heatmap_etf_price_daily"} <= datasets.keys()
+
+
+def test_optional_flow_run_cannot_make_core_artifact_healthy():
+    from market_monitor.heatmaps import build_heatmap_health
+    status = build_heatmap_health(expected=3, observed=1, latest_date="2026-09-14")
+    assert status["status"] == "Degraded"
+    assert status["coverage"] == "1/3"
+
+
+def test_heatmap_health_statuses():
+    from market_monitor.heatmaps import build_heatmap_health
+    healthy = build_heatmap_health(expected=25, observed=25, latest_date="2026-09-14")
+    assert healthy["status"] == "Healthy"
+    assert healthy["coverage"] == "25/25"
+
+    unavailable = build_heatmap_health(expected=25, observed=0, latest_date=None)
+    assert unavailable["status"] == "Unavailable"
+    assert unavailable["coverage"] == "0/25"
+    assert unavailable["latest_observation"] == "—"
+
+
+def test_pipeline_retains_heatmap_history_on_source_failure(monkeypatch):
+    import market_monitor.pipeline as pl
+
+    retained = pd.DataFrame([{"date": "2026-09-12", "ticker": "SPY", "close": 500.0}])
+    monkeypatch.setattr(
+        pl, "load_latest_normalized", lambda name: retained if name == "heatmap_etf_price_daily" else pd.DataFrame()
+    )
+    monkeypatch.setattr(
+        pl,
+        "fetch_all_raw",
+        lambda **kwargs: {
+            "index_close": pd.DataFrame(),
+            "etf_close": pd.DataFrame(),
+            "etf_spot": pd.DataFrame(),
+            "heatmap_etf_price_daily": pd.DataFrame(),
+            "_fetch_errors": [{"dataset": "heatmap_etf_price_daily", "severity": "optional", "error": "timeout"}],
+        },
+    )
+
+    results = pl.run_pipeline(write=False)
+    assert "heatmap_etf_price_daily" in results
+    assert len(results["heatmap_etf_price_daily"]) == 1
+    assert results["heatmap_etf_price_daily"].iloc[0]["ticker"] == "SPY"

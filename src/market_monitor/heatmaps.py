@@ -21,6 +21,51 @@ FLOW_CALENDAR_DAYS: dict[str, int] = {
     "3m": 90,
 }
 
+HEATMAP_CATEGORY_LABELS: dict[str, dict[str, str]] = {
+    "broad_equity": {"en": "Broad Equity", "zh": "宽基股票"},
+    "sector": {"en": "Sectors", "zh": "行业板块"},
+    "international": {"en": "International", "zh": "国际市场"},
+    "commodity": {"en": "Commodities", "zh": "大宗商品"},
+    "fixed_income": {"en": "Fixed Income", "zh": "固定收益"},
+}
+
+
+def build_heatmap_health(
+    expected: int,
+    observed: int,
+    latest_date: str | None = None,
+) -> dict[str, Any]:
+    """Build a source health dictionary for the ETF heat map data."""
+    coverage_str = f"{observed}/{expected}"
+    if expected <= 0:
+        status = "Healthy" if observed > 0 else "Unavailable"
+    elif observed == 0:
+        status = "Unavailable"
+    elif observed < expected:
+        status = "Degraded"
+    else:
+        status = "Healthy"
+
+    obs_str = str(latest_date) if latest_date and str(latest_date) != "—" else "—"
+
+    if status == "Healthy":
+        notes = f"Daily OHLCV for all {observed} heatmap ETFs."
+    elif status == "Degraded":
+        notes = f"Daily OHLCV for {observed} of {expected} heatmap ETFs."
+    else:
+        notes = "Heatmap ETF price fetch returned no rows."
+
+    return {
+        "source": "US & Cross-Asset ETF heat map prices",
+        "status": status,
+        "latest_observation": obs_str,
+        "coverage": coverage_str,
+        "expected": expected,
+        "observed": observed,
+        "records": observed,
+        "notes": notes,
+    }
+
 
 def _session_return(closes: pd.Series, sessions: int) -> float | None:
     """Return compounded percentage return over the given session window."""
@@ -84,6 +129,10 @@ def build_return_snapshot(
 
     for item in universe:
         row: dict[str, Any] = dict(item)
+        category = str(item.get("category", "")).strip()
+        if category in HEATMAP_CATEGORY_LABELS:
+            row.setdefault("category_en", HEATMAP_CATEGORY_LABELS[category]["en"])
+            row.setdefault("category_zh", HEATMAP_CATEGORY_LABELS[category]["zh"])
         ticker = str(item.get("ticker", "")).strip().upper()
         ticker_data = grouped.get(ticker)
 
@@ -248,6 +297,10 @@ def build_flow_snapshot(
 
     for item in meta_records:
         row = dict(item)
+        category = str(item.get("category", "")).strip()
+        if category in HEATMAP_CATEGORY_LABELS:
+            row.setdefault("category_en", HEATMAP_CATEGORY_LABELS[category]["en"])
+            row.setdefault("category_zh", HEATMAP_CATEGORY_LABELS[category]["zh"])
         fund_id = _normalize_fund_id(item.get("fund_id"))
         if not fund_id and "ticker" in item:
             fund_id = _normalize_fund_id(item.get("ticker"))
