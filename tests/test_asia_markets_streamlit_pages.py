@@ -32,6 +32,7 @@ def test_page_registry_has_unique_keys_paths_and_one_default() -> None:
         "overview",
         "market",
         "regime",
+        "heatmaps",
         "labour",
         "population",
         "real_estate",
@@ -48,6 +49,7 @@ def test_page_registry_has_unique_keys_paths_and_one_default() -> None:
     [
         ("market", "market"),
         ("regime", "regime"),
+        ("heatmaps", "market"),
         ("labour", "labour"),
         ("population", "population"),
         ("real_estate", "real_estate"),
@@ -168,3 +170,12 @@ def test_period_signal_compares_the_exact_prior_year_month() -> None:
     signal = latest_period_signal(frame, "date", "value")
 
     assert signal["change"] == pytest.approx(25.0)
+
+
+def test_heatmaps_is_a_lazy_market_page():
+    from am.page_registry import DEFINITION_BY_KEY
+
+    definition = DEFINITION_BY_KEY["heatmaps"]
+    assert definition.group == "markets"
+    assert definition.url_path == "heat-maps"
+    assert definition.renderer == "am.heatmaps:render_heatmaps"

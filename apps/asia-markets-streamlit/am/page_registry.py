@@ -53,6 +53,16 @@ PAGE_DEFINITIONS: tuple[PageDefinition, ...] = (
         renderer="am.regime:render_regime",
     ),
     PageDefinition(
+        "heatmaps",
+        "markets",
+        "Heat Maps",
+        "热力图",
+        "heat-maps",
+        "🟩",
+        sector_key="market",
+        renderer="am.heatmaps:render_heatmaps",
+    ),
+    PageDefinition(
         "labour",
         "hong_kong",
         "Labour Market",
