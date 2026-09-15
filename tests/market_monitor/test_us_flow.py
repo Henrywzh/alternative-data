@@ -98,3 +98,23 @@ def test_us_snapshot_sampler_fails_closed_and_reports_missing_tickers(monkeypatc
     assert frame.iloc[0]["market_cap"] == pytest.approx(450_000.0)
     assert frame.attrs["requested_tickers"] == ["SPY", "QQQ"]
     assert frame.attrs["missing_tickers"] == ["QQQ"]
+
+
+def test_us_snapshot_supports_current_yfinance_etf_quote_shape(monkeypatch) -> None:
+    class _Ticker:
+        def __init__(self, ticker: str) -> None:
+            self.fast_info = {
+                "lastPrice": 100.0,
+                "marketCap": None,
+            }
+            self.info = {
+                "sharesOutstanding": 12_000.0,
+                "regularMarketTime": 1_789_416_000,
+            }
+
+    monkeypatch.setitem(sys.modules, "yfinance", SimpleNamespace(Ticker=_Ticker))
+    frame = fetch_us_etf_size_snapshot(["SPY"])
+    assert list(frame["ticker"]) == ["SPY"]
+    assert frame.iloc[0]["last_price"] == pytest.approx(100.0)
+    assert frame.iloc[0]["market_cap"] == pytest.approx(1_200_000.0)
+    assert frame.iloc[0]["observation_date"] == "2026-09-14"

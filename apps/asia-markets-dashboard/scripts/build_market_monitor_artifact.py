@@ -63,6 +63,9 @@ from history_policy import history_window  # noqa: E402
 CHART_HISTORY_YEARS = 2
 
 
+COMMITTED_ARTIFACT_PATH = ROOT / "apps" / "asia-markets-dashboard" / ".generated" / "market-monitor-artifact.json"
+
+
 # Fields render_southbound_market_flow actually reads (KPI strip + dual-axis
 # chart). Add one here when the renderer starts needing it.
 SOUTHBOUND_ARTIFACT_COLUMNS: tuple[str, ...] = (
@@ -81,6 +84,42 @@ def _records(frame: pd.DataFrame) -> list[dict[str, Any]]:
         if pd.api.types.is_datetime64_any_dtype(out[col]):
             out[col] = out[col].dt.strftime("%Y-%m-%d")
     return json.loads(out.to_json(orient="records", date_format="iso", default_handler=str))
+
+
+def _load_committed_artifact_dataset(dataset_id: str) -> pd.DataFrame:
+    """Read a previously published dataset for a cache-miss fallback.
+
+    ``etf_price_daily`` and ``etf_fund_activity_daily`` are deliberately
+    ignored by Git because the daily pipeline recreates their complete
+    histories.  A clean checkout can nevertheless run the artifact builder
+    before that pipeline (or after an upstream fetch failure).  In that case
+    dropping the rows from the already-published artifact would erase usable
+    Streamlit data.  This helper is intentionally read-only and returns an
+    empty frame for malformed/missing artifacts; the caller records any use
+    as a degraded, stale fallback.
+    """
+    try:
+        payload = json.loads(COMMITTED_ARTIFACT_PATH.read_text(encoding="utf-8"))
+        rows = payload.get("snapshot", {}).get("datasets", {}).get(dataset_id, [])
+    except (OSError, TypeError, ValueError, AttributeError):
+        return pd.DataFrame()
+    if not isinstance(rows, list) or not rows or not all(isinstance(row, dict) for row in rows):
+        return pd.DataFrame()
+    return pd.DataFrame(rows)
+
+
+def _usable_artifact_dataset(
+    frame: pd.DataFrame | None,
+    required_columns: set[str],
+    date_column: str,
+) -> tuple[bool, str | None]:
+    """Validate the minimum shape needed before retaining a published dataset."""
+    if frame is None or frame.empty or not required_columns.issubset(frame.columns):
+        return False, None
+    dates = pd.to_datetime(frame[date_column], errors="coerce").dropna()
+    if dates.empty:
+        return False, None
+    return True, dates.max().strftime("%Y-%m-%d")
 
 
 def _chart_series(
@@ -388,6 +427,77 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     us_flow, us_flow_lineage = load_latest_with_lineage(
         DERIVED_DIR, "us_etf_flow_proxy_daily", scope="full"
     )
+    artifact_fallbacks: list[dict[str, Any]] = []
+
+    # These two histories are intentionally not versioned as parquet (see
+    # .gitignore): the close pipeline recreates them and the published JSON
+    # carries a bounded projection.  A builder-only invocation on a clean
+    # checkout must not turn a temporary cache miss into an empty Streamlit
+    # page, so retain the last published rows until the source pipeline has
+    # produced a replacement.
+    if not _usable_artifact_dataset(etf_px, {"date", "close"}, "date")[0]:
+        fallback = _load_committed_artifact_dataset("etf_price_daily_tail")
+        usable, fallback_latest = _usable_artifact_dataset(
+            fallback,
+            {"date", "ticker", "close"},
+            "date",
+        )
+        if usable:
+            fallback = fallback.copy()
+            fallback["fund_id"] = (
+                fallback["ticker"].astype(str).str.strip().str.split(".").str[0].str.zfill(6)
+            )
+            etf_px = fallback
+            etf_px_lineage = None
+            artifact_fallbacks.append(
+                {
+                    "dataset": "etf_price_daily_tail",
+                    "rows": int(len(fallback)),
+                    "latest": fallback_latest,
+                }
+            )
+    if not _usable_artifact_dataset(premium_hist, {"date", "premium_pct"}, "date")[0]:
+        fallback = _load_committed_artifact_dataset("premium_history")
+        usable, fallback_latest = _usable_artifact_dataset(
+            fallback,
+            {"date", "ticker", "premium_pct"},
+            "date",
+        )
+        if usable:
+            fallback = fallback.copy()
+            fallback["fund_id"] = (
+                fallback["ticker"].astype(str).str.strip().str.split(".").str[0].str.zfill(6)
+            )
+            premium_hist = fallback
+            premium_lineage = None
+            artifact_fallbacks.append(
+                {
+                    "dataset": "premium_history",
+                    "rows": int(len(fallback)),
+                    "latest": fallback_latest,
+                }
+            )
+    if not _usable_artifact_dataset(
+        activity,
+        {"observation_date", "fund_id"},
+        "observation_date",
+    )[0]:
+        fallback = _load_committed_artifact_dataset("etf_fund_activity_daily")
+        usable, fallback_latest = _usable_artifact_dataset(
+            fallback,
+            {"observation_date", "fund_id"},
+            "observation_date",
+        )
+        if usable:
+            activity = fallback
+            activity_lineage = None
+            artifact_fallbacks.append(
+                {
+                    "dataset": "etf_fund_activity_daily",
+                    "rows": int(len(fallback)),
+                    "latest": fallback_latest,
+                }
+            )
     # Reapply source normalization to persisted snapshots.  This repairs old
     # local parquet written before the zero-as-missing rule without requiring a
     # fresh upstream call just to rebuild the portable artifact.
@@ -506,7 +616,26 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     china_flow_snapshot = build_flow_snapshot(activity, meta_with_cat)
     us_flow_snapshot = build_flow_snapshot(us_flow, us_meta)
     flow_frames = [frame for frame in (china_flow_snapshot, us_flow_snapshot) if frame is not None and not frame.empty]
-    flow_snapshot = pd.concat(flow_frames, ignore_index=True) if flow_frames else pd.DataFrame()
+    if flow_frames:
+        # Both cohorts have intentionally typed-empty fields (for example,
+        # US rows have no published NAV).  Make those all-null columns
+        # explicit before concatenation so pandas does not infer future
+        # dtypes differently or emit an all-NA concat warning.
+        flow_columns = list(dict.fromkeys(column for frame in flow_frames for column in frame.columns))
+        aligned_flow_frames = []
+        for frame in flow_frames:
+            aligned = frame.reindex(columns=flow_columns).copy()
+            for column in aligned.columns:
+                if aligned[column].isna().all():
+                    aligned[column] = aligned[column].astype("object")
+            # Keep the two cohort frames on one explicit dtype contract.
+            # Casting the complete aligned frame avoids pandas' future
+            # all-NA concat inference warning when one cohort has a field
+            # that is intentionally absent (for example, US published NAV).
+            aligned_flow_frames.append(aligned.astype("object"))
+        flow_snapshot = pd.concat(aligned_flow_frames, ignore_index=True)
+    else:
+        flow_snapshot = pd.DataFrame()
 
     investable_ids = [spec["exposure_id"] for spec in investable_exposures()]
     activity_records = _activity_records(activity)
@@ -948,6 +1077,27 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
             "notes": us_flow_note,
         }
     )
+    if artifact_fallbacks:
+        fallback_latest = max(
+            (str(item.get("latest")) for item in artifact_fallbacks if item.get("latest")),
+            default="—",
+        )
+        fallback_detail = "; ".join(
+            f"{item['dataset']} ({item['rows']} rows through {item['latest']})"
+            for item in artifact_fallbacks
+        )
+        source_health_rows.append(
+            {
+                "source": "Committed market-monitor artifact fallback",
+                "status": "Degraded",
+                "latest_observation": fallback_latest,
+                "records": int(sum(item["rows"] for item in artifact_fallbacks)),
+                "notes": (
+                    "Underlying normalized cache was unavailable; retained the last published rows. "
+                    f"Stale until the source pipeline replaces: {fallback_detail}."
+                ),
+            }
+        )
     datasets["source_health"] = _apply_daily_source_freshness(
         source_health_rows,
         daily_close_by_source,
@@ -1177,7 +1327,7 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         }
     )
 
-    overall_healthy = overall_healthy and coverage_ok and not fetch_errors
+    overall_healthy = overall_healthy and coverage_ok and not fetch_errors and not artifact_fallbacks
 
     snapshot_id = hashlib.sha1(json.dumps(datasets, sort_keys=True, default=str).encode()).hexdigest()[:16]
     artifact: dict[str, Any] = {

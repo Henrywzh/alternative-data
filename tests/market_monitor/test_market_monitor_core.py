@@ -2882,6 +2882,51 @@ def test_market_artifact_includes_heatmap_datasets():
     assert {"etf_heatmap_returns", "etf_heatmap_flows", "heatmap_etf_price_daily"} <= datasets.keys()
 
 
+def test_artifact_builder_retains_published_etf_history_when_cache_is_missing(monkeypatch):
+    """A clean builder-only checkout must not erase the existing ETF Monitor."""
+    builder = _load_builder()
+    original_loader = builder.load_latest_with_lineage
+
+    def missing_ignored_caches(root, dataset_name, scope="full"):
+        if dataset_name in {"etf_price_daily", "premium_history", "etf_fund_activity_daily"}:
+            return pd.DataFrame(), None
+        return original_loader(root, dataset_name, scope=scope)
+
+    monkeypatch.setattr(builder, "load_latest_with_lineage", missing_ignored_caches)
+    artifact, status = builder.build_artifact()
+    datasets = artifact["snapshot"]["datasets"]
+
+    assert datasets["etf_price_daily_tail"]
+    assert datasets["premium_history"]
+    assert datasets["etf_fund_activity_daily"]
+    assert status["overall_status"] == "Degraded"
+    assert any(
+        row["source"] == "Committed market-monitor artifact fallback"
+        and row["status"] == "Degraded"
+        for row in status["sources"]
+    )
+
+
+def test_artifact_builder_rejects_malformed_legacy_cache(monkeypatch):
+    """A non-empty but unusable cache must not erase published ETF views."""
+    builder = _load_builder()
+    original_loader = builder.load_latest_with_lineage
+
+    def malformed_ignored_caches(root, dataset_name, scope="full"):
+        if dataset_name in {"etf_price_daily", "premium_history", "etf_fund_activity_daily"}:
+            return pd.DataFrame({"corrupt": [1]}), {"run_id": "bad-cache"}
+        return original_loader(root, dataset_name, scope=scope)
+
+    monkeypatch.setattr(builder, "load_latest_with_lineage", malformed_ignored_caches)
+    artifact, status = builder.build_artifact()
+    datasets = artifact["snapshot"]["datasets"]
+
+    assert datasets["etf_price_daily_tail"]
+    assert datasets["premium_history"]
+    assert datasets["etf_fund_activity_daily"]
+    assert status["overall_status"] == "Degraded"
+
+
 def test_optional_flow_run_cannot_make_core_artifact_healthy():
     from market_monitor.heatmaps import build_heatmap_health
     status = build_heatmap_health(expected=3, observed=1, latest_date="2026-09-14")

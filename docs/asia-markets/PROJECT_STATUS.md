@@ -666,15 +666,15 @@ replacement for the operating manual or generated source-status JSON.
   ten-year regional detail window to stay under its per-dataset row limit.
 - Streamlit is implemented as a private research terminal. In addition to
   the Hong Kong sector pages it now has the Streamlit-native Index & ETF
-  Allocation Monitor. Its flow is `src/market_monitor` sources -> immutable
-  normalized/derived Parquet -> `market-monitor-artifact*.json` -> Plotly
-  views. The monitor currently covers 11 investable exposures and 29 ETF
-  wrappers, with source-declared Sina/Sina-HK/CSI/Yahoo routing, two-year ETF
-  price and premium history, RSI/MA/drawdown, absolute entry status versus
-  peer rank, and 12 relative-strength pair histories. The artifact is
-  verified as ready at commit `9a096149`; 71 market-monitor tests and 64
-  Streamlit/wiring/history tests passed in the 2026-08-21 review. Do not
-  treat those counts as a permanent freshness guarantee.
+  Allocation Monitor and a separate Heat Maps page. Its flow is
+  `src/market_monitor` sources -> immutable normalized/derived Parquet ->
+  `market-monitor-artifact*.json` -> Plotly views. The monitor covers the
+  source-declared index/wrapper universe; Heat Maps adds 28 cross-asset US ETF
+  rows across broad equity, sectors, international markets, commodities and
+  fixed income, with 1D/1W/1M/3M/YTD/1Y performance, validated China flow,
+  optional local US market-cap flow proxy and ETF price/SMA/flow detail. This
+  is Streamlit-only and does not enter the Cloudflare roster. Do not treat
+  generated row counts or freshness as a permanent guarantee.
 - The market monitor now has an optional ETF fund-activity pilot for tracked
   A-share wrappers. It stores official SSE/SZSE published share counts in
   separate run-scoped raw/normalized datasets and derives a CNY flow only from
@@ -691,6 +691,12 @@ replacement for the operating manual or generated source-status JSON.
   health should use its own latest observation date, wrapper table columns
   need fuller Chinese localization, and historical premium z-score/verified
   NAV-based AUM/tracking difference remain V1.1.
+- The Heat Maps US flow proxy is intentionally local-only: schedule
+  `market-monitor --sample-us-etf-flow` after the US close, then rebuild the
+  English and Chinese artifacts. It must remain quiet when no newer provider
+  session exists, and its `validated_proxy` rows must not be described as
+  issuer-reported fund flow. The first snapshot establishes size only; the
+  second later session is the earliest proxy-flow observation.
 - The crypto page keeps the long-run monthly Fear & Greed context plus the
   daily score and a derived trailing seven-calendar-day average for
   interactive research views. It also exposes the curated Wikimedia crypto

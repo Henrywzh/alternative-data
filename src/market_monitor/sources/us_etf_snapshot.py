@@ -59,12 +59,83 @@ def fetch_us_etf_size_snapshot(tickers: Sequence[str]) -> pd.DataFrame:
     missing: list[str] = []
     for ticker in requested:
         try:
-            info = yf.Ticker(ticker).fast_info
-            price = pd.to_numeric(_value(info, "last_price", "regularMarketPrice"), errors="coerce")
-            market_cap = pd.to_numeric(_value(info, "market_cap", "marketCap"), errors="coerce")
-            observation_date = _observation_date(
-                _value(info, "last_trade_time", "regularMarketTime", "last_trade_date")
+            ticker_obj = yf.Ticker(ticker)
+            fast_info = ticker_obj.fast_info
+            price = pd.to_numeric(
+                _value(fast_info, "last_price", "lastPrice", "regularMarketPrice"),
+                errors="coerce",
             )
+            market_cap = pd.to_numeric(
+                _value(fast_info, "market_cap", "marketCap"),
+                errors="coerce",
+            )
+            observation_value = _value(
+                fast_info,
+                "last_trade_time",
+                "lastTradeTime",
+                "regularMarketTime",
+                "last_trade_date",
+            )
+
+            # yfinance's current FastInfo object does not expose an ETF
+            # market cap or trade timestamp consistently.  Fill those fields
+            # from the ordinary quote dictionary only when needed; this keeps
+            # the fast path cheap while supporting the provider's real
+            # camelCase ETF fields.
+            quote_info: Any | None = None
+            if pd.isna(price) or pd.isna(market_cap) or observation_value is None:
+                try:
+                    quote_info = ticker_obj.info
+                except Exception:  # noqa: BLE001 - fail closed below
+                    quote_info = None
+            if quote_info is not None:
+                if pd.isna(price):
+                    price = pd.to_numeric(
+                        _value(quote_info, "regularMarketPrice", "lastPrice"),
+                        errors="coerce",
+                    )
+                if pd.isna(market_cap):
+                    market_cap = pd.to_numeric(
+                        _value(quote_info, "marketCap", "market_cap"),
+                        errors="coerce",
+                    )
+                if observation_value is None:
+                    observation_value = _value(
+                        quote_info,
+                        "regularMarketTime",
+                        "lastTradeTime",
+                        "last_trade_time",
+                    )
+
+                # ETFs often publish shares outstanding but no marketCap in
+                # the quote endpoint.  Price × shares is an explicit size
+                # proxy and is preferable to dropping an otherwise valid
+                # post-close observation.
+                if pd.isna(market_cap):
+                    shares_outstanding = pd.to_numeric(
+                        _value(
+                            quote_info,
+                            "sharesOutstanding",
+                            "shares_outstanding",
+                            "shares",
+                        ),
+                        errors="coerce",
+                    )
+                    if pd.notna(price) and pd.notna(shares_outstanding):
+                        market_cap = price * shares_outstanding
+
+            # Last-trade timestamps are absent from some yfinance quote
+            # responses.  A recent daily history index is an allowed provider
+            # session-date fallback; if it is unavailable, omit the ticker
+            # rather than using the local retrieval date as an observation.
+            if observation_value is None:
+                try:
+                    history = ticker_obj.history(period="5d", interval="1d", auto_adjust=False)
+                    if history is not None and not history.empty:
+                        observation_value = history.index[-1]
+                except Exception:  # noqa: BLE001 - fail closed below
+                    observation_value = None
+            observation_date = _observation_date(observation_value)
             if (
                 pd.isna(price)
                 or pd.isna(market_cap)
