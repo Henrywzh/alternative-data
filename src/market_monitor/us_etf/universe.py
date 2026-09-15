@@ -271,3 +271,52 @@ US_SUB_INDUSTRY_ETFS: list[dict[str, Any]] = [
 
 ALL_US_ETFS: list[dict[str, Any]] = US_SECTOR_ETFS + US_SUB_INDUSTRY_ETFS
 US_ETF_TICKERS: list[str] = [item["ticker"] for item in ALL_US_ETFS]
+
+# Curated Cross-Asset ETF Heat-Map Universe
+HEATMAP_BROAD_EQUITY_ETFS: list[dict[str, Any]] = [
+    {"ticker": "SPY", "name_en": "SPDR S&P 500 ETF", "name_zh": "标普500 ETF", "category": "broad_equity", "currency": "USD"},
+    {"ticker": "IVV", "name_en": "iShares Core S&P 500 ETF", "name_zh": "iShares 标普500 ETF", "category": "broad_equity", "currency": "USD"},
+    {"ticker": "QQQ", "name_en": "Invesco QQQ", "name_zh": "纳斯达克100 ETF", "category": "broad_equity", "currency": "USD"},
+    {"ticker": "DIA", "name_en": "SPDR Dow Jones Industrial Average ETF Trust", "name_zh": "道琼斯工业平均指数ETF", "category": "broad_equity", "currency": "USD"},
+    {"ticker": "RSP", "name_en": "Invesco S&P 500 Equal Weight ETF", "name_zh": "标普500等权重ETF", "category": "broad_equity", "currency": "USD"},
+    {"ticker": "MDY", "name_en": "SPDR S&P MidCap 400 ETF Trust", "name_zh": "标普中盘400 ETF", "category": "broad_equity", "currency": "USD"},
+    {"ticker": "IWM", "name_en": "iShares Russell 2000 ETF", "name_zh": "罗素2000小盘股ETF", "category": "broad_equity", "currency": "USD"},
+]
+
+HEATMAP_SECTOR_ETFS: list[dict[str, Any]] = [
+    {
+        **sector_etf,
+        "category": "sector",
+        "currency": "USD",
+    }
+    for sector_etf in US_SECTOR_ETFS
+]
+
+HEATMAP_INTERNATIONAL_ETFS: list[dict[str, Any]] = [
+    {"ticker": "EFA", "name_en": "iShares MSCI EAFE ETF", "name_zh": "发达市场（除美加）ETF", "category": "international", "currency": "USD"},
+    {"ticker": "EEM", "name_en": "iShares MSCI Emerging Markets ETF", "name_zh": "新兴市场ETF", "category": "international", "currency": "USD"},
+]
+
+HEATMAP_COMMODITY_ETFS: list[dict[str, Any]] = [
+    {"ticker": "GLD", "name_en": "SPDR Gold Shares", "name_zh": "黄金ETF", "category": "commodity", "currency": "USD"},
+    {"ticker": "SLV", "name_en": "iShares Silver Trust", "name_zh": "白银ETF", "category": "commodity", "currency": "USD"},
+    {"ticker": "USO", "name_en": "United States Oil Fund", "name_zh": "美国原油基金ETF", "category": "commodity", "currency": "USD"},
+]
+
+HEATMAP_FIXED_INCOME_ETFS: list[dict[str, Any]] = [
+    {"ticker": "AGG", "name_en": "iShares Core U.S. Aggregate Bond ETF", "name_zh": "美国综合债券ETF", "category": "fixed_income", "currency": "USD"},
+    {"ticker": "SHY", "name_en": "iShares 1-3 Year Treasury Bond ETF", "name_zh": "美国1-3年期国债ETF", "category": "fixed_income", "currency": "USD"},
+    {"ticker": "IEF", "name_en": "iShares 7-10 Year Treasury Bond ETF", "name_zh": "美国7-10年期国债ETF", "category": "fixed_income", "currency": "USD"},
+    {"ticker": "LQD", "name_en": "iShares iBoxx $ Investment Grade Corporate Bond ETF", "name_zh": "投资级公司债ETF", "category": "fixed_income", "currency": "USD"},
+    {"ticker": "HYG", "name_en": "iShares iBoxx $ High Yield Corporate Bond ETF", "name_zh": "高收益公司债ETF", "category": "fixed_income", "currency": "USD"},
+]
+
+HEATMAP_ETFS: list[dict[str, Any]] = (
+    HEATMAP_BROAD_EQUITY_ETFS
+    + HEATMAP_SECTOR_ETFS
+    + HEATMAP_INTERNATIONAL_ETFS
+    + HEATMAP_COMMODITY_ETFS
+    + HEATMAP_FIXED_INCOME_ETFS
+)
+
+HEATMAP_ETF_TICKERS: list[str] = [item["ticker"] for item in HEATMAP_ETFS]
