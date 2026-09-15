@@ -11,7 +11,7 @@ CME FedWatch.
 ## Data flow
 
 ```text
-FRED + Atlanta Fed + Polymarket + CFTC
+FRED + Atlanta Fed + Polymarket + CFTC + CNN Fear & Greed + Yahoo commodities + PCE inflation
                   |
           normalized Parquet
                   |
@@ -27,8 +27,7 @@ The regime pipeline does not create a second price database.
 
 ## Decision-first presentation
 
-The Streamlit page reads one run-scoped artifact and presents it in this
-order:
+The Streamlit page reads one run-scoped artifact. A shared decision header stays above three subtabs — Equity, Fixed income and Macro — in this order:
 
 1. current aggregate state followed by a four-reading daily brief;
 2. the persisted alert decision, new transition count, confirmed-domain
@@ -38,13 +37,19 @@ order:
    progress, freshness and the declared rule;
 5. threshold history with state-transition markers;
 6. separate Atlanta Fed and Polymarket policy-expectation panels;
-7. same-date credit/VIX z-score evidence, with raw levels behind an
+7. raw CBOE VIX history beside CNN Business US-equity Fear & Greed;
+8. CNN Fear & Greed component cards: a view toggle between a 0-100
+   percentile proxy drawn over the same five colour bands as the
+   composite chart (CNN official latest score shown as a diamond) and
+   the raw native-unit inputs. The feed's historical per-day rating
+   field is permanently stale for most components and is not used;
+9. same-date credit/VIX z-score evidence, with raw levels behind an
    expander;
-8. CFTC latest positioning plus contract-level historical percentile;
-9. cross-asset prices rebased to 100 plus exact 1/5/20-session returns;
-10. historical signal episodes, post-event reactions and threshold
-   sensitivity;
-11. recent true state transitions and source health.
+10. CFTC latest positioning plus contract-level historical percentile;
+11. cross-asset prices rebased to 100 plus exact 1/5/20-session returns;
+12. historical signal episodes, post-event reactions and threshold
+    sensitivity;
+13. recent true state transitions and source health.
 
 The artifact owns the calculations. Streamlit only filters, localizes and
 renders these presentation datasets:
@@ -55,6 +60,9 @@ renders these presentation datasets:
 - `condition_state_history`
 - `state_transition_history`
 - `credit_vix_signal_history`
+- `cnn_fear_greed_history`
+- `macro_commodity_returns`
+- `inflation_release_panel`
 - `cot_history`
 - `cross_asset_returns`
 - `signal_episodes`
@@ -80,6 +88,13 @@ renders these presentation datasets:
 - CFTC Commitments of Traders is weekly. Financial futures use
   leveraged-money positioning; commodity futures use managed-money
   positioning.
+- CNN Business Fear & Greed is the US-equity sentiment gauge. It is
+  not Alternative.me crypto Fear & Greed. The public graphdata feed
+  currently publishes about one year of history.
+- Macro commodities are Yahoo Finance front-month futures and the URA
+  ETF, not LBMA/EIA spot. Inflation uses FRED PCE and Dallas Fed
+  trimmed-mean monthly prints; headline/core PCE are shown as YoY
+  percent changes of the price index.
 
 ## State and freshness rules
 

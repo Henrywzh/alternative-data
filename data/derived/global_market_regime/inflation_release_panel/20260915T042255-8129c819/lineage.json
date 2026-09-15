@@ -1,0 +1,21 @@
+{
+  "run_scope": "full",
+  "retrieved_at": "2026-09-15T04:22:55.431129Z",
+  "dataset_name": "inflation_release_panel",
+  "run_id": "20260915T042255-8129c819",
+  "created_at": "2026-09-15T04:23:41.388897Z",
+  "records": 84,
+  "columns": [
+    "indicator_id",
+    "label_en",
+    "label_zh",
+    "unit",
+    "display",
+    "date",
+    "period",
+    "value",
+    "source_value",
+    "series_id"
+  ],
+  "sha256": "2246d946b36dda65c3685aa389ce442e1a1ca730946a5810c227f22997aa6282"
+}

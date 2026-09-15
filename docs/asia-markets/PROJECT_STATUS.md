@@ -2033,7 +2033,9 @@ regressed, not never-fetched:
   datasets regress, so the guard restored the entire previous artifact,
   preserving the regressed May version. The guard also preserved the
   crypto artifact the same day (btc_price_history 109->0, Binance 451
-  from CI IPs).
+  from CI IPs). Local Mac fetch of Binance remains 200; CI should reuse
+  data/normalized/hk_stablecoin_crypto/btc_price_history.parquet instead of
+  publishing an empty series.
 - Verified 2026-08-21: the project fetcher currently returns 115 rows
   with latest period 2026-06 from this machine.
 
@@ -2099,7 +2101,11 @@ Its daily workflow runs at 22:30 UTC on weekdays, after the US cash
 close in both EST and EDT. It monitors persistent Brent and US 10-year
 thresholds, Atlanta Fed three-month-average SOFR probabilities,
 Polymarket next-meeting hike/hold/cut token histories, shared-date
-high-yield-OAS/VIX stress and weekly CFTC positioning.
+high-yield-OAS/VIX stress, weekly CFTC positioning, the raw CBOE VIX
+level, CNN Business US-equity Fear & Greed (not Alternative.me
+crypto sentiment; public history is about one year), Yahoo Finance
+commodity futures/ETF proxies, and FRED PCE inflation prints. The
+Streamlit page now splits into Equity, Fixed income and Macro subtabs.
 
 All persisted datasets in an artifact must share one full-run ID.
 Stale conditions remain visible with their own freshness labels but are

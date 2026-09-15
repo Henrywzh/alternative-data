@@ -17,7 +17,16 @@ import pandas as pd
 from .config import (
     CFTC_DISAGG_CONTRACTS,
     CFTC_TFF_CONTRACTS,
+    CNN_FEAR_GREED_SERIES_ID,
+    CNN_FEAR_GREED_SOURCE,
     COT_STALE_AFTER_CALENDAR_DAYS,
+    INFLATION_SERIES,
+    INFLATION_SERIES_ID,
+    INFLATION_SOURCE,
+    INFLATION_STALE_AFTER_CALENDAR_DAYS,
+    MACRO_COMMODITY_ASSETS,
+    MACRO_COMMODITY_SERIES_ID,
+    MACRO_COMMODITY_SOURCE,
     CONDITION_RULES,
     CROSS_ASSET_EXPOSURES,
     SECTOR_LEADERSHIP_BENCHMARK,
@@ -39,6 +48,8 @@ from .prediction_markets import (
     parse_fomc_snapshot,
 )
 from .signals import build_indicator_states, latest_state_row, overall_state
+from .cnn_fear_greed import fetch_cnn_fear_greed
+from .macro_sources import fetch_inflation_observations, fetch_macro_commodity_prices
 from .sources import (
     fetch_atlanta_mpt,
     fetch_fred_observations,
@@ -167,6 +178,12 @@ def source_health_rows(
     fomc: pd.DataFrame | None = None,
     fomc_error: str | None = None,
     cross_asset: pd.DataFrame | None = None,
+    cnn_fear_greed: pd.DataFrame | None = None,
+    cnn_error: str | None = None,
+    commodities: pd.DataFrame | None = None,
+    commodity_errors: dict[str, str] | None = None,
+    inflation: pd.DataFrame | None = None,
+    inflation_errors: dict[str, str] | None = None,
 ) -> pd.DataFrame:
     rows: list[dict[str, Any]] = []
     for spec in FRED_SERIES:
@@ -357,6 +374,153 @@ def source_health_rows(
             "notes": asset_notes,
         }
     )
+    cnn_frame = cnn_fear_greed.copy() if cnn_fear_greed is not None else pd.DataFrame()
+    if not cnn_frame.empty and "date" in cnn_frame.columns:
+        cnn_frame["date"] = pd.to_datetime(cnn_frame["date"], errors="coerce")
+        if "component_id" in cnn_frame.columns:
+            composite = cnn_frame[cnn_frame["component_id"].astype(str).eq("composite")]
+        else:
+            composite = cnn_frame
+        cnn_latest = composite["date"].max() if not composite.empty else cnn_frame["date"].max()
+        cnn_records = int(len(composite)) if not composite.empty else int(len(cnn_frame))
+    else:
+        cnn_latest = None
+        cnn_records = 0
+    if cnn_error:
+        cnn_status, cnn_notes = "Unavailable", cnn_error
+        cnn_records = 0
+    elif cnn_fear_greed is None or cnn_fear_greed.empty or cnn_latest is None:
+        cnn_status, cnn_notes, cnn_records = (
+            "Unavailable",
+            "CNN Fear & Greed returned no rows.",
+            0,
+        )
+    else:
+        freshness = classify_freshness(cnn_latest, now=now)
+        cnn_status = (
+            "Healthy"
+            if freshness in FRESH_CONDITION_STATUSES
+            else ("Degraded" if freshness == "Stale" else "Unavailable")
+        )
+        cnn_notes = (
+            "CNN Business US-equity Fear & Greed through "
+            f"{_iso(cnn_latest)}; not Alternative.me crypto sentiment."
+        )
+    rows.append(
+        {
+            "source": CNN_FEAR_GREED_SOURCE,
+            "series_id": CNN_FEAR_GREED_SERIES_ID,
+            "status": cnn_status,
+            "latest_observation": _iso(cnn_latest) or "—",
+            "records": cnn_records,
+            "notes": cnn_notes,
+        }
+    )
+    expected_assets = {str(spec["asset_id"]) for spec in MACRO_COMMODITY_ASSETS}
+    commodity_errors = commodity_errors or {}
+    commodity_frame = commodities.copy() if commodities is not None else pd.DataFrame()
+    if not commodity_frame.empty and {"date", "asset_id"}.issubset(commodity_frame.columns):
+        commodity_frame["date"] = pd.to_datetime(commodity_frame["date"], errors="coerce")
+        latest_by_asset = commodity_frame.dropna(subset=["date", "asset_id"]).groupby("asset_id")["date"].max()
+        observed_assets = {str(value) for value in latest_by_asset.index}
+        commodity_latest = latest_by_asset.max() if not latest_by_asset.empty else None
+        stale_assets = {
+            str(asset_id)
+            for asset_id, latest_date in latest_by_asset.items()
+            if classify_freshness(latest_date, now=now) not in FRESH_CONDITION_STATUSES
+        }
+        commodity_records = int(len(commodity_frame))
+    else:
+        observed_assets = set()
+        commodity_latest = None
+        stale_assets = set()
+        commodity_records = 0
+    if commodity_errors and not observed_assets:
+        commodity_status = "Unavailable"
+        commodity_notes = "; ".join(f"{key}: {value}" for key, value in sorted(commodity_errors.items())[:4])
+    elif not observed_assets:
+        commodity_status = "Unavailable"
+        commodity_notes = "Commodity proxies returned no rows."
+    else:
+        commodity_status = (
+            "Healthy"
+            if expected_assets <= observed_assets and not stale_assets and not commodity_errors
+            else "Degraded"
+        )
+        commodity_notes = (
+            "Yahoo Finance futures/ETF proxies through "
+            f"{_iso(commodity_latest)}; "
+            f"{len(observed_assets & expected_assets)}/{len(expected_assets)} assets observed."
+        )
+        if stale_assets:
+            commodity_notes += " Stale: " + ", ".join(sorted(stale_assets)) + "."
+        if commodity_errors:
+            commodity_notes += " Errors: " + ", ".join(sorted(commodity_errors)) + "."
+    rows.append(
+        {
+            "source": MACRO_COMMODITY_SOURCE,
+            "series_id": MACRO_COMMODITY_SERIES_ID,
+            "status": commodity_status,
+            "latest_observation": _iso(commodity_latest) or "—",
+            "records": commodity_records,
+            "notes": commodity_notes,
+        }
+    )
+    expected_inflation = {str(spec["series_id"]) for spec in INFLATION_SERIES}
+    inflation_errors = inflation_errors or {}
+    inflation_frame = inflation.copy() if inflation is not None else pd.DataFrame()
+    if not inflation_frame.empty and {"date", "series_id"}.issubset(inflation_frame.columns):
+        inflation_frame["date"] = pd.to_datetime(inflation_frame["date"], errors="coerce")
+        latest_by_series = inflation_frame.dropna(subset=["date", "series_id"]).groupby("series_id")["date"].max()
+        observed_inflation = {str(value) for value in latest_by_series.index}
+        inflation_latest = latest_by_series.max() if not latest_by_series.empty else None
+        stale_inflation = {
+            str(series_id)
+            for series_id, latest_date in latest_by_series.items()
+            if classify_freshness(
+                latest_date,
+                now=now,
+                stale_after=INFLATION_STALE_AFTER_CALENDAR_DAYS,
+            )
+            not in FRESH_CONDITION_STATUSES
+        }
+        inflation_records = int(len(inflation_frame))
+    else:
+        observed_inflation = set()
+        inflation_latest = None
+        stale_inflation = set()
+        inflation_records = 0
+    if inflation_errors and not observed_inflation:
+        inflation_status = "Unavailable"
+        inflation_notes = "; ".join(f"{key}: {value}" for key, value in sorted(inflation_errors.items())[:4])
+    elif not observed_inflation:
+        inflation_status = "Unavailable"
+        inflation_notes = "Inflation panel returned no rows."
+    else:
+        inflation_status = (
+            "Healthy"
+            if expected_inflation <= observed_inflation and not stale_inflation and not inflation_errors
+            else "Degraded"
+        )
+        inflation_notes = (
+            "FRED PCE / Dallas Fed trimmed-mean prints through "
+            f"{_iso(inflation_latest)}; "
+            f"{len(observed_inflation & expected_inflation)}/{len(expected_inflation)} series observed."
+        )
+        if stale_inflation:
+            inflation_notes += " Stale: " + ", ".join(sorted(stale_inflation)) + "."
+        if inflation_errors:
+            inflation_notes += " Errors: " + ", ".join(sorted(inflation_errors)) + "."
+    rows.append(
+        {
+            "source": INFLATION_SOURCE,
+            "series_id": INFLATION_SERIES_ID,
+            "status": inflation_status,
+            "latest_observation": _iso(inflation_latest) or "—",
+            "records": inflation_records,
+            "notes": inflation_notes,
+        }
+    )
     return pd.DataFrame(rows)
 
 
@@ -403,6 +567,9 @@ def run_pipeline(
     mpt_frame: pd.DataFrame | None = None,
     cot_frame: pd.DataFrame | None = None,
     fomc_history_frame: pd.DataFrame | None = None,
+    cnn_fear_greed_frame: pd.DataFrame | None = None,
+    commodity_frame: pd.DataFrame | None = None,
+    inflation_frame: pd.DataFrame | None = None,
     skip_external: bool = False,
     now: datetime | None = None,
 ) -> dict[str, Any]:
@@ -435,8 +602,14 @@ def run_pipeline(
     )
     cot_error: str | None = None
     fomc_error: str | None = None
+    cnn_error: str | None = None
+    commodity_errors: dict[str, str] = {}
+    inflation_errors: dict[str, str] = {}
     cot_history = cot_frame.copy() if cot_frame is not None else pd.DataFrame()
     fomc_history = fomc_history_frame.copy() if fomc_history_frame is not None else pd.DataFrame()
+    cnn_fear_greed = (
+        cnn_fear_greed_frame.copy() if cnn_fear_greed_frame is not None else pd.DataFrame()
+    )
     fomc_snapshot: dict[str, Any] | None = None
     if cot_frame is None and not skip_external:
         try:
@@ -492,6 +665,31 @@ def run_pipeline(
     if not fomc_history.empty:
         states["fomc_hike"] = classify_fomc_states(fomc_history)
 
+    if cnn_fear_greed_frame is None and not skip_external:
+        try:
+            cnn_fear_greed, _payload = fetch_cnn_fear_greed()
+        except Exception as exc:
+            cnn_error = safe_error_message(exc)
+            cnn_fear_greed = pd.DataFrame()
+    elif cnn_fear_greed_frame is None:
+        cnn_fear_greed = pd.DataFrame()
+    commodities = commodity_frame.copy() if commodity_frame is not None else pd.DataFrame()
+    inflation = inflation_frame.copy() if inflation_frame is not None else pd.DataFrame()
+    if commodity_frame is None and not skip_external:
+        try:
+            commodities, commodity_errors = fetch_macro_commodity_prices()
+        except Exception as exc:
+            commodity_errors = {"macro_commodities": safe_error_message(exc)}
+            commodities = pd.DataFrame()
+    if inflation_frame is None and not skip_external:
+        try:
+            inflation, inflation_errors = fetch_inflation_observations()
+        except Exception as exc:
+            inflation_errors = {"inflation_panel": safe_error_message(exc)}
+            inflation = pd.DataFrame()
+    from .presentation import build_inflation_release_panel, build_macro_commodity_returns
+    commodity_returns = build_macro_commodity_returns(commodities)
+    inflation_panel = build_inflation_release_panel(inflation)
     snapshot = latest_condition_snapshot(states, now=now)
     if fomc_snapshot and not snapshot.empty:
         mask = snapshot["indicator_id"].eq("fomc_hike")
@@ -517,6 +715,12 @@ def run_pipeline(
         fomc=fomc_history,
         fomc_error=fomc_error,
         cross_asset=cross_asset,
+        cnn_fear_greed=cnn_fear_greed,
+        cnn_error=cnn_error,
+        commodities=commodities,
+        commodity_errors=commodity_errors,
+        inflation=inflation,
+        inflation_errors=inflation_errors,
     )
     current_states = fresh_state_map(snapshot)
     expected_conditions = set(CONDITION_RULES)
@@ -547,6 +751,14 @@ def run_pipeline(
         "treasury_curve_snapshots": curve_snapshots,
         "treasury_yield_changes": yield_changes,
         "sector_leadership": sector_leadership,
+        "cnn_fear_greed": cnn_fear_greed,
+        "cnn_error": cnn_error,
+        "macro_commodity_prices": commodities,
+        "macro_commodity_returns": commodity_returns,
+        "inflation_observations": inflation,
+        "inflation_release_panel": inflation_panel,
+        "commodity_errors": commodity_errors,
+        "inflation_errors": inflation_errors,
         "overall_state": overall_state(current_states) if current_states else "Unavailable",
         "fred_errors": fred_errors,
         "mpt_error": mpt_error,
@@ -578,6 +790,21 @@ def run_pipeline(
         if not fomc_history.empty:
             save_normalized("fomc_history", fomc_history, metadata=metadata, run_id=run_id)
             prune_runs(NORMALIZED_DIR, "fomc_history")
+        if not cnn_fear_greed.empty:
+            save_normalized("cnn_fear_greed", cnn_fear_greed, metadata=metadata, run_id=run_id)
+            prune_runs(NORMALIZED_DIR, "cnn_fear_greed")
+        if not commodities.empty:
+            save_normalized("macro_commodity_prices", commodities, metadata=metadata, run_id=run_id)
+            prune_runs(NORMALIZED_DIR, "macro_commodity_prices")
+        if not inflation.empty:
+            save_normalized("inflation_observations", inflation, metadata=metadata, run_id=run_id)
+            prune_runs(NORMALIZED_DIR, "inflation_observations")
+        if not commodity_returns.empty:
+            save_derived("macro_commodity_returns", commodity_returns, metadata=metadata, run_id=run_id)
+            prune_runs(DERIVED_DIR, "macro_commodity_returns")
+        if not inflation_panel.empty:
+            save_derived("inflation_release_panel", inflation_panel, metadata=metadata, run_id=run_id)
+            prune_runs(DERIVED_DIR, "inflation_release_panel")
         if not panel.empty:
             save_derived("condition_states", panel, metadata=metadata, run_id=run_id)
             prune_runs(DERIVED_DIR, "condition_states")

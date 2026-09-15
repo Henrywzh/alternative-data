@@ -588,20 +588,22 @@ def style_app() -> None:
         .am-health-value { color: #111827; font-size: 1.15rem; font-weight: 750; }
         .am-health-label { color: #667085; font-size: .72rem; }
         .am-regime-summary { margin: 1rem 0 1.35rem; padding: 1.15rem 1.25rem; border: 1px solid #dbe4f0; border-left: 5px solid #2563eb; border-radius: 10px; background: #f8fafc; }
+        .am-regime-summary[data-state="normal"] { border-left-color: #10b981; background: #ecfdf5; }
         .am-regime-summary[data-state="watch"] { border-left-color: #f59e0b; background: #fffbeb; }
         .am-regime-summary[data-state="confirmed"],
         .am-regime-summary[data-state="escalating"] { border-left-color: #ef4444; background: #fef2f2; }
-        .am-regime-summary[data-state="improving"] { border-left-color: #10b981; background: #ecfdf5; }
+        .am-regime-summary[data-state="improving"] { border-left-color: #059669; background: #d1fae5; }
         .am-regime-summary[data-state="unavailable"] { border-left-color: #94a3b8; background: #f8fafc; }
         .am-regime-summary-title { color: #111827; font-size: 1.35rem; font-weight: 800; line-height: 1.2; }
         .am-regime-summary-body { margin-top: .35rem; color: #374151; font-size: .96rem; line-height: 1.45; }
         .am-regime-summary-meta { margin-top: .45rem; color: #667085; font-size: .78rem; }
         .am-regime-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; margin: .7rem 0 1.1rem; }
         .am-regime-card { min-width: 0; min-height: 10.4rem; padding: 1rem; border: 1px solid #e5e7eb; border-top: 4px solid #94a3b8; border-radius: 10px; background: #fff; }
+        .am-regime-card[data-state="normal"] { border-top-color: #10b981; background: #f0fdf4; }
         .am-regime-card[data-state="watch"] { border-top-color: #f59e0b; }
         .am-regime-card[data-state="confirmed"],
         .am-regime-card[data-state="escalating"] { border-top-color: #ef4444; }
-        .am-regime-card[data-state="improving"] { border-top-color: #10b981; }
+        .am-regime-card[data-state="improving"] { border-top-color: #059669; background: #ecfdf5; }
         .am-regime-card[data-state="unavailable"] { border-top-color: #94a3b8; background: #f8fafc; }
         .am-regime-card-title { min-height: 2.45em; color: #374151; font-size: .83rem; font-weight: 750; line-height: 1.25; }
         .am-regime-card-reading { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; margin-top: .45rem; }
@@ -613,15 +615,17 @@ def style_app() -> None:
         .am-regime-card-meta { margin-top: .45rem; color: #94a3b8; font-size: .7rem; line-height: 1.3; }
         .am-regime-brief-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; margin: .65rem 0 1.15rem; }
         .am-regime-brief-card { min-width: 0; min-height: 8.5rem; padding: .9rem 1rem; border: 1px solid #e5e7eb; border-left: 4px solid #94a3b8; border-radius: 10px; background: #fff; }
+        .am-regime-brief-card[data-state="normal"] { border-left-color: #10b981; background: #f0fdf4; }
         .am-regime-brief-card[data-state="watch"] { border-left-color: #f59e0b; background: #fffbeb; }
         .am-regime-brief-card[data-state="confirmed"],
         .am-regime-brief-card[data-state="escalating"] { border-left-color: #ef4444; background: #fef2f2; }
-        .am-regime-brief-card[data-state="improving"] { border-left-color: #10b981; background: #ecfdf5; }
+        .am-regime-brief-card[data-state="improving"] { border-left-color: #059669; background: #ecfdf5; }
         .am-regime-brief-card[data-state="unavailable"] { border-left-color: #94a3b8; background: #f8fafc; }
         .am-regime-brief-label { color: #667085; font-size: .76rem; font-weight: 750; line-height: 1.25; }
         .am-regime-brief-value { margin-top: .35rem; color: #111827; font-size: 1.28rem; font-weight: 800; line-height: 1.15; }
         .am-regime-brief-note { margin-top: .42rem; color: #667085; font-size: .74rem; line-height: 1.35; }
         .am-alert-decision { margin: .65rem 0 1.2rem; padding: 1rem 1.1rem; border: 1px solid #dbe4f0; border-left: 5px solid #10b981; border-radius: 10px; background: #f8fafc; }
+        .am-alert-decision[data-state="normal"] { border-left-color: #10b981; background: #ecfdf5; }
         .am-alert-decision[data-state="watch"] { border-left-color: #f59e0b; background: #fffbeb; }
         .am-alert-decision[data-state="confirmed"] { border-left-color: #ef4444; background: #fef2f2; }
         .am-alert-decision[data-state="unavailable"] { border-left-color: #94a3b8; background: #f8fafc; }

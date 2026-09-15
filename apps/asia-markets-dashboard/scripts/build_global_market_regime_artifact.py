@@ -27,8 +27,15 @@ if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
 from src.global_market_regime.config import (
+    CNN_FEAR_GREED_PAGE,
+    CNN_FEAR_GREED_SERIES_ID,
+    CNN_FEAR_GREED_SOURCE,
     DERIVED_DIR,
     FRED_SERIES,
+    INFLATION_SERIES_ID,
+    INFLATION_SOURCE,
+    MACRO_COMMODITY_SERIES_ID,
+    MACRO_COMMODITY_SOURCE,
     NORMALIZED_DIR,
     STATE_SEVERITY,
 )
@@ -36,6 +43,8 @@ from src.global_market_regime.alerts import load_alert_state
 from src.global_market_regime.presentation import (
     build_cross_asset_returns,
     build_domain_summary,
+    build_inflation_release_panel,
+    build_macro_commodity_returns,
     build_regime_summary,
     build_state_transitions,
     build_threshold_monitor,
@@ -236,6 +245,9 @@ def _localized_zh_artifact(artifact: dict[str, Any]) -> dict[str, Any]:
         "CFTC Commitments of Traders": "美国商品期货交易委员会持仓报告",
         "Polymarket FOMC": "Polymarket FOMC 预测市场",
         "Asia Markets index monitor": "Asia Markets 指数监控",
+        "CNN Business Fear & Greed": "CNN商业恐惧与贪婪指数",
+        "Yahoo Finance futures / ETF proxies": "Yahoo Finance 期货／ETF 代理",
+        "FRED PCE / Dallas Fed trimmed mean": "FRED PCE／达拉斯联储截尾均值",
     }
     note_templates = {
         "DCOILBRENTEU": "布伦特原油日度数据，截至{date}。",
@@ -249,6 +261,9 @@ def _localized_zh_artifact(artifact: dict[str, Any]) -> dict[str, Any]:
         "cftc_cot": "CFTC杠杆／管理资金净头寸，截至{date}；已覆盖全部7个注册合约。",
         "polymarket_fomc": "下次FOMC会议加息／维持／降息预测市场价格；不是CME FedWatch。",
         "market_monitor_prices": "复用Asia Markets市场监控的日度指数收盘价，截至{date}；已覆盖全部8个预期指数。",
+        "cnn_fear_greed": "CNN商业美股恐惧与贪婪指数日度数据，截至{date}。这不是Alternative.me加密情绪。公开历史约一年。",
+        "macro_commodities": "Yahoo Finance 期货／ETF 商品代理价格，截至{date}。不是LBMA／EIA现货。",
+        "inflation_panel": "FRED PCE／达拉斯联储截尾均值及收入支出月度数据，截至{date}。",
     }
     health_rows = localized.get("snapshot", {}).get("datasets", {}).get(
         "source_health", []
@@ -272,6 +287,9 @@ def _localized_zh_artifact(artifact: dict[str, Any]) -> dict[str, Any]:
             "cftc_cot": "美国商品期货交易委员会持仓报告",
             "polymarket_fomc": "Polymarket FOMC 预测市场",
             "market_monitor_prices": "Asia Markets 指数监控",
+            "cnn_fear_greed": "CNN商业恐惧与贪婪指数",
+            "macro_commodities": "Yahoo Finance 期货／ETF 商品代理",
+            "inflation_panel": "FRED PCE／达拉斯联储截尾均值",
         }
     )
     for source in localized.get("sources", []):
@@ -294,6 +312,14 @@ def _localized_zh_artifact(artifact: dict[str, Any]) -> dict[str, Any]:
         "fomc_odds_chart": (
             "下次 FOMC 会议赔率",
             "下一次美联储决议事件的 Polymarket 价格。这是预测市场价格，不是 CME FedWatch，也不是亚特兰大联储 SOFR 概率。",
+        ),
+        "vix_history_chart": (
+            "CBOE VIX",
+            "FRED 提供的 CBOE 波动率指数日度水平。这是原始 VIX，不是信用／VIX 同步压力规则。",
+        ),
+        "cnn_fear_greed_chart": (
+            "CNN恐惧与贪婪指数",
+            "CNN商业美股恐惧与贪婪指数（0=极度恐惧，100=极度贪婪）。不是 Alternative.me 加密情绪。公开历史约一年。",
         ),
         "credit_vix_chart": (
             "高收益债利差与 VIX",
@@ -341,6 +367,11 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         cot = cot_history.sort_values("date").groupby("contract_id", as_index=False).tail(1)
         cot_lineage = cot_history_lineage
     fomc, fomc_lineage = _load("fomc_history")
+    cnn_fear, cnn_lineage = _load("cnn_fear_greed")
+    commodities, commodity_lineage = _load("macro_commodity_prices")
+    inflation, inflation_lineage = _load("inflation_observations")
+    commodity_returns, commodity_return_lineage = _load("macro_commodity_returns", derived=True)
+    inflation_panel, inflation_panel_lineage = _load("inflation_release_panel", derived=True)
     curve, curve_lineage = _load("treasury_curve_snapshots", derived=True)
     yield_changes, yield_changes_lineage = _load("treasury_yield_changes", derived=True)
     if curve.empty:
@@ -350,6 +381,10 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     leadership, leadership_lineage = _load("sector_leadership", derived=True)
     if leadership.empty:
         leadership = build_sector_leadership(prices)
+    if commodity_returns.empty:
+        commodity_returns = build_macro_commodity_returns(commodities)
+    if inflation_panel.empty:
+        inflation_panel = build_inflation_release_panel(inflation)
 
     required_lineages = (
         fred_lineage,
@@ -362,6 +397,12 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         cot_history_lineage,
         fomc_lineage,
     )
+    if not cnn_fear.empty:
+        required_lineages = required_lineages + (cnn_lineage,)
+    if not commodities.empty:
+        required_lineages = required_lineages + (commodity_lineage,)
+    if not inflation.empty:
+        required_lineages = required_lineages + (inflation_lineage,)
     run_ids = {
         lineage.get("run_id")
         for lineage in required_lineages
@@ -443,6 +484,7 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     event_forward_returns = build_event_forward_returns(states, prices)
     event_forward_summary = summarize_event_forward_returns(event_forward_returns)
     fomc_windowed = history_window(fomc, "date", years=CHART_HISTORY_YEARS) if not fomc.empty else fomc
+    cnn_windowed = history_window(cnn_fear, "date", years=CHART_HISTORY_YEARS) if not cnn_fear.empty else cnn_fear
     if not fomc_windowed.empty:
         fomc_rows = []
         for field, series in (("hike_prob", "Hike"), ("hold_prob", "Hold"), ("cut_prob", "Cut")):
@@ -510,6 +552,67 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
                 "hy_oas",
                 "vix",
                 "state",
+            ),
+        ),
+        "cnn_fear_greed_history": _records(
+            cnn_windowed,
+            (
+                "date",
+                "component_id",
+                "label_en",
+                "label_zh",
+                "score",
+                "raw_value",
+                "rating",
+            ),
+        ),
+        "cnn_fear_greed_composite": _records(
+            cnn_windowed[cnn_windowed["component_id"].astype(str).eq("composite")]
+            if not cnn_windowed.empty and "component_id" in cnn_windowed.columns
+            else cnn_windowed,
+            (
+                "date",
+                "component_id",
+                "label_en",
+                "label_zh",
+                "score",
+                "rating",
+            ),
+        ),
+        "macro_commodity_prices": _records(
+            commodities,
+            ("date", "asset_id", "symbol", "label_en", "label_zh", "group", "unit", "close"),
+        ),
+        "macro_commodity_returns": _records(
+            commodity_returns,
+            (
+                "asset_id",
+                "date",
+                "close",
+                "symbol",
+                "label_en",
+                "label_zh",
+                "group",
+                "unit",
+                "return_1d_pct",
+                "return_1w_pct",
+                "return_1m_pct",
+                "return_3m_pct",
+                "return_ytd_pct",
+            ),
+        ),
+        "inflation_release_panel": _records(
+            inflation_panel,
+            (
+                "indicator_id",
+                "label_en",
+                "label_zh",
+                "unit",
+                "display",
+                "date",
+                "period",
+                "value",
+                "series_id",
             ),
         ),
         "source_health": _records(health, ("source", "series_id", "status", "latest_observation", "records", "notes")),
@@ -674,6 +777,36 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
             "layout": "full",
         },
         {
+            "id": "vix_history_chart",
+            "title": "CBOE VIX",
+            "subtitle": "Daily CBOE Volatility Index via FRED. This is the raw VIX level, not the credit/VIX sync-stress rule.",
+            "type": "line",
+            "dataset": "fred_observations",
+            "sourceId": "vix",
+            "encodings": {
+                "x": {"field": "date", "type": "temporal", "label": "Date"},
+                "y": {"field": "value", "type": "quantitative", "label": "Index"},
+                "color": {"field": "indicator_id", "type": "nominal", "label": "Series"},
+            },
+            "valueFormat": "number",
+            "layout": "half",
+        },
+        {
+            "id": "cnn_fear_greed_chart",
+            "title": "CNN Fear & Greed",
+            "subtitle": "CNN Business US-equity Fear & Greed Index (0=extreme fear, 100=extreme greed). Not Alternative.me crypto sentiment. Public history is about one year.",
+            "type": "line",
+            "dataset": "cnn_fear_greed_composite",
+            "sourceId": "cnn_fear_greed",
+            "encodings": {
+                "x": {"field": "date", "type": "temporal", "label": "Date"},
+                "y": {"field": "score", "type": "quantitative", "label": "Score"},
+                "color": {"field": "component_id", "type": "nominal", "label": "Series"},
+            },
+            "valueFormat": "number",
+            "layout": "half",
+        },
+        {
             "id": "credit_vix_chart",
             "title": "High-yield OAS and VIX",
             "subtitle": "ICE BofA US High Yield OAS and CBOE VIX. Sync stress requires both 5-day changes positive and both 20-day z-scores above +1 on a shared date.",
@@ -814,6 +947,36 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
             "label": "Asia Markets index monitor",
             "href": "",
             "query": {"engine": "existing normalized market-monitor prices", "description": "Shared daily index closes used only for cross-asset context."},
+        },
+        {
+            "id": "cnn_fear_greed",
+            "label": CNN_FEAR_GREED_SOURCE + " · US equity sentiment",
+            "href": CNN_FEAR_GREED_PAGE,
+            "query": {
+                "engine": "CNN dataviz graphdata JSON",
+                "series_id": CNN_FEAR_GREED_SERIES_ID,
+                "description": "US-equity Fear & Greed Index and component readings. Not Alternative.me crypto sentiment. Public history is about one year.",
+            },
+        },
+        {
+            "id": "macro_commodities",
+            "label": MACRO_COMMODITY_SOURCE,
+            "href": "https://finance.yahoo.com",
+            "query": {
+                "engine": "Yahoo Finance futures/ETF proxies",
+                "series_id": MACRO_COMMODITY_SERIES_ID,
+                "description": "Front-month futures and ETF proxies for the Macro commodities table. Not LBMA/EIA spot prints.",
+            },
+        },
+        {
+            "id": "inflation_panel",
+            "label": INFLATION_SOURCE,
+            "href": "https://fred.stlouisfed.org/series/PCEPI",
+            "query": {
+                "engine": "FRED API",
+                "series_id": INFLATION_SERIES_ID,
+                "description": "Monthly PCE, Dallas Fed trimmed-mean PCE, personal income and spending. Headline/core PCE are shown as year-over-year percent changes of the price index.",
+            },
         }
     ]
     all_sources_healthy = bool(
@@ -827,6 +990,9 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         "cftc_cot",
         "polymarket_fomc",
         "market_monitor_prices",
+        CNN_FEAR_GREED_SERIES_ID,
+        MACRO_COMMODITY_SERIES_ID,
+        INFLATION_SERIES_ID,
     }
     observed_health_series = (
         set(health["series_id"].dropna().astype(str))
