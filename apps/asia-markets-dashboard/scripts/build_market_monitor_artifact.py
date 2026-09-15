@@ -108,18 +108,127 @@ def _load_committed_artifact_dataset(dataset_id: str) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def _usable_artifact_dataset(
+def _dataset_coverage(
     frame: pd.DataFrame | None,
     required_columns: set[str],
     date_column: str,
-) -> tuple[bool, str | None]:
-    """Validate the minimum shape needed before retaining a published dataset."""
+) -> dict[str, Any] | None:
+    """Describe a candidate dataset, or ``None`` when it cannot be rendered.
+
+    "Usable" is the minimum a renderer needs: the required columns, plus at
+    least one date that can honestly be placed on a time axis.  The coverage
+    figures are what lets the caller tell a *shorter* dataset from a broken
+    one -- a distinction the earlier emptiness-only check could not make.
+    """
     if frame is None or frame.empty or not required_columns.issubset(frame.columns):
-        return False, None
+        return None
     dates = pd.to_datetime(frame[date_column], errors="coerce").dropna()
     if dates.empty:
-        return False, None
-    return True, dates.max().strftime("%Y-%m-%d")
+        return None
+    return {
+        "rows": int(len(frame)),
+        "earliest": dates.min(),
+        "latest": dates.max(),
+    }
+
+
+# Datasets whose local parquet cache is deliberately not versioned (see
+# .gitignore).  The published artifact is therefore the only durable copy of
+# their history, so the builder treats it as a floor rather than as a
+# throwaway.  Keeping the three specs in one place stops the rule from being
+# restated -- and drifting -- once per dataset.
+#
+# ``rebuild_fund_id_from`` names the column the published projection renamed
+# fund_id to (``_chart_series(..., id_as="ticker")`` ships the bare fund_id),
+# so the join key the renderers use can be restored on the way back in.
+PRICE_TAIL_FALLBACK: dict[str, Any] = {
+    "dataset": "etf_price_daily_tail",
+    "date_column": "date",
+    "live_columns": {"date", "close"},
+    "published_columns": {"date", "ticker", "close"},
+    "rebuild_fund_id_from": "ticker",
+}
+PREMIUM_HISTORY_FALLBACK: dict[str, Any] = {
+    "dataset": "premium_history",
+    "date_column": "date",
+    "live_columns": {"date", "premium_pct"},
+    "published_columns": {"date", "ticker", "premium_pct"},
+    "rebuild_fund_id_from": "ticker",
+}
+FUND_ACTIVITY_FALLBACK: dict[str, Any] = {
+    "dataset": "etf_fund_activity_daily",
+    "date_column": "observation_date",
+    "live_columns": {"observation_date", "fund_id"},
+    # exposure_id is required of the published copy because build_artifact
+    # filters activity by it; retaining rows without it would report a
+    # successful fallback and then publish nothing.
+    "published_columns": {"observation_date", "fund_id", "exposure_id"},
+    "rebuild_fund_id_from": None,
+}
+
+
+def _published_fallback(
+    live: pd.DataFrame | None,
+    spec: dict[str, Any],
+) -> tuple[pd.DataFrame, dict[str, Any]] | None:
+    """Return published rows to use instead of ``live``, or ``None`` to keep it.
+
+    Two different failure modes justify falling back:
+
+    ``unavailable`` -- the local cache is missing, or too malformed to render.
+    ``truncated``   -- the cache renders fine but has lost history the
+                       published artifact still carries.  Testing only for
+                       emptiness missed this entirely: a one-row cache is
+                       "usable", and would silently replace a two-year chart
+                       with a single point while the status panel stayed
+                       healthy.
+
+    History loss is judged by the *earliest* observation rather than the row
+    count, because row counts move for legitimate reasons (the fund universe
+    changes).  The published projection is already windowed by
+    ``history_window``, so a healthy cache always reaches further back than the
+    artifact does; the artifact reaching further back is precisely the signal
+    that the cache lost history.
+    """
+    date_column = spec["date_column"]
+    live_coverage = _dataset_coverage(live, spec["live_columns"], date_column)
+    published = _load_committed_artifact_dataset(spec["dataset"])
+    published_coverage = _dataset_coverage(
+        published, spec["published_columns"], date_column
+    )
+    if published_coverage is None:
+        # Nothing durable to fall back to; the live cache, whatever its state,
+        # is all there is.
+        return None
+
+    if live_coverage is None:
+        reason = "unavailable"
+        detail = "local cache missing or unreadable"
+    elif published_coverage["earliest"] < live_coverage["earliest"]:
+        reason = "truncated"
+        detail = (
+            f"local cache held {live_coverage['rows']} rows starting "
+            f"{live_coverage['earliest'].strftime('%Y-%m-%d')}, "
+            f"dropping history back to "
+            f"{published_coverage['earliest'].strftime('%Y-%m-%d')}"
+        )
+    else:
+        return None
+
+    frame = published.copy()
+    id_source = spec["rebuild_fund_id_from"]
+    if id_source:
+        frame["fund_id"] = (
+            frame[id_source].astype(str).str.strip().str.split(".").str[0].str.zfill(6)
+        )
+    record = {
+        "dataset": spec["dataset"],
+        "reason": reason,
+        "detail": detail,
+        "rows": int(len(frame)),
+        "latest": published_coverage["latest"].strftime("%Y-%m-%d"),
+    }
+    return frame, record
 
 
 def _chart_series(
@@ -429,75 +538,31 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     )
     artifact_fallbacks: list[dict[str, Any]] = []
 
-    # These two histories are intentionally not versioned as parquet (see
+    # These histories are intentionally not versioned as parquet (see
     # .gitignore): the close pipeline recreates them and the published JSON
     # carries a bounded projection.  A builder-only invocation on a clean
-    # checkout must not turn a temporary cache miss into an empty Streamlit
-    # page, so retain the last published rows until the source pipeline has
-    # produced a replacement.
-    if not _usable_artifact_dataset(etf_px, {"date", "close"}, "date")[0]:
-        fallback = _load_committed_artifact_dataset("etf_price_daily_tail")
-        usable, fallback_latest = _usable_artifact_dataset(
-            fallback,
-            {"date", "ticker", "close"},
-            "date",
-        )
-        if usable:
-            fallback = fallback.copy()
-            fallback["fund_id"] = (
-                fallback["ticker"].astype(str).str.strip().str.split(".").str[0].str.zfill(6)
-            )
-            etf_px = fallback
-            etf_px_lineage = None
-            artifact_fallbacks.append(
-                {
-                    "dataset": "etf_price_daily_tail",
-                    "rows": int(len(fallback)),
-                    "latest": fallback_latest,
-                }
-            )
-    if not _usable_artifact_dataset(premium_hist, {"date", "premium_pct"}, "date")[0]:
-        fallback = _load_committed_artifact_dataset("premium_history")
-        usable, fallback_latest = _usable_artifact_dataset(
-            fallback,
-            {"date", "ticker", "premium_pct"},
-            "date",
-        )
-        if usable:
-            fallback = fallback.copy()
-            fallback["fund_id"] = (
-                fallback["ticker"].astype(str).str.strip().str.split(".").str[0].str.zfill(6)
-            )
-            premium_hist = fallback
-            premium_lineage = None
-            artifact_fallbacks.append(
-                {
-                    "dataset": "premium_history",
-                    "rows": int(len(fallback)),
-                    "latest": fallback_latest,
-                }
-            )
-    if not _usable_artifact_dataset(
-        activity,
-        {"observation_date", "fund_id"},
-        "observation_date",
-    )[0]:
-        fallback = _load_committed_artifact_dataset("etf_fund_activity_daily")
-        usable, fallback_latest = _usable_artifact_dataset(
-            fallback,
-            {"observation_date", "fund_id"},
-            "observation_date",
-        )
-        if usable:
-            activity = fallback
-            activity_lineage = None
-            artifact_fallbacks.append(
-                {
-                    "dataset": "etf_fund_activity_daily",
-                    "rows": int(len(fallback)),
-                    "latest": fallback_latest,
-                }
-            )
+    # checkout -- or a run after a partial upstream fetch -- must not erase the
+    # Streamlit page, so retain the last published rows whenever the local
+    # cache is unusable *or* has gone backwards, and mark the artifact degraded
+    # until the source pipeline produces a real replacement.
+    resolved = _published_fallback(etf_px, PRICE_TAIL_FALLBACK)
+    if resolved is not None:
+        etf_px, fallback_record = resolved
+        etf_px_lineage = None
+        artifact_fallbacks.append(fallback_record)
+
+    resolved = _published_fallback(premium_hist, PREMIUM_HISTORY_FALLBACK)
+    if resolved is not None:
+        premium_hist, fallback_record = resolved
+        premium_lineage = None
+        artifact_fallbacks.append(fallback_record)
+
+    resolved = _published_fallback(activity, FUND_ACTIVITY_FALLBACK)
+    if resolved is not None:
+        activity, fallback_record = resolved
+        activity_lineage = None
+        artifact_fallbacks.append(fallback_record)
+
     # Reapply source normalization to persisted snapshots.  This repairs old
     # local parquet written before the zero-as-missing rule without requiring a
     # fresh upstream call just to rebuild the portable artifact.
@@ -1083,7 +1148,8 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
             default="—",
         )
         fallback_detail = "; ".join(
-            f"{item['dataset']} ({item['rows']} rows through {item['latest']})"
+            f"{item['dataset']} [{item['reason']}] "
+            f"({item['rows']} rows through {item['latest']}; {item['detail']})"
             for item in artifact_fallbacks
         )
         source_health_rows.append(
@@ -1093,7 +1159,8 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
                 "latest_observation": fallback_latest,
                 "records": int(sum(item["rows"] for item in artifact_fallbacks)),
                 "notes": (
-                    "Underlying normalized cache was unavailable; retained the last published rows. "
+                    "Retained the last published rows because the underlying normalized "
+                    "cache was unavailable or had lost history. "
                     f"Stale until the source pipeline replaces: {fallback_detail}."
                 ),
             }
