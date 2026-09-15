@@ -14,6 +14,13 @@ RETURN_WINDOWS: dict[str, int] = {
     "1y": 252,
 }
 
+FLOW_CALENDAR_DAYS: dict[str, int] = {
+    "1d": 1,
+    "1w": 7,
+    "1m": 30,
+    "3m": 90,
+}
+
 
 def _session_return(closes: pd.Series, sessions: int) -> float | None:
     """Return compounded percentage return over the given session window."""
@@ -110,6 +117,228 @@ def build_return_snapshot(
             for window_name in RETURN_WINDOWS:
                 row[f"return_{window_name}_pct"] = None
             row["return_ytd_pct"] = None
+
+        rows.append(row)
+
+    return pd.DataFrame(rows)
+
+
+def _normalize_fund_id(value: Any) -> str:
+    if value is None or pd.isna(value):
+        return ""
+    s = str(value).strip().upper()
+    if s.endswith(".0"):
+        s = s[:-2]
+    if s.isdigit() and len(s) < 6:
+        s = s.zfill(6)
+    return s
+
+
+def _clean_activity(activity: pd.DataFrame) -> pd.DataFrame:
+    """Clean, filter, deduplicate and sort ETF fund activity history."""
+    if activity is None or activity.empty:
+        return pd.DataFrame()
+    frame = activity.copy()
+
+    date_col = (
+        "observation_date"
+        if "observation_date" in frame.columns
+        else ("date" if "date" in frame.columns else None)
+    )
+    if date_col is None:
+        return pd.DataFrame()
+    frame["observation_date"] = pd.to_datetime(frame[date_col], errors="coerce")
+
+    if "fund_id" in frame.columns and "ticker" in frame.columns:
+        fund_series = frame["fund_id"].replace("", pd.NA).fillna(frame["ticker"])
+        frame["fund_id"] = fund_series.map(_normalize_fund_id)
+    elif "fund_id" in frame.columns:
+        frame["fund_id"] = frame["fund_id"].map(_normalize_fund_id)
+    elif "ticker" in frame.columns:
+        frame["fund_id"] = frame["ticker"].map(_normalize_fund_id)
+    else:
+        return pd.DataFrame()
+
+    frame = frame[frame["fund_id"] != ""].dropna(subset=["observation_date"])
+    if frame.empty:
+        return pd.DataFrame()
+
+    if "flow_status" not in frame.columns:
+        if "coverage_status" in frame.columns:
+            frame["flow_status"] = frame["coverage_status"]
+        else:
+            frame["flow_status"] = "unavailable"
+    frame["flow_status"] = frame["flow_status"].astype(str).str.strip()
+
+    flow_col = (
+        "estimated_flow_cny"
+        if "estimated_flow_cny" in frame.columns
+        else ("estimated_flow" if "estimated_flow" in frame.columns else None)
+    )
+    if flow_col is not None:
+        frame["estimated_flow_cny"] = pd.to_numeric(frame[flow_col], errors="coerce")
+    else:
+        frame["estimated_flow_cny"] = pd.NA
+
+    size_col = (
+        "aum_nav_estimate_cny"
+        if "aum_nav_estimate_cny" in frame.columns
+        else (
+            "size_value"
+            if "size_value" in frame.columns
+            else ("aum" if "aum" in frame.columns else None)
+        )
+    )
+    if size_col is not None:
+        frame["size_value"] = pd.to_numeric(frame[size_col], errors="coerce")
+    else:
+        frame["size_value"] = pd.NA
+
+    frame = (
+        frame.sort_values(["fund_id", "observation_date"], kind="mergesort")
+        .drop_duplicates(["fund_id", "observation_date"], keep="last")
+        .reset_index(drop=True)
+    )
+    return frame
+
+
+def build_flow_snapshot(
+    activity: pd.DataFrame,
+    metadata: pd.DataFrame | Sequence[Mapping[str, Any]],
+    *,
+    as_of: str | None = None,
+) -> pd.DataFrame:
+    """Build a flow snapshot DataFrame across standard calendar windows for each metadata fund.
+
+    Sums estimated flow only for rows where flow_status == 'validated'.
+    Preserves missing flows as null rather than converting to zero.
+    """
+    if isinstance(metadata, pd.DataFrame):
+        meta_records = metadata.to_dict(orient="records")
+    elif metadata is not None:
+        meta_records = [dict(item) for item in metadata]
+    else:
+        meta_records = []
+
+    if not meta_records:
+        return pd.DataFrame()
+
+    cleaned = _clean_activity(activity)
+    as_of_ts = pd.to_datetime(as_of) if as_of is not None else None
+
+    if as_of_ts is not None and not cleaned.empty:
+        cleaned = cleaned[cleaned["observation_date"] <= as_of_ts]
+
+    if as_of is not None:
+        effective_as_of_str = str(as_of)
+        effective_as_of_ts = as_of_ts
+    elif not cleaned.empty:
+        valid_rows_all = cleaned[cleaned["flow_status"] == "validated"]
+        if not valid_rows_all.empty:
+            effective_as_of_ts = valid_rows_all["observation_date"].max()
+        else:
+            effective_as_of_ts = cleaned["observation_date"].max()
+        effective_as_of_str = effective_as_of_ts.strftime("%Y-%m-%d")
+    else:
+        effective_as_of_ts = None
+        effective_as_of_str = None
+
+    rows: list[dict[str, Any]] = []
+    grouped = dict(tuple(cleaned.groupby("fund_id", sort=False))) if not cleaned.empty else {}
+
+    for item in meta_records:
+        row = dict(item)
+        fund_id = _normalize_fund_id(item.get("fund_id"))
+        if not fund_id and "ticker" in item:
+            fund_id = _normalize_fund_id(item.get("ticker"))
+        fund_data = grouped.get(fund_id)
+        if fund_data is None and "ticker" in item:
+            fund_data = grouped.get(_normalize_fund_id(item.get("ticker")))
+
+        row["as_of"] = effective_as_of_str
+
+        if fund_data is not None and not fund_data.empty:
+            latest_row = fund_data.iloc[-1]
+            raw_status = latest_row.get("flow_status")
+            coverage_status = (
+                str(raw_status)
+                if raw_status is not None and not pd.isna(raw_status)
+                else "unavailable"
+            )
+            row["coverage_status"] = coverage_status
+
+            size_val = latest_row.get("size_value")
+            if size_val is not None and not pd.isna(size_val) and float(size_val) > 0:
+                row["size_value"] = float(size_val)
+                basis = latest_row.get("size_basis")
+                if basis is not None and not pd.isna(basis) and str(basis).strip():
+                    row["size_basis"] = str(basis).strip()
+                else:
+                    row["size_basis"] = "nav_estimate"
+            else:
+                row["size_value"] = None
+                row["size_basis"] = None
+
+            valid_rows = fund_data[fund_data["flow_status"] == "validated"]
+            valid_obs_count = len(valid_rows)
+            row["valid_observations"] = valid_obs_count
+
+            if valid_obs_count > 0:
+                first_date_ts = valid_rows["observation_date"].iloc[0]
+                latest_date_ts = valid_rows["observation_date"].iloc[-1]
+                row["first_valid_flow_date"] = first_date_ts.strftime("%Y-%m-%d")
+                row["latest_valid_flow_date"] = latest_date_ts.strftime("%Y-%m-%d")
+            else:
+                row["first_valid_flow_date"] = None
+                row["latest_valid_flow_date"] = None
+
+            anchor_ts = latest_row["observation_date"]
+
+            for window_name, days in FLOW_CALENDAR_DAYS.items():
+                field_name = f"flow_{window_name}"
+                if valid_obs_count == 0 or anchor_ts is None:
+                    row[field_name] = None
+                else:
+                    window_start_ts = anchor_ts - pd.Timedelta(days=days - 1)
+                    in_window = valid_rows[
+                        (valid_rows["observation_date"] >= window_start_ts)
+                        & (valid_rows["observation_date"] <= anchor_ts)
+                    ]
+                    if in_window.empty:
+                        row[field_name] = None
+                    else:
+                        flows = in_window["estimated_flow_cny"].dropna()
+                        if flows.empty:
+                            row[field_name] = None
+                        else:
+                            row[field_name] = float(flows.sum())
+
+            if valid_obs_count == 0 or anchor_ts is None:
+                row["flow_ytd"] = None
+            else:
+                ytd_start_ts = pd.Timestamp(year=anchor_ts.year, month=1, day=1)
+                ytd_rows = valid_rows[
+                    (valid_rows["observation_date"] >= ytd_start_ts)
+                    & (valid_rows["observation_date"] <= anchor_ts)
+                ]
+                if ytd_rows.empty:
+                    row["flow_ytd"] = None
+                else:
+                    ytd_flows = ytd_rows["estimated_flow_cny"].dropna()
+                    if ytd_flows.empty:
+                        row["flow_ytd"] = None
+                    else:
+                        row["flow_ytd"] = float(ytd_flows.sum())
+        else:
+            row["coverage_status"] = "unavailable"
+            row["size_value"] = None
+            row["size_basis"] = None
+            row["valid_observations"] = 0
+            row["first_valid_flow_date"] = None
+            row["latest_valid_flow_date"] = None
+            for window_name in FLOW_CALENDAR_DAYS:
+                row[f"flow_{window_name}"] = None
+            row["flow_ytd"] = None
 
         rows.append(row)
 
