@@ -19,7 +19,7 @@ from .alert_policy import (
     state_with_pending_events,
 )
 from .freshness import BLOCKING_FRESHNESS_STATUSES, market_date
-from .pipeline import run_intraday_snapshot, run_pipeline
+from .pipeline import run_intraday_snapshot, run_pipeline, run_us_etf_flow_sampler
 from .storage import prune_all_runs
 
 
@@ -91,6 +91,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--start-date", default=None, help="YYYYMMDD start for history")
     parser.add_argument("--no-write", action="store_true", help="Run without persisting snapshots")
     parser.add_argument("--allow-partial-write", action="store_true", help="Allow persisting partial/test runs to disk")
+    parser.add_argument(
+        "--sample-us-etf-flow",
+        action="store_true",
+        help="Run the optional local US ETF post-close size/flow sampler (no email)",
+    )
     parser.add_argument("--send-report", action="store_true", help="Evaluate the Gmail alert policy after running")
     parser.add_argument(
         "--force-report",
@@ -120,6 +125,37 @@ def main(argv: list[str] | None = None) -> int:
         help="For close mode, skip the email but let the dashboard artifact build from the degraded run",
     )
     args = parser.parse_args(argv)
+
+    if args.sample_us_etf_flow:
+        incompatible = (
+            args.mode != "close"
+            or args.limit_exposures
+            or args.etf_only
+            or args.start_date
+            or args.send_report
+            or args.force_report
+            or args.require_fresh
+            or args.allow_stale_artifact
+            or args.allow_partial_write
+            or args.recipient
+        )
+        if incompatible:
+            parser.error("--sample-us-etf-flow is a standalone local sampler and cannot be combined with pipeline/email options")
+        results = run_us_etf_flow_sampler(write=not args.no_write)
+        if not args.no_write:
+            removed_runs = prune_all_runs(keep=20)
+            if removed_runs:
+                print(f"Pruned {len(removed_runs)} stale market-monitor run directories")
+        summary = {
+            "mode": results.get("mode"),
+            "new_session": results.get("new_session"),
+            "latest_observation": results.get("latest_observation"),
+            "observed": (results.get("freshness") or {}).get("observed"),
+            "expected": (results.get("freshness") or {}).get("expected"),
+            "missing_tickers": results.get("missing_tickers") or [],
+        }
+        print(json.dumps(summary, ensure_ascii=False, indent=2, default=str))
+        return 0
 
     is_partial = bool(args.limit_exposures or args.etf_only)
     should_write = args.mode == "close" and (not args.no_write) and (not is_partial or args.allow_partial_write)

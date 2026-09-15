@@ -188,8 +188,10 @@ def render_performance_tab(
     labels_list: list[str] = []
     parents: list[str] = []
     values: list[float] = []
-    colors: list[float] = []
+    colors: list[float | None] = []
     customdata_list: list[list[Any]] = []
+    parent_indices: dict[str, int] = {}
+    category_area_totals: dict[str, float] = {}
 
     categories_present = filtered_df["category"].dropna().unique().tolist()
     for cat in categories_present:
@@ -198,8 +200,9 @@ def render_performance_tab(
         ids.append(cat_id)
         labels_list.append(cat_name)
         parents.append("")
+        parent_indices[str(cat)] = len(values)
         values.append(0.0)
-        colors.append(0.0)
+        colors.append(None)
         customdata_list.append(["", cat_name, cat_name, "", "", "", "", "", "", "", ""])
 
     for _, row in filtered_df.iterrows():
@@ -237,7 +240,8 @@ def render_performance_tab(
         labels_list.append(display_label)
         parents.append(f"CAT_{cat}")
         values.append(area_val)
-        colors.append(ret_val if ret_val is not None else 0.0)
+        colors.append(ret_val)
+        category_area_totals[cat] = category_area_totals.get(cat, 0.0) + area_val
         customdata_list.append([
             ticker,
             name,
@@ -252,8 +256,15 @@ def render_performance_tab(
             f"{size_str} ({size_basis})",
         ])
 
-    # Dynamic color scale bounds centered at 0
-    valid_rets = [c for c in colors if c != 0.0]
+    # Plotly's ``total`` hierarchy requires parent values to equal the sum of
+    # their children.  A missing return remains None all the way into the
+    # treemap instead of becoming a visually misleading zero return.
+    for cat, parent_index in parent_indices.items():
+        values[parent_index] = category_area_totals.get(cat, 0.0)
+
+    # Dynamic color scale bounds centered at 0.  Category nodes have no
+    # return of their own, so they are deliberately excluded from the bounds.
+    valid_rets = [c for c in colors if c is not None and pd.notna(c)]
     max_bound = max(abs(min(valid_rets, default=-3.0)), abs(max(valid_rets, default=3.0)), 2.0)
 
     fig = go.Figure(
@@ -262,7 +273,7 @@ def render_performance_tab(
             labels=labels_list,
             parents=parents,
             values=values,
-            branchvalues="remainder",
+            branchvalues="total",
             marker=dict(
                 colors=colors,
                 colorscale=RETURN_COLORSCALE,
@@ -437,8 +448,10 @@ def render_flow_tab(
     labels_list: list[str] = []
     parents: list[str] = []
     values: list[float] = []
-    colors: list[float] = []
+    colors: list[float | None] = []
     customdata_list: list[list[Any]] = []
+    parent_indices: dict[str, int] = {}
+    category_area_totals: dict[str, float] = {}
 
     categories_present = filtered_df["category"].dropna().unique().tolist()
     for cat in categories_present:
@@ -447,9 +460,10 @@ def render_flow_tab(
         ids.append(cat_id)
         labels_list.append(cat_name)
         parents.append("")
+        parent_indices[str(cat)] = len(values)
         values.append(0.0)
-        colors.append(0.0)
-        customdata_list.append(["", cat_name, cat_name, "", "", "", "", ""])
+        colors.append(None)
+        customdata_list.append(["", cat_name, cat_name, "", "", "", "", "", ""])
 
     for _, row in filtered_df.iterrows():
         fund_id = str(row.get("fund_id") or row.get("ticker", "")).strip().upper()
@@ -465,7 +479,7 @@ def render_flow_tab(
 
         raw_flow = row.get(window_col)
         has_valid_flow = (
-            coverage_status == "validated"
+            coverage_status in {"validated", "validated_proxy"}
             and raw_flow is not None
             and not pd.isna(raw_flow)
         )
@@ -477,6 +491,7 @@ def render_flow_tab(
         area_val = float(size_val) if has_size else 1.0
         size_basis = str(row.get("size_basis") or "equal_area")
         size_str = _format_size_amount(size_val, language) if has_size else tr(language, "Equal area", "等面积")
+        currency = str(row.get("currency") or "—").strip()
 
         first_d = str(row.get("first_valid_flow_date") or "—")
         latest_d = str(row.get("latest_valid_flow_date") or "—")
@@ -484,6 +499,7 @@ def render_flow_tab(
 
         status_label = {
             "validated": tr(language, "Validated", "已核验"),
+            "validated_proxy": tr(language, "Validated proxy", "已核验代理值"),
             "shares_only": tr(language, "Shares only", "仅份额"),
             "unavailable": tr(language, "Unavailable", "暂不可用"),
         }.get(coverage_status, coverage_status)
@@ -495,7 +511,8 @@ def render_flow_tab(
         labels_list.append(display_label)
         parents.append(f"CAT_{cat}")
         values.append(area_val)
-        colors.append(flow_val if flow_val is not None else 0.0)
+        colors.append(flow_val)
+        category_area_totals[cat] = category_area_totals.get(cat, 0.0) + area_val
         customdata_list.append([
             ticker,
             name,
@@ -505,9 +522,13 @@ def render_flow_tab(
             str(valid_obs),
             date_range_str,
             flow_str,
+            currency,
         ])
 
-    valid_flows = [c for c in colors if c != 0.0]
+    for cat, parent_index in parent_indices.items():
+        values[parent_index] = category_area_totals.get(cat, 0.0)
+
+    valid_flows = [c for c in colors if c is not None and pd.notna(c)]
     max_bound = max(abs(min(valid_flows, default=-1e8)), abs(max(valid_flows, default=1e8)), 1e6)
 
     fig = go.Figure(
@@ -516,7 +537,7 @@ def render_flow_tab(
             labels=labels_list,
             parents=parents,
             values=values,
-            branchvalues="remainder",
+            branchvalues="total",
             marker=dict(
                 colors=colors,
                 colorscale=FLOW_COLORSCALE,
@@ -543,7 +564,9 @@ def render_flow_tab(
                 + "%{customdata[6]}<br>"
                 + f"{window_label} "
                 + tr(language, "Estimated Flow: ", "预估资金流：")
-                + "%{customdata[7]}<extra></extra>"
+                + "%{customdata[7]}<br>"
+                + tr(language, "Currency: ", "币种：")
+                + "%{customdata[8]}<extra></extra>"
             ),
             textinfo="label",
             textposition="middle center",
@@ -562,8 +585,8 @@ def render_flow_tab(
     st.caption(
         tr(
             language,
-            f"Rectangle size: NAV-backed estimated assets / equal area · Color: {window_label} net flow (CNY/USD).",
-            f"色块面积：NAV预估资产／等面积 · 颜色：{window_label} 净申赎资金流。",
+            f"Rectangle size: source-reported/proxy size / equal area · Color: {window_label} net flow in each instrument's native currency (CNY or USD).",
+            f"色块面积：来源披露／代理规模／等面积 · 颜色：{window_label} 净资金流（按各标的本币：CNY 或 USD）。",
         )
     )
     st.plotly_chart(
@@ -591,6 +614,7 @@ def render_flow_tab(
         coverage_status = str(row.get("coverage_status") or "unavailable").strip()
         status_label = {
             "validated": tr(language, "Validated", "已核验"),
+            "validated_proxy": tr(language, "Validated proxy", "已核验代理值"),
             "shares_only": tr(language, "Shares only", "仅份额"),
             "unavailable": tr(language, "Unavailable", "暂不可用"),
         }.get(coverage_status, coverage_status)
@@ -605,6 +629,7 @@ def render_flow_tab(
             "_status": status_label,
             "_valid_obs": int(row.get("valid_observations") or 0),
             "_size": size_str,
+            "_currency": str(row.get("currency") or "—"),
             "_flow_1d": _format_flow_amount(row.get("flow_1d"), language),
             "_flow_1w": _format_flow_amount(row.get("flow_1w"), language),
             "_flow_1m": _format_flow_amount(row.get("flow_1m"), language),
@@ -619,6 +644,7 @@ def render_flow_tab(
         "_status": tr(language, "Status", "核验状态"),
         "_valid_obs": tr(language, "Valid Obs", "有效样本数"),
         "_size": tr(language, "Estimated Size", "预估规模"),
+        "_currency": tr(language, "Currency", "币种"),
         "_flow_1d": tr(language, "1D Flow", "1日流向"),
         "_flow_1w": tr(language, "1W Flow", "1周流向"),
         "_flow_1m": tr(language, "1M Flow", "1月流向"),
@@ -778,7 +804,7 @@ def render_detail_tab(
                 sub_act["date"] = pd.to_datetime(sub_act[date_col], errors="coerce")
                 sub_act["flow"] = pd.to_numeric(sub_act[flow_col], errors="coerce")
                 if "flow_status" in sub_act.columns:
-                    sub_act = sub_act[sub_act["flow_status"] == "validated"]
+                    sub_act = sub_act[sub_act["flow_status"].isin({"validated", "validated_proxy"})]
                 ticker_flows = (
                     sub_act.dropna(subset=["date", "flow"])
                     .sort_values("date")
@@ -821,7 +847,7 @@ def render_detail_tab(
             f"Data basis: Exchange shares × published NAV (Validated · {valid_cnt} obs)",
             f"数据依据：交易所官方份额变动 × 估值NAV（已核验 · {valid_cnt} 个观测点）",
         )
-    elif basis_str == "market_cap_proxy":
+    elif cov_status == "validated_proxy" or basis_str == "market_cap_proxy":
         basis_desc = tr(
             language,
             f"Data basis: Sampled market cap proxy (Accumulating · {valid_cnt} obs)",
@@ -1018,6 +1044,9 @@ def render_heatmaps(
     heatmap_prices = pd.DataFrame(datasets.get("heatmap_etf_price_daily", []))
     china_etf_prices = pd.DataFrame(datasets.get("etf_price_daily_tail", []))
     activity_df = pd.DataFrame(datasets.get("etf_fund_activity_daily", []))
+    us_flow_df = pd.DataFrame(datasets.get("us_etf_flow_proxy_daily", []))
+    if not us_flow_df.empty:
+        activity_df = pd.concat([activity_df, us_flow_df], ignore_index=True)
 
     # Combine price datasets to ensure all funds with price history are supported
     price_frames = []

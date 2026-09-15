@@ -224,6 +224,26 @@ def test_flow_snapshot_sums_only_validated_rows() -> None:
     assert row["size_basis"] == "nav_estimate"
 
 
+def test_flow_snapshot_accepts_validated_market_cap_proxy_rows() -> None:
+    rows = pd.DataFrame(
+        [
+            {
+                "observation_date": "2026-09-14",
+                "ticker": "SPY",
+                "estimated_flow": 110.0,
+                "flow_status": "validated_proxy",
+                "size_value": 1_210.0,
+                "size_basis": "market_cap_proxy",
+            }
+        ]
+    )
+    metadata = pd.DataFrame([{"fund_id": "SPY", "ticker": "SPY", "category": "broad_equity"}])
+    row = build_flow_snapshot(rows, metadata).iloc[0]
+    assert row["flow_1d"] == pytest.approx(110.0)
+    assert row["coverage_status"] == "validated_proxy"
+    assert row["size_basis"] == "market_cap_proxy"
+
+
 def test_flow_snapshot_does_not_turn_unavailable_into_zero() -> None:
     row = build_flow_snapshot(
         pd.DataFrame([_activity("2026-09-14", None, "shares_only")]),

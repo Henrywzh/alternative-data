@@ -20,6 +20,7 @@ FLOW_CALENDAR_DAYS: dict[str, int] = {
     "1m": 30,
     "3m": 90,
 }
+VALID_FLOW_STATUSES = frozenset({"validated", "validated_proxy"})
 
 HEATMAP_CATEGORY_LABELS: dict[str, dict[str, str]] = {
     "broad_equity": {"en": "Broad Equity", "zh": "宽基股票"},
@@ -259,7 +260,7 @@ def build_flow_snapshot(
 ) -> pd.DataFrame:
     """Build a flow snapshot DataFrame across standard calendar windows for each metadata fund.
 
-    Sums estimated flow only for rows where flow_status == 'validated'.
+    Sums estimated flow only for rows with a validated source-backed status.
     Preserves missing flows as null rather than converting to zero.
     """
     if isinstance(metadata, pd.DataFrame):
@@ -282,7 +283,7 @@ def build_flow_snapshot(
         effective_as_of_str = str(as_of)
         effective_as_of_ts = as_of_ts
     elif not cleaned.empty:
-        valid_rows_all = cleaned[cleaned["flow_status"] == "validated"]
+        valid_rows_all = cleaned[cleaned["flow_status"].isin(VALID_FLOW_STATUSES)]
         if not valid_rows_all.empty:
             effective_as_of_ts = valid_rows_all["observation_date"].max()
         else:
@@ -332,7 +333,7 @@ def build_flow_snapshot(
                 row["size_value"] = None
                 row["size_basis"] = None
 
-            valid_rows = fund_data[fund_data["flow_status"] == "validated"]
+            valid_rows = fund_data[fund_data["flow_status"].isin(VALID_FLOW_STATUSES)]
             valid_obs_count = len(valid_rows)
             row["valid_observations"] = valid_obs_count
 
