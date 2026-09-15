@@ -3,38 +3,27 @@
   "last_states": {
     "brent": "Confirmed",
     "us10y": "Confirmed",
-    "hike_prob": "Escalating",
+    "hike_prob": "Watch",
     "credit_vix": "Normal",
     "fomc_hike": "Escalating"
   },
   "last_overall": "Escalating",
   "sent_event_keys": [],
   "last_sent_at": null,
-  "last_evaluation_at": "2026-09-12T00:26:38.533175Z",
-  "last_run_id": "20260912T002619-37029c4e",
+  "last_evaluation_at": "2026-09-15T00:45:54.400475Z",
+  "last_run_id": "20260915T004536-22771f89",
   "last_decision": "defensive_eligible",
   "last_component_events": [
     {
-      "indicator_id": "us10y",
+      "indicator_id": "hike_prob",
       "domain_id": "rates_policy",
-      "label_zh": "美国10年期国债收益率",
-      "label_en": "US 10-year yield",
-      "from_state": "Watch",
-      "to_state": "Confirmed",
-      "value": 4.95,
-      "observation_date": "2026-09-10",
-      "event_key": "us10y|Watch|Confirmed|2026-09-10"
-    },
-    {
-      "indicator_id": "fomc_hike",
-      "domain_id": "rates_policy",
-      "label_zh": "下次FOMC加息赔率",
-      "label_en": "Next FOMC hike odds",
-      "from_state": "Normal",
-      "to_state": "Escalating",
-      "value": 81.25,
-      "observation_date": "2026-09-12",
-      "event_key": "fomc_hike|Normal|Escalating|2026-09-12"
+      "label_zh": "近端SOFR高于目标区间概率",
+      "label_en": "Near-term SOFR above target",
+      "from_state": "Escalating",
+      "to_state": "Watch",
+      "value": 93.57,
+      "observation_date": "2026-09-11",
+      "event_key": "hike_prob|Escalating|Watch|2026-09-11"
     }
   ],
   "alert_mode": "preview"
