@@ -2264,11 +2264,18 @@ def test_southbound_flow_has_a_source_health_row() -> None:
         latest = southbound_rows[-1]
         latest_net = pd.to_numeric(latest.get("net_buy_yi"), errors="coerce")
         latest_holding = pd.to_numeric(latest.get("holding_market_value"), errors="coerce")
-        expected_status = (
-            "Healthy"
-            if pd.notna(latest_net) and pd.notna(latest_holding) and latest_holding > 0
-            else "Degraded"
-        )
+        prior_holding = pd.to_numeric(pd.NA, errors="coerce")
+        if len(southbound_rows) > 1:
+            prior_holding = pd.to_numeric(southbound_rows[-2].get("holding_market_value"), errors="coerce")
+        if pd.isna(latest_net):
+            expected_status = "Degraded"
+        elif pd.notna(latest_holding) and latest_holding > 0:
+            expected_status = "Healthy"
+        elif pd.notna(prior_holding) and prior_holding > 0:
+            # Eastmoney publishes holdings one session after net buy.
+            expected_status = "Partial"
+        else:
+            expected_status = "Degraded"
     assert row["status"] == expected_status
 
 
@@ -2392,6 +2399,59 @@ def test_source_health_distinguishes_an_empty_source_from_a_partial_one() -> Non
     assert southbound["status"] == "Unavailable"
     assert southbound["records"] == 0
     assert "no rows" in southbound["notes"]
+
+
+def test_southbound_same_day_holding_lag_is_partial_not_degraded() -> None:
+    """Eastmoney publishes holding value one session after net buy.
+
+    A same-day missing holding value is the known publication lag, so the
+    health row must read Partial; Degraded here fired on every same-day run.
+    """
+    builder = _load_builder()
+    frame = pd.DataFrame(
+        {
+            "trade_date": ["2026-09-14", "2026-09-15"],
+            "net_buy_yi": [44.7, 8.8],
+            "holding_market_value": [1.2e13, None],
+        }
+    )
+
+    status, note = builder._southbound_latest_session_health(frame)
+
+    assert status == "Partial"
+    assert "one-session" in note
+
+
+def test_southbound_stale_holdings_on_two_sessions_is_degraded() -> None:
+    builder = _load_builder()
+    frame = pd.DataFrame(
+        {
+            "trade_date": ["2026-09-14", "2026-09-15"],
+            "net_buy_yi": [44.7, 8.8],
+            "holding_market_value": [None, None],
+        }
+    )
+
+    status, note = builder._southbound_latest_session_health(frame)
+
+    assert status == "Degraded"
+    assert "holding market value" in note
+
+
+def test_southbound_missing_latest_net_buy_is_degraded() -> None:
+    builder = _load_builder()
+    frame = pd.DataFrame(
+        {
+            "trade_date": ["2026-09-14", "2026-09-15"],
+            "net_buy_yi": [44.7, None],
+            "holding_market_value": [1.2e13, 1.2e13],
+        }
+    )
+
+    status, note = builder._southbound_latest_session_health(frame)
+
+    assert status == "Degraded"
+    assert "net buy" in note
 
 
 def test_source_health_dates_each_provider_by_its_own_observations() -> None:

@@ -249,6 +249,55 @@ class ProviderDelivery:
     southbound_quality_note: str = ""
 
 
+def _southbound_latest_session_health(southbound: pd.DataFrame | None) -> tuple[str, str]:
+    """Lag-aware delivery status for the Eastmoney southbound aggregate.
+
+    Eastmoney publishes holding_market_value one session after net buy, so a
+    same-day missing holding value is the known publication lag (Partial),
+    not a delivery failure. Missing holdings on the latest *and* prior
+    session, or a missing latest net buy, is a real failure (Degraded).
+    """
+    if southbound is None or southbound.empty or "trade_date" not in southbound.columns:
+        return "Unavailable", ""
+    dates = pd.to_datetime(southbound["trade_date"], errors="coerce")
+    if dates.notna().sum() == 0:
+        return "Unavailable", ""
+    latest_date = dates.max()
+    latest_rows = southbound[dates.eq(latest_date)]
+    prior_rows = southbound[dates.lt(latest_date)]
+
+    def _net_valid(rows: pd.DataFrame) -> bool:
+        return "net_buy_yi" in rows.columns and pd.to_numeric(
+            rows["net_buy_yi"], errors="coerce"
+        ).notna().any()
+
+    def _holdings_valid(rows: pd.DataFrame) -> bool:
+        return "holding_market_value" in rows.columns and pd.to_numeric(
+            rows["holding_market_value"], errors="coerce"
+        ).gt(0).any()
+
+    latest_label = str(latest_date.date())
+    if not _net_valid(latest_rows):
+        return (
+            "Degraded",
+            f"Latest session {latest_label} has no valid net buy; "
+            "the renderer leaves it missing instead of filling from an older session.",
+        )
+    if _holdings_valid(latest_rows):
+        return "Healthy", ""
+    if _holdings_valid(prior_rows):
+        return (
+            "Partial",
+            f"Latest session {latest_label} holding market value is pending "
+            "Eastmoney's one-session publication lag; no older row is substituted.",
+        )
+    return (
+        "Degraded",
+        f"Latest session {latest_label} has no valid holding market value; "
+        "the renderer leaves it missing instead of filling from an older session.",
+    )
+
+
 def _source_health_rows(delivery: ProviderDelivery) -> list[dict[str, Any]]:
     """The per-provider health rows, from delivery alone.
 
@@ -662,32 +711,7 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     else:
         southbound_latest = "—"
 
-    southbound_status = "Healthy" if southbound_rows else "Unavailable"
-    southbound_quality_note = ""
-    if southbound_rows:
-        latest_southbound = southbound[
-            pd.to_datetime(southbound["trade_date"], errors="coerce").dt.strftime("%Y-%m-%d")
-            == southbound_latest
-        ]
-        latest_net_valid = (
-            "net_buy_yi" in latest_southbound.columns
-            and pd.to_numeric(latest_southbound["net_buy_yi"], errors="coerce").notna().any()
-        )
-        latest_holding_valid = (
-            "holding_market_value" in latest_southbound.columns
-            and pd.to_numeric(latest_southbound["holding_market_value"], errors="coerce").gt(0).any()
-        )
-        if not latest_net_valid or not latest_holding_valid:
-            southbound_status = "Degraded"
-            missing = []
-            if not latest_net_valid:
-                missing.append("net buy")
-            if not latest_holding_valid:
-                missing.append("holding market value")
-            southbound_quality_note = (
-                f"Latest session {southbound_latest} has no valid {', '.join(missing)}; "
-                "the renderer leaves it missing instead of filling from an older session."
-            )
+    southbound_status, southbound_quality_note = _southbound_latest_session_health(southbound)
 
     latest_by_exposure = {}
     if not technicals.empty and {"exposure_id", "date"}.issubset(technicals.columns):
