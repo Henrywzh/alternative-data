@@ -125,7 +125,8 @@ _BOOLEAN_COLUMNS = {
 }
 _INTEGER_COLUMNS = {
     "observation_version", "fiscal_year", "analyst_count", "provider_contributor_count", "lookback_days",
-    "current_analyst_count", "prior_analyst_count", "analyst_count_change", "row_count", "version", "shares_affected",
+    "current_analyst_count", "prior_analyst_count", "analyst_count_change", "row_count", "stale_after_days",
+    "version", "shares_affected",
 }
 _FLOAT_COLUMNS = {
     "confidence", "value", "low_value", "high_value", "current_value", "current_dispersion", "prior_value",
