@@ -94,12 +94,12 @@
       "dow": 1253,
       "ftse100": 1260,
       "growth": 1210,
-      "hk_dividend": 1225,
-      "hk_hshares": 1225,
+      "hk_dividend": 1226,
+      "hk_hshares": 1226,
       "hk_internet": 1231,
-      "hk_midcap": 1225,
-      "hsi": 1225,
-      "hstech": 1225,
+      "hk_midcap": 1226,
+      "hsi": 1226,
+      "hstech": 1226,
       "kospi": 1218,
       "kr_semis": 1210,
       "ndx": 1253,
@@ -120,16 +120,23 @@
       "us_utilities": 1253,
       "us_value": 1253
     },
-    "first_date": "2021-09-10",
-    "last_date": "2026-09-09",
+    "first_date": "2021-09-17",
+    "last_date": "2026-09-16",
     "requested_start_date": null,
-    "fetch_errors": [],
+    "fetch_errors": [
+      {
+        "dataset": "etf_share_daily",
+        "severity": "optional",
+        "source": "szse:fund_scale_daily_szse",
+        "error": "ConnectionError: ('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))"
+      }
+    ],
     "regressions": []
   },
   "dataset_name": "index_price_daily",
-  "run_id": "20260909T135011-1954c6c1",
-  "created_at": "2026-09-09T13:50:29.546378+00:00",
-  "records": 45757,
+  "run_id": "20260916T142148-d5fcf0fa",
+  "created_at": "2026-09-16T14:22:06.595919+00:00",
+  "records": 45762,
   "columns": [
     "date",
     "exposure_id",
@@ -142,5 +149,5 @@
     "retrieved_at_utc",
     "observation_type"
   ],
-  "sha256": "06f508a9f45e0ae0cdb864d1350bc7340f9ec8a6bbc016e4d55b2f6e94bea065"
+  "sha256": "407b00ff2d0b5b1da76f29e37a97c866b5e8a3267d93315017a98a88ebf70c89"
 }
