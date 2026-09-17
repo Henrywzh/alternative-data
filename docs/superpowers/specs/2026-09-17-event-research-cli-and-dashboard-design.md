@@ -190,7 +190,7 @@ The existing command remains the single entry point:
 ```bash
 event-consensus query capabilities
 event-consensus query brief --horizon-hours 48
-event-consensus query list --country US --priority high
+event-consensus query list --countries US --priority high
 event-consensus query research --event-id <event_id>
 event-consensus query history --event-id <event_id>
 event-consensus query postmortem --event-id <event_id>
