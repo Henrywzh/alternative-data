@@ -479,15 +479,20 @@ def test_alert_status_boolean_contract_fails_closed() -> None:
     assert result["decision_id"] == "unavailable"
 
 
-def test_workflow_does_not_inject_gmail_secrets_in_preview_mode() -> None:
+def test_workflow_enables_defensive_alerts_with_scoped_gmail_secrets() -> None:
     workflow = (
         ROOT / ".github" / "workflows" / "global-market-regime-daily.yml"
     ).read_text(encoding="utf-8")
+    before_fetch, after_fetch = workflow.split(
+        "      - name: Fetch and derive regime states", 1
+    )
+    fetch_step = after_fetch.split("      - name: Build Streamlit artifact", 1)[0]
 
-    assert "--alert-mode preview" in workflow
-    assert "GMAIL_SENDER" not in workflow
-    assert "GMAIL_APP_PASSWORD" not in workflow
-    assert "GMAIL_RECIPIENTS" not in workflow
+    assert "--alert-mode defensive" in fetch_step
+    assert "--alert-mode preview" not in workflow
+    for key in ("GMAIL_SENDER", "GMAIL_APP_PASSWORD", "GMAIL_RECIPIENTS"):
+        assert f"{key}:" not in before_fetch
+        assert f"{key}:" in fetch_step
 
 
 def test_workflow_pins_external_actions_to_commits() -> None:

@@ -39,8 +39,11 @@ jobs:
       - name: Fetch and derive regime states
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY || secrets.SEMICONDUCTOR_FRED_API_KEY }}
+          GMAIL_SENDER: ${{ secrets.GMAIL_SENDER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          GMAIL_RECIPIENTS: ${{ secrets.GMAIL_RECIPIENTS }}
         run: |
-          python -m global_market_regime.cli --alert-mode preview
+          python -m global_market_regime.cli --alert-mode defensive
 
       - name: Build Streamlit artifact
         working-directory: apps/asia-markets-dashboard

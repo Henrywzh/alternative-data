@@ -2130,3 +2130,10 @@ Polymarket outcome history is built from each outcome token's own price
 history; a current snapshot price is never projected backwards. Gmail
 delivery is non-blocking and cannot prevent refreshed data and artifacts
 from being committed.
+
+Defensive alert email was enabled on 2026-09-17: the daily workflow now
+runs the CLI with `--alert-mode defensive`, so a real Gmail report is
+sent when breadth qualifies (>=2 confirmed domains, or confirmed
+financial stress) and a fresh state transition fires. Component
+transitions recorded earlier in preview mode are not replayed, because
+preview runs already advanced the last-known states.
