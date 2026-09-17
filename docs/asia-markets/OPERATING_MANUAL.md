@@ -128,8 +128,30 @@ The event/consensus flow is:
 free calendar/consensus + official components + quote adapters
   -> data/normalized/event_consensus append-only local ledgers
   -> data/cache/event_consensus/events_consensus_latest.json
-  -> Asia Markets / Events & Consensus
+  -> src/event_consensus/query.py
+  -> Asia Markets / Events & Consensus or repo-local event-consensus query CLI
 ```
+
+The local agent read contract starts with:
+
+```bash
+PYTHONPATH=src python -m event_consensus.cli query capabilities
+PYTHONPATH=src python -m event_consensus.cli query brief --horizon-hours 48
+PYTHONPATH=src python -m event_consensus.cli query health
+```
+
+These query commands are offline and read-only. They emit one JSON document to
+stdout and do not append to any PIT ledger. Use the explicit refresh command
+only when a new observation is intended:
+
+```bash
+PYTHONPATH=src python -m event_consensus.cli refresh --trigger manual
+```
+
+The complete query envelope, event dossier, history, post-release and missing
+evidence semantics are documented in
+[`EVENT_RESEARCH_CLI.md`](EVENT_RESEARCH_CLI.md). Agents should use this
+contract rather than scrape the Streamlit page or reconstruct event scores.
 
 For a local/manual refresh from the repository root:
 

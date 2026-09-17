@@ -35,6 +35,15 @@ The canonical financial-data repository is the sibling repo at
 `/Users/henrywzh/Desktop/Quant/financial-data`. See
 `docs/asia-markets/REPO_BRIDGE.md` for the high-level relationship.
 
+### Local event research access
+
+For the private Events & Consensus surface, local coding agents should start
+with `event-consensus query capabilities`. Query commands are read-only JSON
+queries over the local PIT artifact and ledgers; they do not contact remote
+sources. Use `event-consensus refresh` only when an explicit data refresh is
+authorized. Do not scrape Streamlit or reimplement event priority/scoring;
+see `docs/asia-markets/EVENT_RESEARCH_CLI.md` for the contract.
+
 ## Repository Location
 
 This repository lives at `/Users/henrywzh/Quant/alternative-data`, deliberately
