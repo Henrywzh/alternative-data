@@ -39,7 +39,10 @@ def test_every_page_renders_in_both_languages(page: str, language_choice: str) -
     assert not app.exception, [str(error) for error in app.exception]
 
 
-@pytest.mark.parametrize("market_region", ["china", "us", "apac", "emea", "global"])
+@pytest.mark.parametrize(
+    "market_region",
+    ["china", "hong_kong", "us", "apac", "emea", "global"],
+)
 @pytest.mark.parametrize("language_choice", ["English", "中文"])
 def test_every_market_region_renders_in_both_languages(
     market_region: str,
@@ -53,6 +56,26 @@ def test_every_market_region_renders_in_both_languages(
     app.run()
 
     assert not app.exception, [str(error) for error in app.exception]
+
+
+@pytest.mark.parametrize(
+    ("language_choice", "expected_heading"),
+    [("English", "Hong Kong Market"), ("中文", "香港市场")],
+)
+def test_hong_kong_market_region_has_a_dedicated_view(
+    language_choice: str,
+    expected_heading: str,
+) -> None:
+    """Hong Kong gets a focused view while reusing the market artifact."""
+    app = AppTest.from_file(str(APP_PATH), default_timeout=120)
+    app.session_state["page"] = "market"
+    app.session_state["language_choice"] = language_choice
+    app.session_state["market_region"] = "hong_kong"
+    app.run()
+
+    assert not app.exception, [str(error) for error in app.exception]
+    rendered_markdown = "\n".join(str(item.value) for item in app.markdown)
+    assert expected_heading in rendered_markdown
 
 
 def test_new_session_defaults_to_chinese() -> None:
@@ -332,8 +355,8 @@ def test_every_region_tab_can_show_the_ratio_view_at_once() -> None:
     """Two tabs in Ratio mode crashed the whole ETF Monitor page.
 
     render_market_ratio_chart hardcoded key="market_ratio_num"/"..._den"
-    while every region tab calls it, and st.tabs evaluates all five tab bodies
-    on every run -- so the second tab switched to Ratio raised
+    while every regional view can call it, so switching a second view to Ratio
+    raised
     StreamlitDuplicateElementKey and took the page down.
 
     test_every_page_renders_in_both_languages cannot catch this: it renders
@@ -342,7 +365,7 @@ def test_every_region_tab_can_show_the_ratio_view_at_once() -> None:
     app = AppTest.from_file(str(APP_PATH), default_timeout=120)
     app.session_state["page"] = "market"
     app.session_state["language_choice"] = "English"
-    for tab_key in ("china", "us", "apac", "emea", "global"):
+    for tab_key in ("china", "hong_kong", "us", "apac", "emea", "global"):
         app.session_state[f"market_leadership_mode_{tab_key}"] = "Ratio (A/B)"
     app.run()
 
@@ -353,10 +376,9 @@ def test_market_multiseries_charts_use_svg_rendering() -> None:
     """Hidden regional tabs must not exhaust the browser's WebGL contexts.
 
     Plotly Express switches large multi-series lines to ``scattergl`` by
-    default.  The market page evaluates all five tab bodies, including their
-    hidden charts, so one visible chart could lose its curve layer while its
-    axes and legend remained.  These charts are small enough for SVG and do
-    not need WebGL.
+    default.  These regional charts are small enough for SVG and do not need
+    WebGL, which avoids exhausting browser WebGL contexts as the user moves
+    between views.
     """
     app = AppTest.from_file(str(APP_PATH), default_timeout=120)
     app.session_state["page"] = "market"

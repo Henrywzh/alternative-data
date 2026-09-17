@@ -588,11 +588,11 @@ def style_app() -> None:
         .am-health-value { color: #111827; font-size: 1.15rem; font-weight: 750; }
         .am-health-label { color: #667085; font-size: .72rem; }
         .am-regime-summary { margin: 1rem 0 1.35rem; padding: 1.15rem 1.25rem; border: 1px solid #dbe4f0; border-left: 5px solid #2563eb; border-radius: 10px; background: #f8fafc; }
-        .am-regime-summary[data-state="normal"] { border-left-color: #10b981; background: #ecfdf5; }
+        .am-regime-summary[data-state="normal"] { border-left-color: #10b981; background: #f0fdf4; }
         .am-regime-summary[data-state="watch"] { border-left-color: #f59e0b; background: #fffbeb; }
         .am-regime-summary[data-state="confirmed"],
         .am-regime-summary[data-state="escalating"] { border-left-color: #ef4444; background: #fef2f2; }
-        .am-regime-summary[data-state="improving"] { border-left-color: #059669; background: #d1fae5; }
+        .am-regime-summary[data-state="improving"] { border-left-color: #059669; background: #ecfdf5; }
         .am-regime-summary[data-state="unavailable"] { border-left-color: #94a3b8; background: #f8fafc; }
         .am-regime-summary-title { color: #111827; font-size: 1.35rem; font-weight: 800; line-height: 1.2; }
         .am-regime-summary-body { margin-top: .35rem; color: #374151; font-size: .96rem; line-height: 1.45; }
@@ -603,7 +603,7 @@ def style_app() -> None:
         .am-regime-card[data-state="watch"] { border-top-color: #f59e0b; }
         .am-regime-card[data-state="confirmed"],
         .am-regime-card[data-state="escalating"] { border-top-color: #ef4444; }
-        .am-regime-card[data-state="improving"] { border-top-color: #059669; background: #ecfdf5; }
+        .am-regime-card[data-state="improving"] { border-top-color: #059669; }
         .am-regime-card[data-state="unavailable"] { border-top-color: #94a3b8; background: #f8fafc; }
         .am-regime-card-title { min-height: 2.45em; color: #374151; font-size: .83rem; font-weight: 750; line-height: 1.25; }
         .am-regime-card-reading { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; margin-top: .45rem; }
@@ -625,7 +625,7 @@ def style_app() -> None:
         .am-regime-brief-value { margin-top: .35rem; color: #111827; font-size: 1.28rem; font-weight: 800; line-height: 1.15; }
         .am-regime-brief-note { margin-top: .42rem; color: #667085; font-size: .74rem; line-height: 1.35; }
         .am-alert-decision { margin: .65rem 0 1.2rem; padding: 1rem 1.1rem; border: 1px solid #dbe4f0; border-left: 5px solid #10b981; border-radius: 10px; background: #f8fafc; }
-        .am-alert-decision[data-state="normal"] { border-left-color: #10b981; background: #ecfdf5; }
+        .am-alert-decision[data-state="normal"] { border-left-color: #10b981; background: #f0fdf4; }
         .am-alert-decision[data-state="watch"] { border-left-color: #f59e0b; background: #fffbeb; }
         .am-alert-decision[data-state="confirmed"] { border-left-color: #ef4444; background: #fef2f2; }
         .am-alert-decision[data-state="unavailable"] { border-left-color: #94a3b8; background: #f8fafc; }

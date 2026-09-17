@@ -641,6 +641,9 @@ MARKET_TABS: dict[str, tuple[str, ...]] = {
     "china_core": (
         "csi300", "csi500", "csi1000", "hsi",
     ),
+    "hong_kong": (
+        "hsi", "hstech", "hk_dividend", "hk_internet", "hk_midcap", "hk_hshares",
+    ),
     "us": ("sp500", "ndx", "dow", "russell2000"),
     # CN-KR Semiconductor is a cross-border QDII theme, not an APAC
     # ex-China/HK country benchmark. It is therefore available on `china`

@@ -291,14 +291,16 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
     # live US-sector fallback on every run.
     china_eids = market_tab_exposures("china")
     china_core_eids = market_tab_exposures("china_core")
+    hong_kong_eids = market_tab_exposures("hong_kong")
     us_broad_eids = market_tab_exposures("us")
     apac_eids = market_tab_exposures("apac")
     emea_eids = market_tab_exposures("emea")
     global_eids = market_tab_exposures("global")
 
-    region_keys = ("china", "us", "apac", "emea", "global")
+    region_keys = ("china", "hong_kong", "us", "apac", "emea", "global")
     region_labels = {
         "china": tr(language, "🇨🇳 China & HK", "🇨🇳 泛中国 (A股/港股/出海QDII)"),
+        "hong_kong": tr(language, "🇭🇰 Hong Kong", "🇭🇰 香港市场"),
         "us": tr(language, "🇺🇸 United States", "🇺🇸 美国市场 (大盘基准/11大行业)"),
         "apac": tr(language, "🌏 APAC ex-CN/HK", "🌏 亚太除中港 (日经/韩国/台湾)"),
         "emea": tr(language, "🌍 EMEA", "🌍 欧洲与中东 (英/德/法/沙特)"),
@@ -491,7 +493,46 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
             show_wrappers=True,
         )
 
-    # ==================== 2. 🇺🇸 美国市场 (实际指数 + 11大行业与纯度细分) ====================
+    # ==================== 2. 🇭🇰 香港市场 (港股基准 + ETF + 南向资金) ====================
+    elif selected_region == "hong_kong":
+        section_heading(
+            language,
+            "Hong Kong Market",
+            "香港市场",
+            "Hong Kong benchmarks, listed ETF wrappers and Southbound Stock Connect flow.",
+            "香港基准指数、场内 ETF 包装及港股通南向资金。",
+        )
+        sub_hk_prices, sub_hk_tech, sub_hk_labels = _region_frames(hong_kong_eids)
+        _render_leadership_block(
+            sub_hk_prices,
+            sub_hk_tech,
+            sub_hk_labels,
+            "hong_kong",
+            show_premium=True,
+        )
+
+        if not southbound.empty:
+            st.markdown(
+                f'<div class="am-chart-title" style="margin-top:24px;">{tr(language, "Southbound Stock Connect Flow", "港股通南向资金全市场流向")}</div>',
+                unsafe_allow_html=True,
+            )
+            render_southbound_market_flow(southbound, language, window)
+
+        render_scoped_index_section(
+            hong_kong_eids,
+            label_by_exposure,
+            prices,
+            technicals,
+            wrappers,
+            language,
+            window,
+            etf_prices=etf_prices,
+            premium_history=premium_history,
+            key_prefix="hong_kong",
+            show_wrappers=True,
+        )
+
+    # ==================== 3. 🇺🇸 美国市场 (实际指数 + 11大行业与纯度细分) ====================
     elif selected_region == "us":
         sub_us_prices, sub_us_tech, sub_us_labels = _region_frames(us_broad_eids)
         _render_leadership_block(sub_us_prices, sub_us_tech, sub_us_labels, "us")
@@ -512,7 +553,7 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
             show_wrappers=False,
         )
 
-    # ==================== 3. 🌏 亚太除中港 (日经 / 韩国 / 台湾) ====================
+    # ==================== 4. 🌏 亚太除中港 (日经 / 韩国 / 台湾) ====================
     elif selected_region == "apac":
         sub_apac_prices, sub_apac_tech, sub_apac_labels = _region_frames(apac_eids)
         _render_leadership_block(sub_apac_prices, sub_apac_tech, sub_apac_labels, "apac")
@@ -530,7 +571,7 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
             show_wrappers=False,
         )
 
-    # ==================== 4. 🌍 欧洲与中东 (英国 / 德国 / 法国 / 沙特) ====================
+    # ==================== 5. 🌍 欧洲与中东 (英国 / 德国 / 法国 / 沙特) ====================
     elif selected_region == "emea":
         sub_emea_prices, sub_emea_tech, sub_emea_labels = _region_frames(emea_eids)
         _render_leadership_block(sub_emea_prices, sub_emea_tech, sub_emea_labels, "emea")
@@ -548,7 +589,7 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
             show_wrappers=False,
         )
 
-    # ==================== 5. 🌐 全球大类基准 / 全部 ====================
+    # ==================== 6. 🌐 全球大类基准 / 全部 ====================
     elif selected_region == "global":
         sub_glob_prices, sub_glob_tech, sub_glob_labels = _region_frames(global_eids)
         _render_leadership_block(sub_glob_prices, sub_glob_tech, sub_glob_labels, "global")

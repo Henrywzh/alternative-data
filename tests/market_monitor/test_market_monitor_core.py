@@ -2327,6 +2327,14 @@ def test_market_tab_boundaries_keep_core_and_regional_leadership_clean() -> None
         "hk_internet",
         "kr_semis",
     }.intersection(MARKET_TABS["china_core"])
+    assert MARKET_TABS["hong_kong"] == (
+        "hsi",
+        "hstech",
+        "hk_dividend",
+        "hk_internet",
+        "hk_midcap",
+        "hk_hshares",
+    )
     assert MARKET_TABS["apac"] == ("nikkei225", "kospi", "twii")
     assert "kr_semis" in MARKET_TABS["china"]
     assert "kr_semis" not in MARKET_TABS["apac"]
