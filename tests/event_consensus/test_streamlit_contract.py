@@ -10,6 +10,7 @@ if str(APP_DIR) not in sys.path:
 
 from am.events_consensus import (  # noqa: E402
     _priority_band,
+    _priority_legend,
     _style_timeline_frame,
     _timeline_frame,
 )
@@ -47,6 +48,11 @@ def test_provider_importance_one_always_gets_high_priority() -> None:
     assert _priority_band(40, provider_importance=1) == "high"
     assert _priority_band(40, provider_importance="1") == "high"
     assert _priority_band(69.9, provider_importance=0) == "medium"
+
+
+def test_priority_legend_explains_provider_override() -> None:
+    assert "provider 1 or score ≥70" in _priority_legend("en")
+    assert "数据商1或评分≥70" in _priority_legend("zh")
 
 
 def test_timeline_exposes_bilingual_priority_labels() -> None:

@@ -128,7 +128,7 @@ def _priority_legend(language: str) -> str:
         language,
         (
             "Importance: "
-            f'<span style="{badge}background:{high_bg};color:{high_fg};">🔴 High ≥70</span>'
+            f'<span style="{badge}background:{high_bg};color:{high_fg};">🔴 High (provider 1 or score ≥70)</span>'
             f'<span style="{badge}background:{medium_bg};color:{medium_fg};">🟠 Medium 50–69</span>'
             f'<span style="{badge}background:{low_bg};color:{low_fg};">⚪ Low &lt;50</span>'
             "<br><small>Provider importance=1 always takes High; otherwise colors use "
@@ -136,7 +136,7 @@ def _priority_legend(language: str) -> str:
         ),
         (
             "重要性："
-            f'<span style="{badge}background:{high_bg};color:{high_fg};">🔴 高 ≥70</span>'
+            f'<span style="{badge}background:{high_bg};color:{high_fg};">🔴 高（数据商1或评分≥70）</span>'
             f'<span style="{badge}background:{medium_bg};color:{medium_fg};">🟠 中 50–69</span>'
             f'<span style="{badge}background:{low_bg};color:{low_fg};">⚪ 低 &lt;50</span>'
             "<br><small>数据商重要性=1 始终为高；其他事件颜色依据描述性风险／催化评分。"
