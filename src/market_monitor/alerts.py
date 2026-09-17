@@ -487,7 +487,10 @@ def build_email_html(
         if freshness.get("southbound")
         else None
     )
-    fetch_errors = freshness.get("fetch_errors") or []
+    fetch_errors = [
+        error for error in (freshness.get("fetch_errors") or [])
+        if not (isinstance(error, dict) and error.get("severity") == "optional")
+    ]
     csi500_tech = _get_tech_summary(technicals, "csi500")
     csi300_tech = _get_tech_summary(technicals, "csi300")
     sp500_tech = _get_tech_summary(technicals, "sp500")

@@ -10,6 +10,8 @@ from typing import Any
 
 import pandas as pd
 
+from common.partitioned_parquet import dataset_parts, read_dataset
+
 from .models import (
     CheckResult,
     Evidence,
@@ -184,6 +186,10 @@ def evaluate_output(
                 as_of=as_of,
                 observation=observation,
             )
+        elif spec.validator == "observation_freshness":
+            checks = _evaluate_observation_freshness(
+                spec=spec, as_of=as_of, observation=observation
+            )
         elif spec.validator == "asia_markets_freshness":
             checks = _evaluate_asia_markets(
                 spec=spec,
@@ -212,6 +218,34 @@ def evaluate_output(
 
 
 def _observe_output(spec: OutputSpec, path: Path) -> OutputObservation:
+    # A parquet output is one file or a directory of date partitions, and the
+    # registry may name either spelling, so ask the shared resolver rather
+    # than `is_file()`. Judging a migrated dataset missing is not a cosmetic
+    # error: a required output that does not exist makes the whole run
+    # FAILED_ACTIONABLE, which is the loudest state the control tower has.
+    parts = dataset_parts(path)
+    if parts:
+        frame = read_dataset(path)
+        latest: str | None = None
+        # An explicitly declared column wins: a lane outside the dashboard
+        # registry has no contract to look the column up in.
+        date_column = spec.date_column or _primary_date_column(spec.dataset_id)
+        if date_column and date_column in frame.columns:
+            values = frame[date_column].dropna().astype(str)
+            if not values.empty:
+                latest = str(values.max())[:10]
+        return OutputObservation(
+            output_id=spec.output_id,
+            path=spec.path,
+            required=spec.required,
+            exists=True,
+            # Summed, so the reported size stays comparable across a
+            # migration instead of collapsing to one partition.
+            size_bytes=sum(part.stat().st_size for part in parts),
+            row_count=len(frame),
+            latest_observation=latest,
+        )
+
     if not path.is_file():
         return OutputObservation(
             output_id=spec.output_id,
@@ -223,17 +257,8 @@ def _observe_output(spec: OutputSpec, path: Path) -> OutputObservation:
             latest_observation=None,
         )
 
-    row_count: int | None = None
-    latest: str | None = None
-    if path.suffix == ".parquet":
-        frame = pd.read_parquet(path)
-        row_count = len(frame)
-        date_column = _primary_date_column(spec.dataset_id)
-        if date_column and date_column in frame.columns:
-            values = frame[date_column].dropna().astype(str)
-            if not values.empty:
-                latest = str(values.max())[:10]
-    elif path.suffix == ".json":
+    latest = None
+    if path.suffix == ".json":
         try:
             import json
 
@@ -248,7 +273,7 @@ def _observe_output(spec: OutputSpec, path: Path) -> OutputObservation:
         required=spec.required,
         exists=True,
         size_bytes=path.stat().st_size,
-        row_count=row_count,
+        row_count=None,
         latest_observation=latest,
     )
 
@@ -328,6 +353,67 @@ def _evaluate_dataset_contract(
             )
         )
     return checks
+
+
+def _evaluate_observation_freshness(
+    *,
+    spec: OutputSpec,
+    as_of: date,
+    observation: OutputObservation,
+) -> list[CheckResult]:
+    """Age-check a lane that feeds no dashboard, from its newest observation.
+
+    dataset_contract cannot serve these: it resolves the date column through
+    dashboard.data.DATASET_REGISTRY, and the free institutional lanes are not
+    registered there. Without this they could only be checked for existence,
+    which is exactly the failure that hides -- a lane whose source quietly
+    stopped answering leaves a complete, structurally valid, frozen dataset
+    behind and every run still reports success.
+    """
+    latest = observation.latest_observation
+    if not latest:
+        return [
+            CheckResult(
+                check_id=f"{spec.output_id}.freshness",
+                status="unknown",
+                required=spec.required,
+                message=(
+                    f"Output {spec.path} has no readable value in "
+                    f"{spec.date_column!r}, so its age cannot be established."
+                ),
+            )
+        ]
+
+    max_age_days = float(spec.freshness["max_age_days"])
+    observed = pd.to_datetime(latest, errors="coerce")
+    if pd.isna(observed):
+        return [
+            CheckResult(
+                check_id=f"{spec.output_id}.freshness",
+                status="unknown",
+                required=spec.required,
+                message=f"Newest {spec.date_column} value {latest!r} is not a date.",
+                observed=latest,
+            )
+        ]
+
+    age_days = (pd.Timestamp(as_of) - observed.normalize()).days
+    stale = age_days > max_age_days
+    return [
+        CheckResult(
+            check_id=f"{spec.output_id}.freshness",
+            status="stale" if stale else "healthy",
+            required=spec.required,
+            message=(
+                f"Newest observation {latest} is {age_days} days old, past the "
+                f"{max_age_days:g}-day contract."
+                if stale
+                else f"Newest observation {latest} is {age_days} days old."
+            ),
+            expected=f"within {max_age_days:g} days of {as_of.isoformat()}",
+            observed=latest,
+        )
+    ]
 
 
 def _evaluate_asia_markets(

@@ -1,0 +1,19 @@
+{
+  "type": "normalized",
+  "run_scope": "full",
+  "source_id": "yfinance_heatmap_etf",
+  "dataset_name": "heatmap_etf_price_daily",
+  "run_id": "20260915T142825-dcd019c5",
+  "created_at": "2026-09-15T14:28:42.503001+00:00",
+  "records": 14028,
+  "columns": [
+    "date",
+    "ticker",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+  ],
+  "sha256": "0865d5f06ce7d1e068ef238f10c8f2b1384e363460abc08469b058c274c7c155"
+}

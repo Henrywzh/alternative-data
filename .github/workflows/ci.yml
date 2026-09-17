@@ -51,6 +51,14 @@ jobs:
       - name: Compile Python sources
         run: python -m compileall -q src dashboard
 
+      - name: Check repository size budget
+        # Parquet is already compressed, so git cannot delta two versions of
+        # the same table: a monolithic tracked dataset costs its full size on
+        # every refresh commit. That is how the pack reached 991 MiB while all
+        # tracked content was 268 MB. This fails the build on any file over the
+        # per-file budget and reports the pack and Streamlit-RAM headroom.
+        run: python3 scripts/check_repo_size_budget.py --all
+
       - name: Run test suite
         env:
           DATA_SOURCE: local

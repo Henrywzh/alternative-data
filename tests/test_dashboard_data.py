@@ -1215,18 +1215,35 @@ def test_openrouter_derived_marts_load_only_compact_projected_schemas(
         fetched_paths.append(path)
         return remote_payloads.get(path)
 
+    # daily_provider_economics is stored as one parquet per usage_date, so it
+    # is fetched through fetch_directory rather than as a single file. Without
+    # this the dashboard would silently fall back to the local copy and the
+    # assertion below would be measuring nothing.
+    fetched_dirs: list[str] = []
+
+    def fetch_mart_directory(rel_dir: str, sha: str, suffix: str = ".parquet"):
+        assert sha == "derived-sha"
+        fetched_dirs.append(rel_dir)
+        payload = remote_payloads.get(f"{rel_dir}.parquet")
+        return (payload,) if payload else ()
+
     monkeypatch.setattr("dashboard.data.remote.remote_enabled", lambda: True)
     monkeypatch.setattr("dashboard.data.remote.fetch_bytes", fetch_mart_bytes)
+    monkeypatch.setattr("dashboard.data.remote.fetch_directory", fetch_mart_directory)
 
     remote_datasets = load_domain_datasets(
         "openrouter_derived", data_sha="derived-sha"
     )
 
+    assert fetched_dirs == ["data/normalized/marts/daily_provider_economics"]
+
     # Dataset fetches within a domain run concurrently, so only the *set* of
     # fetched paths is deterministic, not the order they land in.
     assert set(fetched_paths) == {
         "data/normalized/marts/openrouter_usage_economics_daily.parquet",
-        "data/normalized/marts/daily_provider_economics.parquet",
+        # daily_provider_economics is absent on purpose: it is partitioned, and
+        # a partitioned dataset must never be fetched as one file. It is
+        # asserted against fetched_dirs above instead.
         "data/normalized/marts/daily_provider_revenue_estimates.parquet",
         "data/normalized/openrouter/cloud_infra_daily_activity.parquet",
         "data/normalized/marts/daily_cloud_infra_economics.parquet",
@@ -5010,9 +5027,18 @@ def test_partitioned_datasets_match_the_writers_partition_map() -> None:
     "<id>.parquet", misses, and returns zero rows without raising -- so drift
     here is invisible until someone notices an empty panel.
     """
+    from ai_hiring_data.storage import PARTITION_COLUMNS as HIRING_PARTITIONS
+    from openrouter_data.storage import PARTITION_COLUMNS as OPENROUTER_PARTITIONS
     from provider_adoption_data.storage import PARTITION_COLUMNS
+    from research_data.marts import PARTITIONED_MARTS
 
-    assert PARTITIONED_DATASETS == frozenset(PARTITION_COLUMNS)
+    writers = (
+        frozenset(PARTITION_COLUMNS)
+        | frozenset(OPENROUTER_PARTITIONS)
+        | frozenset(HIRING_PARTITIONS)
+        | frozenset(PARTITIONED_MARTS)
+    )
+    assert PARTITIONED_DATASETS == writers
 
 
 def test_every_partitioned_dataset_has_a_column_projection() -> None:
@@ -5022,10 +5048,17 @@ def test_every_partitioned_dataset_has_a_column_projection() -> None:
     memory each, and pyarrow aborts the process on a failed allocation instead
     of raising MemoryError.
     """
+    # Resolve through the same chain load_dataset uses, so a partitioned
+    # dataset owned by another domain still counts as projected.
+    from dashboard.data import AI_HIRING_LOAD_COLUMNS, OPENROUTER_LOAD_COLUMNS
+
     for dataset_id in PARTITIONED_DATASETS:
-        assert PROVIDER_ADOPTION_LOAD_COLUMNS.get(dataset_id), (
-            f"{dataset_id} is partitioned but has no load-columns projection"
+        projection = (
+            OPENROUTER_LOAD_COLUMNS.get(dataset_id)
+            or PROVIDER_ADOPTION_LOAD_COLUMNS.get(dataset_id)
+            or AI_HIRING_LOAD_COLUMNS.get(dataset_id)
         )
+        assert projection, f"{dataset_id} is partitioned but has no load-columns projection"
 
 
 def test_load_dataset_reads_every_local_partition(tmp_path: Path) -> None:

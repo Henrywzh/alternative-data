@@ -54,6 +54,10 @@ from .storage import (
     save_raw,
 )
 from .technicals import compute_technicals
+from .us_etf.fetch import fetch_us_etf_history
+from .us_etf.universe import HEATMAP_ETFS, HEATMAP_ETF_TICKERS
+from .sources.us_etf_snapshot import fetch_us_etf_size_snapshot
+from .us_flow import build_us_proxy_flow
 from .wrapper import (
     filter_premium_history_to_sessions,
     fill_premium_from_last_close,
@@ -810,6 +814,29 @@ def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, 
         print(f"  [market_monitor] southbound flow fetch failed: {exc}")
         raw["southbound_market_flow"] = pd.DataFrame()
         fetch_errors.append({"dataset": "southbound_market_flow", "error": f"{type(exc).__name__}: {exc}"})
+
+    # --- US & Cross-Asset ETF prices for Heat Maps (optional) ---
+    heatmap_tickers = [item["ticker"] for item in HEATMAP_ETFS]
+    try:
+        raw["heatmap_etf_price_daily"] = fetch_us_etf_history(period="2y", tickers=heatmap_tickers)
+        if raw["heatmap_etf_price_daily"].empty:
+            fetch_errors.append(
+                {
+                    "dataset": "heatmap_etf_price_daily",
+                    "severity": "optional",
+                    "error": "empty heatmap ETF price history",
+                }
+            )
+    except Exception as exc:  # noqa: BLE001
+        print(f"  [market_monitor] heatmap ETF price fetch failed: {exc}")
+        raw["heatmap_etf_price_daily"] = pd.DataFrame()
+        fetch_errors.append(
+            {
+                "dataset": "heatmap_etf_price_daily",
+                "severity": "optional",
+                "error": f"{type(exc).__name__}: {exc}",
+            }
+        )
     return raw
 
 
@@ -958,10 +985,10 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
         "requested_start_date": start_date,
         "fetch_errors": raw.get("_fetch_errors") or [],
     }
-    # Compare before writing this run, so a later CLI freshness gate can stop
-    # the email even when the artifact builder has not run yet. Partial test
-    # runs are intentionally excluded: they asked for a smaller universe and
-    # must not be compared with the full scheduled run.
+   # Compare before writing this run, so a later CLI freshness gate can stop
+   # the email even when the artifact builder has not run yet. Partial test
+   # runs are intentionally excluded: they asked for a smaller universe and
+   # must not be compared with the full scheduled run.
     previous_history = (
         load_lineage_history(NORMALIZED_DIR, "index_price_daily", scope="full", limit=1)
         if run_scope == "full"
@@ -973,11 +1000,11 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
 
     # Persist raw observations only after the coverage check has been
     # calculated. The raw layer is local and gitignored, but a failed full
-    # fetch must not look like a healthy run simply because its incomplete raw
+   # fetch must not look like a healthy run simply because its incomplete raw
     # response was written before the email gate could inspect it.
     raw_write: dict[str, dict[str, str] | None] = {}
     if write:
-        for dataset_name in ("index_close", "etf_close", "etf_spot", "etf_share_daily"):  # not _fetch_errors
+        for dataset_name in ("index_close", "etf_close", "etf_spot", "etf_share_daily", "heatmap_etf_price_daily"):  # not _fetch_errors
             raw_write[dataset_name] = save_raw(dataset_name, raw[dataset_name], metadata={"type": "raw", "run_scope": run_scope}, run_id=shared_run_id) if dataset_name in raw and not raw[dataset_name].empty else None
         results["_raw_run"] = raw_write
 
@@ -985,6 +1012,17 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
     normalized_etf = raw["etf_close"].copy() if not raw["etf_close"].empty else pd.DataFrame()
     results["etf_price_daily"] = normalized_etf
     results["southbound_market_flow"] = raw.get("southbound_market_flow", pd.DataFrame())
+
+    # Normalized: heatmap ETF prices (optional)
+    heatmap_px = raw.get("heatmap_etf_price_daily")
+    if heatmap_px is None or heatmap_px.empty:
+        previous_heatmap_px = load_latest_normalized("heatmap_etf_price_daily")
+        heatmap_px = (
+            previous_heatmap_px
+            if previous_heatmap_px is not None and not previous_heatmap_px.empty
+            else pd.DataFrame()
+        )
+    results["heatmap_etf_price_daily"] = heatmap_px
 
     # Derived: per-exposure technical snapshot (latest row).
     #
@@ -1137,6 +1175,22 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
             metadata={"type": "normalized", "run_scope": run_scope, "source_id": "official_exchange_etf_shares"},
             run_id=run_id,
         ) if should_save_activity else None
+        heatmap_df = results["heatmap_etf_price_daily"]
+        has_new_heatmap_rows = (
+            raw.get("heatmap_etf_price_daily") is not None
+            and not raw.get("heatmap_etf_price_daily").empty
+        )
+        should_save_heatmap = not heatmap_df.empty and has_new_heatmap_rows
+        run_info["heatmap_etf_price_daily"] = (
+            save_normalized(
+                "heatmap_etf_price_daily",
+                heatmap_df,
+                metadata={"type": "normalized", "run_scope": run_scope, "source_id": "yfinance_heatmap_etf"},
+                run_id=run_id,
+            )
+            if should_save_heatmap
+            else None
+        )
         fee_frame = pd.DataFrame(list((raw.get("_published_fees") or {}).values()))
         if not fee_frame.empty:
             fee_frame = fee_frame.reindex(columns=FEE_COLUMNS)
@@ -1147,7 +1201,7 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
         # Bounded retention. Every run writes the complete history rather than
         # a delta, so old snapshots are pure duplication; see prune_runs.
         pruned: dict[str, list[str]] = {}
-        for root, datasets in ((NORMALIZED_DIR, ("index_price_daily", "etf_price_daily", "southbound_market_flow", "etf_fund_activity_daily")),
+        for root, datasets in ((NORMALIZED_DIR, ("index_price_daily", "etf_price_daily", "southbound_market_flow", "etf_fund_activity_daily", "heatmap_etf_price_daily")),
                                # premium_history was missing here, so the one
                                # dataset that carries a full 11k-row series
                                # kept every run it had ever written while the
@@ -1155,7 +1209,7 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
                                (DERIVED_DIR, ("exposure_technicals", "relative_regime", "wrapper_metrics",
                                               "premium_history", "relative_pairs", "relative_pair_history",
                                               "fund_fees")),
-                               (RAW_DIR, ("index_close", "etf_close", "etf_spot", "etf_share_daily"))):
+                               (RAW_DIR, ("index_close", "etf_close", "etf_spot", "etf_share_daily", "heatmap_etf_price_daily"))):
             for dataset_name in datasets:
                 dropped = prune_runs(root, dataset_name, keep=RUN_RETENTION)
                 if dropped:
@@ -1197,3 +1251,120 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
         "fetch_errors": raw.get("_fetch_errors") or [],
     }
     return results
+
+
+def run_us_etf_flow_sampler(*, write: bool = True) -> dict[str, Any]:
+    """Sample US ETF size proxies without running the ordinary daily pipeline.
+
+    This is intentionally a separate, local-only path.  It appends a new
+    provider snapshot and a derived proxy-flow row only when at least one
+    ticker has a later observation date than the retained history.  A repeated
+    session therefore remains a quiet no-op, and a failed/empty fetch cannot
+    overwrite the prior snapshot.
+    """
+    current = fetch_us_etf_size_snapshot(HEATMAP_ETF_TICKERS)
+    previous = load_latest_normalized("us_etf_size_snapshot")
+    current_flow = build_us_proxy_flow(current, previous)
+
+    previous_latest: dict[str, pd.Timestamp] = {}
+    if previous is not None and not previous.empty and {"ticker", "observation_date"}.issubset(previous.columns):
+        prior_dates = pd.to_datetime(previous["observation_date"], errors="coerce")
+        prior_frame = previous.assign(_date=prior_dates).dropna(subset=["_date"])
+        if not prior_frame.empty:
+            previous_latest = {
+                str(row["ticker"]).strip().upper(): pd.Timestamp(row["_date"])
+                for _, row in prior_frame.sort_values("_date").groupby("ticker", sort=False).tail(1).iterrows()
+            }
+
+    new_mask = pd.Series(False, index=current.index)
+    if not current.empty:
+        current_dates = pd.to_datetime(current["observation_date"], errors="coerce")
+        new_mask = pd.Series(
+            [
+                pd.notna(obs_date)
+                and obs_date > previous_latest.get(str(ticker).strip().upper(), pd.Timestamp.min)
+                for ticker, obs_date in zip(current["ticker"], current_dates)
+            ],
+            index=current.index,
+        )
+    new_current = current.loc[new_mask].copy() if not current.empty else current
+    new_tickers = set(new_current.get("ticker", pd.Series(dtype=str)).astype(str).str.upper())
+
+    if previous is not None and not previous.empty:
+        size_history = pd.concat([previous, new_current], ignore_index=True)
+    else:
+        size_history = new_current.copy()
+    if not size_history.empty and {"ticker", "observation_date"}.issubset(size_history.columns):
+        size_history = (
+            size_history.drop_duplicates(["ticker", "observation_date"], keep="last")
+            .sort_values(["ticker", "observation_date"])
+            .reset_index(drop=True)
+        )
+
+    previous_flow = load_latest_derived("us_etf_flow_proxy_daily")
+    new_flow = current_flow[current_flow["ticker"].astype(str).str.upper().isin(new_tickers)].copy()
+    if previous_flow is not None and not previous_flow.empty:
+        flow_history = pd.concat([previous_flow, new_flow], ignore_index=True)
+    else:
+        flow_history = new_flow.copy()
+    if not flow_history.empty and {"ticker", "observation_date"}.issubset(flow_history.columns):
+        flow_history = (
+            flow_history.drop_duplicates(["ticker", "observation_date"], keep="last")
+            .sort_values(["ticker", "observation_date"])
+            .reset_index(drop=True)
+        )
+
+    missing_tickers = list(current.attrs.get("missing_tickers", []))
+    requested_tickers = list(current.attrs.get("requested_tickers", HEATMAP_ETF_TICKERS))
+    latest_observation = None
+    if not new_current.empty and "observation_date" in new_current.columns:
+        latest_observation = str(pd.to_datetime(new_current["observation_date"], errors="coerce").max().date())
+    elif not current.empty and "observation_date" in current.columns:
+        latest_observation = str(pd.to_datetime(current["observation_date"], errors="coerce").max().date())
+
+    run_info: dict[str, Any] = {}
+    if write and not new_current.empty:
+        run_id = new_run_id()
+        run_info["us_etf_size_snapshot"] = save_normalized(
+            "us_etf_size_snapshot",
+            size_history,
+            metadata={
+                "type": "normalized",
+                "run_scope": "full",
+                "source_id": "yahoo_finance_fast_info",
+                "requested_tickers": requested_tickers,
+                "missing_tickers": missing_tickers,
+            },
+            run_id=run_id,
+        )
+        run_info["us_etf_flow_proxy_daily"] = save_derived(
+            "us_etf_flow_proxy_daily",
+            flow_history,
+            metadata={
+                "type": "derived",
+                "run_scope": "full",
+                "source_id": "yahoo_finance_fast_info",
+                "method": "market_cap_proxy",
+            },
+            run_id=run_id,
+        )
+
+    return {
+        "mode": "us_etf_flow_sampler",
+        "snapshot": current,
+        "flow": current_flow,
+        "new_snapshot": new_current,
+        "flow_history": flow_history,
+        "new_session": bool(not new_current.empty),
+        "requested_tickers": requested_tickers,
+        "missing_tickers": missing_tickers,
+        "latest_observation": latest_observation,
+        "freshness": {
+            "status": "Unavailable" if current.empty else ("Degraded" if missing_tickers else "Healthy"),
+            "observation_date": latest_observation,
+            "observed": int(current["ticker"].nunique()) if not current.empty else 0,
+            "expected": len(requested_tickers),
+            "missing_tickers": missing_tickers,
+        },
+        "_run": run_info,
+    }

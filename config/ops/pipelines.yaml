@@ -1,12 +1,18 @@
 version: 1
-phase: 0
+phase: 1
 pipelines:
   openrouter-provider-activity:
     workflow: openrouter-provider-activity-daily.yml
+    artifact_prefix: ops-shadow-openrouter-provider-activity-
+    github_workflow_name: OpenRouter Provider Activity Daily
     cadence:
       kind: daily
       expected_interval_hours: 24
+      grace_hours: 6
     criticality: high
+    retry:
+      automatic: true
+      max_attempts: 1
     jobs:
       scrape-provider-activity:
         outputs:
@@ -27,7 +33,10 @@ pipelines:
               mode: max_age_days
               max_age_days: 2
           - id: daily-provider-economics
-            path: data/normalized/marts/daily_provider_economics.parquet
+            # One parquet per usage month, not a single file: the path names
+            # the partition directory. Either spelling resolves, but the
+            # registry states what is actually on disk.
+            path: data/normalized/marts/daily_provider_economics
             required: true
             validator: dataset_contract
             dataset_id: daily_provider_economics
@@ -53,10 +62,16 @@ pipelines:
 
   asia-markets-dashboard-refresh:
     workflow: asia-markets-dashboard-refresh-daily.yml
+    artifact_prefix: ops-shadow-asia-markets-dashboard-refresh-
+    github_workflow_name: Asia Markets Dashboard Data Refresh Daily
     cadence:
       kind: daily
       expected_interval_hours: 24
+      grace_hours: 6
     criticality: high
+    retry:
+      automatic: true
+      max_attempts: 1
     jobs:
       refresh-dashboard-data:
         outputs:
@@ -68,16 +83,24 @@ pipelines:
 
   semiconductor-memory-monthly:
     workflow: semiconductor-memory-monthly.yml
+    github_workflow_name: Semiconductor Memory Monthly
     cadence:
       kind: monthly_windows
       schedule_windows:
         - days: 1-5
           purpose: adata
+          job_id: adata-update
         - days: 14-16
           purpose: fred
+          job_id: fred-update
+      grace_hours: 6
     criticality: medium
+    retry:
+      automatic: true
+      max_attempts: 1
     jobs:
       adata-update:
+        artifact_prefix: ops-shadow-semiconductor-memory-adata-
         outputs:
           - id: semiconductor-memory-regime-monthly
             path: data/normalized/semiconductor_memory/semiconductor_memory_regime_monthly.parquet
@@ -88,6 +111,7 @@ pipelines:
               mode: monthly_release_lag
               release_lag_days: 5
       fred-update:
+        artifact_prefix: ops-shadow-semiconductor-memory-fred-
         outputs:
           - id: fred-semiconductor-ppi-monthly
             path: data/normalized/semiconductor_memory/fred_semiconductor_ppi_monthly.parquet
@@ -97,3 +121,133 @@ pipelines:
             freshness:
               mode: monthly_release_lag
               release_lag_days: 45
+
+  # The free institutional lanes. Each was backfilled once and then went
+  # unwatched: nothing in this registry covered them, so a lane whose source
+  # stopped answering would have kept its complete, valid, frozen dataset and
+  # reported success forever. max_age_days is set from each source's own
+  # publication cadence plus slack for one missed release, so a single bad day
+  # stays quiet and a lane that has actually stopped goes loud and stays loud.
+  free-institutional-daily:
+    workflow: free-institutional-daily.yml
+    # The reconciler finds a job's last successful run through this prefix.
+    # Without it collect_latest_reports skips the job entirely, last_finished
+    # reads as None, and every reconciliation opens a missed-schedule incident
+    # for a pipeline that ran perfectly.
+    artifact_prefix: ops-shadow-free-institutional-daily-
+    github_workflow_name: Free Institutional Data Daily
+    cadence:
+      kind: daily
+      expected_interval_hours: 24
+      # GitHub queues scheduled runs and can start them hours late -- this
+      # workflow's 05:10 cron first fired at 10:09. The window has to tolerate
+      # that or the monitor reports a delay as a miss.
+      grace_hours: 8
+    criticality: medium
+    jobs:
+      refresh:
+        outputs:
+          - id: hkex-market-flow-daily
+            path: data/normalized/hkex_market_flow/hkex_market_flow_daily.parquet
+            required: true
+            validator: observation_freshness
+            date_column: trade_date
+            freshness:
+              # HK holidays run to four consecutive sessions at Lunar New Year.
+              mode: max_age_days
+              max_age_days: 7
+          - id: eia-grid-hourly
+            path: data/normalized/eia_energy/eia_grid_hourly
+            required: true
+            validator: observation_freshness
+            date_column: timestamp_utc
+            freshness:
+              # EIA's bulk file lags real time by a couple of days.
+              mode: max_age_days
+              max_age_days: 5
+          - id: hkma-observations
+            path: data/normalized/hkma_macro/hkma_observations.parquet
+            required: true
+            validator: observation_freshness
+            date_column: date
+            freshness:
+              mode: max_age_days
+              max_age_days: 7
+
+  free-institutional-weekly:
+    workflow: free-institutional-weekly.yml
+    # The reconciler finds a job's last successful run through this prefix.
+    # Without it collect_latest_reports skips the job entirely, last_finished
+    # reads as None, and every reconciliation opens a missed-schedule incident
+    # for a pipeline that ran perfectly.
+    artifact_prefix: ops-shadow-free-institutional-weekly-
+    github_workflow_name: Free Institutional Data Weekly
+    cadence:
+      kind: weekly
+      expected_interval_hours: 168
+    criticality: low
+    jobs:
+      refresh:
+        outputs:
+          - id: factset-sp500-earnings-regime
+            path: data/normalized/factset_earnings/factset_sp500_earnings_regime.parquet
+            required: true
+            validator: observation_freshness
+            date_column: report_date
+            freshness:
+              # Weekly publication; three weeks tolerates two missed reports.
+              mode: max_age_days
+              max_age_days: 21
+
+  free-institutional-monthly:
+    workflow: free-institutional-monthly.yml
+    # The reconciler finds a job's last successful run through this prefix.
+    # Without it collect_latest_reports skips the job entirely, last_finished
+    # reads as None, and every reconciliation opens a missed-schedule incident
+    # for a pipeline that ran perfectly.
+    artifact_prefix: ops-shadow-free-institutional-monthly-
+    github_workflow_name: Free Institutional Data Monthly
+    cadence:
+      kind: monthly_windows
+      schedule_windows:
+        # job_id is required: expected_jobs_due matches windows to jobs by it,
+        # and a window without one is skipped, leaving the pipeline unchecked.
+        - days: "6"
+          job_id: refresh
+          purpose: monthly publication sweep
+    criticality: low
+    jobs:
+      refresh:
+        outputs:
+          - id: sp-pmi-subindices
+            path: data/normalized/sp_pmi/sp_pmi_subindices.parquet
+            required: true
+            validator: observation_freshness
+            date_column: period
+            freshness:
+              # `period` is a YYYY-MM month, so the newest value is already a
+              # month behind on the day it publishes; 75 days allows for that
+              # plus one missed release.
+              mode: max_age_days
+              max_age_days: 75
+          - id: msci-rebalance-events
+            path: data/normalized/msci_reviews/msci_rebalance_events.parquet
+            required: true
+            validator: observation_freshness
+            date_column: announcement_date
+            freshness:
+              # Index reviews are quarterly; 150 days spans one missed cycle.
+              mode: max_age_days
+              max_age_days: 150
+          - id: bis-observations
+            path: data/normalized/bis_macro/bis_observations.parquet
+            required: false
+            validator: file
+            freshness: {}
+            # Existence only. `period` is a quarter label ("2025-Q4"), which
+            # does parse -- to the quarter's FIRST day -- but BIS publishes the
+            # credit gap about two quarters in arrears, so that date is ~6
+            # months behind reality the moment it lands. A max_age_days loose
+            # enough to avoid false alarms would let the lane sit dead for a
+            # year before complaining, which is not monitoring. Give it a real
+            # published_at column and this becomes observation_freshness.

@@ -11,6 +11,7 @@ import argparse
 import json
 import re
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -94,8 +95,40 @@ def artifact_sector(path: str) -> str | None:
     return match.group(1) if match else None
 
 
+def commit_exists(ref: str) -> bool:
+    """Whether this clone can resolve ``ref`` to a commit.
+
+    On a push event the base comes from ``github.event.before``, which names
+    the ref's previous head. A force-push orphans that commit, and a runner's
+    fresh clone never receives unreachable objects -- so the base is routinely
+    a real-looking SHA that resolves nowhere, and `git diff` against it dies
+    with "fatal: bad object". A local clone hides this, because cloning from a
+    path hardlinks the whole object store, unreachable commits included.
+    """
+    return (
+        subprocess.run(
+            ["git", "cat-file", "-e", f"{ref}^{{commit}}"],
+            cwd=REPO_ROOT,
+            check=False,
+            capture_output=True,
+        ).returncode
+        == 0
+    )
+
+
 def changed_paths(base: str | None, head: str) -> list[str]:
-    if base and set(base) != {"0"}:
+    # An all-zero base means the ref was just created, and an unresolvable one
+    # means it was force-pushed or rewritten. Neither gives a diffable
+    # starting point, so both fall back to the head commit's own changes --
+    # narrower than the true range, but a real report instead of a crash.
+    usable_base = bool(base) and set(base or "") != {"0"} and commit_exists(base or "")
+    if base and set(base) != {"0"} and not usable_base:
+        print(
+            f"parity: base {base} is not present in this clone (force-push or "
+            "rewritten history); reviewing the head commit's own changes instead.",
+            file=sys.stderr,
+        )
+    if usable_base:
         output = git("diff", "--name-only", base, head, "--")
     else:
         output = git("diff-tree", "--root", "--no-commit-id", "--name-only", "-r", head)

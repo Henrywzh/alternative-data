@@ -3,7 +3,7 @@
 This is the durable handoff for the Asia Markets Index & ETF Allocation
 Monitor. It describes the current implementation, not a future proposal.
 
-Last verified against commit `f7df114a` on 2026-08-22.
+Last verified against the ETF heat-map implementation branch on 2026-09-15.
 
 ## Product boundary
 
@@ -91,6 +91,15 @@ Provider ownership is declared per exposure and routed explicitly:
   share-count observations for tracked A-share wrappers. SSE's source field is
   published in units of ten-thousand shares and is normalized to actual shares;
   SZSE's daily feed is already actual shares.
+- Yahoo Finance ETF history: the curated cross-asset heat-map price universe
+  (28 US-listed ETFs across broad equity, sectors, international markets,
+  commodities and fixed income). The price history is optional in the main
+  market run and retained when a later fetch is empty.
+- Local Yahoo Finance `fast_info`: post-close price/market-cap snapshots for
+  the same heat-map universe. The optional local sampler derives a
+  `market_cap_proxy` flow as the change in implied shares times the current
+  sampled price. It is explicitly not issuer-reported creation/redemption
+  flow and is not used by the ETF email alert until two observations exist.
 
 The pipeline stores five years of index history for rolling relative-signal
 baselines and two years of ETF price/premium chart history. Historical premium
@@ -122,6 +131,12 @@ functional layers:
 4. **Wrapper selection** — entry cost is premium plus half the bid/ask spread
    in basis points; peer rank is within the same exposure; liquidity is shown
    separately; hold rank uses management plus custody fee, size proxy and age.
+5. **Heat Maps / 热力图** — three subtabs: cross-asset ETF performance
+   treemap with 1D/1W/1M/3M/YTD/1Y controls, ETF flow treemap, and a selected
+   ETF detail view with close/SMA20/SMA50/SMA200 plus a shared-axis flow panel.
+   Missing returns and flows remain blank/unavailable rather than being
+   rendered as zero. China flow rows are NAV-validated when possible; US flow
+   rows are labelled `validated_proxy` and show their native currency.
 
 `Events / Consensus` is an independent macro-first workflow provided by
 `src/event_consensus/`. It reads a git-ignored compact local artifact and does
@@ -198,6 +213,19 @@ snapshot, not a promise that every future daily run has the same row count.
   remains `shares_only` and is not filled with IOPV, turnover or a provider's
   main-force-flow field. The activity source is non-blocking for the core
   market email and its absence is surfaced as degraded/unavailable health.
+- The Heat Maps flow view intentionally combines different currencies only as
+  a visual monitoring surface: Chinese official flow rows are CNY and local US
+  proxy rows are USD. It does not convert them into a common allocation total.
+  The US proxy sampler is local-only, runs after the US close, requires a
+  later observation date than the retained snapshot, and stays quiet on a
+  repeated session. A first observation is recorded for size but has no flow.
+- `etf_price_daily` and `etf_fund_activity_daily` are intentionally ignored
+  as full parquet histories because the close pipeline recreates them. If an
+  artifact-only build runs before that pipeline (or after a cache miss), the
+  builder may retain the last published JSON projection for these two legacy
+  datasets. It adds an explicit `Committed market-monitor artifact fallback`
+  source-health row and marks the artifact `partial`/`Degraded`; it never
+  presents the fallback as a fresh observation.
 - SSE Dividend currently has only one tracked wrapper; HSI and STAR 50 have
   two. This is a cohort-coverage limitation, not evidence that rank #1 is
   informative.

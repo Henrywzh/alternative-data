@@ -8,6 +8,7 @@ import pandas as pd
 from openrouter_data.models import RunContext, Snapshot
 from openrouter_data.pipeline import TaskSpendPipeline
 from openrouter_data.sources.task_spend import TaskSpendSource
+from openrouter_data.storage import StorageManager
 
 
 def _payload(*, window_days: int = 30) -> dict:
@@ -109,11 +110,23 @@ def test_task_spend_pipeline_upserts_daily_snapshots(tmp_path: Path, monkeypatch
     )
 
     first = pipeline.run_daily_update()
+    # The dataset is stored as one parquet per snapshot_date, so read it back
+    # through the storage API rather than a hard-coded single-file path.
+    storage = StorageManager(tmp_path)
+    store = storage.partition_store("openrouter_task_spend")
+    assert store is not None
+    after_first = {path.name: path.read_bytes() for path in store.paths()}
+
     second = pipeline.run_daily_update()
 
-    path = tmp_path / "data" / "normalized" / "openrouter" / "openrouter_task_spend.parquet"
-    written = pd.read_parquet(path)
+    written = storage.load_dataset("openrouter_task_spend")
     assert first.datasets_written["openrouter_task_spend"] == 3
     assert second.datasets_written["openrouter_task_spend"] == 3
     assert len(written) == 3
     assert written[["snapshot_date", "period", "window_days", "category_slug", "model_permaslug"]].duplicated().sum() == 0
+
+    # Re-running the same snapshot must not rewrite a single partition byte.
+    # A byte-identical parquet is still a new git blob, so this assertion is
+    # what keeps the daily job from re-adding the history it was split up to
+    # avoid.
+    assert {path.name: path.read_bytes() for path in store.paths()} == after_first

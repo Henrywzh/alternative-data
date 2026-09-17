@@ -16,6 +16,9 @@ from common.partitioned_parquet import (
     UNPARTITIONED,
     PartitionSpec,
     PartitionedParquetStore,
+    dataset_parts,
+    read_dataset,
+    resolve_dataset_path,
 )
 
 COLUMNS = ["signal_date", "entity_id", "score", "is_active"]
@@ -210,3 +213,96 @@ def test_day_granularity_leaves_a_plain_date_unchanged(tmp_path: Path) -> None:
     store = _store(tmp_path)
     store.write(_frame([("2026-01-05", "a", 1.0, True)]))
     assert {p.name for p in store.paths()} == {"2026-01-05.parquet"}
+
+
+# --- read-side resolution -------------------------------------------------
+#
+# Readers hold whichever spelling of a dataset's name was current when they
+# were written. A pipeline registry said `daily_provider_economics.parquet`
+# long after the dataset became a directory, and the consumer that only knew
+# how to `is_file()` reported a healthy pipeline as FAILED_ACTIONABLE.
+
+
+def _write_part(directory: Path, name: str, value: str) -> None:
+    directory.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame({"signal_date": [name], "entity_id": [value]}).to_parquet(
+        directory / f"{name}.parquet", index=False
+    )
+
+
+def test_either_spelling_resolves_to_the_partition_directory(tmp_path: Path) -> None:
+    _write_part(tmp_path / "prices", "2026-01-01", "a")
+
+    assert resolve_dataset_path(tmp_path / "prices") == tmp_path / "prices"
+    assert resolve_dataset_path(tmp_path / "prices.parquet") == tmp_path / "prices"
+
+
+def test_either_spelling_resolves_to_the_single_file(tmp_path: Path) -> None:
+    single = tmp_path / "prices.parquet"
+    pd.DataFrame({"signal_date": ["2026-01-01"]}).to_parquet(single, index=False)
+
+    assert resolve_dataset_path(single) == single
+    assert resolve_dataset_path(tmp_path / "prices") == single
+
+
+def test_the_partition_directory_wins_while_both_exist(tmp_path: Path) -> None:
+    # A migration writes the partitions before deleting the file, so for one
+    # run both are on disk. Preferring the file would serve the stale copy.
+    pd.DataFrame({"signal_date": ["2020-01-01"], "entity_id": ["stale"]}).to_parquet(
+        tmp_path / "prices.parquet", index=False
+    )
+    _write_part(tmp_path / "prices", "2026-01-01", "fresh")
+
+    assert read_dataset(tmp_path / "prices.parquet")["entity_id"].tolist() == ["fresh"]
+
+
+def test_an_empty_directory_does_not_mask_the_single_file(tmp_path: Path) -> None:
+    # An aborted migration can leave the directory behind with nothing in it;
+    # treating that as the dataset would report zero rows for live data.
+    (tmp_path / "prices").mkdir()
+    single = tmp_path / "prices.parquet"
+    pd.DataFrame({"signal_date": ["2026-01-01"]}).to_parquet(single, index=False)
+
+    assert resolve_dataset_path(tmp_path / "prices") == single
+
+
+def test_a_dotted_dataset_name_is_not_truncated(tmp_path: Path) -> None:
+    # `with_suffix("")` on `catalog.v2` yields `catalog` -- a different
+    # dataset. Only a `.parquet` suffix may be stripped.
+    _write_part(tmp_path / "catalog.v2", "2026-01-01", "a")
+    _write_part(tmp_path / "catalog", "2026-01-01", "wrong")
+
+    assert resolve_dataset_path(tmp_path / "catalog.v2") == tmp_path / "catalog.v2"
+
+
+def test_an_absent_dataset_resolves_to_nothing(tmp_path: Path) -> None:
+    assert resolve_dataset_path(tmp_path / "missing.parquet") is None
+    assert dataset_parts(tmp_path / "missing.parquet") == []
+    with pytest.raises(FileNotFoundError):
+        read_dataset(tmp_path / "missing.parquet")
+
+
+def test_parts_are_read_in_partition_name_order(tmp_path: Path) -> None:
+    for name in ("2026-03-01", "2026-01-01", "2026-02-01"):
+        _write_part(tmp_path / "prices", name, name)
+
+    frame = read_dataset(tmp_path / "prices")
+
+    assert frame["signal_date"].tolist() == ["2026-01-01", "2026-02-01", "2026-03-01"]
+
+
+def test_a_custom_reader_is_used_for_every_part(tmp_path: Path) -> None:
+    # openrouter_derived_data reads single-threaded to keep PyArrow's thread
+    # pool from outliving the interpreter; that must survive the shared path.
+    _write_part(tmp_path / "prices", "2026-01-01", "a")
+    _write_part(tmp_path / "prices", "2026-01-02", "b")
+    seen: list[Path] = []
+
+    def reader(path: Path) -> pd.DataFrame:
+        seen.append(path)
+        return pd.read_parquet(path, engine="pyarrow", use_threads=False)
+
+    frame = read_dataset(tmp_path / "prices", reader=reader)
+
+    assert len(seen) == 2
+    assert len(frame) == 2

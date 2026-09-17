@@ -6,7 +6,7 @@
     "title": "香港劳动力市场与人才政策",
     "description": "劳动力、就业、失业、职位空缺、工资、就业收入及官方人才政策流量的来源快照。",
     "sector": "hk-labour-market",
-    "generatedAt": "2026-08-30T14:11:48.789009Z",
+    "generatedAt": "2026-09-15T11:48:04.659077Z",
     "cards": [
       {
         "id": "labour_force_card",
@@ -686,13 +686,13 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `66bebab253891ab7` · 生成于 2026-08-30T14:11:48.789009Z。"
+        "body": "**数据快照：** `61fbf75aed9bca0b` · 生成于 2026-09-15T11:48:04.659077Z。"
       }
     ]
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-30T14:11:48.789009Z",
+    "generatedAt": "2026-09-15T11:48:04.659077Z",
     "status": "ready",
     "datasets": {
       "kpi_labour_force": [
@@ -31826,11 +31826,11 @@
           "median_monthly_earnings": 18800
         },
         {
-          "industry": "地产及专业、商用服务",
+          "industry": "总计",
           "median_monthly_earnings": 21000
         },
         {
-          "industry": "总计",
+          "industry": "地产及专业、商用服务",
           "median_monthly_earnings": 21000
         },
         {
@@ -36354,11 +36354,11 @@
           "median_monthly_earnings": 16800
         },
         {
-          "occupation": "文书支援人员",
+          "occupation": "机台及机器操作员及装配员",
           "median_monthly_earnings": 20000
         },
         {
-          "occupation": "机台及机器操作员及装配员",
+          "occupation": "文书支援人员",
           "median_monthly_earnings": 20000
         },
         {
@@ -37127,7 +37127,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-labour-market/",
-    "snapshotId": "66bebab253891ab7",
+    "snapshotId": "61fbf75aed9bca0b",
     "dataAsOf": "2026-07-31"
   }
 }

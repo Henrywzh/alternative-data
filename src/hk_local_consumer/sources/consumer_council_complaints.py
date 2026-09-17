@@ -4,6 +4,8 @@ from datetime import datetime, timezone
 import pandas as pd
 import requests
 
+from ..http import get_with_retry
+
 from hk_local_consumer.config import (
     DATA_SOURCE_FALLBACK,
     DATA_SOURCE_LIVE,
@@ -40,12 +42,10 @@ def fetch_consumer_council_complaints() -> pd.DataFrame:
     records = []
 
     try:
-        resp = requests.get(
+        resp = get_with_retry(
             CONSUMER_COUNCIL_COMPLAINTS_URL,
             headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"},
-            timeout=15,
         )
-        resp.raise_for_status()
         data = resp.json()
 
         complaints_list = data.get("complaints", [])

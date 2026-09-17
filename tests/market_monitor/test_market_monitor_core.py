@@ -2904,3 +2904,252 @@ def test_the_shipped_registry_states_the_fees_the_issuer_publishes():
     }
 
     assert reconcile_fees(build_metadata_frame(), published) == []
+
+
+def test_optional_share_errors_are_not_counted_as_email_data_warnings():
+    from market_monitor.alerts import build_email_html
+
+    html = build_email_html(
+        report_date="2026-09-10",
+        technicals=pd.DataFrame(),
+        regime=pd.DataFrame(),
+        wrappers=pd.DataFrame(),
+        freshness={
+            "quote": {"status": "Fresh"},
+            "daily_close": {"status": "Fresh"},
+            "fetch_errors": [
+                {
+                    "dataset": "etf_share_daily",
+                    "severity": "optional",
+                    "error": "KeyError: missing share columns",
+                },
+                {
+                    "dataset": "etf_spot",
+                    "error": "ConnectionError: reset",
+                },
+            ],
+        },
+    )
+    assert "1 个数据源请求失败" in html
+    assert "2 个数据源请求失败" not in html
+    assert "KeyError" not in html
+
+
+def test_market_artifact_includes_heatmap_datasets():
+    builder = _load_builder()
+    artifact, _labels = builder.build_artifact()
+    datasets = artifact["snapshot"]["datasets"]
+    assert {"etf_heatmap_returns", "etf_heatmap_flows", "heatmap_etf_price_daily"} <= datasets.keys()
+
+
+# The published-artifact fallback is the only durable copy of the two ETF
+# histories .gitignore keeps out of the repo, so these tests build their own
+# published artifact in tmp rather than reading the committed one.  Asserting
+# against the real file made the tests pass for the wrong reason: they would
+# have kept passing on an empty fallback and started failing the day a build
+# published the very emptiness they exist to catch.
+# Both are CSI300 wrappers; the exposure id has to be a real one because
+# build_artifact filters the activity history by etf_activity_exposures().
+FALLBACK_FUND_IDS = ("510300", "159919")
+FALLBACK_EXPOSURE_ID = "csi300"
+FALLBACK_DATES = ("2026-01-05", "2026-02-05", "2026-03-05")
+
+
+def _published_artifact_fixture(path, *, dates=FALLBACK_DATES):
+    """Write a minimal committed artifact and return its dataset row counts."""
+    price = [
+        {"date": day, "ticker": fund, "close": 4.0 + index}
+        for index, day in enumerate(dates)
+        for fund in FALLBACK_FUND_IDS
+    ]
+    premium = [
+        {"date": day, "ticker": fund, "premium_pct": 0.1, "basis": "nav"}
+        for day in dates
+        for fund in FALLBACK_FUND_IDS
+    ]
+    activity = [
+        {
+            "observation_date": day,
+            "fund_id": fund,
+            "exposure_id": FALLBACK_EXPOSURE_ID,
+            "shares_outstanding": 1_000.0,
+        }
+        for day in dates
+        for fund in FALLBACK_FUND_IDS
+    ]
+    payload = {
+        "snapshot": {
+            "datasets": {
+                "etf_price_daily_tail": price,
+                "premium_history": premium,
+                "etf_fund_activity_daily": activity,
+            }
+        }
+    }
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    return {
+        "etf_price_daily_tail": len(price),
+        "premium_history": len(premium),
+        "etf_fund_activity_daily": len(activity),
+    }
+
+
+FALLBACK_CACHE_NAMES = {"etf_price_daily", "premium_history", "etf_fund_activity_daily"}
+
+
+def _build_with_caches(monkeypatch, tmp_path, cache_frames, *, publish=True):
+    """Run the builder against a tmp published artifact and stubbed caches."""
+    builder = _load_builder()
+    original_loader = builder.load_latest_with_lineage
+
+    artifact_path = tmp_path / "market-monitor-artifact.json"
+    expected = _published_artifact_fixture(artifact_path) if publish else {}
+    monkeypatch.setattr(builder, "COMMITTED_ARTIFACT_PATH", artifact_path)
+
+    def loader(root, dataset_name, scope="full"):
+        if dataset_name in cache_frames:
+            return cache_frames[dataset_name]
+        return original_loader(root, dataset_name, scope=scope)
+
+    monkeypatch.setattr(builder, "load_latest_with_lineage", loader)
+    artifact, status = builder.build_artifact()
+    return artifact["snapshot"]["datasets"], status, expected
+
+
+def _fallback_note(status):
+    for row in status["sources"]:
+        if row["source"] == "Committed market-monitor artifact fallback":
+            return row
+    return None
+
+
+def test_artifact_builder_retains_published_etf_history_when_cache_is_missing(
+    monkeypatch, tmp_path
+):
+    """A clean builder-only checkout must not erase the existing ETF Monitor."""
+    caches = {name: (pd.DataFrame(), None) for name in FALLBACK_CACHE_NAMES}
+    datasets, status, expected = _build_with_caches(monkeypatch, tmp_path, caches)
+
+    assert len(datasets["etf_price_daily_tail"]) == expected["etf_price_daily_tail"]
+    assert len(datasets["etf_fund_activity_daily"]) == expected["etf_fund_activity_daily"]
+    assert datasets["premium_history"]
+    assert status["overall_status"] == "Degraded"
+    note = _fallback_note(status)
+    assert note is not None and note["status"] == "Degraded"
+    assert "[unavailable]" in note["notes"]
+
+
+def test_artifact_builder_rejects_malformed_legacy_cache(monkeypatch, tmp_path):
+    """A non-empty but unusable cache must not erase published ETF views."""
+    caches = {
+        name: (pd.DataFrame({"corrupt": [1]}), {"run_id": "bad-cache"})
+        for name in FALLBACK_CACHE_NAMES
+    }
+    datasets, status, expected = _build_with_caches(monkeypatch, tmp_path, caches)
+
+    assert len(datasets["etf_price_daily_tail"]) == expected["etf_price_daily_tail"]
+    assert len(datasets["etf_fund_activity_daily"]) == expected["etf_fund_activity_daily"]
+    assert status["overall_status"] == "Degraded"
+    assert "[unavailable]" in _fallback_note(status)["notes"]
+
+
+def test_artifact_builder_retains_published_history_when_cache_is_truncated(
+    monkeypatch, tmp_path
+):
+    """A partial fetch must not silently replace a long history with a stub.
+
+    This is the case an emptiness-only guard missed: the cache below is
+    perfectly well-formed, so it reads as "usable", but it has lost every
+    observation before its single row.  Publishing it would collapse the ETF
+    chart to one point while the status panel stayed healthy.
+    """
+    one_row = pd.DataFrame(
+        {"date": ["2026-06-01"], "fund_id": ["510300"], "close": [4.2]}
+    )
+    caches = {"etf_price_daily": (one_row, {"run_id": "partial"})}
+    datasets, status, expected = _build_with_caches(monkeypatch, tmp_path, caches)
+
+    assert len(datasets["etf_price_daily_tail"]) == expected["etf_price_daily_tail"]
+    assert status["overall_status"] == "Degraded"
+    note = _fallback_note(status)
+    assert "etf_price_daily_tail [truncated]" in note["notes"]
+    # The operator needs to see what the cache actually offered, not just that
+    # something was wrong.
+    assert "1 rows starting 2026-06-01" in note["notes"]
+
+
+def test_artifact_builder_prefers_a_cache_that_still_has_the_history(
+    monkeypatch, tmp_path
+):
+    """A cache reaching further back than the artifact is used, not overridden."""
+    days = pd.date_range("2024-01-01", periods=400, freq="D")
+    deep = pd.DataFrame(
+        {
+            "date": list(days) * 2,
+            "fund_id": ["510300"] * len(days) + ["159919"] * len(days),
+            "close": [4.2] * (len(days) * 2),
+        }
+    )
+    caches = {"etf_price_daily": (deep, {"run_id": "healthy"})}
+    datasets, status, expected = _build_with_caches(monkeypatch, tmp_path, caches)
+
+    published = datasets["etf_price_daily_tail"]
+    assert len(published) > expected["etf_price_daily_tail"]
+    assert min(row["date"] for row in published) < FALLBACK_DATES[0]
+    note = _fallback_note(status)
+    assert note is None or "etf_price_daily_tail" not in note["notes"]
+
+
+def test_artifact_builder_survives_a_missing_committed_artifact(monkeypatch, tmp_path):
+    """With nothing published yet there is no floor -- and no crash."""
+    caches = {name: (pd.DataFrame(), None) for name in FALLBACK_CACHE_NAMES}
+    datasets, status, _ = _build_with_caches(
+        monkeypatch, tmp_path, caches, publish=False
+    )
+
+    assert datasets["etf_price_daily_tail"] == []
+    assert _fallback_note(status) is None
+
+
+def test_optional_flow_run_cannot_make_core_artifact_healthy():
+    from market_monitor.heatmaps import build_heatmap_health
+    status = build_heatmap_health(expected=3, observed=1, latest_date="2026-09-14")
+    assert status["status"] == "Degraded"
+    assert status["coverage"] == "1/3"
+
+
+def test_heatmap_health_statuses():
+    from market_monitor.heatmaps import build_heatmap_health
+    healthy = build_heatmap_health(expected=25, observed=25, latest_date="2026-09-14")
+    assert healthy["status"] == "Healthy"
+    assert healthy["coverage"] == "25/25"
+
+    unavailable = build_heatmap_health(expected=25, observed=0, latest_date=None)
+    assert unavailable["status"] == "Unavailable"
+    assert unavailable["coverage"] == "0/25"
+    assert unavailable["latest_observation"] == "—"
+
+
+def test_pipeline_retains_heatmap_history_on_source_failure(monkeypatch):
+    import market_monitor.pipeline as pl
+
+    retained = pd.DataFrame([{"date": "2026-09-12", "ticker": "SPY", "close": 500.0}])
+    monkeypatch.setattr(
+        pl, "load_latest_normalized", lambda name: retained if name == "heatmap_etf_price_daily" else pd.DataFrame()
+    )
+    monkeypatch.setattr(
+        pl,
+        "fetch_all_raw",
+        lambda **kwargs: {
+            "index_close": pd.DataFrame(),
+            "etf_close": pd.DataFrame(),
+            "etf_spot": pd.DataFrame(),
+            "heatmap_etf_price_daily": pd.DataFrame(),
+            "_fetch_errors": [{"dataset": "heatmap_etf_price_daily", "severity": "optional", "error": "timeout"}],
+        },
+    )
+
+    results = pl.run_pipeline(write=False)
+    assert "heatmap_etf_price_daily" in results
+    assert len(results["heatmap_etf_price_daily"]) == 1
+    assert results["heatmap_etf_price_daily"].iloc[0]["ticker"] == "SPY"

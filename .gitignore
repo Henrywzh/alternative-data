@@ -36,6 +36,15 @@ data/normalized/*
 data/normalized/openrouter/*
 !data/normalized/openrouter/*.csv
 !data/normalized/openrouter/*.parquet
+# A dataset stored as one parquet per observation date lives in a directory,
+# so the *.parquet rule above does not reach it. Git cannot re-include a file
+# whose parent directory is excluded, so the directory itself has to be
+# un-ignored before the parts inside it. Without these the daily job deletes
+# the tracked single file, commits that deletion, and the partitions it wrote
+# are silently ignored -- the dataset disappears from the repository with no
+# error anywhere. That is exactly what happened to openrouter_task_spend.
+!data/normalized/openrouter/*/
+!data/normalized/openrouter/*/*.parquet
 
 # documented OpenRouter API datasets + compact landing-page mart
 !data/normalized/openrouter_official/
@@ -248,6 +257,8 @@ data/normalized/provider_incidents/*
 !data/normalized/ai_hiring/
 data/normalized/ai_hiring/*
 !data/normalized/ai_hiring/*.parquet
+!data/normalized/ai_hiring/*/
+!data/normalized/ai_hiring/*/*.parquet
 
 # global_market_regime: commit normalized/derived snapshots; raw Atlanta workbook stays local.
 !data/normalized/global_market_regime/
@@ -275,6 +286,12 @@ data/normalized/sec_edgar/*
 !data/normalized/marts/
 data/normalized/marts/*
 !data/normalized/marts/*.parquet
+# A mart stored as one parquet per observation date lives in a directory, so
+# the *.parquet rule above does not reach it. Without these two the partitions
+# are silently ignored: the refresh job writes them, `git add` skips them, and
+# the published mart quietly stops updating.
+!data/normalized/marts/*/
+!data/normalized/marts/*/*.parquet
 # ...except the on-demand refresh scratch. The Refresh button on the company
 # page writes these on a single operator's machine from an ad-hoc fetch. The
 # rule above un-ignores every mart parquet, so without these the first click
@@ -563,7 +580,20 @@ data/raw/factset_earnings/**
 data/raw/sp_pmi/**
 data/raw/msci_reviews/**
 data/raw/hkex_market_flow/**
-!data/raw/*/*/
+# Descend into each lane's run directories so the manifest re-includes below
+# can reach them. Scoped to these eight lanes, not `!data/raw/*/*/`: that
+# wildcard un-ignored every second-level directory under data/raw, which made
+# 180 MB of local PDF and image caches (hk_transport, minerals_signal_data)
+# committable by a plain `git add -A`. They are each under the per-file size
+# budget, so the size guard would not have caught it either.
+!data/raw/bis_macro/*/
+!data/raw/hkma_macro/*/
+!data/raw/eia_energy/*/
+!data/raw/cme_voi/*/
+!data/raw/factset_earnings/*/
+!data/raw/sp_pmi/*/
+!data/raw/msci_reviews/*/
+!data/raw/hkex_market_flow/*/
 !data/raw/bis_macro/*/manifest.json
 !data/raw/hkma_macro/*/manifest.json
 !data/raw/eia_energy/*/manifest.json

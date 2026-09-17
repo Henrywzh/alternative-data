@@ -43,14 +43,33 @@ jobs:
 
       - name: Commit normalized dataset
         run: |
-          if [ -z "$(git status --porcelain -- data/normalized/openrouter/openrouter_task_spend.parquet)" ]; then
+          # openrouter_task_spend is stored as one parquet per snapshot_date.
+          # The storage layer migrates on write, so the first run after the
+          # layout change deletes the single file and creates the directory --
+          # both spellings have to be handled. A path is included when it
+          # exists OR is still tracked: a tracked-but-deleted file must be
+          # staged, or its deletion stays in the working tree and the later
+          # `git pull --rebase` aborts with "You have unstaged changes".
+          PATHS=""
+          for candidate in \
+            data/normalized/openrouter/openrouter_task_spend \
+            data/normalized/openrouter/openrouter_task_spend.parquet \
+            data/normalized/openrouter/openrouter_task_spend.csv; do
+            if [ -e "$candidate" ] || git ls-files --error-unmatch "$candidate" >/dev/null 2>&1; then
+              PATHS="$PATHS $candidate"
+            fi
+          done
+
+          # shellcheck disable=SC2086
+          if [ -z "$PATHS" ] || [ -z "$(git status --porcelain -- $PATHS)" ]; then
             echo "No task-spend dataset changes to commit"
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/normalized/openrouter/openrouter_task_spend.parquet
+          # shellcheck disable=SC2086
+          git add -A -- $PATHS
           git commit -m "chore: update OpenRouter task spend dataset"
           for attempt in 1 2 3; do
             if git pull --rebase origin "${{ github.event.repository.default_branch }}" && git push; then
@@ -74,5 +93,6 @@ jobs:
         with:
           name: openrouter-task-spend-normalized-dataset
           path: |
+            data/normalized/openrouter/openrouter_task_spend/
             data/normalized/openrouter/openrouter_task_spend.parquet
           if-no-files-found: error

@@ -43,13 +43,23 @@ pipelines:
     return registry
 
 
-def test_phase_zero_registry_contains_exact_pilots_and_real_jobs() -> None:
+def test_registry_contains_exactly_the_watched_pipelines_and_real_jobs() -> None:
+    """The registry is an explicit inventory, so every addition is deliberate.
+
+    Kept exhaustive rather than relaxed to a subset: what this catches is a
+    pipeline appearing or disappearing by accident, and a >= assertion would
+    notice neither. The three free-institutional entries joined the original
+    Phase 0 pilots when those lanes got their first scheduled refresh.
+    """
     registry = load_registry(REGISTRY_PATH, repo_root=ROOT)
 
     assert set(registry.pipelines) == {
         "asia-markets-dashboard-refresh",
         "openrouter-provider-activity",
         "semiconductor-memory-monthly",
+        "free-institutional-daily",
+        "free-institutional-weekly",
+        "free-institutional-monthly",
     }
     assert set(registry.pipelines["openrouter-provider-activity"].jobs) == {
         "scrape-provider-activity"
@@ -61,6 +71,12 @@ def test_phase_zero_registry_contains_exact_pilots_and_real_jobs() -> None:
         "adata-update",
         "fred-update",
     }
+    for pipeline_id in (
+        "free-institutional-daily",
+        "free-institutional-weekly",
+        "free-institutional-monthly",
+    ):
+        assert set(registry.pipelines[pipeline_id].jobs) == {"refresh"}
 
 
 def test_registry_rejects_paths_that_escape_the_repository(tmp_path: Path) -> None:

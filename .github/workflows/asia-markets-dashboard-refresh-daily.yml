@@ -109,6 +109,27 @@ jobs:
             echo "::warning::one or more local-consumer sources failed; refresh guard will preserve the last complete artifact"
           fi
 
+      - name: Ingest HK Labour Market source data
+        id: labour_market_ingest
+        run: |
+          # build_hk_labour_market_artifact.py reads the latest normalized
+          # vintage and raises FileNotFoundError when there is none. A clean
+          # runner has no gitignored normalized cache and no labour-market
+          # data is tracked, so with no ingest step that builder failed on
+          # every single run -- which is what kept producer.sector-builders
+          # reporting failure.
+          #
+          # Deliberately not --strict: run-update covers many C&SD tables, and
+          # making one blocked publisher fail the whole refresh is exactly the
+          # trap the local-consumer lane fell into. A partial vintage still
+          # lets the builder produce an artifact.
+          if hk-labour-market-data run-update; then
+            echo "producer_outcome=success" >> "$GITHUB_OUTPUT"
+          else
+            echo "producer_outcome=failure" >> "$GITHUB_OUTPUT"
+            echo "::warning::labour-market ingest failed; the builder will fall back to the last artifact"
+          fi
+
       - name: Refresh HK Real Estate + HK Local Consumer artifacts
         id: sector_builders
         # A single upstream publisher must not block the other sector
@@ -214,6 +235,8 @@ jobs:
         working-directory: .
         env:
           OPS_JOB_STATUS: ${{ job.status }}
+          OPS_INCIDENT_REPO: ${{ secrets.OPS_INCIDENT_REPO }}
+          OPS_INCIDENT_TOKEN: ${{ secrets.OPS_INCIDENT_TOKEN }}
         run: |
           python scripts/ops/finalize_pipeline.py \
             --pipeline-id asia-markets-dashboard-refresh \
@@ -221,6 +244,7 @@ jobs:
             --execution "$OPS_JOB_STATUS" \
             --producer-outcome "bd-history=${{ steps.bd_history.outputs.producer_outcome }}" \
             --producer-outcome "local-consumer-ingest=${{ steps.local_consumer_ingest.outputs.producer_outcome }}" \
+            --producer-outcome "labour-market-ingest=${{ steps.labour_market_ingest.outputs.producer_outcome }}" \
             --producer-outcome "sector-builders=${{ steps.sector_builders.outputs.producer_outcome }}" \
             --baseline-report /tmp/ops-baseline-asia-markets-dashboard-refresh.json \
             --output artifacts/ops/asia-markets-dashboard-refresh/run-report.json \

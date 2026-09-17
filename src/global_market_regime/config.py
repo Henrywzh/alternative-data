@@ -59,6 +59,87 @@ FRED_SERIES = (
         "href": "https://fred.stlouisfed.org/series/DGS2",
     },
     {
+        "series_id": "DGS1MO",
+        "indicator_id": "us1m",
+        "label_en": "US 1-month yield",
+        "label_zh": "美国1个月国债收益率",
+        "unit": "percent",
+        "source": "FRED / Treasury H.15",
+        "href": "https://fred.stlouisfed.org/series/DGS1MO",
+    },
+    {
+        "series_id": "DGS3MO",
+        "indicator_id": "us3m",
+        "label_en": "US 3-month yield",
+        "label_zh": "美国3个月国债收益率",
+        "unit": "percent",
+        "source": "FRED / Treasury H.15",
+        "href": "https://fred.stlouisfed.org/series/DGS3MO",
+    },
+    {
+        "series_id": "DGS6MO",
+        "indicator_id": "us6m",
+        "label_en": "US 6-month yield",
+        "label_zh": "美国6个月国债收益率",
+        "unit": "percent",
+        "source": "FRED / Treasury H.15",
+        "href": "https://fred.stlouisfed.org/series/DGS6MO",
+    },
+    {
+        "series_id": "DGS1",
+        "indicator_id": "us1y",
+        "label_en": "US 1-year yield",
+        "label_zh": "美国1年期国债收益率",
+        "unit": "percent",
+        "source": "FRED / Treasury H.15",
+        "href": "https://fred.stlouisfed.org/series/DGS1",
+    },
+    {
+        "series_id": "DGS3",
+        "indicator_id": "us3y",
+        "label_en": "US 3-year yield",
+        "label_zh": "美国3年期国债收益率",
+        "unit": "percent",
+        "source": "FRED / Treasury H.15",
+        "href": "https://fred.stlouisfed.org/series/DGS3",
+    },
+    {
+        "series_id": "DGS5",
+        "indicator_id": "us5y",
+        "label_en": "US 5-year yield",
+        "label_zh": "美国5年期国债收益率",
+        "unit": "percent",
+        "source": "FRED / Treasury H.15",
+        "href": "https://fred.stlouisfed.org/series/DGS5",
+    },
+    {
+        "series_id": "DGS7",
+        "indicator_id": "us7y",
+        "label_en": "US 7-year yield",
+        "label_zh": "美国7年期国债收益率",
+        "unit": "percent",
+        "source": "FRED / Treasury H.15",
+        "href": "https://fred.stlouisfed.org/series/DGS7",
+    },
+    {
+        "series_id": "DGS20",
+        "indicator_id": "us20y",
+        "label_en": "US 20-year yield",
+        "label_zh": "美国20年期国债收益率",
+        "unit": "percent",
+        "source": "FRED / Treasury H.15",
+        "href": "https://fred.stlouisfed.org/series/DGS20",
+    },
+    {
+        "series_id": "DGS30",
+        "indicator_id": "us30y",
+        "label_en": "US 30-year yield",
+        "label_zh": "美国30年期国债收益率",
+        "unit": "percent",
+        "source": "FRED / Treasury H.15",
+        "href": "https://fred.stlouisfed.org/series/DGS30",
+    },
+    {
         "series_id": "VIXCLS",
         "indicator_id": "vix",
         "label_en": "VIX",
@@ -95,6 +176,13 @@ FRED_SERIES = (
         "href": "https://fred.stlouisfed.org/series/DTWEXAFEGS",
     },
 )
+
+CNN_FEAR_GREED_URL = (
+    "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
+)
+CNN_FEAR_GREED_PAGE = "https://www.cnn.com/markets/fear-and-greed"
+CNN_FEAR_GREED_SOURCE = "CNN Business Fear & Greed"
+CNN_FEAR_GREED_SERIES_ID = "cnn_fear_greed"
 
 ATLANTA_MPT_URL = (
     "https://www.atlantafed.org/-/media/Project/Atlanta/FRBA/Documents/"
@@ -230,3 +318,208 @@ CROSS_ASSET_EXPOSURES = (
     "nikkei225",
     "kospi",
 )
+# US sector ETFs reused from market-monitor for the Regime leadership table.
+# These are wrappers (XLK/XLF-style), not official SPY weights.
+SECTOR_LEADERSHIP_EXPOSURES = (
+    "us_tech",
+    "us_discretionary",
+    "us_communication",
+    "us_healthcare",
+    "us_staples",
+    "us_utilities",
+)
+SECTOR_LEADERSHIP_BENCHMARK = "us_broad"
+
+# Constant-maturity Treasury curve for the Fixed Income tab. These points are
+# the standard FRED H.15 tenors. Shepherd's 1.5M / 2M / 4M par-curve knots are
+# omitted in V1; the 2Y-10Y shape does not depend on them.
+TREASURY_CURVE_POINTS = (
+    {"indicator_id": "us1m", "maturity": "1M", "tenor_months": 1, "label_en": "1 Mo", "label_zh": "1个月"},
+    {"indicator_id": "us3m", "maturity": "3M", "tenor_months": 3, "label_en": "3 Mo", "label_zh": "3个月"},
+    {"indicator_id": "us6m", "maturity": "6M", "tenor_months": 6, "label_en": "6 Mo", "label_zh": "6个月"},
+    {"indicator_id": "us1y", "maturity": "1Y", "tenor_months": 12, "label_en": "1 Yr", "label_zh": "1年"},
+    {"indicator_id": "us2y", "maturity": "2Y", "tenor_months": 24, "label_en": "2 Yr", "label_zh": "2年"},
+    {"indicator_id": "us3y", "maturity": "3Y", "tenor_months": 36, "label_en": "3 Yr", "label_zh": "3年"},
+    {"indicator_id": "us5y", "maturity": "5Y", "tenor_months": 60, "label_en": "5 Yr", "label_zh": "5年"},
+    {"indicator_id": "us7y", "maturity": "7Y", "tenor_months": 84, "label_en": "7 Yr", "label_zh": "7年"},
+    {"indicator_id": "us10y", "maturity": "10Y", "tenor_months": 120, "label_en": "10 Yr", "label_zh": "10年"},
+    {"indicator_id": "us20y", "maturity": "20Y", "tenor_months": 240, "label_en": "20 Yr", "label_zh": "20年"},
+    {"indicator_id": "us30y", "maturity": "30Y", "tenor_months": 360, "label_en": "30 Yr", "label_zh": "30年"},
+)
+TREASURY_CURVE_SNAPSHOT_LABELS = (
+    {"snapshot_id": "latest", "label_en": "Latest published", "label_zh": "最新公布"},
+    {"snapshot_id": "week_ago", "label_en": "1 week ago", "label_zh": "一周前"},
+    {"snapshot_id": "month_ago", "label_en": "1 month ago", "label_zh": "一个月前"},
+    {"snapshot_id": "year_start", "label_en": "Start of year", "label_zh": "年初"},
+)
+
+MACRO_COMMODITY_ASSETS = (
+    {
+        "asset_id": "gold",
+        "symbol": "GC=F",
+        "label_en": "Gold (GC=F)",
+        "label_zh": "黄金 (GC=F)",
+        "group": "metals",
+        "unit": "USD/oz",
+        "proxy_note_en": "Front-month COMEX gold futures via Yahoo Finance, not LBMA spot.",
+        "proxy_note_zh": "Yahoo Finance 的 COMEX 黄金近月期货，不是 LBMA 现货。",
+    },
+    {
+        "asset_id": "silver",
+        "symbol": "SI=F",
+        "label_en": "Silver (SI=F)",
+        "label_zh": "白银 (SI=F)",
+        "group": "metals",
+        "unit": "USD/oz",
+        "proxy_note_en": "Front-month COMEX silver futures via Yahoo Finance, not LBMA spot.",
+        "proxy_note_zh": "Yahoo Finance 的 COMEX 白银近月期货，不是 LBMA 现货。",
+    },
+    {
+        "asset_id": "platinum",
+        "symbol": "PL=F",
+        "label_en": "Platinum (PL=F)",
+        "label_zh": "铂金 (PL=F)",
+        "group": "metals",
+        "unit": "USD/oz",
+        "proxy_note_en": "Front-month NYMEX platinum futures via Yahoo Finance.",
+        "proxy_note_zh": "Yahoo Finance 的 NYMEX 铂金近月期货。",
+    },
+    {
+        "asset_id": "palladium",
+        "symbol": "PA=F",
+        "label_en": "Palladium (PA=F)",
+        "label_zh": "钯金 (PA=F)",
+        "group": "metals",
+        "unit": "USD/oz",
+        "proxy_note_en": "Front-month NYMEX palladium futures via Yahoo Finance.",
+        "proxy_note_zh": "Yahoo Finance 的 NYMEX 钯金近月期货。",
+    },
+    {
+        "asset_id": "wti",
+        "symbol": "CL=F",
+        "label_en": "WTI crude (CL=F)",
+        "label_zh": "WTI原油 (CL=F)",
+        "group": "energy",
+        "unit": "USD/bbl",
+        "proxy_note_en": "Front-month NYMEX WTI futures via Yahoo Finance, not the FRED EIA spot used by the oil threshold.",
+        "proxy_note_zh": "Yahoo Finance 的 NYMEX WTI 近月期货，不是油价门槛使用的 FRED EIA 现货。",
+    },
+    {
+        "asset_id": "copper",
+        "symbol": "HG=F",
+        "label_en": "Copper (HG=F)",
+        "label_zh": "铜 (HG=F)",
+        "group": "metals",
+        "unit": "USD/lb",
+        "proxy_note_en": "Front-month COMEX copper futures via Yahoo Finance.",
+        "proxy_note_zh": "Yahoo Finance 的 COMEX 铜近月期货。",
+    },
+    {
+        "asset_id": "natgas",
+        "symbol": "NG=F",
+        "label_en": "Natural gas (NG=F)",
+        "label_zh": "天然气 (NG=F)",
+        "group": "energy",
+        "unit": "USD/MMBtu",
+        "proxy_note_en": "Front-month NYMEX Henry Hub futures via Yahoo Finance.",
+        "proxy_note_zh": "Yahoo Finance 的 NYMEX 亨利港近月期货。",
+    },
+    {
+        "asset_id": "uranium",
+        "symbol": "URA",
+        "label_en": "Uranium (URA)",
+        "label_zh": "铀 (URA)",
+        "group": "energy",
+        "unit": "USD",
+        "proxy_note_en": "Global X Uranium ETF price, not a uranium spot print.",
+        "proxy_note_zh": "Global X 铀 ETF 价格，不是铀现货。",
+    },
+    {
+        "asset_id": "dxy",
+        "symbol": "DX-Y.NYB",
+        "label_en": "US Dollar Index",
+        "label_zh": "美元指数",
+        "group": "fx",
+        "unit": "index",
+        "proxy_note_en": "ICE US Dollar Index via Yahoo Finance.",
+        "proxy_note_zh": "Yahoo Finance 的 ICE 美元指数。",
+    },
+)
+MACRO_COMMODITY_SOURCE = "Yahoo Finance futures / ETF proxies"
+MACRO_COMMODITY_SERIES_ID = "macro_commodities"
+
+INFLATION_SERIES = (
+    {
+        "series_id": "PCEPI",
+        "indicator_id": "headline_pce",
+        "label_en": "Headline PCE",
+        "label_zh": "PCE物价指数",
+        "unit": "YoY %",
+        "display": "yoy",
+        "source": "FRED / BEA",
+        "href": "https://fred.stlouisfed.org/series/PCEPI",
+    },
+    {
+        "series_id": "PCEPILFE",
+        "indicator_id": "core_pce",
+        "label_en": "Core PCE (ex food & energy)",
+        "label_zh": "核心PCE（除食品能源）",
+        "unit": "YoY %",
+        "display": "yoy",
+        "source": "FRED / BEA",
+        "href": "https://fred.stlouisfed.org/series/PCEPILFE",
+    },
+    {
+        "series_id": "PCETRIM1M158SFRBDAL",
+        "indicator_id": "trim_pce_1m",
+        "label_en": "Trimmed Mean PCE - 1M annualized",
+        "label_zh": "截尾均值PCE（1个月年化）",
+        "unit": "Ann. %",
+        "display": "level",
+        "source": "FRED / Dallas Fed",
+        "href": "https://fred.stlouisfed.org/series/PCETRIM1M158SFRBDAL",
+    },
+    {
+        "series_id": "PCETRIM6M680SFRBDAL",
+        "indicator_id": "trim_pce_6m",
+        "label_en": "Trimmed Mean PCE - 6M annualized",
+        "label_zh": "截尾均值PCE（6个月年化）",
+        "unit": "Ann. %",
+        "display": "level",
+        "source": "FRED / Dallas Fed",
+        "href": "https://fred.stlouisfed.org/series/PCETRIM6M680SFRBDAL",
+    },
+    {
+        "series_id": "PCETRIM12M159SFRBDAL",
+        "indicator_id": "trim_pce_12m",
+        "label_en": "Trimmed Mean PCE - 12M (YoY)",
+        "label_zh": "截尾均值PCE（12个月同比）",
+        "unit": "YoY %",
+        "display": "level",
+        "source": "FRED / Dallas Fed",
+        "href": "https://fred.stlouisfed.org/series/PCETRIM12M159SFRBDAL",
+    },
+    {
+        "series_id": "PI",
+        "indicator_id": "personal_income",
+        "label_en": "Personal Income",
+        "label_zh": "个人收入",
+        "unit": "MoM %",
+        "display": "mom",
+        "source": "FRED / BEA",
+        "href": "https://fred.stlouisfed.org/series/PI",
+    },
+    {
+        "series_id": "PCE",
+        "indicator_id": "personal_spending",
+        "label_en": "Personal Spending",
+        "label_zh": "个人支出",
+        "unit": "MoM %",
+        "display": "mom",
+        "source": "FRED / BEA",
+        "href": "https://fred.stlouisfed.org/series/PCE",
+    },
+)
+INFLATION_SOURCE = "FRED PCE / Dallas Fed trimmed mean"
+INFLATION_SERIES_ID = "inflation_panel"
+INFLATION_STALE_AFTER_CALENDAR_DAYS = 90

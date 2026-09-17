@@ -399,3 +399,104 @@ def build_cross_asset_returns(
             )
         rows.append(item)
     return pd.DataFrame(rows)
+
+
+def build_macro_commodity_returns(
+    prices: pd.DataFrame,
+    *,
+    windows: Sequence[int] = (1, 5, 21, 63),
+) -> pd.DataFrame:
+    """Exact close-to-close commodity proxy returns for the Macro tab."""
+    if prices is None or prices.empty:
+        return pd.DataFrame()
+    frame = prices.copy()
+    required = {"date", "asset_id", "close"}
+    if not required.issubset(frame.columns):
+        return pd.DataFrame()
+    frame["date"] = pd.to_datetime(frame["date"], errors="coerce")
+    frame["close"] = pd.to_numeric(frame["close"], errors="coerce")
+    frame = (
+        frame.dropna(subset=["date", "asset_id", "close"])
+        .loc[lambda value: value["close"].gt(0)]
+        .sort_values(["asset_id", "date"], kind="mergesort")
+        .drop_duplicates(["asset_id", "date"], keep="last")
+        .reset_index(drop=True)
+    )
+    rows: list[dict[str, Any]] = []
+    for asset_id, group in frame.groupby("asset_id", sort=False):
+        group = group.sort_values("date").reset_index(drop=True)
+        closes = group["close"]
+        latest = float(closes.iloc[-1])
+        latest_date = group["date"].iloc[-1]
+        year_start = pd.Timestamp(year=int(latest_date.year), month=1, day=1)
+        ytd = group[group["date"] >= year_start]
+        ytd_base = float(ytd["close"].iloc[0]) if not ytd.empty else None
+        item: dict[str, Any] = {
+            "asset_id": str(asset_id),
+            "date": latest_date,
+            "close": latest,
+            "symbol": group["symbol"].iloc[-1] if "symbol" in group.columns else None,
+            "label_en": group["label_en"].iloc[-1] if "label_en" in group.columns else asset_id,
+            "label_zh": group["label_zh"].iloc[-1] if "label_zh" in group.columns else asset_id,
+            "group": group["group"].iloc[-1] if "group" in group.columns else None,
+            "unit": group["unit"].iloc[-1] if "unit" in group.columns else None,
+        }
+        named = {1: "return_1d_pct", 5: "return_1w_pct", 21: "return_1m_pct", 63: "return_3m_pct"}
+        for window in windows:
+            field = named.get(window, f"return_{window}d_pct")
+            item[field] = (
+                (latest / float(closes.iloc[-window - 1]) - 1.0) * 100.0
+                if len(closes) > window
+                else None
+            )
+        item["return_ytd_pct"] = (
+            (latest / ytd_base - 1.0) * 100.0 if ytd_base else None
+        )
+        rows.append(item)
+    return pd.DataFrame(rows)
+
+
+def build_inflation_release_panel(
+    observations: pd.DataFrame,
+    *,
+    months: int = 12,
+) -> pd.DataFrame:
+    """Last N monthly inflation prints in long form, with derived YoY/MoM where needed."""
+    if observations is None or observations.empty:
+        return pd.DataFrame()
+    frame = observations.copy()
+    required = {"date", "indicator_id", "value", "display"}
+    if not required.issubset(frame.columns):
+        return pd.DataFrame()
+    frame["date"] = pd.to_datetime(frame["date"], errors="coerce")
+    frame["value"] = pd.to_numeric(frame["value"], errors="coerce")
+    frame = frame.dropna(subset=["date", "indicator_id", "value"]).sort_values(["indicator_id", "date"], kind="mergesort")
+    rows: list[dict[str, Any]] = []
+    for indicator_id, group in frame.groupby("indicator_id", sort=False):
+        group = group.sort_values("date").reset_index(drop=True)
+        display = str(group["display"].iloc[-1])
+        if display == "yoy":
+            prior = group["value"].shift(12)
+            group = group.assign(release_value=(group["value"] / prior - 1.0) * 100.0)
+        elif display == "mom":
+            prior = group["value"].shift(1)
+            group = group.assign(release_value=(group["value"] / prior - 1.0) * 100.0)
+        else:
+            group = group.assign(release_value=group["value"])
+        keep = group.dropna(subset=["release_value"]).tail(months)
+        for row in keep.to_dict("records"):
+            rows.append(
+                {
+                    "indicator_id": str(indicator_id),
+                    "label_en": row.get("label_en") or indicator_id,
+                    "label_zh": row.get("label_zh") or indicator_id,
+                    "unit": row.get("unit"),
+                    "display": display,
+                    "date": row["date"],
+                    "period": pd.Timestamp(row["date"]).strftime("%Y-%m"),
+                    "value": float(row["release_value"]),
+                    "source_value": float(row["value"]),
+                    "series_id": row.get("series_id"),
+                }
+            )
+    return pd.DataFrame(rows)

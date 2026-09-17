@@ -1,0 +1,24 @@
+{
+  "type": "derived",
+  "run_scope": "full",
+  "dataset_name": "relative_pairs",
+  "run_id": "20260915T142825-dcd019c5",
+  "created_at": "2026-09-15T14:28:42.506008+00:00",
+  "records": 12,
+  "columns": [
+    "pair_id",
+    "region",
+    "label",
+    "label_zh",
+    "left",
+    "right",
+    "ratio",
+    "ratio_ma60",
+    "zscore",
+    "trend",
+    "regime",
+    "regime_zh",
+    "observations"
+  ],
+  "sha256": "478538799b29055f5276c95f29dd7f0365993a0e0baa15372a68253913c37543"
+}

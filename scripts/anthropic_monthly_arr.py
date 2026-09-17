@@ -1,18 +1,27 @@
 #!/usr/bin/env python3
 from pathlib import Path
 import calendar
+import sys
 import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib.ticker import FuncFormatter
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / 'data/normalized/marts/daily_provider_economics.parquet'
+# research_data's package __init__ reaches dashboard.data, so the repo root has
+# to be importable as well as src/.
+sys.path.insert(0, str(ROOT / 'src'))
+sys.path.insert(0, str(ROOT))
+
+from research_data.marts import read_mart  # noqa: E402
+
 OUTPUT = ROOT / 'anthropic_monthly_arr.png'
 
 def money(x): return '—' if pd.isna(x) else f'${x:,.0f}'
 
 def main():
-    df = pd.read_parquet(SOURCE)
+    # read_mart resolves both layouts: the mart is stored as one parquet per
+    # usage_date, and opening "<mart>.parquet" directly would find nothing.
+    df = read_mart('daily_provider_economics', base_dir=ROOT)
     df['usage_date'] = pd.to_datetime(df['usage_date']).dt.normalize()
     masks = [df[c].astype('string').str.contains('anthropic', case=False, na=False) for c in ('provider_slug','provider_name','entity_name','entity_id') if c in df]
     a = df[pd.concat(masks, axis=1).any(axis=1)].copy()

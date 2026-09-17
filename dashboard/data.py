@@ -39,16 +39,19 @@ def _read_parquet_projected(source, columns: list[str] | None) -> pd.DataFrame:
 # Datasets written as a directory of per-date Parquet partitions instead of a
 # single file, so that a day's push rewrites one small partition rather than the
 # whole 36 MB table (which git stores as an entirely new blob every night).
-# This mirrors PARTITION_COLUMNS in src/provider_adoption_data/storage.py;
-# scripts/check_dataset_contract.py asserts the two stay in step.  A reader that
-# does not know a dataset is partitioned does not fail -- it looks for
-# "<id>.parquet", misses, and returns zero rows with no error anywhere.
+# This mirrors the PARTITION_COLUMNS maps in src/provider_adoption_data/storage.py
+# and src/openrouter_data/storage.py; a test asserts the union stays in step.
+# A reader that does not know a dataset is partitioned does not fail -- it looks
+# for "<id>.parquet", misses, and returns zero rows with no error anywhere.
 PARTITIONED_DATASETS: frozenset[str] = frozenset(
     {
         "github_repo_candidates_daily",
         "github_repo_rollup_daily",
         "huggingface_models_daily",
         "github_provider_signals_daily",
+        "openrouter_task_spend",
+        "hiring_job_events",
+        "daily_provider_economics",
     }
 )
 

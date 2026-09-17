@@ -7,6 +7,8 @@ import pandas as pd
 from global_market_regime.presentation import (
     build_cross_asset_returns,
     build_domain_summary,
+    build_inflation_release_panel,
+    build_macro_commodity_returns,
     build_regime_summary,
     build_state_transitions,
     build_threshold_monitor,
@@ -235,3 +237,63 @@ def test_cross_asset_reindexing_and_returns_use_price_ratios() -> None:
         (119.0 / 59.0 - 1.0) * 100.0,
         6,
     )
+
+
+def test_macro_commodity_returns_use_named_windows_and_ytd() -> None:
+    dates = pd.date_range("2026-01-02", periods=70, freq="B")
+    prices = pd.DataFrame(
+        {
+            "date": dates,
+            "asset_id": "gold",
+            "symbol": "GC=F",
+            "label_en": "Gold",
+            "label_zh": "黄金",
+            "group": "metals",
+            "unit": "USD/oz",
+            "close": [2000.0 + i for i in range(len(dates))],
+        }
+    )
+    returns = build_macro_commodity_returns(prices).iloc[0]
+    latest = 2000.0 + 69
+    assert round(float(returns["return_1d_pct"]), 6) == round((latest / (latest - 1) - 1.0) * 100.0, 6)
+    assert round(float(returns["return_1w_pct"]), 6) == round((latest / (latest - 5) - 1.0) * 100.0, 6)
+    assert round(float(returns["return_ytd_pct"]), 6) == round((latest / 2000.0 - 1.0) * 100.0, 6)
+
+
+def test_inflation_panel_converts_index_levels_to_yoy_and_keeps_trimmed_mean() -> None:
+    dates = pd.date_range("2025-01-01", periods=14, freq="MS")
+    observations = pd.DataFrame(
+        [
+            {
+                "date": date,
+                "indicator_id": "headline_pce",
+                "label_en": "Headline PCE",
+                "label_zh": "PCE",
+                "unit": "YoY %",
+                "display": "yoy",
+                "value": 100 + i,
+                "series_id": "PCEPI",
+            }
+            for i, date in enumerate(dates)
+        ]
+        + [
+            {
+                "date": date,
+                "indicator_id": "trim_pce_12m",
+                "label_en": "Trimmed Mean PCE - 12M (YoY)",
+                "label_zh": "截尾均值",
+                "unit": "YoY %",
+                "display": "level",
+                "value": 2.0 + i / 10,
+                "series_id": "PCETRIM12M159SFRBDAL",
+            }
+            for i, date in enumerate(dates)
+        ]
+    )
+    panel = build_inflation_release_panel(observations, months=12)
+    headline = panel[panel["indicator_id"].eq("headline_pce")].sort_values("date")
+    assert len(headline) == 2
+    last = headline.iloc[-1]
+    assert round(float(last["value"]), 6) == round(((113 / 101) - 1.0) * 100.0, 6)
+    trimmed = panel[panel["indicator_id"].eq("trim_pce_12m")].sort_values("date")
+    assert round(float(trimmed.iloc[-1]["value"]), 6) == 3.3

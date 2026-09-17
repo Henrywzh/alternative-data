@@ -43,6 +43,12 @@ from src.market_monitor.freshness import (
     classify_daily_observation,
     classify_intraday_quote,
 )
+from src.market_monitor.heatmaps import (
+    build_flow_snapshot,
+    build_heatmap_health,
+    build_return_snapshot,
+)
+from src.market_monitor.us_etf.universe import HEATMAP_ETFS
 from src.market_monitor.pipeline import coverage_regressions  # noqa: E402
 from src.market_monitor.ranking import rank_wrappers
 from src.market_monitor.sources.eastmoney_hsgt import normalize_southbound_market_flow
@@ -55,6 +61,9 @@ from history_policy import history_window  # noqa: E402
 # each venue happened to trade.  Two years is what the pipeline fetches, so
 # this ships everything collected rather than silently halving it.
 CHART_HISTORY_YEARS = 2
+
+
+COMMITTED_ARTIFACT_PATH = ROOT / "apps" / "asia-markets-dashboard" / ".generated" / "market-monitor-artifact.json"
 
 
 # Fields render_southbound_market_flow actually reads (KPI strip + dual-axis
@@ -75,6 +84,151 @@ def _records(frame: pd.DataFrame) -> list[dict[str, Any]]:
         if pd.api.types.is_datetime64_any_dtype(out[col]):
             out[col] = out[col].dt.strftime("%Y-%m-%d")
     return json.loads(out.to_json(orient="records", date_format="iso", default_handler=str))
+
+
+def _load_committed_artifact_dataset(dataset_id: str) -> pd.DataFrame:
+    """Read a previously published dataset for a cache-miss fallback.
+
+    ``etf_price_daily`` and ``etf_fund_activity_daily`` are deliberately
+    ignored by Git because the daily pipeline recreates their complete
+    histories.  A clean checkout can nevertheless run the artifact builder
+    before that pipeline (or after an upstream fetch failure).  In that case
+    dropping the rows from the already-published artifact would erase usable
+    Streamlit data.  This helper is intentionally read-only and returns an
+    empty frame for malformed/missing artifacts; the caller records any use
+    as a degraded, stale fallback.
+    """
+    try:
+        payload = json.loads(COMMITTED_ARTIFACT_PATH.read_text(encoding="utf-8"))
+        rows = payload.get("snapshot", {}).get("datasets", {}).get(dataset_id, [])
+    except (OSError, TypeError, ValueError, AttributeError):
+        return pd.DataFrame()
+    if not isinstance(rows, list) or not rows or not all(isinstance(row, dict) for row in rows):
+        return pd.DataFrame()
+    return pd.DataFrame(rows)
+
+
+def _dataset_coverage(
+    frame: pd.DataFrame | None,
+    required_columns: set[str],
+    date_column: str,
+) -> dict[str, Any] | None:
+    """Describe a candidate dataset, or ``None`` when it cannot be rendered.
+
+    "Usable" is the minimum a renderer needs: the required columns, plus at
+    least one date that can honestly be placed on a time axis.  The coverage
+    figures are what lets the caller tell a *shorter* dataset from a broken
+    one -- a distinction the earlier emptiness-only check could not make.
+    """
+    if frame is None or frame.empty or not required_columns.issubset(frame.columns):
+        return None
+    dates = pd.to_datetime(frame[date_column], errors="coerce").dropna()
+    if dates.empty:
+        return None
+    return {
+        "rows": int(len(frame)),
+        "earliest": dates.min(),
+        "latest": dates.max(),
+    }
+
+
+# Datasets whose local parquet cache is deliberately not versioned (see
+# .gitignore).  The published artifact is therefore the only durable copy of
+# their history, so the builder treats it as a floor rather than as a
+# throwaway.  Keeping the three specs in one place stops the rule from being
+# restated -- and drifting -- once per dataset.
+#
+# ``rebuild_fund_id_from`` names the column the published projection renamed
+# fund_id to (``_chart_series(..., id_as="ticker")`` ships the bare fund_id),
+# so the join key the renderers use can be restored on the way back in.
+PRICE_TAIL_FALLBACK: dict[str, Any] = {
+    "dataset": "etf_price_daily_tail",
+    "date_column": "date",
+    "live_columns": {"date", "close"},
+    "published_columns": {"date", "ticker", "close"},
+    "rebuild_fund_id_from": "ticker",
+}
+PREMIUM_HISTORY_FALLBACK: dict[str, Any] = {
+    "dataset": "premium_history",
+    "date_column": "date",
+    "live_columns": {"date", "premium_pct"},
+    "published_columns": {"date", "ticker", "premium_pct"},
+    "rebuild_fund_id_from": "ticker",
+}
+FUND_ACTIVITY_FALLBACK: dict[str, Any] = {
+    "dataset": "etf_fund_activity_daily",
+    "date_column": "observation_date",
+    "live_columns": {"observation_date", "fund_id"},
+    # exposure_id is required of the published copy because build_artifact
+    # filters activity by it; retaining rows without it would report a
+    # successful fallback and then publish nothing.
+    "published_columns": {"observation_date", "fund_id", "exposure_id"},
+    "rebuild_fund_id_from": None,
+}
+
+
+def _published_fallback(
+    live: pd.DataFrame | None,
+    spec: dict[str, Any],
+) -> tuple[pd.DataFrame, dict[str, Any]] | None:
+    """Return published rows to use instead of ``live``, or ``None`` to keep it.
+
+    Two different failure modes justify falling back:
+
+    ``unavailable`` -- the local cache is missing, or too malformed to render.
+    ``truncated``   -- the cache renders fine but has lost history the
+                       published artifact still carries.  Testing only for
+                       emptiness missed this entirely: a one-row cache is
+                       "usable", and would silently replace a two-year chart
+                       with a single point while the status panel stayed
+                       healthy.
+
+    History loss is judged by the *earliest* observation rather than the row
+    count, because row counts move for legitimate reasons (the fund universe
+    changes).  The published projection is already windowed by
+    ``history_window``, so a healthy cache always reaches further back than the
+    artifact does; the artifact reaching further back is precisely the signal
+    that the cache lost history.
+    """
+    date_column = spec["date_column"]
+    live_coverage = _dataset_coverage(live, spec["live_columns"], date_column)
+    published = _load_committed_artifact_dataset(spec["dataset"])
+    published_coverage = _dataset_coverage(
+        published, spec["published_columns"], date_column
+    )
+    if published_coverage is None:
+        # Nothing durable to fall back to; the live cache, whatever its state,
+        # is all there is.
+        return None
+
+    if live_coverage is None:
+        reason = "unavailable"
+        detail = "local cache missing or unreadable"
+    elif published_coverage["earliest"] < live_coverage["earliest"]:
+        reason = "truncated"
+        detail = (
+            f"local cache held {live_coverage['rows']} rows starting "
+            f"{live_coverage['earliest'].strftime('%Y-%m-%d')}, "
+            f"dropping history back to "
+            f"{published_coverage['earliest'].strftime('%Y-%m-%d')}"
+        )
+    else:
+        return None
+
+    frame = published.copy()
+    id_source = spec["rebuild_fund_id_from"]
+    if id_source:
+        frame["fund_id"] = (
+            frame[id_source].astype(str).str.strip().str.split(".").str[0].str.zfill(6)
+        )
+    record = {
+        "dataset": spec["dataset"],
+        "reason": reason,
+        "detail": detail,
+        "rows": int(len(frame)),
+        "latest": published_coverage["latest"].strftime("%Y-%m-%d"),
+    }
+    return frame, record
 
 
 def _chart_series(
@@ -422,6 +576,42 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     activity, activity_lineage = load_latest_with_lineage(
         NORMALIZED_DIR, "etf_fund_activity_daily", scope="full"
     )
+    heatmap_px, _heatmap_lineage = load_latest_with_lineage(
+        NORMALIZED_DIR, "heatmap_etf_price_daily", scope="full"
+    )
+    us_size, us_size_lineage = load_latest_with_lineage(
+        NORMALIZED_DIR, "us_etf_size_snapshot", scope="full"
+    )
+    us_flow, us_flow_lineage = load_latest_with_lineage(
+        DERIVED_DIR, "us_etf_flow_proxy_daily", scope="full"
+    )
+    artifact_fallbacks: list[dict[str, Any]] = []
+
+    # These histories are intentionally not versioned as parquet (see
+    # .gitignore): the close pipeline recreates them and the published JSON
+    # carries a bounded projection.  A builder-only invocation on a clean
+    # checkout -- or a run after a partial upstream fetch -- must not erase the
+    # Streamlit page, so retain the last published rows whenever the local
+    # cache is unusable *or* has gone backwards, and mark the artifact degraded
+    # until the source pipeline produces a real replacement.
+    resolved = _published_fallback(etf_px, PRICE_TAIL_FALLBACK)
+    if resolved is not None:
+        etf_px, fallback_record = resolved
+        etf_px_lineage = None
+        artifact_fallbacks.append(fallback_record)
+
+    resolved = _published_fallback(premium_hist, PREMIUM_HISTORY_FALLBACK)
+    if resolved is not None:
+        premium_hist, fallback_record = resolved
+        premium_lineage = None
+        artifact_fallbacks.append(fallback_record)
+
+    resolved = _published_fallback(activity, FUND_ACTIVITY_FALLBACK)
+    if resolved is not None:
+        activity, fallback_record = resolved
+        activity_lineage = None
+        artifact_fallbacks.append(fallback_record)
+
     # Reapply source normalization to persisted snapshots.  This repairs old
     # local parquet written before the zero-as-missing rule without requiring a
     # fresh upstream call just to rebuild the portable artifact.
@@ -489,6 +679,78 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     if not technicals.empty and "date" in technicals.columns:
         data_as_of = str(pd.to_datetime(technicals["date"], errors="coerce").max().date())
 
+    # These are independent calendars.  Do not clip US ETF returns to the
+    # latest Asia index close (the US session can be one trading day ahead),
+    # and let fund-flow rows use their own per-fund latest observation date.
+    heatmap_as_of = None
+    if heatmap_px is not None and not heatmap_px.empty and "date" in heatmap_px.columns:
+        heatmap_dates = pd.to_datetime(heatmap_px["date"], errors="coerce").dropna()
+        if not heatmap_dates.empty:
+            heatmap_as_of = heatmap_dates.max().strftime("%Y-%m-%d")
+    return_snapshot = build_return_snapshot(heatmap_px, HEATMAP_ETFS, as_of=heatmap_as_of)
+
+    # Assign categories to China ETF metadata for flow heatmap aggregation.
+    china_categories = {
+        "csi300": "broad_equity",
+        "csi500": "broad_equity",
+        "csi1000": "broad_equity",
+        "dividend": "broad_equity",
+        "growth": "broad_equity",
+        "hstech": "sector",
+        "hk_internet": "sector",
+        "kr_semis": "sector",
+        "hsi": "international",
+        "hk_dividend": "international",
+        "sp500": "international",
+        "ndx": "international",
+        "nikkei225": "international",
+        "cac40": "international",
+        "dax": "international",
+        "saudi": "international",
+    }
+    meta_frame = build_metadata_frame()
+    meta_with_cat = meta_frame.copy() if meta_frame is not None and not meta_frame.empty else pd.DataFrame()
+    if not meta_with_cat.empty:
+        if "category" not in meta_with_cat.columns:
+            meta_with_cat["category"] = meta_with_cat["exposure_id"].map(china_categories).fillna("broad_equity")
+    us_meta = pd.DataFrame(
+        [
+            {
+                "fund_id": item["ticker"],
+                "ticker": item["ticker"],
+                "fund_name": item.get("name_en", item["ticker"]),
+                "name_en": item.get("name_en", item["ticker"]),
+                "name_zh": item.get("name_zh", item["ticker"]),
+                "category": item.get("category", "broad_equity"),
+                "currency": item.get("currency", "USD"),
+            }
+            for item in HEATMAP_ETFS
+        ]
+    )
+    china_flow_snapshot = build_flow_snapshot(activity, meta_with_cat)
+    us_flow_snapshot = build_flow_snapshot(us_flow, us_meta)
+    flow_frames = [frame for frame in (china_flow_snapshot, us_flow_snapshot) if frame is not None and not frame.empty]
+    if flow_frames:
+        # Both cohorts have intentionally typed-empty fields (for example,
+        # US rows have no published NAV).  Make those all-null columns
+        # explicit before concatenation so pandas does not infer future
+        # dtypes differently or emit an all-NA concat warning.
+        flow_columns = list(dict.fromkeys(column for frame in flow_frames for column in frame.columns))
+        aligned_flow_frames = []
+        for frame in flow_frames:
+            aligned = frame.reindex(columns=flow_columns).copy()
+            for column in aligned.columns:
+                if aligned[column].isna().all():
+                    aligned[column] = aligned[column].astype("object")
+            # Keep the two cohort frames on one explicit dtype contract.
+            # Casting the complete aligned frame avoids pandas' future
+            # all-NA concat inference warning when one cohort has a field
+            # that is intentionally absent (for example, US published NAV).
+            aligned_flow_frames.append(aligned.astype("object"))
+        flow_snapshot = pd.concat(aligned_flow_frames, ignore_index=True)
+    else:
+        flow_snapshot = pd.DataFrame()
+
     investable_ids = [spec["exposure_id"] for spec in investable_exposures()]
     activity_records = _activity_records(activity)
     datasets: dict[str, list[dict[str, Any]]] = {
@@ -506,6 +768,14 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         "relative_pair_history": _chart_series(pair_hist, "pair_id", "ratio", keep=("ratio_ma", "zscore")),
         "etf_price_daily_tail": _chart_series(etf_px, "fund_id", "close", id_as="ticker"),
         "etf_fund_activity_daily": activity_records,
+        "us_etf_flow_proxy_daily": _records(us_flow),
+        "etf_heatmap_returns": _records(return_snapshot),
+        "etf_heatmap_flows": _records(flow_snapshot),
+        "heatmap_etf_price_daily": _records(
+            history_window(heatmap_px, "date", years=CHART_HISTORY_YEARS)
+            if heatmap_px is not None and not heatmap_px.empty
+            else heatmap_px
+        ),
         # Only the four fields render_southbound_market_flow reads. The full
         # 17-column dump was 1.5 MB of a 3.7 MB artifact, of which source_id /
         # source_url / retrieved_at_utc / flow were one constant value repeated
@@ -805,6 +1075,120 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
             "notes": activity_summary["notes"],
         }
     )
+    expected_heatmap_count = len(HEATMAP_ETFS)
+    observed_heatmap_count = (
+        int(heatmap_px["ticker"].nunique())
+        if heatmap_px is not None and not heatmap_px.empty and "ticker" in heatmap_px.columns
+        else 0
+    )
+    heatmap_latest = (
+        str(pd.to_datetime(heatmap_px["date"], errors="coerce").max().date())
+        if heatmap_px is not None and not heatmap_px.empty and "date" in heatmap_px.columns
+        else "—"
+    )
+    heatmap_health = build_heatmap_health(
+        expected=expected_heatmap_count,
+        observed=observed_heatmap_count,
+        latest_date=heatmap_latest,
+    )
+    heatmap_errors = [
+        err
+        for err in reported
+        if err.get("dataset") == "heatmap_etf_price_daily"
+    ]
+    if heatmap_errors:
+        # The pipeline deliberately retains the last non-empty history when
+        # this optional source fails.  Keep that history visible, but never
+        # describe the current fetch as healthy.
+        heatmap_health["status"] = "Degraded" if observed_heatmap_count else "Unavailable"
+        detail = "; ".join(str(err.get("error") or "fetch failed") for err in heatmap_errors[:2])
+        heatmap_health["notes"] = (
+            f"{heatmap_health['notes']} Current fetch failed; retained history is stale. {detail}"
+        )
+    source_health_rows.append(heatmap_health)
+    us_flow_expected = len(HEATMAP_ETFS)
+    us_flow_latest = "—"
+    us_flow_observed = 0
+    us_flow_validated = 0
+    us_flow_missing: list[str] = []
+    us_flow_lineage_match = bool(
+        us_size_lineage
+        and us_flow_lineage
+        and us_size_lineage.get("run_id") == us_flow_lineage.get("run_id")
+    )
+    if us_size is not None and not us_size.empty and {"ticker", "observation_date"}.issubset(us_size.columns):
+        size_dates = pd.to_datetime(us_size["observation_date"], errors="coerce")
+        size_rows = us_size.assign(_observation_date=size_dates).dropna(subset=["_observation_date"])
+        if not size_rows.empty:
+            latest_size_date = size_rows["_observation_date"].max()
+            us_flow_latest = latest_size_date.strftime("%Y-%m-%d")
+            latest_size_rows = size_rows[size_rows["_observation_date"] == latest_size_date]
+            us_flow_observed = int(latest_size_rows["ticker"].astype(str).str.upper().nunique())
+            requested = us_size_lineage.get("requested_tickers") if us_size_lineage else None
+            expected_tickers = {
+                str(ticker).strip().upper()
+                for ticker in (requested or [item["ticker"] for item in HEATMAP_ETFS])
+            }
+            observed_tickers = set(latest_size_rows["ticker"].astype(str).str.upper())
+            us_flow_missing = sorted(expected_tickers - observed_tickers)
+
+            if us_flow is not None and not us_flow.empty and {"ticker", "observation_date", "flow_status"}.issubset(us_flow.columns):
+                flow_dates = pd.to_datetime(us_flow["observation_date"], errors="coerce")
+                latest_flow_rows = us_flow.assign(_observation_date=flow_dates)
+                latest_flow_rows = latest_flow_rows[latest_flow_rows["_observation_date"] == latest_size_date]
+                us_flow_validated = int(
+                    latest_flow_rows["flow_status"].astype(str).eq("validated_proxy").sum()
+                )
+
+    us_flow_status = (
+        "Unavailable"
+        if us_flow_observed == 0
+        else (
+            "Degraded"
+            if us_flow_observed < us_flow_expected or us_flow_missing or not us_flow_lineage_match
+            else "Healthy"
+        )
+    )
+    us_flow_note = (
+        f"Latest local snapshot covers {us_flow_observed}/{us_flow_expected} heatmap ETFs; "
+        f"{us_flow_validated} have a prior observation. Not issuer-reported flow."
+    )
+    if us_flow_missing:
+        us_flow_note += f" Missing: {', '.join(us_flow_missing[:8])}."
+    if us_size_lineage and us_flow_lineage and not us_flow_lineage_match:
+        us_flow_note += " Size and derived-flow snapshots come from different runs."
+    source_health_rows.append(
+        {
+            "source": "Local US ETF market-cap flow proxy",
+            "status": us_flow_status,
+            "latest_observation": us_flow_latest,
+            "records": int(len(us_flow)) if us_flow is not None else 0,
+            "notes": us_flow_note,
+        }
+    )
+    if artifact_fallbacks:
+        fallback_latest = max(
+            (str(item.get("latest")) for item in artifact_fallbacks if item.get("latest")),
+            default="—",
+        )
+        fallback_detail = "; ".join(
+            f"{item['dataset']} [{item['reason']}] "
+            f"({item['rows']} rows through {item['latest']}; {item['detail']})"
+            for item in artifact_fallbacks
+        )
+        source_health_rows.append(
+            {
+                "source": "Committed market-monitor artifact fallback",
+                "status": "Degraded",
+                "latest_observation": fallback_latest,
+                "records": int(sum(item["rows"] for item in artifact_fallbacks)),
+                "notes": (
+                    "Retained the last published rows because the underlying normalized "
+                    "cache was unavailable or had lost history. "
+                    f"Stale until the source pipeline replaces: {fallback_detail}."
+                ),
+            }
+        )
     datasets["source_health"] = _apply_daily_source_freshness(
         source_health_rows,
         daily_close_by_source,
@@ -921,9 +1305,11 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         {"id": "sse_etf_scale", "label": "Shanghai Stock Exchange ETF published share counts", "href": "https://www.sse.com.cn/assortment/fund/etf/list/scale/", "query": {"engine": "akshare fund_etf_scale_sse"}},
         {"id": "szse_etf_scale", "label": "Shenzhen Stock Exchange ETF daily share counts", "href": "https://www.szse.cn/market/fund/volume/etf/index.html", "query": {"engine": "akshare fund_scale_daily_szse"}},
         {"id": "eastmoney_hsgt_southbound", "label": "Eastmoney aggregate southbound Stock Connect flow", "href": "https://data.eastmoney.com/hsgt/hsgtV2.html", "query": {"engine": "akshare stock_hsgt_hist_em(南向资金)"}},
-        {"id": "sina_index_daily", "label": "Sina Finance index / ETF daily OHLCV", "href": "https://finance.sina.com.cn/", "query": {"engine": "akshare stock_zh_index_daily / fund_etf_hist_sina"}},
+       {"id": "sina_index_daily", "label": "Sina Finance index / ETF daily OHLCV", "href": "https://finance.sina.com.cn/", "query": {"engine": "akshare stock_zh_index_daily / fund_etf_hist_sina"}},
         {"id": "yfinance_spx", "label": "Yahoo Finance S&P 500 index", "href": "https://finance.yahoo.com/quote/%5EGSPC/", "query": {"engine": "yfinance ^GSPC"}},
-    ]
+        {"id": "yfinance_heatmap_etfs", "label": "Yahoo Finance US & Cross-Asset ETF daily OHLCV", "href": "https://finance.yahoo.com/", "query": {"engine": "yfinance download"}},
+        {"id": "local_yfinance_us_etf_flow", "label": "Local Yahoo Finance fast_info ETF size snapshots / market-cap flow proxy", "href": "https://finance.yahoo.com/", "query": {"engine": "yfinance Ticker.fast_info", "method": "market_cap_delta_proxy"}},
+   ]
 
     charts: list[dict[str, Any]] = []
     tables: list[dict[str, Any]] = []
@@ -1032,7 +1418,7 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         }
     )
 
-    overall_healthy = overall_healthy and coverage_ok and not fetch_errors
+    overall_healthy = overall_healthy and coverage_ok and not fetch_errors and not artifact_fallbacks
 
     snapshot_id = hashlib.sha1(json.dumps(datasets, sort_keys=True, default=str).encode()).hexdigest()[:16]
     artifact: dict[str, Any] = {

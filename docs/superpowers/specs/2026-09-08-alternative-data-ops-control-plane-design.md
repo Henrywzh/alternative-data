@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-08
 
-**Status:** Approved in design discussion; implementation is staged
+**Status:** Phase 0 landed; Phase 1 incident mode is in implementation
 
 **Repository:** `Henrywzh/alternative-data`
 
@@ -518,6 +518,8 @@ Phase 0 behavior:
 - Add six-hour reconciliation.
 - Add the daily cloud digest.
 - Codex investigates but does not merge repairs.
+
+Phase 1 code in this repository records incidents, retries clear transient failures once, reconciles missed schedules every six hours, and emails a daily digest. Codex investigation remains deferred until a private incident repository and `OPS_INCIDENT_TOKEN` are configured; the agent still does not merge repairs.
 
 ### Phase 2: Repair Mode
 

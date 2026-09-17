@@ -18,9 +18,19 @@ from .core import _regime_has_columns, _regime_history_window, _regime_state_lab
 
 from .explorer import render_source_coverage
 
-from .regime_labels import COT_LABELS_ZH, FOMC_DIST_LABELS_ZH, REGIME_DIST_LABELS_ZH, REGIME_DOMAIN_LABELS, REGIME_FRESHNESS_LABELS_ZH, REGIME_FRESHNESS_OK, REGIME_SERIES_LABELS, REGIME_SERIES_LABELS_ZH
+from .regime_labels import COT_LABELS_ZH, FOMC_DIST_LABELS_ZH, REGIME_DIST_LABELS_ZH, REGIME_DOMAIN_LABELS, REGIME_EXPOSURE_LABELS, REGIME_FRESHNESS_LABELS_ZH, REGIME_FRESHNESS_OK, REGIME_SERIES_LABELS, REGIME_SERIES_LABELS_ZH
 
-from .regime_evidence import render_cot_history, render_credit_vix_evidence, render_cross_asset_context, render_regime_validation
+from .regime_evidence import (
+    render_cnn_fear_greed,
+    render_cnn_fear_greed_components,
+    render_cot_history,
+    render_credit_vix_evidence,
+    render_cross_asset_context,
+    render_inflation_heatmap,
+    render_macro_commodity_table,
+    render_regime_validation,
+    render_vix_history,
+)
 
 
 def _strict_contract_true(value: Any) -> bool:
@@ -879,6 +889,178 @@ def render_regime_transitions(artifact: dict[str, Any], language: str) -> None:
     st.dataframe(table, hide_index=True, width="stretch")
 
 
+
+def _format_yield_value(value, *, spread: bool) -> str:
+    number = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
+    if pd.isna(number):
+        return "—"
+    if spread:
+        return f"{number:+.1f} bps"
+    return f"{number:.2f}%"
+
+
+def _format_bp_change(value) -> str:
+    number = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
+    if pd.isna(number):
+        return "—"
+    return f"{number:+.1f}"
+
+
+
+def render_sector_leadership(artifact: dict[str, Any], language: str) -> None:
+    frame = frame_for_dataset(artifact, "sector_leadership")
+    required = ("exposure_id", "rel_20d_pct", "rel_60d_pct", "return_20d_pct")
+    if not _regime_has_columns(frame, required):
+        st.info(tr(language, "Sector leadership is not in this artifact yet.", "这个数据快照还没有行业相对强弱。"))
+        return
+    show = frame.copy()
+    show["Sector"] = show["exposure_id"].map(
+        lambda value: REGIME_EXPOSURE_LABELS.get(str(value), (str(value), str(value)))[1 if language == "zh" else 0]
+    )
+    def _pct(value):
+        number = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
+        if pd.isna(number):
+            return "—"
+        return f"{number:+.2f}%"
+    table = pd.DataFrame(
+        {
+            tr(language, "Sector", "行业"): show["Sector"],
+            tr(language, "Rank", "排名"): show.get("rank_20d"),
+            tr(language, "20D vs SPY", "20日相对标普"): show["rel_20d_pct"].map(_pct),
+            tr(language, "60D vs SPY", "60日相对标普"): show["rel_60d_pct"].map(_pct),
+            tr(language, "20D return", "20日回报"): show["return_20d_pct"].map(_pct),
+            tr(language, "200D slope", "200日均线斜率"): show.get("sma200_slope_ann_pct", pd.Series([None] * len(show))).map(_pct),
+            tr(language, "As of", "截至"): pd.to_datetime(show.get("date"), errors="coerce").dt.strftime("%Y-%m-%d"),
+        }
+    )
+    st.caption(
+        tr(
+            language,
+            "US sector ETFs versus SPY. Relative return is sector window return minus SPY window return, not a contribution attribution. 200D slope is annualized from the last five 200-day SMA observations.",
+            "美股行业 ETF 相对 SPY。相对回报是行业窗口回报减去 SPY 窗口回报，不是权重贡献。200日斜率由最近五个200日均线观察值年化。",
+        )
+    )
+    st.dataframe(table, hide_index=True, width="stretch")
+
+
+def render_treasury_curve_chart(artifact: dict[str, Any], language: str) -> None:
+    frame = frame_for_dataset(artifact, "treasury_curve_snapshots")
+    required = ("tenor_months", "yield_pct", "snapshot_id", "as_of")
+    if not _regime_has_columns(frame, required):
+        st.info(tr(language, "Treasury curve snapshot is not in this artifact yet.", "这个数据快照还没有国债收益率曲线。"))
+        return
+    show = frame.copy()
+    show["tenor_months"] = pd.to_numeric(show["tenor_months"], errors="coerce")
+    show["yield_pct"] = pd.to_numeric(show["yield_pct"], errors="coerce")
+    show = show.dropna(subset=["tenor_months", "yield_pct", "snapshot_id"]).sort_values(["snapshot_id", "tenor_months"])
+    if show.empty:
+        st.info(tr(language, "Treasury curve snapshot is not in this artifact yet.", "这个数据快照还没有国债收益率曲线。"))
+        return
+    label_field = "label_zh" if language == "zh" and "label_zh" in show.columns else "label_en"
+    if label_field not in show.columns:
+        label_field = "snapshot_id"
+    tickvals = sorted({int(value) for value in show["tenor_months"].tolist()})
+    ticktext = []
+    maturity_map = {
+        int(row["tenor_months"]):
+        str(row["maturity_zh"] if language == "zh" else row["maturity_en"])
+        for row in show.to_dict("records")
+        if pd.notna(row.get("tenor_months"))
+    }
+    ticktext = [maturity_map.get(value, str(value)) for value in tickvals]
+    fig = go.Figure()
+    palette = {
+        "latest": PALETTE[0],
+        "week_ago": PALETTE[5],
+        "month_ago": PALETTE[9],
+        "year_start": PALETTE[2],
+    }
+    order = ["latest", "week_ago", "month_ago", "year_start"]
+    for snapshot_id in order:
+        subset = show[show["snapshot_id"].astype(str).eq(snapshot_id)]
+        if subset.empty:
+            continue
+        as_of = subset["as_of"].iloc[0]
+        label = str(subset[label_field].iloc[0])
+        if as_of and str(as_of) not in {"—", "nan"}:
+            label = f"{label} ({as_of})"
+        fig.add_trace(
+            go.Scatter(
+                x=subset["tenor_months"],
+                y=subset["yield_pct"],
+                mode="lines+markers",
+                name=label,
+                line={"color": palette.get(snapshot_id, PALETTE[0]), "width": 2},
+                hovertemplate="%{text}<br>%{fullData.name}: %{y:.2f}%<extra></extra>",
+                text=subset["maturity_zh" if language == "zh" else "maturity_en"],
+            )
+        )
+    fig.update_xaxes(
+        title=tr(language, "Maturity", "期限"),
+        tickmode="array",
+        tickvals=tickvals,
+        ticktext=ticktext,
+    )
+    fig.update_yaxes(title=tr(language, "Yield %", "收益率 %"), ticksuffix="%")
+    fig = chart_theme(fig, "number", date_axis=False, height=430)
+    fig.update_layout(hovermode="x unified")
+    st.markdown(
+        f'<div class="am-chart-title">{tr(language, "US Treasury yield curve", "美国国债收益率曲线")}</div>',
+        unsafe_allow_html=True,
+    )
+    st.caption(
+        tr(
+            language,
+            "Latest published constant-maturity yields versus one week ago, one month ago and the start of the year. Missing tenors stay blank; the chart does not interpolate. Treasury may publish after the US cash close, so a same-day refresh can still show the previous session.",
+            "最新公布的固定期限收益率，对比一周前、一个月前和年初。缺数据的期限留空，不做插值。财政部有时在美股收盘后才公布，所以当天刷新仍可能显示上一交易日。",
+        )
+    )
+    st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True})
+
+
+def render_treasury_yield_table(artifact: dict[str, Any], language: str) -> None:
+    frame = frame_for_dataset(artifact, "treasury_yield_changes")
+    required = ("maturity_en", "yield_pct", "change_1d_bp", "change_1w_bp", "change_1m_bp", "change_ytd_bp")
+    if not _regime_has_columns(frame, required):
+        st.info(tr(language, "Treasury yield-change table is not in this artifact yet.", "这个数据快照还没有国债收益率变化表。"))
+        return
+    show = frame.copy()
+    maturity = show["maturity_zh"] if language == "zh" and "maturity_zh" in show.columns else show["maturity_en"]
+    spread = show.get("row_kind", pd.Series(["tenor"] * len(show))).astype(str).eq("spread")
+    table = pd.DataFrame(
+        {
+            tr(language, "Maturity", "期限"): maturity,
+            tr(language, "Yield", "收益率"): [
+                _format_yield_value(value, spread=is_spread)
+                for value, is_spread in zip(show["yield_pct"], spread)
+            ],
+            tr(language, "1D (bps)", "1日（基点）"): show["change_1d_bp"].map(_format_bp_change),
+            tr(language, "1W (bps)", "1周（基点）"): show["change_1w_bp"].map(_format_bp_change),
+            tr(language, "1M (bps)", "1月（基点）"): show["change_1m_bp"].map(_format_bp_change),
+            tr(language, "YTD (bps)", "年初至今（基点）"): show["change_ytd_bp"].map(_format_bp_change),
+        }
+    )
+    ten_year = show[show["indicator_id"].astype(str).eq("us10y")]
+    caption = tr(
+        language,
+        "Changes are in yield basis points, not bond returns. Green in the source convention means yields rose.",
+        "变化单位是收益率基点，不是债券回报。源数据惯例中绿色表示收益率上升。",
+    )
+    if not ten_year.empty:
+        distance = pd.to_numeric(ten_year.iloc[0].get("us10y_vs_threshold_bp"), errors="coerce")
+        as_of = ten_year.iloc[0].get("as_of") or "—"
+        if not pd.isna(distance):
+            caption = (
+                tr(
+                    language,
+                    f"10-year is {distance:+.1f} bp from the 4.82% threshold as of {as_of}. " + caption,
+                    f"10年期相对 4.82% 门槛为 {distance:+.1f} 基点，数据截至 {as_of}。" + caption,
+                )
+            )
+    st.caption(caption)
+    st.dataframe(table, hide_index=True, width="stretch")
+
+
 def render_regime(artifact: dict[str, Any], labels: dict[str, Any], language: str, window: str) -> None:
     """Defensive global-conditions radar. Not an allocation or buy-the-dip cockpit."""
     render_header(
@@ -889,8 +1071,8 @@ def render_regime(artifact: dict[str, Any], labels: dict[str, Any], language: st
         title_override=tr(language, "Global Market Regime", "全球市场状态"),
         description_override=tr(
             language,
-            "Defensive radar for oil, Treasuries, CFTC positioning, Polymarket FOMC odds, Atlanta Fed SOFR odds, credit and VIX. Polymarket is a prediction-market price; Atlanta Fed is 3-month average SOFR odds. Neither is CME FedWatch.",
-            "原油、美债、CFTC 持仓、Polymarket 下次 FOMC 赔率、Atlanta Fed SOFR 分布、信用利差和 VIX 的防守雷达。Polymarket 是预测市场价格；Atlanta Fed 是三个月平均 SOFR 概率。两者都不是 CME FedWatch。",
+            "Defensive radar for oil, Treasuries, CFTC positioning, Polymarket FOMC odds, Atlanta Fed SOFR odds, credit, VIX and CNN US-equity Fear & Greed. Polymarket is a prediction-market price; Atlanta Fed is 3-month average SOFR odds. Neither is CME FedWatch. CNN Fear & Greed is not the crypto index.",
+            "原油、美债、CFTC 持仓、Polymarket 下次 FOMC 赔率、Atlanta Fed SOFR 分布、信用利差、VIX 和 CNN 美股恐惧与贪婪的防守雷达。Polymarket 是预测市场价格；Atlanta Fed 是三个月平均 SOFR 概率。两者都不是 CME FedWatch。CNN 恐惧与贪婪不是加密情绪指数。",
         ),
     )
     for warning in regime_data_warnings(artifact, language):
@@ -927,159 +1109,231 @@ def render_regime(artifact: dict[str, Any], labels: dict[str, Any], language: st
     )
     render_regime_threshold_cards(artifact, language)
 
-    section_heading(
-        language,
-        "Threshold evidence",
-        "门槛证据",
-        "Thresholds and true state-transition markers are overlaid on the history.",
-        "历史走势同时标出门槛和真实状态转折点。",
+    equity_tab, rates_tab, macro_tab = st.tabs(
+        [
+            tr(language, "Equity", "股市"),
+            tr(language, "Fixed income", "固收"),
+            tr(language, "Macro", "宏观"),
+        ]
     )
-    left, right = st.columns(2)
-    with left:
+    with equity_tab:
+        section_heading(
+            language,
+            "Volatility and sentiment",
+            "波动与情绪",
+            "VIX is the raw CBOE level. CNN Fear & Greed is the US-equity sentiment gauge, not Alternative.me crypto Fear & Greed.",
+            "VIX 是 CBOE 原始水平。CNN 恐惧与贪婪是美股情绪指数，不是 Alternative.me 加密恐惧与贪婪。",
+        )
+        vol_left, vol_right = st.columns(2)
+        with vol_left:
+            with st.container(border=True):
+                render_vix_history(artifact, labels, language, window)
+        with vol_right:
+            with st.container(border=True):
+                render_cnn_fear_greed(artifact, language, window)
+        section_heading(
+            language,
+            "CNN Fear & Greed components",
+            "CNN恐惧与贪婪分项",
+            "Each component is its own card. CNN only publishes a 0-100 score for the latest day; the charts use raw historical inputs on their own scales.",
+            "每个分项单独一张卡。CNN 只对最新一天公布 0–100 分数；图使用各自量纲的原始历史输入。",
+        )
+        render_cnn_fear_greed_components(artifact, language, window)
+        section_heading(
+            language,
+            "US sector leadership",
+            "美股行业相对强弱",
+            "Sector ETFs versus SPY over 20 and 60 sessions. This is relative performance, not official SPY weight contribution.",
+            "行业 ETF 相对 SPY 的20日和60日表现。这是相对强弱，不是官方权重贡献。",
+        )
         with st.container(border=True):
-            render_regime_threshold_chart(artifact, "brent", language, window)
-    with right:
+            render_sector_leadership(artifact, language)
+        section_heading(
+            language,
+            "Cross-asset context",
+            "跨资产背景",
+            "Existing market-monitor index closes reused as context, not a second price database.",
+            "复用现有 ETF 监控的指数收盘价作为背景，不再单独保存第二套价格。",
+        )
+        with st.container(border=True):
+            render_cross_asset_context(artifact, language, window)
+
+    with rates_tab:
+        section_heading(
+            language,
+            "Threshold evidence",
+            "门槛证据",
+            "The 4.82% 10-year rule stays on the cards above; the chart overlays true state-transition markers.",
+            "4.82% 的10年期规则仍在上方门槛卡；图上叠加真实状态转折点。",
+        )
         with st.container(border=True):
             render_regime_threshold_chart(artifact, "us10y", language, window)
-
-    section_heading(
-        language,
-        "Policy expectations",
-        "政策预期",
-        "Atlanta Fed estimates the distribution of 3-month average SOFR; Polymarket prices the next scheduled FOMC decision. They answer different questions.",
-        "Atlanta Fed 估算三个月平均 SOFR 的分布；Polymarket 定价下一次 FOMC 决议。两者回答不同问题。",
-    )
-    policy_left, policy_right = st.columns(2)
-    with policy_left:
-        with st.container(border=True):
-            render_line_chart(
-                artifact,
-                labels,
-                "hike_probability_chart",
-                language,
-                window,
-                views=("Level",),
-                periods_per_year=252,
-                height=390,
-                series_label_map=REGIME_DIST_LABELS_ZH if language == "zh" else None,
-                title_override=tr(
+        section_heading(
+            language,
+            "Policy expectations",
+            "政策预期",
+            "Atlanta Fed estimates the distribution of 3-month average SOFR; Polymarket prices the next scheduled FOMC decision. They answer different questions.",
+            "Atlanta Fed 估算三个月平均 SOFR 的分布；Polymarket 定价下一次 FOMC 决议。两者回答不同问题。",
+        )
+        policy_left, policy_right = st.columns(2)
+        with policy_left:
+            with st.container(border=True):
+                render_line_chart(
+                    artifact,
+                    labels,
+                    "hike_probability_chart",
                     language,
-                    "Near-term SOFR vs current FOMC target",
-                    "近端SOFR相对当前FOMC目标区间",
-                ),
-                subtitle_override=tr(
-                    language,
-                    "Probability distribution for 3-month average SOFR; not meeting-by-meeting FedWatch odds.",
-                    "三个月平均SOFR的概率分布；不是逐次会议的FedWatch赔率。",
-                ),
-            )
-    with policy_right:
-        with st.container(border=True):
-            fomc_row = monitor[monitor["indicator_id"].astype(str).eq("fomc_hike")]
-            if not fomc_row.empty:
-                current = fomc_row.iloc[-1]
-                one_obs = pd.to_numeric(current.get("change_1obs_pp"), errors="coerce")
-                seven_day = pd.to_numeric(current.get("change_7d_pp"), errors="coerce")
-                meeting = current.get("meeting_date") or current.get("target_range") or "—"
-                deltas = []
-                if not pd.isna(one_obs):
-                    deltas.append(tr(language, f"latest change {one_obs:+.1f} pp", f"最新变化 {one_obs:+.1f} 个百分点"))
-                if not pd.isna(seven_day):
-                    deltas.append(tr(language, f"7-day change {seven_day:+.1f} pp", f"7日变化 {seven_day:+.1f} 个百分点"))
-                st.caption(
-                    tr(language, f"Meeting: {meeting}", f"会议：{meeting}")
-                    + (f" · {' · '.join(deltas)}" if deltas else "")
+                    window,
+                    views=("Level",),
+                    periods_per_year=252,
+                    height=390,
+                    series_label_map=REGIME_DIST_LABELS_ZH if language == "zh" else None,
+                    title_override=tr(
+                        language,
+                        "Near-term SOFR vs current FOMC target",
+                        "近端SOFR相对当前FOMC目标区间",
+                    ),
+                    subtitle_override=tr(
+                        language,
+                        "Probability distribution for 3-month average SOFR; not meeting-by-meeting FedWatch odds.",
+                        "三个月平均SOFR的概率分布；不是逐次会议的FedWatch赔率。",
+                    ),
                 )
-            render_line_chart(
-                artifact,
-                labels,
-                "fomc_odds_chart",
-                language,
-                window,
-                views=("Level",),
-                periods_per_year=252,
-                height=350,
-                series_label_map=FOMC_DIST_LABELS_ZH if language == "zh" else None,
-                title_override=tr(
+        with policy_right:
+            with st.container(border=True):
+                fomc_row = monitor[monitor["indicator_id"].astype(str).eq("fomc_hike")]
+                if not fomc_row.empty:
+                    current = fomc_row.iloc[-1]
+                    one_obs = pd.to_numeric(current.get("change_1obs_pp"), errors="coerce")
+                    seven_day = pd.to_numeric(current.get("change_7d_pp"), errors="coerce")
+                    meeting = current.get("meeting_date") or current.get("target_range") or "—"
+                    deltas = []
+                    if not pd.isna(one_obs):
+                        deltas.append(tr(language, f"latest change {one_obs:+.1f} pp", f"最新变化 {one_obs:+.1f} 个百分点"))
+                    if not pd.isna(seven_day):
+                        deltas.append(tr(language, f"7-day change {seven_day:+.1f} pp", f"7日变化 {seven_day:+.1f} 个百分点"))
+                    st.caption(
+                        tr(language, f"Meeting: {meeting}", f"会议：{meeting}")
+                        + (f" · {' · '.join(deltas)}" if deltas else "")
+                    )
+                render_line_chart(
+                    artifact,
+                    labels,
+                    "fomc_odds_chart",
                     language,
-                    "Next FOMC meeting odds",
-                    "下次FOMC会议赔率",
-                ),
-                subtitle_override=tr(
-                    language,
-                    "Polymarket prices for the currently selected open meeting; V1 is not a continuous archive across past meetings.",
-                    "当前所选开放会议的Polymarket预测市场价格；V1尚未形成跨历次会议的连续档案。",
-                ),
-            )
-
-    section_heading(
-        language,
-        "Credit and volatility",
-        "信用与波动",
-        "The decision rule uses same-date 20-day z-scores and five-day direction. Raw levels remain available for audit.",
-        "决策规则使用同日20日z分数和5日方向；原始水平保留供核查。",
-    )
-    with st.container(border=True):
-        render_credit_vix_evidence(artifact, language, window)
-
-    section_heading(
-        language,
-        "CFTC positioning",
-        "CFTC 持仓",
-        "Latest net positions are paired with their own historical percentile; financials use leveraged-money, while gold and WTI use managed-money.",
-        "最新净头寸同时配有自身历史分位；金融期货用杠杆资金，黄金和WTI用管理资金。",
-    )
-    cot = frame_for_dataset(artifact, "cot_latest")
-    cot_required = (
-        "label_zh" if language == "zh" else "label_en",
-        "net",
-        "weekly_change",
-        "percentile",
-        "position_label",
-        "report",
-    )
-    if not _regime_has_columns(cot, cot_required):
-        st.info(tr(language, "CFTC snapshot is not in this artifact yet.", "这个数据快照还没有CFTC持仓。"))
-    else:
-        show = cot.copy()
-        show["Contract"] = show.get("label_zh" if language == "zh" else "label_en")
-        show["Reading"] = show.get("position_label").map(
-            lambda value: COT_LABELS_ZH.get(str(value), str(value)) if language == "zh" else str(value)
-        )
-        show["Report"] = show.get("report").map(
-            lambda value: COT_LABELS_ZH.get(str(value), str(value)) if language == "zh" else str(value)
-        )
-        show["net"] = pd.to_numeric(show["net"], errors="coerce")
-        show["weekly_change"] = pd.to_numeric(show["weekly_change"], errors="coerce")
-        show["percentile"] = pd.to_numeric(show["percentile"], errors="coerce")
-        keep = ["Contract", "net", "weekly_change", "percentile", "Reading", "Report", "date"]
-        st.dataframe(
-            show[[column for column in keep if column in show.columns]].rename(
-                columns={
-                    "Contract": tr(language, "Contract", "合约"),
-                    "net": tr(language, "Net", "净头寸"),
-                    "weekly_change": tr(language, "Weekly change", "当周变化"),
-                    "percentile": tr(language, "Percentile", "历史分位"),
-                    "Reading": tr(language, "Reading", "读法"),
-                    "Report": tr(language, "Report", "报告口径"),
-                    "date": tr(language, "Report date", "报告日"),
-                }
-            ),
-            hide_index=True,
-            width="stretch",
+                    window,
+                    views=("Level",),
+                    periods_per_year=252,
+                    height=350,
+                    series_label_map=FOMC_DIST_LABELS_ZH if language == "zh" else None,
+                    title_override=tr(
+                        language,
+                        "Next FOMC meeting odds",
+                        "下次FOMC会议赔率",
+                    ),
+                    subtitle_override=tr(
+                        language,
+                        "Polymarket prices for the currently selected open meeting; V1 is not a continuous archive across past meetings.",
+                        "当前所选开放会议的Polymarket预测市场价格；V1尚未形成跨历次会议的连续档案。",
+                    ),
+                )
+        section_heading(
+            language,
+            "US Treasuries",
+            "美国国债",
+            "The curve compares four published sessions. The table is yield change in basis points, not bond returns.",
+            "曲线比较四个已公布交易日。表格是收益率基点变化，不是债券回报。",
         )
         with st.container(border=True):
-            render_cot_history(artifact, language, window)
+            render_treasury_curve_chart(artifact, language)
+        with st.container(border=True):
+            render_treasury_yield_table(artifact, language)
+        section_heading(
+            language,
+            "Credit and volatility",
+            "信用与波动",
+            "The decision rule uses same-date 20-day z-scores and five-day direction. Raw levels remain available for audit.",
+            "决策规则使用同日20日z分数和5日方向；原始水平保留供核查。",
+        )
+        with st.container(border=True):
+            render_credit_vix_evidence(artifact, language, window)
 
-    section_heading(
-        language,
-        "Cross-asset context",
-        "跨资产背景",
-        "Existing market-monitor index closes reused as context, not a second price database.",
-        "复用现有 ETF 监控的指数收盘价作为背景，不再单独保存第二套价格。",
-    )
-    with st.container(border=True):
-        render_cross_asset_context(artifact, language, window)
+    with macro_tab:
+        section_heading(
+            language,
+            "Commodities",
+            "商品",
+            "1D / 1W / 1M / 3M / YTD returns on Yahoo Finance futures and ETF proxies, not LBMA/EIA spot.",
+            "Yahoo Finance 期货与 ETF 代理的1日／1周／1月／3月／年初至今回报，不是 LBMA／EIA 现货。",
+        )
+        with st.container(border=True):
+            render_macro_commodity_table(artifact, language)
+        section_heading(
+            language,
+            "Inflation — last 12 monthly releases",
+            "通胀 — 最近12次月度发布",
+            "FRED PCE and Dallas Fed trimmed-mean prints. Headline/core PCE are YoY percent changes of the price index.",
+            "FRED PCE 与达拉斯联储截尾均值。PCE物价与核心PCE为价格指数同比。",
+        )
+        with st.container(border=True):
+            render_inflation_heatmap(artifact, language)
+        section_heading(
+            language,
+            "Oil threshold evidence",
+            "油价门槛证据",
+            "Persistent Brent closes above $100 remain the V1 inflation/supply gate. This uses FRED EIA spot, not the futures proxy in the table above.",
+            "布伦特现货持续收于100美元上方仍是 V1 通胀／供给门槛。这里用的是 FRED EIA 现货，不是上方表格的期货代理。",
+        )
+        with st.container(border=True):
+            render_regime_threshold_chart(artifact, "brent", language, window)
+        section_heading(
+            language,
+            "CFTC positioning",
+            "CFTC 持仓",
+            "Latest net positions are paired with their own historical percentile; financials use leveraged-money, while gold and WTI use managed-money.",
+            "最新净头寸同时配有自身历史分位；金融期货用杠杆资金，黄金和WTI用管理资金。",
+        )
+        cot = frame_for_dataset(artifact, "cot_latest")
+        cot_required = (
+            "label_zh" if language == "zh" else "label_en",
+            "net",
+            "weekly_change",
+            "percentile",
+            "position_label",
+            "report",
+        )
+        if not _regime_has_columns(cot, cot_required):
+            st.info(tr(language, "CFTC snapshot is not in this artifact yet.", "这个数据快照还没有CFTC持仓。"))
+        else:
+            show = cot.copy()
+            show["Contract"] = show.get("label_zh" if language == "zh" else "label_en")
+            show["Reading"] = show.get("position_label").map(
+                lambda value: COT_LABELS_ZH.get(str(value), str(value)) if language == "zh" else str(value)
+            )
+            show["Report"] = show.get("report").map(
+                lambda value: COT_LABELS_ZH.get(str(value), str(value)) if language == "zh" else str(value)
+            )
+            show["net"] = pd.to_numeric(show["net"], errors="coerce")
+            show["weekly_change"] = pd.to_numeric(show["weekly_change"], errors="coerce")
+            show["percentile"] = pd.to_numeric(show["percentile"], errors="coerce")
+            keep = ["Contract", "net", "weekly_change", "percentile", "Reading", "Report", "date"]
+            st.dataframe(
+                show[[column for column in keep if column in show.columns]].rename(
+                    columns={
+                        "Contract": tr(language, "Contract", "合约"),
+                        "net": tr(language, "Net", "净头寸"),
+                        "weekly_change": tr(language, "Weekly change", "当周变化"),
+                        "percentile": tr(language, "Percentile", "历史分位"),
+                        "Reading": tr(language, "Reading", "读法"),
+                        "Report": tr(language, "Report", "报告口径"),
+                        "date": tr(language, "Report date", "报告日"),
+                    }
+                ),
+                hide_index=True,
+                width="stretch",
+            )
+            with st.container(border=True):
+                render_cot_history(artifact, language, window)
 
     section_heading(
         language,

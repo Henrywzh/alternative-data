@@ -1,1 +1,1 @@
-"""Shadow-mode operations telemetry for alternative-data pipelines."""
+"""Operations control plane for alternative-data pipelines."""

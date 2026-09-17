@@ -5,6 +5,7 @@ import requests
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional, Union
 
+from ..http import get_with_retry
 from ..config import CONSUMER_COUNCIL_PRICE_WATCH_URL, DEFAULT_HEADERS
 from ..storage import save_raw_snapshot
 
@@ -60,17 +61,61 @@ def parse_consumer_council_payload(payload: Union[Dict[str, Any], list]) -> pd.D
     return df_norm
 
 
+# The Online Price Watch open data is published as CSV and has been for some
+# time. This lane still asked for JSON -- CONSUMER_COUNCIL_PRICE_WATCH_URL ends
+# in `pricewatch_en.csv` and answers `Content-Type: text/csv` -- so every run
+# raised "Expecting value: line 1 column 1 (char 0)", returned an empty frame,
+# and under `--strict` failed the whole stage-1 ingest. That is what kept the
+# Asia Markets refresh in DEGRADED_RETAINED with a permanently open incident.
+#
+# consumer_council_pricewatch already fetches and parses exactly these bytes
+# correctly, so this lane reshapes that frame to its own published column
+# names rather than issuing a second request and running a second parser
+# against the same URL.
+_PRICEWATCH_TO_PRICE_WATCH = {
+    "date": "date",
+    "product_code": "product_id",
+    "product_name": "product_name",
+    "category_1": "category",
+    "brand": "brand",
+    "supermarket_code": "supermarket_name",
+    "price": "price_hkd",
+}
+
+
 def fetch_consumer_council_prices(custom_url: Optional[str] = None) -> pd.DataFrame:
-    """Fetch and parse HK Consumer Council Online Price Watch prices."""
+    """Fetch HK Consumer Council Online Price Watch prices.
+
+    ``custom_url`` is still honoured for callers that point at a JSON payload
+    of the historical shape; the default path reads the CSV the department
+    actually publishes.
+    """
     url = custom_url or CONSUMER_COUNCIL_PRICE_WATCH_URL
     raw_path = None
     try:
-        resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=15)
-        if resp.status_code == 200:
+        if custom_url is not None:
+            resp = get_with_retry(url)
             payload = resp.json()
             raw_path = save_raw_snapshot("consumer_council_prices", payload, file_ext="json", source_url=url)
             df = parse_consumer_council_payload(payload)
             df.attrs["raw_snapshot"] = str(raw_path)
+            df.attrs["source_url"] = url
+            return df
+
+        from .consumer_council_pricewatch import fetch_consumer_council_pricewatch
+
+        source = fetch_consumer_council_pricewatch()
+        if not source.empty:
+            df = source.rename(columns=_PRICEWATCH_TO_PRICE_WATCH)
+            df = df[[column for column in _PRICEWATCH_TO_PRICE_WATCH.values() if column in df.columns]].copy()
+            # The CSV carries an "offers" note but no pre-discount figure, so
+            # original_price_hkd stays absent rather than being invented.
+            df["original_price_hkd"] = pd.NA
+            df["is_on_sale"] = (
+                source["offers"].notna() & source["offers"].astype(str).str.strip().ne("")
+                if "offers" in source.columns
+                else False
+            )
             df.attrs["source_url"] = url
             return df
     except Exception as exc:

@@ -8,6 +8,8 @@ from uuid import uuid4
 
 import pandas as pd
 
+from common.partitioned_parquet import read_dataset
+
 from .identity import load_capability_map, rank_capability_families
 from .resolver import resolve_capability_map
 from .metrics import (
@@ -142,10 +144,15 @@ class OpenRouterDerivedPipeline:
     def _load_inputs(self) -> dict[str, pd.DataFrame]:
         loaded: dict[str, pd.DataFrame] = {}
         for dataset_id, relative_path in _INPUTS.items():
-            path = self.base_dir / relative_path
-            if not path.exists():
-                raise FileNotFoundError(path)
-            loaded[dataset_id] = _read_parquet_serial(path)
+            # An input is one parquet or a directory of date partitions. Which
+            # one, and which wins while a migration has both on disk, is
+            # decided once in common.partitioned_parquet rather than here --
+            # this copy used to check the file first and so read the stale
+            # single file for the one run where both existed. `read_dataset`
+            # raises FileNotFoundError when neither layout holds data.
+            loaded[dataset_id] = read_dataset(
+                self.base_dir / relative_path, reader=_read_parquet_serial
+            )
         return loaded
 
     def _validate_inputs(
@@ -332,12 +339,15 @@ class OpenRouterDerivedPipeline:
 
 
 def _read_parquet_serial(path: Path) -> pd.DataFrame:
-    """Read a compact pipeline input without spawning Arrow worker threads.
+    """Read one parquet file without spawning Arrow worker threads.
 
     PyArrow's threaded dataset reader can leave asynchronous work alive during
     CPython shutdown on Linux, producing ``terminate called without an active
     exception`` / exit 134 after an otherwise successful build.  These marts
     are small, so deterministic single-threaded reads are a better reliability
     tradeoff than parallel I/O.
+
+    Passed to ``read_dataset`` as its reader, so a partitioned input is still
+    one serial read per partition.
     """
     return pd.read_parquet(path, engine="pyarrow", use_threads=False)

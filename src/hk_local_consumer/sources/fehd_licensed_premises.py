@@ -28,9 +28,9 @@ from datetime import date
 from xml.etree import ElementTree as ET
 
 import pandas as pd
-import requests
 
 from ..config import DEFAULT_HEADERS
+from ..http import get_with_retry
 from ..storage import save_raw_snapshot
 
 logger = logging.getLogger(__name__)
@@ -56,8 +56,10 @@ DIFF_COLUMNS = ["generation_date", "prior_generation_date", "opened", "closed", 
 
 
 def fetch_fehd_licensed_premises() -> pd.DataFrame:
-    response = requests.get(FEHD_RESTAURANTS_XML_URL, headers=DEFAULT_HEADERS, timeout=30)
-    response.raise_for_status()
+    # A bare GET here dropped stage-1 on 2026-09-13: the 4.8 MB XML arrives
+    # chunked, the connection ended mid-body, and `ChunkedEncodingError`
+    # failed the whole strict ingest for one transient blip.
+    response = get_with_retry(FEHD_RESTAURANTS_XML_URL)
     raw_path = save_raw_snapshot(
         "fehd_licensed_premises",
         response.content,

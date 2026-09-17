@@ -55,12 +55,18 @@ class OutputSpec:
     dataset_id: str | None = None
     artifact_root: str | None = None
     freshness: dict[str, Any] = field(default_factory=dict)
+    # Which column carries the observation date. dataset_contract takes this
+    # from dashboard.data.DATASET_REGISTRY, but a lane that feeds no dashboard
+    # is not registered there and still needs to be watched for going stale,
+    # so observation_freshness lets the registry name the column directly.
+    date_column: str | None = None
 
 
 @dataclass(frozen=True)
 class JobSpec:
     job_id: str
     outputs: tuple[OutputSpec, ...]
+    artifact_prefix: str | None = None
 
 
 @dataclass(frozen=True)
@@ -70,6 +76,9 @@ class PipelineSpec:
     cadence: dict[str, Any]
     criticality: str
     jobs: dict[str, JobSpec]
+    artifact_prefix: str | None = None
+    github_workflow_name: str | None = None
+    retry: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -135,6 +144,9 @@ def load_registry(path: Path, *, repo_root: Path) -> PipelineRegistry:
         if not isinstance(raw_jobs, dict) or not raw_jobs:
             raise RegistryError(f"Pipeline {pipeline_id!r} has no jobs")
         jobs: dict[str, JobSpec] = {}
+        pipeline_artifact_prefix = _optional_string(raw_pipeline.get("artifact_prefix"))
+        github_workflow_name = _optional_string(raw_pipeline.get("github_workflow_name"))
+        retry = _validate_retry(raw_pipeline.get("retry"), pipeline_id=str(pipeline_id))
         for job_id, raw_job in raw_jobs.items():
             if not isinstance(raw_job, dict):
                 raise RegistryError(
@@ -165,7 +177,12 @@ def load_registry(path: Path, *, repo_root: Path) -> PipelineRegistry:
                 raise RegistryError(
                     f"Pipeline {pipeline_id!r} job {job_id!r} has duplicate output IDs"
                 )
-            jobs[str(job_id)] = JobSpec(job_id=str(job_id), outputs=outputs)
+            job_artifact_prefix = _optional_string(raw_job.get("artifact_prefix"))
+            jobs[str(job_id)] = JobSpec(
+                job_id=str(job_id),
+                outputs=outputs,
+                artifact_prefix=job_artifact_prefix or pipeline_artifact_prefix,
+            )
 
         pipelines[str(pipeline_id)] = PipelineSpec(
             pipeline_id=str(pipeline_id),
@@ -173,6 +190,9 @@ def load_registry(path: Path, *, repo_root: Path) -> PipelineRegistry:
             cadence=cadence,
             criticality=criticality,
             jobs=jobs,
+            artifact_prefix=pipeline_artifact_prefix,
+            github_workflow_name=github_workflow_name,
+            retry=retry,
         )
 
     return PipelineRegistry(
@@ -200,7 +220,7 @@ def _parse_output(
     _validate_relative_path(path, label=f"Output {output_id!r}")
 
     validator = str(payload.get("validator", "")).strip()
-    allowed = {"file", "dataset_contract", "asia_markets_freshness"}
+    allowed = {"file", "dataset_contract", "asia_markets_freshness", "observation_freshness"}
     if validator not in allowed:
         raise RegistryError(
             f"Output {output_id!r} uses unsupported validator {validator!r}"
@@ -212,6 +232,12 @@ def _parse_output(
                 f"Output {output_id!r} references unknown dataset contract {dataset_id!r}"
             )
 
+    date_column = _optional_string(payload.get("date_column"))
+    if validator == "observation_freshness" and not date_column:
+        raise RegistryError(
+            f"Output {output_id!r} requires date_column for observation freshness"
+        )
+
     artifact_root = _optional_string(payload.get("artifact_root"))
     if artifact_root is not None:
         _validate_relative_path(artifact_root, label=f"Output {output_id!r} artifact_root")
@@ -222,7 +248,7 @@ def _parse_output(
     _validate_freshness(
         freshness,
         output_id=output_id,
-        required=validator == "dataset_contract",
+        required=validator in ("dataset_contract", "observation_freshness"),
     )
     if validator == "asia_markets_freshness" and artifact_root is None:
         raise RegistryError(
@@ -237,6 +263,7 @@ def _parse_output(
         dataset_id=dataset_id,
         artifact_root=artifact_root,
         freshness=dict(freshness),
+        date_column=date_column,
     )
 
 
@@ -250,7 +277,10 @@ def _validate_cadence(payload: Any, *, pipeline_id: str) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise RegistryError(f"Pipeline {pipeline_id!r} cadence must be a mapping")
     kind = str(payload.get("kind", "")).strip()
-    if kind == "daily":
+    # "weekly" shares daily's shape -- a fixed expected gap between runs -- and
+    # differs only in size, so it validates the same field rather than earning
+    # a branch of its own.
+    if kind in ("daily", "weekly"):
         interval = payload.get("expected_interval_hours")
         if (
             isinstance(interval, bool)
@@ -286,6 +316,11 @@ def _validate_cadence(payload: Any, *, pipeline_id: str) -> dict[str, Any]:
                     f"Pipeline {pipeline_id!r} has missing or duplicate window purpose"
                 )
             purposes.add(purpose)
+            job_id = _optional_string(window.get("job_id"))
+            if job_id is not None and not job_id:
+                raise RegistryError(
+                    f"Pipeline {pipeline_id!r} schedule window has empty job_id"
+                )
     else:
         raise RegistryError(
             f"Pipeline {pipeline_id!r} has unsupported cadence kind {kind!r}"
@@ -326,6 +361,24 @@ def _validate_freshness(
         raise RegistryError(
             f"Output {output_id!r} uses unsupported freshness mode {mode!r}"
         )
+
+
+def _validate_retry(payload: Any, *, pipeline_id: str) -> dict[str, Any]:
+    if payload is None:
+        return {"automatic": False, "max_attempts": 0}
+    if not isinstance(payload, dict):
+        raise RegistryError(f"Pipeline {pipeline_id!r} retry must be a mapping")
+    automatic = bool(payload.get("automatic", False))
+    max_attempts = payload.get("max_attempts", 1 if automatic else 0)
+    if isinstance(max_attempts, bool) or not isinstance(max_attempts, int) or max_attempts < 0:
+        raise RegistryError(
+            f"Pipeline {pipeline_id!r} retry.max_attempts must be a non-negative integer"
+        )
+    if automatic and max_attempts < 1:
+        raise RegistryError(
+            f"Pipeline {pipeline_id!r} automatic retry requires max_attempts >= 1"
+        )
+    return {"automatic": automatic, "max_attempts": max_attempts}
 
 
 def _dataset_registry(repo_root: Path) -> dict[str, Any]:

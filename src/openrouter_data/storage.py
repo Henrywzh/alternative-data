@@ -7,6 +7,7 @@ from typing import Any
 
 import pandas as pd
 
+from common.partitioned_parquet import PartitionSpec, PartitionedParquetStore
 from openrouter_data.exceptions import ValidationError
 from openrouter_data.models import DatasetRecord, Snapshot
 
@@ -158,6 +159,23 @@ SORT_KEYS: dict[str, list[str]] = {
     "openrouter_task_spend": ["snapshot_date", "period", "category_slug", "rank", "model_permaslug"],
 }
 PARQUET_ONLY_DATASETS = {"provider_daily_activity", "openrouter_model_activity", "cloud_infra_daily_activity"}
+
+# openrouter_task_spend appends one snapshot date per run on top of ~124k rows
+# already stored. Measured across two consecutive commits (2026-09-08 ->
+# 2026-09-09): 123,960 -> 125,700 rows, 71 -> 72 snapshot dates, and exactly
+# one of those 72 differed. The single-file layout rewrote the whole 4.0 MB
+# parquet for that 1% change, and parquet is compressed binary that git cannot
+# delta -- 49.6 MB of history over the last 90 days alone. One file per
+# snapshot date means a run rewrites only the date it touched.
+#
+# Adopt this only for append-only datasets, and measure first: sibling tables
+# here fail the test. provider_daily_activity carries a single snapshot_date
+# for the whole file (100% rewritten), and ai_hiring's hiring_jobs mutates old
+# rows as jobs close (80-91% rewritten). Both would gain the file-count cost
+# and none of the benefit. See src/common/partitioned_parquet.py.
+PARTITION_COLUMNS: dict[str, str] = {
+    "openrouter_task_spend": "snapshot_date",
+}
 RETENTION_DAYS = {
     # Daily model detail can add thousands of category rows per run. A rolling
     # six-month window keeps the Streamlit load useful without unbounded growth.
@@ -187,10 +205,33 @@ class StorageManager:
         (run_dir / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
         return run_dir
 
+    def partition_store(self, dataset_id: str) -> PartitionedParquetStore | None:
+        """The partitioned store for this dataset, or None if it is single-file."""
+        column = PARTITION_COLUMNS.get(dataset_id)
+        if column is None:
+            return None
+        columns = self._dataset_columns(dataset_id)
+        return PartitionedParquetStore(
+            self.normalized_root / dataset_id,
+            PartitionSpec(
+                column=column,
+                columns=columns,
+                bool_columns=frozenset(BOOL_COLUMNS) & set(columns),
+                numeric_columns=frozenset(NUMERIC_COLUMNS) & set(columns),
+            ),
+        )
+
     def load_dataset(self, dataset_id: str) -> pd.DataFrame:
         csv_path = self.normalized_root / f"{dataset_id}.csv"
         parquet_path = self.normalized_root / f"{dataset_id}.parquet"
-        if parquet_path.exists():
+        store = self.partition_store(dataset_id)
+        partitioned = store.load() if store else None
+        if partitioned is not None:
+            # A leftover single file would silently double every row, so the
+            # partitioned directory is authoritative once it exists. A
+            # pre-migration checkout has no directory and falls through.
+            dataframe = partitioned
+        elif parquet_path.exists():
             dataframe = pd.read_parquet(parquet_path)
         elif csv_path.exists():
             dataframe = pd.read_csv(csv_path)
@@ -262,6 +303,15 @@ class StorageManager:
 
         csv_path = self.normalized_root / f"{dataset_id}.csv"
         parquet_path = self.normalized_root / f"{dataset_id}.parquet"
+        store = self.partition_store(dataset_id)
+        if store is not None:
+            store.write(merged)
+            # The pre-partition files are now stale duplicates of the whole
+            # dataset; leaving either behind would double-count on any reader
+            # that still prefers it.
+            parquet_path.unlink(missing_ok=True)
+            csv_path.unlink(missing_ok=True)
+            return merged
         merged.to_parquet(parquet_path, index=False)
         if dataset_id in PARQUET_ONLY_DATASETS:
             csv_path.unlink(missing_ok=True)
