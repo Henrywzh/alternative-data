@@ -51,6 +51,25 @@ REGIME_EXPOSURE_LABELS = {
     "us_staples": ("US Staples", "美国日常消费"),
     "us_utilities": ("US Utilities", "美国公用事业"),
 }
+REGIME_CROSS_ASSET_CORE = (
+    "sp500",
+    "ndx",
+    "csi300",
+    "csi500",
+    "hsi",
+    "hstech",
+    "nikkei225",
+    "kospi",
+)
+REGIME_US_SECTOR_AUX = (
+    "us_broad",
+    "us_tech",
+    "us_discretionary",
+    "us_communication",
+    "us_healthcare",
+    "us_staples",
+    "us_utilities",
+)
 REGIME_RETURN_HORIZONS = (
     ("return_1d_pct", "1 session", "1个交易日"),
     ("return_5d_pct", "5 sessions", "5个交易日"),

@@ -17,7 +17,15 @@ from .config import PALETTE
 
 from .core import apply_line_hover, chart_theme, frame_for_dataset, latest_row, render_line_chart, tr
 
-from .regime_labels import REGIME_EXPOSURE_LABELS, REGIME_INDICATOR_LABELS, REGIME_RETURN_HORIZONS, REGIME_SERIES_LABELS, REGIME_SERIES_LABELS_ZH
+from .regime_labels import (
+    REGIME_CROSS_ASSET_CORE,
+    REGIME_EXPOSURE_LABELS,
+    REGIME_INDICATOR_LABELS,
+    REGIME_RETURN_HORIZONS,
+    REGIME_SERIES_LABELS,
+    REGIME_SERIES_LABELS_ZH,
+    REGIME_US_SECTOR_AUX,
+)
 
 from .core import _regime_has_columns, _regime_history_window, _regime_state_label
 
@@ -1051,13 +1059,24 @@ def render_cross_asset_context(artifact: dict[str, Any], language: str, window: 
     if not _regime_has_columns(prices, ("date", "exposure_id", "close")):
         st.info(tr(language, "No cross-asset history is available.", "暂无跨资产历史数据。"))
         return
-    available = list(dict.fromkeys(prices["exposure_id"].astype(str).tolist()))
+    observed = list(dict.fromkeys(prices["exposure_id"].astype(str).tolist()))
+    core_order = [value for value in REGIME_CROSS_ASSET_CORE if value in observed]
+    sector_order = [value for value in REGIME_US_SECTOR_AUX if value in observed]
+    unknown_order = [value for value in observed if value not in REGIME_CROSS_ASSET_CORE and value not in REGIME_US_SECTOR_AUX]
+    available = core_order + sector_order + unknown_order
     selected = st.multiselect(
         tr(language, "Series", "显示序列"),
         available,
-        default=available,
+        default=core_order,
         format_func=lambda value: REGIME_EXPOSURE_LABELS.get(value, (value, value))[1 if language == "zh" else 0],
         key=f"regime_cross_asset_series_{language}",
+    )
+    st.caption(
+        tr(
+            language,
+            "Core cross-asset indices are selected by default; US sector ETFs are optional overlays (SPY duplicates S&P 500 above).",
+            "默认仅勾选核心跨资产指数；美国行业 ETF 为可选叠加（SPY 与上方标普500重复）。",
+        )
     )
     if not selected:
         st.info(tr(language, "Select at least one series.", "请至少选择一个序列。"))
