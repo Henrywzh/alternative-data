@@ -47,8 +47,15 @@ _PRIORITY_COLORS = {
 }
 
 
-def _priority_band(value: Any) -> str:
-    """Map the existing descriptive risk score to a display-only priority band."""
+def _priority_band(value: Any, *, provider_importance: Any = None) -> str:
+    """Map provider importance and risk score to a display-only priority band."""
+    provider_score = pd.to_numeric(
+        pd.Series([provider_importance]),
+        errors="coerce",
+    ).iloc[0]
+    if not pd.isna(provider_score) and float(provider_score) == 1.0:
+        return "high"
+
     score = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
     if pd.isna(score):
         return "unknown"
@@ -60,11 +67,26 @@ def _priority_band(value: Any) -> str:
     return "low"
 
 
-def _priority_label(value: Any, language: str) -> str:
-    return tr(language, *_PRIORITY_LABELS[_priority_band(value)])
+def _priority_label(
+    value: Any,
+    language: str,
+    *,
+    provider_importance: Any = None,
+) -> str:
+    return tr(
+        language,
+        *_PRIORITY_LABELS[
+            _priority_band(value, provider_importance=provider_importance)
+        ],
+    )
 
 
-def _style_timeline_frame(frame: pd.DataFrame, *, language: str):
+def _style_timeline_frame(
+    frame: pd.DataFrame,
+    *,
+    language: str,
+    provider_importance: pd.Series | None = None,
+):
     """Highlight priority and score cells without changing the underlying data."""
     if frame.empty:
         return frame
@@ -72,7 +94,15 @@ def _style_timeline_frame(frame: pd.DataFrame, *, language: str):
     priority_column = tr(language, "Priority", "重要性")
 
     def style_row(row: pd.Series) -> list[str]:
-        band = _priority_band(row.get(score_column))
+        provider_value = (
+            provider_importance.get(row.name)
+            if provider_importance is not None
+            else None
+        )
+        band = _priority_band(
+            row.get(score_column),
+            provider_importance=provider_value,
+        )
         colors = _PRIORITY_COLORS.get(band)
         if colors is None:
             return [""] * len(row)
@@ -101,15 +131,16 @@ def _priority_legend(language: str) -> str:
             f'<span style="{badge}background:{high_bg};color:{high_fg};">🔴 High ≥70</span>'
             f'<span style="{badge}background:{medium_bg};color:{medium_fg};">🟠 Medium 50–69</span>'
             f'<span style="{badge}background:{low_bg};color:{low_fg};">⚪ Low &lt;50</span>'
-            "<br><small>Colors use the existing descriptive risk/catalyst score; "
-            "the filter uses provider importance.</small>"
+            "<br><small>Provider importance=1 always takes High; otherwise colors use "
+            "the descriptive risk/catalyst score. The filter uses provider importance.</small>"
         ),
         (
             "重要性："
             f'<span style="{badge}background:{high_bg};color:{high_fg};">🔴 高 ≥70</span>'
             f'<span style="{badge}background:{medium_bg};color:{medium_fg};">🟠 中 50–69</span>'
             f'<span style="{badge}background:{low_bg};color:{low_fg};">⚪ 低 &lt;50</span>'
-            "<br><small>颜色依据现有的描述性风险／催化评分；上方筛选仍依据数据商的原始重要性。</small>"
+            "<br><small>数据商重要性=1 始终为高；其他事件颜色依据描述性风险／催化评分。"
+            "上方筛选仍依据数据商的原始重要性。</small>"
         ),
     )
 
@@ -205,7 +236,14 @@ def _timeline_frame(
     output["priority"] = output.get(
         "risk_score",
         pd.Series(pd.NA, index=output.index),
-    ).map(lambda value: _priority_label(value, language))
+    ).combine(
+        output.get("importance", pd.Series(pd.NA, index=output.index)),
+        lambda score, provider_importance: _priority_label(
+            score,
+            language,
+            provider_importance=provider_importance,
+        ),
+    )
     columns = [
         "time",
         "country",
@@ -708,8 +746,8 @@ def render_events_consensus(language: str) -> None:
         key="event_consensus_major_only",
         help=tr(
             language,
-            "Hide the provider's low-importance events; row colors use the total descriptive risk/catalyst score.",
-            "隐藏数据商标记为低重要性的事件；表格颜色依据完整的描述性风险／催化评分。",
+            "Hide the provider's low-importance events; provider importance=1 always displays as High, and other row colors use the total descriptive risk/catalyst score.",
+            "隐藏数据商标记为低重要性的事件；数据商重要性=1 始终显示为高，其他事件颜色依据完整的描述性风险／催化评分。",
         ),
     )
     filtered = events[events["country"].astype(str).isin(selected_countries)].copy()
@@ -744,7 +782,11 @@ def render_events_consensus(language: str) -> None:
         timezone_name=timezone_name,
     )
     st.dataframe(
-        _style_timeline_frame(upcoming_view, language=language),
+        _style_timeline_frame(
+            upcoming_view,
+            language=language,
+            provider_importance=upcoming.get("importance"),
+        ),
         hide_index=True,
         width="stretch",
         height=min(520, 38 + max(1, len(upcoming)) * 35),
@@ -764,7 +806,11 @@ def render_events_consensus(language: str) -> None:
                 timezone_name=timezone_name,
             )
             st.dataframe(
-                _style_timeline_frame(recent_view, language=language),
+                _style_timeline_frame(
+                    recent_view,
+                    language=language,
+                    provider_importance=recent.get("importance"),
+                ),
                 hide_index=True,
                 width="stretch",
             )

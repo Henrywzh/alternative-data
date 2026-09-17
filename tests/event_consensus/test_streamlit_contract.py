@@ -43,6 +43,12 @@ def test_priority_bands_use_the_existing_risk_score_scale() -> None:
     assert _priority_band(None) == "unknown"
 
 
+def test_provider_importance_one_always_gets_high_priority() -> None:
+    assert _priority_band(40, provider_importance=1) == "high"
+    assert _priority_band(40, provider_importance="1") == "high"
+    assert _priority_band(69.9, provider_importance=0) == "medium"
+
+
 def test_timeline_exposes_bilingual_priority_labels() -> None:
     events = pd.DataFrame(
         [
@@ -78,6 +84,27 @@ def test_timeline_exposes_bilingual_priority_labels() -> None:
 
     assert english["Priority"].tolist() == ["🔴 High", "🟠 Medium", "⚪ Low"]
     assert chinese["重要性"].tolist() == ["🔴 高", "🟠 中", "⚪ 低"]
+
+
+def test_provider_high_priority_is_styled_even_when_score_is_below_high_band() -> None:
+    events = pd.DataFrame(
+        [
+            {
+                "scheduled_at_utc": "2026-09-18T12:30:00Z",
+                "importance": 1,
+                "risk_score": 40,
+            }
+        ]
+    )
+    view = _timeline_frame(events, language="en", timezone_name="UTC")
+
+    assert view["Priority"].tolist() == ["🔴 High"]
+    html = _style_timeline_frame(
+        view,
+        language="en",
+        provider_importance=events["importance"],
+    ).to_html()
+    assert "#fee2e2" in html
 
 
 def test_timeline_priority_cells_are_colored() -> None:
