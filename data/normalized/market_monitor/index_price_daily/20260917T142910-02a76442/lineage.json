@@ -94,12 +94,12 @@
       "dow": 1253,
       "ftse100": 1260,
       "growth": 1210,
-      "hk_dividend": 1225,
-      "hk_hshares": 1225,
+      "hk_dividend": 1226,
+      "hk_hshares": 1226,
       "hk_internet": 1232,
-      "hk_midcap": 1225,
-      "hsi": 1225,
-      "hstech": 1225,
+      "hk_midcap": 1226,
+      "hsi": 1226,
+      "hstech": 1226,
       "kospi": 1218,
       "kr_semis": 1211,
       "ndx": 1253,
@@ -120,16 +120,10 @@
       "us_utilities": 1253,
       "us_value": 1253
     },
-    "first_date": "2021-09-11",
-    "last_date": "2026-09-10",
+    "first_date": "2021-09-18",
+    "last_date": "2026-09-17",
     "requested_start_date": null,
     "fetch_errors": [
-      {
-        "dataset": "etf_share_daily",
-        "severity": "optional",
-        "source": "sse:fund_etf_scale_sse",
-        "error": "KeyError: \"None of [Index(['序号', '基金代码', '基金简称', 'ETF类型', '统计日期', '基金份额'], dtype='object')] are in the [columns]\""
-      },
       {
         "dataset": "etf_share_daily",
         "severity": "optional",
@@ -140,9 +134,9 @@
     "regressions": []
   },
   "dataset_name": "index_price_daily",
-  "run_id": "20260910T134818-f2ff03d0",
-  "created_at": "2026-09-10T13:48:38.747824+00:00",
-  "records": 45759,
+  "run_id": "20260917T142910-02a76442",
+  "created_at": "2026-09-17T14:29:38.582830+00:00",
+  "records": 45764,
   "columns": [
     "date",
     "exposure_id",
@@ -155,5 +149,5 @@
     "retrieved_at_utc",
     "observation_type"
   ],
-  "sha256": "8f320b4d9b63c8f33ea77e19b478893f94bf070ff992d4df018680270414af92"
+  "sha256": "c8fae1e114bff2bac7f87e9c9f3d2b1dd86e3dd344864f53012c582ebfab7943"
 }
