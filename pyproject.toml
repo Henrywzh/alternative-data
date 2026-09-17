@@ -45,6 +45,9 @@ dev = [
   # HKEX event-study capture lane.
   "duckdb>=1.0",
 ]
+live-market = [
+  "futu-api>=9",
+]
 
 [project.scripts]
 openrouter-data = "openrouter_data.cli:main"
@@ -82,6 +85,7 @@ opencode-data = "opencode_data.cli:main"
 replicate-data = "replicate_data.cli:main"
 market-monitor = "market_monitor.cli:main"
 global-market-regime = "global_market_regime.cli:main"
+event-consensus = "event_consensus.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

@@ -100,7 +100,8 @@ measurements are not silently presented as identical observations.
 
 ## Current Streamlit views
 
-The market page has four functional layers:
+The market page has two internal modes. `Markets` keeps the four existing
+functional layers:
 
 1. **Market Leadership / 市场领导力** — a regional selector for China/HK +
    QDII, US, APAC ex-CN/HK, EMEA and Global. Only the selected region is
@@ -121,6 +122,18 @@ The market page has four functional layers:
 4. **Wrapper selection** — entry cost is premium plus half the bid/ask spread
    in basis points; peer rank is within the same exposure; liquidity is shown
    separately; hold rank uses management plus custody fee, size proxy and age.
+
+`Events / Consensus` is an independent macro-first workflow provided by
+`src/event_consensus/`. It reads a git-ignored compact local artifact and does
+not alter the market-monitor artifact contract. Its 7-14 day timeline includes
+explicitly decomposed risk/catalyst scoring, a PIT consensus history, official
+BLS CPI/PPI/labour component snapshots, current cross-asset quotes and conditional scenario
+templates. CPI cards include coarse dated December 2025 reference weights from
+the [BLS relative-importance table](https://www.bls.gov/cpi/tables/relative-importance/2025.htm);
+they are not current-month spending weights. Only the explicit refresh button
+makes network requests. The free calendar/forecast lane is third-party and its
+actuals remain unverified until an official adapter matches them; missing
+dispersion and event beta are never imputed.
 
 ### US sector board
 
@@ -169,6 +182,10 @@ snapshot, not a promise that every future daily run has the same row count.
   the wrapper caveat.
 - The index and wrapper data are daily/session data, not intraday execution
   data. A run timestamp and an observation date are different things.
+- The Events / Consensus score is descriptive, not a trade recommendation.
+  Finnhub is used for supported US quote snapshots, not as an economic
+  consensus source on the current free entitlement. Korea and Hong Kong quote
+  coverage requires a future Futu or other adapter.
 - Only quotes with a verified current observation enter premium comparisons and
   ranks. A recent but unverified quote may be shown with an explicit status;
   stale and previous-close premiums are shown as unavailable in both the
@@ -203,7 +220,9 @@ python -m pytest tests/test_asia_markets_wiring.py \
   tests/test_asia_markets_streamlit_contracts.py \
   tests/test_dashboard_history_policy.py -q
 python -m py_compile apps/asia-markets-streamlit/app.py \
-  apps/asia-markets-dashboard/scripts/build_market_monitor_artifact.py
+  apps/asia-markets-dashboard/scripts/build_market_monitor_artifact.py \
+  apps/asia-markets-streamlit/am/events_consensus.py
+PYTHONPATH=src python -m pytest tests/event_consensus -q
 ```
 
 If the artifact contract changes, rebuild both English and Chinese JSON

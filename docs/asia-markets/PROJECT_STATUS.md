@@ -13,6 +13,16 @@ replacement for the operating manual or generated source-status JSON.
   The Index & ETF Allocation Monitor is Streamlit-only in V1; it is not in
   the Cloudflare `sectors.json` roster and is not packaged by
   `package-dashboard.mjs`.
+- The private Market Monitor now includes an internal `Events / Consensus`
+  mode. It has a 7-14 day US/China/Korea timeline, explicit manual refresh,
+  append-only PIT event/quote/component ledgers, official BLS CPI/PPI/labour
+  component snapshots, Finnhub US cross-asset quotes and a free scheduled
+  GitHub backup.
+  TradingView is currently the clearly labelled third-party
+  calendar/consensus lane because the configured Finnhub free account returns
+  HTTP 403 for economic-calendar access. Consensus dispersion, official
+  China/Korea components, Futu OpenD and historical event beta remain follow-up
+  adapters rather than fabricated coverage.
 - Canonical financial-data sibling: `/Users/henrywzh/Desktop/Quant/financial-data`;
   see `REPO_BRIDGE.md` for the shared contract.
 - Research Control Tower V1 is a local/private, read-only publication. The

@@ -105,6 +105,13 @@ Allocation Monitor is read from `market-monitor-artifact*.json` and is not
 added to `sectors.json` or `package-dashboard.mjs` in V1. Company explorer and
 broader portfolio workflows remain future scope.
 
+The Market Monitor also contains an internal `Events / Consensus` mode backed
+by the independent `src/event_consensus/` package. Opening the mode is a local
+artifact read. Its explicitly labelled refresh button is the only Streamlit
+path allowed to call the collectors; it appends a manual PIT snapshot and is
+not page-navigation fetching. Event/consensus data stays private and is not a
+Cloudflare public-sector artifact.
+
 The market-monitor-specific flow is:
 
 ```text
@@ -113,6 +120,27 @@ src/market_monitor sources
   -> apps/asia-markets-dashboard/.generated/market-monitor-artifact*.json
   -> apps/asia-markets-streamlit/app.py
 ```
+
+The event/consensus flow is:
+
+```text
+free calendar/consensus + official components + quote adapters
+  -> data/normalized/event_consensus append-only local ledgers
+  -> data/cache/event_consensus/events_consensus_latest.json
+  -> Asia Markets Market Monitor / Events / Consensus
+```
+
+For a local/manual refresh from the repository root:
+
+```bash
+PYTHONPATH=src python -m event_consensus.cli --trigger manual
+```
+
+`--no-quotes` skips network quote acquisition but retains the last valid quote
+snapshot in the compact artifact. Installing `.[live-market]` and running
+Futu OpenD on `127.0.0.1:11111` enables the optional local quote fast lane;
+without it, the source is shown as `Not configured` and is not treated as
+coverage.
 
 This shared artifact is a read contract only. It does not make the monitor a
 Cloudflare page or authorize adding it to the public sector roster.
