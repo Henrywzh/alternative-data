@@ -28,11 +28,15 @@ def test_brief_keeps_provider_importance_one_high_even_with_low_score(artifact_p
         now_utc=NOW,
     )
 
-    rows = service.brief(horizon_hours=48)["data"]["events"]
+    result = service.brief(horizon_hours=48)
+    rows = result["data"]["events"]
 
     assert rows[0]["event_id"] == "tradingview:importance-one"
     assert rows[0]["priority"] == "high"
     assert rows[0]["priority_reason"] == "provider_importance_1"
+    assert result["data"]["high_priority_count"] == 2
+    assert result["data"]["consensus_available_count"] == 2
+    assert result["data"]["awaiting_consensus_count"] == 0
 
 
 def test_list_events_filters_country_priority_and_release_state(artifact_path):

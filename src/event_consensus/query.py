@@ -283,12 +283,25 @@ class EventQueryService:
             and (_timestamp(row.get("scheduled_at_utc")) or pd.Timestamp(self.now)) >= pd.Timestamp(self.now)
             and (country_set is None or str(row.get("country")) in country_set)
         ]
-        low_count = sum(1 for row in all_window_rows if row["priority"] not in {"high", "medium"})
+        focus_rows = [
+            row for row in all_window_rows if row["priority"] in {"high", "medium"}
+        ]
+        low_count = len(all_window_rows) - len(focus_rows)
+        consensus_count = sum(
+            1
+            for row in focus_rows
+            if row["availability"].get("forecast") == "available"
+        )
         return self._envelope(
             "brief",
             {
                 "horizon_hours": horizon_hours,
                 "events": rows[: max(1, limit)],
+                "high_priority_count": sum(
+                    1 for row in focus_rows if row["priority"] == "high"
+                ),
+                "consensus_available_count": consensus_count,
+                "awaiting_consensus_count": len(focus_rows) - consensus_count,
                 "hidden_low_priority_count": low_count,
             },
             filters={"horizon_hours": horizon_hours, "countries": sorted(country_set) if country_set else None},
