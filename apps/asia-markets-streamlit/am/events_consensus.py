@@ -185,6 +185,21 @@ def _local_time(value: Any, timezone_name: str) -> str:
     return stamp.tz_convert(ZoneInfo(timezone_name)).strftime("%a %d %b · %H:%M")
 
 
+def _unit_text(unit: Any, *, default: str = "") -> str:
+    """Return a display-safe unit, treating pandas missing values as absent."""
+    if unit is None:
+        return default
+    if isinstance(unit, str):
+        cleaned = unit.strip()
+        return default if cleaned.casefold() in {"", "nan", "none", "nat"} else cleaned
+    try:
+        if bool(pd.isna(unit)):
+            return default
+    except (TypeError, ValueError):
+        pass
+    return str(unit).strip() or default
+
+
 def _number(value: Any, unit: Any = None) -> str:
     if value is None or pd.isna(value):
         return "—"
@@ -192,7 +207,7 @@ def _number(value: Any, unit: Any = None) -> str:
         rendered = f"{float(value):,.2f}".rstrip("0").rstrip(".")
     else:
         rendered = str(value)
-    suffix = str(unit or "").strip()
+    suffix = _unit_text(unit)
     return f"{rendered}{suffix}" if suffix in {"%", "pp", "bps"} else (
         f"{rendered} {suffix}" if suffix else rendered
     )
@@ -382,7 +397,7 @@ def _render_consensus(
                 name=tr(language, "Consensus", "市场预期"),
             )
         )
-        fig.update_yaxes(title=str(unit or "value"))
+        fig.update_yaxes(title=_unit_text(unit, default="value"))
         st.plotly_chart(
             chart_theme(fig, "number", date_axis=True, height=280),
             width="stretch",

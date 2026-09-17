@@ -9,14 +9,23 @@ if str(APP_DIR) not in sys.path:
     sys.path.insert(0, str(APP_DIR))
 
 from am.events_consensus import (  # noqa: E402
+    _number,
     _priority_band,
     _priority_legend,
     _style_timeline_frame,
     _timeline_frame,
+    _unit_text,
 )
 
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+def test_missing_unit_is_not_rendered_as_nan() -> None:
+    assert _number(1_310_000, float("nan")) == "1,310,000"
+    assert _number(1_239_000, pd.NA) == "1,239,000"
+    assert _number(1.2, "%") == "1.2%"
+    assert _unit_text(float("nan"), default="value") == "value"
 
 
 def test_market_monitor_has_internal_events_mode() -> None:
