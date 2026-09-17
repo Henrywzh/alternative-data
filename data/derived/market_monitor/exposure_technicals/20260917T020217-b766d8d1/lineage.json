@@ -2,8 +2,8 @@
   "type": "derived",
   "run_scope": "full",
   "dataset_name": "exposure_technicals",
-  "run_id": "20260908T134602-e863e6c6",
-  "created_at": "2026-09-08T13:46:23.918828+00:00",
+  "run_id": "20260917T020217-b766d8d1",
+  "created_at": "2026-09-17T02:02:31.513699+00:00",
   "records": 37,
   "columns": [
     "rsi",
@@ -17,5 +17,5 @@
     "label",
     "date"
   ],
-  "sha256": "8430c2b10fe84fa79d711e848a54127dffd44c7f6a5abe090a6199173e9ab2c1"
+  "sha256": "0ee3bcb5fb1b22c35598e09493523e01515b2e8137c7c9002f59305fd368674d"
 }

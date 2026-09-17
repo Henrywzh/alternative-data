@@ -83,17 +83,17 @@
     "missing_exposures": [],
     "rows_by_exposure": {
       "cac40": 1279,
-      "chinext": 1210,
-      "cn_infotech": 1210,
-      "cn_staples": 1210,
-      "csi1000": 1210,
-      "csi300": 1210,
-      "csi500": 1210,
+      "chinext": 1209,
+      "cn_infotech": 1209,
+      "cn_staples": 1209,
+      "csi1000": 1209,
+      "csi300": 1209,
+      "csi500": 1209,
       "dax": 1273,
-      "dividend": 1210,
+      "dividend": 1209,
       "dow": 1253,
       "ftse100": 1260,
-      "growth": 1210,
+      "growth": 1209,
       "hk_dividend": 1225,
       "hk_hshares": 1225,
       "hk_internet": 1231,
@@ -105,11 +105,11 @@
       "ndx": 1253,
       "nikkei225": 1221,
       "russell2000": 1253,
-      "saudi": 1253,
+      "saudi": 1252,
       "sp500": 1253,
       "twii": 1212,
       "us_broad": 1253,
-      "us_communication": 1253,
+      "us_communication": 1252,
       "us_discretionary": 1253,
       "us_equal_weight": 1253,
       "us_growth": 1253,
@@ -120,16 +120,23 @@
       "us_utilities": 1253,
       "us_value": 1253
     },
-    "first_date": "2021-09-09",
-    "last_date": "2026-09-08",
+    "first_date": "2021-09-18",
+    "last_date": "2026-09-16",
     "requested_start_date": null,
-    "fetch_errors": [],
+    "fetch_errors": [
+      {
+        "dataset": "etf_share_daily",
+        "severity": "optional",
+        "source": "szse:fund_scale_daily_szse",
+        "error": "ConnectionError: ('Connection aborted.', ConnectionResetError(54, 'Connection reset by peer'))"
+      }
+    ],
     "regressions": []
   },
   "dataset_name": "index_price_daily",
-  "run_id": "20260908T134602-e863e6c6",
-  "created_at": "2026-09-08T13:46:23.891563+00:00",
-  "records": 45757,
+  "run_id": "20260917T020217-b766d8d1",
+  "created_at": "2026-09-17T02:02:31.486462+00:00",
+  "records": 45747,
   "columns": [
     "date",
     "exposure_id",
@@ -142,5 +149,5 @@
     "retrieved_at_utc",
     "observation_type"
   ],
-  "sha256": "81cf14ab2d0079c57754a9520cd62d063aaf8ef1426554de7baef102d81f5593"
+  "sha256": "519bf5af0fc5df39bfe1cb6ff5a666644b81fa7be9f579d9c7ac792fc5b06f36"
 }

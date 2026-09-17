@@ -1,12 +1,12 @@
 {
   "baseline_initialized": true,
   "last_evaluated_by_mode": {
-    "close": "2026-09-14",
+    "close": "2026-09-16",
     "intraday": "2026-09-11"
   },
-  "last_sent_kind": "event",
-  "last_sent_report_date": "2026-09-11",
-  "last_sent_week": "2026-W37",
+  "last_sent_kind": "manual",
+  "last_sent_report_date": "2026-09-17",
+  "last_sent_week": "2026-W38",
   "pending_events": [],
   "sent_event_keys": [
     "drawdown|csi300|2026-09-03|沪深300：60日回撤进入风险区间（当前 -10.02%）。",
