@@ -1,4 +1,4 @@
-"""Interactive Events / Consensus mode for the private Market Monitor."""
+"""Standalone Events & Consensus page for the private research terminal."""
 
 from __future__ import annotations
 
@@ -688,8 +688,8 @@ def _render_post_release(selected: pd.Series, language: str) -> None:
 def render_events_consensus(language: str) -> None:
     section_heading(
         language,
-        "Events / Consensus",
-        "事件 / 市场预期",
+        "Events & Consensus",
+        "事件与预期",
         "A point-in-time timeline for macro catalysts, expectation revisions and conditional risk responses.",
         "以 PIT 快照跟踪宏观催化点、预期变化及条件式风险应对。",
     )

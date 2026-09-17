@@ -28,12 +28,12 @@ def test_missing_unit_is_not_rendered_as_nan() -> None:
     assert _unit_text(float("nan"), default="value") == "value"
 
 
-def test_market_monitor_has_internal_events_mode() -> None:
+def test_events_consensus_is_not_nested_inside_market_monitor() -> None:
     source = (
         ROOT / "apps" / "asia-markets-streamlit" / "am" / "market_page.py"
     ).read_text(encoding="utf-8")
-    assert 'mode_keys = ("markets", "events")' in source
-    assert "render_events_consensus(language)" in source
+    assert "market_monitor_mode" not in source
+    assert "render_events_consensus" not in source
 
 
 def test_navigation_is_read_only_and_refresh_is_explicit() -> None:
