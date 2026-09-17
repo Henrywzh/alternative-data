@@ -227,6 +227,35 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
     st.markdown(f'<div class="am-page-title">{tr(language, SECTORS["market"]["name_en"], SECTORS["market"]["name_zh"])}</div>', unsafe_allow_html=True)
     st.caption(tr(language, "Global Multi-Asset & ETF Monitor. Regional segmentation with clean data separation.", "全球多资产与 ETF 监控看板。按地域严格分层，无跨区干扰。"))
 
+    mode_keys = ("markets", "events")
+    mode_labels = {
+        "markets": tr(language, "Markets", "市场"),
+        "events": tr(language, "Events / Consensus", "事件 / 市场预期"),
+    }
+    if hasattr(st, "segmented_control"):
+        selected_mode = st.segmented_control(
+            tr(language, "Monitor mode", "监控模式"),
+            mode_keys,
+            default=mode_keys[0],
+            key="market_monitor_mode",
+            format_func=lambda key: mode_labels[key],
+            label_visibility="collapsed",
+        ) or mode_keys[0]
+    else:
+        selected_mode = st.radio(
+            tr(language, "Monitor mode", "监控模式"),
+            mode_keys,
+            horizontal=True,
+            key="market_monitor_mode",
+            format_func=lambda key: mode_labels[key],
+            label_visibility="collapsed",
+        )
+    if selected_mode == "events":
+        from .events_consensus import render_events_consensus
+
+        render_events_consensus(language)
+        return
+
     datasets = artifact.get("snapshot", {}).get("datasets", {})
 
     technicals = pd.DataFrame(datasets.get("exposure_technicals", []))

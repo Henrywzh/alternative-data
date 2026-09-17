@@ -692,6 +692,14 @@ LEGACY_GENERATION_ARTIFACT_NAMES = tuple(
 
 _LEGACY_EARNINGS_ACTUALS_COLUMNS = tuple(EARNINGS_ACTUALS_COLUMNS[:-8])
 
+# source_health.parquet published before the explicit freshness SLA
+# (stale_after_days) was added.  The repository reader accepts that legacy
+# column set, so the publisher lineage validator must accept it too; only
+# the exact legacy shape is allowed, never an arbitrary partial schema.
+_LEGACY_SOURCE_HEALTH_COLUMNS = tuple(
+    column for column in SOURCE_HEALTH_COLUMNS if column != "stale_after_days"
+)
+
 OPTIONAL_ARTIFACT_NAMES = frozenset({
     "consensus_snapshots.parquet",
     "consensus_revisions.parquet",
@@ -5823,6 +5831,12 @@ def _validated_current_lineage(
         if legacy_generation and name == "earnings_actuals.parquet":
             if tuple(table_schema.names) != _LEGACY_EARNINGS_ACTUALS_COLUMNS:
                 raise BuildError(f"CURRENT selected manifest schema mismatch: {name}")
+        elif (
+            legacy_generation
+            and name == "source_health.parquet"
+            and tuple(table_schema.names) == _LEGACY_SOURCE_HEALTH_COLUMNS
+        ):
+            continue
         elif table_schema != schemas[name]:
             raise BuildError(f"CURRENT selected manifest schema mismatch: {name}")
     return _iso(built_at), generation_id

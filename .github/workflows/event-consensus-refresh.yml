@@ -1,0 +1,72 @@
+name: Event Consensus Cloud Backup
+
+on:
+  schedule:
+    # Four economical weekday checkpoints cover Asia morning, Asia close,
+    # common US 08:30 releases (with DST/standard-time tolerance) and the
+    # post-FOMC window. GitHub scheduling is eventual, not a T+2 guarantee.
+    - cron: "45 1,6,13,19 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: event-consensus-cloud-backup
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install focused dependencies
+        run: python -m pip install "pandas>=2.2,<3" "pyarrow>=16" "requests>=2.32" "pytest>=8.2"
+
+      - name: Restore append-only cloud ledger
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data/normalized/event_consensus
+            data/cache/event_consensus
+          key: event-consensus-linux-${{ github.run_id }}
+          restore-keys: |
+            event-consensus-linux-
+
+      - name: Verify event engine
+        env:
+          PYTHONPATH: src
+        run: python -m pytest tests/event_consensus -q
+
+      - name: Capture eventual calendar, actuals and cross-asset snapshot
+        env:
+          PYTHONPATH: src
+        run: python -m event_consensus.cli --trigger cloud_backup
+
+      - name: Save append-only cloud ledger
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            data/normalized/event_consensus
+            data/cache/event_consensus
+          key: event-consensus-linux-${{ github.run_id }}
+
+      - name: Retain inspectable backup artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: event-consensus-${{ github.run_id }}
+          path: |
+            data/normalized/event_consensus
+            data/cache/event_consensus/events_consensus_latest.json
+          if-no-files-found: warn
+          retention-days: 90
