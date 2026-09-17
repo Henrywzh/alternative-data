@@ -6,7 +6,7 @@
     "title": "香港劳动力市场与人才政策",
     "description": "劳动力、就业、失业、职位空缺、工资、就业收入及官方人才政策流量的来源快照。",
     "sector": "hk-labour-market",
-    "generatedAt": "2026-09-15T11:48:04.659077Z",
+    "generatedAt": "2026-09-17T11:44:00.191923Z",
     "cards": [
       {
         "id": "labour_force_card",
@@ -686,23 +686,23 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `61fbf75aed9bca0b` · 生成于 2026-09-15T11:48:04.659077Z。"
+        "body": "**数据快照：** `bd7f79d53b1cde34` · 生成于 2026-09-17T11:44:00.191923Z。"
       }
     ]
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-09-15T11:48:04.659077Z",
+    "generatedAt": "2026-09-17T11:44:00.191923Z",
     "status": "ready",
     "datasets": {
       "kpi_labour_force": [
         {
-          "labour_force_thousands": 3793.3,
-          "employed_thousands": 3647.6,
-          "unemployed_thousands": 145.7,
-          "unemployment_rate": 0.038,
-          "underemployment_rate": 0.017,
-          "observation_date": "2026-07-31"
+          "labour_force_thousands": 3805.9,
+          "employed_thousands": 3652,
+          "unemployed_thousands": 153.9,
+          "unemployment_rate": 0.04,
+          "underemployment_rate": 0.019,
+          "observation_date": "2026-08-31"
         }
       ],
       "kpi_labour_demand": [
@@ -724,7 +724,7 @@
       "kpi_income": [
         {
           "median_monthly_earnings": 21000,
-          "observation_date": "2026-06-30"
+          "observation_date": "2026-07-31"
         }
       ],
       "kpi_talent_policy": [
@@ -3335,6 +3335,12 @@
           "value": 3647.6
         },
         {
+          "month": "2026-08",
+          "date": "2026-08-31",
+          "series": "就业人数",
+          "value": 3652
+        },
+        {
           "month": "1985-03",
           "date": "1985-03-31",
           "series": "劳动力",
@@ -5933,6 +5939,12 @@
           "value": 3793.3
         },
         {
+          "month": "2026-08",
+          "date": "2026-08-31",
+          "series": "劳动力",
+          "value": 3805.9
+        },
+        {
           "month": "1985-03",
           "date": "1985-03-31",
           "series": "失业人数",
@@ -8529,6 +8541,12 @@
           "date": "2026-07-31",
           "series": "失业人数",
           "value": 145.7
+        },
+        {
+          "month": "2026-08",
+          "date": "2026-08-31",
+          "series": "失业人数",
+          "value": 153.9
         }
       ],
       "labour_rate_history": [
@@ -11131,6 +11149,12 @@
           "value": 0.017
         },
         {
+          "month": "2026-08",
+          "date": "2026-08-31",
+          "series": "就业不足率",
+          "value": 0.019
+        },
+        {
           "month": "1985-03",
           "date": "1985-03-31",
           "series": "失业率",
@@ -13727,6 +13751,12 @@
           "date": "2026-07-31",
           "series": "失业率",
           "value": 0.038
+        },
+        {
+          "month": "2026-08",
+          "date": "2026-08-31",
+          "series": "失业率",
+          "value": 0.04
         }
       ],
       "vacancy_history": [
@@ -22551,6 +22581,11 @@
         {
           "month": "2026-06",
           "date": "2026-06-30",
+          "value": 21000
+        },
+        {
+          "month": "2026-07",
+          "date": "2026-07-31",
           "value": 21000
         }
       ],
@@ -31806,12 +31841,54 @@
           "date": "2026-06-30",
           "series": "运输通讯",
           "value": 22500
+        },
+        {
+          "month": "2026-07",
+          "date": "2026-07-31",
+          "series": "建造",
+          "value": 24000
+        },
+        {
+          "month": "2026-07",
+          "date": "2026-07-31",
+          "series": "住宿餐饮",
+          "value": 17000
+        },
+        {
+          "month": "2026-07",
+          "date": "2026-07-31",
+          "series": "金融",
+          "value": 40000
+        },
+        {
+          "month": "2026-07",
+          "date": "2026-07-31",
+          "series": "制造",
+          "value": 20700
+        },
+        {
+          "month": "2026-07",
+          "date": "2026-07-31",
+          "series": "零售",
+          "value": 16500
+        },
+        {
+          "month": "2026-07",
+          "date": "2026-07-31",
+          "series": "总计",
+          "value": 21000
+        },
+        {
+          "month": "2026-07",
+          "date": "2026-07-31",
+          "series": "运输通讯",
+          "value": 22800
         }
       ],
       "earnings_by_industry_latest": [
         {
           "industry": "零售业",
-          "median_monthly_earnings": 16600
+          "median_monthly_earnings": 16500
         },
         {
           "industry": "住宿及膳食",
@@ -31823,43 +31900,43 @@
         },
         {
           "industry": "公共行政、社会及个人服务",
-          "median_monthly_earnings": 18800
+          "median_monthly_earnings": 18900
         },
         {
-          "industry": "总计",
-          "median_monthly_earnings": 21000
+          "industry": "制造业",
+          "median_monthly_earnings": 20700
         },
         {
           "industry": "地产及专业、商用服务",
           "median_monthly_earnings": 21000
         },
         {
-          "industry": "制造业",
-          "median_monthly_earnings": 22000
+          "industry": "总计",
+          "median_monthly_earnings": 21000
         },
         {
           "industry": "运输、仓储、速递及资讯通讯",
-          "median_monthly_earnings": 22500
+          "median_monthly_earnings": 22800
         },
         {
           "industry": "建造业",
-          "median_monthly_earnings": 23400
+          "median_monthly_earnings": 24000
         },
         {
           "industry": "进出口及批发",
           "median_monthly_earnings": 25000
         },
         {
-          "industry": "其他行业",
-          "median_monthly_earnings": 25000
+          "industry": "金融、保险、地产及商用服务",
+          "median_monthly_earnings": 25100
         },
         {
-          "industry": "金融、保险、地产及商用服务",
-          "median_monthly_earnings": 25900
+          "industry": "其他行业",
+          "median_monthly_earnings": 28200
         },
         {
           "industry": "金融及保险",
-          "median_monthly_earnings": 41300
+          "median_monthly_earnings": 40000
         }
       ],
       "occupation_earnings_history": [
@@ -36338,6 +36415,42 @@
           "date": "2026-06-30",
           "series": "总计",
           "value": 21000
+        },
+        {
+          "month": "2026-07",
+          "date": "2026-07-31",
+          "series": "辅专业",
+          "value": 28000
+        },
+        {
+          "month": "2026-07",
+          "date": "2026-07-31",
+          "series": "非技术",
+          "value": 6000
+        },
+        {
+          "month": "2026-07",
+          "date": "2026-07-31",
+          "series": "经理",
+          "value": 52000
+        },
+        {
+          "month": "2026-07",
+          "date": "2026-07-31",
+          "series": "专业",
+          "value": 45800
+        },
+        {
+          "month": "2026-07",
+          "date": "2026-07-31",
+          "series": "销售服务",
+          "value": 17000
+        },
+        {
+          "month": "2026-07",
+          "date": "2026-07-31",
+          "series": "总计",
+          "value": 21000
         }
       ],
       "earnings_by_occupation_latest": [
@@ -36347,11 +36460,11 @@
         },
         {
           "occupation": "其他职业",
-          "median_monthly_earnings": 14000
+          "median_monthly_earnings": 15000
         },
         {
           "occupation": "服务工作及销售人员",
-          "median_monthly_earnings": 16800
+          "median_monthly_earnings": 17000
         },
         {
           "occupation": "机台及机器操作员及装配员",
@@ -36367,19 +36480,19 @@
         },
         {
           "occupation": "工艺及有关人员",
-          "median_monthly_earnings": 21800
+          "median_monthly_earnings": 21900
         },
         {
           "occupation": "辅专业人员",
-          "median_monthly_earnings": 28500
+          "median_monthly_earnings": 28000
         },
         {
           "occupation": "专业人员",
-          "median_monthly_earnings": 46400
+          "median_monthly_earnings": 45800
         },
         {
           "occupation": "经理",
-          "median_monthly_earnings": 50000
+          "median_monthly_earnings": 52000
         }
       ],
       "talent_policy_received_history": [
@@ -37015,8 +37128,8 @@
           "dataset": "劳动力月度数据",
           "type": "指标",
           "status": "健康",
-          "latest_observation": "2026-07-31",
-          "records": 13450,
+          "latest_observation": "2026-08-31",
+          "records": 13475,
           "freshness": "构建时实时",
           "notes": "每月三个月移动平均系列；年度估计另行保留。"
         },
@@ -37045,8 +37158,8 @@
           "dataset": "行业就业收入中位数",
           "type": "指标",
           "status": "健康",
-          "latest_observation": "2026-06-30",
-          "records": 3096,
+          "latest_observation": "2026-07-31",
+          "records": 3109,
           "freshness": "构建时实时",
           "notes": "每月就业收入中位数；主趋势图采用三个月移动平均系列。"
         },
@@ -37127,7 +37240,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-labour-market/",
-    "snapshotId": "61fbf75aed9bca0b",
-    "dataAsOf": "2026-07-31"
+    "snapshotId": "bd7f79d53b1cde34",
+    "dataAsOf": "2026-08-31"
   }
 }
