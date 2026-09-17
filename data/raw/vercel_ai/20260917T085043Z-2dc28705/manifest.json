@@ -1,0 +1,47 @@
+{
+  "run_id": "20260917T085043Z-2dc28705",
+  "mode": "daily-update",
+  "scraped_at": "2026-09-17T08:50:43.273471Z",
+  "status": "success",
+  "datasets": [
+    {
+      "dataset_id": "vercel_model_leaderboard",
+      "status": "ok",
+      "rows": 8310,
+      "source_urls": [
+        "https://vercel.com/api/ai/leaderboard-export?dataset=models&format=json&modality=all",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=models&format=json&modality=image",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=models&format=json&modality=text",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=models&format=json&modality=video"
+      ],
+      "new_entities": [
+        "Flux 3",
+        "Gemini 3.8 Flash",
+        "Grok 4.6",
+        "Veo 3.1 Lite Generate"
+      ]
+    },
+    {
+      "dataset_id": "vercel_lab_leaderboard",
+      "status": "ok",
+      "rows": 18202,
+      "source_urls": [
+        "https://vercel.com/api/ai/leaderboard-export?dataset=labs&format=json&modality=all",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=labs&format=json&modality=image",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=labs&format=json&modality=text",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=labs&format=json&modality=video"
+      ],
+      "new_entities": [
+        "typesafe-ai"
+      ]
+    },
+    {
+      "dataset_id": "vercel_models",
+      "status": "ok",
+      "rows": 374,
+      "source_urls": [
+        "https://ai-gateway.vercel.sh/v1/models"
+      ]
+    }
+  ]
+}
