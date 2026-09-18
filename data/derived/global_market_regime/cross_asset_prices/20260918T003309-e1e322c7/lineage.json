@@ -1,0 +1,23 @@
+{
+  "run_scope": "full",
+  "retrieved_at": "2026-09-18T00:33:09.312057Z",
+  "upstream_market_monitor_run_id": "20260917T142910-02a76442",
+  "upstream_market_monitor_run_scope": "full",
+  "dataset_name": "cross_asset_prices",
+  "run_id": "20260918T003309-e1e322c7",
+  "created_at": "2026-09-18T00:33:38.258724Z",
+  "records": 18588,
+  "columns": [
+    "date",
+    "exposure_id",
+    "index_id",
+    "close",
+    "open",
+    "high",
+    "low",
+    "volume",
+    "retrieved_at_utc",
+    "observation_type"
+  ],
+  "sha256": "217da4904a189afbdf2b382338e1c3dc9ed942da97f0d6dc022ecceb188673e9"
+}
