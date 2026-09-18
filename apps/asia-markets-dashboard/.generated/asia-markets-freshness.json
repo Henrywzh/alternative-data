@@ -1,6 +1,6 @@
 {
   "version": "asia-markets-freshness.v1",
-  "auditedAt": "2026-09-18T05:27:08.411963Z",
+  "auditedAt": "2026-09-18T11:26:46.424268Z",
   "asOf": "2026-09-18",
   "status": "healthy",
   "requiredFailures": [],
@@ -32,7 +32,7 @@
       "required": true,
       "status": "healthy",
       "expected_latest_period": "2026-Q1",
-      "latest_observation": "2026-Q1",
+      "latest_observation": "2026-Q2",
       "notes": "C&SD persons-engaged and vacancy statistics are quarterly; the 2026 calendar schedules Q2 for 18 September."
     },
     {
@@ -161,8 +161,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-09-18T05:17:12.126314Z",
-      "latest_observation": "2026-09-18T05:17:12.126314Z",
+      "expected_latest_period": "2026-09-18T11:16:46.779120Z",
+      "latest_observation": "2026-09-18T11:16:46.779120Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -171,8 +171,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-09-18T05:17:12.288338Z",
-      "latest_observation": "2026-09-18T05:17:12.288338Z",
+      "expected_latest_period": "2026-09-18T11:16:47.154776Z",
+      "latest_observation": "2026-09-18T11:16:47.154776Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -181,8 +181,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-09-18T05:17:12.192207Z",
-      "latest_observation": "2026-09-18T05:17:12.192207Z",
+      "expected_latest_period": "2026-09-18T11:16:46.850395Z",
+      "latest_observation": "2026-09-18T11:16:46.850395Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -201,8 +201,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-09-18T05:17:12.357120Z",
-      "latest_observation": "2026-09-18T05:17:12.357120Z",
+      "expected_latest_period": "2026-09-18T11:16:47.220522Z",
+      "latest_observation": "2026-09-18T11:16:47.220522Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {

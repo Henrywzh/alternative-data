@@ -6,7 +6,7 @@
     "title": "香港人口、迁移与跨境数据监测",
     "description": "入境处高频每日出入境净流量、政府统计处人口估算与净移动、积金局永久离港强积金申索、教资会内地生入学人数及大湾区跨境车流/高铁客流。",
     "sector": "hk-population-migration",
-    "generatedAt": "2026-09-18T05:17:12.192207Z",
+    "generatedAt": "2026-09-18T11:16:46.850395Z",
     "dataAsOf": "2026-09-17",
     "liveSourcesCount": 6,
     "totalSourcesCount": 6,
@@ -344,7 +344,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `14d7a5ab56fb5f70` · 生成于 2026-09-18T05:17:12.192207Z。这是已发布快照，不是实时连接。"
+        "body": "**数据快照：** `14d7a5ab56fb5f70` · 生成于 2026-09-18T11:16:46.850395Z。这是已发布快照，不是实时连接。"
       },
       {
         "id": "kpi_grid",
@@ -404,7 +404,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-09-18T05:17:12.192207Z",
+    "generatedAt": "2026-09-18T11:16:46.850395Z",
     "status": "ready",
     "datasets": {
       "immd_daily_traffic": [
@@ -18355,7 +18355,7 @@
     "sector_id": "hk-population-migration",
     "sector_name": "Hong Kong Population, Migration & Cross-Border Data Monitor",
     "snapshotId": "14d7a5ab56fb5f70",
-    "generatedAt": "2026-09-18T05:17:12.192207Z",
+    "generatedAt": "2026-09-18T11:16:46.850395Z",
     "dataAsOf": "2026-09-17"
   }
 }

@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "香港本地消费监测",
     "description": "极端天气干扰时长、港元/人民币汇率、跨境出入境人流（北上/南下）、黄金原料成本、零售销售、餐饮收益及消费股估值的来源快照。",
-    "generatedAt": "2026-09-18T05:17:12.288338Z",
+    "generatedAt": "2026-09-18T11:16:47.154776Z",
     "cards": [
       {
         "id": "northbound_card",
@@ -1234,7 +1234,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `caf5ded1a4556eea` · 生成于 2026-09-18T05:17:12.288338Z。"
+        "body": "**数据快照：** `6e9a25c71961e000` · 生成于 2026-09-18T11:16:47.154776Z。"
       },
       {
         "id": "demand_signals_section",
@@ -1458,7 +1458,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-09-18T05:17:12.288338Z",
+    "generatedAt": "2026-09-18T11:16:47.154776Z",
     "status": "ready",
     "datasets": {
       "kpi_weather": [
@@ -3037,7 +3037,7 @@
       ],
       "kpi_median_pe": [
         {
-          "latest": 10.5
+          "latest": 10.46
         }
       ],
       "gold_history": [
@@ -3530,66 +3530,50 @@
         {
           "ticker": "00709.HK",
           "company_name": "Giordano International",
-          "pe_ttm": 10.5,
+          "pe_ttm": 10.46,
           "pb_ratio": 1.07,
-          "market_cap_hkd_b": 2.142,
-          "date": "2026-09-17"
-        },
-        {
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.08,
-          "pb_ratio": 0.83,
-          "market_cap_hkd_b": 12.447,
-          "date": "2026-09-17"
-        },
-        {
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": -58.65,
-          "pb_ratio": -8.03,
-          "market_cap_hkd_b": 0.442,
-          "date": "2026-09-17"
-        },
-        {
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 13.67,
-          "pb_ratio": 0.85,
-          "market_cap_hkd_b": 0.568,
-          "date": "2026-09-17"
+          "market_cap_hkd_b": 2.134,
+          "date": "2026-09-18"
         },
         {
           "ticker": "00341.HK",
           "company_name": "Café de Coral Holdings",
-          "pe_ttm": 19.34,
-          "pb_ratio": 1.17,
-          "market_cap_hkd_b": 3.173,
-          "date": "2026-09-17"
+          "pe_ttm": 19.08,
+          "pb_ratio": 1.15,
+          "market_cap_hkd_b": 3.13,
+          "date": "2026-09-18"
+        },
+        {
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 12.11,
+          "pb_ratio": 3.52,
+          "market_cap_hkd_b": 109.023,
+          "date": "2026-09-18"
         },
         {
           "ticker": "00178.HK",
           "company_name": "Sa Sa International",
-          "pe_ttm": 17.95,
-          "pb_ratio": 2.81,
-          "market_cap_hkd_b": 3.6,
-          "date": "2026-09-17"
+          "pe_ttm": 18.03,
+          "pb_ratio": 2.82,
+          "market_cap_hkd_b": 3.615,
+          "date": "2026-09-18"
         },
         {
           "ticker": "01910.HK",
           "company_name": "Samsonite",
-          "pe_ttm": 8.07,
-          "pb_ratio": 1.4,
-          "market_cap_hkd_b": 16.57,
-          "date": "2026-09-17"
+          "pe_ttm": 8.14,
+          "pb_ratio": 1.41,
+          "market_cap_hkd_b": 16.706,
+          "date": "2026-09-18"
         },
         {
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 14.08,
-          "pb_ratio": 2.44,
-          "market_cap_hkd_b": 99.845,
-          "date": "2026-09-17"
+          "ticker": "00590.HK",
+          "company_name": "Luk Fook Holdings",
+          "pe_ttm": 6.04,
+          "pb_ratio": 0.82,
+          "market_cap_hkd_b": 12.364,
+          "date": "2026-09-18"
         },
         {
           "ticker": "00116.HK",
@@ -3597,65 +3581,81 @@
           "pe_ttm": 2.91,
           "pb_ratio": 0.53,
           "market_cap_hkd_b": 8.638,
-          "date": "2026-09-17"
+          "date": "2026-09-18"
         },
         {
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 12.09,
-          "pb_ratio": 3.51,
-          "market_cap_hkd_b": 108.826,
-          "date": "2026-09-17"
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 14.12,
+          "pb_ratio": 2.44,
+          "market_cap_hkd_b": 100.152,
+          "date": "2026-09-18"
+        },
+        {
+          "ticker": "00052.HK",
+          "company_name": "Fairwood Holdings",
+          "pe_ttm": 13.53,
+          "pb_ratio": null,
+          "market_cap_hkd_b": 0.562,
+          "date": "2026-09-18"
+        },
+        {
+          "ticker": "01255.HK",
+          "company_name": "TATA Health",
+          "pe_ttm": -64.45,
+          "pb_ratio": -8.83,
+          "market_cap_hkd_b": 0.486,
+          "date": "2026-09-18"
         },
         {
           "ticker": "06811.HK",
           "company_name": "Tai Hing Group",
-          "pe_ttm": 9.46,
-          "pb_ratio": 1.44,
-          "market_cap_hkd_b": 1.345,
-          "date": "2026-09-17"
+          "pe_ttm": 9.7,
+          "pb_ratio": 1.48,
+          "market_cap_hkd_b": 1.379,
+          "date": "2026-09-18"
         }
       ],
       "valuation_pe_chart": [
         {
           "company_name": "Giordano International",
-          "pe_ttm": 10.5
-        },
-        {
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.08
-        },
-        {
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 13.67
+          "pe_ttm": 10.46
         },
         {
           "company_name": "Café de Coral Holdings",
-          "pe_ttm": 19.34
+          "pe_ttm": 19.08
+        },
+        {
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 12.11
         },
         {
           "company_name": "Sa Sa International",
-          "pe_ttm": 17.95
+          "pe_ttm": 18.03
         },
         {
           "company_name": "Samsonite",
-          "pe_ttm": 8.07
+          "pe_ttm": 8.14
         },
         {
-          "company_name": "Prada",
-          "pe_ttm": 14.08
+          "company_name": "Luk Fook Holdings",
+          "pe_ttm": 6.04
         },
         {
           "company_name": "Chow Sang Sang Holdings",
           "pe_ttm": 2.91
         },
         {
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 12.09
+          "company_name": "Prada",
+          "pe_ttm": 14.12
+        },
+        {
+          "company_name": "Fairwood Holdings",
+          "pe_ttm": 13.53
         },
         {
           "company_name": "Tai Hing Group",
-          "pe_ttm": 9.46
+          "pe_ttm": 9.7
         }
       ],
       "valuation_history": [
@@ -6580,6 +6580,14 @@
           "market_cap_hkd_b": 16.57
         },
         {
+          "date": "2026-09-18",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 8.14,
+          "pb_ratio": 1.41,
+          "market_cap_hkd_b": 16.706
+        },
+        {
           "date": "2025-09-18",
           "ticker": "01913.HK",
           "company_name": "Prada",
@@ -9500,6 +9508,14 @@
           "market_cap_hkd_b": 99.845
         },
         {
+          "date": "2026-09-18",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 14.12,
+          "pb_ratio": 2.44,
+          "market_cap_hkd_b": 100.152
+        },
+        {
           "date": "2025-09-18",
           "ticker": "01929.HK",
           "company_name": "Chow Tai Fook Jewellery",
@@ -12418,6 +12434,14 @@
           "pe_ttm": 12.09,
           "pb_ratio": 3.51,
           "market_cap_hkd_b": 108.826
+        },
+        {
+          "date": "2026-09-18",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 12.11,
+          "pb_ratio": 3.52,
+          "market_cap_hkd_b": 109.023
         }
       ],
       "kpi_retail": [
@@ -13109,9 +13133,9 @@
       ],
       "kpi_restaurant": [
         {
-          "latest": 27196,
-          "period_change": -0.040976,
-          "year_change": 0.003728,
+          "latest": 27210,
+          "period_change": -0.040482,
+          "year_change": 0.004244,
           "observation_date": "2026-06-30"
         }
       ],
@@ -13319,14 +13343,14 @@
         {
           "date": "2026-06-30",
           "month": "2026-06",
-          "value": 27196
+          "value": 27210
         }
       ],
       "restaurant_snapshot": [
         {
           "sub_sector": "全部食肆",
-          "total_receipts_hkd_m": 27196,
-          "total_purchases_hkd_m": 8774,
+          "total_receipts_hkd_m": 27210,
+          "total_purchases_hkd_m": 8667,
           "receipts_value_index": 126.7,
           "yoy_change": null,
           "qoq_change": null,
@@ -13334,70 +13358,70 @@
         },
         {
           "sub_sector": "中式餐馆",
-          "total_receipts_hkd_m": 9485,
+          "total_receipts_hkd_m": 9508,
           "total_purchases_hkd_m": null,
-          "receipts_value_index": 115.6,
-          "yoy_change": 0.0146555413,
-          "qoq_change": -0.0220641303,
+          "receipts_value_index": 115.9,
+          "yoy_change": 0.0171159606,
+          "qoq_change": -0.0196927518,
           "date": "2026-06-30"
         },
         {
           "sub_sector": "非中式餐馆",
-          "total_receipts_hkd_m": 8871,
+          "total_receipts_hkd_m": 8882,
           "total_purchases_hkd_m": null,
-          "receipts_value_index": 136.1,
-          "yoy_change": 0.0155695478,
-          "qoq_change": -0.1243707433,
+          "receipts_value_index": 136.3,
+          "yoy_change": 0.0168288495,
+          "qoq_change": -0.1232849669,
           "date": "2026-06-30"
         },
         {
           "sub_sector": "快餐店",
-          "total_receipts_hkd_m": 6366,
+          "total_receipts_hkd_m": 6354,
           "total_purchases_hkd_m": null,
-          "receipts_value_index": 132.3,
-          "yoy_change": -0.0154655119,
-          "qoq_change": 0.048073757,
+          "receipts_value_index": 132.1,
+          "yoy_change": -0.0173213733,
+          "qoq_change": 0.0460981231,
           "date": "2026-06-30"
         },
         {
           "sub_sector": "其他饮食场所",
-          "total_receipts_hkd_m": 2156,
+          "total_receipts_hkd_m": 2150,
           "total_purchases_hkd_m": null,
-          "receipts_value_index": 128.1,
-          "yoy_change": -0.0266365688,
-          "qoq_change": -0.0087356322,
+          "receipts_value_index": 127.7,
+          "yoy_change": -0.0293453725,
+          "qoq_change": -0.0114942529,
           "date": "2026-06-30"
         },
         {
           "sub_sector": "酒吧",
-          "total_receipts_hkd_m": 318,
+          "total_receipts_hkd_m": 317,
           "total_purchases_hkd_m": null,
-          "receipts_value_index": 124.3,
-          "yoy_change": -0.0392749245,
-          "qoq_change": 0.1357142857,
+          "receipts_value_index": 123.8,
+          "yoy_change": -0.0422960725,
+          "qoq_change": 0.1321428571,
           "date": "2026-06-30"
         }
       ],
       "restaurant_chart": [
         {
           "sub_sector": "酒吧",
-          "yoy_change": -0.0392749245
+          "yoy_change": -0.0422960725
         },
         {
           "sub_sector": "其他饮食场所",
-          "yoy_change": -0.0266365688
+          "yoy_change": -0.0293453725
         },
         {
           "sub_sector": "快餐店",
-          "yoy_change": -0.0154655119
-        },
-        {
-          "sub_sector": "中式餐馆",
-          "yoy_change": 0.0146555413
+          "yoy_change": -0.0173213733
         },
         {
           "sub_sector": "非中式餐馆",
-          "yoy_change": 0.0155695478
+          "yoy_change": 0.0168288495
+        },
+        {
+          "sub_sector": "中式餐馆",
+          "yoy_change": 0.0171159606
         }
       ],
       "kpi_store_footprint": [
@@ -20320,9 +20344,9 @@
           "dataset": "香港消费股估值",
           "type": "指标",
           "status": "健康",
-          "latest_observation": "2026-09-17",
-          "records": 4015,
-          "freshness": "1 天前",
+          "latest_observation": "2026-09-18",
+          "records": 4026,
+          "freshness": "0 天前",
           "notes": "仅提供市盈率（TTM）、市净率和市值；该接口没有股息率指标。"
         },
         {
@@ -20392,9 +20416,9 @@
           "dataset": "香港消费股估值",
           "type": "指标",
           "status": "健康",
-          "latest_observation": "2026-09-17",
-          "records": 4015,
-          "freshness": "1 天前",
+          "latest_observation": "2026-09-18",
+          "records": 4026,
+          "freshness": "0 天前",
           "notes": "仅提供市盈率（TTM）、市净率和市值；该接口没有股息率指标。"
         },
         {
@@ -20475,7 +20499,7 @@
           "date": "2026-09-18",
           "company": "Caltex",
           "fuel_type": "普通汽油",
-          "discounted_price_hkd": 33.52,
+          "discounted_price_hkd": 33.72,
           "walkin_discount_hkd": 0.9,
           "data_source": "live"
         },
@@ -20515,7 +20539,7 @@
           "date": "2026-09-18",
           "company": "Caltex",
           "fuel_type": "高级汽油",
-          "discounted_price_hkd": 35.32,
+          "discounted_price_hkd": 35.52,
           "walkin_discount_hkd": 0.9,
           "data_source": "live"
         }
@@ -28791,7 +28815,7 @@
         "url": "https://oil-price.consumer.org.hk/en",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 消费者委员会油价计算机。",
-        "executed_at": "2026-09-18T05:17:12.288338Z"
+        "executed_at": "2026-09-18T11:16:47.154776Z"
       }
     },
     {
@@ -28803,7 +28827,7 @@
         "url": "https://www.consumer.org.hk/node/32290/export-complaints/json?lang=en",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 消费者委员会投诉数据接口。",
-        "executed_at": "2026-09-18T05:17:12.288338Z"
+        "executed_at": "2026-09-18T11:16:47.154776Z"
       }
     },
     {
@@ -28815,7 +28839,7 @@
         "url": "https://online-price-watch.consumer.org.hk/opw/opendata/pricewatch_en.csv",
         "language": "CSV / Parquet",
         "description": "构建时从公开来源读取并校验 Consumer Council Online Price Watch。",
-        "executed_at": "2026-09-18T05:17:12.288338Z"
+        "executed_at": "2026-09-18T11:16:47.154776Z"
       }
     },
     {
@@ -28831,7 +28855,7 @@
           "Latest is the most recent published PM benchmark fixing.",
           "Day and year movements are latest divided by the prior trading day or the observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-09-18T05:17:12.288338Z"
+        "executed_at": "2026-09-18T11:16:47.154776Z"
       }
     },
     {
@@ -28847,7 +28871,7 @@
           "PE (TTM), PB, and market cap (HKD bn) are each ticker's latest published daily value.",
           "No dividend-yield indicator exists on this endpoint; yield is not reported here."
         ],
-        "executed_at": "2026-09-18T05:17:12.288338Z"
+        "executed_at": "2026-09-18T11:16:47.154776Z"
       }
     },
     {
@@ -28863,7 +28887,7 @@
           "All retail outlet is the classification group's own published total across all outlet types.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-09-18T05:17:12.288338Z"
+        "executed_at": "2026-09-18T11:16:47.154776Z"
       }
     },
     {
@@ -28879,7 +28903,7 @@
           "Purchases are only published sector-wide, not broken out by restaurant type.",
           "Quarter and year movements are latest divided by the prior quarter or the observation four quarters earlier, minus one."
         ],
-        "executed_at": "2026-09-18T05:17:12.288338Z"
+        "executed_at": "2026-09-18T11:16:47.154776Z"
       }
     },
     {
@@ -28895,7 +28919,7 @@
           "This is a current-state snapshot only -- the source has no issue-date or status-history field.",
           "Opened/closed counts compare this run's licence numbers against the most recently stored prior snapshot, and are unavailable until at least two runs have been persisted."
         ],
-        "executed_at": "2026-09-18T05:17:12.288338Z"
+        "executed_at": "2026-09-18T11:16:47.154776Z"
       }
     },
     {
@@ -28911,7 +28935,7 @@
           "Category sub-indices share the headline table's index basis but only start in 2005 -- thirty years shorter history.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-09-18T05:17:12.288338Z"
+        "executed_at": "2026-09-18T11:16:47.154776Z"
       }
     },
     {
@@ -28928,7 +28952,7 @@
           "Southbound (南下) flow is daily Mainland visitor arrivals across all 17 control points, since Mainland visitors legitimately arrive by air, rail, and sea, not just by land.",
           "7-day moving averages (7d MA) smooth out day-of-week seasonality (weekend shopping spikes)."
         ],
-        "executed_at": "2026-09-18T05:17:12.288338Z"
+        "executed_at": "2026-09-18T11:16:47.154776Z"
       }
     },
     {
@@ -28945,7 +28969,7 @@
           "Red/Black Rainstorm hours measures total duration under Red or Black rainstorm warnings.",
           "RMB per 100 HKD is derived from FRED daily DEXCHUS and DEXHKUS rates."
         ],
-        "executed_at": "2026-09-18T05:17:12.288338Z"
+        "executed_at": "2026-09-18T11:16:47.154776Z"
       }
     },
     {
@@ -28960,7 +28984,7 @@
           "Total stores is each company's own latest snapshot count (not a cross-company-comparable unit -- a POP MART Roboshop and a Chow Tai Fook boutique are both counted as one location).",
           "This is a footprint snapshot, not a trend: most companies only have 1-2 dated snapshots so far, so month-over-month change is not yet meaningful."
         ],
-        "executed_at": "2026-09-18T05:17:12.288338Z"
+        "executed_at": "2026-09-18T11:16:47.154776Z"
       }
     },
     {
@@ -28974,13 +28998,13 @@
           "Validated live measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-09-18T05:17:12.288338Z"
+        "executed_at": "2026-09-18T11:16:47.154776Z"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-local-consumer/",
-    "snapshotId": "caf5ded1a4556eea",
+    "snapshotId": "6e9a25c71961e000",
     "dataAsOf": "2026-09-16"
   }
 }
