@@ -44,7 +44,12 @@ jobs:
       - name: Verify event engine
         env:
           PYTHONPATH: src
-        run: python -m pytest tests/event_consensus -q
+        # test_streamlit_contract.py exercises the Streamlit presentation
+        # layer (imports plotly + streamlit) and runs in the full CI env.
+        # This focused env verifies the event engine and ledger only.
+        run: >-
+          python -m pytest tests/event_consensus -q
+          --ignore=tests/event_consensus/test_streamlit_contract.py
 
       - name: Capture eventual calendar, actuals and cross-asset snapshot
         env:

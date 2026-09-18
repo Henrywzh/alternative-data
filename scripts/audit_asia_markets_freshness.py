@@ -297,7 +297,10 @@ def audit_artifacts(
             check_id="labour.vacancies",
             sector="hk-labour-market",
             dataset_id="vacancy_history",
-            expected=expected_quarter(as_of, release_lag_days=79),
+            # Q2 2026 is scheduled for 18 September; 81 days flips the gate
+            # on 19 September so the daily 11:39 UTC run gets one full
+            # grace day after the scheduled publication date.
+            expected=expected_quarter(as_of, release_lag_days=81),
             grain="quarter",
             notes=(
                 "C&SD persons-engaged and vacancy statistics are quarterly; the "
@@ -309,7 +312,9 @@ def audit_artifacts(
             check_id="labour.wages",
             sector="hk-labour-market",
             dataset_id="wage_yoy_history",
-            expected=expected_quarter(as_of, release_lag_days=89),
+            # Q2 2026 is scheduled for 28 September; 91 days flips the gate
+            # on 29 September, one grace day after the scheduled release.
+            expected=expected_quarter(as_of, release_lag_days=91),
             grain="quarter",
             notes=(
                 "C&SD wage and payroll statistics are quarterly; the 2026 calendar "
