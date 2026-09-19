@@ -798,7 +798,7 @@ def _render_briefing(
     timeline = pd.DataFrame(window["data"].get("events", []))
     if major_only and not timeline.empty:
         timeline = timeline[timeline["priority"].isin(["high", "medium"])].copy()
-    st.markdown(f"#### {tr(language, 'Next 7–14 days', '未来 7–14 天')}")
+    st.markdown(f"#### {tr(language, 'Next 14 days', '未来 14 天')}")
     if timeline.empty:
         st.info(tr(language, "No events match the current filters.", "没有符合当前筛选条件的事件。"))
         return
@@ -1025,7 +1025,7 @@ def render_events_consensus(language: str) -> None:
     )
 
     st.markdown(
-        f"#### {tr(language, 'Next 7–14 days', '未来 7–14 天')}"
+        f"#### {tr(language, 'Upcoming events', '即将公布的事件')}"
     )
     st.markdown(_priority_legend(language), unsafe_allow_html=True)
     upcoming_view = _timeline_frame(
@@ -1104,26 +1104,26 @@ def render_events_consensus(language: str) -> None:
     console_heading, console_refresh = st.columns([4, 1])
     console_heading.markdown(f"### {selected.get('title', '—')}")
     refresh_selected = console_refresh.button(
-        tr(language, "Refresh selected", "刷新所选事件"),
+        tr(language, "Refresh calendar", "刷新日历"),
         width="stretch",
         key="event_consensus_refresh_selected",
         help=tr(
             language,
-            "The free calendar endpoint returns the current window; only the selected event console is kept open.",
-            "免费日历接口会返回当前窗口；刷新后仍保持所选事件控制台。",
+            "Appends a full-window PIT snapshot, then keeps this event console open. The free calendar endpoint cannot refresh one event in isolation.",
+            "会追加一份完整窗口的 PIT 快照，然后继续停留在当前事件控制台。免费日历接口无法单独刷新一个事件。",
         ),
     )
     if refresh_selected:
         try:
-            with st.spinner(tr(language, "Refreshing selected event…", "正在刷新所选事件…")):
+            with st.spinner(tr(language, "Refreshing calendar…", "正在刷新日历…")):
                 _run_manual_refresh()
             st.rerun()
         except Exception as exc:
             st.error(
                 tr(
                     language,
-                    f"Selected-event refresh failed: {type(exc).__name__}.",
-                    f"所选事件刷新失败：{type(exc).__name__}。",
+                    f"Calendar refresh failed: {type(exc).__name__}.",
+                    f"日历刷新失败：{type(exc).__name__}。",
                 )
             )
     st.caption(

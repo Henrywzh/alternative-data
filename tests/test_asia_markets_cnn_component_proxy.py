@@ -16,6 +16,7 @@ if str(APP_DIR) not in sys.path:
 from am.regime_evidence import (  # noqa: E402
     CNN_COMPONENT_DIRECTION,
     CNN_MOMENTUM_MA_WINDOW,
+    CNN_SCORE_BANDS,
     _cnn_official_score_hovertemplate,
     cnn_component_proxy_percentile,
 )
@@ -84,3 +85,23 @@ def test_official_score_tooltip_contains_a_renderable_plotly_value_token() -> No
 
     assert "%{y:.0f}" in template
     assert "%{{y:.0f}}" not in template
+
+
+def test_cnn_score_bands_match_labelled_inclusive_buckets() -> None:
+    """Integer CNN scores must sit inside the labelled 0-24 / 25-44 / 45-55 / 56-74 / 75-100 buckets."""
+    bands = [(float(low), float(high)) for low, high, *_ in CNN_SCORE_BANDS]
+    assert bands == [(0.0, 24.0), (25.0, 44.0), (45.0, 55.0), (56.0, 74.0), (75.0, 100.0)]
+
+    def bucket(score: float) -> tuple[float, float]:
+        matches = [band for band in bands if band[0] <= score <= band[1]]
+        assert len(matches) == 1, score
+        return matches[0]
+
+    assert bucket(24) == (0.0, 24.0)
+    assert bucket(25) == (25.0, 44.0)
+    assert bucket(44) == (25.0, 44.0)
+    assert bucket(45) == (45.0, 55.0)
+    assert bucket(55) == (45.0, 55.0)
+    assert bucket(56) == (56.0, 74.0)
+    assert bucket(74) == (56.0, 74.0)
+    assert bucket(75) == (75.0, 100.0)

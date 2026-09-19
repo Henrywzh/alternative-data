@@ -709,10 +709,28 @@ def date_tick_format(dates: pd.Series) -> str:
     return "%Y"
 
 
-def apply_line_hover(fig: Any, frame: pd.DataFrame, value_format: str) -> None:
+def _trace_has_points(trace: Any) -> bool:
+    """Skip dummy legend traces that have no real x/y observations."""
+    values: list[Any] = []
+    for coord in (getattr(trace, "x", None), getattr(trace, "y", None)):
+        if coord is None:
+            continue
+        values.extend(list(coord))
+    return any(value is not None and not pd.isna(value) for value in values)
+
+
+def apply_line_hover(
+    fig: Any,
+    frame: pd.DataFrame,
+    value_format: str,
+    *,
+    skip_empty: bool = False,
+) -> None:
     x_format = date_hover_format(frame["_date"])
     y_format = ".1%" if value_format == "percent" else ",.1f"
     for trace in fig.data:
+        if skip_empty and not _trace_has_points(trace):
+            continue
         series_name = trace.name or "Value"
         trace.hovertemplate = f"<b>%{{x|{x_format}}}</b><br>{series_name}: %{{y:{y_format}}}<extra></extra>"
 

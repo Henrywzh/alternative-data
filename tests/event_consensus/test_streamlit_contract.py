@@ -155,3 +155,26 @@ def test_timeline_priority_cells_are_colored() -> None:
     assert "#fee2e2" in html
     assert "#fef3c7" in html
     assert "#f1f5f9" in html
+
+
+def test_briefing_and_research_headings_match_their_windows() -> None:
+    source = (
+        ROOT / "apps" / "asia-markets-streamlit" / "am" / "events_consensus.py"
+    ).read_text(encoding="utf-8")
+    assert "Next 7–14 days" not in source
+    assert "未来 7–14 天" not in source
+    assert "Next 14 days" in source
+    assert "未来 14 天" in source
+    assert "Upcoming events" in source
+    assert "即将公布的事件" in source
+
+
+def test_console_refresh_is_described_as_a_full_calendar_refresh() -> None:
+    source = (
+        ROOT / "apps" / "asia-markets-streamlit" / "am" / "events_consensus.py"
+    ).read_text(encoding="utf-8")
+    assert "Refresh selected" not in source
+    assert "刷新所选事件" not in source
+    assert "Refresh calendar" in source
+    assert "刷新日历" in source
+    assert "cannot refresh one event in isolation" in source

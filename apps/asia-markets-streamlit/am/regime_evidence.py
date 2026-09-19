@@ -486,6 +486,16 @@ def cnn_component_proxy_percentile(full_frame: pd.DataFrame, component_id: str) 
 
 
 CNN_RATING_ORDER = ("extreme fear", "fear", "neutral", "greed", "extreme greed")
+# Inclusive CNN score bands aligned to the labelled 0-24 / 25-44 / 45-55 /
+# 56-74 / 75-100 buckets. Integer scores sit in exactly one band.
+CNN_SCORE_BANDS = (
+    (0, 24, "#7f1d1d", 0.10),
+    (25, 44, "#b45309", 0.08),
+    (45, 55, "#64748b", 0.06),
+    (56, 74, "#047857", 0.08),
+    (75, 100, "#065f46", 0.10),
+)
+CNN_SCORE_TICKS = (0, 25, 45, 55, 75, 100)
 
 
 def _cnn_band_label(key: str, language: str) -> str:
@@ -586,15 +596,18 @@ def render_cnn_fear_greed(artifact: dict[str, Any], language: str, window: str) 
             hovertemplate="<b>%{x|%d %b %Y}</b><br>%{y:.1f}<extra></extra>",
         )
     )
-    fig.add_hrect(y0=0, y1=25, fillcolor="#7f1d1d", opacity=0.10, line_width=0)
-    fig.add_hrect(y0=25, y1=45, fillcolor="#b45309", opacity=0.08, line_width=0)
-    fig.add_hrect(y0=45, y1=55, fillcolor="#64748b", opacity=0.06, line_width=0)
-    fig.add_hrect(y0=55, y1=75, fillcolor="#047857", opacity=0.08, line_width=0)
-    fig.add_hrect(y0=75, y1=100, fillcolor="#065f46", opacity=0.10, line_width=0)
+    for band_y0, band_y1, band_color, band_opacity in CNN_SCORE_BANDS:
+        fig.add_hrect(
+            y0=band_y0,
+            y1=band_y1,
+            fillcolor=band_color,
+            opacity=band_opacity,
+            line_width=0,
+        )
     fig.update_yaxes(
         range=[0, 100],
         title=tr(language, "Score", "分数"),
-        tickvals=[0, 25, 45, 55, 75, 100],
+        tickvals=list(CNN_SCORE_TICKS),
     )
     _add_cnn_rating_legend(fig, language, include_score_bands=True)
     chart_theme(fig, height=430)
@@ -605,7 +618,12 @@ def render_cnn_fear_greed(artifact: dict[str, Any], language: str, window: str) 
         legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "x": 0},
         margin={"l": 10, "r": 18, "t": 52, "b": 62},
     )
-    apply_line_hover(fig, composite.rename(columns={"date": "_date", "score": "_value"}), "number")
+    apply_line_hover(
+        fig,
+        composite.rename(columns={"date": "_date", "score": "_value"}),
+        "number",
+        skip_empty=True,
+    )
     st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True})
 
 
@@ -777,13 +795,7 @@ def _render_cnn_component_charts(
                             if not pd.isna(window_start):
                                 proxy = proxy[proxy["date"] >= window_start]
                         fig = go.Figure()
-                        for band_y0, band_y1, band_color, band_opacity in (
-                            (0, 25, "#7f1d1d", 0.10),
-                            (25, 45, "#b45309", 0.08),
-                            (45, 55, "#64748b", 0.06),
-                            (55, 75, "#047857", 0.08),
-                            (75, 100, "#065f46", 0.10),
-                        ):
+                        for band_y0, band_y1, band_color, band_opacity in CNN_SCORE_BANDS:
                             fig.add_hrect(
                                 y0=band_y0,
                                 y1=band_y1,
@@ -851,7 +863,7 @@ def _render_cnn_component_charts(
                         fig.update_yaxes(
                             range=[0, 100],
                             title=None,
-                            tickvals=[0, 25, 45, 55, 75, 100],
+                            tickvals=list(CNN_SCORE_TICKS),
                         )
                         chart_theme(fig, height=310)
                         st.plotly_chart(
