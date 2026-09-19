@@ -6,7 +6,7 @@
     "title": "香港劳动力市场与人才政策",
     "description": "劳动力、就业、失业、职位空缺、工资、就业收入及官方人才政策流量的来源快照。",
     "sector": "hk-labour-market",
-    "generatedAt": "2026-09-17T11:44:00.191923Z",
+    "generatedAt": "2026-09-19T11:02:27.145058Z",
     "cards": [
       {
         "id": "labour_force_card",
@@ -686,13 +686,13 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `bd7f79d53b1cde34` · 生成于 2026-09-17T11:44:00.191923Z。"
+        "body": "**数据快照：** `888c5a626d63e604` · 生成于 2026-09-19T11:02:27.145058Z。"
       }
     ]
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-09-17T11:44:00.191923Z",
+    "generatedAt": "2026-09-19T11:02:27.145058Z",
     "status": "ready",
     "datasets": {
       "kpi_labour_force": [
@@ -707,10 +707,10 @@
       ],
       "kpi_labour_demand": [
         {
-          "vacancies": 48610,
-          "persons_engaged": 2704303,
-          "vacancy_rate": 0.018,
-          "observation_date": "2026-03-31"
+          "vacancies": 45380,
+          "persons_engaged": 2697387,
+          "vacancy_rate": 0.017,
+          "observation_date": "2026-06-30"
         }
       ],
       "kpi_wage": [
@@ -14391,6 +14391,12 @@
           "value": 2704303
         },
         {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "就业人数",
+          "value": 2697387
+        },
+        {
           "month": "2000-03",
           "date": "2000-03-31",
           "series": "职位空缺",
@@ -15019,6 +15025,12 @@
           "date": "2026-03-31",
           "series": "职位空缺",
           "value": 48610
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "职位空缺",
+          "value": 45380
         }
       ],
       "vacancy_industry_history": [
@@ -15653,6 +15665,12 @@
           "value": 4900
         },
         {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "金融",
+          "value": 4915
+        },
+        {
           "month": "2000-03",
           "date": "2000-03-31",
           "series": "医疗",
@@ -16281,6 +16299,12 @@
           "date": "2026-03-31",
           "series": "医疗",
           "value": 7505
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "医疗",
+          "value": 7180
         },
         {
           "month": "2000-03",
@@ -16913,6 +16937,12 @@
           "value": 5894
         },
         {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "专业商用",
+          "value": 5282
+        },
+        {
           "month": "2000-03",
           "date": "2000-03-31",
           "series": "社会",
@@ -17541,6 +17571,12 @@
           "date": "2026-03-31",
           "series": "社会",
           "value": 14939
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "社会",
+          "value": 14229
         },
         {
           "month": "2000-03",
@@ -18173,6 +18209,12 @@
           "value": 48610
         },
         {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "职位空缺总数",
+          "value": 45380
+        },
+        {
           "month": "2000-03",
           "date": "2000-03-31",
           "series": "贸易",
@@ -18801,6 +18843,12 @@
           "date": "2026-03-31",
           "series": "贸易",
           "value": 7236
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "series": "贸易",
+          "value": 6783
         }
       ],
       "vacancy_rate_history": [
@@ -19328,88 +19376,93 @@
           "month": "2026-03",
           "date": "2026-03-31",
           "value": 0.018
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-30",
+          "value": 0.017
         }
       ],
       "vacancies_by_industry_latest": [
         {
           "industry": "建筑地盘",
-          "vacancies": 258,
-          "vacancy_rate": 0.002
+          "vacancies": 32,
+          "vacancy_rate": null
         },
         {
           "industry": "其他服务",
-          "vacancies": 1029,
-          "vacancy_rate": 0.014
+          "vacancies": 1103,
+          "vacancy_rate": 0.015
         },
         {
           "industry": "艺术、娱乐及康乐",
-          "vacancies": 1725,
-          "vacancy_rate": 0.033
+          "vacancies": 1386,
+          "vacancy_rate": 0.027
         },
         {
           "industry": "制造业",
-          "vacancies": 1928,
-          "vacancy_rate": 0.025
-        },
-        {
-          "industry": "资讯及通讯",
-          "vacancies": 2070,
-          "vacancy_rate": 0.019
-        },
-        {
-          "industry": "专业、科学及技术服务",
-          "vacancies": 2504,
-          "vacancy_rate": 0.012
-        },
-        {
-          "industry": "地产",
-          "vacancies": 3337,
+          "vacancies": 1683,
           "vacancy_rate": 0.022
         },
         {
+          "industry": "资讯及通讯",
+          "vacancies": 1800,
+          "vacancy_rate": 0.017
+        },
+        {
+          "industry": "专业、科学及技术服务",
+          "vacancies": 2121,
+          "vacancy_rate": 0.011
+        },
+        {
+          "industry": "地产",
+          "vacancies": 2704,
+          "vacancy_rate": 0.018
+        },
+        {
           "industry": "行政及支援服务",
-          "vacancies": 3390,
+          "vacancies": 3161,
           "vacancy_rate": 0.016
         },
         {
           "industry": "运输、仓储及速递",
-          "vacancies": 3473,
+          "vacancies": 3462,
           "vacancy_rate": 0.021
         },
         {
           "industry": "住宿及膳食",
-          "vacancies": 4382,
+          "vacancies": 4320,
           "vacancy_rate": 0.017
         },
         {
           "industry": "教育",
-          "vacancies": 4680,
-          "vacancy_rate": 0.021
+          "vacancies": 4560,
+          "vacancy_rate": 0.02
         },
         {
           "industry": "金融及保险",
-          "vacancies": 4900,
+          "vacancies": 4915,
           "vacancy_rate": 0.021
         },
         {
           "industry": "专业及商用服务",
-          "vacancies": 5894,
-          "vacancy_rate": 0.014
+          "vacancies": 5282,
+          "vacancy_rate": 0.013
         },
         {
           "industry": "进出口、批发及零售",
-          "vacancies": 7236,
-          "vacancy_rate": 0.012
+          "vacancies": 6783,
+          "vacancy_rate": 0.011
         },
         {
           "industry": "医疗及社会工作",
-          "vacancies": 7505,
-          "vacancy_rate": 0.03
+          "vacancies": 7180,
+          "vacancy_rate": 0.029
         },
         {
           "industry": "社会及个人服务",
-          "vacancies": 14939,
-          "vacancy_rate": 0.025
+          "vacancies": 14229,
+          "vacancy_rate": 0.024
         }
       ],
       "wage_yoy_history": [
@@ -37138,8 +37191,8 @@
           "dataset": "按行业划分的职位空缺",
           "type": "指标",
           "status": "健康",
-          "latest_observation": "2026-03-31",
-          "records": 6930,
+          "latest_observation": "2026-06-30",
+          "records": 6996,
           "freshness": "构建时实时",
           "notes": "按季劳动力需求调查；不包括公务员职位空缺。"
         },
@@ -37240,7 +37293,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-labour-market/",
-    "snapshotId": "bd7f79d53b1cde34",
+    "snapshotId": "888c5a626d63e604",
     "dataAsOf": "2026-08-31"
   }
 }

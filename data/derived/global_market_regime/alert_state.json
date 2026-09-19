@@ -3,18 +3,19 @@
   "last_states": {
     "brent": "Confirmed",
     "us10y": "Confirmed",
-    "hike_prob": "Watch",
+    "hike_prob": "Escalating",
     "credit_vix": "Normal",
     "fomc_hike": "Normal"
   },
-  "last_overall": "Confirmed",
+  "last_overall": "Escalating",
   "sent_event_keys": [
     "hike_prob|Escalating|Watch|2026-09-16",
-    "credit_vix|Watch|Normal|2026-09-16"
+    "credit_vix|Watch|Normal|2026-09-16",
+    "hike_prob|Watch|Escalating|2026-09-17"
   ],
-  "last_sent_at": "2026-09-18T00:33:39.219998Z",
-  "last_evaluation_at": "2026-09-18T00:33:39.220012Z",
-  "last_run_id": "20260918T003309-e1e322c7",
+  "last_sent_at": "2026-09-19T00:28:16.364372Z",
+  "last_evaluation_at": "2026-09-19T00:28:16.364385Z",
+  "last_run_id": "20260919T002752-8f14e00d",
   "last_decision": "defensive",
   "last_component_events": [
     {
@@ -22,22 +23,11 @@
       "domain_id": "rates_policy",
       "label_zh": "近端SOFR高于目标区间概率",
       "label_en": "Near-term SOFR above target",
-      "from_state": "Escalating",
-      "to_state": "Watch",
-      "value": 91.0,
-      "observation_date": "2026-09-16",
-      "event_key": "hike_prob|Escalating|Watch|2026-09-16"
-    },
-    {
-      "indicator_id": "credit_vix",
-      "domain_id": "financial_stress",
-      "label_zh": "高收益债利差与VIX同步压力",
-      "label_en": "HY OAS + VIX sync stress",
       "from_state": "Watch",
-      "to_state": "Normal",
-      "value": 0.533819775901915,
-      "observation_date": "2026-09-16",
-      "event_key": "credit_vix|Watch|Normal|2026-09-16"
+      "to_state": "Escalating",
+      "value": 93.08,
+      "observation_date": "2026-09-17",
+      "event_key": "hike_prob|Watch|Escalating|2026-09-17"
     }
   ],
   "alert_mode": "defensive"
