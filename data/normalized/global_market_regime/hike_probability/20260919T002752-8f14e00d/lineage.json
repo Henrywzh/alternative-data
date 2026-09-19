@@ -1,0 +1,19 @@
+{
+  "run_scope": "full",
+  "retrieved_at": "2026-09-19T00:27:52.102635Z",
+  "dataset_name": "hike_probability",
+  "run_id": "20260919T002752-8f14e00d",
+  "created_at": "2026-09-19T00:28:14.327632Z",
+  "records": 873,
+  "columns": [
+    "date",
+    "reference_start",
+    "target_range",
+    "value",
+    "cut_prob",
+    "mean_rate_bps",
+    "hold_prob",
+    "window_key"
+  ],
+  "sha256": "26dde2f7267a09d0a9f5a19d7c528cbe89b01ae5901a056524b7d4a853a39727"
+}
