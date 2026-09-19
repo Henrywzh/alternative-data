@@ -97,16 +97,17 @@ existing .generated/<sector>-artifact.json
   -> Plotly charts, KPI cards, tables and source-health views
 ```
 
-The current Streamlit app includes the overview, market monitor, labour,
-population, transport, real-estate, aerospace, crypto, Data Explorer and
-Source Health pages. It must not fetch from external sources during page
-navigation or create a second copy of the source pipelines. The Index & ETF
-Allocation Monitor is read from `market-monitor-artifact*.json` and is not
-added to `sectors.json` or `package-dashboard.mjs` in V1. Company explorer and
-broader portfolio workflows remain future scope.
+The current Streamlit app includes the overview, market monitor, market regime,
+events and consensus, heat maps, labour, population, transport, real-estate,
+aerospace, crypto, Data Explorer and Source Health pages. It must not fetch
+from external sources during page navigation or create a second copy of the
+source pipelines. The Index & ETF Allocation Monitor is read from
+`market-monitor-artifact*.json` and is not added to `sectors.json` or
+`package-dashboard.mjs` in V1. Company explorer and broader portfolio
+workflows remain future scope.
 
-The Market Monitor also contains an internal `Events / Consensus` mode backed
-by the independent `src/event_consensus/` package. Opening the mode is a local
+`Events & Consensus` is a standalone private Streamlit page backed by the
+independent `src/event_consensus/` package. Opening the page is a local
 artifact read. Its explicitly labelled refresh button is the only Streamlit
 path allowed to call the collectors; it appends a manual PIT snapshot and is
 not page-navigation fetching. Event/consensus data stays private and is not a
@@ -127,8 +128,30 @@ The event/consensus flow is:
 free calendar/consensus + official components + quote adapters
   -> data/normalized/event_consensus append-only local ledgers
   -> data/cache/event_consensus/events_consensus_latest.json
-  -> Asia Markets Market Monitor / Events / Consensus
+  -> src/event_consensus/query.py
+  -> Asia Markets / Events & Consensus or repo-local event-consensus query CLI
 ```
+
+The local agent read contract starts with:
+
+```bash
+PYTHONPATH=src python -m event_consensus.cli query capabilities
+PYTHONPATH=src python -m event_consensus.cli query brief --horizon-hours 48
+PYTHONPATH=src python -m event_consensus.cli query health
+```
+
+These query commands are offline and read-only. They emit one JSON document to
+stdout and do not append to any PIT ledger. Use the explicit refresh command
+only when a new observation is intended:
+
+```bash
+PYTHONPATH=src python -m event_consensus.cli refresh --trigger manual
+```
+
+The complete query envelope, event dossier, history, post-release and missing
+evidence semantics are documented in
+[`EVENT_RESEARCH_CLI.md`](EVENT_RESEARCH_CLI.md). Agents should use this
+contract rather than scrape the Streamlit page or reconstruct event scores.
 
 For a local/manual refresh from the repository root:
 

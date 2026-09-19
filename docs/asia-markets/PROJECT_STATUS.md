@@ -8,13 +8,13 @@ replacement for the operating manual or generated source-status JSON.
 - Public production surface: Cloudflare Pages for the existing public sector
   dashboard.
 - Private research surface: `apps/asia-markets-streamlit/app.py`. The current
-  app includes Overview, Index & ETF Allocation Monitor, labour, population,
-  transport, real estate, aerospace, crypto, Data Explorer and Source Health.
-  The Index & ETF Allocation Monitor is Streamlit-only in V1; it is not in
-  the Cloudflare `sectors.json` roster and is not packaged by
-  `package-dashboard.mjs`.
-- The private Market Monitor now includes an internal `Events / Consensus`
-  mode. It has a 7-14 day US/China/Korea timeline, explicit manual refresh,
+  app includes Overview, Index & ETF Allocation Monitor, Market Regime,
+  Events & Consensus, Heat Maps, labour, population, transport, real estate,
+  aerospace, crypto, Data Explorer and Source Health. The Index & ETF
+  Allocation Monitor is Streamlit-only in V1; it is not in the Cloudflare
+  `sectors.json` roster and is not packaged by `package-dashboard.mjs`.
+- `Events & Consensus` is a standalone private Streamlit page under the
+  Markets sidebar group. It has a 7-14 day US/China/Korea timeline, explicit manual refresh,
   append-only PIT event/quote/component ledgers, official BLS CPI/PPI/labour
   component snapshots, Finnhub US cross-asset quotes and a free scheduled
   GitHub backup.

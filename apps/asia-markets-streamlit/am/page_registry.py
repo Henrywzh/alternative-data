@@ -53,6 +53,15 @@ PAGE_DEFINITIONS: tuple[PageDefinition, ...] = (
         renderer="am.regime:render_regime",
     ),
     PageDefinition(
+        "events",
+        "markets",
+        "Events & Consensus",
+        "事件与预期",
+        "events-consensus",
+        "🗓️",
+        renderer="am.events_consensus:render_events_consensus",
+    ),
+    PageDefinition(
         "heatmaps",
         "markets",
         "Heat Maps",
@@ -224,6 +233,11 @@ def run_page(page_key: str) -> None:
             language,
             history_window,
         )
+        return
+
+    if definition.renderer is not None:
+        renderer = _resolve_renderer(definition.renderer)
+        renderer(language)
         return
 
     artifacts, labels, errors = load_all_sector_artifacts(language)

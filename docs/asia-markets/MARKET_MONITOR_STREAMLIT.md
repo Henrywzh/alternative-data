@@ -109,8 +109,7 @@ measurements are not silently presented as identical observations.
 
 ## Current Streamlit views
 
-The market page has two internal modes. `Markets` keeps the four existing
-functional layers:
+The ETF Monitor is a dedicated page with the following functional layers:
 
 1. **Market Leadership / 市场领导力** — a regional selector for China/HK +
    QDII, US, APAC ex-CN/HK, EMEA and Global. Only the selected region is
@@ -138,9 +137,10 @@ functional layers:
    rendered as zero. China flow rows are NAV-validated when possible; US flow
    rows are labelled `validated_proxy` and show their native currency.
 
-`Events / Consensus` is an independent macro-first workflow provided by
-`src/event_consensus/`. It reads a git-ignored compact local artifact and does
-not alter the market-monitor artifact contract. Its 7-14 day timeline includes
+`Events & Consensus` is a standalone sibling page in the Markets sidebar group.
+It is an independent macro-first workflow provided by `src/event_consensus/`.
+It reads a git-ignored compact local artifact and does not alter the
+market-monitor artifact contract. Its 7-14 day timeline includes
 explicitly decomposed risk/catalyst scoring, a PIT consensus history, official
 BLS CPI/PPI/labour component snapshots, current cross-asset quotes and conditional scenario
 templates. CPI cards include coarse dated December 2025 reference weights from

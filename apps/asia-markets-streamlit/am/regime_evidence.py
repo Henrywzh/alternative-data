@@ -597,8 +597,14 @@ def render_cnn_fear_greed(artifact: dict[str, Any], language: str, window: str) 
         tickvals=[0, 25, 45, 55, 75, 100],
     )
     _add_cnn_rating_legend(fig, language, include_score_bands=True)
-    fig.update_layout(legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "x": 0})
     chart_theme(fig, height=430)
+    # chart_theme parks the legend inside the bottom margin, where this
+    # chart's six entries wrap to two rows and cover the date axis; place
+    # the legend above the plot and give the top margin room for it.
+    fig.update_layout(
+        legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "x": 0},
+        margin={"l": 10, "r": 18, "t": 52, "b": 62},
+    )
     apply_line_hover(fig, composite.rename(columns={"date": "_date", "score": "_value"}), "number")
     st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True})
 

@@ -28,12 +28,12 @@ def test_missing_unit_is_not_rendered_as_nan() -> None:
     assert _unit_text(float("nan"), default="value") == "value"
 
 
-def test_market_monitor_has_internal_events_mode() -> None:
+def test_events_consensus_is_not_nested_inside_market_monitor() -> None:
     source = (
         ROOT / "apps" / "asia-markets-streamlit" / "am" / "market_page.py"
     ).read_text(encoding="utf-8")
-    assert 'mode_keys = ("markets", "events")' in source
-    assert "render_events_consensus(language)" in source
+    assert "market_monitor_mode" not in source
+    assert "render_events_consensus" not in source
 
 
 def test_navigation_is_read_only_and_refresh_is_explicit() -> None:
@@ -43,6 +43,25 @@ def test_navigation_is_read_only_and_refresh_is_explicit() -> None:
     assert "if refresh:" in source
     assert "_run_manual_refresh()" in source
     assert "run_pipeline(trigger_type=\"manual\", write=True)" in source
+
+
+def test_events_page_exposes_all_three_research_modes() -> None:
+    source = (
+        ROOT / "apps" / "asia-markets-streamlit" / "am" / "events_consensus.py"
+    ).read_text(encoding="utf-8")
+    assert "Briefing" in source
+    assert "Event Research" in source
+    assert "Post-release Review" in source
+
+
+def test_events_page_uses_query_service_for_read_models() -> None:
+    source = (
+        ROOT / "apps" / "asia-markets-streamlit" / "am" / "events_consensus.py"
+    ).read_text(encoding="utf-8")
+    assert "EventQueryService" in source
+    assert "service.brief(" in source
+    assert "service.research(" in source
+    assert "service.postmortem(" in source
 
 
 def test_priority_bands_use_the_existing_risk_score_scale() -> None:

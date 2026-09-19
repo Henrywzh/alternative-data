@@ -1,4 +1,4 @@
-"""Interactive Events / Consensus mode for the private Market Monitor."""
+"""Standalone Events & Consensus page for the private research terminal."""
 
 from __future__ import annotations
 
@@ -171,7 +171,55 @@ def _run_manual_refresh() -> dict[str, Any]:
 
     result = run_pipeline(trigger_type="manual", write=True)
     _read_artifact.clear()
+    _cached_query_service.clear()
     return result["artifact"]
+
+
+@st.cache_resource(show_spinner=False)
+def _cached_query_service(
+    artifact_path_text: str,
+    event_ledger_path_text: str,
+    quote_ledger_path_text: str,
+    component_ledger_path_text: str,
+    artifact_mtime_ns: int,
+    event_ledger_mtime_ns: int,
+    quote_ledger_mtime_ns: int,
+    component_ledger_mtime_ns: int,
+):
+    del artifact_mtime_ns, event_ledger_mtime_ns
+    del quote_ledger_mtime_ns, component_ledger_mtime_ns
+    from event_consensus.query import EventQueryService
+
+    return EventQueryService(
+        artifact_path=Path(artifact_path_text),
+        event_ledger_path=Path(event_ledger_path_text),
+        quote_ledger_path=Path(quote_ledger_path_text),
+        component_ledger_path=Path(component_ledger_path_text),
+    )
+
+
+def load_event_query_service():
+    from event_consensus.config import (
+        COMPONENT_LEDGER_PATH,
+        EVENT_LEDGER_PATH,
+        QUOTE_LEDGER_PATH,
+    )
+    from event_consensus.query import QueryError
+
+    paths = (
+        _artifact_path(),
+        EVENT_LEDGER_PATH,
+        QUOTE_LEDGER_PATH,
+        COMPONENT_LEDGER_PATH,
+    )
+    mtimes = tuple(path.stat().st_mtime_ns if path.exists() else 0 for path in paths)
+    try:
+        return _cached_query_service(
+            *(str(path) for path in paths),
+            *mtimes,
+        )
+    except QueryError:
+        return None
 
 
 def _local_time(value: Any, timezone_name: str) -> str:
@@ -685,11 +733,158 @@ def _render_post_release(selected: pd.Series, language: str) -> None:
         )
 
 
+def _render_briefing(
+    service: Any,
+    language: str,
+    timezone_name: str,
+    countries: list[str],
+    major_only: bool,
+) -> None:
+    brief = service.brief(horizon_hours=48, countries=countries, limit=5)
+    brief_events = pd.DataFrame(brief["data"].get("events", []))
+    st.markdown(f"#### {tr(language, 'What matters next 48h', '未来 48 小时最重要事件')}")
+    brief_data = brief["data"]
+    metrics = st.columns(5)
+    high_count = int(brief_data.get("high_priority_count", 0))
+    consensus_count = int(brief_data.get("consensus_available_count", 0))
+    awaiting_count = int(brief_data.get("awaiting_consensus_count", 0))
+    metrics[0].metric(tr(language, "High priority", "高重要性"), high_count)
+    metrics[1].metric(tr(language, "Consensus available", "已有市场预期"), consensus_count)
+    metrics[2].metric(
+        tr(language, "Awaiting consensus", "等待市场预期"),
+        awaiting_count,
+    )
+    metrics[3].metric(
+        tr(language, "Low priority hidden", "隐藏低重要性"),
+        int(brief_data.get("hidden_low_priority_count", 0)),
+    )
+    metrics[4].metric(
+        tr(language, "Window", "窗口"),
+        tr(language, "48 hours", "48 小时"),
+    )
+    if brief_events.empty:
+        st.info(tr(language, "No high or medium priority events in the next 48 hours.", "未来 48 小时没有中高重要性事件。"))
+    else:
+        display = _timeline_frame(
+            brief_events,
+            language=language,
+            timezone_name=timezone_name,
+        )
+        st.dataframe(
+            _style_timeline_frame(
+                display,
+                language=language,
+                provider_importance=brief_events.get("importance"),
+            ),
+            hide_index=True,
+            width="stretch",
+            height=min(360, 38 + max(1, len(brief_events)) * 42),
+        )
+        st.caption(
+            tr(
+                language,
+                "High-priority rows are selected by provider importance, timing and the descriptive risk/catalyst score. Evidence quality is shown separately.",
+                "高重要性事件依据数据商重要性、时间接近度及描述性风险／催化评分筛选；证据质量单独显示。",
+            )
+        )
+
+    now = pd.Timestamp(service.now)
+    window = service.list_events(
+        start_utc=now.isoformat(),
+        end_utc=(now + pd.Timedelta(days=14)).isoformat(),
+        countries=countries,
+        released=False,
+    )
+    timeline = pd.DataFrame(window["data"].get("events", []))
+    if major_only and not timeline.empty:
+        timeline = timeline[timeline["priority"].isin(["high", "medium"])].copy()
+    st.markdown(f"#### {tr(language, 'Next 7–14 days', '未来 7–14 天')}")
+    if timeline.empty:
+        st.info(tr(language, "No events match the current filters.", "没有符合当前筛选条件的事件。"))
+        return
+    display = _timeline_frame(timeline, language=language, timezone_name=timezone_name)
+    st.dataframe(
+        _style_timeline_frame(
+            display,
+            language=language,
+            provider_importance=timeline.get("importance"),
+        ),
+        hide_index=True,
+        width="stretch",
+        height=min(560, 38 + max(1, len(timeline)) * 35),
+    )
+
+
+def _render_postmortem_review(
+    service: Any,
+    language: str,
+    timezone_name: str,
+    countries: list[str],
+    major_only: bool,
+) -> None:
+    released = service.list_events(
+        countries=countries,
+        released=True,
+    )["data"].get("events", [])
+    if major_only:
+        released = [row for row in released if row.get("priority") in {"high", "medium"}]
+    if not released:
+        st.info(tr(language, "No released events match the current filters.", "没有符合当前筛选条件的已公布事件。"))
+        return
+    released_frame = pd.DataFrame(released)
+    selected_id = st.selectbox(
+        tr(language, "Review released event", "复盘已公布事件"),
+        released_frame["event_id"].astype(str).tolist(),
+        key="event_consensus_postmortem_event",
+        format_func=lambda value: _event_label(
+            released_frame[released_frame["event_id"].astype(str).eq(value)].iloc[0],
+            timezone_name,
+        ),
+    )
+    review = service.postmortem(str(selected_id))["data"]
+    event = pd.Series(review["event"])
+    st.markdown(f"### {event.get('title', '—')}")
+    st.caption(
+        " · ".join(
+            (
+                str(event.get("country") or "—"),
+                str(event.get("event_id") or "—"),
+                str(event.get("verification_status") or "unknown"),
+            )
+        )
+    )
+    release = review["release"]
+    pre_release = review["pre_release"]
+    columns = st.columns(4)
+    columns[0].metric(tr(language, "Consensus", "市场预期"), _number(pre_release.get("forecast"), event.get("unit")))
+    columns[1].metric(tr(language, "Prior", "前值"), _number(pre_release.get("previous"), event.get("unit")))
+    columns[2].metric(tr(language, "Actual", "实际值"), _number(release.get("actual"), event.get("unit")))
+    columns[3].metric(tr(language, "Surprise", "预期差"), _number(release.get("surprise"), event.get("unit")))
+    st.caption(
+        tr(
+            language,
+            f"Verification: {release.get('verification_status') or 'unknown'}",
+            f"验证状态：{release.get('verification_status') or '未知'}",
+        )
+    )
+    reaction = review["market_reaction"]
+    if reaction.get("status") == "insufficient_history":
+        st.info(
+            tr(
+                language,
+                "Historical market reaction is unavailable: no PIT-safe event-study observations have been published.",
+                "历史市场反应暂不可用：目前没有已发布的 PIT-safe 事件研究观察值。",
+            )
+        )
+    else:
+        st.dataframe(pd.DataFrame(reaction.get("observations", [])), hide_index=True, width="stretch")
+
+
 def render_events_consensus(language: str) -> None:
     section_heading(
         language,
-        "Events / Consensus",
-        "事件 / 市场预期",
+        "Events & Consensus",
+        "事件与预期",
         "A point-in-time timeline for macro catalysts, expectation revisions and conditional risk responses.",
         "以 PIT 快照跟踪宏观催化点、预期变化及条件式风险应对。",
     )
@@ -716,11 +911,12 @@ def render_events_consensus(language: str) -> None:
         )
     )
 
-    artifact = load_event_consensus_artifact()
+    service = load_event_query_service()
     if refresh:
         try:
             with st.spinner(tr(language, "Fetching calendar, consensus and quotes…", "正在抓取事件、预期与行情…")):
-                artifact = _run_manual_refresh()
+                _run_manual_refresh()
+            service = load_event_query_service()
             st.success(tr(language, "Manual snapshot appended.", "已追加手动快照。"))
         except Exception as exc:
             st.error(
@@ -731,7 +927,7 @@ def render_events_consensus(language: str) -> None:
                 )
             )
 
-    if not artifact:
+    if service is None:
         st.info(
             tr(
                 language,
@@ -741,8 +937,9 @@ def render_events_consensus(language: str) -> None:
         )
         return
 
+    artifact = service.artifact
     _render_status(artifact, language, timezone_name)
-    events = pd.DataFrame(artifact.get("events", []))
+    events = pd.DataFrame(service.list_events()["data"].get("events", []))
     if events.empty:
         st.warning(tr(language, "No usable events in the current window.", "当前窗口没有可用事件。"))
         return
@@ -765,10 +962,50 @@ def render_events_consensus(language: str) -> None:
             "隐藏数据商标记为低重要性的事件；数据商重要性=1 始终显示为高，其他事件颜色依据完整的描述性风险／催化评分。",
         ),
     )
+    mode = st.radio(
+        tr(language, "Research mode", "研究模式"),
+        ["briefing", "research", "postmortem"],
+        index=0,
+        horizontal=True,
+        format_func=lambda value: tr(
+            language,
+            {
+                "briefing": "Briefing",
+                "research": "Event Research",
+                "postmortem": "Post-release Review",
+            }[value],
+            {
+                "briefing": "重点简报",
+                "research": "事件研究",
+                "postmortem": "公布后复盘",
+            }[value],
+        ),
+        key="event_consensus_research_mode",
+    )
+    selected_countries = [str(country) for country in selected_countries]
+    if mode == "briefing":
+        _render_briefing(
+            service,
+            language,
+            timezone_name,
+            selected_countries,
+            major_only,
+        )
+        return
+    if mode == "postmortem":
+        _render_postmortem_review(
+            service,
+            language,
+            timezone_name,
+            selected_countries,
+            major_only,
+        )
+        return
+
     filtered = events[events["country"].astype(str).isin(selected_countries)].copy()
-    if major_only and "importance" in filtered.columns:
+    if major_only and "priority" in filtered.columns:
         filtered = filtered[
-            pd.to_numeric(filtered["importance"], errors="coerce").fillna(-1).ge(0)
+            filtered["priority"].isin(["high", "medium"])
         ]
     filtered["_scheduled"] = pd.to_datetime(
         filtered["scheduled_at_utc"],
@@ -779,8 +1016,8 @@ def render_events_consensus(language: str) -> None:
     upcoming = filtered[filtered["_scheduled"].ge(now)].copy()
     recent = filtered[filtered["_scheduled"].lt(now)].copy()
     upcoming = upcoming.sort_values(
-        ["risk_score", "scheduled_at_utc"],
-        ascending=[False, True],
+        ["priority_rank", "importance", "risk_score", "scheduled_at_utc"],
+        ascending=[True, False, False, True],
     )
     recent = recent.sort_values(
         ["scheduled_at_utc", "risk_score"],
@@ -848,6 +1085,21 @@ def render_events_consensus(language: str) -> None:
     selected = console_events[
         console_events["event_id"].astype(str).eq(str(selected_id))
     ].iloc[0]
+    dossier = service.research(str(selected_id))["data"]
+    research_artifact = dict(artifact)
+    research_artifact.update(
+        {
+            "consensus_history": dossier.get("consensus_history", []),
+            "component_contracts": dossier.get("component_contracts", []),
+            "official_components": dossier.get("official_components", []),
+            "quotes": dossier.get("quotes", []),
+            "scenario_templates": {
+                str(selected.get("event_family") or "other"): dossier.get(
+                    "scenario_templates", []
+                )
+            },
+        }
+    )
 
     console_heading, console_refresh = st.columns([4, 1])
     console_heading.markdown(f"### {selected.get('title', '—')}")
@@ -896,13 +1148,13 @@ def render_events_consensus(language: str) -> None:
         ]
     )
     with tabs[0]:
-        _render_consensus(selected, artifact, language, timezone_name)
+        _render_consensus(selected, research_artifact, language, timezone_name)
     with tabs[1]:
-        _render_components(selected, artifact, language)
+        _render_components(selected, research_artifact, language)
     with tabs[2]:
-        _render_market_pricing(artifact, language, timezone_name)
+        _render_market_pricing(research_artifact, language, timezone_name)
     with tabs[3]:
-        _render_scenarios(selected, artifact, language)
+        _render_scenarios(selected, research_artifact, language)
     with tabs[4]:
         _render_post_release(selected, language)
     with tabs[5]:

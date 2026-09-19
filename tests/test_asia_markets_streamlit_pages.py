@@ -32,6 +32,7 @@ def test_page_registry_has_unique_keys_paths_and_one_default() -> None:
         "overview",
         "market",
         "regime",
+        "events",
         "heatmaps",
         "labour",
         "population",
@@ -122,6 +123,37 @@ def test_aggregate_pages_load_all_artifacts(
     assert sector_calls == []
 
 
+def test_events_page_is_standalone_and_loads_no_sector_artifacts(monkeypatch) -> None:
+    import am.page_registry as registry
+
+    rendered_languages: list[str] = []
+    all_calls: list[str] = []
+    sector_calls: list[tuple[str, str]] = []
+
+    monkeypatch.setattr(
+        registry,
+        "load_all_sector_artifacts",
+        lambda language: all_calls.append(language),
+    )
+    monkeypatch.setattr(
+        registry,
+        "load_sector_artifact",
+        lambda key, language: sector_calls.append((key, language)),
+    )
+    monkeypatch.setattr(
+        registry,
+        "_resolve_renderer",
+        lambda _target: rendered_languages.append,
+    )
+    monkeypatch.setattr(registry, "_page_state", lambda: ("zh", "10 years"))
+
+    registry.run_page("events")
+
+    assert rendered_languages == ["zh"]
+    assert all_calls == []
+    assert sector_calls == []
+
+
 def test_sidebar_groups_reference_every_registered_page_once() -> None:
     from am.page_registry import PAGE_DEFINITIONS
     from am.sidebar import SIDEBAR_GROUPS
@@ -135,6 +167,12 @@ def test_sidebar_groups_reference_every_registered_page_once() -> None:
 
     assert sorted(sidebar_keys) == sorted(registry_keys)
     assert len(sidebar_keys) == len(set(sidebar_keys))
+    assert dict(SIDEBAR_GROUPS)["markets"] == (
+        "market",
+        "regime",
+        "events",
+        "heatmaps",
+    )
 
 
 def test_period_signal_requires_the_exact_prior_year_month() -> None:
@@ -179,3 +217,13 @@ def test_heatmaps_is_a_lazy_market_page():
     assert definition.group == "markets"
     assert definition.url_path == "heat-maps"
     assert definition.renderer == "am.heatmaps:render_heatmaps"
+
+
+def test_events_is_a_standalone_market_page() -> None:
+    from am.page_registry import DEFINITION_BY_KEY
+
+    definition = DEFINITION_BY_KEY["events"]
+    assert definition.group == "markets"
+    assert definition.url_path == "events-consensus"
+    assert definition.sector_key is None
+    assert definition.renderer == "am.events_consensus:render_events_consensus"
