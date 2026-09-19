@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from event_consensus.query import EventQueryService, QueryError
-from conftest import NOW
+from event_consensus_fixtures import NOW
 
 
 def test_capabilities_describe_loaded_artifact(artifact_path):

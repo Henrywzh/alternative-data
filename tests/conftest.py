@@ -17,6 +17,10 @@ for path in (ROOT, SRC):
     if path_str not in sys.path:
         sys.path.insert(0, path_str)
 
+# Nested conftest.py files shadow `import conftest` under pytest prepend mode.
+# Keep event fixtures in a uniquely named module instead of tests/*/conftest.py.
+pytest_plugins = ("event_consensus_fixtures",)
+
 
 def require_local_normalized(*dataset_names: str) -> None:
     """Skip when a gitignored normalized dataset this test needs is absent.

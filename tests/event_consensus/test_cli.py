@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from conftest import fake_pipeline_result
+from event_consensus_fixtures import fake_pipeline_result
 from event_consensus.cli import main
 
 
