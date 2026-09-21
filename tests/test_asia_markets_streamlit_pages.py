@@ -348,3 +348,49 @@ def test_factset_revision_comparison_keeps_signed_history_and_article_note() -> 
     assert note["typical"][0][2] == -1.7
     assert not _factset_is_revision_note(frame.iloc[-1])
     assert len(comparison["prints"]) == 2
+
+def test_factset_named_sector_prints_are_ordered_and_exclude_call_mentions() -> None:
+    import pandas as pd
+
+    from am.regime import _factset_named_sector_prints
+
+    frame = pd.DataFrame(
+        [
+            {
+                "report_date": "2026-08-06",
+                "article_type": "revision",
+                "article_title": "Analysts Increasing in Quarterly EPS Estimates",
+                "quarterly_eps_revision_pct": 0.3,
+                "annual_eps_revision_pct": 3.2,
+                "sector_revision_json": '{"Materials": -5.0}',
+            },
+            {
+                "report_date": "2026-09-04",
+                "article_type": "revision",
+                "article_title": "Analysts Increasing EPS Estimates",
+                "quarterly_eps_revision_pct": 1.2,
+                "annual_eps_revision_pct": 6.1,
+                "sector_revision_json": '{"Energy": 11.8, "Materials": -9.1}',
+            },
+            {
+                "report_date": "2026-06-05",
+                "article_type": "earnings_calls",
+                "article_title": "Highest Number of S&P 500 Earnings Calls Citing Oil",
+                "quarterly_eps_revision_pct": None,
+                "annual_eps_revision_pct": None,
+                "sector_revision_json": '{"Energy": 100.0}',
+            },
+            {
+                "report_date": "2026-07-06",
+                "article_type": "revision",
+                "article_title": "Analysts Made Largest Increases",
+                "quarterly_eps_revision_pct": 3.4,
+                "annual_eps_revision_pct": 6.3,
+                "sector_revision_json": None,
+            },
+        ]
+    )
+    prints = _factset_named_sector_prints(frame)
+    dates = [str(pd.to_datetime(value).date()) for value in prints["report_date"]]
+    assert dates == ["2026-08-06", "2026-09-04"]
+    assert prints.iloc[-1]["quarterly_eps_revision_pct"] == 1.2

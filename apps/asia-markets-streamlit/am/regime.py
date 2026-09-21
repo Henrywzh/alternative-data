@@ -1291,6 +1291,20 @@ def _factset_latest_article_sectors(row: pd.Series) -> list[dict[str, Any]]:
     return _factset_sector_revision_rows(row.get("sector_revision_json"))
 
 
+def _factset_named_sector_prints(frame: pd.DataFrame) -> pd.DataFrame:
+    """Revision notes that actually named one or more sectors."""
+    prints = _factset_revision_prints(frame)
+    if prints.empty:
+        return prints
+    keep = prints.apply(
+        lambda row: bool(_factset_sector_revision_rows(row.get("sector_revision_json"))),
+        axis=1,
+    )
+    return prints.loc[keep].reset_index(drop=True)
+
+
+
+
 def render_factset_earnings_context(
     artifact: dict[str, Any],
     language: str,
@@ -1407,7 +1421,6 @@ def render_factset_earnings_context(
     previous = comparison["previous"]
     prints = comparison["prints"]
     revision_note = _factset_revision_note(revision) if not revision.empty else None
-    named_now = _factset_latest_article_sectors(revision) if not revision.empty else []
 
     st.markdown(f"**{tr(language, 'What changed', '现在到底什么情况')}**")
     st.caption(
@@ -1568,39 +1581,93 @@ def render_factset_earnings_context(
             )
             st.plotly_chart(chart_theme(history_fig, height=320), width="stretch", config={"displayModeBar": False})
 
-    if named_now:
-        st.markdown(f"**{tr(language, 'Named in this print', '本篇点名的行业')}**")
+    named_prints = _factset_named_sector_prints(show)
+    if not named_prints.empty:
+        st.markdown(f"**{tr(language, 'Named sectors by print', '按篇幅查看点名行业')}**")
         st.caption(
             tr(
                 language,
-                "Only the sectors FactSet named in the latest revision note. Teal was raised, red was cut. Energy vs Materials is a split, not a full sector board.",
-                "只显示最新修正文章点名的行业。青绿=上调，红=下调。能源 vs 材料是方向分裂，不是完整行业面板。",
+                "Each FactSet revision note names only a few sectors. The slider walks those prints; it does not create a full 11-sector board. Teal was raised, red was cut.",
+                "每篇 FactSet 修正文章只会点名少数行业。用滑条切换篇幅，不会拼出完整的11个行业面板。青绿=上调，红=下调。",
             )
         )
-        sector_fig = go.Figure(
-            go.Bar(
-                x=[row["revision_pct"] for row in named_now],
-                y=[row["sector"] for row in named_now],
-                orientation="h",
-                marker_color=[_signed_color(row["revision_pct"]) for row in named_now],
-                text=[_factset_display_number(row["revision_pct"], "%") for row in named_now],
-                textposition="outside",
-                hovertemplate="%{y}<br>%{x:+.1f}%<extra></extra>",
+        print_count = int(len(named_prints))
+        selected_number = st.slider(
+            tr(language, "Older prints ← → Newer prints", "更早篇幅 ← → 更新篇幅"),
+            min_value=1,
+            max_value=print_count,
+            value=print_count,
+            key="factset_named_sector_print",
+        )
+        selected_print = named_prints.iloc[selected_number - 1]
+        named_now = _factset_latest_article_sectors(selected_print)
+        selected_url = str(selected_print.get("source_url") or "").strip()
+        selected_q = pd.to_numeric(
+            pd.Series([selected_print.get("quarterly_eps_revision_pct")]), errors="coerce"
+        ).iloc[0]
+        selected_a = pd.to_numeric(
+            pd.Series([selected_print.get("annual_eps_revision_pct")]), errors="coerce"
+        ).iloc[0]
+        heading = tr(
+            language,
+            f"Print {selected_number} of {print_count}: {_factset_article_label(selected_print, language)}",
+            f"第 {selected_number} / {print_count} 篇：{_factset_article_label(selected_print, language)}",
+        )
+        if selected_url:
+            st.markdown(
+                f"{heading} · [{tr(language, 'Open this note', '打开这篇原文')}]({selected_url})"
             )
-        )
-        sector_fig.add_vline(x=0, line_color=FACTSET_HIST, line_width=1)
-        sector_fig.update_layout(
-            height=max(220, 88 + 36 * len(named_now)),
-            margin={"l": 12, "r": 28, "t": 8, "b": 12},
-            xaxis_title=tr(language, "EPS revision %", "EPS修正 %"),
-            yaxis={"autorange": "reversed"},
-            showlegend=False,
-        )
-        st.plotly_chart(
-            chart_theme(sector_fig, height=max(220, 88 + 36 * len(named_now)), date_axis=False),
-            width="stretch",
-            config={"displayModeBar": False},
-        )
+        else:
+            st.markdown(heading)
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.metric(
+                tr(language, "This print · quarterly", "本篇 · 季度修正"),
+                _factset_display_number(selected_q, "%"),
+            )
+        with c2:
+            st.metric(
+                tr(language, "This print · full year", "本篇 · 年度修正"),
+                _factset_display_number(selected_a, "%"),
+            )
+        with c3:
+            st.metric(
+                tr(language, "Sectors named", "点名行业数"),
+                str(len(named_now)),
+            )
+        if named_now:
+            sector_fig = go.Figure(
+                go.Bar(
+                    x=[row["revision_pct"] for row in named_now],
+                    y=[row["sector"] for row in named_now],
+                    orientation="h",
+                    marker_color=[_signed_color(row["revision_pct"]) for row in named_now],
+                    text=[_factset_display_number(row["revision_pct"], "%") for row in named_now],
+                    textposition="outside",
+                    hovertemplate="%{y}<br>%{x:+.1f}%<extra></extra>",
+                )
+            )
+            sector_fig.add_vline(x=0, line_color=FACTSET_HIST, line_width=1)
+            sector_fig.update_layout(
+                height=max(220, 88 + 36 * len(named_now)),
+                margin={"l": 12, "r": 28, "t": 8, "b": 12},
+                xaxis_title=tr(language, "EPS revision %", "EPS修正 %"),
+                yaxis={"autorange": "reversed"},
+                showlegend=False,
+            )
+            st.plotly_chart(
+                chart_theme(sector_fig, height=max(220, 88 + 36 * len(named_now)), date_axis=False),
+                width="stretch",
+                config={"displayModeBar": False},
+            )
+        else:
+            st.info(
+                tr(
+                    language,
+                    "This print did not name any sectors.",
+                    "这篇没有点名任何行业。",
+                )
+            )
     valuation = _factset_valuation_history(show)
     pe_points = valuation.dropna(subset=["forward_12m_pe"])
     avg_points = valuation.dropna(subset=["forward_12m_pe_10y_avg"])
