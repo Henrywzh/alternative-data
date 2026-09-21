@@ -394,3 +394,21 @@ def test_factset_named_sector_prints_are_ordered_and_exclude_call_mentions() -> 
     dates = [str(pd.to_datetime(value).date()) for value in prints["report_date"]]
     assert dates == ["2026-08-06", "2026-09-04"]
     assert prints.iloc[-1]["quarterly_eps_revision_pct"] == 1.2
+
+def test_factset_named_print_label_includes_date_title_and_sectors() -> None:
+    import pandas as pd
+
+    from am.regime import _factset_named_print_label
+
+    row = pd.Series(
+        {
+            "report_date": "2026-09-04",
+            "article_title": "Analysts Increasing EPS Estimates",
+            "sector_revision_json": '{"Energy": 11.8, "Materials": -9.1}',
+        }
+    )
+    label = _factset_named_print_label(row, "en")
+    assert "2026-09-04" in label or "4 Sep" in label or "Sep 2026" in label or "September" in label or "9月" in label or "2026" in label
+    assert "Analysts Increasing EPS Estimates" in label
+    assert "Energy" in label
+    assert "Materials" in label

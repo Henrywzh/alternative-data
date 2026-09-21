@@ -1291,6 +1291,23 @@ def _factset_latest_article_sectors(row: pd.Series) -> list[dict[str, Any]]:
     return _factset_sector_revision_rows(row.get("sector_revision_json"))
 
 
+def _factset_named_print_label(row: pd.Series, language: str) -> str:
+    """Searchable menu label: date, title, and the sectors that print named."""
+    date_label = observation_date_label(row.get("report_date"), language)
+    title = str(row.get("article_title") or "").strip() or tr(
+        language, "Untitled FactSet note", "无标题 FactSet 笔记"
+    )
+    named = _factset_latest_article_sectors(row)
+    if named:
+        sectors = ", ".join(
+            f"{item['sector']} {_factset_display_number(item['revision_pct'], '%')}"
+            for item in named
+        )
+    else:
+        sectors = tr(language, "no named sectors", "未点名行业")
+    return f"{date_label} · {title} · {sectors}"
+
+
 def _factset_named_sector_prints(frame: pd.DataFrame) -> pd.DataFrame:
     """Revision notes that actually named one or more sectors."""
     prints = _factset_revision_prints(frame)
@@ -1589,19 +1606,23 @@ def render_factset_earnings_context(
         st.caption(
             tr(
                 language,
-                "Each FactSet revision note names only a few sectors. The slider walks those prints; it does not create a full 11-sector board. Teal was raised, red was cut.",
-                "每篇 FactSet 修正文章只会点名少数行业。用滑条切换篇幅，不会拼出完整的11个行业面板。青绿=上调，红=下调。",
+                "Each FactSet revision note names only a few sectors. Search or pick a print by date, title or sector. This does not create a full 11-sector board. Teal was raised, red was cut.",
+                "每篇 FactSet 修正文章只会点名少数行业。可按日期、标题或行业搜索并选择篇幅，不会拼出完整的11个行业面板。青绿=上调，红=下调。",
             )
         )
         print_count = int(len(named_prints))
-        selected_number = st.slider(
-            tr(language, "Older prints ← → Newer prints", "更早篇幅 ← → 更新篇幅"),
-            min_value=1,
-            max_value=print_count,
-            value=print_count,
+        newest_first = named_prints.iloc[::-1].reset_index(drop=True)
+        labels = [
+            _factset_named_print_label(row, language)
+            for _, row in newest_first.iterrows()
+        ]
+        selected_label = st.selectbox(
+            tr(language, "Choose a FactSet print", "选择一篇 FactSet 文章"),
+            labels,
+            index=0,
             key="factset_named_sector_print",
         )
-        selected_print = named_prints.iloc[selected_number - 1]
+        selected_print = newest_first.iloc[labels.index(selected_label)]
         named_now = _factset_latest_article_sectors(selected_print)
         selected_url = str(selected_print.get("source_url") or "").strip()
         selected_q = pd.to_numeric(
@@ -1610,10 +1631,11 @@ def render_factset_earnings_context(
         selected_a = pd.to_numeric(
             pd.Series([selected_print.get("annual_eps_revision_pct")]), errors="coerce"
         ).iloc[0]
+        chronological_number = print_count - int(labels.index(selected_label))
         heading = tr(
             language,
-            f"Print {selected_number} of {print_count}: {_factset_article_label(selected_print, language)}",
-            f"第 {selected_number} / {print_count} 篇：{_factset_article_label(selected_print, language)}",
+            f"Print {chronological_number} of {print_count}: {_factset_article_label(selected_print, language)}",
+            f"第 {chronological_number} / {print_count} 篇：{_factset_article_label(selected_print, language)}",
         )
         if selected_url:
             st.markdown(
@@ -1816,40 +1838,58 @@ def render_regime(artifact: dict[str, Any], labels: dict[str, Any], language: st
         st.info(tr(language, "No regime snapshot is available yet.", "暂时没有市场状态快照。"))
         render_regime_source_coverage(artifact, labels, language)
         return
-    render_regime_summary_banner(artifact, language)
-    render_regime_daily_brief(artifact, language)
-    section_heading(
-        language,
-        "Alert decision",
-        "预警决策",
-        "A persisted pipeline decision: fresh transitions, breadth qualification and alert mode. The Streamlit app does not recompute it.",
-        "展示 pipeline 已保存的判断：最新状态变化、扩散门槛及预警模式；Streamlit 不会自行重算。",
-    )
-    render_regime_alert_decision(artifact, language)
-    section_heading(
-        language,
-        "Risk breadth",
-        "风险扩散",
-        "The headline keeps the highest-severity state, while these domains show whether pressure is isolated or spreading.",
-        "总状态保留最高严重度；领域卡片用来区分压力是局部出现，还是正在扩散。",
-    )
-    render_regime_domain_cards(artifact, language)
-    section_heading(
-        language,
-        "Decision thresholds",
-        "决策门槛",
-        "Each card shows the current state, declared rule, distance to threshold, confirmation progress and observation date.",
-        "每张卡同时显示当前状态、明确规则、距门槛距离、确认进度和观察日期。",
-    )
-    render_regime_threshold_cards(artifact, language)
-
-    equity_tab, rates_tab, macro_tab = st.tabs(
+    overview_tab, equity_tab, rates_tab, macro_tab = st.tabs(
         [
+            tr(language, "Overview", "总览"),
             tr(language, "Equity", "股市"),
             tr(language, "Fixed income", "固收"),
             tr(language, "Macro", "宏观"),
         ]
     )
+    with overview_tab:
+        render_regime_summary_banner(artifact, language)
+        render_regime_daily_brief(artifact, language)
+        section_heading(
+            language,
+            "Alert decision",
+            "预警决策",
+            "A persisted pipeline decision: fresh transitions, breadth qualification and alert mode. The Streamlit app does not recompute it.",
+            "展示 pipeline 已保存的判断：最新状态变化、扩散门槛及预警模式；Streamlit 不会自行重算。",
+        )
+        render_regime_alert_decision(artifact, language)
+        section_heading(
+            language,
+            "Risk breadth",
+            "风险扩散",
+            "The headline keeps the highest-severity state, while these domains show whether pressure is isolated or spreading.",
+            "总状态保留最高严重度；领域卡片用来区分压力是局部出现，还是正在扩散。",
+        )
+        render_regime_domain_cards(artifact, language)
+        section_heading(
+            language,
+            "Decision thresholds",
+            "决策门槛",
+            "Each card shows the current state, declared rule, distance to threshold, confirmation progress and observation date.",
+            "每张卡同时显示当前状态、明确规则、距门槛距离、确认进度和观察日期。",
+        )
+        render_regime_threshold_cards(artifact, language)
+        section_heading(
+            language,
+            "Historical validation",
+            "历史验证",
+            "Descriptive, non-PIT replay of current rules using today's revised FRED history; inspect 5/20/60-session reactions before enabling formal alerts.",
+            "使用当前修订版FRED历史进行描述性、非PIT规则回放；检查信号后5／20／60个交易日表现，再决定是否启用正式预警。",
+        )
+        render_regime_validation(artifact, language)
+        section_heading(
+            language,
+            "Recent state transitions",
+            "近期状态转折",
+            "Only actual state changes are listed; unchanged daily observations are omitted.",
+            "只列出真实状态变化，不显示状态未变的日常观察。",
+        )
+        render_regime_transitions(artifact, language)
+        render_regime_source_coverage(artifact, labels, language)
     with equity_tab:
         section_heading(
             language,
@@ -2077,25 +2117,6 @@ def render_regime(artifact: dict[str, Any], labels: dict[str, Any], language: st
             )
             with st.container(border=True):
                 render_cot_history(artifact, language, window)
-
-    section_heading(
-        language,
-        "Historical validation",
-        "历史验证",
-        "Descriptive, non-PIT replay of current rules using today's revised FRED history; inspect 5/20/60-session reactions before enabling formal alerts.",
-        "使用当前修订版FRED历史进行描述性、非PIT规则回放；检查信号后5／20／60个交易日表现，再决定是否启用正式预警。",
-    )
-    render_regime_validation(artifact, language)
-
-    section_heading(
-        language,
-        "Recent state transitions",
-        "近期状态转折",
-        "Only actual state changes are listed; unchanged daily observations are omitted.",
-        "只列出真实状态变化，不显示状态未变的日常观察。",
-    )
-    render_regime_transitions(artifact, language)
-    render_regime_source_coverage(artifact, labels, language)
 
 
 def render_regime_source_coverage(
