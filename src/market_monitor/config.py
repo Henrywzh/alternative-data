@@ -73,6 +73,14 @@ ETF_ACTIVITY_SSE_REFRESH_SESSIONS = 10
 # GitHub-tracked JSON without bound.
 ETF_ACTIVITY_ARTIFACT_MAX_ROWS = 2_000
 
+# Eastmoney's ETF spot endpoint occasionally returns a transient gateway or
+# rate-limit response.  Retry only a bounded set of transport/provider
+# failures; a persistent failure must still reach the freshness gate instead
+# of being replaced with yesterday's quote.
+ETF_SPOT_MAX_ATTEMPTS = 3
+ETF_SPOT_RETRY_BASE_SECONDS = 1.0
+ETF_SPOT_RETRYABLE_STATUS_CODES = frozenset({408, 429, 500, 502, 503, 504})
+
 # The activity panel is supplementary context.  It must never turn an
 # unavailable optional source into a false "healthy" trading signal.
 ETF_ACTIVITY_METHOD_SHARE_DELTA_NAV = "official_share_delta_nav"

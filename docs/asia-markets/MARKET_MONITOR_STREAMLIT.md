@@ -84,7 +84,10 @@ Provider ownership is declared per exposure and routed explicitly:
   produced a request for "SPX", which returns an empty frame rather than an
   error.
 - Eastmoney ETF spot: current market price, IOPV premium/discount, turnover,
-  bid/ask and market-cap proxy.
+  bid/ask and market-cap proxy. The spot endpoint retries a bounded set of
+  transient gateway/rate-limit failures and empty responses; if the retry
+  budget is exhausted, the run remains fail-closed and the freshness gate
+  blocks the email rather than borrowing an older quote.
 - Eastmoney published NAV endpoint: historical close-vs-NAV premium backfill.
 - Eastmoney issuer fee endpoint: management and custody fee reconciliation.
 - Shanghai and Shenzhen Stock Exchange ETF scale feeds: official published

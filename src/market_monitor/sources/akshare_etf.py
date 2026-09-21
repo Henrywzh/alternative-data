@@ -7,11 +7,18 @@ is lazy-imported so tests that don't hit the network never import it.
 
 from __future__ import annotations
 
+import re
+import time
 from datetime import date
 from typing import Any
 
 import pandas as pd
 
+from ..config import (
+    ETF_SPOT_MAX_ATTEMPTS,
+    ETF_SPOT_RETRY_BASE_SECONDS,
+    ETF_SPOT_RETRYABLE_STATUS_CODES,
+)
 from ..freshness import isoformat_utc, market_date
 
 
@@ -196,11 +203,54 @@ def fetch_index_daily(symbol: str, start_date: str | None = None, end_date: str 
     return out
 
 
+def _is_retryable_spot_error(exc: Exception) -> bool:
+    """Return whether an Eastmoney spot failure is likely transient."""
+    response = getattr(exc, "response", None)
+    status_code = getattr(response, "status_code", None)
+    try:
+        if int(status_code) in ETF_SPOT_RETRYABLE_STATUS_CODES:
+            return True
+    except (TypeError, ValueError):
+        pass
+
+    message = str(exc)
+    if any(re.search(rf"\b{code}\b", message) for code in ETF_SPOT_RETRYABLE_STATUS_CODES):
+        return True
+    return type(exc).__name__ in {"ConnectionError", "ConnectTimeout", "ReadTimeout", "Timeout"}
+
+
+def _fetch_etf_spot_with_retry(ak: Any) -> pd.DataFrame:
+    """Fetch the raw spot frame with bounded retry/backoff semantics."""
+    for attempt in range(ETF_SPOT_MAX_ATTEMPTS):
+        try:
+            df = ak.fund_etf_spot_em()
+        except Exception as exc:  # noqa: BLE001 - classify only transient failures
+            if attempt == ETF_SPOT_MAX_ATTEMPTS - 1 or not _is_retryable_spot_error(exc):
+                raise
+            print(
+                f"  [market_monitor] transient ETF spot failure ({type(exc).__name__}); "
+                f"retry {attempt + 1}/{ETF_SPOT_MAX_ATTEMPTS - 1}"
+            )
+        else:
+            if isinstance(df, pd.DataFrame) and not df.empty:
+                return df
+            if attempt == ETF_SPOT_MAX_ATTEMPTS - 1:
+                return pd.DataFrame()
+            print(
+                "  [market_monitor] empty ETF spot response; "
+                f"retry {attempt + 1}/{ETF_SPOT_MAX_ATTEMPTS - 1}"
+            )
+
+        time.sleep(ETF_SPOT_RETRY_BASE_SECONDS * (2**attempt))
+
+    return pd.DataFrame()
+
+
 def fetch_etf_spot() -> pd.DataFrame:
     """Current ETF snapshot from Eastmoney (price, premium/discount, turnover)."""
     import akshare as ak
 
-    df = ak.fund_etf_spot_em()
+    df = _fetch_etf_spot_with_retry(ak)
     if df is None or df.empty:
         return pd.DataFrame()
     retrieved_at_utc = isoformat_utc()
