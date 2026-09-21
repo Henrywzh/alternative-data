@@ -1523,18 +1523,20 @@ def render_factset_earnings_context(
                 )
             )
             figure.add_hline(y=0, line_color=FACTSET_HIST, line_width=1)
+            figure.update_traces(cliponaxis=False)
             figure.update_layout(
                 height=300,
-                margin={"l": 12, "r": 12, "t": 28, "b": 12},
+                margin={"l": 12, "r": 12, "t": 36, "b": 12},
                 yaxis_title=tr(language, "EPS revision %", "EPS修正 %"),
                 showlegend=False,
-                title=tr(
-                    language,
-                    "This print versus typical early-quarter cut",
-                    "本篇 vs 季度前段历史常态下调",
-                ),
+                title=None,
             )
-            st.plotly_chart(chart_theme(figure, height=300, date_axis=False), width="stretch", config={"displayModeBar": False})
+            themed = chart_theme(figure, height=300, date_axis=False)
+            themed.update_layout(margin={"l": 12, "r": 18, "t": 36, "b": 62})
+            st.markdown(
+                f"**{tr(language, 'This print versus typical early-quarter cut', '本篇 vs 季度前段历史常态下调')}**"
+            )
+            st.plotly_chart(themed, width="stretch", config={"displayModeBar": False})
 
         if not prints.empty:
             st.caption(
