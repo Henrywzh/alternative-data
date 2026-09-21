@@ -229,3 +229,69 @@ def test_events_is_a_standalone_market_page() -> None:
     assert definition.url_path == "events-consensus"
     assert definition.sector_key is None
     assert definition.renderer == "am.events_consensus:render_events_consensus"
+
+def test_factset_helpers_split_snapshot_from_revision_and_keep_sector_dates() -> None:
+    import pandas as pd
+
+    from am.regime import (
+        FACTSET_CORE_FIELDS,
+        FACTSET_REVISION_FIELDS,
+        _factset_latest_sector_board,
+        _factset_latest_with_any,
+        _factset_valuation_history,
+    )
+
+    frame = pd.DataFrame(
+        [
+            {
+                "report_date": "2026-08-07",
+                "article_type": "sector",
+                "article_title": "Earnings Season Update",
+                "blended_earnings_growth_yoy": 47.4,
+                "eps_beat_rate": 86.0,
+                "forward_12m_pe": 20.0,
+                "forward_12m_pe_10y_avg": 19.0,
+                "quarterly_eps_revision_pct": None,
+                "annual_eps_revision_pct": None,
+                "sector_revision_json": None,
+            },
+            {
+                "report_date": "2026-09-04",
+                "article_type": "revision",
+                "article_title": "Analysts Increasing EPS Estimates",
+                "blended_earnings_growth_yoy": None,
+                "eps_beat_rate": None,
+                "forward_12m_pe": None,
+                "forward_12m_pe_10y_avg": 39.0,
+                "quarterly_eps_revision_pct": 1.2,
+                "annual_eps_revision_pct": 6.1,
+                "sector_revision_json": '{"Energy": 11.8, "Materials": -9.1}',
+            },
+            {
+                "report_date": "2026-07-10",
+                "article_type": "revision",
+                "article_title": "Earlier IT revision",
+                "blended_earnings_growth_yoy": None,
+                "eps_beat_rate": None,
+                "forward_12m_pe": None,
+                "forward_12m_pe_10y_avg": None,
+                "quarterly_eps_revision_pct": None,
+                "annual_eps_revision_pct": None,
+                "sector_revision_json": '{"Information Technology": 3.4}',
+            },
+        ]
+    )
+
+    core = _factset_latest_with_any(frame, FACTSET_CORE_FIELDS)
+    revision = _factset_latest_with_any(frame, FACTSET_REVISION_FIELDS)
+    board = _factset_latest_sector_board(frame)
+    history = _factset_valuation_history(frame)
+
+    assert str(pd.to_datetime(core["report_date"]).date()) == "2026-08-07"
+    assert core["forward_12m_pe"] == 20.0
+    assert str(pd.to_datetime(revision["report_date"]).date()) == "2026-09-04"
+    assert revision["quarterly_eps_revision_pct"] == 1.2
+    assert list(board["sector"]) == ["Energy", "Information Technology", "Materials"]
+    assert list(board["revision_pct"]) == [11.8, 3.4, -9.1]
+    assert 39.0 not in set(history["forward_12m_pe_10y_avg"].dropna())
+    assert 20.0 in set(history["forward_12m_pe"].dropna())

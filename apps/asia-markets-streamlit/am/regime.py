@@ -1094,6 +1094,101 @@ def _factset_sector_revision_rows(value: Any) -> list[dict[str, Any]]:
     return sorted(rows, key=lambda row: row["revision_pct"], reverse=True)
 
 
+FACTSET_CORE_FIELDS = (
+    "blended_earnings_growth_yoy",
+    "eps_beat_rate",
+    "forward_12m_pe",
+)
+FACTSET_REVISION_FIELDS = (
+    "quarterly_eps_revision_pct",
+    "annual_eps_revision_pct",
+    "positive_eps_guidance_count",
+    "negative_eps_guidance_count",
+    "eps_guidance_total_count",
+    "sector_revision_json",
+)
+FACTSET_PE_AVERAGE_DISPLAY_RANGE = (8.0, 26.0)
+
+
+def _factset_field_present(frame: pd.DataFrame, field: str) -> pd.Series:
+    if field not in frame.columns:
+        return pd.Series(False, index=frame.index)
+    if field == "sector_revision_json":
+        return frame[field].map(lambda value: bool(_factset_sector_revision_rows(value)))
+    return pd.to_numeric(frame[field], errors="coerce").notna()
+
+
+def _factset_latest_with_any(frame: pd.DataFrame, fields: tuple[str, ...]) -> pd.Series:
+    """Latest article that actually published one of the requested fields."""
+    if frame.empty:
+        return pd.Series(dtype="object")
+    work = frame.copy()
+    work["_date"] = pd.to_datetime(work.get("report_date"), errors="coerce")
+    work = work.dropna(subset=["_date"]).sort_values("_date")
+    if work.empty:
+        return pd.Series(dtype="object")
+    mask = pd.Series(False, index=work.index)
+    for field in fields:
+        mask = mask | _factset_field_present(work, field)
+    subset = work.loc[mask]
+    if subset.empty:
+        return pd.Series(dtype="object")
+    return subset.iloc[-1]
+
+
+def _factset_article_label(row: pd.Series, language: str) -> str:
+    if row.empty:
+        return "—"
+    date_label = observation_date_label(row.get("report_date"), language)
+    article_type = str(row.get("article_type") or "").strip()
+    title = str(row.get("article_title") or "").strip()
+    parts = [part for part in (date_label, article_type, title) if part and part != "—"]
+    return " · ".join(parts) if parts else "—"
+
+
+def _factset_latest_sector_board(frame: pd.DataFrame) -> pd.DataFrame:
+    """Most recent named sector revision, not a simultaneous 11-sector print."""
+    empty = pd.DataFrame(columns=["sector", "revision_pct", "report_date", "article_type"])
+    if frame.empty:
+        return empty
+    work = frame.copy()
+    work["_date"] = pd.to_datetime(work.get("report_date"), errors="coerce")
+    work = work.dropna(subset=["_date"]).sort_values("_date")
+    rows: list[dict[str, Any]] = []
+    for _, row in work.iterrows():
+        for item in _factset_sector_revision_rows(row.get("sector_revision_json")):
+            rows.append(
+                {
+                    "sector": item["sector"],
+                    "revision_pct": item["revision_pct"],
+                    "report_date": row["_date"],
+                    "article_type": row.get("article_type"),
+                }
+            )
+    if not rows:
+        return empty
+    return (
+        pd.DataFrame(rows)
+        .sort_values("report_date")
+        .drop_duplicates("sector", keep="last")
+        .sort_values("revision_pct", ascending=False)
+        .reset_index(drop=True)
+    )
+
+
+def _factset_valuation_history(frame: pd.DataFrame) -> pd.DataFrame:
+    work = frame.copy()
+    work["report_date"] = pd.to_datetime(work.get("report_date"), errors="coerce")
+    work["forward_12m_pe"] = pd.to_numeric(work.get("forward_12m_pe"), errors="coerce")
+    work["forward_12m_pe_10y_avg"] = pd.to_numeric(
+        work.get("forward_12m_pe_10y_avg"), errors="coerce"
+    )
+    work = work.dropna(subset=["report_date"]).sort_values("report_date").tail(104)
+    average = work["forward_12m_pe_10y_avg"]
+    low, high = FACTSET_PE_AVERAGE_DISPLAY_RANGE
+    work.loc[~average.between(low, high), "forward_12m_pe_10y_avg"] = pd.NA
+    return work
+
 def render_factset_earnings_context(
     artifact: dict[str, Any],
     language: str,
@@ -1118,8 +1213,9 @@ def render_factset_earnings_context(
     if show.empty:
         st.info(tr(language, "No valid FactSet report dates are available.", "没有有效的 FactSet 报告日期。"))
         return
-    latest = show.iloc[-1]
-    latest_date = observation_date_label(latest.get("report_date"), language)
+    newest = show.iloc[-1]
+    core = _factset_latest_with_any(show, FACTSET_CORE_FIELDS)
+    revision = _factset_latest_with_any(show, FACTSET_REVISION_FIELDS)
     health_row = health.iloc[-1].to_dict() if not health.empty else {}
     status = str(health_row.get("status") or "Partial")
     status_label = {
@@ -1136,44 +1232,49 @@ def render_factset_earnings_context(
     ).iloc[0]
     fill_text = "—" if pd.isna(core_fill) else f"{float(core_fill) * 100:.0f}%"
     supported_fill_text = "—" if pd.isna(supported_fill) else f"{float(supported_fill) * 100:.0f}%"
-    last_seen = health_row.get("last_seen_report_date")
     article_records = _factset_display_count(health_row.get("article_records"))
     metric_records = _factset_display_count(health_row.get("supported_records"))
     usable_records = _factset_display_count(health_row.get("usable_records"))
     coverage_note = tr(
         language,
-        f"{status_label} · usable observation {latest_date} · last article seen {last_seen or '—'} · core fill floor {fill_text} · supported payload fill {supported_fill_text} · article catalog {article_records} · metric-bearing {metric_records} · usable {usable_records}",
-        f"{status_label} · 可用观察截至 {latest_date} · 最近文章 {last_seen or '—'} · 核心字段最低填充率 {fill_text} · 支持字段填充率 {supported_fill_text} · 文章目录 {article_records} · 含指标 {metric_records} · 可用 {usable_records}",
+        f"{status_label} · newest article {observation_date_label(newest.get('report_date'), language)} · last earnings snapshot {_factset_article_label(core, language)} · core fill floor {fill_text} · supported payload fill {supported_fill_text} · article catalog {article_records} · metric-bearing {metric_records} · usable {usable_records}",
+        f"{status_label} · 最新文章 {observation_date_label(newest.get('report_date'), language)} · 最近盈利快照 {_factset_article_label(core, language)} · 核心字段最低填充率 {fill_text} · 支持字段填充率 {supported_fill_text} · 文章目录 {article_records} · 含指标 {metric_records} · 可用 {usable_records}",
     )
     st.caption(coverage_note)
-    latest_report_date = (
-        latest["report_date"].date().isoformat()
-        if pd.notna(latest.get("report_date"))
+    core_report_date = (
+        pd.to_datetime(core.get("report_date"), errors="coerce").date().isoformat()
+        if not core.empty and pd.notna(core.get("report_date"))
         else None
     )
-    if last_seen and str(last_seen) != str(latest_report_date):
+    newest_report_date = (
+        newest["report_date"].date().isoformat() if pd.notna(newest.get("report_date")) else None
+    )
+    if newest_report_date and newest_report_date != core_report_date:
         st.warning(
             tr(
                 language,
-                "The newest FactSet article has no supported metric payload; the panel uses the latest supported observation and does not impute missing fields. The full article catalog remains available to the research layer.",
-                "最新 FactSet 文章没有支持的指标 payload；本面板使用最近一条可用观察，不对缺失字段进行填补。完整文章目录仍提供给研究层使用。",
+                f"The newest article ({_factset_article_label(newest, language)}) is an estimate-revision note, not a full earnings snapshot. Growth, beat-rate and P/E below come from the latest article that actually printed those fields.",
+                f"最新文章（{_factset_article_label(newest, language)}）是盈利预估修正，不是完整盈利快照。下方增长、超预期比例和市盈率来自最近一篇真正刊出这些字段的文章。",
             )
         )
 
+    st.markdown(f"**{tr(language, 'Latest earnings snapshot', '最新盈利快照')}**")
+    st.caption(
+        tr(
+            language,
+            f"Source: {_factset_article_label(core, language)}. These four numbers are reprinted together in earnings-season updates; revision notes usually omit them.",
+            f"来源：{_factset_article_label(core, language)}。这四个数字通常一起出现在盈利季更新里；预估修正文章一般不会重印它们。",
+        )
+    )
     metric_specs = (
-        (
-            "Earnings growth YoY",
-            "盈利同比增长",
-            "blended_earnings_growth_yoy",
-            "%",
-        ),
+        ("Earnings growth YoY", "盈利同比增长", "blended_earnings_growth_yoy", "%"),
         ("EPS beat rate", "EPS超预期比例", "eps_beat_rate", "%"),
         ("Forward 12M P/E", "未来12个月市盈率", "forward_12m_pe", "x"),
         ("P/E vs 10Y average", "市盈率相对10年均值", "pe_premium_pct", "%"),
     )
-    latest_forward = pd.to_numeric(pd.Series([latest.get("forward_12m_pe")]), errors="coerce").iloc[0]
-    latest_average = pd.to_numeric(pd.Series([latest.get("forward_12m_pe_10y_avg")]), errors="coerce").iloc[0]
-    latest_metrics = latest.to_dict()
+    latest_metrics = core.to_dict() if not core.empty else {}
+    latest_forward = pd.to_numeric(pd.Series([latest_metrics.get("forward_12m_pe")]), errors="coerce").iloc[0]
+    latest_average = pd.to_numeric(pd.Series([latest_metrics.get("forward_12m_pe_10y_avg")]), errors="coerce").iloc[0]
     latest_metrics["pe_premium_pct"] = (
         (latest_forward / latest_average - 1) * 100
         if pd.notna(latest_forward) and pd.notna(latest_average) and latest_average != 0
@@ -1187,6 +1288,15 @@ def render_factset_earnings_context(
                 _factset_display_number(latest_metrics.get(field), suffix),
             )
 
+    st.markdown(f"**{tr(language, 'Latest estimate revisions', '最新盈利预估修正')}**")
+    st.caption(
+        tr(
+            language,
+            f"Source: {_factset_article_label(revision, language)}. This is analyst estimate drift, not the earnings print above.",
+            f"来源：{_factset_article_label(revision, language)}。这是分析师预估漂移，不是上面的盈利快照。",
+        )
+    )
+    revision_metrics = revision.to_dict() if not revision.empty else {}
     revision_specs = (
         ("Quarterly EPS revision", "季度 EPS 修正", "quarterly_eps_revision_pct"),
         ("Annual EPS revision", "年度 EPS 修正", "annual_eps_revision_pct"),
@@ -1196,7 +1306,7 @@ def render_factset_earnings_context(
         with column:
             st.metric(
                 tr(language, label_en, label_zh),
-                _factset_display_number(latest_metrics.get(field), "%"),
+                _factset_display_number(revision_metrics.get(field), "%"),
             )
     guidance_specs = (
         ("Positive EPS guidance", "正面 EPS 指引", "positive_eps_guidance_count"),
@@ -1208,61 +1318,90 @@ def render_factset_earnings_context(
         with column:
             st.metric(
                 tr(language, label_en, label_zh),
-                _factset_display_count(latest_metrics.get(field)),
+                _factset_display_count(revision_metrics.get(field)),
             )
 
-    sector_rows = _factset_sector_revision_rows(latest_metrics.get("sector_revision_json"))
-    if sector_rows:
+    named_now = _factset_sector_revision_rows(revision_metrics.get("sector_revision_json"))
+    board = _factset_latest_sector_board(show)
+    if not board.empty:
+        st.markdown(
+            f"**{tr(language, 'Named sector EPS-estimate revisions', '点名行业的 EPS 预估修正')}**"
+        )
+        named_text = (
+            ", ".join(
+                f"{row['sector']} {_factset_display_number(row['revision_pct'], '%')}"
+                for row in named_now
+            )
+            if named_now
+            else tr(language, "none in the latest revision article", "最新修正文章没有点名行业")
+        )
         st.caption(
             tr(
                 language,
-                "Latest article sector EPS-estimate revisions",
-                "最新文章的行业 EPS 估计修正",
+                f"FactSet does not publish a full 11-sector board in one article. The latest revision note named: {named_text}. The table below keeps the latest mention of each sector, with its own article date.",
+                f"FactSet 不会在一篇文章里给出完整的11个行业面板。最新修正文章点名：{named_text}。下表保留每个行业最近一次被点名的修正，并带上对应文章日期。",
             )
         )
         sector_table = pd.DataFrame(
             {
-                tr(language, "Sector", "行业"): [row["sector"] for row in sector_rows],
+                tr(language, "Sector", "行业"): board["sector"],
                 tr(language, "EPS revision", "EPS 修正"): [
-                    _factset_display_number(row["revision_pct"], "%") for row in sector_rows
+                    _factset_display_number(value, "%") for value in board["revision_pct"]
+                ],
+                tr(language, "As of", "截至"): [
+                    observation_date_label(value, language) for value in board["report_date"]
+                ],
+                tr(language, "Article type", "文章类型"): [
+                    "—" if pd.isna(value) or not str(value).strip() else str(value)
+                    for value in board["article_type"]
                 ],
             }
         )
         st.dataframe(sector_table, hide_index=True, width="stretch")
 
-    valuation = show[["report_date", "forward_12m_pe", "forward_12m_pe_10y_avg"]].copy()
-    valuation["forward_12m_pe"] = pd.to_numeric(valuation["forward_12m_pe"], errors="coerce")
-    valuation["forward_12m_pe_10y_avg"] = pd.to_numeric(
-        valuation["forward_12m_pe_10y_avg"], errors="coerce"
-    )
-    valuation = valuation.dropna(subset=["report_date"]).tail(104)
-    if valuation[["forward_12m_pe", "forward_12m_pe_10y_avg"]].notna().any().any():
+    valuation = _factset_valuation_history(show)
+    pe_points = valuation.dropna(subset=["forward_12m_pe"])
+    avg_points = valuation.dropna(subset=["forward_12m_pe_10y_avg"])
+    if not pe_points.empty or not avg_points.empty:
+        st.markdown(
+            f"**{tr(language, 'S&P 500 forward 12-month P/E', '标普500未来12个月市盈率')}**"
+        )
+        st.caption(
+            tr(
+                language,
+                "Each marker is a FactSet article that printed a valuation, not a daily series. The dotted line is the 10-year average when FactSet published a plausible value; a few parse outliers are omitted.",
+                "每个点是一篇刊出估值的 FactSet 文章，不是日频序列。虚线是 FactSet 给出的10年均值（已去掉明显解析异常值）。",
+            )
+        )
         figure = go.Figure()
-        if valuation["forward_12m_pe"].notna().any():
+        if not pe_points.empty:
             figure.add_trace(
                 go.Scatter(
-                    x=valuation["report_date"],
-                    y=valuation["forward_12m_pe"],
+                    x=pe_points["report_date"],
+                    y=pe_points["forward_12m_pe"],
                     mode="lines+markers",
+                    connectgaps=False,
                     name=tr(language, "Forward 12M P/E", "未来12个月市盈率"),
                 )
             )
-        if valuation["forward_12m_pe_10y_avg"].notna().any():
+        if not avg_points.empty:
             figure.add_trace(
                 go.Scatter(
-                    x=valuation["report_date"],
-                    y=valuation["forward_12m_pe_10y_avg"],
-                    mode="lines",
+                    x=avg_points["report_date"],
+                    y=avg_points["forward_12m_pe_10y_avg"],
+                    mode="lines+markers",
+                    connectgaps=False,
                     name=tr(language, "10Y average P/E", "10年平均市盈率"),
                     line={"dash": "dot"},
                 )
             )
         figure.update_layout(
-            height=320,
-            margin={"l": 12, "r": 12, "t": 24, "b": 12},
-            yaxis_title=tr(language, "P/E (x)", "市盈率（倍）"),
+            height=340,
+            margin={"l": 12, "r": 12, "t": 8, "b": 12},
+            yaxis_title="P/E",
             xaxis_title=tr(language, "FactSet report date", "FactSet报告日期"),
-            legend={"orientation": "h", "y": 1.1},
+            legend={"orientation": "h", "y": 1.12},
+            yaxis={"range": [10, 25]},
         )
         st.plotly_chart(figure, width="stretch", config={"displayModeBar": False})
 
@@ -1277,8 +1416,6 @@ def render_factset_earnings_context(
         "annual_eps_revision_pct",
         "positive_eps_guidance_count",
         "negative_eps_guidance_count",
-        "numeric_field_count",
-        "supported_field_count",
         "article_type",
     ):
         if column not in table.columns:
@@ -1287,12 +1424,9 @@ def render_factset_earnings_context(
         lambda value: observation_date_label(value, language)
     )
     quarter_label = tr(language, "Quarter", "季度")
-    if "reference_quarter" in table.columns:
-        table[quarter_label] = table["reference_quarter"].map(
-            lambda value: "—" if pd.isna(value) else str(value)
-        )
-    else:
-        table[quarter_label] = "—"
+    table[quarter_label] = table.get("reference_quarter", pd.Series(index=table.index)).map(
+        lambda value: "—" if pd.isna(value) else str(value)
+    )
     table[tr(language, "Earnings growth YoY", "盈利同比增长")] = table[
         "blended_earnings_growth_yoy"
     ].map(lambda value: _factset_display_number(value, "%"))
@@ -1305,12 +1439,6 @@ def render_factset_earnings_context(
     table[tr(language, "10Y average P/E", "10年平均市盈率")] = table[
         "forward_12m_pe_10y_avg"
     ].map(lambda value: _factset_display_number(value, "x"))
-    table[tr(language, "Numeric fields", "有效数值字段")] = table["numeric_field_count"].map(
-        _factset_display_count
-    )
-    table[tr(language, "Supported fields", "支持字段")] = table["supported_field_count"].map(
-        _factset_display_count
-    )
     table[tr(language, "Quarterly EPS revision", "季度 EPS 修正")] = table[
         "quarterly_eps_revision_pct"
     ].map(lambda value: _factset_display_number(value, "%"))
@@ -1329,6 +1457,7 @@ def render_factset_earnings_context(
     columns = [
         tr(language, "Report date", "报告日"),
         tr(language, "Quarter", "季度"),
+        tr(language, "Article type", "文章类型"),
         tr(language, "Earnings growth YoY", "盈利同比增长"),
         tr(language, "EPS beat rate", "EPS超预期比例"),
         tr(language, "Forward 12M P/E", "未来12个月市盈率"),
@@ -1337,16 +1466,17 @@ def render_factset_earnings_context(
         tr(language, "Annual EPS revision", "年度 EPS 修正"),
         tr(language, "Positive guidance", "正面指引"),
         tr(language, "Negative guidance", "负面指引"),
-        tr(language, "Article type", "文章类型"),
-        tr(language, "Numeric fields", "有效数值字段"),
-        tr(language, "Supported fields", "支持字段"),
     ]
-    st.dataframe(table[[column for column in columns if column in table.columns]].iloc[::-1], hide_index=True, width="stretch")
+    st.dataframe(
+        table[[column for column in columns if column in table.columns]].iloc[::-1],
+        hide_index=True,
+        width="stretch",
+    )
     st.caption(
         tr(
             language,
-            "FactSet Earnings Insight is an aggregate S&P 500 earnings-season, valuation and estimate-revision context feed. The catalog retains relevant articles; this table only shows supported observations. It is not company-level consensus.",
-            "FactSet Earnings Insight 是标普500整体盈利季、估值及盈利修正背景数据流。文章目录保留相关文章，本表只显示有支持字段的观察；不是个股共识。",
+            "FactSet Earnings Insight is an aggregate S&P 500 earnings-season, valuation and estimate-revision context feed. Different article types print different fields; blank cells are unpublished, not zero. This is not company-level consensus.",
+            "FactSet Earnings Insight 是标普500整体盈利季、估值及盈利修正背景数据流。不同类型文章刊出的字段不同；空单元格是未发布，不是零。这不是个股共识。",
         )
     )
 
@@ -1442,8 +1572,8 @@ def render_regime(artifact: dict[str, Any], labels: dict[str, Any], language: st
             language,
             "Earnings and valuation context",
             "盈利与估值背景",
-            "FactSet Earnings Insight is shown as aggregate S&P 500 context. Coverage is explicit; this panel does not create security-level consensus or fill missing article fields.",
-            "FactSet Earnings Insight 仅作为标普500整体背景。面板明确显示覆盖率，不生成个股共识，也不填补文章缺失字段。",
+            "FactSet articles print different fields. Earnings snapshots and estimate-revision notes are shown separately; missing cells are unpublished, not zero.",
+            "FactSet 不同类型文章刊出的字段不同。盈利快照和预估修正分开展示；空单元格是未发布，不是零。",
         )
         with st.container(border=True):
             render_factset_earnings_context(artifact, language)
