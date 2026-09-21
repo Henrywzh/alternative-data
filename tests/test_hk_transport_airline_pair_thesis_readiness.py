@@ -58,7 +58,19 @@ def test_dynamic_as_of_date_derivation():
         }
     ])
 
-    result = build_airline_pair_thesis_readiness(fundamentals=custom_fundamentals)
+    # Keep this unit test isolated from the repository's live normalized
+    # artifacts. Passing only fundamentals would let the function load the
+    # other default inputs and move the derived max date as those artifacts
+    # refresh in CI.
+    result = build_airline_pair_thesis_readiness(
+        fundamentals=custom_fundamentals,
+        scope=pd.DataFrame(),
+        bridge=pd.DataFrame(),
+        capacity=pd.DataFrame(),
+        queue=pd.DataFrame(),
+        risk=pd.DataFrame(),
+        calendar=pd.DataFrame(),
+    )
     assert result['as_of_date'].iloc[0] == '2026-09-20'
 
 

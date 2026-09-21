@@ -497,6 +497,112 @@ def test_spot_premium_sign_is_premium_positive():
         assert abs(implied - out.loc[ticker, "premium_pct"]) < 0.01
 
 
+def test_spot_fetch_retries_transient_provider_error(monkeypatch):
+    """A transient Eastmoney failure must not turn a healthy retry into a skip."""
+    import market_monitor.sources.akshare_etf as src
+
+    frame = pd.DataFrame(
+        {
+            "代码": ["510300"],
+            "最新价": [4.2],
+            "IOPV实时估值": [4.2],
+            "基金折价率": [0.0],
+        }
+    )
+
+    class _Response:
+        status_code = 502
+
+    class _BadGateway(Exception):
+        response = _Response()
+
+    calls = 0
+
+    class _FakeAk:
+        @staticmethod
+        def fund_etf_spot_em():
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                raise _BadGateway("502 Server Error")
+            return frame
+
+    sleeps: list[float] = []
+    monkeypatch.setitem(sys.modules, "akshare", _FakeAk)
+    monkeypatch.setattr(src.time, "sleep", sleeps.append)
+
+    out = src.fetch_etf_spot()
+
+    assert calls == 2
+    assert sleeps == [src.ETF_SPOT_RETRY_BASE_SECONDS]
+    assert out.loc[0, "ticker"] == "510300"
+
+
+def test_spot_fetch_retries_empty_response(monkeypatch):
+    """An empty provider frame is retryable, not evidence of a fresh empty universe."""
+    import market_monitor.sources.akshare_etf as src
+
+    frame = pd.DataFrame(
+        {
+            "代码": ["510300"],
+            "最新价": [4.2],
+            "IOPV实时估值": [4.2],
+            "基金折价率": [0.0],
+        }
+    )
+    calls = 0
+
+    class _FakeAk:
+        @staticmethod
+        def fund_etf_spot_em():
+            nonlocal calls
+            calls += 1
+            return pd.DataFrame() if calls == 1 else frame
+
+    sleeps: list[float] = []
+    monkeypatch.setitem(sys.modules, "akshare", _FakeAk)
+    monkeypatch.setattr(src.time, "sleep", sleeps.append)
+
+    out = src.fetch_etf_spot()
+
+    assert calls == 2
+    assert sleeps == [src.ETF_SPOT_RETRY_BASE_SECONDS]
+    assert out.loc[0, "ticker"] == "510300"
+
+
+def test_spot_fetch_reraises_after_transient_retry_budget(monkeypatch):
+    """Persistent provider failure remains visible to the freshness gate."""
+    import market_monitor.sources.akshare_etf as src
+
+    class _Response:
+        status_code = 502
+
+    class _BadGateway(Exception):
+        response = _Response()
+
+    calls = 0
+
+    class _FakeAk:
+        @staticmethod
+        def fund_etf_spot_em():
+            nonlocal calls
+            calls += 1
+            raise _BadGateway("502 Server Error")
+
+    sleeps: list[float] = []
+    monkeypatch.setitem(sys.modules, "akshare", _FakeAk)
+    monkeypatch.setattr(src.time, "sleep", sleeps.append)
+
+    with pytest.raises(_BadGateway):
+        src.fetch_etf_spot()
+
+    assert calls == src.ETF_SPOT_MAX_ATTEMPTS
+    assert sleeps == [
+        src.ETF_SPOT_RETRY_BASE_SECONDS,
+        src.ETF_SPOT_RETRY_BASE_SECONDS * 2,
+    ]
+
+
 @pytest.mark.parametrize("is_cross_border", [False, True])
 def test_buy_score_and_entry_status_cannot_disagree(is_cross_border):
     """The score's band edges are entry_status's thresholds, by construction.
