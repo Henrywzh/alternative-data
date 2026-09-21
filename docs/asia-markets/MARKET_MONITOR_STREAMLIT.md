@@ -103,6 +103,10 @@ Provider ownership is declared per exposure and routed explicitly:
   `market_cap_proxy` flow as the change in implied shares times the current
   sampled price. It is explicitly not issuer-reported creation/redemption
   flow and is not used by the ETF email alert until two observations exist.
+- Eastmoney Stock Connect: daily Southbound aggregate flow history. This
+  remains the canonical Southbound dataset and chart in ETF Monitor; related
+  HKEX/HKMA/MSCI context is surfaced by the sibling Hong Kong Flows & Liquidity
+  page without copying this dataset.
 
 The pipeline stores five years of index history for rolling relative-signal
 baselines and two years of ETF price/premium chart history. Historical premium
@@ -152,6 +156,12 @@ they are not current-month spending weights. Only the explicit refresh button
 makes network requests. The free calendar/forecast lane is third-party and its
 actuals remain unverified until an official adapter matches them; missing
 dispersion and event beta are never imputed.
+
+`Hong Kong Flows & Liquidity` is another standalone sibling page in the Markets
+sidebar group. It reads the auxiliary `hong-kong-flows-artifact*.json` pair and
+shows HKEX short inventory, selected HKMA liquidity/funding series and recent
+MSCI HK/CN review cycles. Its Southbound callout is a link to this page's
+canonical view, not a second chart or dataset.
 
 ### US sector board
 

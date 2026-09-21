@@ -9,8 +9,9 @@ replacement for the operating manual or generated source-status JSON.
   dashboard.
 - Private research surface: `apps/asia-markets-streamlit/app.py`. The current
   app includes Overview, Index & ETF Allocation Monitor, Market Regime,
-  Events & Consensus, Heat Maps, labour, population, transport, real estate,
-  aerospace, crypto, Data Explorer and Source Health. The Index & ETF
+  Hong Kong Flows & Liquidity, Events & Consensus, Heat Maps, labour,
+  population, transport, real estate, aerospace, crypto, Data Explorer and
+  Source Health. The Index & ETF
   Allocation Monitor is Streamlit-only in V1; it is not in the Cloudflare
   `sectors.json` roster and is not packaged by `package-dashboard.mjs`.
 - `Events & Consensus` is a standalone private Streamlit page under the
@@ -23,6 +24,17 @@ replacement for the operating manual or generated source-status JSON.
   HTTP 403 for economic-calendar access. Consensus dispersion, official
   China/Korea components, Futu OpenD and historical event beta remain follow-up
   adapters rather than fabricated coverage.
+- `Hong Kong Flows & Liquidity` is an auxiliary private Streamlit page backed
+  by `hong-kong-flows-artifact*.json`. It consumes the existing normalized
+  HKMA, HKEX and MSCI lanes; Southbound Stock Connect remains canonical in
+  ETF Monitor and is not duplicated in this artifact.
+- FactSet Earnings Insight is now split into a normalized aggregate observation
+  table and `data/normalized/factset_earnings/factset_article_catalog.parquet`.
+  The latest retained raw snapshot replays to 838 relevant articles and 369
+  dated/quarter-tagged observations, with quarterly/annual EPS revisions,
+  guidance counts and sector revisions where published. Market Regime shows
+  this as partial aggregate context; core growth/P-E promotion remains gated,
+  and no security-level consensus is inferred.
 - Canonical financial-data sibling: `/Users/henrywzh/Desktop/Quant/financial-data`;
   see `REPO_BRIDGE.md` for the shared contract.
 - Research Control Tower V1 is a local/private, read-only publication. The

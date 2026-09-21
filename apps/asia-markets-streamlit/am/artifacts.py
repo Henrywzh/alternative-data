@@ -73,6 +73,49 @@ def load_sector_artifact(
     return current, localized, errors
 
 
+def load_auxiliary_artifact(
+    slug: str,
+    language: str,
+    *,
+    title_en: str,
+    title_zh: str,
+) -> tuple[dict[str, Any], dict[str, Any], list[str]]:
+    """Load a non-sector artifact without adding it to the sector roster.
+
+    Auxiliary artifacts are useful to more than one page but should not become
+    fake sectors that overview cards or the static hub treat as a separate
+    business research section.
+    """
+    errors: list[str] = []
+    try:
+        current = load_artifact(slug, "en", artifact_mtime_ns(slug, "en"))
+    except ARTIFACT_LOAD_ERRORS as error:
+        reason = f"{type(error).__name__}: {error}"
+        current = unavailable_artifact(slug, reason)
+        errors.append(
+            tr(
+                language,
+                f"{title_en} artifact is unavailable.",
+                f"{title_zh}的数据快照不可用。",
+            )
+        )
+        return current, current, errors
+    if language == "en":
+        return current, current, errors
+    try:
+        localized = load_artifact(slug, "zh", artifact_mtime_ns(slug, "zh"))
+    except ARTIFACT_LOAD_ERRORS:
+        localized = current
+        errors.append(
+            tr(
+                language,
+                f"{title_en} localized labels are unavailable; using English labels.",
+                f"{title_zh}的中文展示快照不可用，已改用英文标签。",
+            )
+        )
+    return current, localized, errors
+
+
 def load_all_sector_artifacts(
     language: str,
     sector_keys: Iterable[str] | None = None,

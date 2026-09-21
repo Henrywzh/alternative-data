@@ -160,6 +160,11 @@ jobs:
       - name: Localize Streamlit-facing artifacts
         run: node scripts/package-dashboard.mjs --localize-only
 
+      - name: Build Hong Kong institutional context artifact
+        run: |
+          python scripts/build_hong_kong_flows_artifact.py \
+            --output .generated/hong-kong-flows-artifact.json
+
       - name: Write machine-readable freshness report
         working-directory: .
         run: python scripts/audit_asia_markets_freshness.py --report-only

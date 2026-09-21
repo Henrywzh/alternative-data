@@ -25,8 +25,12 @@ def render_source_coverage(
     rows: list[dict[str, Any]] = []
     source_links: list[tuple[str, str, str]] = []
     for sector_key, artifact in artifacts.items():
-        sector_name = SECTORS[sector_key]["name_en"] if language == "en" else SECTORS[sector_key]["name_zh"]
         label_artifact = labels.get(sector_key, artifact)
+        sector_config = SECTORS.get(sector_key)
+        if sector_config is not None:
+            sector_name = sector_config["name_en"] if language == "en" else sector_config["name_zh"]
+        else:
+            sector_name = str(label_artifact.get("manifest", {}).get("title") or sector_key)
         health = localized_source_health_frame(
             artifact,
             label_artifact,
@@ -63,6 +67,50 @@ def render_source_coverage(
                         "notes": source_description,
                     }
                 )
+        # FactSet is an optional supplemental lane attached to the regime
+        # artifact rather than the core global-regime source_health table. It
+        # still belongs on the generic health page so its article coverage and
+        # sparse core-field fill are visible without pretending it is a core
+        # threshold input.
+        factset_health = frame_for_dataset(artifact, "factset_earnings_health")
+        if not factset_health.empty:
+            for factset_row in factset_health.to_dict("records"):
+                core_fill = pd.to_numeric(
+                    pd.Series([factset_row.get("core_fill_rate_last_24")]), errors="coerce"
+                ).iloc[0]
+                supported_fill = pd.to_numeric(
+                    pd.Series([factset_row.get("supported_fill_rate_last_24")]), errors="coerce"
+                ).iloc[0]
+                fill_text = (
+                    tr(language, "core", "核心")
+                    + f" {float(core_fill) * 100:.0f}% / "
+                    + tr(language, "supported", "支持字段")
+                    + f" {float(supported_fill) * 100:.0f}%"
+                    if pd.notna(core_fill) and pd.notna(supported_fill)
+                    else "—"
+                )
+                factset_status = str(factset_row.get("status", "Unavailable"))
+                factset_status = {
+                    "Healthy": tr(language, "Healthy", "健康"),
+                    "Partial": tr(language, "Partial", "部分可用"),
+                    "Unavailable": tr(language, "Unavailable", "不可用"),
+                }.get(factset_status, factset_status)
+                rows.append(
+                    {
+                        tr(language, "Sector", "板块"): sector_name,
+                        "source": tr(language, "FactSet Earnings Insight", "FactSet Earnings Insight 盈利洞察"),
+                        "series_id": factset_row.get("series_id", "factset_earnings_regime"),
+                        "dataset": "factset_article_catalog",
+                        "type": tr(language, "Supplemental", "补充数据"),
+                        "status": factset_status,
+                        "latest_observation": factset_row.get("latest_supported_observation")
+                        or factset_row.get("latest_observation")
+                        or "—",
+                        "records": factset_row.get("article_records") or factset_row.get("records", 0),
+                        "freshness": fill_text,
+                        "notes": factset_row.get("notes", ""),
+                    }
+                )
         for source in label_artifact.get("sources", []):
             source_links.append((sector_name, source.get("label", source.get("id", "")), source.get("href", "")))
     if rows:
@@ -93,7 +141,11 @@ def render_source_coverage(
 def combined_dataset_index(artifacts: dict[str, dict[str, Any]], language: str) -> list[tuple[str, str, str]]:
     options: list[tuple[str, str, str]] = []
     for sector_key, artifact in artifacts.items():
-        sector_name = SECTORS[sector_key]["name_en"] if language == "en" else SECTORS[sector_key]["name_zh"]
+        sector_config = SECTORS.get(sector_key)
+        if sector_config is not None:
+            sector_name = sector_config["name_en"] if language == "en" else sector_config["name_zh"]
+        else:
+            sector_name = str(artifact.get("manifest", {}).get("title") or sector_key)
         datasets = artifact.get("snapshot", {}).get("datasets", {})
         if not isinstance(datasets, dict):
             continue

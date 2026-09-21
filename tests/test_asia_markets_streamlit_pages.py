@@ -32,6 +32,7 @@ def test_page_registry_has_unique_keys_paths_and_one_default() -> None:
         "overview",
         "market",
         "regime",
+        "hong_kong_flows",
         "events",
         "heatmaps",
         "labour",
@@ -170,6 +171,7 @@ def test_sidebar_groups_reference_every_registered_page_once() -> None:
     assert dict(SIDEBAR_GROUPS)["markets"] == (
         "market",
         "regime",
+        "hong_kong_flows",
         "events",
         "heatmaps",
     )

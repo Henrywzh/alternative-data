@@ -488,6 +488,16 @@ def render_market(artifact: dict[str, Any], labels: dict[str, Any], language: st
                 unsafe_allow_html=True,
             )
             render_southbound_market_flow(southbound, language, window)
+            st.caption(
+                tr(
+                    language,
+                    "Need the surrounding institutional context? HKEX short inventory, HKMA liquidity and MSCI review events live on the dedicated page; this Southbound panel remains canonical.",
+                    "需要机构数据背景？HKEX卖空库存、HKMA流动性和MSCI审议事件在专门页面展示；本南下资金面板仍是唯一主视图。",
+                )
+            )
+            st.markdown(
+                f"[{tr(language, 'Open Hong Kong Flows & Liquidity', '打开香港资金流与流动性') }](./hong-kong-flows)"
+            )
 
         render_scoped_index_section(
             hong_kong_eids,

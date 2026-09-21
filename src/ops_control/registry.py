@@ -60,6 +60,9 @@ class OutputSpec:
     # is not registered there and still needs to be watched for going stale,
     # so observation_freshness lets the registry name the column directly.
     date_column: str | None = None
+    # Optional source-specific quality rules.  The FactSet quality validator
+    # uses these for payload fill floors and retrieval-time freshness.
+    quality: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -220,7 +223,13 @@ def _parse_output(
     _validate_relative_path(path, label=f"Output {output_id!r}")
 
     validator = str(payload.get("validator", "")).strip()
-    allowed = {"file", "dataset_contract", "asia_markets_freshness", "observation_freshness"}
+    allowed = {
+        "file",
+        "dataset_contract",
+        "asia_markets_freshness",
+        "observation_freshness",
+        "factset_quality",
+    }
     if validator not in allowed:
         raise RegistryError(
             f"Output {output_id!r} uses unsupported validator {validator!r}"
@@ -233,7 +242,7 @@ def _parse_output(
             )
 
     date_column = _optional_string(payload.get("date_column"))
-    if validator == "observation_freshness" and not date_column:
+    if validator in {"observation_freshness", "factset_quality"} and not date_column:
         raise RegistryError(
             f"Output {output_id!r} requires date_column for observation freshness"
         )
@@ -248,8 +257,13 @@ def _parse_output(
     _validate_freshness(
         freshness,
         output_id=output_id,
-        required=validator in ("dataset_contract", "observation_freshness"),
+        required=validator in ("dataset_contract", "observation_freshness", "factset_quality"),
     )
+    quality = payload.get("quality", {})
+    if not isinstance(quality, dict):
+        raise RegistryError(f"Output {output_id!r} quality must be a mapping")
+    if validator == "factset_quality":
+        _validate_factset_quality(quality, output_id=output_id)
     if validator == "asia_markets_freshness" and artifact_root is None:
         raise RegistryError(
             f"Output {output_id!r} requires artifact_root for Asia Markets freshness"
@@ -264,6 +278,7 @@ def _parse_output(
         artifact_root=artifact_root,
         freshness=dict(freshness),
         date_column=date_column,
+        quality=dict(quality),
     )
 
 
@@ -360,6 +375,58 @@ def _validate_freshness(
     else:
         raise RegistryError(
             f"Output {output_id!r} uses unsupported freshness mode {mode!r}"
+        )
+
+
+def _validate_factset_quality(payload: dict[str, Any], *, output_id: str) -> None:
+    """Validate payload fill and retrieval freshness rules for FactSet lanes."""
+    window_rows = payload.get("window_rows", 24)
+    if isinstance(window_rows, bool) or not isinstance(window_rows, int) or window_rows <= 0:
+        raise RegistryError(f"Output {output_id!r} quality.window_rows must be positive")
+
+    rules = payload.get("fill_floor")
+    if not isinstance(rules, list) or not rules:
+        raise RegistryError(f"Output {output_id!r} quality.fill_floor must be a non-empty list")
+    seen_columns: set[str] = set()
+    for rule in rules:
+        if not isinstance(rule, dict):
+            raise RegistryError(f"Output {output_id!r} quality.fill_floor entries must be mappings")
+        column = str(rule.get("column", "")).strip()
+        if not column or column in seen_columns:
+            raise RegistryError(
+                f"Output {output_id!r} quality.fill_floor has missing or duplicate column {column!r}"
+            )
+        seen_columns.add(column)
+        minimum = rule.get("min_fraction")
+        if (
+            isinstance(minimum, bool)
+            or not isinstance(minimum, (int, float))
+            or not 0 <= float(minimum) <= 1
+        ):
+            raise RegistryError(
+                f"Output {output_id!r} fill floor for {column!r} must be between 0 and 1"
+            )
+        if "min_value" in rule:
+            min_value = rule["min_value"]
+            if isinstance(min_value, bool) or not isinstance(min_value, (int, float)):
+                raise RegistryError(
+                    f"Output {output_id!r} min_value for {column!r} must be numeric"
+                )
+
+    ingestion = payload.get("ingestion")
+    if not isinstance(ingestion, dict):
+        raise RegistryError(f"Output {output_id!r} quality.ingestion must be a mapping")
+    ingestion_column = str(ingestion.get("date_column", "")).strip()
+    if not ingestion_column:
+        raise RegistryError(f"Output {output_id!r} quality.ingestion requires date_column")
+    max_age = ingestion.get("max_age_days")
+    if (
+        isinstance(max_age, bool)
+        or not isinstance(max_age, (int, float))
+        or max_age <= 0
+    ):
+        raise RegistryError(
+            f"Output {output_id!r} quality.ingestion.max_age_days must be positive"
         )
 
 

@@ -192,12 +192,47 @@ pipelines:
           - id: factset-sp500-earnings-regime
             path: data/normalized/factset_earnings/factset_sp500_earnings_regime.parquet
             required: true
-            validator: observation_freshness
+            validator: factset_quality
             date_column: report_date
             freshness:
               # Weekly publication; three weeks tolerates two missed reports.
               mode: max_age_days
               max_age_days: 21
+            quality:
+              # This is the promotion floor used by Market Regime: both
+              # headline core fields must be present in at least 60% of the
+              # latest 24 dated observations.
+              window_rows: 24
+              fill_floor:
+                - column: blended_earnings_growth_yoy
+                  min_fraction: 0.60
+                - column: forward_12m_pe
+                  min_fraction: 0.60
+              ingestion:
+                date_column: fetched_at
+                max_age_days: 21
+          - id: factset-article-catalog
+            path: data/normalized/factset_earnings/factset_article_catalog.parquet
+            required: true
+            validator: factset_quality
+            date_column: report_date
+            freshness:
+              # The catalog should move with the weekly article lane even when
+              # the newest article has no supported numeric payload.
+              mode: max_age_days
+              max_age_days: 21
+            quality:
+              window_rows: 24
+              fill_floor:
+                # The catalog is allowed to retain articles with no payload;
+                # this floor catches a total parser failure without treating
+                # article coverage as security-level earnings consensus.
+                - column: supported_field_count
+                  min_fraction: 0.25
+                  min_value: 1
+              ingestion:
+                date_column: fetched_at
+                max_age_days: 21
 
   free-institutional-monthly:
     workflow: free-institutional-monthly.yml

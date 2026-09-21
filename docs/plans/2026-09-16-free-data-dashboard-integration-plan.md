@@ -2,8 +2,12 @@
 
 ## Status
 
-- **Status**: Planning only; no pipeline or dashboard code changes in this plan.
-- **Implementation target**: this repository, `/Users/henrywzh/Quant/alternative-data`.
+- **Status**: Implementation in progress; the approved Phase 1 contract keeps
+  Southbound Stock Connect canonical in ETF Monitor and adds a separate Hong
+  Kong institutional-data context page. FactSet's parser/catalog repair is
+  implemented locally; core earnings-growth/P-E promotion remains gated by
+  the measured fill floor.
+- **Implementation target**: this repository, `/Users/henrywzh/Desktop/Quant/alternative-data`.
 - **Baseline**: `origin/main`.
 - **Priority**: Asia Markets first, then Research Control Tower.
 - **Deferred**: Alternative Data AI dashboard.
@@ -106,7 +110,7 @@ turnover measure and that counts and shares are the safer fields. The `rmb`
 suffix on an HKEX short-selling turnover series is separately worth checking
 before anything renders it.
 
-### The FactSet lane has regressed since the audit
+### The FactSet lane regressed since the audit; the repair is now explicit
 
 The audit recorded 218 rows on 2026-09-11. `origin/main` now holds 821. The
 extra rows are empty, and two fields went *backwards*:
@@ -122,9 +126,20 @@ extra rows are empty, and two fields went *backwards*:
 
 The freshness validator cannot see this: `observation_freshness` checks
 `report_date`, and all 596 empty rows carry a valid one. The weekly workflow
-reports success while publishing nothing. Fixing this is a prerequisite for
-routing FactSet anywhere, and it motivates the fill-floor validator in the gates
-section.
+reports success while publishing nothing. Fixing this was a prerequisite for
+routing FactSet anywhere, and it motivated the fill-floor validator in the
+gates section.
+
+The approved repair was implemented on 2026-09-17.  The retained raw snapshot
+is replayed through the current parser into two contracts: an article catalog
+for every relevant public article, and an observation table containing only
+rows with a reliable publication date, reference quarter, and supported
+payload.  The replay produced 838 catalog records and 369 observations; 415
+articles have no supported metric payload, 45 have no reference quarter, and 9
+have no reliable publication date.  It also adds quarterly/annual EPS
+revisions, positive/negative EPS guidance counts, and sector revision JSON.
+The article catalog is available to the research layer, while Market Regime
+uses the aggregate observation view and keeps the core fill-floor gate.
 
 ## Product structure
 
@@ -159,28 +174,24 @@ is: cross-border flow, funding, and index-event context.
 
 It owns:
 
-- Stock Connect southbound/northbound flow (Eastmoney-owned — see ownership table)
 - HKEX short inventory — counts and shares, not value
 - HKMA HIBOR, Aggregate Balance, and Hong Kong liquidity indicators
 - MSCI index events for HK/CN, as unlinked index events
 - Hong Kong-specific data quality and source-health warnings
 
-ETF Monitor may show a small summary or link to this view, but the detailed flow
-and short-selling tables have one canonical presentation location.
+ETF Monitor remains the only canonical presentation location for the existing
+Eastmoney Southbound Stock Connect flow. This page may point back to that view,
+but it must not re-emit or re-render the Southbound dataset.
 
-### `southbound_market_flow` is a migration, not a new feature
+### `southbound_market_flow` is an existing canonical view, not a migration
 
 `southbound_market_flow` is already a published artifact dataset (2,715 rows)
 built at `build_market_monitor_artifact.py:734` and rendered by
 `market_page.py:435` inside ETF Monitor. The underlying parquet is gitignored,
-so the published artifact is the durable copy of that history. Moving it to a
-different artifact file is a contract change and must be staged:
-
-1. Emit the dataset into both `market-monitor-artifact.json` and
-   `hong-kong-flows-artifact.json` for one release, under the same key.
-2. Move the renderer to the new page, reading the new artifact.
-3. Drop it from the market-monitor artifact only after a release in which
-   nothing reads it there.
+so the published artifact is the durable copy of that history. The new Hong
+Kong artifact deliberately excludes this dataset. A compact page note/link is
+allowed, while the existing ETF Monitor panel stays the single source of truth
+for the Southbound chart and KPIs.
 
 ## Source ownership
 
@@ -236,10 +247,10 @@ regime input and a source that is 73% empty is not an earnings input.
 | BIS credit gap | Quarterly; 1957 → | Market Regime | `macro_observations` |
 | HKMA HIBOR/liquidity | Daily; official + marked aggregator rows | HK Flows & Liquidity / Real Estate / Regime | `macro_observations`, `source_health` |
 | HKEX short inventory | Daily; 2019 → | HK Flows & Liquidity | Source health initially |
-| Eastmoney Stock Connect flow | Daily; 2014 → | HK Flows & Liquidity | `macro_observations` |
+| Eastmoney Stock Connect flow | Daily; 2014 → | ETF Monitor (canonical); HK Flows & Liquidity links back only | `macro_observations` |
 | S&P PMI | **One period; no backfill available** | **Overview card only**, until ≥12 periods | `events` (release), not `macro_observations` |
-| FactSet Earnings Insight | Weekly; **73% empty rows** | **Blocked** until the fill regression is fixed | Blocked |
-| MSCI reviews | Monthly/quarterly; no identifiers | HK Flows & Liquidity / ETF Monitor, **unlinked index events** | Index events and timeline |
+| FactSet Earnings Insight | Weekly; 838 catalog articles / 369 supported observations; core fields remain sparse | Market Regime aggregate context with explicit health; core promotion gate remains active | Article catalog + aggregate observations; no security-level consensus |
+| MSCI reviews | Monthly/quarterly; no identifiers | HK Flows & Liquidity; compact context/link only in ETF Monitor, **unlinked index events** | Index events and timeline |
 | EIA grid | Hourly; aggregate to daily | Compact daily energy context | Source Health only in RCT v1 |
 | CFTC COT | Weekly; existing collector | Market Regime | Reuse existing normalized lane |
 | FRED / OFR / VIX | Existing lanes | Market Regime | Reuse existing normalized lanes |
@@ -284,13 +295,15 @@ apps/asia-markets-dashboard/scripts/build_hong_kong_flows_artifact.py
 ```
 
 Datasets, following the existing snake_case convention
-(`fred_observations`, `cot_history`, `southbound_market_flow`):
+(`fred_observations`, `cot_history`):
 
 ```text
 hkma_liquidity_daily          hkex_short_inventory_daily
-southbound_market_flow        msci_index_events
-bis_credit_cycle_quarterly    pmi_headline_latest
-eia_power_mix_daily
+msci_index_events             msci_review_cycles
+
+The canonical `southbound_market_flow` dataset is intentionally absent from
+this artifact. It remains in `market-monitor-artifact.json` and is consumed by
+ETF Monitor only.
 ```
 
 `source_health` and `freshness` already exist as per-artifact dataset keys.
@@ -320,10 +333,13 @@ Rules:
 
 After the artifact contract is stable, add thin rendering changes:
 
-- `Hong Kong Flows & Liquidity`: Eastmoney flow, HKEX short inventory, HKMA
-  liquidity, MSCI HK/CN index events.
-- `Market Regime`: FRED, OFR, CFTC, VIX, BIS, HKMA liquidity.
-- `ETF Monitor`: MSCI context; flow detail links to the new page.
+- `Hong Kong Flows & Liquidity`: HKEX short inventory, HKMA liquidity, MSCI
+  HK/CN index events, and a link back to the canonical Southbound panel.
+- `Market Regime`: FactSet aggregate earnings/valuation context alongside its
+  existing FRED, OFR, CFTC and VIX radar. FactSet is never treated as
+  security-level consensus while its fill floor is not met.
+- `ETF Monitor`: keeps the complete Southbound panel and may show only a small
+  MSCI/context link; it must not duplicate the Hong Kong detail tables.
 - `Overview`: latest cross-market pulse summaries, including the PMI card.
 - `Data Explorer` and `Source Health`: expose the new datasets and their quality
   state without hardcoded source-specific loaders.
@@ -348,11 +364,12 @@ has already failed the way it describes.
    repo data. A test that reads the repository's own data asserts "the repo
    currently has data" as much as the behaviour, and breaks precisely when the
    guarded failure occurs.
-7. A new ops validator, alongside the four in `src/ops_control/registry.py:223`
-   (`file`, `dataset_contract`, `asia_markets_freshness`,
-   `observation_freshness`): a **fill floor** per named column. `max_age_days`
-   on `report_date` passed every day while 596 of 821 FactSet rows were empty;
-   freshness validators check the date column, not the payload.
+7. A new `factset_quality` ops validator, alongside the four in
+   `src/ops_control/registry.py:223` (`file`, `dataset_contract`,
+   `asia_markets_freshness`, `observation_freshness`): a **fill floor** per
+   named column plus retrieval-time freshness. `max_age_days` on `report_date`
+   passed every day while 596 of 821 FactSet rows were empty; freshness
+   validators check the date column, not the payload.
 
 ## Phase 2 — Research Control Tower
 
@@ -463,9 +480,9 @@ below.
 
 ```text
 Phase 0   ownership decisions + field-mapping table   (coverage audit already done)
-Phase 0b  fix the FactSet fill regression; add the fill-floor validator
+Phase 0b  fix the FactSet fill regression; add the fill-floor validator (implemented; core gate remains below promotion threshold)
 Phase 1A  hong-kong-flows artifact contract and source health
-Phase 1B  Hong Kong Flows & Liquidity page; dual-key southbound migration
+Phase 1B  Hong Kong Flows & Liquidity page; canonical Southbound link only
 Phase 1C  Market Regime, ETF Monitor, and Overview
 Phase 1D  Explorer and Source Health
 Phase 2-0 emit source_health.stale_after_days from the ops registry

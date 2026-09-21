@@ -61,9 +61,19 @@ from src.global_market_regime.validation import (
     build_threshold_sensitivity,
     summarize_event_forward_returns,
 )
+from factset_earnings_data.models import (
+    FACTSET_BASE_NUMERIC_FIELDS,
+    FACTSET_NUMERIC_FIELDS,
+    FACTSET_PAYLOAD_FIELDS,
+)
 from history_policy import history_window
 
 CHART_HISTORY_YEARS = 5
+FACTSET_PATH = ROOT / "data" / "normalized" / "factset_earnings" / "factset_sp500_earnings_regime.parquet"
+FACTSET_ARTICLE_CATALOG_PATH = ROOT / "data" / "normalized" / "factset_earnings" / "factset_article_catalog.parquet"
+FACTSET_ARTICLE_CATALOG_RELATIVE_PATH = FACTSET_ARTICLE_CATALOG_PATH.relative_to(ROOT).as_posix()
+FACTSET_NUMERIC_COLUMNS = FACTSET_NUMERIC_FIELDS
+FACTSET_PAYLOAD_COLUMNS = FACTSET_PAYLOAD_FIELDS
 
 
 def _records(frame: pd.DataFrame, columns: tuple[str, ...] | None = None) -> list[dict[str, Any]]:
@@ -89,6 +99,152 @@ def _records(frame: pd.DataFrame, columns: tuple[str, ...] | None = None) -> lis
 def _load(name: str, *, derived: bool = False) -> tuple[pd.DataFrame, dict[str, Any] | None]:
     root = DERIVED_DIR if derived else NORMALIZED_DIR
     return load_latest_with_lineage(root, name, scope="full")
+
+
+def _load_factset_article_catalog() -> pd.DataFrame:
+    """Load the relevant-article audit table, migrating missing columns."""
+    columns = (
+        "article_url",
+        "title",
+        "report_date",
+        "reference_quarter",
+        "article_type",
+        "raw_run_id",
+        "ocr_image_count",
+        "body_char_count",
+        "supported_field_count",
+        "extraction_status",
+        "fetched_at",
+    )
+    if not FACTSET_ARTICLE_CATALOG_PATH.exists():
+        return pd.DataFrame(columns=columns)
+    frame = pd.read_parquet(FACTSET_ARTICLE_CATALOG_PATH).copy()
+    for column in columns:
+        if column not in frame.columns:
+            frame[column] = pd.NA
+    frame = frame[list(columns)]
+    if frame.empty:
+        return frame
+    frame["article_url"] = frame["article_url"].fillna("").astype(str).str.strip()
+    frame = frame[frame["article_url"].ne("")].copy()
+    frame["report_date"] = pd.to_datetime(frame["report_date"], errors="coerce")
+    for column in ("ocr_image_count", "body_char_count", "supported_field_count"):
+        frame[column] = pd.to_numeric(frame[column], errors="coerce")
+    return frame.drop_duplicates(subset=["article_url"], keep="last").sort_values(
+        ["report_date", "article_url"], na_position="last"
+    ).reset_index(drop=True)
+
+
+def _load_factset_earnings(
+    article_catalog: pd.DataFrame | None = None,
+) -> tuple[pd.DataFrame, dict[str, Any]]:
+    """Load the optional FactSet article lane without joining the core run.
+
+    FactSet is a supplemental aggregate context feed.  It must not make the
+    FRED/regime run inconsistent or turn article-level coverage into
+    security-level consensus.  Empty article rows are retained in the quality
+    metadata but never published as dashboard observations.
+    """
+    empty_health = {
+        "source": "FactSet Earnings Insight",
+        "series_id": "factset_earnings_regime",
+        "status": "Unavailable",
+        "latest_observation": None,
+        "last_seen_report_date": None,
+        "coverage_start": None,
+        "records": 0,
+        "usable_records": 0,
+        "fill_rate_last_24": None,
+        "core_fill_rate_last_24": None,
+        "supported_fill_rate_last_24": None,
+        "article_records": 0,
+        "supported_records": 0,
+        "latest_supported_observation": None,
+        "latest_core_observation": None,
+        "article_catalog_path": FACTSET_ARTICLE_CATALOG_RELATIVE_PATH,
+        "notes": "The normalized FactSet snapshot is unavailable.",
+        "source_url": "https://insight.factset.com/topic/earnings",
+    }
+    if not FACTSET_PATH.exists():
+        return pd.DataFrame(), empty_health
+    frame = pd.read_parquet(FACTSET_PATH)
+    if frame.empty or "report_date" not in frame.columns:
+        return pd.DataFrame(), empty_health | {"records": int(len(frame))}
+
+    out = frame.copy()
+    out["report_date"] = pd.to_datetime(out["report_date"], errors="coerce")
+    for column in FACTSET_NUMERIC_COLUMNS:
+        if column not in out.columns:
+            out[column] = pd.NA
+        out[column] = pd.to_numeric(out[column], errors="coerce")
+    if "sector_revision_json" not in out.columns:
+        out["sector_revision_json"] = pd.NA
+    out["numeric_field_count"] = out[list(FACTSET_NUMERIC_COLUMNS)].notna().sum(axis=1)
+    sector_payload = out["sector_revision_json"].fillna("").astype(str).str.strip()
+    out["supported_field_count"] = out["numeric_field_count"] + sector_payload.ne("").astype(int)
+    catalog = article_catalog if article_catalog is not None else pd.DataFrame()
+    if not catalog.empty and "report_date" in catalog.columns:
+        catalog_dates = pd.to_datetime(catalog["report_date"], errors="coerce")
+        last_seen = catalog_dates.max()
+        article_records = int(len(catalog))
+        catalog_supported = pd.to_numeric(
+            catalog.get("supported_field_count"), errors="coerce"
+        ).fillna(0).gt(0)
+        supported_records = int((catalog_dates.notna() & catalog_supported).sum())
+    else:
+        last_seen = out["report_date"].max()
+        article_records = int(len(out))
+        supported_records = int((out["report_date"].notna() & out["supported_field_count"].gt(0)).sum())
+    valid = out[out["report_date"].notna() & out["supported_field_count"].gt(0)].copy()
+    valid = valid.sort_values("report_date").reset_index(drop=True)
+    recent = out.sort_values("report_date").tail(24)
+    growth_fill = recent["blended_earnings_growth_yoy"].notna().mean() if len(recent) else 0.0
+    pe_fill = recent["forward_12m_pe"].notna().mean() if len(recent) else 0.0
+    core_fill_floor = float(min(growth_fill, pe_fill))
+    if not catalog.empty and "report_date" in catalog.columns:
+        catalog_recent = catalog.loc[catalog_dates.notna()].sort_values("report_date").tail(24)
+        supported_fill = (
+            pd.to_numeric(catalog_recent.get("supported_field_count"), errors="coerce")
+            .fillna(0)
+            .gt(0)
+            .mean()
+            if len(catalog_recent)
+            else 0.0
+        )
+    else:
+        supported_fill = recent["supported_field_count"].gt(0).mean() if len(recent) else 0.0
+    status = "Healthy" if core_fill_floor >= 0.60 else ("Partial" if not valid.empty else "Unavailable")
+    latest_usable = valid["report_date"].max() if not valid.empty else pd.NaT
+    core_mask = out[list(FACTSET_BASE_NUMERIC_FIELDS)].notna().any(axis=1)
+    core_dates = out.loc[out["report_date"].notna() & core_mask, "report_date"]
+    health = {
+        "source": "FactSet Earnings Insight",
+        "series_id": "factset_earnings_regime",
+        "status": status,
+        "latest_observation": latest_usable.date().isoformat() if pd.notna(latest_usable) else None,
+        "last_seen_report_date": last_seen.date().isoformat() if pd.notna(last_seen) else None,
+        "coverage_start": valid["report_date"].min().date().isoformat() if not valid.empty else None,
+        "records": int(len(out)),
+        "usable_records": int(len(valid)),
+        "fill_rate_last_24": round(core_fill_floor, 4),
+        "core_fill_rate_last_24": round(core_fill_floor, 4),
+        "supported_fill_rate_last_24": round(float(supported_fill), 4),
+        "article_records": article_records,
+        "supported_records": supported_records,
+        "latest_supported_observation": latest_usable.date().isoformat() if pd.notna(latest_usable) else None,
+        "latest_core_observation": core_dates.max().date().isoformat() if not core_dates.empty else None,
+        "article_catalog_path": FACTSET_ARTICLE_CATALOG_RELATIVE_PATH,
+        "notes": (
+            "Aggregate S&P 500 earnings/valuation context only; the article catalog retains relevant articles, "
+            "while the observation table publishes supported metric payloads. Core fill is based on earnings growth "
+            "and forward P/E; the latest article may contain revision/guidance metrics without those core fields."
+        ),
+        "source_url": "https://insight.factset.com/topic/earnings",
+    }
+    if valid.empty:
+        return pd.DataFrame(), health
+    valid["coverage_status"] = status
+    return valid, health
 
 
 def _normalize_fomc_columns(latest: pd.DataFrame) -> pd.DataFrame:
@@ -248,6 +404,7 @@ def _localized_zh_artifact(artifact: dict[str, Any]) -> dict[str, Any]:
         "CNN Business Fear & Greed": "CNN商业恐惧与贪婪指数",
         "Yahoo Finance futures / ETF proxies": "Yahoo Finance 期货／ETF 代理",
         "FRED PCE / Dallas Fed trimmed mean": "FRED PCE／达拉斯联储截尾均值",
+        "FactSet Earnings Insight": "FactSet Earnings Insight 盈利洞察",
     }
     note_templates = {
         "DCOILBRENTEU": "布伦特原油日度数据，截至{date}。",
@@ -264,6 +421,7 @@ def _localized_zh_artifact(artifact: dict[str, Any]) -> dict[str, Any]:
         "cnn_fear_greed": "CNN商业美股恐惧与贪婪指数日度数据，截至{date}。这不是Alternative.me加密情绪。公开历史约一年。",
         "macro_commodities": "Yahoo Finance 期货／ETF 商品代理价格，截至{date}。不是LBMA／EIA现货。",
         "inflation_panel": "FRED PCE／达拉斯联储截尾均值及收入支出月度数据，截至{date}。",
+        "factset_earnings_regime": "FactSet 标普500综合盈利／估值及盈利修正背景；可用观察截至{date}，不是个股共识数据。",
     }
     health_rows = localized.get("snapshot", {}).get("datasets", {}).get(
         "source_health", []
@@ -290,6 +448,7 @@ def _localized_zh_artifact(artifact: dict[str, Any]) -> dict[str, Any]:
             "cnn_fear_greed": "CNN商业恐惧与贪婪指数",
             "macro_commodities": "Yahoo Finance 期货／ETF 商品代理",
             "inflation_panel": "FRED PCE／达拉斯联储截尾均值",
+            "factset_earnings": "FactSet Earnings Insight 盈利洞察",
         }
     )
     for source in localized.get("sources", []):
@@ -343,6 +502,8 @@ def _localized_zh_artifact(artifact: dict[str, Any]) -> dict[str, Any]:
         "cot_latest_table": "CFTC 管理／杠杆资金持仓",
         "treasury_yield_table": "国债收益率水平与变化（基点）",
         "sector_leadership_table": "美股行业相对标普500",
+        "factset_earnings_table": "FactSet Earnings Insight — 标普500综合背景",
+        "factset_article_catalog_table": "FactSet Earnings Insight — 文章目录",
     }
     for table in localized.get("manifest", {}).get("tables", []):
         title = table_titles.get(str(table.get("id")))
@@ -374,6 +535,25 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
     inflation_panel, inflation_panel_lineage = _load("inflation_release_panel", derived=True)
     curve, curve_lineage = _load("treasury_curve_snapshots", derived=True)
     yield_changes, yield_changes_lineage = _load("treasury_yield_changes", derived=True)
+    factset_article_catalog = _load_factset_article_catalog()
+    factset_earnings, factset_earnings_health = _load_factset_earnings(factset_article_catalog)
+    if not factset_earnings.empty and not factset_article_catalog.empty:
+        catalog_meta = factset_article_catalog[
+            [
+                "article_url",
+                "title",
+                "article_type",
+                "raw_run_id",
+                "ocr_image_count",
+                "body_char_count",
+                "extraction_status",
+            ]
+        ].rename(columns={"article_url": "source_url", "title": "article_title"})
+        factset_earnings = factset_earnings.merge(
+            catalog_meta,
+            how="left",
+            on="source_url",
+        )
     if curve.empty:
         curve = build_treasury_curve_snapshots(fred)
     if yield_changes.empty:
@@ -615,6 +795,43 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
                 "series_id",
             ),
         ),
+        "factset_earnings_regime": _records(
+            factset_earnings,
+            (
+                "report_date",
+                "reference_quarter",
+                *FACTSET_NUMERIC_COLUMNS,
+                "sector_revision_json",
+                "numeric_field_count",
+                "supported_field_count",
+                "coverage_status",
+                "article_title",
+                "article_type",
+                "raw_run_id",
+                "ocr_image_count",
+                "body_char_count",
+                "extraction_status",
+                "fetched_at",
+                "source_url",
+            ),
+        ),
+        "factset_article_catalog": _records(
+            factset_article_catalog,
+            (
+                "article_url",
+                "title",
+                "report_date",
+                "reference_quarter",
+                "article_type",
+                "raw_run_id",
+                "ocr_image_count",
+                "body_char_count",
+                "supported_field_count",
+                "extraction_status",
+                "fetched_at",
+            ),
+        ),
+        "factset_earnings_health": [factset_earnings_health],
         "source_health": _records(health, ("source", "series_id", "status", "latest_observation", "records", "notes")),
         "cross_asset_prices": _records(prices_chart, ("date", "exposure_id", "close")),
         "cross_asset_returns": _records(cross_asset_returns),
@@ -903,7 +1120,39 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
                 {"field": "return_20d_pct", "label": "20D return", "format": "number"},
                 {"field": "sma200_slope_ann_pct", "label": "200D slope", "format": "number"},
             ],
-        }
+        },
+        {
+            "id": "factset_earnings_table",
+            "title": "FactSet Earnings Insight — aggregate S&P 500 context",
+            "dataset": "factset_earnings_regime",
+            "columns": [
+                {"field": "report_date", "label": "Report date", "format": "text"},
+                {"field": "reference_quarter", "label": "Quarter", "format": "text"},
+                {"field": "blended_earnings_growth_yoy", "label": "Earnings growth YoY", "format": "number"},
+                {"field": "eps_beat_rate", "label": "EPS beat rate", "format": "number"},
+                {"field": "forward_12m_pe", "label": "Forward 12M P/E", "format": "number"},
+                {"field": "forward_12m_pe_10y_avg", "label": "10Y average P/E", "format": "number"},
+                {"field": "quarterly_eps_revision_pct", "label": "Quarterly EPS revision", "format": "number"},
+                {"field": "annual_eps_revision_pct", "label": "Annual EPS revision", "format": "number"},
+                {"field": "positive_eps_guidance_count", "label": "Positive guidance", "format": "number"},
+                {"field": "negative_eps_guidance_count", "label": "Negative guidance", "format": "number"},
+                {"field": "numeric_field_count", "label": "Numeric fields", "format": "number"},
+                {"field": "supported_field_count", "label": "Supported fields", "format": "number"},
+            ],
+        },
+        {
+            "id": "factset_article_catalog_table",
+            "title": "FactSet Earnings Insight — article catalog",
+            "dataset": "factset_article_catalog",
+            "columns": [
+                {"field": "report_date", "label": "Report date", "format": "text"},
+                {"field": "title", "label": "Article", "format": "text"},
+                {"field": "article_type", "label": "Type", "format": "text"},
+                {"field": "reference_quarter", "label": "Quarter", "format": "text"},
+                {"field": "supported_field_count", "label": "Supported fields", "format": "number"},
+                {"field": "extraction_status", "label": "Extraction", "format": "text"},
+            ],
+        },
     ]
     fomc_slug = ""
     if latest is not None and not latest.empty and "indicator_id" in latest.columns:
@@ -977,7 +1226,16 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
                 "series_id": INFLATION_SERIES_ID,
                 "description": "Monthly PCE, Dallas Fed trimmed-mean PCE, personal income and spending. Headline/core PCE are shown as year-over-year percent changes of the price index.",
             },
-        }
+        },
+        {
+            "id": "factset_earnings",
+            "label": "FactSet Earnings Insight",
+            "href": "https://insight.factset.com/topic/earnings",
+            "query": {
+                "engine": "existing normalized FactSet article lane",
+                "description": "Aggregate S&P 500 earnings-season, valuation, estimate-revision and guidance context. The article catalog retains relevant articles while the observation table publishes supported payloads; this is not security-level consensus.",
+            },
+        },
     ]
     all_sources_healthy = bool(
         not health.empty

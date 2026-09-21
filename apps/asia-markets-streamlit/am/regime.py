@@ -6,6 +6,7 @@ Split out of the former monolithic app.py; behaviour is unchanged.
 from __future__ import annotations
 
 from html import escape
+import json
 from typing import Any
 
 import pandas as pd
@@ -1061,6 +1062,295 @@ def render_treasury_yield_table(artifact: dict[str, Any], language: str) -> None
     st.dataframe(table, hide_index=True, width="stretch")
 
 
+def _factset_display_number(value: Any, suffix: str = "") -> str:
+    parsed = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
+    if pd.isna(parsed):
+        return "—"
+    return f"{float(parsed):,.1f}{suffix}"
+
+
+def _factset_display_count(value: Any) -> str:
+    parsed = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
+    if pd.isna(parsed):
+        return "—"
+    return f"{int(parsed):,}" if float(parsed).is_integer() else f"{float(parsed):,.1f}"
+
+
+def _factset_sector_revision_rows(value: Any) -> list[dict[str, Any]]:
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return []
+    try:
+        parsed = json.loads(str(value))
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return []
+    if not isinstance(parsed, dict):
+        return []
+    rows: list[dict[str, Any]] = []
+    for sector, revision in parsed.items():
+        number = pd.to_numeric(pd.Series([revision]), errors="coerce").iloc[0]
+        if pd.isna(number):
+            continue
+        rows.append({"sector": str(sector), "revision_pct": float(number)})
+    return sorted(rows, key=lambda row: row["revision_pct"], reverse=True)
+
+
+def render_factset_earnings_context(
+    artifact: dict[str, Any],
+    language: str,
+) -> None:
+    """Render aggregate FactSet context without implying security consensus."""
+    frame = frame_for_dataset(artifact, "factset_earnings_regime")
+    health = frame_for_dataset(artifact, "factset_earnings_health")
+    if frame.empty:
+        status = str(health.iloc[-1].get("status") if not health.empty else "Unavailable")
+        st.info(
+            tr(
+                language,
+                f"FactSet Earnings Insight is {status.lower()} in the current local snapshot; no numeric observation is published.",
+                f"当前本地快照中的 FactSet Earnings Insight 状态为“{status}”，暂时没有可发布的数值观察。",
+            )
+        )
+        return
+
+    show = frame.copy()
+    show["report_date"] = pd.to_datetime(show["report_date"], errors="coerce")
+    show = show.dropna(subset=["report_date"]).sort_values("report_date")
+    if show.empty:
+        st.info(tr(language, "No valid FactSet report dates are available.", "没有有效的 FactSet 报告日期。"))
+        return
+    latest = show.iloc[-1]
+    latest_date = observation_date_label(latest.get("report_date"), language)
+    health_row = health.iloc[-1].to_dict() if not health.empty else {}
+    status = str(health_row.get("status") or "Partial")
+    status_label = {
+        "Healthy": tr(language, "Ready", "可用"),
+        "Partial": tr(language, "Partial coverage", "部分覆盖"),
+        "Unavailable": tr(language, "Unavailable", "不可用"),
+    }.get(status, status)
+    fill_floor = pd.to_numeric(pd.Series([health_row.get("fill_rate_last_24")]), errors="coerce").iloc[0]
+    core_fill = pd.to_numeric(
+        pd.Series([health_row.get("core_fill_rate_last_24", fill_floor)]), errors="coerce"
+    ).iloc[0]
+    supported_fill = pd.to_numeric(
+        pd.Series([health_row.get("supported_fill_rate_last_24")]), errors="coerce"
+    ).iloc[0]
+    fill_text = "—" if pd.isna(core_fill) else f"{float(core_fill) * 100:.0f}%"
+    supported_fill_text = "—" if pd.isna(supported_fill) else f"{float(supported_fill) * 100:.0f}%"
+    last_seen = health_row.get("last_seen_report_date")
+    article_records = _factset_display_count(health_row.get("article_records"))
+    metric_records = _factset_display_count(health_row.get("supported_records"))
+    usable_records = _factset_display_count(health_row.get("usable_records"))
+    coverage_note = tr(
+        language,
+        f"{status_label} · usable observation {latest_date} · last article seen {last_seen or '—'} · core fill floor {fill_text} · supported payload fill {supported_fill_text} · article catalog {article_records} · metric-bearing {metric_records} · usable {usable_records}",
+        f"{status_label} · 可用观察截至 {latest_date} · 最近文章 {last_seen or '—'} · 核心字段最低填充率 {fill_text} · 支持字段填充率 {supported_fill_text} · 文章目录 {article_records} · 含指标 {metric_records} · 可用 {usable_records}",
+    )
+    st.caption(coverage_note)
+    latest_report_date = (
+        latest["report_date"].date().isoformat()
+        if pd.notna(latest.get("report_date"))
+        else None
+    )
+    if last_seen and str(last_seen) != str(latest_report_date):
+        st.warning(
+            tr(
+                language,
+                "The newest FactSet article has no supported metric payload; the panel uses the latest supported observation and does not impute missing fields. The full article catalog remains available to the research layer.",
+                "最新 FactSet 文章没有支持的指标 payload；本面板使用最近一条可用观察，不对缺失字段进行填补。完整文章目录仍提供给研究层使用。",
+            )
+        )
+
+    metric_specs = (
+        (
+            "Earnings growth YoY",
+            "盈利同比增长",
+            "blended_earnings_growth_yoy",
+            "%",
+        ),
+        ("EPS beat rate", "EPS超预期比例", "eps_beat_rate", "%"),
+        ("Forward 12M P/E", "未来12个月市盈率", "forward_12m_pe", "x"),
+        ("P/E vs 10Y average", "市盈率相对10年均值", "pe_premium_pct", "%"),
+    )
+    latest_forward = pd.to_numeric(pd.Series([latest.get("forward_12m_pe")]), errors="coerce").iloc[0]
+    latest_average = pd.to_numeric(pd.Series([latest.get("forward_12m_pe_10y_avg")]), errors="coerce").iloc[0]
+    latest_metrics = latest.to_dict()
+    latest_metrics["pe_premium_pct"] = (
+        (latest_forward / latest_average - 1) * 100
+        if pd.notna(latest_forward) and pd.notna(latest_average) and latest_average != 0
+        else pd.NA
+    )
+    metric_columns = st.columns(len(metric_specs))
+    for column, (label_en, label_zh, field, suffix) in zip(metric_columns, metric_specs):
+        with column:
+            st.metric(
+                tr(language, label_en, label_zh),
+                _factset_display_number(latest_metrics.get(field), suffix),
+            )
+
+    revision_specs = (
+        ("Quarterly EPS revision", "季度 EPS 修正", "quarterly_eps_revision_pct"),
+        ("Annual EPS revision", "年度 EPS 修正", "annual_eps_revision_pct"),
+    )
+    revision_columns = st.columns(len(revision_specs))
+    for column, (label_en, label_zh, field) in zip(revision_columns, revision_specs):
+        with column:
+            st.metric(
+                tr(language, label_en, label_zh),
+                _factset_display_number(latest_metrics.get(field), "%"),
+            )
+    guidance_specs = (
+        ("Positive EPS guidance", "正面 EPS 指引", "positive_eps_guidance_count"),
+        ("Negative EPS guidance", "负面 EPS 指引", "negative_eps_guidance_count"),
+        ("Total EPS guidance", "EPS 指引总数", "eps_guidance_total_count"),
+    )
+    guidance_columns = st.columns(len(guidance_specs))
+    for column, (label_en, label_zh, field) in zip(guidance_columns, guidance_specs):
+        with column:
+            st.metric(
+                tr(language, label_en, label_zh),
+                _factset_display_count(latest_metrics.get(field)),
+            )
+
+    sector_rows = _factset_sector_revision_rows(latest_metrics.get("sector_revision_json"))
+    if sector_rows:
+        st.caption(
+            tr(
+                language,
+                "Latest article sector EPS-estimate revisions",
+                "最新文章的行业 EPS 估计修正",
+            )
+        )
+        sector_table = pd.DataFrame(
+            {
+                tr(language, "Sector", "行业"): [row["sector"] for row in sector_rows],
+                tr(language, "EPS revision", "EPS 修正"): [
+                    _factset_display_number(row["revision_pct"], "%") for row in sector_rows
+                ],
+            }
+        )
+        st.dataframe(sector_table, hide_index=True, width="stretch")
+
+    valuation = show[["report_date", "forward_12m_pe", "forward_12m_pe_10y_avg"]].copy()
+    valuation["forward_12m_pe"] = pd.to_numeric(valuation["forward_12m_pe"], errors="coerce")
+    valuation["forward_12m_pe_10y_avg"] = pd.to_numeric(
+        valuation["forward_12m_pe_10y_avg"], errors="coerce"
+    )
+    valuation = valuation.dropna(subset=["report_date"]).tail(104)
+    if valuation[["forward_12m_pe", "forward_12m_pe_10y_avg"]].notna().any().any():
+        figure = go.Figure()
+        if valuation["forward_12m_pe"].notna().any():
+            figure.add_trace(
+                go.Scatter(
+                    x=valuation["report_date"],
+                    y=valuation["forward_12m_pe"],
+                    mode="lines+markers",
+                    name=tr(language, "Forward 12M P/E", "未来12个月市盈率"),
+                )
+            )
+        if valuation["forward_12m_pe_10y_avg"].notna().any():
+            figure.add_trace(
+                go.Scatter(
+                    x=valuation["report_date"],
+                    y=valuation["forward_12m_pe_10y_avg"],
+                    mode="lines",
+                    name=tr(language, "10Y average P/E", "10年平均市盈率"),
+                    line={"dash": "dot"},
+                )
+            )
+        figure.update_layout(
+            height=320,
+            margin={"l": 12, "r": 12, "t": 24, "b": 12},
+            yaxis_title=tr(language, "P/E (x)", "市盈率（倍）"),
+            xaxis_title=tr(language, "FactSet report date", "FactSet报告日期"),
+            legend={"orientation": "h", "y": 1.1},
+        )
+        st.plotly_chart(figure, width="stretch", config={"displayModeBar": False})
+
+    table = show.tail(24).copy()
+    for column in (
+        "reference_quarter",
+        "blended_earnings_growth_yoy",
+        "eps_beat_rate",
+        "forward_12m_pe",
+        "forward_12m_pe_10y_avg",
+        "quarterly_eps_revision_pct",
+        "annual_eps_revision_pct",
+        "positive_eps_guidance_count",
+        "negative_eps_guidance_count",
+        "numeric_field_count",
+        "supported_field_count",
+        "article_type",
+    ):
+        if column not in table.columns:
+            table[column] = pd.NA
+    table[tr(language, "Report date", "报告日")] = table["report_date"].map(
+        lambda value: observation_date_label(value, language)
+    )
+    quarter_label = tr(language, "Quarter", "季度")
+    if "reference_quarter" in table.columns:
+        table[quarter_label] = table["reference_quarter"].map(
+            lambda value: "—" if pd.isna(value) else str(value)
+        )
+    else:
+        table[quarter_label] = "—"
+    table[tr(language, "Earnings growth YoY", "盈利同比增长")] = table[
+        "blended_earnings_growth_yoy"
+    ].map(lambda value: _factset_display_number(value, "%"))
+    table[tr(language, "EPS beat rate", "EPS超预期比例")] = table["eps_beat_rate"].map(
+        lambda value: _factset_display_number(value, "%")
+    )
+    table[tr(language, "Forward 12M P/E", "未来12个月市盈率")] = table["forward_12m_pe"].map(
+        lambda value: _factset_display_number(value, "x")
+    )
+    table[tr(language, "10Y average P/E", "10年平均市盈率")] = table[
+        "forward_12m_pe_10y_avg"
+    ].map(lambda value: _factset_display_number(value, "x"))
+    table[tr(language, "Numeric fields", "有效数值字段")] = table["numeric_field_count"].map(
+        _factset_display_count
+    )
+    table[tr(language, "Supported fields", "支持字段")] = table["supported_field_count"].map(
+        _factset_display_count
+    )
+    table[tr(language, "Quarterly EPS revision", "季度 EPS 修正")] = table[
+        "quarterly_eps_revision_pct"
+    ].map(lambda value: _factset_display_number(value, "%"))
+    table[tr(language, "Annual EPS revision", "年度 EPS 修正")] = table[
+        "annual_eps_revision_pct"
+    ].map(lambda value: _factset_display_number(value, "%"))
+    table[tr(language, "Positive guidance", "正面指引")] = table[
+        "positive_eps_guidance_count"
+    ].map(_factset_display_count)
+    table[tr(language, "Negative guidance", "负面指引")] = table[
+        "negative_eps_guidance_count"
+    ].map(_factset_display_count)
+    table[tr(language, "Article type", "文章类型")] = table["article_type"].map(
+        lambda value: "—" if pd.isna(value) or not str(value).strip() else str(value)
+    )
+    columns = [
+        tr(language, "Report date", "报告日"),
+        tr(language, "Quarter", "季度"),
+        tr(language, "Earnings growth YoY", "盈利同比增长"),
+        tr(language, "EPS beat rate", "EPS超预期比例"),
+        tr(language, "Forward 12M P/E", "未来12个月市盈率"),
+        tr(language, "10Y average P/E", "10年平均市盈率"),
+        tr(language, "Quarterly EPS revision", "季度 EPS 修正"),
+        tr(language, "Annual EPS revision", "年度 EPS 修正"),
+        tr(language, "Positive guidance", "正面指引"),
+        tr(language, "Negative guidance", "负面指引"),
+        tr(language, "Article type", "文章类型"),
+        tr(language, "Numeric fields", "有效数值字段"),
+        tr(language, "Supported fields", "支持字段"),
+    ]
+    st.dataframe(table[[column for column in columns if column in table.columns]].iloc[::-1], hide_index=True, width="stretch")
+    st.caption(
+        tr(
+            language,
+            "FactSet Earnings Insight is an aggregate S&P 500 earnings-season, valuation and estimate-revision context feed. The catalog retains relevant articles; this table only shows supported observations. It is not company-level consensus.",
+            "FactSet Earnings Insight 是标普500整体盈利季、估值及盈利修正背景数据流。文章目录保留相关文章，本表只显示有支持字段的观察；不是个股共识。",
+        )
+    )
+
+
 def render_regime(artifact: dict[str, Any], labels: dict[str, Any], language: str, window: str) -> None:
     """Defensive global-conditions radar. Not an allocation or buy-the-dip cockpit."""
     render_header(
@@ -1148,6 +1438,15 @@ def render_regime(artifact: dict[str, Any], labels: dict[str, Any], language: st
         )
         with st.container(border=True):
             render_sector_leadership(artifact, language)
+        section_heading(
+            language,
+            "Earnings and valuation context",
+            "盈利与估值背景",
+            "FactSet Earnings Insight is shown as aggregate S&P 500 context. Coverage is explicit; this panel does not create security-level consensus or fill missing article fields.",
+            "FactSet Earnings Insight 仅作为标普500整体背景。面板明确显示覆盖率，不生成个股共识，也不填补文章缺失字段。",
+        )
+        with st.container(border=True):
+            render_factset_earnings_context(artifact, language)
         section_heading(
             language,
             "Cross-asset context",
