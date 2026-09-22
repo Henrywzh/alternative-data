@@ -1189,40 +1189,29 @@ def _factset_valuation_history(frame: pd.DataFrame) -> pd.DataFrame:
     work.loc[~average.between(low, high), "forward_12m_pe_10y_avg"] = pd.NA
     return work
 
-FACTSET_REVISION_NOTE_BY_URL = {
-    "https://insight.factset.com/analysts-increasing-eps-estimates-for-sp-500-companies-for-2nd-straight-quarter": {
-        "window_en": "June 30–August 31 (first two months of Q3)",
-        "window_zh": "6月30日至8月31日（三季度前两个月）",
-        "question_en": "Given concerns about higher oil and gas prices, have analysts cut Q3 EPS more than normal?",
-        "question_zh": "市场担心油价和气价走高，分析师是否把三季度EPS下调得比正常更多？",
-        "answer_en": "No. The Q3 bottom-up EPS estimate rose 1.2% to $89.69 from $88.64. Analysts usually cut during the first two months of a quarter.",
-        "answer_zh": "没有。三季度自下而上EPS预估从88.64美元上调1.2%至89.69美元。正常季度的前两个月通常是下调。",
-        "typical": [
-            ("5Y avg first 2 months", "近5年前两个月均值", -1.7),
-            ("10Y avg", "近10年均值", -2.1),
-            ("15Y avg", "近15年均值", -2.6),
-            ("20Y avg", "近20年均值", -3.1),
-        ],
-        "breadth_en": "4 of 11 sectors were revised up, led by Energy; 7 were revised down, led by Materials.",
-        "breadth_zh": "11个行业里4个上调（能源领先），7个下调（材料领先）。",
-    },
-    "https://insight.factset.com/analysts-increasing-in-quarterly-eps-estimates-for-sp-500-for-2nd-straight-quarter": {
-        "window_en": "June 30–July 30 (first month of Q3)",
-        "window_zh": "6月30日至7月30日（三季度第一个月）",
-        "question_en": "Given concerns about higher oil prices, have analysts cut Q3 EPS more than normal?",
-        "question_zh": "市场担心油价走高，分析师是否把三季度EPS下调得比正常更多？",
-        "answer_en": "No. The Q3 bottom-up EPS estimate rose 0.3% to $88.95 from $88.67. Analysts usually cut during the first month of a quarter.",
-        "answer_zh": "没有。三季度自下而上EPS预估从88.67美元上调0.3%至88.95美元。正常季度的第一个月通常是下调。",
-        "typical": [
-            ("5Y avg first month", "近5年第一个月均值", -1.0),
-            ("10Y avg", "近10年均值", -1.3),
-            ("15Y avg", "近15年均值", -1.7),
-            ("20Y avg", "近20年均值", -1.9),
-        ],
-        "breadth_en": "5 of 11 sectors were revised up, led by Energy and Financials; 6 were revised down, led by Materials.",
-        "breadth_zh": "11个行业里5个上调（能源、金融领先），6个下调（材料领先）。",
-    },
-}
+def _factset_revision_note(row: pd.Series) -> dict[str, Any] | None:
+    raw = row.get("narrative_json") if not row.empty else None
+    if raw is None or (isinstance(raw, float) and pd.isna(raw)):
+        return None
+    try:
+        parsed = json.loads(str(raw))
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return None
+    if not isinstance(parsed, dict) or not parsed.get("question") or not parsed.get("answer_sentence"):
+        return None
+    typical_rows = []
+    for item in parsed.get("typical") or []:
+        if not isinstance(item, dict):
+            continue
+        years = item.get("years")
+        window = str(item.get("window") or "").strip()
+        value = pd.to_numeric(pd.Series([item.get("value")]), errors="coerce").iloc[0]
+        if years is None or pd.isna(value):
+            continue
+        typical_rows.append((int(years), window, float(value)))
+    parsed = dict(parsed)
+    parsed["typical_rows"] = typical_rows
+    return parsed
 
 
 def _factset_is_revision_note(row: pd.Series) -> bool:
@@ -1278,11 +1267,6 @@ def _factset_revision_comparison(frame: pd.DataFrame) -> dict[str, Any]:
         "quarterly_median": prints["quarterly_eps_revision_pct"].median(),
         "annual_median": prints["annual_eps_revision_pct"].median(),
     }
-
-
-def _factset_revision_note(row: pd.Series) -> dict[str, Any] | None:
-    url = str(row.get("source_url") or "").strip()
-    return FACTSET_REVISION_NOTE_BY_URL.get(url)
 
 
 def _factset_latest_article_sectors(row: pd.Series) -> list[dict[str, Any]]:
@@ -1464,15 +1448,16 @@ def render_factset_earnings_context(
         )
         q_delta = q_now - q_prev if pd.notna(q_now) and pd.notna(q_prev) else pd.NA
         a_delta = a_now - a_prev if pd.notna(a_now) and pd.notna(a_prev) else pd.NA
-        typical_5y = revision_note["typical"][0][2] if revision_note else None
+        typical_rows = list(revision_note.get("typical_rows") or []) if revision_note else []
+        typical_5y = next((value for years, _window, value in typical_rows if years == 5), None)
         vs_typical = q_now - typical_5y if pd.notna(q_now) and typical_5y is not None else pd.NA
         source_url = str(revision.get("source_url") or "").strip()
         direction = tr(language, "up", "上调") if pd.notna(q_now) and q_now >= 0 else tr(language, "down", "下调")
         st.write(
             tr(
                 language,
-                f"Q3 EPS estimates were revised {direction} {_factset_display_number(q_now, '%')} in the latest FactSet print. That is unusual: analysts typically cut early in the quarter.",
-                f"最新一篇 FactSet 显示，三季度EPS预估{direction}{_factset_display_number(q_now, '%')}。这不寻常：正常季度前段通常是下调。",
+                f"This FactSet print revised quarterly EPS estimates {direction} {_factset_display_number(q_now, '%')}.",
+                f"这篇 FactSet 把季度EPS预估{direction}{_factset_display_number(q_now, '%')}。",
             )
         )
         if source_url:
@@ -1505,24 +1490,59 @@ def render_factset_earnings_context(
             )
 
         if revision_note:
-            st.info(
-                tr(
-                    language,
-                    f"FactSet asked: {revision_note['question_en']} {revision_note['answer_en']} Window: {revision_note['window_en']}. {revision_note['breadth_en']}",
-                    f"FactSet 问的是：{revision_note['question_zh']} {revision_note['answer_zh']} 窗口：{revision_note['window_zh']}。{revision_note['breadth_zh']}",
+            question = str(revision_note.get("question") or "").strip()
+            answer_sentence = str(revision_note.get("answer_sentence") or "").strip()
+            window = str(revision_note.get("window") or "").strip()
+            breadth = revision_note.get("breadth") if isinstance(revision_note.get("breadth"), dict) else {}
+            up_count = breadth.get("up_count")
+            down_count = breadth.get("down_count")
+            led_up = ", ".join(str(item) for item in (breadth.get("led_up") or []) if item)
+            led_down = ", ".join(str(item) for item in (breadth.get("led_down") or []) if item)
+            parts = [question, answer_sentence]
+            if window:
+                parts.append(tr(language, f"Window: {window}.", f"窗口：{window}。"))
+            if up_count is not None or down_count is not None:
+                parts.append(
+                    tr(
+                        language,
+                        f"{up_count if up_count is not None else '—'} of 11 sectors were revised up"
+                        + (f", led by {led_up}" if led_up else "")
+                        + f"; {down_count if down_count is not None else '—'} were revised down"
+                        + (f", led by {led_down}" if led_down else "")
+                        + ".",
+                        f"11个行业里{up_count if up_count is not None else '—'}个上调"
+                        + (f"（{led_up}领先）" if led_up else "")
+                        + f"，{down_count if down_count is not None else '—'}个下调"
+                        + (f"（{led_down}领先）" if led_down else "")
+                        + "。",
+                    )
                 )
-            )
+            st.info(" ".join(part for part in parts if part))
             st.caption(
                 tr(
                     language,
-                    "FactSet answered a yes/no versus history. It did not publish a causal attribution for Energy vs Materials, and this panel does not invent one.",
-                    "FactSet 回答的是‘相对历史是否异常’，没有给出能源 vs 材料的因果解释；本面板也不会编一个原因。",
+                    "Quoted from the FactSet article itself. Missing history or sector lines were not published in this print; this panel does not invent them.",
+                    "以上均摘自 FactSet 原文。这篇没有写的历史均值或行业句，本面板不会补写。",
                 )
             )
+            hist_labels = []
+            for years, window_label, value in typical_rows:
+                window_text = window_label or tr(language, "typical window", "常态窗口")
+                hist_labels.append(
+                    {
+                        "label": tr(
+                            language,
+                            f"{years}Y avg {window_text}",
+                            f"近{years}年{window_text}均值",
+                        ),
+                        "value": value,
+                        "role": "hist",
+                    }
+                )
             bars = pd.DataFrame(
                 [
                     {"label": tr(language, "This print", "本篇"), "value": (float(q_now) if pd.notna(q_now) else None), "role": "now"},
-                    *[{"label": tr(language, en, zh), "value": value, "role": "hist"} for en, zh, value in revision_note["typical"]],
+                    *hist_labels,
                 ]
             )
             colors = [

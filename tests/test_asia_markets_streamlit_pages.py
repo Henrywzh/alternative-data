@@ -324,6 +324,7 @@ def test_factset_revision_comparison_keeps_signed_history_and_article_note() -> 
                 "quarterly_eps_revision_pct": 1.2,
                 "annual_eps_revision_pct": 6.1,
                 "sector_revision_json": '{"Energy": 11.8, "Materials": -9.1}',
+                "narrative_json": '{"question": "Have analysts lowered EPS estimates more than normal?", "answer": "no", "answer_sentence": "The answer is no. Analysts increased estimates.", "window": "June 30 to August 31", "typical": [{"years": 5, "window": "first two months", "value": -1.7}], "breadth": {"up_count": 4, "down_count": 7, "led_up": ["Energy"], "led_down": ["Materials"]}}',
             },
             {
                 "report_date": "2026-06-05",
@@ -345,7 +346,8 @@ def test_factset_revision_comparison_keeps_signed_history_and_article_note() -> 
     assert current["quarterly_eps_revision_pct"] == 1.2
     assert str(pd.to_datetime(previous["report_date"]).date()) == "2026-08-06"
     assert note is not None
-    assert note["typical"][0][2] == -1.7
+    assert note["question"].startswith("Have analysts lowered EPS estimates")
+    assert note["typical_rows"][0][2] == -1.7
     assert not _factset_is_revision_note(frame.iloc[-1])
     assert len(comparison["prints"]) == 2
 

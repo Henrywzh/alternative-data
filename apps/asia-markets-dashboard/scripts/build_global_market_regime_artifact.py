@@ -115,6 +115,7 @@ def _load_factset_article_catalog() -> pd.DataFrame:
         "supported_field_count",
         "extraction_status",
         "fetched_at",
+        "narrative_json",
     )
     if not FACTSET_ARTICLE_CATALOG_PATH.exists():
         return pd.DataFrame(columns=columns)
@@ -547,6 +548,7 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
                 "ocr_image_count",
                 "body_char_count",
                 "extraction_status",
+                "narrative_json",
             ]
         ].rename(columns={"article_url": "source_url", "title": "article_title"})
         factset_earnings = factset_earnings.merge(
@@ -829,6 +831,7 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
                 "supported_field_count",
                 "extraction_status",
                 "fetched_at",
+                "narrative_json",
             ),
         ),
         "factset_earnings_health": [factset_earnings_health],
