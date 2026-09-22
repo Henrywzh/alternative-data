@@ -9,7 +9,11 @@ from typing import Any, Mapping, Sequence
 
 import streamlit as st
 
-from .artifacts import load_all_sector_artifacts, load_sector_artifact
+from .artifacts import (
+    load_all_sector_artifacts,
+    load_auxiliary_artifact,
+    load_sector_artifact,
+)
 from .config import HISTORY_WINDOWS, SECTORS
 from .core import tr
 
@@ -51,6 +55,15 @@ PAGE_DEFINITIONS: tuple[PageDefinition, ...] = (
         "🧭",
         sector_key="regime",
         renderer="am.regime:render_regime",
+    ),
+    PageDefinition(
+        "hong_kong_flows",
+        "markets",
+        "Hong Kong Flows & Liquidity",
+        "香港资金流与流动性",
+        "hong-kong-flows",
+        "🌊",
+        renderer="am.hong_kong_flows:render_hong_kong_flows",
     ),
     PageDefinition(
         "events",
@@ -204,8 +217,8 @@ def _render_aggregate(
         st.caption(
             tr(
                 language,
-                f"Freshness and coverage for {len(SECTORS)} connected research sections.",
-                f"{len(SECTORS)} 个已接入研究板块的更新时间和覆盖情况。",
+                f"Freshness and coverage for {len(SECTORS)} connected research sections plus auxiliary context feeds.",
+                f"{len(SECTORS)} 个已接入研究板块及辅助数据流的更新时间和覆盖情况。",
             )
         )
         render_source_coverage(artifacts, labels, language)
@@ -241,6 +254,16 @@ def run_page(page_key: str) -> None:
         return
 
     artifacts, labels, errors = load_all_sector_artifacts(language)
+    if page_key in {"data", "health"}:
+        auxiliary, auxiliary_labels, auxiliary_errors = load_auxiliary_artifact(
+            "hong-kong-flows",
+            language,
+            title_en="Hong Kong Flows & Liquidity",
+            title_zh="香港资金流与流动性",
+        )
+        artifacts["hong_kong_flows"] = auxiliary
+        labels["hong_kong_flows"] = auxiliary_labels
+        errors.extend(auxiliary_errors)
     _show_errors(errors)
     _render_aggregate(
         page_key,

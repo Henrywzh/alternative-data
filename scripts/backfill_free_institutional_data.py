@@ -58,7 +58,7 @@ from eia_energy_data.config import DEFAULT_RESPONDENTS, EIA_BULK_EBA_URL, resolv
 from eia_energy_data.models import EiaGridHourlyObservation
 from eia_energy_data.storage import EiaEnergyStorage
 from factset_earnings_data.client import FactsetEarningsClient
-from factset_earnings_data.config import GICS_SECTORS
+from factset_earnings_data.models import FactsetArticleRecord
 from factset_earnings_data.storage import FactsetEarningsStorage
 from hkex_market_flow_data.client import HkexMarketFlowClient
 from hkex_market_flow_data.storage import HkexMarketFlowStorage
@@ -758,22 +758,11 @@ def _factset_ocr(payload: bytes, suffix: str = ".png") -> str:
 
 
 def _factset_relevant(title: str, text: str, url: str) -> bool:
-    path = urlparse(url).path.strip("/").lower()
-    if not path or path.startswith("author/"):
-        return False
-    blob = f"{title} {text} {url}".lower()
-    return (
-        ("earnings" in blob and ("insight" in blob or "s&p 500" in blob or "eps" in blob))
-        or "forward 12-month p/e" in blob
-        or "forward p/e" in blob
-    )
+    return FactsetEarningsClient.is_relevant_article(title, text, url)
 
 
 def _factset_candidate_url(url: str) -> bool:
-    path = urlparse(url).path.strip("/").lower()
-    if not path or path.startswith(("author/", "topic/", "search")):
-        return False
-    return any(token in path for token in ("earnings", "eps", "sp-500", "revenue", "profit", "margin", "estimate"))
+    return FactsetEarningsClient.is_candidate_article_url(url)
 
 
 def backfill_factset(base_dir: Path, run_id: str) -> dict[str, Any]:
@@ -804,12 +793,22 @@ def backfill_factset(base_dir: Path, run_id: str) -> dict[str, Any]:
             consecutive_empty = consecutive_empty + 1 if not new_links else 0
             if consecutive_empty >= 2:
                 break
+        except requests.HTTPError as exc:
+            # FactSet's topic archive currently returns 404 immediately after
+            # the final page. Treat that known pagination boundary as a clean
+            # stop; all other HTTP failures remain partial-run evidence.
+            if page_number > 1 and exc.response is not None and exc.response.status_code == 404:
+                break
+            errors[f"topic_page_{page_number}"] = f"{type(exc).__name__}: {exc}"
+            if page_number > 2:
+                break
         except Exception as exc:
             errors[f"topic_page_{page_number}"] = f"{type(exc).__name__}: {exc}"
             if page_number > 2:
                 break
 
     observations = []
+    article_catalog = []
     relevant_articles = 0
     ocr_images = 0
     candidate_urls = [url for url in article_urls if _factset_candidate_url(url)]
@@ -825,6 +824,7 @@ def backfill_factset(base_dir: Path, run_id: str) -> dict[str, Any]:
                 metadata={"article_url": url},
                 gzip_payload=True,
             )
+            article_fetched_at = str(raw_run.entries[-1].get("captured_at_utc") or utc_now())
             metadata = client.extract_article_metadata(response.text)
             if not _factset_relevant(metadata["title"], metadata["text"], url):
                 continue
@@ -871,54 +871,81 @@ def backfill_factset(base_dir: Path, run_id: str) -> dict[str, Any]:
                     ocr_images += 1
                 except Exception as exc:
                     errors[f"image_{article_number}"] = f"{type(exc).__name__}: {exc}"
+            report_date = client.report_date_from_url(url) or metadata.get("report_date", "")
             ref_q = client.infer_reference_quarter(
                 combined_text,
                 metadata["title"],
-                metadata.get("report_date", ""),
+                report_date,
             )
-            if not ref_q:
-                continue
             observation = client.parse_summary_metrics(
                 combined_text,
-                metadata.get("report_date", ""),
+                report_date,
                 ref_q,
                 source_url=url,
             )
-            metric_values = observation.to_dict()
-            if any(metric_values.get(field) is not None for field in (
-                "blended_earnings_growth_yoy", "blended_revenue_growth_yoy", "eps_beat_rate", "eps_surprise_pct",
-                "revenue_beat_rate", "revenue_surprise_pct", "forward_12m_pe",
-            )):
+            supported_count = client.supported_field_count(observation)
+            if report_date and ref_q and supported_count:
                 observations.append(observation)
+            article_catalog.append(
+                FactsetArticleRecord(
+                    article_url=url,
+                    title=str(metadata.get("title") or ""),
+                    report_date=report_date,
+                    reference_quarter=ref_q,
+                    article_type=client.classify_article(metadata.get("title", ""), combined_text, url),
+                    raw_run_id=run_id,
+                    ocr_image_count=article_ocr_count,
+                    body_char_count=len(str(metadata.get("text") or "")),
+                    supported_field_count=supported_count,
+                    extraction_status=(
+                        "supported_observation"
+                        if report_date and ref_q and supported_count
+                        else "invalid_report_date"
+                        if not report_date
+                        else "no_reference_quarter"
+                        if not ref_q
+                        else "no_supported_metrics"
+                    ),
+                    fetched_at=article_fetched_at,
+                )
+            )
         except Exception as exc:
             errors[f"article_{article_number}"] = f"{type(exc).__name__}: {exc}"
         if article_number % 25 == 0:
             LOGGER.info("FactSet articles processed %s/%s", article_number, len(candidate_urls))
 
-    normalized_total = len(storage.upsert_observations(observations)) if observations else len(storage.load_observations())
+    normalized_total = len(storage.upsert_observations(observations))
+    catalog_total = len(storage.upsert_article_catalog(article_catalog))
     dates = [obs.report_date for obs in observations if obs.report_date]
     manifest = _save_source_manifest(
         raw_run,
         row_count=len(observations),
         errors=errors,
-        normalized_outputs=_output_map(storage, ["factset_sp500_earnings_regime.parquet", "factset_sp500_earnings_regime.csv"]),
+        normalized_outputs=_output_map(
+            storage,
+            ["factset_sp500_earnings_regime.parquet", "factset_article_catalog.parquet"],
+        ),
         coverage={
             "topic_pages_fetched": page_count,
             "article_links_discovered": len(article_urls),
             "relevant_articles": relevant_articles,
+            "article_catalog_rows": catalog_total,
+            "supported_observation_rows": len(observations),
+            "unsupported_article_rows": max(0, len(article_catalog) - len(observations)),
             "ocr_images": ocr_images,
             "rows_fetched": len(observations),
             "min_report_date": min(dates) if dates else None,
             "max_report_date": max(dates) if dates else None,
             "frequency": "irregular/weekly public Insight articles",
             "universe": "S&P 500 aggregate metrics when the article exposes them",
-            "coverage_note": "Only public article/infographic metrics are normalized; no paid FactSet API or vendor security-level estimates are fetched.",
+            "coverage_note": "The article catalog retains every relevant public article; only articles with a report date, reference quarter, and supported aggregate metric payload enter the observation table. No paid FactSet API or vendor security-level estimates are fetched.",
         },
     )
     return {
         "status": _status(len(observations), errors),
         "rows_fetched": len(observations),
         "rows_normalized_total": normalized_total,
+        "article_catalog_rows": catalog_total,
         "manifest": _relative_to_base(base_dir, manifest),
         "errors": errors,
     }

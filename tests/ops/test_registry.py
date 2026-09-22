@@ -79,6 +79,19 @@ def test_registry_contains_exactly_the_watched_pipelines_and_real_jobs() -> None
         assert set(registry.pipelines[pipeline_id].jobs) == {"refresh"}
 
 
+def test_factset_outputs_use_quality_contracts() -> None:
+    registry = load_registry(REGISTRY_PATH, repo_root=ROOT)
+    outputs = registry.pipelines["free-institutional-weekly"].jobs["refresh"].outputs
+
+    assert [output.validator for output in outputs] == ["factset_quality", "factset_quality"]
+    assert outputs[0].quality["window_rows"] == 24
+    assert {rule["column"] for rule in outputs[0].quality["fill_floor"]} == {
+        "blended_earnings_growth_yoy",
+        "forward_12m_pe",
+    }
+    assert outputs[1].quality["fill_floor"][0]["column"] == "supported_field_count"
+
+
 def test_registry_rejects_paths_that_escape_the_repository(tmp_path: Path) -> None:
     workflow = tmp_path / ".github" / "workflows"
     workflow.mkdir(parents=True)

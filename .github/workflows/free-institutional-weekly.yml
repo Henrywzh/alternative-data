@@ -1,8 +1,9 @@
 name: Free Institutional Data Weekly
 
 # FactSet Earnings Insight publishes weekly, so a daily job would re-scrape
-# the same PDF six times to find nothing. The lane walks no date range: it
-# reads whatever the topic page currently links and upserts by report_date.
+# the same pages six times to find nothing. The lane walks no date range: it
+# reads whatever the topic page currently links, upserts observations by
+# article URL, and refreshes the auditable article catalog alongside them.
 
 on:
   schedule:
@@ -72,9 +73,10 @@ jobs:
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
 
-      # Freshness is checked against the artifact, not the step outcome: a lane
-      # whose fetch quietly stopped returning rows leaves a complete, valid,
-      # stale dataset behind and the job still reports success.
+# Report-date freshness, payload fill floors, and retrieval freshness are
+# checked against the outputs, not only the step outcome: a lane whose fetch
+# quietly stopped returning rows must not look healthy just because an older
+# dated table still exists.
       - name: Emit shadow run report
         if: always()
         continue-on-error: true

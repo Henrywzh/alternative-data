@@ -98,8 +98,9 @@ existing .generated/<sector>-artifact.json
 ```
 
 The current Streamlit app includes the overview, market monitor, market regime,
-events and consensus, heat maps, labour, population, transport, real-estate,
-aerospace, crypto, Data Explorer and Source Health pages. It must not fetch
+Hong Kong Flows & Liquidity, events and consensus, heat maps, labour,
+population, transport, real-estate, aerospace, crypto, Data Explorer and
+Source Health pages. It must not fetch
 from external sources during page navigation or create a second copy of the
 source pipelines. The Index & ETF Allocation Monitor is read from
 `market-monitor-artifact*.json` and is not added to `sectors.json` or
@@ -121,6 +122,21 @@ src/market_monitor sources
   -> apps/asia-markets-dashboard/.generated/market-monitor-artifact*.json
   -> apps/asia-markets-streamlit/app.py
 ```
+
+The Hong Kong institutional-context flow is an auxiliary Streamlit artifact,
+not a sector and not a second Southbound pipeline:
+
+```text
+existing normalized HKMA / HKEX / MSCI lanes
+  -> apps/asia-markets-dashboard/scripts/build_hong_kong_flows_artifact.py
+  -> apps/asia-markets-dashboard/.generated/hong-kong-flows-artifact*.json
+  -> Asia Markets / Hong Kong Flows & Liquidity
+```
+
+The auxiliary page owns HKEX short inventory, HKMA liquidity and MSCI HK/CN
+review context. Eastmoney Southbound Stock Connect remains owned and rendered
+by ETF Monitor; the auxiliary artifact contains only a reference row and link
+back to that canonical view.
 
 The event/consensus flow is:
 

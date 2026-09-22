@@ -156,6 +156,39 @@ empty, so the fill rate is the number to read before using a lane.
 | `revision_breadth_score` | 0 | 0 | 218 |
 | `sector_growth_json` | 0 | 0 | 218 |
 
+## FactSet parser/catalog replay addendum (2026-09-17)
+
+The normalized FactSet lane was rebuilt offline from the retained raw run
+`20260911T120436Z-58a90ab8`; no source refetch was required.  The new
+`factset_article_catalog.parquet` retains 838 relevant article records,
+including 415 with no supported metric payload, 45 without a reference
+quarter, and 9 without a reliable publication date.  The observation parquet
+contains 369 rows only when a report date, reference quarter, and at least one
+supported field are present.  Topic pagination rows and empty observations are
+not published.  The derived `factset_replay_receipt.json` records the
+parser-derived coverage next to the normalized files without mutating the
+immutable raw manifest.
+
+The parser now also extracts quarterly and annual bottom-up EPS revisions,
+positive/negative EPS guidance counts, and a JSON sector-revision map when the
+public article states them.  Current non-null counts across the 369 published
+rows are:
+
+| Field | Non-null |
+|---|---:|
+| `quarterly_eps_revision_pct` | 103 |
+| `annual_eps_revision_pct` | 39 |
+| `positive_eps_guidance_count` | 40 |
+| `negative_eps_guidance_count` | 45 |
+| `sector_revision_json` | 68 |
+
+The latest supported article is dated 2026-09-04 and carries a +1.2%
+quarterly EPS revision, +6.1% CY2026 revision, and Energy/Materials sector
+revisions.  These are aggregate S&P 500 article observations, not
+security-level FactSet consensus.  The dashboard continues to expose the
+core fill floor separately; the extended revision/guidance fields do not
+pretend to repair sparse earnings-growth or valuation coverage.
+
 ## Defects found and fixed after the backfill
 
 An independent review of the shipped code found six defects that produced
@@ -182,6 +215,15 @@ Two further changes came out of the same review:
   five hours of data, and it could not page past the API's 5,000-row cap. It now
   uses the paginator over an explicit date range, and reports a missing
   `EIA_API_KEY` as a configuration error rather than failing with an opaque 403.
+
+The FactSet replay review also closed six integrity gaps: default replay now
+rejects partial raw runs except for the known topic-pagination 404 boundary;
+replay persistence replaces rather than additively upserts its projection;
+storage requires a reference quarter; EPS/revenue surprises preserve
+`above`/`below` direction; artifact paths are repository-relative; and a
+derived replay receipt records parser coverage without rewriting the raw
+manifest.  The weekly registry now applies the `factset_quality` validator to
+both FactSet outputs, including core payload floors and `fetched_at` freshness.
 
 ## Storage layout
 

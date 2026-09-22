@@ -13,7 +13,7 @@ from .core import tr
 
 SIDEBAR_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("workspace", ("overview",)),
-    ("markets", ("market", "regime", "events", "heatmaps")),
+    ("markets", ("market", "regime", "hong_kong_flows", "events", "heatmaps")),
     (
         "hong_kong",
         (

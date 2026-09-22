@@ -32,6 +32,7 @@ def test_page_registry_has_unique_keys_paths_and_one_default() -> None:
         "overview",
         "market",
         "regime",
+        "hong_kong_flows",
         "events",
         "heatmaps",
         "labour",
@@ -170,6 +171,7 @@ def test_sidebar_groups_reference_every_registered_page_once() -> None:
     assert dict(SIDEBAR_GROUPS)["markets"] == (
         "market",
         "regime",
+        "hong_kong_flows",
         "events",
         "heatmaps",
     )
@@ -227,3 +229,186 @@ def test_events_is_a_standalone_market_page() -> None:
     assert definition.url_path == "events-consensus"
     assert definition.sector_key is None
     assert definition.renderer == "am.events_consensus:render_events_consensus"
+
+def test_factset_helpers_split_snapshot_from_revision_and_keep_sector_dates() -> None:
+    import pandas as pd
+
+    from am.regime import (
+        FACTSET_CORE_FIELDS,
+        FACTSET_REVISION_FIELDS,
+        _factset_latest_sector_board,
+        _factset_latest_with_any,
+        _factset_valuation_history,
+    )
+
+    frame = pd.DataFrame(
+        [
+            {
+                "report_date": "2026-08-07",
+                "article_type": "sector",
+                "article_title": "Earnings Season Update",
+                "blended_earnings_growth_yoy": 47.4,
+                "eps_beat_rate": 86.0,
+                "forward_12m_pe": 20.0,
+                "forward_12m_pe_10y_avg": 19.0,
+                "quarterly_eps_revision_pct": None,
+                "annual_eps_revision_pct": None,
+                "sector_revision_json": None,
+            },
+            {
+                "report_date": "2026-09-04",
+                "article_type": "revision",
+                "article_title": "Analysts Increasing EPS Estimates",
+                "blended_earnings_growth_yoy": None,
+                "eps_beat_rate": None,
+                "forward_12m_pe": None,
+                "forward_12m_pe_10y_avg": 39.0,
+                "quarterly_eps_revision_pct": 1.2,
+                "annual_eps_revision_pct": 6.1,
+                "sector_revision_json": '{"Energy": 11.8, "Materials": -9.1}',
+            },
+            {
+                "report_date": "2026-07-10",
+                "article_type": "revision",
+                "article_title": "Earlier IT revision",
+                "blended_earnings_growth_yoy": None,
+                "eps_beat_rate": None,
+                "forward_12m_pe": None,
+                "forward_12m_pe_10y_avg": None,
+                "quarterly_eps_revision_pct": None,
+                "annual_eps_revision_pct": None,
+                "sector_revision_json": '{"Information Technology": 3.4}',
+            },
+        ]
+    )
+
+    core = _factset_latest_with_any(frame, FACTSET_CORE_FIELDS)
+    revision = _factset_latest_with_any(frame, FACTSET_REVISION_FIELDS)
+    board = _factset_latest_sector_board(frame)
+    history = _factset_valuation_history(frame)
+
+    assert str(pd.to_datetime(core["report_date"]).date()) == "2026-08-07"
+    assert core["forward_12m_pe"] == 20.0
+    assert str(pd.to_datetime(revision["report_date"]).date()) == "2026-09-04"
+    assert revision["quarterly_eps_revision_pct"] == 1.2
+    assert list(board["sector"]) == ["Energy", "Information Technology", "Materials"]
+    assert list(board["revision_pct"]) == [11.8, 3.4, -9.1]
+    assert 39.0 not in set(history["forward_12m_pe_10y_avg"].dropna())
+    assert 20.0 in set(history["forward_12m_pe"].dropna())
+
+def test_factset_revision_comparison_keeps_signed_history_and_article_note() -> None:
+    import pandas as pd
+
+    from am.regime import (
+        _factset_revision_comparison,
+        _factset_revision_note,
+        _factset_is_revision_note,
+    )
+
+    frame = pd.DataFrame(
+        [
+            {
+                "report_date": "2026-08-06",
+                "article_type": "revision",
+                "article_title": "Analysts Increasing in Quarterly EPS Estimates",
+                "source_url": "https://insight.factset.com/analysts-increasing-in-quarterly-eps-estimates-for-sp-500-for-2nd-straight-quarter",
+                "quarterly_eps_revision_pct": 0.3,
+                "annual_eps_revision_pct": 3.2,
+                "sector_revision_json": '{"Materials": -5.0}',
+            },
+            {
+                "report_date": "2026-09-04",
+                "article_type": "revision",
+                "article_title": "Analysts Increasing EPS Estimates",
+                "source_url": "https://insight.factset.com/analysts-increasing-eps-estimates-for-sp-500-companies-for-2nd-straight-quarter",
+                "quarterly_eps_revision_pct": 1.2,
+                "annual_eps_revision_pct": 6.1,
+                "sector_revision_json": '{"Energy": 11.8, "Materials": -9.1}',
+            },
+            {
+                "report_date": "2026-06-05",
+                "article_type": "earnings_calls",
+                "article_title": "Highest Number of S&P 500 Earnings Calls Citing Oil",
+                "source_url": "https://insight.factset.com/highest-number-of-sp-500-earnings-calls-citing-oil-since-2020",
+                "quarterly_eps_revision_pct": None,
+                "annual_eps_revision_pct": None,
+                "sector_revision_json": '{"Energy": 100.0}',
+            },
+        ]
+    )
+    comparison = _factset_revision_comparison(frame)
+    current = comparison["current"]
+    previous = comparison["previous"]
+    note = _factset_revision_note(current)
+
+    assert str(pd.to_datetime(current["report_date"]).date()) == "2026-09-04"
+    assert current["quarterly_eps_revision_pct"] == 1.2
+    assert str(pd.to_datetime(previous["report_date"]).date()) == "2026-08-06"
+    assert note is not None
+    assert note["typical"][0][2] == -1.7
+    assert not _factset_is_revision_note(frame.iloc[-1])
+    assert len(comparison["prints"]) == 2
+
+def test_factset_named_sector_prints_are_ordered_and_exclude_call_mentions() -> None:
+    import pandas as pd
+
+    from am.regime import _factset_named_sector_prints
+
+    frame = pd.DataFrame(
+        [
+            {
+                "report_date": "2026-08-06",
+                "article_type": "revision",
+                "article_title": "Analysts Increasing in Quarterly EPS Estimates",
+                "quarterly_eps_revision_pct": 0.3,
+                "annual_eps_revision_pct": 3.2,
+                "sector_revision_json": '{"Materials": -5.0}',
+            },
+            {
+                "report_date": "2026-09-04",
+                "article_type": "revision",
+                "article_title": "Analysts Increasing EPS Estimates",
+                "quarterly_eps_revision_pct": 1.2,
+                "annual_eps_revision_pct": 6.1,
+                "sector_revision_json": '{"Energy": 11.8, "Materials": -9.1}',
+            },
+            {
+                "report_date": "2026-06-05",
+                "article_type": "earnings_calls",
+                "article_title": "Highest Number of S&P 500 Earnings Calls Citing Oil",
+                "quarterly_eps_revision_pct": None,
+                "annual_eps_revision_pct": None,
+                "sector_revision_json": '{"Energy": 100.0}',
+            },
+            {
+                "report_date": "2026-07-06",
+                "article_type": "revision",
+                "article_title": "Analysts Made Largest Increases",
+                "quarterly_eps_revision_pct": 3.4,
+                "annual_eps_revision_pct": 6.3,
+                "sector_revision_json": None,
+            },
+        ]
+    )
+    prints = _factset_named_sector_prints(frame)
+    dates = [str(pd.to_datetime(value).date()) for value in prints["report_date"]]
+    assert dates == ["2026-08-06", "2026-09-04"]
+    assert prints.iloc[-1]["quarterly_eps_revision_pct"] == 1.2
+
+def test_factset_named_print_label_includes_date_title_and_sectors() -> None:
+    import pandas as pd
+
+    from am.regime import _factset_named_print_label
+
+    row = pd.Series(
+        {
+            "report_date": "2026-09-04",
+            "article_title": "Analysts Increasing EPS Estimates",
+            "sector_revision_json": '{"Energy": 11.8, "Materials": -9.1}',
+        }
+    )
+    label = _factset_named_print_label(row, "en")
+    assert "2026-09-04" in label or "4 Sep" in label or "Sep 2026" in label or "September" in label or "9月" in label or "2026" in label
+    assert "Analysts Increasing EPS Estimates" in label
+    assert "Energy" in label
+    assert "Materials" in label

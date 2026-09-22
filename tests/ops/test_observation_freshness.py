@@ -32,6 +32,27 @@ def _spec(**overrides) -> OutputSpec:
     return OutputSpec(**payload)
 
 
+def _factset_spec(**overrides) -> OutputSpec:
+    payload = dict(
+        output_id="factset",
+        path="data/normalized/factset/factset.parquet",
+        required=True,
+        validator="factset_quality",
+        date_column="report_date",
+        freshness={"mode": "max_age_days", "max_age_days": 21},
+        quality={
+            "window_rows": 4,
+            "fill_floor": [
+                {"column": "blended_earnings_growth_yoy", "min_fraction": 0.75},
+                {"column": "forward_12m_pe", "min_fraction": 0.75},
+            ],
+            "ingestion": {"date_column": "fetched_at", "max_age_days": 21},
+        },
+    )
+    payload.update(overrides)
+    return OutputSpec(**payload)
+
+
 def _write(root: Path, values: list[str], column: str = "trade_date") -> None:
     target = root / "data" / "normalized" / "lane"
     target.mkdir(parents=True)
@@ -141,3 +162,70 @@ def test_a_partitioned_lane_is_aged_across_its_partitions(tmp_path: Path) -> Non
 
     assert [c.status for c in checks] == ["healthy"]
     assert observation.latest_observation == "2026-09-11"
+
+
+def _write_factset(root: Path, *, growth: list[float | None], pe: list[float | None], fetched_at: str) -> None:
+    target = root / "data" / "normalized" / "factset"
+    target.mkdir(parents=True)
+    pd.DataFrame(
+        {
+            "report_date": [f"2026-09-{day:02d}" for day in range(8, 8 + len(growth))],
+            "reference_quarter": ["2026Q3"] * len(growth),
+            "blended_earnings_growth_yoy": growth,
+            "forward_12m_pe": pe,
+            "fetched_at": [fetched_at] * len(growth),
+        }
+    ).to_parquet(target / "factset.parquet", index=False)
+
+
+def test_factset_quality_checks_fill_floor_and_ingestion_freshness(tmp_path: Path) -> None:
+    _write_factset(
+        tmp_path,
+        growth=[1.0, 2.0, 3.0, None],
+        pe=[20.0, 21.0, 22.0, None],
+        fetched_at="2026-09-11T12:00:00+00:00",
+    )
+
+    checks, _ = evaluate_output(
+        spec=_factset_spec(), repo_root=tmp_path, as_of=date(2026, 9, 12)
+    )
+
+    assert [check.status for check in checks] == ["healthy", "healthy", "healthy", "healthy"]
+    assert checks[1].check_id.endswith("fill-floor.1")
+    assert checks[-1].check_id.endswith("ingestion-freshness")
+
+
+def test_factset_quality_rejects_sparse_core_payload(tmp_path: Path) -> None:
+    _write_factset(
+        tmp_path,
+        growth=[1.0, None, None, None],
+        pe=[20.0, 21.0, 22.0, 23.0],
+        fetched_at="2026-09-11T12:00:00+00:00",
+    )
+
+    checks, _ = evaluate_output(
+        spec=_factset_spec(), repo_root=tmp_path, as_of=date(2026, 9, 12)
+    )
+
+    assert checks[0].status == "healthy"
+    assert checks[1].status == "invalid"
+    assert checks[2].status == "healthy"
+    assert checks[3].status == "healthy"
+
+
+def test_factset_quality_rejects_old_ingestion_even_with_recent_report_date(tmp_path: Path) -> None:
+    _write_factset(
+        tmp_path,
+        growth=[1.0, 2.0, 3.0, 4.0],
+        pe=[20.0, 21.0, 22.0, 23.0],
+        fetched_at="2026-08-01T12:00:00+00:00",
+    )
+
+    checks, _ = evaluate_output(
+        spec=_factset_spec(), repo_root=tmp_path, as_of=date(2026, 9, 12)
+    )
+
+    assert checks[0].status == "healthy"
+    assert checks[1].status == "healthy"
+    assert checks[2].status == "healthy"
+    assert checks[3].status == "stale"

@@ -190,6 +190,13 @@ def evaluate_output(
             checks = _evaluate_observation_freshness(
                 spec=spec, as_of=as_of, observation=observation
             )
+        elif spec.validator == "factset_quality":
+            checks = _evaluate_factset_quality(
+                spec=spec,
+                path=path,
+                as_of=as_of,
+                observation=observation,
+            )
         elif spec.validator == "asia_markets_freshness":
             checks = _evaluate_asia_markets(
                 spec=spec,
@@ -414,6 +421,128 @@ def _evaluate_observation_freshness(
             observed=latest,
         )
     ]
+
+
+def _evaluate_factset_quality(
+    *,
+    spec: OutputSpec,
+    path: Path,
+    as_of: date,
+    observation: OutputObservation,
+) -> list[CheckResult]:
+    """Check FactSet report-date freshness, payload fill, and ingestion time."""
+    checks = _evaluate_observation_freshness(
+        spec=spec,
+        as_of=as_of,
+        observation=observation,
+    )
+    frame = read_dataset(path) if dataset_parts(path) else pd.read_parquet(path)
+    quality = spec.quality
+    window_rows = int(quality.get("window_rows", 24))
+    date_column = spec.date_column
+    if not date_column or date_column not in frame.columns:
+        quality_window = frame.iloc[0:0].copy()
+    else:
+        quality_window = frame.copy()
+        quality_window["__quality_date"] = pd.to_datetime(
+            quality_window[date_column], errors="coerce"
+        )
+        quality_window = quality_window.loc[quality_window["__quality_date"].notna()]
+        quality_window = quality_window.sort_values("__quality_date").tail(window_rows)
+
+    for index, rule in enumerate(quality.get("fill_floor", []), start=1):
+        column = str(rule.get("column", "")).strip()
+        minimum = float(rule.get("min_fraction", 0.0))
+        check_id = f"{spec.output_id}.fill-floor.{index}"
+        if column not in quality_window.columns:
+            checks.append(
+                CheckResult(
+                    check_id=check_id,
+                    status="invalid",
+                    required=spec.required,
+                    message=f"Payload column {column!r} is missing from {spec.path}.",
+                    expected=f"column {column!r} present",
+                )
+            )
+            continue
+        values = quality_window[column]
+        if "min_value" in rule:
+            numeric = pd.to_numeric(values, errors="coerce")
+            present = numeric.ge(float(rule["min_value"]))
+        else:
+            present = values.notna()
+            if pd.api.types.is_object_dtype(values):
+                present &= ~values.astype(str).str.strip().str.lower().isin(
+                    {"", "nan", "none", "null"}
+                )
+        fraction = float(present.mean()) if len(values) else 0.0
+        status = "healthy" if fraction >= minimum else "invalid"
+        checks.append(
+            CheckResult(
+                check_id=check_id,
+                status=status,
+                required=spec.required,
+                message=(
+                    f"{column} fill is {fraction:.1%} ({int(present.sum())}/{len(values)}) "
+                    f"over the latest {len(values)} dated rows."
+                ),
+                expected=f">= {minimum:.1%} over the latest {window_rows} dated rows",
+                observed=f"{fraction:.1%}",
+                details={
+                    "column": column,
+                    "window_rows": window_rows,
+                    "non_null_rows": int(present.sum()),
+                    "dated_rows": int(len(values)),
+                },
+            )
+        )
+
+    ingestion = quality["ingestion"]
+    ingestion_column = str(ingestion["date_column"]).strip()
+    ingestion_check_id = f"{spec.output_id}.ingestion-freshness"
+    if ingestion_column not in frame.columns:
+        checks.append(
+            CheckResult(
+                check_id=ingestion_check_id,
+                status="unknown",
+                required=spec.required,
+                message=f"Output {spec.path} has no readable {ingestion_column!r} column.",
+            )
+        )
+        return checks
+    ingestion_values = pd.to_datetime(frame[ingestion_column], errors="coerce", utc=True).dropna()
+    if ingestion_values.empty:
+        checks.append(
+            CheckResult(
+                check_id=ingestion_check_id,
+                status="unknown",
+                required=spec.required,
+                message=f"Output {spec.path} has no parseable {ingestion_column!r} values.",
+            )
+        )
+        return checks
+    latest_ingestion = ingestion_values.max()
+    as_of_timestamp = pd.Timestamp(as_of, tz="UTC")
+    age_days = (as_of_timestamp - latest_ingestion).total_seconds() / 86400
+    max_age_days = float(ingestion["max_age_days"])
+    stale = age_days > max_age_days
+    checks.append(
+        CheckResult(
+            check_id=ingestion_check_id,
+            status="stale" if stale else "healthy",
+            required=spec.required,
+            message=(
+                f"Latest {ingestion_column} value {latest_ingestion.isoformat()} is "
+                f"{age_days:.1f} days old, past the {max_age_days:g}-day contract."
+                if stale
+                else f"Latest {ingestion_column} value {latest_ingestion.isoformat()} is {age_days:.1f} days old."
+            ),
+            expected=f"within {max_age_days:g} days of {as_of.isoformat()}",
+            observed=latest_ingestion.isoformat(),
+            details={"age_days": round(age_days, 3), "column": ingestion_column},
+        )
+    )
+    return checks
 
 
 def _evaluate_asia_markets(
