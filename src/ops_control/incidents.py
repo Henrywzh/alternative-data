@@ -113,9 +113,18 @@ class Incident:
 def fingerprint_for(
     *,
     pipeline_id: str,
+    job_id: str,
     failed_check: str,
     error_class: str,
 ) -> str:
+    digest = hashlib.sha256(
+        f"{pipeline_id}|{job_id}|{failed_check}|{error_class}".encode("utf-8")
+    ).hexdigest()[:16]
+    return f"{pipeline_id}:{job_id}:{failed_check}:{error_class}:{digest}"
+
+
+def legacy_fingerprint_for(*, pipeline_id: str, failed_check: str, error_class: str) -> str:
+    """Find pre-job-scoped incidents while migrating their existing issues."""
     digest = hashlib.sha256(
         f"{pipeline_id}|{failed_check}|{error_class}".encode("utf-8")
     ).hexdigest()[:16]
@@ -189,6 +198,7 @@ def incident_from_report(
     error_class = classify_error(check, derived_state=report.derived_state)
     fingerprint = fingerprint_for(
         pipeline_id=report.pipeline_id,
+        job_id=report.job_id,
         failed_check=failed_check,
         error_class=error_class,
     )
@@ -260,6 +270,7 @@ def missed_schedule_incident(
     error_class = "missed_schedule"
     fingerprint = fingerprint_for(
         pipeline_id=pipeline.pipeline_id,
+        job_id=job_id,
         failed_check=failed_check,
         error_class=error_class,
     )
