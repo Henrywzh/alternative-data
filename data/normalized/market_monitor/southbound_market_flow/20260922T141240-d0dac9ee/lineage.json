@@ -3,9 +3,9 @@
   "run_scope": "full",
   "source_id": "eastmoney:hsgt_hist",
   "dataset_name": "southbound_market_flow",
-  "run_id": "20260915T142825-dcd019c5",
-  "created_at": "2026-09-15T14:28:42.480420+00:00",
-  "records": 2715,
+  "run_id": "20260922T141240-d0dac9ee",
+  "created_at": "2026-09-22T14:12:57.537162+00:00",
+  "records": 2720,
   "columns": [
     "trade_date",
     "net_buy_yi",
@@ -25,5 +25,5 @@
     "source_url",
     "retrieved_at_utc"
   ],
-  "sha256": "041360f2a509c7ef9af5a83661c4e6adbbbb2f2e8129922852be8e8972aa5818"
+  "sha256": "e5b1835494091de76377ca82d0f939cf47e278ec59fb844296b9f306cd80ba79"
 }
