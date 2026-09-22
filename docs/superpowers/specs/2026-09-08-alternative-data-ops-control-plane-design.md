@@ -433,6 +433,7 @@ The daily report contains:
 - Registered job count without open incidents (not a proof of fresh data).
 - New and open incidents.
 - Incidents recovered in the last 24 hours, with their prior issue context.
+- New incident threads opened in the last seven days in the Monday reliability section; recurring occurrences are not counted as separate failures.
 - Stale, regressed, partial, or retained datasets.
 - Incidents waiting for local Codex.
 - Incidents requiring human input.

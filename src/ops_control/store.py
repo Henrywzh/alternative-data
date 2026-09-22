@@ -143,8 +143,8 @@ def parse_issue(item: dict[str, Any]) -> Incident | None:
     if not payload.get("issue_url"):
         payload["issue_url"] = item.get("html_url")
     incident = Incident.from_dict(payload)
-    # The GitHub issue state is authoritative if someone closed an incident
-    # manually without rewriting its embedded JSON snapshot.
+    # GitHub issue state is authoritative when someone changes it without
+    # rewriting the embedded JSON snapshot.
     if item.get("state") == "closed" and incident.status not in {"RECOVERED", "CLOSED"}:
         return replace(
             incident,
@@ -152,6 +152,14 @@ def parse_issue(item: dict[str, Any]) -> Incident | None:
             retry_eligible=False,
             needs_human=False,
             needs_local=False,
+        )
+    if item.get("state") == "open" and incident.status in {"RECOVERED", "CLOSED"}:
+        return replace(
+            incident,
+            status="NEEDS_HUMAN",
+            retry_eligible=False,
+            needs_human=True,
+            recovered_at=None,
         )
     return incident
 

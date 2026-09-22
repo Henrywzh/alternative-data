@@ -146,6 +146,8 @@ def recover_resolved_incidents(
     }
     recovered: list[Incident] = []
     for incident in open_incidents:
+        if incident.status == "NEEDS_HUMAN":
+            continue
         key = (incident.pipeline_id, incident.job_id)
         report = reports.get(key)
         if key in current_keys or report is None or report.derived_state != "HEALTHY":

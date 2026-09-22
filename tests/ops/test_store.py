@@ -4,7 +4,7 @@ from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
 
-from ops_control.incidents import legacy_fingerprint_for, missed_schedule_incident
+from ops_control.incidents import legacy_fingerprint_for, mark_recovered, missed_schedule_incident
 from ops_control.registry import load_registry
 from ops_control.store import IncidentStore, _issue_body, parse_issue
 
@@ -54,6 +54,29 @@ def test_closed_github_issue_cannot_appear_as_open_incident() -> None:
     assert parsed.status == "CLOSED"
     assert parsed.needs_human is False
     assert parsed.issue_url == "https://github.com/example/ops/issues/3"
+
+
+def test_manually_reopened_recovered_issue_requires_human_review() -> None:
+    registry = load_registry(ROOT / "config" / "ops" / "pipelines.yaml", repo_root=ROOT)
+    incident = missed_schedule_incident(
+        pipeline=registry.pipelines["openrouter-provider-activity"],
+        job_id="scrape-provider-activity",
+        now=datetime(2026, 9, 8, tzinfo=timezone.utc),
+        last_finished_at=None,
+    )
+    recovered = mark_recovered(incident, now=datetime(2026, 9, 9, tzinfo=timezone.utc))
+
+    parsed = parse_issue({
+        "state": "open",
+        "body": _issue_body(recovered),
+        "html_url": "https://github.com/example/ops/issues/3",
+    })
+
+    assert parsed is not None
+    assert parsed.status == "NEEDS_HUMAN"
+    assert parsed.needs_human is True
+    assert parsed.retry_eligible is False
+    assert parsed.recovered_at is None
 
 
 def test_upsert_migrates_matching_legacy_issue_without_creating_duplicate(monkeypatch) -> None:

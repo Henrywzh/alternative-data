@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -89,6 +90,29 @@ def test_monday_digest_includes_weekly_section() -> None:
     body = build_digest(registry=registry, incidents=[], now=monday)
     assert "No open incidents in registered jobs." in body
     assert "Weekly reliability:" in body
+
+
+def test_weekly_digest_counts_new_threads_not_recent_updates() -> None:
+    registry = load_registry(ROOT / "config" / "ops" / "pipelines.yaml", repo_root=ROOT)
+    pipeline = registry.pipelines["openrouter-provider-activity"]
+    old = missed_schedule_incident(
+        pipeline=pipeline,
+        job_id="scrape-provider-activity",
+        now=datetime(2026, 8, 25, tzinfo=timezone.utc),
+        last_finished_at=None,
+    )
+    old_updated = replace(old, updated_at="2026-09-09T11:00:00Z")
+    recent = missed_schedule_incident(
+        pipeline=pipeline,
+        job_id="scrape-provider-activity",
+        now=datetime(2026, 9, 8, tzinfo=timezone.utc),
+        last_finished_at=None,
+    )
+
+    body = build_digest(registry=registry, incidents=[old_updated, recent], now=NOW, weekly=True)
+
+    assert "New incident threads opened in last 7d" in body
+    assert "- missed_schedule: 1" in body
 
 
 def test_digest_only_counts_recovery_in_last_24_hours() -> None:
@@ -209,6 +233,32 @@ def test_stale_healthy_report_does_not_recover_job_with_current_incident() -> No
         open_incidents=[existing],
         reports={(report.pipeline_id, report.job_id): report},
         current_incidents=[current],
+        now=NOW,
+    )
+
+    assert recovered == []
+
+
+def test_healthy_report_does_not_auto_close_manually_reopened_issue() -> None:
+    registry = load_registry(ROOT / "config" / "ops" / "pipelines.yaml", repo_root=ROOT)
+    pipeline = registry.pipelines["openrouter-provider-activity"]
+    existing = missed_schedule_incident(
+        pipeline=pipeline,
+        job_id="scrape-provider-activity",
+        now=datetime(2026, 9, 8, tzinfo=timezone.utc),
+        last_finished_at=None,
+    )
+    reopened = replace(existing, status="NEEDS_HUMAN", needs_human=True, derived_state="HEALTHY")
+    report = _healthy_report(
+        "openrouter-provider-activity",
+        "scrape-provider-activity",
+        "2026-09-09T11:30:00Z",
+    )
+
+    recovered = recover_resolved_incidents(
+        open_incidents=[reopened],
+        reports={(report.pipeline_id, report.job_id): report},
+        current_incidents=[],
         now=NOW,
     )
 

@@ -67,9 +67,9 @@ def build_digest(*, registry: PipelineRegistry, incidents: Iterable[Incident], n
         weekly_cutoff = now - timedelta(days=7)
         counts = Counter(
             item.error_class for item in incidents
-            if datetime.fromisoformat(item.updated_at.replace("Z", "+00:00")) >= weekly_cutoff
+            if datetime.fromisoformat(item.opened_at.replace("Z", "+00:00")) >= weekly_cutoff
         )
-        lines.extend(["", "Weekly reliability:"])
+        lines.extend(["", "Weekly reliability: New incident threads opened in last 7d"])
         if not counts:
             lines.append("- No incidents in the current window.")
         else:
