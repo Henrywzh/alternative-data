@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-08
 
-**Status:** Phase 0 landed; Phase 1 incident mode is in implementation
+**Status:** Phase 1 monitoring deployed; Codex triage and repair are pending
 
 **Repository:** `Henrywzh/alternative-data`
 
@@ -296,10 +296,12 @@ Evidence records include the run URL, commit SHA, timestamps, check identifier, 
 Incidents use a stable fingerprint:
 
 ```text
-pipeline_id + failed_check + normalized_error_class
+pipeline_id + job_id + failed_check + normalized_error_class
 ```
 
-Repeated occurrences update the existing active incident.
+Repeated occurrences update the existing active incident. The incident store
+migrates matching pre-job-scoped issues in place so a new fingerprint does not
+duplicate an existing issue.
 
 ```text
 DETECTED
@@ -428,9 +430,11 @@ The local worker always scans the complete unresolved queue. The architecture do
 
 The daily report contains:
 
-- Healthy pipeline count.
+- Registered job count without open incidents (not a proof of fresh data).
 - New and open incidents.
-- Automatically recovered incidents.
+- Incidents recovered in the last 24 hours, with their prior issue context.
+- New incident threads opened in the last seven days in the Monday reliability section; recurring occurrences are not counted as separate failures.
+- A manually reopened terminal issue remains open for human review even if the latest producer report is healthy; ordinary `NEEDS_HUMAN` failures may still recover on fresh healthy evidence.
 - Stale, regressed, partial, or retained datasets.
 - Incidents waiting for local Codex.
 - Incidents requiring human input.
@@ -519,7 +523,7 @@ Phase 0 behavior:
 - Add the daily cloud digest.
 - Codex investigates but does not merge repairs.
 
-Phase 1 code in this repository records incidents, retries clear transient failures once, reconciles missed schedules every six hours, and emails a daily digest. Codex investigation remains deferred until a private incident repository and `OPS_INCIDENT_TOKEN` are configured; the agent still does not merge repairs.
+Phase 1 code in this repository records incidents, retries clear transient failures once, reconciles missed schedules every six hours, and emails a daily digest. The private incident repository and `OPS_INCIDENT_TOKEN` are configured. Codex investigation and agent-driven repair are not yet deployed.
 
 ### Phase 2: Repair Mode
 

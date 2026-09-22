@@ -1,12 +1,19 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime, timezone
 import json
 from pathlib import Path
 from typing import Any, Callable
 
 from .github_api import paginate, request_json
-from .incidents import Incident, merge_incident, redact_incident, validate_incident
+from .incidents import (
+    Incident,
+    legacy_fingerprint_for,
+    merge_incident,
+    redact_incident,
+    validate_incident,
+)
 from .redaction import redact_text
 
 
@@ -31,6 +38,8 @@ class IncidentStore:
     def upsert(self, incident: Incident) -> Incident:
         sanitized = redact_incident(incident)
         existing = self.find_by_fingerprint(sanitized.fingerprint)
+        if existing is None:
+            existing = self._find_legacy_match(sanitized)
         merged = sanitized if existing is None else merge_incident(existing, sanitized)
         validate_incident(merged.to_dict(), self.schema_path)
         body = _issue_body(merged)
@@ -59,6 +68,22 @@ class IncidentStore:
             )
             merged = Incident.from_dict({**merged.to_dict(), "issue_url": existing.issue_url})
         return merged
+
+    def _find_legacy_match(self, incident: Incident) -> Incident | None:
+        legacy = legacy_fingerprint_for(
+            pipeline_id=incident.pipeline_id,
+            failed_check=incident.failed_check,
+            error_class=incident.error_class,
+        )
+        existing = self.find_by_fingerprint(legacy)
+        if existing is None or (
+            existing.pipeline_id != incident.pipeline_id
+            or existing.job_id != incident.job_id
+            or existing.failed_check != incident.failed_check
+            or existing.error_class != incident.error_class
+        ):
+            return None
+        return replace(existing, fingerprint=incident.fingerprint, incident_id=incident.incident_id)
 
     def find_by_fingerprint(self, fingerprint: str) -> Incident | None:
         # `is:issue` is mandatory: GitHub's search/issues endpoint rejects a
@@ -117,7 +142,28 @@ def parse_issue(item: dict[str, Any]) -> Incident | None:
     payload = json.loads(encoded)
     if not payload.get("issue_url"):
         payload["issue_url"] = item.get("html_url")
-    return Incident.from_dict(payload)
+    incident = Incident.from_dict(payload)
+    # GitHub issue state is authoritative when someone changes it without
+    # rewriting the embedded JSON snapshot.
+    if item.get("state") == "closed" and incident.status not in {"RECOVERED", "CLOSED"}:
+        return replace(
+            incident,
+            status="CLOSED",
+            retry_eligible=False,
+            needs_human=False,
+            needs_local=False,
+            manually_reopened=False,
+        )
+    if item.get("state") == "open" and incident.status in {"RECOVERED", "CLOSED"}:
+        return replace(
+            incident,
+            status="NEEDS_HUMAN",
+            retry_eligible=False,
+            needs_human=True,
+            recovered_at=None,
+            manually_reopened=True,
+        )
+    return incident
 
 
 def _issue_body(incident: Incident) -> str:

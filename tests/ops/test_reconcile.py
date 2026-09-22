@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -78,6 +79,7 @@ def test_digest_mentions_healthy_count_and_open_incidents() -> None:
     )
     body = build_digest(registry=registry, incidents=[incident], now=NOW)
     assert "Open incidents: 1" in body
+    assert "Jobs without open incidents:" in body
     assert "Needs human: 0" in body
     assert "openrouter-provider-activity/scrape-provider-activity" in body
 
@@ -86,8 +88,47 @@ def test_monday_digest_includes_weekly_section() -> None:
     registry = load_registry(ROOT / "config" / "ops" / "pipelines.yaml", repo_root=ROOT)
     monday = datetime(2026, 9, 7, 1, 0, tzinfo=timezone.utc)  # 09:00 Taipei
     body = build_digest(registry=registry, incidents=[], now=monday)
-    assert "All registered pilot jobs look healthy." in body
+    assert "No open incidents in registered jobs." in body
     assert "Weekly reliability:" in body
+
+
+def test_weekly_digest_counts_new_threads_not_recent_updates() -> None:
+    registry = load_registry(ROOT / "config" / "ops" / "pipelines.yaml", repo_root=ROOT)
+    pipeline = registry.pipelines["openrouter-provider-activity"]
+    old = missed_schedule_incident(
+        pipeline=pipeline,
+        job_id="scrape-provider-activity",
+        now=datetime(2026, 8, 25, tzinfo=timezone.utc),
+        last_finished_at=None,
+    )
+    old_updated = replace(old, updated_at="2026-09-09T11:00:00Z")
+    recent = missed_schedule_incident(
+        pipeline=pipeline,
+        job_id="scrape-provider-activity",
+        now=datetime(2026, 9, 8, tzinfo=timezone.utc),
+        last_finished_at=None,
+    )
+
+    body = build_digest(registry=registry, incidents=[old_updated, recent], now=NOW, weekly=True)
+
+    assert "New incident threads opened in last 7d" in body
+    assert "- missed_schedule: 1" in body
+
+
+def test_digest_only_counts_recovery_in_last_24_hours() -> None:
+    from ops_control.incidents import mark_recovered
+
+    registry = load_registry(ROOT / "config" / "ops" / "pipelines.yaml", repo_root=ROOT)
+    pipeline = registry.pipelines["openrouter-provider-activity"]
+    old = missed_schedule_incident(
+        pipeline=pipeline, job_id="scrape-provider-activity", now=NOW, last_finished_at=None
+    )
+    recent = mark_recovered(old, now=datetime(2026, 9, 9, 11, 0, tzinfo=timezone.utc))
+    historic = mark_recovered(old, now=datetime(2026, 9, 7, 11, 0, tzinfo=timezone.utc))
+    body = build_digest(registry=registry, incidents=[recent, historic], now=NOW)
+    assert "Recovered in last 24h: 1" in body
+    assert body.count("- openrouter-provider-activity/scrape-provider-activity:") == 1
+    assert "previous issue:" in body
 
 
 def test_monthly_window_is_checked_after_grace_not_during_the_window() -> None:
@@ -106,6 +147,36 @@ def test_monthly_window_is_checked_after_grace_not_during_the_window() -> None:
         and item.error_class == "missed_schedule"
         for item in incidents
     )
+
+
+def test_monthly_run_inside_window_satisfies_deadline() -> None:
+    registry = load_registry(ROOT / "config" / "ops" / "pipelines.yaml", repo_root=ROOT)
+    pipeline = registry.pipelines["semiconductor-memory-monthly"]
+    job = pipeline.jobs["adata-update"]
+    assert missed_schedule(
+        pipeline=pipeline,
+        job=job,
+        last_finished_at="2026-09-05T12:00:00Z",
+        now=datetime(2026, 9, 22, 16, 0, tzinfo=timezone.utc),
+    ) is False
+    assert missed_schedule(
+        pipeline=pipeline,
+        job=job,
+        last_finished_at="2026-08-05T12:00:00Z",
+        now=datetime(2026, 9, 22, 16, 0, tzinfo=timezone.utc),
+    ) is True
+
+
+def test_late_monthly_run_resolves_open_missed_schedule() -> None:
+    registry = load_registry(ROOT / "config" / "ops" / "pipelines.yaml", repo_root=ROOT)
+    pipeline = registry.pipelines["semiconductor-memory-monthly"]
+    job = pipeline.jobs["adata-update"]
+    assert missed_schedule(
+        pipeline=pipeline,
+        job=job,
+        last_finished_at="2026-09-08T12:00:00Z",
+        now=datetime(2026, 9, 22, 16, 0, tzinfo=timezone.utc),
+    ) is False
 
 
 def test_healthy_report_recovers_old_incident_when_job_is_now_clear() -> None:
@@ -166,3 +237,56 @@ def test_stale_healthy_report_does_not_recover_job_with_current_incident() -> No
     )
 
     assert recovered == []
+
+
+def test_healthy_report_does_not_auto_close_manually_reopened_issue() -> None:
+    registry = load_registry(ROOT / "config" / "ops" / "pipelines.yaml", repo_root=ROOT)
+    pipeline = registry.pipelines["openrouter-provider-activity"]
+    existing = missed_schedule_incident(
+        pipeline=pipeline,
+        job_id="scrape-provider-activity",
+        now=datetime(2026, 9, 8, tzinfo=timezone.utc),
+        last_finished_at=None,
+    )
+    reopened = replace(existing, status="NEEDS_HUMAN", needs_human=True, manually_reopened=True)
+    report = _healthy_report(
+        "openrouter-provider-activity",
+        "scrape-provider-activity",
+        "2026-09-09T11:30:00Z",
+    )
+
+    recovered = recover_resolved_incidents(
+        open_incidents=[reopened],
+        reports={(report.pipeline_id, report.job_id): report},
+        current_incidents=[],
+        now=NOW,
+    )
+
+    assert recovered == []
+
+
+def test_healthy_report_recovers_ordinary_needs_human_incident() -> None:
+    registry = load_registry(ROOT / "config" / "ops" / "pipelines.yaml", repo_root=ROOT)
+    pipeline = registry.pipelines["openrouter-provider-activity"]
+    existing = missed_schedule_incident(
+        pipeline=pipeline,
+        job_id="scrape-provider-activity",
+        now=datetime(2026, 9, 8, tzinfo=timezone.utc),
+        last_finished_at=None,
+    )
+    needs_human = replace(existing, status="NEEDS_HUMAN", needs_human=True)
+    report = _healthy_report(
+        "openrouter-provider-activity",
+        "scrape-provider-activity",
+        "2026-09-09T11:30:00Z",
+    )
+
+    recovered = recover_resolved_incidents(
+        open_incidents=[needs_human],
+        reports={(report.pipeline_id, report.job_id): report},
+        current_incidents=[],
+        now=NOW,
+    )
+
+    assert len(recovered) == 1
+    assert recovered[0].status == "RECOVERED"

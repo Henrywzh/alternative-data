@@ -70,11 +70,24 @@ def schedule_deadline(pipeline: PipelineSpec, job: JobSpec, *, now: datetime) ->
     return None
 
 
+def monthly_window_start(pipeline: PipelineSpec, job: JobSpec, *, now: datetime) -> datetime | None:
+    if (pipeline.cadence or {}).get("kind") != "monthly_windows":
+        return None
+    for window in pipeline.cadence.get("schedule_windows", []):
+        if str(window.get("job_id") or "") == job.job_id:
+            day = min(int(str(window["days"]).split("-")[0]), monthrange(now.year, now.month)[1])
+            return datetime(now.year, now.month, day, tzinfo=timezone.utc)
+    return None
+
+
 def missed_schedule(*, pipeline: PipelineSpec, job: JobSpec, last_finished_at: str | None, now: datetime) -> bool:
     deadline = schedule_deadline(pipeline, job, now=now)
     if deadline is None:
         return False
     finished = parse_iso(last_finished_at)
+    window_start = monthly_window_start(pipeline, job, now=now)
+    if window_start is not None:
+        return now >= deadline and (finished is None or finished < window_start)
     if finished is None:
         return now >= deadline
     return finished < deadline and now >= deadline
@@ -133,6 +146,8 @@ def recover_resolved_incidents(
     }
     recovered: list[Incident] = []
     for incident in open_incidents:
+        if incident.manually_reopened:
+            continue
         key = (incident.pipeline_id, incident.job_id)
         report = reports.get(key)
         if key in current_keys or report is None or report.derived_state != "HEALTHY":

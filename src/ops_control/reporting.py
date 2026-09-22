@@ -18,44 +18,58 @@ TAIPEI = timezone(timedelta(hours=8))
 def build_digest(*, registry: PipelineRegistry, incidents: Iterable[Incident], now: datetime, weekly: bool = False) -> str:
     incidents = list(incidents)
     open_incidents = [item for item in incidents if item.status in ACTIVE_STATUSES]
-    recovered = [item for item in incidents if item.status == "RECOVERED"]
+    recent_cutoff = now - timedelta(hours=24)
+    recovered = [
+        item for item in incidents
+        if item.status == "RECOVERED"
+        and item.recovered_at is not None
+        and datetime.fromisoformat(item.recovered_at.replace("Z", "+00:00")) >= recent_cutoff
+    ]
     needs_human = [item for item in open_incidents if item.needs_human]
     needs_local = [item for item in open_incidents if item.needs_local]
     stale = [item for item in open_incidents if item.derived_state in {"STALE", "DEGRADED_RETAINED", "REGRESSED"}]
-    healthy_jobs = 0
+    jobs_without_open_incidents = 0
     total_jobs = 0
     unhealthy_keys = {(item.pipeline_id, item.job_id) for item in open_incidents}
     for pipeline in registry.pipelines.values():
         for job in pipeline.jobs.values():
             total_jobs += 1
             if (pipeline.pipeline_id, job.job_id) not in unhealthy_keys:
-                healthy_jobs += 1
+                jobs_without_open_incidents += 1
     local_now = now.astimezone(TAIPEI)
     weekday = local_now.strftime("%A")
     lines = [
         f"Alternative-data ops digest — {local_now.strftime('%Y-%m-%d %H:%M %Z')}",
         "",
-        f"Healthy jobs: {healthy_jobs}/{total_jobs}",
+        f"Jobs without open incidents: {jobs_without_open_incidents}/{total_jobs}",
         f"Open incidents: {len(open_incidents)}",
-        f"Recovered: {len(recovered)}",
+        f"Recovered in last 24h: {len(recovered)}",
         f"Needs human: {len(needs_human)}",
         f"Needs local: {len(needs_local)}",
         f"Stale/retained/regressed: {len(stale)}",
     ]
     if not open_incidents:
-        lines.extend(["", "All registered pilot jobs look healthy."])
+        lines.extend(["", "No open incidents in registered jobs."])
     else:
         lines.extend(["", "Open incidents:"])
         for item in open_incidents:
             url = f" ({item.issue_url})" if item.issue_url else ""
             lines.append(f"- {item.pipeline_id}/{item.job_id}: {item.status} {item.derived_state} — {item.summary}{url}")
     if recovered:
-        lines.extend(["", "Recovered:"])
+        lines.extend(["", "Recovered in last 24h:"])
         for item in recovered:
-            lines.append(f"- {item.pipeline_id}/{item.job_id}: {item.summary}")
+            url = f" ({item.issue_url})" if item.issue_url else ""
+            lines.append(
+                f"- {item.pipeline_id}/{item.job_id}: recovered at {item.recovered_at}; "
+                f"previous issue: {item.summary}{url}"
+            )
     if weekly or weekday == "Monday":
-        counts = Counter(item.error_class for item in incidents)
-        lines.extend(["", "Weekly reliability:"])
+        weekly_cutoff = now - timedelta(days=7)
+        counts = Counter(
+            item.error_class for item in incidents
+            if datetime.fromisoformat(item.opened_at.replace("Z", "+00:00")) >= weekly_cutoff
+        )
+        lines.extend(["", "Weekly reliability: New incident threads opened in last 7d"])
         if not counts:
             lines.append("- No incidents in the current window.")
         else:

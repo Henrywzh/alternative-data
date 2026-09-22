@@ -1,13 +1,18 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime, timezone
 import json
 import subprocess
 import sys
 from pathlib import Path
 
-from ops_control.finalize import finalize_run, write_fallback_report
+from ops_control.finalize import _maybe_record_incident, finalize_run, write_fallback_report
+from ops_control.incidents import mark_recovered, missed_schedule_incident
+from ops_control.models import CheckResult, RunReport
+from ops_control.registry import load_registry
 from ops_control.schema import validate_run_report
+from ops_control.store import _issue_body, parse_issue
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -141,6 +146,65 @@ def test_finalizer_error_still_writes_a_schema_valid_fallback(tmp_path: Path) ->
     assert report.derived_state == "UNKNOWN_EVIDENCE"
     assert "top-secret-value" not in report_path.read_text(encoding="utf-8")
     assert "top-secret-value" not in evidence_path.read_text(encoding="utf-8")
+
+
+def test_healthy_finalizer_preserves_manual_reopen_but_recovers_ordinary_issue(monkeypatch) -> None:
+    registry = load_registry(REGISTRY, repo_root=ROOT)
+    pipeline = registry.pipelines["openrouter-provider-activity"]
+    original = missed_schedule_incident(
+        pipeline=pipeline,
+        job_id="scrape-provider-activity",
+        now=NOW,
+        last_finished_at=None,
+    )
+    reopened = parse_issue({
+        "state": "open",
+        "body": _issue_body(mark_recovered(original, now=NOW)),
+        "html_url": "https://github.com/example/ops/issues/3",
+    })
+    assert reopened is not None
+    ordinary = replace(original, status="NEEDS_HUMAN", needs_human=True)
+    written = []
+
+    class FakeStore:
+        def __init__(self, **kwargs):
+            pass
+
+        def find_open_for_job(self, pipeline_id, job_id):
+            return [reopened, ordinary]
+
+        def upsert(self, incident):
+            written.append(incident)
+
+    monkeypatch.setenv("OPS_INCIDENT_REPO", "example/ops")
+    monkeypatch.setenv("OPS_INCIDENT_TOKEN", "test-token")
+    monkeypatch.setattr("ops_control.finalize.IncidentStore", FakeStore)
+    report = RunReport(
+        pipeline_id=original.pipeline_id,
+        job_id=original.job_id,
+        workflow="test.yml",
+        run_id="100",
+        run_attempt=1,
+        commit_sha="abc",
+        started_at="2026-09-08T02:00:00Z",
+        finished_at="2026-09-08T02:00:00Z",
+        execution="success",
+        collection="complete",
+        data_health="fresh",
+        publication="published",
+        evidence_quality="verified",
+        derived_state="HEALTHY",
+        checks=[CheckResult(check_id="ok", status="healthy", required=True, message="ok")],
+        outputs=[],
+        evidence=[],
+        shadow=True,
+    )
+
+    _maybe_record_incident(report, pipeline=pipeline, now=NOW)
+
+    assert len(written) == 1
+    assert written[0].status == "RECOVERED"
+    assert written[0].manually_reopened is False
 
 
 def test_script_writes_fallback_when_third_party_dependencies_are_unavailable(

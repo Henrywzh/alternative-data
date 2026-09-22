@@ -284,7 +284,7 @@ def _maybe_record_incident(report: RunReport, *, pipeline, now: datetime | None)
         store = IncidentStore(repository=incident_repo, token=incident_token, schema_path=schema_path)
         if report.derived_state == "HEALTHY":
             for existing in store.find_open_for_job(report.pipeline_id, report.job_id):
-                if existing.status == "RETRYING":
+                if existing.status == "RETRYING" or existing.manually_reopened:
                     continue
                 store.upsert(mark_recovered(existing, now=now or datetime.now(timezone.utc), run_id=report.run_id))
             return

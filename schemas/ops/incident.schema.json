@@ -110,6 +110,9 @@
     "needs_local": {
       "type": "boolean"
     },
+    "manually_reopened": {
+      "type": "boolean"
+    },
     "opened_at": {
       "type": "string",
       "format": "date-time"

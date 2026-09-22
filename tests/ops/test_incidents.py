@@ -95,10 +95,26 @@ def test_stale_data_is_not_auto_retried_and_needs_human() -> None:
 
 
 def test_same_fingerprint_is_stable_across_runs() -> None:
-    left = fingerprint_for(pipeline_id="p", failed_check="c", error_class="e")
-    right = fingerprint_for(pipeline_id="p", failed_check="c", error_class="e")
+    left = fingerprint_for(pipeline_id="p", job_id="first", failed_check="c", error_class="e")
+    right = fingerprint_for(pipeline_id="p", job_id="first", failed_check="c", error_class="e")
     assert left == right
-    assert "p:c:e:" in left
+    assert "p:first:c:e:" in left
+    assert left != fingerprint_for(pipeline_id="p", job_id="second", failed_check="c", error_class="e")
+
+
+def test_missed_schedule_fingerprint_is_scoped_to_job() -> None:
+    registry = load_registry(ROOT / "config" / "ops" / "pipelines.yaml", repo_root=ROOT)
+    pipeline = registry.pipelines["semiconductor-memory-monthly"]
+    from ops_control.incidents import missed_schedule_incident
+
+    adata = missed_schedule_incident(
+        pipeline=pipeline, job_id="adata-update", now=NOW, last_finished_at=None
+    )
+    fred = missed_schedule_incident(
+        pipeline=pipeline, job_id="fred-update", now=NOW, last_finished_at=None
+    )
+    assert adata.fingerprint != fred.fingerprint
+    assert adata.failed_check == fred.failed_check == "schedule.window"
 
 
 def test_retry_helper_invokes_github_once(monkeypatch) -> None:
