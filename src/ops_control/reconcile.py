@@ -146,7 +146,7 @@ def recover_resolved_incidents(
     }
     recovered: list[Incident] = []
     for incident in open_incidents:
-        if incident.status == "NEEDS_HUMAN":
+        if incident.manually_reopened:
             continue
         key = (incident.pipeline_id, incident.job_id)
         report = reports.get(key)

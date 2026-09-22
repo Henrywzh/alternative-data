@@ -152,6 +152,7 @@ def parse_issue(item: dict[str, Any]) -> Incident | None:
             retry_eligible=False,
             needs_human=False,
             needs_local=False,
+            manually_reopened=False,
         )
     if item.get("state") == "open" and incident.status in {"RECOVERED", "CLOSED"}:
         return replace(
@@ -160,6 +161,7 @@ def parse_issue(item: dict[str, Any]) -> Incident | None:
             retry_eligible=False,
             needs_human=True,
             recovered_at=None,
+            manually_reopened=True,
         )
     return incident
 

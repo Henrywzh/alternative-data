@@ -434,6 +434,7 @@ The daily report contains:
 - New and open incidents.
 - Incidents recovered in the last 24 hours, with their prior issue context.
 - New incident threads opened in the last seven days in the Monday reliability section; recurring occurrences are not counted as separate failures.
+- A manually reopened terminal issue remains open for human review even if the latest producer report is healthy; ordinary `NEEDS_HUMAN` failures may still recover on fresh healthy evidence.
 - Stale, regressed, partial, or retained datasets.
 - Incidents waiting for local Codex.
 - Incidents requiring human input.

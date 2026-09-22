@@ -66,6 +66,7 @@ class Incident:
     unknown: tuple[str, ...]
     recovered_at: str | None = None
     issue_url: str | None = None
+    manually_reopened: bool = False
     schema_version: int = field(default=1, init=False)
 
     @classmethod
@@ -97,6 +98,7 @@ class Incident:
             unknown=tuple(str(item) for item in payload.get("unknown", [])),
             recovered_at=None if payload.get("recovered_at") is None else str(payload["recovered_at"]),
             issue_url=None if payload.get("issue_url") is None else str(payload["issue_url"]),
+            manually_reopened=bool(payload.get("manually_reopened", False)),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -389,6 +391,7 @@ def mark_recovered(incident: Incident, *, now: datetime, run_id: str | None = No
         updated_at=stamp,
         last_seen_at=stamp,
         recovered_at=stamp,
+        manually_reopened=False,
         run_ids=run_ids,
     )
 

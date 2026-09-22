@@ -77,6 +77,7 @@ def test_manually_reopened_recovered_issue_requires_human_review() -> None:
     assert parsed.needs_human is True
     assert parsed.retry_eligible is False
     assert parsed.recovered_at is None
+    assert parsed.manually_reopened is True
 
 
 def test_upsert_migrates_matching_legacy_issue_without_creating_duplicate(monkeypatch) -> None:

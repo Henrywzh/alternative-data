@@ -248,7 +248,7 @@ def test_healthy_report_does_not_auto_close_manually_reopened_issue() -> None:
         now=datetime(2026, 9, 8, tzinfo=timezone.utc),
         last_finished_at=None,
     )
-    reopened = replace(existing, status="NEEDS_HUMAN", needs_human=True, derived_state="HEALTHY")
+    reopened = replace(existing, status="NEEDS_HUMAN", needs_human=True, manually_reopened=True)
     report = _healthy_report(
         "openrouter-provider-activity",
         "scrape-provider-activity",
@@ -263,3 +263,30 @@ def test_healthy_report_does_not_auto_close_manually_reopened_issue() -> None:
     )
 
     assert recovered == []
+
+
+def test_healthy_report_recovers_ordinary_needs_human_incident() -> None:
+    registry = load_registry(ROOT / "config" / "ops" / "pipelines.yaml", repo_root=ROOT)
+    pipeline = registry.pipelines["openrouter-provider-activity"]
+    existing = missed_schedule_incident(
+        pipeline=pipeline,
+        job_id="scrape-provider-activity",
+        now=datetime(2026, 9, 8, tzinfo=timezone.utc),
+        last_finished_at=None,
+    )
+    needs_human = replace(existing, status="NEEDS_HUMAN", needs_human=True)
+    report = _healthy_report(
+        "openrouter-provider-activity",
+        "scrape-provider-activity",
+        "2026-09-09T11:30:00Z",
+    )
+
+    recovered = recover_resolved_incidents(
+        open_incidents=[needs_human],
+        reports={(report.pipeline_id, report.job_id): report},
+        current_incidents=[],
+        now=NOW,
+    )
+
+    assert len(recovered) == 1
+    assert recovered[0].status == "RECOVERED"
