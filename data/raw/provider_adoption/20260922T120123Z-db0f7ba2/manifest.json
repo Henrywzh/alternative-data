@@ -1,0 +1,32 @@
+{
+  "run_id": "20260922T120123Z-db0f7ba2",
+  "mode": "npm-daily-update",
+  "scraped_at": "2026-09-22T12:01:23.324019Z",
+  "target_date": "2026-09-21",
+  "providers": [
+    "openai",
+    "anthropic",
+    "google",
+    "deepseek",
+    "meta",
+    "mistral",
+    "qwen",
+    "moonshot",
+    "minimax",
+    "zai",
+    "langchain",
+    "pydantic_ai"
+  ],
+  "datasets": [
+    "pypi_downloads_daily",
+    "npm_downloads_daily",
+    "github_repo_candidates_daily",
+    "github_provider_signals_daily",
+    "github_repo_rollup_daily",
+    "github_provider_adoption_daily",
+    "provider_momentum_daily",
+    "huggingface_models_daily"
+  ],
+  "parser_version": "0.1.0",
+  "range_start_date": "2025-10-10"
+}
