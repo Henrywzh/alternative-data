@@ -16,9 +16,12 @@ def test_factset_replay_reuses_html_and_ocr_without_network(tmp_path: Path) -> N
       <h1>Analysts Increasing EPS Estimates for S&amp;P 500 Companies</h1>
       <div class="fs--blog--single--meta"><p>By John Butters | September 4, 2026</p></div>
       <div id="hs_cos_wrapper_post_body">
-        <p>The Q3 bottom-up EPS estimate increased by 1.2% during the first two months of the quarter.</p>
+        <p>Given concerns in the market about higher oil prices, have analysts lowered EPS estimates more than normal for S&amp;P 500 companies for the third quarter?</p>
+        <p>The answer is no. During the months of July and August, analysts increased EPS estimates in aggregate for the third quarter.</p>
+        <p>The Q3 bottom-up EPS estimate increased by 1.2% during the first two months of the quarter from June 30 to August 31.</p>
+        <p>During the past five years (20 quarters), the average decline in the bottom-up EPS estimate during the first two months of a quarter has been 1.7%.</p>
         <p>The CY 2026 bottom-up EPS estimate increased by 6.1% during the same period.</p>
-        <p>At the sector level, the Energy (+11.8%) sector led the increase.</p>
+        <p>At the sector level, four of the eleven sectors witnessed an increase in their bottom-up EPS estimate, led by the Energy (+11.8%) sector. On the other hand, seven sectors recorded a decrease, led by the Materials (-9.1%) sector.</p>
       </div>
     </body></html>
     """.encode()
@@ -44,6 +47,8 @@ def test_factset_replay_reuses_html_and_ocr_without_network(tmp_path: Path) -> N
     assert result.observations[0].positive_eps_guidance_count == 63.0
     assert result.catalog[0].ocr_image_count == 1
     assert result.catalog[0].extraction_status == "supported_observation"
+    assert result.catalog[0].narrative_json is not None
+    assert "The answer is no" in result.catalog[0].narrative_json
 
 
 def test_latest_raw_run_ignores_partial_article_fetches(tmp_path: Path) -> None:

@@ -68,6 +68,7 @@ class FactsetArticleRecord:
     supported_field_count: int
     extraction_status: str
     fetched_at: str
+    narrative_json: str | None = None
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)

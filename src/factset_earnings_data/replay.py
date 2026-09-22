@@ -10,6 +10,7 @@ from typing import Any
 
 from .client import FactsetEarningsClient
 from .models import FactsetArticleRecord, FactsetEarningsObservation
+from .narrative import narrative_to_json, parse_article_narrative
 from .storage import FactsetEarningsStorage
 
 
@@ -182,6 +183,7 @@ def replay_raw_run(
                 supported_field_count=supported_count,
                 extraction_status=extraction_status,
                 fetched_at=str(entry.get("captured_at_utc") or manifest.get("finished_at_utc") or ""),
+                narrative_json=narrative_to_json(parse_article_narrative(combined_text)),
             )
         )
 

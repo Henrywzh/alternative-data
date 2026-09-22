@@ -59,6 +59,7 @@ from eia_energy_data.models import EiaGridHourlyObservation
 from eia_energy_data.storage import EiaEnergyStorage
 from factset_earnings_data.client import FactsetEarningsClient
 from factset_earnings_data.models import FactsetArticleRecord
+from factset_earnings_data.narrative import narrative_to_json, parse_article_narrative
 from factset_earnings_data.storage import FactsetEarningsStorage
 from hkex_market_flow_data.client import HkexMarketFlowClient
 from hkex_market_flow_data.storage import HkexMarketFlowStorage
@@ -907,6 +908,7 @@ def backfill_factset(base_dir: Path, run_id: str) -> dict[str, Any]:
                         else "no_supported_metrics"
                     ),
                     fetched_at=article_fetched_at,
+                    narrative_json=narrative_to_json(parse_article_narrative(combined_text)),
                 )
             )
         except Exception as exc:

@@ -45,6 +45,7 @@ class FactsetEarningsStorage:
         "supported_field_count",
         "extraction_status",
         "fetched_at",
+        "narrative_json",
     ]
 
     def __init__(self, base_dir: Path) -> None:
