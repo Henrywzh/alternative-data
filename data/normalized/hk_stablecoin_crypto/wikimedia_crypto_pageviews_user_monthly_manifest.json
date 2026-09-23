@@ -1,0 +1,25 @@
+{
+  "dataset": "wikimedia_crypto_pageviews_user_monthly",
+  "source": "Wikimedia Pageviews API",
+  "source_url": "https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article",
+  "project": "en.wikipedia.org",
+  "pages": [
+    "Bitcoin",
+    "Ethereum",
+    "Cryptocurrency",
+    "Stablecoin",
+    "Tether (cryptocurrency)",
+    "USD Coin",
+    "Decentralized finance",
+    "Decentralized exchange"
+  ],
+  "agent": "user",
+  "grain": "Curated crypto Wikipedia page × complete calendar month",
+  "history_start": "2016-08",
+  "history_end": "2026-07",
+  "records": 960,
+  "source_status": "live",
+  "source_granularity": "daily",
+  "caveat": "Monthly user totals are Wikipedia page loads, not unique people, trading activity, or Hong Kong adoption.",
+  "fetched_at": "2026-08-12T22:30:05.936248+00:00"
+}

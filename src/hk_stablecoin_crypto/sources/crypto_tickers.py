@@ -12,7 +12,7 @@ import pandas as pd
 import requests
 
 from ..config import BINANCE_TICKER_URL, COINBASE_TICKER_URL, FEAR_GREED_URL
-from ..storage import save_raw_snapshot
+from ..storage import load_latest_normalized_frame, save_normalized_frame, save_raw_snapshot
 
 logger = logging.getLogger(__name__)
 
@@ -61,17 +61,32 @@ def compute_coinbase_premium() -> dict:
     
     if cb_price and bn_price:
         premium_bps = (cb_price - bn_price) / bn_price * 10000
-        return {
+        payload = {
             "coinbase_price_usd": cb_price,
             "binance_price_usd": bn_price,
             "premium_bps": premium_bps,
             "fetched_at": now_str,
+            "source": "live",
         }
-    
+        save_normalized_frame(
+            "coinbase_premium",
+            pd.DataFrame([payload]),
+            source="live",
+            extra={"provider": "coinbase+binance"},
+        )
+        return payload
+
+    cached = load_latest_normalized_frame("coinbase_premium")
+    if not cached.empty:
+        row = cached.iloc[-1].to_dict()
+        row["source"] = "cache"
+        row["error"] = "Failed to fetch one or both prices"
+        return row
     return {
         "premium_bps": None,
         "error": "Failed to fetch one or both prices",
         "fetched_at": now_str,
+        "source": "unavailable",
     }
 
 
@@ -181,10 +196,29 @@ def fetch_btc_price_history(limit: int = 365) -> pd.DataFrame:
         result = pd.DataFrame(rows).drop_duplicates(subset=["date"]).sort_values("date")
         result = result.tail(target_days).reset_index(drop=True)
         save_raw_snapshot("btc_price_history", data, file_ext="json", source_url=url)
+        # Only a full-history fetch may replace the committed cache: a
+        # positive ``limit`` would otherwise truncate ten years of history
+        # down to that window.
+        if limit <= 0:
+            save_normalized_frame(
+                "btc_price_history",
+                result,
+                source="live",
+                extra={"provider": "binance", "symbol": "BTCUSDT"},
+            )
+        result.attrs["source"] = "live"
         return result
     except Exception as exc:
         logger.exception("Failed to fetch BTC price history")
-        return pd.DataFrame(columns=["date", "btc_price_usd", "fetched_at"])
+        cached = load_latest_normalized_frame("btc_price_history")
+        if not cached.empty:
+            cached.attrs["source"] = "cache"
+            cached.attrs["error"] = str(exc)
+            return cached
+        empty = pd.DataFrame(columns=["date", "btc_price_usd", "fetched_at"])
+        empty.attrs["source"] = "unavailable"
+        empty.attrs["error"] = str(exc)
+        return empty
 
 
 def fetch_all_crypto_signals() -> dict:

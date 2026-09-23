@@ -25,6 +25,20 @@ from src.hk_stablecoin_crypto.sources.wikimedia_pageviews import (
 )
 
 
+@pytest.fixture(autouse=True)
+def _isolate_normalized_cache(monkeypatch, tmp_path):
+    """Keep fetchers from overwriting the committed Binance/Coinbase caches.
+
+    ``fetch_btc_price_history`` and ``compute_coinbase_premium`` persist their
+    result under ``data/normalized/hk_stablecoin_crypto``. Those files are
+    tracked and the daily local refresh commits them whenever they change, so
+    a test feeding fake prices must never reach the real directory.
+    """
+    import src.hk_stablecoin_crypto.storage as storage
+
+    monkeypatch.setattr(storage, "NORMALIZED_DIR", tmp_path / "normalized")
+
+
 @pytest.mark.network
 def test_fetch_hkma_register():
     df = fetch_licensed_issuers()
@@ -393,3 +407,69 @@ def test_watchlist_price_in_quality_specs():
 def test_pipeline_stage_1_includes_watchlist_price_key():
     res = run_stage_1_pipeline()
     assert "watchlist_price" in res
+
+
+def test_btc_price_history_falls_back_to_normalized_cache(monkeypatch, tmp_path):
+    import pandas as pd
+    import src.hk_stablecoin_crypto.sources.crypto_tickers as tickers
+    import src.hk_stablecoin_crypto.storage as storage
+
+    cached = pd.DataFrame(
+        [{"date": "2026-09-01", "btc_price_usd": 111.0, "fetched_at": "2026-09-01T00:00:00Z"}]
+    )
+    monkeypatch.setattr(storage, "NORMALIZED_DIR", tmp_path)
+    monkeypatch.setattr(tickers, "NORMALIZED_DIR", tmp_path, raising=False)
+    monkeypatch.setattr(tickers, "load_latest_normalized_frame", lambda name: cached)
+    monkeypatch.setattr(tickers, "save_normalized_frame", lambda *args, **kwargs: tmp_path)
+    monkeypatch.setattr(tickers, "save_raw_snapshot", lambda *args, **kwargs: None)
+
+    def boom(*args, **kwargs):
+        raise RuntimeError("451 unavailable for legal reasons")
+
+    monkeypatch.setattr(tickers.requests, "get", boom)
+    frame = tickers.fetch_btc_price_history(0)
+    assert list(frame["btc_price_usd"]) == [111.0]
+    assert frame.attrs["source"] == "cache"
+
+
+def test_coinbase_premium_falls_back_to_normalized_cache(monkeypatch):
+    import pandas as pd
+    import src.hk_stablecoin_crypto.sources.crypto_tickers as tickers
+
+    cached = pd.DataFrame(
+        [{
+            "coinbase_price_usd": 100.0,
+            "binance_price_usd": 99.0,
+            "premium_bps": 101.01,
+            "fetched_at": "2026-09-01T00:00:00Z",
+        }]
+    )
+    monkeypatch.setattr(tickers, "fetch_coinbase_btc_ticker", lambda: {"price_usd": None})
+    monkeypatch.setattr(tickers, "fetch_binance_btc_ticker", lambda: {"price_usd": None})
+    monkeypatch.setattr(tickers, "load_latest_normalized_frame", lambda name: cached)
+    result = tickers.compute_coinbase_premium()
+    assert result["source"] == "cache"
+    assert result["premium_bps"] == 101.01
+
+
+def test_btc_price_history_windowed_fetch_does_not_replace_cache(monkeypatch):
+    """A positive limit returns a window; it must not truncate the full cache."""
+    import src.hk_stablecoin_crypto.sources.crypto_tickers as tickers
+
+    class Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return [[day * 86_400_000, "0", "0", "0", str(100 + day)] for day in range(20_000, 20_005)]
+
+    saved: list[str] = []
+    monkeypatch.setattr(tickers.requests, "get", lambda *args, **kwargs: Response())
+    monkeypatch.setattr(tickers, "save_raw_snapshot", lambda *args, **kwargs: None)
+    monkeypatch.setattr(tickers, "save_normalized_frame", lambda name, *args, **kwargs: saved.append(name))
+
+    frame = tickers.fetch_btc_price_history(5)
+
+    assert len(frame) == 5
+    assert frame.attrs["source"] == "live"
+    assert saved == []

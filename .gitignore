@@ -602,3 +602,11 @@ data/raw/hkex_market_flow/**
 !data/raw/sp_pmi/*/manifest.json
 !data/raw/msci_reviews/*/manifest.json
 !data/raw/hkex_market_flow/*/manifest.json
+
+# hk_stablecoin_crypto: commit Binance/Coinbase caches so CI can rebuild BTC history
+# when api.binance.com returns 451 from US datacenter IPs. Raw vendor dumps stay local.
+!data/normalized/hk_stablecoin_crypto/
+data/normalized/hk_stablecoin_crypto/**
+!data/normalized/hk_stablecoin_crypto/**/
+!data/normalized/hk_stablecoin_crypto/**/*.parquet
+!data/normalized/hk_stablecoin_crypto/**/*.json

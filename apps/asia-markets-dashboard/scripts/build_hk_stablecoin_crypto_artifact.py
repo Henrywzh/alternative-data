@@ -418,16 +418,20 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
     fng_history_rows = []
     fng_daily_rows = []
     btc_history_rows = []
+    cb_source = "unavailable"
+    btc_source = "unavailable"
     try:
         signals = fetch_all_crypto_signals()
         if signals:
-            live_count += 1
             cb_data = signals.get("coinbase_premium", {})
             btc_price = cb_data.get("coinbase_price_usd")
             cb_premium_bps = cb_data.get("premium_bps")
+            cb_source = cb_data.get("source") or ("live" if cb_premium_bps is not None else "unavailable")
             fng_data = signals.get("fear_greed", {})
             fng_val = fng_data.get("value")
             fng_class = fng_data.get("classification")
+            if cb_source == "live" or fng_val is not None:
+                live_count += 1
             
         fng_df = fetch_fear_greed_history(0)  # full backfill
         if not fng_df.empty:
@@ -459,6 +463,7 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
                 })
                 
         btc_df = fetch_btc_price_history(0)
+        btc_source = btc_df.attrs.get("source", "live" if not btc_df.empty else "unavailable")
         if not btc_df.empty:
             btc_monthly = _monthly_history(btc_df, "btc_price_usd", method="last")
             for _, r in btc_monthly.iterrows():
@@ -960,9 +965,13 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
             "freshness": "live" if len(etf_summary_rows) > 0 else "unavailable",
         },
         "coinbase_binance": {
-            "status": "success" if btc_price is not None else "degraded",
-            "records": 1 if btc_price is not None else 0,
-            "freshness": "live" if btc_price is not None else "unavailable",
+            "status": "success" if cb_source == "live" or btc_source == "live" else "degraded",
+            "records": len(btc_history_rows) if btc_history_rows else (1 if btc_price is not None else 0),
+            "freshness": (
+                "live" if cb_source == "live" or btc_source == "live"
+                else "stale" if cb_source == "cache" or btc_source == "cache" or btc_history_rows
+                else "unavailable"
+            ),
         },
         "fear_greed": {
             "status": "success" if fng_val is not None else "degraded",
@@ -1138,7 +1147,10 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
                 "status": "Healthy" if source_stats[key]["status"] == "success" else "Degraded",
                 "latest_observation": data_as_of,
                 "records": source_stats[key]["records"],
-                "freshness": "Live" if source_stats[key]["freshness"] == "live" else "Unavailable",
+                "freshness": {
+                    "live": "Live",
+                    "stale": "Stale",
+                }.get(source_stats[key]["freshness"], "Unavailable"),
                 "notes": s["query"]["description"],
             }
             for key, s in PUBLIC_SOURCES.items()
