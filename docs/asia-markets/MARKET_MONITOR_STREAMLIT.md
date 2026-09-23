@@ -3,7 +3,9 @@
 This is the durable handoff for the Asia Markets Index & ETF Allocation
 Monitor. It describes the current implementation, not a future proposal.
 
-Last verified against the ETF heat-map implementation branch on 2026-09-15.
+Updated for the current implementation on 2026-09-23. The tracked-wrapper
+Eastmoney batch fallback is unit-tested; successful live access from GitHub
+Actions still needs runner confirmation.
 
 ## Product boundary
 
@@ -86,10 +88,12 @@ Provider ownership is declared per exposure and routed explicitly:
 - Eastmoney ETF spot: current market price, IOPV premium/discount, turnover,
   bid/ask and market-cap proxy. The primary AkShare endpoint retries a bounded
   set of transient gateway/rate-limit failures and empty responses. If that
-  path remains unavailable, a direct Eastmoney fallback rotates across public
-  quote hosts and fetches every page with a minimal field set. A failed or
-  incomplete fallback remains fail-closed: the freshness gate blocks the
-  email rather than borrowing an older quote or presenting partial coverage.
+  path remains unavailable, a direct Eastmoney batch requests only the ETF
+  codes in `ETF_REGISTRY`, rotating across public quote hosts and validating
+  exact wrapper/exchange coverage. The much larger full-market paginated scan
+  remains a last-resort fallback. Any failed or incomplete path remains
+  fail-closed: the freshness gate blocks the email rather than borrowing an
+  older quote or presenting partial coverage.
 - Eastmoney published NAV endpoint: historical close-vs-NAV premium backfill.
 - Eastmoney issuer fee endpoint: management and custody fee reconciliation.
 - Shanghai and Shenzhen Stock Exchange ETF scale feeds: official published

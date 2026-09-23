@@ -697,9 +697,12 @@ replacement for the operating manual or generated source-status JSON.
   optional local US market-cap flow proxy and ETF price/SMA/flow detail. This
   is Streamlit-only and does not enter the Cloudflare roster. Do not treat
   generated row counts or freshness as a permanent guarantee. Intraday
-  Eastmoney ETF quotes now retry the AkShare source and then use a bounded,
-  full-pagination multi-host fallback; incomplete snapshots still fail closed
-  before email rather than being presented as a fresh wrapper comparison.
+  Eastmoney ETF quotes now retry the AkShare source, then query only registered
+  wrapper codes through a bounded multi-host batch endpoint; a full-market
+  paginated scan remains the last resort. Incomplete snapshots still fail
+  closed before email rather than being presented as a fresh wrapper comparison.
+  The targeted fallback is unit-tested; GitHub-runner live reachability remains
+  to be confirmed by the next scheduled run.
 - The market monitor now has an optional ETF fund-activity pilot for tracked
   A-share wrappers. It stores official SSE/SZSE published share counts in
   separate run-scoped raw/normalized datasets and derives a CNY flow only from
