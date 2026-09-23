@@ -571,7 +571,7 @@ def test_spot_fetch_retries_empty_response(monkeypatch):
 
 
 def test_spot_fetch_reraises_after_transient_retry_budget(monkeypatch):
-    """Persistent provider failure remains visible to the freshness gate."""
+    """Both Eastmoney paths failing remains visible to the freshness gate."""
     import market_monitor.sources.akshare_etf as src
 
     class _Response:
@@ -592,8 +592,13 @@ def test_spot_fetch_reraises_after_transient_retry_budget(monkeypatch):
     sleeps: list[float] = []
     monkeypatch.setitem(sys.modules, "akshare", _FakeAk)
     monkeypatch.setattr(src.time, "sleep", sleeps.append)
+    monkeypatch.setattr(
+        src,
+        "_fetch_etf_spot_from_hosts",
+        lambda: (_ for _ in ()).throw(RuntimeError("alternate hosts unavailable")),
+    )
 
-    with pytest.raises(_BadGateway):
+    with pytest.raises(RuntimeError, match="failed on both paths"):
         src.fetch_etf_spot()
 
     assert calls == src.ETF_SPOT_MAX_ATTEMPTS
@@ -601,6 +606,113 @@ def test_spot_fetch_reraises_after_transient_retry_budget(monkeypatch):
         src.ETF_SPOT_RETRY_BASE_SECONDS,
         src.ETF_SPOT_RETRY_BASE_SECONDS * 2,
     ]
+
+
+def test_spot_fetch_uses_host_fallback_after_primary_failure(monkeypatch):
+    """A fresh alternate-host quote can recover without changing quote semantics."""
+    import market_monitor.sources.akshare_etf as src
+
+    frame = pd.DataFrame(
+        {
+            "代码": ["510300"],
+            "名称": ["沪深300ETF"],
+            "最新价": [4.21],
+            "IOPV实时估值": [4.20],
+            "基金折价率": [-0.24],
+        }
+    )
+
+    class _FakeAk:
+        @staticmethod
+        def fund_etf_spot_em():
+            raise RuntimeError("primary endpoint unavailable")
+
+    monkeypatch.setitem(sys.modules, "akshare", _FakeAk)
+    monkeypatch.setattr(src, "_fetch_etf_spot_from_hosts", lambda: frame)
+
+    out = src.fetch_etf_spot()
+
+    assert out.loc[0, "ticker"] == "510300"
+    assert out.loc[0, "market_price"] == pytest.approx(4.21)
+    assert out.loc[0, "iopv"] == pytest.approx(4.20)
+    assert out.loc[0, "premium_pct"] == pytest.approx(0.24)
+    assert out.loc[0, "observation_type"] == "intraday_quote"
+
+
+def test_spot_host_fallback_retries_alternate_host_and_requires_complete_pages(monkeypatch):
+    """The direct fallback rotates hosts per failed page and checks pagination."""
+    import market_monitor.sources.akshare_etf as src
+
+    first_page = [{"f12": f"{number:06d}", "f2": 1.0} for number in range(100)]
+    second_page = [{"f12": "999999", "f2": 2.0}]
+    calls: list[tuple[str, str]] = []
+
+    class _Response:
+        def __init__(self, payload=None, status_code=200):
+            self.payload = payload
+            self.status_code = status_code
+
+        def raise_for_status(self):
+            if self.status_code >= 400:
+                response = type("Response", (), {"status_code": self.status_code})()
+                raise src.requests.HTTPError(
+                    f"HTTP {self.status_code}", response=response
+                )
+
+        def json(self):
+            return self.payload
+
+    class _Session:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def get(self, url, *, params, headers, timeout):
+            page = params["pn"]
+            calls.append((url, page))
+            if page == "1" and url.startswith(src.ETF_SPOT_BASE_URLS[0]):
+                return _Response(status_code=502)
+            page_rows = first_page if page == "1" else second_page
+            return _Response({"rc": 0, "data": {"total": 101, "diff": page_rows}})
+
+    monkeypatch.setattr(src.requests, "Session", _Session)
+    monkeypatch.setattr(src, "ETF_SPOT_BASE_URLS", ("https://eastmoney-a", "https://eastmoney-b"))
+    monkeypatch.setattr(src.time, "sleep", lambda _seconds: None)
+
+    out = src._fetch_etf_spot_from_hosts()
+
+    assert len(out) == 101
+    assert out.loc[0, "代码"] == "000000"
+    assert out.loc[100, "代码"] == "999999"
+    assert calls == [
+        ("https://eastmoney-a/api/qt/clist/get", "1"),
+        ("https://eastmoney-b/api/qt/clist/get", "1"),
+        ("https://eastmoney-a/api/qt/clist/get", "2"),
+    ]
+
+
+def test_spot_host_fallback_rejects_incomplete_page(monkeypatch):
+    """A truncated page must never be normalized as a fresh market snapshot."""
+    import market_monitor.sources.akshare_etf as src
+
+    class _Session:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+    monkeypatch.setattr(src.requests, "Session", _Session)
+    monkeypatch.setattr(
+        src,
+        "_fetch_etf_spot_page",
+        lambda _session, _page: ([{"f12": f"{number:06d}"} for number in range(99)], 101),
+    )
+
+    with pytest.raises(RuntimeError, match="page 1 incomplete: 99/100 rows"):
+        src._fetch_etf_spot_from_hosts()
 
 
 @pytest.mark.parametrize("is_cross_border", [False, True])

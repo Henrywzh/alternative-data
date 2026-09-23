@@ -84,10 +84,12 @@ Provider ownership is declared per exposure and routed explicitly:
   produced a request for "SPX", which returns an empty frame rather than an
   error.
 - Eastmoney ETF spot: current market price, IOPV premium/discount, turnover,
-  bid/ask and market-cap proxy. The spot endpoint retries a bounded set of
-  transient gateway/rate-limit failures and empty responses; if the retry
-  budget is exhausted, the run remains fail-closed and the freshness gate
-  blocks the email rather than borrowing an older quote.
+  bid/ask and market-cap proxy. The primary AkShare endpoint retries a bounded
+  set of transient gateway/rate-limit failures and empty responses. If that
+  path remains unavailable, a direct Eastmoney fallback rotates across public
+  quote hosts and fetches every page with a minimal field set. A failed or
+  incomplete fallback remains fail-closed: the freshness gate blocks the
+  email rather than borrowing an older quote or presenting partial coverage.
 - Eastmoney published NAV endpoint: historical close-vs-NAV premium backfill.
 - Eastmoney issuer fee endpoint: management and custody fee reconciliation.
 - Shanghai and Shenzhen Stock Exchange ETF scale feeds: official published

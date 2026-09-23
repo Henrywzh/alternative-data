@@ -696,7 +696,10 @@ replacement for the operating manual or generated source-status JSON.
   fixed income, with 1D/1W/1M/3M/YTD/1Y performance, validated China flow,
   optional local US market-cap flow proxy and ETF price/SMA/flow detail. This
   is Streamlit-only and does not enter the Cloudflare roster. Do not treat
-  generated row counts or freshness as a permanent guarantee.
+  generated row counts or freshness as a permanent guarantee. Intraday
+  Eastmoney ETF quotes now retry the AkShare source and then use a bounded,
+  full-pagination multi-host fallback; incomplete snapshots still fail closed
+  before email rather than being presented as a fresh wrapper comparison.
 - The market monitor now has an optional ETF fund-activity pilot for tracked
   A-share wrappers. It stores official SSE/SZSE published share counts in
   separate run-scoped raw/normalized datasets and derives a CNY flow only from

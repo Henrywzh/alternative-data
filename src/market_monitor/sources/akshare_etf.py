@@ -13,6 +13,7 @@ from datetime import date
 from typing import Any
 
 import pandas as pd
+import requests
 
 from ..config import (
     ETF_SPOT_MAX_ATTEMPTS,
@@ -41,6 +42,177 @@ SINA_INDEX_SYMBOLS = {
 # Hang Seng and CSI-Hong-Kong indices come from Sina's separate HK endpoint,
 # which takes the index's own symbol rather than an sh/sz-prefixed code.
 SINA_HK_INDEX_SYMBOLS = frozenset({"HSI", "HSTECH", "HSCEI", "CSHKDIV", "CSHKMCS"})
+
+# AkShare's ETF spot adapter uses the `push2delay` host and downloads the
+# entire ETF universe through its paginated helper. When that host returns
+# persistent 502s, retrying the same full-universe request cannot recover.
+# Keep a small, field-minimal direct fallback on Eastmoney's public
+# `clist/get` endpoint, rotating hosts page-by-page only when needed.
+ETF_SPOT_PAGE_SIZE = 100  # Eastmoney caps this endpoint at 100 rows per page.
+ETF_SPOT_BASE_URLS = (
+    "https://88.push2.eastmoney.com",
+    "https://82.push2.eastmoney.com",
+    "https://push2.eastmoney.com",
+    "https://push2delay.eastmoney.com",
+)
+ETF_SPOT_FIELDS = (
+    "f2,f3,f5,f6,f12,f13,f14,f20,f21,f31,f32,f38,f402,f441"
+)
+ETF_SPOT_FIELD_RENAMES = {
+    "f12": "代码",
+    "f14": "名称",
+    "f2": "最新价",
+    "f441": "IOPV实时估值",
+    "f402": "基金折价率",
+    "f3": "涨跌幅",
+    "f5": "成交量",
+    "f6": "成交额",
+    "f31": "买一",
+    "f32": "卖一",
+    "f38": "最新份额",
+    "f20": "总市值",
+    "f21": "流通市值",
+}
+
+
+def _spot_error_label(exc: Exception) -> str:
+    """Include an HTTP status in source logs instead of hiding it as HTTPError."""
+    response = getattr(exc, "response", None)
+    status_code = getattr(response, "status_code", None)
+    suffix = f" HTTP {status_code}" if status_code is not None else ""
+    return f"{type(exc).__name__}{suffix}"
+
+
+def _fetch_etf_spot_page(
+    session: requests.Session,
+    page: int,
+) -> tuple[list[dict[str, Any]], int]:
+    """Fetch one ETF-list page with bounded Eastmoney host failover."""
+    params = {
+        "pn": str(page),
+        "pz": str(ETF_SPOT_PAGE_SIZE),
+        "po": "1",
+        "np": "1",
+        "ut": "bd1d9ddb04089700cf9c27f6f7426281",
+        "fltt": "2",
+        "invt": "2",
+        "wbp2u": "|0|0|0|web",
+        "fid": "f12",
+        "fs": "b:MK0021,b:MK0022,b:MK0023,b:MK0024,b:MK0827",
+        "fields": ETF_SPOT_FIELDS,
+    }
+    headers = {
+        "Referer": "https://quote.eastmoney.com/",
+        "User-Agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/131.0.0.0 Safari/537.36"
+        ),
+    }
+    last_error: Exception | None = None
+    attempts = min(ETF_SPOT_MAX_ATTEMPTS, len(ETF_SPOT_BASE_URLS))
+    for attempt in range(attempts):
+        base_url = ETF_SPOT_BASE_URLS[attempt]
+        try:
+            response = session.get(
+                f"{base_url}/api/qt/clist/get",
+                params=params,
+                headers=headers,
+                timeout=(5, 15),
+            )
+            response.raise_for_status()
+            payload = response.json()
+            if not isinstance(payload, dict) or payload.get("rc") not in (0, "0"):
+                raise RuntimeError(
+                    f"Eastmoney ETF list returned invalid response from {base_url}"
+                )
+            data = payload.get("data")
+            if not isinstance(data, dict) or not isinstance(data.get("diff"), list):
+                raise RuntimeError(
+                    f"Eastmoney ETF list omitted page data from {base_url}"
+                )
+            total = int(data.get("total") or 0)
+            rows = data["diff"]
+            if total <= 0 or not rows:
+                raise RuntimeError(
+                    f"Eastmoney ETF list returned no rows from {base_url}"
+                )
+            return rows, total
+        except Exception as exc:  # noqa: BLE001 - try only bounded alternate hosts
+            last_error = exc
+            retryable = _is_retryable_spot_error(exc) or isinstance(exc, RuntimeError)
+            if attempt + 1 >= attempts or not retryable:
+                raise
+            print(
+                f"  [market_monitor] ETF spot page {page} failed at "
+                f"{base_url} ({_spot_error_label(exc)}: {exc}); trying alternate host"
+            )
+            time.sleep(ETF_SPOT_RETRY_BASE_SECONDS * (attempt + 1))
+
+    if last_error is not None:
+        raise last_error
+    raise RuntimeError(f"Eastmoney ETF spot page {page} could not be fetched")
+
+
+def _fetch_etf_spot_from_hosts() -> pd.DataFrame:
+    """Fetch a complete Eastmoney ETF snapshot via paginated host failover.
+
+    Pagination is kept here rather than retried as one giant AkShare call, so
+    a single gateway failure only retries its page. A short page, duplicate
+    code, or changing row count is treated as incomplete; callers must not
+    mistake a partial universe for a valid current snapshot.
+    """
+    rows: list[dict[str, Any]] = []
+    seen_codes: set[str] = set()
+    expected_total: int | None = None
+    total_pages: int | None = None
+    with requests.Session() as session:
+        page = 1
+        while total_pages is None or page <= total_pages:
+            page_rows, page_total = _fetch_etf_spot_page(session, page)
+            if expected_total is None:
+                expected_total = page_total
+                total_pages = (expected_total + ETF_SPOT_PAGE_SIZE - 1) // ETF_SPOT_PAGE_SIZE
+            elif page_total != expected_total:
+                raise RuntimeError(
+                    "Eastmoney ETF universe changed during pagination "
+                    f"({expected_total} to {page_total} rows)"
+                )
+
+            expected_page_rows = min(
+                ETF_SPOT_PAGE_SIZE,
+                max(expected_total - (page - 1) * ETF_SPOT_PAGE_SIZE, 0),
+            )
+            if len(page_rows) != expected_page_rows:
+                raise RuntimeError(
+                    f"Eastmoney ETF page {page} incomplete: "
+                    f"{len(page_rows)}/{expected_page_rows} rows"
+                )
+            page_codes = [str(row.get("f12") or "") for row in page_rows]
+            if any(not code for code in page_codes):
+                raise RuntimeError(f"Eastmoney ETF page {page} contains a missing code")
+            duplicates = seen_codes.intersection(page_codes)
+            if duplicates or len(set(page_codes)) != len(page_codes):
+                raise RuntimeError(
+                    f"Eastmoney ETF page {page} contains duplicate codes: "
+                    f"{sorted(duplicates)[:5]}"
+                )
+            seen_codes.update(page_codes)
+            rows.extend(page_rows)
+            print(
+                f"  [market_monitor] ETF spot fallback page {page}/"
+                f"{total_pages}: {len(rows)}/{expected_total} rows"
+            )
+            page += 1
+            if page <= total_pages:
+                # Avoid hammering the provider while walking a live list.
+                time.sleep(min(0.25, ETF_SPOT_RETRY_BASE_SECONDS))
+
+    if expected_total is None or len(rows) != expected_total:
+        raise RuntimeError(
+            f"Eastmoney ETF snapshot incomplete: {len(rows)}/{expected_total or 0} rows"
+        )
+    return pd.DataFrame(rows).rename(columns=ETF_SPOT_FIELD_RENAMES)
 
 
 def _fmt_start(value: str | date | None, *, em: bool) -> str:
@@ -216,7 +388,14 @@ def _is_retryable_spot_error(exc: Exception) -> bool:
     message = str(exc)
     if any(re.search(rf"\b{code}\b", message) for code in ETF_SPOT_RETRYABLE_STATUS_CODES):
         return True
-    return type(exc).__name__ in {"ConnectionError", "ConnectTimeout", "ReadTimeout", "Timeout"}
+    return type(exc).__name__ in {
+        "ConnectionError",
+        "ConnectTimeout",
+        "ReadTimeout",
+        "Timeout",
+        "JSONDecodeError",
+        "ChunkedEncodingError",
+    }
 
 
 def _fetch_etf_spot_with_retry(ak: Any) -> pd.DataFrame:
@@ -228,7 +407,7 @@ def _fetch_etf_spot_with_retry(ak: Any) -> pd.DataFrame:
             if attempt == ETF_SPOT_MAX_ATTEMPTS - 1 or not _is_retryable_spot_error(exc):
                 raise
             print(
-                f"  [market_monitor] transient ETF spot failure ({type(exc).__name__}); "
+                f"  [market_monitor] transient ETF spot failure ({_spot_error_label(exc)}); "
                 f"retry {attempt + 1}/{ETF_SPOT_MAX_ATTEMPTS - 1}"
             )
         else:
@@ -248,9 +427,29 @@ def _fetch_etf_spot_with_retry(ak: Any) -> pd.DataFrame:
 
 def fetch_etf_spot() -> pd.DataFrame:
     """Current ETF snapshot from Eastmoney (price, premium/discount, turnover)."""
-    import akshare as ak
+    primary_error: Exception | None = None
+    try:
+        import akshare as ak
 
-    df = _fetch_etf_spot_with_retry(ak)
+        df = _fetch_etf_spot_with_retry(ak)
+        if df is None or df.empty:
+            raise RuntimeError("AkShare ETF spot returned an empty frame")
+    except Exception as exc:  # noqa: BLE001 - retain direct source fallback
+        primary_error = exc
+        print(
+            "  [market_monitor] AkShare ETF spot unavailable "
+            f"({_spot_error_label(exc)}: {exc}); using bounded Eastmoney host fallback"
+        )
+        try:
+            df = _fetch_etf_spot_from_hosts()
+        except Exception as fallback_error:  # noqa: BLE001 - fail closed if both paths fail
+            message = (
+                "ETF spot fetch failed on both paths: "
+                f"AkShare {_spot_error_label(primary_error)} ({primary_error}); "
+                f"Eastmoney host fallback {_spot_error_label(fallback_error)} "
+                f"({fallback_error})"
+            )
+            raise RuntimeError(message) from fallback_error
     if df is None or df.empty:
         return pd.DataFrame()
     retrieved_at_utc = isoformat_utc()
