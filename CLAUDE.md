@@ -35,23 +35,21 @@ The sibling canonical financial-data repository is
 
 ## Repository Location
 
-This repository lives at `/Users/henrywzh/Quant/alternative-data`, deliberately
-**outside** `~/Desktop/`. Do not move it back.
+The working checkout is `/Users/henrywzh/Desktop/Quant/alternative-data`
+(decided 2026-09-23). Do all work here, alongside the sibling repos under
+`~/Desktop/Quant/`.
 
-Reason: macOS iCloud "Desktop & Documents" sync is enabled, so anything under
-`~/Desktop/Quant/` is continuously synced. That produced duplicate `<name> 2`
-files inside `.git/objects`, blocked `git gc` (a stale `gc.log` stopped
-automatic cleanup for weeks), and risked real corruption — iCloud can rewrite
-or evict files mid-write while git is building objects. A 31 GB `.git`-bearing
-repo also burns iCloud quota for no benefit; code is backed up by its git
-remote, not by file-level cloud sync.
+`/Users/henrywzh/Quant/alternative-data` is an older checkout from a period
+when the repo was moved out of `~/Desktop/` to avoid iCloud sync. Do not start
+new work there; it may still hold uncommitted changes, unpushed branches and
+the local `.config`, so check it before discarding anything.
 
-Note: `mv` cannot move a large synced tree out of the iCloud domain — it blocks
-indefinitely in the file provider with zero CPU. Use `ditto` to copy, verify,
-then delete the source.
-
-The sibling repos below are still under `~/Desktop/Quant/` and those paths
-remain correct.
+Known risk: macOS iCloud "Desktop & Documents" sync covers `~/Desktop/Quant/`.
+It has previously produced duplicate `<name> 2` files (including inside
+`.git/`), blocked `git gc` via a stale `gc.log`, and can rewrite or evict
+files while git is writing objects. If `* 2` duplicates or git corruption
+appear, suspect iCloud first. Code is backed up by the git remote, not by
+iCloud.
 
 ## Wider Workspace
 

@@ -15,6 +15,8 @@ sys.path.insert(0, str(ROOT))
 from research_data.marts import read_mart  # noqa: E402
 
 OUTPUT = ROOT / 'anthropic_monthly_arr.png'
+# Reported in the run summary only; read_mart does the actual resolution.
+SOURCE = ROOT / 'data/normalized/marts/daily_provider_economics'
 
 def money(x): return '—' if pd.isna(x) else f'${x:,.0f}'
 

@@ -53,7 +53,6 @@ from openrouter_arr_nowcast import (
 
 RELATIVE_SOURCE = Path("data/normalized/marts/daily_provider_revenue_estimates.parquet")
 DEFAULT_SOURCE = ROOT / RELATIVE_SOURCE
-FALLBACK_SOURCE = Path.home() / "Quant" / "alternative-data" / RELATIVE_SOURCE
 
 TARGETS: dict[str, str] = {
     "openai": "OpenAI",
@@ -109,12 +108,11 @@ class Nowcast:
 
 
 def resolve_source(explicit: str | None) -> Path:
-    """Return an existing source path, including the machine's data mount."""
+    """Return the explicit source if given, else this checkout's tracked mart."""
 
     candidates = [
         Path(explicit).expanduser().resolve() if explicit else None,
         DEFAULT_SOURCE,
-        FALLBACK_SOURCE,
     ]
     for candidate in candidates:
         if candidate is not None and candidate.exists():

@@ -536,19 +536,18 @@ def load_canonical_daily_bars(
     if db_path.exists():
         con = duckdb.connect(str(db_path), read_only=True)
         try:
-            clause = ""
+            conditions: list[str] = []
             params: list[object] = []
             if tickers:
-                clause = " WHERE ticker IN (SELECT UNNEST(?)::VARCHAR)"
+                conditions.append("ticker IN (SELECT UNNEST(?)::VARCHAR)")
                 params.append(sorted(set(tickers)))
             if start_date is not None:
-                clause += " AND " if clause else "WHERE "
-                clause += "timestamp_utc >= ?"
+                conditions.append("timestamp_utc >= ?")
                 params.append(pd.Timestamp(start_date).date())
             if end_date is not None:
-                clause += " AND " if clause else "WHERE "
-                clause += "timestamp_utc <= ?"
+                conditions.append("timestamp_utc <= ?")
                 params.append(pd.Timestamp(end_date).date())
+            clause = f" WHERE {' AND '.join(conditions)}" if conditions else ""
             frame = con.execute(
                 "SELECT ticker, interval, timestamp_utc, open, high, low, "
                 "close, adj_close, volume "
