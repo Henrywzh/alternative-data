@@ -69,6 +69,17 @@ def test_every_pilot_job_emits_and_uploads_non_blocking_shadow_telemetry(
     assert fallback["continue-on-error"] == "true"
     assert fallback["uses"] == "actions/github-script@v7"
 
+    if workflow_name == "asia-markets-dashboard-refresh-daily.yml":
+        capture = steps["Capture sanitized sector-builder evidence"]
+        assert capture["if"] == "always()"
+        assert capture["continue-on-error"] == "true"
+        assert "scripts/ops/capture_sector_builder_evidence.py" in capture["run"]
+        assert "sector-builder-evidence.json" in capture["run"]
+        assert "RUNNER_TEMP/asia-market-sector-builders.log" in capture["run"]
+        assert "artifacts/ops/asia-markets-dashboard-refresh/" in steps[
+            "Upload Phase 0 shadow telemetry"
+        ]["with"]["path"]
+
     report_path = tmp_path / workflow_name / job_id / "run-report.json"
     evidence_path = report_path.with_name("evidence-manifest.json")
     env = dict(os.environ)

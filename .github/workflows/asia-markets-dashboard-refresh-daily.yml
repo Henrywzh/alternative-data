@@ -157,6 +157,19 @@ jobs:
             echo "producer_outcome=success" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Capture sanitized sector-builder evidence
+        if: always()
+        continue-on-error: true
+        working-directory: .
+        env:
+          SECTOR_BUILDERS_OUTCOME: ${{ steps.sector_builders.outputs.producer_outcome }}
+        run: |
+          python scripts/ops/capture_sector_builder_evidence.py \
+            --log "$RUNNER_TEMP/asia-market-sector-builders.log" \
+            --roster apps/asia-markets-dashboard/sectors.json \
+            --producer-outcome "$SECTOR_BUILDERS_OUTCOME" \
+            --output artifacts/ops/asia-markets-dashboard-refresh/sector-builder-evidence.json
+
       - name: Localize Streamlit-facing artifacts
         run: node scripts/package-dashboard.mjs --localize-only
 

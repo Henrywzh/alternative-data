@@ -503,6 +503,11 @@ Deliverables:
 - Deterministic health evaluation using existing validators.
 - Shadow finalizer integration with `if: always()`.
 - Uploaded run reports and evidence manifests.
+- The Asia Markets dashboard refresh additionally uploads
+  `sector-builder-evidence.json` with failed builder identity, exit/timeout
+  metadata, and a bounded excerpt redacted with the shared ops-control rules;
+  the raw combined runner log is not copied into that artifact, though the
+  existing `tee` still streams it to the GitHub Actions step log.
 - Unit tests, schema fixtures, and fixtures representing known historical failures.
 
 Phase 0 behavior:
