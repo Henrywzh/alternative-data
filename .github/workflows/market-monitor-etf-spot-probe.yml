@@ -1,0 +1,33 @@
+name: Market Monitor ETF Spot Connectivity Probe
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: market-monitor-etf-spot-probe-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    name: Read-only tracked-wrapper quote probe
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out selected branch
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal probe dependencies
+        run: python -m pip install "pandas>=2.2,<3" "requests>=2.32"
+
+      - name: Probe the tracked ETF batch endpoint
+        env:
+          PYTHONPATH: src
+        run: python scripts/probe_market_monitor_etf_spot.py
