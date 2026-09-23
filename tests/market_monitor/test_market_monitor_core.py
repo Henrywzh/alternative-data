@@ -3379,3 +3379,50 @@ def test_pipeline_retains_heatmap_history_on_source_failure(monkeypatch):
     assert "heatmap_etf_price_daily" in results
     assert len(results["heatmap_etf_price_daily"]) == 1
     assert results["heatmap_etf_price_daily"].iloc[0]["ticker"] == "SPY"
+
+
+def _run_consistency_row(status):
+    for row in status["sources"]:
+        if row["source"] == "Pipeline run consistency":
+            return row
+    return None
+
+
+def test_artifact_builder_flags_premium_history_from_an_older_run(monkeypatch, tmp_path):
+    """Premium history is written by the same close run as the technicals.
+
+    A real (non-fallback) snapshot from an older run must be reported as a
+    timeline mix, not silently published next to newer technicals.
+    """
+    builder = _load_builder()
+    frame, lineage = builder.load_latest_with_lineage(
+        builder.DERIVED_DIR, "premium_history", scope="full"
+    )
+    if frame.empty or lineage is None:
+        pytest.skip("no committed premium_history snapshot in this checkout")
+    stale = {**lineage, "run_id": "20200101T000000-00000000"}
+    _, status, _ = _build_with_caches(
+        monkeypatch, tmp_path, {"premium_history": (frame, stale)}
+    )
+
+    row = _run_consistency_row(status)
+    assert row is not None
+    assert "premium_history" in row["notes"]
+
+
+def test_artifact_builder_run_check_ignores_fallback_etf_prices(monkeypatch, tmp_path):
+    """A published-artifact fallback has no lineage and is flagged elsewhere."""
+    builder = _load_builder()
+    frame, lineage = builder.load_latest_with_lineage(
+        builder.DERIVED_DIR, "premium_history", scope="full"
+    )
+    if frame.empty or lineage is None:
+        pytest.skip("no committed premium_history snapshot in this checkout")
+    _, status, _ = _build_with_caches(
+        monkeypatch,
+        tmp_path,
+        {"etf_price_daily": (pd.DataFrame(), None), "premium_history": (frame, lineage)},
+    )
+
+    row = _run_consistency_row(status)
+    assert row is None or "etf_price_daily" not in row["notes"]

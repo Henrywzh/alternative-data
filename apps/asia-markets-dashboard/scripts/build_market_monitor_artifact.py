@@ -666,7 +666,17 @@ def build_artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         "wrapper_metrics": wrap_lineage,
         "index_price_daily": index_lineage,
     }
-    run_ids = {name: (li or {}).get("run_id") for name, li in lineages.items()}
+    # ETF prices and premium history are written by the same close run as the
+    # core datasets, so an older snapshot of either would mix timelines. Their
+    # lineage is None only when the published-artifact fallback above was
+    # used, which is already recorded as degraded -- so check them only when a
+    # real snapshot was loaded. Southbound flow and fund activity are left out
+    # on purpose: the pipeline keeps their previous snapshot when those
+    # optional sources are down, so a differing run_id there is expected.
+    for name, lineage in (("etf_price_daily", etf_px_lineage), ("premium_history", premium_lineage)):
+        if lineage is not None:
+            lineages[name] = lineage
+    run_ids ={name: (li or {}).get("run_id") for name, li in lineages.items()}
     unique_run_ids = {rid for rid in run_ids.values() if rid}
     run_consistent = len(unique_run_ids) == 1 and all(run_ids.values())
     latest_run_id = max(unique_run_ids, key=str) if unique_run_ids else None
