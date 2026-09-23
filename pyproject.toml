@@ -103,3 +103,8 @@ testpaths = ["tests"]
 # one test. This caps every individual test at 4 minutes so one slow/degraded
 # external site can no longer block the whole run.
 timeout = 240
+# iCloud "Desktop & Documents" sync leaves conflict copies such as
+# "test_foo 2.py" next to the real module. pytest would collect them as extra
+# test modules -- stale code that has overwritten tracked data caches with
+# fixture values -- so never collect a numbered copy.
+addopts = ["--ignore-glob=* [0-9].py", "--ignore-glob=* [0-9][0-9].py"]
