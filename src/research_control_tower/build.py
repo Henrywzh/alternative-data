@@ -22,7 +22,7 @@ from pathlib import PurePosixPath
 import re
 import shutil
 import tempfile
-from typing import Any, Iterable, Literal, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Iterable, Literal, Mapping, Sequence
 from zoneinfo import ZoneInfo
 
 import pandas as pd
@@ -53,6 +53,9 @@ from .valuation import (
     validate_internal_estimates_df,
     validate_valuation_snapshots_df,
 )
+
+if TYPE_CHECKING:
+    from .contracts import RegistryBundle
 
 
 SCHEMA_VERSION = "control_tower_marts_v1"

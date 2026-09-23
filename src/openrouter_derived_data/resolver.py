@@ -20,9 +20,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import re
-from typing import Iterable, Mapping
+from typing import TYPE_CHECKING, Iterable, Mapping
 
 import pandas as pd
+
+if TYPE_CHECKING:
+    from .identity import CapabilityMap
 
 
 DATE_SUFFIX = re.compile(r"[-_:]?\d{8}$")

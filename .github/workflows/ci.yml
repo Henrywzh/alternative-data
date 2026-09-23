@@ -51,6 +51,15 @@ jobs:
       - name: Compile Python sources
         run: python -m compileall -q src dashboard
 
+      - name: Check for undefined names
+        # F821 only: an undefined name is always a latent NameError (e.g. a
+        # script that printed a constant it no longer defined). Wider rule
+        # sets are not enforced yet -- F811 flags intentional local re-imports
+        # in Streamlit AppTest functions, and F401/F841 have a large backlog.
+        run: |
+          python -m pip install ruff==0.16.8
+          ruff check src dashboard apps scripts tests --select F821
+
       - name: Check repository size budget
         # Parquet is already compressed, so git cannot delta two versions of
         # the same table: a monolithic tracked dataset costs its full size on

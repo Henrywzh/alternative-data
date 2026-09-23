@@ -1,3 +1,4 @@
+import os
 import pathlib
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -5,7 +6,10 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 
-artifacts_dir = pathlib.Path("/Users/henrywzh/.gemini/antigravity/brain/79920c81-d15b-4034-95d6-b2df1537097f")
+# Charts land in the repo (run from the repo root, like the data paths
+# below); CHART_OUTPUT_DIR overrides it.
+artifacts_dir = pathlib.Path(os.environ.get("CHART_OUTPUT_DIR", "output/charts"))
+artifacts_dir.mkdir(parents=True, exist_ok=True)
 
 def generate_replicate_overtime_charts():
     plt.style.use('seaborn-v0_8-whitegrid' if 'seaborn-v0_8-whitegrid' in plt.style.available else 'default')

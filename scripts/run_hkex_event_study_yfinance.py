@@ -568,8 +568,13 @@ def load_canonical_daily_bars(
             symbols=list(tickers),
             require_all=False,
         )
+    reason = (
+        f"no market_data_bars rows in {db_path} for the requested tickers/dates"
+        if db_path.exists()
+        else f"DuckDB missing at {db_path}"
+    )
     raise FileNotFoundError(
-        "canonical daily bars unavailable: DuckDB missing and no fallback "
+        f"canonical daily bars unavailable: {reason}, and no fallback "
         "snapshot root supplied"
     )
 

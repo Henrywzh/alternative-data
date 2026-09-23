@@ -36,6 +36,7 @@ THE SHARP EDGES (each one cost a debugging session)
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Sequence
@@ -249,7 +250,13 @@ class PartitionedParquetStore:
             # question that matters is "would this create a new blob".
             if path.exists() and path.read_bytes() == payload:
                 continue
-            path.write_bytes(payload)
+            # Write beside the target and rename over it, so an interrupted
+            # run leaves the previous partition rather than a truncated one.
+            # The temp name does not end in .parquet, so neither ``load`` nor
+            # the stale sweep below ever sees it.
+            tmp = path.with_name(f".{path.name}.tmp")
+            tmp.write_bytes(payload)
+            os.replace(tmp, path)
             written.append(path)
 
         keep = {f"{name}.parquet" for name in names.unique()}

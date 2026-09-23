@@ -315,7 +315,6 @@ def build_shkp_commercial_backtest(
     for target in years:
         if target <= fit_start:
             continue
-        train_mask = (years[0] + 1 <= target - 1)
         train_years = [y for y in years if fit_start <= y <= target - 1]
         if len(train_years) < 5:
             continue
