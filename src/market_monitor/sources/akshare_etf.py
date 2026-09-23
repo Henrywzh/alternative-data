@@ -154,8 +154,9 @@ def _fetch_etf_spot_for_tracked_wrappers() -> pd.DataFrame:
                     raise RuntimeError(f"Eastmoney returned duplicate ETF code: {code}")
                 if market_id != expected_market_by_code[code]:
                     raise RuntimeError(
-                        f"Eastmoney returned ETF {code} for market {market_id}; "
-                        f"expected {expected_market_by_code[code]}"
+                        f"Eastmoney returned ETF {code} for market {market_id!r}; "
+                        f"expected {expected_market_by_code[code]!r}; "
+                        f"response fields={sorted(row)}"
                     )
                 rows_by_code[code] = row
 
