@@ -710,6 +710,31 @@ def test_spot_targeted_fallback_requests_registry_secids_and_rotates_hosts(monke
     ]
 
 
+def test_spot_targeted_fallback_accepts_blank_market_when_secids_are_qualified(monkeypatch):
+    """ETF ulist rows may omit f13; the request still pins market + code."""
+    import market_monitor.sources.akshare_etf as src
+
+    registry = list(src.ETF_REGISTRY)
+    rows = [
+        {"f12": item["fund_id"], "f13": "", "f2": 1.25}
+        for item in registry
+    ]
+
+    class _Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"rc": 0, "data": {"diff": rows}}
+
+    monkeypatch.setattr(src.requests, "get", lambda *_args, **_kwargs: _Response())
+    monkeypatch.setattr(src, "ETF_SPOT_BASE_URLS", ("https://eastmoney-a",))
+
+    out = src._fetch_etf_spot_for_tracked_wrappers()
+
+    assert out["代码"].tolist() == [item["fund_id"] for item in registry]
+
+
 @pytest.mark.parametrize("malformation", ["missing", "duplicate", "unexpected", "wrong_market"])
 def test_spot_targeted_fallback_rejects_invalid_wrapper_coverage(monkeypatch, malformation):
     """A malformed targeted response must not be treated as a complete quote set."""

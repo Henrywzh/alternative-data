@@ -152,7 +152,12 @@ def _fetch_etf_spot_for_tracked_wrappers() -> pd.DataFrame:
                     raise RuntimeError(f"Eastmoney returned an unrequested ETF code: {code}")
                 if code in rows_by_code:
                     raise RuntimeError(f"Eastmoney returned duplicate ETF code: {code}")
-                if market_id != expected_market_by_code[code]:
+                # The batch request is exchange-qualified (`market.code`).
+                # Eastmoney's ETF rows can include `f13` but leave it blank;
+                # when supplied, still enforce that it agrees with the
+                # registry. The unique-code and exact-coverage checks below
+                # remain mandatory either way.
+                if market_id and market_id != expected_market_by_code[code]:
                     raise RuntimeError(
                         f"Eastmoney returned ETF {code} for market {market_id!r}; "
                         f"expected {expected_market_by_code[code]!r}; "
