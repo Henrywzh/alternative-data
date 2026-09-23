@@ -58,15 +58,18 @@ new work there. On 2026-09-23 its `.config`, the unpushed
 `output/reports/`) were copied here; the old checkout was left intact.
 
 iCloud: `~/Desktop/` is covered by iCloud "Desktop & Documents" sync, which
-previously produced `<name> 2` duplicates (including `.git/index 2..9`),
-blocked `git gc`, and can rewrite or evict files while git is writing. Since
-2026-09-23 the real directory is `~/Desktop/Quant/alternative-data.nosync`
-(macOS never syncs `*.nosync`), and `~/Desktop/Quant/alternative-data` is a
-symlink to it, so every existing path keeps working. Do not rename the
-directory back or replace the symlink with a real folder. Consequence: this
-checkout, including untracked files such as `.config` and `tmp/`, exists only
-on this Mac; code is backed up by the git remote. If `* 2` duplicates appear
-again, check that the symlink is still in place.
+produced `<name> 2` conflict copies (including `.git/index 2..9` and stale
+`tests/... 2.py` modules that pytest collected), blocked `git gc`, and can
+rewrite or evict files while git is writing. Renaming the folder to `*.nosync`
+did NOT stop it on this macOS (FileProvider-based iCloud Drive).
+
+Since 2026-09-23 the real directory is `~/Developer/Quant/alternative-data`,
+outside iCloud, and `~/Desktop/Quant/alternative-data` is a symlink to it, so
+every configured path (Codex/Claude projects, automations, worktrees) keeps
+working. `financial-data` is set up the same way. Do not replace the symlink
+with a real folder. Tools may display the resolved `~/Developer/...` path;
+that is expected. The checkout, including untracked `.config` and `tmp/`,
+exists only on this Mac; code is backed up by the git remote.
 
 ## Wider Workspace
 
