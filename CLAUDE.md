@@ -41,15 +41,21 @@ The working checkout is `/Users/henrywzh/Desktop/Quant/alternative-data`
 
 `/Users/henrywzh/Quant/alternative-data` is an older checkout from a period
 when the repo was moved out of `~/Desktop/` to avoid iCloud sync. Do not start
-new work there; it may still hold uncommitted changes, unpushed branches and
-the local `.config`, so check it before discarding anything.
+new work there. On 2026-09-23 its `.config`, the unpushed
+`feat/global-market-regime` branch, and its uncommitted work (as branch
+`wip/global-market-regime-uncommitted-20260923`, plus `tmp/` and
+`output/reports/`) were copied here; the old checkout was left intact.
 
-Known risk: macOS iCloud "Desktop & Documents" sync covers `~/Desktop/Quant/`.
-It has previously produced duplicate `<name> 2` files (including inside
-`.git/`), blocked `git gc` via a stale `gc.log`, and can rewrite or evict
-files while git is writing objects. If `* 2` duplicates or git corruption
-appear, suspect iCloud first. Code is backed up by the git remote, not by
-iCloud.
+iCloud: `~/Desktop/` is covered by iCloud "Desktop & Documents" sync, which
+previously produced `<name> 2` duplicates (including `.git/index 2..9`),
+blocked `git gc`, and can rewrite or evict files while git is writing. Since
+2026-09-23 the real directory is `~/Desktop/Quant/alternative-data.nosync`
+(macOS never syncs `*.nosync`), and `~/Desktop/Quant/alternative-data` is a
+symlink to it, so every existing path keeps working. Do not rename the
+directory back or replace the symlink with a real folder. Consequence: this
+checkout, including untracked files such as `.config` and `tmp/`, exists only
+on this Mac; code is backed up by the git remote. If `* 2` duplicates appear
+again, check that the symlink is still in place.
 
 ## Wider Workspace
 
