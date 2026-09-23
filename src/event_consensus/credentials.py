@@ -19,7 +19,7 @@ def _read_one(path: Path, name: str) -> str:
     return ""
 
 def resolve_credential(name: str, repo_root: Path) -> str:
-    """Resolve one named value from env, local config, or canonical checkout."""
+    """Resolve one named value from env, local config, or the main Desktop checkout."""
     value = os.environ.get(name, "").strip()
     if value:
         return value
@@ -28,7 +28,7 @@ def resolve_credential(name: str, repo_root: Path) -> str:
     candidates = [
         Path(explicit).expanduser() if explicit else None,
         Path(repo_root) / ".config",
-        Path.home() / "Quant" / "alternative-data" / ".config",
+        Path.home() / "Desktop" / "Quant" / "alternative-data" / ".config",
     ]
     for candidate in candidates:
         if candidate is None:
