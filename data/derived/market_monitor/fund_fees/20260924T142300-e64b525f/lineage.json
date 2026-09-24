@@ -2,8 +2,8 @@
   "type": "derived",
   "run_scope": "full",
   "dataset_name": "fund_fees",
-  "run_id": "20260918T134827-6a6f67dd",
-  "created_at": "2026-09-18T13:48:54.593564+00:00",
+  "run_id": "20260924T142300-e64b525f",
+  "created_at": "2026-09-24T14:23:25.679902+00:00",
   "records": 36,
   "columns": [
     "fund_id",
@@ -11,5 +11,5 @@
     "custody_fee",
     "fetched_at"
   ],
-  "sha256": "4b88dfb12635fc9dc28a2adb56fa3fcf394ff92f1a3aefd7189eed9efed00dcb"
+  "sha256": "845480c15437f0ac3b3b86262e01b184cdcdba4359c1beb39a772460f6909ef0"
 }
