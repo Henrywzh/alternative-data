@@ -1,9 +1,13 @@
 {
   "version": "asia-markets-freshness.v1",
-  "auditedAt": "2026-09-23T11:49:18.088273Z",
-  "asOf": "2026-09-23",
-  "status": "healthy",
-  "requiredFailures": [],
+  "auditedAt": "2026-09-25T11:56:38.918830Z",
+  "asOf": "2026-09-25",
+  "status": "degraded",
+  "requiredFailures": [
+    "local_consumer.immigration",
+    "real_estate.bd_history",
+    "hk-real-estate.localisation"
+  ],
   "checks": [
     {
       "check_id": "labour.unemployment",
@@ -80,8 +84,8 @@
       "sector": "hk-local-consumer",
       "dataset": "kpi_northbound",
       "required": true,
-      "status": "healthy",
-      "expected_latest_period": "2026-09-21",
+      "status": "stale",
+      "expected_latest_period": "2026-09-23",
       "latest_observation": "2026-09-22",
       "notes": "Immigration passenger clearance is daily; allow a two-day publication/holiday lag."
     },
@@ -91,7 +95,7 @@
       "dataset": "consumer_council_oilprice",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-09-21",
+      "expected_latest_period": "2026-09-23",
       "latest_observation": "2026-09-23",
       "notes": "Consumer Council pump-price snapshot is fetched daily; allow a two-day publication lag."
     },
@@ -110,9 +114,9 @@
       "sector": "hk-real-estate",
       "dataset": "bd_supply_pipeline_history_units,bd_supply_pipeline_history_counts",
       "required": true,
-      "status": "healthy",
+      "status": "stale",
       "expected_latest_period": "2026-07",
-      "latest_observation": "2026-07",
+      "latest_observation": "2026-05",
       "notes": "Md54/Md55/Md56 history must include the latest parsed Buildings Department digest."
     },
     {
@@ -151,8 +155,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-09-22T14:12:58.167771+00:00",
-      "latest_observation": "2026-09-22T14:12:58.167771+00:00",
+      "expected_latest_period": "2026-09-24T14:29:22.968063+00:00",
+      "latest_observation": "2026-09-24T14:29:22.968063+00:00",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -190,8 +194,8 @@
       "sector": "hk-real-estate",
       "dataset": "artifact-en/zh",
       "required": true,
-      "status": "healthy",
-      "expected_latest_period": "2026-09-22T11:43:14.337839Z",
+      "status": "stale",
+      "expected_latest_period": "2026-09-23T18:16:11.540004Z",
       "latest_observation": "2026-09-22T11:43:14.337839Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
@@ -201,8 +205,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-09-23T11:39:18.310739Z",
-      "latest_observation": "2026-09-23T11:39:18.310739Z",
+      "expected_latest_period": "2026-09-25T11:53:29.475053Z",
+      "latest_observation": "2026-09-25T11:53:29.475053Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
