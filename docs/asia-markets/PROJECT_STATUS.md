@@ -80,6 +80,12 @@ replacement for the operating manual or generated source-status JSON.
   a previously non-empty dataset becomes empty or disappears, and core HKMA
   mortgage / Buildings Department history builders use committed-artifact
   fallbacks marked stale when CI has no normalized cache.
+- 2026-09-26 Asia Markets daily-refresh CI repair: the workflow now stages the
+  durable `hk_stablecoin_crypto` normalized outputs (including Wikimedia
+  weekly/monthly manifests) and fails with exact leftover tracked paths if a
+  builder changes another file outside its explicit staging allowlist. This
+  addresses the repeated post-commit `git pull --rebase` failure; a successful
+  GitHub rerun is still needed to confirm the fix on the remote runner.
 - `scripts/audit_asia_markets_freshness.py` is the machine-readable freshness
   gate for the Streamlit-facing sector artifacts. It checks observation periods
   rather than build timestamps, validates Buildings Department history against

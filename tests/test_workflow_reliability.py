@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import subprocess
 from copy import deepcopy
 from pathlib import Path
 
@@ -53,8 +54,74 @@ def test_asia_markets_refresh_stages_all_durable_builder_outputs() -> None:
         "data/normalized/hk_commercial_aerospace/",
         "data/normalized/hk_local_consumer/afcd_category_history.csv",
         "data/normalized/hk_local_consumer/consumer_council_oilprice_history.csv",
+        "data/normalized/hk_stablecoin_crypto/",
     ):
         assert path in commit_section
+
+
+def test_asia_markets_refresh_stages_crypto_manifests_and_reports_other_dirty_paths(
+    tmp_path: Path,
+) -> None:
+    workflow = yaml.load(
+        (WORKFLOWS / "asia-markets-dashboard-refresh-daily.yml").read_text(encoding="utf-8"),
+        Loader=yaml.BaseLoader,
+    )
+    commit_step = next(
+        step
+        for step in workflow["jobs"]["refresh-dashboard-data"]["steps"]
+        if step.get("name") == "Commit refreshed artifact manifests and status files"
+    )
+    run_script = commit_step["run"]
+    stage_script = run_script[
+        run_script.index("git add \\\n") : run_script.index("if git diff --staged --quiet; then")
+    ]
+
+    crypto_manifests = (
+        "data/normalized/hk_stablecoin_crypto/wikimedia_crypto_pageviews_weekly_manifest.json",
+        "data/normalized/hk_stablecoin_crypto/wikimedia_crypto_pageviews_user_monthly_manifest.json",
+    )
+    all_paths = (
+        "apps/asia-markets-dashboard/.generated/sentinel.json",
+        "apps/asia-markets-dashboard/src/data/sentinel.json",
+        "data/normalized/hk_commercial_aerospace/sentinel.jsonl",
+        "data/normalized/hk_population_migration/mpfa_departure_claims/20260801_mpfa_cached_v2/sentinel.json",
+        "data/normalized/hk_local_consumer/afcd_category_history.csv",
+        "data/normalized/hk_local_consumer/consumer_council_oilprice_history.csv",
+        *crypto_manifests,
+        "src/unrelated.py",
+    )
+    for relative_path in all_paths:
+        path = tmp_path / relative_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("baseline\n", encoding="utf-8")
+
+    def git(*args: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            ["git", *args], cwd=tmp_path, text=True, capture_output=True, check=True
+        )
+
+    git("init", "-q")
+    git("config", "user.name", "Test")
+    git("config", "user.email", "test@example.com")
+    git("add", "--all")
+    git("commit", "-qm", "baseline")
+
+    for relative_path in crypto_manifests:
+        (tmp_path / relative_path).write_text("refreshed\n", encoding="utf-8")
+    staged = subprocess.run(
+        ["bash", "-e", "-c", stage_script], cwd=tmp_path, text=True, capture_output=True
+    )
+    assert staged.returncode == 0, staged.stderr + staged.stdout
+    staged_paths = git("diff", "--cached", "--name-only").stdout.splitlines()
+    assert set(crypto_manifests).issubset(staged_paths)
+
+    unrelated = tmp_path / "src/unrelated.py"
+    unrelated.write_text("unexpected\n", encoding="utf-8")
+    rejected = subprocess.run(
+        ["bash", "-e", "-c", stage_script], cwd=tmp_path, text=True, capture_output=True
+    )
+    assert rejected.returncode != 0
+    assert "src/unrelated.py" in rejected.stdout
 
 
 @pytest.mark.parametrize(

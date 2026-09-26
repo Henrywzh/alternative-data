@@ -191,9 +191,9 @@ jobs:
           # Stage the complete set of durable outputs that the artifact
           # builders can update. The dashboard builders are intentionally
           # allowed to refresh append-only source histories as well as the
-          # published artifact/status files. Staging only artifact globs leaves
-          # those source histories unstaged, so the retrying git pull --rebase
-          # below fails with "You have unstaged changes" after the commit.
+          # published artifact/status files. Keep the stablecoin normalized
+          # manifests here too: the Wikimedia crypto pageview refresh rewrites
+          # its weekly and monthly manifests during this workflow.
           # Keep disposable per-run caches ignored; these paths are the
           # committed dashboard outputs and durable source histories.
           # The population artifact builder is fetch-first: a successful MPFA
@@ -206,7 +206,17 @@ jobs:
             data/normalized/hk_commercial_aerospace/ \
             data/normalized/hk_population_migration/mpfa_departure_claims/20260801_mpfa_cached_v2/ \
             data/normalized/hk_local_consumer/afcd_category_history.csv \
-            data/normalized/hk_local_consumer/consumer_council_oilprice_history.csv
+            data/normalized/hk_local_consumer/consumer_council_oilprice_history.csv \
+            data/normalized/hk_stablecoin_crypto/
+
+          # Fail with exact leftover paths instead of retrying `git pull
+          # --rebase` against a dirty worktree. This makes future omissions
+          # from the explicit durable-output allowlist actionable in the logs.
+          if ! git diff --quiet; then
+            echo "::error::Refresh left tracked modifications outside the staged output set:"
+            git diff --name-only
+            exit 1
+          fi
 
           if git diff --staged --quiet; then
             echo "No dashboard data changes to commit"
