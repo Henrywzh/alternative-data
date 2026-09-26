@@ -1,0 +1,20 @@
+{
+  "run_scope": "full",
+  "retrieved_at": "2026-09-26T00:44:56.818424Z",
+  "dataset_name": "sector_leadership",
+  "run_id": "20260926T004456-5f6924c3",
+  "created_at": "2026-09-26T00:45:15.099792Z",
+  "records": 6,
+  "columns": [
+    "exposure_id",
+    "benchmark_id",
+    "date",
+    "return_20d_pct",
+    "return_60d_pct",
+    "rel_20d_pct",
+    "rel_60d_pct",
+    "sma200_slope_ann_pct",
+    "rank_20d"
+  ],
+  "sha256": "8c98877c938f3a588b07beada32c62d462e7400a2010beb3be1704e9a92f0172"
+}
