@@ -6,7 +6,7 @@
     "title": "香港交通与航空监测",
     "description": "港铁月度客运量（本地/跨境/高铁）、国泰航空及香港国际机场流量、六家中国上市航空公司客运与货运运营数据、运输署公共交通/私家车/电动车登记、C&SD跨境移动及传感器停车位占用率数据。",
     "sector": "hk-transport",
-    "generatedAt": "2026-09-27T12:05:40.237403Z",
+    "generatedAt": "2026-09-28T13:55:47.933882Z",
     "cards": [
       {
         "id": "mtr_card",
@@ -2054,18 +2054,18 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-09-27T12:05:40.237403Z",
+    "generatedAt": "2026-09-28T13:55:47.933882Z",
     "status": "ready",
     "datasets": {
       "kpi_mtr": [
         {
-          "latest": 161531,
-          "domestic_thousands": 131170,
-          "cross_boundary_thousands": 8873,
-          "hsr_thousands": 2748,
-          "period_change": 0.019811,
-          "recovery_vs_2019_pct": 0.012568,
-          "observation_date": "2026-07-01"
+          "latest": 167550,
+          "domestic_thousands": 135062,
+          "cross_boundary_thousands": 10412,
+          "hsr_thousands": 3365,
+          "period_change": 0.037262,
+          "recovery_vs_2019_pct": 0.050299,
+          "observation_date": "2026-08-01"
         }
       ],
       "kpi_cathay": [
@@ -6864,6 +6864,21 @@
           "hsr_thousands": 2748,
           "hsr_daily_avg_thousands": 88.6,
           "total_mtr_patronage_thousands": 161531
+        },
+        {
+          "month": "2026-08",
+          "date": "2026-08-01 00:00:00",
+          "domestic_service_thousands": 135062,
+          "domestic_service_daily_avg_thousands": 4599,
+          "airport_express_thousands": 1084,
+          "airport_express_daily_avg_thousands": 35,
+          "cross_boundary_thousands": 10412,
+          "cross_boundary_daily_avg_thousands": 336,
+          "light_rail_bus_thousands": 17627,
+          "light_rail_bus_daily_avg_thousands": 569,
+          "hsr_thousands": 3365,
+          "hsr_daily_avg_thousands": 108.5,
+          "total_mtr_patronage_thousands": 167550
         }
       ],
       "cathay_history": [
@@ -9244,36 +9259,6 @@
         }
       ],
       "mtr_service_breakdown_history": [
-        {
-          "date": "2016-07-01",
-          "month": "2016-07",
-          "series": "机场快线",
-          "value": 1396
-        },
-        {
-          "date": "2016-07-01",
-          "month": "2016-07",
-          "series": "本地",
-          "value": 132358
-        },
-        {
-          "date": "2016-07-01",
-          "month": "2016-07",
-          "series": "高铁",
-          "value": 0
-        },
-        {
-          "date": "2016-07-01",
-          "month": "2016-07",
-          "series": "轻铁巴士",
-          "value": 19733
-        },
-        {
-          "date": "2016-07-01",
-          "month": "2016-07",
-          "series": "跨境",
-          "value": 9833
-        },
         {
           "date": "2016-08-01",
           "month": "2016-08",
@@ -12873,6 +12858,36 @@
           "month": "2026-07",
           "series": "跨境",
           "value": 8873
+        },
+        {
+          "date": "2026-08-01",
+          "month": "2026-08",
+          "series": "机场快线",
+          "value": 1084
+        },
+        {
+          "date": "2026-08-01",
+          "month": "2026-08",
+          "series": "本地",
+          "value": 135062
+        },
+        {
+          "date": "2026-08-01",
+          "month": "2026-08",
+          "series": "高铁",
+          "value": 3365
+        },
+        {
+          "date": "2026-08-01",
+          "month": "2026-08",
+          "series": "轻铁巴士",
+          "value": 17627
+        },
+        {
+          "date": "2026-08-01",
+          "month": "2026-08",
+          "series": "跨境",
+          "value": 10412
         }
       ],
       "cathay_capacity_demand_history": [
@@ -96213,71 +96228,79 @@
           "parks_reporting_exact": 447,
           "parks_with_unknown_count": 95,
           "participating_parks": 542
+        },
+        {
+          "date": "2026-09-28 13:55",
+          "month": "2026-09",
+          "value": 19981,
+          "parks_reporting_exact": 447,
+          "parks_with_unknown_count": 95,
+          "participating_parks": 542
         }
       ],
       "hk_parking_current_district": [
         {
-          "summary": "沙田区：1,668 个确切空置车位（共 47 个停车场）"
+          "summary": "沙田区：2,294 个确切空置车位（共 47 个停车场）"
         },
         {
-          "summary": "离岛区：1,260 个确切空置车位（共 14 个停车场）"
+          "summary": "离岛区：1,811 个确切空置车位（共 14 个停车场）"
         },
         {
-          "summary": "中西区：1,180 个确切空置车位（共 10 个停车场）"
+          "summary": "油尖旺区：1,562 个确切空置车位（共 11 个停车场）"
         },
         {
-          "summary": "观塘区：1,062 个确切空置车位（共 62 个停车场）"
+          "summary": "中西区：1,542 个确切空置车位（共 10 个停车场）"
         },
         {
-          "summary": "油尖旺区：1,052 个确切空置车位（共 13 个停车场）"
+          "summary": "观塘区：1,485 个确切空置车位（共 62 个停车场）"
         },
         {
-          "summary": "西贡区：1,001 个确切空置车位（共 36 个停车场）"
+          "summary": "西贡区：1,467 个确切空置车位（共 36 个停车场）"
         },
         {
-          "summary": "北区：839 个确切空置车位（共 23 个停车场）"
+          "summary": "北区：1,222 个确切空置车位（共 22 个停车场）"
         },
         {
-          "summary": "元朗区：700 个确切空置车位（共 28 个停车场）"
+          "summary": "元朗区：1,148 个确切空置车位（共 28 个停车场）"
         },
         {
-          "summary": "南区：695 个确切空置车位（共 9 个停车场）"
+          "summary": "九龙城区：1,017 个确切空置车位（共 16 个停车场）"
         },
         {
-          "summary": "黄大仙区：552 个确切空置车位（共 33 个停车场）"
+          "summary": "黄大仙区：997 个确切空置车位（共 33 个停车场）"
         },
         {
-          "summary": "葵青区：525 个确切空置车位（共 32 个停车场）"
+          "summary": "大埔区：949 个确切空置车位（共 24 个停车场）"
         },
         {
-          "summary": "大埔区：419 个确切空置车位（共 22 个停车场）"
+          "summary": "南区：927 个确切空置车位（共 9 个停车场）"
         },
         {
-          "summary": "荃湾区：356 个确切空置车位（共 16 个停车场）"
+          "summary": "葵青区：852 个确切空置车位（共 31 个停车场）"
         },
         {
-          "summary": "九龙城区：328 个确切空置车位（共 14 个停车场）"
+          "summary": "荃湾区：842 个确切空置车位（共 16 个停车场）"
         },
         {
-          "summary": "屯门区：294 个确切空置车位（共 27 个停车场）"
+          "summary": "屯门区：703 个确切空置车位（共 26 个停车场）"
         },
         {
-          "summary": "东区：238 个确切空置车位（共 26 个停车场）"
+          "summary": "东区：544 个确切空置车位（共 27 个停车场）"
         },
         {
-          "summary": "深水埗区：182 个确切空置车位（共 30 个停车场）"
+          "summary": "深水埗区：310 个确切空置车位（共 30 个停车场）"
         },
         {
-          "summary": "湾仔区：80 个确切空置车位（共 5 个停车场）"
+          "summary": "湾仔区：309 个确切空置车位（共 5 个停车场）"
         }
       ],
       "kpi_carpark_occupancy": [
         {
-          "occupancy_pct": 85.1139,
+          "occupancy_pct": 78.2173,
           "capacity_spaces": 20677,
-          "vacant_spaces": 3078,
+          "vacant_spaces": 4504,
           "sample_size": 20677,
-          "observation_date": "2026-09-25 11:53"
+          "observation_date": "2026-09-28 13:55"
         }
       ],
       "td_carpark_occupancy_history": [
@@ -96320,62 +96343,70 @@
           "sample_size": 20677,
           "capacity_spaces": 20677,
           "vacant_spaces": 3078
+        },
+        {
+          "date": "2026-09-28 13:55",
+          "month": "2026-09",
+          "value": 78.2173,
+          "sample_size": 20677,
+          "capacity_spaces": 20677,
+          "vacant_spaces": 4504
         }
       ],
       "td_carpark_occupancy_latest_district": [
         {
-          "summary": "深水埗区：95.4% 占用（1415 个已观测计量车位）"
+          "summary": "黄大仙区：94.0% 占用（419 个已观测计量车位）"
         },
         {
-          "summary": "屯门区：95.1% 占用（1335 个已观测计量车位）"
+          "summary": "观塘区：91.7% 占用（651 个已观测计量车位）"
         },
         {
-          "summary": "油尖旺区：93.9% 占用（1956 个已观测计量车位）"
+          "summary": "油尖旺区：90.6% 占用（1956 个已观测计量车位）"
         },
         {
-          "summary": "东区：93.4% 占用（589 个已观测计量车位）"
+          "summary": "深水埗区：90.0% 占用（1415 个已观测计量车位）"
         },
         {
-          "summary": "黄大仙区：93.3% 占用（419 个已观测计量车位）"
+          "summary": "葵青区：85.9% 占用（637 个已观测计量车位）"
         },
         {
-          "summary": "北区：91.4% 占用（1119 个已观测计量车位）"
+          "summary": "北区：84.8% 占用（1119 个已观测计量车位）"
         },
         {
-          "summary": "观塘区：91.1% 占用（651 个已观测计量车位）"
+          "summary": "东区：84.7% 占用（589 个已观测计量车位）"
         },
         {
-          "summary": "九龙城区：91.0% 占用（2642 个已观测计量车位）"
+          "summary": "屯门区：82.8% 占用（1335 个已观测计量车位）"
         },
         {
-          "summary": "荃湾区：87.5% 占用（698 个已观测计量车位）"
+          "summary": "沙田区：81.6% 占用（1705 个已观测计量车位）"
         },
         {
-          "summary": "沙田区：85.6% 占用（1705 个已观测计量车位）"
+          "summary": "九龙城区：80.9% 占用（2642 个已观测计量车位）"
         },
         {
-          "summary": "湾仔区：82.6% 占用（1032 个已观测计量车位）"
+          "summary": "元朗区：80.5% 占用（1242 个已观测计量车位）"
         },
         {
-          "summary": "元朗区：80.0% 占用（1242 个已观测计量车位）"
+          "summary": "荃湾区：79.5% 占用（698 个已观测计量车位）"
         },
         {
-          "summary": "葵青区：79.7% 占用（637 个已观测计量车位）"
+          "summary": "湾仔区：73.4% 占用（1032 个已观测计量车位）"
         },
         {
-          "summary": "中西区：79.3% 占用（598 个已观测计量车位）"
+          "summary": "中西区：72.1% 占用（598 个已观测计量车位）"
         },
         {
-          "summary": "大埔区：77.9% 占用（1641 个已观测计量车位）"
+          "summary": "大埔区：68.3% 占用（1641 个已观测计量车位）"
         },
         {
-          "summary": "离岛区：74.3% 占用（338 个已观测计量车位）"
+          "summary": "西贡区：56.4% 占用（1982 个已观测计量车位）"
         },
         {
-          "summary": "南区：68.3% 占用（678 个已观测计量车位）"
+          "summary": "离岛区：54.7% 占用（338 个已观测计量车位）"
         },
         {
-          "summary": "西贡区：65.3% 占用（1982 个已观测计量车位）"
+          "summary": "南区：50.1% 占用（678 个已观测计量车位）"
         }
       ]
     }
@@ -96596,7 +96627,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-transport/",
-    "snapshotId": "a2422c4cdb246911",
-    "dataAsOf": "2026-09-25"
+    "snapshotId": "4a40a1f3eccdb3fa",
+    "dataAsOf": "2026-09-28"
   }
 }

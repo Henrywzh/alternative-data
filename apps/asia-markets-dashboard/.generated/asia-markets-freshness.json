@@ -1,6 +1,6 @@
 {
   "version": "asia-markets-freshness.v1",
-  "auditedAt": "2026-09-28T08:26:03.017938Z",
+  "auditedAt": "2026-09-28T13:58:12.516353Z",
   "asOf": "2026-09-28",
   "status": "healthy",
   "requiredFailures": [],
@@ -142,7 +142,7 @@
       "required": true,
       "status": "healthy",
       "expected_latest_period": "2026-07",
-      "latest_observation": "2026-07",
+      "latest_observation": "2026-08",
       "notes": "MTR monthly patronage is checked with a 35-day publication allowance because release dates vary around the latter part of the following month."
     },
     {
@@ -201,8 +201,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-09-27T12:05:40.237403Z",
-      "latest_observation": "2026-09-27T12:05:40.237403Z",
+      "expected_latest_period": "2026-09-28T13:55:47.933882Z",
+      "latest_observation": "2026-09-28T13:55:47.933882Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
