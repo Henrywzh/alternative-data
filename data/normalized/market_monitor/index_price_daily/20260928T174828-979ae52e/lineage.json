@@ -83,31 +83,31 @@
     "missing_exposures": [],
     "rows_by_exposure": {
       "cac40": 1279,
-      "chinext": 1212,
-      "cn_infotech": 1212,
-      "cn_staples": 1212,
-      "csi1000": 1212,
-      "csi300": 1212,
-      "csi500": 1212,
+      "chinext": 1210,
+      "cn_infotech": 1210,
+      "cn_staples": 1210,
+      "csi1000": 1210,
+      "csi300": 1210,
+      "csi500": 1210,
       "dax": 1273,
-      "dividend": 1212,
+      "dividend": 1210,
       "dow": 1253,
       "ftse100": 1260,
-      "growth": 1212,
+      "growth": 1210,
       "hk_dividend": 1226,
       "hk_hshares": 1226,
-      "hk_internet": 1232,
+      "hk_internet": 1231,
       "hk_midcap": 1226,
       "hsi": 1226,
       "hstech": 1226,
-      "kospi": 1221,
-      "kr_semis": 1212,
+      "kospi": 1218,
+      "kr_semis": 1210,
       "ndx": 1253,
-      "nikkei225": 1221,
+      "nikkei225": 1219,
       "russell2000": 1253,
       "saudi": 1253,
       "sp500": 1253,
-      "twii": 1214,
+      "twii": 1212,
       "us_broad": 1253,
       "us_communication": 1253,
       "us_discretionary": 1253,
@@ -120,16 +120,10 @@
       "us_utilities": 1253,
       "us_value": 1253
     },
-    "first_date": "2021-09-23",
-    "last_date": "2026-09-22",
+    "first_date": "2021-09-30",
+    "last_date": "2026-09-28",
     "requested_start_date": null,
     "fetch_errors": [
-      {
-        "dataset": "etf_share_daily",
-        "severity": "optional",
-        "source": "sse:fund_etf_scale_sse",
-        "error": "KeyError: \"None of [Index(['序号', '基金代码', '基金简称', 'ETF类型', '统计日期', '基金份额'], dtype='object')] are in the [columns]\""
-      },
       {
         "dataset": "etf_share_daily",
         "severity": "optional",
@@ -138,15 +132,15 @@
       },
       {
         "dataset": "etf_spot",
-        "error": "HTTPError: 502 Server Error: Bad Gateway for url: https://push2delay.eastmoney.com/api/qt/clist/get?pn=1&pz=100&po=1&np=1&ut=bd1d9ddb04089700cf9c27f6f7426281&fltt=2&invt=2&wbp2u=%7C0%7C0%7C0%7Cweb&fid=f12&fs=b%3AMK0021%2Cb%3AMK0022%2Cb%3AMK0023%2Cb%3AMK0024%2Cb%3AMK0827&fields=f1%2Cf2%2Cf3%2Cf4%2Cf5%2Cf6%2Cf7%2Cf8%2Cf9%2Cf10%2Cf12%2Cf13%2Cf14%2Cf15%2Cf16%2Cf17%2Cf18%2Cf20%2Cf21%2Cf23%2Cf24%2Cf25%2Cf22%2Cf11%2Cf30%2Cf31%2Cf32%2Cf33%2Cf34%2Cf35%2Cf38%2Cf62%2Cf63%2Cf64%2Cf65%2Cf66%2Cf69%2Cf72%2Cf75%2Cf78%2Cf81%2Cf84%2Cf87%2Cf115%2Cf124%2Cf128%2Cf136%2Cf152%2Cf184%2Cf297%2Cf402%2Cf441"
+        "error": "RuntimeError: ETF spot fetch failed on all paths: AkShare HTTPError HTTP 502 (502 Server Error: Bad Gateway for url: https://push2delay.eastmoney.com/api/qt/clist/get?pn=1&pz=100&po=1&np=1&ut=bd1d9ddb04089700cf9c27f6f7426281&fltt=2&invt=2&wbp2u=%7C0%7C0%7C0%7Cweb&fid=f12&fs=b%3AMK0021%2Cb%3AMK0022%2Cb%3AMK0023%2Cb%3AMK0024%2Cb%3AMK0827&fields=f1%2Cf2%2Cf3%2Cf4%2Cf5%2Cf6%2Cf7%2Cf8%2Cf9%2Cf10%2Cf12%2Cf13%2Cf14%2Cf15%2Cf16%2Cf17%2Cf18%2Cf20%2Cf21%2Cf23%2Cf24%2Cf25%2Cf22%2Cf11%2Cf30%2Cf31%2Cf32%2Cf33%2Cf34%2Cf35%2Cf38%2Cf62%2Cf63%2Cf64%2Cf65%2Cf66%2Cf69%2Cf72%2Cf75%2Cf78%2Cf81%2Cf84%2Cf87%2Cf115%2Cf124%2Cf128%2Cf136%2Cf152%2Cf184%2Cf297%2Cf402%2Cf441); targeted Eastmoney HTTPError HTTP 502 (502 Server Error: Bad Gateway for url: https://push2.eastmoney.com/api/qt/ulist.np/get?secids=1.510300%2C1.510330%2C0.159919%2C1.510500%2C1.512500%2C0.159922%2C1.512100%2C0.159845%2C1.560010%2C1.510880%2C1.588000%2C1.588080%2C1.513180%2C1.513130%2C1.513010%2C0.159920%2C1.513660%2C0.159941%2C1.513100%2C1.513300%2C1.513500%2C0.159655%2C1.513650%2C1.513630%2C0.159545%2C1.513690%2C0.159792%2C1.513040%2C1.520650%2C1.513520%2C1.513000%2C1.513310%2C1.513080%2C1.513030%2C0.159329%2C1.520830&fields=f2%2Cf3%2Cf5%2Cf6%2Cf12%2Cf13%2Cf14%2Cf20%2Cf21%2Cf31%2Cf32%2Cf38%2Cf402%2Cf441&fltt=2&ut=bd1d9ddb04089700cf9c27f6f7426281); paginated Eastmoney HTTPError HTTP 502 (502 Server Error: Bad Gateway for url: https://push2.eastmoney.com/api/qt/clist/get?pn=7&pz=100&po=1&np=1&ut=bd1d9ddb04089700cf9c27f6f7426281&fltt=2&invt=2&wbp2u=%7C0%7C0%7C0%7Cweb&fid=f12&fs=b%3AMK0021%2Cb%3AMK0022%2Cb%3AMK0023%2Cb%3AMK0024%2Cb%3AMK0827&fields=f2%2Cf3%2Cf5%2Cf6%2Cf12%2Cf13%2Cf14%2Cf20%2Cf21%2Cf31%2Cf32%2Cf38%2Cf402%2Cf441)"
       }
     ],
     "regressions": []
   },
   "dataset_name": "index_price_daily",
-  "run_id": "20260922T141240-d0dac9ee",
-  "created_at": "2026-09-22T14:12:57.517343+00:00",
-  "records": 45786,
+  "run_id": "20260928T174828-979ae52e",
+  "created_at": "2026-09-28T17:48:47.666950+00:00",
+  "records": 45760,
   "columns": [
     "date",
     "exposure_id",
@@ -159,5 +153,5 @@
     "retrieved_at_utc",
     "observation_type"
   ],
-  "sha256": "daf6f8458c88b1b03fbc81412d1b6af96d72f2a3a698dfd53d1fff70f646895e"
+  "sha256": "7176572c351c2c218b9e681acd42d29ace0d529ba5b56c0077e5dd8126c105e5"
 }
