@@ -25,8 +25,8 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: hk-labour-market-monthly-${{ github.ref }}
-  cancel-in-progress: false
+  group: asia-markets-dashboard-artifacts-${{ github.ref }}
+  queue: max
 
 permissions:
   contents: write

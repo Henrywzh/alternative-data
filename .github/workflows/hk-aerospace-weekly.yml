@@ -14,8 +14,8 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: hk-aerospace-weekly-${{ github.ref }}
-  cancel-in-progress: false
+  group: asia-markets-dashboard-artifacts-${{ github.ref }}
+  queue: max
 
 permissions:
   contents: write

@@ -8,8 +8,8 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: market-monitor
-  cancel-in-progress: false
+  group: asia-markets-dashboard-artifacts-${{ github.ref }}
+  queue: max
 
 permissions:
   contents: write

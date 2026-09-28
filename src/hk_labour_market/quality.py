@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 import pandas as pd
 
@@ -30,7 +30,12 @@ POLICY_REQUIRED_COLUMNS = {
 }
 
 
-def validate_frame(frame: pd.DataFrame, spec: CenstatdTableSpec) -> list[str]:
+def validate_frame(
+    frame: pd.DataFrame,
+    spec: CenstatdTableSpec,
+    *,
+    as_of_date: date | None = None,
+) -> list[str]:
     """Return human-readable quality errors; suppressed / N.A. values remain valid rows."""
     if frame.empty:
         return ["dataset yielded zero normalized records"]
@@ -49,7 +54,7 @@ def validate_frame(frame: pd.DataFrame, spec: CenstatdTableSpec) -> list[str]:
     latest = pd.to_datetime(frame.loc[available, "period_end"], errors="coerce").max()
     if pd.isna(latest):
         return ["cannot determine latest numeric observation"]
-    now = pd.Timestamp(datetime.now(timezone.utc).date())
+    now = pd.Timestamp(as_of_date or datetime.now(timezone.utc).date())
     if latest > now + pd.Timedelta(days=7):
         return [f"latest observation is implausibly in the future: {latest.date()}"]
     if latest < now - pd.Timedelta(days=spec.expected_latest_age_days):
