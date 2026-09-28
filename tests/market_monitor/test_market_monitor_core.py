@@ -710,6 +710,37 @@ def test_spot_targeted_fallback_requests_registry_secids_and_rotates_hosts(monke
     ]
 
 
+def test_spot_targeted_fallback_tries_every_configured_host(monkeypatch):
+    """The direct fallback must not omit hosts when its list exceeds AkShare retries."""
+    import market_monitor.sources.akshare_etf as src
+
+    hosts = (
+        "https://eastmoney-a",
+        "https://eastmoney-b",
+        "https://eastmoney-c",
+        "https://eastmoney-d",
+    )
+    calls: list[str] = []
+
+    class _Response:
+        status_code = 502
+
+    def _get(url, **_kwargs):
+        calls.append(url)
+        response = _Response()
+        raise src.requests.HTTPError("HTTP 502", response=response)
+
+    monkeypatch.setattr(src.requests, "get", _get)
+    monkeypatch.setattr(src, "ETF_SPOT_BASE_URLS", hosts)
+    monkeypatch.setattr(src.time, "sleep", lambda _seconds: None)
+
+    with pytest.raises(src.requests.HTTPError, match="HTTP 502"):
+        src._fetch_etf_spot_for_tracked_wrappers()
+
+    assert len(hosts) > src.ETF_SPOT_MAX_ATTEMPTS
+    assert calls == [f"{host}/api/qt/ulist.np/get" for host in hosts]
+
+
 def test_spot_targeted_fallback_accepts_blank_market_when_secids_are_qualified(monkeypatch):
     """ETF ulist rows may omit f13; the request still pins market + code."""
     import market_monitor.sources.akshare_etf as src
@@ -826,6 +857,37 @@ def test_spot_host_fallback_retries_alternate_host_and_requires_complete_pages(m
         ("https://eastmoney-b/api/qt/clist/get", "1"),
         ("https://eastmoney-a/api/qt/clist/get", "2"),
     ]
+
+
+def test_spot_page_fallback_tries_every_configured_host(monkeypatch):
+    """Page-level failover also visits the final configured quote gateway."""
+    import market_monitor.sources.akshare_etf as src
+
+    hosts = (
+        "https://eastmoney-a",
+        "https://eastmoney-b",
+        "https://eastmoney-c",
+        "https://eastmoney-d",
+    )
+    calls: list[str] = []
+
+    class _Response:
+        status_code = 502
+
+    class _Session:
+        def get(self, url, **_kwargs):
+            calls.append(url)
+            response = _Response()
+            raise src.requests.HTTPError("HTTP 502", response=response)
+
+    monkeypatch.setattr(src, "ETF_SPOT_BASE_URLS", hosts)
+    monkeypatch.setattr(src.time, "sleep", lambda _seconds: None)
+
+    with pytest.raises(src.requests.HTTPError, match="HTTP 502"):
+        src._fetch_etf_spot_page(_Session(), 7)
+
+    assert len(hosts) > src.ETF_SPOT_MAX_ATTEMPTS
+    assert calls == [f"{host}/api/qt/clist/get" for host in hosts]
 
 
 def test_spot_host_fallback_rejects_incomplete_page(monkeypatch):

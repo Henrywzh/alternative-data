@@ -120,7 +120,10 @@ def _fetch_etf_spot_for_tracked_wrappers() -> pd.DataFrame:
             "Chrome/131.0.0.0 Safari/537.36"
         ),
     }
-    attempts = min(ETF_SPOT_MAX_ATTEMPTS, len(ETF_SPOT_BASE_URLS))
+    # Direct fallbacks have one configured URL per independent Eastmoney
+    # gateway. Try every one: ETF_SPOT_MAX_ATTEMPTS applies to retries of the
+    # AkShare adapter below, not the separately curated host list.
+    attempts = len(ETF_SPOT_BASE_URLS)
     last_error: Exception | None = None
     for attempt, base_url in enumerate(ETF_SPOT_BASE_URLS[:attempts]):
         try:
@@ -222,7 +225,10 @@ def _fetch_etf_spot_page(
         ),
     }
     last_error: Exception | None = None
-    attempts = min(ETF_SPOT_MAX_ATTEMPTS, len(ETF_SPOT_BASE_URLS))
+    # See the tracked-wrapper fallback above. A provider outage can affect
+    # several gateways, but do not silently leave the final configured host
+    # unused because the AkShare retry budget is smaller than this host list.
+    attempts = len(ETF_SPOT_BASE_URLS)
     for attempt in range(attempts):
         base_url = ETF_SPOT_BASE_URLS[attempt]
         try:
