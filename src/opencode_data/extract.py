@@ -157,6 +157,18 @@ def extract_leaderboard(stats_home: dict[str, Any], scraped_at: str) -> list[dic
     lb_data = stats_home.get("leaderboard", {})
     if isinstance(lb_data, list):
         lb_data = {_FLAT_SCHEMA_TIER: {_FLAT_SCHEMA_TIMEFRAME: lb_data}}
+    elif isinstance(lb_data, dict) and lb_data and all(
+        isinstance(item_list, list) for item_list in lb_data.values()
+    ):
+        # The live payload now groups leaderboard rows by timeframe only
+        # ("daily" / "weekly"), without the former user-tier wrapper.
+        timeframe_aliases = {"daily": "1D", "weekly": "1W"}
+        lb_data = {
+            _FLAT_SCHEMA_TIER: {
+                timeframe_aliases.get(str(timeframe).lower(), str(timeframe)): item_list
+                for timeframe, item_list in lb_data.items()
+            }
+        }
     if not isinstance(lb_data, dict):
         return rows
 
