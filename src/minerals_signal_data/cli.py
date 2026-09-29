@@ -96,6 +96,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Also download price-table/trend images (local only; not committed)",
     )
+    tungsten.add_argument(
+        "--with-tungsten-ocr",
+        action="store_true",
+        help="Use CTIA price-table images to fill missing 65% tungsten concentrate prices",
+    )
     return parser
 
 
@@ -171,6 +176,7 @@ def main() -> int:
             args.base_dir,
             max_pages=args.max_pages,
             with_images=args.with_images,
+            tungsten_ocr=args.with_tungsten_ocr,
             since_date=args.since_date,
             since_days=args.since_days,
             source=args.source,

@@ -22,6 +22,7 @@ import subprocess
 import hashlib
 import json
 from datetime import datetime, timedelta
+from io import StringIO
 from pathlib import Path
 
 import pandas as pd
@@ -655,27 +656,193 @@ def clean_chinese_val(val_str: str, unit: str) -> float | str:
     return val
 
 
-def extract_tungsten_chinese(html_text: str) -> dict:
-    text = BeautifulSoup(html_text, "html.parser").get_text("\n")
-    patterns = {
-        "wolframite_concentrate": r"65%黑钨精矿价格([\d,.]+)\s*(万元/标吨|元/吨|元/吨度)",
-        "scheelite_concentrate": r"65%白钨精矿价格([\d,.]+)\s*(万元/标吨|元/吨|元/吨度)",
-        "apt": r"仲钨酸铵.*?价格([\d,.]+)\s*(万元/吨|元/吨)",
-        "european_apt": r"欧洲APT价格([\d,.-]+)\s*(美元/吨度|美元/mtu)",
-        "tungsten_powder": r"钨粉价格([\d,.]+)\s*(元/千克|元/kg|元/吨)",
-        "tungsten_carbide_powder": r"碳化钨粉价格([\d,.]+)\s*(元/千克|元/kg|元/吨)",
-        "ferrotungsten": r"(?:70%?|70)?钨铁价格([\d,.]+)\s*(万元/吨|元/吨)",
-        "cobalt_powder": r"钴粉价格([\d,.]+)\s*(元/千克|元/kg|元/吨)",
-        "scrap_carbide_rod": r"废钨棒材价格([\d,.]+)\s*(元/千克|元/kg|元/吨)"
-    }
-    extracted = {}
-    for field, regex in patterns.items():
-        match = re.search(regex, text)
+_TUNGSTEN_NUMBER = r"\d+(?:,\d{3})*(?:\.\d+)?"
+_TUNGSTEN_PRICE_RE = re.compile(
+    rf"(?P<low>{_TUNGSTEN_NUMBER})(?:\s*(?:[-–—~～至到])\s*(?P<high>{_TUNGSTEN_NUMBER}))?"
+    r"\s*(?P<unit>万元/标吨|万元/吨|元/吨度|美元/吨度|美元/mtu|美元/吨|元/千克|元/kg|元/吨)",
+    re.IGNORECASE,
+)
+_TUNGSTEN_PRICE_MARKER = r"(?:价格|报价|议价重心(?:参考)?|主流议价|采购价|成交价|议价)"
+_TUNGSTEN_LABELS = {
+    "wolframite_concentrate": r"65%黑钨精矿",
+    "scheelite_concentrate": r"65%白钨精矿",
+    "apt": r"仲钨酸铵|(?<!欧洲)APT",
+    "european_apt": r"欧洲APT",
+    "tungsten_powder": r"(?<!碳化)钨粉(?:末)?",
+    "tungsten_carbide_powder": r"碳化钨粉",
+    "ferrotungsten": r"(?:70(?:%|％)?钨铁|钨铁)",
+    "cobalt_powder": r"钴粉",
+    "scrap_carbide_rod": r"(?:废钨棒材|废钨棒)",
+}
+_TUNGSTEN_RESPECTIVELY_LABELS = (
+    (None, r"55[%％]钨精矿"),
+    ("wolframite_concentrate", r"65[%％]黑钨精矿"),
+    ("scheelite_concentrate", r"65[%％]白钨精矿"),
+    ("european_apt", r"欧洲APT"),
+    ("apt", r"仲钨酸铵|(?<!欧洲)APT"),
+    ("tungsten_carbide_powder", r"碳化钨粉"),
+    ("tungsten_powder", r"(?<!碳化)(?:中颗粒)?钨粉(?:末)?"),
+    ("ferrotungsten", r"(?:70[%％]?钨铁|钨铁)"),
+    ("cobalt_powder", r"钴粉"),
+    ("scrap_carbide_rod", r"(?:废钨棒材|废钨棒)"),
+)
+
+
+def _tungsten_price_value(match: re.Match, field: str) -> float | str:
+    unit = match.group("unit")
+    value = clean_chinese_val(match.group("low"), unit)
+    if value == "":
+        return ""
+
+    value = float(value)
+    if field in {"tungsten_powder", "tungsten_carbide_powder", "cobalt_powder", "scrap_carbide_rod"}:
+        if unit in {"万元/吨", "元/吨"}:
+            value *= 0.001
+
+    low, high = PRICE_BOUNDS[field]
+    return value if low <= value <= high else ""
+
+
+def _extract_tungsten_labeled_price(text: str, label_pattern: str, field: str) -> float | str:
+    marker_and_price = re.compile(
+        rf"{_TUNGSTEN_PRICE_MARKER}[^0-9]{{0,32}}{_TUNGSTEN_PRICE_RE.pattern}",
+        re.IGNORECASE,
+    )
+    for label_match in re.finditer(label_pattern, text, re.IGNORECASE):
+        tail = text[label_match.end() :]
+        boundary = re.search(r"[。；;]", tail)
+        segment = tail[: boundary.start()] if boundary else tail[:220]
+        if "分别" in segment:
+            continue
+        match = marker_and_price.search(segment)
         if match:
-            extracted[field] = clean_chinese_val(match.group(1), match.group(2))
-        else:
-            extracted[field] = ""
+            value = _tungsten_price_value(match, field)
+            if value != "":
+                return value
+    return ""
+
+
+def _extract_tungsten_respectively(text: str) -> dict[str, float]:
+    """Map listed tungsten products to listed prices in explicit respectively clauses."""
+    extracted: dict[str, float] = {}
+    for clause in re.split(r"[。；;]", text):
+        respective_match = re.search("分别", clause)
+        if not respective_match:
+            continue
+        prefix = clause[: respective_match.start()]
+        suffix = clause[respective_match.end() :]
+        label_pattern = "|".join(
+            f"(?P<label_{index}>{pattern})"
+            for index, (_, pattern) in enumerate(_TUNGSTEN_RESPECTIVELY_LABELS)
+        )
+        mentions = []
+        for match in re.finditer(label_pattern, prefix, re.IGNORECASE):
+            field = next(
+                field
+                for index, (field, _) in enumerate(_TUNGSTEN_RESPECTIVELY_LABELS)
+                if match.group(f"label_{index}") is not None
+            )
+            mentions.append(field)
+        values = list(_TUNGSTEN_PRICE_RE.finditer(suffix))
+        if len(mentions) != len(values) or len(mentions) < 2:
+            continue
+        for field, value_match in zip(mentions, values):
+            if field is None:
+                continue
+            value = _tungsten_price_value(value_match, field)
+            if value != "":
+                extracted[field] = float(value)
     return extracted
+
+
+def extract_tungsten_chinese(html_text: str) -> dict:
+    text = BeautifulSoup(html_text, "html.parser").get_text(" ")
+    text = re.sub(r"\s+", "", text)
+    extracted = {
+        field: _extract_tungsten_labeled_price(text, label, field)
+        for field, label in _TUNGSTEN_LABELS.items()
+    }
+    extracted.update(_extract_tungsten_respectively(text))
+    return extracted
+
+
+def _parse_tungsten_price_table_ocr(tsv_text: str) -> dict[str, float]:
+    """Read the two 65% concentrate rows from CTIA's standard price-table layout.
+
+    English-only OCR does not consistently recognize Chinese row labels. The
+    table places the 65% black and white concentrate rows first and third; only
+    assign values when exactly two 65% labels and in-range prices are detected.
+    """
+    rows = list(csv.DictReader(StringIO(tsv_text), delimiter="\t"))
+    grade_rows = []
+    price_rows = []
+    for row in rows:
+        if row.get("level") != "5" or not row.get("text", "").strip():
+            continue
+        try:
+            left = int(row["left"])
+            top = int(row["top"])
+            height = int(row["height"])
+            confidence = float(row["conf"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if confidence < 30:
+            continue
+
+        token = row["text"].strip()
+        center_y = top + height / 2
+        if 100 <= left < 300 and re.search(r"65\s*%", token):
+            grade_rows.append((center_y, confidence))
+        if 280 <= left < 450:
+            numeric = re.sub(r"[^0-9,.]", "", token).replace(",", "")
+            if not numeric:
+                continue
+            try:
+                value = float(numeric)
+            except ValueError:
+                continue
+            price_rows.append((center_y, confidence, value))
+
+    grade_rows.sort()
+    if len(grade_rows) != 2:
+        return {}
+
+    extracted = {}
+    for field, (grade_y, _) in zip(("wolframite_concentrate", "scheelite_concentrate"), grade_rows):
+        candidates = [row for row in price_rows if abs(row[0] - grade_y) <= 10]
+        if not candidates:
+            continue
+        _, _, value = max(candidates, key=lambda row: row[1])
+        low, high = PRICE_BOUNDS[field]
+        if low <= value <= high:
+            extracted[field] = value
+    return extracted
+
+
+def _run_tesseract_ocr_tungsten(image_path: Path) -> dict[str, float]:
+    try:
+        result = subprocess.run(
+            [
+                "tesseract",
+                str(Path(image_path).resolve()),
+                "stdout",
+                "-l",
+                "eng",
+                "--psm",
+                "11",
+                "tsv",
+            ],
+            capture_output=True,
+            text=True,
+            errors="replace",
+            check=False,
+        )
+        if result.returncode == 0:
+            return _parse_tungsten_price_table_ocr(result.stdout)
+        _log(f"  Tesseract OCR returned exit code {result.returncode} (tungsten)")
+    except Exception as exc:  # noqa: BLE001
+        _log(f"  Tesseract OCR execution failed (tungsten): {exc}")
+    return {}
 
 
 def extract_molybdenum_chinese(html_text: str) -> dict:
@@ -1017,6 +1184,42 @@ def _load_existing(csv_path: Path) -> tuple[set[str], set[str]]:
     return existing_dates, existing_urls
 
 
+def _load_existing_rows(csv_path: Path) -> dict[str, dict[str, str]]:
+    if not csv_path.exists():
+        return {}
+    with csv_path.open("r", newline="", encoding="utf-8") as handle:
+        return {
+            row["date"]: row
+            for row in csv.DictReader(handle)
+            if row.get("date")
+        }
+
+
+def _rewrite_csv_with_updates(
+    csv_path: Path,
+    headers: list[str],
+    updates_by_date: dict[str, dict[str, str]],
+) -> int:
+    if not updates_by_date or not csv_path.exists():
+        return 0
+
+    temp_path = csv_path.with_suffix(".tmp")
+    updated_count = 0
+    with csv_path.open("r", newline="", encoding="utf-8") as source:
+        reader = csv.DictReader(source)
+        with temp_path.open("w", newline="", encoding="utf-8") as target:
+            writer = csv.DictWriter(target, fieldnames=headers, lineterminator="\n")
+            writer.writeheader()
+            for row in reader:
+                replacement = updates_by_date.get(row.get("date", ""))
+                if replacement is not None:
+                    row = replacement
+                    updated_count += 1
+                writer.writerow({key: row.get(key, "") for key in headers})
+    temp_path.replace(csv_path)
+    return updated_count
+
+
 def _source_from_url(url: str | None) -> str:
     host = urllib.parse.urlparse(url or "").netloc.lower()
     if host == "www.ctia.com.cn":
@@ -1030,7 +1233,7 @@ def _ensure_raw_csv_schema(csv_path: Path, headers: list[str]) -> None:
     """Add explicit source provenance to legacy raw files without losing rows."""
     if not csv_path.exists():
         with csv_path.open("w", newline="", encoding="utf-8") as handle:
-            csv.DictWriter(handle, fieldnames=headers).writeheader()
+            csv.DictWriter(handle, fieldnames=headers, lineterminator="\n").writeheader()
         return
 
     with csv_path.open("r", newline="", encoding="utf-8") as handle:
@@ -1042,7 +1245,7 @@ def _ensure_raw_csv_schema(csv_path: Path, headers: list[str]) -> None:
 
     temp_path = csv_path.with_suffix(".tmp")
     with temp_path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=headers)
+        writer = csv.DictWriter(handle, fieldnames=headers, lineterminator="\n")
         writer.writeheader()
         for row in rows:
             normalized = {column: row.get(column, "") for column in headers}
@@ -1161,6 +1364,7 @@ def scrape_ctia_range(
     *,
     max_pages: int = 3,
     with_images: bool = False,
+    tungsten_ocr: bool = False,
     session: requests.Session | None = None,
     since_date: str | None = None,
     since_days: int | None = None,
@@ -1180,28 +1384,33 @@ def scrape_ctia_range(
     cutoff_msg = f", since={cutoff.date()}" if cutoff is not None else ""
     _log(f"Scraping CTIA WP REST API (max_pages={max_pages}{cutoff_msg})...")
 
-    existing_tungsten_dates, existing_tungsten_urls = _load_existing(tungsten_csv_path)
-    existing_moly_dates, existing_moly_urls = _load_existing(moly_csv_path)
-    existing_ree_dates, existing_ree_urls = _load_existing(ree_csv_path)
-
     _ensure_raw_csv_schema(tungsten_csv_path, CSV_HEADERS)
     _ensure_raw_csv_schema(moly_csv_path, MOLY_CSV_HEADERS)
     _ensure_raw_csv_schema(ree_csv_path, REE_CSV_HEADERS)
 
+    existing_tungsten_dates, existing_tungsten_urls = _load_existing(tungsten_csv_path)
+    existing_moly_dates, existing_moly_urls = _load_existing(moly_csv_path)
+    existing_ree_dates, existing_ree_urls = _load_existing(ree_csv_path)
+    existing_tungsten_rows = _load_existing_rows(tungsten_csv_path)
+
     categories = [
-        (17, "tungsten", tungsten_csv_path, CSV_HEADERS, existing_tungsten_dates, existing_tungsten_urls),
-        (18, "molybdenum", moly_csv_path, MOLY_CSV_HEADERS, existing_moly_dates, existing_moly_urls),
-        (54, "rare_earth", ree_csv_path, REE_CSV_HEADERS, existing_ree_dates, existing_ree_urls)
+        (17, "tungsten", tungsten_csv_path, CSV_HEADERS, existing_tungsten_dates, existing_tungsten_urls, existing_tungsten_rows),
+        (18, "molybdenum", moly_csv_path, MOLY_CSV_HEADERS, existing_moly_dates, existing_moly_urls, {}),
+        (54, "rare_earth", ree_csv_path, REE_CSV_HEADERS, existing_ree_dates, existing_ree_urls, {}),
     ]
 
     new_count = 0
+    updated_count = 0
     pending_batches: list[tuple[Path, list[str], str, list[dict]]] = []
+    pending_updates: list[tuple[Path, list[str], str, dict[str, dict[str, str]]]] = []
     # Determine page size based on cutoff to be efficient
     per_page = 100 if cutoff is not None else 10
 
-    for cat_id, mineral_type, csv_path, headers, existing_dates, existing_urls in categories:
+    for cat_id, mineral_type, csv_path, headers, existing_dates, existing_urls, existing_rows in categories:
         _log(f"Processing category {mineral_type} (ID: {cat_id})...")
         category_new_rows = []
+        category_updates: dict[str, dict[str, str]] = {}
+        seen_price_dates: set[str] = set()
         stop_category = False
 
         for page in range(1, max_pages + 1):
@@ -1224,7 +1433,13 @@ def scrape_ctia_range(
                     stop_category = True
                     break
 
-                if link in existing_urls or date_str in existing_dates:
+                existing_row = existing_rows.get(date_str) if mineral_type == "tungsten" else None
+                if mineral_type == "tungsten":
+                    if existing_row and link != existing_row.get("url"):
+                        continue
+                    if not existing_row and date_str in seen_price_dates:
+                        continue
+                elif link in existing_urls or date_str in existing_dates:
                     continue
 
                 title = post["title"]["rendered"]
@@ -1244,7 +1459,31 @@ def scrape_ctia_range(
                 if mineral_type == "tungsten":
                     extracted = extract_tungsten_chinese(content_html)
                     row_data.update(extracted)
-                    _log(f"  Parsed Tungsten {date_str}: APT={row_data.get('apt')}")
+                    concentrate_missing = any(
+                        row_data.get(field) in ("", None)
+                        for field in ("wolframite_concentrate", "scheelite_concentrate")
+                    )
+                    if tungsten_ocr and concentrate_missing:
+                        img_url = _find_ctia_price_image_url(content_html, ["tungsten-price"])
+                        if img_url:
+                            _log(f"  [{date_str}] Concentrate prices missing in text; running table OCR.")
+                            ocr_img_local = _download_ctia_image(
+                                session, img_url, image_dir, f"temp_tungsten_ocr_{date_str}.jpg"
+                            )
+                            if ocr_img_local:
+                                ocr_prices = _run_tesseract_ocr_tungsten(Path(ocr_img_local))
+                                for key, value in ocr_prices.items():
+                                    if value and row_data.get(key) in ("", None):
+                                        row_data[key] = value
+                                try:
+                                    Path(ocr_img_local).unlink()
+                                except Exception:
+                                    pass
+                    _log(
+                        f"  Parsed Tungsten {date_str}: "
+                        f"APT={row_data.get('apt')}, black_concentrate={row_data.get('wolframite_concentrate')}, "
+                        f"scheelite={row_data.get('scheelite_concentrate')}"
+                    )
                 elif mineral_type == "molybdenum":
                     extracted = extract_molybdenum_chinese(content_html)
                     row_data.update(extracted)
@@ -1292,29 +1531,52 @@ def scrape_ctia_range(
                     _log(f"  Skipping {mineral_type} {date_str}: no validated price fields")
                     continue
 
+                if existing_row is not None:
+                    changed = False
+                    for field in PRICE_FIELDS:
+                        new_value = row_data.get(field)
+                        old_value = str(existing_row.get(field, "")).strip()
+                        new_text = str(new_value) if new_value not in ("", None) else ""
+                        if new_text and old_value != new_text:
+                            existing_row[field] = new_text
+                            changed = True
+                    if changed:
+                        category_updates[date_str] = dict(existing_row)
+                        _log(f"  Updated parsed tungsten fields for existing date {date_str}.")
+                    seen_price_dates.add(date_str)
+                    continue
+
                 category_new_rows.append(row_data)
+                seen_price_dates.add(date_str)
                 existing_dates.add(date_str)
                 existing_urls.add(link)
 
         if category_new_rows:
             category_new_rows.sort(key=lambda r: r["date"])
             pending_batches.append((csv_path, headers, mineral_type, category_new_rows))
+        if category_updates:
+            pending_updates.append((csv_path, headers, mineral_type, category_updates))
 
     # Commit raw rows only after every requested CTIA category completed. A refusal
     # therefore leaves historical data untouched instead of publishing a partial run.
     for csv_path, headers, mineral_type, rows in pending_batches:
         with csv_path.open("a", newline="", encoding="utf-8") as handle:
-            writer = csv.DictWriter(handle, fieldnames=headers)
+            writer = csv.DictWriter(handle, fieldnames=headers, lineterminator="\n")
             for row in rows:
                 writer.writerow({key: row.get(key, "") for key in headers})
         new_count += len(rows)
         _log(f"Wrote {len(rows)} new {mineral_type} records.")
 
+    for csv_path, headers, mineral_type, updates_by_date in pending_updates:
+        count = _rewrite_csv_with_updates(csv_path, headers, updates_by_date)
+        updated_count += count
+        _log(f"Backfilled {count} existing {mineral_type} record(s).")
+
     write_processed_snapshot(base_dir, tungsten_csv_path, PROCESSED_DATASET, PRICE_FIELDS)
     write_processed_snapshot(base_dir, moly_csv_path, MOLY_PROCESSED_DATASET, MOLY_PRICE_FIELDS)
     write_processed_snapshot(base_dir, ree_csv_path, REE_PROCESSED_DATASET, REE_PRICE_FIELDS)
 
-    _log(f"Done. {new_count} new record(s).")
+    _log(f"Done. {new_count} new record(s), {updated_count} existing record(s) backfilled.")
     return new_count
 
 
@@ -1323,6 +1585,7 @@ def scrape_range(
     *,
     max_pages: int = 3,
     with_images: bool = False,
+    tungsten_ocr: bool = False,
     session: requests.Session | None = None,
     since_date: str | None = None,
     since_days: int | None = None,
@@ -1333,6 +1596,7 @@ def scrape_range(
             base_dir=base_dir,
             max_pages=max_pages,
             with_images=with_images,
+            tungsten_ocr=tungsten_ocr,
             session=session,
             since_date=since_date,
             since_days=since_days,
@@ -1443,7 +1707,7 @@ def scrape_range(
                 if page_new_tungsten:
                     page_new_tungsten.sort(key=lambda row: row["date"])
                     with tungsten_csv_path.open("a", newline="", encoding="utf-8") as handle:
-                        writer = csv.DictWriter(handle, fieldnames=CSV_HEADERS)
+                        writer = csv.DictWriter(handle, fieldnames=CSV_HEADERS, lineterminator="\n")
                         for row in page_new_tungsten:
                             writer.writerow({k: row.get(k, "") for k in CSV_HEADERS})
                     new_count += len(page_new_tungsten)
@@ -1452,7 +1716,7 @@ def scrape_range(
                 if page_new_moly:
                     page_new_moly.sort(key=lambda row: row["date"])
                     with moly_csv_path.open("a", newline="", encoding="utf-8") as handle:
-                        writer = csv.DictWriter(handle, fieldnames=MOLY_CSV_HEADERS)
+                        writer = csv.DictWriter(handle, fieldnames=MOLY_CSV_HEADERS, lineterminator="\n")
                         for row in page_new_moly:
                             writer.writerow({k: row.get(k, "") for k in MOLY_CSV_HEADERS})
                     new_count += len(page_new_moly)
@@ -1461,7 +1725,7 @@ def scrape_range(
                 if page_new_ree:
                     page_new_ree.sort(key=lambda row: row["date"])
                     with ree_csv_path.open("a", newline="", encoding="utf-8") as handle:
-                        writer = csv.DictWriter(handle, fieldnames=REE_CSV_HEADERS)
+                        writer = csv.DictWriter(handle, fieldnames=REE_CSV_HEADERS, lineterminator="\n")
                         for row in page_new_ree:
                             writer.writerow({k: row.get(k, "") for k in REE_CSV_HEADERS})
                     new_count += len(page_new_ree)
@@ -1496,11 +1760,17 @@ def main() -> int:
         action="store_true",
         help="Also download price-table/trend images (local only; not committed)",
     )
+    parser.add_argument(
+        "--with-tungsten-ocr",
+        action="store_true",
+        help="Use CTIA price-table images to fill missing 65% tungsten concentrate prices",
+    )
     args = parser.parse_args()
     scrape_range(
         args.base_dir,
         max_pages=args.max_pages,
         with_images=args.with_images,
+        tungsten_ocr=args.with_tungsten_ocr,
         since_date=args.since_date,
         since_days=args.since_days,
     )
