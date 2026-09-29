@@ -6,7 +6,7 @@
     "title": "香港公用事业与基础设施监测",
     "description": "中电控股（CLP）季度售电量拆解、中华煤气（Towngas）代理数据、香港天文台日均气温、电能实业（Power Assets）分部业绩、渠务署污水流量/实验室数据及水务署停水通告。",
     "sector": "hk-utilities",
-    "generatedAt": "2026-09-28T13:57:21.002146Z",
+    "generatedAt": "2026-09-29T12:56:27.554353Z",
     "cards": [
       {
         "id": "clp_card",
@@ -397,7 +397,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-09-28T13:57:21.002146Z",
+    "generatedAt": "2026-09-29T12:56:27.554353Z",
     "status": "ready",
     "datasets": {
       "kpi_clp": [
@@ -4499,10 +4499,10 @@
       ],
       "kpi_water_suspension": [
         {
-          "active_notices": 36,
-          "total_notices": 108,
-          "recent_emergency_notices": 79,
-          "observation_date": "2026-09-28"
+          "active_notices": 32,
+          "total_notices": 119,
+          "recent_emergency_notices": 87,
+          "observation_date": "2026-09-29"
         }
       ],
       "sewage_flow_history": [
@@ -11976,6 +11976,58 @@
       ],
       "water_suspension_events": [
         {
+          "suspension_id": "2026092813832",
+          "water_type": "食水",
+          "district": "Kwai Tsing",
+          "nature": "计划",
+          "suspension_start": "2026-10-06 22:00",
+          "suspension_date": "2026-10-06",
+          "actual_resumption": null,
+          "address": "Greenfield Garden, Cheung Wan Street Rest Garden",
+          "cause": "Replacement and rehabilitation of water mains",
+          "status": "停水尚未开始",
+          "is_active": true
+        },
+        {
+          "suspension_id": "2026092413700",
+          "water_type": "食水",
+          "district": "Tai Po",
+          "nature": "计划",
+          "suspension_start": "2026-10-06 10:00",
+          "suspension_date": "2026-10-06",
+          "actual_resumption": null,
+          "address": "Parc Versailles Phase I (ONLY STOP FIRE WATER)",
+          "cause": "Replacement and rehabilitation of water mains",
+          "status": "停水尚未开始",
+          "is_active": true
+        },
+        {
+          "suspension_id": "2026092313635",
+          "water_type": "食水",
+          "district": "Yuen Long",
+          "nature": "计划",
+          "suspension_start": "2026-10-06 10:00",
+          "suspension_date": "2026-10-06",
+          "actual_resumption": null,
+          "address": "Fok On Garden",
+          "cause": "Replacement and rehabilitation of water mains",
+          "status": "停水尚未开始",
+          "is_active": true
+        },
+        {
+          "suspension_id": "2026092913876",
+          "water_type": "食水",
+          "district": "Wong Tai Sin",
+          "nature": "计划",
+          "suspension_start": "2026-10-06 00:00",
+          "suspension_date": "2026-10-06",
+          "actual_resumption": null,
+          "address": "Bel Air Heights, Diamond Hill Baptist Church, Nan Lian Garden (Chinese Timber Architecture Gallery, Rockery, Tang Gallery, The Mill, Long Men Lou, Song Cha Xie, Pavilion of Absolute Perfection, Xiang Hai Xuan), Western Lotus Pond Garden; Fire Hydrant (PH3272, PH4672, PH4713, PH6566) Remark : Fire service water is also affected",
+          "cause": "Valve exercise",
+          "status": "停水尚未开始",
+          "is_active": true
+        },
+        {
           "suspension_id": "2026092313633",
           "water_type": "食水",
           "district": "Wong Tai Sin",
@@ -11989,19 +12041,6 @@
           "is_active": true
         },
         {
-          "suspension_id": "2026092313654",
-          "water_type": "食水",
-          "district": "Wong Tai Sin",
-          "nature": "计划",
-          "suspension_start": "2026-10-05 10:00",
-          "suspension_date": "2026-10-05",
-          "actual_resumption": null,
-          "address": "Hsin Kuang Centre Hsin Kuang Shopping Centre",
-          "cause": "Replacement and rehabilitation of water mains",
-          "status": "停水尚未开始",
-          "is_active": true
-        },
-        {
           "suspension_id": "2026092513726",
           "water_type": "食水",
           "district": "Central & Western",
@@ -12011,6 +12050,19 @@
           "actual_resumption": null,
           "address": "No.5 Kotewall Road",
           "cause": "Improvement work of water main/installation",
+          "status": "停水尚未开始",
+          "is_active": true
+        },
+        {
+          "suspension_id": "2026092313654",
+          "water_type": "食水",
+          "district": "Wong Tai Sin",
+          "nature": "计划",
+          "suspension_start": "2026-10-05 10:00",
+          "suspension_date": "2026-10-05",
+          "actual_resumption": null,
+          "address": "Hsin Kuang Centre Hsin Kuang Shopping Centre Remark : Fire service water is affected only",
+          "cause": "Replacement and rehabilitation of water mains",
           "status": "停水尚未开始",
           "is_active": true
         },
@@ -12119,6 +12171,19 @@
           "is_active": true
         },
         {
+          "suspension_id": "2026092913878",
+          "water_type": "食水",
+          "district": "Central & Western",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 22:00",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": null,
+          "address": "24-28, 74 (EVEN) MOUNT KELLETT ROAD",
+          "cause": "Emergency repairing of water main/installation",
+          "status": "停水尚未开始",
+          "is_active": true
+        },
+        {
           "suspension_id": "2026092113557",
           "water_type": "食水",
           "district": "Islands",
@@ -12145,6 +12210,214 @@
           "is_active": true
         },
         {
+          "suspension_id": "2026092913887",
+          "water_type": "鹹水",
+          "district": "Central & Western",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 20:30",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": null,
+          "address": "HOLLYWOOD CENTRE",
+          "cause": "Emergency repairing of water main/installation",
+          "status": "停水尚未开始",
+          "is_active": true
+        },
+        {
+          "suspension_id": "2026092913886",
+          "water_type": "鹹水",
+          "district": "Eastern",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 18:37",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": null,
+          "address": "K WAH CENTRE, ICAC, WSD HK REGIONAL BUILDING, KODAK HOUSE, NO.323 JAVA ROAD",
+          "cause": "Emergency repairing of water main/installation",
+          "status": "供水暂停中",
+          "is_active": true
+        },
+        {
+          "suspension_id": "2026092913885",
+          "water_type": "鹹水",
+          "district": "Wan Chai",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 18:00",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": null,
+          "address": "382-430 LOCKHART ROAD, 375-429 HENNESSY ROAD",
+          "cause": "Emergency repairing of water main/installation",
+          "status": "供水暂停中",
+          "is_active": true
+        },
+        {
+          "suspension_id": "2026092913884",
+          "water_type": "食水",
+          "district": "Islands",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 17:47",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": null,
+          "address": "TUNG CHUNG COMMUNITY SERVICES COMPLEX, TUNG CHUNG COMMUNITY LIAISON CENTRE",
+          "cause": "Emergency repairing of water main/installation",
+          "status": "供水暂停中",
+          "is_active": true
+        },
+        {
+          "suspension_id": "2026092913883",
+          "water_type": "鹹水",
+          "district": "Wan Chai",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 17:36",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": null,
+          "address": "485-515 LOCKHART ROAD (ODD),488,496-508 JAFFE ROAD (EVEN),1,3 CANNON STREET",
+          "cause": "Emergency repairing of water main/installation",
+          "status": "供水暂停中",
+          "is_active": true
+        },
+        {
+          "suspension_id": "2026092913882",
+          "water_type": "食水",
+          "district": "Islands",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 16:37",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": null,
+          "address": "TUNG CHUNG COMMUNITY LIAISON CENTRE",
+          "cause": "Valve exercise",
+          "status": "供水暂停中",
+          "is_active": true
+        },
+        {
+          "suspension_id": "2026092913881",
+          "water_type": "食水",
+          "district": "Tai Po",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 16:29",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": "2026-09-29 18:29",
+          "address": "AREA LAMP POST LUNG MEI TSUEN",
+          "cause": "Emergency repairing of water main/installation",
+          "status": "供水已恢复",
+          "is_active": false
+        },
+        {
+          "suspension_id": "2026092913880",
+          "water_type": "食水",
+          "district": "North",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 16:07",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": null,
+          "address": "WING NING WAI",
+          "cause": "Emergency repairing of water main/installation",
+          "status": "供水暂停中",
+          "is_active": true
+        },
+        {
+          "suspension_id": "2026092913879",
+          "water_type": "食水",
+          "district": "North",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 16:05",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": null,
+          "address": "AREA AROUND FU TEI AU TSUEN",
+          "cause": "Valve exercise",
+          "status": "供水暂停中",
+          "is_active": true
+        },
+        {
+          "suspension_id": "2026092913877",
+          "water_type": "食水",
+          "district": "North",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 15:40",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": "2026-09-29 16:30",
+          "address": "SHEUNG SHAN KAI WAT, TAI PO TIN",
+          "cause": "Valve exercise",
+          "status": "供水已恢复",
+          "is_active": false
+        },
+        {
+          "suspension_id": "2026092913873",
+          "water_type": "食水",
+          "district": "Tai Po",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 15:06",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": "2026-09-29 16:27",
+          "address": "AREA LAMP POST LUNG MEI TSUEN",
+          "cause": "Emergency repairing of water main/installation",
+          "status": "供水已恢复",
+          "is_active": false
+        },
+        {
+          "suspension_id": "2026092913872",
+          "water_type": "食水",
+          "district": "Tai Po",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 15:05",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": null,
+          "address": "AREA OF LAMP POST VE4105, KAM SHAN TSUEN",
+          "cause": "Emergency repairing of water main/installation",
+          "status": "供水暂停中",
+          "is_active": true
+        },
+        {
+          "suspension_id": "2026092913870",
+          "water_type": "鹹水",
+          "district": "Wan Chai",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 14:54",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": null,
+          "address": "NOS.36-48 LEIGHTON ROAD (EVEN.)",
+          "cause": "Emergency repairing of water main/installation",
+          "status": "供水暂停中",
+          "is_active": true
+        },
+        {
+          "suspension_id": "2026092913867",
+          "water_type": "食水",
+          "district": "North",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 14:40",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": "2026-09-29 15:30",
+          "address": "HA PAK TSUEN",
+          "cause": "Valve exercise",
+          "status": "供水已恢复",
+          "is_active": false
+        },
+        {
+          "suspension_id": "2026092913858",
+          "water_type": "食水",
+          "district": "Southern",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 14:30",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": "2026-09-29 15:30",
+          "address": "THE UNIVERSITY OF HONG KONG LI KA SHING FACULTY OF MEDICINE REMARK : FIRE SERVICE WATER IS AFFECTED ONLY",
+          "cause": "Valve exercise",
+          "status": "供水已恢复",
+          "is_active": false
+        },
+        {
+          "suspension_id": "2026092913864",
+          "water_type": "食水",
+          "district": "Sai Kung",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 14:08",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": "2026-09-29 16:01",
+          "address": "AREA OF LAMP POST VE0838, PO TOI O",
+          "cause": "Emergency repairing of water main/installation",
+          "status": "供水已恢复",
+          "is_active": false
+        },
+        {
           "suspension_id": "2026091613348",
           "water_type": "食水及鹹水",
           "district": "Sai Kung",
@@ -12154,8 +12427,21 @@
           "actual_resumption": null,
           "address": "AREA AROUND HO CHUNG NEW VILALGE Remark : Fresh water for flushing purpose is also affected",
           "cause": "Replacement and rehabilitation of water mains",
-          "status": "停水尚未开始",
+          "status": "供水暂停中",
           "is_active": true
+        },
+        {
+          "suspension_id": "2026092913863",
+          "water_type": "鹹水",
+          "district": "Sha Tin",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 13:40",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": "2026-09-29 16:51",
+          "address": "WU KAI SHA VILLAGE",
+          "cause": "Emergency repairing of water main/installation",
+          "status": "供水已恢复",
+          "is_active": false
         },
         {
           "suspension_id": "2026091813426",
@@ -12164,50 +12450,37 @@
           "nature": "计划",
           "suspension_start": "2026-09-29 12:00",
           "suspension_date": "2026-09-29",
-          "actual_resumption": null,
+          "actual_resumption": "2026-09-29 13:56",
           "address": "Sai Kung Garden ==NO FIRE SERVICE WATER SUPPLY ONLY==",
           "cause": "Replacement and rehabilitation of water mains",
-          "status": "停水尚未开始",
-          "is_active": true
+          "status": "供水已恢复",
+          "is_active": false
         },
         {
-          "suspension_id": "2026092113522",
+          "suspension_id": "2026092913862",
           "water_type": "食水",
-          "district": "Wan Chai",
-          "nature": "计划",
-          "suspension_start": "2026-09-29 10:00",
+          "district": "North",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 11:23",
           "suspension_date": "2026-09-29",
-          "actual_resumption": null,
-          "address": "No. 5-7, Tsun Yuen Street No.69E & 69F Sing Woo Road",
-          "cause": "Improvement work of water main/installation",
-          "status": "停水尚未开始",
-          "is_active": true
+          "actual_resumption": "2026-09-29 13:23",
+          "address": "SHEUNG SHUI WAI TAI YUEN TSUEN",
+          "cause": "Emergency repairing of water main/installation",
+          "status": "供水已恢复",
+          "is_active": false
         },
         {
-          "suspension_id": "2026091813428",
-          "water_type": "食水及鹹水",
-          "district": "Sai Kung",
-          "nature": "计划",
-          "suspension_start": "2026-09-29 10:00",
-          "suspension_date": "2026-09-29",
-          "actual_resumption": null,
-          "address": "Sai Kung Garden Remarks: Temporary mains water for flushing is also suspended",
-          "cause": "Replacement and rehabilitation of water mains",
-          "status": "停水尚未开始",
-          "is_active": true
-        },
-        {
-          "suspension_id": "2026091813427",
+          "suspension_id": "2026092913861",
           "water_type": "食水",
-          "district": "Tuen Mun",
-          "nature": "计划",
-          "suspension_start": "2026-09-29 10:00",
+          "district": "North",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 10:39",
           "suspension_date": "2026-09-29",
-          "actual_resumption": null,
-          "address": "So Kwun Wat Tsuen Temporary Structure Remarks: Fresh water for flushing",
-          "cause": "Replacement and rehabilitation of water mains",
-          "status": "停水尚未开始",
-          "is_active": true
+          "actual_resumption": "2026-09-29 13:28",
+          "address": "AREA OF LAMP POST VD0081, WING NING WAI",
+          "cause": "Valve exercise",
+          "status": "供水已恢复",
+          "is_active": false
         },
         {
           "suspension_id": "2026092513750",
@@ -12216,11 +12489,167 @@
           "nature": "计划",
           "suspension_start": "2026-09-29 10:00",
           "suspension_date": "2026-09-29",
-          "actual_resumption": null,
+          "actual_resumption": "2026-09-29 11:07",
           "address": "Maple Gardens Phase I",
           "cause": "Improvement work of water main/installation",
-          "status": "停水尚未开始",
-          "is_active": true
+          "status": "供水已恢复",
+          "is_active": false
+        },
+        {
+          "suspension_id": "2026091813427",
+          "water_type": "食水",
+          "district": "Tuen Mun",
+          "nature": "计划",
+          "suspension_start": "2026-09-29 10:00",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": "2026-09-29 14:43",
+          "address": "So Kwun Wat Tsuen Temporary Structure Remarks: Fresh water for flushing",
+          "cause": "Replacement and rehabilitation of water mains",
+          "status": "供水已恢复",
+          "is_active": false
+        },
+        {
+          "suspension_id": "2026091813428",
+          "water_type": "食水及鹹水",
+          "district": "Sai Kung",
+          "nature": "计划",
+          "suspension_start": "2026-09-29 10:00",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": "2026-09-29 11:47",
+          "address": "Sai Kung Garden Remarks: Temporary mains water for flushing is also suspended",
+          "cause": "Replacement and rehabilitation of water mains",
+          "status": "供水已恢复",
+          "is_active": false
+        },
+        {
+          "suspension_id": "2026092113522",
+          "water_type": "食水",
+          "district": "Wan Chai",
+          "nature": "计划",
+          "suspension_start": "2026-09-29 10:00",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": "2026-09-29 15:03",
+          "address": "No. 5-7, Tsun Yuen Street No.69E & 69F Sing Woo Road",
+          "cause": "Improvement work of water main/installation",
+          "status": "供水已恢复",
+          "is_active": false
+        },
+        {
+          "suspension_id": "2026092913860",
+          "water_type": "食水",
+          "district": "North",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 09:57",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": "2026-09-29 11:26",
+          "address": "SHEUNG SHUI WAI CHUNG SUM TSUEN",
+          "cause": "Emergency repairing of water main/installation",
+          "status": "供水已恢复",
+          "is_active": false
+        },
+        {
+          "suspension_id": "2026092913857",
+          "water_type": "食水",
+          "district": "Yuen Long",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 09:50",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": "2026-09-29 10:41",
+          "address": "AREA OF LAMP POST U8414, NGAU KENG TSUEN",
+          "cause": "Valve exercise",
+          "status": "供水已恢复",
+          "is_active": false
+        },
+        {
+          "suspension_id": "2026092913859",
+          "water_type": "食水",
+          "district": "Yuen Long",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 09:50",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": "2026-09-29 16:51",
+          "address": "AREA OF LAMP POST FC0686, WING PING TSUEN",
+          "cause": "Emergency repairing of water main/installation",
+          "status": "供水已恢复",
+          "is_active": false
+        },
+        {
+          "suspension_id": "2026092913856",
+          "water_type": "食水",
+          "district": "Sai Kung",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 09:39",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": "2026-09-29 11:09",
+          "address": "AREA OF LAMP POST EB9642, CLEAR WATER BAY SECOND BEACH",
+          "cause": "Emergency repairing of water main/installation",
+          "status": "供水已恢复",
+          "is_active": false
+        },
+        {
+          "suspension_id": "2026092913855",
+          "water_type": "食水",
+          "district": "North",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 09:35",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": "2026-09-29 10:35",
+          "address": "AREA OF LAMP POST V1529, TAI YUEN TSUEN",
+          "cause": "Valve exercise",
+          "status": "供水已恢复",
+          "is_active": false
+        },
+        {
+          "suspension_id": "2026092913854",
+          "water_type": "食水",
+          "district": "Sai Kung",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 09:34",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": "2026-09-29 10:41",
+          "address": "AREA OF NGAU PUI WO NEAR LAMP POST VE5306",
+          "cause": "Emergency repairing of water main/installation",
+          "status": "供水已恢复",
+          "is_active": false
+        },
+        {
+          "suspension_id": "2026092913853",
+          "water_type": "鹹水",
+          "district": "Yau Tsim Mong",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 09:30",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": "2026-09-29 18:58",
+          "address": "KING'S PARK HILL ROAD, NO. 15, 23 KING'S PARK RISE",
+          "cause": "Emergency repairing of water main/installation",
+          "status": "供水已恢复",
+          "is_active": false
+        },
+        {
+          "suspension_id": "2026092913852",
+          "water_type": "食水",
+          "district": "North",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 09:25",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": "2026-09-29 11:30",
+          "address": "TUNG SHAN HA",
+          "cause": "Emergency repairing of water main/installation",
+          "status": "供水已恢复",
+          "is_active": false
+        },
+        {
+          "suspension_id": "2026092913851",
+          "water_type": "食水",
+          "district": "Wan Chai",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 09:16",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": "2026-09-29 09:28",
+          "address": "NOS 33-64 LEIGHTON ROAD (WATER IS WEAK OR NO WATER)",
+          "cause": "Valve exercise",
+          "status": "供水已恢复",
+          "is_active": false
         },
         {
           "suspension_id": "2026091813464",
@@ -12229,11 +12658,76 @@
           "nature": "计划",
           "suspension_start": "2026-09-29 09:00",
           "suspension_date": "2026-09-29",
-          "actual_resumption": null,
+          "actual_resumption": "2026-09-29 14:38",
           "address": "House No. 4, 4A, 4B, 4C, 4D, 72A, 72B Pui O Lo Uk Tsuen, Law Uk Tsuen Public Toilet and some premises, Lantau (Including fresh water flushing supply)",
           "cause": "Improvement work of water main/installation",
-          "status": "停水尚未开始",
+          "status": "供水已恢复",
+          "is_active": false
+        },
+        {
+          "suspension_id": "2026092913848",
+          "water_type": "鹹水",
+          "district": "Tuen Mun",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 07:45",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": null,
+          "address": "TIN'S CENTRE BLOCK 9",
+          "cause": "Emergency repairing of water main/installation",
+          "status": "供水暂停中",
           "is_active": true
+        },
+        {
+          "suspension_id": "2026092913847",
+          "water_type": "食水",
+          "district": "Tai Po",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 07:10",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": "2026-09-29 07:35",
+          "address": "AREA AROUND LAM TSUEN NEAR LAMP POST VE2560",
+          "cause": "Valve exercise",
+          "status": "供水已恢复",
+          "is_active": false
+        },
+        {
+          "suspension_id": "2026092913846",
+          "water_type": "鹹水",
+          "district": "Yuen Long",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 06:15",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": "2026-09-29 09:15",
+          "address": "PING SHAN, WANG CHAU, YUEN LONG TOWN, TIN SHUI WAI, HUNG SHUI KIU",
+          "cause": "Valve exercise",
+          "status": "供水已恢复",
+          "is_active": false
+        },
+        {
+          "suspension_id": "2026092913845",
+          "water_type": "食水",
+          "district": "Central & Western",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 02:20",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": "2026-09-29 04:30",
+          "address": "SKY COURT (ONLY AFFECTED FIRE SERVICE WATER SUPPLY)",
+          "cause": "Emergency repairing of water main/installation",
+          "status": "供水已恢复",
+          "is_active": false
+        },
+        {
+          "suspension_id": "2026092913844",
+          "water_type": "食水",
+          "district": "Yau Tsim Mong",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 00:07",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": "2026-09-29 04:05",
+          "address": "NOS.1-1E NELSON STREET",
+          "cause": "Emergency repairing of water main/installation",
+          "status": "供水已恢复",
+          "is_active": false
         },
         {
           "suspension_id": "2026092513742",
@@ -12242,11 +12736,37 @@
           "nature": "计划",
           "suspension_start": "2026-09-29 00:01",
           "suspension_date": "2026-09-29",
-          "actual_resumption": null,
+          "actual_resumption": "2026-09-29 03:35",
           "address": "Villa Tiara (Including Block1-6 & Club House), Construction Site of China Civil Engineering Construction Corporation at Tuen Hing Road；and No. 2A, 2C and 23, Tseng Tau Sheung Tsuen. Please see attached drawing for details.",
           "cause": "Improvement work of water main/installation",
-          "status": "停水尚未开始",
-          "is_active": true
+          "status": "供水已恢复",
+          "is_active": false
+        },
+        {
+          "suspension_id": "2026092913843",
+          "water_type": "鹹水",
+          "district": "Yuen Long",
+          "nature": "紧急",
+          "suspension_start": "2026-09-29 00:01",
+          "suspension_date": "2026-09-29",
+          "actual_resumption": "2026-09-29 05:20",
+          "address": "PING SHAN, WANG CHAU, YUEN LONG TOWN, TIN SHUI WAI",
+          "cause": "Emergency repairing of water main/installation",
+          "status": "供水已恢复",
+          "is_active": false
+        },
+        {
+          "suspension_id": "2026092813842",
+          "water_type": "食水",
+          "district": "Yuen Long",
+          "nature": "紧急",
+          "suspension_start": "2026-09-28 22:27",
+          "suspension_date": "2026-09-28",
+          "actual_resumption": "2026-09-28 23:45",
+          "address": "AROUND TAI SHU HA ROAD EAST CLOSE TO LAMP POST H2599",
+          "cause": "Valve exercise",
+          "status": "供水已恢复",
+          "is_active": false
         },
         {
           "suspension_id": "2026092313627",
@@ -12255,11 +12775,11 @@
           "nature": "计划",
           "suspension_start": "2026-09-28 22:00",
           "suspension_date": "2026-09-28",
-          "actual_resumption": null,
-          "address": "No. 16 Mong Lung Street, No. 14 Mong Lung Street, No. 114 Shau Kei Wan Main Street East, No. 116 Shau Kei Wan Main Street East, Mong Lung House, Tung Tai Building, No. 23 Kam Wa Street, No. 21 Kam Wa Street, No. 7 Kam Wa Street, No. 5 Kam Wa Street, Nos. 1-3 Kam Wa Street, Construction Site at Kam Wa Street near Mong Lung Street  Fire Hydrant Nos. SN1541 & SN30286 Temporary mains water for flushing is also suspended",
+          "actual_resumption": "2026-09-29 05:05",
+          "address": "No. 16 Mong Lung Street, No. 14 Mong Lung Street, NO.114,116 Shau Kei Wan Main Street East, Mong Lung House, Tung Tai Building, No. 23 Kam Wa Street, No. 21 Kam Wa Street, No. 7 Kam Wa Street, No. 5 Kam Wa Street, Nos. 1-3 Kam Wa Street, Construction Site at Kam Wa Street near Mong Lung Street  Fire Hydrant Nos. SN1541 & SN30286 Temporary mains water for flushing is also suspended",
           "cause": "Replacement and rehabilitation of water mains",
-          "status": "停水尚未开始",
-          "is_active": true
+          "status": "供水已恢复",
+          "is_active": false
         },
         {
           "suspension_id": "2026092813820",
@@ -12268,11 +12788,37 @@
           "nature": "紧急",
           "suspension_start": "2026-09-28 22:00",
           "suspension_date": "2026-09-28",
-          "actual_resumption": null,
+          "actual_resumption": "2026-09-29 02:11",
           "address": "NOS.98-106 BLUE POOL ROAD (EVEN.), NO.2 GREEN LANE",
           "cause": "Emergency repairing of water main/installation",
-          "status": "停水尚未开始",
-          "is_active": true
+          "status": "供水已恢复",
+          "is_active": false
+        },
+        {
+          "suspension_id": "2026092813841",
+          "water_type": "食水",
+          "district": "Southern",
+          "nature": "紧急",
+          "suspension_start": "2026-09-28 22:00",
+          "suspension_date": "2026-09-28",
+          "actual_resumption": "2026-09-29 02:00",
+          "address": "139 POK FU LAM ROAD",
+          "cause": "Emergency repairing of water main/installation",
+          "status": "供水已恢复",
+          "is_active": false
+        },
+        {
+          "suspension_id": "2026092813840",
+          "water_type": "鹹水",
+          "district": "Yuen Long",
+          "nature": "紧急",
+          "suspension_start": "2026-09-28 21:20",
+          "suspension_date": "2026-09-28",
+          "actual_resumption": "2026-09-28 23:59",
+          "address": "PING SHAN, WANG CHAU, YUEN LONG TOWN, TIN SHUI WAI",
+          "cause": "Valve exercise",
+          "status": "供水已恢复",
+          "is_active": false
         },
         {
           "suspension_id": "2026092813839",
@@ -12281,11 +12827,11 @@
           "nature": "紧急",
           "suspension_start": "2026-09-28 20:25",
           "suspension_date": "2026-09-28",
-          "actual_resumption": null,
+          "actual_resumption": "2026-09-28 21:26",
           "address": "AREA AROUND LAMP POST BE1314, TAI YEUNG CHE ROAD",
           "cause": "Valve exercise",
-          "status": "供水暂停中",
-          "is_active": true
+          "status": "供水已恢复",
+          "is_active": false
         },
         {
           "suspension_id": "2026092813838",
@@ -12294,11 +12840,11 @@
           "nature": "紧急",
           "suspension_start": "2026-09-28 20:00",
           "suspension_date": "2026-09-28",
-          "actual_resumption": null,
+          "actual_resumption": "2026-09-29 00:16",
           "address": "HONG KONG CHINESE WOMEN'S CLUB COLLEGE",
           "cause": "Emergency repairing of water main/installation",
-          "status": "供水暂停中",
-          "is_active": true
+          "status": "供水已恢复",
+          "is_active": false
         },
         {
           "suspension_id": "2026092813837",
@@ -12307,11 +12853,11 @@
           "nature": "紧急",
           "suspension_start": "2026-09-28 19:10",
           "suspension_date": "2026-09-28",
-          "actual_resumption": null,
+          "actual_resumption": "2026-09-29 04:00",
           "address": "K WAH CENTRE, ICAC, WSD HK REGIONAL BUILDING, KODAK HOUSE, NO.323 JAVA ROAD",
           "cause": "Emergency repairing of water main/installation",
-          "status": "供水暂停中",
-          "is_active": true
+          "status": "供水已恢复",
+          "is_active": false
         },
         {
           "suspension_id": "2026092813833",
@@ -12320,11 +12866,11 @@
           "nature": "紧急",
           "suspension_start": "2026-09-28 18:00",
           "suspension_date": "2026-09-28",
-          "actual_resumption": null,
+          "actual_resumption": "2026-09-29 03:30",
           "address": "149,151 HOLLYWOOD ROAD",
           "cause": "Emergency repairing of water main/installation",
-          "status": "供水暂停中",
-          "is_active": true
+          "status": "供水已恢复",
+          "is_active": false
         },
         {
           "suspension_id": "2026092813835",
@@ -12347,7 +12893,7 @@
           "suspension_start": "2026-09-28 16:55",
           "suspension_date": "2026-09-28",
           "actual_resumption": null,
-          "address": "(EVEN) 12-22 BONHAM ROAD, 1,3 BREEZY PATH, (EVEN) 2-6  PARK ROAD",
+          "address": "(EVEN) 12-22 BONHAM ROAD, 1,3 BREEZY PATH, (EVEN) 2-6 & 25 PARK ROAD",
           "cause": "Emergency repairing of water main/installation",
           "status": "供水暂停中",
           "is_active": true
@@ -12372,11 +12918,11 @@
           "nature": "紧急",
           "suspension_start": "2026-09-28 15:09",
           "suspension_date": "2026-09-28",
-          "actual_resumption": null,
+          "actual_resumption": "2026-09-28 20:00",
           "address": "NOS.209-225 (ODD.) SHAU KEI WAN ROAD",
           "cause": "Emergency repairing of water main/installation",
-          "status": "供水暂停中",
-          "is_active": true
+          "status": "供水已恢复",
+          "is_active": false
         },
         {
           "suspension_id": "2026092813828",
@@ -12411,11 +12957,11 @@
           "nature": "紧急",
           "suspension_start": "2026-09-28 14:40",
           "suspension_date": "2026-09-28",
-          "actual_resumption": null,
+          "actual_resumption": "2026-09-29 00:28",
           "address": "GARDEN VISTA",
           "cause": "Emergency repairing of water main/installation",
-          "status": "供水暂停中",
-          "is_active": true
+          "status": "供水已恢复",
+          "is_active": false
         },
         {
           "suspension_id": "2026092813823",
@@ -12424,11 +12970,11 @@
           "nature": "紧急",
           "suspension_start": "2026-09-28 14:18",
           "suspension_date": "2026-09-28",
-          "actual_resumption": null,
+          "actual_resumption": "2026-09-28 15:18",
           "address": "AREA OF LAMP POST VD5507 & LANE NO.8, CHUNG SUM TSUEN",
           "cause": "Valve exercise",
-          "status": "供水暂停中",
-          "is_active": true
+          "status": "供水已恢复",
+          "is_active": false
         },
         {
           "suspension_id": "2026092813822",
@@ -12463,11 +13009,11 @@
           "nature": "紧急",
           "suspension_start": "2026-09-28 12:17",
           "suspension_date": "2026-09-28",
-          "actual_resumption": null,
+          "actual_resumption": "2026-09-28 23:51",
           "address": "SHEK KU LUNG PUBLIC TOILET",
           "cause": "Emergency repairing of water main/installation",
-          "status": "供水暂停中",
-          "is_active": true
+          "status": "供水已恢复",
+          "is_active": false
         },
         {
           "suspension_id": "2026092813817",
@@ -12548,32 +13094,6 @@
           "is_active": false
         },
         {
-          "suspension_id": "2026092813808",
-          "water_type": "食水",
-          "district": "North",
-          "nature": "紧急",
-          "suspension_start": "2026-09-28 10:00",
-          "suspension_date": "2026-09-28",
-          "actual_resumption": "2026-09-28 10:55",
-          "address": "LUNG YEUK TAU LO WAI - KWAI YUEN",
-          "cause": "Emergency repairing of water main/installation",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026091813454",
-          "water_type": "食水及鹹水",
-          "district": "Yuen Long",
-          "nature": "计划",
-          "suspension_start": "2026-09-28 10:00",
-          "suspension_date": "2026-09-28",
-          "actual_resumption": null,
-          "address": "Area of Yuen Long Choi Uk Tsuen , Yung Lung Wai and Tai Wai Tsuen",
-          "cause": "Repairing of water main/installation",
-          "status": "供水暂停中",
-          "is_active": true
-        },
-        {
           "suspension_id": "2026091413243",
           "water_type": "食水",
           "district": "Tsuen Wan",
@@ -12593,11 +13113,11 @@
           "nature": "计划",
           "suspension_start": "2026-09-28 10:00",
           "suspension_date": "2026-09-28",
-          "actual_resumption": null,
+          "actual_resumption": "2026-09-28 18:00",
           "address": "Sai Wan Ho Harbour Park",
           "cause": "Replacement and rehabilitation of water mains",
-          "status": "供水暂停中",
-          "is_active": true
+          "status": "供水已恢复",
+          "is_active": false
         },
         {
           "suspension_id": "2026091813441",
@@ -12609,8 +13129,34 @@
           "actual_resumption": "2026-09-28 11:02",
           "address": "No. 5 and 18A-18C, Kap Pin Long Village, SK",
           "cause": "Improvement work of water main/installation",
-          "status": "供水暂停中",
-          "is_active": true
+          "status": "供水已恢复",
+          "is_active": false
+        },
+        {
+          "suspension_id": "2026091813454",
+          "water_type": "食水及鹹水",
+          "district": "Yuen Long",
+          "nature": "计划",
+          "suspension_start": "2026-09-28 10:00",
+          "suspension_date": "2026-09-28",
+          "actual_resumption": "2026-09-28 20:00",
+          "address": "Area of Yuen Long Choi Uk Tsuen , Yung Lung Wai and Tai Wai Tsuen",
+          "cause": "Repairing of water main/installation",
+          "status": "供水已恢复",
+          "is_active": false
+        },
+        {
+          "suspension_id": "2026092813808",
+          "water_type": "食水",
+          "district": "North",
+          "nature": "紧急",
+          "suspension_start": "2026-09-28 10:00",
+          "suspension_date": "2026-09-28",
+          "actual_resumption": "2026-09-28 10:55",
+          "address": "LUNG YEUK TAU LO WAI - KWAI YUEN",
+          "cause": "Emergency repairing of water main/installation",
+          "status": "供水已恢复",
+          "is_active": false
         },
         {
           "suspension_id": "2026092313628",
@@ -12724,7 +13270,7 @@
           "suspension_start": "2026-09-28 09:00",
           "suspension_date": "2026-09-28",
           "actual_resumption": null,
-          "address": "SHEK YAM LEI MUK ROAD PARK, NORTH KWAI CHUNG JOCKEY CLUB SWIMMING POOL, KWAI CHUNG SWIMMING POOL COMPLEX SUBSTATION",
+          "address": "NORTH KWAI CHUNG JOCKEY CLUB SWIMMING POOL",
           "cause": "Emergency repairing of water main/installation",
           "status": "供水暂停中",
           "is_active": true
@@ -12975,420 +13521,29 @@
           "cause": "Valve exercise",
           "status": "供水已恢复",
           "is_active": false
-        },
-        {
-          "suspension_id": "2026092513770",
-          "water_type": "食水",
-          "district": "Yuen Long",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 23:20",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-26 00:30",
-          "address": "AREA AROUND LAMP POST BD2093 AT KUNG UM ROAD",
-          "cause": "Valve exercise",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026092513768",
-          "water_type": "鹹水",
-          "district": "Central & Western",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 22:20",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-26 23:40",
-          "address": "NOS.6-18(EVENS.),NOS1-23(ODDS.) MOSQUE STREET",
-          "cause": "Emergency repairing of water main/installation",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026092513769",
-          "water_type": "鹹水",
-          "district": "Eastern",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 22:19",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-26 20:25",
-          "address": "BLOCK 1-10 KORNHILL GARDEN",
-          "cause": "Emergency repairing of water main/installation",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026092513767",
-          "water_type": "食水",
-          "district": "Kwai Tsing",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 21:30",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-26 20:00",
-          "address": "NO SUPPLY: LMK DEVELOPMENT ESTATE, STANDPIPE PH25223, PH25224 WEAK SUPPLY: IPLACE",
-          "cause": "Emergency repairing of water main/installation",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026092513766",
-          "water_type": "食水",
-          "district": "Southern",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 21:14",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-26 01:35",
-          "address": "(HOUSE ) RH/23D/61 SANDY BAY LOWER VILLAGE",
-          "cause": "Emergency repairing of water main/installation",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026092513765",
-          "water_type": "食水",
-          "district": "Kwai Tsing",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 19:05",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-25 21:30",
-          "address": "AREA OF TAI LIN PAI ROAD, HA KWAI CHUNG VILLAGE",
-          "cause": "Valve exercise",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026092513764",
-          "water_type": "食水",
-          "district": "Sham Shui Po",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 16:31",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-25 17:26",
-          "address": "NO.82,84 AP LIU STREET",
-          "cause": "Emergency repairing of water main/installation",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026092513763",
-          "water_type": "食水",
-          "district": "Yuen Long",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 16:25",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-25 18:29",
-          "address": "HANG MEI TSUEN",
-          "cause": "Emergency repairing of water main/installation",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026092513762",
-          "water_type": "鹹水",
-          "district": "Central & Western",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 16:06",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-26 08:18",
-          "address": "144 -151 CONNAUGHT ROAD WEST",
-          "cause": "Emergency repairing of water main/installation",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026092513761",
-          "water_type": "鹹水",
-          "district": "Kwun Tong",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 16:00",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-26 04:30",
-          "address": "NOS 300-302 NGAU TAK KOK ROAD",
-          "cause": "Emergency repairing of water main/installation",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026092513754",
-          "water_type": "食水",
-          "district": "Tai Po",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 15:16",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-25 17:16",
-          "address": "AREA AROUND SHA LAN TSUEN NEARBY LAMP POST VA3668",
-          "cause": "Valve exercise",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026092513753",
-          "water_type": "食水",
-          "district": "Yuen Long",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 15:12",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-25 15:56",
-          "address": "AROUND FAN TIN TSUEN CLOSE TO LAMP POST VD3920",
-          "cause": "Valve exercise",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026092513752",
-          "water_type": "食水",
-          "district": "North",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 14:49",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-25 16:49",
-          "address": "AREA AROUND LAMP POST VA3912 SO KWUN PO TSUEN",
-          "cause": "Emergency repairing of water main/installation",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026092513751",
-          "water_type": "食水",
-          "district": "Yuen Long",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 14:20",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-25 16:24",
-          "address": "AREA AROUND LAMP POST VG0323 AT HANG MEI TSUEN",
-          "cause": "Valve exercise",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026092513749",
-          "water_type": "食水",
-          "district": "Islands",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 14:05",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-25 16:10",
-          "address": "NOS 6, 161-168 SHEK LAU PO",
-          "cause": "Emergency repairing of water main/installation",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026092513748",
-          "water_type": "食水",
-          "district": "North",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 14:02",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-25 15:50",
-          "address": "AREA AROUND TONG KUNG LENG NEARBY LAMP POST V8670",
-          "cause": "Valve exercise",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026092513741",
-          "water_type": "鹹水",
-          "district": "Central & Western",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 11:40",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-25 12:25",
-          "address": "WEAK SUPPLY OF CENTRAL, WESTERN AND SHEUNG WAN DISTRICT",
-          "cause": "Valve exercise",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026092513739",
-          "water_type": "食水",
-          "district": "North",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 11:29",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-25 12:16",
-          "address": "AREA AROUND LAMP POST EB7256 SHA TAU KOK ROAD",
-          "cause": "Emergency repairing of water main/installation",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026092513737",
-          "water_type": "食水",
-          "district": "North",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 11:22",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-25 12:00",
-          "address": "AREA AROUND LAMP POST V1543 WAI LOI TSUEN",
-          "cause": "Emergency repairing of water main/installation",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026092513736",
-          "water_type": "食水",
-          "district": "North",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 10:39",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-25 11:20",
-          "address": "AREA AROUND LAMP POST V1543 WAI LOI TSUEN",
-          "cause": "Valve exercise",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026092513735",
-          "water_type": "食水",
-          "district": "Kwun Tong",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 10:24",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-25 15:52",
-          "address": "BLOCK H, I, J, K, AMOY GARDENS (ONLY FIRE SERVICE IS SUSPENDED)",
-          "cause": "Emergency repairing of water main/installation",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026092513734",
-          "water_type": "食水",
-          "district": "Yuen Long",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 10:20",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-25 10:40",
-          "address": "AREA AROUND HOUSE 183 AT SHUI TSIU LO WAI",
-          "cause": "Valve exercise",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026092513733",
-          "water_type": "食水",
-          "district": "Yuen Long",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 10:16",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-25 10:44",
-          "address": "AREA AROUND DEEP BAY ROAD",
-          "cause": "Valve exercise",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026092513732",
-          "water_type": "食水",
-          "district": "North",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 10:07",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-25 11:19",
-          "address": "AREA OF HUNG LUNG HANG NEAR LAMP POST EB0591",
-          "cause": "Emergency repairing of water main/installation",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026092513731",
-          "water_type": "食水及鹹水",
-          "district": "Yuen Long",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 10:05",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-25 11:16",
-          "address": "AREA AROUND TONG TAU PO TSUEN",
-          "cause": "Valve exercise",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026090913039",
-          "water_type": "食水",
-          "district": "Eastern",
-          "nature": "计划",
-          "suspension_start": "2026-09-25 10:00",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-25 11:55",
-          "address": "The Floridian Remark: Only fire service water is affected",
-          "cause": "Replacement and rehabilitation of water mains",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026092513730",
-          "water_type": "食水",
-          "district": "Tuen Mun",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 10:00",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-25 11:11",
-          "address": "TUEN MUN GOVERNMENT OFFICES, TUEN MUN LAW COURT, TUEN MUN PARKLANE SQUARE",
-          "cause": "Valve exercise",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026092513728",
-          "water_type": "食水",
-          "district": "Sai Kung",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 09:41",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-25 12:16",
-          "address": "AREA OF NO.5 WO MEI TSUEN",
-          "cause": "Emergency repairing of water main/installation",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026092513727",
-          "water_type": "食水",
-          "district": "North",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 09:30",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-25 11:30",
-          "address": "AREA AROUND LAMP POST AT  KAI LENG TSUEN",
-          "cause": "Valve exercise",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026092513724",
-          "water_type": "鹹水",
-          "district": "Wong Tai Sin",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 05:02",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-26 01:32",
-          "address": "15,26,28 LOK SIN ROAD,SHEK KU LUNG ROAD PLAYGROUND",
-          "cause": "Emergency repairing of water main/installation",
-          "status": "供水已恢复",
-          "is_active": false
-        },
-        {
-          "suspension_id": "2026092513723",
-          "water_type": "鹹水",
-          "district": "Central & Western",
-          "nature": "紧急",
-          "suspension_start": "2026-09-25 02:53",
-          "suspension_date": "2026-09-25",
-          "actual_resumption": "2026-09-25 18:13",
-          "address": "2,6-8 MACDONNELL ROAD",
-          "cause": "Emergency repairing of water main/installation",
-          "status": "供水已恢复",
-          "is_active": false
         }
       ],
       "water_suspension_summary": [
         {
+          "summary": "2026092813832 (2026-10-06 22:00): Kwai Tsing; Fresh Water; Planned; Suspension not yet started"
+        },
+        {
+          "summary": "2026092413700 (2026-10-06 10:00): Tai Po; Fresh Water; Planned; Suspension not yet started"
+        },
+        {
+          "summary": "2026092313635 (2026-10-06 10:00): Yuen Long; Fresh Water; Planned; Suspension not yet started"
+        },
+        {
+          "summary": "2026092913876 (2026-10-06 00:00): Wong Tai Sin; Fresh Water; Planned; Suspension not yet started"
+        },
+        {
           "summary": "2026092313633 (2026-10-05 22:00): Wong Tai Sin; Fresh Water; Planned; Suspension not yet started"
         },
         {
-          "summary": "2026092313654 (2026-10-05 10:00): Wong Tai Sin; Fresh Water; Planned; Suspension not yet started"
+          "summary": "2026092513726 (2026-10-05 10:00): Central & Western; Fresh Water; Planned; Suspension not yet started"
         },
         {
-          "summary": "2026092513726 (2026-10-05 10:00): Central & Western; Fresh Water; Planned; Suspension not yet started"
+          "summary": "2026092313654 (2026-10-05 10:00): Wong Tai Sin; Fresh Water; Planned; Suspension not yet started"
         },
         {
           "summary": "2026092313616 (2026-10-05 09:30): Tai Po; Fresh Water; Planned; Suspension not yet started"
@@ -13415,52 +13570,166 @@
           "summary": "2026092113528 (2026-09-29 23:00): Tuen Mun; Fresh Water; Planned; Suspension not yet started"
         },
         {
+          "summary": "2026092913878 (2026-09-29 22:00): Central & Western; Fresh Water; Emergency; Suspension not yet started"
+        },
+        {
           "summary": "2026092113557 (2026-09-29 22:00): Islands; Fresh Water; Planned; Suspension not yet started"
         },
         {
           "summary": "2026090312823 (2026-09-29 21:00): Sha Tin; Salt Water; Planned; Suspension not yet started"
         },
         {
-          "summary": "2026091613348 (2026-09-29 14:00): Sai Kung; Fresh And Salt Water; Planned; Suspension not yet started"
+          "summary": "2026092913887 (2026-09-29 20:30): Central & Western; Salt Water; Emergency; Suspension not yet started"
         },
         {
-          "summary": "2026091813426 (2026-09-29 12:00): Sai Kung; Fresh Water; Planned; Suspension not yet started"
+          "summary": "2026092913886 (2026-09-29 18:37): Eastern; Salt Water; Emergency; Supply being suspended"
         },
         {
-          "summary": "2026092113522 (2026-09-29 10:00): Wan Chai; Fresh Water; Planned; Suspension not yet started"
+          "summary": "2026092913885 (2026-09-29 18:00): Wan Chai; Salt Water; Emergency; Supply being suspended"
         },
         {
-          "summary": "2026091813428 (2026-09-29 10:00): Sai Kung; Fresh And Salt Water; Planned; Suspension not yet started"
+          "summary": "2026092913884 (2026-09-29 17:47): Islands; Fresh Water; Emergency; Supply being suspended"
         },
         {
-          "summary": "2026091813427 (2026-09-29 10:00): Tuen Mun; Fresh Water; Planned; Suspension not yet started"
+          "summary": "2026092913883 (2026-09-29 17:36): Wan Chai; Salt Water; Emergency; Supply being suspended"
         },
         {
-          "summary": "2026092513750 (2026-09-29 10:00): Eastern; Fresh Water; Planned; Suspension not yet started"
+          "summary": "2026092913882 (2026-09-29 16:37): Islands; Fresh Water; Emergency; Supply being suspended"
         },
         {
-          "summary": "2026091813464 (2026-09-29 09:00): Islands; Fresh Water; Planned; Suspension not yet started"
+          "summary": "2026092913881 (2026-09-29 16:29): Tai Po; Fresh Water; Emergency; Supply resumed"
         },
         {
-          "summary": "2026092513742 (2026-09-29 00:01): Tuen Mun; Fresh Water; Planned; Suspension not yet started"
+          "summary": "2026092913880 (2026-09-29 16:07): North; Fresh Water; Emergency; Supply being suspended"
         },
         {
-          "summary": "2026092313627 (2026-09-28 22:00): Eastern; Fresh Water; Planned; Suspension not yet started"
+          "summary": "2026092913879 (2026-09-29 16:05): North; Fresh Water; Emergency; Supply being suspended"
         },
         {
-          "summary": "2026092813820 (2026-09-28 22:00): Wan Chai; Fresh Water; Emergency; Suspension not yet started"
+          "summary": "2026092913877 (2026-09-29 15:40): North; Fresh Water; Emergency; Supply resumed"
         },
         {
-          "summary": "2026092813839 (2026-09-28 20:25): Tai Po; Fresh Water; Emergency; Supply being suspended"
+          "summary": "2026092913873 (2026-09-29 15:06): Tai Po; Fresh Water; Emergency; Supply resumed"
         },
         {
-          "summary": "2026092813838 (2026-09-28 20:00): Eastern; Fresh Water; Emergency; Supply being suspended"
+          "summary": "2026092913872 (2026-09-29 15:05): Tai Po; Fresh Water; Emergency; Supply being suspended"
         },
         {
-          "summary": "2026092813837 (2026-09-28 19:10): Eastern; Salt Water; Emergency; Supply being suspended"
+          "summary": "2026092913870 (2026-09-29 14:54): Wan Chai; Salt Water; Emergency; Supply being suspended"
         },
         {
-          "summary": "2026092813833 (2026-09-28 18:00): Central & Western; Fresh Water; Emergency; Supply being suspended"
+          "summary": "2026092913867 (2026-09-29 14:40): North; Fresh Water; Emergency; Supply resumed"
+        },
+        {
+          "summary": "2026092913858 (2026-09-29 14:30): Southern; Fresh Water; Emergency; Supply resumed"
+        },
+        {
+          "summary": "2026092913864 (2026-09-29 14:08): Sai Kung; Fresh Water; Emergency; Supply resumed"
+        },
+        {
+          "summary": "2026091613348 (2026-09-29 14:00): Sai Kung; Fresh And Salt Water; Planned; Supply being suspended"
+        },
+        {
+          "summary": "2026092913863 (2026-09-29 13:40): Sha Tin; Salt Water; Emergency; Supply resumed"
+        },
+        {
+          "summary": "2026091813426 (2026-09-29 12:00): Sai Kung; Fresh Water; Planned; Supply resumed"
+        },
+        {
+          "summary": "2026092913862 (2026-09-29 11:23): North; Fresh Water; Emergency; Supply resumed"
+        },
+        {
+          "summary": "2026092913861 (2026-09-29 10:39): North; Fresh Water; Emergency; Supply resumed"
+        },
+        {
+          "summary": "2026092513750 (2026-09-29 10:00): Eastern; Fresh Water; Planned; Supply resumed"
+        },
+        {
+          "summary": "2026091813427 (2026-09-29 10:00): Tuen Mun; Fresh Water; Planned; Supply resumed"
+        },
+        {
+          "summary": "2026091813428 (2026-09-29 10:00): Sai Kung; Fresh And Salt Water; Planned; Supply resumed"
+        },
+        {
+          "summary": "2026092113522 (2026-09-29 10:00): Wan Chai; Fresh Water; Planned; Supply resumed"
+        },
+        {
+          "summary": "2026092913860 (2026-09-29 09:57): North; Fresh Water; Emergency; Supply resumed"
+        },
+        {
+          "summary": "2026092913857 (2026-09-29 09:50): Yuen Long; Fresh Water; Emergency; Supply resumed"
+        },
+        {
+          "summary": "2026092913859 (2026-09-29 09:50): Yuen Long; Fresh Water; Emergency; Supply resumed"
+        },
+        {
+          "summary": "2026092913856 (2026-09-29 09:39): Sai Kung; Fresh Water; Emergency; Supply resumed"
+        },
+        {
+          "summary": "2026092913855 (2026-09-29 09:35): North; Fresh Water; Emergency; Supply resumed"
+        },
+        {
+          "summary": "2026092913854 (2026-09-29 09:34): Sai Kung; Fresh Water; Emergency; Supply resumed"
+        },
+        {
+          "summary": "2026092913853 (2026-09-29 09:30): Yau Tsim Mong; Salt Water; Emergency; Supply resumed"
+        },
+        {
+          "summary": "2026092913852 (2026-09-29 09:25): North; Fresh Water; Emergency; Supply resumed"
+        },
+        {
+          "summary": "2026092913851 (2026-09-29 09:16): Wan Chai; Fresh Water; Emergency; Supply resumed"
+        },
+        {
+          "summary": "2026091813464 (2026-09-29 09:00): Islands; Fresh Water; Planned; Supply resumed"
+        },
+        {
+          "summary": "2026092913848 (2026-09-29 07:45): Tuen Mun; Salt Water; Emergency; Supply being suspended"
+        },
+        {
+          "summary": "2026092913847 (2026-09-29 07:10): Tai Po; Fresh Water; Emergency; Supply resumed"
+        },
+        {
+          "summary": "2026092913846 (2026-09-29 06:15): Yuen Long; Salt Water; Emergency; Supply resumed"
+        },
+        {
+          "summary": "2026092913845 (2026-09-29 02:20): Central & Western; Fresh Water; Emergency; Supply resumed"
+        },
+        {
+          "summary": "2026092913844 (2026-09-29 00:07): Yau Tsim Mong; Fresh Water; Emergency; Supply resumed"
+        },
+        {
+          "summary": "2026092513742 (2026-09-29 00:01): Tuen Mun; Fresh Water; Planned; Supply resumed"
+        },
+        {
+          "summary": "2026092913843 (2026-09-29 00:01): Yuen Long; Salt Water; Emergency; Supply resumed"
+        },
+        {
+          "summary": "2026092813842 (2026-09-28 22:27): Yuen Long; Fresh Water; Emergency; Supply resumed"
+        },
+        {
+          "summary": "2026092313627 (2026-09-28 22:00): Eastern; Fresh Water; Planned; Supply resumed"
+        },
+        {
+          "summary": "2026092813820 (2026-09-28 22:00): Wan Chai; Fresh Water; Emergency; Supply resumed"
+        },
+        {
+          "summary": "2026092813841 (2026-09-28 22:00): Southern; Fresh Water; Emergency; Supply resumed"
+        },
+        {
+          "summary": "2026092813840 (2026-09-28 21:20): Yuen Long; Salt Water; Emergency; Supply resumed"
+        },
+        {
+          "summary": "2026092813839 (2026-09-28 20:25): Tai Po; Fresh Water; Emergency; Supply resumed"
+        },
+        {
+          "summary": "2026092813838 (2026-09-28 20:00): Eastern; Fresh Water; Emergency; Supply resumed"
+        },
+        {
+          "summary": "2026092813837 (2026-09-28 19:10): Eastern; Salt Water; Emergency; Supply resumed"
+        },
+        {
+          "summary": "2026092813833 (2026-09-28 18:00): Central & Western; Fresh Water; Emergency; Supply resumed"
         },
         {
           "summary": "2026092813835 (2026-09-28 17:20): Sham Shui Po; Fresh Water; Emergency; Supply resumed"
@@ -13472,7 +13741,7 @@
           "summary": "2026092813829 (2026-09-28 15:11): Central & Western; Salt Water; Emergency; Supply resumed"
         },
         {
-          "summary": "2026092813827 (2026-09-28 15:09): Eastern; Salt Water; Emergency; Supply being suspended"
+          "summary": "2026092813827 (2026-09-28 15:09): Eastern; Salt Water; Emergency; Supply resumed"
         },
         {
           "summary": "2026092813828 (2026-09-28 15:07): Sai Kung; Fresh Water; Emergency; Supply resumed"
@@ -13481,10 +13750,10 @@
           "summary": "2026092813826 (2026-09-28 14:56): North; Fresh Water; Emergency; Supply resumed"
         },
         {
-          "summary": "2026092813825 (2026-09-28 14:40): Sha Tin; Salt Water; Emergency; Supply being suspended"
+          "summary": "2026092813825 (2026-09-28 14:40): Sha Tin; Salt Water; Emergency; Supply resumed"
         },
         {
-          "summary": "2026092813823 (2026-09-28 14:18): North; Fresh Water; Emergency; Supply being suspended"
+          "summary": "2026092813823 (2026-09-28 14:18): North; Fresh Water; Emergency; Supply resumed"
         },
         {
           "summary": "2026092813822 (2026-09-28 14:13): Islands; Fresh Water; Emergency; Supply resumed"
@@ -13493,7 +13762,7 @@
           "summary": "2026092813821 (2026-09-28 14:04): Yuen Long; Fresh And Salt Water; Emergency; Supply resumed"
         },
         {
-          "summary": "2026092813818 (2026-09-28 12:17): Wong Tai Sin; Salt Water; Emergency; Supply being suspended"
+          "summary": "2026092813818 (2026-09-28 12:17): Wong Tai Sin; Salt Water; Emergency; Supply resumed"
         },
         {
           "summary": "2026092813817 (2026-09-28 11:37): Islands; Fresh Water; Emergency; Supply resumed"
@@ -13514,19 +13783,19 @@
           "summary": "2026092813809 (2026-09-28 10:03): Yuen Long; Fresh Water; Emergency; Supply resumed"
         },
         {
-          "summary": "2026092813808 (2026-09-28 10:00): North; Fresh Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026091813454 (2026-09-28 10:00): Yuen Long; Fresh And Salt Water; Planned; Supply being suspended"
-        },
-        {
           "summary": "2026091413243 (2026-09-28 10:00): Tsuen Wan; Fresh Water; Planned; Supply resumed"
         },
         {
-          "summary": "2026091413226 (2026-09-28 10:00): Eastern; Fresh Water; Planned; Supply being suspended"
+          "summary": "2026091413226 (2026-09-28 10:00): Eastern; Fresh Water; Planned; Supply resumed"
         },
         {
-          "summary": "2026091813441 (2026-09-28 10:00): Sai Kung; Fresh Water; Planned; Supply being suspended"
+          "summary": "2026091813441 (2026-09-28 10:00): Sai Kung; Fresh Water; Planned; Supply resumed"
+        },
+        {
+          "summary": "2026091813454 (2026-09-28 10:00): Yuen Long; Fresh And Salt Water; Planned; Supply resumed"
+        },
+        {
+          "summary": "2026092813808 (2026-09-28 10:00): North; Fresh Water; Emergency; Supply resumed"
         },
         {
           "summary": "2026092313628 (2026-09-28 10:00): Eastern; Fresh Water; Planned; Supply resumed"
@@ -13611,99 +13880,6 @@
         },
         {
           "summary": "2026092613773 (2026-09-26 09:37): Yuen Long; Fresh Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026092513770 (2026-09-25 23:20): Yuen Long; Fresh Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026092513768 (2026-09-25 22:20): Central & Western; Salt Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026092513769 (2026-09-25 22:19): Eastern; Salt Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026092513767 (2026-09-25 21:30): Kwai Tsing; Fresh Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026092513766 (2026-09-25 21:14): Southern; Fresh Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026092513765 (2026-09-25 19:05): Kwai Tsing; Fresh Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026092513764 (2026-09-25 16:31): Sham Shui Po; Fresh Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026092513763 (2026-09-25 16:25): Yuen Long; Fresh Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026092513762 (2026-09-25 16:06): Central & Western; Salt Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026092513761 (2026-09-25 16:00): Kwun Tong; Salt Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026092513754 (2026-09-25 15:16): Tai Po; Fresh Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026092513753 (2026-09-25 15:12): Yuen Long; Fresh Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026092513752 (2026-09-25 14:49): North; Fresh Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026092513751 (2026-09-25 14:20): Yuen Long; Fresh Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026092513749 (2026-09-25 14:05): Islands; Fresh Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026092513748 (2026-09-25 14:02): North; Fresh Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026092513741 (2026-09-25 11:40): Central & Western; Salt Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026092513739 (2026-09-25 11:29): North; Fresh Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026092513737 (2026-09-25 11:22): North; Fresh Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026092513736 (2026-09-25 10:39): North; Fresh Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026092513735 (2026-09-25 10:24): Kwun Tong; Fresh Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026092513734 (2026-09-25 10:20): Yuen Long; Fresh Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026092513733 (2026-09-25 10:16): Yuen Long; Fresh Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026092513732 (2026-09-25 10:07): North; Fresh Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026092513731 (2026-09-25 10:05): Yuen Long; Fresh And Salt Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026090913039 (2026-09-25 10:00): Eastern; Fresh Water; Planned; Supply resumed"
-        },
-        {
-          "summary": "2026092513730 (2026-09-25 10:00): Tuen Mun; Fresh Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026092513728 (2026-09-25 09:41): Sai Kung; Fresh Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026092513727 (2026-09-25 09:30): North; Fresh Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026092513724 (2026-09-25 05:02): Wong Tai Sin; Salt Water; Emergency; Supply resumed"
-        },
-        {
-          "summary": "2026092513723 (2026-09-25 02:53): Central & Western; Salt Water; Emergency; Supply resumed"
         }
       ]
     }
@@ -13784,7 +13960,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-utilities/",
-    "snapshotId": "b062cc6eea4b698c",
+    "snapshotId": "e73fec4126577820",
     "dataAsOf": "2026-08-31"
   }
 }
