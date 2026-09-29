@@ -1,0 +1,21 @@
+{
+  "run_scope": "full",
+  "retrieved_at": "2026-09-29T02:08:42.376822Z",
+  "dataset_name": "inflation_observations",
+  "run_id": "20260929T020842-70386f79",
+  "created_at": "2026-09-29T02:08:57.687382Z",
+  "records": 973,
+  "columns": [
+    "date",
+    "series_id",
+    "indicator_id",
+    "label_en",
+    "label_zh",
+    "unit",
+    "display",
+    "value",
+    "source",
+    "retrieved_at"
+  ],
+  "sha256": "132cfc1ecd373544f7b11cae4094075c53461d6fbcb2e677b8b0da9c8505df03"
+}
