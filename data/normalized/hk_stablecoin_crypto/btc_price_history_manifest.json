@@ -1,9 +1,9 @@
 {
   "dataset": "btc_price_history",
   "source": "live",
-  "fetched_at": "2026-09-29T08:02:05.119103+00:00",
-  "rows": 3331,
-  "latest_date": "2026-09-29",
+  "fetched_at": "2026-09-30T08:41:04.057461+00:00",
+  "rows": 3332,
+  "latest_date": "2026-09-30",
   "provider": "binance",
   "symbol": "BTCUSDT"
 }
