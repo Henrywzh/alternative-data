@@ -12,8 +12,10 @@ from provider_adoption_data.models import ProviderConfig, PypiDownloadPoint, Sna
 
 class PypiStatsSource:
     BASE_URL = "https://pypistats.org/api/packages"
-    MAX_RATE_LIMIT_RETRIES = 2
+    MAX_RETRIES = 2
     BASE_RETRY_DELAY_SECONDS = 2.0
+    MAX_RETRY_DELAY_SECONDS = 60.0
+    RETRYABLE_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
 
     def __init__(self, session: requests.Session | None = None) -> None:
         self.session = session or requests.Session()
@@ -30,43 +32,46 @@ class PypiStatsSource:
         return snapshots
 
     def _fetch_snapshot(self, provider_slug: str, package_name: str, url: str) -> Snapshot | None:
-        max_attempts = self.MAX_RATE_LIMIT_RETRIES + 1
+        max_attempts = self.MAX_RETRIES + 1
         for attempt in range(1, max_attempts + 1):
-            response = self.session.get(url, timeout=30)
-            if response.status_code == 429:
-                if attempt == max_attempts:
-                    logging.warning(
-                        "PyPIStats rate limited provider=%s package=%s after %s attempts; skipping package",
-                        provider_slug,
-                        package_name,
-                        attempt,
+            response = None
+            try:
+                response = self.session.get(url, timeout=30)
+            except (requests.ConnectionError, requests.Timeout) as exc:
+                reason = type(exc).__name__
+            else:
+                if response.status_code not in self.RETRYABLE_STATUS_CODES:
+                    response.raise_for_status()
+                    return Snapshot(
+                        name=sanitize_filename(f"pypi_{provider_slug}_{package_name}"),
+                        source_url=url,
+                        body=response.text,
                     )
-                    return None
-                delay_seconds = self._retry_delay_seconds(response, attempt)
-                logging.warning(
-                    "PyPIStats rate limited provider=%s package=%s; retrying in %.1fs (attempt %s/%s)",
-                    provider_slug,
-                    package_name,
-                    delay_seconds,
-                    attempt,
-                    max_attempts,
-                )
-                time.sleep(delay_seconds)
-                continue
+                reason = f"HTTP {response.status_code}"
 
-            response.raise_for_status()
-            return Snapshot(
-                name=sanitize_filename(f"pypi_{provider_slug}_{package_name}"),
-                source_url=url,
-                body=response.text,
+            if attempt == max_attempts:
+                logging.warning(
+                    "PyPIStats unavailable provider=%s package=%s (%s) after %s attempts; skipping package",
+                    provider_slug, package_name, reason, attempt,
+                )
+                return None
+            delay_seconds = (
+                self._retry_delay_seconds(response, attempt)
+                if response is not None
+                else self.BASE_RETRY_DELAY_SECONDS * (2 ** (attempt - 1))
             )
+            logging.warning(
+                "PyPIStats unavailable provider=%s package=%s (%s); retrying in %.1fs (attempt %s/%s)",
+                provider_slug, package_name, reason, delay_seconds, attempt, max_attempts,
+            )
+            time.sleep(delay_seconds)
         return None
 
     def _retry_delay_seconds(self, response: requests.Response, attempt: int) -> float:
         retry_after = response.headers.get("Retry-After")
         if retry_after is not None:
             try:
-                return max(float(retry_after), 0.0)
+                return min(max(float(retry_after), 0.0), self.MAX_RETRY_DELAY_SECONDS)
             except ValueError:
                 pass
         return self.BASE_RETRY_DELAY_SECONDS * (2 ** (attempt - 1))

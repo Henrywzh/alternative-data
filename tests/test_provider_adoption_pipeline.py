@@ -307,7 +307,10 @@ class FakePypiSession:
         self.requested_urls.append(url)
         if not self._responses:
             raise AssertionError(f"Unexpected PyPI request: {url}")
-        return self._responses.pop(0)
+        response = self._responses.pop(0)
+        if isinstance(response, Exception):
+            raise response
+        return response
 
 
 class FakeResponse:
@@ -455,6 +458,70 @@ def test_pypi_source_skips_package_after_repeated_rate_limits() -> None:
     assert len(snapshots) == 1
     assert json.loads(snapshots[0].body)["package"] == "anthropic"
     assert session.requested_urls.count("https://pypistats.org/api/packages/openai/overall") == 3
+
+
+@pytest.mark.parametrize("failure", [500, 502, 503, 504, requests.Timeout(), requests.ConnectionError()])
+def test_pypi_source_recovers_from_transient_failures(failure, monkeypatch) -> None:
+    failed_response = FakePypiResponse(status_code=failure) if isinstance(failure, int) else failure
+    session = FakePypiSession([failed_response, FakePypiResponse(status_code=200, text='{"package":"openai","data":[]}')])
+    delays = []
+    monkeypatch.setattr("provider_adoption_data.sources.pypi.time.sleep", delays.append)
+
+    snapshots = PypiStatsSource(session=session).fetch_snapshots(get_provider_registry(["openai"]))
+
+    assert len(snapshots) == 1
+    assert len(session.requested_urls) == 2
+    assert delays == [2.0]
+
+
+def test_pypi_unavailable_package_does_not_block_other_packages(tmp_path, monkeypatch) -> None:
+    session = FakePypiSession([
+        *(FakePypiResponse(status_code=500) for _ in range(3)),
+        FakePypiResponse(status_code=200, text=json.dumps({
+            "package": "anthropic",
+            "data": [{"category": "without_mirrors", "date": "2026-10-01", "downloads": 220}],
+        })),
+    ])
+    monkeypatch.setattr("provider_adoption_data.sources.pypi.time.sleep", lambda _: None)
+    pipeline = ProviderAdoptionPipeline(tmp_path, pypi_source=FakePypiSource())
+    pipeline.run_pypi_daily_update(provider_slugs=["openai", "anthropic"])
+    retained = pipeline.storage.load_dataset("pypi_downloads_daily")
+    pipeline.pypi_source = PypiStatsSource(session=session)
+
+    result = pipeline.run_pypi_daily_update(provider_slugs=["openai", "anthropic"])
+
+    manifest = json.loads((Path(result.raw_run_dir) / "manifest.json").read_text())
+    assert manifest["source_coverage"] == {
+        "status": "partial", "expected_package_count": 2,
+        "fetched_package_count": 1, "missing_packages": ["openai"],
+    }
+    updated = pipeline.storage.load_dataset("pypi_downloads_daily")
+    pd.testing.assert_frame_equal(
+        retained[retained["provider"] == "openai"].reset_index(drop=True),
+        updated[updated["provider"] == "openai"].reset_index(drop=True),
+    )
+    assert 220 in updated[updated["provider"] == "anthropic"]["downloads"].values
+
+
+def test_pypi_total_outage_fails_without_refreshing_retained_history(tmp_path, monkeypatch) -> None:
+    pipeline = ProviderAdoptionPipeline(tmp_path, pypi_source=FakePypiSource())
+    pipeline.run_pypi_daily_update(provider_slugs=["openai"])
+    retained = pipeline.storage.load_dataset("pypi_downloads_daily")
+    session = FakePypiSession([FakePypiResponse(status_code=503) for _ in range(3)])
+    monkeypatch.setattr("provider_adoption_data.sources.pypi.time.sleep", lambda _: None)
+    pipeline.pypi_source = PypiStatsSource(session=session)
+
+    with pytest.raises(ValueError, match="no download observations"):
+        pipeline.run_pypi_daily_update(provider_slugs=["openai"])
+
+    pd.testing.assert_frame_equal(retained, pipeline.storage.load_dataset("pypi_downloads_daily"))
+
+
+def test_pypi_non_transient_client_errors_are_not_retried() -> None:
+    session = FakePypiSession([FakePypiResponse(status_code=404)])
+    with pytest.raises(requests.HTTPError):
+        PypiStatsSource(session=session).fetch_snapshots(get_provider_registry(["openai"]))
+    assert len(session.requested_urls) == 1
 
 
 def test_npm_source_extracts_scoped_package_downloads() -> None:

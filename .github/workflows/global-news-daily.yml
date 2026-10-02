@@ -25,8 +25,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e .[dev]
+          python -m pip install --upgrade pip --timeout 60 --retries 10
+          python -m pip install --timeout 60 --retries 10 -e '.[dev]'
 
       - name: Run daily update
         env:

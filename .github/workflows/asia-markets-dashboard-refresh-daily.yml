@@ -40,8 +40,8 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: asia-markets-dashboard-refresh-${{ github.ref }}
-  cancel-in-progress: false
+  group: asia-markets-dashboard-artifacts-${{ github.ref }}
+  queue: max
 
 permissions:
   actions: read

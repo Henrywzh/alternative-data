@@ -11,8 +11,8 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: hk-stablecoin-crypto-weekly-${{ github.ref }}
-  cancel-in-progress: false
+  group: asia-markets-dashboard-artifacts-${{ github.ref }}
+  queue: max
 
 permissions:
   contents: write
@@ -62,6 +62,15 @@ jobs:
             apps/asia-markets-dashboard/.generated/hk-stablecoin-crypto-artifact-zh.json \
             apps/asia-markets-dashboard/.generated/asia-markets-freshness.json \
             apps/asia-markets-dashboard/src/data/dashboard-status-hk-stablecoin-crypto.json
+          # The Wikimedia pageview refresh also updates the tracked normalized
+          # weekly and monthly manifests consumed by this artifact builder.
+          git add data/normalized/hk_stablecoin_crypto/
+
+          if ! git diff --quiet; then
+            echo "::error::Refresh left tracked modifications outside the staged output set:"
+            git diff --name-only
+            exit 1
+          fi
 
           if git diff --staged --quiet; then
             echo "No HK stablecoin & crypto data changes to commit"

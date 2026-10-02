@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -101,9 +102,13 @@ def test_censtatd_fetch_retries_transient_incomplete_response(monkeypatch):
 def test_validate_allows_provisional_values_but_rejects_duplicate_source_rows():
     spec = next(item for item in CORE_CENSTATD_TABLES if item.table_id == "215-16001")
     frame = normalize_censtatd_table(_payload(), spec)
-    assert validate_frame(frame, spec) == []
+    # The 2026-03-31 fixture is exactly 180 days old on this fixed reference date.
+    as_of_date = date(2026, 9, 27)
+    assert validate_frame(frame, spec, as_of_date=as_of_date) == []
     duplicated = pd.concat([frame, frame.iloc[[0]]], ignore_index=True)
-    assert validate_frame(duplicated, spec) == ["contains duplicate source observations for its natural key"]
+    assert validate_frame(duplicated, spec, as_of_date=as_of_date) == [
+        "contains duplicate source observations for its natural key"
+    ]
 
 
 def test_invalid_response_is_snapshotted_before_quality_rejection(monkeypatch, tmp_path):
@@ -171,7 +176,7 @@ def test_unlisted_source_dimensions_are_preserved_in_the_observation_key():
         ],
     }
     frame = normalize_censtatd_table(payload, spec)
-    assert validate_frame(frame, spec) == []
+    assert validate_frame(frame, spec, as_of_date=date(2026, 9, 27)) == []
 
 
 def test_main_industry_and_occupation_aliases_are_exposed_for_specialized_tables():

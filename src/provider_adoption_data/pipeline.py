@@ -15,6 +15,7 @@ from provider_adoption_data.models import (
     RunContext,
     Snapshot,
     coerce_target_date,
+    sanitize_filename,
 )
 from provider_adoption_data.sources.config import get_provider_registry
 from provider_adoption_data.sources.github import GithubSource
@@ -67,8 +68,23 @@ class ProviderAdoptionPipeline:
         context = self._create_context()
         snapshots = self.pypi_source.fetch_snapshots(providers)
         manifest = self._build_manifest("pypi-daily-update", context, target_date=coerce_target_date(target_date), providers=providers)
+        expected_snapshots = {
+            sanitize_filename(f"pypi_{provider.slug}_{package.package_name}"): package.package_name
+            for provider in providers for package in provider.pypi_packages
+        }
+        expected_packages = set(expected_snapshots.values())
+        fetched_packages = {expected_snapshots[snapshot.name] for snapshot in snapshots if snapshot.name in expected_snapshots}
+        missing_packages = sorted(expected_packages - fetched_packages)
+        manifest["source_coverage"] = {
+            "status": "unavailable" if not snapshots else "partial" if missing_packages else "complete",
+            "expected_package_count": len(expected_packages),
+            "fetched_package_count": len(expected_packages & fetched_packages),
+            "missing_packages": missing_packages,
+        }
         raw_run_dir = self.storage.write_raw_run(context.run_id, snapshots, manifest)
         points = self.pypi_source.extract(snapshots, providers)
+        if expected_packages and not points:
+            raise ValueError("PyPIStats produced no download observations; retained history was not refreshed")
 
         records = [
             DatasetRecord(

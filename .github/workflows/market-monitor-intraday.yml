@@ -7,6 +7,11 @@ on:
     # fetches only the live ETF quote snapshot and never writes daily history.
     - cron: "15 4 * * 1-5"
   workflow_dispatch:
+    inputs:
+      diagnostics_only:
+        description: "Validate live quotes without sending email or saving the delivery cursor"
+        type: boolean
+        default: false
 
 concurrency:
   group: market-monitor
@@ -23,13 +28,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
+      SEND_REPORT: ${{ github.event_name != 'workflow_dispatch' || !inputs.diagnostics_only }}
       GMAIL_SENDER: ${{ secrets.GMAIL_SENDER }}
       GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
       GMAIL_RECIPIENTS: ${{ secrets.GMAIL_RECIPIENTS }}
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.repository.default_branch }}
+          ref: ${{ inputs.diagnostics_only && github.ref || github.event.repository.default_branch }}
 
       - uses: actions/setup-python@v6
         with:
@@ -48,6 +54,7 @@ jobs:
           sudo apt-get install -y -qq fonts-noto-cjk
 
       - name: Require Gmail configuration
+        if: env.SEND_REPORT == 'true'
         run: |
           # Unlike the close job, the alert is this workflow's only market
           # output. The delivery cursor is persisted separately below; no
@@ -59,12 +66,14 @@ jobs:
 
       - name: Fetch live snapshot and evaluate alert
         run: |
-          python -m market_monitor.cli \
-            --mode intraday \
-            --send-report \
-            --require-fresh
+          args=(--mode intraday --require-fresh)
+          if [ "$SEND_REPORT" = "true" ]; then
+            args+=(--send-report)
+          fi
+          python -m market_monitor.cli "${args[@]}"
 
       - name: Commit alert delivery cursor
+        if: env.SEND_REPORT == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

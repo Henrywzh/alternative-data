@@ -190,6 +190,27 @@ def test_opencode_extraction_handles_flat_schema_without_timeframe_tier_nesting(
     assert country_rows[0]["timeframe"] == "1W"
 
 
+def test_opencode_leaderboard_handles_timeframe_only_schema():
+    scraped_at = "2026-09-28T12:00:00+00:00"
+    stats_home = {
+        "leaderboard": {
+            "daily": [
+                {"model": "daily-model", "provider": "lab", "rank": 1, "tokens": 100}
+            ],
+            "weekly": [
+                {"model": "weekly-model", "provider": "lab", "rank": 1, "tokens": 700}
+            ],
+        }
+    }
+
+    rows = extract_leaderboard(stats_home, scraped_at)
+
+    assert [(row["user_tier"], row["timeframe"], row["model_slug"]) for row in rows] == [
+        ("All Users", "1D", "daily-model"),
+        ("All Users", "1W", "weekly-model"),
+    ]
+
+
 def test_opencode_storage():
     scraped_at = "2026-08-04T12:00:00+00:00"
     with tempfile.TemporaryDirectory() as tmpdir:

@@ -595,7 +595,7 @@ def test_spot_fetch_reraises_after_transient_retry_budget(monkeypatch):
     monkeypatch.setattr(
         src,
         "_fetch_etf_spot_for_tracked_wrappers",
-        lambda: (_ for _ in ()).throw(RuntimeError("targeted quotes unavailable")),
+        lambda **_kwargs: (_ for _ in ()).throw(RuntimeError("targeted quotes unavailable")),
     )
     monkeypatch.setattr(
         src,
@@ -649,7 +649,8 @@ def test_spot_fetch_uses_host_fallback_after_primary_failure(monkeypatch):
     assert out.loc[0, "observation_type"] == "intraday_quote"
 
 
-def test_spot_targeted_fallback_requests_registry_secids_and_rotates_hosts(monkeypatch):
+@pytest.mark.parametrize("scoped_list", [False, True])
+def test_spot_targeted_fallback_requests_registry_secids_and_rotates_hosts(monkeypatch, scoped_list):
     """The fallback batches only tracked wrappers and validates all are returned."""
     import market_monitor.sources.akshare_etf as src
 
@@ -684,10 +685,10 @@ def test_spot_targeted_fallback_requests_registry_secids_and_rotates_hosts(monke
             return self.payload
 
     def _get(url, *, params, headers, timeout):
-        calls.append((url, params["secids"]))
+        calls.append((url, params.get("secids", params.get("fs"))))
         if url.startswith(src.ETF_SPOT_BASE_URLS[0]):
             return _Response(status_code=502)
-        return _Response({"rc": 0, "data": {"diff": rows}})
+        return _Response({"rc": 0, "data": {"total": len(registry), "diff": rows}})
 
     monkeypatch.setattr(src.requests, "get", _get)
     monkeypatch.setattr(
@@ -697,17 +698,46 @@ def test_spot_targeted_fallback_requests_registry_secids_and_rotates_hosts(monke
     )
     monkeypatch.setattr(src.time, "sleep", lambda _seconds: None)
 
-    out = src._fetch_etf_spot_for_tracked_wrappers()
+    out = src._fetch_etf_spot_for_tracked_wrappers(scoped_list=scoped_list)
 
     expected_secids = ",".join(
-        f"{market_by_venue[item['venue']]}.{item['fund_id']}" for item in registry
+        f"{'i:' if scoped_list else ''}{market_by_venue[item['venue']]}.{item['fund_id']}" for item in registry
     )
     assert len(out) == len(registry)
     assert out["代码"].tolist() == [item["fund_id"] for item in registry]
-    assert calls == [
-        ("https://eastmoney-a/api/qt/ulist.np/get", expected_secids),
-        ("https://eastmoney-b/api/qt/ulist.np/get", expected_secids),
-    ]
+    endpoint = "clist/get" if scoped_list else "ulist.np/get"
+    assert calls == [(f"https://eastmoney-{host}/api/qt/{endpoint}", expected_secids) for host in ("a", "b")]
+
+
+def test_spot_targeted_fallback_tries_every_configured_host(monkeypatch):
+    """The direct fallback must not omit hosts when its list exceeds AkShare retries."""
+    import market_monitor.sources.akshare_etf as src
+
+    hosts = (
+        "https://eastmoney-a",
+        "https://eastmoney-b",
+        "https://eastmoney-c",
+        "https://eastmoney-d",
+    )
+    calls: list[str] = []
+
+    class _Response:
+        status_code = 502
+
+    def _get(url, **_kwargs):
+        calls.append(url)
+        response = _Response()
+        raise src.requests.HTTPError("HTTP 502", response=response)
+
+    monkeypatch.setattr(src.requests, "get", _get)
+    monkeypatch.setattr(src, "ETF_SPOT_BASE_URLS", hosts)
+    monkeypatch.setattr(src.time, "sleep", lambda _seconds: None)
+
+    with pytest.raises(src.requests.HTTPError, match="HTTP 502"):
+        src._fetch_etf_spot_for_tracked_wrappers()
+
+    assert len(hosts) > src.ETF_SPOT_MAX_ATTEMPTS
+    assert calls == [f"{host}/api/qt/ulist.np/get" for host in hosts]
 
 
 def test_spot_targeted_fallback_accepts_blank_market_when_secids_are_qualified(monkeypatch):
@@ -735,8 +765,9 @@ def test_spot_targeted_fallback_accepts_blank_market_when_secids_are_qualified(m
     assert out["代码"].tolist() == [item["fund_id"] for item in registry]
 
 
-@pytest.mark.parametrize("malformation", ["missing", "duplicate", "unexpected", "wrong_market"])
-def test_spot_targeted_fallback_rejects_invalid_wrapper_coverage(monkeypatch, malformation):
+@pytest.mark.parametrize("scoped_list", [False, True])
+@pytest.mark.parametrize("malformation", ["missing", "duplicate", "unexpected", "wrong_market", "numeric_zero_market"])
+def test_spot_targeted_fallback_rejects_invalid_wrapper_coverage(monkeypatch, malformation, scoped_list):
     """A malformed targeted response must not be treated as a complete quote set."""
     import market_monitor.sources.akshare_etf as src
 
@@ -753,13 +784,15 @@ def test_spot_targeted_fallback_rejects_invalid_wrapper_coverage(monkeypatch, ma
         rows.append({"f12": "999999", "f13": "1"})
     elif malformation == "wrong_market":
         rows[0]["f13"] = "0" if rows[0]["f13"] == "1" else "1"
+    elif malformation == "numeric_zero_market":
+        rows[0]["f13"] = 0
 
     class _Response:
         def raise_for_status(self):
             return None
 
         def json(self):
-            return {"rc": 0, "data": {"diff": rows}}
+            return {"rc": 0, "data": {"total": len(registry), "diff": rows}}
 
     monkeypatch.setattr(src.requests, "get", lambda *_args, **_kwargs: _Response())
     monkeypatch.setattr(src, "ETF_SPOT_BASE_URLS", ("https://eastmoney-a",))
@@ -769,9 +802,52 @@ def test_spot_targeted_fallback_rejects_invalid_wrapper_coverage(monkeypatch, ma
         "duplicate": "duplicate ETF code",
         "unexpected": "unrequested ETF code",
         "wrong_market": "expected",
+        "numeric_zero_market": "expected",
     }[malformation]
     with pytest.raises(RuntimeError, match=expected_error):
-        src._fetch_etf_spot_for_tracked_wrappers()
+        src._fetch_etf_spot_for_tracked_wrappers(scoped_list=scoped_list)
+
+
+def test_spot_fetch_recovers_with_instrument_filtered_list(monkeypatch):
+    import market_monitor.sources.akshare_etf as src
+
+    class _FakeAk:
+        @staticmethod
+        def fund_etf_spot_em():
+            raise RuntimeError("primary unavailable")
+
+    calls = []
+    def _targeted(*, scoped_list=False):
+        calls.append(scoped_list)
+        if not scoped_list:
+            raise RuntimeError("ulist unavailable")
+        return pd.DataFrame({"代码": ["510300"], "最新价": [4.432], "IOPV实时估值": [4.4301], "基金折价率": [-0.04]})
+
+    monkeypatch.setitem(sys.modules, "akshare", _FakeAk)
+    monkeypatch.setattr(src, "_fetch_etf_spot_for_tracked_wrappers", _targeted)
+    monkeypatch.setattr(src, "_fetch_etf_spot_paginated_from_hosts", lambda: pytest.fail("unrelated pages should not be fetched"))
+
+    out = src.fetch_etf_spot()
+
+    assert calls == [False, True]
+    assert out.loc[0, "market_price"] == pytest.approx(4.432)
+    assert out.loc[0, "premium_pct"] == pytest.approx(0.04)
+    assert out["source_observed_at_utc"].isna().all()
+
+
+def test_scoped_spot_rejects_truncated_total(monkeypatch):
+    import market_monitor.sources.akshare_etf as src
+
+    class _Response:
+        def raise_for_status(self):
+            pass
+        def json(self):
+            return {"rc": 0, "data": {"total": 1, "diff": [{"f12": "510300"}]}}
+
+    monkeypatch.setattr(src.requests, "get", lambda *_args, **_kwargs: _Response())
+    monkeypatch.setattr(src, "ETF_SPOT_BASE_URLS", ("https://eastmoney-a",))
+    with pytest.raises(RuntimeError, match="total mismatch"):
+        src._fetch_etf_spot_for_tracked_wrappers(scoped_list=True)
 
 
 def test_spot_host_fallback_retries_alternate_host_and_requires_complete_pages(monkeypatch):
@@ -826,6 +902,37 @@ def test_spot_host_fallback_retries_alternate_host_and_requires_complete_pages(m
         ("https://eastmoney-b/api/qt/clist/get", "1"),
         ("https://eastmoney-a/api/qt/clist/get", "2"),
     ]
+
+
+def test_spot_page_fallback_tries_every_configured_host(monkeypatch):
+    """Page-level failover also visits the final configured quote gateway."""
+    import market_monitor.sources.akshare_etf as src
+
+    hosts = (
+        "https://eastmoney-a",
+        "https://eastmoney-b",
+        "https://eastmoney-c",
+        "https://eastmoney-d",
+    )
+    calls: list[str] = []
+
+    class _Response:
+        status_code = 502
+
+    class _Session:
+        def get(self, url, **_kwargs):
+            calls.append(url)
+            response = _Response()
+            raise src.requests.HTTPError("HTTP 502", response=response)
+
+    monkeypatch.setattr(src, "ETF_SPOT_BASE_URLS", hosts)
+    monkeypatch.setattr(src.time, "sleep", lambda _seconds: None)
+
+    with pytest.raises(src.requests.HTTPError, match="HTTP 502"):
+        src._fetch_etf_spot_page(_Session(), 7)
+
+    assert len(hosts) > src.ETF_SPOT_MAX_ATTEMPTS
+    assert calls == [f"{host}/api/qt/clist/get" for host in hosts]
 
 
 def test_spot_host_fallback_rejects_incomplete_page(monkeypatch):
