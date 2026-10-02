@@ -96,6 +96,10 @@ Provider ownership is declared per exposure and routed explicitly:
   remains a last-resort fallback. Any failed or incomplete path remains
   fail-closed: the freshness gate blocks the email rather than borrowing an
   older quote or presenting partial coverage.
+  Every configured direct quote host is attempted, independently of the
+  smaller AkShare retry budget. A manual `market-monitor-intraday.yml` run
+  with `diagnostics_only=true` exercises the same live-quote/freshness gate
+  without sending email or saving an alert delivery cursor.
 - Eastmoney published NAV endpoint: historical close-vs-NAV premium backfill.
 - Eastmoney issuer fee endpoint: management and custody fee reconciliation.
 - Shanghai and Shenzhen Stock Exchange ETF scale feeds: official published

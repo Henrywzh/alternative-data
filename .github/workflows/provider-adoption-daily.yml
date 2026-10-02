@@ -8,6 +8,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: provider-adoption-publisher
+  cancel-in-progress: false
+
 jobs:
   provider-adoption:
     runs-on: ubuntu-latest
@@ -41,6 +45,7 @@ jobs:
           : > "$RUNNER_TEMP/provider-adoption-raw-dirs.txt"
 
       - name: Run PyPI update
+        id: pypi
         run: |
           set -euo pipefail
           log_file="$RUNNER_TEMP/provider-adoption-pypi.log"
@@ -48,6 +53,7 @@ jobs:
           grep '^raw_run_dir=' "$log_file" >> "$RUNNER_TEMP/provider-adoption-raw-dirs.txt"
 
       - name: Run npm update
+        if: ${{ !cancelled() }}
         run: |
           set -euo pipefail
           log_file="$RUNNER_TEMP/provider-adoption-npm.log"
@@ -55,6 +61,7 @@ jobs:
           grep '^raw_run_dir=' "$log_file" >> "$RUNNER_TEMP/provider-adoption-raw-dirs.txt"
 
       - name: Run Hugging Face update
+        if: ${{ !cancelled() }}
         run: |
           set -euo pipefail
           log_file="$RUNNER_TEMP/provider-adoption-hf.log"
@@ -62,6 +69,8 @@ jobs:
           grep '^raw_run_dir=' "$log_file" >> "$RUNNER_TEMP/provider-adoption-raw-dirs.txt"
 
       - name: Run GitHub update
+        id: github
+        if: ${{ !cancelled() }}
         run: |
           set -euo pipefail
           log_file="$RUNNER_TEMP/provider-adoption-github.log"
@@ -69,6 +78,7 @@ jobs:
           grep '^raw_run_dir=' "$log_file" >> "$RUNNER_TEMP/provider-adoption-raw-dirs.txt"
 
       - name: Run derived metrics update
+        if: ${{ !cancelled() && steps.pypi.outcome == 'success' && steps.github.outcome == 'success' }}
         run: |
           set -euo pipefail
           log_file="$RUNNER_TEMP/provider-adoption-derived.log"
@@ -76,6 +86,7 @@ jobs:
           grep '^raw_run_dir=' "$log_file" >> "$RUNNER_TEMP/provider-adoption-raw-dirs.txt"
 
       - name: Commit normalized datasets
+        if: ${{ !cancelled() }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -88,10 +99,16 @@ jobs:
 
           git diff --cached --stat
           git commit -m "chore: update provider adoption datasets"
-          git pull --rebase origin "${{ github.event.repository.default_branch }}"
-          git push
+          for attempt in 1 2 3; do
+            if git pull --rebase origin "${{ github.event.repository.default_branch }}" && git push; then
+              exit 0
+            fi
+            sleep $((attempt * 5))
+          done
+          exit 1
 
       - name: Stage raw snapshots artifact
+        if: ${{ !cancelled() }}
         run: |
           set -euo pipefail
           artifact_root="$RUNNER_TEMP/provider-adoption-raw-artifact"
@@ -104,6 +121,7 @@ jobs:
           done < <(sort -u "$dirs_file")
 
       - name: Upload raw snapshots
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
           name: provider-adoption-raw-snapshots
@@ -111,6 +129,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload normalized datasets
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
           name: provider-adoption-normalized-datasets
