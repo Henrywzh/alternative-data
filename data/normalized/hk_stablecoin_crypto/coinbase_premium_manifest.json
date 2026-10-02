@@ -1,7 +1,7 @@
 {
   "dataset": "coinbase_premium",
   "source": "live",
-  "fetched_at": "2026-09-28T10:52:16.529754+00:00",
+  "fetched_at": "2026-10-02T09:04:20.831868+00:00",
   "rows": 1,
   "latest_date": null,
   "provider": "coinbase+binance"

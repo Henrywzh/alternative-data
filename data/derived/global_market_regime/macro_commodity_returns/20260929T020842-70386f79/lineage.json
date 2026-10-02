@@ -1,0 +1,24 @@
+{
+  "run_scope": "full",
+  "retrieved_at": "2026-09-29T02:08:42.376822Z",
+  "dataset_name": "macro_commodity_returns",
+  "run_id": "20260929T020842-70386f79",
+  "created_at": "2026-09-29T02:08:57.689788Z",
+  "records": 9,
+  "columns": [
+    "asset_id",
+    "date",
+    "close",
+    "symbol",
+    "label_en",
+    "label_zh",
+    "group",
+    "unit",
+    "return_1d_pct",
+    "return_1w_pct",
+    "return_1m_pct",
+    "return_3m_pct",
+    "return_ytd_pct"
+  ],
+  "sha256": "037cc9fa2e1d7f19fefad3466dcc91101c26f71215e73dab424efd0bdceeba53"
+}

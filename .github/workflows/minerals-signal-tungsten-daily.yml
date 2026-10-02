@@ -57,17 +57,49 @@ jobs:
         id: ctia_scrape
         continue-on-error: true
         run: |
-          # One API page per category; the scraper waits 15 seconds between
-          # requests and fails immediately on a CTIA refusal. A transient
-          # network failure here (e.g. CTIA connectivity timeout) must not
-          # block today's report from sending off the data already on disk,
-          # so the step is allowed to fail without failing the job.
-          minerals-signal-data scrape-tungsten --base-dir . --source ctia --max-pages 1 --since-days 31
+          # One API page per category; API and optional price-image requests
+          # are spaced at least 15 seconds apart. A transient network failure
+          # is reported below and freshness validation decides whether the
+          # existing data is still recent enough to send.
+          minerals-signal-data scrape-tungsten --base-dir . --source ctia --max-pages 1 --since-days 31 --with-tungsten-ocr
 
       - name: Warn on CTIA scrape failure
         if: steps.ctia_scrape.outcome == 'failure'
         run: |
           echo "::warning::CTIA scrape failed (likely a transient network issue); continuing with existing data. See the 'Run bounded CTIA daily scraper' step for details."
+
+      - name: Validate recent tungsten coverage
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          import pandas as pd
+
+          path = Path("data/raw/minerals_signal_data/tungsten_chinatungsten.csv")
+          if not path.exists():
+              raise SystemExit("Missing tungsten raw CSV after scrape")
+
+          fields = [
+              "wolframite_concentrate",
+              "scheelite_concentrate",
+              "apt",
+              "tungsten_powder",
+              "tungsten_carbide_powder",
+              "ferrotungsten",
+          ]
+          frame = pd.read_csv(path)
+          frame["date"] = pd.to_datetime(frame["date"], errors="coerce")
+          cutoff = (
+              pd.Timestamp.now(tz="Asia/Shanghai").normalize().tz_localize(None)
+              - pd.Timedelta(days=14)
+          )
+          recent = frame[frame["date"] >= cutoff].copy()
+          counts = recent[fields].apply(pd.to_numeric, errors="coerce").notna().sum()
+          print(f"Tungsten rows with prices in last 14 days: {len(recent)}")
+          print(counts.to_string())
+          if int(counts.sum()) == 0:
+              raise SystemExit("No validated tungsten price fields in the last 14 days")
+          PY
 
       - name: Validate recent molybdenum coverage
         run: |

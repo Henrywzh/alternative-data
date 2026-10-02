@@ -1,12 +1,12 @@
 {
   "baseline_initialized": true,
   "last_evaluated_by_mode": {
-    "close": "2026-09-25",
-    "intraday": "2026-09-24"
+    "close": "2026-10-01",
+    "intraday": "2026-09-30"
   },
   "last_sent_kind": "event",
-  "last_sent_report_date": "2026-09-24",
-  "last_sent_week": "2026-W39",
+  "last_sent_report_date": "2026-09-30",
+  "last_sent_week": "2026-W40",
   "pending_events": [],
   "sent_event_keys": [
     "drawdown|csi300|2026-09-03|沪深300：60日回撤进入风险区间（当前 -10.02%）。",
@@ -17,7 +17,11 @@
     "drawdown|csi300|2026-09-11|沪深300：60日回撤进入风险区间（当前 -10.86%）。",
     "trend_reversal|csi300|2026-09-11|沪深300：20日均线由 均线附近 转为 跌破均线，相对均线 -1.81%。",
     "weekly_heartbeat|2026-W38|2026-09-18|本周没有新的已确认重大变化；按每周兜底节奏发送摘要。",
-    "entry_status|csi500:510500|2026-09-22|中证500 · 南方中证500ETF：合理区间 → 同类溢价偏低，溢价率 -0.13%。"
+    "entry_status|csi500:510500|2026-09-22|中证500 · 南方中证500ETF：合理区间 → 同类溢价偏低，溢价率 -0.13%。",
+    "trend_reversal|csi300|2026-09-28|沪深300：20日均线由 均线附近 转为 跌破均线，相对均线 -3.98%。",
+    "trend_reversal|csi500|2026-09-28|中证500：20日均线由 均线附近 转为 跌破均线，相对均线 -4.06%。",
+    "drawdown|csi300|2026-09-29|沪深300：60日回撤进入风险区间（当前 -10.89%）。",
+    "rsi_extreme|csi300|2026-09-29|沪深300：RSI 由 均线附近 进入 超卖（RSI 31）。"
   ],
   "version": 1
 }

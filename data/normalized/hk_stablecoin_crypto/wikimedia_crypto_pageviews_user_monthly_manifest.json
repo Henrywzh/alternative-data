@@ -15,11 +15,11 @@
   ],
   "agent": "user",
   "grain": "Curated crypto Wikipedia page × complete calendar month",
-  "history_start": "2016-09",
-  "history_end": "2026-08",
+  "history_start": "2016-10",
+  "history_end": "2026-09",
   "records": 960,
   "source_status": "live",
   "source_granularity": "daily",
   "caveat": "Monthly user totals are Wikipedia page loads, not unique people, trading activity, or Hong Kong adoption.",
-  "fetched_at": "2026-09-28T13:58:18.969131+00:00"
+  "fetched_at": "2026-10-01T13:18:01.081777+00:00"
 }
