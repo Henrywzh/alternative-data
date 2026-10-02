@@ -85,7 +85,7 @@ def _spot_error_label(exc: Exception) -> str:
     return f"{type(exc).__name__}{suffix}"
 
 
-def _fetch_etf_spot_for_tracked_wrappers() -> pd.DataFrame:
+def _fetch_etf_spot_for_tracked_wrappers(*, scoped_list: bool = False) -> pd.DataFrame:
     """Fetch only registered ETF quotes in one batch, with bounded host failover."""
     venue_market = {"SH": "1", "SZ": "0"}
     expected_market_by_code: dict[str, str] = {}
@@ -112,6 +112,19 @@ def _fetch_etf_spot_for_tracked_wrappers() -> pd.DataFrame:
         "fltt": "2",
         "ut": "bd1d9ddb04089700cf9c27f6f7426281",
     }
+    endpoint = "ulist.np/get"
+    if scoped_list:
+        # clist's exchange-qualified instrument filter returns the same
+        # quote fields without ulist or the unrelated full-market pages.
+        if len(secids) > ETF_SPOT_PAGE_SIZE:
+            raise RuntimeError("Tracked ETF list exceeds the scoped quote page limit")
+        params.pop("secids")
+        params.update({
+            "fs": ",".join(f"i:{secid}" for secid in secids),
+            "pn": "1", "pz": str(ETF_SPOT_PAGE_SIZE),
+            "np": "1", "po": "1", "fid": "f12",
+        })
+        endpoint = "clist/get"
     headers = {
         "Referer": "https://quote.eastmoney.com/",
         "User-Agent": (
@@ -128,7 +141,7 @@ def _fetch_etf_spot_for_tracked_wrappers() -> pd.DataFrame:
     for attempt, base_url in enumerate(ETF_SPOT_BASE_URLS[:attempts]):
         try:
             response = requests.get(
-                f"{base_url}/api/qt/ulist.np/get",
+                f"{base_url}/api/qt/{endpoint}",
                 params=params,
                 headers=headers,
                 timeout=(5, 15),
@@ -144,13 +157,17 @@ def _fetch_etf_spot_for_tracked_wrappers() -> pd.DataFrame:
                 raise RuntimeError(
                     f"Eastmoney targeted ETF quote omitted rows from {base_url}"
                 )
+            if scoped_list and int(data.get("total") or 0) != len(secids):
+                raise RuntimeError(
+                    f"Eastmoney scoped ETF total mismatch: {data.get('total')}/{len(secids)}"
+                )
 
             rows_by_code: dict[str, dict[str, Any]] = {}
             for row in data["diff"]:
                 if not isinstance(row, dict):
                     raise RuntimeError("Eastmoney targeted ETF quote contains a non-object row")
                 code = str(row.get("f12") or "")
-                market_id = str(row.get("f13") or "")
+                market_id = "" if row.get("f13") is None else str(row["f13"])
                 if code not in expected_market_by_code:
                     raise RuntimeError(f"Eastmoney returned an unrequested ETF code: {code}")
                 if code in rows_by_code:
@@ -178,7 +195,7 @@ def _fetch_etf_spot_for_tracked_wrappers() -> pd.DataFrame:
 
             ordered_rows = [rows_by_code[code] for code in expected_market_by_code]
             print(
-                "  [market_monitor] targeted ETF spot quote coverage: "
+                f"  [market_monitor] targeted ETF spot ({endpoint}) quote coverage: "
                 f"{len(ordered_rows)}/{len(expected_market_by_code)} wrappers"
             )
             return pd.DataFrame(ordered_rows).rename(columns=ETF_SPOT_FIELD_RENAMES)
@@ -564,19 +581,27 @@ def fetch_etf_spot() -> pd.DataFrame:
             print(
                 "  [market_monitor] targeted ETF spot batch unavailable "
                 f"({_spot_error_label(targeted_error)}: {targeted_error}); "
-                "trying paginated list fallback"
+                "trying instrument-filtered list fallback"
             )
             try:
-                df = _fetch_etf_spot_paginated_from_hosts()
-            except Exception as list_error:  # noqa: BLE001 - fail closed if all sources fail
-                message = (
-                    "ETF spot fetch failed on all paths: "
-                    f"AkShare {_spot_error_label(primary_error)} ({primary_error}); "
-                    f"targeted Eastmoney {_spot_error_label(targeted_error)} "
-                    f"({targeted_error}); paginated Eastmoney "
-                    f"{_spot_error_label(list_error)} ({list_error})"
+                df = _fetch_etf_spot_for_tracked_wrappers(scoped_list=True)
+            except Exception as scoped_error:  # noqa: BLE001 - retain final fallback
+                print(
+                    "  [market_monitor] scoped ETF spot list unavailable "
+                    f"({_spot_error_label(scoped_error)}: {scoped_error}); trying paginated list fallback"
                 )
-                raise RuntimeError(message) from list_error
+                try:
+                    df = _fetch_etf_spot_paginated_from_hosts()
+                except Exception as list_error:  # noqa: BLE001 - fail closed if all sources fail
+                    message = (
+                        "ETF spot fetch failed on all paths: "
+                        f"AkShare {_spot_error_label(primary_error)} ({primary_error}); "
+                        f"targeted Eastmoney {_spot_error_label(targeted_error)} "
+                        f"({targeted_error}); scoped Eastmoney {_spot_error_label(scoped_error)} "
+                        f"({scoped_error}); paginated Eastmoney "
+                        f"{_spot_error_label(list_error)} ({list_error})"
+                    )
+                    raise RuntimeError(message) from list_error
     if df is None or df.empty:
         return pd.DataFrame()
     retrieved_at_utc = isoformat_utc()

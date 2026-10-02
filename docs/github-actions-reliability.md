@@ -12,7 +12,11 @@ The September/October 2026 failures had distinct causes:
 - ETF spot fallbacks attempted three of four configured hosts because they
   inherited the primary source's retry budget. Both direct fallbacks now
   attempt every configured host. Incomplete/unavailable quotes still block
-  the report. Use the intraday workflow's `diagnostics_only` input for a
+  the report. An October 2 diagnostic found `ulist` unavailable on every
+  host and full-universe pagination failing after page 12. A scoped
+  `clist/get` instrument filter now requests only the registered wrappers,
+  validates exact code/exchange coverage, and avoids unrelated pages.
+  Use the intraday workflow's `diagnostics_only` input for a
   live GitHub-runner probe without sending email.
 - PyPIStats HTTP 500 responses were not retried. The source now retries
   429/500/502/503/504 and connection/time-out failures with bounded backoff.

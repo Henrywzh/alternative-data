@@ -93,7 +93,10 @@ Provider ownership is declared per exposure and routed explicitly:
   path remains unavailable, a direct Eastmoney batch requests only the ETF
   codes in `ETF_REGISTRY`, rotating across public quote hosts and validating
   exact wrapper/exchange coverage. The much larger full-market paginated scan
-  remains a last-resort fallback. Any failed or incomplete path remains
+  remains a last-resort fallback after an instrument-filtered `clist/get`
+  request for the same registered wrappers. That scoped list avoids relying
+  on unrelated funds' pagination when the batch endpoint is unavailable.
+  Any failed or incomplete path remains
   fail-closed: the freshness gate blocks the email rather than borrowing an
   older quote or presenting partial coverage.
   Every configured direct quote host is attempted, independently of the
