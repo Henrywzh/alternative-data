@@ -75,6 +75,40 @@ jobs:
             --require-fresh \
             --allow-stale-artifact
 
+      - name: Retry the close digest once after a transient freshness failure
+        id: recovery
+        if: steps.pipeline.outputs.degraded == 'true'
+        run: |
+          # Eastmoney has intermittent close-time 502s across its quote
+          # gateways. The CLI already exhausts its bounded provider fallbacks;
+          # wait once before repeating the full run so a short outage can clear.
+          # The retry uses this step's own GITHUB_OUTPUT file, so its healthy
+          # result is not confused with the first step's degraded=true output.
+          echo "The freshness gate blocked the first digest; retrying once in 60 seconds."
+          sleep 60
+          retry_log="$RUNNER_TEMP/market-monitor-close-retry.log"
+          if python -m market_monitor.cli \
+            --mode close \
+            --send-report \
+            --require-fresh \
+            --allow-stale-artifact 2>&1 | tee "$retry_log"; then
+            if grep -Fxq 'degraded=true' "$GITHUB_OUTPUT"; then
+              echo 'recovered=false' >> "$GITHUB_OUTPUT"
+              echo '### ⚠️ Close digest remains degraded after delayed retry; no email was sent.' >> "$GITHUB_STEP_SUMMARY"
+            elif grep -Fq 'Gmail alert not sent (' "$retry_log"; then
+              echo 'recovered=false' >> "$GITHUB_OUTPUT"
+              echo '### ⚠️ Freshness recovered, but Gmail delivery failed on retry.' >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo 'recovered=true' >> "$GITHUB_OUTPUT"
+              echo '### ✅ Delayed close retry passed the freshness gate; email was sent or the alert policy found no digest due.' >> "$GITHUB_STEP_SUMMARY"
+            fi
+          else
+            retry_exit_code=$?
+            echo 'recovered=false' >> "$GITHUB_OUTPUT"
+            echo "retry_exit_code=$retry_exit_code" >> "$GITHUB_OUTPUT"
+            echo "### ⚠️ Delayed close retry exited with code $retry_exit_code; digest delivery was not verified." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Build dashboard artifact
         working-directory: apps/asia-markets-dashboard
         run: |
@@ -101,12 +135,11 @@ jobs:
           done
           exit 1
 
-      - name: Fail the run when the digest was skipped
-        if: steps.pipeline.outputs.degraded == 'true'
+      - name: Fail the run when the digest remains skipped after retry
+        if: steps.pipeline.outputs.degraded == 'true' && steps.recovery.outputs.recovered != 'true'
         run: |
-          # The artifact and the commit above are deliberately allowed through
-          # on a degraded run. Without this step the operator's only signal
-          # that no digest was sent is the absence of an email, which is
-          # indistinguishable from a quiet day -- so end the job red.
-          echo "::error::Freshness gate skipped the digest; see the job summary."
+          # The artifact and commit above are deliberately allowed through on
+          # a degraded run. After one delayed full-run retry, keep the job red
+          # so an undelivered digest remains visible to the operator.
+          echo "::error::Freshness gate still blocks the digest after retry; see the job summary."
           exit 1

@@ -103,6 +103,11 @@ Provider ownership is declared per exposure and routed explicitly:
   smaller AkShare retry budget. A manual `market-monitor-intraday.yml` run
   with `diagnostics_only=true` exercises the same live-quote/freshness gate
   without sending email or saving an alert delivery cursor.
+- The scheduled close workflow retries the complete close run once after a
+  60-second pause if required freshness blocks the digest. This can recover a
+  brief Eastmoney gateway outage; if the retry remains degraded or errors,
+  the artifact is still built from the explicitly degraded run and the Action
+  remains failed. No stale quote is used to force email delivery.
 - Eastmoney published NAV endpoint: historical close-vs-NAV premium backfill.
 - Eastmoney issuer fee endpoint: management and custody fee reconciliation.
 - Shanghai and Shenzhen Stock Exchange ETF scale feeds: official published
