@@ -1,0 +1,11 @@
+{
+  "run_id": "20261005T174045Z-bfa44115",
+  "mode": "adata-update",
+  "scraped_at": "2026-10-05T17:40:45.215196Z",
+  "parser_version": "0.1.0",
+  "months_fetched": [
+    "2026-09"
+  ],
+  "reports_count": 1,
+  "images_downloaded": 4
+}
