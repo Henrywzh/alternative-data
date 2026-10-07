@@ -1,0 +1,17 @@
+{
+  "run_scope": "full",
+  "retrieved_at": "2026-10-07T01:42:22.806007Z",
+  "dataset_name": "source_health",
+  "run_id": "20261007T014222-2a9921ab",
+  "created_at": "2026-10-07T01:42:37.658626Z",
+  "records": 23,
+  "columns": [
+    "source",
+    "series_id",
+    "status",
+    "latest_observation",
+    "records",
+    "notes"
+  ],
+  "sha256": "cefc9589f2d87198b63947df0b8779ee57e67beeb10d3c3eb678cfecbf60163e"
+}
