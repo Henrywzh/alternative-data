@@ -18,6 +18,7 @@ import requests
 
 from .activity import build_etf_fund_activity
 from .config import (
+    ALERT_CORE_EXPOSURES,
     COVERAGE_BOUNDARY_TOLERANCE_DAYS,
     COVERAGE_MIN_ROW_RATIO,
     EXPOSURES,
@@ -28,6 +29,7 @@ from .config import (
     etf_activity_exposures,
 )
 from .freshness import (
+    classify_daily_exposures,
     classify_daily_groups,
     classify_daily_observation,
     classify_intraday_quote,
@@ -141,7 +143,12 @@ def _spot_freshness(
     )
 
 
-def coverage_regressions(current: dict[str, Any], previous: dict[str, Any]) -> list[str]:
+def coverage_regressions(
+    current: dict[str, Any],
+    previous: dict[str, Any],
+    *,
+    exposure_ids: tuple[str, ...] | None = None,
+) -> list[str]:
     """Return material index-history coverage regressions for this run.
 
     This belongs beside the pipeline result, not only in the dashboard
@@ -150,11 +157,16 @@ def coverage_regressions(current: dict[str, Any], previous: dict[str, Any]) -> l
     history. A first run has no previous coverage and therefore cannot shrink.
     """
     notes: list[str] = []
+    scoped_ids = set(exposure_ids) if exposure_ids is not None else None
     missing = set(current.get("missing_exposures") or [])
+    if scoped_ids is not None:
+        missing &= scoped_ids
     notes.extend(f"no rows for {exposure_id}" for exposure_id in sorted(missing))
     current_rows = current.get("rows_by_exposure") or {}
     previous_rows = previous.get("rows_by_exposure") or {}
-    for exposure_id, previous_count in sorted(previous_rows.items()):
+    exposure_scope = scoped_ids if scoped_ids is not None else set(previous_rows)
+    for exposure_id in sorted(exposure_scope):
+        previous_count = previous_rows.get(exposure_id, 0)
         current_count = int(current_rows.get(exposure_id, 0))
         if exposure_id in missing:
             continue
@@ -172,23 +184,50 @@ def coverage_regressions(current: dict[str, Any], previous: dict[str, Any]) -> l
         except ValueError:
             return None
 
-    current_first = _boundary(current.get("first_date"))
-    previous_first = _boundary(previous.get("first_date"))
-    if current_first and previous_first:
-        first_shift = (current_first - previous_first).days
-        if first_shift > COVERAGE_BOUNDARY_TOLERANCE_DAYS:
-            notes.append(
-                f"first_date moved from {previous_first.isoformat()} to {current_first.isoformat()}"
-            )
+    if scoped_ids is None:
+        current_first = _boundary(current.get("first_date"))
+        previous_first = _boundary(previous.get("first_date"))
+        if current_first and previous_first:
+            first_shift = (current_first - previous_first).days
+            if first_shift > COVERAGE_BOUNDARY_TOLERANCE_DAYS:
+                notes.append(
+                    f"first_date moved from {previous_first.isoformat()} to {current_first.isoformat()}"
+                )
 
-    current_last = _boundary(current.get("last_date"))
-    previous_last = _boundary(previous.get("last_date"))
-    if current_last and previous_last:
-        last_shift = (previous_last - current_last).days
-        if last_shift > COVERAGE_BOUNDARY_TOLERANCE_DAYS:
-            notes.append(
-                f"last_date moved from {previous_last.isoformat()} to {current_last.isoformat()}"
-            )
+        current_last = _boundary(current.get("last_date"))
+        previous_last = _boundary(previous.get("last_date"))
+        if current_last and previous_last:
+            last_shift = (previous_last - current_last).days
+            if last_shift > COVERAGE_BOUNDARY_TOLERANCE_DAYS:
+                notes.append(
+                    f"last_date moved from {previous_last.isoformat()} to {current_last.isoformat()}"
+                )
+    else:
+        current_first_by_exposure = current.get("first_date_by_exposure") or {}
+        previous_first_by_exposure = previous.get("first_date_by_exposure") or {}
+        current_last_by_exposure = current.get("last_date_by_exposure") or {}
+        previous_last_by_exposure = previous.get("last_date_by_exposure") or {}
+        for exposure_id in sorted(scoped_ids):
+            if exposure_id in missing:
+                continue
+            for label, current_values, previous_values, direction in (
+                ("first_date", current_first_by_exposure, previous_first_by_exposure, "later"),
+                ("last_date", current_last_by_exposure, previous_last_by_exposure, "earlier"),
+            ):
+                current_date = _boundary(current_values.get(exposure_id))
+                previous_date = _boundary(previous_values.get(exposure_id))
+                if not current_date or not previous_date:
+                    continue
+                shift = (
+                    (current_date - previous_date).days
+                    if direction == "later"
+                    else (previous_date - current_date).days
+                )
+                if shift > COVERAGE_BOUNDARY_TOLERANCE_DAYS:
+                    notes.append(
+                        f"{exposure_id} {label} moved from {previous_date.isoformat()} "
+                        f"to {current_date.isoformat()}"
+                    )
     return notes
 
 
@@ -968,11 +1007,14 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
     ]
     if normalized_index.empty:
         rows_by_exposure: dict[str, int] = {}
+        first_date_by_exposure: dict[str, str] = {}
+        last_date_by_exposure: dict[str, str] = {}
         first_date = last_date = None
     else:
-        rows_by_exposure = {
-            str(k): int(v) for k, v in normalized_index.groupby("exposure_id").size().items()
-        }
+        grouped_dates = normalized_index.groupby("exposure_id")["date"]
+        rows_by_exposure = {str(k): int(v) for k, v in grouped_dates.size().items()}
+        first_date_by_exposure = {str(k): str(v) for k, v in grouped_dates.min().items()}
+        last_date_by_exposure = {str(k): str(v) for k, v in grouped_dates.max().items()}
         first_date = str(normalized_index["date"].min())
         last_date = str(normalized_index["date"].max())
     coverage = {
@@ -980,6 +1022,8 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
         "observed_exposures": sorted(rows_by_exposure),
         "missing_exposures": sorted(set(expected_exposures) - set(rows_by_exposure)),
         "rows_by_exposure": rows_by_exposure,
+        "first_date_by_exposure": first_date_by_exposure,
+        "last_date_by_exposure": last_date_by_exposure,
         "first_date": first_date,
         "last_date": last_date,
         "requested_start_date": start_date,
@@ -996,6 +1040,11 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
     )
     previous_coverage = (previous_history[0].get("coverage") if previous_history else None) or {}
     coverage["regressions"] = coverage_regressions(coverage, previous_coverage)
+    coverage["alert_regressions"] = coverage_regressions(
+        coverage,
+        previous_coverage,
+        exposure_ids=ALERT_CORE_EXPOSURES,
+    )
     results["_coverage"] = coverage
 
     # Persist raw observations only after the coverage check has been
@@ -1231,6 +1280,10 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
         EXPOSURES,
         group_key="price_source",
     )
+    daily_close_by_exposure = classify_daily_exposures(
+        latest_by_exposure,
+        EXPOSURES,
+    )
     daily_observation = None
     if not results["exposure_technicals"].empty and "date" in results["exposure_technicals"].columns:
         daily_observation = classify_daily_observation(results["exposure_technicals"]["date"].max())
@@ -1246,8 +1299,10 @@ def run_pipeline(*, limit_exposures: tuple[str, ...] | None = None, etf_only: tu
         "daily_close": daily_observation or {"status": "Unavailable", "observation_type": "daily_close"},
         "daily_close_by_region": daily_close_by_region,
         "daily_close_by_source": daily_close_by_source,
+        "daily_close_by_exposure": daily_close_by_exposure,
         "southbound": southbound_observation or {"status": "Unavailable", "observation_type": "published_data"},
         "coverage_regressions": coverage.get("regressions") or [],
+        "core_coverage_regressions": coverage.get("alert_regressions") or [],
         "fetch_errors": raw.get("_fetch_errors") or [],
     }
     return results

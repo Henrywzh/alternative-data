@@ -31,7 +31,12 @@ from .config import (
     ALERT_RSI_OVERSOLD,
     REPO_ROOT,
 )
-from .freshness import BLOCKING_FRESHNESS_STATUSES, freshness_note
+from .freshness import (
+    BLOCKING_FRESHNESS_STATUSES,
+    alert_fetch_error_is_required,
+    alert_fetch_error_is_relevant,
+    freshness_note,
+)
 
 
 LABEL_ZH_MAP = {
@@ -325,7 +330,7 @@ def _build_cross_border_note(wrappers: pd.DataFrame) -> str:
 
 
 def _freshness_warning(freshness: dict[str, object], *, mode: str = "close") -> str:
-    """Summarize blocking regional/source freshness issues for the email."""
+    """Summarize freshness issues for the data that the email actually shows."""
     issues: list[str] = []
     if mode == "intraday":
         # The midday run borrows the last persisted close instead of computing
@@ -337,14 +342,16 @@ def _freshness_warning(freshness: dict[str, object], *, mode: str = "close") -> 
         close = freshness.get("daily_close", {}) or {}
         if str(close.get("status")) in BLOCKING_FRESHNESS_STATUSES:
             issues.append(f"借用的收盘技术面: {freshness_note(close, language='zh')}")
-    for scope, records in (
-        ("区域", freshness.get("daily_close_by_region", {}) or {}),
-        ("来源", freshness.get("daily_close_by_source", {}) or {}),
-    ):
-        for group, record in sorted(records.items()):
+    if mode != "intraday":
+        by_exposure = freshness.get("daily_close_by_exposure", {}) or {}
+        for exposure_id in ALERT_CORE_EXPOSURES:
+            record = by_exposure.get(exposure_id, {}) if isinstance(by_exposure, dict) else {}
             if str(record.get("status")) in BLOCKING_FRESHNESS_STATUSES:
-                issues.append(f"{scope} {group}: {freshness_note(record, language='zh')}")
-    regressions = freshness.get("coverage_regressions") or []
+                label = LABEL_ZH_MAP.get(exposure_id, exposure_id)
+                issues.append(f"核心指数 {label}: {freshness_note(record, language='zh')}")
+    regressions = freshness.get("core_coverage_regressions")
+    if regressions is None:
+        regressions = freshness.get("coverage_regressions") or []
     if regressions:
         issues.append("历史覆盖回退: " + "; ".join(str(item) for item in regressions[:4]))
     return "；".join(issues)
@@ -488,8 +495,9 @@ def build_email_html(
         else None
     )
     fetch_errors = [
-        error for error in (freshness.get("fetch_errors") or [])
-        if not (isinstance(error, dict) and error.get("severity") == "optional")
+        error
+        for error in (freshness.get("fetch_errors") or [])
+        if alert_fetch_error_is_relevant(error)
     ]
     csi500_tech = _get_tech_summary(technicals, "csi500")
     csi300_tech = _get_tech_summary(technicals, "csi300")
@@ -557,7 +565,7 @@ def build_email_html(
               ETF 行情：{_esc(quote_note)}<br>
               技术面：{_esc(close_note)}
               {('<br>南向资金：' + _esc(southbound_note)) if southbound_note else ''}
-              {('<br><span style="color:#b91c1c;"><b>区域/来源数据警告</b>：' + _esc(freshness_warning) + '</span>') if freshness_warning else ''}
+              {('<br><span style="color:#b91c1c;"><b>核心数据警告</b>：' + _esc(freshness_warning) + '</span>') if freshness_warning else ''}
               {('<br><span style="color:#b91c1c;"><b>数据警告</b>：' + _esc(str(len(fetch_errors))) + ' 个数据源请求失败，缺失值未用旧数据补齐。</span>') if fetch_errors else ''}
             </div>
 

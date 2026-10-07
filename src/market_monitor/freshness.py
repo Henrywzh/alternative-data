@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from datetime import date, datetime, timedelta, timezone
+from functools import lru_cache
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -19,6 +20,10 @@ from .config import FRESHNESS_POLICIES, MARKET_TIMEZONE
 UTC = timezone.utc
 LOCAL_TZ = ZoneInfo(MARKET_TIMEZONE)
 BLOCKING_FRESHNESS_STATUSES = frozenset({"Unavailable", "Stale", "Invalid"})
+ALERT_REQUIRED_EXPOSURE_DATASETS = frozenset({"index_close", "etf_close"})
+ALERT_NON_BLOCKING_DATASETS = frozenset(
+    {"etf_share_daily", "heatmap_etf_price_daily", "southbound_market_flow"}
+)
 
 
 def utc_now() -> datetime:
@@ -60,6 +65,83 @@ def parse_timestamp(value: Any) -> datetime | None:
 
 def _age_seconds(reference: datetime, now: datetime) -> float:
     return max(0.0, (now - reference).total_seconds())
+
+
+@lru_cache(maxsize=16)
+def _exchange_calendar(name: str):
+    """Load a cached exchange calendar; imported lazily for cheap unit tests."""
+    from exchange_calendars import get_calendar
+
+    return get_calendar(name)
+
+
+def last_completed_session_date(
+    calendar_name: str,
+    *,
+    now_utc: datetime | None = None,
+) -> date:
+    """Return the latest fully closed session for an exchange.
+
+    The report timezone can be many hours ahead of an exchange (notably New
+    York), so checking only the local date can accept an in-progress daily bar.
+    Walk back until the exchange's official close is no later than ``now_utc``.
+    """
+    now = (now_utc or utc_now()).astimezone(UTC)
+    local_date = now.astimezone(LOCAL_TZ).date().isoformat()
+    calendar = _exchange_calendar(calendar_name)
+    session = calendar.date_to_session(local_date, direction="previous")
+    for _ in range(10):
+        close = calendar.session_close(session).to_pydatetime().astimezone(UTC)
+        if close <= now:
+            return session.date()
+        session = calendar.previous_session(session)
+    raise ValueError(f"Could not resolve a completed {calendar_name} session near {local_date}")
+
+
+def alert_fetch_error_is_required(error: Any) -> bool:
+    """Whether a fetch error affects data shown in the compact ETF email.
+
+    Index/ETF histories for non-core exposures remain visible in dashboard
+    health but do not suppress the three-exposure email. Unknown required
+    datasets fail closed; explicitly optional and event notices do not become
+    data blockers.
+    """
+    if not isinstance(error, Mapping):
+        return True
+    if error.get("severity") in {"optional", "event"}:
+        return False
+    dataset = str(error.get("dataset") or "")
+    if dataset in ALERT_REQUIRED_EXPOSURE_DATASETS:
+        from .config import ALERT_CORE_EXPOSURES
+
+        exposure_id = str(error.get("exposure_id") or "")
+        # Missing ownership metadata is not proof that the failed fetch was
+        # irrelevant; only a positively identified non-core exposure is safe
+        # to ignore for this compact report.
+        return not exposure_id or exposure_id in ALERT_CORE_EXPOSURES
+    if dataset == "etf_spot":
+        # Quote freshness/availability is checked separately. A name-vs-
+        # registry contradiction is different: it can put a fund in the wrong
+        # peer cohort and must still fail closed.
+        return str(error.get("error") or "").startswith("RegistryMismatch")
+    if dataset in ALERT_NON_BLOCKING_DATASETS:
+        return False
+    return True
+
+
+def alert_fetch_error_is_relevant(error: Any) -> bool:
+    """Whether a fetch error belongs in the compact email's warning count."""
+    if not isinstance(error, Mapping):
+        return True
+    if error.get("severity") in {"optional", "event"}:
+        return False
+    dataset = str(error.get("dataset") or "")
+    if dataset in ALERT_REQUIRED_EXPOSURE_DATASETS:
+        from .config import ALERT_CORE_EXPOSURES
+
+        exposure_id = str(error.get("exposure_id") or "")
+        return not exposure_id or exposure_id in ALERT_CORE_EXPOSURES
+    return dataset not in {"etf_share_daily", "heatmap_etf_price_daily"}
 
 
 def classify_intraday_quote(
@@ -132,55 +214,73 @@ def classify_daily_groups(
 ) -> dict[str, dict[str, Any]]:
     """Classify daily coverage independently for each configured group.
 
-    The aggregate latest date is useful as a headline, but its maximum can
-    hide a stalled market. This helper uses the oldest observed latest date in
-    each group and marks a group unavailable when any configured exposure is
-    missing. The per-exposure dates remain in the record for auditability.
+    Each member is checked against its own exchange calendar when configured.
+    The group's freshness is the worst member status; this avoids comparing
+    dates from different time zones as if they were sessions on one market.
     """
     groups: dict[str, list[str]] = {}
-    for spec in exposure_specs:
+    specs = list(exposure_specs)
+    spec_by_id: dict[str, Mapping[str, Any]] = {}
+    for spec in specs:
         exposure_id = str(spec.get("exposure_id") or "")
         group = str(spec.get(group_key) or "Unknown")
         if exposure_id:
             groups.setdefault(group, []).append(exposure_id)
+            spec_by_id[exposure_id] = spec
 
     classified: dict[str, dict[str, Any]] = {}
     for group, exposure_ids in groups.items():
         observed: dict[str, str] = {}
         invalid_exposures: list[str] = []
+        stale_exposures: list[str] = []
+        member_records: dict[str, dict[str, Any]] = {}
         for exposure_id in exposure_ids:
             record = classify_daily_observation(
                 latest_by_exposure.get(exposure_id),
                 now_utc=now_utc,
                 observation_type=observation_type,
+                session_calendar=spec_by_id[exposure_id].get("session_calendar"),
             )
+            member_records[exposure_id] = record
             if record.get("observation_date"):
                 observed[exposure_id] = str(record["observation_date"])
             if record.get("status") == "Invalid":
                 invalid_exposures.append(exposure_id)
+            if record.get("status") == "Stale":
+                stale_exposures.append(exposure_id)
 
         missing = sorted(set(exposure_ids) - set(observed))
-        if observed:
-            # Conservative group date: a group is not current while one of its
-            # members is still on an older session.
-            record = classify_daily_observation(
-                min(observed.values()),
-                now_utc=now_utc,
-                observation_type=observation_type,
-            )
-        else:
-            record = classify_daily_observation(
-                None,
-                now_utc=now_utc,
-                observation_type=observation_type,
-            )
+        statuses = {str(item.get("status")) for item in member_records.values()}
         if invalid_exposures:
-            # A future-dated member must not disappear behind the minimum of
-            # the other dates. Preserve the conservative group date for
-            # context, but make the invalid member authoritative for status.
-            record["status"] = "Invalid"
+            status = "Invalid"
         elif missing:
-            record["status"] = "Unavailable"
+            status = "Unavailable"
+        elif stale_exposures:
+            status = "Stale"
+        elif statuses == {"Current session"}:
+            status = "Current session"
+        else:
+            status = "Last session"
+        ages = [
+            int(item["age_calendar_days"])
+            for item in member_records.values()
+            if item.get("age_calendar_days") is not None
+        ]
+        record: dict[str, Any] = {
+            "status": status,
+            "observation_date": min(observed.values()) if observed else None,
+            "age_calendar_days": max(ages) if ages else None,
+            "observation_type": observation_type,
+            "status_by_exposure": {
+                exposure_id: item.get("status")
+                for exposure_id, item in member_records.items()
+            },
+            "expected_session_by_exposure": {
+                exposure_id: item.get("expected_session_date")
+                for exposure_id, item in member_records.items()
+                if item.get("expected_session_date")
+            },
+        }
         record.update(
             {
                 "group": group,
@@ -188,6 +288,7 @@ def classify_daily_groups(
                 "observed_count": len(observed),
                 "missing_exposures": missing,
                 "invalid_exposures": sorted(invalid_exposures),
+                "stale_exposures": sorted(stale_exposures),
                 "latest_by_exposure": observed,
             }
         )
@@ -195,21 +296,42 @@ def classify_daily_groups(
     return classified
 
 
+def classify_daily_exposures(
+    latest_by_exposure: Mapping[str, Any],
+    exposure_specs: Iterable[Mapping[str, Any]],
+    *,
+    now_utc: datetime | None = None,
+    observation_type: str = "daily_close",
+) -> dict[str, dict[str, Any]]:
+    """Classify each configured exposure against its own market calendar."""
+    return {
+        str(spec["exposure_id"]): classify_daily_observation(
+            latest_by_exposure.get(str(spec["exposure_id"])),
+            now_utc=now_utc,
+            observation_type=observation_type,
+            session_calendar=spec.get("session_calendar"),
+        )
+        for spec in exposure_specs
+        if spec.get("exposure_id")
+    }
+
+
 def classify_daily_observation(
     observation_date: Any,
     *,
     now_utc: datetime | None = None,
     observation_type: str = "daily_close",
+    session_calendar: str | None = None,
 ) -> dict[str, Any]:
     """Classify a daily/session observation without calling it today's close.
 
-    The monitor does not maintain a hard-coded holiday table.  A dated daily
-    row before the local calendar date is therefore reported as ``Last
-    session`` until the configurable safety bound is exceeded.  This is honest
-    on weekends and holidays while still detecting a provider that has stopped
-    moving altogether.
+    When an exchange calendar is configured, freshness is measured against
+    that exchange's last completed session. Other datasets use a conservative
+    calendar-day bound because their publication cadence has no trading
+    calendar.
     """
-    now_local = (now_utc or utc_now()).astimezone(LOCAL_TZ)
+    now = (now_utc or utc_now()).astimezone(UTC)
+    now_local = now.astimezone(LOCAL_TZ)
     try:
         if isinstance(observation_date, datetime):
             parsed_date = observation_date.date()
@@ -226,7 +348,30 @@ def classify_daily_observation(
         }
 
     age_days = (now_local.date() - parsed_date).days
-    if age_days < 0:
+    expected_session_date = None
+    if session_calendar:
+        try:
+            expected_session_date = last_completed_session_date(
+                session_calendar,
+                now_utc=now,
+            ).isoformat()
+        except Exception as exc:  # noqa: BLE001 - calendar failure must fail closed
+            return {
+                "status": "Unavailable",
+                "observation_date": parsed_date.isoformat(),
+                "age_calendar_days": age_days,
+                "observation_type": observation_type,
+                "session_calendar": session_calendar,
+                "calendar_error": f"{type(exc).__name__}: {exc}",
+            }
+        expected = date.fromisoformat(expected_session_date)
+        if parsed_date > expected:
+            status = "Invalid"
+        elif parsed_date < expected:
+            status = "Stale"
+        else:
+            status = "Current session" if parsed_date == now_local.date() else "Last session"
+    elif age_days < 0:
         status = "Invalid"
     elif age_days > FRESHNESS_POLICIES[observation_type]["stale_after_calendar_days"]:
         status = "Stale"
@@ -234,12 +379,16 @@ def classify_daily_observation(
         status = "Current session"
     else:
         status = "Last session"
-    return {
+    record: dict[str, Any] = {
         "status": status,
         "observation_date": parsed_date.isoformat(),
         "age_calendar_days": age_days,
         "observation_type": observation_type,
     }
+    if session_calendar:
+        record["session_calendar"] = session_calendar
+        record["expected_session_date"] = expected_session_date
+    return record
 
 
 STATUS_LABELS_ZH = {

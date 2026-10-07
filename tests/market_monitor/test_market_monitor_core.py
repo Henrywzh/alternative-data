@@ -15,6 +15,13 @@ from market_monitor.relative_strength import build_relative_regime, compute_spre
 from market_monitor.technicals import compute_technicals
 
 
+def _core_exposure_freshness(overrides=None):
+    records = {key: {"status": "Last session"} for key in ("csi300", "csi500", "sp500")}
+    for key, record in (overrides or {}).items():
+        records[key] = record
+    return records
+
+
 def test_intraday_quote_freshness_does_not_confuse_retrieval_with_source_time():
     from market_monitor.freshness import classify_intraday_quote
 
@@ -50,6 +57,65 @@ def test_daily_freshness_calls_weekend_data_last_session_not_current():
     record = classify_daily_observation("2026-08-21", now_utc=now)
     assert record["status"] == "Last session"
     assert record["observation_date"] == "2026-08-21"
+
+
+def test_exchange_calendar_accepts_china_holiday_close_but_rejects_a_missed_session():
+    from market_monitor.freshness import classify_daily_observation, last_completed_session_date
+
+    # Oct 1-7 2026 is an official SSE closure. At 00:41 Taipei on Oct 8, the
+    # Sep 30 close is still the latest completed session; after Oct 8 closes,
+    # the same observation is genuinely stale.
+    pre_open = datetime(2026, 10, 7, 16, 41, tzinfo=timezone.utc)
+    assert last_completed_session_date("XSHG", now_utc=pre_open).isoformat() == "2026-09-30"
+    valid = classify_daily_observation("2026-09-30", now_utc=pre_open, session_calendar="XSHG")
+    assert valid["status"] == "Last session"
+    assert valid["expected_session_date"] == "2026-09-30"
+
+    after_reopen = datetime(2026, 10, 8, 9, 0, tzinfo=timezone.utc)
+    stale = classify_daily_observation("2026-09-30", now_utc=after_reopen, session_calendar="XSHG")
+    assert stale["status"] == "Stale"
+    assert stale["expected_session_date"] == "2026-10-08"
+
+
+def test_exchange_calendar_does_not_accept_an_in_progress_us_daily_bar():
+    from market_monitor.freshness import last_completed_session_date
+
+    # At 12:41 EDT on Oct 7, the US cash session has not closed yet.
+    now = datetime(2026, 10, 7, 16, 41, tzinfo=timezone.utc)
+    assert last_completed_session_date("XNYS", now_utc=now).isoformat() == "2026-10-06"
+
+
+def test_email_fetch_error_scope_distinguishes_core_optional_and_visible_auxiliary_data():
+    from market_monitor.freshness import (
+        alert_fetch_error_is_relevant,
+        alert_fetch_error_is_required,
+    )
+
+    noncore_index = {"dataset": "index_close", "exposure_id": "hsi", "error": "timeout"}
+    assert not alert_fetch_error_is_required(noncore_index)
+    assert not alert_fetch_error_is_relevant(noncore_index)
+
+    missing_owner = {"dataset": "etf_close", "error": "timeout"}
+    assert alert_fetch_error_is_required(missing_owner)
+    assert alert_fetch_error_is_relevant(missing_owner)
+
+    # Live quote health is checked as a single report-level record; the raw
+    # request error is still shown in an email warning but is not a second gate.
+    spot_error = {"dataset": "etf_spot", "error": "ConnectionError: timed out"}
+    assert not alert_fetch_error_is_required(spot_error)
+    assert alert_fetch_error_is_relevant(spot_error)
+
+    registry_mismatch = {"dataset": "etf_spot", "error": "RegistryMismatch: wrong exposure"}
+    assert alert_fetch_error_is_required(registry_mismatch)
+    assert alert_fetch_error_is_relevant(registry_mismatch)
+
+    auxiliary = {"dataset": "southbound_market_flow", "error": "timeout"}
+    assert not alert_fetch_error_is_required(auxiliary)
+    assert alert_fetch_error_is_relevant(auxiliary)
+
+    optional = {"dataset": "etf_share_daily", "severity": "optional", "error": "empty"}
+    assert not alert_fetch_error_is_required(optional)
+    assert not alert_fetch_error_is_relevant(optional)
 
 
 def test_daily_group_freshness_does_not_borrow_another_region_latest_date():
@@ -1235,6 +1301,40 @@ def test_coverage_regression_catches_boundary_loss_with_unchanged_row_count():
     notes = builder.coverage_regressions(current, previous)
 
     assert any("first_date moved from 2024-01-01 to 2024-01-20" in note for note in notes)
+
+
+def test_core_coverage_regressions_ignore_unrelated_exposures_and_compare_each_core_series():
+    builder = _load_builder()
+    previous = {
+        "rows_by_exposure": {"csi300": 120, "csi500": 120, "hsi": 150},
+        "missing_exposures": [],
+        "first_date_by_exposure": {
+            "csi300": "2024-01-01", "csi500": "2024-01-01", "hsi": "2024-01-01"
+        },
+        "last_date_by_exposure": {
+            "csi300": "2026-10-01", "csi500": "2026-10-01", "hsi": "2026-10-01"
+        },
+    }
+    current = {
+        "rows_by_exposure": {"csi300": 100, "csi500": 120},
+        "missing_exposures": ["hsi"],
+        "first_date_by_exposure": {
+            "csi300": "2024-01-20", "csi500": "2024-01-01", "hsi": "2024-02-01"
+        },
+        "last_date_by_exposure": {
+            "csi300": "2026-10-01", "csi500": "2026-09-10", "hsi": "2026-09-10"
+        },
+    }
+
+    notes = builder.coverage_regressions(
+        current, previous, exposure_ids=("csi300", "csi500", "sp500")
+    )
+
+    assert len(notes) == 3, notes
+    assert any("csi300 100 rows vs 120" in note for note in notes)
+    assert any("csi300 first_date moved" in note for note in notes)
+    assert any("csi500 last_date moved" in note for note in notes)
+    assert not any("hsi" in note for note in notes)
 
 
 def test_email_escapes_provider_supplied_text():
@@ -2481,28 +2581,80 @@ def test_close_freshness_gate_can_publish_degraded_artifact_without_sending_emai
     ]) == 0
 
 
-def test_close_freshness_gate_blocks_stale_region_before_email(monkeypatch):
-    from market_monitor import cli
+def test_close_email_gate_ignores_stale_noncore_region_source_and_fetches():
+    from market_monitor.cli import _freshness_blockers as cli_blockers
+    from market_monitor.alert_policy import _freshness_blockers as policy_blockers
 
-    monkeypatch.setattr(
-        cli,
-        "run_pipeline",
-        lambda **kwargs: {
-            "mode": "close",
-            "freshness": {
-                "daily_close": {"status": "Last session"},
-                "quote": {"status": "Fresh"},
-                "daily_close_by_region": {"HK": {"status": "Stale"}},
-                "daily_close_by_source": {"sina_hk": {"status": "Stale"}},
-                "fetch_errors": [],
-            },
-        },
-    )
-    monkeypatch.setattr(cli, "send_report", lambda **kwargs: pytest.fail("email must be skipped"))
+    freshness = {
+        "quote": {"status": "Fresh"},
+        "daily_close_by_exposure": _core_exposure_freshness(),
+        "daily_close_by_region": {"HK": {"status": "Stale"}},
+        "daily_close_by_source": {"csindex": {"status": "Stale"}},
+        "core_coverage_regressions": [],
+        "fetch_errors": [
+            {"dataset": "index_close", "exposure_id": "hk_internet", "error": "timeout"},
+            {"dataset": "etf_close", "exposure_id": "nikkei225", "ticker": "513000", "error": "timeout"},
+        ],
+    }
 
-    assert cli.main([
-        "--mode", "close", "--no-write", "--send-report", "--require-fresh", "--allow-stale-artifact"
-    ]) == 0
+    assert cli_blockers(freshness, mode="close") == []
+    assert policy_blockers(freshness, mode="close") == ()
+
+
+def test_close_email_gate_blocks_stale_or_missing_core_and_core_source_errors():
+    from market_monitor.cli import _freshness_blockers as cli_blockers
+    from market_monitor.alert_policy import _freshness_blockers as policy_blockers
+
+    stale_core = {
+        "quote": {"status": "Fresh"},
+        "daily_close_by_exposure": _core_exposure_freshness({"csi500": {"status": "Stale"}}),
+        "core_coverage_regressions": [],
+    }
+    assert any("core exposure csi500: Stale" in item for item in cli_blockers(stale_core, mode="close"))
+    assert any("core exposure csi500: Stale" in item for item in policy_blockers(stale_core, mode="close"))
+
+    missing_quote = {"daily_close_by_exposure": _core_exposure_freshness()}
+    assert "ETF spot: Unavailable" in cli_blockers(missing_quote, mode="close")
+    assert "quote: Unavailable" in policy_blockers(missing_quote, mode="close")
+
+    missing_core = {"quote": {"status": "Fresh"}, "daily_close_by_exposure": {"csi300": {"status": "Last session"}}}
+    assert any("core exposure csi500: Unavailable" in item for item in cli_blockers(missing_core, mode="close"))
+
+    failed_core_source = {
+        "quote": {"status": "Fresh"},
+        "daily_close_by_exposure": _core_exposure_freshness(),
+        "core_coverage_regressions": [],
+        "fetch_errors": [{"dataset": "index_close", "exposure_id": "csi300", "error": "timeout"}],
+    }
+    assert "fetch error: index_close" in cli_blockers(failed_core_source, mode="close")
+    assert "fetch error: index_close" in policy_blockers(failed_core_source, mode="close")
+
+
+def test_intraday_email_gate_uses_live_quote_not_close_health_or_close_coverage():
+    from market_monitor.cli import _freshness_blockers as cli_blockers
+    from market_monitor.alert_policy import _freshness_blockers as policy_blockers
+
+    stale_close = {
+        "quote": {"status": "Fresh"},
+        "daily_close_by_exposure": _core_exposure_freshness(
+            {"csi300": {"status": "Stale"}}
+        ),
+        "core_coverage_regressions": ["csi300 lost history"],
+        "fetch_errors": [
+            {"dataset": "index_close", "exposure_id": "csi300", "error": "timeout"},
+            {"dataset": "southbound_market_flow", "error": "timeout"},
+        ],
+    }
+    assert cli_blockers(stale_close, mode="intraday") == []
+    assert policy_blockers(stale_close, mode="intraday") == ()
+
+    stale_quote = {**stale_close, "quote": {"status": "Stale"}}
+    assert "ETF spot: Stale" in cli_blockers(stale_quote, mode="intraday")
+    assert "quote: Stale" in policy_blockers(stale_quote, mode="intraday")
+
+    missing_quote = {key: value for key, value in stale_close.items() if key != "quote"}
+    assert "ETF spot: Unavailable" in cli_blockers(missing_quote, mode="intraday")
+    assert "quote: Unavailable" in policy_blockers(missing_quote, mode="intraday")
 
 
 def test_close_freshness_gate_blocks_coverage_regression_before_email(monkeypatch):
@@ -2516,7 +2668,8 @@ def test_close_freshness_gate_blocks_coverage_regression_before_email(monkeypatc
             "freshness": {
                 "daily_close": {"status": "Last session"},
                 "quote": {"status": "Fresh"},
-                "coverage_regressions": ["csi500 100 rows vs 120 in the previous run"],
+                "daily_close_by_exposure": _core_exposure_freshness(),
+                "core_coverage_regressions": ["csi500 100 rows vs 120 in the previous run"],
                 "fetch_errors": [],
             },
         },
@@ -2970,7 +3123,8 @@ def test_a_skipped_digest_signals_ci_instead_of_passing_quietly(monkeypatch, tmp
             "freshness": {
                 "daily_close": {"status": "Last session"},
                 "quote": {"status": "Fresh"},
-                "daily_close_by_region": {"HK": {"status": "Stale"}},
+                "daily_close_by_exposure": _core_exposure_freshness({"csi300": {"status": "Stale"}}),
+                "core_coverage_regressions": [],
                 "fetch_errors": [],
             },
         },
@@ -2981,7 +3135,7 @@ def test_a_skipped_digest_signals_ci_instead_of_passing_quietly(monkeypatch, tmp
         "--mode", "close", "--no-write", "--send-report", "--require-fresh", "--allow-stale-artifact"
     ]) == 0
     assert "degraded=true" in output.read_text(encoding="utf-8")
-    assert "region HK" in summary.read_text(encoding="utf-8")
+    assert "core exposure csi300" in summary.read_text(encoding="utf-8")
 
 
 def test_a_healthy_close_run_leaves_no_degraded_marker(monkeypatch, tmp_path):
@@ -2997,6 +3151,8 @@ def test_a_healthy_close_run_leaves_no_degraded_marker(monkeypatch, tmp_path):
             "freshness": {
                 "daily_close": {"status": "Last session"},
                 "quote": {"status": "Fresh"},
+                "daily_close_by_exposure": _core_exposure_freshness(),
+                "core_coverage_regressions": [],
                 "fetch_errors": [],
             },
         },

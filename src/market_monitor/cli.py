@@ -18,7 +18,12 @@ from .alert_policy import (
     save_alert_state,
     state_with_pending_events,
 )
-from .freshness import BLOCKING_FRESHNESS_STATUSES, market_date
+from .config import ALERT_CORE_EXPOSURES
+from .freshness import (
+    BLOCKING_FRESHNESS_STATUSES,
+    alert_fetch_error_is_required,
+    market_date,
+)
 from .pipeline import run_intraday_snapshot, run_pipeline, run_us_etf_flow_sampler
 from .storage import prune_all_runs
 
@@ -36,28 +41,34 @@ EMAIL_CHART_SERIES: tuple[tuple[str, str, str], ...] = (
 def _freshness_blockers(freshness: dict[str, object], *, mode: str) -> list[str]:
     """Return blocking freshness/coverage issues before an email is sent."""
     records: list[tuple[str, dict[str, object]]] = []
-    if mode == "intraday":
-        records.append(("ETF spot", freshness.get("quote", {}) or {}))
-    else:
-        records.extend(
-            [
-                ("daily close", freshness.get("daily_close", {}) or {}),
-                ("ETF spot", freshness.get("quote", {}) or {}),
-            ]
-        )
-        for group, record in sorted((freshness.get("daily_close_by_region", {}) or {}).items()):
-            records.append((f"region {group}", record or {}))
-        for group, record in sorted((freshness.get("daily_close_by_source", {}) or {}).items()):
-            records.append((f"source {group}", record or {}))
+    quote = freshness.get("quote")
+    records.append(("ETF spot", quote if isinstance(quote, dict) else {"status": "Unavailable"}))
+    if mode != "intraday":
+        by_exposure = freshness.get("daily_close_by_exposure") or {}
+        for exposure_id in ALERT_CORE_EXPOSURES:
+            record = by_exposure.get(exposure_id) if isinstance(by_exposure, dict) else None
+            records.append(
+                (
+                    f"core exposure {exposure_id}",
+                    record if isinstance(record, dict) else {"status": "Unavailable"},
+                )
+            )
 
     blockers = [
         f"{scope}: {record.get('status')}"
         for scope, record in records
         if str(record.get("status")) in BLOCKING_FRESHNESS_STATUSES
     ]
-    regressions = freshness.get("coverage_regressions") or []
-    if regressions:
-        blockers.append("coverage regression: " + "; ".join(str(item) for item in regressions[:6]))
+    if mode != "intraday":
+        regressions = freshness.get("core_coverage_regressions")
+        if regressions is None:
+            regressions = freshness.get("coverage_regressions") or []
+        if regressions:
+            blockers.append("coverage regression: " + "; ".join(str(item) for item in regressions[:6]))
+        for error in freshness.get("fetch_errors", []) or []:
+            if alert_fetch_error_is_required(error):
+                dataset = str(error.get("dataset") or "data") if isinstance(error, dict) else "data"
+                blockers.append(f"fetch error: {dataset}")
     return blockers
 
 
@@ -186,13 +197,6 @@ def main(argv: list[str] | None = None) -> int:
     if args.require_fresh:
         freshness = results.get("freshness") or {}
         blockers = _freshness_blockers(freshness, mode=args.mode)
-        fetch_errors = [
-            error
-            for error in (freshness.get("fetch_errors") or [])
-            if error.get("severity") not in {"event", "optional"}
-        ]
-        if fetch_errors:
-            blockers.append(f"{len(fetch_errors)} fetch error(s)")
         if blockers:
             print(
                 "Required freshness gate blocked report: " + ", ".join(blockers),

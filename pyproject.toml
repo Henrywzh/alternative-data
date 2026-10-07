@@ -31,6 +31,7 @@ dependencies = [
   "akshare>=1.18.40",
   "yfinance>=0.2.54",
   "trendspyg>=0.6.1",
+  "exchange-calendars>=4.13.2,<5",
 ]
 
 [tool.poetry]

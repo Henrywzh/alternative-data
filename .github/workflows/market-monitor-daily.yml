@@ -64,11 +64,12 @@ jobs:
       - name: Fetch and derive index/ETF signals
         id: pipeline
         run: |
-          # Required stale/unavailable/invalid regional or source data, a
-          # coverage regression or a failed fetch blocks the email, but not
-          # the artifact build: the dashboard publishes technical data and
-          # its explicit freshness warning. A healthy run sends only when the
-          # event policy finds a confirmed change or the weekly heartbeat is due.
+          # Stale/unavailable/invalid core exposures, tracked ETF quotes,
+          # core-history coverage regressions, or a failed required fetch
+          # block the email, but not the artifact build. Non-core region/source
+          # health remains visible in the dashboard without suppressing this
+          # three-exposure digest. A healthy run sends only when the event
+          # policy finds a confirmed change or the weekly heartbeat is due.
           python -m market_monitor.cli \
             --mode close \
             --send-report \

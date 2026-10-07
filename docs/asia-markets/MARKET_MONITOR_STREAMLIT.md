@@ -225,6 +225,14 @@ snapshot, not a promise that every future daily run has the same row count.
   the wrapper caveat.
 - The index and wrapper data are daily/session data, not intraday execution
   data. A run timestamp and an observation date are different things.
+- The close email's freshness gate is scoped to the data it actually renders:
+  the CSI 300, CSI 500 and S&P 500 daily series, tracked ETF spot quotes,
+  regressions in those three core histories and required fetches for those
+  exposures. Core daily freshness is measured against the last fully completed
+  XSHG/XNYS session through `exchange-calendars`, so a declared exchange
+  closure is not treated as a provider outage and an in-progress US daily bar
+  is not treated as a completed close. Stale non-core region/source series
+  remain visible in health reporting but do not suppress the compact email.
 - The Events / Consensus score is descriptive, not a trade recommendation.
   Finnhub is used for supported US quote snapshots, not as an economic
   consensus source on the current free entitlement. Korea and Hong Kong quote

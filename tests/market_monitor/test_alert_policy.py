@@ -5,6 +5,10 @@ import json
 import pandas as pd
 
 
+def _core_daily_freshness():
+    return {key: {"status": "Last session"} for key in ("csi300", "csi500", "sp500")}
+
+
 def _state(
     *,
     close_cursor: str | None = "2026-01-01",
@@ -189,6 +193,8 @@ def test_published_fee_change_is_an_immediate_event():
         premium_history=pd.DataFrame(),
         relative_pair_history=pd.DataFrame(),
         freshness={
+            "quote": {"status": "Fresh"},
+            "daily_close_by_exposure": _core_daily_freshness(),
             "fetch_errors": [
                 {
                     "dataset": "fund_fee",
@@ -284,6 +290,8 @@ def test_sent_event_keys_prevent_replaying_an_operational_event():
     from market_monitor.alert_policy import advance_alert_state, evaluate_alert
 
     freshness = {
+        "quote": {"status": "Fresh"},
+        "daily_close_by_exposure": _core_daily_freshness(),
         "fetch_errors": [
             {
                 "dataset": "fund_fee",
@@ -478,7 +486,10 @@ def test_policy_blocks_direct_evaluation_when_freshness_fails():
         wrappers=pd.DataFrame(),
         premium_history=pd.DataFrame(),
         relative_pair_history=pd.DataFrame(),
-        freshness={"daily_close": {"status": "Stale"}, "fetch_errors": []},
+        freshness={
+            "daily_close_by_exposure": _core_daily_freshness() | {"csi500": {"status": "Stale"}},
+            "fetch_errors": [],
+        },
     )
     assert decision.should_send is False
     assert decision.observation_date is None
@@ -540,6 +551,8 @@ def test_cli_persists_pending_events_when_gmail_fails_and_clears_after_retry(mon
         "freshness": {
             "quote": {"status": "Fresh"},
             "daily_close": {"status": "Last session"},
+            "daily_close_by_exposure": _core_daily_freshness(),
+            "core_coverage_regressions": [],
             "fetch_errors": [],
         },
     }
@@ -596,6 +609,8 @@ def test_a_registry_fee_disagreement_does_not_black_out_every_alert():
         freshness={
             "quote": {"status": "Fresh"},
             "daily_close": {"status": "Fresh"},
+            "daily_close_by_exposure": _core_daily_freshness(),
+            "core_coverage_regressions": [],
             "fetch_errors": [
                 fee_mismatch_event({"fund_id": "510300", "stated": "0.5000%", "published": "0.1500%"})
             ],
@@ -626,6 +641,8 @@ def test_a_wrong_exposure_registry_name_still_blocks_the_alert():
         freshness={
             "quote": {"status": "Fresh"},
             "daily_close": {"status": "Fresh"},
+            "daily_close_by_exposure": _core_daily_freshness(),
+            "core_coverage_regressions": [],
             "fetch_errors": [
                 {
                     "dataset": "etf_spot",
@@ -658,6 +675,8 @@ def test_a_real_rate_cut_is_still_labelled_as_a_fee_change():
         freshness={
             "quote": {"status": "Fresh"},
             "daily_close": {"status": "Fresh"},
+            "daily_close_by_exposure": _core_daily_freshness(),
+            "core_coverage_regressions": [],
             "fetch_errors": [
                 {
                     "dataset": "fund_fee",
@@ -688,6 +707,8 @@ def test_a_standing_registry_disagreement_does_not_mail_every_single_day():
     freshness = {
         "quote": {"status": "Fresh"},
         "daily_close": {"status": "Fresh"},
+        "daily_close_by_exposure": _core_daily_freshness(),
+        "core_coverage_regressions": [],
         "fetch_errors": [
             fee_mismatch_event({"fund_id": "513080", "stated": "0.8000%", "published": "0.5000%"})
         ],
@@ -755,6 +776,8 @@ def test_optional_share_fetch_errors_do_not_create_tactical_events():
         freshness={
             "quote": {"status": "Fresh"},
             "daily_close": {"status": "Fresh"},
+            "daily_close_by_exposure": _core_daily_freshness(),
+            "core_coverage_regressions": [],
             "fetch_errors": [
                 {
                     "dataset": "etf_share_daily",

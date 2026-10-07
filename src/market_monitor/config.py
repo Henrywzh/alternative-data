@@ -15,8 +15,9 @@ DERIVED_DIR = REPO_ROOT / "data" / "derived" / "market_monitor"
 # quote threshold is intentionally short because a live quote that is older
 # than one market interval is no longer a useful "latest" value.  Daily
 # observations are allowed to span weekends and exchange holidays; the
-# longer bound is a safety net for a stalled provider, not a claim that the
-# last row is today's close.
+# longer bound is a safety net for datasets without an exchange calendar, not
+# a claim that the last row is today's close. Core email exposures carry
+# explicit exchange calendars so long scheduled closures do not look stale.
 MARKET_TIMEZONE = "Asia/Taipei"
 FRESHNESS_POLICIES = {
     "intraday_quote": {"max_age_minutes": 15},
@@ -132,6 +133,7 @@ EXPOSURES = (
         "label": "CSI 300",
         "label_zh": "沪深300",
         "region": "China",
+        "session_calendar": "XSHG",
         "size": "Large",
         "style": "Broad",
         "risk_character": "Core",
@@ -143,6 +145,7 @@ EXPOSURES = (
         "label": "CSI 500",
         "label_zh": "中证500",
         "region": "China",
+        "session_calendar": "XSHG",
         "size": "Mid",
         "style": "Broad",
         "risk_character": "Cyclical-ish",
@@ -223,6 +226,7 @@ EXPOSURES = (
         "label": "S&P 500",
         "label_zh": "标普500",
         "region": "US",
+        "session_calendar": "XNYS",
         "size": "Large",
         "style": "Broad",
         "risk_character": "Global core",

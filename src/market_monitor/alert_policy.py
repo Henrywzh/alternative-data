@@ -46,7 +46,7 @@ from .config import (
     ALERT_STATE_VERSION,
     EXPOSURES,
 )
-from .freshness import BLOCKING_FRESHNESS_STATUSES
+from .freshness import BLOCKING_FRESHNESS_STATUSES, alert_fetch_error_is_required
 from .ranking import classify_entry_status
 from .relative_strength import RELATIVE_PAIRS
 from .technicals import compute_technical_history
@@ -750,33 +750,30 @@ def _freshness_blockers(
     if not freshness:
         return ()
     records: list[tuple[str, Mapping[str, Any]]] = []
-    freshness_keys = ("quote",) if mode == "intraday" else ("quote", "daily_close")
-    for key in freshness_keys:
-        record = freshness.get(key)
-        if isinstance(record, Mapping):
-            records.append((key, record))
-    for parent_key, prefix in (
-        ("daily_close_by_region", "region"),
-        ("daily_close_by_source", "source"),
-    ):
-        grouped = freshness.get(parent_key)
-        if not isinstance(grouped, Mapping):
-            continue
-        for group, record in grouped.items():
-            if isinstance(record, Mapping):
-                records.append((f"{prefix} {group}", record))
+    record = freshness.get("quote")
+    records.append(("quote", record if isinstance(record, Mapping) else {"status": "Unavailable"}))
+    if mode != "intraday":
+        by_exposure = freshness.get("daily_close_by_exposure")
+        for exposure_id in ALERT_CORE_EXPOSURES:
+            record = by_exposure.get(exposure_id) if isinstance(by_exposure, Mapping) else None
+            records.append(
+                (f"core exposure {exposure_id}", record if isinstance(record, Mapping) else {"status": "Unavailable"})
+            )
 
     blockers = [
         f"{scope}: {record.get('status')}"
         for scope, record in records
         if str(record.get("status")) in BLOCKING_FRESHNESS_STATUSES
     ]
-    regressions = freshness.get("coverage_regressions") or []
-    blockers.extend(f"coverage regression: {item}" for item in regressions[:6])
-    for error in freshness.get("fetch_errors", []) or []:
-        if isinstance(error, Mapping) and error.get("severity") not in {"event", "optional"}:
-            dataset = str(error.get("dataset") or "data")
-            blockers.append(f"fetch error: {dataset}")
+    if mode != "intraday":
+        regressions = freshness.get("core_coverage_regressions")
+        if regressions is None:
+            regressions = freshness.get("coverage_regressions") or []
+        blockers.extend(f"coverage regression: {item}" for item in regressions[:6])
+        for error in freshness.get("fetch_errors", []) or []:
+            if alert_fetch_error_is_required(error):
+                dataset = str(error.get("dataset") or "data") if isinstance(error, Mapping) else "data"
+                blockers.append(f"fetch error: {dataset}")
     return tuple(blockers)
 
 
