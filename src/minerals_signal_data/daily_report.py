@@ -20,6 +20,7 @@ from minerals_signal_data.market_data import fetch_public_stock_prices
 
 TUNGSTEN_TICKERS = ["002842.SZ", "000657.SZ", "002378.SZ", "600397.SH", "600549.SH"]
 MOLYBDENUM_TICKERS = ["601958.SH", "603993.SH", "3993.HK"]
+MINERAL_PRICE_FRESHNESS_DAYS = 7
 CHINESE_STOCK_NAMES = {
     "000657.SZ": "中钨高新",
     "002378.SZ": "章源钨业",
@@ -214,6 +215,26 @@ def _source_summary(stock_prices: pd.DataFrame) -> str:
     return ", ".join(labels.get(source, source) for source in ordered) or "—"
 
 
+def _mineral_price_age_days(report_date: str, mineral_date: str) -> int | None:
+    if not mineral_date or mineral_date == "—":
+        return None
+    try:
+        report_day = pd.Timestamp(report_date).normalize()
+        price_day = pd.Timestamp(mineral_date).normalize()
+    except (TypeError, ValueError):
+        return None
+    return max(0, (report_day - price_day).days)
+
+
+def _mineral_freshness_notice(report_date: str, mineral_date: str) -> str:
+    age_days = _mineral_price_age_days(report_date, mineral_date)
+    if age_days is None:
+        return "暂无有效报价"
+    if age_days > MINERAL_PRICE_FRESHNESS_DAYS:
+        return f"数据滞后 {age_days} 天"
+    return ""
+
+
 def _build_email_html(
     spec: ReportSpec,
     *,
@@ -224,11 +245,18 @@ def _build_email_html(
     mineral_cid: str,
     stock_cid: str,
 ) -> str:
+    freshness_notice = _mineral_freshness_notice(report_date, mineral_date)
+    freshness_html = (
+        f'<span style="color:#b54708;"> · {freshness_notice}</span>'
+        if freshness_notice
+        else ""
+    )
+    mineral_date_label = f"报价截至 {mineral_date}" if mineral_date != "—" else "暂无有效报价"
     return f'''<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
 <body style="margin:0;padding:0;background:#fff;font-family:Arial,Helvetica,sans-serif;color:#17324d;">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;margin:0;padding:0;background:#fff;">
 <tr><td style="padding:8px 10px 5px;font-size:21px;line-height:25px;font-weight:700;color:#17324d;">{spec.mineral_name}每日图表简报</td></tr>
-<tr><td style="padding:0 10px;font-size:16px;line-height:20px;font-weight:700;color:#17324d;">{spec.mineral_title} · {mineral_date}</td></tr>
+<tr><td style="padding:0 10px;font-size:16px;line-height:20px;font-weight:700;color:#17324d;">{spec.mineral_title} · {mineral_date_label}{freshness_html}</td></tr>
 <tr><td style="padding:0;margin:0;line-height:0;font-size:0;"><img src="cid:{mineral_cid}" alt="{spec.mineral_title}" style="display:block;width:100%;height:auto;border:0;margin:0;padding:0;"></td></tr>
 <tr><td style="padding:7px 10px 0;font-size:16px;line-height:20px;font-weight:700;color:#17324d;">{spec.stock_title} · {stock_date}</td></tr>
 <tr><td style="padding:0;margin:0;line-height:0;font-size:0;"><img src="cid:{stock_cid}" alt="{spec.stock_title}" style="display:block;width:100%;height:auto;border:0;margin:0;padding:0;"></td></tr>
@@ -262,7 +290,8 @@ def _send_email(
     )
     plain_body = (
         f"{spec.mineral_name}每日图表简报\n\n"
-        f"{spec.mineral_title} · {mineral_date}\n"
+        f"{spec.mineral_title} · 报价截至 {mineral_date}\n"
+        f"{_mineral_freshness_notice(report_date, mineral_date)}\n"
         f"{spec.stock_title} · {stock_date}\n\n"
         f"矿产价格：CTIA；股票价格：{source_summary}。\n"
         "高清原图已作为附件。\n"
@@ -272,7 +301,15 @@ def _send_email(
     recipients = [item.strip() for item in config["GMAIL_RECIPIENTS"].split(",") if item.strip()]
     message["To"] = ", ".join(recipients)
     message["Date"] = formatdate(localtime=True)
-    message["Subject"] = f"{spec.mineral_name}每日图表简报 | {report_date}"
+    age_days = _mineral_price_age_days(report_date, mineral_date)
+    subject_status = (
+        f"[报价滞后{age_days}天] "
+        if age_days is not None and age_days > MINERAL_PRICE_FRESHNESS_DAYS
+        else "[暂无有效报价] "
+        if age_days is None
+        else ""
+    )
+    message["Subject"] = f"{subject_status}{spec.mineral_name}每日图表简报 | {report_date}"
     message.set_content(plain_body)
     message.add_alternative(html_body, subtype="html")
     html_part = message.get_payload()[-1]
@@ -340,6 +377,7 @@ def send_daily_reports(
             _build_stock_chart(stock, spec, start=start, end=chart_end, path=original_stock, mobile=False)
             mineral_date_text = pd.Timestamp(mineral_date).date().isoformat() if not pd.isna(mineral_date) else "—"
             stock_date_text = pd.Timestamp(stock_date).date().isoformat() if not pd.isna(stock_date) else "—"
+            mineral_age_days = _mineral_price_age_days(run_date.date().isoformat(), mineral_date_text)
             prepared_reports.append(
                 {
                     "spec": spec,
@@ -355,6 +393,12 @@ def send_daily_reports(
             )
             results[spec.mineral_id] = {
                 "mineral_date": mineral_date_text,
+                "mineral_age_days": str(mineral_age_days) if mineral_age_days is not None else "",
+                "mineral_status": (
+                    "stale"
+                    if mineral_age_days is None or mineral_age_days > MINERAL_PRICE_FRESHNESS_DAYS
+                    else "current"
+                ),
                 "stock_date": stock_date_text,
                 "stock_sources": _source_summary(stock),
             }

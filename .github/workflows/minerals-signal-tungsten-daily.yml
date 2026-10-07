@@ -101,12 +101,13 @@ jobs:
               raise SystemExit("No validated tungsten price fields in the last 14 days")
           PY
 
-      - name: Validate recent molybdenum coverage
+      - name: Validate latest molybdenum quote freshness
         run: |
           python - <<'PY'
           from pathlib import Path
 
           import pandas as pd
+          from minerals_signal_data.daily_report import MINERAL_PRICE_FRESHNESS_DAYS
 
           path = Path("data/raw/minerals_signal_data/molybdenum_chinatungsten.csv")
           if not path.exists():
@@ -120,15 +121,21 @@ jobs:
           ]
           frame = pd.read_csv(path)
           frame["date"] = pd.to_datetime(frame["date"], errors="coerce")
-          cutoff = pd.Timestamp.now(tz="UTC").tz_convert(None).normalize() - pd.Timedelta(days=45)
-          recent = frame[frame["date"] >= cutoff].copy()
-          if recent.empty:
-              raise SystemExit("No recent molybdenum rows found in the last 45 days")
+          prices = frame[fields].apply(pd.to_numeric, errors="coerce")
+          valid = frame.loc[prices.notna().any(axis=1), "date"].dropna()
+          if valid.empty:
+              raise SystemExit("No valid molybdenum price observations found")
 
-          counts = recent[fields].replace("", pd.NA).notna().sum()
-          print(counts.to_string())
-          if int(counts.sum()) == 0:
-              raise SystemExit("Recent molybdenum rows exist, but all tracked price fields are empty")
+          latest = valid.max().normalize()
+          today = pd.Timestamp.now(tz="Asia/Shanghai").normalize().tz_localize(None)
+          age_days = max(0, (today - latest).days)
+          print(f"Latest molybdenum quote: {latest.date()} ({age_days} days old)")
+          if age_days > MINERAL_PRICE_FRESHNESS_DAYS:
+              print(
+                  f"::warning::Molybdenum price is stale: latest quote is {latest.date()}, "
+                  f"{age_days} days old (freshness threshold: {MINERAL_PRICE_FRESHNESS_DAYS} days). "
+                  "The report will still include the latest available quote."
+              )
           PY
 
       - name: Report rare earth coverage (informational only)
