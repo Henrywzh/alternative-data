@@ -2,8 +2,8 @@
   "type": "derived",
   "run_scope": "full",
   "dataset_name": "relative_pairs",
-  "run_id": "20261001T165245-9d7e68c1",
-  "created_at": "2026-10-01T16:53:08.048698+00:00",
+  "run_id": "20261008T164231-a18739a8",
+  "created_at": "2026-10-08T16:42:48.659814+00:00",
   "records": 12,
   "columns": [
     "pair_id",
@@ -20,5 +20,5 @@
     "regime_zh",
     "observations"
   ],
-  "sha256": "3a5d1d68139e0e7856fe88828e1f575ecb30480adb2d48cfd55a5fdbfac16904"
+  "sha256": "5fcdd66b3305bdd6a9c14f4bbfa16f4b71337c57635656f6340471c5f3ef35bd"
 }
