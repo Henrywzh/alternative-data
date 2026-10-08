@@ -76,14 +76,21 @@ class AppsSource(SourceExtractor):
             raise ExtractionError(f"Could not fetch snapshot for app {app.slug}")
         return last_snapshot
 
-    @staticmethod
-    def _looks_like_app_detail_page(html: str, app: MonitoredApp) -> bool:
-        required_signals = (
-            app.app_name,
-            "forecast-1d",
-            "appModelAnalytics",
+    def _looks_like_app_detail_page(self, html: str, app: MonitoredApp) -> bool:
+        # The forecast marker is a chart implementation detail, not an app
+        # identity signal. Match parsed metadata and app-scoped analytics so a
+        # directory card alone cannot be mistaken for the detail page.
+        try:
+            metadata = self._extract_app_metadata(html, app)
+        except ExtractionError:
+            return False
+        return any(
+            isinstance(node, dict)
+            and node.get("appName") == metadata.get("title")
+            and ("data" in node or "appModelAnalytics" in node)
+            for payload in iter_next_f_objects(html)
+            for node in walk_json(payload)
         )
-        return all(signal in html for signal in required_signals)
 
     def extract(self, snapshots: list[Snapshot], context: RunContext) -> dict[str, list[DatasetRecord]]:
         snapshot_by_name = {snapshot.name: snapshot for snapshot in snapshots}
@@ -360,9 +367,18 @@ class AppsSource(SourceExtractor):
             for node in walk_json(payload):
                 if not isinstance(node, dict):
                     continue
-                if node.get("appName") != app_name or node.get("forecast") != "forecast-1d":
+                if node.get("appName") != app_name:
                     continue
-                if self._is_usage_chart(node):
+                data = node.get("data")
+                if isinstance(data, dict):
+                    # Since October 2026 the chart exposes daily and weekly
+                    # series together. Only daily observations belong in the
+                    # app_usage_daily table; never substitute weekly totals.
+                    daily_chart = {**node, "data": data.get("daily")}
+                    if self._is_usage_chart(daily_chart):
+                        return daily_chart
+                    raise ExtractionError(f"Missing or invalid daily usage chart payload for {app_name}")
+                if node.get("forecast") == "forecast-1d" and self._is_usage_chart(node):
                     return node
         raise ExtractionError(f"Could not find usage chart payload for {app_name}")
 
@@ -371,7 +387,13 @@ class AppsSource(SourceExtractor):
         if not isinstance(node, dict):
             return False
         data = node.get("data")
-        return isinstance(data, list) and bool(data) and isinstance(data[0], dict) and "x" in data[0] and "ys" in data[0]
+        return isinstance(data, list) and bool(data) and all(
+            isinstance(point, dict)
+            and isinstance(point.get("x"), str)
+            and isinstance(point.get("ys"), dict)
+            and bool(point["ys"])
+            for point in data
+        )
 
     def _extract_top_models_payload(self, html: str, app_name: str) -> list[dict[str, Any]]:
         for payload in iter_next_f_objects(html):

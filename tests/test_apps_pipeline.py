@@ -13,6 +13,7 @@ from openrouter_data.sources.apps import AppsSource, MONITORED_APPS
 
 
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "apps_payloads.json"
+DAILY_WEEKLY_FIXTURE_PATH = Path(__file__).parent / "fixtures" / "apps_daily_weekly_payloads.json"
 
 
 def _load_payloads() -> dict:
@@ -149,6 +150,93 @@ def test_app_metadata_parser_accepts_newline_delimited_next_f_chunks() -> None:
 
     assert result["id"] == payloads["openclaw_metadata"]["id"]
     assert result["origin_url"] == "https://openclaw.ai/"
+
+
+@pytest.mark.parametrize("app", MONITORED_APPS, ids=lambda app: app.slug)
+def test_current_detail_page_is_fetched_without_forecast_marker(app, monkeypatch: pytest.MonkeyPatch) -> None:
+    source = AppsSource()
+    current = json.loads(DAILY_WEEKLY_FIXTURE_PATH.read_text(encoding="utf-8"))
+    builder = build_app_detail_fixture_html if app.slug == "openclaw" else build_hermes_detail_fixture_html
+    html = builder(usage=current[app.slug])
+    assert "forecast-1d" not in html
+    requested_urls = []
+
+    def fetch(name, url):
+        requested_urls.append(url)
+        return Snapshot(name=name, source_url=url, body=html)
+
+    monkeypatch.setattr(source, "_fetch", fetch)
+    snapshot = source._fetch_app_snapshot(app)
+
+    assert snapshot.source_url == app.source_url
+    assert requested_urls == [app.source_url]
+
+
+def test_detail_fetch_rejects_directory_cards_and_uses_valid_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+    source = AppsSource()
+    app = MONITORED_APPS[0]
+    directory = build_apps_directory_fixture_html()
+    # The directory includes matching metadata, but no app-scoped analytics.
+    assert source._extract_app_metadata(directory, app)["origin_url"] == app.origin_url
+    assert not source._looks_like_app_detail_page(directory, app)
+    assert not source._looks_like_app_detail_page(build_hermes_detail_fixture_html(), app)
+    requested_urls = []
+
+    def fetch(name, url):
+        requested_urls.append(url)
+        return Snapshot(
+            name=name, source_url=url,
+            body=directory if url == app.source_url else build_app_detail_fixture_html(),
+        )
+
+    monkeypatch.setattr(source, "_fetch", fetch)
+    snapshot = source._fetch_app_snapshot(app)
+    assert snapshot.source_url == app.fallback_source_urls[0]
+    assert requested_urls == [app.source_url, app.fallback_source_urls[0]]
+
+
+def test_current_daily_weekly_payload_keeps_daily_grain_and_storage_idempotent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    current = json.loads(DAILY_WEEKLY_FIXTURE_PATH.read_text(encoding="utf-8"))
+    pipeline = AppsPipeline(tmp_path)
+    snapshots = make_snapshots(
+        build_apps_directory_fixture_html(),
+        build_app_detail_fixture_html(usage=current["openclaw"]),
+        build_hermes_detail_fixture_html(usage=current["hermes-agent"]),
+    )
+    monkeypatch.setattr(pipeline.source, "fetch_snapshots", lambda: snapshots)
+
+    counts = pipeline.validate()
+    expected_rows = sum(len(point["ys"]) for usage in current.values() for point in usage["data"]["daily"])
+    assert counts["app_usage_daily"] == expected_rows
+    pipeline.run_initial_backfill()
+    pipeline.run_daily_update()
+    csv_path = tmp_path / "data/normalized/openrouter/app_usage_daily.csv"
+    usage = pd.read_csv(csv_path)
+    parquet = pd.read_parquet(csv_path.with_suffix(".parquet"))
+    assert len(usage) == len(parquet) == expected_rows
+    assert not usage[["app_id", "usage_date", "model_permaslug"]].duplicated().any()
+    for payload in current.values():
+        app_usage = usage[usage["app_name"] == payload["appName"]]
+        daily = payload["data"]["daily"]
+        assert set(app_usage["usage_date"]) == {point["x"].split(" ", 1)[0] for point in daily}
+        for point in daily:
+            rows = app_usage[app_usage["usage_date"] == point["x"].split(" ", 1)[0]]
+            assert rows.set_index("model_permaslug")["total_tokens"].to_dict() == point["ys"]
+            assert rows.sort_values("rank")["total_tokens"].is_monotonic_decreasing
+
+
+@pytest.mark.parametrize("daily", [None, [], "unsupported", [{"x": "2026-10-08", "ys": {}}], [
+    {"x": "2026-10-07", "ys": {"Others": 123}}, {"x": "2026-10-08"},
+]])
+def test_invalid_daily_series_never_falls_back_to_weekly(daily) -> None:
+    usage = {
+        "appName": "OpenClaw",
+        "data": {"daily": daily, "weekly": [{"x": "2026-10-05", "ys": {"Others": 999}}]},
+    }
+    with pytest.raises(ExtractionError, match="daily usage chart payload for OpenClaw"):
+        AppsSource()._extract_usage_chart(build_app_detail_fixture_html(usage=usage), "OpenClaw")
 
 
 def test_missing_required_payload_raises_clear_error() -> None:

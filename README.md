@@ -32,6 +32,12 @@ OpenRouter economics methodology:
 - Revenue estimates are conservative by default: usage is joined to the latest prior OpenRouter pricing snapshot, provider/global price fallbacks are excluded, and unpriced rows remain visible as coverage gaps.
 - `daily_provider_economics` is the shared dashboard/notebook table for observed tokens, pricing matches, revenue method, and coverage flags.
 
+App detail extraction supports both the legacy `forecast-1d` chart and the
+current `data.daily` / `data.weekly` payload. `app_usage_daily` uses only
+`data.daily`; weekly aggregates remain in raw HTML snapshots and are never
+substituted for missing daily observations. Current UTC-day values are mutable
+and are refreshed by replacing each app/date partition on subsequent runs.
+
 Apps datasets:
 
 - `app_metadata_snapshots`: daily metadata snapshots for monitored apps

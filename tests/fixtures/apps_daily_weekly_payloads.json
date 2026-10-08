@@ -1,0 +1,150 @@
+{
+  "openclaw": {
+    "data": {
+      "daily": [
+        {
+          "x": "2026-09-08 00:00:00",
+          "ys": {
+            "deepseek/deepseek-v4-flash-20260731": 26961707018,
+            "deepseek/deepseek-v4-flash-20260423": 16985409914,
+            "z-ai/glm-5.3-flash-20260826": 15993413185,
+            "minimax/minimax-m3-20260531": 11331358708,
+            "openai/gpt-5.6-luna-20260709": 8884820210,
+            "google/gemini-3.8-flash-20260902": 5389896184,
+            "anthropic/claude-sonnet-5-20260630": 5044938753,
+            "deepseek/deepseek-v4-pro-20260423": 4558544830,
+            "z-ai/glm-5.3-20260816": 4472583355,
+            "z-ai/glm-5.2-20260616": 4453727456,
+            "Others": 64703596690
+          }
+        },
+        {
+          "x": "2026-10-08 00:00:00",
+          "ys": {
+            "deepseek/deepseek-v4.1-flash-20260910": 15232943607,
+            "z-ai/glm-5.3-flash-20260826": 5789487802,
+            "stepfun/step-3.7-flash-20260528": 3989213447,
+            "minimax/minimax-m3-20260531": 3670885986,
+            "deepseek/deepseek-v4-flash-20260731": 3311526907,
+            "nvidia/nemotron-3-super-120b-a12b-20230311": 2903136726,
+            "deepseek/deepseek-v4-flash-20260423": 2862332780,
+            "nvidia/nemotron-3-ultra-550b-a55b-20260604": 2501123613,
+            "deepseek/deepseek-v4-pro-20260423": 1848630431,
+            "z-ai/glm-5.3-20260816": 1447041255,
+            "Others": 21885082564
+          }
+        }
+      ],
+      "weekly": [
+        {
+          "x": "2026-01-26",
+          "ys": {
+            "anthropic/claude-4.5-sonnet-20250929": 48276553,
+            "moonshotai/kimi-k2.5-0127": 47547396,
+            "google/gemini-3-flash-preview-20251217": 35385943,
+            "minimax/minimax-m2.1": 34148410,
+            "openai/gpt-5.2-20251211": 29272663,
+            "x-ai/grok-4.1-fast": 9093901,
+            "anthropic/claude-4.5-opus-20251124": 5137259,
+            "arcee-ai/trinity-large-preview": 4648547,
+            "deepseek/deepseek-chat-v3": 4554455,
+            "deepseek/deepseek-v3.2-20251201": 3139651,
+            "Others": 23162195
+          }
+        },
+        {
+          "x": "2026-10-05",
+          "ys": {
+            "deepseek/deepseek-v4.1-flash-20260910": 180678720903,
+            "z-ai/glm-5.3-flash-20260826": 53900382349,
+            "deepseek/deepseek-v4-flash-20260731": 41813375512,
+            "deepseek/deepseek-v4-flash-20260423": 34543047873,
+            "minimax/minimax-m3-20260531": 30378761487,
+            "nvidia/nemotron-3-ultra-550b-a55b-20260604": 23701138496,
+            "nvidia/nemotron-3-super-120b-a12b-20230311": 22002026843,
+            "z-ai/glm-5.3-20260816": 17896761343,
+            "deepseek/deepseek-v4-pro-20260423": 17854268632,
+            "openai/gpt-6-luna-20260922": 11540998120,
+            "Others": 234479967236
+          }
+        }
+      ]
+    },
+    "appName": "OpenClaw",
+    "forecastFromTimestamp": 1791449059470
+  },
+  "hermes-agent": {
+    "data": {
+      "daily": [
+        {
+          "x": "2026-09-08 00:00:00",
+          "ys": {
+            "deepseek/deepseek-v4-flash-20260731": 322072807690,
+            "z-ai/glm-5.3-flash-20260826": 224081897408,
+            "deepseek/deepseek-v4-flash-20260423": 156955473315,
+            "upstage/solar-pro4-20260810": 126410373556,
+            "deepseek/deepseek-v4-pro-20260423": 44941530222,
+            "openai/gpt-5.6-luna-20260709": 41241600622,
+            "poolside/laguna-s-2.1-20260720": 39784319036,
+            "stepfun/step-3.7-flash-20260528": 30380595741,
+            "anthropic/claude-sonnet-5-20260630": 30322121338,
+            "google/gemini-3.8-flash-20260902": 30197232537,
+            "Others": 475473438883
+          }
+        },
+        {
+          "x": "2026-10-08 00:00:00",
+          "ys": {
+            "deepseek/deepseek-v4.1-flash-20260910": 119296047168,
+            "z-ai/glm-5.3-flash-20260826": 39928650675,
+            "deepseek/deepseek-v4-flash-20260731": 29638077938,
+            "nvidia/nemotron-3-ultra-550b-a55b-20260604": 20879988815,
+            "openai/gpt-6-luna-20260922": 20680403871,
+            "upstage/solar-mini4-20260922": 20102323986,
+            "deepseek/deepseek-v4-flash-20260423": 18647882536,
+            "anthropic/claude-opus-5.5-20260921": 16665509119,
+            "poolside/laguna-s-2.1-20260720": 14053731723,
+            "inclusionai/ling-3.0-flash-sante-20260904": 10114794482,
+            "Others": 132193451130
+          }
+        }
+      ],
+      "weekly": [
+        {
+          "x": "2026-02-23",
+          "ys": {
+            "anthropic/claude-4.6-opus-20260205": 918159375,
+            "anthropic/claude-4.6-sonnet-20260217": 565533426,
+            "arcee-ai/trinity-large-preview": 386708211,
+            "minimax/minimax-m2.5-20260211": 381514408,
+            "moonshotai/kimi-k2.5-0127": 277798951,
+            "google/gemini-3-flash-preview-20251217": 221266955,
+            "openai/gpt-5.2-20251211": 153693766,
+            "openai/gpt-5.3-codex-20260224": 128714509,
+            "deepseek/deepseek-v3.2-20251201": 119227160,
+            "anthropic/claude-4.5-haiku-20251001": 83988186,
+            "Others": 518345984
+          }
+        },
+        {
+          "x": "2026-10-05",
+          "ys": {
+            "deepseek/deepseek-v4.1-flash-20260910": 1408029556345,
+            "stealth/space-bunny-alpha": 509982579936,
+            "z-ai/glm-5.3-flash-20260826": 476577421393,
+            "deepseek/deepseek-v4-flash-20260731": 354302506609,
+            "deepseek/deepseek-v4-flash-20260423": 215865801995,
+            "openai/gpt-6-luna-20260922": 189550384296,
+            "nvidia/nemotron-3-ultra-550b-a55b-20260604": 169182782786,
+            "anthropic/claude-opus-5.5-20260921": 156843593592,
+            "upstage/solar-mini4-20260922": 150792566542,
+            "poolside/laguna-s-2.1-20260720": 120159967092,
+            "Others": 1559025194200
+          }
+        }
+      ]
+    },
+    "appName": "Hermes Agent",
+    "forecastFromTimestamp": 1791448732412
+  }
+}
