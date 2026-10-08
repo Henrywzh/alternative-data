@@ -87,6 +87,14 @@ Provider ownership is declared per exposure and routed explicitly:
   declared per exposure as `yf_symbol`; deriving it from `index_id` once
   produced a request for "SPX", which returns an empty frame rather than an
   error.
+- ETF daily close history: AkShare Sina ETF history is preferred, followed by
+  Tencent daily K-lines and then Eastmoney ETF history. Each response is
+  checked against the latest completed XSHG session (and clipped to the
+  requested session window); stale non-empty Sina data therefore cannot block
+  the fallback. Accepted rows retain `source_id`. Tencent's documented
+  K-line endpoint is for A-share stocks, not an ETF-specific contract; it is a
+  fallback empirically validated against the tracked ETF codes, not the primary
+  source of record.
 - Eastmoney ETF spot: current market price, IOPV premium/discount, turnover,
   bid/ask and market-cap proxy. The primary AkShare endpoint retries a bounded
   set of transient gateway/rate-limit failures and empty responses. If that
@@ -96,9 +104,11 @@ Provider ownership is declared per exposure and routed explicitly:
   remains a last-resort fallback after an instrument-filtered `clist/get`
   request for the same registered wrappers. That scoped list avoids relying
   on unrelated funds' pagination when the batch endpoint is unavailable.
-  Any failed or incomplete path remains
-  fail-closed: the freshness gate blocks the email rather than borrowing an
-  older quote or presenting partial coverage.
+  Any failed or incomplete path remains unavailable rather than borrowing an
+  older quote or presenting partial coverage. A missing live quote blocks the
+  intraday email; the close email can still send when its core completed daily
+  closes pass freshness and coverage checks, while quote-dependent premium and
+  spread fields remain blank and are called out as unavailable.
   Every configured direct quote host is attempted, independently of the
   smaller AkShare retry budget. A manual `market-monitor-intraday.yml` run
   with `diagnostics_only=true` exercises the same live-quote/freshness gate
@@ -226,10 +236,10 @@ snapshot, not a promise that every future daily run has the same row count.
 - The index and wrapper data are daily/session data, not intraday execution
   data. A run timestamp and an observation date are different things.
 - The close email's freshness gate is scoped to the data it actually renders:
-  the CSI 300, CSI 500 and S&P 500 daily series, tracked ETF spot quotes,
-  regressions in those three core histories and required fetches for those
-  exposures. Core daily freshness is measured against the last fully completed
-  XSHG/XNYS session through `exchange-calendars`, so a declared exchange
+  the CSI 300, CSI 500 and S&P 500 daily series, regressions in those three
+  core histories and required fetches for those exposures. It does not require
+  an intraday ETF spot snapshot. Core daily freshness is measured against the
+  last fully completed XSHG/XNYS session through `exchange-calendars`, so a declared exchange
   closure is not treated as a provider outage and an in-progress US daily bar
   is not treated as a completed close. Stale non-core region/source series
   remain visible in health reporting but do not suppress the compact email.

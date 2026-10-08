@@ -41,8 +41,9 @@ EMAIL_CHART_SERIES: tuple[tuple[str, str, str], ...] = (
 def _freshness_blockers(freshness: dict[str, object], *, mode: str) -> list[str]:
     """Return blocking freshness/coverage issues before an email is sent."""
     records: list[tuple[str, dict[str, object]]] = []
-    quote = freshness.get("quote")
-    records.append(("ETF spot", quote if isinstance(quote, dict) else {"status": "Unavailable"}))
+    if mode == "intraday":
+        quote = freshness.get("quote")
+        records.append(("ETF spot", quote if isinstance(quote, dict) else {"status": "Unavailable"}))
     if mode != "intraday":
         by_exposure = freshness.get("daily_close_by_exposure") or {}
         for exposure_id in ALERT_CORE_EXPOSURES:

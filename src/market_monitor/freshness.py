@@ -98,6 +98,40 @@ def last_completed_session_date(
     raise ValueError(f"Could not resolve a completed {calendar_name} session near {local_date}")
 
 
+def expected_latest_session_date(
+    calendar_name: str,
+    requested_end_date: str | date | None = None,
+    *,
+    now_utc: datetime | None = None,
+) -> date:
+    """Resolve the latest completed session inside a requested date window.
+
+    Historical/backfill requests may end before today, while an EOD source can
+    also return an in-progress current-day bar before the exchange closes. The
+    expected observation is therefore the earlier of the requested window's
+    last session and the exchange's latest fully completed session.
+    """
+    completed = last_completed_session_date(calendar_name, now_utc=now_utc)
+    if requested_end_date is None:
+        return completed
+
+    if isinstance(requested_end_date, datetime):
+        requested = requested_end_date.date()
+    elif isinstance(requested_end_date, date):
+        requested = requested_end_date
+    else:
+        text = str(requested_end_date).strip().replace("-", "")
+        if len(text) < 8 or not text[:8].isdigit():
+            raise ValueError(f"Invalid requested end date: {requested_end_date!r}")
+        requested = date(int(text[:4]), int(text[4:6]), int(text[6:8]))
+
+    calendar = _exchange_calendar(calendar_name)
+    requested_session = calendar.date_to_session(
+        requested.isoformat(), direction="previous"
+    ).date()
+    return min(completed, requested_session)
+
+
 def alert_fetch_error_is_required(error: Any) -> bool:
     """Whether a fetch error affects data shown in the compact ETF email.
 

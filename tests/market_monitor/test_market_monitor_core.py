@@ -3,7 +3,7 @@
 import json
 import sys
 import warnings
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -83,6 +83,144 @@ def test_exchange_calendar_does_not_accept_an_in_progress_us_daily_bar():
     # At 12:41 EDT on Oct 7, the US cash session has not closed yet.
     now = datetime(2026, 10, 7, 16, 41, tzinfo=timezone.utc)
     assert last_completed_session_date("XNYS", now_utc=now).isoformat() == "2026-10-06"
+
+
+def test_expected_latest_session_respects_requested_window_and_market_close():
+    from market_monitor.freshness import expected_latest_session_date
+
+    before_reopen = datetime(2026, 10, 7, 16, 41, tzinfo=timezone.utc)
+    assert expected_latest_session_date(
+        "XSHG", "20261008", now_utc=before_reopen
+    ).isoformat() == "2026-09-30"
+
+    after_reopen_close = datetime(2026, 10, 8, 9, 0, tzinfo=timezone.utc)
+    assert expected_latest_session_date(
+        "XSHG", "20261010", now_utc=after_reopen_close
+    ).isoformat() == "2026-10-08"
+
+
+def test_etf_daily_uses_tencent_when_sina_returns_stale_history(monkeypatch):
+    import market_monitor.sources.akshare_etf as source
+
+    monkeypatch.setattr(
+        source, "expected_latest_session_date", lambda calendar, end: date(2026, 10, 8)
+    )
+    calls = []
+
+    class _FakeAk:
+        @staticmethod
+        def fund_etf_hist_sina(*, symbol):
+            calls.append(("sina", symbol))
+            return pd.DataFrame({"日期": ["2026-09-30"], "收盘": [4.1]})
+
+        @staticmethod
+        def stock_zh_a_hist_tx(*, symbol, start_date, end_date, adjust):
+            calls.append(("tencent", symbol, adjust))
+            return pd.DataFrame(
+                {
+                    "date": ["2026-09-30", "2026-10-08"],
+                    "open": [4.0, 4.2],
+                    "high": [4.2, 4.4],
+                    "low": [3.9, 4.1],
+                    "close": [4.1, 4.3],
+                    "volume": [1000, 1200],
+                    "amount": [4100, 5160],
+                }
+            )
+
+        @staticmethod
+        def fund_etf_hist_em(**kwargs):
+            pytest.fail("Eastmoney should not be called after a fresh Tencent result")
+
+    monkeypatch.setitem(sys.modules, "akshare", _FakeAk)
+    out = source.fetch_etf_daily("510300.SH", start_date="20260901", end_date="20261008")
+
+    assert calls == [("sina", "sh510300"), ("tencent", "sh510300", "")]
+    assert out["date"].tolist() == ["2026-09-30", "2026-10-08"]
+    assert out["close"].tolist() == [4.1, 4.3]
+    assert out["source_id"].eq("akshare_stock_zh_a_hist_tx").all()
+    assert out["observation_type"].eq("daily_close").all()
+
+
+def test_etf_daily_keeps_fresh_sina_history_without_extra_requests(monkeypatch):
+    import market_monitor.sources.akshare_etf as source
+
+    monkeypatch.setattr(
+        source, "expected_latest_session_date", lambda calendar, end: date(2026, 10, 8)
+    )
+
+    class _FakeAk:
+        @staticmethod
+        def fund_etf_hist_sina(*, symbol):
+            return pd.DataFrame({"日期": ["2026-10-08"], "收盘": [4.3]})
+
+        @staticmethod
+        def stock_zh_a_hist_tx(**kwargs):
+            pytest.fail("Tencent should not be called after fresh Sina data")
+
+        @staticmethod
+        def fund_etf_hist_em(**kwargs):
+            pytest.fail("Eastmoney should not be called after fresh Sina data")
+
+    monkeypatch.setitem(sys.modules, "akshare", _FakeAk)
+    out = source.fetch_etf_daily("510300.SH", start_date="20260901", end_date="20261008")
+
+    assert out["date"].tolist() == ["2026-10-08"]
+    assert out["source_id"].tolist() == ["akshare_fund_etf_hist_sina"]
+
+
+def test_etf_daily_uses_eastmoney_if_tencent_is_stale(monkeypatch):
+    import market_monitor.sources.akshare_etf as source
+
+    monkeypatch.setattr(
+        source, "expected_latest_session_date", lambda calendar, end: date(2026, 10, 8)
+    )
+
+    class _FakeAk:
+        @staticmethod
+        def fund_etf_hist_sina(*, symbol):
+            return pd.DataFrame({"日期": ["2026-09-30"], "收盘": [4.1]})
+
+        @staticmethod
+        def stock_zh_a_hist_tx(**kwargs):
+            return pd.DataFrame({"date": ["2026-09-30"], "close": [4.1]})
+
+        @staticmethod
+        def fund_etf_hist_em(**kwargs):
+            return pd.DataFrame({"日期": ["2026-10-08"], "收盘": [4.3]})
+
+    monkeypatch.setitem(sys.modules, "akshare", _FakeAk)
+    out = source.fetch_etf_daily("510300.SH", start_date="20260901", end_date="20261008")
+
+    assert out["date"].tolist() == ["2026-10-08"]
+    assert out["source_id"].tolist() == ["akshare_fund_etf_hist_em"]
+
+
+def test_etf_daily_fails_closed_when_every_provider_is_stale(monkeypatch):
+    import market_monitor.sources.akshare_etf as source
+
+    monkeypatch.setattr(
+        source, "expected_latest_session_date", lambda calendar, end: date(2026, 10, 8)
+    )
+    stale_en = pd.DataFrame({"date": ["2026-09-30"], "close": [4.1]})
+    stale_zh = pd.DataFrame({"日期": ["2026-09-30"], "收盘": [4.1]})
+
+    class _FakeAk:
+        @staticmethod
+        def fund_etf_hist_sina(**kwargs):
+            return stale_zh
+
+        @staticmethod
+        def stock_zh_a_hist_tx(**kwargs):
+            return stale_en
+
+        @staticmethod
+        def fund_etf_hist_em(**kwargs):
+            return stale_zh
+
+    monkeypatch.setitem(sys.modules, "akshare", _FakeAk)
+    with pytest.raises(RuntimeError, match="expected session 2026-10-08"):
+        source.fetch_etf_daily("510300.SH", start_date="20260901", end_date="20261008")
 
 
 def test_email_fetch_error_scope_distinguishes_core_optional_and_visible_auxiliary_data():
@@ -2559,9 +2697,43 @@ def test_digest_summary_is_data_driven_and_does_not_hardcode_a_recommendation():
     assert "+8%~+11%" not in html
 
 
-def test_close_freshness_gate_can_publish_degraded_artifact_without_sending_email(monkeypatch):
+def test_close_email_explains_unavailable_spot_without_using_old_premium():
+    from market_monitor.alerts import build_email_html
+
+    wrappers = pd.DataFrame(
+        [
+            {
+                "exposure_id": "csi500",
+                "ticker": "510500",
+                "fund_name": "南方中证500ETF",
+                "premium_pct": 0.4,
+                "quote_status": "Unavailable",
+                "quote_basis": "last_close",
+            }
+        ]
+    )
+    html = build_email_html(
+        report_date="2026-10-08",
+        technicals=pd.DataFrame(),
+        regime=pd.DataFrame(),
+        wrappers=wrappers,
+        mode="close",
+        freshness={
+            "quote": {"status": "Unavailable"},
+            "daily_close": {"status": "Last session", "observation_date": "2026-10-08"},
+        },
+    )
+
+    assert "盘中报价不可用或已过期" in html
+    assert "溢价与价差不参与本次判断" in html
+    assert "折溢价: <b style=\"color:#92400e;font-family:monospace;\">—</b>" in html
+    assert "+0.40%" not in html
+
+
+def test_close_freshness_gate_sends_email_without_intraday_quote(monkeypatch):
     from market_monitor import cli
 
+    sent = []
     monkeypatch.setattr(
         cli,
         "run_pipeline",
@@ -2570,15 +2742,19 @@ def test_close_freshness_gate_can_publish_degraded_artifact_without_sending_emai
             "freshness": {
                 "daily_close": {"status": "Last session"},
                 "quote": {"status": "Unavailable"},
+                "daily_close_by_exposure": _core_exposure_freshness(),
                 "fetch_errors": [{"dataset": "etf_spot", "error": "empty"}],
             },
         },
     )
-    monkeypatch.setattr(cli, "send_report", lambda **kwargs: pytest.fail("email must be skipped"))
+    monkeypatch.setattr(cli, "load_alert_state", lambda *_: None)
+    monkeypatch.setattr(cli, "send_report", lambda **kwargs: sent.append(kwargs))
+    monkeypatch.setattr(cli, "build_email_html", lambda **kwargs: "<html></html>")
 
     assert cli.main([
-        "--mode", "close", "--no-write", "--send-report", "--require-fresh", "--allow-stale-artifact"
+        "--mode", "close", "--no-write", "--force-report", "--require-fresh"
     ]) == 0
+    assert len(sent) == 1
 
 
 def test_close_email_gate_ignores_stale_noncore_region_source_and_fetches():
@@ -2614,8 +2790,15 @@ def test_close_email_gate_blocks_stale_or_missing_core_and_core_source_errors():
     assert any("core exposure csi500: Stale" in item for item in policy_blockers(stale_core, mode="close"))
 
     missing_quote = {"daily_close_by_exposure": _core_exposure_freshness()}
-    assert "ETF spot: Unavailable" in cli_blockers(missing_quote, mode="close")
-    assert "quote: Unavailable" in policy_blockers(missing_quote, mode="close")
+    assert cli_blockers(missing_quote, mode="close") == []
+    assert policy_blockers(missing_quote, mode="close") == ()
+
+    stale_quote = {
+        "quote": {"status": "Stale"},
+        "daily_close_by_exposure": _core_exposure_freshness(),
+    }
+    assert cli_blockers(stale_quote, mode="close") == []
+    assert policy_blockers(stale_quote, mode="close") == ()
 
     missing_core = {"quote": {"status": "Fresh"}, "daily_close_by_exposure": {"csi300": {"status": "Last session"}}}
     assert any("core exposure csi500: Unavailable" in item for item in cli_blockers(missing_core, mode="close"))

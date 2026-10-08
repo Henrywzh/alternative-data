@@ -20,11 +20,13 @@ from ..config import (
     ETF_SPOT_RETRY_BASE_SECONDS,
     ETF_SPOT_RETRYABLE_STATUS_CODES,
 )
-from ..freshness import isoformat_utc, market_date
+from ..freshness import expected_latest_session_date, isoformat_utc, market_date
 from ..metadata import ETF_REGISTRY
 
 
 OHLCV_COLUMNS = ("date", "open", "high", "low", "close", "volume", "amount")
+ETF_DAILY_COLUMNS = (*OHLCV_COLUMNS, "source_id")
+ETF_DAILY_RESULT_COLUMNS = (*ETF_DAILY_COLUMNS, "retrieved_at_utc", "observation_type")
 
 # Sina index symbols for the V1 universe (Eastmoney's index_zh_a_hist is
 # intermittently disconnected from some networks; Sina is a reliable fallback).
@@ -377,63 +379,159 @@ def _coerce_symbol(value: str) -> str:
     return str(value).split(".")[0].zfill(6)
 
 
-def fetch_etf_daily(symbol: str, start_date: str | date | None = None, end_date: str | date | None = None) -> pd.DataFrame:
-    """Daily OHLCV for one A-share ETF via Eastmoney."""
+def _normalize_etf_daily_frame(
+    frame: pd.DataFrame | None,
+    *,
+    source_id: str,
+    start_ts: pd.Timestamp | None,
+    end_ts: pd.Timestamp,
+) -> pd.DataFrame:
+    """Normalize provider-specific daily bars without hiding schema drift."""
+    if frame is None or not isinstance(frame, pd.DataFrame) or frame.empty:
+        return pd.DataFrame(columns=ETF_DAILY_COLUMNS)
+
+    aliases = {
+        "date": ("date", "日期"),
+        "open": ("open", "开盘"),
+        "high": ("high", "最高"),
+        "low": ("low", "最低"),
+        "close": ("close", "收盘"),
+        "volume": ("volume", "成交量"),
+        "amount": ("amount", "成交额"),
+    }
+    renamed = frame.copy()
+    for canonical, candidates in aliases.items():
+        if canonical not in renamed.columns:
+            match = next((name for name in candidates if name in renamed.columns), None)
+            if match is not None:
+                renamed = renamed.rename(columns={match: canonical})
+    if "date" not in renamed.columns or "close" not in renamed.columns:
+        raise ValueError(f"daily history schema missing date/close for {source_id}")
+
+    out = pd.DataFrame(index=renamed.index)
+    out["date"] = pd.to_datetime(renamed["date"], errors="coerce")
+    if out["date"].notna().sum() == 0:
+        raise ValueError(f"daily history has no valid dates for {source_id}")
+    for column in OHLCV_COLUMNS[1:]:
+        values = renamed[column] if column in renamed.columns else float("nan")
+        out[column] = pd.to_numeric(values, errors="coerce")
+    in_window = out["date"].notna() & (out["date"] <= end_ts)
+    if start_ts is not None:
+        in_window &= out["date"] >= start_ts
+    if in_window.any() and not (out.loc[in_window, "close"].gt(0)).any():
+        raise ValueError(f"daily history has no positive close in requested window for {source_id}")
+    out = out.dropna(subset=["date", "close"])
+    out = out[out["close"] > 0]
+    if start_ts is not None:
+        out = out[out["date"] >= start_ts]
+    out = out[out["date"] <= end_ts]
+    out = (
+        out.sort_values("date")
+        .drop_duplicates(subset=["date"], keep="last")
+        .reset_index(drop=True)
+    )
+    if out.empty:
+        return pd.DataFrame(columns=ETF_DAILY_COLUMNS)
+    out["date"] = out["date"].dt.strftime("%Y-%m-%d")
+    out["source_id"] = source_id
+    return out.loc[:, list(ETF_DAILY_COLUMNS)]
+
+
+def fetch_etf_daily(
+    symbol: str,
+    start_date: str | date | None = None,
+    end_date: str | date | None = None,
+) -> pd.DataFrame:
+    """Fetch a session-validated A-share ETF daily history.
+
+    Sina is preferred. A non-empty but stale Sina response is not accepted:
+    Tencent's daily K-line endpoint is tried next, followed by Eastmoney. The
+    Tencent endpoint is documented for A-share stocks, but has been empirically
+    validated against the tracked ETF codes; ``source_id`` preserves which
+    provider supplied each accepted history.
+    """
     import akshare as ak
-    import time
 
     start = _fmt_start(start_date, em=True) or "19900101"
     end = _fmt_start(end_date, em=True) or market_date().replace("-", "")
-    # Prefer Sina (stable from more networks); fall back to Eastmoney spot if
-    # Sina is unavailable for a particular issue.
+    start_ts = _parse_date(start)
+    expected_session = expected_latest_session_date("XSHG", end)
+    end_ts = pd.Timestamp(expected_session)
+    if start_ts is not None and start_ts > end_ts:
+        return pd.DataFrame(columns=ETF_DAILY_RESULT_COLUMNS)
+
     code = _coerce_symbol(symbol)
-    sina_symbol = ("sh" if str(symbol).upper().endswith(".SH") else "sz") + code
-    try:
-        df = ak.fund_etf_hist_sina(symbol=sina_symbol)
-        if df is not None and isinstance(df, pd.DataFrame) and not df.empty:
-            df = df.rename(columns={"日期": "date", "开盘": "open", "最高": "high", "最低": "low", "收盘": "close", "成交量": "volume", "成交额": "amount"})
-            df = df.copy()
-            df["date"] = pd.to_datetime(df["date"], errors="coerce")
-            start_ts = _parse_date(start)
-            end_ts = _parse_date(end) or pd.Timestamp(market_date())
-            if start_ts:
-                df = df[df["date"] >= start_ts]
-            if end_ts:
-                df = df[df["date"] <= end_ts]
-        else:
-            raise RuntimeError("empty sina frame")
-    except Exception:
-        time.sleep(0.5)
-        df = ak.fund_etf_hist_em(symbol=code, period="daily", start_date=start, end_date=end, adjust="")
-    if df is None or df.empty:
-        return pd.DataFrame(columns=OHLCV_COLUMNS)
-    raw = df.rename(
-        columns={
-            "日期": "date",
-            "开盘": "open",
-            "最高": "high",
-            "最低": "low",
-            "收盘": "close",
-            "成交量": "volume",
-            "成交额": "amount",
-        }
+    venue = str(symbol).upper().rsplit(".", 1)[-1]
+    exchange_symbol = (
+        "sh" if venue == "SH" or str(symbol).startswith("6") else "sz"
+    ) + code
+    providers = (
+        (
+            "akshare_fund_etf_hist_sina",
+            lambda: ak.fund_etf_hist_sina(symbol=exchange_symbol),
+        ),
+        (
+            "akshare_stock_zh_a_hist_tx",
+            lambda: ak.stock_zh_a_hist_tx(
+                symbol=exchange_symbol,
+                start_date=start,
+                end_date=end,
+                adjust="",
+            ),
+        ),
+        (
+            "akshare_fund_etf_hist_em",
+            lambda: ak.fund_etf_hist_em(
+                symbol=code,
+                period="daily",
+                start_date=start,
+                end_date=end,
+                adjust="",
+            ),
+        ),
     )
-    keep = [c for c in OHLCV_COLUMNS if c in raw.columns]
-    if "close" not in keep:
-        return pd.DataFrame(columns=OHLCV_COLUMNS)
-    out = raw[keep].copy()
-    for col in ("open", "high", "low", "close"):
-        if col in out.columns:
-            out[col] = pd.to_numeric(out[col], errors="coerce")
-    for col in ("volume", "amount"):
-        if col in out.columns:
-            out[col] = pd.to_numeric(out[col], errors="coerce")
-    if "date" in out.columns:
-        out["date"] = pd.to_datetime(out["date"], errors="coerce").dt.strftime("%Y-%m-%d")
-    out = out[keep].dropna(subset=["date", "close"]).reset_index(drop=True)
-    out["retrieved_at_utc"] = isoformat_utc()
-    out["observation_type"] = "daily_close"
-    return out
+    failures: list[str] = []
+    successful_empty_responses = 0
+    for source_id, fetch in providers:
+        try:
+            raw = fetch()
+            out = _normalize_etf_daily_frame(
+                raw,
+                source_id=source_id,
+                start_ts=start_ts,
+                end_ts=end_ts,
+            )
+        except Exception as exc:  # noqa: BLE001 - try the next provider
+            failures.append(f"{source_id}: {type(exc).__name__}: {exc}")
+            continue
+
+        if out.empty:
+            successful_empty_responses += 1
+            failures.append(f"{source_id}: no rows in requested session window")
+            continue
+        latest_date = pd.Timestamp(out["date"].max()).date()
+        if latest_date < expected_session:
+            failures.append(
+                f"{source_id}: stale through {latest_date.isoformat()}, "
+                f"expected {expected_session.isoformat()}"
+            )
+            continue
+
+        out["retrieved_at_utc"] = isoformat_utc()
+        out["observation_type"] = "daily_close"
+        return out
+
+    # A genuinely empty requested range (for example, a future-only query) is
+    # different from provider failure or stale data. Preserve the old empty
+    # result contract only when every endpoint successfully returned no rows.
+    if successful_empty_responses == len(providers):
+        return pd.DataFrame(columns=ETF_DAILY_RESULT_COLUMNS)
+
+    detail = "; ".join(failures[-3:])
+    raise RuntimeError(
+        f"No fresh daily close for {symbol}; expected session "
+        f"{expected_session.isoformat()}. {detail}"
+    )
 
 
 def fetch_index_daily(symbol: str, start_date: str | None = None, end_date: str | None = None) -> pd.DataFrame:

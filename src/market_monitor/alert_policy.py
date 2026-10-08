@@ -750,8 +750,9 @@ def _freshness_blockers(
     if not freshness:
         return ()
     records: list[tuple[str, Mapping[str, Any]]] = []
-    record = freshness.get("quote")
-    records.append(("quote", record if isinstance(record, Mapping) else {"status": "Unavailable"}))
+    if mode == "intraday":
+        record = freshness.get("quote")
+        records.append(("quote", record if isinstance(record, Mapping) else {"status": "Unavailable"}))
     if mode != "intraday":
         by_exposure = freshness.get("daily_close_by_exposure")
         for exposure_id in ALERT_CORE_EXPOSURES:

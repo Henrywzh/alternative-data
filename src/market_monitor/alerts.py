@@ -486,7 +486,14 @@ def build_email_html(
         if is_intraday
         else "收盘数据；各区块按自身来源的最新观察日展示"
     )
-    quote_note = freshness_note(freshness.get("quote", {}), language="zh") if freshness.get("quote") else "实时行情状态未提供"
+    quote_record = freshness.get("quote") or {}
+    quote_note = freshness_note(quote_record, language="zh") if quote_record else "实时行情状态未提供"
+    if (
+        not is_intraday
+        and str(quote_record.get("status") or "Unavailable")
+        in BLOCKING_FRESHNESS_STATUSES
+    ):
+        quote_note = "盘中报价不可用或已过期；收盘快报仍依据日线数据，溢价与价差不参与本次判断"
     close_note = freshness_note(freshness.get("daily_close", {}), language="zh") if freshness.get("daily_close") else "收盘技术面状态未提供"
     freshness_warning = _freshness_warning(freshness, mode=mode)
     southbound_note = (

@@ -705,8 +705,15 @@ replacement for the operating manual or generated source-status JSON.
   generated row counts or freshness as a permanent guarantee. Intraday
   Eastmoney ETF quotes now retry the AkShare source, then query only registered
   wrapper codes through a bounded multi-host batch endpoint; a full-market
-  paginated scan remains the last resort. Incomplete snapshots still fail
-  closed before email rather than being presented as a fresh wrapper comparison.
+  paginated scan remains the last resort. Incomplete quote snapshots stay
+  unavailable rather than being presented as a fresh wrapper comparison, and
+  they block intraday email. Close email instead gates on fresh core daily
+  closes and coverage, so a live-quote outage alone does not suppress it;
+  premium and spread remain unavailable. ETF daily closes now try Sina, then
+  freshness-checked Tencent daily K-lines, then Eastmoney, accepting only data
+  through the latest completed XSHG session and recording the provider.
+  Tencent's endpoint is documented for A-share stocks and is an empirically
+  validated ETF fallback, not an ETF-specific source contract.
   A read-only GitHub Actions probe confirmed 36/36 registered wrappers with
   valid price and premium fields on 2026-09-23. Eastmoney omits a source
   observation timestamp in this response; the probe confirms endpoint
