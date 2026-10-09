@@ -1,0 +1,22 @@
+{
+  "run_scope": "full",
+  "retrieved_at": "2026-10-09T02:22:18.612469Z",
+  "dataset_name": "cnn_fear_greed",
+  "run_id": "20261009T022218-c32bc3b5",
+  "created_at": "2026-10-09T02:22:33.354319Z",
+  "records": 2000,
+  "columns": [
+    "date",
+    "component_id",
+    "label_en",
+    "label_zh",
+    "score",
+    "raw_value",
+    "rating",
+    "source",
+    "retrieved_at",
+    "series_id",
+    "source_name"
+  ],
+  "sha256": "d83c1b468951552852b1c703df652e0219649afba187369b9d42bbdf3584d490"
+}
