@@ -76,6 +76,23 @@ categories.
 
 ## 3. Dashboard architecture
 
+### Research Agent Bridge V1
+
+The separate offline `scripts/build_research_agent_feeds.py` command exports
+an explicitly selected public numeric subset of canonical EN sector artifacts
+to `investment_feed.v1`. It preserves each KPI's observation date, source,
+units, native matched freshness/source-health evidence and missing/provisional
+state. The allowlist is `config/research_agent_feed/sources.v1.json`; newly
+added datasets/fields are not automatically exported.
+
+`research-agent-feed-daily.yml` publishes the two small JSON/Markdown feeds to
+the isolated public `agent-feed` branch. It does not run collectors, publish
+Streamlit-only/private artifacts, rebuild Control Tower CURRENT or change
+either dashboard's deployment branch. This is an external research read
+contract; no Streamlit UI parity change is required. See
+[`../research-agent/README.md`](../research-agent/README.md) for coverage,
+exclusions, quality guardrails, access checks and candidate lifecycle.
+
 The production flow is:
 
 ```text

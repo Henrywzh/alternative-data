@@ -1,0 +1,547 @@
+{
+  "version": "research_agent_sources.v1",
+  "publication": "public_numeric_subset",
+  "max_bytes_per_feed": 102400,
+  "asia_sections": [
+    {
+      "id": "hk-labour-market",
+      "label": "Hong Kong Labour Market & Talent Policy",
+      "path": "apps/asia-markets-dashboard/.generated/hk-labour-market-artifact.json",
+      "records": [
+        {
+          "id": "labour_force_card",
+          "dataset": "kpi_labour_force",
+          "label": "Labour Force",
+          "description": "C&SD monthly rolling-three-month labour-force headline; observation period is shown in the last metric.",
+          "source_id": "censtatd_labour_force",
+          "source_url": "https://www.censtatd.gov.hk/api/get.php?id=210-06101&lang=en&full_series=1",
+          "date_field": "observation_date",
+          "cadence": "rolling_three_month",
+          "fields": {
+            "labour_force_thousands": "thousand_people",
+            "employed_thousands": "thousand_people",
+            "unemployment_rate": "fraction",
+            "underemployment_rate": "fraction"
+          },
+          "freshness_check": "labour.unemployment",
+          "health_dataset": "labour_force_monthly"
+        },
+        {
+          "id": "labour_demand_card",
+          "dataset": "kpi_labour_demand",
+          "label": "Labour Demand",
+          "description": "C&SD quarterly establishments/persons-engaged and vacancies survey; observation period is shown in the last metric.",
+          "source_id": "censtatd_labour_demand",
+          "source_url": "https://www.censtatd.gov.hk/api/get.php?id=215-16001&lang=en&full_series=1",
+          "date_field": "observation_date",
+          "cadence": "quarterly",
+          "fields": {
+            "vacancies": "jobs",
+            "persons_engaged": "people",
+            "vacancy_rate": "fraction"
+          },
+          "freshness_check": "labour.vacancies",
+          "health_dataset": "labour_demand_by_industry"
+        },
+        {
+          "id": "wage_card",
+          "dataset": "kpi_wage",
+          "label": "Wage",
+          "description": "C&SD industry wage/payroll indices; YoY measures are percentage changes, while the source period is shown below.",
+          "source_id": "censtatd_wage_payroll",
+          "source_url": "https://www.censtatd.gov.hk/en/web_table.html?id=220-19001",
+          "date_field": "observation_date",
+          "cadence": "quarterly",
+          "fields": {
+            "nominal_wage_yoy": "fraction",
+            "real_wage_yoy": "fraction",
+            "nominal_payroll_yoy": "fraction"
+          },
+          "freshness_check": "labour.wages",
+          "health_dataset": "wage_payroll_indices"
+        },
+        {
+          "id": "income_card",
+          "dataset": "kpi_income",
+          "label": "Income",
+          "description": "Median monthly employment earnings for all industries, using the latest rolling-three-month observation.",
+          "source_id": "censtatd_earnings",
+          "source_url": "https://www.censtatd.gov.hk/api/get.php?id=210-06316&lang=en&full_series=1",
+          "date_field": "observation_date",
+          "cadence": "rolling_three_month",
+          "fields": {
+            "median_monthly_earnings": "HKD_per_month"
+          },
+          "freshness_check": null,
+          "health_dataset": "median_earnings_by_industry"
+        },
+        {
+          "id": "talent_policy_card",
+          "dataset": "kpi_talent_policy",
+          "label": "Talent Policy",
+          "description": "Annual policy-flow totals across the schemes; QMAS quota-allotted successful selection cases are included in the approval-equivalent total. Applications are not the same as arrivals or employment.",
+          "source_id": "talent_policy_open_data",
+          "source_url": "https://www.immd.gov.hk/eng/opendata.html",
+          "date_field": "observation_date",
+          "cadence": "annual",
+          "fields": {
+            "applications_received": "applications",
+            "applications_approved": "applications",
+            "qmas_quota": "cases"
+          },
+          "freshness_check": null,
+          "health_dataset": "talent_policy_supply_panel"
+        }
+      ]
+    },
+    {
+      "id": "hk-real-estate",
+      "label": "Hong Kong Real Estate Monitor",
+      "path": "apps/asia-markets-dashboard/.generated/hk-real-estate-artifact.json",
+      "records": [
+        {
+          "id": "rvd_price_card",
+          "dataset": "kpi_rvd_price",
+          "label": "Rvd Price",
+          "description": "Latest published index; MoM and year-on-year movements.",
+          "source_id": "rvd_price",
+          "source_url": "https://www.rvd.gov.hk/en/property_market_statistics/index.html",
+          "date_field": "observation_date",
+          "cadence": "monthly",
+          "fields": {
+            "latest": "index_points",
+            "period_change": "fraction",
+            "year_change": "fraction"
+          },
+          "freshness_check": null,
+          "health_dataset": "RVD Residential Price Index"
+        },
+        {
+          "id": "rvd_rent_card",
+          "dataset": "kpi_rvd_rent",
+          "label": "Rvd Rent",
+          "description": "Latest published index; MoM and year-on-year movements.",
+          "source_id": "rvd_rent",
+          "source_url": "https://www.rvd.gov.hk/en/property_market_statistics/index.html",
+          "date_field": "observation_date",
+          "cadence": "monthly",
+          "fields": {
+            "latest": "index_points",
+            "period_change": "fraction",
+            "year_change": "fraction"
+          },
+          "freshness_check": null,
+          "health_dataset": "RVD Residential Rental Index"
+        }
+      ]
+    },
+    {
+      "id": "hk-transport",
+      "label": "HK Transport & Aviation Sector Monitor",
+      "path": "apps/asia-markets-dashboard/.generated/hk-transport-artifact.json",
+      "records": [
+        {
+          "id": "mtr_card",
+          "dataset": "kpi_mtr",
+          "label": "Mtr",
+          "description": "Monthly passenger journeys ('000s) across Domestic, Cross-boundary, and HSR lines, plus recovery vs. the pre-pandemic 2019 monthly average.",
+          "source_id": "mtr_patronage",
+          "source_url": "https://www.mtr.com.hk/en/corporate/investor/patronage.php",
+          "date_field": "observation_date",
+          "cadence": "monthly",
+          "fields": {
+            "latest": "thousand_journeys",
+            "domestic_thousands": "thousand_journeys",
+            "cross_boundary_thousands": "thousand_journeys",
+            "hsr_thousands": "thousand_journeys",
+            "recovery_vs_2019_pct": "fraction"
+          },
+          "freshness_check": "transport.mtr_patronage",
+          "health_dataset": null
+        },
+        {
+          "id": "cathay_card",
+          "dataset": "kpi_cathay",
+          "label": "Cathay",
+          "description": "Monthly Cathay Group passengers carried and passenger load factor (%), plus recovery vs. the pre-pandemic 2019 monthly average.",
+          "source_id": "cathay_hkia_traffic",
+          "source_url": "https://www.cathaypacific.com/content/dam/cx/about-us/investor-relations/announcements/en/",
+          "date_field": "observation_date",
+          "cadence": "monthly",
+          "fields": {
+            "latest": "passengers",
+            "load_factor_pct": "percent",
+            "hkia_passengers": "passengers",
+            "period_change": "fraction",
+            "recovery_vs_2019_pct": "fraction"
+          },
+          "freshness_check": null,
+          "health_dataset": null
+        },
+        {
+          "id": "journeys_card",
+          "dataset": "kpi_journeys",
+          "label": "Journeys",
+          "description": "Monthly KMB (Transport International, 00062.HK) passenger journeys, and the territory-wide public transport total across every mode.",
+          "source_id": "hk_passenger_journeys",
+          "source_url": "https://www.td.gov.hk/en/transport_in_hong_kong/transport_figures/monthly_traffic_and_transport_digest/index.html",
+          "date_field": "observation_date",
+          "cadence": "monthly",
+          "fields": {
+            "kmb_k": "thousand_journeys",
+            "total_k": "thousand_journeys",
+            "period_change": "fraction"
+          },
+          "freshness_check": null,
+          "health_dataset": null
+        },
+        {
+          "id": "fleet_card",
+          "dataset": "kpi_fleet",
+          "label": "Fleet",
+          "description": "Private car fleet stock and electric vehicle share of the registered fleet.",
+          "source_id": "hk_vehicle_stock",
+          "source_url": "https://www.td.gov.hk/en/transport_in_hong_kong/transport_figures/monthly_traffic_and_transport_digest/index.html",
+          "date_field": "observation_date",
+          "cadence": "monthly",
+          "fields": {
+            "total_registered": "vehicles",
+            "ev_share_pct": "percent",
+            "ev_share_change_pp": "percentage_points"
+          },
+          "freshness_check": null,
+          "health_dataset": null
+        },
+        {
+          "id": "private_car_first_reg_card",
+          "dataset": "kpi_private_car_first_reg",
+          "label": "Private Car First Reg",
+          "description": "Monthly private-car first registrations by make and fuel type; the electric share is a flow share, not the cumulative fleet share.",
+          "source_id": "hk_private_car_first_reg",
+          "source_url": "https://data.gov.hk/en-data/dataset/hk-td-tis_17-monthly-traffic-and-transport-digest-csv/resource/472658ca-1640-4fc2-be5c-eae62f9bf547",
+          "date_field": "observation_date",
+          "cadence": "monthly",
+          "fields": {
+            "total_first_reg": "vehicles",
+            "electric_first_reg": "vehicles",
+            "ev_share_pct": "percent"
+          },
+          "freshness_check": null,
+          "health_dataset": null
+        }
+      ]
+    },
+    {
+      "id": "hk-utilities",
+      "label": "HK Utilities & Infrastructure Sector Monitor",
+      "path": "apps/asia-markets-dashboard/.generated/hk-utilities-artifact.json",
+      "records": [
+        {
+          "id": "clp_card",
+          "dataset": "kpi_clp",
+          "label": "Clp",
+          "description": "Quarterly electricity sales in GWh and AI Data-Centre growth.",
+          "source_id": "clp_electricity",
+          "source_url": "https://www.clpgroup.com/en/investors/financial-reports.html",
+          "date_field": "observation_date",
+          "cadence": "quarterly",
+          "fields": {
+            "latest": "GWh",
+            "commercial_gwh": "GWh",
+            "ai_data_centre_yoy_pct": "percent"
+          },
+          "freshness_check": null,
+          "health_dataset": null
+        },
+        {
+          "id": "towngas_card",
+          "dataset": "kpi_towngas",
+          "label": "Towngas",
+          "description": "Monthly town gas consumption in Terajoules (TJ).",
+          "source_id": "towngas_proxy",
+          "source_url": "https://www.censtatd.gov.hk/en/web_table.html?id=915-91201",
+          "date_field": "observation_date",
+          "cadence": "monthly",
+          "fields": {
+            "latest": "TJ",
+            "domestic_tj": "TJ",
+            "commercial_tj": "TJ"
+          },
+          "freshness_check": null,
+          "health_dataset": null
+        }
+      ]
+    },
+    {
+      "id": "hk-telecom",
+      "label": "Hong Kong Telecom Sector Monitor",
+      "path": "apps/asia-markets-dashboard/.generated/hk-telecom-artifact.json",
+      "records": [
+        {
+          "id": "hkt_card",
+          "dataset": "kpi_hkt",
+          "label": "Hkt",
+          "description": "HKT (6823.HK) postpaid exit ARPU and postpaid subscribers, semi-annual.",
+          "source_id": "hkt_operating_drivers",
+          "source_url": "https://www.hkt.com/en/about-hkt/investor-relations/financial-results/",
+          "date_field": "observation_date",
+          "cadence": "semiannual",
+          "fields": {
+            "latest_arpu": "HKD",
+            "postpaid_subscribers_thousands": "thousand_subscribers",
+            "ftth_connections_thousands": "thousand_connections"
+          },
+          "freshness_check": null,
+          "health_dataset": null
+        },
+        {
+          "id": "smartone_card",
+          "dataset": "kpi_smartone",
+          "label": "Smartone",
+          "description": "SmarTone (0315.HK) postpaid ARPU and postpaid subscribers, semi-annual.",
+          "source_id": "smartone_operating_drivers",
+          "source_url": "https://www.smartoneholdings.com/about/investor/results/",
+          "date_field": "observation_date",
+          "cadence": "semiannual",
+          "fields": {
+            "latest_arpu": "HKD",
+            "postpaid_subscribers_thousands": "thousand_subscribers",
+            "arpu_5g_to_4g_ratio": "ratio"
+          },
+          "freshness_check": null,
+          "health_dataset": null
+        },
+        {
+          "id": "hutchison_card",
+          "dataset": "kpi_hutchison",
+          "label": "Hutchison",
+          "description": "Hutchison Telecom / 3 HK (0215.HK) postpaid gross & net ARPU and churn, semi-annual.",
+          "source_id": "hutchison_telecom_operating_drivers",
+          "source_url": "https://www.hthkh.com/en/ir/fin_results.php",
+          "date_field": "observation_date",
+          "cadence": "semiannual",
+          "fields": {
+            "latest_gross_arpu": "HKD",
+            "latest_net_arpu": "HKD",
+            "postpaid_customers_thousands": "thousand_subscribers",
+            "churn_rate_pct": "percent"
+          },
+          "freshness_check": null,
+          "health_dataset": null
+        }
+      ]
+    },
+    {
+      "id": "hk-reit",
+      "label": "Hong Kong REITs Sector Monitor",
+      "path": "apps/asia-markets-dashboard/.generated/hk-reit-artifact.json",
+      "records": [
+        {
+          "id": "linkreit_card",
+          "dataset": "kpi_linkreit",
+          "label": "Linkreit",
+          "description": "Link REIT (0823.HK) latest NAV/unit, DPU, and occupancy/reversion disclosures.",
+          "source_id": "linkreit_fundamentals",
+          "source_url": "https://www.linkreit.com/en/investor-relations/",
+          "date_field": "observation_date",
+          "cadence": "annual",
+          "fields": {
+            "nav_per_unit_hkd": "HKD_per_unit",
+            "dpu_hkd": "HKD_per_unit",
+            "occupancy_pct": "percent",
+            "rental_reversion_pct": "percent"
+          },
+          "freshness_check": null,
+          "health_dataset": null
+        },
+        {
+          "id": "championreit_card",
+          "dataset": "kpi_championreit",
+          "label": "Championreit",
+          "description": "Champion REIT (2778.HK) latest NAV/unit, DPU, and occupancy/reversion disclosures.",
+          "source_id": "championreit_fundamentals",
+          "source_url": "https://www.championreit.com/en/investor-relations/",
+          "date_field": "observation_date",
+          "cadence": "annual",
+          "fields": {
+            "nav_per_unit_hkd": "HKD_per_unit",
+            "dpu_hkd": "HKD_per_unit",
+            "occupancy_pct": "percent",
+            "rental_reversion_pct": "percent"
+          },
+          "freshness_check": null,
+          "health_dataset": null
+        },
+        {
+          "id": "regalreit_card",
+          "dataset": "kpi_regalreit",
+          "label": "Regalreit",
+          "description": "Regal REIT (1881.HK) latest NAV/unit, DPU, and hotel disclosures.",
+          "source_id": "regalreit_fundamentals",
+          "source_url": "https://www.regalreit.com/en/investor-relations/",
+          "date_field": "observation_date",
+          "cadence": "semiannual",
+          "fields": {
+            "nav_per_unit_hkd": "HKD_per_unit",
+            "hotel_occupancy_pct": "percent",
+            "revpar_hkd": "HKD"
+          },
+          "freshness_check": null,
+          "health_dataset": null
+        }
+      ]
+    },
+    {
+      "id": "hk-local-consumer",
+      "label": "Hong Kong Local Consumer Monitor",
+      "path": "apps/asia-markets-dashboard/.generated/hk-local-consumer-artifact.json",
+      "records": [
+        {
+          "id": "retail_card",
+          "dataset": "kpi_retail",
+          "label": "Retail",
+          "description": "All retail outlet value index; month and year-on-year movements.",
+          "source_id": "cnsd_retail",
+          "source_url": "https://www.censtatd.gov.hk/en/web_table.html?id=620-67002",
+          "date_field": "observation_date",
+          "cadence": "monthly",
+          "fields": {
+            "latest": "index_points",
+            "period_change": "fraction",
+            "year_change": "fraction"
+          },
+          "freshness_check": null,
+          "health_dataset": null
+        },
+        {
+          "id": "restaurant_card",
+          "dataset": "kpi_restaurant",
+          "label": "Restaurant",
+          "description": "All-restaurants quarterly receipts; quarter and year-on-year movements.",
+          "source_id": "censtatd_restaurant",
+          "source_url": "https://www.censtatd.gov.hk/en/web_table.html?id=625-68003",
+          "date_field": "observation_date",
+          "cadence": "quarterly",
+          "fields": {
+            "latest": "HKD_million",
+            "period_change": "fraction",
+            "year_change": "fraction"
+          },
+          "freshness_check": null,
+          "health_dataset": null
+        }
+      ]
+    },
+    {
+      "id": "hk-population-migration",
+      "label": "Hong Kong Population & Migration",
+      "path": "apps/asia-markets-dashboard/.generated/hk-population-migration-artifact.json",
+      "records": [
+        {
+          "id": "population",
+          "dataset": "csd_population",
+          "label": "Population estimates",
+          "description": "Official mid/end-year population estimates and population movement; not daily flows.",
+          "source_id": "csd",
+          "source_url": "https://www.censtatd.gov.hk/en/web_table.html?id=110-01001",
+          "date_field": "period",
+          "cadence": "semiannual",
+          "fields": {
+            "mid_year_population_thousands": "thousand_people",
+            "net_movement_thousands": "thousand_people",
+            "natural_growth_thousands": "thousand_people"
+          },
+          "freshness_check": null,
+          "health_dataset": null
+        },
+        {
+          "id": "mpfa_departure",
+          "dataset": "mpfa_claims",
+          "label": "MPF permanent-departure claims",
+          "description": "Quarterly claims on grounds of permanent departure; not a direct count of emigrants.",
+          "source_id": "mpfa",
+          "source_url": "https://www.mpfa.org.hk/en/info-centre/research-reports/quarterly-reports/mpf-schemes",
+          "date_field": "quarter",
+          "cadence": "quarterly",
+          "fields": {
+            "claims_count": "claims",
+            "amount_mhkd": "HKD_million"
+          },
+          "freshness_check": "population.mpfa",
+          "health_dataset": null
+        }
+      ]
+    }
+  ],
+  "exclusions": {
+    "asia_markets": [
+      {
+        "id": "private_research",
+        "reason": "Events & Consensus, ETF Monitor, Global Market Regime, Hong Kong Flows and Control Tower require their existing private read contracts."
+      },
+      {
+        "id": "agency_property_data",
+        "reason": "Centaline/Midland redistribution review is outside this public subset."
+      },
+      {
+        "id": "crypto_aerospace",
+        "reason": "Mixed-date KPI summaries need per-metric provenance adapters before export."
+      },
+      {
+        "id": "other_dashboard_detail",
+        "reason": "V1 selects the listed official headline datasets; other history, forecasts and private overlays remain in their canonical surfaces."
+      }
+    ],
+    "alternative_signals": [
+      {
+        "id": "licensed_memory_prices",
+        "reason": "ADATA/DRAMeXchange payloads, images and derived price baskets are excluded pending redistribution review."
+      },
+      {
+        "id": "minerals_google_trends",
+        "reason": "Local processed datasets and source permissions need separate adapters; not read by V1."
+      },
+      {
+        "id": "apps_rankings",
+        "reason": "App rankings and rolling-window usage are not exported as unqualified demand signals."
+      },
+      {
+        "id": "positions_theses_news",
+        "reason": "Positions, private theses, credentials, raw responses and full news bodies are never exporter inputs."
+      },
+      {
+        "id": "npm_github_hf_momentum",
+        "reason": "Zero latest npm observations, changing GitHub sampling and rolling HF downloads require separate coverage gates."
+      }
+    ]
+  },
+  "rules": [
+    {
+      "rule_id": "hk.unemployment.ge_4pct.v1",
+      "record_id": "hk-labour-market/labour_force_card",
+      "field": "unemployment_rate",
+      "operator": "ge",
+      "threshold": 0.04,
+      "unit": "fraction",
+      "rationale": "Review labour-market weakness when the published rolling-three-month unemployment rate is at least 4%."
+    },
+    {
+      "rule_id": "hk.rvd.price.mom_abs_2pct.v1",
+      "record_id": "hk-real-estate/rvd_price_card",
+      "field": "period_change",
+      "operator": "abs_ge",
+      "threshold": 0.02,
+      "unit": "fraction",
+      "rationale": "Review a reported residential-price MoM move of at least 2%; provisional observations remain flagged."
+    },
+    {
+      "rule_id": "tw.revenue.yoy_abs_20pct.v1",
+      "section_id": "taiwan_semiconductor",
+      "field": "yoy_pct",
+      "operator": "abs_ge",
+      "threshold": 20.0,
+      "unit": "percent",
+      "rationale": "Review an issuer-reported monthly revenue YoY move of at least 20%; this is not an earnings forecast."
+    }
+  ]
+}

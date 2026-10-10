@@ -1,0 +1,115 @@
+name: Research Agent Feeds
+
+# Read committed inputs only. Publishing to agent-feed does not push main or
+# streamlit-deploy and therefore does not reload either Streamlit dashboard.
+on:
+  schedule:
+    # Morning Asia snapshot and afternoon alternative-data snapshot (UTC).
+    # Consumer scheduling must account for UK daylight saving separately.
+    - cron: "20 7,16 * * *"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/build_research_agent_feeds.py"
+      - "config/research_agent_feed/**"
+      - "docs/research-agent/**"
+      - ".github/workflows/research-agent-feed-daily.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-agent-feed-${{ github.event_name == 'pull_request' && github.ref || 'publication' }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out committed inputs
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install exporter dependencies
+        run: python -m pip install 'pyarrow>=16,<24' 'jsonschema>=4.23,<5'
+
+      - name: Load previous public feed
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/feed-previous"
+          if git ls-remote --exit-code --heads origin agent-feed >/dev/null; then
+            git fetch --no-tags --depth=1 origin refs/heads/agent-feed:refs/remotes/origin/agent-feed
+            for domain in asia_markets alternative_signals; do
+              git show "origin/agent-feed:feeds/$domain.json" > "$RUNNER_TEMP/feed-previous/$domain.json"
+            done
+          fi
+
+      - name: Build schema-validated public feeds
+        run: |
+          python scripts/build_research_agent_feeds.py \
+            --previous-dir "$RUNNER_TEMP/feed-previous" \
+            --output-dir "$RUNNER_TEMP/feed-output/feeds"
+          mkdir -p "$RUNNER_TEMP/feed-output/schema"
+          cp config/research_agent_feed/investment_feed.v1.schema.json "$RUNNER_TEMP/feed-output/schema/"
+          cp docs/research-agent/README.md "$RUNNER_TEMP/feed-output/README.md"
+
+      - name: Upload feed bundle
+        uses: actions/upload-artifact@v7
+        with:
+          name: research-agent-feeds
+          path: ${{ runner.temp }}/feed-output/
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    needs: build
+    # PRs produce inspectable artifacts but cannot publish. Manual dispatch
+    # from a non-default branch also remains a preview.
+    if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Check out repository for authenticated Git publication
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - name: Download validated feed bundle
+        uses: actions/download-artifact@v8
+        with:
+          name: research-agent-feeds
+          path: ${{ runner.temp }}/feed-output
+
+      - name: Append public feed snapshot to isolated branch
+        run: |
+          set -euo pipefail
+          publish_dir="$RUNNER_TEMP/feed-publication"
+          if git ls-remote --exit-code --heads origin agent-feed >/dev/null; then
+            git fetch --no-tags --depth=1 origin refs/heads/agent-feed:refs/remotes/origin/agent-feed
+            git worktree add --detach "$publish_dir" origin/agent-feed
+          else
+            git worktree add --detach --no-checkout "$publish_dir" HEAD
+            git -C "$publish_dir" switch --orphan agent-feed
+          fi
+          cp -R "$RUNNER_TEMP/feed-output/feeds" "$publish_dir/"
+          mkdir -p "$publish_dir/schema"
+          cp "$RUNNER_TEMP/feed-output/schema/investment_feed.v1.schema.json" "$publish_dir/schema/"
+          cp "$RUNNER_TEMP/feed-output/README.md" "$publish_dir/README.md"
+          git -C "$publish_dir" config user.name "github-actions[bot]"
+          git -C "$publish_dir" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C "$publish_dir" add feeds/asia_markets.json feeds/asia_markets.md \
+            feeds/alternative_signals.json feeds/alternative_signals.md \
+            schema/investment_feed.v1.schema.json README.md
+          if git -C "$publish_dir" diff --staged --quiet; then
+            exit 0
+          fi
+          git -C "$publish_dir" commit -m "chore: publish research agent feeds [$(date -u +%Y-%m-%dT%H:%MZ)]"
+          # No force push: a concurrent/independent branch change fails visibly.
+          git -C "$publish_dir" push origin HEAD:refs/heads/agent-feed
