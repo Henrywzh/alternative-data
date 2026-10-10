@@ -1,19 +1,22 @@
 # alternative_signals research feed
 
-Generated: 2026-10-10T21:52:14.819135Z · Status: **degraded**
+Generated: 2026-10-10T21:56:34.072463Z · Status: **degraded**
 
-Source commit: `0660a0ee1db80b54548db9cdaa8881668f86d6af`
+Source commit: `d0ce986675efa26725324ae021b1ddb8a02fb711`
 
 Observation dates differ by record. Generated time is not a market-data timestamp.
 
 | Section | Record | Observation | Quality | Values |
 |---|---|---|---|---|
-| OpenRouter usage economics | completion_tokens_per_request/all_models | 2026-10-09 | current | value: 553.0215579177645 tokens_per_request |
-| OpenRouter usage economics | prompt_tokens_per_request/all_models | 2026-10-09 | current | value: 21534.445624899116 tokens_per_request |
-| OpenRouter usage economics | realized_market_average/all_models | 2026-10-09 | degraded | value: 0.6722606597273354 USD_per_million_tokens |
-| OpenRouter usage economics | realized_sota_price/sota | 2026-10-09 | degraded | value: 4.468226153273388 USD_per_million_tokens |
-| OpenRouter usage economics | sota_median_list_price/sota | 2026-10-09 | current | value: 5.733 USD_per_million_tokens |
-| OpenRouter usage economics | total_tokens_per_request/all_models | 2026-10-09 | current | value: 22087.46718281688 tokens_per_request |
+| OpenRouter usage economics | completion_tokens_per_request/all_models (1d window) | 2026-10-09 | current | value: 615.7076449285396 tokens_per_request |
+| OpenRouter usage economics | completion_tokens_per_request/all_models (7d window) | 2026-10-09 | current | value: 553.0215579177645 tokens_per_request |
+| OpenRouter usage economics | prompt_tokens_per_request/all_models (1d window) | 2026-10-09 | current | value: 26744.2768686381 tokens_per_request |
+| OpenRouter usage economics | prompt_tokens_per_request/all_models (7d window) | 2026-10-09 | current | value: 21534.445624899116 tokens_per_request |
+| OpenRouter usage economics | realized_market_average/all_models (7d window) | 2026-10-09 | degraded (partial_pricing_coverage) | value: 0.6722606597273354 USD_per_million_tokens |
+| OpenRouter usage economics | realized_sota_price/sota (7d window) | 2026-10-09 | degraded (partial_pricing_coverage) | value: 4.468226153273388 USD_per_million_tokens |
+| OpenRouter usage economics | sota_median_list_price/sota (1d window) | 2026-10-09 | current | value: 5.733 USD_per_million_tokens |
+| OpenRouter usage economics | total_tokens_per_request/all_models (1d window) | 2026-10-09 | current | value: 27359.984513566636 tokens_per_request |
+| OpenRouter usage economics | total_tokens_per_request/all_models (7d window) | 2026-10-09 | current | value: 22087.46718281688 tokens_per_request |
 | PyPI core SDK downloads (without mirrors) | anthropic/anthropic | 2026-10-09 | current | downloads: 6638591 downloads |
 | PyPI core SDK downloads (without mirrors) | google/google-genai | 2026-10-09 | current | downloads: 5318516 downloads |
 | PyPI core SDK downloads (without mirrors) | google/google-generativeai | 2026-10-09 | current | downloads: 317152 downloads |
@@ -34,16 +37,16 @@ Observation dates differ by record. Generated time is not a market-data timestam
 
 ## Rule candidates
 
-- **new** `7f60981ff01e331d52b68c3f`: taiwan_semiconductor/2303 / tw.revenue.yoy_abs_20pct.v1
-- **new** `8e4f8c424a9567e0df4bdb36`: taiwan_semiconductor/2317 / tw.revenue.yoy_abs_20pct.v1
-- **new** `069426caad9146f0f6fe714e`: taiwan_semiconductor/2330 / tw.revenue.yoy_abs_20pct.v1
-- **new** `0901c597632414c1873e9659`: taiwan_semiconductor/2344 / tw.revenue.yoy_abs_20pct.v1
-- **new** `49b9165ce6fb4aa9f007cbf1`: taiwan_semiconductor/2382 / tw.revenue.yoy_abs_20pct.v1
-- **new** `f4012261e9c5f6b5e7885072`: taiwan_semiconductor/2408 / tw.revenue.yoy_abs_20pct.v1
-- **new** `68a8203dadde809c553bb7af`: taiwan_semiconductor/3231 / tw.revenue.yoy_abs_20pct.v1
-- **new** `677fca3028899a830568acd8`: taiwan_semiconductor/6239 / tw.revenue.yoy_abs_20pct.v1
-- **new** `4c25ba79add659746b2f4fa3`: taiwan_semiconductor/6669 / tw.revenue.yoy_abs_20pct.v1
-- **new** `0506616963f0f19830df38c4`: taiwan_semiconductor/8299 / tw.revenue.yoy_abs_20pct.v1
+- **new** `ff2ad60b4b3c5e6cb22ec540`: taiwan_semiconductor/2303 / tw.revenue.yoy_abs_20pct.v1
+- **new** `daa8c4554eb92ec49558f05f`: taiwan_semiconductor/2317 / tw.revenue.yoy_abs_20pct.v1
+- **new** `5d10397643d69661db1e0ecf`: taiwan_semiconductor/2330 / tw.revenue.yoy_abs_20pct.v1
+- **new** `2074fd483c4ba5381297dade`: taiwan_semiconductor/2344 / tw.revenue.yoy_abs_20pct.v1
+- **new** `72db2efbd00371699f3c2ee1`: taiwan_semiconductor/2382 / tw.revenue.yoy_abs_20pct.v1
+- **new** `4a0ef915ec4f557e191fd093`: taiwan_semiconductor/2408 / tw.revenue.yoy_abs_20pct.v1
+- **new** `cdeabacf71709b0f2829b6f1`: taiwan_semiconductor/3231 / tw.revenue.yoy_abs_20pct.v1
+- **new** `a387a455bb33be430234730f`: taiwan_semiconductor/6239 / tw.revenue.yoy_abs_20pct.v1
+- **new** `c164884b4c561658df479013`: taiwan_semiconductor/6669 / tw.revenue.yoy_abs_20pct.v1
+- **new** `048370cda2bebd06d64ddc7d`: taiwan_semiconductor/8299 / tw.revenue.yoy_abs_20pct.v1
 
 ## Changes
 
@@ -53,12 +56,15 @@ Observation dates differ by record. Generated time is not a market-data timestam
 - initial_observation: developer_adoption/mistral/mistralai
 - initial_observation: developer_adoption/openai/openai
 - initial_observation: developer_adoption/qwen/dashscope
-- initial_observation: openrouter_economics/completion_tokens_per_request/all_models
-- initial_observation: openrouter_economics/prompt_tokens_per_request/all_models
-- initial_observation: openrouter_economics/realized_market_average/all_models
-- initial_observation: openrouter_economics/realized_sota_price/sota
-- initial_observation: openrouter_economics/sota_median_list_price/sota
-- initial_observation: openrouter_economics/total_tokens_per_request/all_models
+- initial_observation: openrouter_economics/completion_tokens_per_request/all_models/1
+- initial_observation: openrouter_economics/completion_tokens_per_request/all_models/7
+- initial_observation: openrouter_economics/prompt_tokens_per_request/all_models/1
+- initial_observation: openrouter_economics/prompt_tokens_per_request/all_models/7
+- initial_observation: openrouter_economics/realized_market_average/all_models/7
+- initial_observation: openrouter_economics/realized_sota_price/sota/7
+- initial_observation: openrouter_economics/sota_median_list_price/sota/1
+- initial_observation: openrouter_economics/total_tokens_per_request/all_models/1
+- initial_observation: openrouter_economics/total_tokens_per_request/all_models/7
 - initial_observation: taiwan_semiconductor/2303
 - initial_observation: taiwan_semiconductor/2317
 - initial_observation: taiwan_semiconductor/2330
