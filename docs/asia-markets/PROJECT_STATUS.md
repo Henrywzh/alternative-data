@@ -5,6 +5,17 @@ replacement for the operating manual or generated source-status JSON.
 
 ## Current state
 
+- Research Agent Bridge V1: the offline exporter and dedicated
+  `research-agent-feed-daily.yml` workflow provide `asia_markets` and
+  `alternative_signals` public numeric subsets under `investment_feed.v1`.
+  Asia coverage is explicitly allowlisted official headlines from eight
+  sectors, not all private Streamlit research. The workflow produces PR
+  preview artifacts and publishes only from the default branch to
+  `agent-feed`. First live publication and access from the intended ChatGPT
+  Project remain rollout checks; frozen examples are not latest endpoints.
+  See `docs/research-agent/README.md` for the full read contract. Existing
+  dashboard/collector and Control Tower boundaries remain canonical.
+
 - Public production surface: Cloudflare Pages for the existing public sector
   dashboard.
 - Private research surface: `apps/asia-markets-streamlit/app.py`. The current

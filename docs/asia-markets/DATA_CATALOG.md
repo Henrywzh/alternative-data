@@ -3,6 +3,24 @@
 This is the quick map from dashboard sector to builder, artifact and main data
 families. The authoritative roster is `apps/asia-markets-dashboard/sectors.json`.
 
+## Research Agent Bridge V1
+
+`scripts/build_research_agent_feeds.py` reads an explicit public subset of the
+existing EN artifacts for labour, property (RVD only), transport, utilities,
+telecom, selected REITs, consumer (retail/restaurants) and population (C&SD/MPFA).
+It also exports selected existing OpenRouter price/workload marts, PyPI core
+SDK downloads without mirrors and Taiwan semiconductor monthly issuer revenue
+into a separate `alternative_signals` feed. Source-native values, field names,
+units, per-record dates and provenance are retained; no collectors rerun.
+
+The feeds omit private event/consensus, ETF/regime/flows and Control Tower
+outputs, licensed memory prices, agency property indices and unreviewed or
+mixed-date summaries. They declare exclusions and unknown/stale coverage
+explicitly. A 100 KiB per-JSON budget fails closed without truncation. The
+public `agent-feed` branch is separate from main and both deployments; it is
+not private storage. Contract, rules, publication and known limitations:
+[`../research-agent/README.md`](../research-agent/README.md).
+
 ## Cross-repository financial data
 
 The sibling `/Users/henrywzh/Desktop/Quant/financial-data` repository owns the
