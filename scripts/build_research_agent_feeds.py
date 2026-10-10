@@ -17,6 +17,7 @@ from calendar import monthrange
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 import jsonschema
 import pyarrow.parquet as pq
@@ -321,6 +322,8 @@ def alt_sections(inputs: Inputs, now: datetime) -> list[dict]:
                     row=row, fields=record_fields, observation=row[date_field], retrieved=row.get("scraped_at"),
                     cadence=cadence, now=now, provenance=inputs.reference(path, url),
                     description=description, methodology=meta)
+                if identity == "developer_adoption":
+                    record["provenance"]["url"] = "https://pypistats.org/packages/" + quote(row["package_name"], safe="")
                 if identity == "developer_adoption" and row.get("downloads") == 0:
                     record["quality"]["status"] = "unknown"
                     record["quality"]["issues"].append("zero_download_count_requires_upstream_confirmation")

@@ -42,11 +42,20 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/feed-previous"
+          : > "$RUNNER_TEMP/feed-baseline.txt"
           if git ls-remote --exit-code --heads origin agent-feed >/dev/null; then
             git fetch --no-tags --depth=1 origin refs/heads/agent-feed:refs/remotes/origin/agent-feed
+            git rev-parse origin/agent-feed > "$RUNNER_TEMP/feed-baseline.txt"
             for domain in asia_markets alternative_signals; do
               git show "origin/agent-feed:feeds/$domain.json" > "$RUNNER_TEMP/feed-previous/$domain.json"
             done
+          else
+            remote_status=$?
+            # Exit 2 means no matching branch; authentication/network failures
+            # must not silently erase the previous candidate baseline.
+            if [ "$remote_status" -ne 2 ]; then
+              exit "$remote_status"
+            fi
           fi
 
       - name: Build schema-validated public feeds
@@ -57,6 +66,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/feed-output/schema"
           cp config/research_agent_feed/investment_feed.v1.schema.json "$RUNNER_TEMP/feed-output/schema/"
           cp docs/research-agent/README.md "$RUNNER_TEMP/feed-output/README.md"
+          cp "$RUNNER_TEMP/feed-baseline.txt" "$RUNNER_TEMP/feed-output/publication-baseline.txt"
 
       - name: Upload feed bundle
         uses: actions/upload-artifact@v7
@@ -91,10 +101,20 @@ jobs:
         run: |
           set -euo pipefail
           publish_dir="$RUNNER_TEMP/feed-publication"
+          baseline_sha="$(cat "$RUNNER_TEMP/feed-output/publication-baseline.txt")"
           if git ls-remote --exit-code --heads origin agent-feed >/dev/null; then
             git fetch --no-tags --depth=1 origin refs/heads/agent-feed:refs/remotes/origin/agent-feed
+            if [ "$(git rev-parse origin/agent-feed)" != "$baseline_sha" ]; then
+              echo "::error::agent-feed changed after this build; refusing to publish against a different baseline."
+              exit 1
+            fi
             git worktree add --detach "$publish_dir" origin/agent-feed
           else
+            remote_status=$?
+            if [ "$remote_status" -ne 2 ] || [ -n "$baseline_sha" ]; then
+              echo "::error::Cannot establish the same agent-feed baseline used by the build."
+              exit 1
+            fi
             git worktree add --detach --no-checkout "$publish_dir" HEAD
             git -C "$publish_dir" switch --orphan agent-feed
           fi
