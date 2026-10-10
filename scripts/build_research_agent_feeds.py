@@ -429,9 +429,12 @@ def markdown(feed: dict) -> str:
             lines.append(f"| {s['label']} | unavailable | — | unavailable | — |")
         for r in s["records"]:
             values = "; ".join(f"{k}: {v['value']} {v['unit']}" for k, v in r["metrics"].items())
+            quality = r["quality"]["status"]
+            if r["quality"]["issues"]:
+                quality += " (" + ", ".join(r["quality"]["issues"]) + ")"
             safe = lambda text: str(text).replace("|", "\\|").replace("\n", " ")
             lines.append("| " + " | ".join(safe(x) for x in (
-                s["label"], r["label"], r["observation_as_of"], r["quality"]["status"], values)) + " |")
+                s["label"], r["label"], r["observation_as_of"], quality, values)) + " |")
     lines += ["", "## Rule candidates", ""]
     for c in feed["research_candidates"]:
         lines.append(f"- **{c['state']}** `{c['candidate_id']}`: {c['record_id']} / {c['rule_id']}")
@@ -497,7 +500,9 @@ def main() -> int:
         feed["research_candidates"] = candidates(current, config["rules"], previous if same_contract else {}, generated)
         states = [r["quality"]["status"] for r in current.values()]
         feed["pipeline_status"] = ("unavailable" if not states or all(s == "unavailable" for s in states) else
-                                   "complete" if all(s == "current" for s in states) and not any(s["issues"] for s in sections) else
+                                   "complete" if all(s == "current" for s in states) and
+                                   not any(s["issues"] for s in sections) and
+                                   not any(r["quality"]["issues"] for r in current.values()) else
                                    "degraded")
         dates = [r["observation_as_of"] for r in current.values() if period_end(r["observation_as_of"])]
         feed["as_of"] = max(dates, key=lambda x: period_end(x)) if dates else None
