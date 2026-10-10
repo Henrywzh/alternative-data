@@ -1,0 +1,793 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "investment_feed.v1"
+    },
+    "domain": {
+      "enum": [
+        "asia_markets",
+        "alternative_signals"
+      ]
+    },
+    "as_of": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "generated_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source_commit": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$"
+    },
+    "pipeline_status": {
+      "enum": [
+        "complete",
+        "degraded",
+        "unavailable"
+      ]
+    },
+    "publication": {
+      "const": "public_numeric_subset"
+    },
+    "contract_version": {
+      "const": "research_agent_sources.v1"
+    },
+    "contract_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "baseline_generated_at_utc": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "baseline_source_commit": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/section"
+      }
+    },
+    "research_candidates": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/candidate"
+      }
+    },
+    "changes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "record_id": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "initial_observation",
+              "new_observation",
+              "observation_regressed",
+              "revision",
+              "quality_change",
+              "methodology_change",
+              "unavailable",
+              "contract_changed"
+            ]
+          },
+          "previous_observation_as_of": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "observation_as_of": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "record_id",
+          "type",
+          "previous_observation_as_of",
+          "observation_as_of"
+        ]
+      }
+    },
+    "excluded_coverage": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "reason"
+        ]
+      }
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "required": [
+          "path",
+          "sha256"
+        ]
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "domain",
+    "as_of",
+    "generated_at_utc",
+    "source_commit",
+    "pipeline_status",
+    "publication",
+    "contract_version",
+    "contract_sha256",
+    "baseline_generated_at_utc",
+    "baseline_source_commit",
+    "sections",
+    "research_candidates",
+    "changes",
+    "excluded_coverage",
+    "inputs"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Henrywzh/alternative-data/investment_feed.v1.schema.json",
+  "$defs": {
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "unit": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "value",
+        "unit"
+      ]
+    },
+    "metrics": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "$ref": "#/$defs/metric"
+      }
+    },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "check_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "latest_observation": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "expected_latest_period": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "audited_at_utc": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "check_id",
+        "status",
+        "latest_observation",
+        "expected_latest_period",
+        "audited_at_utc"
+      ]
+    },
+    "freshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "current",
+            "stale",
+            "unknown"
+          ]
+        },
+        "policy": {
+          "type": "string"
+        },
+        "source_check": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/check"
+            }
+          ]
+        },
+        "evidence_as_of": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "max_observation_age_days": {
+          "type": "integer"
+        },
+        "max_capture_age_days": {
+          "type": "integer"
+        },
+        "check_matches_observation": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "status",
+        "policy",
+        "source_check",
+        "evidence_as_of"
+      ]
+    },
+    "record": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "observation_as_of": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "published_at_utc": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "retrieved_at_utc": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "cadence": {
+          "enum": [
+            "daily",
+            "monthly",
+            "quarterly",
+            "rolling_three_month",
+            "semiannual",
+            "annual"
+          ]
+        },
+        "metrics": {
+          "$ref": "#/$defs/metrics"
+        },
+        "methodology": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "dataset": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "source_id": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "source_period": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "source_provisional": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "index_baseline": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "rolling_window_days": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "pricing_join_status": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "included_tokens": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "excluded_unpriced_tokens": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "expected_family_count": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "priced_family_count": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "observed_model_count": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "methodology_version": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "with_mirrors": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "package_category": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "company_name": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "industry": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "mom_pct_is_derived": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "parser_version": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "source_run_id": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "metric_id": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "cohort_id": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "benchmark_snapshot_date": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "pricing_snapshot_date": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "numerator": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "denominator": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            }
+          },
+          "required": []
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "sha256": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "artifact_url": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          "required": [
+            "path",
+            "sha256",
+            "url",
+            "artifact_url"
+          ]
+        },
+        "quality": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "enum": [
+                "current",
+                "stale",
+                "unknown",
+                "unavailable",
+                "degraded"
+              ]
+            },
+            "source_status": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "freshness": {
+              "$ref": "#/$defs/freshness"
+            },
+            "issues": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "status",
+            "source_status",
+            "freshness",
+            "issues"
+          ]
+        },
+        "previous_observation": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "observation_as_of": {
+                  "type": "string"
+                },
+                "metrics": {
+                  "$ref": "#/$defs/metrics"
+                }
+              },
+              "required": [
+                "observation_as_of",
+                "metrics"
+              ]
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "description",
+        "observation_as_of",
+        "published_at_utc",
+        "retrieved_at_utc",
+        "cadence",
+        "metrics",
+        "methodology",
+        "provenance",
+        "quality",
+        "previous_observation"
+      ]
+    },
+    "section": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "records": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/record"
+          }
+        },
+        "coverage": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "selection": {
+              "type": "string"
+            },
+            "expected_records": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "input_rows": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "selection",
+            "input_rows"
+          ]
+        },
+        "issues": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "records",
+        "coverage",
+        "issues"
+      ]
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "candidate_id": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{24}$"
+        },
+        "rule_id": {
+          "type": "string"
+        },
+        "record_id": {
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "new",
+            "continuing",
+            "resolved",
+            "unknown"
+          ]
+        },
+        "first_seen_at_utc": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "last_confirmed_at_utc": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "last_evaluated_at_utc": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "rationale": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "field": {
+              "type": "string"
+            },
+            "value": {
+              "type": "number"
+            },
+            "unit": {
+              "type": "string"
+            },
+            "operator": {
+              "enum": [
+                "ge",
+                "abs_ge"
+              ]
+            },
+            "threshold": {
+              "type": "number"
+            },
+            "observation_as_of": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "field",
+            "value",
+            "unit",
+            "operator",
+            "threshold",
+            "observation_as_of"
+          ]
+        }
+      },
+      "required": [
+        "candidate_id",
+        "rule_id",
+        "record_id",
+        "state",
+        "first_seen_at_utc",
+        "last_confirmed_at_utc",
+        "last_evaluated_at_utc",
+        "rationale",
+        "evidence"
+      ]
+    }
+  }
+}
