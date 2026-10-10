@@ -366,6 +366,8 @@ streamlit run dashboard/app.py
 
 The dashboard is deployed on Streamlit Community Cloud (entry point `dashboard/app.py`). It reads the committed datasets directly from GitHub (`raw.githubusercontent.com`) at runtime, keyed by the latest `data/normalized` commit SHA, so data pushed by the scheduled workflows appears within a few minutes without rebooting the app. Use the "🔄 Refresh data" button next to the section selector to force an immediate refresh.
 
+The Cloud app is deployed from the `streamlit-deploy` branch, not `main`. Every push to the tracked branch makes Cloud hot-reload the app, and with ~25 data pushes a day one of those reloads eventually segfaulted the process, which Cloud does not restart. `.github/workflows/streamlit-deploy-sync.yml` fast-forwards `streamlit-deploy` to `main` when dashboard code or config changes, and once a day at 04:30 UTC. The daily run exists because the minerals and Google Trends sections still read files from the deployed checkout and lag `main` by up to a day. Run that workflow manually to ship a dashboard change immediately. Never commit to `streamlit-deploy` directly.
+
 Optional configuration via Streamlit secrets / environment variables (see `.streamlit/secrets.toml.example`):
 
 - `DATA_SOURCE`: `remote` (default) fetches datasets from GitHub; `local` reads the on-disk checkout instead (offline/local dev).

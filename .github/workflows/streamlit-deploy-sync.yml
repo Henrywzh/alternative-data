@@ -1,0 +1,74 @@
+name: Streamlit deploy branch sync
+
+# Streamlit Community Cloud redeploys on every push to the branch it tracks,
+# and hot-reloads the app in the same process each time. Tracking `main` meant
+# ~25 reloads a day from data workflows alone, and one of those reloads
+# segfaulted the process (native extensions -- pyarrow, curl_cffi via yfinance
+# -- under a reload while fetch threads were live). Cloud does not restart a
+# crashed app, so it stayed on "Oh no. Error running app" until a manual reboot.
+#
+# The app reads datasets at runtime from `main` on GitHub (dashboard/remote.py,
+# keyed by the latest data commit SHA), so the code it runs does not need to
+# move with data. The app tracks `streamlit-deploy` instead, which this
+# workflow fast-forwards to `main`:
+#   - when code or app config changes (paths below), and
+#   - once a day, because the minerals and Google Trends sections and the
+#     raw-manifest freshness panel still read files from the deployed checkout
+#     rather than fetching them -- so those lag `main` by at most a day.
+# Data pushes made with GITHUB_TOKEN never trigger this workflow.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "dashboard/**"
+      - "src/**"
+      - "config/**"
+      - ".streamlit/**"
+      - "requirements*.txt"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "runtime.txt"
+      - "packages.txt"
+      - ".github/workflows/streamlit-deploy-sync.yml"
+  schedule:
+    # 04:30 UTC: after the overnight minerals refresh, before Asia/Europe use.
+    - cron: "30 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: streamlit-deploy-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Fast-forward streamlit-deploy to main
+        run: |
+          set -euo pipefail
+          if git ls-remote --exit-code --heads origin streamlit-deploy >/dev/null; then
+            git fetch --quiet origin streamlit-deploy
+            if [ "$(git rev-parse origin/streamlit-deploy)" = "$(git rev-parse HEAD)" ]; then
+              echo "streamlit-deploy is already at $(git rev-parse --short HEAD)"
+              exit 0
+            fi
+            # Only ever fast-forward: a commit made directly on the deploy
+            # branch would otherwise be silently discarded.
+            if ! git merge-base --is-ancestor origin/streamlit-deploy HEAD; then
+              echo "::error::streamlit-deploy has commits that are not on main; refusing to overwrite it."
+              exit 1
+            fi
+          fi
+          git push origin "HEAD:refs/heads/streamlit-deploy"
+          echo "streamlit-deploy -> $(git rev-parse --short HEAD)"
