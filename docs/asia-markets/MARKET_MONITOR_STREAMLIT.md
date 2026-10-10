@@ -86,7 +86,10 @@ Provider ownership is declared per exposure and routed explicitly:
   (`^GDAXI`) and US relative-strength benchmark legs. The provider symbol is
   declared per exposure as `yf_symbol`; deriving it from `index_id` once
   produced a request for "SPX", which returns an empty frame rather than an
-  error.
+  error. Every Yahoo series also declares its exchange session calendar. The
+  adapter clamps Yahoo's exclusive `end` date to the day after that exchange's
+  latest fully completed session and filters returned rows to the same bound,
+  so an in-progress US daily bar cannot be mistaken for a completed close.
 - Eastmoney ETF spot: current market price, IOPV premium/discount, turnover,
   bid/ask and market-cap proxy. The primary AkShare endpoint retries a bounded
   set of transient gateway/rate-limit failures and empty responses. If that

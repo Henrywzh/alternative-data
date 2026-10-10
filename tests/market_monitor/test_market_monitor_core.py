@@ -85,6 +85,68 @@ def test_exchange_calendar_does_not_accept_an_in_progress_us_daily_bar():
     assert last_completed_session_date("XNYS", now_utc=now).isoformat() == "2026-10-06"
 
 
+@pytest.mark.parametrize(
+    ("calendar", "now", "expected_end", "expected_dates"),
+    [
+        # The daily runner can execute before the US cash close. A partial
+        # Yahoo bar for Oct 9 must not enter the close-history artifact.
+        ("XNYS", datetime(2026, 10, 9, 16, 22, tzinfo=timezone.utc), "2026-10-09", ["2026-10-08"]),
+        # After the official close, the just-completed session is included.
+        ("XNYS", datetime(2026, 10, 9, 21, 0, tzinfo=timezone.utc), "2026-10-10", ["2026-10-08", "2026-10-09"]),
+        # Tokyo has completed Oct 9 at the same UTC timestamp; it must not
+        # inherit New York's later close simply because Yahoo serves both.
+        ("XTKS", datetime(2026, 10, 9, 16, 22, tzinfo=timezone.utc), "2026-10-10", ["2026-10-08", "2026-10-09"]),
+    ],
+)
+def test_yfinance_daily_fetch_clamps_and_filters_to_completed_exchange_session(
+    monkeypatch, calendar, now, expected_end, expected_dates
+):
+    from types import SimpleNamespace
+
+    from market_monitor.sources import yfinance as yf_source
+
+    calls = []
+
+    class _FakeTicker:
+        def history(self, *, start, end, auto_adjust):
+            calls.append({"start": start, "end": end, "auto_adjust": auto_adjust})
+            # Simulate an upstream endpoint returning today's still-forming
+            # bar despite the exclusive end-date request.
+            return pd.DataFrame(
+                {
+                    "Open": [99.0, 100.0, 101.0],
+                    "High": [100.0, 101.0, 102.0],
+                    "Low": [98.0, 99.0, 100.0],
+                    "Close": [99.5, 100.5, 101.5],
+                    "Volume": [1_000, 1_100, 1_200],
+                },
+                index=pd.to_datetime(["2026-10-08", "2026-10-09", "2026-10-10"]),
+            )
+
+    monkeypatch.setitem(sys.modules, "yfinance", SimpleNamespace(Ticker=lambda symbol: _FakeTicker()))
+    result = yf_source.fetch_daily(
+        "^GSPC",
+        start_date="2026-10-01",
+        end_date="2026-10-11",
+        session_calendar=calendar,
+        now_utc=now,
+    )
+
+    assert calls == [{"start": "2026-10-01", "end": expected_end, "auto_adjust": True}]
+    assert result["date"].tolist() == expected_dates
+
+
+def test_every_yfinance_exposure_declares_a_valid_session_calendar():
+    from exchange_calendars import get_calendar_names
+
+    from market_monitor.config import EXPOSURES
+
+    available = set(get_calendar_names())
+    yfinance_exposures = [spec for spec in EXPOSURES if spec["price_source"] == "yfinance"]
+    assert yfinance_exposures
+    assert all(spec.get("session_calendar") in available for spec in yfinance_exposures)
+
+
 def test_email_fetch_error_scope_distinguishes_core_optional_and_visible_auxiliary_data():
     from market_monitor.freshness import (
         alert_fetch_error_is_relevant,

@@ -713,7 +713,12 @@ def fetch_all_raw(*, start_date: str | None = None, limit_exposures: tuple[str, 
                 else:
                     us_start = start_date or _iso_start()
                 yf_symbol = YFINANCE_SYMBOLS[exposure]
-                frame = yfinance.fetch_daily(yf_symbol, start_date=us_start, end_date=market_end)
+                frame = yfinance.fetch_daily(
+                    yf_symbol,
+                    start_date=us_start,
+                    end_date=market_end,
+                    session_calendar=spec["session_calendar"],
+                )
                 if frame is not None and not frame.empty:
                     frame["index_id"] = idx
             elif spec["price_source"] == "csindex":
