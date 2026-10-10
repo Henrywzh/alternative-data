@@ -24,6 +24,9 @@ on:
       - "dashboard/**"
       - "src/**"
       - "config/**"
+      # This reference mapping is read directly by the minerals page.
+      # Treat edits as app configuration; generated prices still sync daily.
+      - "data/reference/minerals_signal_data/stock_mapping.csv"
       - ".streamlit/**"
       - "requirements*.txt"
       - "pyproject.toml"

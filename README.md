@@ -366,7 +366,19 @@ streamlit run dashboard/app.py
 
 The dashboard is deployed on Streamlit Community Cloud (entry point `dashboard/app.py`). It reads the committed datasets directly from GitHub (`raw.githubusercontent.com`) at runtime, keyed by the latest `data/normalized` commit SHA, so data pushed by the scheduled workflows appears within a few minutes without rebooting the app. Use the "🔄 Refresh data" button next to the section selector to force an immediate refresh.
 
-The Cloud app is deployed from the `streamlit-deploy` branch, not `main`. Every push to the tracked branch makes Cloud hot-reload the app, and with ~25 data pushes a day one of those reloads eventually segfaulted the process, which Cloud does not restart. `.github/workflows/streamlit-deploy-sync.yml` fast-forwards `streamlit-deploy` to `main` when dashboard code or config changes, and once a day at 04:30 UTC. The daily run exists because the minerals and Google Trends sections still read files from the deployed checkout and lag `main` by up to a day. Run that workflow manually to ship a dashboard change immediately. Never commit to `streamlit-deploy` directly.
+Configure the Cloud app to deploy from the `streamlit-deploy` branch, with entry point `dashboard/app.py`. Creating the branch alone does not change an existing app's deployment settings. Every push to the tracked branch makes Cloud hot-reload the app, and with ~25 data pushes a day one of those reloads eventually segfaulted the process, which Cloud does not restart. `.github/workflows/streamlit-deploy-sync.yml` fast-forwards `streamlit-deploy` to `main` when dashboard code or config changes, and once a day at 04:30 UTC. The daily run exists because the minerals and Google Trends sections still read files from the deployed checkout. They normally update daily; delayed or failed scheduled runs can extend that lag. Run that workflow manually to ship a dashboard change immediately. Never commit to `streamlit-deploy` directly.
+
+Local checkout dependencies reviewed for this deployment policy:
+
+| Consumer | Local files | Sync policy |
+| --- | --- | --- |
+| Minerals page | `data/processed/minerals_signal_data/{dataset}/{latest-or-run}/{dataset}.parquet` for `mineral_price_universe_live`, `mineral_price_series_daily`, `tungsten_price_daily`, `molybdenum_price_daily`, `rare_earth_price_daily`, `stock_mapping_expanded_live`, and `stock_price_series_daily`; legacy CSV fallback | Daily scheduled sync |
+| Minerals reference fallback | `data/reference/minerals_signal_data/stock_mapping.csv` | Immediate sync trigger, like app configuration |
+| Google Trends page | `data/processed/google_trends/*_combined.parquet` | Daily scheduled sync |
+| Google Trends watchlist | `src/google_trends_data/watchlist.json` | Immediate sync through `src/**` |
+| Cache fingerprints and file-presence diagnostics | File metadata under `data/normalized/**` and raw manifest paths under `data/raw/*/*/manifest.json` | Checkout metadata updates daily; remote dataset caches also include their pinned GitHub data SHA |
+
+The app's normal freshness summary uses loaded datasets (`scan_raw_manifests=False`), rather than reading a local raw manifest's timestamp. Standard dataset and OpenRouter sidecar loaders fetch the pinned remote version first and use checkout files as a fallback if remote loading fails.
 
 Optional configuration via Streamlit secrets / environment variables (see `.streamlit/secrets.toml.example`):
 
