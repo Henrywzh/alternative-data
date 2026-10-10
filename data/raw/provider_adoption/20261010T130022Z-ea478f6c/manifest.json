@@ -1,0 +1,37 @@
+{
+  "run_id": "20261010T130022Z-ea478f6c",
+  "mode": "pypi-daily-update",
+  "scraped_at": "2026-10-10T13:00:22.434205Z",
+  "target_date": "2026-10-10",
+  "providers": [
+    "openai",
+    "anthropic",
+    "google",
+    "deepseek",
+    "meta",
+    "mistral",
+    "qwen",
+    "moonshot",
+    "minimax",
+    "zai",
+    "langchain",
+    "pydantic_ai"
+  ],
+  "datasets": [
+    "pypi_downloads_daily",
+    "npm_downloads_daily",
+    "github_repo_candidates_daily",
+    "github_provider_signals_daily",
+    "github_repo_rollup_daily",
+    "github_provider_adoption_daily",
+    "provider_momentum_daily",
+    "huggingface_models_daily"
+  ],
+  "parser_version": "0.1.0",
+  "source_coverage": {
+    "status": "complete",
+    "expected_package_count": 9,
+    "fetched_package_count": 9,
+    "missing_packages": []
+  }
+}
