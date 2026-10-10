@@ -271,9 +271,10 @@ def alt_sections(inputs: Inputs, now: datetime) -> list[dict]:
     specs = [
         ("openrouter_economics", "OpenRouter usage economics",
          "data/normalized/marts/openrouter_usage_economics_daily.parquet", "usage_date",
-         ["metric_id", "cohort_id"], {"value": "metric_specific"},
+         ["metric_id", "cohort_id", "rolling_window_days"], {"value": "metric_specific"},
          ["rolling_window_days", "pricing_join_status", "included_tokens", "excluded_unpriced_tokens",
-          "expected_family_count", "priced_family_count", "observed_model_count", "methodology_version"],
+          "expected_family_count", "priced_family_count", "observed_model_count", "methodology_version",
+          "benchmark_snapshot_date", "pricing_snapshot_date", "numerator", "denominator"],
          "https://openrouter.ai/rankings", "daily"),
         ("developer_adoption", "PyPI core SDK downloads (without mirrors)",
          "data/normalized/provider_adoption/pypi_downloads_daily.parquet", "download_date",
@@ -316,9 +317,14 @@ def alt_sections(inputs: Inputs, now: datetime) -> list[dict]:
                     "taiwan_semiconductor": "Issuer-reported monthly revenue. Source fields named *_ntd contain thousands of TWD; percentage changes use a 0–100 scale. Issuers can publish on different dates.",
                 }[identity]
                 meta = {k: row.get(k) for k in extra}
+                meta["source_run_id"] = row.get("source_run_id")
+                label = str(row.get("company_name") or group)
+                if identity == "openrouter_economics":
+                    meta.update({"metric_id": row["metric_id"], "cohort_id": row["cohort_id"]})
+                    label = f"{row['metric_id']}/{row['cohort_id']} ({row['rolling_window_days']}d window)"
                 # Only reviewed scalar metadata is ever copied.
                 record = make_record(
-                    identity=f"{identity}/{group}", label=str(row.get("company_name") or group),
+                    identity=f"{identity}/{group}", label=label,
                     row=row, fields=record_fields, observation=row[date_field], retrieved=row.get("scraped_at"),
                     cadence=cadence, now=now, provenance=inputs.reference(path, url),
                     description=description, methodology=meta)

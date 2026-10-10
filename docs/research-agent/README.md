@@ -49,7 +49,7 @@ on the code branch and `schema/investment_feed.v1.schema.json` on agent-feed.
 | Asia / REITs | `hk-reit-artifact.json` | Selected Link/Champion/Regal official fundamental/hotel KPIs |
 | Asia / consumer | `hk-local-consumer-artifact.json` | Official retail and restaurant KPIs |
 | Asia / population | `hk-population-migration-artifact.json` | C&SD population estimates and MPFA departure claims, with their own periods |
-| Alt / OpenRouter | `marts/openrouter_usage_economics_daily.parquet` | Six existing price/workload metrics, windows, pricing join status and coverage |
+| Alt / OpenRouter | `marts/openrouter_usage_economics_daily.parquet` | Six existing price/workload metric types, separate 1d/7d windows, pricing/benchmark snapshot dates and coverage |
 | Alt / adoption | `provider_adoption/pypi_downloads_daily.parquet` | Core SDK downloads without mirrors, per package/provider |
 | Alt / semiconductors | `taiwan_semiconductor_revenue/tw_monthly_revenue.parquet` | Per-issuer latest revenue, YoY/MoM, YTD and prior observation |
 

@@ -486,6 +486,62 @@
                 "boolean",
                 "null"
               ]
+            },
+            "source_run_id": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "metric_id": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "cohort_id": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "benchmark_snapshot_date": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "pricing_snapshot_date": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "numerator": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "denominator": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
             }
           },
           "required": []
