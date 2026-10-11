@@ -1,8 +1,8 @@
 # alternative_signals research feed
 
-Generated: 2026-10-10T22:10:36.240821Z · Status: **degraded**
+Generated: 2026-10-11T11:23:01.322020Z · Status: **degraded**
 
-Source commit: `37f743affa6b0bf400854866b65a04919e11a7a7`
+Source commit: `85fcef9d3c7b4a4b783db6bf6d1a4af82e3bdb3f`
 
 Observation dates differ by record. Generated time is not a market-data timestamp.
 
@@ -37,45 +37,19 @@ Observation dates differ by record. Generated time is not a market-data timestam
 
 ## Rule candidates
 
-- **new** `199f93de8f1a74c0ca2fc2e6`: taiwan_semiconductor/2303 / tw.revenue.yoy_abs_20pct.v1
-- **new** `262dc26f3e72230eea15adde`: taiwan_semiconductor/2317 / tw.revenue.yoy_abs_20pct.v1
-- **new** `524ddb985a98fbd09b9f0050`: taiwan_semiconductor/2330 / tw.revenue.yoy_abs_20pct.v1
-- **new** `6e00484f787a1a5fbb5cbf36`: taiwan_semiconductor/2344 / tw.revenue.yoy_abs_20pct.v1
-- **new** `e157e5d6fca9215e95cbbce6`: taiwan_semiconductor/2382 / tw.revenue.yoy_abs_20pct.v1
-- **new** `0ff46ea3805b80990202a585`: taiwan_semiconductor/2408 / tw.revenue.yoy_abs_20pct.v1
-- **new** `2eb5ae2e56606074873ecf8f`: taiwan_semiconductor/3231 / tw.revenue.yoy_abs_20pct.v1
-- **new** `49f768858f6e0e0d632ccdcd`: taiwan_semiconductor/6239 / tw.revenue.yoy_abs_20pct.v1
-- **new** `17fe04ed3f913704b2179a42`: taiwan_semiconductor/6669 / tw.revenue.yoy_abs_20pct.v1
-- **new** `d0ed99bb349b83460ae0dd4a`: taiwan_semiconductor/8299 / tw.revenue.yoy_abs_20pct.v1
+- **continuing** `199f93de8f1a74c0ca2fc2e6`: taiwan_semiconductor/2303 / tw.revenue.yoy_abs_20pct.v1
+- **continuing** `262dc26f3e72230eea15adde`: taiwan_semiconductor/2317 / tw.revenue.yoy_abs_20pct.v1
+- **continuing** `524ddb985a98fbd09b9f0050`: taiwan_semiconductor/2330 / tw.revenue.yoy_abs_20pct.v1
+- **continuing** `6e00484f787a1a5fbb5cbf36`: taiwan_semiconductor/2344 / tw.revenue.yoy_abs_20pct.v1
+- **continuing** `e157e5d6fca9215e95cbbce6`: taiwan_semiconductor/2382 / tw.revenue.yoy_abs_20pct.v1
+- **continuing** `0ff46ea3805b80990202a585`: taiwan_semiconductor/2408 / tw.revenue.yoy_abs_20pct.v1
+- **continuing** `2eb5ae2e56606074873ecf8f`: taiwan_semiconductor/3231 / tw.revenue.yoy_abs_20pct.v1
+- **continuing** `49f768858f6e0e0d632ccdcd`: taiwan_semiconductor/6239 / tw.revenue.yoy_abs_20pct.v1
+- **continuing** `17fe04ed3f913704b2179a42`: taiwan_semiconductor/6669 / tw.revenue.yoy_abs_20pct.v1
+- **continuing** `d0ed99bb349b83460ae0dd4a`: taiwan_semiconductor/8299 / tw.revenue.yoy_abs_20pct.v1
 
 ## Changes
 
-- initial_observation: developer_adoption/anthropic/anthropic
-- initial_observation: developer_adoption/google/google-genai
-- initial_observation: developer_adoption/google/google-generativeai
-- initial_observation: developer_adoption/mistral/mistralai
-- initial_observation: developer_adoption/openai/openai
-- initial_observation: developer_adoption/qwen/dashscope
-- initial_observation: openrouter_economics/completion_tokens_per_request/all_models/1
-- initial_observation: openrouter_economics/completion_tokens_per_request/all_models/7
-- initial_observation: openrouter_economics/prompt_tokens_per_request/all_models/1
-- initial_observation: openrouter_economics/prompt_tokens_per_request/all_models/7
-- initial_observation: openrouter_economics/realized_market_average/all_models/7
-- initial_observation: openrouter_economics/realized_sota_price/sota/7
-- initial_observation: openrouter_economics/sota_median_list_price/sota/1
-- initial_observation: openrouter_economics/total_tokens_per_request/all_models/1
-- initial_observation: openrouter_economics/total_tokens_per_request/all_models/7
-- initial_observation: taiwan_semiconductor/2303
-- initial_observation: taiwan_semiconductor/2317
-- initial_observation: taiwan_semiconductor/2330
-- initial_observation: taiwan_semiconductor/2344
-- initial_observation: taiwan_semiconductor/2382
-- initial_observation: taiwan_semiconductor/2408
-- initial_observation: taiwan_semiconductor/3231
-- initial_observation: taiwan_semiconductor/5347
-- initial_observation: taiwan_semiconductor/6239
-- initial_observation: taiwan_semiconductor/6669
-- initial_observation: taiwan_semiconductor/8299
 
 ## Excluded coverage
 
