@@ -1,5 +1,15 @@
 from __future__ import annotations
 
+# Streamlit Cloud has segfaulted this process during normal serving, and a
+# bare "Segmentation fault" in the log says nothing about where. faulthandler
+# writes every thread's Python stack to stderr (which Cloud's log captures)
+# when a fatal signal arrives. Enabled first so it also covers the heavy
+# native imports below; re-enabling on each script rerun is a no-op.
+import faulthandler
+
+if not faulthandler.is_enabled():
+    faulthandler.enable(all_threads=True)
+
 import inspect
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path

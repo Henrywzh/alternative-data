@@ -267,7 +267,12 @@ def _fetch_monthly_fx_to_usd(start_period: str, end_period: str) -> pd.DataFrame
     rows: list[pd.DataFrame] = []
     for currency, (symbol, transform) in symbol_map.items():
         try:
-            frame = yf.download(symbol, start=start_date, end=end_date, auto_adjust=False, progress=False)
+            # threads=False: yfinance otherwise fans each call out over its
+            # own threads sharing one curl_cffi (libcurl) session, a known
+            # native-crash pattern inside an already multi-threaded server.
+            frame = yf.download(
+                symbol, start=start_date, end=end_date, auto_adjust=False, progress=False, threads=False
+            )
         except Exception:
             continue
         if frame.empty:
