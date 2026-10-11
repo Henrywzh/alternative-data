@@ -1,8 +1,8 @@
 # alternative_signals research feed
 
-Generated: 2026-10-11T11:23:01.322020Z · Status: **degraded**
+Generated: 2026-10-11T14:05:02.169749Z · Status: **degraded**
 
-Source commit: `85fcef9d3c7b4a4b783db6bf6d1a4af82e3bdb3f`
+Source commit: `9b7115f0e2b79dd76deec6346b0bec98d69d2f80`
 
 Observation dates differ by record. Generated time is not a market-data timestamp.
 
@@ -17,12 +17,12 @@ Observation dates differ by record. Generated time is not a market-data timestam
 | OpenRouter usage economics | sota_median_list_price/sota (1d window) | 2026-10-09 | current | value: 5.733 USD_per_million_tokens |
 | OpenRouter usage economics | total_tokens_per_request/all_models (1d window) | 2026-10-09 | current | value: 27359.984513566636 tokens_per_request |
 | OpenRouter usage economics | total_tokens_per_request/all_models (7d window) | 2026-10-09 | current | value: 22087.46718281688 tokens_per_request |
-| PyPI core SDK downloads (without mirrors) | anthropic/anthropic | 2026-10-09 | current | downloads: 6638591 downloads |
-| PyPI core SDK downloads (without mirrors) | google/google-genai | 2026-10-09 | current | downloads: 5318516 downloads |
-| PyPI core SDK downloads (without mirrors) | google/google-generativeai | 2026-10-09 | current | downloads: 317152 downloads |
-| PyPI core SDK downloads (without mirrors) | mistral/mistralai | 2026-10-09 | current | downloads: 453233 downloads |
-| PyPI core SDK downloads (without mirrors) | openai/openai | 2026-10-09 | current | downloads: 11570824 downloads |
-| PyPI core SDK downloads (without mirrors) | qwen/dashscope | 2026-10-09 | current | downloads: 81232 downloads |
+| PyPI core SDK downloads (without mirrors) | anthropic/anthropic | 2026-10-10 | current | downloads: 4450446 downloads |
+| PyPI core SDK downloads (without mirrors) | google/google-genai | 2026-10-10 | current | downloads: 3483283 downloads |
+| PyPI core SDK downloads (without mirrors) | google/google-generativeai | 2026-10-10 | current | downloads: 196518 downloads |
+| PyPI core SDK downloads (without mirrors) | mistral/mistralai | 2026-10-10 | current | downloads: 213759 downloads |
+| PyPI core SDK downloads (without mirrors) | openai/openai | 2026-10-10 | current | downloads: 8160957 downloads |
+| PyPI core SDK downloads (without mirrors) | qwen/dashscope | 2026-10-10 | current | downloads: 76192 downloads |
 | Taiwan semiconductor / AI supply-chain monthly revenue | 聯電 | 2026-09 | current | monthly_revenue_ntd: 25350431.0 TWD_thousand; yoy_pct: 27.22 percent; mom_pct: 1.2209797697 percent; ytd_revenue_ntd: 204009681.0 TWD_thousand |
 | Taiwan semiconductor / AI supply-chain monthly revenue | 鴻海 | 2026-09 | current | monthly_revenue_ntd: 1158633235.0 TWD_thousand; yoy_pct: 38.42 percent; mom_pct: 25.6971081695 percent; ytd_revenue_ntd: 7669772510.0 TWD_thousand |
 | Taiwan semiconductor / AI supply-chain monthly revenue | 台積電 | 2026-09 | current | monthly_revenue_ntd: 511857399.0 TWD_thousand; yoy_pct: 54.65 percent; mom_pct: -0.5726315926 percent; ytd_revenue_ntd: 3898726974.0 TWD_thousand |
@@ -50,6 +50,12 @@ Observation dates differ by record. Generated time is not a market-data timestam
 
 ## Changes
 
+- new_observation: developer_adoption/anthropic/anthropic
+- new_observation: developer_adoption/google/google-genai
+- new_observation: developer_adoption/google/google-generativeai
+- new_observation: developer_adoption/mistral/mistralai
+- new_observation: developer_adoption/openai/openai
+- new_observation: developer_adoption/qwen/dashscope
 
 ## Excluded coverage
 
