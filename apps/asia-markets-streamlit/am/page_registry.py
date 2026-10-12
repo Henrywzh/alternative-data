@@ -86,7 +86,7 @@ PAGE_DEFINITIONS: tuple[PageDefinition, ...] = (
     ),
     PageDefinition(
         "labour",
-        "hong_kong",
+        "economy",
         "Labour Market",
         "劳动力市场",
         "hk-labour-market",
@@ -96,7 +96,7 @@ PAGE_DEFINITIONS: tuple[PageDefinition, ...] = (
     ),
     PageDefinition(
         "population",
-        "hong_kong",
+        "economy",
         "Population & Migration",
         "人口与迁移",
         "hk-population-migration",
@@ -106,7 +106,7 @@ PAGE_DEFINITIONS: tuple[PageDefinition, ...] = (
     ),
     PageDefinition(
         "real_estate",
-        "hong_kong",
+        "economy",
         "Hong Kong Real Estate",
         "地产",
         "hk-real-estate",
@@ -116,7 +116,7 @@ PAGE_DEFINITIONS: tuple[PageDefinition, ...] = (
     ),
     PageDefinition(
         "transport",
-        "hong_kong",
+        "economy",
         "Transport & Aviation",
         "交通与航空",
         "hk-transport",
@@ -126,7 +126,7 @@ PAGE_DEFINITIONS: tuple[PageDefinition, ...] = (
     ),
     PageDefinition(
         "aerospace",
-        "hong_kong",
+        "themes",
         "Commercial Aerospace",
         "商业航天",
         "hk-commercial-aerospace",
@@ -136,7 +136,7 @@ PAGE_DEFINITIONS: tuple[PageDefinition, ...] = (
     ),
     PageDefinition(
         "crypto",
-        "hong_kong",
+        "themes",
         "Stablecoin & Crypto",
         "稳定币与加密资产",
         "hk-stablecoin-crypto",

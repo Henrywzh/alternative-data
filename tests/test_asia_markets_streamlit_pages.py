@@ -175,6 +175,10 @@ def test_sidebar_groups_reference_every_registered_page_once() -> None:
         "events",
         "heatmaps",
     )
+    assert dict(SIDEBAR_GROUPS)["economy"] == ("real_estate", "transport", "labour", "population")
+    assert dict(SIDEBAR_GROUPS)["themes"] == ("aerospace", "crypto")
+    groups = {key: group for group, keys in SIDEBAR_GROUPS for key in keys}
+    assert all(groups[page.key] == page.group for page in PAGE_DEFINITIONS)
 
 
 def test_period_signal_requires_the_exact_prior_year_month() -> None:

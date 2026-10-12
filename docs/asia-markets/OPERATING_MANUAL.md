@@ -124,6 +124,23 @@ source pipelines. The Index & ETF Allocation Monitor is read from
 `package-dashboard.mjs` in V1. Company explorer and broader portfolio
 workflows remain future scope.
 
+Private Streamlit navigation is grouped into **Markets & capital** (ETF,
+Regime, Hong Kong Flows, Events, Heat Maps), **Economy & industries** (Hong
+Kong real estate, transport, labour, population), and **Thematic research**
+(commercial aerospace, stablecoin/crypto). Data Explorer and Source Health
+are auxiliary tools. Existing URL paths and artifact slugs stay unchanged;
+presentation geography is independent of those legacy `hk-` slugs.
+
+The overview is market-first: two market-monitor cards, compact economic
+readings, collapsed thematic links and a compact source-check summary. It
+does not duplicate full sector charts. Economic release ordering uses only
+an explicit publication/announcement date on the displayed metric's own
+row; an observation period, artifact build time, or unrelated daily series
+must never be described as a new release. Missing publication/health
+metadata remains visibly unknown. Featured trends remain reserved for
+validated higher-frequency derived signals, not filled with placeholder
+charts. Overview buttons use native page navigation like the sidebar.
+
 `Events & Consensus` is a standalone private Streamlit page backed by the
 independent `src/event_consensus/` package. Opening the page is a local
 artifact read. Its explicitly labelled refresh button is the only Streamlit

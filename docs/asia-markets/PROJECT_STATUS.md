@@ -5,6 +5,16 @@ replacement for the operating manual or generated source-status JSON.
 
 ## Current state
 
+- 2026-10-12 private Streamlit information hierarchy: sidebar now separates
+  Markets & capital, Economy & industries, Thematic research and auxiliary
+  tools. Overview prioritizes two market cards, four compact economic
+  readings and collapsed thematic access, rather than eight equal sector
+  cards. Release dates are promoted only with explicit row-level evidence;
+  unknown source health is no longer inferred as Ready. Aerospace is
+  labelled China/global, crypto global/Hong Kong policy. Native overview
+  links preserve destination URLs on widget reruns. No pipeline, signal,
+  artifact, Cloudflare or deployment changes are part of this refactor.
+
 - Research Agent Bridge V1: the offline exporter and dedicated
   `research-agent-feed-daily.yml` workflow provide `asia_markets` and
   `alternative_signals` public numeric subsets under `investment_feed.v1`.

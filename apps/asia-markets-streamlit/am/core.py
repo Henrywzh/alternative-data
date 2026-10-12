@@ -16,7 +16,7 @@ import streamlit as st
 
 from .paths import ARTIFACT_ROOT
 
-from .config import HISTORY_WINDOWS, MONTH_LABELS_ZH, PALETTE, REGIME_STATE_LABELS_ZH, SECTORS
+from .config import HISTORY_WINDOWS, MONTH_LABELS_ZH, PALETTE, REGIME_STATE_LABELS_ZH, SECTORS, sector_region
 
 
 def tr(language: str, english: str, chinese: str) -> str:
@@ -539,9 +539,11 @@ def style_app() -> None:
         <style>
         :root { --am-blue: #2563eb; --am-ink: #111827; --am-muted: #667085; }
         .stApp { background: #ffffff; color: var(--am-ink); }
+        .stApp, .stApp button, .stApp input { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+        .am-pulse-value, .am-health-value, .am-economic-value, [data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; }
         [data-testid="stSidebar"] { background: #f7f8fa; border-right: 1px solid #e5e7eb; }
         [data-testid="stSidebar"] > div:first-child { padding-top: 1.2rem; }
-        [data-testid="stSidebar"] .am-sidebar-group-label { color: #6b7280; font-size: .68rem; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; margin: 1rem 0 .3rem .65rem; }
+        [data-testid="stSidebar"] .am-sidebar-group-label { color: #6b7280; font-size: .8rem; font-weight: 750; letter-spacing: .04em; margin: 1.15rem 0 .4rem .65rem; }
         [data-testid="stSidebar"] .stButton { margin-bottom: .12rem; }
         [data-testid="stSidebar"] .stButton > button { justify-content: flex-start; min-height: 2.25rem; padding: .4rem .65rem; border: 0 !important; border-radius: 7px; background: transparent !important; box-shadow: none !important; color: #111827 !important; font-size: .86rem; font-weight: 520; }
         [data-testid="stSidebar"] .stButton > button > div,
@@ -587,6 +589,11 @@ def style_app() -> None:
         .am-health-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .7rem; align-items: center; }
         .am-health-value { color: #111827; font-size: 1.15rem; font-weight: 750; }
         .am-health-label { color: #667085; font-size: .72rem; }
+        .am-economic-row { display: grid; grid-template-columns: 1.1fr 1.5fr .9fr 1fr; gap: .85rem; align-items: center; padding: .8rem 0; border-bottom: 1px solid #eef1f5; font-size: .96rem; }
+        .am-economic-name { color: #111827; font-weight: 700; }
+        .am-economic-value { margin-top: .2rem; color: #111827; font-size: 1.1rem; font-weight: 700; }
+        .am-economic-meta { color: #667085; font-size: .88rem; line-height: 1.5; overflow-wrap: anywhere; }
+        .am-economic-release { color: #2563eb; font-weight: 700; }
         .am-regime-summary { margin: 1rem 0 1.35rem; padding: 1.15rem 1.25rem; border: 1px solid #dbe4f0; border-left: 5px solid #2563eb; border-radius: 10px; background: #f8fafc; }
         .am-regime-summary[data-state="normal"] { border-left-color: #10b981; background: #f0fdf4; }
         .am-regime-summary[data-state="watch"] { border-left-color: #f59e0b; background: #fffbeb; }
@@ -643,6 +650,8 @@ def style_app() -> None:
             .am-alert-decision-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
         @media (max-width: 620px) {
+            .am-economic-row { grid-template-columns: 1fr 1fr; }
+            .am-pulse-value { overflow-wrap: anywhere; }
             .am-regime-grid { grid-template-columns: 1fr; }
             .am-regime-brief-grid { grid-template-columns: 1fr; }
             .am-alert-decision-grid { grid-template-columns: 1fr; }
@@ -1192,8 +1201,7 @@ def render_header(
     description = description_override or manifest.get("description", "")
     st.markdown(f'<div class="am-page-title">{escape(title)}</div>', unsafe_allow_html=True)
     st.caption(description)
-    region_en, region_zh = ("Global", "全球") if sector_key == "regime" else ("Hong Kong", "香港")
-    region = escape(tr(language, region_en, region_zh))
+    region = escape(sector_region(sector_key, language))
     snapshot_label = escape(tr(language, "Snapshot as of", "数据截至"))
     data_as_of = escape(str(artifact.get("package_info", {}).get("dataAsOf", "—")))
     source_label = escape(

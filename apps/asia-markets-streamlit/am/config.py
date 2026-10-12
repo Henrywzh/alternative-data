@@ -39,15 +39,15 @@ SECTORS: dict[str, dict[str, str]] = {
     },
     "crypto": {
         "slug": "hk-stablecoin-crypto",
-        "name_en": "Hong Kong Stablecoin & Crypto",
-        "name_zh": "香港稳定币与加密资产",
+        "name_en": "Stablecoin & Crypto",
+        "name_zh": "稳定币与加密资产",
         "short_en": "Stablecoin & Crypto",
         "short_zh": "稳定币与加密资产",
     },
     "aerospace": {
         "slug": "hk-commercial-aerospace",
-        "name_en": "Hong Kong Commercial Aerospace",
-        "name_zh": "香港商业航天",
+        "name_en": "Commercial Aerospace",
+        "name_zh": "商业航天",
         "short_en": "Commercial Aerospace",
         "short_zh": "商业航天",
     },
@@ -66,6 +66,19 @@ SECTORS: dict[str, dict[str, str]] = {
         "short_zh": "市场状态",
     },
 }
+
+SECTOR_REGIONS = {
+    "market": ("Cross-market", "跨市场"),
+    "regime": ("Global", "全球"),
+    "crypto": ("Global / Hong Kong policy", "全球／香港政策"),
+    "aerospace": ("China / global context", "中国／全球背景"),
+}
+
+
+def sector_region(sector_key: str, language: str) -> str:
+    """Presentation geography, independent of the legacy artifact slug."""
+    region = SECTOR_REGIONS.get(sector_key, ("Hong Kong", "香港"))
+    return region[1 if language == "zh" else 0]
 
 HISTORY_WINDOWS = {
     "10 years": 10,

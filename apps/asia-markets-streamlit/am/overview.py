@@ -1,6 +1,6 @@
 """Terminal overview page and sector pulse cards.
 
-Split out of the former monolithic app.py; behaviour is unchanged.
+Market-first entrypoint with compact economic and thematic research access.
 """
 
 from __future__ import annotations
@@ -11,37 +11,37 @@ from typing import Any
 import pandas as pd
 import streamlit as st
 
-from .config import OVERVIEW_FEATURED_CHARTS, OVERVIEW_PULSE_CONFIG, PAIR_CARD_HEIGHT, PALETTE, SECTORS
+from .config import OVERVIEW_FEATURED_CHARTS, OVERVIEW_PULSE_CONFIG, PAIR_CARD_HEIGHT, PALETTE, SECTORS, sector_region
 
-from .core import latest_metric_reading, latest_series_reading, observation_date_label, parse_period, render_line_chart, section_heading, source_health_frame, sparkline_context, sparkline_svg, tr
-from .regime_labels import (
-    COT_LABELS_ZH,
-    FOMC_DIST_LABELS_ZH,
-    REGIME_DIST_LABELS_ZH,
-    REGIME_DOMAIN_LABELS,
-    REGIME_EXPOSURE_LABELS,
-    REGIME_FRESHNESS_LABELS_ZH,
-    REGIME_FRESHNESS_OK,
-    REGIME_INDICATOR_LABELS,
-    REGIME_RETURN_HORIZONS,
-    REGIME_SERIES_LABELS,
-    REGIME_SERIES_LABELS_ZH,
-)
+from .core import find_manifest_item, latest_metric_reading, latest_series_reading, observation_date_label, parse_period, render_line_chart, section_heading, source_health_frame, sparkline_context, sparkline_svg, tr
+from .overview_policy import economic_observation_rows
 
 
 def set_app_page(page_key: str) -> None:
-    st.session_state["page"] = page_key
+    # Use native navigation so the destination survives language/widget reruns
+    # and can be bookmarked. The old one-shot session router reset on rerun.
+    from .page_registry import build_streamlit_pages
+
+    st.switch_page(build_streamlit_pages()[page_key])
+
+
+def overview_page_button(label: str, key: str, page_key: str) -> None:
+    # switch_page raises a rerun, which Streamlit suppresses inside callbacks.
+    # Call it in the main render path, as the sidebar already does.
+    if st.button(label, key=key, width="stretch"):
+        set_app_page(page_key)
 
 
 def overview_source_summary(
     artifacts: dict[str, dict[str, Any]],
     labels: dict[str, dict[str, Any]],
 ) -> dict[str, int]:
-    total = healthy = attention = problem = 0
+    total = healthy = attention = problem = missing_metadata = 0
     for sector_key, artifact in artifacts.items():
         health = source_health_frame(artifact)
-        if health.empty:
-            status_values = ["Ready"] * len(labels.get(sector_key, artifact).get("sources", []))
+        if health.empty or "status" not in health.columns:
+            missing_metadata += 1
+            status_values = ["Unknown"] * len(artifact.get("sources", []))
         else:
             status_values = health.get("status", pd.Series(dtype="object")).astype(str).tolist()
         for value in status_values:
@@ -53,19 +53,21 @@ def overview_source_summary(
                 attention += 1
             else:
                 problem += 1
-    return {"total": total, "healthy": healthy, "attention": attention, "problem": problem}
+    return {"total": total, "healthy": healthy, "attention": attention, "problem": problem, "missing_metadata": missing_metadata}
 
 
 def sector_source_status(artifact: dict[str, Any], label_artifact: dict[str, Any], language: str) -> str:
     health = source_health_frame(artifact)
-    if health.empty:
-        statuses = ["ready"] * len(label_artifact.get("sources", []))
+    if health.empty or "status" not in health.columns:
+        return tr(language, "Health unknown", "健康状态未知")
     else:
         statuses = health.get("status", pd.Series(dtype="object")).astype(str).str.casefold().tolist()
     if not statuses:
-        return tr(language, "Snapshot", "数据快照")
+        return tr(language, "Health unknown", "健康状态未知")
     if all(value in {"healthy", "ready", "live", "success"} for value in statuses):
         return tr(language, "Ready", "可用")
+    if any(value not in {"healthy", "ready", "live", "success", "partial", "warning", "degraded", "stale"} for value in statuses):
+        return tr(language, "Problem", "有问题")
     if any(value in {"partial", "warning", "degraded", "stale"} for value in statuses):
         return tr(language, "Attention", "需留意")
     return tr(language, "Problem", "有问题")
@@ -91,37 +93,12 @@ def render_overview_header(
     labels: dict[str, dict[str, Any]],
     language: str,
 ) -> None:
-    summary = overview_source_summary(artifacts, labels)
     latest = latest_artifact_date(artifacts, language)
-    status_items = [
-        (
-            tr(language, "Connected sectors", "已接入板块"),
-            f"{len(artifacts)}",
-            tr(language, "Detailed pages available", "已有详细板块页面"),
-        ),
-        (
-            tr(language, "Source feeds", "来源数据流"),
-            f"{summary['total']}",
-            tr(language, "Across current sectors", "覆盖当前板块"),
-        ),
-        (
-            tr(language, "Ready feeds", "可用数据流"),
-            f"{summary['healthy']}/{summary['total']}" if summary["total"] else "—",
-            tr(language, "Build-validated", "已通过构建验证"),
-        ),
-        (
-            tr(language, "Latest artifact", "最新数据快照"),
-            latest,
-            tr(language, "Individual metrics have their own dates", "各指标仍保留自己的观察日期"),
-        ),
-    ]
-    cards = "".join(
-        f'<div class="am-overview-status-item"><div class="am-overview-status-label">{escape(label)}</div>'
-        f'<div class="am-overview-status-value">{escape(value)}</div>'
-        f'<div class="am-overview-status-note">{escape(note)}</div></div>'
-        for label, value, note in status_items
-    )
-    st.markdown(f'<div class="am-overview-status">{cards}</div>', unsafe_allow_html=True)
+    st.caption(tr(
+        language,
+        f"Latest observation across sections: {latest}. Each metric retains its own date; this is not a common cutoff or publication date.",
+        f"各板块最新观察日：{latest}。各指标日期独立；此日期不是所有数据的共同截止日或发布日期。",
+    ))
 
 
 def render_sector_pulse(
@@ -131,10 +108,10 @@ def render_sector_pulse(
 ) -> None:
     section_heading(
         language,
-        "Sector pulse",
-        "板块脉搏",
-        "A compact reading for each connected sector; open the sector page for full detail.",
-        "每个已接入板块只保留一组核心读数；完整细节请进入板块页面。",
+        "Markets & allocation",
+        "市场与配置",
+        "Core readings from the existing monitors; open a page for changes, signals and source detail.",
+        "复用现有监控的核心读数；变化、信号及来源详情保留在各页面。",
     )
     columns = st.columns(2 if len(artifacts) > 1 else 1)
     for index, (sector_key, artifact) in enumerate(artifacts.items()):
@@ -148,6 +125,8 @@ def render_sector_pulse(
         metric_blocks: list[str] = []
         for metric in config.get("metrics", ())[:3]:
             if metric.get("series"):
+                if not find_manifest_item(artifact, "charts", metric.get("chart_id", "immd_net_flow_chart")):
+                    continue
                 value, date = latest_series_reading(
                     artifact,
                     metric.get("chart_id", "immd_net_flow_chart"),
@@ -176,7 +155,7 @@ def render_sector_pulse(
         sparkline = config.get("sparkline")
         sparkline_markup = ""
         sparkline_context_markup = ""
-        if sparkline:
+        if sparkline and find_manifest_item(artifact, "charts", sparkline["chart_id"]):
             sparkline_frame, sparkline_title, sparkline_latest, sparkline_range, sparkline_note = sparkline_context(
                 artifact,
                 sparkline,
@@ -198,13 +177,25 @@ def render_sector_pulse(
                 )
         with columns[index % len(columns)]:
             with st.container(border=True):
-                region_en, region_zh = ("Global", "全球") if sector_key == "regime" else ("Hong Kong", "香港")
                 st.markdown(
                     f'<div class="am-pulse-title">{escape(name)}</div>'
-                    f'<div class="am-pulse-meta">{escape(tr(language, region_en, region_zh))} · '
+                    f'<div class="am-pulse-meta">{escape(sector_region(sector_key, language))} · '
                     f'{escape(status)} · {escape(tr(language, "artifact through", "数据截至"))} {escape(as_of)}</div>',
                     unsafe_allow_html=True,
                 )
+                if sector_key == "regime":
+                    from .regime import regime_data_warnings
+
+                    warnings = regime_data_warnings(artifact, language)
+                    if warnings:
+                        st.warning(tr(
+                            language,
+                            "Incomplete or stale inputs: readings below are audit context, not a complete current assessment.",
+                            "数据不完整或部分输入过期：下方读数仅供核查，并非完整的当前判断。",
+                        ))
+                        with st.expander(tr(language, "Data warning details", "数据警告详情")):
+                            for warning in warnings:
+                                st.caption(warning)
                 if metric_blocks:
                     st.markdown(
                         f'<div class="am-pulse-metrics">{"".join(metric_blocks)}</div>',
@@ -212,13 +203,64 @@ def render_sector_pulse(
                     )
                 if sparkline_markup:
                     st.markdown(f"{sparkline_context_markup}{sparkline_markup}", unsafe_allow_html=True)
-                st.button(
+                overview_page_button(
                     tr(language, f"Open {sector.get('short_en', name)}", f"打开{sector.get('short_zh', name)}"),
                     key=f"overview_open_{sector_key}",
-                    width="stretch",
-                    on_click=set_app_page,
-                    args=(sector_key,),
+                    page_key=sector_key,
                 )
+
+
+def render_economic_observations(artifacts: dict[str, dict[str, Any]], language: str) -> None:
+    section_heading(
+        language, "Economic data & releases", "经济数据与发布",
+        "Recent known releases lead; observation periods are not publication dates. Full histories remain on their pages.",
+        "已知近期发布优先；观察期不等于发布日期。完整历史保留在对应页面。",
+    )
+    for row in economic_observation_rows(artifacts, language):
+        key = row["sector"]
+        sector = SECTORS[key]
+        release = (
+            observation_date_label(row["release"], language)
+            if not pd.isna(row["release"])
+            else tr(language, "Publication date unavailable", "未提供发布日期")
+        )
+        badge = tr(language, "Released within 30 days", "近30天发布") if row["recent_release"] else ""
+        name = sector["short_zh" if language == "zh" else "short_en"]
+        st.markdown(
+            '<div class="am-economic-row">'
+            f'<div class="am-economic-name">{escape(name)}<div class="am-economic-meta">{escape(sector_region(key, language))}</div></div>'
+            f'<div>{escape(row["label"])}<div class="am-economic-value">{escape(row["value"])}</div></div>'
+            f'<div class="am-economic-meta">{escape(tr(language, "Observed", "观察期"))}<br>{escape(row["observation"])}</div>'
+            f'<div class="am-economic-meta">{escape(release)}<div class="am-economic-release">{escape(badge)}</div></div>'
+            '</div>', unsafe_allow_html=True,
+        )
+    columns = st.columns(4)
+    for column, key in zip(columns, ("real_estate", "transport", "labour", "population")):
+        with column:
+            sector = SECTORS[key]
+            overview_page_button(
+                tr(language, sector["short_en"], sector["short_zh"]),
+                key=f"overview_economy_{key}", page_key=key,
+            )
+
+
+def render_research_shortcuts(language: str) -> None:
+    columns = st.columns(3)
+    for column, (key, en, zh) in zip(columns, (
+        ("hong_kong_flows", "Hong Kong flows", "香港资金流"),
+        ("events", "Events & consensus", "事件与预期"),
+        ("heatmaps", "Heat maps", "热力图"),
+    )):
+        with column:
+            overview_page_button(tr(language, en, zh), key=f"overview_shortcut_{key}", page_key=key)
+
+
+def render_thematic_shortcuts(language: str) -> None:
+    with st.expander(tr(language, "Thematic research", "专题研究"), expanded=False):
+        for key in ("aerospace", "crypto"):
+            sector = SECTORS[key]
+            st.caption(sector_region(key, language))
+            overview_page_button(tr(language, sector["short_en"], sector["short_zh"]), key=f"overview_theme_{key}", page_key=key)
 
 
 def render_featured_trends(
@@ -261,12 +303,10 @@ def render_featured_trends(
                     change_mode=chart["change_mode"],
                     height=chart["height"],
                 )
-                st.button(
+                overview_page_button(
                     tr(language, f"Open {sector['short_en']}", f"打开{sector['short_zh']}"),
                     key=f"overview_featured_open_{sector_key}",
-                    width="stretch",
-                    on_click=set_app_page,
-                    args=(sector_key,),
+                    page_key=sector_key,
                 )
 
 
@@ -275,42 +315,25 @@ def render_overview_health_summary(
     labels: dict[str, dict[str, Any]],
     language: str,
 ) -> None:
-    section_heading(
-        language,
-        "Source health",
-        "来源健康度",
-        "Overview shows only the compact status; the full source table stays on Source Health.",
-        "总览只显示摘要；完整来源表保留在来源健康度页面。",
-    )
     summary = overview_source_summary(artifacts, labels)
-    with st.container(border=True):
-        columns = st.columns(4)
-        values = [
-            (tr(language, "Total feeds", "数据流总数"), summary["total"]),
-            (tr(language, "Ready", "可用"), summary["healthy"]),
-            (tr(language, "Attention", "需留意"), summary["attention"]),
-            (tr(language, "Problem", "有问题"), summary["problem"]),
-        ]
-        for column, (label, value) in zip(columns, values):
-            with column:
-                st.markdown(
-                    f'<div class="am-health-value">{escape(str(value))}</div>'
-                    f'<div class="am-health-label">{escape(label)}</div>',
-                    unsafe_allow_html=True,
-                )
-        st.caption(
-            tr(
+    text_column, link_column = st.columns([3, 1])
+    with text_column:
+        st.caption(tr(
+            language,
+            f"Reported source checks: {summary['healthy']}/{summary['total']} ready · {summary['attention']} need attention · {summary['problem']} unavailable or unknown. Not a guarantee that all observations are current.",
+            f"来源检查：{summary['healthy']}/{summary['total']} 可用 · {summary['attention']} 需留意 · {summary['problem']} 不可用或未知。不代表所有观察值均为最新。",
+        ))
+        if summary["missing_metadata"]:
+            st.warning(tr(
                 language,
-                "Source observation dates remain mixed by cadence; inspect Source Health for dataset-level detail.",
-                "不同来源的观察日期按各自频率更新；请到来源健康度查看数据集详情。",
-            )
-        )
-        st.button(
+                f"{summary['missing_metadata']} sections lack source-health metadata; their status is unknown.",
+                f"{summary['missing_metadata']} 个板块缺少来源健康元数据，状态未知。",
+            ))
+    with link_column:
+        overview_page_button(
             tr(language, "Open Source Health", "打开来源健康度"),
             key="overview_open_health",
-            width="stretch",
-            on_click=set_app_page,
-            args=("health",),
+            page_key="health",
         )
 
 
@@ -325,16 +348,23 @@ def render_overview(
     st.caption(
         tr(
             language,
-            "A bounded Hong Kong market pulse across the connected sectors; detailed analysis stays on sector pages.",
-            "香港市场脉搏总览；详细分析保留在各板块页面。",
+            "Markets and allocation first, economic releases next; detailed research stays on its own pages.",
+            "先看市场与配置，再看经济数据发布；详细研究保留在各页面。",
         )
     )
     st.markdown(
-        f'<div class="am-meta">{escape(tr(language, "Hong Kong", "香港"))} · '
-        f'{escape(tr(language, "artifact snapshots, not live browser connections", "artifact 数据快照，不是浏览器实时连接"))}</div>',
+        f'<div class="am-meta">{escape(tr(language, "Cross-market", "跨市场"))} · '
+        f'{escape(tr(language, "local data snapshots, not live quotes", "本地数据快照，非实时报价"))}</div>',
         unsafe_allow_html=True,
     )
     render_overview_header(artifacts, labels, language)
-    render_sector_pulse(artifacts, labels, language)
-    render_featured_trends(artifacts, labels, language, window)
     render_overview_health_summary(artifacts, labels, language)
+    market_artifacts = {key: artifacts[key] for key in ("regime", "market") if key in artifacts}
+    if market_artifacts:
+        render_sector_pulse(market_artifacts, labels, language)
+    else:
+        st.warning(tr(language, "Market snapshots are unavailable.", "市场数据快照不可用。"))
+    render_research_shortcuts(language)
+    render_economic_observations(artifacts, language)
+    render_thematic_shortcuts(language)
+    render_featured_trends(artifacts, labels, language, window)

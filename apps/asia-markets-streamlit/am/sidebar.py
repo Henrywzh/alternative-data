@@ -15,24 +15,24 @@ SIDEBAR_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("workspace", ("overview",)),
     ("markets", ("market", "regime", "hong_kong_flows", "events", "heatmaps")),
     (
-        "hong_kong",
+        "economy",
         (
-            "labour",
-            "population",
             "real_estate",
             "transport",
-            "aerospace",
-            "crypto",
+            "labour",
+            "population",
         ),
     ),
+    ("themes", ("aerospace", "crypto")),
     ("data", ("data", "health")),
 )
 
 GROUP_LABELS = {
     "workspace": ("Workspace", "工作台"),
-    "markets": ("Markets", "市场"),
-    "hong_kong": ("Hong Kong", "香港"),
-    "data": ("Data", "数据"),
+    "markets": ("Markets & capital", "市场与资金"),
+    "economy": ("Economy & industries", "经济与行业"),
+    "themes": ("Thematic research", "专题研究"),
+    "data": ("Research tools", "辅助工具"),
 }
 
 
