@@ -2,11 +2,11 @@
   "baseline_initialized": true,
   "last_evaluated_by_mode": {
     "close": "2026-10-06",
-    "intraday": "2026-10-08"
+    "intraday": "2026-10-09"
   },
   "last_sent_kind": "event",
-  "last_sent_report_date": "2026-10-07",
-  "last_sent_week": "2026-W41",
+  "last_sent_report_date": "2026-10-12",
+  "last_sent_week": "2026-W42",
   "pending_events": [],
   "sent_event_keys": [
     "drawdown|csi300|2026-09-03|沪深300：60日回撤进入风险区间（当前 -10.02%）。",
@@ -22,7 +22,8 @@
     "trend_reversal|csi500|2026-09-28|中证500：20日均线由 均线附近 转为 跌破均线，相对均线 -4.06%。",
     "drawdown|csi300|2026-09-29|沪深300：60日回撤进入风险区间（当前 -10.89%）。",
     "rsi_extreme|csi300|2026-09-29|沪深300：RSI 由 均线附近 进入 超卖（RSI 31）。",
-    "trend_reversal|sp500|2026-10-06|标普500：20日均线由 均线附近 转为 站上均线，相对均线 +2.05%。"
+    "trend_reversal|sp500|2026-10-06|标普500：20日均线由 均线附近 转为 站上均线，相对均线 +2.05%。",
+    "rsi_extreme|csi500|2026-10-09|中证500：RSI 由 均线附近 进入 超卖（RSI 32）。"
   ],
   "version": 1
 }
