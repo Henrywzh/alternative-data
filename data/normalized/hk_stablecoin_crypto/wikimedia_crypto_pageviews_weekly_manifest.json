@@ -26,5 +26,5 @@
   "source_status": "live",
   "source_granularity": "daily",
   "caveat": "Wikipedia pageviews are page loads, not unique people, trading activity, or Hong Kong adoption.",
-  "fetched_at": "2026-10-12T09:36:39.747162+00:00"
+  "fetched_at": "2026-10-12T15:28:28.070247+00:00"
 }
