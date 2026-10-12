@@ -67,6 +67,11 @@ data/normalized/market_monitor/**
 !data/normalized/market_monitor/**/
 !data/normalized/market_monitor/**/*.parquet
 !data/normalized/market_monitor/**/*.json
+!data/normalized/china_macro/
+data/normalized/china_macro/**
+!data/normalized/china_macro/**/
+!data/normalized/china_macro/**/*.parquet
+!data/normalized/china_macro/**/*.json
 !data/derived/
 data/derived/*
 !data/derived/market_monitor/

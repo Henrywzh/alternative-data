@@ -501,3 +501,38 @@ Update this manual when any of the following changes:
 Update `DATA_CATALOG.md` for source and dataset facts. Update
 `PROJECT_STATUS.md` for current work and open decisions. Avoid duplicating
 volatile status details throughout the manual.
+
+### China macro (Streamlit-only)
+
+China macro is auxiliary context within Market Regime → Macro → China, not
+a Cloudflare sector. Sources are refreshed outside the application using
+`python -m china_macro.cli` (`--backfill` for full history, `--build-only` for
+local artifact rebuilds). The dedicated `china-macro-daily.yml` schedules a
+refresh at 08:30 UTC; it becomes active only after the workflow reaches the
+default branch. No email or live-on-navigation fetch is enabled by this feature.
+
+`data/normalized/china_macro/CURRENT.json` selects one hash-validated immutable
+run bundle containing source observations and separate derived signals. Never
+select different datasets' latest runs independently. Failed source requests
+retain original observation/capture dates; all-fetch failure or an empty run
+must not replace the last valid snapshot. Source-response bodies stay ignored
+under `data/raw/china_macro/`. Bilingual artifacts live at
+`.generated/china-macro-artifact{,-zh}.json`.
+
+Monthly and daily series have distinct units/scopes. GDP, property, investment
+and profits are YTD where specified; Jan–Feb activity releases are combined.
+M1's January 2025 definition change is explicit, with the official comparable
+2024 series separated from legacy M1. Borrower loan-balance changes are not
+official new-lending flows. FX is SAFE/CFETS central parity, not a spot close.
+DR007 must never be replaced with FR007/FDR007 under the same label.
+
+Winter gaps require a period-aware diagnosis: from 2012 industrial/retail
+February is January–February combined, while standalone January remains blank.
+Do not fill a missing February with zero or treat cumulative growth as monthly.
+Internal missing-month diagnostics exclude only documented unpublished periods.
+The 2026 infrastructure definition includes utilities and must stay separate
+from the historical ex-utilities series. PBC annual-workbook reparses replace
+prior rows from that URL; appended ratio tables must not enter amount series.
+Schema-v2 refresh forces one archive reparse; future internal loan/AFRE gaps
+also trigger historical retries. Source availability is not guaranteed: retain
+failed-source history with its original capture dates and visible diagnostics.

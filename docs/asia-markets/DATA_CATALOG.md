@@ -1811,3 +1811,48 @@ one measure, and do not infer project-level stage progression from it.
 - `Catalog only`, `planned`, `unavailable` and `stale/unreachable` must remain
   visible; do not convert them into healthy measures merely to improve the hub
   summary.
+
+## China macro research context (2026-10-12)
+
+- Surface: Streamlit Market Regime → Macro → China; also included in Data
+  Explorer / Source Health as auxiliary context, not a new HK sector.
+- Official NBS release-bank API: PMI headline/subindices, industrial growth
+  and profits, property sales/investment/starts/completions, fixed investment.
+  Official release HTML supplies infrastructure investment and CPI/core CPI
+  interpretation data; API failures are retained as measured failed fetches.
+- Eastmoney public statistics mirrors: CPI/PPI, retail, cumulative GDP,
+  money supply, new RMB loans, USD-denominated trade, LPR. Mirror units are
+  normalized (100m CNY → CNY bn; thousand USD → USD bn).
+- From 2012, retail/industrial February uses the published January–February
+  cumulative fields and carries `scope=jan_feb`. Standalone January is not
+  invented. Gap diagnostics exclude unpublished January but retain genuine
+  missing reference months; no interpolation/zero fill is performed.
+- NBS investment-release dates use the formal article title: annual → December,
+  first half → June. Migrated information-disclosure URL dates and comparison
+  years in the body must not determine the observation period. Infrastructure
+  ex-utilities ends December 2025; the 2026 including-utilities definition is a
+  separate metric, not a continuation of the old series.
+- PBC official annual Excel: AFRE flow/stock, government bonds and real-economy
+  RMB lending; RMB credit-funds tables provide borrower loan balances.
+  The comparable 2024 M1 back series comes from the official 2025 annual
+  financial statistics report, not estimates.
+- PBC amount parsers trim boundary whitespace (including archived XLS NBSP),
+  disambiguate numeric October only within a complete Jan–Dec block, and stop
+  at the primary table boundary. Appended percentage/revision tables are not
+  read using the primary amount header. A successful annual-workbook reparse
+  replaces that URL's old rows; failure preserves the prior observations.
+  Borrower-loan and AFRE expected-month gaps trigger annual archive retries.
+- Daily: Jin10 CFETS Shibor mirror; SAFE official USD/CNY central parity;
+  ChinaBond/CCDC 1Y/10Y government yields. The old Jin10 FX file stopped in
+  2021 and is not the production FX source. DR007 remains explicitly missing
+  until a genuine usable source is validated; no FDR007 substitution.
+- Derived: orders minus finished-goods inventory; industrial minus retail
+  YoY; comparable M1 minus M2; AFRE excluding government bonds; trade balance;
+  three-calendar-month averages of trade YoY; 10Y−1Y curve in bp; consecutive
+  loan-balance changes. Missing months remain missing, never zero or bridged.
+- Each metric publishes coverage/capture dates, units and scope. NBS freshness
+  uses its annual official release calendar when available; other feeds use
+  explicit cadence guards rather than claiming a fixed publication day.
+- Data: `data/normalized/china_macro/runs/<run-id>/{observations,signals}.parquet`
+  with a hash-validated `CURRENT.json`. Full histories remain in Parquet and
+  artifacts; charts default to the terminal's 10-year window.

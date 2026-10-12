@@ -2062,6 +2062,15 @@ def render_regime(artifact: dict[str, Any], labels: dict[str, Any], language: st
             render_credit_vix_evidence(artifact, language, window)
 
     with macro_tab:
+        region = st.segmented_control(
+            tr(language, "Economy", "经济体"), ["global", "china"], default="global",
+            format_func=lambda value: tr(language, "US & global", "美国与全球") if value == "global" else tr(language, "China", "中国"),
+            key="regime_macro_economy",
+        )
+        if region == "china":
+            from .china_macro import render_china_macro
+            render_china_macro(language, window)
+            return
         section_heading(
             language,
             "Commodities",

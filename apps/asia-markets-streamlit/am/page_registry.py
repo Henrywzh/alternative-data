@@ -264,6 +264,12 @@ def run_page(page_key: str) -> None:
         artifacts["hong_kong_flows"] = auxiliary
         labels["hong_kong_flows"] = auxiliary_labels
         errors.extend(auxiliary_errors)
+        china, china_labels, china_errors = load_auxiliary_artifact(
+            "china-macro", language, title_en="China Macro", title_zh="中国宏观经济",
+        )
+        artifacts["china_macro"] = china
+        labels["china_macro"] = china_labels
+        errors.extend(china_errors)
     _show_errors(errors)
     _render_aggregate(
         page_key,

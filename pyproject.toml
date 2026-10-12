@@ -25,6 +25,9 @@ dependencies = [
   "pypdf>=5.0",
   "PyYAML>=6.0.2",
   "requests>=2.32",
+  # China macro: official NBS session and PBC archival XLS workbooks.
+  "curl_cffi>=0.13",
+  "xlrd>=2.0.1",
   "streamlit>=1.56.0",
   "plotly>=5.24",
   "matplotlib>=3.8",

@@ -2174,3 +2174,46 @@ sent when breadth qualifies (>=2 confirmed domains, or confirmed
 financial stress) and a fresh state transition fires. Component
 transitions recorded earlier in preview mode are not replayed, because
 preview runs already advanced the last-known states.
+
+## 2026-10-12 — China macro Streamlit expansion
+
+Implementation adds six groups under Market Regime → Macro → China: activity,
+inflation/profits, credit/liquidity, property/investment, external demand, and
+rates/FX. Scrollable charts, inflation heatmap, full-series default selection,
+raw tables and per-metric source health follow the existing terminal design.
+The feature does not alter ETF alerts, the regime scoring engine, or Cloudflare
+publishing. The dedicated `china-macro-daily.yml` workflow refreshes at 08:30 UTC
+and supports a manual full-history backfill. Deployment targets the main-branch
+Asia Markets Streamlit app, not Cloudflare.
+
+Full-source history backfill and parser repairs completed locally: 31,136 source
+observations and 5,666 descriptive derived values, using the hash-validated run
+`20261012T125911-9d758bca`. All 28 source groups succeeded, with no request warnings.
+The universe has 61 raw/derived series: 58 available, two historical definition
+vintages and DR007 unavailable. Core CPI starts July 2020; legacy infrastructure
+starts September 2019 and now has no internal expected-month gaps through
+December 2025. The 2026 infrastructure series includes utilities and remains
+separate. Manufacturing investment starts February 2012. Monthly activity
+and inflation are through August 2026; PMI is through September. Official
+September CPI/activity release dates are October 14/19 respectively, so August
+is not yet stale on October 12. Offline and Streamlit integration validation:
+192 tests passed. Real-browser desktop (1440px) and mobile (390px) checks passed
+without page-level horizontal overflow or visible application exceptions;
+the February 2026 tooltip shows retail growth 2.8% and "1–2月合并".
+
+Winter-data repairs use cumulative February fields from 2012, retain unpublished
+standalone January as a gap, and correctly date annual/half-year NBS releases.
+PBC XLS boundary whitespace no longer drops the 2022 borrower-loan year; appended
+percentage tables cannot overwrite AFRE monetary amounts or corrupt October
+dates. Successful reparses replace the same official workbook's prior rows.
+Internal loan/AFRE gaps trigger archive retries; schema v2 also forces a one-time
+AFRE reparse. Genuine older gaps remain explicitly listed (currently ten series,
+all gaps before 2012), never zero-filled or interpolated.
+
+Local macOS PyArrow 25 mimalloc crashed in existing regime dataframe rendering;
+the local preview is launched with `ARROW_DEFAULT_MEMORY_POOL=system`. This is
+a local runtime workaround, not a change to cloud dependency policy or signals.
+Known limitations remain visible: NBS API requests can receive WAF HTML and
+must fall back to official releases/retained history without recapture; DR007
+is not yet sourced. Shorter available series must not be advertised as 10-year
+coverage. See DATA_CATALOG.md for precise source/scope definitions.
