@@ -1,0 +1,42 @@
+{
+  "run_id": "20261013T105504Z-c2bfc682",
+  "mode": "daily-update",
+  "scraped_at": "2026-10-13T10:55:04.961083Z",
+  "status": "success",
+  "datasets": [
+    {
+      "dataset_id": "vercel_model_leaderboard",
+      "status": "ok",
+      "rows": 8399,
+      "source_urls": [
+        "https://vercel.com/api/ai/leaderboard-export?dataset=models&format=json&modality=all",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=models&format=json&modality=image",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=models&format=json&modality=text",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=models&format=json&modality=video"
+      ],
+      "new_entities": [
+        "Grok Imagine Video 1.5 Lite"
+      ]
+    },
+    {
+      "dataset_id": "vercel_lab_leaderboard",
+      "status": "ok",
+      "rows": 19909,
+      "source_urls": [
+        "https://vercel.com/api/ai/leaderboard-export?dataset=labs&format=json&modality=all",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=labs&format=json&modality=image",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=labs&format=json&modality=text",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=labs&format=json&modality=video"
+      ],
+      "new_entities": []
+    },
+    {
+      "dataset_id": "vercel_models",
+      "status": "ok",
+      "rows": 458,
+      "source_urls": [
+        "https://ai-gateway.vercel.sh/v1/models"
+      ]
+    }
+  ]
+}
