@@ -61,7 +61,7 @@ jobs:
           # are spaced at least 15 seconds apart. A transient network failure
           # is reported below and freshness validation decides whether the
           # existing data is still recent enough to send.
-          minerals-signal-data scrape-tungsten --base-dir . --source ctia --max-pages 1 --since-days 31 --with-tungsten-ocr
+          minerals-signal-data scrape-tungsten --base-dir . --source ctia --max-pages 1 --since-days 31 --with-tungsten-ocr --with-molybdenum-ocr
 
       - name: Warn on CTIA scrape failure
         if: steps.ctia_scrape.outcome == 'failure'

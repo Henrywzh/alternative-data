@@ -869,7 +869,9 @@ def extract_molybdenum_chinese(html_text: str) -> dict:
                     break
         mentions.sort()
 
-        price_pattern = re.compile(r"([\d,.]+)\s*(元/吨度|元/吨|元/千克|元/kg)")
+        price_pattern = re.compile(
+            r"([\d,.]+)\s*(万元/吨度|万元/吨|元/吨度|元/吨|元/千克|元/kg)"
+        )
         matches = list(price_pattern.finditer(clause))
 
         if len(mentions) == len(matches) and len(mentions) > 0:
@@ -879,10 +881,10 @@ def extract_molybdenum_chinese(html_text: str) -> dict:
                     extracted[field] = val
 
     direct_patterns = {
-        "molybdenum_concentrate": r"钼精矿.*?报价在?([\d,.]+)\s*(元/吨度|元/吨)",
-        "ferromolybdenum": r"钼铁.*?报价在?([\d,.]+)\s*(元/吨|元/千克)",
-        "ammonium_heptamolybdate": r"七钼酸铵.*?报价在?([\d,.]+)\s*(元/吨|元/千克)",
-        "ammonium_tetramolybdate": r"四钼酸铵.*?报价在?([\d,.]+)\s*(元/吨|元/千克)"
+        "molybdenum_concentrate": r"钼精矿.*?报价在?([\d,.]+)\s*(万元/吨度|万元/吨|元/吨度|元/吨)",
+        "ferromolybdenum": r"钼铁.*?报价在?([\d,.]+)\s*(万元/吨|万元/吨度|元/吨|元/千克)",
+        "ammonium_heptamolybdate": r"七钼酸铵.*?报价在?([\d,.]+)\s*(万元/吨|万元/吨度|元/吨|元/千克)",
+        "ammonium_tetramolybdate": r"四钼酸铵.*?报价在?([\d,.]+)\s*(万元/吨|万元/吨度|元/吨|元/千克)"
     }
     for field, regex in direct_patterns.items():
         if extracted[field] == "":
@@ -1365,6 +1367,7 @@ def scrape_ctia_range(
     max_pages: int = 3,
     with_images: bool = False,
     tungsten_ocr: bool = False,
+    molybdenum_ocr: bool = False,
     session: requests.Session | None = None,
     since_date: str | None = None,
     since_days: int | None = None,
@@ -1489,7 +1492,7 @@ def scrape_ctia_range(
                     row_data.update(extracted)
 
                     moly_missing = any(row_data.get(f) in ("", None) for f in MOLY_PRICE_FIELDS)
-                    if with_images and moly_missing:
+                    if (with_images or molybdenum_ocr) and moly_missing:
                         img_url = _find_ctia_price_image_url(content_html, ["molybdenum-price", "钼价"])
                         if img_url:
                             _log(f"  [{date_str}] Core moly values missing in text. Downloading image for OCR: {img_url}")
@@ -1586,6 +1589,7 @@ def scrape_range(
     max_pages: int = 3,
     with_images: bool = False,
     tungsten_ocr: bool = False,
+    molybdenum_ocr: bool = False,
     session: requests.Session | None = None,
     since_date: str | None = None,
     since_days: int | None = None,
@@ -1597,6 +1601,7 @@ def scrape_range(
             max_pages=max_pages,
             with_images=with_images,
             tungsten_ocr=tungsten_ocr,
+            molybdenum_ocr=molybdenum_ocr,
             session=session,
             since_date=since_date,
             since_days=since_days,
@@ -1765,12 +1770,18 @@ def main() -> int:
         action="store_true",
         help="Use CTIA price-table images to fill missing 65% tungsten concentrate prices",
     )
+    parser.add_argument(
+        "--with-molybdenum-ocr",
+        action="store_true",
+        help="Use CTIA price-table images to fill missing molybdenum prices without OCRing rare-earth articles",
+    )
     args = parser.parse_args()
     scrape_range(
         args.base_dir,
         max_pages=args.max_pages,
         with_images=args.with_images,
         tungsten_ocr=args.with_tungsten_ocr,
+        molybdenum_ocr=args.with_molybdenum_ocr,
         since_date=args.since_date,
         since_days=args.since_days,
     )

@@ -101,6 +101,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Use CTIA price-table images to fill missing 65% tungsten concentrate prices",
     )
+    tungsten.add_argument(
+        "--with-molybdenum-ocr",
+        action="store_true",
+        help="Use CTIA price-table images to fill missing molybdenum prices without OCRing rare-earth articles",
+    )
     return parser
 
 
@@ -177,6 +182,7 @@ def main() -> int:
             max_pages=args.max_pages,
             with_images=args.with_images,
             tungsten_ocr=args.with_tungsten_ocr,
+            molybdenum_ocr=args.with_molybdenum_ocr,
             since_date=args.since_date,
             since_days=args.since_days,
             source=args.source,

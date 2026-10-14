@@ -13,6 +13,7 @@ from minerals_signal_data.chinatungsten_scraper import (
     _parse_rare_earth_ocr,
     _find_ctia_price_image_url,
     _parse_chinese_moly_ocr,
+    scrape_ctia_range,
 )
 
 
@@ -56,6 +57,22 @@ def test_extract_molybdenum_chinese_respectively() -> None:
     assert res["ammonium_tetramolybdate"] == ""
 
 
+def test_extract_molybdenum_chinese_ctia_ten_thousand_yuan_units() -> None:
+    html = """
+    <p>今日，钼精矿、钼铁与七钼酸铵成交价格分别在5480元/吨度、34.3万元/吨和33.3万元/吨左右。</p>
+    """
+    res = extract_molybdenum_chinese(html)
+    assert res["molybdenum_concentrate"] == 5480.0
+    assert res["ferromolybdenum"] == 343000.0
+    assert res["ammonium_heptamolybdate"] == 333000.0
+
+
+def test_extract_molybdenum_chinese_does_not_treat_daily_declines_as_prices() -> None:
+    html = "<p>今日，钼精矿与氧化钼价格约降10元/吨度，钼铁与钼酸盐价格约降1000元/吨。</p>"
+    res = extract_molybdenum_chinese(html)
+    assert all(value == "" for value in res.values())
+
+
 def test_extract_molybdenum_chinese_direct() -> None:
     html = """
     <p>钼精矿市场上，商家报价在5,180元/吨度左右。</p>
@@ -64,6 +81,68 @@ def test_extract_molybdenum_chinese_direct() -> None:
     res = extract_molybdenum_chinese(html)
     assert res["molybdenum_concentrate"] == 5180.0
     assert res["ferromolybdenum"] == 318000.0
+
+
+def test_scrape_cli_exposes_targeted_molybdenum_ocr() -> None:
+    from minerals_signal_data.cli import build_parser
+
+    args = build_parser().parse_args(
+        ["scrape-tungsten", "--source", "ctia", "--with-molybdenum-ocr"]
+    )
+    assert args.with_molybdenum_ocr is True
+    assert args.with_images is False
+
+
+def test_ctia_scrape_runs_moly_ocr_without_enabling_all_image_scraping(tmp_path, monkeypatch) -> None:
+    from minerals_signal_data import chinatungsten_scraper
+
+    post = {
+        "date": "2026-10-14T08:00:00",
+        "link": "https://www.ctia.com.cn/news/134343.html",
+        "title": {"rendered": "钼市偏弱 钼铁价格继续下跌"},
+        "content": {
+            "rendered": (
+                '<p>今日钼精矿与氧化钼价格约降10元/吨度。</p>'
+                '<img src="https://www.ctia.com.cn/wp-content/uploads/molybdenum-price-picture-10143.jpg">'
+            )
+        },
+    }
+    ocr_calls = []
+
+    def fake_get_ctia_url(_session, url):
+        return [post] if "categories=18" in url else []
+
+    def fake_download(_session, _url, image_dir, filename):
+        image_path = image_dir / filename
+        image_path.parent.mkdir(parents=True, exist_ok=True)
+        image_path.write_bytes(b"test image")
+        return str(image_path)
+
+    def fake_moly_ocr(image_path):
+        ocr_calls.append(image_path)
+        return {
+            "molybdenum_concentrate": 5480.0,
+            "ferromolybdenum": 343000.0,
+            "ammonium_heptamolybdate": 333000.0,
+        }
+
+    monkeypatch.setattr(chinatungsten_scraper, "_get_ctia_url", fake_get_ctia_url)
+    monkeypatch.setattr(chinatungsten_scraper, "_download_ctia_image", fake_download)
+    monkeypatch.setattr(chinatungsten_scraper, "_run_tesseract_ocr_moly_china", fake_moly_ocr)
+    monkeypatch.setattr(chinatungsten_scraper, "write_processed_snapshot", lambda *args, **kwargs: None)
+
+    result = scrape_ctia_range(
+        tmp_path,
+        max_pages=1,
+        molybdenum_ocr=True,
+        session=object(),
+        since_date="2026-10-14",
+    )
+
+    assert result == 1
+    assert len(ocr_calls) == 1
+    saved = (tmp_path / "data/raw/minerals_signal_data/molybdenum_chinatungsten.csv").read_text()
+    assert "5480.0,343000.0,333000.0" in saved
 
 
 def test_parse_rare_earth_ocr() -> None:
