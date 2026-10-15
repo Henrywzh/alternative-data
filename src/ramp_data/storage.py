@@ -16,6 +16,7 @@ from ramp_data.schemas import (
     JOBS_IMPACT_DATASET,
     CATEGORY_CHARTS_DATASETS,
     VINTAGE_DATASETS,
+    TOKENOMICS_DATASETS,
 )
 
 NATURAL_KEYS: dict[str, list[str]] = {
@@ -72,7 +73,7 @@ REPLACE_DATASETS = {"ramp_category_vendors"}
 # Register the config-driven datasets (AI Index + Jobs Impact) from schemas.py so
 # there is a single source of truth for their columns/keys. AI Index datasets are
 # history/append (keyed on date_month); Jobs Impact is a static REPLACE snapshot.
-for _dsid, _cfg in {**AI_INDEX_DATASETS, **FILTER_MODE_DATASETS, **CATEGORY_CHARTS_DATASETS, **VINTAGE_DATASETS}.items():
+for _dsid, _cfg in {**AI_INDEX_DATASETS, **FILTER_MODE_DATASETS, **CATEGORY_CHARTS_DATASETS, **TOKENOMICS_DATASETS, **VINTAGE_DATASETS}.items():
     DATASET_COLUMNS[_dsid] = [*CORE_COLUMNS, *_cfg["fields"]]
     NATURAL_KEYS[_dsid] = _cfg["natural_keys"]
     SORT_KEYS[_dsid] = _cfg["sort_keys"]

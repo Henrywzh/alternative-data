@@ -14,6 +14,33 @@ from __future__ import annotations
 
 CORE_COLUMNS = ["dataset_id", "source_url", "source_run_id", "scraped_at"]
 
+# Token Spend Management is a separate sample from the monthly adoption index.
+# Keep source model identifiers verbatim: aliases are not canonical models.
+TOKENOMICS_DATASETS: dict[str, dict] = {
+    "ramp_ai_token_activity": {
+        "payload_key": "tokenVolumes",
+        "fields": ["period_grain", "period_start", "period_end", "metric_key",
+                   "dimension_type", "series_key", "series_label", "model_maker", "metric_value"],
+        "natural_keys": ["period_grain", "period_start", "period_end", "metric_key",
+                         "dimension_type", "model_maker", "series_key"],
+        "sort_keys": ["period_end", "metric_key", "model_maker", "series_key"],
+        "numeric": ["metric_value"],
+        "metric_fields": ["metric_value", "series_label"],
+        "date_column": "period_end",
+        "min_rows": 500,
+    },
+    "ramp_ai_token_prices": {
+        "payload_key": "tokenPrices",
+        "fields": ["usage_date", "token_type", "model_maker", "token_cost_usd_7d", "token_count_7d"],
+        "natural_keys": ["usage_date", "token_type", "model_maker"],
+        "sort_keys": ["usage_date", "token_type", "model_maker"],
+        "numeric": ["token_cost_usd_7d", "token_count_7d"],
+        "metric_fields": ["token_cost_usd_7d", "token_count_7d"],
+        "date_column": "usage_date",
+        "min_rows": 100,
+    },
+}
+
 
 AI_INDEX_DATASETS: dict[str, dict] = {
     "ramp_ai_adoption_overall": {
@@ -225,6 +252,17 @@ VINTAGE_DATASETS: dict[str, dict] = {
         "min_rows": 1,
     },
 }
+
+for _dataset_id, _cfg in TOKENOMICS_DATASETS.items():
+    VINTAGE_DATASETS[f"{_dataset_id}_vintages"] = {
+        "source_dataset": _dataset_id,
+        "fields": [*_cfg["fields"], "vintage_scraped_at"],
+        "natural_keys": [*_cfg["natural_keys"], "vintage_scraped_at"],
+        "sort_keys": [*_cfg["sort_keys"], "vintage_scraped_at"],
+        "numeric": _cfg["numeric"],
+        "metric_fields": _cfg["metric_fields"],
+        "min_rows": 1,
+    }
 
 # --------------------------------------------------------------- Filter mode
 #

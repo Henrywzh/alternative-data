@@ -10,6 +10,7 @@ Main coverage areas:
 - OpenRouter rankings, request volume, app intelligence, model activity, and provider economics.
 - Provider-adoption signals across GitHub, PyPI, npm, and Hugging Face.
 - Artificial Analysis model snapshots, frontier-model registry features, and public capex trends.
+- Ramp vendor adoption and [Tokenomics](docs/ramp-tokenomics.md): weekly token volume/spend and rolling seven-day effective prices, checked Monday and Thursday.
 - Semiconductor market signals from FRED, official/native trade data, production series, and backup checks.
 - Google Trends keyword studies with CSV import/export automation and local fallback tooling.
 - Notebook-friendly marts and starter notebooks for reproducible research.

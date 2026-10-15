@@ -1,16 +1,17 @@
 # Filename kept as ramp-monthly.yml so the existing run history stays attached
-# to this workflow; the cadence below is weekly.
-name: Ramp Vendor Intelligence Weekly Update
+# to this workflow; the cadence below is twice weekly.
+name: Ramp Vendor Intelligence Twice-Weekly Update
 
 on:
   schedule:
-    # Ramp's data is monthly, but its publication day is not fixed and the
+    # Ramp publishes monthly adoption and weekly Tokenomics on different days;
+    # its publication day is not fixed and the
     # feeds do not land together -- in Aug 2026 the category charts carried
     # July while the AI Index still stopped at June. A single monthly run
     # therefore misses whichever feed publishes after it, and the miss costs a
-    # full month. Poll weekly instead: a run with nothing new is a no-op commit
+    # full month. Poll Monday and Thursday: a run with nothing new is a no-op commit
     # step, so the only cost of over-polling is a few minutes of CI.
-    - cron: "0 5 * * 1"          # 05:00 UTC every Monday
+    - cron: "0 5 * * 1,4"        # 05:00 UTC every Monday and Thursday
   workflow_dispatch:            # allow manual trigger / backfill
 
 permissions:
@@ -71,6 +72,12 @@ jobs:
         run: |
           python -m ramp_data.cli --base-dir . category-charts
 
+      - name: Run Tokenomics update
+        # Run after existing collectors so Tokenomics failures cannot skip
+        # them. It still runs if an earlier collector failed; all token gates
+        # pass before writes, and the commit step preserves successful data.
+        if: ${{ !cancelled() }}
+        run: python -m ramp_data.cli --base-dir . tokenomics
 
       - name: Commit normalized datasets
         # Runs even when a scrape step failed: each step gates its own write, so
