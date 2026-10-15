@@ -6,9 +6,9 @@
     "title": "香港人口、迁移与跨境数据监测",
     "description": "入境处高频每日出入境净流量、政府统计处人口估算与净移动、积金局永久离港强积金申索、教资会内地生入学人数及大湾区跨境车流/高铁客流。",
     "sector": "hk-population-migration",
-    "generatedAt": "2026-10-14T11:55:04.722155Z",
-    "dataAsOf": "2026-10-13",
-    "liveSourcesCount": 5,
+    "generatedAt": "2026-10-15T11:31:42.388505Z",
+    "dataAsOf": "2026-10-14",
+    "liveSourcesCount": 6,
     "totalSourcesCount": 6,
     "cards": [
       {
@@ -344,7 +344,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `52d7c829cb989095` · 生成于 2026-10-14T11:55:04.722155Z。这是已发布快照，不是实时连接。"
+        "body": "**数据快照：** `d0abd1dc0fb0889b` · 生成于 2026-10-15T11:31:42.388505Z。这是已发布快照，不是实时连接。"
       },
       {
         "id": "kpi_grid",
@@ -404,17 +404,10 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-10-14T11:55:04.722155Z",
-    "status": "partial",
+    "generatedAt": "2026-10-15T11:31:42.388505Z",
+    "status": "ready",
     "datasets": {
       "immd_daily_traffic": [
-        {
-          "date": "2025-10-14",
-          "hk_resident_net_flow": 4124,
-          "mainland_visitor_net_retention": -7337,
-          "hk_resident_departures_7d_ma": 324076.1,
-          "mainland_visitor_arrivals_7d_ma": 87828
-        },
         {
           "date": "2025-10-15",
           "hk_resident_net_flow": -8465,
@@ -2962,19 +2955,16 @@
           "mainland_visitor_net_retention": 1207,
           "hk_resident_departures_7d_ma": 356628.7,
           "mainland_visitor_arrivals_7d_ma": 96937.6
+        },
+        {
+          "date": "2026-10-14",
+          "hk_resident_net_flow": -7771,
+          "mainland_visitor_net_retention": -3784,
+          "hk_resident_departures_7d_ma": 360925.6,
+          "mainland_visitor_arrivals_7d_ma": 93087.7
         }
       ],
       "immd_net_flow_history": [
-        {
-          "date": "2025-10-14",
-          "series": "香港居民净流量",
-          "value": 4124
-        },
-        {
-          "date": "2025-10-14",
-          "series": "内地访客净留存",
-          "value": -7337
-        },
         {
           "date": "2025-10-15",
           "series": "香港居民净流量",
@@ -6614,6 +6604,16 @@
           "date": "2026-10-13",
           "series": "内地访客净留存",
           "value": 1207
+        },
+        {
+          "date": "2026-10-14",
+          "series": "香港居民净流量",
+          "value": -7771
+        },
+        {
+          "date": "2026-10-14",
+          "series": "内地访客净留存",
+          "value": -3784
         }
       ],
       "csd_population": [
@@ -11138,6 +11138,11 @@
           "visitors": 10016
         },
         {
+          "date": "2026-08",
+          "region": "非洲",
+          "visitors": 9649
+        },
+        {
           "date": "2016-11",
           "region": "澳纽及南太平洋",
           "visitors": 56926
@@ -11721,6 +11726,11 @@
           "date": "2026-07",
           "region": "澳纽及南太平洋",
           "visitors": 43412
+        },
+        {
+          "date": "2026-08",
+          "region": "澳纽及南太平洋",
+          "visitors": 33523
         },
         {
           "date": "2016-11",
@@ -12308,6 +12318,11 @@
           "visitors": 3607250
         },
         {
+          "date": "2026-08",
+          "region": "中国内地",
+          "visitors": 4569228
+        },
+        {
           "date": "2016-11",
           "region": "欧洲",
           "visitors": 195159
@@ -12891,6 +12906,11 @@
           "date": "2026-07",
           "region": "欧洲",
           "visitors": 128594
+        },
+        {
+          "date": "2026-08",
+          "region": "欧洲",
+          "visitors": 144245
         },
         {
           "date": "2016-11",
@@ -13478,6 +13498,11 @@
           "visitors": 106023
         },
         {
+          "date": "2026-08",
+          "region": "澳门",
+          "visitors": 127633
+        },
+        {
           "date": "2016-11",
           "region": "中东",
           "visitors": 13010
@@ -14061,6 +14086,11 @@
           "date": "2026-07",
           "region": "中东",
           "visitors": 9037
+        },
+        {
+          "date": "2026-08",
+          "region": "中东",
+          "visitors": 8020
         },
         {
           "date": "2016-11",
@@ -14648,6 +14678,11 @@
           "visitors": 82468
         },
         {
+          "date": "2026-08",
+          "region": "北亚",
+          "visitors": 101794
+        },
+        {
           "date": "2016-11",
           "region": "未能识别",
           "visitors": 16
@@ -15231,6 +15266,11 @@
           "date": "2026-07",
           "region": "未能识别",
           "visitors": 3
+        },
+        {
+          "date": "2026-08",
+          "region": "未能识别",
+          "visitors": 4
         },
         {
           "date": "2016-11",
@@ -15818,6 +15858,11 @@
           "visitors": 223773
         },
         {
+          "date": "2026-08",
+          "region": "南亚及东南亚",
+          "visitors": 201746
+        },
+        {
           "date": "2016-11",
           "region": "台湾",
           "visitors": 157904
@@ -16403,6 +16448,11 @@
           "visitors": 145631
         },
         {
+          "date": "2026-08",
+          "region": "台湾",
+          "visitors": 135028
+        },
+        {
           "date": "2016-11",
           "region": "美洲",
           "visitors": 179962
@@ -16986,6 +17036,11 @@
           "date": "2026-07",
           "region": "美洲",
           "visitors": 147635
+        },
+        {
+          "date": "2026-08",
+          "region": "美洲",
+          "visitors": 125450
         }
       ],
       "visitor_arrivals_mainland_vs_row": [
@@ -17575,6 +17630,11 @@
           "value": 3607250
         },
         {
+          "date": "2026-08",
+          "series": "中国内地",
+          "value": 4569228
+        },
+        {
           "date": "2016-11",
           "series": "世界其他地区",
           "value": 1271868
@@ -18158,6 +18218,11 @@
           "date": "2026-07",
           "series": "世界其他地区",
           "value": 896592
+        },
+        {
+          "date": "2026-08",
+          "series": "世界其他地区",
+          "value": 887092
         }
       ],
       "market_kpi_summary": [
@@ -18166,7 +18231,7 @@
           "latest_net_mov": 39.8,
           "latest_mpfa": 1203,
           "latest_ugc": 23961,
-          "latest_visitors": 4503842
+          "latest_visitors": 5456320
         }
       ]
     }
@@ -18251,7 +18316,7 @@
       "label": "Immigration Department Daily Passenger Traffic",
       "status": "success",
       "records": 365,
-      "latest_observation": "2026-10-13",
+      "latest_observation": "2026-10-14",
       "freshness": "dated",
       "notes": "Daily passenger clearance by control point, direction and residency, used to derive HK-resident net flow and Mainland-visitor net retention."
     },
@@ -18267,11 +18332,11 @@
     {
       "id": "mpfa",
       "label": "MPFA Statistical Digest",
-      "status": "degraded",
+      "status": "success",
       "records": 15,
       "latest_observation": "2026-Q2",
       "freshness": "dated",
-      "notes": "Quarterly MPF claims for permanent departure from Hong Kong (count and amount), parsed from the official Statistical Digest. Live fetch failed this build; serving the committed snapshot."
+      "notes": "Quarterly MPF claims for permanent departure from Hong Kong (count and amount), parsed from the official Statistical Digest."
     },
     {
       "id": "ugc",
@@ -18295,8 +18360,8 @@
       "id": "visitor_arrivals",
       "label": "C&SD Visitor Arrivals by Region",
       "status": "success",
-      "records": 2981,
-      "latest_observation": "2026-07",
+      "records": 2992,
+      "latest_observation": "2026-08",
       "freshness": "dated",
       "notes": "Monthly visitor arrivals by nationality/region since 2004, a geographic companion/cross-check to ImmD's cross-border passenger data."
     }
@@ -18305,8 +18370,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-population-migration/",
     "sector_id": "hk-population-migration",
     "sector_name": "Hong Kong Population, Migration & Cross-Border Data Monitor",
-    "snapshotId": "52d7c829cb989095",
-    "generatedAt": "2026-10-14T11:55:04.722155Z",
-    "dataAsOf": "2026-10-13"
+    "snapshotId": "d0abd1dc0fb0889b",
+    "generatedAt": "2026-10-15T11:31:42.388505Z",
+    "dataAsOf": "2026-10-14"
   }
 }

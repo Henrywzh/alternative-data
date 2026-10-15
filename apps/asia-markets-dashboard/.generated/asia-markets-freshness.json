@@ -1,7 +1,7 @@
 {
   "version": "asia-markets-freshness.v1",
-  "auditedAt": "2026-10-14T12:05:04.178199Z",
-  "asOf": "2026-10-14",
+  "auditedAt": "2026-10-15T11:41:42.416745Z",
+  "asOf": "2026-10-15",
   "status": "healthy",
   "requiredFailures": [],
   "checks": [
@@ -81,8 +81,8 @@
       "dataset": "kpi_northbound",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-10-12",
-      "latest_observation": "2026-10-13",
+      "expected_latest_period": "2026-10-13",
+      "latest_observation": "2026-10-14",
       "notes": "Immigration passenger clearance is daily; allow a two-day publication/holiday lag."
     },
     {
@@ -91,8 +91,8 @@
       "dataset": "consumer_council_oilprice",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-10-12",
-      "latest_observation": "2026-10-14",
+      "expected_latest_period": "2026-10-13",
+      "latest_observation": "2026-10-15",
       "notes": "Consumer Council pump-price snapshot is fetched daily; allow a two-day publication lag."
     },
     {
@@ -161,8 +161,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-10-14T11:55:04.078067Z",
-      "latest_observation": "2026-10-14T11:55:04.078067Z",
+      "expected_latest_period": "2026-10-15T11:31:42.203106Z",
+      "latest_observation": "2026-10-15T11:31:42.203106Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -171,8 +171,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-10-14T11:55:04.831383Z",
-      "latest_observation": "2026-10-14T11:55:04.831383Z",
+      "expected_latest_period": "2026-10-15T11:31:42.658280Z",
+      "latest_observation": "2026-10-15T11:31:42.658280Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -181,8 +181,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-10-14T11:55:04.722155Z",
-      "latest_observation": "2026-10-14T11:55:04.722155Z",
+      "expected_latest_period": "2026-10-15T11:31:42.388505Z",
+      "latest_observation": "2026-10-15T11:31:42.388505Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -201,8 +201,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-10-14T11:55:04.832138Z",
-      "latest_observation": "2026-10-14T11:55:04.832138Z",
+      "expected_latest_period": "2026-10-15T11:31:42.734219Z",
+      "latest_observation": "2026-10-15T11:31:42.734219Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
