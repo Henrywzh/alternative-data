@@ -55,12 +55,6 @@ jobs:
         run: |
           python -m ramp_data.cli --base-dir . filter-mode
 
-      - name: Run Tokenomics update
-        # Independent of monthly/filter datasets; all token quality gates run
-        # before writes, and the commit step preserves successful datasets.
-        if: ${{ !cancelled() }}
-        run: python -m ramp_data.cli --base-dir . tokenomics
-
       - name: Run Category-charts update
         # Category-level adoption charts, dynamically scraped from Datawrapper
         # widgets.
@@ -78,6 +72,12 @@ jobs:
         run: |
           python -m ramp_data.cli --base-dir . category-charts
 
+      - name: Run Tokenomics update
+        # Run after existing collectors so Tokenomics failures cannot skip
+        # them. It still runs if an earlier collector failed; all token gates
+        # pass before writes, and the commit step preserves successful data.
+        if: ${{ !cancelled() }}
+        run: python -m ramp_data.cli --base-dir . tokenomics
 
       - name: Commit normalized datasets
         # Runs even when a scrape step failed: each step gates its own write, so
