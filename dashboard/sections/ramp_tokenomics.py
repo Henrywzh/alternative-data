@@ -32,7 +32,8 @@ def activity_pivot(frame: pd.DataFrame, metric: str, breakdown: str) -> pd.DataF
         # Labels can be shared by several aliases; never merge them by label.
         frame["series"] = frame["model_maker"].astype(str) + " · " + frame["series_key"].astype(str)
     grouped = frame.groupby(["period_end", "series"])["metric_value"].sum(min_count=1)
-    return grouped.unstack("series").sort_index()
+    pivot = grouped.unstack("series").sort_index()
+    return pivot.reindex(pd.date_range(pivot.index.min(), pivot.index.max(), freq="W-SUN", name="period_end"))
 
 
 def price_pivot(frame: pd.DataFrame, token_type: str) -> pd.DataFrame:
@@ -47,7 +48,8 @@ def price_pivot(frame: pd.DataFrame, token_type: str) -> pd.DataFrame:
     grouped = frame.groupby(["usage_date", "model_maker"])[columns].sum(min_count=1)
     denominator = grouped["token_count_7d"].where(grouped["token_count_7d"].gt(0))
     prices = (grouped["token_cost_usd_7d"] / denominator * 1_000_000).unstack("model_maker")
-    return prices.rename(columns=lambda value: MAKERS.get(value, value)).sort_index()
+    prices = prices.rename(columns=lambda value: MAKERS.get(value, value)).sort_index()
+    return prices.reindex(pd.date_range(prices.index.min(), prices.index.max(), freq="D", name="usage_date"))
 
 
 def _source_frame(datasets: dict[str, DatasetLoadResult], dataset_id: str) -> pd.DataFrame:
