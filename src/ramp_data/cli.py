@@ -14,9 +14,10 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser("update", help="Crawl Ramp vendors/categories, gate, and upsert normalized datasets")
     subparsers.add_parser("ai-index", help="Fetch the Ramp AI Index (server-rendered) and upsert its datasets")
     subparsers.add_parser("filter-mode", help="Fetch the AI Index Filter-mode cohort timeseries endpoints and upsert")
+    subparsers.add_parser("tokenomics", help="Fetch weekly token activity and rolling-seven-day token prices, preserving revisions")
     subparsers.add_parser("jobs-impact", help="Render the AI jobs-impact table via Playwright and upsert it")
     subparsers.add_parser("category-charts", help="Fetch category-level Adoption, Spend Share, and YoY comparison charts from Datawrapper")
-    subparsers.add_parser("all", help="Run vendors + ai-index + filter-mode + category-charts (server-rendered; excludes jobs-impact)")
+    subparsers.add_parser("all", help="Run vendors + ai-index + filter-mode + tokenomics + category-charts (excludes jobs-impact)")
     subparsers.add_parser("validate", help="Crawl vendors live and print quality summary without writing")
     return parser
 
@@ -47,6 +48,10 @@ def main() -> None:
         _print_result(pipeline.run_filter_mode())
         return
 
+    if args.command == "tokenomics":
+        _print_result(pipeline.run_tokenomics())
+        return
+
     if args.command == "category-charts":
         _print_result(pipeline.run_category_charts())
         return
@@ -62,6 +67,8 @@ def main() -> None:
         _print_result(pipeline.run_ai_index())
         print("== filter-mode ==")
         _print_result(pipeline.run_filter_mode())
+        print("== tokenomics ==")
+        _print_result(pipeline.run_tokenomics())
         print("== category-charts ==")
         _print_result(pipeline.run_category_charts())
         return

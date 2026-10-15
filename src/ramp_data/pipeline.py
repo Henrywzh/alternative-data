@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
+import math
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -14,12 +15,14 @@ from ramp_data.schemas import (
     JOBS_IMPACT_DATASET,
     CATEGORY_CHARTS_DATASETS,
     VINTAGE_DATASETS,
+    TOKENOMICS_DATASETS,
 )
 from ramp_data.sources.ai_index import RampAiIndexSource
 from ramp_data.sources.filter_mode import RampFilterModeSource
 from ramp_data.sources.jobs_impact import RampJobsImpactSource
 from ramp_data.sources.vendors import RampVendorsSource
 from ramp_data.sources.category_charts import RampCategoryChartsSource
+from ramp_data.sources.tokenomics import RampTokenomicsSource
 from ramp_data.storage import StorageManager
 
 
@@ -57,6 +60,7 @@ class RampPipeline:
         self.filter_mode_source = RampFilterModeSource()
         self.jobs_impact_source = RampJobsImpactSource()
         self.category_charts_source = RampCategoryChartsSource()
+        self.tokenomics_source = RampTokenomicsSource()
 
 
     def _create_context(self, *, run_id: str | None = None) -> RunContext:
@@ -141,7 +145,9 @@ class RampPipeline:
 
         try:
             extracted = source.extract(snapshots, context)
-            gate(snapshots, extracted)
+            quality = gate(snapshots, extracted)
+            if mode == "tokenomics":
+                manifest["quality"] = quality
 
             datasets_written: dict[str, int] = {}
             for dataset_id in dataset_ids:
@@ -196,6 +202,89 @@ class RampPipeline:
             self._assert_filter_mode_quality,
             mode="filter-mode",
         )
+
+    def run_tokenomics(self) -> PipelineResult:
+        return self._execute(
+            self.tokenomics_source,
+            tuple(TOKENOMICS_DATASETS),
+            self._assert_tokenomics_quality,
+            mode="tokenomics",
+        )
+
+    @staticmethod
+    def _assert_tokenomics_quality(snapshots, extracted) -> dict[str, dict[str, Any]]:
+        """Fail before writes on schema drift, duplicate keys or invalid windows.
+
+        A 21-day publication allowance covers a missed twice-weekly poll and
+        source latency. Old observations are preserved, never redated as fresh.
+        """
+        report, failures = {}, []
+        today = datetime.now(timezone.utc).date()
+        for dataset_id, cfg in TOKENOMICS_DATASETS.items():
+            records = extracted.get(dataset_id, [])
+            rows = [r.payload for r in records]
+            report[dataset_id] = {"rows": len(rows)}
+            if len(rows) < cfg["min_rows"]:
+                failures.append(f"{dataset_id}: only {len(rows)} rows (expected >= {cfg['min_rows']})")
+                continue
+            seen, observations, group_latest = set(), [], {}
+            for row in rows:
+                try:
+                    if any(not isinstance(row.get(k), str) or not row[k].strip()
+                           for k in cfg["fields"] if k not in cfg["numeric"]):
+                        raise ValueError("missing or invalid dimension")
+                    key = tuple(row.get(k) for k in cfg["natural_keys"])
+                    if key in seen:
+                        raise ValueError("duplicate natural key")
+                    seen.add(key)
+                    observed = date.fromisoformat(row[cfg["date_column"]])
+                    if observed > today:
+                        raise ValueError("future observation")
+                    observations.append(observed)
+                    for field in cfg["numeric"]:
+                        value = row.get(field)
+                        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0:
+                            raise ValueError(f"{field} must be finite and nonnegative")
+                    if dataset_id == "ramp_ai_token_activity":
+                        start = date.fromisoformat(row["period_start"])
+                        if row["period_grain"] != "weekly" or start.weekday() != 0 or observed != start + timedelta(days=6):
+                            raise ValueError("expected complete Monday–Sunday weekly interval")
+                        if row["dimension_type"] != "model" or row["metric_key"] not in {"token_spend", "token_volume"}:
+                            raise ValueError("unexpected token activity dimension or metric")
+                    else:
+                        if row["token_type"] not in {"all_tokens", "uncached_input", "output"}:
+                            raise ValueError("unexpected token type")
+                        if row["token_count_7d"] == 0 and row["token_cost_usd_7d"] != 0:
+                            raise ValueError("positive cost with zero token denominator")
+                    group = (row["metric_key"],) if dataset_id == "ramp_ai_token_activity" else (row["model_maker"], row["token_type"])
+                    group_latest[group] = max(group_latest.get(group, observed), observed)
+                except (ValueError, TypeError, KeyError) as exc:
+                    failures.append(f"{dataset_id}: {exc}")
+                    break
+            if observations:
+                latest = max(observations)
+                report[dataset_id]["latest_observation"] = latest.isoformat()
+                if (today - latest).days > 21:
+                    failures.append(f"{dataset_id}: newest observation {latest} is more than 21 days old")
+                report[dataset_id]["latest_by_breakdown"] = {
+                    "/".join(group): observed.isoformat() for group, observed in sorted(group_latest.items())
+                }
+                for group, observed in group_latest.items():
+                    if (today - observed).days > 21:
+                        failures.append(f"{dataset_id}: {'/'.join(group)} is stale ({observed})")
+            if dataset_id == "ramp_ai_token_activity":
+                if {r.get("metric_key") for r in rows} != {"token_spend", "token_volume"}:
+                    failures.append(f"{dataset_id}: both token_spend and token_volume are required")
+            elif {r.get("token_type") for r in rows} != {"all_tokens", "uncached_input", "output"}:
+                failures.append(f"{dataset_id}: missing token price breakdown")
+            else:
+                for maker in {r.get("model_maker") for r in rows}:
+                    types = {r.get("token_type") for r in rows if r.get("model_maker") == maker}
+                    if types != {"all_tokens", "uncached_input", "output"}:
+                        failures.append(f"{dataset_id}: incomplete price breakdown for {maker}")
+        if failures:
+            raise ValidationError("; ".join(failures))
+        return report
 
     def run_jobs_impact(self) -> PipelineResult:
         return self._execute(

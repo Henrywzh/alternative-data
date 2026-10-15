@@ -28,6 +28,7 @@ from dashboard.components import (
     render_dataset_guard,
 )
 from dashboard.data import DatasetLoadResult
+from dashboard.sections.ramp_tokenomics import render_tokenomics
 
 # AI Index adoption datasets: label -> (dataset_id, breakdown column). Overall has
 # no breakdown (single series); the rest pivot date_month x <breakdown>.
@@ -776,10 +777,12 @@ def _render_jobs_impact(datasets) -> None:
 
 def render(domain_states, datasets) -> None:
     st.markdown('<div class="section-title">Ramp Vendor Intelligence</div>', unsafe_allow_html=True)
-    vendors_tab, ai_index_tab, jobs_tab = st.tabs(["Vendors", "AI Index", "Jobs Impact"])
+    vendors_tab, ai_index_tab, tokenomics_tab, jobs_tab = st.tabs(["Vendors", "AI Index", "Tokenomics", "Jobs Impact"])
     with vendors_tab:
         _render_vendors(datasets)
     with ai_index_tab:
         _render_ai_index(datasets)
+    with tokenomics_tab:
+        render_tokenomics(datasets)
     with jobs_tab:
         _render_jobs_impact(datasets)

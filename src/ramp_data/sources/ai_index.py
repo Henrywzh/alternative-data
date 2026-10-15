@@ -26,6 +26,7 @@ SNAPSHOT_NAME = "ai_index"
 
 class RampAiIndexSource(SourceExtractor):
     name = "ramp_ai_index"
+    datasets = AI_INDEX_DATASETS
 
     def __init__(self, timeout: int = 30, max_retries: int = 3) -> None:
         self.timeout = timeout
@@ -63,13 +64,13 @@ class RampAiIndexSource(SourceExtractor):
         snapshots: list[Snapshot],
         context: RunContext,
     ) -> dict[str, list[GenericRecord]]:
-        extracted: dict[str, list[GenericRecord]] = {dsid: [] for dsid in AI_INDEX_DATASETS}
+        extracted: dict[str, list[GenericRecord]] = {dsid: [] for dsid in self.datasets}
 
         payload = next((s.body for s in snapshots if s.name == SNAPSHOT_NAME), "")
         if not payload:
             return extracted
 
-        for dataset_id, cfg in AI_INDEX_DATASETS.items():
+        for dataset_id, cfg in self.datasets.items():
             rows = rsc.extract_array_after_key(payload, cfg["payload_key"])
             fields = cfg["fields"]
             for row in rows:

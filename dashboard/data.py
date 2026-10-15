@@ -14,6 +14,7 @@ import streamlit as st
 from pyarrow.lib import ArrowInvalid
 
 from dashboard import remote
+from ramp_data.schemas import TOKENOMICS_DATASETS, VINTAGE_DATASETS
 
 
 def _read_parquet_projected(source, columns: list[str] | None) -> pd.DataFrame:
@@ -2127,6 +2128,21 @@ RAMP_LOAD_COLUMNS: dict[str, list[str]] = {
     ],
 }
 
+# Keep Tokenomics storage and dashboard projections on the same column contract.
+for _token_id, _token_cfg in TOKENOMICS_DATASETS.items():
+    for _dataset_id in (_token_id, f"{_token_id}_vintages"):
+        _cfg = TOKENOMICS_DATASETS.get(_dataset_id) or VINTAGE_DATASETS[_dataset_id]
+        DATASET_REGISTRY[_dataset_id] = {
+            "label": _dataset_id.removeprefix("ramp_ai_").replace("_", " ").title(),
+            "domain": "ramp",
+            "natural_keys": _cfg["natural_keys"],
+            "primary_date_column": _token_cfg["date_column"],
+            "metric_column": _token_cfg["numeric"][0],
+            "required_columns": _cfg["fields"],
+        }
+        DOMAIN_ORDER["ramp"].append(_dataset_id)
+        RAMP_LOAD_COLUMNS[_dataset_id] = [*CORE_COLUMNS, *_cfg["fields"]]
+
 OPENROUTER_OFFICIAL_LOAD_COLUMNS: dict[str, list[str]] = {
     "official_model_rankings_daily": [
         *CORE_COLUMNS, "usage_date", "model_permaslug", "total_tokens", "rank", "is_other",
@@ -2343,6 +2359,8 @@ REPLICATE_LOAD_COLUMNS: dict[str, list[str]] = {
 }
 
 DATE_COLUMNS = [
+    "period_start",
+    "period_end",
     "pulse_date",
     "week_start_date",
     "scrape_date",
@@ -2383,6 +2401,8 @@ DATE_COLUMNS = [
     "source_updated_at",
 ]
 NUMERIC_COLUMNS = [
+    "token_cost_usd_7d",
+    "token_count_7d",
     "openrouter_total_tokens",
     "openrouter_named_tokens",
     "openrouter_other_tokens",

@@ -1,0 +1,18 @@
+{
+  "run_id": "20261015T124922Z-101f7a35",
+  "mode": "tokenomics",
+  "scraped_at": "2026-10-15T12:49:22.902465Z",
+  "status": "success",
+  "datasets": [
+    {
+      "dataset_id": "ramp_ai_token_activity",
+      "status": "ok",
+      "rows": 19156
+    },
+    {
+      "dataset_id": "ramp_ai_token_prices",
+      "status": "ok",
+      "rows": 3894
+    }
+  ]
+}
