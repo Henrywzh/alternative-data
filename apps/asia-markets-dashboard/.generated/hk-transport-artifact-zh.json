@@ -6,7 +6,7 @@
     "title": "香港交通与航空监测",
     "description": "港铁月度客运量（本地/跨境/高铁）、国泰航空及香港国际机场流量、六家中国上市航空公司客运与货运运营数据、运输署公共交通/私家车/电动车登记、C&SD跨境移动及传感器停车位占用率数据。",
     "sector": "hk-transport",
-    "generatedAt": "2026-10-15T11:31:42.734219Z",
+    "generatedAt": "2026-10-16T11:27:06.227938Z",
     "cards": [
       {
         "id": "mtr_card",
@@ -2054,7 +2054,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-10-15T11:31:42.734219Z",
+    "generatedAt": "2026-10-16T11:27:06.227938Z",
     "status": "ready",
     "datasets": {
       "kpi_mtr": [
@@ -9146,9 +9146,9 @@
         {
           "date": "2026-03-01 00:00:00",
           "month": "2026-03",
-          "hkia_passengers": 5706000,
-          "hkia_aircraft_movements": 34100,
-          "hkia_freight_tonnes": 427000,
+          "hkia_passengers": 5693706,
+          "hkia_aircraft_movements": 34098,
+          "hkia_freight_tonnes": 427342,
           "cathay_passengers": 2808618,
           "cathay_rpk_thousands": 11446209,
           "cathay_ask_thousands": 12418605,
@@ -9165,9 +9165,9 @@
         {
           "date": "2026-04-01 00:00:00",
           "month": "2026-04",
-          "hkia_passengers": 5635000,
-          "hkia_aircraft_movements": 34445,
-          "hkia_freight_tonnes": 421000,
+          "hkia_passengers": 5631888,
+          "hkia_aircraft_movements": 34446,
+          "hkia_freight_tonnes": 423924,
           "cathay_passengers": 2764946,
           "cathay_rpk_thousands": 11169641,
           "cathay_ask_thousands": 12667713,
@@ -96684,7 +96684,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-transport/",
-    "snapshotId": "f6f2f9d23dd3abb4",
+    "snapshotId": "de23e3385fe03b3c",
     "dataAsOf": "2026-10-05"
   }
 }
