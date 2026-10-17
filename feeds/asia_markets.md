@@ -1,8 +1,8 @@
 # asia_markets research feed
 
-Generated: 2026-10-17T11:38:45.172509Z · Status: **degraded**
+Generated: 2026-10-17T18:32:04.572167Z · Status: **degraded**
 
-Source commit: `23e7f2a236e039e50e74cc191720d70c4cc5af95`
+Source commit: `96df935fdfa96a51fa935d0fee190ec0d156538b`
 
 Observation dates differ by record. Generated time is not a market-data timestamp.
 
