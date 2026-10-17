@@ -1,0 +1,20 @@
+{
+  "run_scope": "full",
+  "retrieved_at": "2026-10-17T00:39:50.506351Z",
+  "dataset_name": "fred_observations",
+  "run_id": "20261017T003950-1449bf98",
+  "created_at": "2026-10-17T00:40:07.996140Z",
+  "records": 45081,
+  "columns": [
+    "date",
+    "series_id",
+    "indicator_id",
+    "value",
+    "unit",
+    "source",
+    "retrieved_at",
+    "realtime_start",
+    "realtime_end"
+  ],
+  "sha256": "3df5c170fd461031987e34b0ac462c0643e6a03c28c15d7b811c7ba926530b28"
+}
