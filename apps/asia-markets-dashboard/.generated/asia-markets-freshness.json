@@ -1,6 +1,6 @@
 {
   "version": "asia-markets-freshness.v1",
-  "auditedAt": "2026-10-19T08:06:52.174738Z",
+  "auditedAt": "2026-10-19T13:27:05.071765Z",
   "asOf": "2026-10-19",
   "status": "healthy",
   "requiredFailures": [],
@@ -82,7 +82,7 @@
       "required": true,
       "status": "healthy",
       "expected_latest_period": "2026-10-17",
-      "latest_observation": "2026-10-17",
+      "latest_observation": "2026-10-18",
       "notes": "Immigration passenger clearance is daily; allow a two-day publication/holiday lag."
     },
     {
@@ -92,7 +92,7 @@
       "required": true,
       "status": "healthy",
       "expected_latest_period": "2026-10-17",
-      "latest_observation": "2026-10-18",
+      "latest_observation": "2026-10-19",
       "notes": "Consumer Council pump-price snapshot is fetched daily; allow a two-day publication lag."
     },
     {
@@ -161,8 +161,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-10-18T11:07:29.114928Z",
-      "latest_observation": "2026-10-18T11:07:29.114928Z",
+      "expected_latest_period": "2026-10-19T13:17:11.443950Z",
+      "latest_observation": "2026-10-19T13:17:11.443950Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -171,8 +171,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-10-18T11:07:28.897096Z",
-      "latest_observation": "2026-10-18T11:07:28.897096Z",
+      "expected_latest_period": "2026-10-19T13:17:11.617229Z",
+      "latest_observation": "2026-10-19T13:17:11.617229Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -181,8 +181,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-10-18T11:07:29.331745Z",
-      "latest_observation": "2026-10-18T11:07:29.331745Z",
+      "expected_latest_period": "2026-10-19T13:17:11.826428Z",
+      "latest_observation": "2026-10-19T13:17:11.826428Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -201,8 +201,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-10-18T11:07:29.325397Z",
-      "latest_observation": "2026-10-18T11:07:29.325397Z",
+      "expected_latest_period": "2026-10-19T13:17:12.017720Z",
+      "latest_observation": "2026-10-19T13:17:12.017720Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -211,8 +211,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-10-19T07:23:51.898430Z",
-      "latest_observation": "2026-10-19T07:23:51.898430Z",
+      "expected_latest_period": "2026-10-19T13:17:11.765430Z",
+      "latest_observation": "2026-10-19T13:17:11.765430Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -221,8 +221,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-10-19T08:01:16Z",
-      "latest_observation": "2026-10-19T08:01:16Z",
+      "expected_latest_period": "2026-10-19T13:17:11Z",
+      "latest_observation": "2026-10-19T13:17:11Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     }
   ]
