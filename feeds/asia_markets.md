@@ -1,14 +1,14 @@
 # asia_markets research feed
 
-Generated: 2026-10-19T21:05:44.157681Z · Status: **degraded**
+Generated: 2026-10-20T12:44:56.250599Z · Status: **degraded**
 
-Source commit: `76dae50fd67dba93dbf16b6d48720836e759a6b9`
+Source commit: `1b5581a3f4f4307dec8bea3015fcefe9ecbbcf6b`
 
 Observation dates differ by record. Generated time is not a market-data timestamp.
 
 | Section | Record | Observation | Quality | Values |
 |---|---|---|---|---|
-| Hong Kong Labour Market & Talent Policy | Labour Force | 2026-08-31 | current | labour_force_thousands: 3805.9 thousand_people; employed_thousands: 3652.0 thousand_people; unemployment_rate: 0.04 fraction; underemployment_rate: 0.019 fraction |
+| Hong Kong Labour Market & Talent Policy | Labour Force | 2026-08-31 | stale | labour_force_thousands: 3805.9 thousand_people; employed_thousands: 3652.0 thousand_people; unemployment_rate: 0.04 fraction; underemployment_rate: 0.019 fraction |
 | Hong Kong Labour Market & Talent Policy | Labour Demand | 2026-06-30 | current | vacancies: 45380.0 jobs; persons_engaged: 2697387.0 people; vacancy_rate: 0.017 fraction |
 | Hong Kong Labour Market & Talent Policy | Wage | 2026-06-30 | current | nominal_wage_yoy: 0.034 fraction; real_wage_yoy: 0.016 fraction; nominal_payroll_yoy: 0.035 fraction |
 | Hong Kong Labour Market & Talent Policy | Income | 2026-07-31 | current | median_monthly_earnings: 21000.0 HKD_per_month |
@@ -35,10 +35,11 @@ Observation dates differ by record. Generated time is not a market-data timestam
 
 ## Rule candidates
 
-- **continuing** `6fc3967d3bb227459f74425f`: hk-labour-market/labour_force_card / hk.unemployment.ge_4pct.v1
+- **unknown** `6fc3967d3bb227459f74425f`: hk-labour-market/labour_force_card / hk.unemployment.ge_4pct.v1
 
 ## Changes
 
+- quality_change: hk-labour-market/labour_force_card
 
 ## Excluded coverage
 
