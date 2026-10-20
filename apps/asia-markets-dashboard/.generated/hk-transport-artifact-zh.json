@@ -6,7 +6,7 @@
     "title": "香港交通与航空监测",
     "description": "港铁月度客运量（本地/跨境/高铁）、国泰航空及香港国际机场流量、六家中国上市航空公司客运与货运运营数据、运输署公共交通/私家车/电动车登记、C&SD跨境移动及传感器停车位占用率数据。",
     "sector": "hk-transport",
-    "generatedAt": "2026-10-19T13:17:12.017720Z",
+    "generatedAt": "2026-10-20T11:37:39.459888Z",
     "cards": [
       {
         "id": "mtr_card",
@@ -2054,7 +2054,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-10-19T13:17:12.017720Z",
+    "generatedAt": "2026-10-20T11:37:39.459888Z",
     "status": "ready",
     "datasets": {
       "kpi_mtr": [
@@ -22352,6 +22352,54 @@
           "airline": "Spring Airlines",
           "region": "Total",
           "value": 3362.8
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "中国国航",
+          "airline": "Air China",
+          "region": "Total",
+          "value": 13994.7
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "东方航空",
+          "airline": "China Eastern",
+          "region": "Total",
+          "value": 12485.31
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 14433.72
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "海航控股",
+          "airline": "Hainan Airlines Holdings",
+          "region": "Total",
+          "value": 5200.25
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "吉祥航空",
+          "airline": "Juneyao Airlines",
+          "region": "Total",
+          "value": 2364.84
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "春秋航空",
+          "airline": "Spring Airlines",
+          "region": "Total",
+          "value": 3048.76
         }
       ],
       "china_airline_ask_history": [
@@ -28458,6 +28506,54 @@
           "airline": "Spring Airlines",
           "region": "Total",
           "value": 6379.2135
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "中国国航",
+          "airline": "Air China",
+          "region": "Total",
+          "value": 31759.8
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "东方航空",
+          "airline": "China Eastern",
+          "region": "Total",
+          "value": 27385.64
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 32935.98
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "海航控股",
+          "airline": "Hainan Airlines Holdings",
+          "region": "Total",
+          "value": 12310.8
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "吉祥航空",
+          "airline": "Juneyao Airlines",
+          "region": "Total",
+          "value": 5007.32
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "春秋航空",
+          "airline": "Spring Airlines",
+          "region": "Total",
+          "value": 5819.3288
         }
       ],
       "china_airline_rpk_history": [
@@ -34564,6 +34660,54 @@
           "airline": "Spring Airlines",
           "region": "Total",
           "value": 6046.8782
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "中国国航",
+          "airline": "Air China",
+          "region": "Total",
+          "value": 27136.5
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "东方航空",
+          "airline": "China Eastern",
+          "region": "Total",
+          "value": 23929.22
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 28274.08
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "海航控股",
+          "airline": "Hainan Airlines Holdings",
+          "region": "Total",
+          "value": 10459.43
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "吉祥航空",
+          "airline": "Juneyao Airlines",
+          "region": "Total",
+          "value": 4388.9694
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "春秋航空",
+          "airline": "Spring Airlines",
+          "region": "Total",
+          "value": 5413.6979
         }
       ],
       "china_airline_load_factor_history": [
@@ -40670,6 +40814,54 @@
           "airline": "Spring Airlines",
           "region": "Total",
           "value": 94.7903
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "中国国航",
+          "airline": "Air China",
+          "region": "Total",
+          "value": 85.4429
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "东方航空",
+          "airline": "China Eastern",
+          "region": "Total",
+          "value": 87.3787
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 85.85
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "海航控股",
+          "airline": "Hainan Airlines Holdings",
+          "region": "Total",
+          "value": 84.96
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "吉祥航空",
+          "airline": "Juneyao Airlines",
+          "region": "Total",
+          "value": 87.6511
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "春秋航空",
+          "airline": "Spring Airlines",
+          "region": "Total",
+          "value": 93.0296
         }
       ],
       "china_airline_region_split_history": [
@@ -43744,153 +43936,33 @@
           "airline": "All carriers",
           "region": "Regional",
           "value": 1070.29
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "国内",
+          "airline": "All carriers",
+          "region": "Domestic",
+          "value": 44267.06
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "国际",
+          "airline": "All carriers",
+          "region": "International",
+          "value": 6343.23
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "地区",
+          "airline": "All carriers",
+          "region": "Regional",
+          "value": 917.28
         }
       ],
       "china_airline_region_by_carrier_history": [
-        {
-          "date": "2017-08-01",
-          "month": "2017-08",
-          "series": "中国国航 · 国内",
-          "airline": "Air China",
-          "region": "Domestic",
-          "value": 7373
-        },
-        {
-          "date": "2017-08-01",
-          "month": "2017-08",
-          "series": "中国国航 · 国际",
-          "airline": "Air China",
-          "region": "International",
-          "value": 1239.6
-        },
-        {
-          "date": "2017-08-01",
-          "month": "2017-08",
-          "series": "中国国航 · 地区",
-          "airline": "Air China",
-          "region": "Regional",
-          "value": 430.2
-        },
-        {
-          "date": "2017-08-01",
-          "month": "2017-08",
-          "series": "东方航空 · 国内",
-          "airline": "China Eastern",
-          "region": "Domestic",
-          "value": 8479.7
-        },
-        {
-          "date": "2017-08-01",
-          "month": "2017-08",
-          "series": "东方航空 · 国际",
-          "airline": "China Eastern",
-          "region": "International",
-          "value": 1408.03
-        },
-        {
-          "date": "2017-08-01",
-          "month": "2017-08",
-          "series": "东方航空 · 地区",
-          "airline": "China Eastern",
-          "region": "Regional",
-          "value": 310.27
-        },
-        {
-          "date": "2017-08-01",
-          "month": "2017-08",
-          "series": "南方航空 · 国内",
-          "airline": "China Southern",
-          "region": "Domestic",
-          "value": 10015.91
-        },
-        {
-          "date": "2017-08-01",
-          "month": "2017-08",
-          "series": "南方航空 · 国际",
-          "airline": "China Southern",
-          "region": "International",
-          "value": 1392.01
-        },
-        {
-          "date": "2017-08-01",
-          "month": "2017-08",
-          "series": "南方航空 · 地区",
-          "airline": "China Southern",
-          "region": "Regional",
-          "value": 212.6
-        },
-        {
-          "date": "2017-08-01",
-          "month": "2017-08",
-          "series": "海航控股 · 国内",
-          "airline": "Hainan Airlines Holdings",
-          "region": "Domestic",
-          "value": 5978.45
-        },
-        {
-          "date": "2017-08-01",
-          "month": "2017-08",
-          "series": "海航控股 · 国际",
-          "airline": "Hainan Airlines Holdings",
-          "region": "International",
-          "value": 420.93
-        },
-        {
-          "date": "2017-08-01",
-          "month": "2017-08",
-          "series": "海航控股 · 地区",
-          "airline": "Hainan Airlines Holdings",
-          "region": "Regional",
-          "value": 25.9
-        },
-        {
-          "date": "2017-08-01",
-          "month": "2017-08",
-          "series": "吉祥航空 · 国内",
-          "airline": "Juneyao Airlines",
-          "region": "Domestic",
-          "value": 1338.49
-        },
-        {
-          "date": "2017-08-01",
-          "month": "2017-08",
-          "series": "吉祥航空 · 国际",
-          "airline": "Juneyao Airlines",
-          "region": "International",
-          "value": 172.68
-        },
-        {
-          "date": "2017-08-01",
-          "month": "2017-08",
-          "series": "吉祥航空 · 地区",
-          "airline": "Juneyao Airlines",
-          "region": "Regional",
-          "value": 21.56
-        },
-        {
-          "date": "2017-08-01",
-          "month": "2017-08",
-          "series": "春秋航空 · 国内",
-          "airline": "Spring Airlines",
-          "region": "Domestic",
-          "value": 1190.74
-        },
-        {
-          "date": "2017-08-01",
-          "month": "2017-08",
-          "series": "春秋航空 · 国际",
-          "airline": "Spring Airlines",
-          "region": "International",
-          "value": 353.33
-        },
-        {
-          "date": "2017-08-01",
-          "month": "2017-08",
-          "series": "春秋航空 · 地区",
-          "airline": "Spring Airlines",
-          "region": "Regional",
-          "value": 56.99
-        },
         {
           "date": "2017-09-01",
           "month": "2017-09",
@@ -59378,6 +59450,150 @@
           "airline": "Spring Airlines",
           "region": "Regional",
           "value": 28.42
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "中国国航 · 国内",
+          "airline": "Air China",
+          "region": "Domestic",
+          "value": 11912
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "中国国航 · 国际",
+          "airline": "Air China",
+          "region": "International",
+          "value": 1710.2
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "中国国航 · 地区",
+          "airline": "Air China",
+          "region": "Regional",
+          "value": 372.5
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "东方航空 · 国内",
+          "airline": "China Eastern",
+          "region": "Domestic",
+          "value": 10441.59
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "东方航空 · 国际",
+          "airline": "China Eastern",
+          "region": "International",
+          "value": 1734.09
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "东方航空 · 地区",
+          "airline": "China Eastern",
+          "region": "Regional",
+          "value": 309.63
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "南方航空 · 国内",
+          "airline": "China Southern",
+          "region": "Domestic",
+          "value": 12430.73
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "南方航空 · 国际",
+          "airline": "China Southern",
+          "region": "International",
+          "value": 1836.82
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "南方航空 · 地区",
+          "airline": "China Southern",
+          "region": "Regional",
+          "value": 166.16
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "海航控股 · 国内",
+          "airline": "Hainan Airlines Holdings",
+          "region": "Domestic",
+          "value": 4826.79
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "海航控股 · 国际",
+          "airline": "Hainan Airlines Holdings",
+          "region": "International",
+          "value": 353.81
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "海航控股 · 地区",
+          "airline": "Hainan Airlines Holdings",
+          "region": "Regional",
+          "value": 19.65
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "吉祥航空 · 国内",
+          "airline": "Juneyao Airlines",
+          "region": "Domestic",
+          "value": 2054.5
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "吉祥航空 · 国际",
+          "airline": "Juneyao Airlines",
+          "region": "International",
+          "value": 289.28
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "吉祥航空 · 地区",
+          "airline": "Juneyao Airlines",
+          "region": "Regional",
+          "value": 21.06
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "春秋航空 · 国内",
+          "airline": "Spring Airlines",
+          "region": "Domestic",
+          "value": 2601.45
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "春秋航空 · 国际",
+          "airline": "Spring Airlines",
+          "region": "International",
+          "value": 419.03
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "春秋航空 · 地区",
+          "airline": "Spring Airlines",
+          "region": "Regional",
+          "value": 28.28
         }
       ],
       "china_airline_latest_snapshot": [
@@ -59386,77 +59602,77 @@
           "airline": "中国国航",
           "reporting_scope": "集团合并运营数据",
           "region": "国内",
-          "passengers": 14291.1,
-          "ask": 24978.9,
-          "rpk": 22145.8,
-          "load_factor_pct": 88.7,
-          "observation_date": "2026-08-01"
+          "passengers": 11912,
+          "ask": 21045.3,
+          "rpk": 18356.3,
+          "load_factor_pct": 87.2,
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "601111",
           "airline": "中国国航",
           "reporting_scope": "集团合并运营数据",
           "region": "国际",
-          "passengers": 1941.2,
-          "ask": 10759.2,
-          "rpk": 9222.3,
+          "passengers": 1710.2,
+          "ask": 9996.7,
+          "rpk": 8204.6,
+          "load_factor_pct": 82.1,
+          "observation_date": "2026-09-01"
+        },
+        {
+          "airline_code": "601111",
+          "airline": "中国国航",
+          "reporting_scope": "集团合并运营数据",
+          "region": "地区",
+          "passengers": 372.5,
+          "ask": 717.8,
+          "rpk": 575.6,
+          "load_factor_pct": 80.2,
+          "observation_date": "2026-09-01"
+        },
+        {
+          "airline_code": "601111",
+          "airline": "中国国航",
+          "reporting_scope": "集团合并运营数据",
+          "region": "合计",
+          "passengers": null,
+          "ask": 31759.8,
+          "rpk": 27136.5,
+          "load_factor_pct": null,
+          "observation_date": "2026-09-01"
+        },
+        {
+          "airline_code": "600115",
+          "airline": "东方航空",
+          "reporting_scope": "集团合并运营数据",
+          "region": "国内",
+          "passengers": 10441.59,
+          "ask": 17459.34,
+          "rpk": 15433.01,
+          "load_factor_pct": 88.39,
+          "observation_date": "2026-09-01"
+        },
+        {
+          "airline_code": "600115",
+          "airline": "东方航空",
+          "reporting_scope": "集团合并运营数据",
+          "region": "国际",
+          "passengers": 1734.09,
+          "ask": 9408.5,
+          "rpk": 8062.9,
           "load_factor_pct": 85.7,
-          "observation_date": "2026-08-01"
-        },
-        {
-          "airline_code": "601111",
-          "airline": "中国国航",
-          "reporting_scope": "集团合并运营数据",
-          "region": "地区",
-          "passengers": 451,
-          "ask": 839.5,
-          "rpk": 696,
-          "load_factor_pct": 82.9,
-          "observation_date": "2026-08-01"
-        },
-        {
-          "airline_code": "601111",
-          "airline": "中国国航",
-          "reporting_scope": "集团合并运营数据",
-          "region": "合计",
-          "passengers": null,
-          "ask": 36577.6,
-          "rpk": 32064,
-          "load_factor_pct": null,
-          "observation_date": "2026-08-01"
-        },
-        {
-          "airline_code": "600115",
-          "airline": "东方航空",
-          "reporting_scope": "集团合并运营数据",
-          "region": "国内",
-          "passengers": 12499.72,
-          "ask": 20707.03,
-          "rpk": 18759.27,
-          "load_factor_pct": 90.59,
-          "observation_date": "2026-08-01"
-        },
-        {
-          "airline_code": "600115",
-          "airline": "东方航空",
-          "reporting_scope": "集团合并运营数据",
-          "region": "国际",
-          "passengers": 2015.9,
-          "ask": 10018.1,
-          "rpk": 8779.74,
-          "load_factor_pct": 87.64,
-          "observation_date": "2026-08-01"
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "600115",
           "airline": "东方航空",
           "reporting_scope": "集团合并运营数据",
           "region": "地区",
-          "passengers": 367.8,
-          "ask": 585.09,
-          "rpk": 519.54,
-          "load_factor_pct": 88.8,
-          "observation_date": "2026-08-01"
+          "passengers": 309.63,
+          "ask": 517.79,
+          "rpk": 433.31,
+          "load_factor_pct": 83.68,
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "600115",
@@ -59464,131 +59680,131 @@
           "reporting_scope": "集团合并运营数据",
           "region": "合计",
           "passengers": null,
-          "ask": 31310.21,
-          "rpk": 28058.56,
+          "ask": 27385.64,
+          "rpk": 23929.22,
           "load_factor_pct": null,
-          "observation_date": "2026-08-01"
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "600029",
           "airline": "南方航空",
           "reporting_scope": "集团合并运营数据",
           "region": "国内",
-          "passengers": 15092.52,
-          "ask": 28042.13,
-          "rpk": 24940.03,
-          "load_factor_pct": 88.94,
-          "observation_date": "2026-08-01"
+          "passengers": 12430.73,
+          "ask": 23598.03,
+          "rpk": 20382.44,
+          "load_factor_pct": 86.37,
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "600029",
           "airline": "南方航空",
           "reporting_scope": "集团合并运营数据",
           "region": "国际",
-          "passengers": 2072.98,
-          "ask": 9727.85,
-          "rpk": 8312.83,
-          "load_factor_pct": 85.45,
-          "observation_date": "2026-08-01"
+          "passengers": 1836.82,
+          "ask": 9009.01,
+          "rpk": 7624.09,
+          "load_factor_pct": 84.63,
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "600029",
           "airline": "南方航空",
           "reporting_scope": "集团合并运营数据",
           "region": "地区",
-          "passengers": 175.8,
-          "ask": 305.63,
-          "rpk": 257.46,
-          "load_factor_pct": 84.24,
-          "observation_date": "2026-08-01"
+          "passengers": 166.16,
+          "ask": 328.94,
+          "rpk": 267.55,
+          "load_factor_pct": 81.34,
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "600029",
           "airline": "南方航空",
           "reporting_scope": "集团合并运营数据",
           "region": "合计",
-          "passengers": 17341.3,
-          "ask": 38075.61,
-          "rpk": 33510.32,
-          "load_factor_pct": 88.01,
-          "observation_date": "2026-08-01"
+          "passengers": 14433.72,
+          "ask": 32935.98,
+          "rpk": 28274.08,
+          "load_factor_pct": 85.85,
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "600221",
           "airline": "海航控股",
           "reporting_scope": "海航集团合并；包括八家运营航司",
           "region": "国内",
-          "passengers": 6813.72,
-          "ask": 12641.93,
-          "rpk": 11300.54,
-          "load_factor_pct": 89.39,
-          "observation_date": "2026-08-01"
+          "passengers": 4826.79,
+          "ask": 9188.24,
+          "rpk": 8060.84,
+          "load_factor_pct": 87.73,
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "600221",
           "airline": "海航控股",
           "reporting_scope": "海航集团合并；包括八家运营航司",
           "region": "国际",
-          "passengers": 385.46,
-          "ask": 3101.1,
-          "rpk": 2486.42,
-          "load_factor_pct": 80.18,
-          "observation_date": "2026-08-01"
+          "passengers": 353.81,
+          "ask": 3085.85,
+          "rpk": 2373.23,
+          "load_factor_pct": 76.91,
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "600221",
           "airline": "海航控股",
           "reporting_scope": "海航集团合并；包括八家运营航司",
           "region": "地区",
-          "passengers": 25.6,
-          "ask": 38.61,
-          "rpk": 29.34,
-          "load_factor_pct": 76,
-          "observation_date": "2026-08-01"
+          "passengers": 19.65,
+          "ask": 36.71,
+          "rpk": 25.37,
+          "load_factor_pct": 69.1,
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "600221",
           "airline": "海航控股",
           "reporting_scope": "海航集团合并；包括八家运营航司",
           "region": "合计",
-          "passengers": 7224.78,
-          "ask": 15781.64,
-          "rpk": 13816.3,
-          "load_factor_pct": 87.55,
-          "observation_date": "2026-08-01"
+          "passengers": 5200.25,
+          "ask": 12310.8,
+          "rpk": 10459.43,
+          "load_factor_pct": 84.96,
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "603885",
           "airline": "吉祥航空",
           "reporting_scope": "公司及九元航空合并",
           "region": "国内",
-          "passengers": 2299.21,
-          "ask": 4010.177,
-          "rpk": 3657.2526,
-          "load_factor_pct": 91.2,
-          "observation_date": "2026-08-01"
+          "passengers": 2054.5,
+          "ask": 3597.4238,
+          "rpk": 3227.6347,
+          "load_factor_pct": 89.72,
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "603885",
           "airline": "吉祥航空",
           "reporting_scope": "公司及九元航空合并",
           "region": "国际",
-          "passengers": 304.99,
-          "ask": 1372.648,
-          "rpk": 1159.8245,
-          "load_factor_pct": 84.5,
-          "observation_date": "2026-08-01"
+          "passengers": 289.28,
+          "ask": 1377.332,
+          "rpk": 1132.9986,
+          "load_factor_pct": 82.26,
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "603885",
           "airline": "吉祥航空",
           "reporting_scope": "公司及九元航空合并",
           "region": "地区",
-          "passengers": 21.67,
-          "ask": 33.7195,
-          "rpk": 29.7422,
-          "load_factor_pct": 88.2,
-          "observation_date": "2026-08-01"
+          "passengers": 21.06,
+          "ask": 32.5642,
+          "rpk": 28.3361,
+          "load_factor_pct": 87.02,
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "603885",
@@ -59596,43 +59812,43 @@
           "reporting_scope": "公司及九元航空合并",
           "region": "合计",
           "passengers": null,
-          "ask": 5416.5445,
-          "rpk": 4846.8193,
+          "ask": 5007.32,
+          "rpk": 4388.9694,
           "load_factor_pct": null,
-          "observation_date": "2026-08-01"
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "601021",
           "airline": "春秋航空",
           "reporting_scope": "公司及子公司",
           "region": "国内",
-          "passengers": 2829.79,
-          "ask": 5148.6859,
-          "rpk": 4909.0246,
-          "load_factor_pct": 95.35,
-          "observation_date": "2026-08-01"
+          "passengers": 2601.45,
+          "ask": 4775.7049,
+          "rpk": 4504.4589,
+          "load_factor_pct": 94.32,
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "601021",
           "airline": "春秋航空",
           "reporting_scope": "公司及子公司",
           "region": "国际",
-          "passengers": 504.59,
-          "ask": 1186.7529,
-          "rpk": 1097.3717,
-          "load_factor_pct": 92.47,
-          "observation_date": "2026-08-01"
+          "passengers": 419.03,
+          "ask": 998.2401,
+          "rpk": 869.0546,
+          "load_factor_pct": 87.06,
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "601021",
           "airline": "春秋航空",
           "reporting_scope": "公司及子公司",
           "region": "地区",
-          "passengers": 28.42,
-          "ask": 43.7747,
-          "rpk": 40.4818,
-          "load_factor_pct": 92.48,
-          "observation_date": "2026-08-01"
+          "passengers": 28.28,
+          "ask": 45.3837,
+          "rpk": 40.1845,
+          "load_factor_pct": 88.54,
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "601021",
@@ -59640,10 +59856,10 @@
           "reporting_scope": "公司及子公司",
           "region": "合计",
           "passengers": null,
-          "ask": 6379.2135,
-          "rpk": 6046.8782,
+          "ask": 5819.3288,
+          "rpk": 5413.6979,
           "load_factor_pct": null,
-          "observation_date": "2026-08-01"
+          "observation_date": "2026-09-01"
         }
       ],
       "china_airline_cargo_history": [
@@ -64980,6 +65196,48 @@
           "series": "春秋航空",
           "airline": "Spring Airlines",
           "value": 7874.28
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "中国国航",
+          "airline": "Air China",
+          "value": 129788.8
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "东方航空",
+          "airline": "China Eastern",
+          "value": 102400
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "value": 173080
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "海航控股",
+          "airline": "Hainan Airlines Holdings",
+          "value": 48180
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "吉祥航空",
+          "airline": "Juneyao Airlines",
+          "value": 16193.45
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "春秋航空",
+          "airline": "Spring Airlines",
+          "value": 10628.62
         }
       ],
       "china_airline_freight_load_factor_history": [
@@ -70246,6 +70504,48 @@
           "series": "春秋航空",
           "airline": "Spring Airlines",
           "value": 15.53
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "中国国航",
+          "airline": "Air China",
+          "value": 42.5
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "东方航空",
+          "airline": "China Eastern",
+          "value": 43.36
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "value": 54.64
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "海航控股",
+          "airline": "Hainan Airlines Holdings",
+          "value": 63.45
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "吉祥航空",
+          "airline": "Juneyao Airlines",
+          "value": 31.57
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "春秋航空",
+          "airline": "Spring Airlines",
+          "value": 22.78
         }
       ],
       "china_airline_cargo_latest_snapshot": [
@@ -70253,67 +70553,67 @@
           "airline_code": "601111",
           "airline": "中国国航",
           "reporting_scope": "集团合并运营数据",
-          "cargo_tonnes": 130382.5,
-          "aftk": 1118.2,
-          "rftk": 475.1,
+          "cargo_tonnes": 129788.8,
+          "aftk": 1059.4,
+          "rftk": 450.2,
           "freight_load_factor_pct": 42.5,
-          "overall_load_factor_pct": 73.3,
-          "observation_date": "2026-08-01"
+          "overall_load_factor_pct": 72.8,
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "600115",
           "airline": "东方航空",
           "reporting_scope": "集团合并运营数据",
-          "cargo_tonnes": 96660,
-          "aftk": 842.32,
-          "rftk": 373.88,
-          "freight_load_factor_pct": 44.39,
-          "overall_load_factor_pct": 76.16,
-          "observation_date": "2026-08-01"
+          "cargo_tonnes": 102400,
+          "aftk": 867.01,
+          "rftk": 375.9,
+          "freight_load_factor_pct": 43.36,
+          "overall_load_factor_pct": 75.26,
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "600029",
           "airline": "南方航空",
           "reporting_scope": "集团合并运营数据",
-          "cargo_tonnes": 158070,
-          "aftk": 1625.8,
-          "rftk": 838.58,
-          "freight_load_factor_pct": 51.58,
-          "overall_load_factor_pct": 73.33,
-          "observation_date": "2026-08-01"
+          "cargo_tonnes": 173080,
+          "aftk": 1597.29,
+          "rftk": 872.69,
+          "freight_load_factor_pct": 54.64,
+          "overall_load_factor_pct": 74.26,
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "600221",
           "airline": "海航控股",
           "reporting_scope": "海航集团合并；包括八家运营航司",
-          "cargo_tonnes": 50620,
-          "aftk": 305.59,
-          "rftk": 176.89,
-          "freight_load_factor_pct": 57.88,
-          "overall_load_factor_pct": 90.03,
-          "observation_date": "2026-08-01"
+          "cargo_tonnes": 48180,
+          "aftk": 269.81,
+          "rftk": 171.2,
+          "freight_load_factor_pct": 63.45,
+          "overall_load_factor_pct": 90.13,
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "603885",
           "airline": "吉祥航空",
           "reporting_scope": "公司及九元航空合并",
-          "cargo_tonnes": 12899.95,
-          "aftk": 180.6628,
-          "rftk": 48.4894,
-          "freight_load_factor_pct": 26.84,
-          "overall_load_factor_pct": 69.35,
-          "observation_date": "2026-08-01"
+          "cargo_tonnes": 16193.45,
+          "aftk": 169.1329,
+          "rftk": 53.3895,
+          "freight_load_factor_pct": 31.57,
+          "overall_load_factor_pct": 71.68,
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "601021",
           "airline": "春秋航空",
           "reporting_scope": "公司及子公司",
-          "cargo_tonnes": 7874.28,
-          "aftk": 95.6536,
-          "rftk": 14.8597,
-          "freight_load_factor_pct": 15.53,
-          "overall_load_factor_pct": 79.01,
-          "observation_date": "2026-08-01"
+          "cargo_tonnes": 10628.62,
+          "aftk": 87.1728,
+          "rftk": 19.8548,
+          "freight_load_factor_pct": 22.78,
+          "overall_load_factor_pct": 82.04,
+          "observation_date": "2026-09-01"
         }
       ],
       "china_airline_fleet_total_history": [
@@ -75426,6 +75726,48 @@
           "series": "春秋航空",
           "airline": "Spring Airlines",
           "value": 140
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "中国国航",
+          "airline": "Air China",
+          "value": 974
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "东方航空",
+          "airline": "China Eastern",
+          "value": 837
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "value": 978
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "海航控股",
+          "airline": "Hainan Airlines Holdings",
+          "value": 366
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "吉祥航空",
+          "airline": "Juneyao Airlines",
+          "value": 133
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "春秋航空",
+          "airline": "Spring Airlines",
+          "value": 140
         }
       ],
       "china_airline_fleet_net_change_history": [
@@ -79747,6 +80089,41 @@
           "series": "春秋航空",
           "airline": "Spring Airlines",
           "value": 2
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "中国国航",
+          "airline": "Air China",
+          "value": -2
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "东方航空",
+          "airline": "China Eastern",
+          "value": 4
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "value": 1
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "海航控股",
+          "airline": "Hainan Airlines Holdings",
+          "value": -1
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "吉祥航空",
+          "airline": "Juneyao Airlines",
+          "value": 0
         }
       ],
       "china_airline_new_route_history": [
@@ -84033,6 +84410,34 @@
           "series": "春秋航空",
           "airline": "Spring Airlines",
           "value": 2
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "中国国航",
+          "airline": "Air China",
+          "value": 1
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "东方航空",
+          "airline": "China Eastern",
+          "value": 2
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "value": 4
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "春秋航空",
+          "airline": "Spring Airlines",
+          "value": 0
         }
       ],
       "china_airline_operating_events_latest": [
@@ -84041,108 +84446,144 @@
           "airline": "中国国航",
           "reporting_scope": "集团合并运营数据",
           "event_type": "引进飞机",
+          "value": 1,
+          "detail": "引进1架A320 系列飞机，",
+          "observation_date": "2026-09-01"
+        },
+        {
+          "airline_code": "601111",
+          "airline": "中国国航",
+          "reporting_scope": "集团合并运营数据",
+          "event_type": "退出／退租飞机",
           "value": 3,
-          "detail": "引进 2 架A320 系列飞机，1 架 B737 系列飞机",
-          "observation_date": "2026-08-01"
+          "detail": "退出1架B737 系列飞机和 2 架 A320 系列飞机",
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "601111",
           "airline": "中国国航",
           "reporting_scope": "集团合并运营数据",
           "event_type": "机队总数",
-          "value": 976,
-          "detail": "合计运营 976 架",
-          "observation_date": "2026-08-01"
+          "value": 974,
+          "detail": "合计运营 974 架",
+          "observation_date": "2026-09-01"
+        },
+        {
+          "airline_code": "601111",
+          "airline": "中国国航",
+          "reporting_scope": "集团合并运营数据",
+          "event_type": "新航线事件数",
+          "value": 1,
+          "detail": "新开北京首都-布加勒斯特-萨格勒布航线（每周三班）",
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "600115",
           "airline": "东方航空",
-          "reporting_scope": "集团合并运营数据",
-          "event_type": "引进飞机",
-          "value": 2,
-          "detail": "引进 2架 A320系列飞机，",
-          "observation_date": "2026-08-01"
-        },
-        {
-          "airline_code": "600115",
-          "airline": "东方航空",
-          "reporting_scope": "集团合并运营数据",
-          "event_type": "退出／退租飞机",
-          "value": 2,
-          "detail": "退出 2架 A320系列飞机",
-          "observation_date": "2026-08-01"
-        },
-        {
-          "airline_code": "600115",
-          "airline": "东方航空",
-          "reporting_scope": "集团合并运营数据",
-          "event_type": "机队总数",
-          "value": 833,
-          "detail": "合计 377 274 182 833",
-          "observation_date": "2026-08-01"
-        },
-        {
-          "airline_code": "600029",
-          "airline": "南方航空",
           "reporting_scope": "集团合并运营数据",
           "event_type": "引进飞机",
           "value": 5,
-          "detail": "引进5架飞机（包含2架A320NEO飞机、1 架A321NEO飞机和2架B737-8飞机），",
-          "observation_date": "2026-08-01"
+          "detail": "引进 5架飞机，包括 4架 A320系列和 1架 B737系列，",
+          "observation_date": "2026-09-01"
+        },
+        {
+          "airline_code": "600115",
+          "airline": "东方航空",
+          "reporting_scope": "集团合并运营数据",
+          "event_type": "退出／退租飞机",
+          "value": 1,
+          "detail": "退出 1架 A320系列飞机",
+          "observation_date": "2026-09-01"
+        },
+        {
+          "airline_code": "600115",
+          "airline": "东方航空",
+          "reporting_scope": "集团合并运营数据",
+          "event_type": "机队总数",
+          "value": 837,
+          "detail": "合计 381 274 182 837",
+          "observation_date": "2026-09-01"
+        },
+        {
+          "airline_code": "600115",
+          "airline": "东方航空",
+          "reporting_scope": "集团合并运营数据",
+          "event_type": "新航线事件数",
+          "value": 2,
+          "detail": "新开成都天府-大连、成都天府-连城等航线",
+          "observation_date": "2026-09-01"
+        },
+        {
+          "airline_code": "600029",
+          "airline": "南方航空",
+          "reporting_scope": "集团合并运营数据",
+          "event_type": "引进飞机",
+          "value": 6,
+          "detail": "引进6架飞机（包含2架A321NEO飞机、3 架B737-8飞机和1架C919飞机），",
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "600029",
           "airline": "南方航空",
           "reporting_scope": "集团合并运营数据",
           "event_type": "退出／退租飞机",
-          "value": 2,
-          "detail": "退出2架飞机（包含1架B787-8 飞机和1架B737-700飞机）",
-          "observation_date": "2026-08-01"
+          "value": 5,
+          "detail": "退出5架飞机（包含2架A321飞机、2架B787-8飞机和1架B737-800飞机）",
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "600029",
           "airline": "南方航空",
           "reporting_scope": "集团合并运营数据",
           "event_type": "机队总数",
-          "value": 977,
-          "detail": "合计运营 977架",
-          "observation_date": "2026-08-01"
+          "value": 978,
+          "detail": "合计运营978架",
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "600029",
           "airline": "南方航空",
           "reporting_scope": "集团合并运营数据",
           "event_type": "新航线事件数",
-          "value": 0,
-          "detail": "无新增主要航线",
-          "observation_date": "2026-08-01"
+          "value": 4,
+          "detail": "新增深圳-泗水-深 1 圳（每周两班）、厦门-伦敦希思罗-厦门（每周三班）、南京- 新加坡-南京（每周七班）、南京-河内-南京（每周七班）",
+          "observation_date": "2026-09-01"
+        },
+        {
+          "airline_code": "600221",
+          "airline": "海航控股",
+          "reporting_scope": "海航集团合并；包括八家运营航司",
+          "event_type": "引进飞机",
+          "value": 1,
+          "detail": "引进 1架A320NEO 飞机，",
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "600221",
           "airline": "海航控股",
           "reporting_scope": "海航集团合并；包括八家运营航司",
           "event_type": "退出／退租飞机",
-          "value": 1,
-          "detail": "退出 1 架 B737-800 飞机",
-          "observation_date": "2026-08-01"
+          "value": 2,
+          "detail": "退出 1架 B737-800 飞机和1 架 EMB190 飞机",
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "600221",
           "airline": "海航控股",
           "reporting_scope": "海航集团合并；包括八家运营航司",
           "event_type": "机队总数",
-          "value": 367,
-          "detail": "合计运营367架",
-          "observation_date": "2026-08-01"
+          "value": 366,
+          "detail": "合计运营366架",
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "603885",
           "airline": "吉祥航空",
           "reporting_scope": "公司及九元航空合并",
           "event_type": "引进飞机",
-          "value": 2,
-          "detail": "引进飞机2架，",
-          "observation_date": "2026-08-01"
+          "value": 0,
+          "detail": "引进飞机0架，",
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "603885",
@@ -84151,7 +84592,7 @@
           "event_type": "退出／退租飞机",
           "value": 0,
           "detail": "退役飞机0架",
-          "observation_date": "2026-08-01"
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "603885",
@@ -84160,16 +84601,7 @@
           "event_type": "机队总数",
           "value": 133,
           "detail": "合计 — 133",
-          "observation_date": "2026-08-01"
-        },
-        {
-          "airline_code": "601021",
-          "airline": "春秋航空",
-          "reporting_scope": "公司及子公司",
-          "event_type": "引进飞机",
-          "value": 2,
-          "detail": "新增2架空客A320neo机型飞机",
-          "observation_date": "2026-08-01"
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "601021",
@@ -84178,16 +84610,16 @@
           "event_type": "机队总数",
           "value": 140,
           "detail": "合计 101 35 4 140",
-          "observation_date": "2026-08-01"
+          "observation_date": "2026-09-01"
         },
         {
           "airline_code": "601021",
           "airline": "春秋航空",
           "reporting_scope": "公司及子公司",
           "event_type": "新航线事件数",
-          "value": 2,
-          "detail": "新增航线情况本月新增航线：上海浦东=承德（周47）、上海浦东=兰州=莎车（周135）",
-          "observation_date": "2026-08-01"
+          "value": 0,
+          "detail": "无新增航线",
+          "observation_date": "2026-09-01"
         }
       ],
       "airline_h1_revenue_mae_comparison": [
@@ -93514,17 +93946,38 @@
           "series": "客运车辆",
           "value": 1301800,
           "is_estimate": false
+        },
+        {
+          "date": "2026-08-01",
+          "month": "2026-08",
+          "series": "飞机",
+          "value": 34995,
+          "is_estimate": false
+        },
+        {
+          "date": "2026-08-01",
+          "month": "2026-08",
+          "series": "货运车辆",
+          "value": 415450,
+          "is_estimate": false
+        },
+        {
+          "date": "2026-08-01",
+          "month": "2026-08",
+          "series": "客运车辆",
+          "value": 1416986,
+          "is_estimate": false
         }
       ],
       "censtatd_boundary_movements_latest": [
         {
-          "summary": "飞机：34,230.0 移动次数（2026-07）"
+          "summary": "飞机：34,995.0 移动次数（2026-08）"
         },
         {
-          "summary": "客运车辆：1,301,800.0 移动次数（2026-07）"
+          "summary": "客运车辆：1,416,986.0 移动次数（2026-08）"
         },
         {
-          "summary": "货运车辆：413,402.0 移动次数（2026-07）"
+          "summary": "货运车辆：415,450.0 移动次数（2026-08）"
         }
       ],
       "hk_private_car_fleet_ev_share_history": [
@@ -96285,71 +96738,79 @@
           "parks_reporting_exact": 450,
           "parks_with_unknown_count": 94,
           "participating_parks": 544
+        },
+        {
+          "date": "2026-10-20 11:37",
+          "month": "2026-10",
+          "value": 17234,
+          "parks_reporting_exact": 460,
+          "parks_with_unknown_count": 88,
+          "participating_parks": 548
         }
       ],
       "hk_parking_current_district": [
         {
-          "summary": "沙田区：2,236 个确切空置车位（共 47 个停车场）"
+          "summary": "观塘区：1,756 个确切空置车位（共 68 个停车场）"
         },
         {
-          "summary": "油尖旺区：2,038 个确切空置车位（共 13 个停车场）"
+          "summary": "沙田区：1,653 个确切空置车位（共 46 个停车场）"
         },
         {
-          "summary": "离岛区：1,766 个确切空置车位（共 15 个停车场）"
+          "summary": "离岛区：1,528 个确切空置车位（共 15 个停车场）"
         },
         {
-          "summary": "中西区：1,575 个确切空置车位（共 10 个停车场）"
+          "summary": "西贡区：1,418 个确切空置车位（共 37 个停车场）"
         },
         {
-          "summary": "观塘区：1,564 个确切空置车位（共 62 个停车场）"
+          "summary": "油尖旺区：1,381 个确切空置车位（共 14 个停车场）"
         },
         {
-          "summary": "西贡区：1,370 个确切空置车位（共 34 个停车场）"
+          "summary": "中西区：1,269 个确切空置车位（共 10 个停车场）"
         },
         {
-          "summary": "元朗区：1,142 个确切空置车位（共 27 个停车场）"
+          "summary": "北区：984 个确切空置车位（共 23 个停车场）"
         },
         {
-          "summary": "九龙城区：1,127 个确切空置车位（共 16 个停车场）"
+          "summary": "元朗区：946 个确切空置车位（共 27 个停车场）"
         },
         {
-          "summary": "黄大仙区：990 个确切空置车位（共 33 个停车场）"
+          "summary": "黄大仙区：918 个确切空置车位（共 33 个停车场）"
         },
         {
-          "summary": "葵青区：932 个确切空置车位（共 32 个停车场）"
+          "summary": "南区：858 个确切空置车位（共 9 个停车场）"
         },
         {
-          "summary": "南区：899 个确切空置车位（共 9 个停车场）"
+          "summary": "大埔区：818 个确切空置车位（共 22 个停车场）"
         },
         {
-          "summary": "荃湾区：895 个确切空置车位（共 15 个停车场）"
+          "summary": "九龙城区：796 个确切空置车位（共 15 个停车场）"
         },
         {
-          "summary": "大埔区：889 个确切空置车位（共 23 个停车场）"
+          "summary": "葵青区：689 个确切空置车位（共 32 个停车场）"
         },
         {
-          "summary": "北区：860 个确切空置车位（共 22 个停车场）"
+          "summary": "屯门区：580 个确切空置车位（共 28 个停车场）"
         },
         {
-          "summary": "屯门区：766 个确切空置车位（共 27 个停车场）"
+          "summary": "东区：579 个确切空置车位（共 29 个停车场）"
         },
         {
-          "summary": "东区：671 个确切空置车位（共 29 个停车场）"
+          "summary": "荃湾区：573 个确切空置车位（共 16 个停车场）"
         },
         {
-          "summary": "深水埗区：372 个确切空置车位（共 30 个停车场）"
+          "summary": "湾仔区：281 个确切空置车位（共 5 个停车场）"
         },
         {
-          "summary": "湾仔区：302 个确切空置车位（共 5 个停车场）"
+          "summary": "深水埗区：207 个确切空置车位（共 31 个停车场）"
         }
       ],
       "kpi_carpark_occupancy": [
         {
-          "occupancy_pct": 77.4548,
-          "capacity_spaces": 20674,
-          "vacant_spaces": 4661,
-          "sample_size": 20674,
-          "observation_date": "2026-10-05 14:37"
+          "occupancy_pct": 78.4543,
+          "capacity_spaces": 20677,
+          "vacant_spaces": 4455,
+          "sample_size": 20677,
+          "observation_date": "2026-10-20 11:37"
         }
       ],
       "td_carpark_occupancy_history": [
@@ -96408,62 +96869,70 @@
           "sample_size": 20674,
           "capacity_spaces": 20674,
           "vacant_spaces": 4661
+        },
+        {
+          "date": "2026-10-20 11:37",
+          "month": "2026-10",
+          "value": 78.4543,
+          "sample_size": 20677,
+          "capacity_spaces": 20677,
+          "vacant_spaces": 4455
         }
       ],
       "td_carpark_occupancy_latest_district": [
         {
-          "summary": "黄大仙区：95.9% 占用（417 个已观测计量车位）"
+          "summary": "油尖旺区：94.2% 占用（1958 个已观测计量车位）"
         },
         {
-          "summary": "油尖旺区：90.3% 占用（1956 个已观测计量车位）"
+          "summary": "深水埗区：93.1% 占用（1415 个已观测计量车位）"
         },
         {
-          "summary": "观塘区：87.7% 占用（651 个已观测计量车位）"
+          "summary": "黄大仙区：93.0% 占用（417 个已观测计量车位）"
         },
         {
-          "summary": "深水埗区：87.5% 占用（1415 个已观测计量车位）"
+          "summary": "东区：85.1% 占用（589 个已观测计量车位）"
         },
         {
-          "summary": "东区：86.1% 占用（589 个已观测计量车位）"
+          "summary": "九龙城区：84.1% 占用（2642 个已观测计量车位）"
         },
         {
-          "summary": "北区：84.1% 占用（1119 个已观测计量车位）"
+          "summary": "北区：82.9% 占用（1119 个已观测计量车位）"
         },
         {
-          "summary": "沙田区：83.9% 占用（1705 个已观测计量车位）"
+          "summary": "葵青区：82.4% 占用（637 个已观测计量车位）"
         },
         {
-          "summary": "葵青区：83.7% 占用（637 个已观测计量车位）"
+          "summary": "湾仔区：82.2% 占用（1032 个已观测计量车位）"
         },
         {
-          "summary": "屯门区：83.5% 占用（1335 个已观测计量车位）"
+          "summary": "荃湾区：82.1% 占用（698 个已观测计量车位）"
         },
         {
-          "summary": "荃湾区：81.5% 占用（698 个已观测计量车位）"
+          "summary": "沙田区：81.4% 占用（1705 个已观测计量车位）"
         },
         {
-          "summary": "元朗区：79.8% 占用（1242 个已观测计量车位）"
+          "summary": "观塘区：81.3% 占用（651 个已观测计量车位）"
         },
         {
-          "summary": "九龙城区：79.3% 占用（2642 个已观测计量车位）"
+          "summary": "元朗区：79.6% 占用（1243 个已观测计量车位）"
         },
         {
-          "summary": "大埔区：69.6% 占用（1641 个已观测计量车位）"
+          "summary": "屯门区：78.1% 占用（1335 个已观测计量车位）"
         },
         {
-          "summary": "湾仔区：69.2% 占用（1032 个已观测计量车位）"
+          "summary": "中西区：76.8% 占用（598 个已观测计量车位）"
         },
         {
-          "summary": "中西区：68.9% 占用（598 个已观测计量车位）"
+          "summary": "大埔区：66.2% 占用（1641 个已观测计量车位）"
         },
         {
-          "summary": "西贡区：54.4% 占用（1981 个已观测计量车位）"
+          "summary": "离岛区：54.4% 占用（338 个已观测计量车位）"
         },
         {
-          "summary": "离岛区：52.7% 占用（338 个已观测计量车位）"
+          "summary": "西贡区：52.7% 占用（1981 个已观测计量车位）"
         },
         {
-          "summary": "南区：49.1% 占用（678 个已观测计量车位）"
+          "summary": "南区：52.4% 占用（678 个已观测计量车位）"
         }
       ]
     }
@@ -96684,7 +97153,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-transport/",
-    "snapshotId": "de23e3385fe03b3c",
-    "dataAsOf": "2026-10-05"
+    "snapshotId": "97b8bc145dc253b2",
+    "dataAsOf": "2026-10-20"
   }
 }
