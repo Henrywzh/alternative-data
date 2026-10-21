@@ -1,14 +1,14 @@
 # asia_markets research feed
 
-Generated: 2026-10-20T20:00:27.033818Z · Status: **degraded**
+Generated: 2026-10-21T12:57:33.330386Z · Status: **degraded**
 
-Source commit: `deae92f54e3174430a5c27bc5878d20c013d7590`
+Source commit: `1096a55ccf694756cd01197ab4e4b2fc09df4e4a`
 
 Observation dates differ by record. Generated time is not a market-data timestamp.
 
 | Section | Record | Observation | Quality | Values |
 |---|---|---|---|---|
-| Hong Kong Labour Market & Talent Policy | Labour Force | 2026-08-31 | stale | labour_force_thousands: 3805.9 thousand_people; employed_thousands: 3652.0 thousand_people; unemployment_rate: 0.04 fraction; underemployment_rate: 0.019 fraction |
+| Hong Kong Labour Market & Talent Policy | Labour Force | 2026-08-31 | current | labour_force_thousands: 3805.9 thousand_people; employed_thousands: 3652.0 thousand_people; unemployment_rate: 0.04 fraction; underemployment_rate: 0.019 fraction |
 | Hong Kong Labour Market & Talent Policy | Labour Demand | 2026-06-30 | current | vacancies: 45380.0 jobs; persons_engaged: 2697387.0 people; vacancy_rate: 0.017 fraction |
 | Hong Kong Labour Market & Talent Policy | Wage | 2026-06-30 | current | nominal_wage_yoy: 0.034 fraction; real_wage_yoy: 0.016 fraction; nominal_payroll_yoy: 0.035 fraction |
 | Hong Kong Labour Market & Talent Policy | Income | 2026-07-31 | current | median_monthly_earnings: 21000.0 HKD_per_month |
@@ -16,7 +16,7 @@ Observation dates differ by record. Generated time is not a market-data timestam
 | Hong Kong Real Estate Monitor | Rvd Price | 2026-08-01 | current (source_provisional) | latest: 320.5 index_points; period_change: 0.000624 fraction; year_change: 0.109765 fraction |
 | Hong Kong Real Estate Monitor | Rvd Rent | 2026-08-01 | current (source_provisional) | latest: 210.3 index_points; period_change: 0.016433 fraction; year_change: 0.052553 fraction |
 | HK Transport & Aviation Sector Monitor | Mtr | 2026-08-01 | current | latest: 167550.0 thousand_journeys; domestic_thousands: 135062.0 thousand_journeys; cross_boundary_thousands: 10412.0 thousand_journeys; hsr_thousands: 3365.0 thousand_journeys; recovery_vs_2019_pct: 0.050299 fraction |
-| HK Transport & Aviation Sector Monitor | Cathay | 2026-08-01 | current | latest: 2827486.0 passengers; load_factor_pct: 87.2 percent; hkia_passengers: 5831000.0 passengers; period_change: 0.041656 fraction; recovery_vs_2019_pct: -0.031648 fraction |
+| HK Transport & Aviation Sector Monitor | Cathay | 2026-09-01 | current | latest: 2453635.0 passengers; load_factor_pct: 84.2 percent; hkia_passengers: 4835000.0 passengers; period_change: -0.13222 fraction; recovery_vs_2019_pct: -0.159684 fraction |
 | HK Transport & Aviation Sector Monitor | Journeys | 2026-07-01 | stale | kmb_k: 74364.335 thousand_journeys; total_k: 349101.83599999995 thousand_journeys; period_change: 0.009501 fraction |
 | HK Transport & Aviation Sector Monitor | Fleet | 2026-08-01 | current | total_registered: 650227.0 vehicles; ev_share_pct: 27.4633 percent; ev_share_change_pp: 0.2152 percentage_points |
 | HK Transport & Aviation Sector Monitor | Private Car First Reg | 2026-07-01 | stale | total_first_reg: 3253.0 vehicles; electric_first_reg: 1969.0 vehicles; ev_share_pct: 60.5287 percent |
@@ -35,10 +35,12 @@ Observation dates differ by record. Generated time is not a market-data timestam
 
 ## Rule candidates
 
-- **unknown** `6fc3967d3bb227459f74425f`: hk-labour-market/labour_force_card / hk.unemployment.ge_4pct.v1
+- **continuing** `6fc3967d3bb227459f74425f`: hk-labour-market/labour_force_card / hk.unemployment.ge_4pct.v1
 
 ## Changes
 
+- quality_change: hk-labour-market/labour_force_card
+- new_observation: hk-transport/cathay_card
 
 ## Excluded coverage
 
