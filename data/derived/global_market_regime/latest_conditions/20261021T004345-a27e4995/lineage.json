@@ -1,0 +1,27 @@
+{
+  "run_scope": "full",
+  "retrieved_at": "2026-10-21T00:43:45.401711Z",
+  "dataset_name": "latest_conditions",
+  "run_id": "20261021T004345-a27e4995",
+  "created_at": "2026-10-21T00:44:02.387315Z",
+  "records": 5,
+  "columns": [
+    "indicator_id",
+    "label_en",
+    "label_zh",
+    "state",
+    "value",
+    "observation_date",
+    "freshness",
+    "reference_start",
+    "target_range",
+    "cut_prob",
+    "hold_prob",
+    "hy_z",
+    "vix_z",
+    "consecutive_breach",
+    "meeting_date",
+    "event_slug"
+  ],
+  "sha256": "8191c8c9160a8999d85ac3b092c38da8f2c0efed847b2dd34d6233c61f45c037"
+}
