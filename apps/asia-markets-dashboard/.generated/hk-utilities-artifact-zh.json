@@ -6,7 +6,7 @@
     "title": "香港公用事业与基础设施监测",
     "description": "中电控股（CLP）季度售电量拆解、中华煤气（Towngas）代理数据、香港天文台日均气温、电能实业（Power Assets）分部业绩、渠务署污水流量/实验室数据及水务署停水通告。",
     "sector": "hk-utilities",
-    "generatedAt": "2026-10-21T11:53:57.499137Z",
+    "generatedAt": "2026-10-21T12:46:19.259193Z",
     "cards": [
       {
         "id": "clp_card",
@@ -397,7 +397,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-10-21T11:53:57.499137Z",
+    "generatedAt": "2026-10-21T12:46:19.259193Z",
     "status": "ready",
     "datasets": {
       "kpi_clp": [
@@ -4499,7 +4499,7 @@
       ],
       "kpi_water_suspension": [
         {
-          "active_notices": 32,
+          "active_notices": 31,
           "total_notices": 138,
           "recent_emergency_notices": 109,
           "observation_date": "2026-10-21"
@@ -12568,11 +12568,11 @@
           "nature": "紧急",
           "suspension_start": "2026-10-21 11:17",
           "suspension_date": "2026-10-21",
-          "actual_resumption": null,
+          "actual_resumption": "2026-10-21 19:10",
           "address": "292-356 QUEEN'S ROAD WEST (EVEN),39-81 FIRST STREET (ODD)",
           "cause": "Emergency repairing of water main/installation",
-          "status": "供水暂停中",
-          "is_active": true
+          "status": "供水已恢复",
+          "is_active": false
         },
         {
           "suspension_id": "2026102114777",
@@ -13918,7 +13918,7 @@
           "summary": "2026102114780 (2026-10-21 12:00): Yuen Long; Salt Water; Emergency; Supply resumed"
         },
         {
-          "summary": "2026102114778 (2026-10-21 11:17): Central & Western; Salt Water; Emergency; Supply being suspended"
+          "summary": "2026102114778 (2026-10-21 11:17): Central & Western; Salt Water; Emergency; Supply resumed"
         },
         {
           "summary": "2026102114777 (2026-10-21 10:36): Kwun Tong; Salt Water; Emergency; Supply resumed"
@@ -14278,7 +14278,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-utilities/",
-    "snapshotId": "0b8d66e44f9f9a3d",
+    "snapshotId": "d6bf2744ee2a5508",
     "dataAsOf": "2026-09-30"
   }
 }
