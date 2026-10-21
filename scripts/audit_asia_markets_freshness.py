@@ -21,6 +21,26 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_ARTIFACT_ROOT = ROOT / "apps" / "asia-markets-dashboard" / ".generated"
 DEFAULT_OUTPUT = DEFAULT_ARTIFACT_ROOT / "asia-markets-freshness.json"
 
+# The C&SD publishes unemployment figures for rolling three-month periods on
+# month-specific dates.  Use its published 2026 calendar rather than assuming
+# every release lands on the 20th.  The period is the last month in each
+# reference window (e.g. the 22 Oct release covers Jul-Sep 2026).
+# Source: https://www.censtatd.gov.hk/FileManager/EN/Common/Schedule_of_Regular_Press_Releases_on_Statistical_Data_in_2026.pdf
+CSD_LABOUR_FORCE_RELEASES_2026 = (
+    (date(2026, 1, 20), "2025-12"),
+    (date(2026, 2, 20), "2026-01"),
+    (date(2026, 3, 18), "2026-02"),
+    (date(2026, 4, 23), "2026-03"),
+    (date(2026, 5, 19), "2026-04"),
+    (date(2026, 6, 16), "2026-05"),
+    (date(2026, 7, 17), "2026-06"),
+    (date(2026, 8, 20), "2026-07"),
+    (date(2026, 9, 17), "2026-08"),
+    (date(2026, 10, 22), "2026-09"),
+    (date(2026, 11, 17), "2026-10"),
+    (date(2026, 12, 17), "2026-11"),
+)
+
 
 @dataclass(frozen=True)
 class CheckResult:
@@ -47,6 +67,24 @@ def expected_month(as_of: date, *, release_day: int) -> str:
     """Return the latest prior month expected to be published by ``as_of``."""
     lag = -1 if as_of.day >= release_day else -2
     return _shift_month(_month_start(as_of), lag).strftime("%Y-%m")
+
+
+def expected_labour_force_period(as_of: date) -> str:
+    """Return the latest C&SD rolling-three-month period due by ``as_of``.
+
+    C&SD's release day varies within the month.  The explicit 2026 calendar
+    prevents the freshness gate from flagging a period before its scheduled
+    release; other years retain the historical day-20 approximation until
+    their annual calendar is added here.
+    """
+    if as_of.year == 2026:
+        released = [
+            period for release_date, period in CSD_LABOUR_FORCE_RELEASES_2026
+            if release_date <= as_of
+        ]
+        if released:
+            return released[-1]
+    return expected_month(as_of, release_day=20)
 
 
 def expected_quarter(as_of: date, *, release_lag_days: int) -> str:
@@ -276,8 +314,11 @@ def audit_artifacts(
             check_id="labour.unemployment",
             sector="hk-labour-market",
             dataset_id="labour_force_history",
-            expected=expected_month(as_of, release_day=20),
-            notes="C&SD rolling three-month labour-force release, normally published around day 20.",
+            expected=expected_labour_force_period(as_of),
+            notes=(
+                "C&SD rolling three-month labour-force release; the 2026 gate "
+                "follows the department's month-specific published release calendar."
+            ),
         ),
         _period_check(
             artifact=labour,

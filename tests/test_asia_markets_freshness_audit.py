@@ -110,6 +110,51 @@ def test_expected_periods_respect_release_lags() -> None:
     assert MODULE.expected_month_by_lag(date(2026, 9, 4), release_lag_days=35) == "2026-07"
 
 
+def test_labour_force_expectation_follows_2026_csd_release_calendar() -> None:
+    assert MODULE.expected_labour_force_period(date(2026, 9, 16)) == "2026-07"
+    assert MODULE.expected_labour_force_period(date(2026, 9, 17)) == "2026-08"
+    assert MODULE.expected_labour_force_period(date(2026, 10, 21)) == "2026-08"
+    assert MODULE.expected_labour_force_period(date(2026, 10, 22)) == "2026-09"
+    assert MODULE.expected_labour_force_period(date(2026, 11, 16)) == "2026-09"
+    assert MODULE.expected_labour_force_period(date(2026, 11, 17)) == "2026-10"
+
+
+def test_labour_freshness_gate_does_not_fail_before_scheduled_release(tmp_path: Path) -> None:
+    root = _healthy_artifact_root(tmp_path)
+    labour = {
+        "labour_force_history": [{"date": "2026-08-31"}],
+        "earnings_history": [{"date": "2026-06-30"}],
+        "vacancy_history": [{"date": "2026-06-30"}],
+        "wage_yoy_history": [{"date": "2026-06-30"}],
+    }
+    _write_pair(root, "hk-labour-market", labour)
+
+    report = MODULE.audit_artifacts(
+        root,
+        as_of=date(2026, 10, 21),
+        sectors={"hk-labour-market"},
+    )
+    unemployment = next(
+        check for check in report["checks"]
+        if check["check_id"] == "labour.unemployment"
+    )
+    assert unemployment["expected_latest_period"] == "2026-08"
+    assert unemployment["latest_observation"] == "2026-08"
+    assert unemployment["status"] == "healthy"
+
+    next_day_report = MODULE.audit_artifacts(
+        root,
+        as_of=date(2026, 10, 22),
+        sectors={"hk-labour-market"},
+    )
+    next_day_unemployment = next(
+        check for check in next_day_report["checks"]
+        if check["check_id"] == "labour.unemployment"
+    )
+    assert next_day_unemployment["expected_latest_period"] == "2026-09"
+    assert next_day_unemployment["status"] == "stale"
+
+
 def test_audit_is_healthy_when_core_sources_and_localisations_align(tmp_path: Path) -> None:
     report = MODULE.audit_artifacts(
         _healthy_artifact_root(tmp_path),
