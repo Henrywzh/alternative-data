@@ -1,0 +1,42 @@
+{
+  "run_id": "20261022T085107Z-85f65a7a",
+  "mode": "daily-update",
+  "scraped_at": "2026-10-22T08:51:07.157698Z",
+  "status": "success",
+  "datasets": [
+    {
+      "dataset_id": "vercel_model_leaderboard",
+      "status": "ok",
+      "rows": 8317,
+      "source_urls": [
+        "https://vercel.com/api/ai/leaderboard-export?dataset=models&format=json&modality=all",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=models&format=json&modality=image",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=models&format=json&modality=text",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=models&format=json&modality=video"
+      ],
+      "new_entities": []
+    },
+    {
+      "dataset_id": "vercel_lab_leaderboard",
+      "status": "ok",
+      "rows": 20617,
+      "source_urls": [
+        "https://vercel.com/api/ai/leaderboard-export?dataset=labs&format=json&modality=all",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=labs&format=json&modality=image",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=labs&format=json&modality=text",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=labs&format=json&modality=video"
+      ],
+      "new_entities": [
+        "baseten"
+      ]
+    },
+    {
+      "dataset_id": "vercel_models",
+      "status": "ok",
+      "rows": 486,
+      "source_urls": [
+        "https://ai-gateway.vercel.sh/v1/models"
+      ]
+    }
+  ]
+}
