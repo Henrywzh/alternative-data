@@ -1,9 +1,9 @@
 {
   "run_scope": "full",
-  "retrieved_at": "2026-10-15T00:40:24.108148Z",
+  "retrieved_at": "2026-10-22T00:47:01.564631Z",
   "dataset_name": "cot_latest",
-  "run_id": "20261015T004024-a7d1c1e7",
-  "created_at": "2026-10-15T00:40:41.204616Z",
+  "run_id": "20261022T004701-6e259964",
+  "created_at": "2026-10-22T00:47:18.536070Z",
   "records": 7,
   "columns": [
     "date",
@@ -23,5 +23,5 @@
     "percentile",
     "position_label"
   ],
-  "sha256": "896505e17761bdaa5af7cde4d152751a2794b15a88fcbae22428ccdfa0d88c59"
+  "sha256": "c5ef58183174e7cfbed155cdc536ad2f8ddeb5abf1adcfdfa911a841e6989bcc"
 }

@@ -1,10 +1,10 @@
 {
   "run_scope": "full",
-  "retrieved_at": "2026-10-15T00:40:24.108148Z",
+  "retrieved_at": "2026-10-22T00:47:01.564631Z",
   "dataset_name": "cot_history",
-  "run_id": "20261015T004024-a7d1c1e7",
-  "created_at": "2026-10-15T00:40:41.198969Z",
-  "records": 3062,
+  "run_id": "20261022T004701-6e259964",
+  "created_at": "2026-10-22T00:47:18.518903Z",
+  "records": 3069,
   "columns": [
     "date",
     "contract_id",
@@ -23,5 +23,5 @@
     "percentile",
     "position_label"
   ],
-  "sha256": "8914cbf4ce3109c02c1ffb5142ae96ee9ccd7fdd0a325288dfe005f663f595c4"
+  "sha256": "815d3514cf38525e9a49465154666cae4c90c850c98de0e762840f28326103f9"
 }
