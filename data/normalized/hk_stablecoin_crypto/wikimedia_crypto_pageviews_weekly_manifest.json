@@ -21,10 +21,10 @@
   ],
   "grain": "Curated crypto Wikipedia page basket × agent × complete Monday-Sunday week",
   "history_start": "2015-06-29",
-  "history_end": "2026-10-12",
-  "records": 2360,
+  "history_end": "2026-10-19",
+  "records": 2364,
   "source_status": "live",
   "source_granularity": "daily",
   "caveat": "Wikipedia pageviews are page loads, not unique people, trading activity, or Hong Kong adoption.",
-  "fetched_at": "2026-10-25T11:38:34.045181+00:00"
+  "fetched_at": "2026-10-26T08:02:42.199231+00:00"
 }
