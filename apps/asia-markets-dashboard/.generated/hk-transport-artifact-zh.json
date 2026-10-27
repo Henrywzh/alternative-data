@@ -6,7 +6,7 @@
     "title": "香港交通与航空监测",
     "description": "港铁月度客运量（本地/跨境/高铁）、国泰航空及香港国际机场流量、六家中国上市航空公司客运与货运运营数据、运输署公共交通/私家车/电动车登记、C&SD跨境移动及传感器停车位占用率数据。",
     "sector": "hk-transport",
-    "generatedAt": "2026-10-26T13:05:37.517959Z",
+    "generatedAt": "2026-10-27T12:14:34.884972Z",
     "cards": [
       {
         "id": "mtr_card",
@@ -2054,18 +2054,18 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-10-26T13:05:37.517959Z",
+    "generatedAt": "2026-10-27T12:14:34.884972Z",
     "status": "ready",
     "datasets": {
       "kpi_mtr": [
         {
-          "latest": 167550,
-          "domestic_thousands": 135062,
-          "cross_boundary_thousands": 10412,
-          "hsr_thousands": 3365,
-          "period_change": 0.037262,
-          "recovery_vs_2019_pct": 0.050299,
-          "observation_date": "2026-08-01"
+          "latest": 171407,
+          "domestic_thousands": 139085,
+          "cross_boundary_thousands": 9527,
+          "hsr_thousands": 2553,
+          "period_change": 0.02302,
+          "recovery_vs_2019_pct": 0.074477,
+          "observation_date": "2026-09-01"
         }
       ],
       "kpi_cathay": [
@@ -6879,6 +6879,21 @@
           "hsr_thousands": 3365,
           "hsr_daily_avg_thousands": 108.5,
           "total_mtr_patronage_thousands": 167550
+        },
+        {
+          "month": "2026-09",
+          "date": "2026-09-01 00:00:00",
+          "domestic_service_thousands": 139085,
+          "domestic_service_daily_avg_thousands": 4887,
+          "airport_express_thousands": 1062,
+          "airport_express_daily_avg_thousands": 35.4,
+          "cross_boundary_thousands": 9527,
+          "cross_boundary_daily_avg_thousands": 318,
+          "light_rail_bus_thousands": 19180,
+          "light_rail_bus_daily_avg_thousands": 639,
+          "hsr_thousands": 2553,
+          "hsr_daily_avg_thousands": 85.1,
+          "total_mtr_patronage_thousands": 171407
         }
       ],
       "cathay_history": [
@@ -9278,36 +9293,6 @@
         }
       ],
       "mtr_service_breakdown_history": [
-        {
-          "date": "2016-08-01",
-          "month": "2016-08",
-          "series": "机场快线",
-          "value": 1337
-        },
-        {
-          "date": "2016-08-01",
-          "month": "2016-08",
-          "series": "本地",
-          "value": 133013
-        },
-        {
-          "date": "2016-08-01",
-          "month": "2016-08",
-          "series": "高铁",
-          "value": 0
-        },
-        {
-          "date": "2016-08-01",
-          "month": "2016-08",
-          "series": "轻铁巴士",
-          "value": 19126
-        },
-        {
-          "date": "2016-08-01",
-          "month": "2016-08",
-          "series": "跨境",
-          "value": 9738
-        },
         {
           "date": "2016-09-01",
           "month": "2016-09",
@@ -12907,6 +12892,36 @@
           "month": "2026-08",
           "series": "跨境",
           "value": 10412
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "机场快线",
+          "value": 1062
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "本地",
+          "value": 139085
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "高铁",
+          "value": 2553
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "轻铁巴士",
+          "value": 19180
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "跨境",
+          "value": 9527
         }
       ],
       "cathay_capacity_demand_history": [
@@ -97212,7 +97227,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-transport/",
-    "snapshotId": "b67371da477ade19",
+    "snapshotId": "35d2f8ca8e180c2a",
     "dataAsOf": "2026-10-25"
   }
 }
