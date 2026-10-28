@@ -1,0 +1,24 @@
+{
+  "run_scope": "full",
+  "retrieved_at": "2026-10-28T01:31:30.843437Z",
+  "dataset_name": "treasury_yield_changes",
+  "run_id": "20261028T013130-659ae538",
+  "created_at": "2026-10-28T01:32:00.604645Z",
+  "records": 13,
+  "columns": [
+    "row_kind",
+    "indicator_id",
+    "maturity",
+    "tenor_months",
+    "maturity_en",
+    "maturity_zh",
+    "as_of",
+    "yield_pct",
+    "change_1d_bp",
+    "change_1w_bp",
+    "change_1m_bp",
+    "change_ytd_bp",
+    "us10y_vs_threshold_bp"
+  ],
+  "sha256": "3067d8e48c19bbfe3c58c0ff8ece8e5481e98002dca9d842b6e2ea56b1efe44e"
+}
