@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "香港本地消费监测",
     "description": "极端天气干扰时长、港元/人民币汇率、跨境出入境人流（北上/南下）、黄金原料成本、零售销售、餐饮收益及消费股估值的来源快照。",
-    "generatedAt": "2026-10-27T12:14:35.552183Z",
+    "generatedAt": "2026-10-28T13:02:45.171607Z",
     "cards": [
       {
         "id": "northbound_card",
@@ -1234,7 +1234,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `3f27f5708f4e978c` · 生成于 2026-10-27T12:14:35.552183Z。"
+        "body": "**数据快照：** `451ecba640ed3d14` · 生成于 2026-10-28T13:02:45.171607Z。"
       },
       {
         "id": "demand_signals_section",
@@ -1458,7 +1458,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-10-27T12:14:35.552183Z",
+    "generatedAt": "2026-10-28T13:02:45.171607Z",
     "status": "ready",
     "datasets": {
       "kpi_weather": [
@@ -2330,18 +2330,18 @@
       "severe_weather_log": [],
       "kpi_northbound": [
         {
-          "latest": 278457,
-          "period_change": 0.017403,
-          "year_change": -0.045333,
-          "observation_date": "2026-10-26"
+          "latest": 279075.1,
+          "period_change": 0.00222,
+          "year_change": -0.096545,
+          "observation_date": "2026-10-27"
         }
       ],
       "kpi_southbound": [
         {
-          "latest": 111020.3,
-          "period_change": 0.013458,
-          "year_change": 0.203241,
-          "observation_date": "2026-10-26"
+          "latest": 110783,
+          "period_change": -0.002137,
+          "year_change": 0.185348,
+          "observation_date": "2026-10-27"
         }
       ],
       "immigration_trend_history": [
@@ -3039,21 +3039,21 @@
       "immigration_checkpoint_history": [],
       "kpi_gold": [
         {
-          "latest": 861.01,
-          "period_change": -0.002028,
-          "year_change": -0.042375,
-          "observation_date": "2026-10-25"
+          "latest": 859.57,
+          "period_change": -0.001672,
+          "year_change": -0.053691,
+          "observation_date": "2026-10-26"
         }
       ],
       "kpi_median_pe": [
         {
-          "latest": 11
+          "latest": 10.93
         }
       ],
       "gold_history": [
         {
           "month": "2016-10",
-          "value": 278.63
+          "value": 278.65
         },
         {
           "month": "2016-11",
@@ -3533,81 +3533,81 @@
         },
         {
           "month": "2026-10",
-          "value": 889.81
+          "value": 887.65
         }
       ],
       "valuation_table": [
         {
           "ticker": "00709.HK",
           "company_name": "Giordano International",
-          "pe_ttm": 9.59,
-          "pb_ratio": 0.98,
-          "market_cap_hkd_b": 1.956,
-          "date": "2026-10-27"
+          "pe_ttm": 9.55,
+          "pb_ratio": 0.97,
+          "market_cap_hkd_b": 1.948,
+          "date": "2026-10-28"
         },
         {
           "ticker": "00341.HK",
           "company_name": "Café de Coral Holdings",
-          "pe_ttm": 20.41,
-          "pb_ratio": 1.23,
-          "market_cap_hkd_b": 3.348,
-          "date": "2026-10-27"
+          "pe_ttm": 20.53,
+          "pb_ratio": 1.24,
+          "market_cap_hkd_b": 3.367,
+          "date": "2026-10-28"
         },
         {
           "ticker": "01929.HK",
           "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 11.89,
-          "pb_ratio": 3.46,
-          "market_cap_hkd_b": 107.05,
-          "date": "2026-10-27"
+          "pe_ttm": 11.87,
+          "pb_ratio": 3.45,
+          "market_cap_hkd_b": 106.852,
+          "date": "2026-10-28"
         },
         {
           "ticker": "00178.HK",
           "company_name": "Sa Sa International",
-          "pe_ttm": 20.51,
-          "pb_ratio": 3.21,
-          "market_cap_hkd_b": 4.112,
-          "date": "2026-10-27"
+          "pe_ttm": 20.12,
+          "pb_ratio": 3.15,
+          "market_cap_hkd_b": 4.034,
+          "date": "2026-10-28"
         },
         {
           "ticker": "01910.HK",
           "company_name": "Samsonite",
-          "pe_ttm": 8.55,
-          "pb_ratio": 1.48,
-          "market_cap_hkd_b": 17.538,
-          "date": "2026-10-27"
+          "pe_ttm": 8.39,
+          "pb_ratio": 1.46,
+          "market_cap_hkd_b": 17.225,
+          "date": "2026-10-28"
         },
         {
           "ticker": "00590.HK",
           "company_name": "Luk Fook Holdings",
-          "pe_ttm": 5.88,
-          "pb_ratio": 0.8,
-          "market_cap_hkd_b": 12.036,
-          "date": "2026-10-27"
+          "pe_ttm": 5.75,
+          "pb_ratio": 0.78,
+          "market_cap_hkd_b": 11.766,
+          "date": "2026-10-28"
         },
         {
           "ticker": "00116.HK",
           "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 2.79,
+          "pe_ttm": 2.77,
           "pb_ratio": 0.51,
-          "market_cap_hkd_b": 8.275,
-          "date": "2026-10-27"
+          "market_cap_hkd_b": 8.222,
+          "date": "2026-10-28"
         },
         {
           "ticker": "01913.HK",
           "company_name": "Prada",
-          "pe_ttm": 13.43,
-          "pb_ratio": 2.32,
-          "market_cap_hkd_b": 95.239,
-          "date": "2026-10-27"
+          "pe_ttm": 13.54,
+          "pb_ratio": 2.34,
+          "market_cap_hkd_b": 96.007,
+          "date": "2026-10-28"
         },
         {
           "ticker": "00052.HK",
           "company_name": "Fairwood Holdings",
-          "pe_ttm": 15.34,
-          "pb_ratio": 0.95,
-          "market_cap_hkd_b": 0.637,
-          "date": "2026-10-27"
+          "pe_ttm": 15.4,
+          "pb_ratio": 0.96,
+          "market_cap_hkd_b": 0.64,
+          "date": "2026-10-28"
         },
         {
           "ticker": "01255.HK",
@@ -3615,68 +3615,60 @@
           "pe_ttm": -58.81,
           "pb_ratio": -8.06,
           "market_cap_hkd_b": 0.443,
-          "date": "2026-10-27"
+          "date": "2026-10-28"
         },
         {
           "ticker": "06811.HK",
           "company_name": "Tai Hing Group",
-          "pe_ttm": 11,
-          "pb_ratio": 1.68,
-          "market_cap_hkd_b": 1.564,
-          "date": "2026-10-27"
+          "pe_ttm": 10.93,
+          "pb_ratio": 1.67,
+          "market_cap_hkd_b": 1.554,
+          "date": "2026-10-28"
         }
       ],
       "valuation_pe_chart": [
         {
           "company_name": "Giordano International",
-          "pe_ttm": 9.59
+          "pe_ttm": 9.55
         },
         {
           "company_name": "Café de Coral Holdings",
-          "pe_ttm": 20.41
+          "pe_ttm": 20.53
         },
         {
           "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 11.89
+          "pe_ttm": 11.87
         },
         {
           "company_name": "Sa Sa International",
-          "pe_ttm": 20.51
+          "pe_ttm": 20.12
         },
         {
           "company_name": "Samsonite",
-          "pe_ttm": 8.55
+          "pe_ttm": 8.39
         },
         {
           "company_name": "Luk Fook Holdings",
-          "pe_ttm": 5.88
+          "pe_ttm": 5.75
         },
         {
           "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 2.79
+          "pe_ttm": 2.77
         },
         {
           "company_name": "Prada",
-          "pe_ttm": 13.43
+          "pe_ttm": 13.54
         },
         {
           "company_name": "Fairwood Holdings",
-          "pe_ttm": 15.34
+          "pe_ttm": 15.4
         },
         {
           "company_name": "Tai Hing Group",
-          "pe_ttm": 11
+          "pe_ttm": 10.93
         }
       ],
       "valuation_history": [
-        {
-          "date": "2025-10-27",
-          "ticker": "01910.HK",
-          "company_name": "Samsonite",
-          "pe_ttm": 10.31,
-          "pb_ratio": 2.12,
-          "market_cap_hkd_b": 23.818
-        },
         {
           "date": "2025-10-28",
           "ticker": "01910.HK",
@@ -6598,12 +6590,12 @@
           "market_cap_hkd_b": 17.538
         },
         {
-          "date": "2025-10-27",
-          "ticker": "01913.HK",
-          "company_name": "Prada",
-          "pe_ttm": 16.59,
-          "pb_ratio": 3.3,
-          "market_cap_hkd_b": 128.581
+          "date": "2026-10-28",
+          "ticker": "01910.HK",
+          "company_name": "Samsonite",
+          "pe_ttm": 8.39,
+          "pb_ratio": 1.46,
+          "market_cap_hkd_b": 17.225
         },
         {
           "date": "2025-10-28",
@@ -9526,12 +9518,12 @@
           "market_cap_hkd_b": 95.239
         },
         {
-          "date": "2025-10-27",
-          "ticker": "01929.HK",
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 26.73,
-          "pb_ratio": 5.98,
-          "market_cap_hkd_b": 158.135
+          "date": "2026-10-28",
+          "ticker": "01913.HK",
+          "company_name": "Prada",
+          "pe_ttm": 13.54,
+          "pb_ratio": 2.34,
+          "market_cap_hkd_b": 96.007
         },
         {
           "date": "2025-10-28",
@@ -12452,6 +12444,14 @@
           "pe_ttm": 11.89,
           "pb_ratio": 3.46,
           "market_cap_hkd_b": 107.05
+        },
+        {
+          "date": "2026-10-28",
+          "ticker": "01929.HK",
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 11.87,
+          "pb_ratio": 3.45,
+          "market_cap_hkd_b": 106.852
         }
       ],
       "kpi_retail": [
@@ -20267,8 +20267,8 @@
       ],
       "kpi_fehd": [
         {
-          "latest": 17260,
-          "observation_date": "2026-10-27"
+          "latest": 17272,
+          "observation_date": "2026-10-28"
         }
       ],
       "fehd_district_density": [
@@ -20278,7 +20278,7 @@
         },
         {
           "district_name": "中西区",
-          "count": 1789
+          "count": 1793
         },
         {
           "district_name": "湾仔",
@@ -20286,7 +20286,7 @@
         },
         {
           "district_name": "旺角",
-          "count": 1228
+          "count": 1230
         },
         {
           "district_name": "九龙城",
@@ -20294,11 +20294,11 @@
         },
         {
           "district_name": "元朗",
-          "count": 1013
+          "count": 1015
         },
         {
           "district_name": "深水埗",
-          "count": 974
+          "count": 973
         },
         {
           "district_name": "沙田",
@@ -20306,23 +20306,23 @@
         },
         {
           "district_name": "东区",
-          "count": 908
+          "count": 910
         },
         {
           "district_name": "观塘",
-          "count": 897
+          "count": 898
         },
         {
           "district_name": "荃湾",
-          "count": 779
+          "count": 780
         },
         {
           "district_name": "屯门",
-          "count": 740
+          "count": 741
         },
         {
           "district_name": "西贡",
-          "count": 609
+          "count": 608
         },
         {
           "district_name": "葵青",
@@ -20330,11 +20330,11 @@
         },
         {
           "district_name": "离岛",
-          "count": 521
+          "count": 520
         },
         {
           "district_name": "黄大仙",
-          "count": 498
+          "count": 497
         },
         {
           "district_name": "大埔",
@@ -20342,17 +20342,17 @@
         },
         {
           "district_name": "北区",
-          "count": 395
+          "count": 397
         },
         {
           "district_name": "南区",
-          "count": 330
+          "count": 331
         }
       ],
       "fehd_opened_closed": [
         {
-          "generation_date": "2026-10-27",
-          "prior_generation_date": "2026-10-27",
+          "generation_date": "2026-10-28",
+          "prior_generation_date": "2026-10-28",
           "opened": 0,
           "closed": 0,
           "net_change": 0
@@ -20366,7 +20366,7 @@
           "status": "健康",
           "latest_observation": "2026-10-01",
           "records": 964,
-          "freshness": "26 天前",
+          "freshness": "27 天前",
           "notes": "每月八号或以上风球及红色/黑色暴雨警告时长，并列港元/人民币汇率。"
         },
         {
@@ -20374,8 +20374,8 @@
           "dataset": "出入境旅客通关",
           "type": "指标",
           "status": "健康",
-          "latest_observation": "2026-10-26",
-          "records": 2125,
+          "latest_observation": "2026-10-27",
+          "records": 2126,
           "freshness": "1 天前",
           "notes": "覆盖17个管制站的香港居民及内地访客每日通关量。"
         },
@@ -20384,8 +20384,8 @@
           "dataset": "上海黄金交易所黄金基准价",
           "type": "指标",
           "status": "健康",
-          "latest_observation": "2026-10-25",
-          "records": 2555,
+          "latest_observation": "2026-10-26",
+          "records": 2556,
           "freshness": "2 天前",
           "notes": "每日上午/下午基准价。"
         },
@@ -20394,7 +20394,7 @@
           "dataset": "香港消费股估值",
           "type": "指标",
           "status": "健康",
-          "latest_observation": "2026-10-27",
+          "latest_observation": "2026-10-28",
           "records": 4026,
           "freshness": "0 天前",
           "notes": "仅提供市盈率（TTM）、市净率和市值；该接口没有股息率指标。"
@@ -20406,7 +20406,7 @@
           "status": "健康",
           "latest_observation": "2026-08-01",
           "records": 6575,
-          "freshness": "87 天前",
+          "freshness": "88 天前",
           "notes": "25个零售类别，自2004年起按月统计。"
         },
         {
@@ -20416,7 +20416,7 @@
           "status": "健康",
           "latest_observation": "2026-06-30",
           "records": 522,
-          "freshness": "119 天前",
+          "freshness": "120 天前",
           "notes": "仅提供全行业购货额；未公布分类型购货额。"
         },
         {
@@ -20438,7 +20438,7 @@
           "status": "健康",
           "latest_observation": "2026-10-01",
           "records": 964,
-          "freshness": "26 天前",
+          "freshness": "27 天前",
           "notes": "每月八号或以上风球及红色/黑色暴雨警告时长，并列港元/人民币汇率。"
         },
         {
@@ -20446,8 +20446,8 @@
           "dataset": "出入境旅客通关",
           "type": "指标",
           "status": "健康",
-          "latest_observation": "2026-10-26",
-          "records": 2125,
+          "latest_observation": "2026-10-27",
+          "records": 2126,
           "freshness": "1 天前",
           "notes": "覆盖17个管制站的香港居民及内地访客每日通关量。"
         },
@@ -20456,8 +20456,8 @@
           "dataset": "上海黄金交易所黄金基准价",
           "type": "指标",
           "status": "健康",
-          "latest_observation": "2026-10-25",
-          "records": 2555,
+          "latest_observation": "2026-10-26",
+          "records": 2556,
           "freshness": "2 天前",
           "notes": "每日上午/下午基准价。"
         },
@@ -20466,7 +20466,7 @@
           "dataset": "香港消费股估值",
           "type": "指标",
           "status": "健康",
-          "latest_observation": "2026-10-27",
+          "latest_observation": "2026-10-28",
           "records": 4026,
           "freshness": "0 天前",
           "notes": "仅提供市盈率（TTM）、市净率和市值；该接口没有股息率指标。"
@@ -20478,7 +20478,7 @@
           "status": "健康",
           "latest_observation": "2026-08-01",
           "records": 6575,
-          "freshness": "87 天前",
+          "freshness": "88 天前",
           "notes": "25个零售类别，自2004年起按月统计。"
         },
         {
@@ -20488,7 +20488,7 @@
           "status": "健康",
           "latest_observation": "2026-06-30",
           "records": 522,
-          "freshness": "119 天前",
+          "freshness": "120 天前",
           "notes": "仅提供全行业购货额；未公布分类型购货额。"
         },
         {
@@ -20514,15 +20514,15 @@
       ],
       "consumer_council_oilprice": [
         {
-          "date": "2026-10-27",
-          "company": "Esso",
+          "date": "2026-10-28",
+          "company": "Caltex",
           "fuel_type": "普通汽油",
-          "discounted_price_hkd": 23.72,
-          "walkin_discount_hkd": 11,
+          "discounted_price_hkd": 24.52,
+          "walkin_discount_hkd": 10.2,
           "data_source": "live"
         },
         {
-          "date": "2026-10-27",
+          "date": "2026-10-28",
           "company": "PetroChina",
           "fuel_type": "普通汽油",
           "discounted_price_hkd": 27.72,
@@ -20530,7 +20530,7 @@
           "data_source": "live"
         },
         {
-          "date": "2026-10-27",
+          "date": "2026-10-28",
           "company": "Shell",
           "fuel_type": "普通汽油",
           "discounted_price_hkd": 27.72,
@@ -20538,7 +20538,7 @@
           "data_source": "live"
         },
         {
-          "date": "2026-10-27",
+          "date": "2026-10-28",
           "company": "Sinopec",
           "fuel_type": "普通汽油",
           "discounted_price_hkd": 28.72,
@@ -20546,23 +20546,23 @@
           "data_source": "live"
         },
         {
-          "date": "2026-10-27",
-          "company": "Caltex",
-          "fuel_type": "普通汽油",
-          "discounted_price_hkd": 33.82,
-          "walkin_discount_hkd": 0.9,
-          "data_source": "live"
-        },
-        {
-          "date": "2026-10-27",
+          "date": "2026-10-28",
           "company": "Esso",
-          "fuel_type": "高级汽油",
-          "discounted_price_hkd": 24.02,
-          "walkin_discount_hkd": 12.5,
+          "fuel_type": "普通汽油",
+          "discounted_price_hkd": 33.12,
+          "walkin_discount_hkd": 1.6,
           "data_source": "live"
         },
         {
-          "date": "2026-10-27",
+          "date": "2026-10-28",
+          "company": "Caltex",
+          "fuel_type": "高级汽油",
+          "discounted_price_hkd": 24.52,
+          "walkin_discount_hkd": 12,
+          "data_source": "live"
+        },
+        {
+          "date": "2026-10-28",
           "company": "PetroChina",
           "fuel_type": "高级汽油",
           "discounted_price_hkd": 29.52,
@@ -20570,27 +20570,27 @@
           "data_source": "live"
         },
         {
-          "date": "2026-10-27",
+          "date": "2026-10-28",
           "company": "Shell",
           "fuel_type": "高级汽油",
-          "discounted_price_hkd": 29.52,
+          "discounted_price_hkd": 27.72,
           "walkin_discount_hkd": 7,
           "data_source": "live"
         },
         {
-          "date": "2026-10-27",
+          "date": "2026-10-28",
           "company": "Sinopec",
           "fuel_type": "高级汽油",
-          "discounted_price_hkd": 24.22,
-          "walkin_discount_hkd": 12.3,
+          "discounted_price_hkd": 25.15,
+          "walkin_discount_hkd": 11.37,
           "data_source": "live"
         },
         {
-          "date": "2026-10-27",
-          "company": "Caltex",
+          "date": "2026-10-28",
+          "company": "Esso",
           "fuel_type": "高级汽油",
-          "discounted_price_hkd": 35.62,
-          "walkin_discount_hkd": 0.9,
+          "discounted_price_hkd": 34.92,
+          "walkin_discount_hkd": 1.6,
           "data_source": "live"
         }
       ],
@@ -27945,14 +27945,14 @@
         },
         {
           "period": "2024 1-12",
-          "category": "电讯服务",
-          "amount": 3106,
+          "category": "电器",
+          "amount": 2467,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "电器",
-          "amount": 2466,
+          "category": "电讯服务",
+          "amount": 3106,
           "data_source": "live"
         },
         {
@@ -27975,26 +27975,26 @@
         },
         {
           "period": "2024 1-12",
-          "category": "本地住宿",
-          "amount": 840,
-          "data_source": "live"
-        },
-        {
-          "period": "2024 1-12",
           "category": "个人护理产品",
           "amount": 1443,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "食品及饮料",
-          "amount": 1289,
+          "category": "电脑产品",
+          "amount": 797,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "电脑产品",
-          "amount": 797,
+          "category": "本地住宿",
+          "amount": 840,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "食品及饮料",
+          "amount": 1289,
           "data_source": "live"
         },
         {
@@ -28023,8 +28023,8 @@
         },
         {
           "period": "2024 1-12",
-          "category": "汽车及汽车服务",
-          "amount": 458,
+          "category": "家居用品／服务",
+          "amount": 649,
           "data_source": "live"
         },
         {
@@ -28041,8 +28041,8 @@
         },
         {
           "period": "2024 1-12",
-          "category": "家居用品／服务",
-          "amount": 649,
+          "category": "汽车及汽车服务",
+          "amount": 458,
           "data_source": "live"
         },
         {
@@ -28053,8 +28053,8 @@
         },
         {
           "period": "2024 1-12",
-          "category": "珠宝及钟表",
-          "amount": 554,
+          "category": "玩具",
+          "amount": 138,
           "data_source": "live"
         },
         {
@@ -28065,8 +28065,8 @@
         },
         {
           "period": "2024 1-12",
-          "category": "玩具",
-          "amount": 138,
+          "category": "珠宝及钟表",
+          "amount": 554,
           "data_source": "live"
         },
         {
@@ -28083,6 +28083,12 @@
         },
         {
           "period": "2024 1-12",
+          "category": "体育用品",
+          "amount": 496,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
           "category": "代理服务",
           "amount": 221,
           "data_source": "live"
@@ -28091,12 +28097,6 @@
           "period": "2024 1-12",
           "category": "婴儿用品",
           "amount": 613,
-          "data_source": "live"
-        },
-        {
-          "period": "2024 1-12",
-          "category": "体育用品",
-          "amount": 496,
           "data_source": "live"
         },
         {
@@ -28113,14 +28113,14 @@
         },
         {
           "period": "2024 1-12",
-          "category": "宠物及宠物服务",
-          "amount": 206,
+          "category": "摄影器材",
+          "amount": 298,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "摄影器材",
-          "amount": 298,
+          "category": "宠物及宠物服务",
+          "amount": 206,
           "data_source": "live"
         },
         {
@@ -28131,14 +28131,14 @@
         },
         {
           "period": "2024 1-12",
-          "category": "广播服务",
-          "amount": 167,
+          "category": "医疗及保健仪器",
+          "amount": 212,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "医疗及保健仪器",
-          "amount": 212,
+          "category": "广播服务",
+          "amount": 167,
           "data_source": "live"
         },
         {
@@ -28155,14 +28155,14 @@
         },
         {
           "period": "2024 1-12",
-          "category": "婚嫁服务",
-          "amount": 87,
+          "category": "出版／教育材料",
+          "amount": 124,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "出版／教育材料",
-          "amount": 124,
+          "category": "婚嫁服务",
+          "amount": 87,
           "data_source": "live"
         },
         {
@@ -28185,14 +28185,14 @@
         },
         {
           "period": "2024 1-12",
-          "category": "分时使用（度假村）",
-          "amount": 25,
+          "category": "律师及法律服务",
+          "amount": 34,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "律师及法律服务",
-          "amount": 34,
+          "category": "分时使用（度假村）",
+          "amount": 25,
           "data_source": "live"
         },
         {
@@ -28210,7 +28210,7 @@
         {
           "period": "2024 1-12",
           "category": "其他货品",
-          "amount": 249,
+          "amount": 248,
           "data_source": "live"
         },
         {
@@ -28227,14 +28227,14 @@
         },
         {
           "period": "2025 1-12",
-          "category": "电讯服务",
-          "amount": 2661,
+          "category": "电器",
+          "amount": 2176,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "电器",
-          "amount": 2176,
+          "category": "电讯服务",
+          "amount": 2661,
           "data_source": "live"
         },
         {
@@ -28257,26 +28257,26 @@
         },
         {
           "period": "2025 1-12",
-          "category": "本地住宿",
-          "amount": 1101,
-          "data_source": "live"
-        },
-        {
-          "period": "2025 1-12",
           "category": "个人护理产品",
           "amount": 1182,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "食品及饮料",
-          "amount": 1202,
+          "category": "电脑产品",
+          "amount": 1040,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "电脑产品",
-          "amount": 1040,
+          "category": "本地住宿",
+          "amount": 1101,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "食品及饮料",
+          "amount": 1202,
           "data_source": "live"
         },
         {
@@ -28305,8 +28305,8 @@
         },
         {
           "period": "2025 1-12",
-          "category": "汽车及汽车服务",
-          "amount": 541,
+          "category": "家居用品／服务",
+          "amount": 612,
           "data_source": "live"
         },
         {
@@ -28323,8 +28323,8 @@
         },
         {
           "period": "2025 1-12",
-          "category": "家居用品／服务",
-          "amount": 612,
+          "category": "汽车及汽车服务",
+          "amount": 541,
           "data_source": "live"
         },
         {
@@ -28335,8 +28335,8 @@
         },
         {
           "period": "2025 1-12",
-          "category": "珠宝及钟表",
-          "amount": 631,
+          "category": "玩具",
+          "amount": 445,
           "data_source": "live"
         },
         {
@@ -28347,8 +28347,8 @@
         },
         {
           "period": "2025 1-12",
-          "category": "玩具",
-          "amount": 445,
+          "category": "珠宝及钟表",
+          "amount": 631,
           "data_source": "live"
         },
         {
@@ -28365,6 +28365,12 @@
         },
         {
           "period": "2025 1-12",
+          "category": "体育用品",
+          "amount": 488,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
           "category": "代理服务",
           "amount": 262,
           "data_source": "live"
@@ -28373,12 +28379,6 @@
           "period": "2025 1-12",
           "category": "婴儿用品",
           "amount": 411,
-          "data_source": "live"
-        },
-        {
-          "period": "2025 1-12",
-          "category": "体育用品",
-          "amount": 488,
           "data_source": "live"
         },
         {
@@ -28395,14 +28395,14 @@
         },
         {
           "period": "2025 1-12",
-          "category": "宠物及宠物服务",
-          "amount": 197,
+          "category": "摄影器材",
+          "amount": 272,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "摄影器材",
-          "amount": 272,
+          "category": "宠物及宠物服务",
+          "amount": 197,
           "data_source": "live"
         },
         {
@@ -28413,14 +28413,14 @@
         },
         {
           "period": "2025 1-12",
-          "category": "广播服务",
-          "amount": 184,
+          "category": "医疗及保健仪器",
+          "amount": 180,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "医疗及保健仪器",
-          "amount": 180,
+          "category": "广播服务",
+          "amount": 184,
           "data_source": "live"
         },
         {
@@ -28437,14 +28437,14 @@
         },
         {
           "period": "2025 1-12",
-          "category": "婚嫁服务",
-          "amount": 170,
+          "category": "出版／教育材料",
+          "amount": 98,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "出版／教育材料",
-          "amount": 98,
+          "category": "婚嫁服务",
+          "amount": 170,
           "data_source": "live"
         },
         {
@@ -28467,14 +28467,14 @@
         },
         {
           "period": "2025 1-12",
-          "category": "分时使用（度假村）",
-          "amount": 19,
+          "category": "律师及法律服务",
+          "amount": 27,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "律师及法律服务",
-          "amount": 27,
+          "category": "分时使用（度假村）",
+          "amount": 19,
           "data_source": "live"
         },
         {
@@ -28498,326 +28498,326 @@
         {
           "period": "2026",
           "category": "饮食及娱乐服务",
-          "amount": 3159,
+          "amount": 3881,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "旅游事务",
-          "amount": 2307,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "电讯服务",
-          "amount": 1437,
+          "amount": 3164,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "电器",
-          "amount": 1432,
+          "amount": 1982,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "电讯服务",
+          "amount": 1900,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "药物及保健食品",
-          "amount": 1240,
+          "amount": 1566,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "美容服务",
-          "amount": 1003,
+          "amount": 1304,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "服装",
-          "amount": 940,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "本地住宿",
-          "amount": 722,
+          "amount": 1217,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "个人护理产品",
-          "amount": 717,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "食品及饮料",
-          "amount": 702,
+          "amount": 944,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "电脑产品",
-          "amount": 683,
+          "amount": 941,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "本地住宿",
+          "amount": 938,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "食品及饮料",
+          "amount": 896,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "银行及金融服务",
-          "amount": 593,
+          "amount": 793,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "网上服务及电子商贸平台",
-          "amount": 497,
+          "amount": 646,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "家具及装置",
-          "amount": 441,
+          "amount": 617,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "电讯器材",
-          "amount": 421,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "汽车及汽车服务",
-          "amount": 397,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "康乐及健身会所",
-          "amount": 390,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "教育事务",
-          "amount": 376,
+          "amount": 541,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "家居用品／服务",
-          "amount": 373,
+          "amount": 536,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "康乐及健身会所",
+          "amount": 528,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "教育事务",
+          "amount": 523,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "汽车及汽车服务",
+          "amount": 516,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "医疗服务",
-          "amount": 359,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "珠宝及钟表",
-          "amount": 307,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "商场、连锁店及奖赏计划",
-          "amount": 297,
+          "amount": 470,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "玩具",
-          "amount": 284,
+          "amount": 446,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "商场、连锁店及奖赏计划",
+          "amount": 444,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "珠宝及钟表",
+          "amount": 388,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "仓储、邮政及速递服务",
-          "amount": 266,
+          "amount": 367,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "装修服务",
-          "amount": 260,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "代理服务",
-          "amount": 255,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "婴儿用品",
-          "amount": 251,
+          "amount": 352,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "体育用品",
-          "amount": 233,
+          "amount": 338,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "代理服务",
+          "amount": 321,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "婴儿用品",
+          "amount": 306,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "交通服务",
-          "amount": 201,
+          "amount": 282,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "物业",
-          "amount": 167,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "宠物及宠物服务",
-          "amount": 152,
+          "amount": 239,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "摄影器材",
-          "amount": 147,
+          "amount": 228,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "宠物及宠物服务",
+          "amount": 189,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "保险",
-          "amount": 126,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "广播服务",
-          "amount": 123,
+          "amount": 164,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "医疗及保健仪器",
-          "amount": 112,
+          "amount": 138,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "广播服务",
+          "amount": 137,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "眼镜产品／服务",
-          "amount": 79,
+          "amount": 107,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "燃油",
-          "amount": 62,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "婚嫁服务",
-          "amount": 51,
+          "amount": 78,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "出版／教育材料",
-          "amount": 46,
+          "amount": 70,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "婚嫁服务",
+          "amount": 61,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "公用事业",
-          "amount": 36,
+          "amount": 48,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "摄影及晒相服务",
-          "amount": 28,
+          "amount": 36,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "长者护理",
-          "amount": 20,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "分时使用（度假村）",
-          "amount": 16,
+          "amount": 29,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "律师及法律服务",
-          "amount": 13,
+          "amount": 21,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "分时使用（度假村）",
+          "amount": 20,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "殡仪服务",
-          "amount": 11,
+          "amount": 12,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "其他服务",
-          "amount": 167,
+          "amount": 239,
           "data_source": "live"
         },
         {
           "period": "2026",
           "category": "其他货品",
-          "amount": 461,
+          "amount": 547,
           "data_source": "live"
         }
       ],
       "consumer_council_complaints_chart": [
         {
-          "category": "食品及饮料",
-          "amount": 702
+          "category": "本地住宿",
+          "amount": 938
+        },
+        {
+          "category": "电脑产品",
+          "amount": 941
         },
         {
           "category": "个人护理产品",
-          "amount": 717
-        },
-        {
-          "category": "本地住宿",
-          "amount": 722
+          "amount": 944
         },
         {
           "category": "服装",
-          "amount": 940
+          "amount": 1217
         },
         {
           "category": "美容服务",
-          "amount": 1003
+          "amount": 1304
         },
         {
           "category": "药物及保健食品",
-          "amount": 1240
-        },
-        {
-          "category": "电器",
-          "amount": 1432
+          "amount": 1566
         },
         {
           "category": "电讯服务",
-          "amount": 1437
+          "amount": 1900
+        },
+        {
+          "category": "电器",
+          "amount": 1982
         },
         {
           "category": "旅游事务",
-          "amount": 2307
+          "amount": 3164
         },
         {
           "category": "饮食及娱乐服务",
-          "amount": 3159
+          "amount": 3881
         }
       ],
       "consumer_council_complaints_history_chart": [
@@ -28844,12 +28844,12 @@
         {
           "period": "2026",
           "category": "饮食及娱乐服务",
-          "amount": 3159
+          "amount": 3881
         },
         {
           "period": "2026",
           "category": "旅游事务",
-          "amount": 2307
+          "amount": 3164
         }
       ],
       "immigration_checkpoint_snapshot": []
@@ -28865,7 +28865,7 @@
         "url": "https://oil-price.consumer.org.hk/en",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 消费者委员会油价计算机。",
-        "executed_at": "2026-10-27T12:14:35.552183Z"
+        "executed_at": "2026-10-28T13:02:45.171607Z"
       }
     },
     {
@@ -28877,7 +28877,7 @@
         "url": "https://www.consumer.org.hk/node/32290/export-complaints/json?lang=en",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 消费者委员会投诉数据接口。",
-        "executed_at": "2026-10-27T12:14:35.552183Z"
+        "executed_at": "2026-10-28T13:02:45.171607Z"
       }
     },
     {
@@ -28889,7 +28889,7 @@
         "url": "https://online-price-watch.consumer.org.hk/opw/opendata/pricewatch_en.csv",
         "language": "CSV / Parquet",
         "description": "构建时从公开来源读取并校验 Consumer Council Online Price Watch。",
-        "executed_at": "2026-10-27T12:14:35.552183Z"
+        "executed_at": "2026-10-28T13:02:45.171607Z"
       }
     },
     {
@@ -28905,7 +28905,7 @@
           "Latest is the most recent published PM benchmark fixing.",
           "Day and year movements are latest divided by the prior trading day or the observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-10-27T12:14:35.552183Z"
+        "executed_at": "2026-10-28T13:02:45.171607Z"
       }
     },
     {
@@ -28921,7 +28921,7 @@
           "PE (TTM), PB, and market cap (HKD bn) are each ticker's latest published daily value.",
           "No dividend-yield indicator exists on this endpoint; yield is not reported here."
         ],
-        "executed_at": "2026-10-27T12:14:35.552183Z"
+        "executed_at": "2026-10-28T13:02:45.171607Z"
       }
     },
     {
@@ -28937,7 +28937,7 @@
           "All retail outlet is the classification group's own published total across all outlet types.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-10-27T12:14:35.552183Z"
+        "executed_at": "2026-10-28T13:02:45.171607Z"
       }
     },
     {
@@ -28953,7 +28953,7 @@
           "Purchases are only published sector-wide, not broken out by restaurant type.",
           "Quarter and year movements are latest divided by the prior quarter or the observation four quarters earlier, minus one."
         ],
-        "executed_at": "2026-10-27T12:14:35.552183Z"
+        "executed_at": "2026-10-28T13:02:45.171607Z"
       }
     },
     {
@@ -28969,7 +28969,7 @@
           "This is a current-state snapshot only -- the source has no issue-date or status-history field.",
           "Opened/closed counts compare this run's licence numbers against the most recently stored prior snapshot, and are unavailable until at least two runs have been persisted."
         ],
-        "executed_at": "2026-10-27T12:14:35.552183Z"
+        "executed_at": "2026-10-28T13:02:45.171607Z"
       }
     },
     {
@@ -28985,7 +28985,7 @@
           "Category sub-indices share the headline table's index basis but only start in 2005 -- thirty years shorter history.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-10-27T12:14:35.552183Z"
+        "executed_at": "2026-10-28T13:02:45.171607Z"
       }
     },
     {
@@ -29002,7 +29002,7 @@
           "Southbound (南下) flow is daily Mainland visitor arrivals across all 17 control points, since Mainland visitors legitimately arrive by air, rail, and sea, not just by land.",
           "7-day moving averages (7d MA) smooth out day-of-week seasonality (weekend shopping spikes)."
         ],
-        "executed_at": "2026-10-27T12:14:35.552183Z"
+        "executed_at": "2026-10-28T13:02:45.171607Z"
       }
     },
     {
@@ -29019,7 +29019,7 @@
           "Red/Black Rainstorm hours measures total duration under Red or Black rainstorm warnings.",
           "RMB per 100 HKD is derived from FRED daily DEXCHUS and DEXHKUS rates."
         ],
-        "executed_at": "2026-10-27T12:14:35.552183Z"
+        "executed_at": "2026-10-28T13:02:45.171607Z"
       }
     },
     {
@@ -29034,7 +29034,7 @@
           "Total stores is each company's own latest snapshot count (not a cross-company-comparable unit -- a POP MART Roboshop and a Chow Tai Fook boutique are both counted as one location).",
           "This is a footprint snapshot, not a trend: most companies only have 1-2 dated snapshots so far, so month-over-month change is not yet meaningful."
         ],
-        "executed_at": "2026-10-27T12:14:35.552183Z"
+        "executed_at": "2026-10-28T13:02:45.171607Z"
       }
     },
     {
@@ -29048,13 +29048,13 @@
           "Validated live measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-10-27T12:14:35.552183Z"
+        "executed_at": "2026-10-28T13:02:45.171607Z"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-local-consumer/",
-    "snapshotId": "3f27f5708f4e978c",
-    "dataAsOf": "2026-10-25"
+    "snapshotId": "451ecba640ed3d14",
+    "dataAsOf": "2026-10-26"
   }
 }
