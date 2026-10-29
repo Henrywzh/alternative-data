@@ -1,8 +1,8 @@
 # asia_markets research feed
 
-Generated: 2026-10-28T21:07:51.835121Z · Status: **degraded**
+Generated: 2026-10-29T14:23:30.427636Z · Status: **degraded**
 
-Source commit: `e93ab7f5f32324d90a02b585cc01f0ed67e75ead`
+Source commit: `bbe18e4bf65d123171db7fb3984abb68a1458058`
 
 Observation dates differ by record. Generated time is not a market-data timestamp.
 
@@ -39,8 +39,6 @@ Observation dates differ by record. Generated time is not a market-data timestam
 
 ## Changes
 
-- new_observation: hk-real-estate/rvd_price_card
-- new_observation: hk-real-estate/rvd_rent_card
 
 ## Excluded coverage
 
