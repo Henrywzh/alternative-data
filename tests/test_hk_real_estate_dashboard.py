@@ -877,3 +877,27 @@ def test_a_carried_forward_dataset_says_so_rather_than_passing_as_fresh():
     # second carried-forward row for it would double-count the same source.
     bridge_label = dashboard_export.PUBLIC_SOURCES["shkp_financial_bridge"]["label"]
     assert sum(row["source"] == bridge_label for row in coverage) == 1
+
+
+def test_28hse_outage_retains_only_its_data_and_marks_coverage_stale(tmp_path, monkeypatch):
+    previous = tmp_path / "previous.json"
+    old_epi = [{"date": "2026-06-01", "series": "EPI", "value": 120.0}]
+    old_projects = [{"project_name": "Example", "status": "on sale"}]
+    previous.write_text(json.dumps({"snapshot": {"datasets": {
+        "epi_eri_history": old_epi, "hse28_new_projects": old_projects,
+    }}}))
+    monkeypatch.setattr(dashboard_export, "_COMMITTED_ARTIFACT_PATH", previous)
+    artifact, _ = dashboard_export.build_artifact(
+        _frames(), raw_hkma=_hkma_frame(), raw_cnsd=_cnsd_frame(),
+        raw_epi_eri=pd.DataFrame(), raw_new_projects=pd.DataFrame(),
+        raw_land_disposals=pd.DataFrame(), raw_landreg=(pd.DataFrame(), pd.DataFrame()),
+        raw_bd_monthly_stats=pd.DataFrame(), raw_bd_supply=pd.DataFrame(),
+        raw_bd_supply_history=pd.DataFrame(), raw_unified_tx=pd.DataFrame(), now=NOW,
+    )
+    datasets = artifact["snapshot"]["datasets"]
+    assert datasets["epi_eri_history"] == old_epi
+    assert datasets["hse28_new_projects"] == old_projects
+    coverage = datasets["source_coverage"]
+    assert next(row for row in coverage if row["source"] == "28Hse")["status"] == "Stale"
+    assert next(row for row in coverage if row["dataset"] == "hse28_new_projects")["status"] == "Stale"
+    assert datasets["kpi_ccl"][0]["latest"] > 0

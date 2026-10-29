@@ -2227,3 +2227,10 @@ Known limitations remain visible: NBS API requests can receive WAF HTML and
 must fall back to official releases/retained history without recapture; DR007
 is not yet sourced. Shorter available series must not be advertised as 10-year
 coverage. See DATA_CATALOG.md for precise source/scope definitions.
+# 2026-10-29 — Real-estate refresh during 28Hse outages
+
+The real-estate builder carries forward the last published EPI/ERI and
+new-project rows when their live fetches fail. Source coverage labels those
+rows stale; fresh Buildings Department data can still enter the new artifact.
+The existing artifact-wide empty and stale-regression guards remain enabled.
+This changes refresh handling only and does not add a Streamlit sector.

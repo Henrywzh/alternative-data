@@ -10,8 +10,10 @@ Actions history. GitHub scheduled runs may start late.
 python -m ramp_data.cli --base-dir . tokenomics
 ```
 
-The collector reads `tokenVolumes` and `tokenPrices` from the public AI Index
-server-rendered payload, using the existing HTTP transport and RSC decoder.
+The collector reads `dataVersion` from the public AI Index server-rendered
+payload, then requests the versioned `chart-data/tokenVolumes` and
+`chart-data/tokenPrices` JSON endpoints. It also supports the older embedded
+payload when no version is present.
 It does not need a browser or API key. Its workflow step runs even if an
 earlier monthly-index or filter-mode step failed. All Tokenomics validation
 passes before any normalized Tokenomics table is written. A Tokenomics
@@ -27,7 +29,7 @@ loader and remote data SHA cache key. Code deployment continues through
 
 | Dataset | Observation grain | Values and units |
 | --- | --- | --- |
-| `ramp_ai_token_activity` | Monday–Sunday week × metric × maker × raw model series | `metric_key=token_volume`: tokens; `token_spend`: USD |
+| `ramp_ai_token_activity` | Source week × metric × maker × raw model series | `metric_key=token_volume`: tokens; `token_spend`: USD |
 | `ramp_ai_token_prices` | Daily window-end date × maker × token type | `token_cost_usd_7d`: rolling seven-day USD; `token_count_7d`: corresponding tokens |
 | `ramp_ai_token_activity_vintages` | Activity natural key × capture timestamp | Captured versions of activity values and labels |
 | `ramp_ai_token_prices_vintages` | Price natural key × capture timestamp | Captured numerator and denominator versions |
@@ -37,6 +39,11 @@ Each row carries source URL, run ID and capture time. Existing observation
 keys are revised by upsert; historical observations absent from a later
 payload are retained. The latest table is therefore accumulated history,
 not a statement of current provider membership.
+
+Ramp's current source uses Saturday–Friday weeks, whereas the previous
+embedded data used Monday–Sunday. Both calendars remain in the stored history;
+the dashboard displays the latest calendar only, preventing overlapping weeks
+from being added together or presented as a continuous weekly series.
 
 Vintages start with our first capture on **2026-10-15**. Earlier observation
 dates are backfilled source history, not proof that those values were
