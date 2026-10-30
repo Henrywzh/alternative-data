@@ -1754,6 +1754,11 @@ def build_artifact(
         timing_annual=df_shkp_sales_handover_annual,
     )
     carried_forward_datasets: dict[str, int] = {}
+    shkp_commercial_asset_rows = _carry_forward_if_runner_unavailable(
+        shkp_commercial_asset_rows,
+        "shkp_hk_commercial_asset_master",
+        carried_forward_datasets,
+    )
     shkp_financial_bridge_rows = _carry_forward_if_runner_unavailable(
         shkp_financial_bridge_rows, "shkp_hk_financial_bridge", carried_forward_datasets
     )
@@ -2037,6 +2042,33 @@ def build_artifact(
             rent_rebase_input.append({"date": row["date"], "series": "ERI", "value": row["value"]})
     residential_price_rebased = _rebase_chart_rows(price_rebase_input, now)
     residential_rent_rebased = _rebase_chart_rows(rent_rebase_input, now)
+    shkp_assets_carried_forward = "shkp_hk_commercial_asset_master" in carried_forward_datasets
+    if shkp_assets_carried_forward:
+        shkp_asset_dates = pd.to_datetime(
+            [row.get("as_of_date") for row in shkp_commercial_asset_rows], errors="coerce"
+        ).dropna()
+        shkp_asset_health = {
+            "source": PUBLIC_SOURCES["shkp_commercial_assets"]["label"],
+            "dataset": "SHKP Hong Kong commercial asset master",
+            "type": "Measure",
+            "status": "Stale",
+            "latest_observation": shkp_asset_dates.max().strftime("%Y-%m-%d") if not shkp_asset_dates.empty else "—",
+            "records": len(shkp_commercial_asset_rows),
+            "freshness": "Previous artifact snapshot",
+            "notes": (
+                f"{RUNNER_UNAVAILABLE_DATASETS['shkp_hk_commercial_asset_master'][1]} was unavailable "
+                "in this build, so the last published rows were retained; no asset-level rent or NOI is inferred."
+            ),
+        }
+    else:
+        shkp_asset_health = _new_source_health(
+            df_shkp_commercial_assets,
+            source_id="shkp_commercial_assets",
+            dataset="SHKP Hong Kong commercial asset master",
+            now=now,
+            note="Current/annual-report/pipeline asset observations; no asset-level rent or NOI is inferred.",
+        )
+
     for health_row in (
         _new_source_health(df_cci, source_id="centaline_cci", dataset="Centaline CCI monthly", now=now, note="Normalized residential price index; CCI is not a sentiment measure."),
         _new_source_health(df_cri, source_id="centaline_cri", dataset="Centaline CRI monthly", now=now, note="Normalized residential rental index; rental-yield history is a companion dataset."),
@@ -2049,7 +2081,7 @@ def build_artifact(
     for health_row in (
         _new_source_health(df_shkp_quarterly, source_id="shkp_quarterly", dataset="SHKP Quarterly property events", now=now, note="Issuer headline events; property relevance and project aliases are heuristic.") if not df_shkp_quarterly.empty else None,
         _new_source_health(df_shkp_quarterly_facts, source_id="shkp_quarterly", dataset="SHKP Quarterly numeric facts", now=now, note="Bounded PDF text extraction of explicit units/areas/rates/milestones; not revenue or ownership.") if not df_shkp_quarterly_facts.empty else None,
-        _new_source_health(df_shkp_commercial_assets, source_id="shkp_commercial_assets", dataset="SHKP Hong Kong commercial asset master", now=now, note="Current/annual-report/pipeline asset observations; no asset-level rent or NOI is inferred.") if not df_shkp_commercial_assets.empty else None,
+        shkp_asset_health,
         _new_source_health(df_cnsd_retail_control, source_id="cnsd_retail_sales_control", dataset="C&SD retail sales control", now=now, note="Economy-wide retail value/volume indices; not SHKP tenant sales.") if not df_cnsd_retail_control.empty else None,
         _new_source_health(df_tourism_occupancy, source_id="tourism_hotel_controls", dataset="Tourism hotel occupancy", now=now, note="Rolling five-year hotel-category occupancy; not SHKP hotel occupancy.") if not df_tourism_occupancy.empty else None,
         _new_source_health(df_tourism_adr, source_id="tourism_hotel_controls", dataset="Tourism hotel achieved room rate", now=now, note="Rolling five-year industry average room rate; not SHKP ADR.") if not df_tourism_adr.empty else None,
@@ -2463,10 +2495,10 @@ def build_artifact(
         )
 
     for dataset_key, row_count in carried_forward_datasets.items():
-        # The SHKP bridge already owns a source_health row, marked Stale above.
-        # The coverage table is a source inventory, not a list of every surface
-        # using a source, so do not alias it here.
-        if dataset_key == "shkp_hk_financial_bridge":
+        # These SHKP datasets already own source_health rows, marked Stale
+        # above. The coverage table is a source inventory, so do not duplicate
+        # them here.
+        if dataset_key in {"shkp_hk_financial_bridge", "shkp_hk_commercial_asset_master"}:
             continue
         if dataset_key == "epi_eri_history":
             continue  # already represented by the 28Hse coverage row above
@@ -3993,20 +4025,21 @@ def _load_dataset_from_committed_artifact(dataset_key: str) -> pd.DataFrame:
     return pd.DataFrame(rows) if isinstance(rows, list) else pd.DataFrame()
 
 
-# Datasets whose only upstream cannot exist on a GitHub runner. The SHKP
-# financial bridge reads the sibling financial-data DuckDB, which CI never
-# checks out; Midland is deliberately skipped there (HK_RE_SKIP_MIDLAND) and
-# WAF-blocked besides. Neither absence is a data problem to fix here -- but
-# rebuilding without them drops the dataset key outright, and the refresh
-# guard correctly reads a vanished dataset as a regression and rejects the
-# whole artifact. That is why CI last published this dashboard on 2026-08-12
-# while every other sector in the same job kept refreshing daily, and why a
-# Buildings Department history repaired upstream still could not reach the
-# published chart. Serve the last published rows for these two and mark them
-# stale, the way HKMA, SRPE and the BD history already do.
+# Datasets that may be unavailable on a GitHub runner: 28Hse can return 403,
+# SHKP's property directory can return its anti-bot 999 response, the SHKP
+# bridge depends on a sibling repo, and Midland is deliberately skipped/WAF
+# blocked. Dropping any one of these keys makes the refresh guard reject the
+# whole real-estate artifact, which also hides successful independent updates
+# such as the Buildings Department history. Retain only the missing dataset
+# from the last published artifact and surface it as Stale; fresh data from
+# the other sources can still publish.
 RUNNER_UNAVAILABLE_DATASETS = {
     "epi_eri_history": ("28Hse EPI / ERI", "28Hse EPI / ERI source"),
     "hse28_new_projects": ("28Hse new projects", "28Hse new-project catalogue"),
+    "shkp_hk_commercial_asset_master": (
+        "SHKP — Hong Kong commercial asset observation master",
+        "SHKP Hong Kong commercial property directory",
+    ),
     "shkp_hk_financial_bridge": (
         "SHKP financial bridge",
         "sibling financial-data DuckDB (not checked out in CI)",
