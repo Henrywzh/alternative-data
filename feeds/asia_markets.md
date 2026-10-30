@@ -1,8 +1,8 @@
 # asia_markets research feed
 
-Generated: 2026-10-30T14:12:38.810231Z · Status: **degraded**
+Generated: 2026-10-30T20:50:07.595469Z · Status: **degraded**
 
-Source commit: `aaeceaffe913a3006733ee2d651d9f415c27b9da`
+Source commit: `56f819fc6b37356166dea52a1d4e7e5d114a8963`
 
 Observation dates differ by record. Generated time is not a market-data timestamp.
 
@@ -39,7 +39,6 @@ Observation dates differ by record. Generated time is not a market-data timestam
 
 ## Changes
 
-- new_observation: hk-utilities/towngas_card
 
 ## Excluded coverage
 

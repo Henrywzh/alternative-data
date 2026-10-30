@@ -1,22 +1,22 @@
 # alternative_signals research feed
 
-Generated: 2026-10-30T14:12:38.810231Z · Status: **degraded**
+Generated: 2026-10-30T20:50:07.595469Z · Status: **degraded**
 
-Source commit: `aaeceaffe913a3006733ee2d651d9f415c27b9da`
+Source commit: `56f819fc6b37356166dea52a1d4e7e5d114a8963`
 
 Observation dates differ by record. Generated time is not a market-data timestamp.
 
 | Section | Record | Observation | Quality | Values |
 |---|---|---|---|---|
-| OpenRouter usage economics | completion_tokens_per_request/all_models (1d window) | 2026-10-28 | current | value: 582.2914484734832 tokens_per_request |
-| OpenRouter usage economics | completion_tokens_per_request/all_models (7d window) | 2026-10-28 | current | value: 595.058912806274 tokens_per_request |
-| OpenRouter usage economics | prompt_tokens_per_request/all_models (1d window) | 2026-10-28 | current | value: 25537.427041734805 tokens_per_request |
-| OpenRouter usage economics | prompt_tokens_per_request/all_models (7d window) | 2026-10-28 | current | value: 22655.43143195156 tokens_per_request |
-| OpenRouter usage economics | realized_market_average/all_models (7d window) | 2026-10-28 | degraded (partial_pricing_coverage) | value: 0.6447280909293683 USD_per_million_tokens |
-| OpenRouter usage economics | realized_sota_price/sota (7d window) | 2026-10-28 | degraded (partial_pricing_coverage) | value: 3.481116374443634 USD_per_million_tokens |
-| OpenRouter usage economics | sota_median_list_price/sota (1d window) | 2026-10-28 | current | value: 2.457 USD_per_million_tokens |
-| OpenRouter usage economics | total_tokens_per_request/all_models (1d window) | 2026-10-28 | current | value: 26119.71849020829 tokens_per_request |
-| OpenRouter usage economics | total_tokens_per_request/all_models (7d window) | 2026-10-28 | current | value: 23250.490344757836 tokens_per_request |
+| OpenRouter usage economics | completion_tokens_per_request/all_models (1d window) | 2026-10-29 | current | value: 642.7285038598867 tokens_per_request |
+| OpenRouter usage economics | completion_tokens_per_request/all_models (7d window) | 2026-10-29 | current | value: 599.844890642564 tokens_per_request |
+| OpenRouter usage economics | prompt_tokens_per_request/all_models (1d window) | 2026-10-29 | current | value: 26819.54714362534 tokens_per_request |
+| OpenRouter usage economics | prompt_tokens_per_request/all_models (7d window) | 2026-10-29 | current | value: 23204.549524536047 tokens_per_request |
+| OpenRouter usage economics | realized_market_average/all_models (7d window) | 2026-10-29 | degraded (partial_pricing_coverage) | value: 0.6394203711994217 USD_per_million_tokens |
+| OpenRouter usage economics | realized_sota_price/sota (7d window) | 2026-10-29 | degraded (partial_pricing_coverage) | value: 3.4227068175810147 USD_per_million_tokens |
+| OpenRouter usage economics | sota_median_list_price/sota (1d window) | 2026-10-29 | current | value: 2.457 USD_per_million_tokens |
+| OpenRouter usage economics | total_tokens_per_request/all_models (1d window) | 2026-10-29 | current | value: 27462.275647485225 tokens_per_request |
+| OpenRouter usage economics | total_tokens_per_request/all_models (7d window) | 2026-10-29 | current | value: 23804.394415178613 tokens_per_request |
 | PyPI core SDK downloads (without mirrors) | anthropic/anthropic | 2026-10-29 | current | downloads: 7946543 downloads |
 | PyPI core SDK downloads (without mirrors) | google/google-genai | 2026-10-29 | current | downloads: 6302092 downloads |
 | PyPI core SDK downloads (without mirrors) | google/google-generativeai | 2026-10-29 | current | downloads: 377999 downloads |
@@ -50,12 +50,15 @@ Observation dates differ by record. Generated time is not a market-data timestam
 
 ## Changes
 
-- new_observation: developer_adoption/anthropic/anthropic
-- new_observation: developer_adoption/google/google-genai
-- new_observation: developer_adoption/google/google-generativeai
-- new_observation: developer_adoption/mistral/mistralai
-- new_observation: developer_adoption/openai/openai
-- new_observation: developer_adoption/qwen/dashscope
+- new_observation: openrouter_economics/completion_tokens_per_request/all_models/1
+- new_observation: openrouter_economics/completion_tokens_per_request/all_models/7
+- new_observation: openrouter_economics/prompt_tokens_per_request/all_models/1
+- new_observation: openrouter_economics/prompt_tokens_per_request/all_models/7
+- new_observation: openrouter_economics/realized_market_average/all_models/7
+- new_observation: openrouter_economics/realized_sota_price/sota/7
+- new_observation: openrouter_economics/sota_median_list_price/sota/1
+- new_observation: openrouter_economics/total_tokens_per_request/all_models/1
+- new_observation: openrouter_economics/total_tokens_per_request/all_models/7
 
 ## Excluded coverage
 
