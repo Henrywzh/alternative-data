@@ -1,8 +1,8 @@
 # asia_markets research feed
 
-Generated: 2026-10-29T21:09:18.089528Z · Status: **degraded**
+Generated: 2026-10-30T14:12:38.810231Z · Status: **degraded**
 
-Source commit: `341350b056109d7e89540e0ad0684f63af1c62f0`
+Source commit: `aaeceaffe913a3006733ee2d651d9f415c27b9da`
 
 Observation dates differ by record. Generated time is not a market-data timestamp.
 
@@ -21,7 +21,7 @@ Observation dates differ by record. Generated time is not a market-data timestam
 | HK Transport & Aviation Sector Monitor | Fleet | 2026-08-01 | current | total_registered: 650227.0 vehicles; ev_share_pct: 27.4633 percent; ev_share_change_pp: 0.2152 percentage_points |
 | HK Transport & Aviation Sector Monitor | Private Car First Reg | 2026-07-01 | stale | total_first_reg: 3253.0 vehicles; electric_first_reg: 1969.0 vehicles; ev_share_pct: 60.5287 percent |
 | HK Utilities & Infrastructure Sector Monitor | Clp | 2026-03-31 | stale | latest: 7319.0 GWh; commercial_gwh: 3032.0 GWh; ai_data_centre_yoy_pct: 11.1 percent |
-| HK Utilities & Infrastructure Sector Monitor | Towngas | 2026-08-01 | current | latest: 1872.8 TJ; domestic_tj: 859.3 TJ; commercial_tj: 884.1 TJ |
+| HK Utilities & Infrastructure Sector Monitor | Towngas | 2026-09-01 | current | latest: 1875.3 TJ; domestic_tj: 865.3 TJ; commercial_tj: 880.7 TJ |
 | Hong Kong Telecom Sector Monitor | Hkt | 2026-06-30 | current (partial_metric_coverage) | latest_arpu: None HKD; postpaid_subscribers_thousands: 3522.0 thousand_subscribers; ftth_connections_thousands: 1101.0 thousand_connections |
 | Hong Kong Telecom Sector Monitor | Smartone | 2026-06-30 | current (partial_metric_coverage) | latest_arpu: 220.0 HKD; postpaid_subscribers_thousands: None thousand_subscribers; arpu_5g_to_4g_ratio: 2.0 ratio |
 | Hong Kong Telecom Sector Monitor | Hutchison | 2026-06-30 | current | latest_gross_arpu: 184.0 HKD; latest_net_arpu: 173.0 HKD; postpaid_customers_thousands: 1304.0 thousand_subscribers; churn_rate_pct: 0.9 percent |
@@ -39,6 +39,7 @@ Observation dates differ by record. Generated time is not a market-data timestam
 
 ## Changes
 
+- new_observation: hk-utilities/towngas_card
 
 ## Excluded coverage
 
