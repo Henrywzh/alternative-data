@@ -238,6 +238,8 @@ def test_retired_ai_index_dataset_does_not_block_its_healthy_siblings():
     assert set(retired) == {
         "ramp_ai_spend_share_by_category",
         "ramp_ai_spend_breakdown",
+        "ramp_ai_provider_model_share",
+        "ramp_ai_model_breakdown",
     }
 
     # Minimal healthy payloads for every live dataset in the gate.
@@ -287,7 +289,7 @@ def test_retired_filter_mode_dataset_does_not_block_its_healthy_siblings():
     from ramp_data.schemas import FILTER_MODE_DATASETS
 
     retired = [k for k, cfg in FILTER_MODE_DATASETS.items() if cfg.get("retired")]
-    assert retired == ["ramp_ai_filter_spend_share"]
+    assert set(retired) == {"ramp_ai_filter_spend_share", "ramp_ai_filter_model_share"}
 
     extracted = {}
     for dsid, cfg in FILTER_MODE_DATASETS.items():
@@ -308,14 +310,14 @@ def test_retired_filter_mode_dataset_does_not_block_its_healthy_siblings():
         ]
 
     report = RampPipeline._assert_filter_mode_quality([], extracted)
-    assert report["ramp_ai_filter_model_share"]["rows"] > 0
+    assert report["ramp_ai_filter_model_share"]["retired"]
     assert report["ramp_ai_filter_pepm"]["rows"] > 0
     assert report["ramp_ai_filter_spend_share"]["retired"]
 
 
 def test_a_live_filter_mode_dataset_still_fails_the_gate_when_empty():
     """Retiring spendShare must not disarm the gate for its live siblings."""
-    with pytest.raises(ValidationError, match="ramp_ai_filter_model_share"):
+    with pytest.raises(ValidationError, match="ramp_ai_filter_pepm"):
         RampPipeline._assert_filter_mode_quality(
             [],
             {

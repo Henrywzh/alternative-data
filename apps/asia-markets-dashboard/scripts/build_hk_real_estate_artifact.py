@@ -1754,6 +1754,11 @@ def build_artifact(
         timing_annual=df_shkp_sales_handover_annual,
     )
     carried_forward_datasets: dict[str, int] = {}
+    shkp_commercial_asset_rows = _carry_forward_if_runner_unavailable(
+        shkp_commercial_asset_rows,
+        "shkp_hk_commercial_asset_master",
+        carried_forward_datasets,
+    )
     shkp_financial_bridge_rows = _carry_forward_if_runner_unavailable(
         shkp_financial_bridge_rows, "shkp_hk_financial_bridge", carried_forward_datasets
     )
@@ -2002,6 +2007,9 @@ def build_artifact(
                     {"date": str(r["date"])[:10], "series": str(r["index_type"]), "value": float(r["index_value"])}
                 )
         epi_eri_rows.sort(key=lambda r: (r["series"], r["date"]))
+    epi_eri_rows = _carry_forward_if_runner_unavailable(
+        epi_eri_rows, "epi_eri_history", carried_forward_datasets
+    )
 
     # Keep price and rent normalization separate.  Combining a rent index with
     # price indices in one rebased chart is numerically possible but visually
@@ -2165,6 +2173,9 @@ def build_artifact(
                     "estimated_move_in_year": int(r["estimated_move_in_year"]) if pd.notna(r.get("estimated_move_in_year")) else None,
                 }
             )
+    new_project_rows = _carry_forward_if_runner_unavailable(
+        new_project_rows, "hse28_new_projects", carried_forward_datasets
+    )
 
     # Land Registry monthly facts + ASP series -> volume trend + ASP trend.
     if raw_landreg is not None:
@@ -2421,6 +2432,7 @@ def build_artifact(
         fallback_reason = (
             df_bd_supply_history.attrs.get("dashboard_fallback_reason")
             if label == "Buildings Department history"
+            else "last committed artifact" if label == "28Hse" and "epi_eri_history" in carried_forward_datasets
             else None
         )
         if not record_count:
@@ -2457,10 +2469,11 @@ def build_artifact(
 
     for dataset_key, row_count in carried_forward_datasets.items():
         # The SHKP bridge already owns a source_health row, marked Stale above.
-        # The coverage table is a source inventory, not a list of every surface
-        # using a source, so do not alias it here.
+        # The coverage table is a source inventory, so do not alias it here.
         if dataset_key == "shkp_hk_financial_bridge":
             continue
+        if dataset_key == "epi_eri_history":
+            continue  # already represented by the 28Hse coverage row above
         label, upstream = RUNNER_UNAVAILABLE_DATASETS[dataset_key]
         additional_coverage.append(
             {
@@ -3984,18 +3997,21 @@ def _load_dataset_from_committed_artifact(dataset_key: str) -> pd.DataFrame:
     return pd.DataFrame(rows) if isinstance(rows, list) else pd.DataFrame()
 
 
-# Datasets whose only upstream cannot exist on a GitHub runner. The SHKP
-# financial bridge reads the sibling financial-data DuckDB, which CI never
-# checks out; Midland is deliberately skipped there (HK_RE_SKIP_MIDLAND) and
-# WAF-blocked besides. Neither absence is a data problem to fix here -- but
-# rebuilding without them drops the dataset key outright, and the refresh
-# guard correctly reads a vanished dataset as a regression and rejects the
-# whole artifact. That is why CI last published this dashboard on 2026-08-12
-# while every other sector in the same job kept refreshing daily, and why a
-# Buildings Department history repaired upstream still could not reach the
-# published chart. Serve the last published rows for these two and mark them
-# stale, the way HKMA, SRPE and the BD history already do.
+# Datasets that may be unavailable on a GitHub runner: 28Hse can return 403,
+# SHKP's property directory can return its anti-bot 999 response, the SHKP
+# bridge depends on a sibling repo, and Midland is deliberately skipped/WAF
+# blocked. Dropping any one of these keys makes the refresh guard reject the
+# whole real-estate artifact, which also hides successful independent updates
+# such as the Buildings Department history. Retain only the missing dataset
+# from the last published artifact and surface it as Stale; fresh data from
+# the other sources can still publish.
 RUNNER_UNAVAILABLE_DATASETS = {
+    "epi_eri_history": ("28Hse EPI / ERI", "28Hse EPI / ERI source"),
+    "hse28_new_projects": ("28Hse new projects", "28Hse new-project catalogue"),
+    "shkp_hk_commercial_asset_master": (
+        "SHKP — Hong Kong commercial asset observation master",
+        "SHKP Hong Kong commercial property directory",
+    ),
     "shkp_hk_financial_bridge": (
         "SHKP financial bridge",
         "sibling financial-data DuckDB (not checked out in CI)",

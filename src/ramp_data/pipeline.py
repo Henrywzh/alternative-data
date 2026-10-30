@@ -169,8 +169,10 @@ class RampPipeline:
             manifest["datasets"] = [
                 {
                     "dataset_id": dataset_id,
-                    "status": "ok" if extracted.get(dataset_id) else "no_new_rows",
+                    "status": ("retired" if quality.get(dataset_id, {}).get("retired")
+                               else "ok" if extracted.get(dataset_id) else "no_new_rows"),
                     "rows": len(extracted.get(dataset_id, [])),
+                    **({"note": quality[dataset_id]["retired"]} if quality.get(dataset_id, {}).get("retired") else {}),
                 }
                 for dataset_id in dataset_ids
             ]
@@ -227,7 +229,7 @@ class RampPipeline:
             if len(rows) < cfg["min_rows"]:
                 failures.append(f"{dataset_id}: only {len(rows)} rows (expected >= {cfg['min_rows']})")
                 continue
-            seen, observations, group_latest = set(), [], {}
+            seen, observations, group_latest, weekly_starts = set(), [], {}, set()
             for row in rows:
                 try:
                     if any(not isinstance(row.get(k), str) or not row[k].strip()
@@ -247,8 +249,9 @@ class RampPipeline:
                             raise ValueError(f"{field} must be finite and nonnegative")
                     if dataset_id == "ramp_ai_token_activity":
                         start = date.fromisoformat(row["period_start"])
-                        if row["period_grain"] != "weekly" or start.weekday() != 0 or observed != start + timedelta(days=6):
-                            raise ValueError("expected complete Monday–Sunday weekly interval")
+                        if row["period_grain"] != "weekly" or start.weekday() not in {0, 5} or observed != start + timedelta(days=6):
+                            raise ValueError("expected complete Monday–Sunday or Saturday–Friday weekly interval")
+                        weekly_starts.add(start.weekday())
                         if row["dimension_type"] != "model" or row["metric_key"] not in {"token_spend", "token_volume"}:
                             raise ValueError("unexpected token activity dimension or metric")
                     else:
@@ -273,6 +276,8 @@ class RampPipeline:
                     if (today - observed).days > 21:
                         failures.append(f"{dataset_id}: {'/'.join(group)} is stale ({observed})")
             if dataset_id == "ramp_ai_token_activity":
+                if len(weekly_starts) > 1:
+                    failures.append(f"{dataset_id}: mixed weekly reporting calendars in one snapshot")
                 if {r.get("metric_key") for r in rows} != {"token_spend", "token_volume"}:
                     failures.append(f"{dataset_id}: both token_spend and token_volume are required")
             elif {r.get("token_type") for r in rows} != {"all_tokens", "uncached_input", "output"}:

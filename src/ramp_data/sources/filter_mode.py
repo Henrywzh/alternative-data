@@ -74,7 +74,8 @@ class RampFilterModeSource(SourceExtractor):
         response = self._get(AI_INDEX_URL)
         if response is None:
             return None
-        match = _VERSION_RE.search(rsc.decode_payload(response.text))
+        payload = rsc.decode_payload(response.text)
+        match = _VERSION_RE.search(payload) or re.search(r'"dataVersion":"([^"]+)"', payload)
         if not match:
             print("Warning: filterModeBundleVersion not found in AI Index payload")
             return None

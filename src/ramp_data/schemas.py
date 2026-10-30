@@ -123,6 +123,7 @@ AI_INDEX_DATASETS: dict[str, dict] = {
         "retired": "2026-09-07: Ramp removed the spend-share payload from the AI Index page",
     },
     "ramp_ai_provider_model_share": {
+        "retired": "2026-10-29: Ramp removed model-share charts and their embedded data; historical data retained",
         "payload_key": "modelShareCurated",
         "fields": [
             "date_month", "dimension_type", "dimension_value", "dimension_label",
@@ -154,6 +155,7 @@ AI_INDEX_DATASETS: dict[str, dict] = {
         "retired": "2026-09-07: Ramp removed the spend-breakdown payload from the AI Index page",
     },
     "ramp_ai_model_breakdown": {
+        "retired": "2026-10-29: Ramp removed model-share charts and their embedded data; historical data retained",
         "payload_key": "modelBreakdown",
         "fields": [
             "date_month", "ai_provider", "provider_display_order",
@@ -300,6 +302,7 @@ FILTER_MODE_DATASETS: dict[str, dict] = {
         "retired": "2026-09-08: Ramp removed the filter-mode spendShare endpoint",
     },
     "ramp_ai_filter_model_share": {
+        "retired": "2026-10-29: Ramp removed the modelShare filter-mode endpoint; historical data retained",
         "endpoint": "modelShare",
         "fields": [
             *FILTER_DIMS, "date_month", "is_latest_complete_month", "ai_provider",
