@@ -1,7 +1,7 @@
 {
   "version": "asia-markets-freshness.v1",
-  "auditedAt": "2026-10-29T13:14:32.636280Z",
-  "asOf": "2026-10-29",
+  "auditedAt": "2026-10-30T13:07:37.256080Z",
+  "asOf": "2026-10-30",
   "status": "degraded",
   "requiredFailures": [
     "real_estate.bd_history"
@@ -83,8 +83,8 @@
       "dataset": "kpi_northbound",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-10-27",
-      "latest_observation": "2026-10-28",
+      "expected_latest_period": "2026-10-28",
+      "latest_observation": "2026-10-29",
       "notes": "Immigration passenger clearance is daily; allow a two-day publication/holiday lag."
     },
     {
@@ -93,8 +93,8 @@
       "dataset": "consumer_council_oilprice",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-10-27",
-      "latest_observation": "2026-10-29",
+      "expected_latest_period": "2026-10-28",
+      "latest_observation": "2026-10-30",
       "notes": "Consumer Council pump-price snapshot is fetched daily; allow a two-day publication lag."
     },
     {
@@ -123,7 +123,7 @@
       "dataset": "hkma_applications_history",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-07",
+      "expected_latest_period": "2026-08",
       "latest_observation": "2026-08",
       "notes": "HKMA residential mortgage survey is monthly; a conservative two-month release gate is applied."
     },
@@ -163,8 +163,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-10-29T13:04:32.324902Z",
-      "latest_observation": "2026-10-29T13:04:32.324902Z",
+      "expected_latest_period": "2026-10-30T12:57:37.090887Z",
+      "latest_observation": "2026-10-30T12:57:37.090887Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -173,8 +173,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-10-29T13:04:32.662957Z",
-      "latest_observation": "2026-10-29T13:04:32.662957Z",
+      "expected_latest_period": "2026-10-30T12:57:37.172935Z",
+      "latest_observation": "2026-10-30T12:57:37.172935Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -183,8 +183,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-10-29T13:04:32.517377Z",
-      "latest_observation": "2026-10-29T13:04:32.517377Z",
+      "expected_latest_period": "2026-10-30T12:57:37.140239Z",
+      "latest_observation": "2026-10-30T12:57:37.140239Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -203,8 +203,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-10-29T13:04:32.563968Z",
-      "latest_observation": "2026-10-29T13:04:32.563968Z",
+      "expected_latest_period": "2026-10-30T12:57:37.631873Z",
+      "latest_observation": "2026-10-30T12:57:37.631873Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -223,8 +223,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-10-28T13:02:45Z",
-      "latest_observation": "2026-10-28T13:02:45Z",
+      "expected_latest_period": "2026-10-30T12:57:37Z",
+      "latest_observation": "2026-10-30T12:57:37Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     }
   ]
