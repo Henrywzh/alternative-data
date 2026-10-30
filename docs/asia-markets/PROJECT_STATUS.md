@@ -105,9 +105,9 @@ replacement for the operating manual or generated source-status JSON.
   current-year ingest was being hidden when separate 28Hse/SHKP sources failed
   on the GitHub runner and caused the artifact-wide guard to restore the whole
   previous real-estate artifact. The builder now retains only those unavailable
-  datasets and marks them stale, allowing fresh Buildings Department and other
-  independent data to publish. This is Cloudflare-only; artifact schema and the
-  Streamlit data contract are unchanged.
+  datasets and marks them stale in source coverage, allowing fresh Buildings
+  Department and other independent data to publish. This is Cloudflare-only;
+  artifact schema and the Streamlit data contract are unchanged.
 - 2026-09-26 Asia Markets daily-refresh CI repair: the workflow now stages the
   durable `hk_stablecoin_crypto` normalized outputs (including Wikimedia
   weekly/monthly manifests) and fails with exact leftover tracked paths if a
