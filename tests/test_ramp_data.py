@@ -238,6 +238,8 @@ def test_retired_ai_index_dataset_does_not_block_its_healthy_siblings():
     assert set(retired) == {
         "ramp_ai_spend_share_by_category",
         "ramp_ai_spend_breakdown",
+        "ramp_ai_provider_model_share",
+        "ramp_ai_model_breakdown",
     }
 
     # Minimal healthy payloads for every live dataset in the gate.
@@ -266,6 +268,8 @@ def test_retired_ai_index_dataset_does_not_block_its_healthy_siblings():
     assert report["ramp_ai_adoption_overall"]["rows"] > 0
     assert report["ramp_ai_spend_share_by_category"]["retired"]
     assert report["ramp_ai_spend_breakdown"]["retired"]
+    assert report["ramp_ai_provider_model_share"]["retired"]
+    assert report["ramp_ai_model_breakdown"]["retired"]
 
 
 def test_a_live_ai_index_dataset_still_fails_the_gate_when_empty():
@@ -282,12 +286,12 @@ def test_a_live_ai_index_dataset_still_fails_the_gate_when_empty():
 
 
 def test_retired_filter_mode_dataset_does_not_block_its_healthy_siblings():
-    """Ramp 404'd the filter-mode spendShare endpoint; modelShare and
-    spendPerEmployee keep shipping and must still be written."""
+    """Ramp 404'd the filter-mode spendShare endpoint, then modelShare;
+    spendPerEmployee keeps shipping and must still be written."""
     from ramp_data.schemas import FILTER_MODE_DATASETS
 
     retired = [k for k, cfg in FILTER_MODE_DATASETS.items() if cfg.get("retired")]
-    assert retired == ["ramp_ai_filter_spend_share"]
+    assert retired == ["ramp_ai_filter_spend_share", "ramp_ai_filter_model_share"]
 
     extracted = {}
     for dsid, cfg in FILTER_MODE_DATASETS.items():
@@ -308,14 +312,14 @@ def test_retired_filter_mode_dataset_does_not_block_its_healthy_siblings():
         ]
 
     report = RampPipeline._assert_filter_mode_quality([], extracted)
-    assert report["ramp_ai_filter_model_share"]["rows"] > 0
     assert report["ramp_ai_filter_pepm"]["rows"] > 0
     assert report["ramp_ai_filter_spend_share"]["retired"]
+    assert report["ramp_ai_filter_model_share"]["retired"]
 
 
 def test_a_live_filter_mode_dataset_still_fails_the_gate_when_empty():
-    """Retiring spendShare must not disarm the gate for its live siblings."""
-    with pytest.raises(ValidationError, match="ramp_ai_filter_model_share"):
+    """Retiring spendShare and modelShare must not disarm the gate for pepm."""
+    with pytest.raises(ValidationError, match="ramp_ai_filter_pepm"):
         RampPipeline._assert_filter_mode_quality(
             [],
             {
@@ -378,9 +382,12 @@ def test_jobs_impact_skips_unrelated_table():
 
 
 def test_filter_mode_version_regex():
-    from ramp_data.sources.filter_mode import _VERSION_RE
+    from ramp_data.sources.filter_mode import find_version
     payload = '...,"spend_share":0.6}],"filterModeBundleVersion":"uRvGDPGrpkEmLur3bXIMka","sanity":{...'
-    assert _VERSION_RE.search(payload).group(1) == "uRvGDPGrpkEmLur3bXIMka"
+    assert find_version(payload) == "uRvGDPGrpkEmLur3bXIMka"
+    # Renamed on 2026-10-22.
+    assert find_version('..."dataVersion":"YxbS8uBVVLXOqNZieHbPiJ",...') == "YxbS8uBVVLXOqNZieHbPiJ"
+    assert find_version('{"adoptionOverall":[]}') is None
 
 
 def test_filter_mode_extract_aliases_date_and_upserts(tmp_path: Path):
@@ -649,4 +656,103 @@ def test_filter_pepm_vintages_ignore_latest_complete_month_flag(tmp_path: Path):
     vintages = storage.append_vintages("ramp_ai_filter_pepm", current)
     assert len(vintages) == 1
     assert str(current.iloc[0]["is_latest_complete_month"]).lower() == "false"
+
+
+# ------------------------------------------------------------------ Tokenomics
+
+
+def _token_rows(start: str, weeks: int, makers=("anthropic", "openai"), models=1) -> list[dict]:
+    """Weekly token rows from ``start`` (a period_start date), seven-day weeks."""
+    from datetime import date, timedelta
+    first = date.fromisoformat(start)
+    rows = []
+    for w in range(weeks):
+        s, e = first + timedelta(days=7 * w), first + timedelta(days=7 * w + 6)
+        for maker in makers:
+            for m in range(models):
+                for metric, value in (("token_spend", 100.0 + w), ("token_volume", 1e9 + w)):
+                    rows.append({"period_grain": "weekly", "period_start": s.isoformat(), "period_end": e.isoformat(),
+                                 "metric_key": metric, "dimension_type": "model", "series_key": f"{maker}-m{m}",
+                                 "series_label": f"{maker} m{m}", "model_maker": maker, "metric_value": value})
+    return rows
+
+
+def _price_rows(end: str, days: int) -> list[dict]:
+    from datetime import date, timedelta
+    last = date.fromisoformat(end)
+    return [{"usage_date": (last - timedelta(days=d)).isoformat(), "token_type": tt, "model_maker": maker,
+             "token_cost_usd_7d": 10.0, "token_count_7d": 1e7}
+            for d in range(days) for maker in ("anthropic", "openai") for tt in ("all_tokens", "uncached_input", "output")]
+
+
+def _token_snapshots(activity: list[dict], prices: list[dict]) -> list[Snapshot]:
+    base = "https://ramp.com/data/ai-index/chart-data"
+    return [Snapshot("ramp_ai_token_activity", f"{base}/tokenVolumes", json.dumps(activity)),
+            Snapshot("ramp_ai_token_prices", f"{base}/tokenPrices", json.dumps(prices))]
+
+
+def _recent_saturday() -> str:
+    from datetime import timedelta
+    today = datetime.now(timezone.utc).date()
+    # The latest complete Saturday-Friday week, a few days back.
+    return (today - timedelta(days=(today.weekday() - 5) % 7 + 7)).isoformat()
+
+
+def test_tokenomics_extracts_chart_data_json_and_passes_the_gate():
+    """Since 2026-10-22 the series are JSON endpoints, in Saturday-Friday weeks."""
+    from datetime import date, timedelta
+    from ramp_data.sources.tokenomics import RampTokenomicsSource
+    last_start = date.fromisoformat(_recent_saturday())
+    activity = _token_rows((last_start - timedelta(weeks=79)).isoformat(), 80, models=20)
+    prices = _price_rows((last_start + timedelta(days=6)).isoformat(), 30)
+    extracted = RampTokenomicsSource().extract(_token_snapshots(activity, prices), _context())
+    assert len(extracted["ramp_ai_token_activity"]) == len(activity) >= 5000
+    assert extracted["ramp_ai_token_activity"][0].payload["period_start"] == activity[0]["period_start"]
+    report = RampPipeline._assert_tokenomics_quality([], extracted)
+    assert report["ramp_ai_token_activity"]["latest_observation"] == (last_start + timedelta(days=6)).isoformat()
+
+
+def test_tokenomics_gate_rejects_mixed_week_conventions():
+    from datetime import date, timedelta
+    from ramp_data.sources.tokenomics import RampTokenomicsSource
+    saturday = date.fromisoformat(_recent_saturday())
+    activity = _token_rows((saturday - timedelta(weeks=39)).isoformat(), 40, models=40)
+    activity += _token_rows((saturday - timedelta(weeks=79, days=5)).isoformat(), 2, models=40)  # Mondays
+    prices = _price_rows((saturday + timedelta(days=6)).isoformat(), 30)
+    extracted = RampTokenomicsSource().extract(_token_snapshots(activity, prices), _context())
+    with pytest.raises(ValidationError, match="more than one weekday"):
+        RampPipeline._assert_tokenomics_quality([], extracted)
+
+
+def test_tokenomics_gate_rejects_a_truncated_activity_feed():
+    """The activity table is replaced each run, so a short feed must not pass."""
+    from ramp_data.sources.tokenomics import RampTokenomicsSource
+    activity = _token_rows(_recent_saturday(), 1)
+    extracted = RampTokenomicsSource().extract(_token_snapshots(activity, _price_rows(_recent_saturday(), 30)), _context())
+    with pytest.raises(ValidationError, match="ramp_ai_token_activity: only"):
+        RampPipeline._assert_tokenomics_quality([], extracted)
+
+
+def test_token_activity_republish_replaces_current_and_keeps_old_weeks_as_vintages(tmp_path: Path):
+    """Ramp re-cut the history from Monday-Sunday to Saturday-Friday weeks.
+
+    The current table must hold one convention (the latest publication); the
+    superseded Monday-Sunday prints survive in the vintages twin.
+    """
+    from ramp_data.sources.tokenomics import RampTokenomicsSource
+    storage = StorageManager(tmp_path)
+    source = RampTokenomicsSource()
+
+    def write(rows):
+        records = source.extract(_token_snapshots(rows, []), _context())["ramp_ai_token_activity"]
+        current = storage.upsert_dataset("ramp_ai_token_activity", records)
+        storage.append_vintages("ramp_ai_token_activity", current)
+        return current
+
+    write(_token_rows("2026-09-07", 4))        # Mondays
+    current = write(_token_rows("2026-09-05", 4))  # Saturdays
+    starts = {datetime.fromisoformat(d).strftime("%A") for d in current["period_start"]}
+    assert starts == {"Saturday"}
+    vintages = storage.load_dataset("ramp_ai_token_activity_vintages")
+    assert {datetime.fromisoformat(d).strftime("%A") for d in vintages["period_start"]} == {"Monday", "Saturday"}
 

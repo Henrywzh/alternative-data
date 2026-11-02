@@ -16,9 +16,18 @@ CORE_COLUMNS = ["dataset_id", "source_url", "source_run_id", "scraped_at"]
 
 # Token Spend Management is a separate sample from the monthly adoption index.
 # Keep source model identifiers verbatim: aliases are not canonical models.
+#
+# Since 2026-10-22 the page no longer embeds these arrays in its RSC payload;
+# it fetches them as JSON from TOKENOMICS_ENDPOINT_BASE/<endpoint>. In the same
+# change Ramp moved weekly activity from Monday-Sunday to Saturday-Friday weeks
+# and republished the whole history that way. Each fetch is the full history,
+# so ramp_ai_token_activity is a REPLACE dataset (storage.py): the current table
+# is the latest publication in one week convention, and the earlier Monday-
+# Sunday prints stay in ramp_ai_token_activity_vintages.
+TOKENOMICS_ENDPOINT_BASE = "https://ramp.com/data/ai-index/chart-data"
 TOKENOMICS_DATASETS: dict[str, dict] = {
     "ramp_ai_token_activity": {
-        "payload_key": "tokenVolumes",
+        "endpoint": "tokenVolumes",
         "fields": ["period_grain", "period_start", "period_end", "metric_key",
                    "dimension_type", "series_key", "series_label", "model_maker", "metric_value"],
         "natural_keys": ["period_grain", "period_start", "period_end", "metric_key",
@@ -27,10 +36,12 @@ TOKENOMICS_DATASETS: dict[str, dict] = {
         "numeric": ["metric_value"],
         "metric_fields": ["metric_value", "series_label"],
         "date_column": "period_end",
-        "min_rows": 500,
+        # The table is replaced on each run, so the floor guards the history:
+        # the full feed is ~20,000 rows (Oct 2026).
+        "min_rows": 5000,
     },
     "ramp_ai_token_prices": {
-        "payload_key": "tokenPrices",
+        "endpoint": "tokenPrices",
         "fields": ["usage_date", "token_type", "model_maker", "token_cost_usd_7d", "token_count_7d"],
         "natural_keys": ["usage_date", "token_type", "model_maker"],
         "sort_keys": ["usage_date", "token_type", "model_maker"],
@@ -134,6 +145,12 @@ AI_INDEX_DATASETS: dict[str, dict] = {
         "sort_keys": ["date_month", "dimension_type", "dimension_value", "provider_display_order", "model_display_order"],
         "numeric": ["display_order", "provider_display_order", "model_display_order", "model_share"],
         "min_rows": 100,
+        # Retired upstream. Between the 2026-10-19 and 2026-10-22 runs Ramp
+        # removed the model-share charts from the AI Index: `modelShareCurated`
+        # and `modelBreakdown` left the payload and filter-mode/modelShare
+        # returns 404. "Overall + Models" now shows adoption by vendor only
+        # (ramp_ai_adoption_by_vendor). Committed history through 2026-09 stays.
+        "retired": "2026-10-22: Ramp removed the model-share payload from the AI Index page",
     },
     # Historical (overall) time series. The *Curated datasets above are single-month
     # cross-sections by dimension; these *Breakdown arrays carry the full monthly
@@ -164,6 +181,8 @@ AI_INDEX_DATASETS: dict[str, dict] = {
         "sort_keys": ["date_month", "provider_display_order", "model_display_order"],
         "numeric": ["provider_display_order", "model_display_order", "model_share"],
         "min_rows": 60,
+        # Retired upstream with ramp_ai_provider_model_share (same change).
+        "retired": "2026-10-22: Ramp removed the model-breakdown payload from the AI Index page",
     },
     # PEPM (a level, not a share) IS published monthly by dimension, so this
     # powers a true monthly time series under the spend-per-employee filter.
@@ -274,7 +293,9 @@ for _dataset_id, _cfg in TOKENOMICS_DATASETS.items():
 # The endpoints require a version token found in the page payload as
 # ``filterModeBundleVersion``, so the source scrapes the page first to resolve it.
 FILTER_MODE_ENDPOINT_BASE = "https://ramp.com/data/ai-index/filter-mode"
-FILTER_MODE_VERSION_KEY = "filterModeBundleVersion"
+# The page publishes the endpoints' version token under this key; it was
+# ``filterModeBundleVersion`` until Ramp renamed it on 2026-10-22.
+FILTER_MODE_VERSION_KEYS = ("dataVersion", "filterModeBundleVersion")
 
 # The four cohort dimensions, shared across all filter-mode datasets.
 FILTER_DIMS = [
@@ -310,6 +331,9 @@ FILTER_MODE_DATASETS: dict[str, dict] = {
         "sort_keys": ["date_month", *FILTER_DIMS, "provider_display_order", "model_display_order"],
         "numeric": ["provider_display_order", "model_display_order", "model_share"],
         "min_rows": 5000,
+        # Ramp removed this endpoint (HTTP 404) by the 2026-10-22 run, with the
+        # AI Index model-share charts. spendPerEmployee remains live.
+        "retired": "2026-10-22: Ramp removed the filter-mode modelShare endpoint",
     },
     "ramp_ai_filter_pepm": {
         "endpoint": "spendPerEmployee",

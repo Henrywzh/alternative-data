@@ -85,6 +85,11 @@ SORT_KEYS[JOBS_IMPACT_DATASET] = JOBS_IMPACT["sort_keys"]
 NUMERIC_COLUMNS.extend(c for c in JOBS_IMPACT["numeric"] if c not in NUMERIC_COLUMNS)
 REPLACE_DATASETS.add(JOBS_IMPACT_DATASET)
 REPLACE_DATASETS.add("ramp_category_adoption_yoy_comparison")
+# Ramp republishes the full token history on every fetch (and re-cut it into
+# Saturday-Friday weeks on 2026-10-22), so the current table is the latest
+# publication; superseded prints live on in the vintages twin. The gate's row
+# floor keeps a truncated feed from replacing the history.
+REPLACE_DATASETS.add("ramp_ai_token_activity")
 
 
 

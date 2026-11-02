@@ -220,6 +220,7 @@ class RampPipeline:
         """
         report, failures = {}, []
         today = datetime.now(timezone.utc).date()
+        week_starts: set[int] = set()
         for dataset_id, cfg in TOKENOMICS_DATASETS.items():
             records = extracted.get(dataset_id, [])
             rows = [r.payload for r in records]
@@ -246,9 +247,12 @@ class RampPipeline:
                         if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0:
                             raise ValueError(f"{field} must be finite and nonnegative")
                     if dataset_id == "ramp_ai_token_activity":
+                        # Weeks were Monday-Sunday until 2026-10-22 and are now
+                        # Saturday-Friday; accept any one convention per feed.
                         start = date.fromisoformat(row["period_start"])
-                        if row["period_grain"] != "weekly" or start.weekday() != 0 or observed != start + timedelta(days=6):
-                            raise ValueError("expected complete Monday–Sunday weekly interval")
+                        if row["period_grain"] != "weekly" or observed != start + timedelta(days=6):
+                            raise ValueError("expected complete seven-day weekly interval")
+                        week_starts.add(start.weekday())
                         if row["dimension_type"] != "model" or row["metric_key"] not in {"token_spend", "token_volume"}:
                             raise ValueError("unexpected token activity dimension or metric")
                     else:
@@ -273,6 +277,8 @@ class RampPipeline:
                     if (today - observed).days > 21:
                         failures.append(f"{dataset_id}: {'/'.join(group)} is stale ({observed})")
             if dataset_id == "ramp_ai_token_activity":
+                if len(week_starts) > 1:
+                    failures.append(f"{dataset_id}: weeks start on more than one weekday")
                 if {r.get("metric_key") for r in rows} != {"token_spend", "token_volume"}:
                     failures.append(f"{dataset_id}: both token_spend and token_volume are required")
             elif {r.get("token_type") for r in rows} != {"all_tokens", "uncached_input", "output"}:
