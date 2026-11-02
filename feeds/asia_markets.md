@@ -1,8 +1,8 @@
 # asia_markets research feed
 
-Generated: 2026-11-01T20:31:46.616114Z · Status: **degraded**
+Generated: 2026-11-02T17:06:51.152704Z · Status: **degraded**
 
-Source commit: `d47ff36e2552643d2ae1d4fa9c2955bcca85d9d4`
+Source commit: `5da60160f02d8d8e4ad1f84ef91909a6bd604ff8`
 
 Observation dates differ by record. Generated time is not a market-data timestamp.
 
@@ -28,7 +28,7 @@ Observation dates differ by record. Generated time is not a market-data timestam
 | Hong Kong REITs Sector Monitor | Linkreit | 2026-03-31 | stale | nav_per_unit_hkd: 57.75 HKD_per_unit; dpu_hkd: 2.5361 HKD_per_unit; occupancy_pct: 97.8 percent; rental_reversion_pct: -8.2 percent |
 | Hong Kong REITs Sector Monitor | Championreit | 2025-12-31 | stale (partial_metric_coverage) | nav_per_unit_hkd: 6.45 HKD_per_unit; dpu_hkd: 0.1263 HKD_per_unit; occupancy_pct: 81.6 percent; rental_reversion_pct: None percent |
 | Hong Kong REITs Sector Monitor | Regalreit | 2026-06-30 | stale | nav_per_unit_hkd: 3.844 HKD_per_unit; hotel_occupancy_pct: 74.3 percent; revpar_hkd: 685.75 HKD |
-| Hong Kong Local Consumer Monitor | Retail | 2026-08-01 | current | latest: 114.8 index_points; period_change: 0.033303 fraction; year_change: -0.088889 fraction |
+| Hong Kong Local Consumer Monitor | Retail | 2026-08-01 | current | latest: 114.8 index_points; period_change: 0.033303 fraction; year_change: -0.049669 fraction |
 | Hong Kong Local Consumer Monitor | Restaurant | 2026-06-30 | current | latest: 27210.0 HKD_million; period_change: -0.040482 fraction; year_change: 0.020056 fraction |
 | Hong Kong Population & Migration | Population estimates | 2026-06 | current | mid_year_population_thousands: 7518.3 thousand_people; net_movement_thousands: 39.8 thousand_people; natural_growth_thousands: -20.4 thousand_people |
 | Hong Kong Population & Migration | MPF permanent-departure claims | 2026-Q2 | current | claims_count: 5200 claims; amount_mhkd: 1203.0 HKD_million |
@@ -39,6 +39,7 @@ Observation dates differ by record. Generated time is not a market-data timestam
 
 ## Changes
 
+- revision: hk-local-consumer/retail_card
 
 ## Excluded coverage
 
