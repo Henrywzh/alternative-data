@@ -615,3 +615,14 @@ data/normalized/hk_stablecoin_crypto/**
 !data/normalized/hk_stablecoin_crypto/**/
 !data/normalized/hk_stablecoin_crypto/**/*.parquet
 !data/normalized/hk_stablecoin_crypto/**/*.json
+
+# gpu_price_history: commit the normalized parquet tables and the last run's
+# source report; raw response bodies stay local (data/raw/* above)
+!data/normalized/gpu_price_history/
+data/normalized/gpu_price_history/*
+!data/normalized/gpu_price_history/*.parquet
+!data/normalized/gpu_price_history/latest_run.json
+
+# ai-data-dashboard: dist/ is rebuilt on every deploy; .cache/ holds the vendored ECharts
+apps/ai-data-dashboard/dist/
+apps/ai-data-dashboard/.cache/

@@ -1,0 +1,9 @@
+# data.json changes on every build and the shared assets with any code
+# change; revalidate them so a deploy shows up on the next page load.
+/*/data.json
+  Cache-Control: no-cache
+/shared/*
+  Cache-Control: no-cache
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
