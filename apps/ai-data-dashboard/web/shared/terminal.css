@@ -14,21 +14,22 @@ html, body { margin: 0; background: var(--bg); color: var(--text); font-family: 
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
-.masthead { display: flex; align-items: center; gap: 18px; padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--panel); flex-wrap: wrap; }
+.masthead { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 18px; padding: 10px 16px 0; border-bottom: 1px solid var(--border); background: var(--panel); }
 .brand { font-size: 17px; font-weight: 700; letter-spacing: .18em; color: var(--accent); white-space: nowrap; }
 .brand small { display: block; font-size: 9.5px; letter-spacing: .14em; color: var(--text-dim); font-weight: 400; }
-.nav { display: flex; gap: 22px; flex: 1 1 auto; flex-wrap: wrap; }
-.nav-group { display: flex; align-items: baseline; gap: 8px; }
-.nav-group > span { font-size: 9.5px; letter-spacing: .14em; color: var(--text-faint); }
-.nav-item { font-size: 11.5px; letter-spacing: .08em; color: var(--text-dim); padding: 2px 0; border-bottom: 1px solid transparent; cursor: default; }
-.nav-item.off { color: var(--text-faint); }
-.nav-item.on { color: var(--accent); border-bottom-color: var(--accent); }
 .asof { font-size: 11px; color: var(--text-dim); letter-spacing: .06em; white-space: nowrap; }
+/* Main tabs: one per page, the larger of the two tab rows. */
+.nav { grid-column: 1 / -1; display: flex; margin: 8px -16px 0; padding: 0 4px; overflow-x: auto; scrollbar-width: none; }
+.nav::-webkit-scrollbar, .subtabs::-webkit-scrollbar { display: none; }
+.nav-item { font-size: 14px; letter-spacing: .1em; color: var(--text-dim); padding: 9px 16px 8px; border-bottom: 3px solid transparent; white-space: nowrap; text-decoration: none; }
+a.nav-item:hover { color: var(--text); text-decoration: none; }
+.nav-item.on { color: var(--accent); border-bottom-color: var(--accent); }
 
-.subtabs { display: flex; gap: 2px; padding: 0 16px; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
-.subtab { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--text-dim); font: inherit; font-size: 11.5px; letter-spacing: .1em; padding: 9px 12px 7px; cursor: pointer; white-space: nowrap; }
+/* Subtabs: the page's own views, a quieter row under the main tabs. */
+.subtabs { display: flex; gap: 2px; padding: 0 10px; border-bottom: 1px solid var(--border); background: var(--bg); overflow-x: auto; scrollbar-width: none; }
+.subtab { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--text-faint); font: inherit; font-size: 11px; letter-spacing: .1em; padding: 7px 10px 5px; cursor: pointer; white-space: nowrap; }
 .subtab:hover { color: var(--text); }
-.subtab.on { color: var(--accent); border-bottom-color: var(--accent); }
+.subtab.on { color: var(--text); border-bottom-color: var(--accent-dim); }
 
 main { padding: 14px 16px 40px; max-width: 1440px; margin: 0 auto; }
 .lede { font-size: 13px; color: var(--text); margin: 2px 0 14px; max-width: 980px; }
@@ -114,8 +115,6 @@ details.fold[open] summary { border-bottom: 1px solid var(--border); color: var(
 .mock { display: inline-block; font-size: 9.5px; letter-spacing: .14em; color: #000; background: var(--accent); padding: 1px 6px; margin-left: 8px; vertical-align: 2px; }
 
 /* Shared additions for the multi-page site. */
-a.nav-item { text-decoration: none; cursor: pointer; }
-a.nav-item:hover { color: var(--text); text-decoration: none; }
 .legend-note { font-size: 10.5px; color: var(--text-faint); }
 .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .grid-even { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }

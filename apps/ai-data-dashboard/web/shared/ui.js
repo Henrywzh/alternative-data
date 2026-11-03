@@ -23,12 +23,14 @@
     ['ADOPTION', [['ramp', 'RAMP'], ['downloads', 'DOWNLOADS']]],
     ['COMPUTE', [['semis', 'SEMIS'], ['gpu', 'GPU RENTAL']]],
   ];
+  // Two levels, as market-recap: the brand row, then one tab per page; each
+  // page's own subtab row sits underneath. The groups only order the tabs.
   function masthead(current, asof) {
-    const nav = PAGES.map(([g, items]) => `<div class="nav-group"><span>${g}</span>${items.map(([id, l]) =>
-      `<a class="nav-item ${id === current ? 'on' : ''}" href="../${id}/">${l}</a>`).join('')}</div>`).join('');
+    const tabs = PAGES.flatMap(([, items]) => items).map(([id, l]) =>
+      `<a class="nav-item ${id === current ? 'on' : ''}" href="../${id}/"${id === current ? ' aria-current="page"' : ''}>${l}</a>`).join('');
     document.getElementById('masthead').innerHTML =
-      `<div class="brand">ALT·DATA<small>AI USAGE · ADOPTION · COMPUTE</small></div><nav class="nav">${nav}</nav>` +
-      `<div class="asof">${asof}</div>`;
+      `<div class="brand">ALT·DATA<small>AI USAGE · ADOPTION · COMPUTE</small></div>` +
+      `<div class="asof">${asof}</div><nav class="nav">${tabs}</nav>`;
   }
 
   const charts = {};
