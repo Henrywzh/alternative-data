@@ -1,8 +1,8 @@
 # asia_markets research feed
 
-Generated: 2026-11-02T17:06:51.152704Z · Status: **degraded**
+Generated: 2026-11-03T15:11:13.162269Z · Status: **degraded**
 
-Source commit: `5da60160f02d8d8e4ad1f84ef91909a6bd604ff8`
+Source commit: `dfba815c450c45f117e0bef7952a0cda7598cd61`
 
 Observation dates differ by record. Generated time is not a market-data timestamp.
 
@@ -25,11 +25,11 @@ Observation dates differ by record. Generated time is not a market-data timestam
 | Hong Kong Telecom Sector Monitor | Hkt | 2026-06-30 | current (partial_metric_coverage) | latest_arpu: None HKD; postpaid_subscribers_thousands: 3522.0 thousand_subscribers; ftth_connections_thousands: 1101.0 thousand_connections |
 | Hong Kong Telecom Sector Monitor | Smartone | 2026-06-30 | current (partial_metric_coverage) | latest_arpu: 220.0 HKD; postpaid_subscribers_thousands: None thousand_subscribers; arpu_5g_to_4g_ratio: 2.0 ratio |
 | Hong Kong Telecom Sector Monitor | Hutchison | 2026-06-30 | current | latest_gross_arpu: 184.0 HKD; latest_net_arpu: 173.0 HKD; postpaid_customers_thousands: 1304.0 thousand_subscribers; churn_rate_pct: 0.9 percent |
-| Hong Kong REITs Sector Monitor | Linkreit | 2026-03-31 | stale | nav_per_unit_hkd: 57.75 HKD_per_unit; dpu_hkd: 2.5361 HKD_per_unit; occupancy_pct: 97.8 percent; rental_reversion_pct: -8.2 percent |
-| Hong Kong REITs Sector Monitor | Championreit | 2025-12-31 | stale (partial_metric_coverage) | nav_per_unit_hkd: 6.45 HKD_per_unit; dpu_hkd: 0.1263 HKD_per_unit; occupancy_pct: 81.6 percent; rental_reversion_pct: None percent |
-| Hong Kong REITs Sector Monitor | Regalreit | 2026-06-30 | stale | nav_per_unit_hkd: 3.844 HKD_per_unit; hotel_occupancy_pct: 74.3 percent; revpar_hkd: 685.75 HKD |
-| Hong Kong Local Consumer Monitor | Retail | 2026-08-01 | current | latest: 114.8 index_points; period_change: 0.033303 fraction; year_change: -0.049669 fraction |
-| Hong Kong Local Consumer Monitor | Restaurant | 2026-06-30 | current | latest: 27210.0 HKD_million; period_change: -0.040482 fraction; year_change: 0.020056 fraction |
+| Hong Kong REITs Sector Monitor | Linkreit | 2026-03-31 | current | nav_per_unit_hkd: 57.75 HKD_per_unit; dpu_hkd: 2.5361 HKD_per_unit; occupancy_pct: 97.8 percent; rental_reversion_pct: -8.2 percent |
+| Hong Kong REITs Sector Monitor | Championreit | 2025-12-31 | current (partial_metric_coverage) | nav_per_unit_hkd: 6.45 HKD_per_unit; dpu_hkd: 0.1263 HKD_per_unit; occupancy_pct: 81.6 percent; rental_reversion_pct: None percent |
+| Hong Kong REITs Sector Monitor | Regalreit | 2026-06-30 | current | nav_per_unit_hkd: 3.844 HKD_per_unit; hotel_occupancy_pct: 74.3 percent; revpar_hkd: 685.75 HKD |
+| Hong Kong Local Consumer Monitor | Retail | 2026-09-01 | current | latest: 119.4 index_points; period_change: 0.039164 fraction; year_change: -0.011589 fraction |
+| Hong Kong Local Consumer Monitor | Restaurant | 2026-09-30 | current | latest: 27489.0 HKD_million; period_change: 0.010254 fraction; year_change: 0.030515 fraction |
 | Hong Kong Population & Migration | Population estimates | 2026-06 | current | mid_year_population_thousands: 7518.3 thousand_people; net_movement_thousands: 39.8 thousand_people; natural_growth_thousands: -20.4 thousand_people |
 | Hong Kong Population & Migration | MPF permanent-departure claims | 2026-Q2 | current | claims_count: 5200 claims; amount_mhkd: 1203.0 HKD_million |
 
@@ -39,7 +39,11 @@ Observation dates differ by record. Generated time is not a market-data timestam
 
 ## Changes
 
-- revision: hk-local-consumer/retail_card
+- new_observation: hk-local-consumer/restaurant_card
+- new_observation: hk-local-consumer/retail_card
+- quality_change: hk-reit/championreit_card
+- quality_change: hk-reit/linkreit_card
+- quality_change: hk-reit/regalreit_card
 
 ## Excluded coverage
 
