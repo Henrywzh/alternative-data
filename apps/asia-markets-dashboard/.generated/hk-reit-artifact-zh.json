@@ -6,8 +6,8 @@
     "title": "香港房地产信托（REITs）基本面监测",
     "description": "领展（Link REIT）、冠君（Champion REIT）、置富（Fortune REIT）、繁荣（Prosperity REIT）、阳光（Sunlight REIT）及富豪（Regal REIT）的每单位资产净值（NAV）、每基金单位分派（DPU）、出租率、租金检讨调升率及酒店 KPI 快照。",
     "sector": "hk-reit",
-    "generatedAt": "2026-10-13T14:14:27.069636Z",
-    "dataAsOf": "2026-06-30",
+    "generatedAt": "2026-11-03T10:44:56.225258Z",
+    "dataAsOf": "2026-09-30",
     "liveSourcesCount": 7,
     "totalSourcesCount": 7,
     "cards": [
@@ -561,7 +561,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `5bd0cfed5c21b239` · 生成于 2026-10-13T14:14:27.069636Z。"
+        "body": "**数据快照：** `dd643b435c3352bd` · 生成于 2026-11-03T10:44:56.225258Z。"
       },
       {
         "id": "kpi_grid",
@@ -626,7 +626,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-10-13T14:14:27.069636Z",
+    "generatedAt": "2026-11-03T10:44:56.225258Z",
     "status": "ready",
     "datasets": {
       "kpi_linkreit": [
@@ -678,10 +678,10 @@
           "nav_per_unit_hkd": null,
           "dpu_hkd": null,
           "dpu_period_change": null,
-          "observation_date": "2026-03-31",
-          "period": "Quarter ended 31 MARCH 2026",
-          "occupancy_pct": 91.5,
-          "rental_reversion_pct": -7.9
+          "observation_date": "2026-09-30",
+          "period": "Quarter ended 30 SEPTEMBER 2026",
+          "occupancy_pct": 91.6,
+          "rental_reversion_pct": null
         }
       ],
       "kpi_regalreit": [
@@ -1434,14 +1434,14 @@
         {
           "date": "2026-03-31",
           "month": "2026-03",
-          "series": "0435",
-          "value": 91.5
-        },
-        {
-          "date": "2026-03-31",
-          "month": "2026-03",
           "series": "0823",
           "value": 97.8
+        },
+        {
+          "date": "2026-09-30",
+          "month": "2026-09",
+          "series": "0435",
+          "value": 91.6
         }
       ],
       "reversion_history": [
@@ -1498,12 +1498,6 @@
           "month": "2025-12",
           "series": "0808",
           "value": -9.3
-        },
-        {
-          "date": "2026-03-31",
-          "month": "2026-03",
-          "series": "0435",
-          "value": -7.9
         },
         {
           "date": "2026-03-31",
@@ -1587,11 +1581,11 @@
           "business_type": "写字楼/零售",
           "nav_per_unit_hkd": null,
           "dpu_hkd": null,
-          "occupancy_pct": 91.5,
-          "rental_reversion_pct": -7.9,
+          "occupancy_pct": 91.6,
+          "rental_reversion_pct": null,
           "average_daily_rate_hkd": null,
           "revpar_hkd": null,
-          "as_of_date": "2026-03-31"
+          "as_of_date": "2026-09-30"
         },
         {
           "reit_name": "Regal REIT",
@@ -1608,145 +1602,67 @@
       ],
       "reit_spot_quotes": [
         {
-          "date": "2026-10-13",
-          "ticker": "02778",
-          "company_name": "Champion REIT",
-          "latest_price_hkd": 2.23,
-          "change_pct": 6.44,
-          "volume": 4624950,
-          "turnover_hkd": 10203768,
-          "turnover_hkd_m": 10.2
-        },
-        {
-          "date": "2026-10-13",
-          "ticker": "00823",
-          "company_name": "Link REIT",
-          "latest_price_hkd": 37.76,
-          "change_pct": 1.34,
-          "volume": 8200594,
-          "turnover_hkd": 307986448,
-          "turnover_hkd_m": 307.99
-        },
-        {
-          "date": "2026-10-13",
-          "ticker": "00778",
-          "company_name": "Fortune REIT",
-          "latest_price_hkd": 4.365,
-          "change_pct": 0.81,
-          "volume": 2207000,
-          "turnover_hkd": 9580920,
-          "turnover_hkd_m": 9.58
-        },
-        {
-          "date": "2026-10-13",
-          "ticker": "00808",
-          "company_name": "Prosperity REIT",
-          "latest_price_hkd": 1.33,
-          "change_pct": -0.37,
-          "volume": 329000,
-          "turnover_hkd": 438600,
-          "turnover_hkd_m": 0.44
-        },
-        {
-          "date": "2026-10-13",
+          "date": "2026-11-03",
           "ticker": "00435",
           "company_name": "Sunlight REIT",
-          "latest_price_hkd": 2.065,
-          "change_pct": -0.48,
-          "volume": 610000,
-          "turnover_hkd": 1261810,
-          "turnover_hkd_m": 1.26
+          "latest_price_hkd": 2.12,
+          "change_pct": 2.42,
+          "volume": 1709283,
+          "turnover_hkd": 3578577,
+          "turnover_hkd_m": 3.58
         },
         {
-          "date": "2026-10-13",
+          "date": "2026-11-03",
+          "ticker": "00823",
+          "company_name": "Link REIT",
+          "latest_price_hkd": 39.98,
+          "change_pct": 0.55,
+          "volume": 8262937,
+          "turnover_hkd": 329165792,
+          "turnover_hkd_m": 329.17
+        },
+        {
+          "date": "2026-11-03",
+          "ticker": "00808",
+          "company_name": "Prosperity REIT",
+          "latest_price_hkd": 1.335,
+          "change_pct": 0.38,
+          "volume": 1237041,
+          "turnover_hkd": 1649089,
+          "turnover_hkd_m": 1.65
+        },
+        {
+          "date": "2026-11-03",
+          "ticker": "00778",
+          "company_name": "Fortune REIT",
+          "latest_price_hkd": 4.42,
+          "change_pct": 0.11,
+          "volume": 2005207,
+          "turnover_hkd": 8879320,
+          "turnover_hkd_m": 8.88
+        },
+        {
+          "date": "2026-11-03",
+          "ticker": "02778",
+          "company_name": "Champion REIT",
+          "latest_price_hkd": 2.2,
+          "change_pct": -0.68,
+          "volume": 898807,
+          "turnover_hkd": 1972638,
+          "turnover_hkd_m": 1.97
+        },
+        {
+          "date": "2026-11-03",
           "ticker": "01881",
           "company_name": "Regal REIT",
-          "latest_price_hkd": 0.29,
-          "change_pct": -1.69,
-          "volume": 321000,
-          "turnover_hkd": 95150,
-          "turnover_hkd_m": 0.1
+          "latest_price_hkd": 0.285,
+          "change_pct": -1.72,
+          "volume": 492001,
+          "turnover_hkd": 141200,
+          "turnover_hkd_m": 0.14
         }
       ],
       "reit_price_history": [
-        {
-          "date": "2026-06-15",
-          "ticker": "00823",
-          "series": "Link",
-          "value": 36.98
-        },
-        {
-          "date": "2026-06-16",
-          "ticker": "00823",
-          "series": "Link",
-          "value": 36.8
-        },
-        {
-          "date": "2026-06-17",
-          "ticker": "00823",
-          "series": "Link",
-          "value": 36.32
-        },
-        {
-          "date": "2026-06-18",
-          "ticker": "00823",
-          "series": "Link",
-          "value": 35.74
-        },
-        {
-          "date": "2026-06-22",
-          "ticker": "00823",
-          "series": "Link",
-          "value": 35.54
-        },
-        {
-          "date": "2026-06-23",
-          "ticker": "00823",
-          "series": "Link",
-          "value": 35.42
-        },
-        {
-          "date": "2026-06-24",
-          "ticker": "00823",
-          "series": "Link",
-          "value": 35.5
-        },
-        {
-          "date": "2026-06-25",
-          "ticker": "00823",
-          "series": "Link",
-          "value": 36.18
-        },
-        {
-          "date": "2026-06-26",
-          "ticker": "00823",
-          "series": "Link",
-          "value": 36.34
-        },
-        {
-          "date": "2026-06-29",
-          "ticker": "00823",
-          "series": "Link",
-          "value": 36.8
-        },
-        {
-          "date": "2026-06-30",
-          "ticker": "00823",
-          "series": "Link",
-          "value": 36.5
-        },
-        {
-          "date": "2026-07-02",
-          "ticker": "00823",
-          "series": "Link",
-          "value": 36.86
-        },
-        {
-          "date": "2026-07-03",
-          "ticker": "00823",
-          "series": "Link",
-          "value": 37.92
-        },
         {
           "date": "2026-07-06",
           "ticker": "00823",
@@ -2174,82 +2090,88 @@
           "value": 37.76
         },
         {
-          "date": "2026-06-15",
-          "ticker": "02778",
-          "series": "Champ",
-          "value": 2.38
+          "date": "2026-10-14",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 37.76
         },
         {
-          "date": "2026-06-16",
-          "ticker": "02778",
-          "series": "Champ",
-          "value": 2.29
+          "date": "2026-10-15",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 37.9
         },
         {
-          "date": "2026-06-17",
-          "ticker": "02778",
-          "series": "Champ",
-          "value": 2.21
+          "date": "2026-10-16",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 38.2
         },
         {
-          "date": "2026-06-18",
-          "ticker": "02778",
-          "series": "Champ",
-          "value": 2.23
+          "date": "2026-10-20",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 38.12
         },
         {
-          "date": "2026-06-22",
-          "ticker": "02778",
-          "series": "Champ",
-          "value": 2.14
+          "date": "2026-10-21",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 38
         },
         {
-          "date": "2026-06-23",
-          "ticker": "02778",
-          "series": "Champ",
-          "value": 2.1
+          "date": "2026-10-22",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 37.42
         },
         {
-          "date": "2026-06-24",
-          "ticker": "02778",
-          "series": "Champ",
-          "value": 2.11
+          "date": "2026-10-23",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 38.02
         },
         {
-          "date": "2026-06-25",
-          "ticker": "02778",
-          "series": "Champ",
-          "value": 2.12
+          "date": "2026-10-26",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 39.58
         },
         {
-          "date": "2026-06-26",
-          "ticker": "02778",
-          "series": "Champ",
-          "value": 2.07
+          "date": "2026-10-27",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 39.3
         },
         {
-          "date": "2026-06-29",
-          "ticker": "02778",
-          "series": "Champ",
-          "value": 2.1
+          "date": "2026-10-28",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 39.08
         },
         {
-          "date": "2026-06-30",
-          "ticker": "02778",
-          "series": "Champ",
-          "value": 2.06
+          "date": "2026-10-29",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 39.26
         },
         {
-          "date": "2026-07-02",
-          "ticker": "02778",
-          "series": "Champ",
-          "value": 2.08
+          "date": "2026-10-30",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 39.82
         },
         {
-          "date": "2026-07-03",
-          "ticker": "02778",
-          "series": "Champ",
-          "value": 2.15
+          "date": "2026-11-02",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 39.76
+        },
+        {
+          "date": "2026-11-03",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 39.98
         },
         {
           "date": "2026-07-06",
@@ -2678,82 +2600,88 @@
           "value": 2.23
         },
         {
-          "date": "2026-06-15",
-          "ticker": "00778",
-          "series": "Fortune",
-          "value": 4.79
+          "date": "2026-10-14",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.175
         },
         {
-          "date": "2026-06-16",
-          "ticker": "00778",
-          "series": "Fortune",
-          "value": 4.76
+          "date": "2026-10-15",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.14
         },
         {
-          "date": "2026-06-17",
-          "ticker": "00778",
-          "series": "Fortune",
-          "value": 4.69
+          "date": "2026-10-16",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.145
         },
         {
-          "date": "2026-06-18",
-          "ticker": "00778",
-          "series": "Fortune",
-          "value": 4.62
+          "date": "2026-10-20",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.185
         },
         {
-          "date": "2026-06-22",
-          "ticker": "00778",
-          "series": "Fortune",
-          "value": 4.54
+          "date": "2026-10-21",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.21
         },
         {
-          "date": "2026-06-23",
-          "ticker": "00778",
-          "series": "Fortune",
-          "value": 4.53
+          "date": "2026-10-22",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.215
         },
         {
-          "date": "2026-06-24",
-          "ticker": "00778",
-          "series": "Fortune",
-          "value": 4.5
+          "date": "2026-10-23",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.185
         },
         {
-          "date": "2026-06-25",
-          "ticker": "00778",
-          "series": "Fortune",
-          "value": 4.52
+          "date": "2026-10-26",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.2
         },
         {
-          "date": "2026-06-26",
-          "ticker": "00778",
-          "series": "Fortune",
-          "value": 4.43
+          "date": "2026-10-27",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.195
         },
         {
-          "date": "2026-06-29",
-          "ticker": "00778",
-          "series": "Fortune",
-          "value": 4.49
+          "date": "2026-10-28",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.155
         },
         {
-          "date": "2026-06-30",
-          "ticker": "00778",
-          "series": "Fortune",
-          "value": 4.4
+          "date": "2026-10-29",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.16
         },
         {
-          "date": "2026-07-02",
-          "ticker": "00778",
-          "series": "Fortune",
-          "value": 4.42
+          "date": "2026-10-30",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.23
         },
         {
-          "date": "2026-07-03",
-          "ticker": "00778",
-          "series": "Fortune",
-          "value": 4.52
+          "date": "2026-11-02",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.215
+        },
+        {
+          "date": "2026-11-03",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.2
         },
         {
           "date": "2026-07-06",
@@ -3182,82 +3110,88 @@
           "value": 4.365
         },
         {
-          "date": "2026-06-15",
-          "ticker": "00808",
-          "series": "Prosper",
-          "value": 1.41
+          "date": "2026-10-14",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.335
         },
         {
-          "date": "2026-06-16",
-          "ticker": "00808",
-          "series": "Prosper",
-          "value": 1.41
+          "date": "2026-10-15",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.34
         },
         {
-          "date": "2026-06-17",
-          "ticker": "00808",
-          "series": "Prosper",
-          "value": 1.4
+          "date": "2026-10-16",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.34
         },
         {
-          "date": "2026-06-18",
-          "ticker": "00808",
-          "series": "Prosper",
-          "value": 1.41
+          "date": "2026-10-20",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.34
         },
         {
-          "date": "2026-06-22",
-          "ticker": "00808",
-          "series": "Prosper",
-          "value": 1.38
+          "date": "2026-10-21",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.26
         },
         {
-          "date": "2026-06-23",
-          "ticker": "00808",
-          "series": "Prosper",
-          "value": 1.37
+          "date": "2026-10-22",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.205
         },
         {
-          "date": "2026-06-24",
-          "ticker": "00808",
-          "series": "Prosper",
-          "value": 1.39
+          "date": "2026-10-23",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.3
         },
         {
-          "date": "2026-06-25",
-          "ticker": "00808",
-          "series": "Prosper",
-          "value": 1.37
+          "date": "2026-10-26",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.38
         },
         {
-          "date": "2026-06-26",
-          "ticker": "00808",
-          "series": "Prosper",
-          "value": 1.41
+          "date": "2026-10-27",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.39
         },
         {
-          "date": "2026-06-29",
-          "ticker": "00808",
-          "series": "Prosper",
-          "value": 1.44
+          "date": "2026-10-28",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.345
         },
         {
-          "date": "2026-06-30",
-          "ticker": "00808",
-          "series": "Prosper",
-          "value": 1.44
+          "date": "2026-10-29",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.365
         },
         {
-          "date": "2026-07-02",
-          "ticker": "00808",
-          "series": "Prosper",
-          "value": 1.43
+          "date": "2026-10-30",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.42
         },
         {
-          "date": "2026-07-03",
-          "ticker": "00808",
-          "series": "Prosper",
-          "value": 1.43
+          "date": "2026-11-02",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.415
+        },
+        {
+          "date": "2026-11-03",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.42
         },
         {
           "date": "2026-07-06",
@@ -3686,82 +3620,88 @@
           "value": 1.33
         },
         {
-          "date": "2026-06-15",
-          "ticker": "00435",
-          "series": "Sunlight",
-          "value": 2.28
+          "date": "2026-10-14",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.34
         },
         {
-          "date": "2026-06-16",
-          "ticker": "00435",
-          "series": "Sunlight",
-          "value": 2.24
+          "date": "2026-10-15",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.335
         },
         {
-          "date": "2026-06-17",
-          "ticker": "00435",
-          "series": "Sunlight",
-          "value": 2.22
+          "date": "2026-10-16",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.345
         },
         {
-          "date": "2026-06-18",
-          "ticker": "00435",
-          "series": "Sunlight",
-          "value": 2.19
+          "date": "2026-10-20",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.345
         },
         {
-          "date": "2026-06-22",
-          "ticker": "00435",
-          "series": "Sunlight",
-          "value": 2.18
+          "date": "2026-10-21",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.35
         },
         {
-          "date": "2026-06-23",
-          "ticker": "00435",
-          "series": "Sunlight",
-          "value": 2.15
+          "date": "2026-10-22",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.355
         },
         {
-          "date": "2026-06-24",
-          "ticker": "00435",
-          "series": "Sunlight",
-          "value": 2.18
+          "date": "2026-10-23",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.37
         },
         {
-          "date": "2026-06-25",
-          "ticker": "00435",
-          "series": "Sunlight",
-          "value": 2.18
+          "date": "2026-10-26",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.365
         },
         {
-          "date": "2026-06-26",
-          "ticker": "00435",
-          "series": "Sunlight",
-          "value": 2.17
+          "date": "2026-10-27",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.36
         },
         {
-          "date": "2026-06-29",
-          "ticker": "00435",
-          "series": "Sunlight",
-          "value": 2.15
+          "date": "2026-10-28",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.35
         },
         {
-          "date": "2026-06-30",
-          "ticker": "00435",
-          "series": "Sunlight",
-          "value": 2.16
+          "date": "2026-10-29",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.33
         },
         {
-          "date": "2026-07-02",
-          "ticker": "00435",
-          "series": "Sunlight",
-          "value": 2.2
+          "date": "2026-10-30",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.35
         },
         {
-          "date": "2026-07-03",
-          "ticker": "00435",
-          "series": "Sunlight",
-          "value": 2.23
+          "date": "2026-11-02",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.33
+        },
+        {
+          "date": "2026-11-03",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.335
         },
         {
           "date": "2026-07-06",
@@ -4190,82 +4130,88 @@
           "value": 2.065
         },
         {
-          "date": "2026-06-15",
-          "ticker": "01881",
-          "series": "Regal",
-          "value": 0.36
+          "date": "2026-10-14",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.065
         },
         {
-          "date": "2026-06-16",
-          "ticker": "01881",
-          "series": "Regal",
-          "value": 0.36
+          "date": "2026-10-15",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.065
         },
         {
-          "date": "2026-06-17",
-          "ticker": "01881",
-          "series": "Regal",
-          "value": 0.35
+          "date": "2026-10-16",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.07
         },
         {
-          "date": "2026-06-18",
-          "ticker": "01881",
-          "series": "Regal",
-          "value": 0.335
+          "date": "2026-10-20",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.065
         },
         {
-          "date": "2026-06-22",
-          "ticker": "01881",
-          "series": "Regal",
-          "value": 0.34
+          "date": "2026-10-21",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.075
         },
         {
-          "date": "2026-06-23",
-          "ticker": "01881",
-          "series": "Regal",
-          "value": 0.335
+          "date": "2026-10-22",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.045
         },
         {
-          "date": "2026-06-24",
-          "ticker": "01881",
-          "series": "Regal",
-          "value": 0.33
+          "date": "2026-10-23",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.06
         },
         {
-          "date": "2026-06-25",
-          "ticker": "01881",
-          "series": "Regal",
-          "value": 0.325
+          "date": "2026-10-26",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.08
         },
         {
-          "date": "2026-06-26",
-          "ticker": "01881",
-          "series": "Regal",
-          "value": 0.325
+          "date": "2026-10-27",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.06
         },
         {
-          "date": "2026-06-29",
-          "ticker": "01881",
-          "series": "Regal",
-          "value": 0.32
+          "date": "2026-10-28",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.055
         },
         {
-          "date": "2026-06-30",
-          "ticker": "01881",
-          "series": "Regal",
-          "value": 0.315
+          "date": "2026-10-29",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.065
         },
         {
-          "date": "2026-07-02",
-          "ticker": "01881",
-          "series": "Regal",
-          "value": 0.31
+          "date": "2026-10-30",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.1
         },
         {
-          "date": "2026-07-03",
-          "ticker": "01881",
-          "series": "Regal",
-          "value": 0.315
+          "date": "2026-11-02",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.07
+        },
+        {
+          "date": "2026-11-03",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.12
         },
         {
           "date": "2026-07-06",
@@ -4692,6 +4638,90 @@
           "ticker": "01881",
           "series": "Regal",
           "value": 0.29
+        },
+        {
+          "date": "2026-10-14",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.295
+        },
+        {
+          "date": "2026-10-15",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.285
+        },
+        {
+          "date": "2026-10-16",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.285
+        },
+        {
+          "date": "2026-10-20",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.285
+        },
+        {
+          "date": "2026-10-21",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.28
+        },
+        {
+          "date": "2026-10-22",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.29
+        },
+        {
+          "date": "2026-10-23",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.285
+        },
+        {
+          "date": "2026-10-26",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.285
+        },
+        {
+          "date": "2026-10-27",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.285
+        },
+        {
+          "date": "2026-10-28",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.285
+        },
+        {
+          "date": "2026-10-29",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.285
+        },
+        {
+          "date": "2026-10-30",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.29
+        },
+        {
+          "date": "2026-11-02",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.29
+        },
+        {
+          "date": "2026-11-03",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.285
         }
       ],
       "linkreit": [
@@ -4994,14 +5024,14 @@
           "source_agency": "Sunlight REIT Investor Relations"
         },
         {
-          "date": "2026-03-31",
-          "period": "Quarter ended 31 MARCH 2026",
+          "date": "2026-09-30",
+          "period": "Quarter ended 30 SEPTEMBER 2026",
           "ticker": "0435.HK",
           "reit_name": "Sunlight REIT",
           "nav_per_unit_hkd": null,
           "dpu_hkd": null,
-          "occupancy_pct": 91.5,
-          "rental_reversion_pct": -7.9,
+          "occupancy_pct": 91.6,
+          "rental_reversion_pct": null,
           "source_agency": "Sunlight REIT Investor Relations"
         }
       ],
@@ -5159,7 +5189,7 @@
       "label": "Sunlight REIT (0435.HK) Financial Disclosures",
       "status": "success",
       "records": 6,
-      "latest_observation": "2026-03-31",
+      "latest_observation": "2026-09-30",
       "freshness": "live",
       "notes": "Office and retail portfolio NAV/unit, DPU, occupancy, and rental reversion."
     },
@@ -5177,11 +5207,11 @@
       "label": "Hong Kong REITs Daily Spot Quotes & History (akshare)",
       "status": "success",
       "records": 6,
-      "latest_observation": "2026-10-13",
+      "latest_observation": "2026-11-03",
       "freshness": "live",
       "history_status": "success",
-      "history_records": 504,
-      "history_latest_observation": "2026-10-13",
+      "history_records": 510,
+      "history_latest_observation": "2026-11-03",
       "history_freshness": "live",
       "notes": "Daily spot price quotes, percentage change, and OHLC daily history for all 6 HK REITs."
     }
@@ -5190,8 +5220,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-reit/",
     "sector_id": "hk-reit",
     "sector_name": "Hong Kong REITs Sector Monitor",
-    "snapshotId": "5bd0cfed5c21b239",
-    "generatedAt": "2026-10-13T14:14:27.069636Z",
-    "dataAsOf": "2026-06-30"
+    "snapshotId": "dd643b435c3352bd",
+    "generatedAt": "2026-11-03T10:44:56.225258Z",
+    "dataAsOf": "2026-09-30"
   }
 }
