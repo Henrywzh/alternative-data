@@ -10,9 +10,12 @@ Actions history. GitHub scheduled runs may start late.
 python -m ramp_data.cli --base-dir . tokenomics
 ```
 
-The collector reads `tokenVolumes` and `tokenPrices` from the public AI Index
-server-rendered payload, using the existing HTTP transport and RSC decoder.
-It does not need a browser or API key. Its workflow step runs even if an
+The collector reads `tokenVolumes` and `tokenPrices` as JSON from
+`https://ramp.com/data/ai-index/chart-data/<name>`, the endpoints the public
+AI Index page loads them from, passing the page's `dataVersion` token when it
+is published. It does not need a browser or API key. (Until 2026-10-22 both
+arrays were embedded in the page's server-rendered payload; that change broke
+collection from 2026-10-22 to 2026-11-02, see below.) Its workflow step runs even if an
 earlier monthly-index or filter-mode step failed. All Tokenomics validation
 passes before any normalized Tokenomics table is written. A Tokenomics
 failure remains visible as a failed workflow, while other successful datasets
@@ -27,16 +30,23 @@ loader and remote data SHA cache key. Code deployment continues through
 
 | Dataset | Observation grain | Values and units |
 | --- | --- | --- |
-| `ramp_ai_token_activity` | Monday–Sunday week × metric × maker × raw model series | `metric_key=token_volume`: tokens; `token_spend`: USD |
+| `ramp_ai_token_activity` | Saturday–Friday week × metric × maker × raw model series (Monday–Sunday before 2026-10-22) | `metric_key=token_volume`: tokens; `token_spend`: USD |
 | `ramp_ai_token_prices` | Daily window-end date × maker × token type | `token_cost_usd_7d`: rolling seven-day USD; `token_count_7d`: corresponding tokens |
 | `ramp_ai_token_activity_vintages` | Activity natural key × capture timestamp | Captured versions of activity values and labels |
 | `ramp_ai_token_prices_vintages` | Price natural key × capture timestamp | Captured numerator and denominator versions |
 
 The exact fields and natural keys are defined in `src/ramp_data/schemas.py`.
-Each row carries source URL, run ID and capture time. Existing observation
-keys are revised by upsert; historical observations absent from a later
-payload are retained. The latest table is therefore accumulated history,
-not a statement of current provider membership.
+Each row carries source URL, run ID and capture time.
+
+`ramp_ai_token_prices` is upserted: existing observation keys are revised and
+observations absent from a later payload are retained, so it is accumulated
+history. `ramp_ai_token_activity` is replaced by each run's payload, because
+Ramp republishes the whole weekly history every time and on 2026-10-22 re-cut
+it from Monday–Sunday into Saturday–Friday weeks. Accumulating would have left
+two overlapping week conventions in one table. The current table is therefore
+the latest publication in a single convention; every earlier print, including
+all Monday–Sunday weeks, stays in `ramp_ai_token_activity_vintages`. The
+activity row floor (below) keeps a truncated payload from replacing history.
 
 Vintages start with our first capture on **2026-10-15**. Earlier observation
 dates are backfilled source history, not proof that those values were
@@ -52,7 +62,9 @@ cohort. It is not representative of total Ramp AI spend and cannot be used as
 provider revenue or ARR.
 
 At initial collection, activity spans weeks ending 2025-01-12 through
-2026-10-11: 19,156 observations, 14 makers, 809 raw model identifiers.
+2026-10-11: 19,156 observations, 14 makers, 809 raw model identifiers. After
+the 2026-10-22 republication it spans Saturday–Friday weeks ending 2025-01-10
+through 2026-10-23: 20,321 observations, 824 raw model identifiers.
 Identifiers include aliases and zero rows; 809 is **not** a count of unique
 underlying models. The dashboard retains maker plus raw series key for model
 selection and sums the reported model rows for maker views. It does not
@@ -76,10 +88,12 @@ and output, so a movement need not imply a list-price change.
 ## Quality and display
 
 The pre-write gate rejects missing dimensions, duplicate natural keys,
-non-finite or negative values, future observations, malformed weekly windows,
+non-finite or negative values, future observations, weekly windows that are
+not seven days or that start on more than one weekday within a payload,
 unexpected metrics/token types, incomplete price token-type coverage per
 maker, and positive cost with a zero denominator. Minimum row counts are
-500 activity and 100 price observations. Both activity metrics and each
+5,000 activity (the replaced table's history guard) and 100 price
+observations. Both activity metrics and each
 maker/token-type price group must have observations within 21 days, allowing
 for source latency and one missed poll. The run manifest records dates per
 breakdown. A fresh fetch never changes observation dates.
@@ -88,6 +102,20 @@ Charts preserve missing values as gaps and reported zeros as zero. Shares
 use the full reported sample before chart-series selection. Latest tables
 show missing latest-period values rather than carrying older numbers
 forward. Capture time is labelled separately from observation date.
+
+## 2026-10-22 source change
+
+Ramp moved both series to the `chart-data` JSON endpoints, renamed the version
+token `filterModeBundleVersion` to `dataVersion`, re-cut weekly activity into
+Saturday–Friday weeks, and removed the AI Index model-share charts
+(`modelShareCurated`, `modelBreakdown`, filter-mode `modelShare`, now HTTP 404).
+The three model-share datasets are marked retired in `schemas.py`; their
+history through 2026-09 stays committed. Every Ramp workflow run from
+2026-10-22 to 2026-11-02 failed and wrote no AI Index, filter-mode or
+Tokenomics data; the first run after the fix backfills it, since each payload
+carries full history. Consumers that join weeks across the two conventions,
+such as Market Recap's adapter, should key on `period_end` and expect it to
+move from Sundays to Fridays.
 
 No new fields are added to `investment_feed.v1` by this change. Market Recap
 can consume the committed Parquet tables through its existing alternative-data

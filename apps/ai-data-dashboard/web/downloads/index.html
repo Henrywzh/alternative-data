@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Downloads · Alt Data</title>
+<link rel="stylesheet" href="../shared/terminal.css">
+<script src="../shared/echarts.min.js"></script>
+<script src="../shared/ui.js"></script>
+</head>
+<body>
+<header class="masthead" id="masthead"></header>
+<div class="subtabs">
+  <button class="subtab" data-view="overview">OVERVIEW</button>
+  <button class="subtab" data-view="sdk">SDKS</button>
+  <button class="subtab" data-view="models">OPEN MODELS</button>
+  <button class="subtab" data-view="github">GITHUB</button>
+</div>
+<main>
+  <section class="view" id="view-overview">
+    <p class="lede" id="lede"></p>
+    <div class="stats" id="stats"></div>
+    <div class="card">
+      <div class="card-head"><span class="card-title">PROVIDER SCORECARD</span><span class="card-sub">7-day average a day · growth against the 7 days ending four weeks earlier</span></div>
+      <div class="card-body table-scroll" id="score"></div>
+    </div>
+    <div class="grid-even">
+      <div class="card">
+        <div class="card-head"><span class="card-title">SHARE OF SDK DOWNLOADS</span><span class="card-sub">PyPI + npm, 28-day average</span></div>
+        <div class="card-body"><div class="chart" id="chart-share"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">SHARE OF OPEN-MODEL DOWNLOADS</span><span class="card-sub">Hugging Face, 7-day average</span></div>
+        <div class="card-body"><div class="chart" id="chart-hfshare"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="view-sdk">
+    <div class="toolbar">
+      <div class="seg" id="sdk-reg"><button data-v="pypi">PYPI</button><button data-v="npm">NPM</button></div>
+      <div class="chips" id="npm-cats" style="margin:0"></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="card-title" id="sdk-title"></span><span class="card-sub">downloads a day</span>
+        <div class="controls">
+          <div class="seg" id="sdk-smooth"><button data-v="1">DAILY</button><button data-v="7">7D AVG</button><button data-v="28">28D AVG</button></div>
+          <div class="seg" id="sdk-scale"><button data-v="lin">LIN</button><button data-v="log">LOG</button></div>
+        </div></div>
+      <div class="card-body"><div class="chart tall" id="chart-sdk"></div>
+        <p class="note" id="sdk-note"></p></div>
+    </div>
+  </section>
+
+  <section class="view" id="view-models">
+    <div class="card">
+      <div class="card-head"><span class="card-title">OPEN-WEIGHT MODEL DOWNLOADS</span><span class="card-sub">Hugging Face, estimated per day · 7-day average</span>
+        <div class="controls"><div class="seg" id="hf-scale"><button data-v="lin">LIN</button><button data-v="log">LOG</button></div></div></div>
+      <div class="card-body"><div class="chart tall" id="chart-hf"></div>
+        <p class="note">Daily downloads estimated from changes in each model's rolling 30-day count, summed over each lab's public models.</p></div>
+    </div>
+  </section>
+
+  <section class="view" id="view-github">
+    <div class="card">
+      <div class="card-head"><span class="card-title">NEW GITHUB REPOS USING EACH PROVIDER</span><span class="card-sub">28-day sum</span>
+        <div class="controls"><div class="seg" id="gh-kind"><button data-v="signal_repos">ANY SIGNAL</button><button data-v="manifest_repos">IN MANIFEST</button><button data-v="import_repos">IN IMPORTS</button></div></div></div>
+      <div class="card-body"><div class="chart tall" id="chart-gh"></div>
+        <p class="note">New public repositories whose dependency manifest, imports, environment variables or model names reference the provider, from a daily sample of newly created repos. Counts are small; read the trend, not the level.</p></div>
+    </div>
+  </section>
+
+  <details class="fold"><summary>SOURCES &amp; METHOD</summary><div class="fold-body">
+    <p><b>PyPI</b>: daily downloads of each provider's Python packages without mirrors (pypistats). <b>npm</b>: daily downloads of each provider's JavaScript packages, grouped by package type. <b>Hugging Face</b>: daily download estimates for each lab's public models. <b>GitHub</b>: newly created public repositories referencing a provider. Downloads count CI runs and installs, not users.</p>
+  </div></details>
+</main>
+<script>
+const { P, color } = UI;
+const state = { reg: 'pypi', cat: 'all', smooth: '7', scale: 'log', hfScale: 'log', gh: 'signal_repos', sort: ['sdk', -1] };
+let D;
+
+const avg = (v, end, n) => { const w = v.slice(end - n + 1, end + 1).filter((x) => !UI.num(x)); return w.length ? w.reduce((a, b) => a + b, 0) / w.length : null; };
+const lastIdx = (v) => { for (let i = v.length - 1; i >= 0; i--) if (!UI.num(v[i])) return i; return -1; };
+function stat(pivot, name, n = 7) {
+  const v = pivot.series[name]; if (!v) return { now: null, chg: null };
+  const i = lastIdx(v); const now = avg(v, i, n), then = avg(v, i - 28, n);
+  return { now, chg: now && then ? now / then - 1 : null };
+}
+
+function renderOverview() {
+  const names = [...new Set([...D.order, ...Object.keys(D.hf.series)])];
+  const sdkSum = (pivot, i) => Object.values(pivot.series).reduce((a, v) => a + (v[i] || 0), 0);
+  const rows = names.map((name) => {
+    const py = stat(D.pypi, name), nm = stat(D.npm.all, name), hf = stat(D.hf, name);
+    const gh = D.github.signal_repos.series[name];
+    const ghi = gh ? lastIdx(gh) : -1;
+    const ghNow = gh ? gh.slice(ghi - 27, ghi + 1).reduce((a, b) => a + (b || 0), 0) : null;
+    const ghThen = gh ? gh.slice(ghi - 55, ghi - 27).reduce((a, b) => a + (b || 0), 0) : null;
+    const sdk = (py.now || 0) + (nm.now || 0);
+    return { name, py, nm, hf, sdk: sdk || null, gh: ghNow, ghChg: ghThen ? ghNow / ghThen - 1 : null,
+      trend: (D.pypi.series[name] || D.hf.series[name] || []).slice(-90) };
+  });
+  const pyTot = rows.reduce((a, r) => a + (r.py.now || 0), 0);
+  const sdkRows = rows.filter((r) => r.sdk).sort((a, b) => b.sdk - a.sdk);
+  const hfRows = rows.filter((r) => r.hf.now).sort((a, b) => b.hf.now - a.hf.now);
+  const fastest = sdkRows.filter((r) => r.py.chg != null).sort((a, b) => b.py.chg - a.py.chg)[0];
+  document.getElementById('lede').innerHTML =
+    `Across PyPI and npm, <b>${sdkRows[0].name}</b>'s SDKs lead with <b>${UI.compact(sdkRows[0].sdk)}</b> downloads a day, then ${sdkRows[1].name} at ${UI.compact(sdkRows[1].sdk)}. ` +
+    `${fastest.name} is growing fastest on PyPI, <span class="${UI.cls(fastest.py.chg)}">${UI.pct(fastest.py.chg)}</span> in four weeks. ` +
+    `Among open-weight models, <b>${hfRows[0].name}</b> leads Hugging Face with ${UI.compact(hfRows[0].hf.now)} a day.`;
+  const stats = [
+    ['PYPI SDK DOWNLOADS', UI.compact(pyTot), `a day, 7-day average · ${D.latest.pypi}`],
+    ['NPM SDK DOWNLOADS', UI.compact(rows.reduce((a, r) => a + (r.nm.now || 0), 0)), `a day · ${D.latest.npm}`],
+    ['TOP SDK', sdkRows[0].name, `${UI.compact(sdkRows[0].sdk)} a day · <span class="${UI.cls(sdkRows[0].py.chg)}">${UI.pct(sdkRows[0].py.chg)}</span> 4W PyPI`],
+    ['HUGGING FACE', UI.compact(hfRows.reduce((a, r) => a + r.hf.now, 0)), `open-model downloads a day · ${D.latest.hf}`],
+    ['TOP OPEN MODELS', hfRows[0].name, `${UI.compact(hfRows[0].hf.now)} a day · <span class="${UI.cls(hfRows[0].hf.chg)}">${UI.pct(hfRows[0].hf.chg)}</span> 4W`],
+  ];
+  document.getElementById('stats').innerHTML = stats.map(([l, v, s]) => `<div class="stat"><div class="stat-label">${l}</div><div class="stat-value">${v}</div><div class="stat-note">${s}</div></div>`).join('');
+  const g = (r, k) => r[k];
+  UI.table('score', rows, [
+    { k: 'name', label: 'PROVIDER', fmt: (r) => UI.dot(color(r.name)) + r.name, sort: (r) => r.name },
+    { k: 'sdk', label: 'SDK / DAY', fmt: (r) => UI.compact(r.sdk) },
+    { k: 'py', label: 'PYPI', fmt: (r) => UI.compact(r.py.now), sort: (r) => r.py.now },
+    { k: 'pyc', label: 'PYPI 4W', fmt: (r) => UI.pct(r.py.chg), cls: (r) => UI.cls(r.py.chg), sort: (r) => r.py.chg },
+    { k: 'nm', label: 'NPM', fmt: (r) => UI.compact(r.nm.now), sort: (r) => r.nm.now },
+    { k: 'nmc', label: 'NPM 4W', fmt: (r) => UI.pct(r.nm.chg), cls: (r) => UI.cls(r.nm.chg), sort: (r) => r.nm.chg },
+    { k: 'hf', label: 'HF MODELS', fmt: (r) => UI.compact(r.hf.now), sort: (r) => r.hf.now },
+    { k: 'hfc', label: 'HF 4W', fmt: (r) => UI.pct(r.hf.chg), cls: (r) => UI.cls(r.hf.chg), sort: (r) => r.hf.chg },
+    { k: 'gh', label: 'NEW REPOS 28D', fmt: (r) => r.gh == null ? '—' : r.gh, sort: (r) => r.gh },
+    { k: 'ghChg', label: 'REPOS Δ', fmt: (r) => UI.pct(r.ghChg, 0), cls: (r) => UI.cls(r.ghChg), sort: (r) => r.ghChg },
+    { k: 'trend', label: '90D', fmt: (r) => UI.spark(r.trend), sort: (r) => r.py.chg },
+  ], state);
+
+  // SDK share: PyPI + npm per provider, 28-day averages.
+  const idx = D.pypi.index, comb = {};
+  for (const name of D.order) {
+    const a = D.pypi.series[name], b = D.npm.all.series[name];
+    if (!a && !b) continue;
+    comb[name] = UI.rolling(idx.map((_, i) => (a ? a[i] || 0 : 0) + (b ? b[i] || 0 : 0)), 28);
+  }
+  shareChart('chart-share', { index: idx, series: comb });
+  const hf7 = Object.fromEntries(Object.entries(D.hf.series).map(([k, v]) => [k, UI.rolling(v, 7)]));
+  shareChart('chart-hfshare', { index: D.hf.index, series: hf7 });
+}
+
+function shareChart(id, pivot) {
+  const sh = UI.shares(pivot);
+  const o = UI.base();
+  o.series = Object.entries(sh).sort((a, b) => (b[1].at(-1) || 0) - (a[1].at(-1) || 0)).map(([name, v], i) => ({ name, type: 'line', stack: 'all', areaStyle: { opacity: 0.85 }, lineStyle: { width: 0.5 }, showSymbol: false,
+    color: color(name, i), data: pivot.index.map((d, j) => [d, v[j]]).filter(([, x]) => x != null) }));
+  o.yAxis.min = 0; o.yAxis.max = 100; o.yAxis.axisLabel.formatter = (v) => v + '%';
+  o.tooltip.valueFormatter = (v) => v == null ? '—' : v.toFixed(1) + '%';
+  o.tooltip.order = 'seriesDesc';
+  UI.draw(id, o);
+}
+
+function lines(id, pivot, smooth, scale) {
+  const o = UI.base();
+  const n = Number(smooth);
+  o.series = Object.entries(pivot.series).sort((a, b) => (avg(b[1], lastIdx(b[1]), 7) || 0) - (avg(a[1], lastIdx(a[1]), 7) || 0))
+    .map(([name, v], i) => ({ name, type: 'line', showSymbol: false, color: color(name, i), lineStyle: { width: 1.6 },
+      data: (n > 1 ? UI.rolling(v, n) : v).map((x, j) => [pivot.index[j], x === 0 && scale === 'log' ? null : x]) }));
+  o.yAxis.type = scale === 'log' ? 'log' : 'value';
+  o.yAxis.axisLabel.formatter = (v) => UI.compact(v, 0);
+  o.tooltip.valueFormatter = (v) => UI.compact(v);
+  o.tooltip.order = 'valueDesc';
+  UI.draw(id, o);
+}
+
+function renderSdk() {
+  const cats = document.getElementById('npm-cats');
+  cats.style.display = state.reg === 'npm' ? 'flex' : 'none';
+  cats.innerHTML = ['all', ...D.npm_categories].map((c) => `<button class="chip ${c === state.cat ? 'on' : ''}" data-c="${c}">${c.replace(/_/g, ' ').toUpperCase()}</button>`).join('');
+  cats.querySelectorAll('.chip').forEach((b) => b.onclick = () => { state.cat = b.dataset.c; renderSdk(); });
+  const pivot = state.reg === 'pypi' ? D.pypi : D.npm[state.cat];
+  document.getElementById('sdk-title').textContent = state.reg === 'pypi' ? 'PYPI SDK DOWNLOADS' : `NPM DOWNLOADS · ${state.cat.replace(/_/g, ' ').toUpperCase()}`;
+  document.getElementById('sdk-note').textContent = state.reg === 'pypi'
+    ? 'Each provider\'s official Python packages, without mirror traffic. LangChain and PydanticAI are frameworks that call the labs\' SDKs, so some installs are counted twice.'
+    : 'Package types: core SDK, agent SDK, CLI, framework core and graph, and legacy SDKs.';
+  lines('chart-sdk', pivot, state.smooth, state.scale);
+}
+
+function renderModels() { lines('chart-hf', D.hf, '7', state.hfScale); }
+
+function renderGithub() {
+  const p = D.github[state.gh];
+  const o = UI.base();
+  o.series = Object.entries(p.series).map(([name, v], i) => ({ name, type: 'line', showSymbol: false, color: color(name, i), lineStyle: { width: 1.6 },
+    data: v.map((_, j) => [p.index[j], j < 27 ? null : v.slice(j - 27, j + 1).reduce((a, b) => a + (b || 0), 0)]) }))
+    .sort((a, b) => (b.data.at(-1)[1] || 0) - (a.data.at(-1)[1] || 0));
+  o.tooltip.order = 'valueDesc';
+  o.grid.top = 52;
+  UI.draw('chart-gh', o);
+}
+
+UI.load('data.json').then((data) => {
+  D = data;
+  UI.masthead('downloads', `DATA TO ${D.latest.pypi}`);
+  UI.seg('sdk-reg', state, 'reg', renderSdk);
+  UI.seg('sdk-smooth', state, 'smooth', renderSdk);
+  UI.seg('sdk-scale', state, 'scale', renderSdk);
+  UI.seg('hf-scale', state, 'hfScale', renderModels);
+  UI.seg('gh-kind', state, 'gh', renderGithub);
+  UI.router({ overview: renderOverview, sdk: renderSdk, models: renderModels, github: renderGithub }, 'overview');
+});
+</script>
+</body>
+</html>

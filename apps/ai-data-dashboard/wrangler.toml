@@ -1,0 +1,8 @@
+# Cloudflare Pages project for the AI data dashboard.
+#
+# dist/ is rebuilt from the committed normalized data and is not in git, so
+# this deploys by direct upload (`wrangler pages deploy`) from the
+# ai-data-dashboard-deploy workflow, not through Pages' git integration.
+name = "ai-data-dashboard"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-10-01"

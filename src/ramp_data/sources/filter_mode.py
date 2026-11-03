@@ -11,8 +11,9 @@ JSON endpoints (NOT the page's hydration payload):
 Each row is one month for one combination of the four cohort dimensions
 (business_office_state, fte_segment, naics_sector, company_financing_status),
 each either a specific value or "ALL". The endpoints require a version token,
-published in the page payload as ``filterModeBundleVersion`` — so we scrape the
-page to resolve it, then fetch the endpoints. The API field ``my_date`` is
+published in the page payload (as ``dataVersion``; ``filterModeBundleVersion``
+before 2026-10-22) — so we scrape the page to resolve it, then fetch the
+endpoints. Only spendPerEmployee is still served; the others are retired. The API field ``my_date`` is
 renamed to ``date_month`` to match the other ramp datasets.
 """
 from __future__ import annotations
@@ -27,13 +28,19 @@ from ramp_data.models import GenericRecord, RunContext, Snapshot
 from ramp_data.schemas import (
     FILTER_MODE_DATASETS,
     FILTER_MODE_ENDPOINT_BASE,
-    FILTER_MODE_VERSION_KEY,
+    FILTER_MODE_VERSION_KEYS,
 )
 from ramp_data.sources import rsc
 from ramp_data.sources.base import SourceExtractor
 
 AI_INDEX_URL = "https://ramp.com/data/ai-index"
-_VERSION_RE = re.compile(rf'"{FILTER_MODE_VERSION_KEY}":"([^"]+)"')
+_VERSION_RE = re.compile(rf'"(?:{"|".join(FILTER_MODE_VERSION_KEYS)})":"([^"]+)"')
+
+
+def find_version(payload: str) -> str | None:
+    """The endpoints' version token from a decoded AI Index payload."""
+    match = _VERSION_RE.search(payload)
+    return match.group(1) if match else None
 
 
 class RampFilterModeSource(SourceExtractor):
@@ -74,11 +81,10 @@ class RampFilterModeSource(SourceExtractor):
         response = self._get(AI_INDEX_URL)
         if response is None:
             return None
-        match = _VERSION_RE.search(rsc.decode_payload(response.text))
-        if not match:
-            print("Warning: filterModeBundleVersion not found in AI Index payload")
-            return None
-        return match.group(1)
+        version = find_version(rsc.decode_payload(response.text))
+        if not version:
+            print(f"Warning: none of {', '.join(FILTER_MODE_VERSION_KEYS)} found in AI Index payload")
+        return version
 
     def fetch_snapshots(self) -> list[Snapshot]:
         version = self._resolve_version()

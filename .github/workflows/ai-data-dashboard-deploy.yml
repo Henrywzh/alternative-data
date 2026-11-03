@@ -1,0 +1,83 @@
+# Build the AI data dashboard (apps/ai-data-dashboard) from the committed
+# normalized data and publish it to Cloudflare Pages.
+#
+# The data workflows commit with GITHUB_TOKEN, and those pushes do not trigger
+# other workflows, so the site rebuilds on a schedule after the morning and
+# evening data runs rather than on every data commit. A push that changes the
+# site's own code deploys straight away.
+#
+# Only a build whose every page and subtab passes the headless smoke test is
+# published; a failed run leaves the last good site live.
+name: AI Data Dashboard Deploy
+
+on:
+  schedule:
+    - cron: "23 11 * * *"   # after the OpenRouter, provider-adoption and Ramp runs
+    - cron: "23 23 * * *"
+  push:
+    branches: [main]
+    paths:
+      - "apps/ai-data-dashboard/**"
+      - "dashboard/sections/openrouter.py"
+      - "dashboard/sections/provider_adoption.py"
+      - "dashboard/sections/semiconductor.py"
+      - "src/openrouter_arr_nowcast.py"
+      - ".github/workflows/ai-data-dashboard-deploy.yml"
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: "Publish to Cloudflare Pages after a passing build"
+        type: boolean
+        default: true
+
+concurrency:
+  group: ai-data-dashboard-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATA_SOURCE: local
+      PYTHONPATH: src:.
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dashboard.txt
+          python -m pip install -e .
+          python -m playwright install --with-deps chromium
+
+      - name: Build site
+        run: python apps/ai-data-dashboard/build.py
+
+      - name: Smoke test every page
+        run: python apps/ai-data-dashboard/smoke.py
+
+      - name: Deploy to Cloudflare Pages
+        if: github.event_name != 'workflow_dispatch' || inputs.deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        working-directory: apps/ai-data-dashboard
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID secrets are not set"
+            exit 1
+          fi
+          npx --yes wrangler@4.136.3 pages deploy dist --project-name ai-data-dashboard --branch main --commit-dirty=true

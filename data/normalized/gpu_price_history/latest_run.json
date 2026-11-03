@@ -1,0 +1,29 @@
+{
+  "started_at_utc": "2026-11-02T12:55:17.121298+00:00",
+  "sources": {
+    "getdeploying": {
+      "status": "ok",
+      "rows": 16840,
+      "observed_from": "2025-05-05",
+      "observed_through": "2026-11-02",
+      "sha256": "e5b17d3f5767f92f9722c29b48cd89807f5b339e38693b8a723e380c163c838b",
+      "url": "https://getdeploying.com/dataset/gpu-prices/weekly.csv"
+    },
+    "github_history": {
+      "status": "ok",
+      "rows": 2823,
+      "observed_from": "2023-01",
+      "observed_through": "2026-09",
+      "sha256": "e7afac003ae7e56a08281c08c4ff20692e4c2509dad0468163843fd4632b35ab",
+      "url": "https://raw.githubusercontent.com/rahilmittal1/gpu-price-history/main/data/rent/rent_index_monthly.csv"
+    },
+    "compute_screener": {
+      "status": "ok",
+      "rows": 1252,
+      "observed_from": "2025-10-23",
+      "observed_through": "2026-11-02",
+      "sha256": "91906f961360c821f22a521e3fb6d241323102e856d64085e51e43241d6d82d1",
+      "url": "https://computescreener.com/data/series.json"
+    }
+  }
+}

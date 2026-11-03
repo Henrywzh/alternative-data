@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GPU Rental · Alt Data</title>
+<script src="../shared/echarts.min.js"></script>
+<style>
+/* Terminal palette, as market-recap: one monospace family, hairlines, colour
+   for meaning only (orange active, green/red direction). Dark only. */
+:root {
+  --bg: #0a0a0a; --panel: #101010; --panel-alt: #141414;
+  --border: #272727; --border-strong: #3a3a3a;
+  --text: #e6e6e6; --text-dim: #aaaaaa; --text-faint: #868686;
+  --accent: #e8a33d; --accent-dim: #8a6524;
+  --up: #4ade80; --down: #f87171;
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--mono); font-size: 13px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.masthead { display: flex; align-items: center; gap: 18px; padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--panel); flex-wrap: wrap; }
+.brand { font-size: 17px; font-weight: 700; letter-spacing: .18em; color: var(--accent); white-space: nowrap; }
+.brand small { display: block; font-size: 9.5px; letter-spacing: .14em; color: var(--text-dim); font-weight: 400; }
+.nav { display: flex; gap: 22px; flex: 1 1 auto; flex-wrap: wrap; }
+.nav-group { display: flex; align-items: baseline; gap: 8px; }
+.nav-group > span { font-size: 9.5px; letter-spacing: .14em; color: var(--text-faint); }
+.nav-item { font-size: 11.5px; letter-spacing: .08em; color: var(--text-dim); padding: 2px 0; border-bottom: 1px solid transparent; text-decoration: none; }
+a.nav-item:hover { color: var(--text); text-decoration: none; }
+.nav-item.off { color: var(--text-faint); }
+.nav-item.on { color: var(--accent); border-bottom-color: var(--accent); }
+.asof { font-size: 11px; color: var(--text-dim); letter-spacing: .06em; white-space: nowrap; }
+
+.subtabs { display: flex; gap: 2px; padding: 0 16px; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
+.subtab { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--text-dim); font: inherit; font-size: 11.5px; letter-spacing: .1em; padding: 9px 12px 7px; cursor: pointer; white-space: nowrap; }
+.subtab:hover { color: var(--text); }
+.subtab.on { color: var(--accent); border-bottom-color: var(--accent); }
+
+main { padding: 14px 16px 40px; max-width: 1440px; margin: 0 auto; }
+.lede { font-size: 13px; color: var(--text); margin: 2px 0 14px; max-width: 980px; }
+.lede b { color: var(--accent); font-weight: 600; }
+.view { display: none; }
+.view.on { display: block; }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; margin-bottom: 12px; }
+.tile { background: var(--panel); border: 1px solid var(--border); padding: 9px 11px 7px; cursor: pointer; position: relative; }
+.tile:hover { border-color: var(--accent-dim); }
+@media (max-width: 600px) { .tiles { grid-template-columns: 1fr 1fr; } .tile .px { font-size: 18px; } .tile .chg { font-size: 9.5px; flex-wrap: wrap; } }
+.tile .name { font-size: 10.5px; letter-spacing: .12em; color: var(--text-dim); display: flex; justify-content: space-between; }
+.tile .name i { font-style: normal; color: var(--text-faint); }
+.tile .px { font-size: 21px; font-weight: 600; margin: 1px 0 0; }
+.tile .px small { font-size: 10.5px; color: var(--text-faint); font-weight: 400; }
+.tile .chg { display: flex; justify-content: space-between; gap: 6px; font-size: 10.5px; }
+.tile .chg span em { font-style: normal; color: var(--text-faint); margin-right: 3px; }
+.tile svg { display: block; margin-top: 4px; width: 100%; }
+.up { color: var(--up); } .down { color: var(--down); } .flat { color: var(--text-dim); }
+
+.idx-body { display: grid; grid-template-columns: 250px minmax(0, 1fr) 280px; }
+.idx-stats { border-right: 1px solid var(--border); }
+.idx-row { padding: 9px 12px; border-bottom: 1px solid var(--border); cursor: pointer; border-left: 2px solid transparent; }
+.idx-row:last-child { border-bottom: 0; }
+.idx-row.on { border-left-color: var(--accent); background: var(--panel-alt); }
+.idx-row .lvl { font-size: 22px; font-weight: 600; line-height: 1.2; }
+.idx-row .lvl small { font-size: 10.5px; color: var(--text-faint); font-weight: 400; margin-left: 6px; }
+.idx-row .chg { display: flex; gap: 10px; font-size: 10.5px; }
+.idx-row .chg em { font-style: normal; color: var(--text-faint); margin-right: 3px; }
+.idx-chart { padding: 8px 12px; min-width: 0; }
+.idx-moved { border-left: 1px solid var(--border); padding: 9px 12px; min-width: 0; }
+@media (max-width: 1100px) { .idx-body { grid-template-columns: 220px minmax(0, 1fr); } .idx-moved { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--border); } }
+@media (max-width: 700px) { .idx-body { grid-template-columns: minmax(0, 1fr); } .idx-stats { border-right: 0; border-bottom: 1px solid var(--border); } }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 12px; }
+@media (max-width: 980px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--panel); border: 1px solid var(--border); margin-bottom: 12px; min-width: 0; }
+.card-head { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.card-title { font-size: 11px; letter-spacing: .14em; color: var(--text); font-weight: 600; }
+.card-sub { font-size: 11px; color: var(--text-faint); }
+.card-body { padding: 8px 12px 10px; }
+.controls { margin-left: auto; display: flex; gap: 10px; flex-wrap: wrap; }
+.seg { display: inline-flex; border: 1px solid var(--border-strong); }
+.seg button { background: none; border: 0; color: var(--text-dim); font: inherit; font-size: 10.5px; letter-spacing: .08em; padding: 2px 8px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--border-strong); }
+.seg button.on { background: var(--accent); color: #000; }
+.chart { width: 100%; height: 340px; }
+.chart.tall { height: 400px; }
+.chart.short { height: 260px; }
+.note { font-size: 10.5px; color: var(--text-faint); margin: 6px 0 0; }
+.src { font-size: 10.5px; color: var(--text-faint); border-top: 1px solid var(--border); padding: 6px 12px; }
+
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.chip { background: var(--panel); border: 1px solid var(--border); color: var(--text-dim); font: inherit; font-size: 11px; letter-spacing: .06em; padding: 3px 9px; cursor: pointer; }
+.chip:hover { color: var(--text); border-color: var(--border-strong); }
+.chip.on { color: var(--accent); border-color: var(--accent); }
+.chip i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0; border: 1px solid var(--border); background: var(--panel); margin-bottom: 12px; }
+.stat { padding: 8px 12px; border-right: 1px solid var(--border); }
+.stat:last-child { border-right: 0; }
+.stat-label { font-size: 10px; letter-spacing: .1em; color: var(--text-dim); }
+.stat-value { font-size: 18px; font-weight: 600; }
+.stat-note { font-size: 10.5px; color: var(--text-faint); }
+
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th { text-align: right; font-weight: 400; font-size: 10px; letter-spacing: .1em; color: var(--text-dim); padding: 5px 8px; border-bottom: 1px solid var(--border-strong); white-space: nowrap; cursor: pointer; user-select: none; }
+th:first-child, td:first-child { text-align: left; }
+th.sorted { color: var(--accent); }
+td { text-align: right; padding: 3px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; font-variant-numeric: tabular-nums; }
+tr:hover td { background: var(--panel-alt); }
+td.dim { color: var(--text-faint); }
+.table-scroll { overflow-x: auto; }
+.toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+input[type=search] { background: var(--panel-alt); color: var(--text); border: 1px solid var(--border-strong); font: inherit; font-size: 12px; padding: 3px 8px; width: 200px; }
+input[type=search]:focus { outline: 1px solid var(--accent); border-color: var(--accent); }
+
+details.fold { border: 1px solid var(--border); background: var(--panel); margin-top: 14px; }
+details.fold summary { cursor: pointer; padding: 8px 12px; font-size: 11px; letter-spacing: .14em; color: var(--text-dim); }
+details.fold[open] summary { border-bottom: 1px solid var(--border); color: var(--text); }
+.fold-body { padding: 10px 12px; font-size: 12px; color: var(--text-dim); }
+.fold-body h4 { margin: 10px 0 4px; font-size: 11px; letter-spacing: .1em; color: var(--text); }
+.fold-body p { margin: 0 0 6px; max-width: 980px; }
+.mock { display: inline-block; font-size: 9.5px; letter-spacing: .14em; color: #000; background: var(--accent); padding: 1px 6px; margin-left: 8px; vertical-align: 2px; }
+</style>
+</head>
+<body>
+<header class="masthead">
+  <div class="brand">ALT·DATA<small>AI USAGE · ADOPTION · COMPUTE</small></div>
+  <nav class="nav">
+    <div class="nav-group"><span>USAGE</span><a class="nav-item" href="../openrouter/">OPENROUTER</a></div>
+    <div class="nav-group"><span>ADOPTION</span><a class="nav-item" href="../ramp/">RAMP</a><a class="nav-item" href="../downloads/">DOWNLOADS</a></div>
+    <div class="nav-group"><span>COMPUTE</span><a class="nav-item" href="../semis/">SEMIS</a><a class="nav-item on" href="../gpu/">GPU RENTAL</a></div>
+  </nav>
+  <div class="asof" id="asof"></div>
+</header>
+<div class="subtabs" id="subtabs">
+  <button class="subtab" data-view="overview">OVERVIEW</button>
+  <button class="subtab" data-view="gpu">BY GPU</button>
+  <button class="subtab" data-view="terms">TERM &amp; SPOT</button>
+  <button class="subtab" data-view="value">PER UNIT OF COMPUTE</button>
+  <button class="subtab" data-view="all">ALL GPUS</button>
+</div>
+
+<main>
+  <!-- OVERVIEW -->
+  <section class="view" id="view-overview">
+    <p class="lede" id="lede"></p>
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">GPU RENTAL INDEX</span>
+        <span class="card-sub" id="idx-sub"></span>
+        <div class="controls">
+          <div class="seg" id="idx-range">
+            <button data-v="13">13W</button><button data-v="26">26W</button><button data-v="52" class="on">1Y</button><button data-v="hist">SINCE 2024</button>
+          </div>
+        </div>
+      </div>
+      <div class="idx-body">
+        <div class="idx-stats" id="idx-stats"></div>
+        <div class="idx-chart"><div class="chart" id="chart-index" style="height:280px"></div></div>
+        <div class="idx-moved">
+          <div class="stat-label" id="idx-moved-title">WHAT MOVED IT</div>
+          <div class="chart" id="chart-contrib" style="height:250px"></div>
+        </div>
+      </div>
+      <div class="src" id="idx-note"></div>
+    </div>
+    <div class="tiles" id="tiles"></div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">ON-DEMAND PRICE PATH</span>
+          <span class="card-sub" id="path-sub"></span>
+          <div class="controls">
+            <div class="seg" id="path-range">
+              <button data-v="13">13W</button><button data-v="26">26W</button><button data-v="52" class="on">1Y</button><button data-v="hist">SINCE 2023</button>
+            </div>
+            <div class="seg" id="path-scale"><button data-v="lin" class="on">LIN</button><button data-v="log">LOG</button></div>
+          </div>
+        </div>
+        <div class="card-body"><div class="chart tall" id="chart-path"></div>
+          <p class="note" id="path-note"></p></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">PRICE SINCE FIRST LISTING</span><span class="card-sub">first month = 100</span></div>
+        <div class="card-body"><div class="chart tall" id="chart-aging"></div>
+          <p class="note">Monthly median, neocloud on-demand, by months since each GPU's first month with three or more providers; months with one provider are gaps. Only GPUs first listed after the history starts (Jan 2023); A100 and V100 entered earlier and are left out.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BY GPU -->
+  <section class="view" id="view-gpu">
+    <div class="chips" id="gpu-chips"></div>
+    <div class="stats" id="gpu-stats"></div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title" id="gpu-title">EVERY SOURCE</span>
+          <span class="card-sub">USD per GPU-hour · each source drawn separately</span>
+          <div class="controls"><div class="seg" id="gpu-seg"><button data-v="neocloud_on_demand" class="on">NEOCLOUD</button><button data-v="hyperscaler_on_demand">HYPERSCALER</button></div></div>
+        </div>
+        <div class="card-body"><div class="chart tall" id="chart-gpu"></div>
+          <p class="note">Monthly history (dashed), weekly provider median (solid), daily standardized index (dotted; hollow points are its reconstructed weekly history). The sources sample different listings and are never spliced or differenced.</p></div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">TERM CURVE</span><span class="card-sub">last 4 weeks</span></div>
+          <div class="card-body"><div class="chart short" id="chart-gpu-terms"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">PROVIDERS LISTING</span><span class="card-sub">on-demand, weekly</span></div>
+          <div class="card-body"><div class="chart short" id="chart-gpu-providers" style="height:150px"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TERMS -->
+  <section class="view" id="view-terms">
+    <p class="lede">How much a commitment saves against the on-demand rate, per GPU. Median of the last four weekly provider medians for each billing term; a term with one provider is drawn hollow.</p>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-head"><span class="card-title">DISCOUNT TO ON-DEMAND</span>
+          <div class="controls"><div class="seg" id="terms-mode"><button data-v="pct" class="on">% OFF</button><button data-v="usd">$ / HR</button></div></div></div>
+        <div class="card-body"><div class="chart tall" id="chart-terms"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">TERM TABLE</span><span class="card-sub">$ / GPU-hour (providers)</span></div>
+        <div class="card-body table-scroll" id="terms-table"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VALUE -->
+  <section class="view" id="view-value">
+    <p class="lede">Latest on-demand price divided by what the chip delivers, so different generations can be compared directly. <span class="mock">SPECS TO VERIFY</span></p>
+    <div class="grid2" style="grid-template-columns: 1fr 1fr">
+      <div class="card">
+        <div class="card-head"><span class="card-title">$ PER PFLOP-HOUR</span><span class="card-sub">dense BF16</span></div>
+        <div class="card-body"><div class="chart" id="chart-flop"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">$ PER 100 GB MEMORY-HOUR</span><span class="card-sub">HBM / on-board</span></div>
+        <div class="card-body"><div class="chart" id="chart-mem"></div></div>
+      </div>
+    </div>
+    <p class="note">Specs are vendor datasheet figures per GPU (dense, no sparsity), rounded. Rental listings may mix memory variants and form factors of the same model. Superchips (GB200, GH200) are priced per listing unit and are omitted.</p>
+  </section>
+
+  <!-- ALL -->
+  <section class="view" id="view-all">
+    <div class="toolbar">
+      <div class="chips" id="all-groups" style="margin:0"></div>
+      <input type="search" id="all-search" placeholder="filter models">
+    </div>
+    <div class="card"><div class="card-body table-scroll" id="all-table"></div>
+      <div class="src">GetDeploying weekly on-demand provider median. Changes compare the latest week with the nearest week at or before 4, 13 and 52 weeks earlier.</div></div>
+  </section>
+
+  <details class="fold">
+    <summary>SOURCES &amp; METHOD</summary>
+    <div class="fold-body" id="sources"></div>
+  </details>
+</main>
+
+<script>
+const COLORS = { b300: '#f472b6', b200: '#a78bfa', h200: '#60a5fa', h100: '#e8a33d', a100: '#94a3b8', mi355x: '#fb923c', mi325x: '#fbbf24', mi300x: '#f87171', gb200: '#22d3ee', gh200: '#34d399', rtxpro6000: '#4ade80', l40s: '#fde68a', a6000: '#c4b5fd', l4: '#67e8f9' };
+const HEADLINE = ['h100', 'h200', 'b200', 'b300', 'a100', 'mi300x'];
+const PATH_DEFAULT = ['b300', 'b200', 'h200', 'h100', 'a100', 'mi300x'];
+const SEG_LABEL = { neocloud_on_demand: 'neocloud on-demand', hyperscaler_on_demand: 'hyperscaler on-demand' };
+const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const P = { text: css('--text'), dim: css('--text-dim'), faint: css('--text-faint'), border: css('--border'), accent: css('--accent'), up: css('--up'), down: css('--down') };
+const FONT = 'ui-monospace, "SF Mono", Menlo, monospace';
+const charts = {};
+let D, BY = {}, WEEKLY = {};
+const state = { view: 'overview', gpu: 'h100', range: '52', scale: 'lin', seg: 'neocloud_on_demand', termsMode: 'pct', allGroup: 'Data center', sort: ['latest', -1], hidden: new Set(), idx: 'all', idxRange: '52' };
+
+const fmt$ = (v, d = 2) => v == null ? '—' : '$' + v.toFixed(d);
+const fmtPct = (v) => v == null ? '—' : (v > 0 ? '+' : '') + (v * 100).toFixed(1) + '%';
+const cls = (v) => v == null ? 'flat' : v > 0.0005 ? 'up' : v < -0.0005 ? 'down' : 'flat';
+const addDays = (iso, n) => { const d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+
+// Value at the latest date on or before `iso`.
+function asOf(series, iso) {
+  for (let i = series.dates.length - 1; i >= 0; i--) if (series.dates[i] <= iso && series.price[i] != null) return series.price[i];
+  return null;
+}
+function changes(series) {
+  const n = series.dates.length; const last = series.dates[n - 1]; const px = series.price[n - 1];
+  const at = (w) => { const v = asOf(series, addDays(last, -7 * w)); return v ? px / v - 1 : null; };
+  return { last, px, prov: series.providers[n - 1], w4: at(4), w13: at(13), w52: at(52) };
+}
+function spark(values, w = 168, h = 30, color = P.accent) {
+  const v = values.filter((x) => x != null); if (v.length < 2) return '';
+  const lo = Math.min(...v), hi = Math.max(...v), span = hi - lo || 1;
+  const pts = values.map((x, i) => x == null ? null : `${(i / (values.length - 1) * w).toFixed(1)},${(h - 2 - (x - lo) / span * (h - 4)).toFixed(1)}`).filter(Boolean);
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline fill="none" stroke="${color}" stroke-width="1.3" points="${pts.join(' ')}"/></svg>`;
+}
+
+function base() {
+  return {
+    animation: false, backgroundColor: 'transparent',
+    textStyle: { fontFamily: FONT, fontSize: 10, color: P.dim },
+    grid: { left: 50, right: 16, top: 34, bottom: 30 },
+    tooltip: { trigger: 'axis', backgroundColor: '#000', borderColor: P.border, textStyle: { color: P.text, fontSize: 11, fontFamily: FONT }, axisPointer: { type: 'line', lineStyle: { color: P.faint, type: 'dashed' } } },
+    legend: { top: 0, left: 0, textStyle: { color: P.dim, fontSize: 10.5 }, icon: 'roundRect', itemWidth: 10, itemHeight: 3, inactiveColor: '#444' },
+    xAxis: { type: 'time', axisLine: { lineStyle: { color: P.border } }, axisTick: { show: false }, axisLabel: { color: P.dim, fontSize: 10, hideOverlap: true }, splitLine: { show: false } },
+    yAxis: { type: 'value', scale: true, axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: P.dim, fontSize: 10 }, splitLine: { lineStyle: { color: P.border, opacity: 0.5 } } },
+  };
+}
+function draw(id, option) {
+  const node = document.getElementById(id);
+  if (!node || node.offsetParent === null) return;
+  (charts[id] ||= echarts.init(node, null, { renderer: 'canvas' })).setOption(option, true);
+}
+
+// ---------- OVERVIEW ----------
+// ---------- INDEX ----------
+const IDX_COLORS = { all: '#e6e6e6', frontier: '#e8a33d', prior: '#60a5fa' };
+const label = (slug) => slug.replace(/^(nvidia|amd|intel)-/, '').replace(/-/g, ' ').toUpperCase();
+// Change of an index over the last n links (levels are chained, so a ratio).
+function idxChange(ix, n) {
+  const L = ix.level, i1 = L.length - 1, i0 = i1 - n;
+  return i0 >= 0 && L[i0] && L[i1] ? L[i1] / L[i0] - 1 : null;
+}
+function renderIndex() {
+  const hist = state.idxRange === 'hist';
+  const set = hist ? D.indices.monthly : D.indices.weekly;
+  if (!set[state.idx]) state.idx = 'all';
+  const n = hist ? null : Number(state.idxRange);
+  const unit = hist ? 'M' : 'W';
+  const steps = hist ? [[3, '3M'], [6, '6M'], [12, '1Y']] : [[4, '4W'], [13, '13W'], [52, '1Y']];
+  document.getElementById('idx-stats').innerHTML = Object.entries(set).map(([k, ix]) => {
+    const last = ix.level[ix.level.length - 1];
+    return `<div class="idx-row ${k === state.idx ? 'on' : ''}" data-k="${k}">
+      <div class="stat-label"><span style="color:${IDX_COLORS[k]}">●</span> ${ix.label.toUpperCase()}</div>
+      <div class="lvl">${last.toFixed(1)}<small>${ix.models[ix.models.length - 1]} chips</small></div>
+      <div class="chg">${steps.map(([s, l]) => { const c = idxChange(ix, s); return `<span><em>${l}</em><b class="${cls(c)}">${fmtPct(c)}</b></span>`; }).join('')}</div></div>`;
+  }).join('');
+  document.querySelectorAll('.idx-row').forEach((r) => r.onclick = () => { state.idx = r.dataset.k; renderIndex(); });
+
+  // Rebase every line to 100 at the start of the window.
+  const o = base();
+  o.series = Object.entries(set).map(([k, ix]) => {
+    const i0 = hist ? 0 : Math.max(0, ix.periods.length - 1 - n);
+    const b = ix.level[i0];
+    return { name: ix.label, type: 'line', showSymbol: false, data: ix.periods.slice(i0).map((p, j) => [hist ? p + '-01' : p, ix.level[i0 + j] == null ? null : ix.level[i0 + j] / b * 100]),
+      lineStyle: { width: k === state.idx ? 2.4 : 1.3, color: IDX_COLORS[k], opacity: k === state.idx ? 1 : 0.65 }, itemStyle: { color: IDX_COLORS[k] } };
+  });
+  o.series.push({ type: 'line', data: [], markLine: { silent: true, symbol: 'none', lineStyle: { color: P.faint, type: 'dashed' }, data: [{ yAxis: 100 }], label: { show: false } } });
+  o.tooltip.valueFormatter = (v) => v == null ? '—' : v.toFixed(1);
+  draw('chart-index', o);
+
+  // Contribution of each chip to the selected index's log change over the window.
+  const ix = set[state.idx];
+  const links = hist ? ix.contrib.slice(1) : ix.contrib.slice(-n);
+  const sum = {};
+  links.forEach((c) => Object.entries(c).forEach(([m, v]) => sum[m] = (sum[m] || 0) + v));
+  const rows = Object.entries(sum).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 8).sort((a, b) => b[1] - a[1]);
+  const total = Object.values(sum).reduce((a, b) => a + b, 0);
+  document.getElementById('idx-moved-title').innerHTML = `WHAT MOVED ${ix.label.toUpperCase()} · ${hist ? 'SINCE ' + ix.periods[0] : state.idxRange + 'W'} <span style="color:var(--text-faint)">(pp of log change, total ${(total * 100).toFixed(1)})</span>`;
+  const c = base();
+  c.legend = { show: false }; c.grid = { left: 92, right: 40, top: 6, bottom: 20 };
+  c.xAxis = { type: 'value', splitNumber: 3, axisLine: { show: false }, axisLabel: { color: P.dim, fontSize: 10 }, splitLine: { lineStyle: { color: P.border, opacity: 0.5 } } };
+  c.yAxis = { type: 'category', inverse: true, data: rows.map(([m]) => label(m)), axisLine: { lineStyle: { color: P.border } }, axisTick: { show: false }, axisLabel: { color: P.text, fontSize: 10.5 } };
+  c.tooltip = { ...c.tooltip, trigger: 'item', valueFormatter: (v) => v.toFixed(2) + ' pp' };
+  c.series = [{ type: 'bar', barWidth: '60%', data: rows.map(([, v]) => ({ value: +(v * 100).toFixed(2), itemStyle: { color: v >= 0 ? P.up : P.down } })),
+    label: { show: true, position: 'right', color: P.dim, fontSize: 10, formatter: (p) => (p.value > 0 ? '+' : '') + p.value.toFixed(1) } }];
+  draw('chart-contrib', c);
+
+  document.getElementById('idx-sub').textContent = hist ? 'monthly · neocloud on-demand · window start = 100' : 'weekly on-demand · window start = 100';
+  document.getElementById('idx-note').textContent = hist
+    ? 'Built the same way from the monthly history (R. Mittal), starting once four or more chips have two or more providers; Frontier is too thin to show. Not spliced to the weekly index.'
+    : 'Chained matched-model index on GetDeploying weekly provider medians: each week moves by the provider-weighted geometric mean of price changes of chips listed by two or more providers in both weeks, so a chip entering or leaving does not move it. Frontier: H100, H200, B200, B300, MI300X/325X/355X. Prior gen: the other data-center chips.';
+}
+
+function renderOverview() {
+  const ix = D.indices.weekly.all, fr = D.indices.weekly.frontier;
+  const h100 = changes(WEEKLY[BY.h100.gd]);
+  document.getElementById('lede').innerHTML =
+    `The data-center rental index is <b>${ix.level[ix.level.length - 1].toFixed(1)}</b> (a year ago = 100): <span class="${cls(idxChange(ix, 13))}">${fmtPct(idxChange(ix, 13))}</span> over 13 weeks, ` +
+    `frontier chips <span class="${cls(idxChange(fr, 13))}">${fmtPct(idxChange(fr, 13))}</span>. H100 rents for <b>${fmt$(h100.px)}</b>/GPU-hr on demand. Week of ${D.latest_week}; the latest week is provisional.`;
+  renderIndex();
+  document.getElementById('tiles').innerHTML = HEADLINE.map((id) => {
+    const g = BY[id], s = WEEKLY[g.gd], c = changes(s);
+    const tail = s.price.slice(-53);
+    return `<div class="tile" data-gpu="${id}">
+      <div class="name"><span>${g.label}</span><i>${c.prov} prov</i></div>
+      <div class="px">${fmt$(c.px)}<small> /hr</small></div>
+      <div class="chg"><span><em>4W</em><b class="${cls(c.w4)}">${fmtPct(c.w4)}</b></span><span><em>13W</em><b class="${cls(c.w13)}">${fmtPct(c.w13)}</b></span><span><em>1Y</em><b class="${cls(c.w52)}">${fmtPct(c.w52)}</b></span></div>
+      ${spark(tail, 168, 30, COLORS[id])}</div>`;
+  }).join('');
+  document.querySelectorAll('.tile').forEach((t) => t.onclick = () => { state.gpu = t.dataset.gpu; go('gpu'); });
+  renderPath(); renderAging();
+}
+
+function renderPath() {
+  const hist = state.range === 'hist';
+  const series = PATH_DEFAULT.map((id) => {
+    const g = BY[id];
+    let data;
+    if (hist) {
+      const m = g.monthly && g.monthly.neocloud_on_demand;
+      data = m ? m.months.map((d, i) => [d + '-01', m.median[i]]) : [];
+    } else {
+      const s = WEEKLY[g.gd]; const from = addDays(D.latest_week, -7 * Number(state.range));
+      data = s.dates.map((d, i) => [d, s.price[i]]).filter(([d]) => d >= from);
+    }
+    return { name: g.label, type: 'line', data, showSymbol: false, connectNulls: false, lineStyle: { width: id === 'h100' ? 2.2 : 1.5, color: COLORS[id] }, itemStyle: { color: COLORS[id] } };
+  }).filter((s) => s.data.length);
+  const o = base();
+  o.series = series;
+  o.yAxis.type = state.scale === 'log' ? 'log' : 'value';
+  o.yAxis.axisLabel.formatter = (v) => '$' + (v >= 10 ? v.toFixed(0) : v.toFixed(1));
+  o.tooltip.valueFormatter = (v) => fmt$(v);
+  draw('chart-path', o);
+  document.getElementById('path-sub').textContent = hist ? 'monthly median · neocloud on-demand' : 'weekly provider median';
+  document.getElementById('path-note').textContent = hist
+    ? 'Reconstructed monthly medians of advertised neocloud on-demand prices (R. Mittal). Some early months rest on one provider. MI300X coverage ends Nov 2025.'
+    : 'Each provider counts once in a day\'s median; the week is the median of daily captures (GetDeploying). Moves can reflect a change in which providers and configurations are listed.';
+}
+
+function renderAging() {
+  const ids = ['b300', 'b200', 'gb200', 'h200', 'gh200', 'h100', 'mi300x', 'l40s', 'rtxpro6000'];
+  const series = ids.map((id) => {
+    const m = BY[id].monthly && BY[id].monthly.neocloud_on_demand; if (!m) return null;
+    // Base on the first month with three or more providers; one-provider months are not drawn.
+    if (m.months[m.median.findIndex((v) => v != null)] <= '2023-01') return null;
+    const i0 = m.median.findIndex((v, i) => v != null && m.providers[i] >= 3); if (i0 < 0) return null;
+    const b = m.median[i0]; const [y0, mo0] = m.months[i0].split('-').map(Number);
+    const data = m.months.slice(i0).map((d, k) => { const [y, mo] = d.split('-').map(Number); const v = m.median[i0 + k]; return [(y - y0) * 12 + mo - mo0, v == null || m.providers[i0 + k] < 2 ? null : v / b * 100]; });
+    return { name: BY[id].label, type: 'line', data, showSymbol: false, lineStyle: { width: id === 'h100' ? 2.2 : 1.4, color: COLORS[id] }, itemStyle: { color: COLORS[id] } };
+  }).filter(Boolean);
+  const o = base();
+  o.xAxis = { type: 'value', name: 'months since first listing', nameLocation: 'middle', nameGap: 22, nameTextStyle: { color: P.faint, fontSize: 10 }, axisLine: { lineStyle: { color: P.border } }, axisLabel: { color: P.dim, fontSize: 10 }, splitLine: { show: false } };
+  o.grid.bottom = 38; o.grid.top = 52;
+  o.series = series;
+  o.series.push({ type: 'line', data: [], markLine: { silent: true, symbol: 'none', lineStyle: { color: P.faint, type: 'dashed' }, data: [{ yAxis: 100 }], label: { show: false } } });
+  o.tooltip.valueFormatter = (v) => v == null ? '—' : v.toFixed(0);
+  draw('chart-aging', o);
+}
+
+// ---------- BY GPU ----------
+function renderGpu() {
+  const g = BY[state.gpu];
+  document.getElementById('gpu-chips').innerHTML = D.gpus.map((x) => `<button class="chip ${x.id === state.gpu ? 'on' : ''}" data-gpu="${x.id}"><i style="background:${COLORS[x.id]}"></i>${x.label}</button>`).join('');
+  document.querySelectorAll('#gpu-chips .chip').forEach((b) => b.onclick = () => { state.gpu = b.dataset.gpu; renderGpu(); });
+  document.getElementById('gpu-title').textContent = g.label + ' · EVERY SOURCE';
+
+  const wk = WEEKLY[g.gd], c = changes(wk);
+  const m = g.monthly && g.monthly[state.seg];
+  const mi = m ? m.median.map((v, i) => [v, i]).filter(([v]) => v != null).pop() : null;
+  const dl = g.daily && g.daily.dates.length ? g.daily.dates.length - 1 : null;
+  const od = g.terms.find((t) => t.term === 'On-demand'), r12 = g.terms.find((t) => t.term === '12M');
+  document.getElementById('gpu-stats').innerHTML = [
+    ['WEEKLY PROVIDER MEDIAN', fmt$(c.px), `wk ${c.last} · ${c.prov} providers · <span class="${cls(c.w13)}">${fmtPct(c.w13)}</span> 13W`],
+    ['DAILY INDEX', dl != null ? fmt$(g.daily.price[dl]) : '—', dl != null ? `${g.daily.dates[dl]}${g.daily.final[dl] === false ? ' · provisional' : ''} · Compute Screener` : 'not covered'],
+    ['MONTHLY MEDIAN', mi ? fmt$(mi[0]) : '—', mi ? `${m.months[mi[1]]} · ${SEG_LABEL[state.seg]} · ${m.providers[mi[1]]} prov` : 'not covered'],
+    ['12M COMMIT vs ON-DEMAND', r12 && r12.price && od.price ? fmtPct(r12.price / od.price - 1) : '—', r12 && r12.price ? `${fmt$(r12.price)} · ${r12.providers} providers` : 'no 12-month listings'],
+  ].map(([l, v, n]) => `<div class="stat"><div class="stat-label">${l}</div><div class="stat-value">${v}</div><div class="stat-note">${n}</div></div>`).join('');
+
+  const col = COLORS[g.id];
+  const o = base();
+  o.series = [];
+  if (m) o.series.push({ name: 'Monthly · ' + SEG_LABEL[state.seg], type: 'line', step: 'end', data: m.months.map((d, i) => [d + '-01', m.median[i]]), showSymbol: false, lineStyle: { type: 'dashed', width: 1.4, color: P.dim }, itemStyle: { color: P.dim } });
+  o.series.push({ name: 'Weekly provider median', type: 'line', data: wk.dates.map((d, i) => [d, wk.price[i]]), showSymbol: false, lineStyle: { width: 2, color: col }, itemStyle: { color: col } });
+  if (g.daily && g.daily.dates.length) {
+    const dd = g.daily;
+    o.series.push({ name: 'Daily index', type: 'line', data: dd.dates.map((d, i) => dd.weekly[i] ? [d, null] : [d, dd.price[i]]), showSymbol: false, connectNulls: false, lineStyle: { width: 1.3, type: 'dotted', color: '#e6e6e6' }, itemStyle: { color: '#e6e6e6' } });
+    o.series.push({ name: 'Daily index · weekly history', type: 'scatter', data: dd.dates.map((d, i) => dd.weekly[i] ? [d, dd.price[i]] : null).filter(Boolean), symbol: 'emptyCircle', symbolSize: 4, itemStyle: { color: '#bbb' } });
+  }
+  o.yAxis.axisLabel.formatter = (v) => '$' + v.toFixed(v >= 10 ? 0 : 1);
+  o.tooltip.valueFormatter = (v) => fmt$(v);
+  o.legend.data = o.series.map((s) => s.name).filter((n) => n !== 'Daily index · weekly history');
+  draw('chart-gpu', o);
+
+  const t = base();
+  const terms = g.terms;
+  t.xAxis = { type: 'category', data: terms.map((x) => x.term), axisLine: { lineStyle: { color: P.border } }, axisTick: { show: false }, axisLabel: { color: P.dim, fontSize: 10 } };
+  t.legend = { show: false };
+  t.grid.top = 14;
+  t.yAxis.axisLabel.formatter = (v) => '$' + v.toFixed(1);
+  t.yAxis.scale = false;
+  t.tooltip = { ...t.tooltip, trigger: 'item', formatter: (p) => `${p.name}<br>${fmt$(p.value)} · ${terms[p.dataIndex].providers} providers` };
+  t.series = [{ type: 'bar', barWidth: '55%', data: terms.map((x) => ({ value: x.price, itemStyle: { color: x.term === 'On-demand' ? col : x.providers <= 1 ? '#333' : '#5a5a5a', borderColor: x.providers <= 1 ? '#666' : undefined, borderType: 'dashed' } })) }];
+  draw('chart-gpu-terms', t);
+
+  const pv = base();
+  pv.legend = { show: false }; pv.grid = { left: 50, right: 16, top: 8, bottom: 22 };
+  pv.series = [{ type: 'bar', data: wk.dates.map((d, i) => [d, wk.providers[i]]), itemStyle: { color: '#4a4a4a' }, barMaxWidth: 6 }];
+  pv.tooltip.valueFormatter = (v) => v + ' providers';
+  draw('chart-gpu-providers', pv);
+}
+
+// ---------- TERMS ----------
+function renderTerms() {
+  const ids = ['b300', 'b200', 'h200', 'h100', 'a100', 'mi300x'];
+  const labels = BY.h100.terms.map((t) => t.term);
+  const o = base();
+  o.xAxis = { type: 'category', data: labels, boundaryGap: false, axisLine: { lineStyle: { color: P.border } }, axisTick: { show: false }, axisLabel: { color: P.dim, fontSize: 10 } };
+  const pct = state.termsMode === 'pct';
+  o.series = ids.map((id) => {
+    const g = BY[id], od = g.terms.find((t) => t.term === 'On-demand').price;
+    return { name: g.label, type: 'line', connectNulls: true, lineStyle: { color: COLORS[id], width: id === 'h100' ? 2.2 : 1.5 }, itemStyle: { color: COLORS[id] },
+      data: g.terms.map((t) => ({ value: t.price == null ? null : pct ? (t.price / od - 1) * 100 : t.price, providers: t.providers,
+        symbol: t.providers <= 1 ? 'emptyCircle' : 'circle', symbolSize: Math.min(4 + t.providers / 2, 12) })) };
+  });
+  o.yAxis.axisLabel.formatter = pct ? (v) => v.toFixed(0) + '%' : (v) => '$' + v.toFixed(0);
+  o.tooltip.formatter = (ps) => ps[0].name + '<br>' + ps.filter((p) => p.value != null).map((p) => `${p.marker}${p.seriesName} ${pct ? p.value.toFixed(1) + '%' : fmt$(p.value)} <span style="color:#888">(${p.data.providers})</span>`).join('<br>');
+  if (pct) o.series.push({ type: 'line', data: [], markLine: { silent: true, symbol: 'none', lineStyle: { color: P.faint, type: 'dashed' }, data: [{ yAxis: 0 }], label: { show: false } } });
+  draw('chart-terms', o);
+  const rows = ids.map((id) => `<tr><td><i style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${COLORS[id]};margin-right:6px"></i>${BY[id].label}</td>` +
+    BY[id].terms.map((t) => `<td class="${t.providers <= 1 ? 'dim' : ''}">${t.price == null ? '—' : t.price.toFixed(2)}<span style="color:var(--text-faint)"> ${t.providers || ''}</span></td>`).join('') + '</tr>').join('');
+  document.getElementById('terms-table').innerHTML = `<table><thead><tr><th>GPU</th>${labels.map((l) => `<th>${l.toUpperCase()}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+// ---------- VALUE ----------
+function renderValue() {
+  const bars = (key, scale, id, digits) => {
+    const rows = D.gpus.filter((g) => g[key] && WEEKLY[g.gd]).map((g) => ({ id: g.id, label: g.label, v: changes(WEEKLY[g.gd]).px / g[key] * scale })).sort((a, b) => a.v - b.v);
+    const o = base();
+    o.legend = { show: false }; o.grid = { left: 96, right: 50, top: 8, bottom: 24 };
+    o.xAxis = { type: 'value', axisLine: { show: false }, axisLabel: { color: P.dim, fontSize: 10, formatter: (v) => '$' + v }, splitLine: { lineStyle: { color: P.border, opacity: 0.5 } } };
+    o.yAxis = { type: 'category', inverse: true, data: rows.map((r) => r.label), axisLine: { lineStyle: { color: P.border } }, axisTick: { show: false }, axisLabel: { color: P.text, fontSize: 11 } };
+    o.tooltip = { ...o.tooltip, trigger: 'item', valueFormatter: (v) => fmt$(v, digits) };
+    o.series = [{ type: 'bar', barWidth: '60%', data: rows.map((r) => ({ value: r.v, itemStyle: { color: COLORS[r.id] } })), label: { show: true, position: 'right', color: P.dim, fontSize: 10.5, formatter: (p) => fmt$(p.value, digits) } }];
+    draw(id, o);
+  };
+  bars('bf16', 1000, 'chart-flop', 2);
+  bars('mem', 100, 'chart-mem', 2);
+}
+
+// ---------- ALL ----------
+function group(slug) {
+  if (/^(amd|intel)-/.test(slug)) return 'AMD & Intel';
+  if (/(rtx-[2-5]0[5-9]0|gtx|gt7)/.test(slug)) return 'Consumer';
+  if (/nvidia-(a100|h100|h200|b200|b300|gb200|gb300|gh200|a10g?|a30|a40|a16|l4|l40s?|t4g?|v100s?|p100|p40|p4|k80|m60|a800)$/.test(slug)) return 'Data center';
+  return 'Workstation';
+}
+function renderAll() {
+  const groups = ['Data center', 'AMD & Intel', 'Workstation', 'Consumer', 'All'];
+  document.getElementById('all-groups').innerHTML = groups.map((x) => `<button class="chip ${x === state.allGroup ? 'on' : ''}" data-g="${x}">${x.toUpperCase()}</button>`).join('');
+  document.querySelectorAll('#all-groups .chip').forEach((b) => b.onclick = () => { state.allGroup = b.dataset.g; renderAll(); });
+  const q = document.getElementById('all-search').value.trim().toLowerCase();
+  const stale = addDays(D.latest_week, -21);
+  let rows = D.weekly.filter((s) => (state.allGroup === 'All' || group(s.slug) === state.allGroup) && (!q || s.slug.includes(q)))
+    .map((s) => ({ s, ...changes(s), model: label(s.slug) }));
+  const [k, dir] = state.sort;
+  rows.sort((a, b) => (k === 'model' ? a.model.localeCompare(b.model) : ((a[k === 'latest' ? 'px' : k] ?? -1e9) - (b[k === 'latest' ? 'px' : k] ?? -1e9))) * dir);
+  const cols = [['model', 'MODEL'], ['latest', '$ / HR'], ['w4', '4W'], ['w13', '13W'], ['w52', '1Y'], ['prov', 'PROVIDERS'], ['last', 'WEEK']];
+  document.getElementById('all-table').innerHTML = `<table><thead><tr>${cols.map(([c, l]) => `<th data-k="${c}" class="${c === k ? 'sorted' : ''}">${l}${c === k ? (dir > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('')}<th>1Y</th></tr></thead><tbody>` +
+    rows.map((r) => `<tr><td>${r.model}</td><td>${fmt$(r.px, r.px < 1 ? 3 : 2)}</td><td class="${cls(r.w4)}">${fmtPct(r.w4)}</td><td class="${cls(r.w13)}">${fmtPct(r.w13)}</td><td class="${cls(r.w52)}">${fmtPct(r.w52)}</td><td class="${r.prov <= 1 ? 'dim' : ''}">${r.prov ?? '—'}</td><td class="${r.last < stale ? 'down' : 'dim'}">${r.last}</td><td>${spark(r.s.price.slice(-53), 110, 18, r.w52 > 0 ? P.up : P.down)}</td></tr>`).join('') + '</tbody></table>';
+  document.querySelectorAll('#all-table th[data-k]').forEach((th) => th.onclick = () => { const c = th.dataset.k; state.sort = [c, state.sort[0] === c ? -state.sort[1] : (c === 'model' ? 1 : -1)]; renderAll(); });
+}
+
+function renderSources() {
+  const s = D.sources;
+  const row = (k, name) => `<tr><td>${name}</td><td class="${s[k].status === 'ok' ? 'up' : 'down'}">${s[k].status.toUpperCase()}</td><td>${s[k].rows.toLocaleString()}</td><td>${s[k].observed_from}</td><td>${s[k].observed_through}</td></tr>`;
+  document.getElementById('sources').innerHTML = `
+    <table style="max-width:720px;margin-bottom:8px"><thead><tr><th>SOURCE</th><th>STATUS</th><th>ROWS</th><th>FROM</th><th>THROUGH</th></tr></thead><tbody>
+    ${row('getdeploying', 'GetDeploying weekly')}${row('github_history', 'R. Mittal monthly')}${row('compute_screener', 'Compute Screener daily')}</tbody></table>
+    <h4>GETDEPLOYING · WEEKLY</h4><p>Median of daily captures of priced listings not marked sold out, by GPU, billing type and term; each provider counts once in a day. Rolling 53 weeks, retained here as it rolls off. The latest week is provisional. <a href="https://getdeploying.com/dataset/gpu-prices" target="_blank">Dataset</a> · CC BY 4.0.</p>
+    <h4>R. MITTAL · MONTHLY HISTORY</h4><p>Reconstructed medians of advertised prices by GPU, form factor and market segment since 2023, not point-in-time. Some months rest on one provider. <a href="https://github.com/rahilmittal1/gpu-price-history/blob/main/data/rent/README.md" target="_blank">Method</a> · CC BY 4.0; underlying sources keep their own terms.</p>
+    <h4>COMPUTE SCREENER · DAILY INDEX</h4><p>Standardized posted-price index. Before 2026-10-23 its history is reconstructed, largely weekly and partly from GetDeploying, so it is not an independent check in that period. <a href="https://computescreener.com/methodology" target="_blank">Method</a> · CC BY 4.0.</p>
+    <h4>ORNN · TRANSACTIONS</h4><p>A transaction-based index whose terms restrict redistribution; linked only. <a href="https://data.ornn.com/markets" target="_blank">Open Ornn</a>.</p>
+    <p>Posted prices and transaction prices describe different markets; no source covers the whole market.</p>`;
+}
+
+// ---------- routing ----------
+function go(view) {
+  state.view = view;
+  history.replaceState(null, '', '#' + view + (view === 'gpu' ? '/' + state.gpu : ''));
+  document.querySelectorAll('.subtab').forEach((b) => b.classList.toggle('on', b.dataset.view === view));
+  document.querySelectorAll('.view').forEach((v) => v.classList.toggle('on', v.id === 'view-' + view));
+  ({ overview: renderOverview, gpu: renderGpu, terms: renderTerms, value: renderValue, all: renderAll })[view]();
+}
+function seg(id, key, after) {
+  document.querySelectorAll(`#${id} button`).forEach((b) => b.onclick = () => {
+    state[key] = b.dataset.v; document.querySelectorAll(`#${id} button`).forEach((x) => x.classList.toggle('on', x === b)); after();
+  });
+}
+
+fetch('data.json', { cache: 'no-store' }).then((r) => r.json()).then((data) => {
+  D = data;
+  D.gpus.forEach((g) => BY[g.id] = g);
+  D.weekly.forEach((s) => WEEKLY[s.slug] = s);
+  document.getElementById('asof').innerHTML = `WK OF ${D.latest_week} · CAPTURED ${D.captured_at_utc.slice(0, 10)}`;
+  document.querySelectorAll('.subtab').forEach((b) => b.onclick = () => go(b.dataset.view));
+  seg('idx-range', 'idxRange', renderIndex);
+  seg('path-range', 'range', renderPath); seg('path-scale', 'scale', renderPath);
+  seg('gpu-seg', 'seg', renderGpu); seg('terms-mode', 'termsMode', renderTerms);
+  document.getElementById('all-search').oninput = renderAll;
+  renderSources();
+  const [v, gpu] = location.hash.slice(1).split('/');
+  if (gpu && BY[gpu]) state.gpu = gpu;
+  go(['overview', 'gpu', 'terms', 'value', 'all'].includes(v) ? v : 'overview');
+  window.addEventListener('hashchange', () => { const [v2, g2] = location.hash.slice(1).split('/'); if (g2 && BY[g2]) state.gpu = g2; if (v2 && v2 !== state.view || g2) go(v2 || 'overview'); });
+  window.addEventListener('resize', () => Object.values(charts).forEach((c) => c.resize()));
+});
+</script>
+</body>
+</html>

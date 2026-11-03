@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Semis · Alt Data</title>
+<link rel="stylesheet" href="../shared/terminal.css">
+<script src="../shared/echarts.min.js"></script>
+<script src="../shared/ui.js"></script>
+<style>
+.heat-wrap { overflow-x: auto; }
+.heat { border-collapse: separate; border-spacing: 2px; }
+.heat th { cursor: default; text-align: center; border: 0; padding: 2px 4px; }
+.heat td { border: 0; padding: 4px 6px; text-align: center; color: #0a0a0a; font-weight: 600; min-width: 52px; }
+.heat td.name { text-align: left; color: var(--text); font-weight: 400; background: none; min-width: 150px; cursor: pointer; }
+.heat td.name:hover { color: var(--accent); }
+.heat td.name small { color: var(--text-faint); margin-left: 6px; }
+.heat tr.group td { color: var(--text-faint); font-weight: 400; text-align: left; font-size: 10px; letter-spacing: .12em; padding-top: 10px; background: none; }
+.heat tr:hover td { background-clip: padding-box; }
+</style>
+</head>
+<body>
+<header class="masthead" id="masthead"></header>
+<div class="subtabs">
+  <button class="subtab" data-view="overview">OVERVIEW</button>
+  <button class="subtab" data-view="taiwan">TAIWAN REVENUE</button>
+  <button class="subtab" data-view="trade">TRADE</button>
+  <button class="subtab" data-view="prices">PRICES</button>
+</div>
+<main>
+  <section class="view" id="view-overview">
+    <p class="lede" id="lede"></p>
+    <div class="stats" id="stats"></div>
+    <div class="card">
+      <div class="card-head"><span class="card-title">TAIWAN SUPPLY CHAIN · REVENUE GROWTH Y/Y</span><span class="card-sub">monthly filings · click a company for its history</span></div>
+      <div class="card-body heat-wrap" id="heat"></div>
+    </div>
+    <div class="grid-even">
+      <div class="card">
+        <div class="card-head"><span class="card-title">GROUP REVENUE GROWTH</span><span class="card-sub">y/y, 3-month sum</span></div>
+        <div class="card-body"><div class="chart" id="chart-groups"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">KOREA CHIP EXPORTS</span><span class="card-sub">integrated circuits, HS 8542 · USD</span></div>
+        <div class="card-body"><div class="chart" id="chart-korea"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="view-taiwan">
+    <div class="chips" id="tw-chips"></div>
+    <div class="stats" id="tw-stats"></div>
+    <div class="card">
+      <div class="card-head"><span class="card-title" id="tw-title"></span><span class="card-sub">NT$ bn per month · y/y on the right axis</span>
+        <div class="controls"><div class="seg" id="tw-range"><button data-v="36">3Y</button><button data-v="60">5Y</button><button data-v="all">ALL</button></div></div></div>
+      <div class="card-body"><div class="chart tall" id="chart-tw"></div></div>
+    </div>
+  </section>
+
+  <section class="view" id="view-trade">
+    <div class="chips" id="trade-chips"></div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-head"><span class="card-title" id="trade-title"></span><span class="card-sub" id="trade-sub"></span>
+          <div class="controls"><div class="seg" id="trade-range"><button data-v="60">5Y</button><button data-v="120">10Y</button><button data-v="all">ALL</button></div></div></div>
+        <div class="card-body"><div class="chart tall" id="chart-trade"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">LATEST PRINTS</span></div>
+        <div class="card-body table-scroll" id="trade-table"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="view-prices">
+    <p class="lede">US producer prices for the hardware behind AI data centers, each rebased to <span id="ppi-base"></span> = 100. Storage and switchgear have outrun chips.</p>
+    <div class="card">
+      <div class="card-head"><span class="card-title">PRODUCER PRICES</span><span class="card-sub">BLS PPI by industry, monthly</span></div>
+      <div class="card-body"><div class="chart tall" id="chart-ppi"></div></div>
+    </div>
+  </section>
+
+  <details class="fold"><summary>SOURCES &amp; METHOD</summary><div class="fold-body">
+    <p><b>Taiwan revenue</b>: monthly revenue filed by each listed company with the Market Observation Post System, in NT$. Groups add their members' revenue; growth is against the same months a year earlier. <b>Trade</b>: Korea Customs Service (HS 8542 integrated circuits, and broader semiconductors from 2022), Japan's Ministry of Finance (ICs, in yen) and Hong Kong Census and Statistics Department (in HK$). <b>Prices</b>: BLS producer price indexes via FRED.</p>
+  </div></details>
+</main>
+<script>
+const { P } = UI;
+const GROUPS = [
+  ['Foundry', ['2330', '2303', '5347'], '#e8a33d'],
+  ['AI server ODM', ['2317', '2382', '3231', '6669'], '#60a5fa'],
+  ['Memory', ['2408', '2344', '8299'], '#a78bfa'],
+  ['Packaging & test', ['6239'], '#4ade80'],
+];
+const state = { co: '2330', twRange: '60', trade: 0, tradeRange: '120' };
+let D, CO = {};
+
+// Group revenue by month, and y/y of its trailing 3-month sum, from months where every member filed.
+function groupSeries(codes) {
+  const months = [...new Set(codes.flatMap((c) => CO[c].months))].sort();
+  const rev = months.map((m) => { let s = 0; for (const c of codes) { const i = CO[c].months.indexOf(m); if (i < 0 || CO[c].revenue[i] == null) return null; s += CO[c].revenue[i]; } return s; });
+  const s3 = rev.map((_, i) => i < 2 || rev.slice(i - 2, i + 1).some((x) => x == null) ? null : rev[i - 2] + rev[i - 1] + rev[i]);
+  return { months, rev, yoy: s3.map((v, i) => i >= 12 && v != null && s3[i - 12] ? v / s3[i - 12] - 1 : null) };
+}
+const heatColor = (v) => {
+  if (v == null) return '#1a1a1a';
+  const t = Math.max(-1, Math.min(1, v / 100));
+  return t >= 0 ? `rgba(74,222,128,${0.15 + 0.85 * Math.min(1, t * 1.6)})` : `rgba(248,113,113,${0.15 + 0.85 * Math.min(1, -t * 2.5)})`;
+};
+const korea = () => D.trade.find((t) => t.country === 'South Korea' && t.metric === 'exports' && t.category === 'ic_only');
+
+function renderOverview() {
+  const tsmc = CO['2330'], ti = tsmc.months.length - 1;
+  const g = Object.fromEntries(GROUPS.map(([n, c]) => [n, groupSeries(c)]));
+  const k = korea(), ki = k.value.length - 1;
+  const last = (s) => s.yoy.filter((x) => x != null).at(-1);
+  document.getElementById('lede').innerHTML =
+    `TSMC booked <b>NT$${tsmc.revenue[ti].toFixed(0)}bn</b> in ${tsmc.months[ti]}, <span class="${UI.cls(tsmc.yoy[ti])}">${UI.pct(tsmc.yoy[ti] / 100)}</span> on a year earlier. ` +
+    `Over the last three months, AI server makers grew <b>${UI.pct(last(g['AI server ODM']), 0)}</b> and memory makers <b>${UI.pct(last(g.Memory), 0)}</b>. ` +
+    `Korea's chip exports were <b>$${(k.value[ki] / 1e6).toFixed(1)}bn</b> in ${k.periods[ki]}, <span class="${UI.cls(k.yoy[ki])}">${UI.pct(k.yoy[ki], 0)}</span> y/y.`;
+  const stats = [
+    ['TSMC', `NT$${tsmc.revenue[ti].toFixed(0)}bn`, `${tsmc.months[ti]} · <span class="${UI.cls(tsmc.yoy[ti])}">${UI.pct(tsmc.yoy[ti] / 100)}</span> y/y · YTD ${UI.pct(tsmc.ytd_yoy[ti] / 100)}`],
+    ...GROUPS.slice(1, 3).map(([n]) => [n.toUpperCase(), UI.pct(last(g[n]), 0), `3-month revenue y/y · NT$${g[n].rev.filter((x) => x != null).at(-1).toFixed(0)}bn last month`]),
+    ['KOREA IC EXPORTS', `$${(k.value[ki] / 1e6).toFixed(1)}bn`, `${k.periods[ki]} · <span class="${UI.cls(k.yoy[ki])}">${UI.pct(k.yoy[ki], 0)}</span> y/y`],
+    ['US CHIP PPI', D.ppi.series['Semiconductors & components'].at(-1).toFixed(1), `${D.ppi.months.at(-1)} · ${D.ppi.base} = 100`],
+  ];
+  document.getElementById('stats').innerHTML = stats.map(([l, v, s]) => `<div class="stat"><div class="stat-label">${l}</div><div class="stat-value">${v}</div><div class="stat-note">${s}</div></div>`).join('');
+
+  // Heatmap: last 13 months, grouped.
+  const months = tsmc.months.slice(-13);
+  let html = `<table class="heat"><thead><tr><th></th>${months.map((m) => `<th>${m.slice(2)}</th>`).join('')}</tr></thead><tbody>`;
+  for (const [name, codes] of GROUPS) {
+    html += `<tr class="group"><td colspan="${months.length + 1}">${name.toUpperCase()}</td></tr>`;
+    for (const c of codes) {
+      const co = CO[c];
+      html += `<tr><td class="name" data-co="${c}">${co.name}<small>${co.local}</small></td>` + months.map((m) => {
+        const i = co.months.indexOf(m), v = i < 0 ? null : co.yoy[i];
+        return `<td style="background:${heatColor(v)}" title="${co.name} ${m}: ${v == null ? 'n/a' : v.toFixed(1) + '%'}">${v == null ? '' : (v > 0 ? '+' : '') + v.toFixed(0)}</td>`;
+      }).join('') + '</tr>';
+    }
+  }
+  document.getElementById('heat').innerHTML = html + '</tbody></table>';
+  document.querySelectorAll('.heat td.name').forEach((td) => td.onclick = () => { state.co = td.dataset.co; location.hash = 'taiwan'; });
+
+  const o = UI.base();
+  o.series = GROUPS.map(([n, , c]) => ({ name: n, type: 'line', showSymbol: false, color: c, lineStyle: { width: 1.8 }, data: g[n].months.map((m, i) => [m + '-01', g[n].yoy[i] == null ? null : g[n].yoy[i] * 100]).filter(([d]) => d >= '2021') }));
+  o.series.push({ type: 'line', data: [], markLine: { silent: true, symbol: 'none', lineStyle: { color: P.faint, type: 'dashed' }, data: [{ yAxis: 0 }], label: { show: false } } });
+  o.yAxis.axisLabel.formatter = (v) => v + '%';
+  o.tooltip.valueFormatter = (v) => v == null ? '—' : v.toFixed(1) + '%';
+  UI.draw('chart-groups', o);
+
+  const kc = UI.base();
+  const from = k.periods.length - 60;
+  kc.xAxis = UI.catAxis(k.periods.slice(from));
+  kc.yAxis = [{ ...kc.yAxis, min: 0, axisLabel: { color: P.dim, fontSize: 10, formatter: (v) => '$' + (v / 1e6).toFixed(0) + 'bn' } },
+    { ...kc.yAxis, splitLine: { show: false }, axisLabel: { color: P.dim, fontSize: 10, formatter: (v) => v + '%' } }];
+  kc.grid.right = 46;
+  kc.series = [
+    { name: 'Exports', type: 'bar', barWidth: '60%', itemStyle: { color: '#3a3a3a' }, data: k.value.slice(from) },
+    { name: 'Y/Y', type: 'line', yAxisIndex: 1, showSymbol: false, color: P.accent, lineStyle: { width: 2 }, data: k.yoy.slice(from).map((v) => v == null ? null : v * 100) },
+  ];
+  kc.tooltip.formatter = (ps) => ps[0].name + '<br>' + ps.map((p) => `${p.marker}${p.seriesName} ${p.seriesName === 'Y/Y' ? (p.value == null ? '—' : p.value.toFixed(1) + '%') : '$' + (p.value / 1e6).toFixed(2) + 'bn'}`).join('<br>');
+  UI.draw('chart-korea', kc);
+}
+
+function renderTaiwan() {
+  document.getElementById('tw-chips').innerHTML = GROUPS.map(([n, codes]) => `<span class="legend-note" style="margin:4px 4px 0 6px">${n.toUpperCase()}</span>` +
+    codes.map((c) => `<button class="chip ${c === state.co ? 'on' : ''}" data-co="${c}">${CO[c].name}</button>`).join('')).join('');
+  document.querySelectorAll('#tw-chips .chip').forEach((b) => b.onclick = () => { state.co = b.dataset.co; renderTaiwan(); });
+  const co = CO[state.co], n = co.months.length, i = n - 1;
+  const sum12 = (end) => co.revenue.slice(end - 11, end + 1).reduce((a, b) => a + (b || 0), 0);
+  document.getElementById('tw-title').textContent = `${co.name.toUpperCase()} · ${co.local} · ${co.industry.toUpperCase()}`;
+  document.getElementById('tw-stats').innerHTML = [
+    ['LATEST MONTH', `NT$${co.revenue[i].toFixed(1)}bn`, `${co.months[i]} · <span class="${UI.cls(co.yoy[i])}">${UI.pct(co.yoy[i] / 100)}</span> y/y`],
+    ['YEAR TO DATE', UI.pct(co.ytd_yoy[i] / 100), 'y/y, as filed'],
+    ['TRAILING 12 MONTHS', `NT$${sum12(i).toFixed(0)}bn`, `${UI.pct(sum12(i) / sum12(i - 12) - 1)} on the prior 12 months`],
+    ['RECORD MONTH', `NT$${Math.max(...co.revenue.filter((x) => x != null)).toFixed(1)}bn`, co.months[co.revenue.indexOf(Math.max(...co.revenue.filter((x) => x != null)))]],
+  ].map(([l, v, s]) => `<div class="stat"><div class="stat-label">${l}</div><div class="stat-value">${v}</div><div class="stat-note">${s}</div></div>`).join('');
+  const from = state.twRange === 'all' ? 0 : Math.max(0, n - Number(state.twRange));
+  const o = UI.base();
+  o.xAxis = UI.catAxis(co.months.slice(from));
+  o.yAxis = [{ ...o.yAxis, min: 0, axisLabel: { color: P.dim, fontSize: 10, formatter: (v) => v.toFixed(0) } },
+    { ...o.yAxis, splitLine: { show: false }, axisLabel: { color: P.dim, fontSize: 10, formatter: (v) => v + '%' } }];
+  o.grid.right = 46;
+  o.series = [
+    { name: 'Revenue', type: 'bar', barWidth: '65%', itemStyle: { color: '#4a4a4a' }, data: co.revenue.slice(from) },
+    { name: 'Y/Y', type: 'line', yAxisIndex: 1, showSymbol: false, color: P.accent, lineStyle: { width: 2 }, data: co.yoy.slice(from) },
+  ];
+  o.tooltip.formatter = (ps) => ps[0].name + '<br>' + ps.map((p) => `${p.marker}${p.seriesName} ${p.value == null ? '—' : p.seriesName === 'Y/Y' ? p.value.toFixed(1) + '%' : 'NT$' + p.value.toFixed(1) + 'bn'}`).join('<br>');
+  UI.draw('chart-tw', o);
+}
+
+const COUNTRY_UNIT = { usd_thousand: ['$', 1e6, 'bn'], jpy_thousand: ['¥', 1e9, 'tn'], hkd_thousand: ['HK$', 1e6, 'bn'] };
+function tradeLabel(t) { return `${t.country} · ${t.metric} · ${t.category === 'ic_only' ? 'ICs' : 'all semis'}`; }
+function renderTrade() {
+  const T = D.trade;
+  document.getElementById('trade-chips').innerHTML = T.map((t, i) => `<button class="chip ${i === state.trade ? 'on' : ''}" data-i="${i}">${tradeLabel(t).toUpperCase()}</button>`).join('');
+  document.querySelectorAll('#trade-chips .chip').forEach((b) => b.onclick = () => { state.trade = Number(b.dataset.i); renderTrade(); });
+  const t = T[state.trade], [sym, div, suf] = COUNTRY_UNIT[t.unit] || ['', 1, ''];
+  document.getElementById('trade-title').textContent = tradeLabel(t).toUpperCase();
+  document.getElementById('trade-sub').textContent = `${sym}${suf} per month · y/y of the 3-month sum`;
+  const n = t.periods.length, from = state.tradeRange === 'all' ? 0 : Math.max(0, n - Number(state.tradeRange));
+  const s3 = t.value.map((_, i) => i < 2 ? null : t.value[i - 2] + t.value[i - 1] + t.value[i]);
+  const y3 = s3.map((v, i) => i >= 14 && v && s3[i - 12] ? (v / s3[i - 12] - 1) * 100 : null);
+  const o = UI.base();
+  o.xAxis = UI.catAxis(t.periods.slice(from));
+  o.yAxis = [{ ...o.yAxis, min: 0, axisLabel: { color: P.dim, fontSize: 10, formatter: (v) => sym + (v / div).toFixed(1) } },
+    { ...o.yAxis, splitLine: { show: false }, axisLabel: { color: P.dim, fontSize: 10, formatter: (v) => v + '%' } }];
+  o.grid.right = 46;
+  o.series = [
+    { name: 'Value', type: 'bar', barWidth: '70%', itemStyle: { color: '#3a3a3a' }, data: t.value.slice(from) },
+    { name: 'Y/Y (3M)', type: 'line', yAxisIndex: 1, showSymbol: false, color: P.accent, lineStyle: { width: 2 }, data: y3.slice(from) },
+  ];
+  o.tooltip.formatter = (ps) => ps[0].name + '<br>' + ps.map((p) => `${p.marker}${p.seriesName} ${p.value == null ? '—' : p.seriesName === 'Value' ? sym + (p.value / div).toFixed(2) + suf : p.value.toFixed(1) + '%'}`).join('<br>');
+  UI.draw('chart-trade', o);
+  document.getElementById('trade-table').innerHTML = `<table><thead><tr><th>SERIES</th><th>MONTH</th><th>VALUE</th><th>Y/Y</th></tr></thead><tbody>` +
+    T.map((x) => { const [s, d, u] = COUNTRY_UNIT[x.unit] || ['', 1, '']; const i = x.value.length - 1;
+      return `<tr><td>${x.country} ${x.metric} <span class="tag">${x.category === 'ic_only' ? 'IC' : 'ALL'}</span></td><td class="dim">${x.periods[i]}</td><td>${s}${(x.value[i] / d).toFixed(1)}${u}</td><td class="${UI.cls(x.yoy[i])}">${UI.pct(x.yoy[i], 0)}</td></tr>`; }).join('') + '</tbody></table>';
+}
+
+function renderPrices() {
+  document.getElementById('ppi-base').textContent = D.ppi.base;
+  const o = UI.base();
+  o.xAxis = UI.catAxis(D.ppi.months);
+  const cols = ['#e8a33d', '#60a5fa', '#a78bfa', '#4ade80', '#f472b6'];
+  o.series = Object.entries(D.ppi.series).map(([name, v], i) => ({ name, type: 'line', showSymbol: false, color: cols[i], lineStyle: { width: i === 0 ? 2.4 : 1.5 }, data: v }));
+  o.series.push({ type: 'line', data: [], markLine: { silent: true, symbol: 'none', lineStyle: { color: P.faint, type: 'dashed' }, data: [{ yAxis: 100 }], label: { show: false } } });
+  o.tooltip.valueFormatter = (v) => v == null ? '—' : v.toFixed(1);
+  o.tooltip.order = 'valueDesc';
+  UI.draw('chart-ppi', o);
+}
+
+UI.load('data.json').then((data) => {
+  D = data;
+  D.companies.forEach((c) => CO[c.code] = c);
+  D.trade.sort((a, b) => (a.country === 'South Korea' ? 0 : a.country === 'Japan' ? 1 : 2) - (b.country === 'South Korea' ? 0 : b.country === 'Japan' ? 1 : 2) || a.metric.localeCompare(b.metric) || b.category.localeCompare(a.category));
+  UI.masthead('semis', `TAIWAN TO ${D.taiwan_latest}`);
+  UI.seg('tw-range', state, 'twRange', renderTaiwan);
+  UI.seg('trade-range', state, 'tradeRange', renderTrade);
+  UI.router({ overview: renderOverview, taiwan: renderTaiwan, trade: renderTrade, prices: renderPrices }, 'overview');
+});
+</script>
+</body>
+</html>
