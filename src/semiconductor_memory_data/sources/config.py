@@ -48,3 +48,10 @@ ADATA_IMAGE_CDN_BASE = "https://industrial-ad.adata.com"
 ADATA_MAX_PAGES = 12
 
 USER_AGENT = "alternative-data-semiconductor-memory/0.1"
+# ADATA's CloudFront WAF has answered HTTP 403 to non-browser user agents
+# (both this one and python-requests' default) since late 2026-10, which
+# failed every scheduled ADATA update from 2026-11-01. A browser UA is served.
+ADATA_USER_AGENT = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
+)

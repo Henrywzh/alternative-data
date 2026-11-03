@@ -217,6 +217,38 @@ def _ratio_change(latest: float | None, prior: float | None) -> float | None:
     return round(latest / prior - 1, 6)
 
 
+def _spot_from_history(df_hist: pd.DataFrame) -> pd.DataFrame:
+    """Latest daily close per ticker, standing in for an unavailable spot call.
+
+    ``stock_hk_spot_em`` pulls the whole HK market in one burst and Eastmoney
+    rate-limits GitHub's runner IPs for it, while the per-ticker daily history
+    call still succeeds there. Each row is that ticker's own last close and
+    its change against the previous close, dated to that trading day. The
+    history call carries no turnover, so turnover stays missing rather than
+    being estimated.
+    """
+    if df_hist.empty or not {"date", "ticker", "close_hkd"}.issubset(df_hist.columns):
+        return pd.DataFrame()
+    rows = []
+    history = df_hist.dropna(subset=["date", "close_hkd"]).sort_values("date")
+    for ticker, group in history.groupby("ticker", sort=True):
+        latest = group.iloc[-1]
+        prior = group.iloc[-2]["close_hkd"] if len(group) > 1 else None
+        change = (float(latest["close_hkd"]) / float(prior) - 1) * 100 if prior else None
+        rows.append(
+            {
+                "date": pd.Timestamp(latest["date"]),
+                "ticker": str(ticker),
+                "company_name": latest.get("company_name"),
+                "latest_price_hkd": float(latest["close_hkd"]),
+                "change_pct": round(change, 2) if change is not None else None,
+                "volume": latest.get("volume"),
+                "turnover_hkd": None,
+            }
+        )
+    return pd.DataFrame(rows)
+
+
 def _reit_kpi(df: pd.DataFrame, is_hotel: bool) -> dict[str, Any]:
     if df.empty:
         base = {
@@ -627,6 +659,10 @@ def build_artifact(
 
     df_spot = raw_spot if raw_spot is not None else fetch_reit_spot_quotes()
     df_hist = raw_hist if raw_hist is not None else fetch_reit_price_history()
+    spot_from_history = df_spot.empty and not df_hist.empty
+    if spot_from_history:
+        df_spot = _spot_from_history(df_hist)
+        spot_from_history = not df_spot.empty
 
     status_entries = []
     for key, ticker, name, source_id, is_hotel in REIT_META:
@@ -654,9 +690,12 @@ def build_artifact(
     history_available = not df_hist.empty
     # Spot quotes and history are one market-feed source in the headline
     # count; only count it as fully live when both calls succeeded.
-    if spot_available and history_available:
+    if spot_available and history_available and not spot_from_history:
         live_count += 1
-    if spot_available and history_available:
+    if spot_from_history:
+        spot_status = "partial"
+        spot_freshness = "partial: spot quotes derived from latest daily closes"
+    elif spot_available and history_available:
         spot_status = "success"
         spot_freshness = "live"
     elif spot_available:
@@ -720,7 +759,12 @@ def build_artifact(
             {
                 "id": "reit_spot_summary_table",
                 "title": "Hong Kong REITs Market Spot Quotes",
-                "subtitle": "Daily spot price quotes, price change %, and turnover ($M HKD) via market feed.",
+                "subtitle": (
+                    "Latest daily close and change vs the previous close; the spot "
+                    "feed was unavailable this build, so turnover is not shown."
+                    if spot_from_history
+                    else "Daily spot price quotes, price change %, and turnover ($M HKD) via market feed."
+                ),
                 "dataset": "reit_spot_quotes",
                 "sourceId": "reit_price_akshare",
                 "density": "dense",

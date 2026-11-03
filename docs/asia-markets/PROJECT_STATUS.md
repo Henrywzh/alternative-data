@@ -185,6 +185,16 @@ replacement for the operating manual or generated source-status JSON.
 
 ## Recent completed work
 
+- Daily refresh failing its freshness gate since 2026-10-29 (fixed
+  2026-11-03): three more real-estate datasets became unreachable from CI
+  (28Hse 403 for `epi_eri_history` / `hse28_new_projects`; SHKP listing
+  endpoints for `shkp_hk_commercial_asset_master`), so the refresh guard kept
+  the 2026-10-28 artifact and `real_estate.bd_history` failed (2026-05 history
+  vs an 2026-08 digest). They are now carried forward and marked `Stale`.
+  `hk-reit-artifact.json` had been held at 2026-10-13 the same way by an
+  empty Eastmoney spot call; spot quotes now fall back to the latest daily
+  closes, labelled partial.
+
 - HK real-estate artifact had not been CI-published since 2026-08-12
   (2026-09-01): `artifact-refresh-guard.mjs` rejected every rebuild because
   two datasets vanish on a clean runner -- `shkp_hk_financial_bridge` needs
