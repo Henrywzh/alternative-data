@@ -6,9 +6,9 @@
     "title": "香港房地产信托（REITs）基本面监测",
     "description": "领展（Link REIT）、冠君（Champion REIT）、置富（Fortune REIT）、繁荣（Prosperity REIT）、阳光（Sunlight REIT）及富豪（Regal REIT）的每单位资产净值（NAV）、每基金单位分派（DPU）、出租率、租金检讨调升率及酒店 KPI 快照。",
     "sector": "hk-reit",
-    "generatedAt": "2026-11-03T10:44:56.225258Z",
+    "generatedAt": "2026-11-03T14:17:28.737555Z",
     "dataAsOf": "2026-09-30",
-    "liveSourcesCount": 7,
+    "liveSourcesCount": 6,
     "totalSourcesCount": 7,
     "cards": [
       {
@@ -561,7 +561,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `dd643b435c3352bd` · 生成于 2026-11-03T10:44:56.225258Z。"
+        "body": "**数据快照：** `e1e877d2f639fe27` · 生成于 2026-11-03T14:17:28.737555Z。"
       },
       {
         "id": "kpi_grid",
@@ -626,7 +626,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-11-03T10:44:56.225258Z",
+    "generatedAt": "2026-11-03T14:17:28.737555Z",
     "status": "ready",
     "datasets": {
       "kpi_linkreit": [
@@ -1608,28 +1608,8 @@
           "latest_price_hkd": 2.12,
           "change_pct": 2.42,
           "volume": 1709283,
-          "turnover_hkd": 3578577,
-          "turnover_hkd_m": 3.58
-        },
-        {
-          "date": "2026-11-03",
-          "ticker": "00823",
-          "company_name": "Link REIT",
-          "latest_price_hkd": 39.98,
-          "change_pct": 0.55,
-          "volume": 8262937,
-          "turnover_hkd": 329165792,
-          "turnover_hkd_m": 329.17
-        },
-        {
-          "date": "2026-11-03",
-          "ticker": "00808",
-          "company_name": "Prosperity REIT",
-          "latest_price_hkd": 1.335,
-          "change_pct": 0.38,
-          "volume": 1237041,
-          "turnover_hkd": 1649089,
-          "turnover_hkd_m": 1.65
+          "turnover_hkd": null,
+          "turnover_hkd_m": null
         },
         {
           "date": "2026-11-03",
@@ -1638,18 +1618,28 @@
           "latest_price_hkd": 4.42,
           "change_pct": 0.11,
           "volume": 2005207,
-          "turnover_hkd": 8879320,
-          "turnover_hkd_m": 8.88
+          "turnover_hkd": null,
+          "turnover_hkd_m": null
         },
         {
           "date": "2026-11-03",
-          "ticker": "02778",
-          "company_name": "Champion REIT",
-          "latest_price_hkd": 2.2,
-          "change_pct": -0.68,
-          "volume": 898807,
-          "turnover_hkd": 1972638,
-          "turnover_hkd_m": 1.97
+          "ticker": "00808",
+          "company_name": "Prosperity REIT",
+          "latest_price_hkd": 1.335,
+          "change_pct": 0.38,
+          "volume": 1237041,
+          "turnover_hkd": null,
+          "turnover_hkd_m": null
+        },
+        {
+          "date": "2026-11-03",
+          "ticker": "00823",
+          "company_name": "Link REIT",
+          "latest_price_hkd": 39.98,
+          "change_pct": 0.55,
+          "volume": 8262937,
+          "turnover_hkd": null,
+          "turnover_hkd_m": null
         },
         {
           "date": "2026-11-03",
@@ -1658,8 +1648,18 @@
           "latest_price_hkd": 0.285,
           "change_pct": -1.72,
           "volume": 492001,
-          "turnover_hkd": 141200,
-          "turnover_hkd_m": 0.14
+          "turnover_hkd": null,
+          "turnover_hkd_m": null
+        },
+        {
+          "date": "2026-11-03",
+          "ticker": "02778",
+          "company_name": "Champion REIT",
+          "latest_price_hkd": 2.2,
+          "change_pct": -0.68,
+          "volume": 898807,
+          "turnover_hkd": null,
+          "turnover_hkd_m": null
         }
       ],
       "reit_price_history": [
@@ -5205,10 +5205,10 @@
     {
       "source_id": "reit_price_akshare",
       "label": "Hong Kong REITs Daily Spot Quotes & History (akshare)",
-      "status": "success",
+      "status": "partial",
       "records": 6,
       "latest_observation": "2026-11-03",
-      "freshness": "live",
+      "freshness": "partial: spot quotes derived from latest daily closes",
       "history_status": "success",
       "history_records": 510,
       "history_latest_observation": "2026-11-03",
@@ -5220,8 +5220,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-reit/",
     "sector_id": "hk-reit",
     "sector_name": "Hong Kong REITs Sector Monitor",
-    "snapshotId": "dd643b435c3352bd",
-    "generatedAt": "2026-11-03T10:44:56.225258Z",
+    "snapshotId": "e1e877d2f639fe27",
+    "generatedAt": "2026-11-03T14:17:28.737555Z",
     "dataAsOf": "2026-09-30"
   }
 }
