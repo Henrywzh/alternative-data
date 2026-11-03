@@ -877,3 +877,28 @@ def test_a_carried_forward_dataset_says_so_rather_than_passing_as_fresh():
     # second carried-forward row for it would double-count the same source.
     bridge_label = dashboard_export.PUBLIC_SOURCES["shkp_financial_bridge"]["label"]
     assert sum(row["source"] == bridge_label for row in coverage) == 1
+
+
+def test_blocked_28hse_and_shkp_listings_are_carried_forward_and_marked_stale():
+    """28Hse and the SHKP listing endpoints are blocked on CI runners.
+
+    Dropping them made the refresh guard keep the 2026-10-28 artifact from
+    2026-10-29 on, so the BD supply history stayed at 2026-05 and the daily
+    freshness audit failed.  They must ride along from the last artifact and
+    say so in source coverage.
+    """
+    artifact, _ = dashboard_export.build_artifact(
+        _frames(), raw_hkma=_hkma_frame(), raw_cnsd=_cnsd_frame(),
+        raw_epi_eri=pd.DataFrame(), raw_new_projects=pd.DataFrame(), now=NOW,
+    )
+    datasets = artifact["snapshot"]["datasets"]
+    for dataset_key in ("epi_eri_history", "hse28_new_projects", "shkp_hk_commercial_asset_master"):
+        assert datasets.get(dataset_key), dataset_key
+
+    coverage = datasets["source_coverage"]
+    epi = [row for row in coverage if row["source"] == "28Hse"]
+    assert len(epi) == 1
+    assert epi[0]["status"] == "Stale"
+    assert epi[0]["freshness"] == "Previous artifact snapshot"
+    new_projects = next(row for row in coverage if row["dataset"] == "hse28_new_projects")
+    assert new_projects["status"] == "Stale"

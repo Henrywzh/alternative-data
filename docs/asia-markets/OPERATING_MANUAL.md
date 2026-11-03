@@ -375,6 +375,22 @@ does not present three-week-old rows as fresh. Adding a dataset with a similar
 CI-absent upstream means adding it to `RUNNER_UNAVAILABLE_DATASETS`, not
 loosening the guard.
 
+It happened again from 2026-10-29: 28Hse began answering runner IPs with
+HTTP 403 (`epi_eri_history`, `hse28_new_projects`) and the SHKP listing
+endpoints returned non-JSON (`shkp_hk_commercial_asset_master`). The guard
+kept the 2026-10-28 artifact, so the BD supply history stayed at 2026-05
+against an 2026-08 digest and the daily workflow failed its freshness gate
+(`real_estate.bd_history`). All three are now in
+`RUNNER_UNAVAILABLE_DATASETS`; the 28Hse EPI / ERI coverage row reports
+`Stale` rather than gaining a second row.
+
+The REIT sector had the same shape: Eastmoney rate-limits the whole-market
+`stock_hk_spot_em` call on runners, so `reit_spot_quotes` went to zero rows
+and `hk-reit-artifact.json` stayed at 2026-10-13. Its builder now rebuilds the
+spot table from each ticker's last two daily closes (`stock_hk_hist`, which
+still works there), leaves turnover missing, and reports the market source as
+`partial: spot quotes derived from latest daily closes`.
+
 ### Transactions
 
 The agency transaction pulse is intentionally capped for display. A display

@@ -19,17 +19,19 @@ from semiconductor_memory_data.sources.config import (
     ADATA_LIST_BASE_URL,
     ADATA_MAX_PAGES,
     ADATA_REPORT_BASE_URL,
+    ADATA_USER_AGENT,
     DRAM_SECTION_KEYWORDS,
     KEYWORD_PATTERNS,
     NAND_SECTION_KEYWORDS,
-    USER_AGENT,
 )
 
 
 class AdataEDMSource:
     def __init__(self, session: requests.Session | None = None) -> None:
         self.session = session or requests.Session()
-        self.session.headers.setdefault("User-Agent", USER_AGENT)
+        # Not setdefault: a requests.Session already carries python-requests'
+        # own User-Agent, so setdefault never applied and the WAF saw that.
+        self.session.headers["User-Agent"] = ADATA_USER_AGENT
 
     # ------------------------------------------------------------------
     # Public API

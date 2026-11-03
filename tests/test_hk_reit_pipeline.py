@@ -391,6 +391,32 @@ def test_price_history_failure_is_not_reported_as_a_fully_live_market_source():
     assert status["overall_status"] == "Degraded"
 
 
+def test_spot_feed_failure_falls_back_to_latest_daily_closes():
+    """Eastmoney rate-limits the whole-market spot call on CI runners.
+
+    An empty spot table made the refresh guard keep the 2026-10-13 artifact
+    on every later run. The per-ticker history still arrives, so the table is
+    rebuilt from each ticker's last two closes and labelled as such.
+    """
+    frames = _frames()
+    frames["raw_spot"] = pd.DataFrame()
+    hist = frames["raw_hist"]
+
+    artifact, status = dashboard_export.build_artifact(**frames, now=NOW)
+    spot = artifact["snapshot"]["datasets"]["reit_spot_quotes"]
+    assert len(spot) == hist["ticker"].nunique()
+    for row in spot:
+        closes = hist[hist["ticker"] == row["ticker"]].sort_values("date")["close_hkd"].tolist()
+        assert row["latest_price_hkd"] == pytest.approx(closes[-1], abs=0.01)
+        assert row["change_pct"] == pytest.approx((closes[-1] / closes[-2] - 1) * 100, abs=0.01)
+        assert row["turnover_hkd"] is None
+
+    market_health = next(entry for entry in artifact["source_health"] if entry["source_id"] == "reit_price_akshare")
+    assert market_health["status"] == "partial"
+    assert "derived from latest daily closes" in market_health["freshness"]
+    assert status["overall_status"] == "Degraded"
+
+
 def test_reit_comparison_table_row_per_reit_with_business_type_split():
     artifact, _ = dashboard_export.build_artifact(**_frames(), now=NOW)
     rows = artifact["snapshot"]["datasets"]["reit_comparison"]

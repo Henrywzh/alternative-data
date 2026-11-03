@@ -1757,6 +1757,9 @@ def build_artifact(
     shkp_financial_bridge_rows = _carry_forward_if_runner_unavailable(
         shkp_financial_bridge_rows, "shkp_hk_financial_bridge", carried_forward_datasets
     )
+    shkp_commercial_asset_rows = _carry_forward_if_runner_unavailable(
+        shkp_commercial_asset_rows, "shkp_hk_commercial_asset_master", carried_forward_datasets
+    )
     (
         srpe_developer_monthly_rows,
         srpe_sell_through_rows,
@@ -2002,6 +2005,10 @@ def build_artifact(
                     {"date": str(r["date"])[:10], "series": str(r["index_type"]), "value": float(r["index_value"])}
                 )
         epi_eri_rows.sort(key=lambda r: (r["series"], r["date"]))
+    # Carried forward before the rebased price/rent charts below read it.
+    epi_eri_rows = _carry_forward_if_runner_unavailable(
+        epi_eri_rows, "epi_eri_history", carried_forward_datasets
+    )
 
     # Keep price and rent normalization separate.  Combining a rent index with
     # price indices in one rebased chart is numerically possible but visually
@@ -2165,6 +2172,9 @@ def build_artifact(
                     "estimated_move_in_year": int(r["estimated_move_in_year"]) if pd.notna(r.get("estimated_move_in_year")) else None,
                 }
             )
+    new_project_rows = _carry_forward_if_runner_unavailable(
+        new_project_rows, "hse28_new_projects", carried_forward_datasets
+    )
 
     # Land Registry monthly facts + ASP series -> volume trend + ASP trend.
     if raw_landreg is not None:
@@ -2421,7 +2431,11 @@ def build_artifact(
         fallback_reason = (
             df_bd_supply_history.attrs.get("dashboard_fallback_reason")
             if label == "Buildings Department history"
-            else None
+            else (
+                "last published EPI / ERI history"
+                if label == "28Hse" and "epi_eri_history" in carried_forward_datasets
+                else None
+            )
         )
         if not record_count:
             coverage_status = "No data this run"
@@ -2459,7 +2473,8 @@ def build_artifact(
         # The SHKP bridge already owns a source_health row, marked Stale above.
         # The coverage table is a source inventory, not a list of every surface
         # using a source, so do not alias it here.
-        if dataset_key == "shkp_hk_financial_bridge":
+        # Likewise the 28Hse EPI / ERI row in the loop above.
+        if dataset_key in {"shkp_hk_financial_bridge", "epi_eri_history"}:
             continue
         label, upstream = RUNNER_UNAVAILABLE_DATASETS[dataset_key]
         additional_coverage.append(
@@ -3993,7 +4008,7 @@ def _load_dataset_from_committed_artifact(dataset_key: str) -> pd.DataFrame:
 # whole artifact. That is why CI last published this dashboard on 2026-08-12
 # while every other sector in the same job kept refreshing daily, and why a
 # Buildings Department history repaired upstream still could not reach the
-# published chart. Serve the last published rows for these two and mark them
+# published chart. Serve the last published rows for these and mark them
 # stale, the way HKMA, SRPE and the BD history already do.
 RUNNER_UNAVAILABLE_DATASETS = {
     "shkp_hk_financial_bridge": (
@@ -4003,6 +4018,23 @@ RUNNER_UNAVAILABLE_DATASETS = {
     "midland_top_estates": (
         "Midland top estates",
         "Midland market-insight scrape (skipped in CI, WAF-blocked)",
+    ),
+    # 28Hse answers GitHub's datacenter IPs with 403 and the SHKP listing
+    # endpoints return non-JSON there; both work from a residential IP. With
+    # these three missing, the guard kept the 2026-10-28 artifact from
+    # 2026-10-29 on, holding the BD supply history at 2026-05 against an
+    # 2026-08 digest and failing the freshness audit every day.
+    "epi_eri_history": (
+        "28Hse EPI / ERI",
+        "28Hse EPI / ERI page (HTTP 403 from CI runners)",
+    ),
+    "hse28_new_projects": (
+        "28Hse new projects",
+        "28Hse new-properties page (HTTP 403 from CI runners)",
+    ),
+    "shkp_hk_commercial_asset_master": (
+        "SHKP commercial asset directory",
+        "SHKP property listing endpoints (non-JSON responses in CI)",
     ),
 }
 

@@ -49,3 +49,11 @@ def test_parse_report_uses_url_month_when_heading_is_stale() -> None:
     assert raw_point.month == "2025-11"
     assert monthly_point.month == "2025-11"
     assert {point.month for point in image_points} == {"2025-11"}
+
+
+def test_adata_requests_send_a_browser_user_agent():
+    """ADATA's WAF returns 403 to python-requests' default UA (2026-11-01 run)."""
+    source = AdataEDMSource()
+    user_agent = source.session.headers["User-Agent"]
+    assert user_agent.startswith("Mozilla/5.0")
+    assert "python-requests" not in user_agent
