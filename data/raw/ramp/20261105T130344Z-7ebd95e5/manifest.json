@@ -1,0 +1,40 @@
+{
+  "run_id": "20261105T130344Z-7ebd95e5",
+  "mode": "tokenomics",
+  "scraped_at": "2026-11-05T13:03:44.839444Z",
+  "status": "success",
+  "datasets": [
+    {
+      "dataset_id": "ramp_ai_token_activity",
+      "status": "ok",
+      "rows": 20321
+    },
+    {
+      "dataset_id": "ramp_ai_token_prices",
+      "status": "ok",
+      "rows": 3930
+    }
+  ],
+  "quality": {
+    "ramp_ai_token_activity": {
+      "rows": 20321,
+      "latest_observation": "2026-10-23",
+      "latest_by_breakdown": {
+        "token_spend": "2026-10-23",
+        "token_volume": "2026-10-23"
+      }
+    },
+    "ramp_ai_token_prices": {
+      "rows": 3930,
+      "latest_observation": "2026-10-23",
+      "latest_by_breakdown": {
+        "anthropic/all_tokens": "2026-10-23",
+        "anthropic/output": "2026-10-23",
+        "anthropic/uncached_input": "2026-10-23",
+        "openai/all_tokens": "2026-10-23",
+        "openai/output": "2026-10-23",
+        "openai/uncached_input": "2026-10-23"
+      }
+    }
+  }
+}
