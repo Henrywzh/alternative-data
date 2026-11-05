@@ -1,8 +1,8 @@
 # asia_markets research feed
 
-Generated: 2026-11-05T15:29:42.437209Z · Status: **degraded**
+Generated: 2026-11-05T22:00:34.147341Z · Status: **degraded**
 
-Source commit: `0086f8e0600c1b7be84939d5568cbbf7b87fe100`
+Source commit: `f73226cf17bca325901fffa1a1ab079f175698b7`
 
 Observation dates differ by record. Generated time is not a market-data timestamp.
 
@@ -39,9 +39,6 @@ Observation dates differ by record. Generated time is not a market-data timestam
 
 ## Changes
 
-- new_observation: hk-transport/fleet_card
-- new_observation: hk-transport/journeys_card
-- new_observation: hk-transport/private_car_first_reg_card
 
 ## Excluded coverage
 
