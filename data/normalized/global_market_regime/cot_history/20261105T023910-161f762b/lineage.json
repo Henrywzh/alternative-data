@@ -1,0 +1,27 @@
+{
+  "run_scope": "full",
+  "retrieved_at": "2026-11-05T02:39:10.755397Z",
+  "dataset_name": "cot_history",
+  "run_id": "20261105T023910-161f762b",
+  "created_at": "2026-11-05T02:39:29.203321Z",
+  "records": 3083,
+  "columns": [
+    "date",
+    "contract_id",
+    "label_en",
+    "label_zh",
+    "group",
+    "report",
+    "market_and_exchange_names",
+    "open_interest",
+    "long_pos",
+    "short_pos",
+    "net",
+    "weekly_change",
+    "retrieved_at",
+    "source",
+    "percentile",
+    "position_label"
+  ],
+  "sha256": "af7f449bebdeadc4b59866b6d0eb48df79a7e29c430a5e2be5664563baa29a25"
+}
