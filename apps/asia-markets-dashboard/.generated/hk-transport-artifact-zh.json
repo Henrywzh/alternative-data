@@ -6,7 +6,7 @@
     "title": "香港交通与航空监测",
     "description": "港铁月度客运量（本地/跨境/高铁）、国泰航空及香港国际机场流量、六家中国上市航空公司客运与货运运营数据、运输署公共交通/私家车/电动车登记、C&SD跨境移动及传感器停车位占用率数据。",
     "sector": "hk-transport",
-    "generatedAt": "2026-11-04T14:35:08.393110Z",
+    "generatedAt": "2026-11-05T14:42:25.087445Z",
     "cards": [
       {
         "id": "mtr_card",
@@ -2054,7 +2054,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-11-04T14:35:08.393110Z",
+    "generatedAt": "2026-11-05T14:42:25.087445Z",
     "status": "ready",
     "datasets": {
       "kpi_mtr": [
@@ -89046,35 +89046,29 @@
       ],
       "kpi_journeys": [
         {
-          "kmb_k": 74364.335,
-          "total_k": 349101.83599999995,
-          "period_change": 0.009501,
-          "observation_date": "2026-07-01"
+          "kmb_k": 76105.324,
+          "total_k": 361332.121,
+          "period_change": 0.036112,
+          "observation_date": "2026-08-01"
         }
       ],
       "kpi_fleet": [
         {
-          "total_registered": 650227,
-          "ev_share_pct": 27.4633,
-          "ev_share_change_pp": 0.2152,
-          "observation_date": "2026-08-01"
+          "total_registered": 651157,
+          "ev_share_pct": 27.6241,
+          "ev_share_change_pp": 0.1607,
+          "observation_date": "2026-09-01"
         }
       ],
       "kpi_net_growth": [
         {
-          "gross_first_registrations": 2989,
-          "deregistrations": 3,
-          "net_first_registrations": 2986,
-          "observation_date": "2026-08-01"
+          "gross_first_registrations": 2698,
+          "deregistrations": 2,
+          "net_first_registrations": 2696,
+          "observation_date": "2026-09-01"
         }
       ],
       "hk_total_transport_journeys_history": [
-        {
-          "date": "2025-02-01",
-          "month": "2025-02",
-          "series": "总计",
-          "value": 330962.866
-        },
         {
           "date": "2025-03-01",
           "month": "2025-03",
@@ -89157,58 +89151,34 @@
           "date": "2026-04-01",
           "month": "2026-04",
           "series": "总计",
-          "value": 342705.672
+          "value": 342676.343
         },
         {
           "date": "2026-05-01",
           "month": "2026-05",
           "series": "总计",
-          "value": 359941.188
+          "value": 359297.196
         },
         {
           "date": "2026-06-01",
           "month": "2026-06",
           "series": "总计",
-          "value": 345816.337
+          "value": 345740.786
         },
         {
           "date": "2026-07-01",
           "month": "2026-07",
           "series": "总计",
-          "value": 349101.836
+          "value": 348738.427
+        },
+        {
+          "date": "2026-08-01",
+          "month": "2026-08",
+          "series": "总计",
+          "value": 361332.121
         }
       ],
       "hk_modal_split_history": [
-        {
-          "date": "2025-02-01",
-          "month": "2025-02",
-          "series": "巴士",
-          "value": 106096.1
-        },
-        {
-          "date": "2025-02-01",
-          "month": "2025-02",
-          "series": "渡轮",
-          "value": 3155.135
-        },
-        {
-          "date": "2025-02-01",
-          "month": "2025-02",
-          "series": "小巴",
-          "value": 41822.353
-        },
-        {
-          "date": "2025-02-01",
-          "month": "2025-02",
-          "series": "铁路",
-          "value": 151378.487
-        },
-        {
-          "date": "2025-02-01",
-          "month": "2025-02",
-          "series": "的士",
-          "value": 18946.338
-        },
         {
           "date": "2025-03-01",
           "month": "2025-03",
@@ -89615,7 +89585,7 @@
           "date": "2026-04-01",
           "month": "2026-04",
           "series": "小巴",
-          "value": 43590.889
+          "value": 43561.49
         },
         {
           "date": "2026-04-01",
@@ -89645,7 +89615,7 @@
           "date": "2026-05-01",
           "month": "2026-05",
           "series": "小巴",
-          "value": 45824.41
+          "value": 45799.937
         },
         {
           "date": "2026-05-01",
@@ -89657,7 +89627,7 @@
           "date": "2026-05-01",
           "month": "2026-05",
           "series": "的士",
-          "value": 21430.569
+          "value": 20811.253
         },
         {
           "date": "2026-06-01",
@@ -89675,7 +89645,7 @@
           "date": "2026-06-01",
           "month": "2026-06",
           "series": "小巴",
-          "value": 44657.713
+          "value": 44579.441
         },
         {
           "date": "2026-06-01",
@@ -89705,7 +89675,7 @@
           "date": "2026-07-01",
           "month": "2026-07",
           "series": "小巴",
-          "value": 44706.393
+          "value": 44345.803
         },
         {
           "date": "2026-07-01",
@@ -89718,33 +89688,39 @@
           "month": "2026-07",
           "series": "的士",
           "value": 19900.68
+        },
+        {
+          "date": "2026-08-01",
+          "month": "2026-08",
+          "series": "巴士",
+          "value": 114099.041
+        },
+        {
+          "date": "2026-08-01",
+          "month": "2026-08",
+          "series": "渡轮",
+          "value": 3595.916
+        },
+        {
+          "date": "2026-08-01",
+          "month": "2026-08",
+          "series": "小巴",
+          "value": 45236.999
+        },
+        {
+          "date": "2026-08-01",
+          "month": "2026-08",
+          "series": "铁路",
+          "value": 166661.743
+        },
+        {
+          "date": "2026-08-01",
+          "month": "2026-08",
+          "series": "的士",
+          "value": 21139.137
         }
       ],
       "hk_franchised_bus_operator_history": [
-        {
-          "date": "2025-02-01",
-          "month": "2025-02",
-          "series": "城巴",
-          "value": 27870.051
-        },
-        {
-          "date": "2025-02-01",
-          "month": "2025-02",
-          "series": "九巴",
-          "value": 71594.419
-        },
-        {
-          "date": "2025-02-01",
-          "month": "2025-02",
-          "series": "龙运",
-          "value": 3776.289
-        },
-        {
-          "date": "2025-02-01",
-          "month": "2025-02",
-          "series": "新大屿山巴士",
-          "value": 2855.341
-        },
         {
           "date": "2025-03-01",
           "month": "2025-03",
@@ -90152,6 +90128,30 @@
           "month": "2026-07",
           "series": "新大屿山巴士",
           "value": 3157.165
+        },
+        {
+          "date": "2026-08-01",
+          "month": "2026-08",
+          "series": "城巴",
+          "value": 30122.46
+        },
+        {
+          "date": "2026-08-01",
+          "month": "2026-08",
+          "series": "九巴",
+          "value": 76105.324
+        },
+        {
+          "date": "2026-08-01",
+          "month": "2026-08",
+          "series": "龙运",
+          "value": 4551.712
+        },
+        {
+          "date": "2026-08-01",
+          "month": "2026-08",
+          "series": "新大屿山巴士",
+          "value": 3319.545
         }
       ],
       "mttd_passenger_journeys_history": [
@@ -93088,17 +93088,35 @@
           "month": "2026-07",
           "series": "港铁本地",
           "value": 142790.954
+        },
+        {
+          "date": "2026-08-01",
+          "month": "2026-08",
+          "series": "专营巴士",
+          "value": 114099.041
+        },
+        {
+          "date": "2026-08-01",
+          "month": "2026-08",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 18711.567
+        },
+        {
+          "date": "2026-08-01",
+          "month": "2026-08",
+          "series": "港铁本地",
+          "value": 148838.523
         }
       ],
       "mttd_passenger_journeys_latest": [
         {
-          "summary": "港铁本地：142,791.0 千人次（2026-07）"
+          "summary": "港铁本地：148,838.5 千人次（2026-08）"
         },
         {
-          "summary": "港铁机场／轻铁／接驳：18,740.0 千人次（2026-07）"
+          "summary": "港铁机场／轻铁／接驳：18,711.6 千人次（2026-08）"
         },
         {
-          "summary": "专营巴士：110,617.8 千人次（2026-07）"
+          "summary": "专营巴士：114,099.0 千人次（2026-08）"
         }
       ],
       "censtatd_boundary_movements_history": [
@@ -94040,11 +94058,6 @@
       ],
       "hk_private_car_fleet_ev_share_history": [
         {
-          "date": "2025-03-01",
-          "month": "2025-03",
-          "value": 18.1019
-        },
-        {
           "date": "2025-04-01",
           "month": "2025-04",
           "value": 18.4389
@@ -94128,15 +94141,14 @@
           "date": "2026-08-01",
           "month": "2026-08",
           "value": 27.4633
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "value": 27.6241
         }
       ],
       "hk_private_car_net_growth_history": [
-        {
-          "date": "2025-03-01",
-          "month": "2025-03",
-          "series": "首次登记净额",
-          "value": 3617
-        },
         {
           "date": "2025-04-01",
           "month": "2025-04",
@@ -94237,16 +94249,22 @@
           "date": "2026-08-01",
           "month": "2026-08",
           "series": "首次登记净额",
-          "value": 2986
+          "value": 2977
+        },
+        {
+          "date": "2026-09-01",
+          "month": "2026-09",
+          "series": "首次登记净额",
+          "value": 2696
         }
       ],
       "kpi_private_car_first_reg": [
         {
-          "total_first_reg": 3253,
-          "electric_first_reg": 1969,
-          "ev_share_pct": 60.5287,
-          "ev_share_change_pp": 6.421500000000002,
-          "observation_date": "2026-07-01"
+          "total_first_reg": 2989,
+          "electric_first_reg": 1810,
+          "ev_share_pct": 60.5554,
+          "ev_share_change_pp": 0.02669999999999817,
+          "observation_date": "2026-08-01"
         }
       ],
       "hk_private_car_ev_make_history": [
@@ -96067,6 +96085,24 @@
           "month": "2026-07",
           "series": "Tesla",
           "value": 145
+        },
+        {
+          "date": "2026-08-01",
+          "month": "2026-08",
+          "series": "比亚迪",
+          "value": 614
+        },
+        {
+          "date": "2026-08-01",
+          "month": "2026-08",
+          "series": "其他电动车厂名",
+          "value": 983
+        },
+        {
+          "date": "2026-08-01",
+          "month": "2026-08",
+          "series": "Tesla",
+          "value": 213
         }
       ],
       "hk_private_car_ev_share_history": [
@@ -96684,68 +96720,73 @@
           "date": "2026-07-01",
           "month": "2026-07",
           "value": 60.5287
+        },
+        {
+          "date": "2026-08-01",
+          "month": "2026-08",
+          "value": 60.5554
         }
       ],
       "hk_private_car_ev_model_latest": [
         {
-          "summary": "BYD BYD SEALION 7: 252 first registrations (2026-08)"
+          "summary": "BYD BYD ATTO 2: 292 first registrations (2026-09)"
         },
         {
-          "summary": "BYD ATTO 3: 162 first registrations (2026-08)"
+          "summary": "DONGFENG NAMMI VIGO PRO: 138 first registrations (2026-09)"
         },
         {
-          "summary": "TESLA MODEL Y L: 135 first registrations (2026-08)"
+          "summary": "TESLA MODEL Y L: 66 first registrations (2026-09)"
         },
         {
-          "summary": "BYD BYD ATTO 2: 125 first registrations (2026-08)"
+          "summary": "XPENG G6 STANDARD RANGE RWD (F30BR): 52 first registrations (2026-09)"
         },
         {
-          "summary": "ICAUR V23 SPORT: 84 first registrations (2026-08)"
+          "summary": "ICAUR V23 SPORT: 51 first registrations (2026-09)"
         },
         {
-          "summary": "DONGFENG NAMMI VIGO PRO: 79 first registrations (2026-08)"
+          "summary": "ICAUR V23: 50 first registrations (2026-09)"
         },
         {
-          "summary": "ICAUR V23: 70 first registrations (2026-08)"
+          "summary": "B.M.W. IX1 EDRIVE20L M SPORT EDITION (U12): 45 first registrations (2026-09)"
         },
         {
-          "summary": "B.M.W. IX1 EDRIVE20L M SPORT EDITION (U12): 58 first registrations (2026-08)"
+          "summary": "MG MG4 URBAN TROPHY: 39 first registrations (2026-09)"
         },
         {
-          "summary": "B.M.W. IX3 50 XDRIVE M SPORT EDITION (NA5): 49 first registrations (2026-08)"
+          "summary": "WULING DARION EV: 38 first registrations (2026-09)"
         },
         {
-          "summary": "MAXUS MIFA 7 ELITE: 46 first registrations (2026-08)"
+          "summary": "MAXUS MIFA 7 ELITE: 31 first registrations (2026-09)"
         },
         {
-          "summary": "XPENG G6 STANDARD RANGE RWD (F30BR): 46 first registrations (2026-08)"
+          "summary": "TESLA MODEL Y PREMIUM REAR-WHEEL DRIVE: 30 first registrations (2026-09)"
         },
         {
-          "summary": "ZEEKR 7X PLATINUM: 46 first registrations (2026-08)"
+          "summary": "GAC AION AION UT PREMIUM: 27 first registrations (2026-09)"
         },
         {
-          "summary": "WULING DARION EV: 45 first registrations (2026-08)"
+          "summary": "XPENG G6 PERFORMANCE AWD (F30BR): 22 first registrations (2026-09)"
         },
         {
-          "summary": "BYD BYD M6: 37 first registrations (2026-08)"
+          "summary": "GEELY EX5 MAX PLUS: 18 first registrations (2026-09)"
         },
         {
-          "summary": "LEAPMOTOR B10: 34 first registrations (2026-08)"
+          "summary": "ZEEKR 7X PLATINUM: 17 first registrations (2026-09)"
         },
         {
-          "summary": "DEEPAL S07 STANDARD RANGE: 33 first registrations (2026-08)"
+          "summary": "B.M.W. IX3 50 XDRIVE M SPORT EDITION (NA5): 16 first registrations (2026-09)"
         },
         {
-          "summary": "BYD BYD SEAL 6 EV: 28 first registrations (2026-08)"
+          "summary": "MAXUS MIFA 7 PLUS: 16 first registrations (2026-09)"
         },
         {
-          "summary": "GAC AION AION UT PREMIUM: 28 first registrations (2026-08)"
+          "summary": "XPENG X9 STANDARD RANGE FWD (H93AER): 16 first registrations (2026-09)"
         },
         {
-          "summary": "MG MG4 URBAN TROPHY: 22 first registrations (2026-08)"
+          "summary": "ZEEKR 009: 16 first registrations (2026-09)"
         },
         {
-          "summary": "MAXUS MIFA 7 PLUS: 20 first registrations (2026-08)"
+          "summary": "DENZA DENZA D9: 15 first registrations (2026-09)"
         }
       ],
       "hk_parking_vacancy_history": [
@@ -96820,71 +96861,79 @@
           "parks_reporting_exact": 466,
           "parks_with_unknown_count": 82,
           "participating_parks": 548
+        },
+        {
+          "date": "2026-11-05 14:42",
+          "month": "2026-11",
+          "value": 20816,
+          "parks_reporting_exact": 463,
+          "parks_with_unknown_count": 88,
+          "participating_parks": 551
         }
       ],
       "hk_parking_current_district": [
         {
-          "summary": "沙田区：1,922 个确切空置车位（共 47 个停车场）"
+          "summary": "沙田区：2,036 个确切空置车位（共 45 个停车场）"
         },
         {
-          "summary": "观塘区：1,852 个确切空置车位（共 68 个停车场）"
+          "summary": "观塘区：2,011 个确切空置车位（共 68 个停车场）"
         },
         {
-          "summary": "离岛区：1,671 个确切空置车位（共 15 个停车场）"
+          "summary": "离岛区：1,753 个确切空置车位（共 15 个停车场）"
         },
         {
-          "summary": "油尖旺区：1,522 个确切空置车位（共 14 个停车场）"
+          "summary": "油尖旺区：1,693 个确切空置车位（共 13 个停车场）"
         },
         {
-          "summary": "西贡区：1,430 个确切空置车位（共 37 个停车场）"
+          "summary": "西贡区：1,380 个确切空置车位（共 37 个停车场）"
         },
         {
-          "summary": "中西区：1,337 个确切空置车位（共 10 个停车场）"
+          "summary": "北区：1,303 个确切空置车位（共 24 个停车场）"
         },
         {
-          "summary": "北区：1,082 个确切空置车位（共 23 个停车场）"
+          "summary": "中西区：1,265 个确切空置车位（共 10 个停车场）"
         },
         {
-          "summary": "元朗区：989 个确切空置车位（共 27 个停车场）"
+          "summary": "元朗区：1,198 个确切空置车位（共 28 个停车场）"
         },
         {
-          "summary": "黄大仙区：970 个确切空置车位（共 34 个停车场）"
+          "summary": "九龙城区：1,099 个确切空置车位（共 16 个停车场）"
         },
         {
-          "summary": "九龙城区：866 个确切空置车位（共 16 个停车场）"
+          "summary": "黄大仙区：1,048 个确切空置车位（共 34 个停车场）"
         },
         {
-          "summary": "南区：840 个确切空置车位（共 10 个停车场）"
+          "summary": "荃湾区：939 个确切空置车位（共 15 个停车场）"
         },
         {
-          "summary": "大埔区：724 个确切空置车位（共 21 个停车场）"
+          "summary": "大埔区：939 个确切空置车位（共 23 个停车场）"
         },
         {
-          "summary": "葵青区：673 个确切空置车位（共 31 个停车场）"
+          "summary": "南区：913 个确切空置车位（共 11 个停车场）"
         },
         {
-          "summary": "荃湾区：649 个确切空置车位（共 16 个停车场）"
+          "summary": "葵青区：865 个确切空置车位（共 30 个停车场）"
         },
         {
-          "summary": "东区：632 个确切空置车位（共 29 个停车场）"
+          "summary": "屯门区：792 个确切空置车位（共 29 个停车场）"
         },
         {
-          "summary": "屯门区：621 个确切空置车位（共 28 个停车场）"
+          "summary": "东区：706 个确切空置车位（共 29 个停车场）"
         },
         {
-          "summary": "湾仔区：521 个确切空置车位（共 10 个停车场）"
+          "summary": "深水埗区：480 个确切空置车位（共 30 个停车场）"
         },
         {
-          "summary": "深水埗区：288 个确切空置车位（共 30 个停车场）"
+          "summary": "湾仔区：396 个确切空置车位（共 6 个停车场）"
         }
       ],
       "kpi_carpark_occupancy": [
         {
-          "occupancy_pct": 79.9053,
+          "occupancy_pct": 77.591,
           "capacity_spaces": 20697,
-          "vacant_spaces": 4159,
+          "vacant_spaces": 4638,
           "sample_size": 20697,
-          "observation_date": "2026-10-28 12:55"
+          "observation_date": "2026-11-05 14:42"
         }
       ],
       "td_carpark_occupancy_history": [
@@ -96967,6 +97016,14 @@
           "sample_size": 20697,
           "capacity_spaces": 20697,
           "vacant_spaces": 4159
+        },
+        {
+          "date": "2026-11-05 14:42",
+          "month": "2026-11",
+          "value": 77.591,
+          "sample_size": 20697,
+          "capacity_spaces": 20697,
+          "vacant_spaces": 4638
         }
       ],
       "td_carpark_occupancy_latest_district": [
@@ -96974,55 +97031,55 @@
           "summary": "黄大仙区：95.7% 占用（417 个已观测计量车位）"
         },
         {
-          "summary": "油尖旺区：94.3% 占用（1964 个已观测计量车位）"
+          "summary": "观塘区：90.8% 占用（651 个已观测计量车位）"
         },
         {
-          "summary": "深水埗区：92.9% 占用（1415 个已观测计量车位）"
+          "summary": "油尖旺区：90.3% 占用（1964 个已观测计量车位）"
         },
         {
-          "summary": "观塘区：88.3% 占用（651 个已观测计量车位）"
+          "summary": "深水埗区：86.9% 占用（1415 个已观测计量车位）"
         },
         {
-          "summary": "东区：86.8% 占用（589 个已观测计量车位）"
+          "summary": "东区：86.6% 占用（589 个已观测计量车位）"
         },
         {
-          "summary": "九龙城区：85.7% 占用（2642 个已观测计量车位）"
+          "summary": "北区：82.9% 占用（1119 个已观测计量车位）"
         },
         {
-          "summary": "北区：83.4% 占用（1119 个已观测计量车位）"
+          "summary": "葵青区：82.7% 占用（637 个已观测计量车位）"
         },
         {
-          "summary": "葵青区：83.0% 占用（637 个已观测计量车位）"
+          "summary": "沙田区：82.1% 占用（1705 个已观测计量车位）"
         },
         {
-          "summary": "荃湾区：82.4% 占用（698 个已观测计量车位）"
+          "summary": "屯门区：81.8% 占用（1349 个已观测计量车位）"
         },
         {
-          "summary": "屯门区：82.3% 占用（1349 个已观测计量车位）"
+          "summary": "荃湾区：81.1% 占用（698 个已观测计量车位）"
         },
         {
-          "summary": "沙田区：81.9% 占用（1705 个已观测计量车位）"
+          "summary": "九龙城区：80.6% 占用（2642 个已观测计量车位）"
         },
         {
-          "summary": "湾仔区：80.4% 占用（1032 个已观测计量车位）"
+          "summary": "元朗区：79.4% 占用（1243 个已观测计量车位）"
         },
         {
-          "summary": "元朗区：80.4% 占用（1243 个已观测计量车位）"
+          "summary": "中西区：71.1% 占用（598 个已观测计量车位）"
         },
         {
-          "summary": "中西区：77.6% 占用（598 个已观测计量车位）"
+          "summary": "大埔区：70.0% 占用（1641 个已观测计量车位）"
         },
         {
-          "summary": "大埔区：69.3% 占用（1641 个已观测计量车位）"
+          "summary": "湾仔区：69.6% 占用（1032 个已观测计量车位）"
         },
         {
-          "summary": "西贡区：56.9% 占用（1981 个已观测计量车位）"
+          "summary": "离岛区：58.3% 占用（338 个已观测计量车位）"
         },
         {
-          "summary": "离岛区：53.6% 占用（338 个已观测计量车位）"
+          "summary": "西贡区：54.5% 占用（1981 个已观测计量车位）"
         },
         {
-          "summary": "南区：50.0% 占用（678 个已观测计量车位）"
+          "summary": "南区：51.2% 占用（678 个已观测计量车位）"
         }
       ]
     }
@@ -97243,7 +97300,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-transport/",
-    "snapshotId": "66ead303e64c0868",
-    "dataAsOf": "2026-10-28"
+    "snapshotId": "f53c2087587f9cd6",
+    "dataAsOf": "2026-11-05"
   }
 }
