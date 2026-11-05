@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       send_email:
-        description: "Send the digest email"
+        description: "Send the digest email (manual runs only)"
         required: false
-        default: true
+        default: false
         type: boolean
 
 permissions:
@@ -51,7 +51,7 @@ jobs:
             extra="--weekly"
           fi
           send=""
-          if [ "${{ github.event_name }}" != "workflow_dispatch" ] || [ "${{ inputs.send_email }}" = "true" ]; then
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.send_email }}" = "true" ]; then
             send="--send-email"
           fi
           python scripts/ops/daily_digest.py $extra $send --output artifacts/ops/daily-digest.txt
