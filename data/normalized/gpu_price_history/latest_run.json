@@ -1,12 +1,12 @@
 {
-  "started_at_utc": "2026-11-05T14:41:03.855222+00:00",
+  "started_at_utc": "2026-11-06T14:18:30.920044+00:00",
   "sources": {
     "getdeploying": {
       "status": "ok",
-      "rows": 16853,
+      "rows": 16855,
       "observed_from": "2025-05-05",
       "observed_through": "2026-11-02",
-      "sha256": "d2c980c09d7a879726260de7acbc5a085b4399cad604ae5d27b57a0819d8e1b0",
+      "sha256": "0956f0daaba82ab1c25215f3ed4fd08ac9bdacc3792ce7df78eda1189e8b1dd4",
       "url": "https://getdeploying.com/dataset/gpu-prices/weekly.csv"
     },
     "github_history": {
@@ -19,10 +19,10 @@
     },
     "compute_screener": {
       "status": "ok",
-      "rows": 1288,
+      "rows": 1352,
       "observed_from": "2025-10-23",
-      "observed_through": "2026-11-05",
-      "sha256": "ab7dd7a853b9838852554d88ac65f9fbbcaab0b8a45f641fca3011f78d7abb3e",
+      "observed_through": "2026-11-06",
+      "sha256": "85853fbd4b08e45bb7779118814c403634da74f288d46ee7a40969dfcfb6b643",
       "url": "https://computescreener.com/data/series.json"
     }
   }
