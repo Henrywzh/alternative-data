@@ -1,0 +1,23 @@
+{
+  "run_id": "20261109T134112Z-0e497710",
+  "mode": "filter-mode",
+  "scraped_at": "2026-11-09T13:41:12.760559Z",
+  "status": "success",
+  "datasets": [
+    {
+      "dataset_id": "ramp_ai_filter_spend_share",
+      "status": "no_new_rows",
+      "rows": 0
+    },
+    {
+      "dataset_id": "ramp_ai_filter_model_share",
+      "status": "no_new_rows",
+      "rows": 0
+    },
+    {
+      "dataset_id": "ramp_ai_filter_pepm",
+      "status": "ok",
+      "rows": 8152
+    }
+  ]
+}
