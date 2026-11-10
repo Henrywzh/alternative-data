@@ -38,6 +38,8 @@ a.nav-item:hover { color: var(--text); text-decoration: none; }
 .subtab { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--text-faint); font: inherit; font-size: 11px; letter-spacing: .1em; padding: 7px 10px 5px; cursor: pointer; white-space: nowrap; }
 .subtab:hover { color: var(--text); }
 .subtab.on { color: var(--text); border-bottom-color: var(--accent-dim); }
+.block + .block .block-title { margin-top: 26px; }
+.block-title { font-size: 11px; font-weight: 600; letter-spacing: .16em; color: var(--text-dim); margin: 4px 0 10px; padding-bottom: 5px; border-bottom: 1px solid var(--border); }
 
 main { padding: 14px 16px 40px; max-width: 1440px; margin: 0 auto; }
 .lede { font-size: 13px; color: var(--text); margin: 2px 0 14px; max-width: 980px; }
@@ -128,15 +130,12 @@ details.fold[open] summary { border-bottom: 1px solid var(--border); color: var(
   <div class="brand">ALT·DATA<small>AI USAGE · ADOPTION · COMPUTE</small></div>
   <div class="asof" id="asof"></div>
   <nav class="nav">
-    <a class="nav-item" href="../openrouter/">OPENROUTER</a><a class="nav-item" href="../ramp/">RAMP</a><a class="nav-item" href="../downloads/">DOWNLOADS</a><a class="nav-item" href="../semis/">SEMIS</a><a class="nav-item on" href="../gpu/" aria-current="page">GPU RENTAL</a>
+    <a class="nav-item" href="../usage/">AI USAGE</a><a class="nav-item" href="../adoption/">ADOPTION</a><a class="nav-item" href="../downloads/">DOWNLOADS</a><a class="nav-item" href="../semis/">SEMIS</a><a class="nav-item on" href="../gpu/" aria-current="page">GPU RENTAL</a>
   </nav>
 </header>
 <div class="subtabs" id="subtabs">
   <button class="subtab" data-view="overview">OVERVIEW</button>
-  <button class="subtab" data-view="gpu">BY GPU</button>
-  <button class="subtab" data-view="terms">TERM &amp; SPOT</button>
-  <button class="subtab" data-view="value">PER UNIT OF COMPUTE</button>
-  <button class="subtab" data-view="all">ALL GPUS</button>
+  <button class="subtab" data-view="detail">DETAIL</button>
 </div>
 
 <main>
@@ -188,7 +187,8 @@ details.fold[open] summary { border-bottom: 1px solid var(--border); color: var(
   </section>
 
   <!-- BY GPU -->
-  <section class="view" id="view-gpu">
+  <section class="view" id="view-detail">
+  <div class="block" id="block-gpu"><h2 class="block-title">BY GPU</h2>
     <div class="chips" id="gpu-chips"></div>
     <div class="stats" id="gpu-stats"></div>
     <div class="grid2">
@@ -212,10 +212,10 @@ details.fold[open] summary { border-bottom: 1px solid var(--border); color: var(
         </div>
       </div>
     </div>
-  </section>
+  </div>
 
   <!-- TERMS -->
-  <section class="view" id="view-terms">
+  <div class="block" id="block-terms"><h2 class="block-title">TERM &amp; SPOT</h2>
     <p class="lede">How much a commitment saves against the on-demand rate, per GPU. Median of the last four weekly provider medians for each billing term; a term with one provider is drawn hollow.</p>
     <div class="grid2">
       <div class="card">
@@ -228,10 +228,10 @@ details.fold[open] summary { border-bottom: 1px solid var(--border); color: var(
         <div class="card-body table-scroll" id="terms-table"></div>
       </div>
     </div>
-  </section>
+  </div>
 
   <!-- VALUE -->
-  <section class="view" id="view-value">
+  <div class="block" id="block-value"><h2 class="block-title">PER UNIT OF COMPUTE</h2>
     <p class="lede">Latest on-demand price divided by what the chip delivers, so different generations can be compared directly. <span class="mock">SPECS TO VERIFY</span></p>
     <div class="grid2" style="grid-template-columns: 1fr 1fr">
       <div class="card">
@@ -244,16 +244,17 @@ details.fold[open] summary { border-bottom: 1px solid var(--border); color: var(
       </div>
     </div>
     <p class="note">Specs are vendor datasheet figures per GPU (dense, no sparsity), rounded. Rental listings may mix memory variants and form factors of the same model. Superchips (GB200, GH200) are priced per listing unit and are omitted.</p>
-  </section>
+  </div>
 
   <!-- ALL -->
-  <section class="view" id="view-all">
+  <div class="block" id="block-all"><h2 class="block-title">ALL GPUS</h2>
     <div class="toolbar">
       <div class="chips" id="all-groups" style="margin:0"></div>
       <input type="search" id="all-search" placeholder="filter models">
     </div>
     <div class="card"><div class="card-body table-scroll" id="all-table"></div>
       <div class="src">GetDeploying weekly on-demand provider median. Changes compare the latest week with the nearest week at or before 4, 13 and 52 weeks earlier.</div></div>
+  </div>
   </section>
 
   <details class="fold">
@@ -389,7 +390,7 @@ function renderOverview() {
       <div class="chg"><span><em>4W</em><b class="${cls(c.w4)}">${fmtPct(c.w4)}</b></span><span><em>13W</em><b class="${cls(c.w13)}">${fmtPct(c.w13)}</b></span><span><em>1Y</em><b class="${cls(c.w52)}">${fmtPct(c.w52)}</b></span></div>
       ${spark(tail, 168, 30, COLORS[id])}</div>`;
   }).join('');
-  document.querySelectorAll('.tile').forEach((t) => t.onclick = () => { state.gpu = t.dataset.gpu; go('gpu'); });
+  document.querySelectorAll('.tile').forEach((t) => t.onclick = () => { state.gpu = t.dataset.gpu; go('detail'); document.getElementById('block-gpu').scrollIntoView(); });
   renderPath(); renderAging();
 }
 
@@ -566,12 +567,14 @@ function renderSources() {
 }
 
 // ---------- routing ----------
+// The old per-view hashes (#gpu/<id>, #terms, ...) open DETAIL.
 function go(view) {
+  if (view !== 'overview') view = 'detail';
   state.view = view;
-  history.replaceState(null, '', '#' + view + (view === 'gpu' ? '/' + state.gpu : ''));
+  history.replaceState(null, '', '#' + view + (view === 'detail' ? '/' + state.gpu : ''));
   document.querySelectorAll('.subtab').forEach((b) => b.classList.toggle('on', b.dataset.view === view));
   document.querySelectorAll('.view').forEach((v) => v.classList.toggle('on', v.id === 'view-' + view));
-  ({ overview: renderOverview, gpu: renderGpu, terms: renderTerms, value: renderValue, all: renderAll })[view]();
+  if (view === 'overview') renderOverview(); else { renderGpu(); renderTerms(); renderValue(); renderAll(); }
 }
 function seg(id, key, after) {
   document.querySelectorAll(`#${id} button`).forEach((b) => b.onclick = () => {
@@ -592,7 +595,7 @@ fetch('data.json', { cache: 'no-store' }).then((r) => r.json()).then((data) => {
   renderSources();
   const [v, gpu] = location.hash.slice(1).split('/');
   if (gpu && BY[gpu]) state.gpu = gpu;
-  go(['overview', 'gpu', 'terms', 'value', 'all'].includes(v) ? v : 'overview');
+  go(v || 'overview');
   window.addEventListener('hashchange', () => { const [v2, g2] = location.hash.slice(1).split('/'); if (g2 && BY[g2]) state.gpu = g2; if (v2 && v2 !== state.view || g2) go(v2 || 'overview'); });
   window.addEventListener('resize', () => Object.values(charts).forEach((c) => c.resize()));
 });

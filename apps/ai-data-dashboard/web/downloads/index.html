@@ -12,9 +12,7 @@
 <header class="masthead" id="masthead"></header>
 <div class="subtabs">
   <button class="subtab" data-view="overview">OVERVIEW</button>
-  <button class="subtab" data-view="sdk">SDKS</button>
-  <button class="subtab" data-view="models">OPEN MODELS</button>
-  <button class="subtab" data-view="github">GITHUB</button>
+  <button class="subtab" data-view="detail">DETAIL</button>
 </div>
 <main>
   <section class="view" id="view-overview">
@@ -36,7 +34,8 @@
     </div>
   </section>
 
-  <section class="view" id="view-sdk">
+  <section class="view" id="view-detail">
+  <div class="block" id="block-sdk"><h2 class="block-title">SDKS</h2>
     <div class="toolbar">
       <div class="seg" id="sdk-reg"><button data-v="pypi">PYPI</button><button data-v="npm">NPM</button></div>
       <div class="chips" id="npm-cats" style="margin:0"></div>
@@ -50,24 +49,25 @@
       <div class="card-body"><div class="chart tall" id="chart-sdk"></div>
         <p class="note" id="sdk-note"></p></div>
     </div>
-  </section>
+  </div>
 
-  <section class="view" id="view-models">
+  <div class="block" id="block-models"><h2 class="block-title">OPEN MODELS</h2>
     <div class="card">
       <div class="card-head"><span class="card-title">OPEN-WEIGHT MODEL DOWNLOADS</span><span class="card-sub">Hugging Face, estimated per day · 7-day average</span>
         <div class="controls"><div class="seg" id="hf-scale"><button data-v="lin">LIN</button><button data-v="log">LOG</button></div></div></div>
       <div class="card-body"><div class="chart tall" id="chart-hf"></div>
         <p class="note">Daily downloads estimated from changes in each model's rolling 30-day count, summed over each lab's public models.</p></div>
     </div>
-  </section>
+  </div>
 
-  <section class="view" id="view-github">
+  <div class="block" id="block-github"><h2 class="block-title">GITHUB</h2>
     <div class="card">
       <div class="card-head"><span class="card-title">NEW GITHUB REPOS USING EACH PROVIDER</span><span class="card-sub">28-day sum</span>
         <div class="controls"><div class="seg" id="gh-kind"><button data-v="signal_repos">ANY SIGNAL</button><button data-v="manifest_repos">IN MANIFEST</button><button data-v="import_repos">IN IMPORTS</button></div></div></div>
       <div class="card-body"><div class="chart tall" id="chart-gh"></div>
         <p class="note">New public repositories whose dependency manifest, imports, environment variables or model names reference the provider, from a daily sample of newly created repos. Counts are small; read the trend, not the level.</p></div>
     </div>
+  </div>
   </section>
 
   <details class="fold"><summary>SOURCES &amp; METHOD</summary><div class="fold-body">
@@ -201,7 +201,7 @@ UI.load('data.json').then((data) => {
   UI.seg('sdk-scale', state, 'scale', renderSdk);
   UI.seg('hf-scale', state, 'hfScale', renderModels);
   UI.seg('gh-kind', state, 'gh', renderGithub);
-  UI.router({ overview: renderOverview, sdk: renderSdk, models: renderModels, github: renderGithub }, 'overview');
+  UI.router({ overview: renderOverview, detail: () => { renderSdk(); renderModels(); renderGithub(); } }, 'overview');
 });
 </script>
 </body>

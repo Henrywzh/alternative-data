@@ -23,9 +23,7 @@
 <header class="masthead" id="masthead"></header>
 <div class="subtabs">
   <button class="subtab" data-view="overview">OVERVIEW</button>
-  <button class="subtab" data-view="taiwan">TAIWAN REVENUE</button>
-  <button class="subtab" data-view="trade">TRADE</button>
-  <button class="subtab" data-view="prices">PRICES</button>
+  <button class="subtab" data-view="detail">DETAIL</button>
 </div>
 <main>
   <section class="view" id="view-overview">
@@ -47,7 +45,8 @@
     </div>
   </section>
 
-  <section class="view" id="view-taiwan">
+  <section class="view" id="view-detail">
+  <div class="block" id="block-taiwan"><h2 class="block-title">TAIWAN REVENUE</h2>
     <div class="chips" id="tw-chips"></div>
     <div class="stats" id="tw-stats"></div>
     <div class="card">
@@ -55,9 +54,9 @@
         <div class="controls"><div class="seg" id="tw-range"><button data-v="36">3Y</button><button data-v="60">5Y</button><button data-v="all">ALL</button></div></div></div>
       <div class="card-body"><div class="chart tall" id="chart-tw"></div></div>
     </div>
-  </section>
+  </div>
 
-  <section class="view" id="view-trade">
+  <div class="block" id="block-trade"><h2 class="block-title">TRADE</h2>
     <div class="chips" id="trade-chips"></div>
     <div class="grid2">
       <div class="card">
@@ -70,14 +69,15 @@
         <div class="card-body table-scroll" id="trade-table"></div>
       </div>
     </div>
-  </section>
+  </div>
 
-  <section class="view" id="view-prices">
+  <div class="block" id="block-prices"><h2 class="block-title">PRICES</h2>
     <p class="lede">US producer prices for the hardware behind AI data centers, each rebased to <span id="ppi-base"></span> = 100. Storage and switchgear have outrun chips.</p>
     <div class="card">
       <div class="card-head"><span class="card-title">PRODUCER PRICES</span><span class="card-sub">BLS PPI by industry, monthly</span></div>
       <div class="card-body"><div class="chart tall" id="chart-ppi"></div></div>
     </div>
+  </div>
   </section>
 
   <details class="fold"><summary>SOURCES &amp; METHOD</summary><div class="fold-body">
@@ -140,7 +140,7 @@ function renderOverview() {
     }
   }
   document.getElementById('heat').innerHTML = html + '</tbody></table>';
-  document.querySelectorAll('.heat td.name').forEach((td) => td.onclick = () => { state.co = td.dataset.co; location.hash = 'taiwan'; });
+  document.querySelectorAll('.heat td.name').forEach((td) => td.onclick = () => { state.co = td.dataset.co; location.hash = 'detail'; setTimeout(() => document.getElementById('block-taiwan').scrollIntoView(), 0); });
 
   const o = UI.base();
   o.series = GROUPS.map(([n, , c]) => ({ name: n, type: 'line', showSymbol: false, color: c, lineStyle: { width: 1.8 }, data: g[n].months.map((m, i) => [m + '-01', g[n].yoy[i] == null ? null : g[n].yoy[i] * 100]).filter(([d]) => d >= '2021') }));
@@ -237,7 +237,7 @@ UI.load('data.json').then((data) => {
   UI.masthead('semis', `TAIWAN TO ${D.taiwan_latest}`);
   UI.seg('tw-range', state, 'twRange', renderTaiwan);
   UI.seg('trade-range', state, 'tradeRange', renderTrade);
-  UI.router({ overview: renderOverview, taiwan: renderTaiwan, trade: renderTrade, prices: renderPrices }, 'overview');
+  UI.router({ overview: renderOverview, detail: () => { renderTaiwan(); renderTrade(); renderPrices(); } }, 'overview');
 });
 </script>
 </body>

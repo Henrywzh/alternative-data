@@ -1,7 +1,7 @@
 """Build the AI data dashboard: a static site in dist/ for Cloudflare Pages.
 
 Copies web/ to dist/ and writes each page's data.json from the normalized data
-committed by the scraper workflows. The OpenRouter, Ramp, Semis and Downloads
+committed by the scraper workflows. The AI usage, adoption, Semis and Downloads
 numbers reuse the Streamlit dashboard's loaders and compute_* functions, so the
 two show the same values; GPU comes from gpu.py. Run from the repository root:
 
@@ -16,6 +16,7 @@ import argparse
 import hashlib
 import json
 import math
+import re
 import shutil
 import urllib.request
 import warnings
@@ -92,8 +93,19 @@ def write(page: str, payload: dict) -> None:
 # ---------------------------------------------------------------- OpenRouter
 # Labs shown in the ARR views; the nowcast still runs over every target.
 ARR_LABS = ["openai", "anthropic", "google", "x-ai", "deepseek", "z-ai", "moonshotai"]
+# The labs both sources report, under one name each; everything else is Other
+# in the cross-source views. OpenRouter keys are provider slugs, Ramp's model makers.
+LABS = ["Anthropic", "OpenAI", "Google", "xAI", "DeepSeek", "Z.ai", "Moonshot"]
+OR_LAB = {"anthropic": "Anthropic", "openai": "OpenAI", "google": "Google", "x-ai": "xAI", "deepseek": "DeepSeek", "z-ai": "Z.ai", "moonshotai": "Moonshot"}
+RAMP_LAB = {"anthropic": "Anthropic", "openai": "OpenAI", "google": "Google", "xai": "xAI", "deepseek": "DeepSeek", "zhipu": "Z.ai", "moonshot": "Moonshot"}
 
-def build_openrouter() -> None:
+def short_name(name: str) -> str:
+    """'Z.ai (GLM)' -> 'Z.ai': the bracketed model family only adds width."""
+    return re.sub(r" \(.*\)$", "", name)
+
+
+def openrouter_payload() -> tuple[dict, pd.DataFrame]:
+    """The OpenRouter half of AI USAGE, and the daily per-lab frame the cross-source views use."""
     ds = load_domain_datasets("openrouter_intelligence", base_dir=ROOT)
     derived = load_domain_datasets("openrouter_derived", base_dir=ROOT)
     views = orr.compute_openrouter_views(ds)
@@ -103,7 +115,7 @@ def build_openrouter() -> None:
     # models and days. Labs are the ARR targets' names; anything else is Other.
     rev = derived["daily_provider_revenue_estimates"].frame.copy()
     rev["usage_date"] = pd.to_datetime(rev["usage_date"])
-    names = orr.TARGET_ARR_PROVIDERS
+    names = {k: short_name(v) for k, v in orr.TARGET_ARR_PROVIDERS.items()}
     rev["lab"] = rev["provider_slug"].map(names).fillna("Other")
     last = rev["usage_date"].max()
     # The latest day is often a partial scrape; drop it from the charts when it is
@@ -174,7 +186,7 @@ def build_openrouter() -> None:
         workloads[basis] = {"history": pivot_json(history), "tasks": task_rows,
                             "macro": sel["macro_summary"].to_dict("records")}
 
-    write("openrouter", {
+    payload = {
         "as_of": str(last.date()),
         "tokens_weekly": pivot_json(weekly_tokens, order, other=True),
         "revenue_weekly": pivot_json(weekly_rev, order, other=True),
@@ -191,16 +203,61 @@ def build_openrouter() -> None:
         "model_days": [d.strftime("%Y-%m-%d") for d in days],
         "workloads": workloads,
         "task_snapshot": ts["latest_snapshot_date"],
+    }
+    daily = charted.assign(lab=charted["provider_slug"].map(OR_LAB).fillna("Other"))
+    daily = daily.groupby(["usage_date", "lab"], as_index=False)[["total_tokens", "estimated_revenue"]].sum()
+    return payload, daily.rename(columns={"usage_date": "date", "total_tokens": "tokens", "estimated_revenue": "spend"})
+
+
+
+# ---------------------------------------------------------------- AI USAGE
+def by_month(daily: pd.DataFrame, value: str, min_days: int = 7) -> dict:
+    """Calendar-month totals per lab from a daily frame. A month missing days is
+    scaled to the whole month from the days seen (a run-rate) and flagged
+    partial; with fewer than min_days seen it is left out."""
+    d = daily.assign(month=daily["date"].dt.to_period("M"))
+    seen = d.groupby("month")["date"].nunique()
+    keep = [m for m, n in seen.items() if n >= min_days]
+    p = d.loc[d["month"].isin(keep)].pivot_table(index="month", columns="lab", values=value, aggfunc="sum").sort_index()
+    scale = pd.Series({m: m.days_in_month / seen[m] for m in p.index})
+    p = p.mul(scale, axis=0)
+    cols = [c for c in LABS + ["Other"] if c in p.columns]
+    return {"index": [str(m) for m in p.index], "series": {c: p[c].tolist() for c in cols},
+            "days": [int(seen[m]) for m in p.index], "full": [int(seen[m]) == m.days_in_month for m in p.index]}
+
+
+def by_week(daily: pd.DataFrame, value: str) -> dict:
+    """Totals per lab over the weeks ending on the frame's last weekday, complete weeks only."""
+    end = daily["date"].max()
+    d = daily.assign(week=end - pd.to_timedelta(((end - daily["date"]).dt.days // 7) * 7, unit="D"))
+    whole = d.groupby("week")["date"].nunique()
+    d = d.loc[d["week"].isin(whole[whole == 7].index)]
+    p = d.pivot_table(index="week", columns="lab", values=value, aggfunc="sum").sort_index()
+    return pivot_json(p, [c for c in LABS + ["Other"] if c in p.columns])
+
+
+def build_usage() -> None:
+    orp, or_daily = openrouter_payload()
+    tok, ramp_daily = tokenomics_payload()
+    write("usage", {
+        "or": orp,
+        "ramp": tok,
+        "labs": LABS,
+        "as_of": {"openrouter": orp["as_of"], "ramp": str(ramp_daily["date"].max().date())},
+        "monthly": {src: {"spend": by_month(frame, "spend"), "tokens": by_month(frame, "tokens")}
+                    for src, frame in (("openrouter", or_daily), ("ramp", ramp_daily))},
+        "weekly": {src: {"spend": by_week(frame, "spend"), "tokens": by_week(frame, "tokens")}
+                   for src, frame in (("openrouter", or_daily), ("ramp", ramp_daily))},
     })
 
 
 # ---------------------------------------------------------------- Ramp
 MAKER_NAMES = {"anthropic": "Anthropic", "openai": "OpenAI", "google": "Google", "xai": "xAI", "deepseek": "DeepSeek",
-               "alibaba": "Alibaba", "moonshot": "Moonshot", "zhipu": "Zhipu", "cursor": "Cursor", "nvidia": "NVIDIA",
+               "alibaba": "Alibaba", "moonshot": "Moonshot", "zhipu": "Z.ai", "cursor": "Cursor", "nvidia": "NVIDIA",
                "minimax": "MiniMax", "meta": "Meta", "thinking-machines-lab": "Thinking Machines"}
 
 
-def build_tokenomics() -> dict:
+def tokenomics_payload() -> tuple[dict, pd.DataFrame]:
     """Ramp AI Index 'Tokenomics': weekly token spend and volume by model, and daily 7-day prices.
 
     Comes from Ramp's Token Spend Management customers, a sample that grows over
@@ -245,12 +302,21 @@ def build_tokenomics() -> dict:
     prices = {tt: pivot_json(px.loc[px["token_type"] == tt].pivot_table(index="usage_date", columns="maker", values="ppm"))
               for tt in ("all_tokens", "uncached_input", "output")}
 
-    return {"spend": pivot_json(weekly["token_spend"], order, other=True), "volume": pivot_json(weekly["token_volume"], order, other=True),
-            "model_spend": pivot_json(model_share), "models": models, "model_weeks": [str(w)[:10] for w in weeks[-26:]],
-            "prices": prices, "window": [cur[0], cur[-1]], "prior_window": [prev[0], prev[-1]]}
+    payload = {"spend": pivot_json(weekly["token_spend"], order, other=True), "volume": pivot_json(weekly["token_volume"], order, other=True),
+               "model_spend": pivot_json(model_share), "models": models, "model_weeks": [str(w)[:10] for w in weeks[-26:]],
+               "prices": prices, "window": [cur[0], cur[-1]], "prior_window": [prev[0], prev[-1]]}
+    # Ramp weeks spread evenly over their seven days, so they add up to calendar months.
+    wk = vol.assign(lab=vol["model_maker"].map(RAMP_LAB).fillna("Other"))
+    wk = wk.pivot_table(index=["period_start", "period_end", "lab"], columns="metric_key", values="metric_value", aggfunc="sum").reset_index()
+    days = []
+    for _, r in wk.iterrows():
+        for d in pd.date_range(r["period_start"], r["period_end"]):
+            days.append((d, r["lab"], r.get("token_volume", np.nan) / 7, r.get("token_spend", np.nan) / 7))
+    daily = pd.DataFrame(days, columns=["date", "lab", "tokens", "spend"])
+    return payload, daily
 
 
-def build_ramp() -> None:
+def build_adoption() -> None:
     ds = load_domain_datasets("ramp", base_dir=ROOT)
     f = lambda k: ds[k].frame.copy()  # noqa: E731
 
@@ -260,14 +326,6 @@ def build_ramp() -> None:
     by_sector = f("ramp_ai_adoption_by_sector").pivot_table(index="date_month", columns="naics_sector", values="adoption_rate_pct")
     pepm = f("ramp_ai_pepm_spend").sort_values("date_month")
     spend = f("ramp_ai_spend_breakdown").pivot_table(index="date_month", columns="spend_category", values="spend_usd", aggfunc="sum")
-    mb = f("ramp_ai_model_breakdown")
-    model_types = sorted(mb["model_spend_type"].dropna().unique().tolist()) if "model_spend_type" in mb else []
-    models = {}
-    for mt in model_types or [None]:
-        part = mb if mt is None else mb.loc[mb["model_spend_type"] == mt]
-        by_provider = part.pivot_table(index="date_month", columns="ai_provider", values="model_share", aggfunc="sum")
-        by_model = part.pivot_table(index="date_month", columns="model_label", values="model_share", aggfunc="sum")
-        models[mt or "all"] = {"provider": pivot_json(by_provider), "model": pivot_json(by_model, top_columns(by_model, 10, 3), other=True)}
 
     va = f("ramp_vendor_adoption_monthly")
     latest = va["spend_month"].max()
@@ -279,7 +337,7 @@ def build_ramp() -> None:
                 "history": hist[r["vendor_name"]].tail(24).tolist() if r["vendor_name"] in hist else []} for _, r in lead.iterrows()]
 
     jobs = f("ramp_ai_jobs_impact")
-    write("ramp", {
+    write("adoption", {
         "overall": {"months": overall["date_month"].astype(str).str[:7].tolist(), "rate": overall["adoption_rate_pct"].tolist(),
                     "mom": overall["mom_change_pp"].tolist(), "yoy": overall["yoy_change_pp"].tolist()},
         "by_vendor": pivot_json(by_vendor), "by_size": pivot_json(by_size), "by_sector": pivot_json(by_sector),
@@ -287,11 +345,9 @@ def build_ramp() -> None:
                  "p90": pepm["p90_pepm"].tolist(), "top10": pepm["top_10_percent_median_pepm"].tolist(),
                  "businesses": pepm["business_count"].tolist(), "spend": pepm["spend_usd"].tolist()},
         "spend_by_category": pivot_json(spend),
-        "models": models,
         "vendor_month": str(latest)[:7], "vendor_months": [str(m)[:7] for m in hist.sort_index().index[-24:]],
         "vendors": vendors,
         "jobs": jobs.to_dict("records"),
-        "tokens": build_tokenomics(),
     })
 
 
@@ -395,7 +451,7 @@ def main() -> None:
         shutil.rmtree(OUT)
     shutil.copytree(APP / "web", OUT)
     vendor_echarts()
-    for build in (build_openrouter, build_ramp, build_semis, build_downloads, build_gpu):
+    for build in (build_usage, build_adoption, build_semis, build_downloads, build_gpu):
         build()
 
 
