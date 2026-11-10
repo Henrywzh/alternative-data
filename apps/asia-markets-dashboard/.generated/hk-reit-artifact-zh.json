@@ -6,7 +6,7 @@
     "title": "香港房地产信托（REITs）基本面监测",
     "description": "领展（Link REIT）、冠君（Champion REIT）、置富（Fortune REIT）、繁荣（Prosperity REIT）、阳光（Sunlight REIT）及富豪（Regal REIT）的每单位资产净值（NAV）、每基金单位分派（DPU）、出租率、租金检讨调升率及酒店 KPI 快照。",
     "sector": "hk-reit",
-    "generatedAt": "2026-11-08T13:27:48.072417Z",
+    "generatedAt": "2026-11-10T14:56:02.973179Z",
     "dataAsOf": "2026-09-30",
     "liveSourcesCount": 7,
     "totalSourcesCount": 7,
@@ -561,7 +561,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `1789c3dbc857fd22` · 生成于 2026-11-08T13:27:48.072417Z。"
+        "body": "**数据快照：** `6d285116dd0a149b` · 生成于 2026-11-10T14:56:02.973179Z。"
       },
       {
         "id": "kpi_grid",
@@ -626,7 +626,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-11-08T13:27:48.072417Z",
+    "generatedAt": "2026-11-10T14:56:02.973179Z",
     "status": "ready",
     "datasets": {
       "kpi_linkreit": [
@@ -1602,64 +1602,64 @@
       ],
       "reit_spot_quotes": [
         {
-          "date": "2026-11-08",
-          "ticker": "00778",
-          "company_name": "Fortune REIT",
-          "latest_price_hkd": 4.515,
-          "change_pct": -0.11,
-          "volume": 2593026,
-          "turnover_hkd": 11754497,
-          "turnover_hkd_m": 11.75
-        },
-        {
-          "date": "2026-11-08",
-          "ticker": "02778",
-          "company_name": "Champion REIT",
-          "latest_price_hkd": 2.28,
-          "change_pct": -0.22,
-          "volume": 1380043,
-          "turnover_hkd": 3156872,
-          "turnover_hkd_m": 3.16
-        },
-        {
-          "date": "2026-11-08",
-          "ticker": "00823",
-          "company_name": "Link REIT",
-          "latest_price_hkd": 40.98,
-          "change_pct": -0.24,
-          "volume": 8157537,
-          "turnover_hkd": 333210720,
-          "turnover_hkd_m": 333.21
-        },
-        {
-          "date": "2026-11-08",
+          "date": "2026-11-10",
           "ticker": "00435",
           "company_name": "Sunlight REIT",
-          "latest_price_hkd": 2.135,
-          "change_pct": -0.7,
-          "volume": 1317534,
-          "turnover_hkd": 2820438,
-          "turnover_hkd_m": 2.82
+          "latest_price_hkd": 2.175,
+          "change_pct": 1.4,
+          "volume": 1851000,
+          "turnover_hkd": 4012735,
+          "turnover_hkd_m": 4.01
         },
         {
-          "date": "2026-11-08",
+          "date": "2026-11-10",
+          "ticker": "00778",
+          "company_name": "Fortune REIT",
+          "latest_price_hkd": 4.61,
+          "change_pct": 0.99,
+          "volume": 3020912,
+          "turnover_hkd": 13886367,
+          "turnover_hkd_m": 13.89
+        },
+        {
+          "date": "2026-11-10",
+          "ticker": "02778",
+          "company_name": "Champion REIT",
+          "latest_price_hkd": 2.325,
+          "change_pct": 0.87,
+          "volume": 1131000,
+          "turnover_hkd": 2625740,
+          "turnover_hkd_m": 2.63
+        },
+        {
+          "date": "2026-11-10",
           "ticker": "00808",
           "company_name": "Prosperity REIT",
-          "latest_price_hkd": 1.355,
-          "change_pct": -0.73,
-          "volume": 750366,
-          "turnover_hkd": 1019584,
-          "turnover_hkd_m": 1.02
+          "latest_price_hkd": 1.37,
+          "change_pct": 0.37,
+          "volume": 507000,
+          "turnover_hkd": 694170,
+          "turnover_hkd_m": 0.69
         },
         {
-          "date": "2026-11-08",
+          "date": "2026-11-10",
+          "ticker": "00823",
+          "company_name": "Link REIT",
+          "latest_price_hkd": 40.82,
+          "change_pct": 0.25,
+          "volume": 7931525,
+          "turnover_hkd": 322756624,
+          "turnover_hkd_m": 322.76
+        },
+        {
+          "date": "2026-11-10",
           "ticker": "01881",
           "company_name": "Regal REIT",
-          "latest_price_hkd": 0.285,
-          "change_pct": -3.39,
-          "volume": 1192000,
-          "turnover_hkd": 340265,
-          "turnover_hkd_m": 0.34
+          "latest_price_hkd": 0.29,
+          "change_pct": 0,
+          "volume": 276000,
+          "turnover_hkd": 80155,
+          "turnover_hkd_m": 0.08
         }
       ],
       "reit_price_history": [
@@ -2162,6 +2162,18 @@
           "value": 40.98
         },
         {
+          "date": "2026-11-09",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 40.72
+        },
+        {
+          "date": "2026-11-10",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 40.82
+        },
+        {
           "date": "2026-07-13",
           "ticker": "02778",
           "series": "Champ",
@@ -2658,6 +2670,18 @@
           "ticker": "02778",
           "series": "Champ",
           "value": 2.28
+        },
+        {
+          "date": "2026-11-09",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.305
+        },
+        {
+          "date": "2026-11-10",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.325
         },
         {
           "date": "2026-07-13",
@@ -3158,6 +3182,18 @@
           "value": 4.515
         },
         {
+          "date": "2026-11-09",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.565
+        },
+        {
+          "date": "2026-11-10",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.61
+        },
+        {
           "date": "2026-07-13",
           "ticker": "00808",
           "series": "Prosper",
@@ -3654,6 +3690,18 @@
           "ticker": "00808",
           "series": "Prosper",
           "value": 1.355
+        },
+        {
+          "date": "2026-11-09",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.365
+        },
+        {
+          "date": "2026-11-10",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.37
         },
         {
           "date": "2026-07-13",
@@ -4154,6 +4202,18 @@
           "value": 2.135
         },
         {
+          "date": "2026-11-09",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.145
+        },
+        {
+          "date": "2026-11-10",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.175
+        },
+        {
           "date": "2026-07-13",
           "ticker": "01881",
           "series": "Regal",
@@ -4650,6 +4710,18 @@
           "ticker": "01881",
           "series": "Regal",
           "value": 0.285
+        },
+        {
+          "date": "2026-11-09",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.29
+        },
+        {
+          "date": "2026-11-10",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.29
         }
       ],
       "linkreit": [
@@ -5135,11 +5207,11 @@
       "label": "Hong Kong REITs Daily Spot Quotes & History (akshare)",
       "status": "success",
       "records": 6,
-      "latest_observation": "2026-11-08",
+      "latest_observation": "2026-11-10",
       "freshness": "live",
       "history_status": "success",
-      "history_records": 498,
-      "history_latest_observation": "2026-11-06",
+      "history_records": 510,
+      "history_latest_observation": "2026-11-10",
       "history_freshness": "live",
       "notes": "Daily spot price quotes, percentage change, and OHLC daily history for all 6 HK REITs."
     }
@@ -5148,8 +5220,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-reit/",
     "sector_id": "hk-reit",
     "sector_name": "Hong Kong REITs Sector Monitor",
-    "snapshotId": "1789c3dbc857fd22",
-    "generatedAt": "2026-11-08T13:27:48.072417Z",
+    "snapshotId": "6d285116dd0a149b",
+    "generatedAt": "2026-11-10T14:56:02.973179Z",
     "dataAsOf": "2026-09-30"
   }
 }
