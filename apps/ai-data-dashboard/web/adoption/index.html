@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Adoption · Alt Data</title>
+<link rel="stylesheet" href="../shared/terminal.css">
+<script src="../shared/echarts.min.js"></script>
+<script src="../shared/ui.js"></script>
+</head>
+<body>
+<header class="masthead" id="masthead"></header>
+<div class="subtabs">
+  <button class="subtab" data-view="overview">OVERVIEW</button>
+  <button class="subtab" data-view="segments">SEGMENTS &amp; VENDORS</button>
+</div>
+<main>
+  <section class="view" id="view-overview">
+    <p class="lede" id="lede"></p>
+    <div class="stats" id="stats"></div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-head"><span class="card-title">SHARE OF US BUSINESSES PAYING FOR AI</span>
+          <div class="controls"><div class="seg" id="adopt-cut"><button data-v="vendor">BY VENDOR</button><button data-v="size">BY SIZE</button><button data-v="sector">BY SECTOR</button></div></div></div>
+        <div class="card-body"><div class="chart tall" id="chart-adopt"></div>
+          <p class="note">Ramp AI Index: share of businesses on Ramp with a paid AI subscription or API charge in the month. The dashed line is all businesses.</p></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">AI SPEND PER EMPLOYEE</span><span class="card-sub">$ per employee per month</span>
+          <div class="controls"><div class="seg" id="pepm-scale"><button data-v="lin">LIN</button><button data-v="log">LOG</button></div></div></div>
+        <div class="card-body"><div class="chart tall" id="chart-pepm"></div>
+          <p class="note">Among businesses with AI spend: the median, the 90th percentile, and the median of the top tenth.</p></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="card-title">AI SPEND BY CATEGORY</span><span class="card-sub">Ramp sample, monthly</span>
+        <div class="controls"><div class="seg" id="cat-mode"><button data-v="usd">$</button><button data-v="share">SHARE</button></div></div></div>
+      <div class="card-body"><div class="chart tall" id="chart-cat"></div>
+        <p class="note">Dollar total in Ramp's spend sample by AI category; it moves with the sample as well as with spending, so the share is the steadier read. Lab-level API spend is on AI USAGE.</p></div>
+    </div>
+  </section>
+
+  <section class="view" id="view-segments">
+    <div class="grid-even">
+      <div class="card">
+        <div class="card-head"><span class="card-title">ADOPTION BY SECTOR</span><span class="card-sub" id="sector-sub"></span></div>
+        <div class="card-body"><div class="chart tall" id="chart-sector"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">HEADCOUNT AFTER ADOPTING AI</span><span class="card-sub">Ramp event study · log points ×100</span></div>
+        <div class="card-body"><div class="chart tall" id="chart-jobs"></div>
+          <p class="note">Ramp's estimate of headcount relative to similar non-adopters, by months since a firm first paid for AI, for high- and low-intensity adopters, with 95% intervals. A published study, not refreshed monthly.</p></div>
+      </div>
+    </div>
+    <div class="toolbar"><input type="search" id="vendor-search" placeholder="filter vendors"></div>
+    <div class="card">
+      <div class="card-head"><span class="card-title">VENDOR ADOPTION</span><span class="card-sub" id="vendor-sub"></span></div>
+      <div class="card-body table-scroll" id="vendor-table"></div>
+      <div class="src">Ramp's published vendor adoption measure for the top 60 vendors (all software, not only AI). Ramp reports it on a 0–1 scale; the exact definition is still to be confirmed before this ships.</div>
+    </div>
+  </section>
+
+  <details class="fold"><summary>SOURCES &amp; METHOD</summary><div class="fold-body">
+    <p><b>Ramp AI Index</b>: share of US businesses on Ramp's card and bill-pay platform with paid AI spend in a month, overall and by vendor, size and sector. <b>Spend per employee</b> and <b>category spend</b> come from Ramp's spend data; the sample is Ramp's customers, not the US economy, and later prints revise earlier months.</p>
+  </div></details>
+</main>
+<script>
+const { P, color } = UI;
+const state = { cut: 'vendor', pepmScale: 'log', catMode: 'share', sort: ['rate', -1] };
+let D;
+const m7 = (d) => d.slice(0, 7);
+
+function renderOverview() {
+  const O = D.overall, n = O.months.length;
+  const V = D.by_vendor, vi = V.index.length - 1;
+  const ant = V.series.Anthropic, oai = V.series.OpenAI;
+  const pe = D.pepm, pn = pe.median.length - 1;
+  const lead = ant[vi] > oai[vi] ? 'Anthropic' : 'OpenAI';
+  // First month Anthropic passed OpenAI, if it has.
+  const cross = V.index.findIndex((d, i) => ant[i] > oai[i] && (i === 0 || ant[i - 1] <= oai[i - 1]));
+  document.getElementById('lede').innerHTML =
+    `<b>${O.rate[n - 1].toFixed(1)}%</b> of US businesses on Ramp paid for AI in ${O.months[n - 1]}, <span class="${UI.cls(O.yoy[n - 1])}">${UI.pp(O.yoy[n - 1])}</span> on a year earlier. ` +
+    `${lead} is the most adopted at <b>${Math.max(ant[vi], oai[vi]).toFixed(1)}%</b>${cross > 0 ? `, ahead of OpenAI since ${m7(V.index[cross])}` : ''}. ` +
+    `The median AI spender pays <b>$${pe.median[pn].toFixed(2)}</b> per employee a month, up ${UI.pct(pe.median[pn] / pe.median[pn - 12] - 1, 0)} in a year.`;
+  const stats = [
+    ['AI ADOPTION', O.rate[n - 1].toFixed(1) + '%', `${O.months[n - 1]} · <span class="${UI.cls(O.mom[n - 1])}">${UI.pp(O.mom[n - 1])}</span> m/m · <span class="${UI.cls(O.yoy[n - 1])}">${UI.pp(O.yoy[n - 1])}</span> y/y`],
+    ['ANTHROPIC', ant[vi].toFixed(1) + '%', `of businesses · <span class="${UI.cls(ant[vi] - ant[vi - 12])}">${UI.pp(ant[vi] - ant[vi - 12])}</span> y/y`],
+    ['OPENAI', oai[vi].toFixed(1) + '%', `of businesses · <span class="${UI.cls(oai[vi] - oai[vi - 12])}">${UI.pp(oai[vi] - oai[vi - 12])}</span> y/y`],
+    ['MEDIAN AI $ / EMPLOYEE', '$' + pe.median[pn].toFixed(2), `${pe.months[pn]} · p90 $${pe.p90[pn].toFixed(0)}`],
+    ['TOP-10% AI $ / EMPLOYEE', '$' + pe.top10[pn].toFixed(0), `${pe.months[pn]} · median of the heaviest spenders`],
+  ];
+  document.getElementById('stats').innerHTML = stats.map(([l, v, s]) => `<div class="stat"><div class="stat-label">${l}</div><div class="stat-value">${v}</div><div class="stat-note">${s}</div></div>`).join('');
+  renderAdopt(); renderPepm(); renderCategories();
+}
+
+function renderAdopt() {
+  const pivot = { vendor: D.by_vendor, size: D.by_size, sector: D.by_sector }[state.cut];
+  const o = UI.base();
+  o.series = Object.entries(pivot.series).sort((a, b) => (b[1].at(-1) || 0) - (a[1].at(-1) || 0))
+    .map(([name, v], i) => ({ name, type: 'line', showSymbol: false, color: state.cut === 'vendor' ? color(name, i) : UI.color('', i), lineStyle: { width: 1.7 }, data: pivot.index.map((d, j) => [d, v[j]]) }));
+  o.series.push({ name: 'All businesses', type: 'line', showSymbol: false, color: P.text, lineStyle: { width: 1.4, type: 'dashed' }, data: D.overall.months.map((m, j) => [m + '-01', D.overall.rate[j]]) });
+  o.yAxis.axisLabel.formatter = (v) => v + '%';
+  o.tooltip.valueFormatter = (v) => v == null ? '—' : v.toFixed(1) + '%';
+  o.tooltip.order = 'valueDesc';
+  o.grid.top = state.cut === 'sector' ? 52 : 34;
+  UI.draw('chart-adopt', o);
+}
+
+function renderPepm() {
+  const pe = D.pepm;
+  const o = UI.base();
+  o.xAxis = UI.catAxis(pe.months);
+  o.series = [['Median', pe.median, P.accent, 2.2], ['90th percentile', pe.p90, '#60a5fa', 1.4], ['Top 10% median', pe.top10, '#a78bfa', 1.4]]
+    .map(([name, v, c, w]) => ({ name, type: 'line', showSymbol: false, color: c, lineStyle: { width: w }, data: v }));
+  o.yAxis.type = state.pepmScale === 'log' ? 'log' : 'value';
+  o.yAxis.axisLabel.formatter = (v) => '$' + v;
+  o.tooltip.valueFormatter = (v) => v == null ? '—' : '$' + v.toFixed(2);
+  UI.draw('chart-pepm', o);
+}
+
+function renderCategories() {
+  const C = D.spend_by_category;
+  const top = Object.entries(C.series).filter(([k]) => k !== 'Other' && k !== 'Other AI')
+    .sort((a, b) => b[1].slice(-6).reduce((x, y) => x + (y || 0), 0) - a[1].slice(-6).reduce((x, y) => x + (y || 0), 0)).slice(0, 7).map(([k]) => k);
+  const series = Object.fromEntries(top.map((k) => [k, C.series[k]]));
+  series.Other = C.index.map((_, i) => Object.entries(C.series).filter(([k]) => !top.includes(k)).reduce((a, [, v]) => a + (v[i] || 0), 0));
+  const share = state.catMode === 'share';
+  const vals = share ? UI.shares({ index: C.index, series }) : series;
+  const o = UI.base();
+  o.xAxis = UI.catAxis(C.index.map(m7));
+  o.series = Object.entries(vals).map(([name, v], i) => ({ name, type: 'bar', stack: 'all', barWidth: '70%', color: name === 'Other' ? '#4a4a4a' : UI.color('', i), data: v }));
+  o.yAxis.axisLabel.formatter = share ? (v) => v + '%' : (v) => '$' + UI.compact(v, 0);
+  o.yAxis.min = 0; if (share) o.yAxis.max = 100;
+  o.tooltip.valueFormatter = share ? (v) => v == null ? '—' : v.toFixed(1) + '%' : (v) => UI.money(v);
+  o.tooltip.order = 'seriesDesc';
+  o.grid.top = 52;
+  UI.draw('chart-cat', o);
+}
+
+function renderSegments() {
+  renderVendors();
+  const S = D.by_sector, i = S.index.length - 1;
+  const rows = Object.entries(S.series).map(([k, v]) => ({ k, now: v[i], ago: v[i - 12] })).sort((a, b) => a.now - b.now);
+  document.getElementById('sector-sub').textContent = `${m7(S.index[i])} vs a year earlier`;
+  const o = UI.base();
+  o.legend = { top: 0, right: 0, textStyle: { color: P.dim, fontSize: 10.5 }, itemWidth: 10, itemHeight: 8 };
+  o.grid = { left: 150, right: 50, top: 30, bottom: 24 };
+  o.xAxis = { type: 'value', max: 100, axisLabel: { color: P.dim, fontSize: 10, formatter: (v) => v + '%' }, splitLine: { lineStyle: { color: P.border, opacity: 0.5 } } };
+  o.yAxis = { type: 'category', data: rows.map((r) => r.k), axisLine: { lineStyle: { color: P.border } }, axisTick: { show: false }, axisLabel: { color: P.text, fontSize: 11 } };
+  o.tooltip = { ...o.tooltip, trigger: 'axis', axisPointer: { type: 'shadow' }, valueFormatter: (v) => v.toFixed(1) + '%' };
+  o.series = [
+    { name: 'A year earlier', type: 'bar', barGap: '-100%', barWidth: '55%', itemStyle: { color: '#333' }, data: rows.map((r) => r.ago) },
+    { name: 'Latest', type: 'bar', barWidth: '25%', itemStyle: { color: P.accent }, data: rows.map((r) => r.now), label: { show: true, position: 'right', color: P.dim, fontSize: 10, formatter: (p) => p.value.toFixed(0) + '%' } },
+  ];
+  UI.draw('chart-sector', o);
+
+  const J = D.jobs.slice().sort((a, b) => a.month_relative_to_adoption - b.month_relative_to_adoption);
+  const x = J.map((r) => r.month_relative_to_adoption);
+  const j = UI.base();
+  j.xAxis = UI.catAxis(x); j.xAxis.name = 'months since adopting'; j.xAxis.nameLocation = 'middle'; j.xAxis.nameGap = 22; j.xAxis.nameTextStyle = { color: P.faint };
+  j.grid.bottom = 38;
+  const band = (lo, hi, c, name) => [
+    { name, color: c, type: 'line', stack: name, data: J.map((r) => r[lo]), lineStyle: { opacity: 0 }, showSymbol: false, tooltip: { show: false } },
+    { name, color: c, type: 'line', stack: name, data: J.map((r) => r[hi] - r[lo]), lineStyle: { opacity: 0 }, areaStyle: { color: c, opacity: 0.15 }, showSymbol: false, tooltip: { show: false } },
+  ];
+  j.series = [
+    ...band('high_intensity_ci_low', 'high_intensity_ci_high', P.accent, 'High intensity'),
+    ...band('low_intensity_ci_low', 'low_intensity_ci_high', '#60a5fa', 'Low intensity'),
+    { name: 'High intensity', type: 'line', data: J.map((r) => r.high_intensity_effect), color: P.accent, showSymbol: false, lineStyle: { width: 2 } },
+    { name: 'Low intensity', type: 'line', data: J.map((r) => r.low_intensity_effect), color: '#60a5fa', showSymbol: false, lineStyle: { width: 2 } },
+    { type: 'line', data: [], markLine: { silent: true, symbol: 'none', lineStyle: { color: P.faint, type: 'dashed' }, data: [{ yAxis: 0 }, { xAxis: '0' }], label: { show: false } } },
+  ];
+  j.legend.data = ['High intensity', 'Low intensity'];
+  j.tooltip.valueFormatter = (v) => v == null ? '—' : v.toFixed(2);
+  UI.draw('chart-jobs', j);
+}
+
+function renderVendors() {
+  const q = document.getElementById('vendor-search').value.trim().toLowerCase();
+  const rows = D.vendors.filter((v) => !q || v.vendor.toLowerCase().includes(q));
+  document.getElementById('vendor-sub').textContent = `${D.vendor_month} · trend over 24 months`;
+  UI.table('vendor-table', rows, [
+    { k: 'vendor', label: 'VENDOR', sort: (r) => r.vendor },
+    { k: 'rate', label: 'ADOPTION', fmt: (r) => r.rate.toFixed(3) },
+    { k: 'yoy', label: 'Y/Y', fmt: (r) => r.yoy == null ? '—' : (r.yoy > 0 ? '+' : '') + r.yoy.toFixed(3), cls: (r) => UI.cls(r.yoy) },
+    { k: 'ent', label: 'ENTERPRISE', fmt: (r) => r.ent == null ? '—' : r.ent.toFixed(3) },
+    { k: 'mm', label: 'MID-MARKET', fmt: (r) => r.mm == null ? '—' : r.mm.toFixed(3) },
+    { k: 'rank_mom', label: 'RANK Δ M/M', fmt: (r) => r.rank_mom == null ? '—' : (r.rank_mom > 0 ? '+' : '') + r.rank_mom, cls: (r) => UI.cls(r.rank_mom) },
+    { k: 'history', label: '24M', fmt: (r) => UI.spark(r.history), sort: (r) => r.yoy },
+  ], state);
+}
+
+UI.load('data.json').then((data) => {
+  D = data;
+  UI.masthead('adoption', `DATA TO ${D.overall.months.at(-1)}`);
+  UI.seg('adopt-cut', state, 'cut', renderAdopt);
+  UI.seg('pepm-scale', state, 'pepmScale', renderPepm);
+  UI.seg('cat-mode', state, 'catMode', renderCategories);
+  document.getElementById('vendor-search').oninput = renderVendors;
+  UI.router({ overview: renderOverview, segments: renderSegments }, 'overview');
+});
+</script>
+</body>
+</html>

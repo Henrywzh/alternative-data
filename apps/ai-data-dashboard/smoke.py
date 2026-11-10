@@ -18,7 +18,7 @@ from pathlib import Path
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import sync_playwright
 
-PAGES = ["openrouter", "ramp", "semis", "downloads", "gpu"]
+PAGES = ["usage", "adoption", "semis", "downloads", "gpu"]
 BAD_TEXT = ("NaN", "undefined", "Infinity")
 
 

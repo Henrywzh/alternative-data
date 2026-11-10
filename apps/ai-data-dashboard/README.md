@@ -4,8 +4,8 @@ A static site on Cloudflare Pages with five pages, grouped in the top menu:
 
 | Group | Page | Data |
 | --- | --- | --- |
-| USAGE | OpenRouter | Daily per-model revenue estimates (`openrouter_derived`), the ARR nowcast and task spend |
-| ADOPTION | Ramp | Ramp AI Index, PEPM, model share, vendor adoption, jobs study, and Tokenomics (`data/normalized/ramp/`) |
+| USAGE | AI Usage | OpenRouter daily per-model revenue estimates (`openrouter_derived`), the ARR nowcast and task spend, with Ramp Tokenomics (`ramp_ai_token_*`) side by side |
+| ADOPTION | Adoption | Ramp AI Index, PEPM, category spend, vendor adoption and the jobs study (`data/normalized/ramp/`) |
 | ADOPTION | Downloads | PyPI, npm, Hugging Face and GitHub adoption (`provider_adoption`) |
 | COMPUTE | Semis | Taiwan monthly revenue, Korea/Japan/HK chip trade, US PPI (`semiconductor_*`, `taiwan_*`, `us_census_trade`) |
 | COMPUTE | GPU Rental | GetDeploying, R. Mittal and Compute Screener rental prices (`gpu_price_history`, see `docs/gpu-price-history.md`) |
@@ -20,6 +20,9 @@ values.
 - `web/`: the pages, one `index.html` each, plus `shared/ui.js` (top menu,
   subtabs, chart defaults, formats, sortable tables) and
   `shared/terminal.css`. Plain HTML and JavaScript; no build tooling.
+  Each page has an OVERVIEW subtab; AI Usage adds SPEND BY LAB, TOKENS &
+  PRICES and MODELS, the others one DETAIL subtab. `web/_redirects` sends the
+  old `/openrouter/` and `/ramp/` URLs to `/usage/` and `/adoption/`.
   ECharts 5.5.1 is downloaded by the build (hash-checked, cached in
   `.cache/`) and served from the site, not from a CDN.
 - `build.py`: copies `web/` to `dist/` and writes each page's `data.json`.
@@ -59,7 +62,13 @@ must exist (`npx wrangler pages project create ai-data-dashboard
   scrape and is left out of the charts. In a month's first days the ARR
   nowcast cannot run, so the page shows the previous month instead, labelled.
 - Ramp Tokenomics comes from Ramp's Token Spend Management customers, a sample
-  that grows as customers connect providers, so levels are shown indexed and
-  shares are the comparable series.
+  that grows as customers connect providers, so shares are the comparable
+  series. Its dollars are what those businesses paid labs, not lab revenue.
+- Monthly spend by lab: Ramp's Saturday-to-Friday weeks are spread evenly over
+  their seven days, then both sources are summed by calendar month. The latest
+  month is a run-rate (days seen scaled to the month), drawn lighter, and
+  left out under 7 days. The two sources measure different buyers, so the page
+  compares their shares rather than adding the dollars. The cross-source views
+  use seven labs (`LABS` in `build.py`); everything else is Other.
 - Ramp's vendor adoption scale (0–1) is shown as published; its definition is
   not yet confirmed.

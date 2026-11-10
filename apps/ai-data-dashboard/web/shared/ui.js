@@ -19,8 +19,8 @@
   }
 
   const PAGES = [
-    ['USAGE', [['openrouter', 'OPENROUTER']]],
-    ['ADOPTION', [['ramp', 'RAMP'], ['downloads', 'DOWNLOADS']]],
+    ['USAGE', [['usage', 'AI USAGE']]],
+    ['ADOPTION', [['adoption', 'ADOPTION'], ['downloads', 'DOWNLOADS']]],
     ['COMPUTE', [['semis', 'SEMIS'], ['gpu', 'GPU RENTAL']]],
   ];
   // Two levels, as market-recap: the brand row, then one tab per page; each
