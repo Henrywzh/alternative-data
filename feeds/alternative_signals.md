@@ -1,61 +1,56 @@
 # alternative_signals research feed
 
-Generated: 2026-11-10T15:37:12.966491Z · Status: **degraded**
+Generated: 2026-11-10T21:49:27.706160Z · Status: **degraded**
 
-Source commit: `3318046e3c30595bae4034d12bb1cf05f94fbe06`
+Source commit: `7075f2fd8f1a7c969dfa4b8d92194683a59c446e`
 
 Observation dates differ by record. Generated time is not a market-data timestamp.
 
 | Section | Record | Observation | Quality | Values |
 |---|---|---|---|---|
-| OpenRouter usage economics | completion_tokens_per_request/all_models (1d window) | 2026-11-08 | current | value: 582.8463094017246 tokens_per_request |
-| OpenRouter usage economics | completion_tokens_per_request/all_models (7d window) | 2026-11-08 | current | value: 605.9596061638563 tokens_per_request |
-| OpenRouter usage economics | prompt_tokens_per_request/all_models (1d window) | 2026-11-08 | current | value: 26676.99739711448 tokens_per_request |
-| OpenRouter usage economics | prompt_tokens_per_request/all_models (7d window) | 2026-11-08 | current | value: 27418.834933897513 tokens_per_request |
-| OpenRouter usage economics | realized_market_average/all_models (7d window) | 2026-11-08 | degraded (partial_pricing_coverage) | value: 0.5415807656936515 USD_per_million_tokens |
-| OpenRouter usage economics | realized_sota_price/sota (7d window) | 2026-11-08 | degraded (partial_pricing_coverage) | value: 3.68780251631528 USD_per_million_tokens |
-| OpenRouter usage economics | sota_median_list_price/sota (1d window) | 2026-11-08 | current | value: 3.276 USD_per_million_tokens |
-| OpenRouter usage economics | total_tokens_per_request/all_models (1d window) | 2026-11-08 | current | value: 27259.843706516203 tokens_per_request |
-| OpenRouter usage economics | total_tokens_per_request/all_models (7d window) | 2026-11-08 | current | value: 28024.794540061368 tokens_per_request |
+| OpenRouter usage economics | completion_tokens_per_request/all_models (1d window) | 2026-11-09 | current | value: 586.6899058578127 tokens_per_request |
+| OpenRouter usage economics | completion_tokens_per_request/all_models (7d window) | 2026-11-09 | current | value: 601.5987931245002 tokens_per_request |
+| OpenRouter usage economics | prompt_tokens_per_request/all_models (1d window) | 2026-11-09 | current | value: 26246.60221460255 tokens_per_request |
+| OpenRouter usage economics | prompt_tokens_per_request/all_models (7d window) | 2026-11-09 | current | value: 27540.516724405003 tokens_per_request |
+| OpenRouter usage economics | realized_market_average/all_models (7d window) | 2026-11-09 | degraded (partial_pricing_coverage) | value: 0.5419452876880104 USD_per_million_tokens |
+| OpenRouter usage economics | realized_sota_price/sota (7d window) | 2026-11-09 | degraded (partial_pricing_coverage) | value: 3.7046220306132724 USD_per_million_tokens |
+| OpenRouter usage economics | sota_median_list_price/sota (1d window) | 2026-11-09 | current | value: 3.276 USD_per_million_tokens |
+| OpenRouter usage economics | total_tokens_per_request/all_models (1d window) | 2026-11-09 | current | value: 26833.292120460363 tokens_per_request |
+| OpenRouter usage economics | total_tokens_per_request/all_models (7d window) | 2026-11-09 | current | value: 28142.115517529503 tokens_per_request |
 | PyPI core SDK downloads (without mirrors) | anthropic/anthropic | 2026-11-09 | current | downloads: 7427542 downloads |
 | PyPI core SDK downloads (without mirrors) | google/google-genai | 2026-11-09 | current | downloads: 6020163 downloads |
 | PyPI core SDK downloads (without mirrors) | google/google-generativeai | 2026-11-09 | current | downloads: 288665 downloads |
 | PyPI core SDK downloads (without mirrors) | mistral/mistralai | 2026-11-09 | current | downloads: 497699 downloads |
 | PyPI core SDK downloads (without mirrors) | openai/openai | 2026-11-09 | current | downloads: 12943927 downloads |
 | PyPI core SDK downloads (without mirrors) | qwen/dashscope | 2026-11-09 | current | downloads: 61325 downloads |
-| Taiwan semiconductor / AI supply-chain monthly revenue | 聯電 | 2026-09 | stale | monthly_revenue_ntd: 25350431.0 TWD_thousand; yoy_pct: 27.22 percent; mom_pct: 1.2209797697 percent; ytd_revenue_ntd: 204009681.0 TWD_thousand |
-| Taiwan semiconductor / AI supply-chain monthly revenue | 鴻海 | 2026-09 | stale | monthly_revenue_ntd: 1158633235.0 TWD_thousand; yoy_pct: 38.42 percent; mom_pct: 25.6971081695 percent; ytd_revenue_ntd: 7669772510.0 TWD_thousand |
-| Taiwan semiconductor / AI supply-chain monthly revenue | 台積電 | 2026-09 | stale | monthly_revenue_ntd: 511857399.0 TWD_thousand; yoy_pct: 54.65 percent; mom_pct: -0.5726315926 percent; ytd_revenue_ntd: 3898726974.0 TWD_thousand |
-| Taiwan semiconductor / AI supply-chain monthly revenue | 華邦電 | 2026-09 | stale | monthly_revenue_ntd: 28248909.0 TWD_thousand; yoy_pct: 256.67 percent; mom_pct: 3.4428274313 percent; ytd_revenue_ntd: 180427134.0 TWD_thousand |
-| Taiwan semiconductor / AI supply-chain monthly revenue | 廣達 | 2026-09 | stale | monthly_revenue_ntd: 325299509.0 TWD_thousand; yoy_pct: 76.69 percent; mom_pct: -23.2731575569 percent; ytd_revenue_ntd: 2961358288.0 TWD_thousand |
-| Taiwan semiconductor / AI supply-chain monthly revenue | 南亞科 | 2026-09 | stale | monthly_revenue_ntd: 45091089.0 TWD_thousand; yoy_pct: 576.62 percent; mom_pct: 0.8968865436 percent; ytd_revenue_ntd: 265284971.0 TWD_thousand |
-| Taiwan semiconductor / AI supply-chain monthly revenue | 緯創 | 2026-09 | stale | monthly_revenue_ntd: 380806168.0 TWD_thousand; yoy_pct: 87.19 percent; mom_pct: -17.2277578487 percent; ytd_revenue_ntd: 2890836071.0 TWD_thousand |
-| Taiwan semiconductor / AI supply-chain monthly revenue | 世界 | 2026-09 | stale | monthly_revenue_ntd: 5903705.0 TWD_thousand; yoy_pct: 15.51 percent; mom_pct: 15.9271523244 percent; ytd_revenue_ntd: 42478500.0 TWD_thousand |
-| Taiwan semiconductor / AI supply-chain monthly revenue | 力成 | 2026-09 | stale | monthly_revenue_ntd: 8506551.0 TWD_thousand; yoy_pct: 26.96 percent; mom_pct: -0.5958952013 percent; ytd_revenue_ntd: 69764228.0 TWD_thousand |
-| Taiwan semiconductor / AI supply-chain monthly revenue | 緯穎 | 2026-09 | stale | monthly_revenue_ntd: 172620352.0 TWD_thousand; yoy_pct: 99.99 percent; mom_pct: 19.6162354227 percent; ytd_revenue_ntd: 989278016.0 TWD_thousand |
-| Taiwan semiconductor / AI supply-chain monthly revenue | 群聯 | 2026-09 | stale | monthly_revenue_ntd: 30638984.0 TWD_thousand; yoy_pct: 370.26 percent; mom_pct: 8.3581529712 percent; ytd_revenue_ntd: 194931541.0 TWD_thousand |
+| Taiwan semiconductor / AI supply-chain monthly revenue | 聯電 | 2026-10 | current | monthly_revenue_ntd: 25197532.0 TWD_thousand; yoy_pct: 18.33 percent; mom_pct: -0.6031416192 percent; ytd_revenue_ntd: 229207213.0 TWD_thousand |
+| Taiwan semiconductor / AI supply-chain monthly revenue | 鴻海 | 2026-10 | current | monthly_revenue_ntd: 1305319612.0 TWD_thousand; yoy_pct: 45.73 percent; mom_pct: 12.6602942647 percent; ytd_revenue_ntd: 8975092122.0 TWD_thousand |
+| Taiwan semiconductor / AI supply-chain monthly revenue | 台積電 | 2026-10 | current | monthly_revenue_ntd: 586890319.0 TWD_thousand; yoy_pct: 59.71 percent; mom_pct: 14.6589499627 percent; ytd_revenue_ntd: 4485617293.0 TWD_thousand |
+| Taiwan semiconductor / AI supply-chain monthly revenue | 華邦電 | 2026-10 | current | monthly_revenue_ntd: 29360613.0 TWD_thousand; yoy_pct: 256.96 percent; mom_pct: 3.9353873808 percent; ytd_revenue_ntd: 209787747.0 TWD_thousand |
+| Taiwan semiconductor / AI supply-chain monthly revenue | 廣達 | 2026-10 | current | monthly_revenue_ntd: 353250414.0 TWD_thousand; yoy_pct: 103.96 percent; mom_pct: 8.5923600334 percent; ytd_revenue_ntd: 3314608702.0 TWD_thousand |
+| Taiwan semiconductor / AI supply-chain monthly revenue | 南亞科 | 2026-10 | current | monthly_revenue_ntd: 46476051.0 TWD_thousand; yoy_pct: 487.73 percent; mom_pct: 3.0714760515 percent; ytd_revenue_ntd: 311761022.0 TWD_thousand |
+| Taiwan semiconductor / AI supply-chain monthly revenue | 緯創 | 2026-10 | current | monthly_revenue_ntd: 402614772.0 TWD_thousand; yoy_pct: 117.56 percent; mom_pct: 5.7269566075 percent; ytd_revenue_ntd: 3293450843.0 TWD_thousand |
+| Taiwan semiconductor / AI supply-chain monthly revenue | 世界 | 2026-10 | current | monthly_revenue_ntd: 4711355.0 TWD_thousand; yoy_pct: 20.53 percent; mom_pct: -20.1966392291 percent; ytd_revenue_ntd: 47189855.0 TWD_thousand |
+| Taiwan semiconductor / AI supply-chain monthly revenue | 力成 | 2026-10 | current | monthly_revenue_ntd: 8726838.0 TWD_thousand; yoy_pct: 25.2 percent; mom_pct: 2.5896159325 percent; ytd_revenue_ntd: 78491066.0 TWD_thousand |
+| Taiwan semiconductor / AI supply-chain monthly revenue | 緯穎 | 2026-10 | current | monthly_revenue_ntd: 165131828.0 TWD_thousand; yoy_pct: 80.94 percent; mom_pct: -4.3381466399 percent; ytd_revenue_ntd: 1154409844.0 TWD_thousand |
+| Taiwan semiconductor / AI supply-chain monthly revenue | 群聯 | 2026-10 | current | monthly_revenue_ntd: 31530384.0 TWD_thousand; yoy_pct: 346.27 percent; mom_pct: 2.9093654019 percent; ytd_revenue_ntd: 226461925.0 TWD_thousand |
 
 ## Rule candidates
 
-- **unknown** `199f93de8f1a74c0ca2fc2e6`: taiwan_semiconductor/2303 / tw.revenue.yoy_abs_20pct.v1
-- **unknown** `262dc26f3e72230eea15adde`: taiwan_semiconductor/2317 / tw.revenue.yoy_abs_20pct.v1
-- **unknown** `524ddb985a98fbd09b9f0050`: taiwan_semiconductor/2330 / tw.revenue.yoy_abs_20pct.v1
-- **unknown** `6e00484f787a1a5fbb5cbf36`: taiwan_semiconductor/2344 / tw.revenue.yoy_abs_20pct.v1
-- **unknown** `e157e5d6fca9215e95cbbce6`: taiwan_semiconductor/2382 / tw.revenue.yoy_abs_20pct.v1
-- **unknown** `0ff46ea3805b80990202a585`: taiwan_semiconductor/2408 / tw.revenue.yoy_abs_20pct.v1
-- **unknown** `2eb5ae2e56606074873ecf8f`: taiwan_semiconductor/3231 / tw.revenue.yoy_abs_20pct.v1
-- **unknown** `49f768858f6e0e0d632ccdcd`: taiwan_semiconductor/6239 / tw.revenue.yoy_abs_20pct.v1
-- **unknown** `17fe04ed3f913704b2179a42`: taiwan_semiconductor/6669 / tw.revenue.yoy_abs_20pct.v1
-- **unknown** `d0ed99bb349b83460ae0dd4a`: taiwan_semiconductor/8299 / tw.revenue.yoy_abs_20pct.v1
+- **resolved** `199f93de8f1a74c0ca2fc2e6`: taiwan_semiconductor/2303 / tw.revenue.yoy_abs_20pct.v1
+- **continuing** `262dc26f3e72230eea15adde`: taiwan_semiconductor/2317 / tw.revenue.yoy_abs_20pct.v1
+- **continuing** `524ddb985a98fbd09b9f0050`: taiwan_semiconductor/2330 / tw.revenue.yoy_abs_20pct.v1
+- **continuing** `6e00484f787a1a5fbb5cbf36`: taiwan_semiconductor/2344 / tw.revenue.yoy_abs_20pct.v1
+- **continuing** `e157e5d6fca9215e95cbbce6`: taiwan_semiconductor/2382 / tw.revenue.yoy_abs_20pct.v1
+- **continuing** `0ff46ea3805b80990202a585`: taiwan_semiconductor/2408 / tw.revenue.yoy_abs_20pct.v1
+- **continuing** `2eb5ae2e56606074873ecf8f`: taiwan_semiconductor/3231 / tw.revenue.yoy_abs_20pct.v1
+- **new** `6606cd86793947ba69c11088`: taiwan_semiconductor/5347 / tw.revenue.yoy_abs_20pct.v1
+- **continuing** `49f768858f6e0e0d632ccdcd`: taiwan_semiconductor/6239 / tw.revenue.yoy_abs_20pct.v1
+- **continuing** `17fe04ed3f913704b2179a42`: taiwan_semiconductor/6669 / tw.revenue.yoy_abs_20pct.v1
+- **continuing** `d0ed99bb349b83460ae0dd4a`: taiwan_semiconductor/8299 / tw.revenue.yoy_abs_20pct.v1
 
 ## Changes
 
-- new_observation: developer_adoption/anthropic/anthropic
-- new_observation: developer_adoption/google/google-genai
-- new_observation: developer_adoption/google/google-generativeai
-- new_observation: developer_adoption/mistral/mistralai
-- new_observation: developer_adoption/openai/openai
-- new_observation: developer_adoption/qwen/dashscope
 - new_observation: openrouter_economics/completion_tokens_per_request/all_models/1
 - new_observation: openrouter_economics/completion_tokens_per_request/all_models/7
 - new_observation: openrouter_economics/prompt_tokens_per_request/all_models/1
@@ -65,6 +60,17 @@ Observation dates differ by record. Generated time is not a market-data timestam
 - new_observation: openrouter_economics/sota_median_list_price/sota/1
 - new_observation: openrouter_economics/total_tokens_per_request/all_models/1
 - new_observation: openrouter_economics/total_tokens_per_request/all_models/7
+- new_observation: taiwan_semiconductor/2303
+- new_observation: taiwan_semiconductor/2317
+- new_observation: taiwan_semiconductor/2330
+- new_observation: taiwan_semiconductor/2344
+- new_observation: taiwan_semiconductor/2382
+- new_observation: taiwan_semiconductor/2408
+- new_observation: taiwan_semiconductor/3231
+- new_observation: taiwan_semiconductor/5347
+- new_observation: taiwan_semiconductor/6239
+- new_observation: taiwan_semiconductor/6669
+- new_observation: taiwan_semiconductor/8299
 
 ## Excluded coverage
 
