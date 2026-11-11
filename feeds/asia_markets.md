@@ -1,8 +1,8 @@
 # asia_markets research feed
 
-Generated: 2026-11-11T15:15:41.584407Z · Status: **degraded**
+Generated: 2026-11-11T22:42:59.460909Z · Status: **degraded**
 
-Source commit: `9e6a682a8569963d16ae46d5adedb97896af9c95`
+Source commit: `20050b13efb093f9e30cc61e11f1ae5c60ebb5b2`
 
 Observation dates differ by record. Generated time is not a market-data timestamp.
 
@@ -39,11 +39,6 @@ Observation dates differ by record. Generated time is not a market-data timestam
 
 ## Changes
 
-- quality_change: hk-labour-market/labour_demand_card
-- quality_change: hk-labour-market/labour_force_card
-- quality_change: hk-labour-market/wage_card
-- quality_change: hk-population-migration/mpfa_departure
-- quality_change: hk-transport/mtr_card
 
 ## Excluded coverage
 
