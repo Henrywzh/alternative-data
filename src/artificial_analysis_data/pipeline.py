@@ -21,7 +21,7 @@ from artificial_analysis_data.sources.config import resolve_api_key
 from artificial_analysis_data.storage import StorageManager
 
 
-PARSER_VERSION = "aa-v1"
+PARSER_VERSION = "aa-v2"
 
 
 class ArtificialAnalysisPipeline:

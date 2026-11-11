@@ -10,7 +10,10 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+import pandas as pd
 import pytest
+
+from dashboard.sections.ramp_tokenomics import activity_pivot
 
 from ramp_data.models import GenericRecord, RunContext, Snapshot
 from ramp_data.pipeline import RampPipeline, ValidationError
@@ -756,3 +759,14 @@ def test_token_activity_republish_replaces_current_and_keeps_old_weeks_as_vintag
     vintages = storage.load_dataset("ramp_ai_token_activity_vintages")
     assert {datetime.fromisoformat(d).strftime("%A") for d in vintages["period_start"]} == {"Monday", "Saturday"}
 
+
+def test_weekly_chart_does_not_mix_overlapping_reporting_calendars():
+    frame = pd.DataFrame([
+        {'period_end': '2026-10-18', 'metric_key': 'token_spend', 'metric_value': 10, 'model_maker': 'openai', 'series_key': 'a'},
+        {'period_end': '2026-10-23', 'metric_key': 'token_spend', 'metric_value': 15, 'model_maker': 'openai', 'series_key': 'a'},
+        {'period_end': '2026-10-09', 'metric_key': 'token_spend', 'metric_value': 12, 'model_maker': 'openai', 'series_key': 'a'},
+    ])
+    pivot = activity_pivot(frame, 'token_spend', 'By model maker')
+    assert list(pivot.index.strftime('%Y-%m-%d')) == ['2026-10-09', '2026-10-16', '2026-10-23']
+    assert pd.isna(pivot.iloc[1, 0])
+    assert pivot.iloc[-1, 0] == 15

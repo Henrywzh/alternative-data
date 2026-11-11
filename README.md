@@ -97,7 +97,7 @@ Framework adoption tracked inside `provider_adoption`:
 - `data/normalized/github_trending/`: analytics-ready Parquet outputs for trending repos
 - `.github/workflows/github-trending-daily.yml`: daily GitHub Actions job for trending repos
 - `.github/workflows/provider-adoption-daily.yml`: daily GitHub Actions job for provider adoption datasets
-- `.github/workflows/artificial-analysis-daily.yml`: daily GitHub Actions job for Artificial Analysis API snapshots and capex refreshes
+- `.github/workflows/artificial-analysis-daily.yml`: daily capex refresh and optional Artificial Analysis model snapshots
 - `.github/workflows/llm-benchmarks-weekly.yml`: weekly GitHub Actions job for ZeroEval benchmark snapshots and the frontier registry mart
 - `.github/workflows/provider-adoption-backfill.yml`: manual bounded backfill job for provider adoption datasets
 - `.github/workflows/repo-keepalive.yml`: scheduled keepalive commit to avoid GitHub disabling scheduled workflows after long inactivity
@@ -343,6 +343,14 @@ provider-adoption-data --base-dir . backfill --start-date 2026-04-01 --end-date 
 Set `HF_TOKEN` to reduce Hugging Face API rate limiting during model snapshot collection. The token is optional for public data but recommended in CI and long-running local syncs.
 
 Set `ARTIFICIAL_ANALYSIS_API_KEY` to enable the Artificial Analysis API collector. If the environment variable is unset, the pipeline falls back to the repository-root `.config` file. API-backed history starts on the first real collection date; the pipeline does not synthesize historical API snapshots.
+
+Model collection uses the paginated [Artificial Analysis Free endpoint](https://artificialanalysis.ai/data-api/docs/reference).
+Fields absent from that tier (such as context windows and blended pricing) remain missing; historical snapshots are retained.
+The public repository workflow refreshes capex only by default. Enable
+`ARTIFICIAL_ANALYSIS_MODEL_PUBLICATION_ALLOWED=true` as a GitHub Actions repository
+variable only after confirming rights to publish the model data and raw snapshots.
+The [Free API is for internal use](https://artificialanalysis.ai/data-api); local
+internal collection can still use the existing key and the daily-update command.
 
 The tiered semiconductor tracker writes normalized outputs as parquet only by design; it does not emit CSV copies for these datasets.
 For GitHub Actions backup/check runs, set the repository secret `SEMICONDUCTOR_COMTRADE_API_KEY` to your UN Comtrade subscription key; the workflow exposes it to the pipeline as `COMTRADE_API_KEY`.

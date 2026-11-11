@@ -84,13 +84,24 @@ class FakeArtificialAnalysisApiSession:
     def __init__(self, responses: list[FakeArtificialAnalysisApiResponse]) -> None:
         self._responses = list(responses)
         self.request_count = 0
+        self.urls = []
 
     def get(self, url: str, headers: dict[str, str], timeout: int) -> FakeArtificialAnalysisApiResponse:
         self.request_count += 1
+        self.urls.append(url)
         assert headers["x-api-key"] == "test-key"
         if not self._responses:
             raise AssertionError(f"Unexpected Artificial Analysis request: {url}")
         return self._responses.pop(0)
+
+
+def _api_page(page: int, total: int, items: list[dict]) -> FakeArtificialAnalysisApiResponse:
+    return FakeArtificialAnalysisApiResponse(status_code=200, text=json.dumps({
+        "tier": "free",
+        "intelligence_index_version": 5,
+        "pagination": {"page": page, "total_pages": total, "has_more": page < total},
+        "data": items,
+    }))
 
 
 def test_api_source_retries_rate_limit_and_recovers(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -99,7 +110,7 @@ def test_api_source_retries_rate_limit_and_recovers(monkeypatch: pytest.MonkeyPa
     session = FakeArtificialAnalysisApiSession(
         [
             FakeArtificialAnalysisApiResponse(status_code=429, headers={"Retry-After": "0"}),
-            FakeArtificialAnalysisApiResponse(status_code=200, text=json.dumps(_load_api_payload())),
+            _api_page(1, 1, _load_api_payload()["data"]),
         ]
     )
     source = ArtificialAnalysisApiSource(session=session)
@@ -109,7 +120,33 @@ def test_api_source_retries_rate_limit_and_recovers(monkeypatch: pytest.MonkeyPa
     assert session.request_count == 2
     assert sleeps == [0.0]
     assert snapshot.name == "llms_models"
-    assert json.loads(snapshot.body)["data"][0]["id"] == "model-openai-1"
+    assert json.loads(snapshot.body)["pages"][0]["data"][0]["id"] == "model-openai-1"
+
+
+def test_free_api_fetches_all_pages_and_preserves_nested_metrics() -> None:
+    session = FakeArtificialAnalysisApiSession([
+        _api_page(1, 2, [{"id": "a", "evaluations": {"artificial_analysis_intelligence_index": 55},
+                          "pricing": {"price_1m_input_tokens": 2},
+                          "performance": {"median_output_tokens_per_second": 43}}]),
+        _api_page(2, 2, [{"id": "b"}]),
+    ])
+    source = ArtificialAnalysisApiSource(session=session)
+    points = source.extract(source.fetch_snapshot("test-key"), run_id="run", scraped_at="now", as_of_date="2026-11-11")
+    assert session.urls == [f"{source.source_url}?page=1", f"{source.source_url}?page=2"]
+    assert [point.model_id for point in points] == ["a", "b"]
+    assert points[0].intelligence_index == 55
+    assert points[0].price_1m_input_tokens == 2
+    assert points[0].median_output_tokens_per_second == 43
+    assert points[0].context_window_tokens is None
+    assert points[0].price_1m_blended_3_to_1 is None
+
+
+def test_free_api_rejects_repeated_model_across_pages() -> None:
+    source = ArtificialAnalysisApiSource(session=FakeArtificialAnalysisApiSession([
+        _api_page(1, 2, [{"id": "a"}]), _api_page(2, 2, [{"id": "a"}]),
+    ]))
+    with pytest.raises(ValueError, match="duplicate model ID"):
+        source.fetch_snapshot("test-key")
 
 
 def test_resolve_api_key_prefers_env_then_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
