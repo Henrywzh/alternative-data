@@ -6,9 +6,9 @@
     "title": "香港人口、迁移与跨境数据监测",
     "description": "入境处高频每日出入境净流量、政府统计处人口估算与净移动、积金局永久离港强积金申索、教资会内地生入学人数及大湾区跨境车流/高铁客流。",
     "sector": "hk-population-migration",
-    "generatedAt": "2026-11-10T14:56:01.968504Z",
-    "dataAsOf": "2026-11-09",
-    "liveSourcesCount": 6,
+    "generatedAt": "2026-11-12T15:17:17.880629Z",
+    "dataAsOf": "2026-11-11",
+    "liveSourcesCount": 5,
     "totalSourcesCount": 6,
     "cards": [
       {
@@ -344,7 +344,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `f35d2846fae445be` · 生成于 2026-11-10T14:56:01.968504Z。这是已发布快照，不是实时连接。"
+        "body": "**数据快照：** `02e35b88dde6e108` · 生成于 2026-11-12T15:17:17.880629Z。这是已发布快照，不是实时连接。"
       },
       {
         "id": "kpi_grid",
@@ -404,24 +404,10 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-11-10T14:56:01.968504Z",
-    "status": "ready",
+    "generatedAt": "2026-11-12T15:17:17.880629Z",
+    "status": "partial",
     "datasets": {
       "immd_daily_traffic": [
-        {
-          "date": "2025-11-10",
-          "hk_resident_net_flow": 35895,
-          "mainland_visitor_net_retention": 8284,
-          "hk_resident_departures_7d_ma": 336356.1,
-          "mainland_visitor_arrivals_7d_ma": 92581.6
-        },
-        {
-          "date": "2025-11-11",
-          "hk_resident_net_flow": 6766,
-          "mainland_visitor_net_retention": 4589,
-          "hk_resident_departures_7d_ma": 337965.3,
-          "mainland_visitor_arrivals_7d_ma": 93499.9
-        },
         {
           "date": "2025-11-12",
           "hk_resident_net_flow": 1242,
@@ -2962,29 +2948,23 @@
           "mainland_visitor_net_retention": 6496,
           "hk_resident_departures_7d_ma": 362553,
           "mainland_visitor_arrivals_7d_ma": 100588.7
+        },
+        {
+          "date": "2026-11-10",
+          "hk_resident_net_flow": 8696,
+          "mainland_visitor_net_retention": 3169,
+          "hk_resident_departures_7d_ma": 363443.1,
+          "mainland_visitor_arrivals_7d_ma": 101840
+        },
+        {
+          "date": "2026-11-11",
+          "hk_resident_net_flow": -2852,
+          "mainland_visitor_net_retention": 6210,
+          "hk_resident_departures_7d_ma": 364689.7,
+          "mainland_visitor_arrivals_7d_ma": 105216.6
         }
       ],
       "immd_net_flow_history": [
-        {
-          "date": "2025-11-10",
-          "series": "香港居民净流量",
-          "value": 35895
-        },
-        {
-          "date": "2025-11-10",
-          "series": "内地访客净留存",
-          "value": 8284
-        },
-        {
-          "date": "2025-11-11",
-          "series": "香港居民净流量",
-          "value": 6766
-        },
-        {
-          "date": "2025-11-11",
-          "series": "内地访客净留存",
-          "value": 4589
-        },
         {
           "date": "2025-11-12",
           "series": "香港居民净流量",
@@ -6614,6 +6594,26 @@
           "date": "2026-11-09",
           "series": "内地访客净留存",
           "value": 6496
+        },
+        {
+          "date": "2026-11-10",
+          "series": "香港居民净流量",
+          "value": 8696
+        },
+        {
+          "date": "2026-11-10",
+          "series": "内地访客净留存",
+          "value": 3169
+        },
+        {
+          "date": "2026-11-11",
+          "series": "香港居民净流量",
+          "value": -2852
+        },
+        {
+          "date": "2026-11-11",
+          "series": "内地访客净留存",
+          "value": 6210
         }
       ],
       "csd_population": [
@@ -18267,7 +18267,7 @@
       "label": "Immigration Department Daily Passenger Traffic",
       "status": "success",
       "records": 365,
-      "latest_observation": "2026-11-09",
+      "latest_observation": "2026-11-11",
       "freshness": "dated",
       "notes": "Daily passenger clearance by control point, direction and residency, used to derive HK-resident net flow and Mainland-visitor net retention."
     },
@@ -18283,11 +18283,11 @@
     {
       "id": "mpfa",
       "label": "MPFA Statistical Digest",
-      "status": "success",
+      "status": "degraded",
       "records": 15,
       "latest_observation": "2026-Q2",
       "freshness": "dated",
-      "notes": "Quarterly MPF claims for permanent departure from Hong Kong (count and amount), parsed from the official Statistical Digest."
+      "notes": "Quarterly MPF claims for permanent departure from Hong Kong (count and amount), parsed from the official Statistical Digest. Live fetch failed this build; serving the committed snapshot."
     },
     {
       "id": "ugc",
@@ -18321,8 +18321,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-population-migration/",
     "sector_id": "hk-population-migration",
     "sector_name": "Hong Kong Population, Migration & Cross-Border Data Monitor",
-    "snapshotId": "f35d2846fae445be",
-    "generatedAt": "2026-11-10T14:56:01.968504Z",
-    "dataAsOf": "2026-11-09"
+    "snapshotId": "02e35b88dde6e108",
+    "generatedAt": "2026-11-12T15:17:17.880629Z",
+    "dataAsOf": "2026-11-11"
   }
 }
