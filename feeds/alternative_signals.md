@@ -1,8 +1,8 @@
 # alternative_signals research feed
 
-Generated: 2026-11-11T22:42:59.460909Z · Status: **degraded**
+Generated: 2026-11-12T15:59:39.376287Z · Status: **degraded**
 
-Source commit: `20050b13efb093f9e30cc61e11f1ae5c60ebb5b2`
+Source commit: `6fdaa6588fe2f628e771c8f85363eaefd5028091`
 
 Observation dates differ by record. Generated time is not a market-data timestamp.
 
@@ -17,12 +17,12 @@ Observation dates differ by record. Generated time is not a market-data timestam
 | OpenRouter usage economics | sota_median_list_price/sota (1d window) | 2026-11-10 | current | value: 2.457 USD_per_million_tokens |
 | OpenRouter usage economics | total_tokens_per_request/all_models (1d window) | 2026-11-10 | current | value: 27801.622033235282 tokens_per_request |
 | OpenRouter usage economics | total_tokens_per_request/all_models (7d window) | 2026-11-10 | current | value: 27715.668336269104 tokens_per_request |
-| PyPI core SDK downloads (without mirrors) | anthropic/anthropic | 2026-11-10 | current | downloads: 8400024 downloads |
-| PyPI core SDK downloads (without mirrors) | google/google-genai | 2026-11-10 | current | downloads: 6555889 downloads |
-| PyPI core SDK downloads (without mirrors) | google/google-generativeai | 2026-11-10 | current | downloads: 292988 downloads |
-| PyPI core SDK downloads (without mirrors) | mistral/mistralai | 2026-11-10 | current | downloads: 591554 downloads |
-| PyPI core SDK downloads (without mirrors) | openai/openai | 2026-11-10 | current | downloads: 14539953 downloads |
-| PyPI core SDK downloads (without mirrors) | qwen/dashscope | 2026-11-10 | current | downloads: 72141 downloads |
+| PyPI core SDK downloads (without mirrors) | anthropic/anthropic | 2026-11-11 | current | downloads: 7809746 downloads |
+| PyPI core SDK downloads (without mirrors) | google/google-genai | 2026-11-11 | current | downloads: 6256487 downloads |
+| PyPI core SDK downloads (without mirrors) | google/google-generativeai | 2026-11-11 | current | downloads: 279405 downloads |
+| PyPI core SDK downloads (without mirrors) | mistral/mistralai | 2026-11-11 | current | downloads: 497720 downloads |
+| PyPI core SDK downloads (without mirrors) | openai/openai | 2026-11-11 | current | downloads: 14870869 downloads |
+| PyPI core SDK downloads (without mirrors) | qwen/dashscope | 2026-11-11 | current | downloads: 67919 downloads |
 | Taiwan semiconductor / AI supply-chain monthly revenue | 聯電 | 2026-10 | current | monthly_revenue_ntd: 25197532.0 TWD_thousand; yoy_pct: 18.33 percent; mom_pct: -0.6031416192 percent; ytd_revenue_ntd: 229207213.0 TWD_thousand |
 | Taiwan semiconductor / AI supply-chain monthly revenue | 鴻海 | 2026-10 | current | monthly_revenue_ntd: 1305319612.0 TWD_thousand; yoy_pct: 45.73 percent; mom_pct: 12.6602942647 percent; ytd_revenue_ntd: 8975092122.0 TWD_thousand |
 | Taiwan semiconductor / AI supply-chain monthly revenue | 台積電 | 2026-10 | current | monthly_revenue_ntd: 586890319.0 TWD_thousand; yoy_pct: 59.71 percent; mom_pct: 14.6589499627 percent; ytd_revenue_ntd: 4485617293.0 TWD_thousand |
@@ -50,26 +50,12 @@ Observation dates differ by record. Generated time is not a market-data timestam
 
 ## Changes
 
-- new_observation: openrouter_economics/completion_tokens_per_request/all_models/1
-- new_observation: openrouter_economics/completion_tokens_per_request/all_models/7
-- new_observation: openrouter_economics/prompt_tokens_per_request/all_models/1
-- new_observation: openrouter_economics/prompt_tokens_per_request/all_models/7
-- new_observation: openrouter_economics/realized_market_average/all_models/7
-- new_observation: openrouter_economics/realized_sota_price/sota/7
-- new_observation: openrouter_economics/sota_median_list_price/sota/1
-- new_observation: openrouter_economics/total_tokens_per_request/all_models/1
-- new_observation: openrouter_economics/total_tokens_per_request/all_models/7
-- methodology_change: taiwan_semiconductor/2303
-- methodology_change: taiwan_semiconductor/2317
-- methodology_change: taiwan_semiconductor/2330
-- methodology_change: taiwan_semiconductor/2344
-- methodology_change: taiwan_semiconductor/2382
-- methodology_change: taiwan_semiconductor/2408
-- methodology_change: taiwan_semiconductor/3231
-- methodology_change: taiwan_semiconductor/5347
-- methodology_change: taiwan_semiconductor/6239
-- methodology_change: taiwan_semiconductor/6669
-- methodology_change: taiwan_semiconductor/8299
+- new_observation: developer_adoption/anthropic/anthropic
+- new_observation: developer_adoption/google/google-genai
+- new_observation: developer_adoption/google/google-generativeai
+- new_observation: developer_adoption/mistral/mistralai
+- new_observation: developer_adoption/openai/openai
+- new_observation: developer_adoption/qwen/dashscope
 
 ## Excluded coverage
 
