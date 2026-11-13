@@ -29,7 +29,7 @@
         <div class="card-head"><span class="card-title">AI SPEND PER EMPLOYEE</span><span class="card-sub">$ per employee per month</span>
           <div class="controls"><div class="seg" id="pepm-scale"><button data-v="lin">LIN</button><button data-v="log">LOG</button></div></div></div>
         <div class="card-body"><div class="chart tall" id="chart-pepm"></div>
-          <p class="note">Among businesses with AI spend: the median, the 90th percentile, and the median of the top tenth.</p></div>
+          <p class="note">Among businesses with AI spend: the median, and the medians of the top tenth and top hundredth. Ramp stopped publishing the 90th and 99th percentiles in November 2026.</p></div>
       </div>
     </div>
     <div class="card">
@@ -86,8 +86,8 @@ function renderOverview() {
     ['AI ADOPTION', O.rate[n - 1].toFixed(1) + '%', `${O.months[n - 1]} · <span class="${UI.cls(O.mom[n - 1])}">${UI.pp(O.mom[n - 1])}</span> m/m · <span class="${UI.cls(O.yoy[n - 1])}">${UI.pp(O.yoy[n - 1])}</span> y/y`],
     ['ANTHROPIC', ant[vi].toFixed(1) + '%', `of businesses · <span class="${UI.cls(ant[vi] - ant[vi - 12])}">${UI.pp(ant[vi] - ant[vi - 12])}</span> y/y`],
     ['OPENAI', oai[vi].toFixed(1) + '%', `of businesses · <span class="${UI.cls(oai[vi] - oai[vi - 12])}">${UI.pp(oai[vi] - oai[vi - 12])}</span> y/y`],
-    ['MEDIAN AI $ / EMPLOYEE', '$' + pe.median[pn].toFixed(2), `${pe.months[pn]} · p90 $${pe.p90[pn].toFixed(0)}`],
-    ['TOP-10% AI $ / EMPLOYEE', '$' + pe.top10[pn].toFixed(0), `${pe.months[pn]} · median of the heaviest spenders`],
+    ['MEDIAN AI $ / EMPLOYEE', '$' + pe.median[pn].toFixed(2), `${pe.months[pn]} · <span class="${UI.cls(pe.median[pn] / pe.median[pn - 12] - 1)}">${UI.pct(pe.median[pn] / pe.median[pn - 12] - 1, 0)}</span> y/y`],
+    ['TOP-10% AI $ / EMPLOYEE', UI.num(pe.top10[pn]) ? '—' : '$' + pe.top10[pn].toFixed(0), `${pe.months[pn]} · median of the heaviest spenders`],
   ];
   document.getElementById('stats').innerHTML = stats.map(([l, v, s]) => `<div class="stat"><div class="stat-label">${l}</div><div class="stat-value">${v}</div><div class="stat-note">${s}</div></div>`).join('');
   renderAdopt(); renderPepm(); renderCategories();
@@ -110,7 +110,7 @@ function renderPepm() {
   const pe = D.pepm;
   const o = UI.base();
   o.xAxis = UI.catAxis(pe.months);
-  o.series = [['Median', pe.median, P.accent, 2.2], ['90th percentile', pe.p90, '#60a5fa', 1.4], ['Top 10% median', pe.top10, '#a78bfa', 1.4]]
+  o.series = [['Median', pe.median, P.accent, 2.2], ['Top 10% median', pe.top10, '#60a5fa', 1.4], ['Top 1% median', pe.top1, '#a78bfa', 1.4]]
     .map(([name, v, c, w]) => ({ name, type: 'line', showSymbol: false, color: c, lineStyle: { width: w }, data: v }));
   o.yAxis.type = state.pepmScale === 'log' ? 'log' : 'value';
   o.yAxis.axisLabel.formatter = (v) => '$' + v;
