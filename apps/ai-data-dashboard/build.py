@@ -342,7 +342,7 @@ def build_adoption() -> None:
                     "mom": overall["mom_change_pp"].tolist(), "yoy": overall["yoy_change_pp"].tolist()},
         "by_vendor": pivot_json(by_vendor), "by_size": pivot_json(by_size), "by_sector": pivot_json(by_sector),
         "pepm": {"months": pepm["date_month"].astype(str).str[:7].tolist(), "median": pepm["median_pepm"].tolist(),
-                 "p90": pepm["p90_pepm"].tolist(), "top10": pepm["top_10_percent_median_pepm"].tolist(),
+                 "top10": pepm["top_10_percent_median_pepm"].tolist(), "top1": pepm["top_1_percent_median_pepm"].tolist(),
                  "businesses": pepm["business_count"].tolist(), "spend": pepm["spend_usd"].tolist()},
         "spend_by_category": pivot_json(spend),
         "vendor_month": str(latest)[:7], "vendor_months": [str(m)[:7] for m in hist.sort_index().index[-24:]],
