@@ -6,9 +6,9 @@
     "title": "香港人口、迁移与跨境数据监测",
     "description": "入境处高频每日出入境净流量、政府统计处人口估算与净移动、积金局永久离港强积金申索、教资会内地生入学人数及大湾区跨境车流/高铁客流。",
     "sector": "hk-population-migration",
-    "generatedAt": "2026-11-12T15:17:17.880629Z",
-    "dataAsOf": "2026-11-11",
-    "liveSourcesCount": 5,
+    "generatedAt": "2026-11-13T14:38:04.785495Z",
+    "dataAsOf": "2026-11-12",
+    "liveSourcesCount": 6,
     "totalSourcesCount": 6,
     "cards": [
       {
@@ -344,7 +344,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `02e35b88dde6e108` · 生成于 2026-11-12T15:17:17.880629Z。这是已发布快照，不是实时连接。"
+        "body": "**数据快照：** `70d5b16260051829` · 生成于 2026-11-13T14:38:04.785495Z。这是已发布快照，不是实时连接。"
       },
       {
         "id": "kpi_grid",
@@ -404,17 +404,10 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-11-12T15:17:17.880629Z",
-    "status": "partial",
+    "generatedAt": "2026-11-13T14:38:04.785495Z",
+    "status": "ready",
     "datasets": {
       "immd_daily_traffic": [
-        {
-          "date": "2025-11-12",
-          "hk_resident_net_flow": 1242,
-          "mainland_visitor_net_retention": 7741,
-          "hk_resident_departures_7d_ma": 338196.7,
-          "mainland_visitor_arrivals_7d_ma": 95304.4
-        },
         {
           "date": "2025-11-13",
           "hk_resident_net_flow": -15839,
@@ -2962,19 +2955,16 @@
           "mainland_visitor_net_retention": 6210,
           "hk_resident_departures_7d_ma": 364689.7,
           "mainland_visitor_arrivals_7d_ma": 105216.6
+        },
+        {
+          "date": "2026-11-12",
+          "hk_resident_net_flow": -17207,
+          "mainland_visitor_net_retention": -258,
+          "hk_resident_departures_7d_ma": 365803.6,
+          "mainland_visitor_arrivals_7d_ma": 108507.1
         }
       ],
       "immd_net_flow_history": [
-        {
-          "date": "2025-11-12",
-          "series": "香港居民净流量",
-          "value": 1242
-        },
-        {
-          "date": "2025-11-12",
-          "series": "内地访客净留存",
-          "value": 7741
-        },
         {
           "date": "2025-11-13",
           "series": "香港居民净流量",
@@ -6614,6 +6604,16 @@
           "date": "2026-11-11",
           "series": "内地访客净留存",
           "value": 6210
+        },
+        {
+          "date": "2026-11-12",
+          "series": "香港居民净流量",
+          "value": -17207
+        },
+        {
+          "date": "2026-11-12",
+          "series": "内地访客净留存",
+          "value": -258
         }
       ],
       "csd_population": [
@@ -18267,7 +18267,7 @@
       "label": "Immigration Department Daily Passenger Traffic",
       "status": "success",
       "records": 365,
-      "latest_observation": "2026-11-11",
+      "latest_observation": "2026-11-12",
       "freshness": "dated",
       "notes": "Daily passenger clearance by control point, direction and residency, used to derive HK-resident net flow and Mainland-visitor net retention."
     },
@@ -18283,11 +18283,11 @@
     {
       "id": "mpfa",
       "label": "MPFA Statistical Digest",
-      "status": "degraded",
+      "status": "success",
       "records": 15,
       "latest_observation": "2026-Q2",
       "freshness": "dated",
-      "notes": "Quarterly MPF claims for permanent departure from Hong Kong (count and amount), parsed from the official Statistical Digest. Live fetch failed this build; serving the committed snapshot."
+      "notes": "Quarterly MPF claims for permanent departure from Hong Kong (count and amount), parsed from the official Statistical Digest."
     },
     {
       "id": "ugc",
@@ -18321,8 +18321,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-population-migration/",
     "sector_id": "hk-population-migration",
     "sector_name": "Hong Kong Population, Migration & Cross-Border Data Monitor",
-    "snapshotId": "02e35b88dde6e108",
-    "generatedAt": "2026-11-12T15:17:17.880629Z",
-    "dataAsOf": "2026-11-11"
+    "snapshotId": "70d5b16260051829",
+    "generatedAt": "2026-11-13T14:38:04.785495Z",
+    "dataAsOf": "2026-11-12"
   }
 }
