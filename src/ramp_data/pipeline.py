@@ -169,8 +169,12 @@ class RampPipeline:
             manifest["datasets"] = [
                 {
                     "dataset_id": dataset_id,
-                    "status": "ok" if extracted.get(dataset_id) else "no_new_rows",
+                    "status": (
+                        "retired" if (reason := quality.get(dataset_id, {}).get("retired"))
+                        else "ok" if extracted.get(dataset_id) else "no_new_rows"
+                    ),
                     "rows": len(extracted.get(dataset_id, [])),
+                    **({"note": reason} if reason else {}),
                 }
                 for dataset_id in dataset_ids
             ]

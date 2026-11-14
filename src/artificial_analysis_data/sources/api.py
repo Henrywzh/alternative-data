@@ -21,13 +21,46 @@ class ArtificialAnalysisApiSource:
 
     def __init__(self, session: requests.Session | None = None) -> None:
         self.session = session or requests.Session()
-        self.source_url = "https://artificialanalysis.ai/api/v2/data/llms/models"
+        self.source_url = "https://artificialanalysis.ai/api/v2/language/models/free"
 
     def fetch_snapshot(self, api_key: str) -> Snapshot:
+        pages = []
+        seen_ids: set[str] = set()
+        total_pages = 1
+        page = 1
+        while page <= total_pages:
+            payload = json.loads(self._fetch_page(api_key, page))
+            if not isinstance(payload, dict):
+                raise ValueError("Artificial Analysis API: expected an object")
+            pagination = payload.get("pagination")
+            items = payload.get("data")
+            if not isinstance(pagination, dict) or not isinstance(items, list) or not items:
+                raise ValueError("Artificial Analysis API: missing pagination or model data")
+            if page == 1:
+                total_pages = pagination.get("total_pages")
+                if type(total_pages) is not int or not 1 <= total_pages <= 100:
+                    raise ValueError("Artificial Analysis API: invalid page count")
+            if (
+                pagination.get("page") != page
+                or pagination.get("total_pages") != total_pages
+                or pagination.get("has_more") is not (page < total_pages)
+                or (pages and payload.get("intelligence_index_version") != pages[0].get("intelligence_index_version"))
+            ):
+                raise ValueError("Artificial Analysis API: inconsistent pagination or index version")
+            for item in items:
+                model_id = item.get("id") if isinstance(item, dict) else None
+                if not isinstance(model_id, str) or not model_id or model_id in seen_ids:
+                    raise ValueError("Artificial Analysis API: missing or duplicate model ID")
+                seen_ids.add(model_id)
+            pages.append(payload)
+            page += 1
+        return Snapshot(name="llms_models", source_url=self.source_url, body=json.dumps({"pages": pages}))
+
+    def _fetch_page(self, api_key: str, page: int) -> str:
         max_attempts = self.MAX_RATE_LIMIT_RETRIES + 1
         for attempt in range(1, max_attempts + 1):
             response = self.session.get(
-                self.source_url,
+                f"{self.source_url}?page={page}",
                 headers={"x-api-key": api_key},
                 timeout=30,
             )
@@ -43,7 +76,7 @@ class ArtificialAnalysisApiSource:
                 continue
 
             response.raise_for_status()
-            return Snapshot(name="llms_models", source_url=self.source_url, body=response.text)
+            return response.text
 
         raise RuntimeError("Artificial Analysis API request exhausted retry attempts")
 
@@ -65,12 +98,18 @@ class ArtificialAnalysisApiSource:
         as_of_date: str,
     ) -> list[ArtificialAnalysisModelPoint]:
         payload = json.loads(snapshot.body)
-        items = payload.get("data", payload if isinstance(payload, list) else [])
+        if isinstance(payload, list):
+            items = payload
+        elif "pages" in payload:
+            items = [item for page in payload["pages"] for item in page["data"]]
+        else:
+            items = payload.get("data", [])
         points: list[ArtificialAnalysisModelPoint] = []
         for item in items:
             creator = item.get("model_creator") or item.get("creator") or {}
             evaluations = item.get("evaluations") or {}
             pricing = item.get("pricing") or {}
+            performance = item.get("performance") or {}
             training = item.get("training_information") or {}
             raw_release_date = item.get("release_date")
             normalized_release_date = coerce_date_string(raw_release_date)
@@ -111,8 +150,12 @@ class ArtificialAnalysisApiSource:
                         item.get("price_1m_output_tokens"),
                         pricing.get("price_1m_output_tokens"),
                     ),
-                    median_output_tokens_per_second=_to_float(item.get("median_output_tokens_per_second")),
-                    median_time_to_first_token_seconds=_to_float(item.get("median_time_to_first_token_seconds")),
+                    median_output_tokens_per_second=_to_float(
+                        item.get("median_output_tokens_per_second"), performance.get("median_output_tokens_per_second")
+                    ),
+                    median_time_to_first_token_seconds=_to_float(
+                        item.get("median_time_to_first_token_seconds"), performance.get("median_time_to_first_token_seconds")
+                    ),
                     context_window_tokens=_to_int(item.get("context_window_tokens"), item.get("context_window")),
                     total_parameters_billions=_to_float(
                         item.get("total_parameters_billions"),
