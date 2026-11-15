@@ -1,8 +1,8 @@
 # alternative_signals research feed
 
-Generated: 2026-11-14T20:44:11.779716Z · Status: **degraded**
+Generated: 2026-11-15T14:46:48.354886Z · Status: **degraded**
 
-Source commit: `fe1fc31b742d8466a590eda69196f6d16f7b0e0e`
+Source commit: `b688244b891eca2219cade39fcf7da1bf2e71e18`
 
 Observation dates differ by record. Generated time is not a market-data timestamp.
 
@@ -17,12 +17,12 @@ Observation dates differ by record. Generated time is not a market-data timestam
 | OpenRouter usage economics | sota_median_list_price/sota (1d window) | 2026-11-13 | current | value: 1.638 USD_per_million_tokens |
 | OpenRouter usage economics | total_tokens_per_request/all_models (1d window) | 2026-11-13 | current | value: 27115.836769317768 tokens_per_request |
 | OpenRouter usage economics | total_tokens_per_request/all_models (7d window) | 2026-11-13 | current | value: 28235.418320912464 tokens_per_request |
-| PyPI core SDK downloads (without mirrors) | anthropic/anthropic | 2026-11-13 | current | downloads: 7812946 downloads |
-| PyPI core SDK downloads (without mirrors) | google/google-genai | 2026-11-13 | current | downloads: 6270922 downloads |
-| PyPI core SDK downloads (without mirrors) | google/google-generativeai | 2026-11-13 | current | downloads: 247916 downloads |
-| PyPI core SDK downloads (without mirrors) | mistral/mistralai | 2026-11-13 | current | downloads: 509361 downloads |
-| PyPI core SDK downloads (without mirrors) | openai/openai | 2026-11-13 | current | downloads: 13571276 downloads |
-| PyPI core SDK downloads (without mirrors) | qwen/dashscope | 2026-11-13 | current | downloads: 61063 downloads |
+| PyPI core SDK downloads (without mirrors) | anthropic/anthropic | 2026-11-14 | current | downloads: 4947196 downloads |
+| PyPI core SDK downloads (without mirrors) | google/google-genai | 2026-11-14 | current | downloads: 4075888 downloads |
+| PyPI core SDK downloads (without mirrors) | google/google-generativeai | 2026-11-14 | current | downloads: 173826 downloads |
+| PyPI core SDK downloads (without mirrors) | mistral/mistralai | 2026-11-14 | current | downloads: 276159 downloads |
+| PyPI core SDK downloads (without mirrors) | openai/openai | 2026-11-14 | current | downloads: 9400268 downloads |
+| PyPI core SDK downloads (without mirrors) | qwen/dashscope | 2026-11-14 | current | downloads: 49689 downloads |
 | Taiwan semiconductor / AI supply-chain monthly revenue | 聯電 | 2026-10 | current | monthly_revenue_ntd: 25197532.0 TWD_thousand; yoy_pct: 18.33 percent; mom_pct: -0.6031416192 percent; ytd_revenue_ntd: 229207213.0 TWD_thousand |
 | Taiwan semiconductor / AI supply-chain monthly revenue | 鴻海 | 2026-10 | current | monthly_revenue_ntd: 1305319612.0 TWD_thousand; yoy_pct: 45.73 percent; mom_pct: 12.6602942647 percent; ytd_revenue_ntd: 8975092122.0 TWD_thousand |
 | Taiwan semiconductor / AI supply-chain monthly revenue | 台積電 | 2026-10 | current | monthly_revenue_ntd: 586890319.0 TWD_thousand; yoy_pct: 59.71 percent; mom_pct: 14.6589499627 percent; ytd_revenue_ntd: 4485617293.0 TWD_thousand |
@@ -50,15 +50,12 @@ Observation dates differ by record. Generated time is not a market-data timestam
 
 ## Changes
 
-- new_observation: openrouter_economics/completion_tokens_per_request/all_models/1
-- new_observation: openrouter_economics/completion_tokens_per_request/all_models/7
-- new_observation: openrouter_economics/prompt_tokens_per_request/all_models/1
-- new_observation: openrouter_economics/prompt_tokens_per_request/all_models/7
-- new_observation: openrouter_economics/realized_market_average/all_models/7
-- new_observation: openrouter_economics/realized_sota_price/sota/7
-- new_observation: openrouter_economics/sota_median_list_price/sota/1
-- new_observation: openrouter_economics/total_tokens_per_request/all_models/1
-- new_observation: openrouter_economics/total_tokens_per_request/all_models/7
+- new_observation: developer_adoption/anthropic/anthropic
+- new_observation: developer_adoption/google/google-genai
+- new_observation: developer_adoption/google/google-generativeai
+- new_observation: developer_adoption/mistral/mistralai
+- new_observation: developer_adoption/openai/openai
+- new_observation: developer_adoption/qwen/dashscope
 
 ## Excluded coverage
 
