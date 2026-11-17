@@ -1,17 +1,17 @@
 # asia_markets research feed
 
-Generated: 2026-11-16T17:04:05.714815Z · Status: **degraded**
+Generated: 2026-11-17T16:54:44.213542Z · Status: **degraded**
 
-Source commit: `94b1f2dc55797c1f40a7c4fa815afafaa4b768d9`
+Source commit: `787b4c4de1d4f4e51227d483a83f0d5c06cbf6d2`
 
 Observation dates differ by record. Generated time is not a market-data timestamp.
 
 | Section | Record | Observation | Quality | Values |
 |---|---|---|---|---|
-| Hong Kong Labour Market & Talent Policy | Labour Force | 2026-09-30 | current | labour_force_thousands: 3810.0 thousand_people; employed_thousands: 3655.0 thousand_people; unemployment_rate: 0.041 fraction; underemployment_rate: 0.02 fraction |
+| Hong Kong Labour Market & Talent Policy | Labour Force | 2026-10-31 | current | labour_force_thousands: 3804.2 thousand_people; employed_thousands: 3653.8 thousand_people; unemployment_rate: 0.04 fraction; underemployment_rate: 0.02 fraction |
 | Hong Kong Labour Market & Talent Policy | Labour Demand | 2026-06-30 | current | vacancies: 45380.0 jobs; persons_engaged: 2697387.0 people; vacancy_rate: 0.017 fraction |
 | Hong Kong Labour Market & Talent Policy | Wage | 2026-06-30 | current | nominal_wage_yoy: 0.034 fraction; real_wage_yoy: 0.016 fraction; nominal_payroll_yoy: 0.035 fraction |
-| Hong Kong Labour Market & Talent Policy | Income | 2026-08-31 | current | median_monthly_earnings: 21000.0 HKD_per_month |
+| Hong Kong Labour Market & Talent Policy | Income | 2026-09-30 | current | median_monthly_earnings: 21000.0 HKD_per_month |
 | Hong Kong Labour Market & Talent Policy | Talent Policy | 2025-12-31 | current | applications_received: 147454.0 applications; applications_approved: 124460.0 applications; qmas_quota: 7101.0 cases |
 | Hong Kong Real Estate Monitor | Rvd Price | 2026-09-01 | current (source_provisional) | latest: 320.8 index_points; period_change: 0.001874 fraction; year_change: 0.093388 fraction |
 | Hong Kong Real Estate Monitor | Rvd Rent | 2026-09-01 | current (source_provisional) | latest: 212.2 index_points; period_change: 0.004735 fraction; year_change: 0.061531 fraction |
@@ -39,6 +39,8 @@ Observation dates differ by record. Generated time is not a market-data timestam
 
 ## Changes
 
+- new_observation: hk-labour-market/income_card
+- new_observation: hk-labour-market/labour_force_card
 
 ## Excluded coverage
 
