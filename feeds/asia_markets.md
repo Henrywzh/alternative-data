@@ -1,8 +1,8 @@
 # asia_markets research feed
 
-Generated: 2026-11-17T16:54:44.213542Z · Status: **degraded**
+Generated: 2026-11-18T16:28:50.675831Z · Status: **degraded**
 
-Source commit: `787b4c4de1d4f4e51227d483a83f0d5c06cbf6d2`
+Source commit: `98843859af1da981bd20bdaceb33bc2c288a535c`
 
 Observation dates differ by record. Generated time is not a market-data timestamp.
 
@@ -16,7 +16,7 @@ Observation dates differ by record. Generated time is not a market-data timestam
 | Hong Kong Real Estate Monitor | Rvd Price | 2026-09-01 | current (source_provisional) | latest: 320.8 index_points; period_change: 0.001874 fraction; year_change: 0.093388 fraction |
 | Hong Kong Real Estate Monitor | Rvd Rent | 2026-09-01 | current (source_provisional) | latest: 212.2 index_points; period_change: 0.004735 fraction; year_change: 0.061531 fraction |
 | HK Transport & Aviation Sector Monitor | Mtr | 2026-09-01 | current | latest: 171407.0 thousand_journeys; domestic_thousands: 139085.0 thousand_journeys; cross_boundary_thousands: 9527.0 thousand_journeys; hsr_thousands: 2553.0 thousand_journeys; recovery_vs_2019_pct: 0.074477 fraction |
-| HK Transport & Aviation Sector Monitor | Cathay | 2026-09-01 | current | latest: 2453635.0 passengers; load_factor_pct: 84.2 percent; hkia_passengers: 4835000.0 passengers; period_change: -0.13222 fraction; recovery_vs_2019_pct: -0.159684 fraction |
+| HK Transport & Aviation Sector Monitor | Cathay | 2026-10-01 | current | latest: 2720195.0 passengers; load_factor_pct: 85.7 percent; hkia_passengers: 5513000.0 passengers; period_change: 0.108639 fraction; recovery_vs_2019_pct: -0.068393 fraction |
 | HK Transport & Aviation Sector Monitor | Journeys | 2026-08-01 | stale | kmb_k: 76105.324 thousand_journeys; total_k: 361332.121 thousand_journeys; period_change: 0.036112 fraction |
 | HK Transport & Aviation Sector Monitor | Fleet | 2026-09-01 | current | total_registered: 651157.0 vehicles; ev_share_pct: 27.6241 percent; ev_share_change_pp: 0.1607 percentage_points |
 | HK Transport & Aviation Sector Monitor | Private Car First Reg | 2026-08-01 | stale | total_first_reg: 2989.0 vehicles; electric_first_reg: 1810.0 vehicles; ev_share_pct: 60.5554 percent |
@@ -31,7 +31,7 @@ Observation dates differ by record. Generated time is not a market-data timestam
 | Hong Kong Local Consumer Monitor | Retail | 2026-09-01 | current | latest: 119.4 index_points; period_change: 0.039164 fraction; year_change: -0.011589 fraction |
 | Hong Kong Local Consumer Monitor | Restaurant | 2026-09-30 | current | latest: 27489.0 HKD_million; period_change: 0.010254 fraction; year_change: 0.030515 fraction |
 | Hong Kong Population & Migration | Population estimates | 2026-06 | current | mid_year_population_thousands: 7518.3 thousand_people; net_movement_thousands: 39.8 thousand_people; natural_growth_thousands: -20.4 thousand_people |
-| Hong Kong Population & Migration | MPF permanent-departure claims | 2026-Q2 | current | claims_count: 5200 claims; amount_mhkd: 1203.0 HKD_million |
+| Hong Kong Population & Migration | MPF permanent-departure claims | 2026-Q2 | stale | claims_count: 5200 claims; amount_mhkd: 1203.0 HKD_million |
 
 ## Rule candidates
 
@@ -39,8 +39,8 @@ Observation dates differ by record. Generated time is not a market-data timestam
 
 ## Changes
 
-- new_observation: hk-labour-market/income_card
-- new_observation: hk-labour-market/labour_force_card
+- quality_change: hk-population-migration/mpfa_departure
+- new_observation: hk-transport/cathay_card
 
 ## Excluded coverage
 
