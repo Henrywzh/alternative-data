@@ -6,7 +6,7 @@
     "title": "香港交通与航空监测",
     "description": "港铁月度客运量（本地/跨境/高铁）、国泰航空及香港国际机场流量、六家中国上市航空公司客运与货运运营数据、运输署公共交通/私家车/电动车登记、C&SD跨境移动及传感器停车位占用率数据。",
     "sector": "hk-transport",
-    "generatedAt": "2026-11-17T16:02:48.799162Z",
+    "generatedAt": "2026-11-18T15:42:57.451549Z",
     "cards": [
       {
         "id": "mtr_card",
@@ -2054,7 +2054,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-11-17T16:02:48.799162Z",
+    "generatedAt": "2026-11-18T15:42:57.451549Z",
     "status": "ready",
     "datasets": {
       "kpi_mtr": [
@@ -2070,13 +2070,13 @@
       ],
       "kpi_cathay": [
         {
-          "latest": 2453635,
-          "load_factor_pct": 84.2,
-          "hkia_passengers": 4835000,
-          "hkia_movements": 32175,
-          "period_change": -0.13222,
-          "recovery_vs_2019_pct": -0.159684,
-          "observation_date": "2026-09-01"
+          "latest": 2720195,
+          "load_factor_pct": 85.7,
+          "hkia_passengers": 5513000,
+          "hkia_movements": 34690,
+          "period_change": 0.108639,
+          "recovery_vs_2019_pct": -0.068393,
+          "observation_date": "2026-10-01"
         }
       ],
       "mtr_history": [
@@ -9290,6 +9290,25 @@
           "cathay_flight_sectors": 11721,
           "cathay_passenger_flight_sectors": 10354,
           "cathay_freighter_flight_sectors": 1367
+        },
+        {
+          "date": "2026-10-01 00:00:00",
+          "month": "2026-10",
+          "hkia_passengers": 5513000,
+          "hkia_aircraft_movements": 34690,
+          "hkia_freight_tonnes": 448000,
+          "cathay_passengers": 2720195,
+          "cathay_rpk_thousands": 11066354,
+          "cathay_ask_thousands": 12914263,
+          "cathay_passenger_load_factor_pct": 85.7,
+          "cathay_cargo_tonnes": 162747,
+          "cathay_aftk_thousands": 1387326,
+          "cathay_rftk_thousands": 857848,
+          "cathay_cargo_load_factor_pct": 61.8,
+          "cathay_atk_thousands": null,
+          "cathay_flight_sectors": 12287,
+          "cathay_passenger_flight_sectors": 10906,
+          "cathay_freighter_flight_sectors": 1381
         }
       ],
       "mtr_service_breakdown_history": [
@@ -14436,6 +14455,18 @@
           "month": "2026-09",
           "series": "RPK ('000)",
           "value": 10481280
+        },
+        {
+          "date": "2026-10-01",
+          "month": "2026-10",
+          "series": "ASK ('000)",
+          "value": 12914263
+        },
+        {
+          "date": "2026-10-01",
+          "month": "2026-10",
+          "series": "RPK ('000)",
+          "value": 11066354
         }
       ],
       "cathay_cargo_capacity_demand_history": [
@@ -15950,6 +15981,18 @@
           "month": "2026-09",
           "series": "RFTK（千单位）",
           "value": 792026
+        },
+        {
+          "date": "2026-10-01",
+          "month": "2026-10",
+          "series": "AFTK（千单位）",
+          "value": 1387326
+        },
+        {
+          "date": "2026-10-01",
+          "month": "2026-10",
+          "series": "RFTK（千单位）",
+          "value": 857848
         }
       ],
       "cathay_fleet_total_history": [
@@ -97300,7 +97343,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-transport/",
-    "snapshotId": "f53c2087587f9cd6",
+    "snapshotId": "078d2cacd1e9f21d",
     "dataAsOf": "2026-11-05"
   }
 }
