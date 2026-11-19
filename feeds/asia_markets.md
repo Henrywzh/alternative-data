@@ -1,8 +1,8 @@
 # asia_markets research feed
 
-Generated: 2026-11-18T16:28:50.675831Z · Status: **degraded**
+Generated: 2026-11-19T16:35:58.103954Z · Status: **degraded**
 
-Source commit: `98843859af1da981bd20bdaceb33bc2c288a535c`
+Source commit: `ad53fd1db40d0d6716c9ecf138591612bf4b3796`
 
 Observation dates differ by record. Generated time is not a market-data timestamp.
 
@@ -39,8 +39,6 @@ Observation dates differ by record. Generated time is not a market-data timestam
 
 ## Changes
 
-- quality_change: hk-population-migration/mpfa_departure
-- new_observation: hk-transport/cathay_card
 
 ## Excluded coverage
 

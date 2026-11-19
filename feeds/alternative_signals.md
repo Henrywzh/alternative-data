@@ -1,28 +1,28 @@
 # alternative_signals research feed
 
-Generated: 2026-11-18T16:28:50.675831Z · Status: **degraded**
+Generated: 2026-11-19T16:35:58.103954Z · Status: **degraded**
 
-Source commit: `98843859af1da981bd20bdaceb33bc2c288a535c`
+Source commit: `ad53fd1db40d0d6716c9ecf138591612bf4b3796`
 
 Observation dates differ by record. Generated time is not a market-data timestamp.
 
 | Section | Record | Observation | Quality | Values |
 |---|---|---|---|---|
-| OpenRouter usage economics | completion_tokens_per_request/all_models (1d window) | 2026-11-16 | current | value: 637.3350368503551 tokens_per_request |
-| OpenRouter usage economics | completion_tokens_per_request/all_models (7d window) | 2026-11-16 | current | value: 615.0083751008219 tokens_per_request |
-| OpenRouter usage economics | prompt_tokens_per_request/all_models (1d window) | 2026-11-16 | current | value: 31243.485992588747 tokens_per_request |
-| OpenRouter usage economics | prompt_tokens_per_request/all_models (7d window) | 2026-11-16 | current | value: 30946.05361626949 tokens_per_request |
-| OpenRouter usage economics | realized_market_average/all_models (7d window) | 2026-11-16 | degraded (partial_pricing_coverage) | value: 0.5487988772153685 USD_per_million_tokens |
-| OpenRouter usage economics | realized_sota_price/sota (7d window) | 2026-11-16 | current | value: 3.3168693489652923 USD_per_million_tokens |
-| OpenRouter usage economics | sota_median_list_price/sota (1d window) | 2026-11-16 | current | value: 1.638 USD_per_million_tokens |
-| OpenRouter usage economics | total_tokens_per_request/all_models (1d window) | 2026-11-16 | current | value: 31880.821029439103 tokens_per_request |
-| OpenRouter usage economics | total_tokens_per_request/all_models (7d window) | 2026-11-16 | current | value: 31561.061991370316 tokens_per_request |
-| PyPI core SDK downloads (without mirrors) | anthropic/anthropic | 2026-11-17 | current | downloads: 8543618 downloads |
-| PyPI core SDK downloads (without mirrors) | google/google-genai | 2026-11-17 | current | downloads: 6902889 downloads |
-| PyPI core SDK downloads (without mirrors) | google/google-generativeai | 2026-11-17 | current | downloads: 270760 downloads |
-| PyPI core SDK downloads (without mirrors) | mistral/mistralai | 2026-11-17 | current | downloads: 542265 downloads |
-| PyPI core SDK downloads (without mirrors) | openai/openai | 2026-11-17 | current | downloads: 15727031 downloads |
-| PyPI core SDK downloads (without mirrors) | qwen/dashscope | 2026-11-17 | current | downloads: 63685 downloads |
+| OpenRouter usage economics | completion_tokens_per_request/all_models (1d window) | 2026-11-17 | current | value: 620.559827084451 tokens_per_request |
+| OpenRouter usage economics | completion_tokens_per_request/all_models (7d window) | 2026-11-17 | current | value: 618.8398775183374 tokens_per_request |
+| OpenRouter usage economics | prompt_tokens_per_request/all_models (1d window) | 2026-11-17 | current | value: 39370.4619458759 tokens_per_request |
+| OpenRouter usage economics | prompt_tokens_per_request/all_models (7d window) | 2026-11-17 | current | value: 32396.711363351573 tokens_per_request |
+| OpenRouter usage economics | realized_market_average/all_models (7d window) | 2026-11-17 | degraded (partial_pricing_coverage) | value: 0.498354296997808 USD_per_million_tokens |
+| OpenRouter usage economics | realized_sota_price/sota (7d window) | 2026-11-17 | current | value: 3.3095012019082772 USD_per_million_tokens |
+| OpenRouter usage economics | sota_median_list_price/sota (1d window) | 2026-11-17 | current | value: 1.638 USD_per_million_tokens |
+| OpenRouter usage economics | total_tokens_per_request/all_models (1d window) | 2026-11-17 | current | value: 39991.02177296035 tokens_per_request |
+| OpenRouter usage economics | total_tokens_per_request/all_models (7d window) | 2026-11-17 | current | value: 33015.551240869914 tokens_per_request |
+| PyPI core SDK downloads (without mirrors) | anthropic/anthropic | 2026-11-18 | current | downloads: 8846792 downloads |
+| PyPI core SDK downloads (without mirrors) | google/google-genai | 2026-11-18 | current | downloads: 6894758 downloads |
+| PyPI core SDK downloads (without mirrors) | google/google-generativeai | 2026-11-18 | current | downloads: 279460 downloads |
+| PyPI core SDK downloads (without mirrors) | mistral/mistralai | 2026-11-18 | current | downloads: 577667 downloads |
+| PyPI core SDK downloads (without mirrors) | openai/openai | 2026-11-18 | current | downloads: 15162845 downloads |
+| PyPI core SDK downloads (without mirrors) | qwen/dashscope | 2026-11-18 | current | downloads: 55074 downloads |
 | Taiwan semiconductor / AI supply-chain monthly revenue | 聯電 | 2026-10 | current | monthly_revenue_ntd: 25197532.0 TWD_thousand; yoy_pct: 18.33 percent; mom_pct: -0.6031416192 percent; ytd_revenue_ntd: 229207213.0 TWD_thousand |
 | Taiwan semiconductor / AI supply-chain monthly revenue | 鴻海 | 2026-10 | current | monthly_revenue_ntd: 1305319612.0 TWD_thousand; yoy_pct: 45.73 percent; mom_pct: 12.6602942647 percent; ytd_revenue_ntd: 8975092122.0 TWD_thousand |
 | Taiwan semiconductor / AI supply-chain monthly revenue | 台積電 | 2026-10 | current | monthly_revenue_ntd: 586890319.0 TWD_thousand; yoy_pct: 59.71 percent; mom_pct: 14.6589499627 percent; ytd_revenue_ntd: 4485617293.0 TWD_thousand |
