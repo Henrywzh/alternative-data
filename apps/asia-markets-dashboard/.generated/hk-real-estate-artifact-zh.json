@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "香港房地产市场监测",
     "description": "基于来源的住宅价格、租金和市场信心指标快照。",
-    "generatedAt": "2026-11-19T15:49:13.912508Z",
+    "generatedAt": "2026-11-20T15:38:01.477682Z",
     "cards": [
       {
         "id": "ccl_card",
@@ -1868,7 +1868,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `6fc1daba2f908897` · 生成于 2026-11-19T15:49:13.912508Z。这是已发布快照，不是实时连接；RVD 标记为 provisional 的观测可能会修订。"
+        "body": "**数据快照：** `d4925a3bb1c9eebb` · 生成于 2026-11-20T15:38:01.477682Z。这是已发布快照，不是实时连接；RVD 标记为 provisional 的观测可能会修订。"
       },
       {
         "id": "market_regime_intro",
@@ -2132,15 +2132,15 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-11-19T15:49:13.912508Z",
+    "generatedAt": "2026-11-20T15:38:01.477682Z",
     "status": "ready",
     "datasets": {
       "kpi_ccl": [
         {
-          "latest": 158.61,
-          "period_change": -0.003142,
-          "year_change": 0.119179,
-          "observation_date": "2026-11-08",
+          "latest": 157.56,
+          "period_change": -0.00662,
+          "year_change": 0.105762,
+          "observation_date": "2026-11-15",
           "is_provisional": false
         }
       ],
@@ -9031,6 +9031,10 @@
         {
           "date": "2026-11-08",
           "value": 158.61
+        },
+        {
+          "date": "2026-11-15",
+          "value": 157.56
         }
       ],
       "mhpi_history": [
@@ -47557,7 +47561,7 @@
           "event_type": "sales_response",
           "asset_class": "residential",
           "geography": "hong_kong",
-          "project": "SIERRA SEA",
+          "project": "Sierra Sea",
           "title": "Phase 2A and Phase 2B of Sai Sha Residences “SIERRA SEA” attract overwhelming market responses",
           "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2026q1/tc/PDF/SHKPQTY_2026q1_ENTC_12-15.pdf",
           "date_semantics": "quarter_end_label_proxy"
@@ -47656,7 +47660,7 @@
           "event_type": "completion_or_opening",
           "asset_class": "residential",
           "geography": "hong_kong",
-          "project": "SIERRA SEA",
+          "project": "Sierra Sea",
           "title": "Completion and handover of SIERRA SEA",
           "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2025q4/tc/PDF/SHKPQTY_2025q4_ENTC_9-13.pdf",
           "date_semantics": "quarter_end_label_proxy"
@@ -47733,7 +47737,7 @@
           "event_type": "project_update",
           "asset_class": "residential",
           "geography": "hong_kong",
-          "project": "SIERRA SEA",
+          "project": "Sierra Sea",
           "title": "SIERRA SEA – the first batch of SHKP’s largest private residential development to date",
           "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2025q2/tc/PDF/SHKPQTY_2025q2_ENTC_2-9.pdf",
           "date_semantics": "quarter_end_label_proxy"
@@ -47744,7 +47748,7 @@
           "event_type": "project_update",
           "asset_class": "residential",
           "geography": "hong_kong",
-          "project": "SIERRA SEA",
+          "project": "Sierra Sea",
           "title": "Phase 1A(2) of Sai Sha private residential development officially named SIERRA SEA",
           "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2025q1/tc/PDF/SHKPQTY_2025q1_ENTC_10-13.pdf",
           "date_semantics": "quarter_end_label_proxy"
@@ -48320,61 +48324,6 @@
           "title": "SHKP Malls present diverse Christmas festive themes",
           "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2021q4/tc/PDF/SHKPQTY_2021q4_ENTC_24-27.pdf",
           "date_semantics": "quarter_end_label_proxy"
-        },
-        {
-          "date": "2021-09-30",
-          "quarter": "2021Q3",
-          "event_type": "sales_response",
-          "asset_class": "residential",
-          "geography": "hong_kong",
-          "project": "Wetland Seasons Bay",
-          "title": "Phase 1 Wetland Seasons Bay reports brisk sales",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2021q3/tc/PDF/SHKPQTY_2021q3_ENTC_10-12.pdf",
-          "date_semantics": "quarter_end_label_proxy"
-        },
-        {
-          "date": "2021-09-30",
-          "quarter": "2021Q3",
-          "event_type": "project_update",
-          "asset_class": "mixed_use",
-          "geography": "mainland",
-          "project": "—",
-          "title": "IGC mall in Guangzhou celebrates its fifth anniversary",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2021q3/tc/PDF/SHKPQTY_2021q3_ENTC_13.pdf",
-          "date_semantics": "quarter_end_label_proxy"
-        },
-        {
-          "date": "2021-09-30",
-          "quarter": "2021Q3",
-          "event_type": "project_update",
-          "asset_class": "retail",
-          "geography": "hong_kong",
-          "project": "—",
-          "title": "Cris Fung: Smart management helps SHKP malls navigate pandemic challenges",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2021q3/tc/PDF/SHKPQTY_2021q3_ENTC_18-21.pdf",
-          "date_semantics": "quarter_end_label_proxy"
-        },
-        {
-          "date": "2021-09-30",
-          "quarter": "2021Q3",
-          "event_type": "project_update",
-          "asset_class": "retail",
-          "geography": "hong_kong",
-          "project": "—",
-          "title": "SHKP malls boost traffic and shopping through comprehensive initiatives",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2021q3/tc/PDF/SHKPQTY_2021q3_ENTC_4-7.pdf",
-          "date_semantics": "quarter_end_label_proxy"
-        },
-        {
-          "date": "2021-09-30",
-          "quarter": "2021Q3",
-          "event_type": "completion_or_opening",
-          "asset_class": "retail",
-          "geography": "hong_kong",
-          "project": "—",
-          "title": "The Ocean PopWalk mall in Tseung Kwan O is now open",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2021q3/tc/PDF/SHKPQTY_2021q3_ENTC_8-9.pdf",
-          "date_semantics": "quarter_end_label_proxy"
         }
       ],
       "shkp_quarterly_numeric_facts": [
@@ -48454,6 +48403,19 @@
           "confidence": "high",
           "fact_text": "Extensive amenities across 100,000 12 4 square feet Building a Hong Kong-Shenzhen 4 30-minute living circle with “three lines Spanning over 100,000 square feet12, Club 3 and three stations” advantage Regency13 comprises the residents’ clubhouse, gardens and recreational spaces, collectively Garden Regency will benefit from a comprehensive offering 48 amenities13.",
           "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2026q3/tc/PDF/SHKPQTY_2026q3_ENTC_10.pdf",
+          "page": 1
+        },
+        {
+          "date": "2026-09-30",
+          "quarter": "2026Q3",
+          "project": "—",
+          "asset_class": null,
+          "fact_type": "area_sqft",
+          "value": 650000,
+          "unit": "sqft",
+          "confidence": "high",
+          "fact_text": "The development comprises The Millennity, two 20-storey Grade-A office 此外，集團於觀塘巧明街98號的項目亦獲香港非住宅項 towers totalling approximately 650,000 square feet, 目（新建築物 — 非政府，機構或社區）組別的優異獎。 and the podium mall The ANGLE.",
+          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2026q3/tc/PDF/SHKPQTY_2026q3_ENTC_24.pdf",
           "page": 1
         },
         {
@@ -48732,71 +48694,6 @@
         {
           "date": "2026-03-31",
           "quarter": "2026Q1",
-          "project": "Cullinan Harbour",
-          "asset_class": "residential",
-          "fact_type": "area_sqft",
-          "value": 2200,
-          "unit": "sqft",
-          "confidence": "high",
-          "fact_text": "With its unique 1,100 to 2,200 square feet2.",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2026q1/tc/PDF/SHKPQTY_2026q1_ENTC_8-11.pdf",
-          "page": 1
-        },
-        {
-          "date": "2026-03-31",
-          "quarter": "2026Q1",
-          "project": "Cullinan Harbour",
-          "asset_class": "residential",
-          "fact_type": "area_sqft",
-          "value": 80000,
-          "unit": "sqft",
-          "confidence": "high",
-          "fact_text": "80,000 square feet5 including the communal gardens and recreation area.",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2026q1/tc/PDF/SHKPQTY_2026q1_ENTC_8-11.pdf",
-          "page": 2
-        },
-        {
-          "date": "2026-03-31",
-          "quarter": "2026Q1",
-          "project": "Artist Square Towers",
-          "asset_class": "office",
-          "fact_type": "area_sqft",
-          "value": 27000,
-          "unit": "sqft",
-          "confidence": "high",
-          "fact_text": "The project comprises three harbourfront 成，設有三幢臨海優質寫字樓，包括東座、 blocks – East Tower, West Tower and South Tower – off ering 西座及南座，總樓面約672,000平方呎，另 6 approximately 672,000 square feet of premium offi ce space 有約27,000平方呎零售空間。項目提供低 7 and 27,000 square feet of retail space.",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2026q1/tc/PDF/SHKPQTY_2026q1_ENTC_7.pdf",
-          "page": 1
-        },
-        {
-          "date": "2026-03-31",
-          "quarter": "2026Q1",
-          "project": "Artist Square Towers",
-          "asset_class": "office",
-          "fact_type": "area_sqft",
-          "value": 250000,
-          "unit": "sqft",
-          "confidence": "high",
-          "fact_text": "Morgan has committed to leasing top six connected fl oors 最高的六層相連層，總樓面面積約25萬平 in AST’s East and West Towers, totalling approximately 250,000 square feet, under a 10-year lease.",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2026q1/tc/PDF/SHKPQTY_2026q1_ENTC_7.pdf",
-          "page": 1
-        },
-        {
-          "date": "2026-03-31",
-          "quarter": "2026Q1",
-          "project": "Artist Square Towers",
-          "asset_class": "office",
-          "fact_type": "area_sqft",
-          "value": 672000,
-          "unit": "sqft",
-          "confidence": "high",
-          "fact_text": "The project comprises three harbourfront 成，設有三幢臨海優質寫字樓，包括東座、 blocks – East Tower, West Tower and South Tower – off ering 西座及南座，總樓面約672,000平方呎，另 6 approximately 672,000 square feet of premium offi ce space 有約27,000平方呎零售空間。項目提供低 7 and 27,000 square feet of retail space.",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2026q1/tc/PDF/SHKPQTY_2026q1_ENTC_7.pdf",
-          "page": 1
-        },
-        {
-          "date": "2026-03-31",
-          "quarter": "2026Q1",
           "project": "—",
           "asset_class": null,
           "fact_type": "contracted_sales_attributable_hkd_m",
@@ -48821,48 +48718,9 @@
           "page": 2
         },
         {
-          "date": "2026-03-31",
-          "quarter": "2026Q1",
-          "project": "Artist Square Towers",
-          "asset_class": "office",
-          "fact_type": "lease_term_years",
-          "value": 10,
-          "unit": "years",
-          "confidence": "medium",
-          "fact_text": "Morgan has committed to leasing top six connected fl oors 最高的六層相連層，總樓面面積約25萬平 in AST’s East and West Towers, totalling approximately 250,000 square feet, under a 10-year lease.",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2026q1/tc/PDF/SHKPQTY_2026q1_ENTC_7.pdf",
-          "page": 1
-        },
-        {
-          "date": "2026-03-31",
-          "quarter": "2026Q1",
-          "project": "Cullinan Harbour",
-          "asset_class": "residential",
-          "fact_type": "property_rate_pct",
-          "value": 90,
-          "unit": "percent",
-          "confidence": "medium",
-          "fact_text": "The development saw units (including Phase 1: 256 units; Phase 2A: 43 enthusiastic take-up by the market, and units in units), with approximately 90% commanding views Phase 1 and Phase 2A are now being handed over of Victoria Harbour1.",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2026q1/tc/PDF/SHKPQTY_2026q1_ENTC_8-11.pdf",
-          "page": 1
-        },
-        {
-          "date": "2026-03-31",
-          "quarter": "2026Q1",
-          "project": "Cullinan Harbour",
-          "asset_class": "residential",
-          "fact_type": "unit_count",
-          "value": 256,
-          "unit": "units",
-          "confidence": "high",
-          "fact_text": "The development saw units (including Phase 1: 256 units; Phase 2A: 43 enthusiastic take-up by the market, and units in units), with approximately 90% commanding views Phase 1 and Phase 2A are now being handed over of Victoria Harbour1.",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2026q1/tc/PDF/SHKPQTY_2026q1_ENTC_8-11.pdf",
-          "page": 1
-        },
-        {
           "date": "2025-12-31",
           "quarter": "2025Q4",
-          "project": "SIERRA SEA",
+          "project": "Sierra Sea",
           "asset_class": "residential",
           "fact_type": "area_sqft",
           "value": 1400000,
@@ -48875,7 +48733,7 @@
         {
           "date": "2025-12-31",
           "quarter": "2025Q4",
-          "project": "SIERRA SEA",
+          "project": "Sierra Sea",
           "asset_class": "residential",
           "fact_type": "area_sqft",
           "value": 1480000,
@@ -48901,7 +48759,7 @@
         {
           "date": "2025-12-31",
           "quarter": "2025Q4",
-          "project": "SIERRA SEA",
+          "project": "Sierra Sea",
           "asset_class": "residential",
           "fact_type": "area_sqft",
           "value": 79000,
@@ -49057,7 +48915,7 @@
         {
           "date": "2025-06-30",
           "quarter": "2025Q2",
-          "project": "SIERRA SEA",
+          "project": "Sierra Sea",
           "asset_class": "residential",
           "fact_type": "area_sqft",
           "value": 79000,
@@ -49070,7 +48928,7 @@
         {
           "date": "2025-06-30",
           "quarter": "2025Q2",
-          "project": "SIERRA SEA",
+          "project": "Sierra Sea",
           "asset_class": "residential",
           "fact_type": "area_sqft",
           "value": 702,
@@ -49083,7 +48941,7 @@
         {
           "date": "2025-06-30",
           "quarter": "2025Q2",
-          "project": "SIERRA SEA",
+          "project": "Sierra Sea",
           "asset_class": "residential",
           "fact_type": "area_sqft",
           "value": 46000,
@@ -49096,7 +48954,7 @@
         {
           "date": "2025-06-30",
           "quarter": "2025Q2",
-          "project": "SIERRA SEA",
+          "project": "Sierra Sea",
           "asset_class": "residential",
           "fact_type": "area_sqft",
           "value": 56000,
@@ -49109,7 +48967,7 @@
         {
           "date": "2025-06-30",
           "quarter": "2025Q2",
-          "project": "SIERRA SEA",
+          "project": "Sierra Sea",
           "asset_class": "residential",
           "fact_type": "area_sqft",
           "value": 1400000,
@@ -49122,7 +48980,7 @@
         {
           "date": "2025-06-30",
           "quarter": "2025Q2",
-          "project": "SIERRA SEA",
+          "project": "Sierra Sea",
           "asset_class": "residential",
           "fact_type": "area_sqft",
           "value": 1480000,
@@ -49148,7 +49006,7 @@
         {
           "date": "2025-06-30",
           "quarter": "2025Q2",
-          "project": "SIERRA SEA",
+          "project": "Sierra Sea",
           "asset_class": "residential",
           "fact_type": "area_sqft",
           "value": 1479000,
@@ -49174,7 +49032,7 @@
         {
           "date": "2025-06-30",
           "quarter": "2025Q2",
-          "project": "SIERRA SEA",
+          "project": "Sierra Sea",
           "asset_class": "residential",
           "fact_type": "unit_count",
           "value": 3781,
@@ -49187,7 +49045,7 @@
         {
           "date": "2025-06-30",
           "quarter": "2025Q2",
-          "project": "SIERRA SEA",
+          "project": "Sierra Sea",
           "asset_class": "residential",
           "fact_type": "unit_count",
           "value": 794,
@@ -57018,7 +56876,7 @@
         {
           "date": "2026-11",
           "series": "CCL",
-          "value": 84.2147
+          "value": 83.6572
         },
         {
           "date": "2026-11",
@@ -57930,7 +57788,7 @@
         {
           "date": "2026-11",
           "series": "CCL",
-          "value": 84.2147
+          "value": 83.6572
         },
         {
           "date": "2026-11",
@@ -82658,56 +82516,596 @@
       ],
       "agency_transactions_pulse": [
         {
+          "transaction_date": "2026-11-20",
+          "estate_name": "加多利軒",
+          "saleable_area_sqft": 264,
+          "price_hkd": 4880000,
+          "unit_price_hkd_sqft": 18485,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "沙田廣場",
+          "saleable_area_sqft": 722,
+          "price_hkd": 9830000,
+          "unit_price_hkd_sqft": 13615,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "怡明閣",
+          "saleable_area_sqft": 309,
+          "price_hkd": 3880000,
+          "unit_price_hkd_sqft": 12557,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "1期 意嵐",
+          "saleable_area_sqft": 439,
+          "price_hkd": 5080000,
+          "unit_price_hkd_sqft": 11572,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "尚悅",
+          "saleable_area_sqft": 440,
+          "price_hkd": 5090000,
+          "unit_price_hkd_sqft": 11568,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "景峰花園",
+          "saleable_area_sqft": 399,
+          "price_hkd": 3280000,
+          "unit_price_hkd_sqft": 8221,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "樂信臺",
+          "saleable_area_sqft": 746,
+          "price_hkd": 16500000,
+          "unit_price_hkd_sqft": 22118,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "1期",
+          "saleable_area_sqft": 448,
+          "price_hkd": 5690000,
+          "unit_price_hkd_sqft": 12701,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "再發大廈",
+          "saleable_area_sqft": 766,
+          "price_hkd": 5500000,
+          "unit_price_hkd_sqft": 7180,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "1期",
+          "saleable_area_sqft": 515,
+          "price_hkd": 8300000,
+          "unit_price_hkd_sqft": 16117,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "都會軒",
+          "saleable_area_sqft": 496,
+          "price_hkd": 9280000,
+          "unit_price_hkd_sqft": 18710,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "迎濤灣",
+          "saleable_area_sqft": 515,
+          "price_hkd": 5950000,
+          "unit_price_hkd_sqft": 11553,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "2期",
+          "saleable_area_sqft": 1032,
+          "price_hkd": 15000000,
+          "unit_price_hkd_sqft": 14535,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "3B期",
+          "saleable_area_sqft": 293,
+          "price_hkd": 4380000,
+          "unit_price_hkd_sqft": 14949,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "朗怡居",
+          "saleable_area_sqft": 552,
+          "price_hkd": 6100000,
+          "unit_price_hkd_sqft": 11051,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "6期 Lp6",
+          "saleable_area_sqft": 423,
+          "price_hkd": 6620000,
+          "unit_price_hkd_sqft": 15650,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "芙蓉園",
+          "saleable_area_sqft": 441,
+          "price_hkd": 4380000,
+          "unit_price_hkd_sqft": 9932,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "1期",
+          "saleable_area_sqft": 1370,
+          "price_hkd": 18000000,
+          "unit_price_hkd_sqft": 13139,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "迎濤灣",
+          "saleable_area_sqft": 737,
+          "price_hkd": 8980000,
+          "unit_price_hkd_sqft": 12185,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "美城苑",
+          "saleable_area_sqft": 338,
+          "price_hkd": 3600000,
+          "unit_price_hkd_sqft": 10651,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "朗城滙",
+          "saleable_area_sqft": 490,
+          "price_hkd": 7160000,
+          "unit_price_hkd_sqft": 14612,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "Kennedy 38",
+          "saleable_area_sqft": 292,
+          "price_hkd": 8660000,
+          "unit_price_hkd_sqft": 29658,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "1期",
+          "saleable_area_sqft": 393,
+          "price_hkd": 6130000,
+          "unit_price_hkd_sqft": 15598,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "2A期",
+          "saleable_area_sqft": 433,
+          "price_hkd": 6590000,
+          "unit_price_hkd_sqft": 15219,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "嘉輝臺",
+          "saleable_area_sqft": 689,
+          "price_hkd": 6500000,
+          "unit_price_hkd_sqft": 9434,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "1期",
+          "saleable_area_sqft": 1022,
+          "price_hkd": 11120000,
+          "unit_price_hkd_sqft": 10881,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "5期 麗湖居",
+          "saleable_area_sqft": 547,
+          "price_hkd": 4500000,
+          "unit_price_hkd_sqft": 8227,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "雅緻樓",
+          "saleable_area_sqft": 447,
+          "price_hkd": 3100000,
+          "unit_price_hkd_sqft": 6935,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "皇府山",
+          "saleable_area_sqft": 501,
+          "price_hkd": 5690000,
+          "unit_price_hkd_sqft": 11357,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "華都中心",
+          "saleable_area_sqft": 531,
+          "price_hkd": 6200000,
+          "unit_price_hkd_sqft": 11676,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "德福花園",
+          "saleable_area_sqft": 556,
+          "price_hkd": 6300000,
+          "unit_price_hkd_sqft": 11331,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "慧莉苑",
+          "saleable_area_sqft": 592,
+          "price_hkd": 12380000,
+          "unit_price_hkd_sqft": 20912,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "裕明苑",
+          "saleable_area_sqft": 649,
+          "price_hkd": 4950000,
+          "unit_price_hkd_sqft": 7627,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "怡景園",
+          "saleable_area_sqft": 545,
+          "price_hkd": 6880000,
+          "unit_price_hkd_sqft": 12624,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "瑋珊園",
+          "saleable_area_sqft": 808,
+          "price_hkd": 4600000,
+          "unit_price_hkd_sqft": 5693,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "皇府山",
+          "saleable_area_sqft": 731,
+          "price_hkd": 8250000,
+          "unit_price_hkd_sqft": 11286,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "雍翠豪園",
+          "saleable_area_sqft": 446,
+          "price_hkd": 5480000,
+          "unit_price_hkd_sqft": 12287,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "御景園",
+          "saleable_area_sqft": 468,
+          "price_hkd": 4330000,
+          "unit_price_hkd_sqft": 9252,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "花圃別墅",
+          "saleable_area_sqft": 658,
+          "price_hkd": 8250000,
+          "unit_price_hkd_sqft": 12538,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "峻弦",
+          "saleable_area_sqft": 713,
+          "price_hkd": 10280000,
+          "unit_price_hkd_sqft": 14418,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "爵悅庭",
+          "saleable_area_sqft": 464,
+          "price_hkd": 7100000,
+          "unit_price_hkd_sqft": 15302,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "2期 映濤軒",
+          "saleable_area_sqft": 728,
+          "price_hkd": 6500000,
+          "unit_price_hkd_sqft": 8929,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "2B期 Park Yoho Napoli",
+          "saleable_area_sqft": 581,
+          "price_hkd": 6360000,
+          "unit_price_hkd_sqft": 10947,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "采葉庭",
+          "saleable_area_sqft": 460,
+          "price_hkd": 5798000,
+          "unit_price_hkd_sqft": 12604,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "2A期",
+          "saleable_area_sqft": 299,
+          "price_hkd": 4800000,
+          "unit_price_hkd_sqft": 16054,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "珀苑",
+          "saleable_area_sqft": 1404,
+          "price_hkd": 32500000,
+          "unit_price_hkd_sqft": 23148,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "浩景臺",
+          "saleable_area_sqft": 631,
+          "price_hkd": 6280000,
+          "unit_price_hkd_sqft": 9952,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "怡豐閣",
+          "saleable_area_sqft": 344,
+          "price_hkd": 5250000,
+          "unit_price_hkd_sqft": 15262,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "祥華邨",
+          "saleable_area_sqft": 424,
+          "price_hkd": 2100000,
+          "unit_price_hkd_sqft": 4953,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "頌明苑",
+          "saleable_area_sqft": 554,
+          "price_hkd": 5610000,
+          "unit_price_hkd_sqft": 10126,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "2期",
+          "saleable_area_sqft": 269,
+          "price_hkd": 3480000,
+          "unit_price_hkd_sqft": 12937,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "新屯門中心",
+          "saleable_area_sqft": 455,
+          "price_hkd": 3988000,
+          "unit_price_hkd_sqft": 8765,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "1期",
+          "saleable_area_sqft": 270,
+          "price_hkd": 3480000,
+          "unit_price_hkd_sqft": 12889,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "花都廣場",
+          "saleable_area_sqft": 526,
+          "price_hkd": 5450000,
+          "unit_price_hkd_sqft": 10361,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "5期",
+          "saleable_area_sqft": 704,
+          "price_hkd": 8938000,
+          "unit_price_hkd_sqft": 12696,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "悅麗苑",
+          "saleable_area_sqft": 421,
+          "price_hkd": 4200000,
+          "unit_price_hkd_sqft": 9976,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "2A期",
+          "saleable_area_sqft": 440,
+          "price_hkd": 11600000,
+          "unit_price_hkd_sqft": 26364,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "1期",
+          "saleable_area_sqft": 1091,
+          "price_hkd": 18700000,
+          "unit_price_hkd_sqft": 17140,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "2A期",
+          "saleable_area_sqft": 457,
+          "price_hkd": 7100000,
+          "unit_price_hkd_sqft": 15536,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "翠林花園",
+          "saleable_area_sqft": null,
+          "price_hkd": 3380000,
+          "unit_price_hkd_sqft": null,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "杏花邨",
+          "saleable_area_sqft": 659,
+          "price_hkd": 9300000,
+          "unit_price_hkd_sqft": 14112,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "2A期",
+          "saleable_area_sqft": 422,
+          "price_hkd": 6330000,
+          "unit_price_hkd_sqft": 15000,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "全．城匯",
+          "saleable_area_sqft": 469,
+          "price_hkd": 8280000,
+          "unit_price_hkd_sqft": 17655,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-20",
+          "estate_name": "一號銀海",
+          "saleable_area_sqft": 968,
+          "price_hkd": 27700000,
+          "unit_price_hkd_sqft": 28616,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-19",
+          "estate_name": "1期",
+          "saleable_area_sqft": 621,
+          "price_hkd": 15000000,
+          "unit_price_hkd_sqft": 24155,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
           "transaction_date": "2026-11-19",
           "estate_name": "2A期",
           "saleable_area_sqft": 299,
           "price_hkd": 4780000,
           "unit_price_hkd_sqft": 15987,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-19",
-          "estate_name": "2期",
-          "saleable_area_sqft": 378,
-          "price_hkd": 4800000,
-          "unit_price_hkd_sqft": 12698,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-19",
-          "estate_name": "星凱．堤岸",
-          "saleable_area_sqft": 568,
-          "price_hkd": 11280000,
-          "unit_price_hkd_sqft": 19859,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-19",
-          "estate_name": "新寶城",
-          "saleable_area_sqft": 434,
-          "price_hkd": 6360000,
-          "unit_price_hkd_sqft": 14654,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-19",
-          "estate_name": "蔚林居",
-          "saleable_area_sqft": 934,
-          "price_hkd": 11080000,
-          "unit_price_hkd_sqft": 11863,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-19",
-          "estate_name": "八號花園",
-          "saleable_area_sqft": 333,
-          "price_hkd": 3530000,
-          "unit_price_hkd_sqft": 10601,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
@@ -82722,46 +83120,10 @@
         },
         {
           "transaction_date": "2026-11-19",
-          "estate_name": "2期 富甲半山",
-          "saleable_area_sqft": 1567,
-          "price_hkd": 29500000,
-          "unit_price_hkd_sqft": 18826,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-19",
-          "estate_name": "宏光樓",
-          "saleable_area_sqft": 379,
-          "price_hkd": 3250000,
-          "unit_price_hkd_sqft": 8575,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-19",
-          "estate_name": "星漣海",
-          "saleable_area_sqft": 1660,
-          "price_hkd": 24000000,
-          "unit_price_hkd_sqft": 14458,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-19",
-          "estate_name": "2期 Yoho Midtown",
-          "saleable_area_sqft": 972,
-          "price_hkd": 12600000,
-          "unit_price_hkd_sqft": 12963,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-19",
-          "estate_name": "1期",
-          "saleable_area_sqft": 533,
-          "price_hkd": 8000000,
-          "unit_price_hkd_sqft": 15009,
+          "estate_name": "蔚林居",
+          "saleable_area_sqft": 934,
+          "price_hkd": 11080000,
+          "unit_price_hkd_sqft": 11863,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
@@ -82776,10 +83138,64 @@
         },
         {
           "transaction_date": "2026-11-19",
+          "estate_name": "新寶城",
+          "saleable_area_sqft": 434,
+          "price_hkd": 6360000,
+          "unit_price_hkd_sqft": 14654,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-19",
+          "estate_name": "星漣海",
+          "saleable_area_sqft": 1660,
+          "price_hkd": 24000000,
+          "unit_price_hkd_sqft": 14458,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-19",
           "estate_name": "2期",
           "saleable_area_sqft": 453,
           "price_hkd": 4260000,
           "unit_price_hkd_sqft": 9404,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-19",
+          "estate_name": "2期",
+          "saleable_area_sqft": 378,
+          "price_hkd": 4800000,
+          "unit_price_hkd_sqft": 12698,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-19",
+          "estate_name": "八號花園",
+          "saleable_area_sqft": 333,
+          "price_hkd": 3530000,
+          "unit_price_hkd_sqft": 10601,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-19",
+          "estate_name": "星凱．堤岸",
+          "saleable_area_sqft": 568,
+          "price_hkd": 11280000,
+          "unit_price_hkd_sqft": 19859,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-19",
+          "estate_name": "2期 富甲半山",
+          "saleable_area_sqft": 1567,
+          "price_hkd": 29500000,
+          "unit_price_hkd_sqft": 18826,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
@@ -82795,27 +83211,144 @@
         {
           "transaction_date": "2026-11-19",
           "estate_name": "1期",
-          "saleable_area_sqft": 621,
-          "price_hkd": 15000000,
-          "unit_price_hkd_sqft": 24155,
+          "saleable_area_sqft": 533,
+          "price_hkd": 8000000,
+          "unit_price_hkd_sqft": 15009,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-19",
+          "estate_name": "2期 Yoho Midtown",
+          "saleable_area_sqft": 972,
+          "price_hkd": 12600000,
+          "unit_price_hkd_sqft": 12963,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-19",
+          "estate_name": "宏光樓",
+          "saleable_area_sqft": 379,
+          "price_hkd": 3250000,
+          "unit_price_hkd_sqft": 8575,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
         {
           "transaction_date": "2026-11-18",
-          "estate_name": "8期 Sea To Sky",
-          "saleable_area_sqft": 465,
-          "price_hkd": 7290000,
-          "unit_price_hkd_sqft": 15677,
+          "estate_name": "翠林花園",
+          "saleable_area_sqft": 429,
+          "price_hkd": 4300000,
+          "unit_price_hkd_sqft": 10023,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
         {
           "transaction_date": "2026-11-18",
-          "estate_name": "縉城峰",
-          "saleable_area_sqft": 459,
-          "price_hkd": 12500000,
-          "unit_price_hkd_sqft": 27233,
+          "estate_name": "2期",
+          "saleable_area_sqft": 503,
+          "price_hkd": 7520000,
+          "unit_price_hkd_sqft": 14950,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-18",
+          "estate_name": "加林閣",
+          "saleable_area_sqft": 1033,
+          "price_hkd": 15300000,
+          "unit_price_hkd_sqft": 14811,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-18",
+          "estate_name": "金禧花園",
+          "saleable_area_sqft": 340,
+          "price_hkd": 5250000,
+          "unit_price_hkd_sqft": 15441,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-18",
+          "estate_name": "山麗苑",
+          "saleable_area_sqft": 448,
+          "price_hkd": 3685000,
+          "unit_price_hkd_sqft": 8225,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-18",
+          "estate_name": "7期 景湖居",
+          "saleable_area_sqft": 442,
+          "price_hkd": 4120000,
+          "unit_price_hkd_sqft": 9321,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-18",
+          "estate_name": "金禧花園",
+          "saleable_area_sqft": 340,
+          "price_hkd": 5200000,
+          "unit_price_hkd_sqft": 15294,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-18",
+          "estate_name": "環海．東岸",
+          "saleable_area_sqft": 376,
+          "price_hkd": 7300000,
+          "unit_price_hkd_sqft": 19415,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-18",
+          "estate_name": "香港黃金海岸",
+          "saleable_area_sqft": 685,
+          "price_hkd": 5500000,
+          "unit_price_hkd_sqft": 8029,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-18",
+          "estate_name": "2期",
+          "saleable_area_sqft": 481,
+          "price_hkd": 6160000,
+          "unit_price_hkd_sqft": 12807,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-18",
+          "estate_name": "聚龍居",
+          "saleable_area_sqft": 1241,
+          "price_hkd": 15100000,
+          "unit_price_hkd_sqft": 12168,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-18",
+          "estate_name": "2期 栢慧豪廷",
+          "saleable_area_sqft": 510,
+          "price_hkd": 4990000,
+          "unit_price_hkd_sqft": 9784,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-18",
+          "estate_name": "星凱．堤岸",
+          "saleable_area_sqft": 228,
+          "price_hkd": 4300000,
+          "unit_price_hkd_sqft": 18860,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
@@ -82830,10 +83363,55 @@
         },
         {
           "transaction_date": "2026-11-18",
-          "estate_name": "聚龍居",
-          "saleable_area_sqft": 1241,
-          "price_hkd": 15100000,
-          "unit_price_hkd_sqft": 12168,
+          "estate_name": "明苑",
+          "saleable_area_sqft": 2271,
+          "price_hkd": 38200000,
+          "unit_price_hkd_sqft": 16821,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-18",
+          "estate_name": "3期",
+          "saleable_area_sqft": 517,
+          "price_hkd": 7680000,
+          "unit_price_hkd_sqft": 14855,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-18",
+          "estate_name": "名鑄",
+          "saleable_area_sqft": 1030,
+          "price_hkd": 33000000,
+          "unit_price_hkd_sqft": 32039,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-18",
+          "estate_name": "8期 Sea To Sky",
+          "saleable_area_sqft": 465,
+          "price_hkd": 7290000,
+          "unit_price_hkd_sqft": 15677,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-18",
+          "estate_name": "創業中心",
+          "saleable_area_sqft": 329,
+          "price_hkd": 4650000,
+          "unit_price_hkd_sqft": 14134,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-18",
+          "estate_name": "縉城峰",
+          "saleable_area_sqft": 459,
+          "price_hkd": 12500000,
+          "unit_price_hkd_sqft": 27233,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
@@ -82857,37 +83435,10 @@
         },
         {
           "transaction_date": "2026-11-18",
-          "estate_name": "3期",
-          "saleable_area_sqft": 517,
-          "price_hkd": 7680000,
-          "unit_price_hkd_sqft": 14855,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-18",
           "estate_name": "2期",
-          "saleable_area_sqft": 481,
-          "price_hkd": 6160000,
-          "unit_price_hkd_sqft": 12807,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-18",
-          "estate_name": "2期",
-          "saleable_area_sqft": 503,
-          "price_hkd": 7520000,
-          "unit_price_hkd_sqft": 14950,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-18",
-          "estate_name": "金禧花園",
-          "saleable_area_sqft": 340,
-          "price_hkd": 5200000,
-          "unit_price_hkd_sqft": 15294,
+          "saleable_area_sqft": 470,
+          "price_hkd": 7200000,
+          "unit_price_hkd_sqft": 15319,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
@@ -82902,33 +83453,6 @@
         },
         {
           "transaction_date": "2026-11-18",
-          "estate_name": "環海．東岸",
-          "saleable_area_sqft": 376,
-          "price_hkd": 7300000,
-          "unit_price_hkd_sqft": 19415,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-18",
-          "estate_name": "翠林花園",
-          "saleable_area_sqft": 429,
-          "price_hkd": 4300000,
-          "unit_price_hkd_sqft": 10023,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-18",
-          "estate_name": "2期 栢慧豪廷",
-          "saleable_area_sqft": 510,
-          "price_hkd": 4990000,
-          "unit_price_hkd_sqft": 9784,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-18",
           "estate_name": "1期",
           "saleable_area_sqft": 610,
           "price_hkd": 8380000,
@@ -82937,767 +83461,173 @@
           "matched_agency_count": 1
         },
         {
-          "transaction_date": "2026-11-18",
-          "estate_name": "7期 景湖居",
-          "saleable_area_sqft": 442,
-          "price_hkd": 4120000,
-          "unit_price_hkd_sqft": 9321,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-18",
-          "estate_name": "星凱．堤岸",
-          "saleable_area_sqft": 228,
-          "price_hkd": 4300000,
-          "unit_price_hkd_sqft": 18860,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-18",
-          "estate_name": "金禧花園",
-          "saleable_area_sqft": 340,
-          "price_hkd": 5250000,
-          "unit_price_hkd_sqft": 15441,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-18",
-          "estate_name": "加林閣",
-          "saleable_area_sqft": 1033,
-          "price_hkd": 15300000,
-          "unit_price_hkd_sqft": 14811,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-18",
-          "estate_name": "明苑",
-          "saleable_area_sqft": 2271,
-          "price_hkd": 38200000,
-          "unit_price_hkd_sqft": 16821,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-18",
-          "estate_name": "2期",
-          "saleable_area_sqft": 470,
-          "price_hkd": 7200000,
-          "unit_price_hkd_sqft": 15319,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-18",
-          "estate_name": "香港黃金海岸",
-          "saleable_area_sqft": 685,
-          "price_hkd": 5500000,
-          "unit_price_hkd_sqft": 8029,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-18",
-          "estate_name": "創業中心",
-          "saleable_area_sqft": 329,
-          "price_hkd": 4650000,
-          "unit_price_hkd_sqft": 14134,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-18",
-          "estate_name": "名鑄",
-          "saleable_area_sqft": 1030,
-          "price_hkd": 33000000,
-          "unit_price_hkd_sqft": 32039,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-18",
-          "estate_name": "山麗苑",
-          "saleable_area_sqft": 448,
-          "price_hkd": 3685000,
-          "unit_price_hkd_sqft": 8225,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-17",
-          "estate_name": "帝豪閣",
-          "saleable_area_sqft": 992,
-          "price_hkd": 15800000,
-          "unit_price_hkd_sqft": 15927,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-17",
-          "estate_name": "峰景大廈",
-          "saleable_area_sqft": null,
-          "price_hkd": 4620000,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-17",
-          "estate_name": "康景花園",
-          "saleable_area_sqft": 517,
-          "price_hkd": 3720000,
-          "unit_price_hkd_sqft": 7195,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-17",
-          "estate_name": "瑞峰花園",
-          "saleable_area_sqft": 1386,
-          "price_hkd": 14560000,
-          "unit_price_hkd_sqft": 10505,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-17",
-          "estate_name": "長發邨",
-          "saleable_area_sqft": 355,
-          "price_hkd": 2250000,
-          "unit_price_hkd_sqft": 6338,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-17",
-          "estate_name": "歌頓大廈",
-          "saleable_area_sqft": 735,
-          "price_hkd": 9000000,
-          "unit_price_hkd_sqft": 12245,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-17",
-          "estate_name": "天璽",
-          "saleable_area_sqft": 872,
-          "price_hkd": 30300000,
-          "unit_price_hkd_sqft": 34748,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-17",
-          "estate_name": "柏傲山",
-          "saleable_area_sqft": 1155,
-          "price_hkd": 33880000,
-          "unit_price_hkd_sqft": 29333,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-17",
-          "estate_name": "2期",
-          "saleable_area_sqft": 715,
-          "price_hkd": 5320000,
-          "unit_price_hkd_sqft": 7441,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-17",
-          "estate_name": "歌頓大廈",
-          "saleable_area_sqft": 1141,
-          "price_hkd": 10000000,
-          "unit_price_hkd_sqft": 8764,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-17",
-          "estate_name": "豐景花園",
-          "saleable_area_sqft": 537,
-          "price_hkd": 5880000,
-          "unit_price_hkd_sqft": 10950,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-17",
-          "estate_name": "寶峰園",
-          "saleable_area_sqft": 822,
-          "price_hkd": 8680000,
-          "unit_price_hkd_sqft": 10560,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-17",
-          "estate_name": "景怡峰",
-          "saleable_area_sqft": 270,
-          "price_hkd": 4700000,
-          "unit_price_hkd_sqft": 17407,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-17",
-          "estate_name": "又一居",
-          "saleable_area_sqft": 584,
-          "price_hkd": 10100000,
-          "unit_price_hkd_sqft": 17295,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-17",
-          "estate_name": "旭逸居",
-          "saleable_area_sqft": 1709,
-          "price_hkd": 39390000,
-          "unit_price_hkd_sqft": 23049,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-17",
-          "estate_name": "2期",
-          "saleable_area_sqft": 521,
-          "price_hkd": 6730000,
-          "unit_price_hkd_sqft": 12917,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-17",
-          "estate_name": "英邦大廈",
-          "saleable_area_sqft": 260,
-          "price_hkd": 4180000,
-          "unit_price_hkd_sqft": 16077,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-17",
-          "estate_name": "香港仔中心",
-          "saleable_area_sqft": 432,
-          "price_hkd": 5280000,
-          "unit_price_hkd_sqft": 12222,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-17",
-          "estate_name": "2A期",
-          "saleable_area_sqft": 454,
-          "price_hkd": 6800000,
-          "unit_price_hkd_sqft": 14978,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-17",
-          "estate_name": "上水名都",
-          "saleable_area_sqft": 391,
-          "price_hkd": 3800000,
-          "unit_price_hkd_sqft": 9719,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-17",
-          "estate_name": "2期",
-          "saleable_area_sqft": 449,
-          "price_hkd": 7620000,
-          "unit_price_hkd_sqft": 16971,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-17",
-          "estate_name": "2期 富甲半山",
-          "saleable_area_sqft": 1579,
-          "price_hkd": 28000000,
-          "unit_price_hkd_sqft": 17733,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-17",
-          "estate_name": "龍翔苑",
-          "saleable_area_sqft": 1204,
-          "price_hkd": 12600000,
-          "unit_price_hkd_sqft": 10465,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-12",
-          "estate_name": "順麗閣",
-          "saleable_area_sqft": 253,
-          "price_hkd": 2900000,
-          "unit_price_hkd_sqft": 11462,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-12",
-          "estate_name": "寶珮苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 4800000,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-12",
-          "estate_name": "維峰",
-          "saleable_area_sqft": 485,
-          "price_hkd": 9200000,
-          "unit_price_hkd_sqft": 18969,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-11",
-          "estate_name": "瑧尚",
-          "saleable_area_sqft": 386,
-          "price_hkd": 6780000,
-          "unit_price_hkd_sqft": 17565,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-11",
-          "estate_name": "殷然",
-          "saleable_area_sqft": 1012,
-          "price_hkd": 36380000,
-          "unit_price_hkd_sqft": 35949,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-10",
-          "estate_name": "5期A Malibu",
-          "saleable_area_sqft": 576,
-          "price_hkd": 9298000,
-          "unit_price_hkd_sqft": 16142,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-10",
-          "estate_name": "太和邨",
-          "saleable_area_sqft": 443,
-          "price_hkd": 3000000,
-          "unit_price_hkd_sqft": 6772,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-10",
-          "estate_name": "2期 Monaco Marine",
-          "saleable_area_sqft": null,
-          "price_hkd": 21500000,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-10",
-          "estate_name": "栢景臺",
-          "saleable_area_sqft": 998,
-          "price_hkd": 30900000,
-          "unit_price_hkd_sqft": 30962,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-10",
-          "estate_name": "2期",
-          "saleable_area_sqft": 348,
-          "price_hkd": 5680000,
-          "unit_price_hkd_sqft": 16322,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-10",
-          "estate_name": "3期",
-          "saleable_area_sqft": 783,
-          "price_hkd": 12000000,
-          "unit_price_hkd_sqft": 15326,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-09",
-          "estate_name": "1期",
-          "saleable_area_sqft": 257,
-          "price_hkd": 4300000,
-          "unit_price_hkd_sqft": 16732,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-09",
-          "estate_name": "太子壹號",
-          "saleable_area_sqft": 205,
-          "price_hkd": 4292000,
-          "unit_price_hkd_sqft": 20937,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-09",
-          "estate_name": "3期 影岸‧紅",
-          "saleable_area_sqft": 539,
-          "price_hkd": 7200000,
-          "unit_price_hkd_sqft": 13358,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-09",
-          "estate_name": "豫豐花園",
-          "saleable_area_sqft": 361,
-          "price_hkd": 3580000,
-          "unit_price_hkd_sqft": 9917,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-09",
-          "estate_name": "文利大廈",
-          "saleable_area_sqft": 339,
-          "price_hkd": 6480000,
-          "unit_price_hkd_sqft": 19115,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-06",
-          "estate_name": "尚悅",
-          "saleable_area_sqft": 443,
-          "price_hkd": 5200000,
-          "unit_price_hkd_sqft": 11738,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-06",
-          "estate_name": "銀禧花園",
-          "saleable_area_sqft": 506,
-          "price_hkd": 7150000,
-          "unit_price_hkd_sqft": 14130,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-06",
-          "estate_name": "匯熙苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 3109500,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-06",
-          "estate_name": "2期",
-          "saleable_area_sqft": 339,
-          "price_hkd": 6895100,
-          "unit_price_hkd_sqft": 20340,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-06",
-          "estate_name": "新威園",
-          "saleable_area_sqft": 574,
-          "price_hkd": 5680000,
-          "unit_price_hkd_sqft": 9895,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-06",
-          "estate_name": "Napa",
-          "saleable_area_sqft": 475,
-          "price_hkd": 4590000,
-          "unit_price_hkd_sqft": 9663,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-06",
-          "estate_name": "海濱花園",
-          "saleable_area_sqft": 419,
-          "price_hkd": 4800000,
-          "unit_price_hkd_sqft": 11456,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-06",
-          "estate_name": "嘉悅半島",
-          "saleable_area_sqft": 463,
-          "price_hkd": 4860000,
-          "unit_price_hkd_sqft": 10497,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-06",
-          "estate_name": "文華樓",
-          "saleable_area_sqft": 665,
-          "price_hkd": 5088888,
-          "unit_price_hkd_sqft": 7652,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-06",
-          "estate_name": "大同新邨",
-          "saleable_area_sqft": 274,
-          "price_hkd": 2735000,
-          "unit_price_hkd_sqft": 9982,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-06",
-          "estate_name": "1期",
-          "saleable_area_sqft": 967,
-          "price_hkd": 23508900,
-          "unit_price_hkd_sqft": 24311,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-06",
-          "estate_name": "1期 賞濤軒",
-          "saleable_area_sqft": 611,
-          "price_hkd": 6180000,
-          "unit_price_hkd_sqft": 10115,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-06",
-          "estate_name": "仁安大廈",
-          "saleable_area_sqft": 438,
-          "price_hkd": 3050000,
-          "unit_price_hkd_sqft": 6963,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-06",
-          "estate_name": "喜漾",
-          "saleable_area_sqft": 497,
-          "price_hkd": 7950000,
-          "unit_price_hkd_sqft": 15996,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-06",
-          "estate_name": "芊御",
-          "saleable_area_sqft": 323,
-          "price_hkd": 5900000,
-          "unit_price_hkd_sqft": 18266,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-06",
-          "estate_name": "康怡花園",
-          "saleable_area_sqft": 902,
-          "price_hkd": 11000000,
-          "unit_price_hkd_sqft": 12195,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-06",
-          "estate_name": "2期",
-          "saleable_area_sqft": 339,
-          "price_hkd": 6742500,
-          "unit_price_hkd_sqft": 19889,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-06",
-          "estate_name": "富豪花園",
-          "saleable_area_sqft": 670,
-          "price_hkd": 6930000,
-          "unit_price_hkd_sqft": 10343,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-06",
-          "estate_name": "恆寧閣",
-          "saleable_area_sqft": 268,
-          "price_hkd": 3350000,
-          "unit_price_hkd_sqft": 12500,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-06",
-          "estate_name": "海康大廈",
-          "saleable_area_sqft": 300,
-          "price_hkd": 3500000,
-          "unit_price_hkd_sqft": 11667,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-06",
-          "estate_name": "利奧坊．壹隅",
-          "saleable_area_sqft": 262,
-          "price_hkd": 5757000,
-          "unit_price_hkd_sqft": 21973,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-06",
+          "transaction_date": "2026-11-16",
           "estate_name": "會展中心會景閣",
-          "saleable_area_sqft": 417,
-          "price_hkd": 7700000,
-          "unit_price_hkd_sqft": 18465,
+          "saleable_area_sqft": 978,
+          "price_hkd": 22500000,
+          "unit_price_hkd_sqft": 23006,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-13",
+          "estate_name": "永發大廈",
+          "saleable_area_sqft": 372,
+          "price_hkd": 5000000,
+          "unit_price_hkd_sqft": 13441,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-13",
+          "estate_name": "安寧花園",
+          "saleable_area_sqft": 538,
+          "price_hkd": 5800000,
+          "unit_price_hkd_sqft": 10781,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-12",
+          "estate_name": "欣榮花園",
+          "saleable_area_sqft": 620,
+          "price_hkd": 7500000,
+          "unit_price_hkd_sqft": 12097,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-12",
+          "estate_name": "天祐苑",
+          "saleable_area_sqft": 438,
+          "price_hkd": 2560000,
+          "unit_price_hkd_sqft": 5845,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-12",
+          "estate_name": "麗翠苑",
+          "saleable_area_sqft": 281,
+          "price_hkd": 3030000,
+          "unit_price_hkd_sqft": 10783,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-11",
+          "estate_name": "3期",
+          "saleable_area_sqft": 522,
+          "price_hkd": 6000000,
+          "unit_price_hkd_sqft": 11494,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-10",
+          "estate_name": "海傍大廈",
+          "saleable_area_sqft": 344,
+          "price_hkd": 3800000,
+          "unit_price_hkd_sqft": 11047,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-10",
+          "estate_name": "1期",
+          "saleable_area_sqft": 464,
+          "price_hkd": 10000000,
+          "unit_price_hkd_sqft": 21552,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-09",
+          "estate_name": "裕豐苑",
+          "saleable_area_sqft": null,
+          "price_hkd": 2694300,
+          "unit_price_hkd_sqft": null,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
         {
           "transaction_date": "2026-11-06",
-          "estate_name": "宏景花園",
-          "saleable_area_sqft": 572,
-          "price_hkd": 5280000,
-          "unit_price_hkd_sqft": 9231,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-05",
-          "estate_name": "C期 The Yoho Hub II",
-          "saleable_area_sqft": 337,
-          "price_hkd": 6803000,
-          "unit_price_hkd_sqft": 20187,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-05",
-          "estate_name": "海翩滙",
-          "saleable_area_sqft": 856,
-          "price_hkd": 14600000,
-          "unit_price_hkd_sqft": 17056,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-05",
-          "estate_name": "金碧閣",
-          "saleable_area_sqft": 496,
-          "price_hkd": 8600000,
-          "unit_price_hkd_sqft": 17339,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-04",
-          "estate_name": "5期",
-          "saleable_area_sqft": 284,
-          "price_hkd": 4050000,
-          "unit_price_hkd_sqft": 14261,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-03",
-          "estate_name": "5期(帝華軒)",
-          "saleable_area_sqft": 1056,
+          "estate_name": "豐業大廈",
+          "saleable_area_sqft": 792,
           "price_hkd": 8000000,
-          "unit_price_hkd_sqft": 7576,
+          "unit_price_hkd_sqft": 10101,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
         {
-          "transaction_date": "2026-11-03",
-          "estate_name": "景峰花園",
-          "saleable_area_sqft": 460,
-          "price_hkd": 3000000,
-          "unit_price_hkd_sqft": 6522,
+          "transaction_date": "2026-11-06",
+          "estate_name": "逸雅苑",
+          "saleable_area_sqft": 385,
+          "price_hkd": 2850000,
+          "unit_price_hkd_sqft": 7403,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
         {
-          "transaction_date": "2026-11-03",
-          "estate_name": "晨樂大廈",
-          "saleable_area_sqft": 360,
+          "transaction_date": "2026-11-06",
+          "estate_name": "友誠大廈",
+          "saleable_area_sqft": 369,
           "price_hkd": 3500000,
-          "unit_price_hkd_sqft": 9722,
+          "unit_price_hkd_sqft": 9485,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
         {
-          "transaction_date": "2026-11-03",
-          "estate_name": "逸濤灣",
-          "saleable_area_sqft": 862,
-          "price_hkd": 19580000,
-          "unit_price_hkd_sqft": 22715,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-02",
-          "estate_name": "汝州街31-33號",
-          "saleable_area_sqft": 265,
-          "price_hkd": 2200000,
-          "unit_price_hkd_sqft": 8302,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-11-02",
+          "transaction_date": "2026-11-06",
           "estate_name": "盛緻苑",
           "saleable_area_sqft": null,
-          "price_hkd": 2821200,
+          "price_hkd": 3325900,
           "unit_price_hkd_sqft": null,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
         {
-          "transaction_date": "2026-11-02",
-          "estate_name": "13期A 海瑅灣 II",
-          "saleable_area_sqft": 459,
-          "price_hkd": 7504600,
-          "unit_price_hkd_sqft": 16350,
+          "transaction_date": "2026-11-06",
+          "estate_name": "2期",
+          "saleable_area_sqft": 959,
+          "price_hkd": 10400000,
+          "unit_price_hkd_sqft": 10845,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-06",
+          "estate_name": "華苑",
+          "saleable_area_sqft": 522,
+          "price_hkd": 7500000,
+          "unit_price_hkd_sqft": 14368,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-11-03",
+          "estate_name": "海暉大廈",
+          "saleable_area_sqft": 445,
+          "price_hkd": 5100000,
+          "unit_price_hkd_sqft": 11461,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
         {
           "transaction_date": "2026-11-02",
-          "estate_name": "車位",
-          "saleable_area_sqft": null,
-          "price_hkd": 880000,
-          "unit_price_hkd_sqft": null,
+          "estate_name": "1期",
+          "saleable_area_sqft": 298,
+          "price_hkd": 4310100,
+          "unit_price_hkd_sqft": 14463,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
         {
-          "transaction_date": "2026-10-30",
-          "estate_name": "2C (2)期",
-          "saleable_area_sqft": 495,
-          "price_hkd": 7418800,
-          "unit_price_hkd_sqft": 14987,
+          "transaction_date": "2026-11-02",
+          "estate_name": "1期",
+          "saleable_area_sqft": 502,
+          "price_hkd": 5700000,
+          "unit_price_hkd_sqft": 11355,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
@@ -83705,845 +83635,233 @@
           "transaction_date": "2026-10-30",
           "estate_name": "2C (2)期",
           "saleable_area_sqft": 426,
-          "price_hkd": 6679300,
-          "unit_price_hkd_sqft": 15679,
+          "price_hkd": 6933900,
+          "unit_price_hkd_sqft": 16277,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
         {
           "transaction_date": "2026-10-30",
-          "estate_name": "4期A 晉海",
-          "saleable_area_sqft": null,
-          "price_hkd": 1850000,
-          "unit_price_hkd_sqft": null,
+          "estate_name": "1期",
+          "saleable_area_sqft": 323,
+          "price_hkd": 5422000,
+          "unit_price_hkd_sqft": 16786,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
         {
           "transaction_date": "2026-10-30",
           "estate_name": "2期",
-          "saleable_area_sqft": 755,
-          "price_hkd": 8600000,
-          "unit_price_hkd_sqft": 11391,
+          "saleable_area_sqft": 520,
+          "price_hkd": 14300000,
+          "unit_price_hkd_sqft": 27500,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
         {
           "transaction_date": "2026-10-30",
-          "estate_name": "13期 尚堤",
-          "saleable_area_sqft": 737,
-          "price_hkd": 7150000,
-          "unit_price_hkd_sqft": 9701,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-30",
-          "estate_name": "2C (2)期",
-          "saleable_area_sqft": 713,
-          "price_hkd": 11056700,
-          "unit_price_hkd_sqft": 15507,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-30",
-          "estate_name": "3期",
-          "saleable_area_sqft": 393,
-          "price_hkd": 7580000,
-          "unit_price_hkd_sqft": 19288,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-30",
-          "estate_name": "嘉熙",
-          "saleable_area_sqft": null,
-          "price_hkd": 2020000,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-30",
-          "estate_name": "怡閣苑",
-          "saleable_area_sqft": 530,
-          "price_hkd": 7000000,
-          "unit_price_hkd_sqft": 13208,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-29",
-          "estate_name": "I",
-          "saleable_area_sqft": 1694,
-          "price_hkd": 27500000,
-          "unit_price_hkd_sqft": 16234,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-29",
-          "estate_name": "2期",
-          "saleable_area_sqft": 496,
-          "price_hkd": 4040000,
-          "unit_price_hkd_sqft": 8145,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-29",
-          "estate_name": "健威花園",
-          "saleable_area_sqft": 456,
-          "price_hkd": 6200000,
-          "unit_price_hkd_sqft": 13596,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-28",
-          "estate_name": "2C (2)期",
-          "saleable_area_sqft": 493,
-          "price_hkd": 7264900,
-          "unit_price_hkd_sqft": 14736,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-28",
-          "estate_name": "2C (2)期",
-          "saleable_area_sqft": 427,
-          "price_hkd": 6127600,
-          "unit_price_hkd_sqft": 14350,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-28",
-          "estate_name": "富榮花園",
-          "saleable_area_sqft": null,
-          "price_hkd": 500000,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-28",
-          "estate_name": "2C (2)期",
-          "saleable_area_sqft": 713,
-          "price_hkd": 13810000,
-          "unit_price_hkd_sqft": 19369,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-28",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2484700,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-28",
-          "estate_name": "灝然",
-          "saleable_area_sqft": 515,
-          "price_hkd": 4925000,
-          "unit_price_hkd_sqft": 9563,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-28",
-          "estate_name": "2C (2)期",
-          "saleable_area_sqft": 679,
-          "price_hkd": 9765600,
-          "unit_price_hkd_sqft": 14382,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-28",
-          "estate_name": "安麗苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2053000,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-28",
-          "estate_name": "山水盈",
-          "saleable_area_sqft": null,
-          "price_hkd": 800000,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-28",
-          "estate_name": "2期",
-          "saleable_area_sqft": 536,
-          "price_hkd": 4200000,
-          "unit_price_hkd_sqft": 7836,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-28",
-          "estate_name": "Savannah",
-          "saleable_area_sqft": 325,
-          "price_hkd": 5190000,
-          "unit_price_hkd_sqft": 15969,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-28",
           "estate_name": "2C (2)期",
           "saleable_area_sqft": 418,
-          "price_hkd": 6511800,
-          "unit_price_hkd_sqft": 15578,
+          "price_hkd": 6730100,
+          "unit_price_hkd_sqft": 16101,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
         {
-          "transaction_date": "2026-10-27",
+          "transaction_date": "2026-10-30",
+          "estate_name": "1期",
+          "saleable_area_sqft": 536,
+          "price_hkd": 10903000,
+          "unit_price_hkd_sqft": 20341,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-10-28",
           "estate_name": "盛緻苑",
           "saleable_area_sqft": null,
-          "price_hkd": 2577100,
+          "price_hkd": 3495000,
           "unit_price_hkd_sqft": null,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
         {
-          "transaction_date": "2026-10-27",
-          "estate_name": "盛緻苑",
+          "transaction_date": "2026-10-28",
+          "estate_name": "昌暉大廈",
+          "saleable_area_sqft": 236,
+          "price_hkd": 3120000,
+          "unit_price_hkd_sqft": 13220,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-10-28",
+          "estate_name": "2期 啟德海灣2",
+          "saleable_area_sqft": 481,
+          "price_hkd": 10000000,
+          "unit_price_hkd_sqft": 20790,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-10-28",
+          "estate_name": "龍珠樓",
           "saleable_area_sqft": null,
-          "price_hkd": 2598600,
+          "price_hkd": 2200000,
           "unit_price_hkd_sqft": null,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
         {
-          "transaction_date": "2026-10-27",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 3416400,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-27",
-          "estate_name": "昌寶大樓",
-          "saleable_area_sqft": 360,
-          "price_hkd": 6500000,
-          "unit_price_hkd_sqft": 18056,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-27",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2644600,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-27",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2652300,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-27",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2725100,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-27",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2772700,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-27",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2502500,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-27",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2828500,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-27",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2790100,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-27",
-          "estate_name": "昌寶大樓",
-          "saleable_area_sqft": 360,
-          "price_hkd": 7500000,
-          "unit_price_hkd_sqft": 20833,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-26",
-          "estate_name": "3期康慧台",
-          "saleable_area_sqft": 398,
-          "price_hkd": 3590000,
-          "unit_price_hkd_sqft": 9020,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-26",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2655900,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-26",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2713100,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-26",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2569500,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-26",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 3118400,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-26",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2765900,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-26",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2867000,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-26",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2793300,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-26",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2655900,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-26",
-          "estate_name": "威明閣",
-          "saleable_area_sqft": 378,
-          "price_hkd": 3830000,
-          "unit_price_hkd_sqft": 10132,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-26",
-          "estate_name": "河畔花園",
-          "saleable_area_sqft": null,
-          "price_hkd": 3800000,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-26",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2858500,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-26",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2656900,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-26",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2728500,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-26",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2592100,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-26",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2863100,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-26",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2748300,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-26",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2668100,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-26",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2816100,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-26",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2801100,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-26",
-          "estate_name": "春暉花園",
-          "saleable_area_sqft": 321,
-          "price_hkd": 4300000,
-          "unit_price_hkd_sqft": 13396,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-26",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2802800,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-24",
+          "transaction_date": "2026-10-28",
           "estate_name": "2期",
-          "saleable_area_sqft": 366,
-          "price_hkd": 4000000,
-          "unit_price_hkd_sqft": 10929,
+          "saleable_area_sqft": 463,
+          "price_hkd": 4160000,
+          "unit_price_hkd_sqft": 8985,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
         {
-          "transaction_date": "2026-10-24",
-          "estate_name": "高俊苑",
-          "saleable_area_sqft": 424,
-          "price_hkd": 4000000,
-          "unit_price_hkd_sqft": 9434,
+          "transaction_date": "2026-10-27",
+          "estate_name": "傲玟",
+          "saleable_area_sqft": 1385,
+          "price_hkd": 29916000,
+          "unit_price_hkd_sqft": 21600,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
         {
-          "transaction_date": "2026-10-24",
-          "estate_name": "花都廣場",
-          "saleable_area_sqft": 413,
-          "price_hkd": 4500000,
-          "unit_price_hkd_sqft": 10896,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-23",
+          "transaction_date": "2026-10-27",
           "estate_name": "2期",
-          "saleable_area_sqft": 456,
-          "price_hkd": 4005000,
-          "unit_price_hkd_sqft": 8783,
+          "saleable_area_sqft": 478,
+          "price_hkd": 4240000,
+          "unit_price_hkd_sqft": 8870,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
         {
-          "transaction_date": "2026-10-23",
-          "estate_name": "盛緻苑",
+          "transaction_date": "2026-10-27",
+          "estate_name": "1期",
+          "saleable_area_sqft": 796,
+          "price_hkd": 7530000,
+          "unit_price_hkd_sqft": 9460,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-10-27",
+          "estate_name": "衡豐樓",
+          "saleable_area_sqft": 346,
+          "price_hkd": 2500000,
+          "unit_price_hkd_sqft": 7225,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-10-27",
+          "estate_name": "海麗花園",
           "saleable_area_sqft": null,
-          "price_hkd": 3356100,
+          "price_hkd": 4210000,
           "unit_price_hkd_sqft": null,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
         {
-          "transaction_date": "2026-10-23",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 3163400,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-23",
-          "estate_name": "3期",
+          "transaction_date": "2026-10-27",
+          "estate_name": "宜安中心",
           "saleable_area_sqft": 533,
-          "price_hkd": 9600000,
-          "unit_price_hkd_sqft": 18011,
+          "price_hkd": 5500000,
+          "unit_price_hkd_sqft": 10319,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
         {
-          "transaction_date": "2026-10-23",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2706600,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-23",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 3243300,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-23",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2793600,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-23",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2849600,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-23",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2689100,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-23",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 3250300,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-23",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2812000,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-22",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 3448700,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-22",
-          "estate_name": "錦柏苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 1040800,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-22",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2558300,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-22",
-          "estate_name": "B期",
-          "saleable_area_sqft": 434,
-          "price_hkd": 9200800,
-          "unit_price_hkd_sqft": 21200,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-22",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2701400,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-22",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2783500,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-22",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2752600,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-22",
-          "estate_name": "琨崙",
-          "saleable_area_sqft": 2326,
-          "price_hkd": 20260000,
-          "unit_price_hkd_sqft": 8710,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-22",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2710800,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-22",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2660700,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-22",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2801100,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-22",
+          "transaction_date": "2026-10-26",
           "estate_name": "2期",
-          "saleable_area_sqft": 323,
-          "price_hkd": 2815000,
-          "unit_price_hkd_sqft": 8715,
+          "saleable_area_sqft": 496,
+          "price_hkd": 4420000,
+          "unit_price_hkd_sqft": 8911,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-10-26",
+          "estate_name": "朗譽",
+          "saleable_area_sqft": 510,
+          "price_hkd": 9486000,
+          "unit_price_hkd_sqft": 18600,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-10-26",
+          "estate_name": "The Boundary",
+          "saleable_area_sqft": 260,
+          "price_hkd": 4370000,
+          "unit_price_hkd_sqft": 16808,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-10-26",
+          "estate_name": "The Boundary",
+          "saleable_area_sqft": 210,
+          "price_hkd": 3610000,
+          "unit_price_hkd_sqft": 17190,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-10-26",
+          "estate_name": "2期",
+          "saleable_area_sqft": 478,
+          "price_hkd": 4282000,
+          "unit_price_hkd_sqft": 8958,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
         {
           "transaction_date": "2026-10-22",
-          "estate_name": "盛緻苑",
+          "estate_name": "美豐花園",
           "saleable_area_sqft": null,
-          "price_hkd": 2706900,
+          "price_hkd": 3400000,
           "unit_price_hkd_sqft": null,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
         {
           "transaction_date": "2026-10-22",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2628900,
-          "unit_price_hkd_sqft": null,
+          "estate_name": "美豐花園",
+          "saleable_area_sqft": 293,
+          "price_hkd": 3780000,
+          "unit_price_hkd_sqft": 12901,
+          "primary_source_agency": "中原地产",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-10-22",
+          "estate_name": "御皇庭",
+          "saleable_area_sqft": 370,
+          "price_hkd": 4310000,
+          "unit_price_hkd_sqft": 11649,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
         {
           "transaction_date": "2026-10-21",
-          "estate_name": "恆運樓",
-          "saleable_area_sqft": 291,
-          "price_hkd": 3118000,
-          "unit_price_hkd_sqft": 10715,
+          "estate_name": "頌雅苑",
+          "saleable_area_sqft": 598,
+          "price_hkd": 5300000,
+          "unit_price_hkd_sqft": 8863,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         },
         {
           "transaction_date": "2026-10-21",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2878100,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-21",
-          "estate_name": "錦柏苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 1770900,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-21",
-          "estate_name": "錦柏苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 1534100,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-21",
-          "estate_name": "錦柏苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 1745000,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-21",
-          "estate_name": "錦柏苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 1775000,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-20",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2856400,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-10-15",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 3136300,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "中原地产",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-09-02",
-          "estate_name": "盛緻苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2065000,
-          "unit_price_hkd_sqft": null,
+          "estate_name": "3期",
+          "saleable_area_sqft": 1381,
+          "price_hkd": 11880000,
+          "unit_price_hkd_sqft": 8602,
           "primary_source_agency": "中原地产",
           "matched_agency_count": 1
         }
@@ -84616,9 +83934,9 @@
           "dataset": "中原CCL",
           "type": "指标",
           "status": "健康",
-          "latest_observation": "2026-11-08",
-          "records": 1715,
-          "freshness": "11 天前",
+          "latest_observation": "2026-11-15",
+          "records": 1716,
+          "freshness": "5 天前",
           "notes": "最新观察值已发布，未标注为临时值。"
         },
         {
@@ -84628,7 +83946,7 @@
           "status": "健康",
           "latest_observation": "2026-11-09",
           "records": 557,
-          "freshness": "10 天前",
+          "freshness": "11 天前",
           "notes": "最新观察值已发布，未标注为临时值。"
         },
         {
@@ -84638,7 +83956,7 @@
           "status": "健康",
           "latest_observation": "2026-11-09",
           "records": 459,
-          "freshness": "10 天前",
+          "freshness": "11 天前",
           "notes": "最新观察值已发布，未标注为临时值。"
         },
         {
@@ -84648,7 +83966,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 405,
-          "freshness": "79 天前",
+          "freshness": "80 天前",
           "notes": "最新观察值为临时值。"
         },
         {
@@ -84658,7 +83976,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 405,
-          "freshness": "79 天前",
+          "freshness": "80 天前",
           "notes": "最新观察值为临时值。"
         },
         {
@@ -84668,7 +83986,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 118,
-          "freshness": "79 天前",
+          "freshness": "80 天前",
           "notes": "Official monthly residential mortgage survey; the source may revise the latest month."
         },
         {
@@ -84678,7 +83996,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 393,
-          "freshness": "79 天前",
+          "freshness": "80 天前",
           "notes": "标准化的月度住宅价格指数历史。"
         },
         {
@@ -84688,7 +84006,7 @@
           "status": "健康",
           "latest_observation": "2026-10-01",
           "records": 715,
-          "freshness": "49 天前",
+          "freshness": "50 天前",
           "notes": "标准化的月度住宅租金指数历史。"
         },
         {
@@ -84698,7 +84016,7 @@
           "status": "健康",
           "latest_observation": "2026-11-16",
           "records": 1148,
-          "freshness": "3 天前",
+          "freshness": "4 天前",
           "notes": "周度市场情绪历史，不是成交或价格指数。"
         },
         {
@@ -84708,7 +84026,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 1620,
-          "freshness": "79 天前",
+          "freshness": "80 天前",
           "notes": "按等级划分的官方写字楼月度租金指数。"
         },
         {
@@ -84718,7 +84036,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 810,
-          "freshness": "79 天前",
+          "freshness": "80 天前",
           "notes": "Official retail rental/price indices; provisional flags are retained."
         },
         {
@@ -84727,8 +84045,8 @@
           "type": "指标",
           "status": "健康",
           "latest_observation": "2026-09-30",
-          "records": 258,
-          "freshness": "50 天前",
+          "records": 247,
+          "freshness": "51 天前",
           "notes": "Issuer headline events; property relevance and project aliases are heuristic."
         },
         {
@@ -84737,8 +84055,8 @@
           "type": "指标",
           "status": "健康",
           "latest_observation": "2026-09-30",
-          "records": 63,
-          "freshness": "50 天前",
+          "records": 56,
+          "freshness": "51 天前",
           "notes": "Bounded PDF text extraction of explicit units/areas/rates/milestones; not revenue or ownership."
         },
         {
@@ -84748,7 +84066,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 13200,
-          "freshness": "79 天前",
+          "freshness": "80 天前",
           "notes": "Economy-wide retail value/volume indices; not SHKP tenant sales."
         },
         {
@@ -84758,7 +84076,7 @@
           "status": "健康",
           "latest_observation": "2026-07-01",
           "records": 180,
-          "freshness": "141 天前",
+          "freshness": "142 天前",
           "notes": "Rolling five-year hotel-category occupancy; not SHKP hotel occupancy."
         },
         {
@@ -84768,7 +84086,7 @@
           "status": "健康",
           "latest_observation": "2026-07-01",
           "records": 180,
-          "freshness": "141 天前",
+          "freshness": "142 天前",
           "notes": "Rolling five-year industry average room rate; not SHKP ADR."
         },
         {
@@ -84778,7 +84096,7 @@
           "status": "Stale",
           "latest_observation": "2024-06-01",
           "records": 140,
-          "freshness": "901 天前",
+          "freshness": "902 天前",
           "notes": "The public file currently ends at 2024-06; retained as a stale catalog/control input until the publisher updates it."
         },
         {
@@ -84788,7 +84106,7 @@
           "status": "健康",
           "latest_observation": "2025-12-31",
           "records": 328,
-          "freshness": "323 天前",
+          "freshness": "324 天前",
           "notes": "Historical year-end grade-level office vacancy; market control only."
         },
         {
@@ -84798,7 +84116,7 @@
           "status": "健康",
           "latest_observation": "2024-12-31",
           "records": 118,
-          "freshness": "688 天前",
+          "freshness": "689 天前",
           "notes": "Latest annual district snapshot; source does not provide a monthly history here."
         },
         {
@@ -84808,7 +84126,7 @@
           "status": "Catalog",
           "latest_observation": "2026-12-31",
           "records": 45,
-          "freshness": "forecast +42d",
+          "freshness": "forecast +41d",
           "notes": "Latest annual district forecast snapshot; future-dated by design and not SHKP pipeline."
         },
         {
@@ -84828,9 +84146,9 @@
           "dataset": "中原CCL",
           "type": "指标",
           "status": "健康",
-          "latest_observation": "2026-11-08",
-          "records": 1715,
-          "freshness": "11 天前",
+          "latest_observation": "2026-11-15",
+          "records": 1716,
+          "freshness": "5 天前",
           "notes": "最新观察值已发布，未标注为临时值。"
         },
         {
@@ -84840,7 +84158,7 @@
           "status": "健康",
           "latest_observation": "2026-11-09",
           "records": 557,
-          "freshness": "10 天前",
+          "freshness": "11 天前",
           "notes": "最新观察值已发布，未标注为临时值。"
         },
         {
@@ -84850,7 +84168,7 @@
           "status": "健康",
           "latest_observation": "2026-11-09",
           "records": 459,
-          "freshness": "10 天前",
+          "freshness": "11 天前",
           "notes": "最新观察值已发布，未标注为临时值。"
         },
         {
@@ -84860,7 +84178,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 405,
-          "freshness": "79 天前",
+          "freshness": "80 天前",
           "notes": "最新观察值为临时值。"
         },
         {
@@ -84870,7 +84188,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 405,
-          "freshness": "79 天前",
+          "freshness": "80 天前",
           "notes": "最新观察值为临时值。"
         },
         {
@@ -84880,7 +84198,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 118,
-          "freshness": "79 天前",
+          "freshness": "80 天前",
           "notes": "Official monthly residential mortgage survey; the source may revise the latest month."
         },
         {
@@ -84890,7 +84208,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 393,
-          "freshness": "79 天前",
+          "freshness": "80 天前",
           "notes": "标准化的月度住宅价格指数历史。"
         },
         {
@@ -84900,7 +84218,7 @@
           "status": "健康",
           "latest_observation": "2026-10-01",
           "records": 715,
-          "freshness": "49 天前",
+          "freshness": "50 天前",
           "notes": "标准化的月度住宅租金指数历史。"
         },
         {
@@ -84910,7 +84228,7 @@
           "status": "健康",
           "latest_observation": "2026-11-16",
           "records": 1148,
-          "freshness": "3 天前",
+          "freshness": "4 天前",
           "notes": "周度市场情绪历史，不是成交或价格指数。"
         },
         {
@@ -84920,7 +84238,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 1620,
-          "freshness": "79 天前",
+          "freshness": "80 天前",
           "notes": "按等级划分的官方写字楼月度租金指数。"
         },
         {
@@ -84930,7 +84248,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 810,
-          "freshness": "79 天前",
+          "freshness": "80 天前",
           "notes": "Official retail rental/price indices; provisional flags are retained."
         },
         {
@@ -84939,8 +84257,8 @@
           "type": "指标",
           "status": "健康",
           "latest_observation": "2026-09-30",
-          "records": 258,
-          "freshness": "50 天前",
+          "records": 247,
+          "freshness": "51 天前",
           "notes": "Issuer headline events; property relevance and project aliases are heuristic."
         },
         {
@@ -84949,8 +84267,8 @@
           "type": "指标",
           "status": "健康",
           "latest_observation": "2026-09-30",
-          "records": 63,
-          "freshness": "50 天前",
+          "records": 56,
+          "freshness": "51 天前",
           "notes": "Bounded PDF text extraction of explicit units/areas/rates/milestones; not revenue or ownership."
         },
         {
@@ -84960,7 +84278,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 13200,
-          "freshness": "79 天前",
+          "freshness": "80 天前",
           "notes": "Economy-wide retail value/volume indices; not SHKP tenant sales."
         },
         {
@@ -84970,7 +84288,7 @@
           "status": "健康",
           "latest_observation": "2026-07-01",
           "records": 180,
-          "freshness": "141 天前",
+          "freshness": "142 天前",
           "notes": "Rolling five-year hotel-category occupancy; not SHKP hotel occupancy."
         },
         {
@@ -84980,7 +84298,7 @@
           "status": "健康",
           "latest_observation": "2026-07-01",
           "records": 180,
-          "freshness": "141 天前",
+          "freshness": "142 天前",
           "notes": "Rolling five-year industry average room rate; not SHKP ADR."
         },
         {
@@ -84990,7 +84308,7 @@
           "status": "Stale",
           "latest_observation": "2024-06-01",
           "records": 140,
-          "freshness": "901 天前",
+          "freshness": "902 天前",
           "notes": "The public file currently ends at 2024-06; retained as a stale catalog/control input until the publisher updates it."
         },
         {
@@ -85000,7 +84318,7 @@
           "status": "健康",
           "latest_observation": "2025-12-31",
           "records": 328,
-          "freshness": "323 天前",
+          "freshness": "324 天前",
           "notes": "Historical year-end grade-level office vacancy; market control only."
         },
         {
@@ -85010,7 +84328,7 @@
           "status": "健康",
           "latest_observation": "2024-12-31",
           "records": 118,
-          "freshness": "688 天前",
+          "freshness": "689 天前",
           "notes": "Latest annual district snapshot; source does not provide a monthly history here."
         },
         {
@@ -85020,7 +84338,7 @@
           "status": "Catalog",
           "latest_observation": "2026-12-31",
           "records": 45,
-          "freshness": "forecast +42d",
+          "freshness": "forecast +41d",
           "notes": "Latest annual district forecast snapshot; future-dated by design and not SHKP pipeline."
         },
         {
@@ -85049,7 +84367,7 @@
           "type": "指标",
           "status": "Partial",
           "latest_observation": "—",
-          "records": 210,
+          "records": 150,
           "freshness": "构建时实时",
           "notes": "已去重的代理行成交数据；详见上方图表/表格。"
         },
@@ -85146,7 +84464,7 @@
         "url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/banking/residential-mortgage-survey",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 香港金管局住宅按揭统计调查。",
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     },
     {
@@ -85158,7 +84476,7 @@
         "url": "https://www.censtatd.gov.hk/api/get.php?id=615-66001&lang=en&full_series=1",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 政府统计处建筑工程总值统计。",
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     },
     {
@@ -85170,7 +84488,7 @@
         "url": "https://www.censtatd.gov.hk/en/data/stat_report/product/D7000004/att/D7000004.xlsx",
         "language": "XLSX",
         "description": "构建时从公开来源读取并校验 政府统计处表 E704 — 政府卖地统计。",
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     },
     {
@@ -85186,7 +84504,7 @@
           "CCL latest is the most recent published weekly Centaline City Leading Index observation.",
           "Weekly and yearly movements are latest divided by the prior observation or latest observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     },
     {
@@ -85198,7 +84516,7 @@
         "url": "https://hk.centanet.com/CCI/api/Index/CCI",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 中原 CCI — 住宅价格指数。",
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     },
     {
@@ -85210,7 +84528,7 @@
         "url": "https://hk.centanet.com/CCI/api/Index/CRI",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 中原 CRI — 住宅租金指数。",
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     },
     {
@@ -85222,7 +84540,7 @@
         "url": "https://hk.centanet.com/CCI/api/Index/CSI",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 中原 CSI — 市场情绪。",
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     },
     {
@@ -85238,7 +84556,7 @@
           "MHPI latest is the most recent published overall weekly Midland Hong Kong Property Price Index observation.",
           "Weekly and yearly movements are latest divided by the prior observation or latest observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     },
     {
@@ -85253,7 +84571,7 @@
         "metric_definitions": [
           "The confidence series is a supporting market-sentiment measure published by Midland Realty."
         ],
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     },
     {
@@ -85269,7 +84587,7 @@
           "RVD price latest is the All Classes monthly private domestic price index.",
           "Monthly and yearly movements are latest divided by the prior month or observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     },
     {
@@ -85285,7 +84603,7 @@
           "RVD rent latest is the All Classes monthly private domestic rental index.",
           "Monthly and yearly movements are latest divided by the prior month or observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     },
     {
@@ -85297,7 +84615,7 @@
         "url": "https://www.rvd.gov.hk/datagovhk/2.3M.csv",
         "language": "CSV",
         "description": "构建时从公开来源读取并校验 差饷物业估价署 — 写字楼租金指数。",
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     },
     {
@@ -85309,7 +84627,7 @@
         "url": "https://www.rvd.gov.hk/datagovhk/3.2M.csv",
         "language": "CSV",
         "description": "构建时从公开来源读取并校验 差饷物业估价署 — 零售租金／价格指数。",
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     },
     {
@@ -85321,7 +84639,7 @@
         "url": "https://www.rvd.gov.hk/datagovhk/Com_Stock_Completions_and_Vacancy_by_District_Eng.csv",
         "language": "CSV",
         "description": "构建时从公开来源读取并校验 Rating and Valuation Department — Commercial stock / vacancy / completions。",
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     },
     {
@@ -85333,7 +84651,7 @@
         "url": "https://www.censtatd.gov.hk/data/MDT_75_620-67002_VAL_IDX_RS_Raw_1dp_idx_n.csv",
         "language": "CSV",
         "description": "构建时从公开来源读取并校验 C&SD — Monthly Retail Sales Control。",
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     },
     {
@@ -85345,7 +84663,7 @@
         "url": "https://www.tourism.gov.hk/datagovhk/hotelroomoccupancy/hotel_room_occupancy_rate_monthly_by_cat_en.csv",
         "language": "CSV",
         "description": "构建时从公开来源读取并校验 Culture, Sports and Tourism Bureau — Hotel occupancy / room-rate controls。",
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     },
     {
@@ -85357,7 +84675,7 @@
         "url": "https://www.shkp.com/en-US/investor-relations/shkp-quarterly",
         "language": "HTML/PDF",
         "description": "构建时从公开来源读取并校验 SHKP Quarterly — issuer project and commercial events。",
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     },
     {
@@ -85369,7 +84687,7 @@
         "url": "https://www.shkp.com/en-US/our-business/hong-kong-properties",
         "language": "Python",
         "description": "构建时从公开来源读取并校验 SHKP — Hong Kong commercial asset observation master。",
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     },
     {
@@ -85381,7 +84699,7 @@
         "url": "https://www.shkp.com/en-US/investor-relations/financial-results-reports",
         "language": "PDF/Parquet/DuckDB",
         "description": "构建时从公开来源读取并校验 新鸿基香港业务财务桥接。",
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     },
     {
@@ -85393,7 +84711,7 @@
         "url": "https://www.srpe.gov.hk/opip/all_development",
         "language": "Parquet/Python",
         "description": "构建时从公开来源读取并校验 新鸿基销售／交付／收入时序桥接。",
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     },
     {
@@ -85412,7 +84730,7 @@
           "RVD 1.4M.csv",
           "RVD 1.3M.csv"
         ],
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     },
     {
@@ -85424,7 +84742,7 @@
         "url": "https://www.28hse.com/epi/historical_data/doaction",
         "language": "HTML (embedded in a JSON envelope)",
         "description": "构建时从公开来源读取并校验 28Hse 屋苑价格及租金指数。",
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     },
     {
@@ -85436,7 +84754,7 @@
         "url": "https://www.28hse.com/new-properties",
         "language": "HTML",
         "description": "构建时从公开来源读取并校验 28Hse 新盘目录。",
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     },
     {
@@ -85451,7 +84769,7 @@
           "Midland data.midland.com.hk/info/v1/transactions/buildings",
           "Centaline hk.centanet.com/findproperty/api/Transaction/Search"
         ],
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     },
     {
@@ -85463,7 +84781,7 @@
         "url": "https://www.landreg.gov.hk/json/monthly_stat/monthly/t1.json",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 土地注册处月度统计。",
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     },
     {
@@ -85475,7 +84793,7 @@
         "url": "https://www.bd.gov.hk/doc/en/whats-new/monthly-digests/Md11.xls",
         "language": "XLS",
         "description": "构建时从公开来源读取并校验 屋宇署月报摘要。",
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     },
     {
@@ -85494,7 +84812,7 @@
           "Md55.xls",
           "Md56.xls"
         ],
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     },
     {
@@ -85514,7 +84832,7 @@
           "Table 1.6",
           "Table 1.7"
         ],
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     },
     {
@@ -85530,7 +84848,7 @@
           "Monthly attributable contract sales are gross transaction price multiplied by the listed-company ownership percentage in the phase registry.",
           "Sell-through uses unique active units from the transaction-register history divided by the phase's published total residential properties."
         ],
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     },
     {
@@ -85544,13 +84862,13 @@
           "Validated core measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-11-19T15:49:13.912508Z"
+        "executed_at": "2026-11-20T15:38:01.477682Z"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-real-estate/",
-    "snapshotId": "6fc1daba2f908897",
-    "dataAsOf": "2026-11-09"
+    "snapshotId": "d4925a3bb1c9eebb",
+    "dataAsOf": "2026-11-15"
   }
 }
