@@ -25,6 +25,13 @@ def activity_pivot(frame: pd.DataFrame, metric: str, breakdown: str) -> pd.DataF
     if frame.empty:
         return pd.DataFrame()
     frame["period_end"] = pd.to_datetime(frame["period_end"], utc=True).dt.tz_localize(None)
+    frame = frame.dropna(subset=["period_end"])
+    if frame.empty:
+        return pd.DataFrame()
+    # Ramp changed its reporting week. Keep old vintages in storage but do not
+    # sum overlapping calendars or draw them as a single continuous series.
+    latest_weekday = frame["period_end"].max().weekday()
+    frame = frame.loc[frame["period_end"].dt.weekday.eq(latest_weekday)]
     frame["metric_value"] = pd.to_numeric(frame["metric_value"], errors="coerce")
     if breakdown == "By model maker":
         frame["series"] = frame["model_maker"].map(lambda value: MAKERS.get(value, value))
@@ -33,7 +40,8 @@ def activity_pivot(frame: pd.DataFrame, metric: str, breakdown: str) -> pd.DataF
         frame["series"] = frame["model_maker"].astype(str) + " · " + frame["series_key"].astype(str)
     grouped = frame.groupby(["period_end", "series"])["metric_value"].sum(min_count=1)
     pivot = grouped.unstack("series").sort_index()
-    return pivot.reindex(pd.date_range(pivot.index.min(), pivot.index.max(), freq="W-SUN", name="period_end"))
+    frequency = f"W-{pivot.index.max().strftime('%a').upper()}"
+    return pivot.reindex(pd.date_range(pivot.index.min(), pivot.index.max(), freq=frequency, name="period_end"))
 
 
 def price_pivot(frame: pd.DataFrame, token_type: str) -> pd.DataFrame:
@@ -97,7 +105,8 @@ def render_tokenomics(datasets: dict[str, DatasetLoadResult]) -> None:
         else:
             unit, scale = ("Tokens (billions)", 1e9) if metric == "token_volume" else ("Spend (USD millions)", 1e6)
         st.caption(
-            "Monday–Sunday totals. Model series retain Ramp's raw identifiers, including aliases; "
+            "Weekly totals use the latest reporting calendar; Ramp changed from Monday–Sunday to "
+            "Saturday–Friday, so older overlapping weeks are not combined. Model series retain Ramp's raw identifiers, including aliases; "
             "they are not a count of distinct models. Spend and volume have different coverage, "
             "so weekly spend ÷ volume is not used to estimate prices."
         )

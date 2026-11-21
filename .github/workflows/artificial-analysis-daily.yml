@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     env:
+      AA_MODEL_PUBLICATION_ALLOWED: ${{ github.event.repository.private || vars.ARTIFICIAL_ANALYSIS_MODEL_PUBLICATION_ALLOWED == 'true' }}
       ARTIFICIAL_ANALYSIS_API_KEY: ${{ secrets.ARTIFICIAL_ANALYSIS_API_KEY }}
     steps:
       - name: Check out repository
@@ -34,7 +35,12 @@ jobs:
         run: |
           # daily-update fetches the API and capex sources once; running validate
           # immediately before it doubles live API usage and can trigger 429s.
-          python -m artificial_analysis_data.cli --base-dir . daily-update
+          if [[ "$AA_MODEL_PUBLICATION_ALLOWED" == "true" ]]; then
+            python -m artificial_analysis_data.cli --base-dir . daily-update
+          else
+            echo "::notice::Model snapshot publication is disabled; refreshing capex only."
+            python -m artificial_analysis_data.cli --base-dir . capex-update
+          fi
 
       - name: Commit normalized datasets
         run: |
@@ -63,5 +69,5 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: artificial-analysis-normalized-datasets
-          path: data/normalized/artificial_analysis/
+          path: ${{ env.AA_MODEL_PUBLICATION_ALLOWED == 'true' && 'data/normalized/artificial_analysis/' || 'data/normalized/artificial_analysis/artificial_analysis_capex_quarterly.*' }}
           if-no-files-found: error

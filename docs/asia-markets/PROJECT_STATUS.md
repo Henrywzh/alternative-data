@@ -5,6 +5,10 @@ replacement for the operating manual or generated source-status JSON.
 
 ## Current state
 
+- 2026-11-11 daily refresh: reuse an installed `pdftotext` on the GitHub runner,
+  or retry Poppler installation on package mirror failures. An unavailable
+  PDF tool still stops the data refresh before any publication.
+
 - 2026-10-12 private Streamlit information hierarchy: sidebar now separates
   Markets & capital, Economy & industries, Thematic research and auxiliary
   tools. Overview prioritizes two market cards, four compact economic

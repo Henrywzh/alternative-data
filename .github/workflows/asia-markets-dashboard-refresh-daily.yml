@@ -75,8 +75,19 @@ jobs:
       - name: Install PDF text extraction tooling
         working-directory: .
         run: |
-          sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends poppler-utils
+          if ! command -v pdftotext >/dev/null; then
+            for attempt in 1 2 3; do
+              if sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 update -o APT::Update::Error-Mode=any &&
+                 sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 install --yes --no-install-recommends poppler-utils; then
+                break
+              fi
+              if [ "$attempt" -eq 3 ]; then
+                echo "::error::Could not install poppler-utils after three attempts"
+                exit 1
+              fi
+              sleep "$((attempt * 10))"
+            done
+          fi
           pdftotext -v
 
       - name: Test artifact refresh guard
