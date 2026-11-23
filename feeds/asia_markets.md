@@ -1,8 +1,8 @@
 # asia_markets research feed
 
-Generated: 2026-11-22T21:48:38.073277Z · Status: **degraded**
+Generated: 2026-11-23T19:15:38.288670Z · Status: **degraded**
 
-Source commit: `72b977ab708857eb47fcaa3dcfdf04c1d006e52a`
+Source commit: `d7c7e69bda29ef8cb6596689b79dae6a3d6d8fd9`
 
 Observation dates differ by record. Generated time is not a market-data timestamp.
 
@@ -15,7 +15,7 @@ Observation dates differ by record. Generated time is not a market-data timestam
 | Hong Kong Labour Market & Talent Policy | Talent Policy | 2025-12-31 | current | applications_received: 147454.0 applications; applications_approved: 124460.0 applications; qmas_quota: 7101.0 cases |
 | Hong Kong Real Estate Monitor | Rvd Price | 2026-09-01 | current (source_provisional) | latest: 320.8 index_points; period_change: 0.001874 fraction; year_change: 0.093388 fraction |
 | Hong Kong Real Estate Monitor | Rvd Rent | 2026-09-01 | current (source_provisional) | latest: 212.2 index_points; period_change: 0.004735 fraction; year_change: 0.061531 fraction |
-| HK Transport & Aviation Sector Monitor | Mtr | 2026-09-01 | current | latest: 171407.0 thousand_journeys; domestic_thousands: 139085.0 thousand_journeys; cross_boundary_thousands: 9527.0 thousand_journeys; hsr_thousands: 2553.0 thousand_journeys; recovery_vs_2019_pct: 0.074477 fraction |
+| HK Transport & Aviation Sector Monitor | Mtr | 2026-10-01 | current | latest: 173819.0 thousand_journeys; domestic_thousands: 140519.0 thousand_journeys; cross_boundary_thousands: 9963.0 thousand_journeys; hsr_thousands: 2938.0 thousand_journeys; recovery_vs_2019_pct: 0.089597 fraction |
 | HK Transport & Aviation Sector Monitor | Cathay | 2026-10-01 | current | latest: 2720195.0 passengers; load_factor_pct: 85.7 percent; hkia_passengers: 5513000.0 passengers; period_change: 0.108639 fraction; recovery_vs_2019_pct: -0.068393 fraction |
 | HK Transport & Aviation Sector Monitor | Journeys | 2026-08-01 | stale | kmb_k: 76105.324 thousand_journeys; total_k: 361332.121 thousand_journeys; period_change: 0.036112 fraction |
 | HK Transport & Aviation Sector Monitor | Fleet | 2026-09-01 | current | total_registered: 651157.0 vehicles; ev_share_pct: 27.6241 percent; ev_share_change_pp: 0.1607 percentage_points |
@@ -39,6 +39,7 @@ Observation dates differ by record. Generated time is not a market-data timestam
 
 ## Changes
 
+- new_observation: hk-transport/mtr_card
 
 ## Excluded coverage
 
