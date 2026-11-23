@@ -1,6 +1,6 @@
 {
   "version": "asia-markets-freshness.v1",
-  "auditedAt": "2026-11-23T11:07:46.821490Z",
+  "auditedAt": "2026-11-23T18:18:58.243837Z",
   "asOf": "2026-11-23",
   "status": "degraded",
   "requiredFailures": [
@@ -84,7 +84,7 @@
       "required": true,
       "status": "healthy",
       "expected_latest_period": "2026-11-21",
-      "latest_observation": "2026-11-21",
+      "latest_observation": "2026-11-22",
       "notes": "Immigration passenger clearance is daily; allow a two-day publication/holiday lag."
     },
     {
@@ -94,7 +94,7 @@
       "required": true,
       "status": "healthy",
       "expected_latest_period": "2026-11-21",
-      "latest_observation": "2026-11-22",
+      "latest_observation": "2026-11-23",
       "notes": "Consumer Council pump-price snapshot is fetched daily; allow a two-day publication lag."
     },
     {
@@ -144,7 +144,7 @@
       "required": true,
       "status": "healthy",
       "expected_latest_period": "2026-09",
-      "latest_observation": "2026-09",
+      "latest_observation": "2026-10",
       "notes": "MTR monthly patronage is checked with a 35-day publication allowance because release dates vary around the latter part of the following month."
     },
     {
@@ -163,8 +163,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-11-22T14:38:01.169452Z",
-      "latest_observation": "2026-11-22T14:38:01.169452Z",
+      "expected_latest_period": "2026-11-23T18:08:57.977779Z",
+      "latest_observation": "2026-11-23T18:08:57.977779Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -173,8 +173,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-11-22T14:38:01.294245Z",
-      "latest_observation": "2026-11-22T14:38:01.294245Z",
+      "expected_latest_period": "2026-11-23T18:08:58.128479Z",
+      "latest_observation": "2026-11-23T18:08:58.128479Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -183,8 +183,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-11-22T14:38:01.232661Z",
-      "latest_observation": "2026-11-22T14:38:01.232661Z",
+      "expected_latest_period": "2026-11-23T18:08:57.979686Z",
+      "latest_observation": "2026-11-23T18:08:57.979686Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -193,8 +193,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-11-22T14:38:59.449702Z",
-      "latest_observation": "2026-11-22T14:38:59.449702Z",
+      "expected_latest_period": "2026-11-23T18:09:51.737787Z",
+      "latest_observation": "2026-11-23T18:09:51.737787Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -203,8 +203,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-11-22T14:38:01.311702Z",
-      "latest_observation": "2026-11-22T14:38:01.311702Z",
+      "expected_latest_period": "2026-11-23T18:08:58.279474Z",
+      "latest_observation": "2026-11-23T18:08:58.279474Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
@@ -223,8 +223,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-11-23T11:02:31Z",
-      "latest_observation": "2026-11-23T11:02:31Z",
+      "expected_latest_period": "2026-11-23T18:08:57Z",
+      "latest_observation": "2026-11-23T18:08:57Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     }
   ]
