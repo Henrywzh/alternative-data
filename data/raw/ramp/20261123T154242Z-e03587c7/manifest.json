@@ -1,0 +1,67 @@
+{
+  "run_id": "20261123T154242Z-e03587c7",
+  "mode": "ai-index",
+  "scraped_at": "2026-11-23T15:42:42.063765Z",
+  "status": "success",
+  "datasets": [
+    {
+      "dataset_id": "ramp_ai_adoption_overall",
+      "status": "ok",
+      "rows": 40
+    },
+    {
+      "dataset_id": "ramp_ai_adoption_by_size",
+      "status": "ok",
+      "rows": 160
+    },
+    {
+      "dataset_id": "ramp_ai_adoption_by_sector",
+      "status": "ok",
+      "rows": 800
+    },
+    {
+      "dataset_id": "ramp_ai_adoption_by_state",
+      "status": "ok",
+      "rows": 2017
+    },
+    {
+      "dataset_id": "ramp_ai_adoption_by_vendor",
+      "status": "ok",
+      "rows": 200
+    },
+    {
+      "dataset_id": "ramp_ai_pepm_spend",
+      "status": "ok",
+      "rows": 40
+    },
+    {
+      "dataset_id": "ramp_ai_spend_share_by_category",
+      "status": "retired",
+      "rows": 0,
+      "note": "2026-09-07: Ramp removed the spend-share payload from the AI Index page"
+    },
+    {
+      "dataset_id": "ramp_ai_provider_model_share",
+      "status": "retired",
+      "rows": 0,
+      "note": "2026-10-22: Ramp removed the model-share payload from the AI Index page"
+    },
+    {
+      "dataset_id": "ramp_ai_spend_breakdown",
+      "status": "retired",
+      "rows": 0,
+      "note": "2026-09-07: Ramp removed the spend-breakdown payload from the AI Index page"
+    },
+    {
+      "dataset_id": "ramp_ai_model_breakdown",
+      "status": "retired",
+      "rows": 0,
+      "note": "2026-10-22: Ramp removed the model-breakdown payload from the AI Index page"
+    },
+    {
+      "dataset_id": "ramp_ai_pepm_spend_by_dimension",
+      "status": "ok",
+      "rows": 1600
+    }
+  ]
+}
