@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "香港房地产市场监测",
     "description": "基于来源的住宅价格、租金和市场信心指标快照。",
-    "generatedAt": "2026-11-23T18:09:51.737787Z",
+    "generatedAt": "2026-11-24T17:46:54.781913Z",
     "cards": [
       {
         "id": "ccl_card",
@@ -1868,7 +1868,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `dbe92dfbee9ed37e` · 生成于 2026-11-23T18:09:51.737787Z。这是已发布快照，不是实时连接；RVD 标记为 provisional 的观测可能会修订。"
+        "body": "**数据快照：** `6983d5547057d3e3` · 生成于 2026-11-24T17:46:54.781913Z。这是已发布快照，不是实时连接；RVD 标记为 provisional 的观测可能会修订。"
       },
       {
         "id": "market_regime_intro",
@@ -2132,7 +2132,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-11-23T18:09:51.737787Z",
+    "generatedAt": "2026-11-24T17:46:54.781913Z",
     "status": "ready",
     "datasets": {
       "kpi_ccl": [
@@ -47561,7 +47561,7 @@
           "event_type": "sales_response",
           "asset_class": "residential",
           "geography": "hong_kong",
-          "project": "SIERRA SEA",
+          "project": "Sierra Sea",
           "title": "Phase 2A and Phase 2B of Sai Sha Residences “SIERRA SEA” attract overwhelming market responses",
           "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2026q1/tc/PDF/SHKPQTY_2026q1_ENTC_12-15.pdf",
           "date_semantics": "quarter_end_label_proxy"
@@ -47660,7 +47660,7 @@
           "event_type": "completion_or_opening",
           "asset_class": "residential",
           "geography": "hong_kong",
-          "project": "SIERRA SEA",
+          "project": "Sierra Sea",
           "title": "Completion and handover of SIERRA SEA",
           "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2025q4/tc/PDF/SHKPQTY_2025q4_ENTC_9-13.pdf",
           "date_semantics": "quarter_end_label_proxy"
@@ -47737,7 +47737,7 @@
           "event_type": "project_update",
           "asset_class": "residential",
           "geography": "hong_kong",
-          "project": "SIERRA SEA",
+          "project": "Sierra Sea",
           "title": "SIERRA SEA – the first batch of SHKP’s largest private residential development to date",
           "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2025q2/tc/PDF/SHKPQTY_2025q2_ENTC_2-9.pdf",
           "date_semantics": "quarter_end_label_proxy"
@@ -47748,7 +47748,7 @@
           "event_type": "project_update",
           "asset_class": "residential",
           "geography": "hong_kong",
-          "project": "SIERRA SEA",
+          "project": "Sierra Sea",
           "title": "Phase 1A(2) of Sai Sha private residential development officially named SIERRA SEA",
           "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2025q1/tc/PDF/SHKPQTY_2025q1_ENTC_10-13.pdf",
           "date_semantics": "quarter_end_label_proxy"
@@ -48411,19 +48411,6 @@
           "project": "—",
           "asset_class": null,
           "fact_type": "area_sqft",
-          "value": 650000,
-          "unit": "sqft",
-          "confidence": "high",
-          "fact_text": "The development comprises The Millennity, two 20-storey Grade-A office 此外，集團於觀塘巧明街98號的項目亦獲香港非住宅項 towers totalling approximately 650,000 square feet, 目（新建築物 — 非政府，機構或社區）組別的優異獎。 and the podium mall The ANGLE.",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2026q3/tc/PDF/SHKPQTY_2026q3_ENTC_24.pdf",
-          "page": 1
-        },
-        {
-          "date": "2026-09-30",
-          "quarter": "2026Q3",
-          "project": "—",
-          "asset_class": null,
-          "fact_type": "area_sqft",
           "value": 2700000,
           "unit": "sqft",
           "confidence": "high",
@@ -48720,6 +48707,45 @@
         {
           "date": "2026-03-31",
           "quarter": "2026Q1",
+          "project": "Artist Square Towers",
+          "asset_class": "office",
+          "fact_type": "area_sqft",
+          "value": 27000,
+          "unit": "sqft",
+          "confidence": "high",
+          "fact_text": "The project comprises three harbourfront 成，設有三幢臨海優質寫字樓，包括東座、 blocks – East Tower, West Tower and South Tower – off ering 西座及南座，總樓面約672,000平方呎，另 6 approximately 672,000 square feet of premium offi ce space 有約27,000平方呎零售空間。項目提供低 7 and 27,000 square feet of retail space.",
+          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2026q1/tc/PDF/SHKPQTY_2026q1_ENTC_7.pdf",
+          "page": 1
+        },
+        {
+          "date": "2026-03-31",
+          "quarter": "2026Q1",
+          "project": "Artist Square Towers",
+          "asset_class": "office",
+          "fact_type": "area_sqft",
+          "value": 250000,
+          "unit": "sqft",
+          "confidence": "high",
+          "fact_text": "Morgan has committed to leasing top six connected fl oors 最高的六層相連層，總樓面面積約25萬平 in AST’s East and West Towers, totalling approximately 250,000 square feet, under a 10-year lease.",
+          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2026q1/tc/PDF/SHKPQTY_2026q1_ENTC_7.pdf",
+          "page": 1
+        },
+        {
+          "date": "2026-03-31",
+          "quarter": "2026Q1",
+          "project": "Artist Square Towers",
+          "asset_class": "office",
+          "fact_type": "area_sqft",
+          "value": 672000,
+          "unit": "sqft",
+          "confidence": "high",
+          "fact_text": "The project comprises three harbourfront 成，設有三幢臨海優質寫字樓，包括東座、 blocks – East Tower, West Tower and South Tower – off ering 西座及南座，總樓面約672,000平方呎，另 6 approximately 672,000 square feet of premium offi ce space 有約27,000平方呎零售空間。項目提供低 7 and 27,000 square feet of retail space.",
+          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2026q1/tc/PDF/SHKPQTY_2026q1_ENTC_7.pdf",
+          "page": 1
+        },
+        {
+          "date": "2026-03-31",
+          "quarter": "2026Q1",
           "project": "—",
           "asset_class": null,
           "fact_type": "contracted_sales_attributable_hkd_m",
@@ -48742,6 +48768,19 @@
           "fact_text": "按所佔權益計算，集團期內錄得的合約銷 completion in early 2026. Office Tower B, 售總額約189億港元，包括在香港合約銷售174億港元",
           "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2026q1/tc/PDF/SHKPQTY_2026q1_ENTC_20-21.pdf",
           "page": 2
+        },
+        {
+          "date": "2026-03-31",
+          "quarter": "2026Q1",
+          "project": "Artist Square Towers",
+          "asset_class": "office",
+          "fact_type": "lease_term_years",
+          "value": 10,
+          "unit": "years",
+          "confidence": "medium",
+          "fact_text": "Morgan has committed to leasing top six connected fl oors 最高的六層相連層，總樓面面積約25萬平 in AST’s East and West Towers, totalling approximately 250,000 square feet, under a 10-year lease.",
+          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2026q1/tc/PDF/SHKPQTY_2026q1_ENTC_7.pdf",
+          "page": 1
         },
         {
           "date": "2026-03-31",
@@ -48772,7 +48811,7 @@
         {
           "date": "2025-12-31",
           "quarter": "2025Q4",
-          "project": "SIERRA SEA",
+          "project": "Sierra Sea",
           "asset_class": "residential",
           "fact_type": "area_sqft",
           "value": 1400000,
@@ -48785,7 +48824,7 @@
         {
           "date": "2025-12-31",
           "quarter": "2025Q4",
-          "project": "SIERRA SEA",
+          "project": "Sierra Sea",
           "asset_class": "residential",
           "fact_type": "area_sqft",
           "value": 1480000,
@@ -48811,7 +48850,7 @@
         {
           "date": "2025-12-31",
           "quarter": "2025Q4",
-          "project": "SIERRA SEA",
+          "project": "Sierra Sea",
           "asset_class": "residential",
           "fact_type": "area_sqft",
           "value": 79000,
@@ -48846,227 +48885,6 @@
           "fact_text": "6 8 The development project features a separate exclusive lobby for the 62 units of Sky Tower 1 (floors 99 會會所所、、會會所所各各區區域域及及設設施施之之名名稱稱僅僅作作推推廣廣之之用用，，將將不不會會在在公公契契、、臨臨時時買買賣賣合合約約、、正正式式買買賣賣合合約約、、 7 32-33, 35-43, and 45-50) on the first floor, providing direct access to all floors of Sky Tower 1; and a 轉轉讓讓契契或或任任何何其其他他業業權權契契據據中中顯顯示示。。會會所所及及//或或康康樂樂設設施施部部份份設設施施及及 // 或或服服務務的的使使用用或或操操作作可可能能 separate exclusive lobby for the 60 units of Summit Tower 2 (floors 32-33, 35-43, and 45-50) on the first 受受制制於於會會所所守守則則及及設設施施的的使使用用守守則則及及政政府府有有關關部部門門發發出出之之同同意意書書或或許許可可證證或或需需額額外外付付款款。。 floor, providing direct access to all floors of Summit Tower 2.",
           "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2025q4/tc/PDF/SHKPQTY_2025q4_ENTC_2-8.pdf",
           "page": 6
-        },
-        {
-          "date": "2025-09-30",
-          "quarter": "2025Q3",
-          "project": "—",
-          "asset_class": null,
-          "fact_type": "amount_hkd",
-          "value": 42300000000,
-          "unit": "HKD",
-          "confidence": "medium",
-          "fact_text": "to the Company’s shareholders, excluding the effect of recorded contracted sales of about HK$42,300 million in 分IGC計劃於明年初開始交付租戶。鄰近觀塘APM的新商場 fair-value changes on investment properties, amounted attributable terms in Hong Kong, the highest level over With full confidence in the long-term prospects of Scramble Hill（三布目）和啟德天璽．天的基座商場「天璽． to HK$21,855 million.",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2025q3/tc/PDF/SHKPQTY_2025q3_ENTC_18-19.pdf",
-          "page": 1
-        },
-        {
-          "date": "2025-09-30",
-          "quarter": "2025Q3",
-          "project": "—",
-          "asset_class": null,
-          "fact_type": "amount_hkd",
-          "value": 21855000000,
-          "unit": "HKD",
-          "confidence": "medium",
-          "fact_text": "to the Company’s shareholders, excluding the effect of recorded contracted sales of about HK$42,300 million in 分IGC計劃於明年初開始交付租戶。鄰近觀塘APM的新商場 fair-value changes on investment properties, amounted attributable terms in Hong Kong, the highest level over With full confidence in the long-term prospects of Scramble Hill（三布目）和啟德天璽．天的基座商場「天璽． to HK$21,855 million.",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2025q3/tc/PDF/SHKPQTY_2025q3_ENTC_18-19.pdf",
-          "page": 1
-        },
-        {
-          "date": "2025-09-30",
-          "quarter": "2025Q3",
-          "project": "—",
-          "asset_class": null,
-          "fact_type": "amount_hkd",
-          "value": 3.75,
-          "unit": "HKD",
-          "confidence": "medium",
-          "fact_text": "內地方面，按所佔權益計算，集團年內錄得合約銷售額約 and longstanding financial discipline to proactively Together with the interim dividend of HK$0.95 per share, embrace economic transformation while exploring 人民幣40億元。儘管新落成的出租物業為集團帶來新增貢 the dividend for the full year will be HK$3.75 per share, The Group’s property investment portfolio in Hong the potential use of artificial intelligence.",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2025q3/tc/PDF/SHKPQTY_2025q3_ENTC_18-19.pdf",
-          "page": 1
-        },
-        {
-          "date": "2025-09-30",
-          "quarter": "2025Q3",
-          "project": "—",
-          "asset_class": null,
-          "fact_type": "amount_hkd",
-          "value": 0.95,
-          "unit": "HKD",
-          "confidence": "medium",
-          "fact_text": "內地方面，按所佔權益計算，集團年內錄得合約銷售額約 and longstanding financial discipline to proactively Together with the interim dividend of HK$0.95 per share, embrace economic transformation while exploring 人民幣40億元。儘管新落成的出租物業為集團帶來新增貢 the dividend for the full year will be HK$3.75 per share, The Group’s property investment portfolio in Hong the potential use of artificial intelligence.",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2025q3/tc/PDF/SHKPQTY_2025q3_ENTC_18-19.pdf",
-          "page": 1
-        },
-        {
-          "date": "2025-09-30",
-          "quarter": "2025Q3",
-          "project": "—",
-          "asset_class": null,
-          "fact_type": "amount_hkd",
-          "value": 8290000000,
-          "unit": "HKD",
-          "confidence": "medium",
-          "fact_text": "In the next two to three years, the completion of when ready and make new investments when Maison和上海徐家匯中心安達仕酒店，整個標誌性的ITC項目 sales increased 5.6% year-on-year to HK$8,290 million.",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2025q3/tc/PDF/SHKPQTY_2025q3_ENTC_18-19.pdf",
-          "page": 1
-        },
-        {
-          "date": "2025-09-30",
-          "quarter": "2025Q3",
-          "project": "—",
-          "asset_class": null,
-          "fact_type": "contracted_sales_attributable_hkd_m",
-          "value": 42300,
-          "unit": "HKD_m",
-          "confidence": "high",
-          "fact_text": "contracted sales of about HK$42,300 million in 分IGC計劃於明年初開始交付租戶。鄰近觀塘APM的新商場 fair-value changes on investment properties, amounted attributable terms",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2025q3/tc/PDF/SHKPQTY_2025q3_ENTC_18-19.pdf",
-          "page": 1
-        },
-        {
-          "date": "2025-09-30",
-          "quarter": "2025Q3",
-          "project": "—",
-          "asset_class": null,
-          "fact_type": "property_rate_pct",
-          "value": 95,
-          "unit": "percent",
-          "confidence": "medium",
-          "fact_text": "Kong registered satisfactory overall occupancy, with to achieve sustainable business growth, the Group 導致整體租金收入輕微下跌。隨著上海ITC第三期的餘下部 major malls registering an overall occupancy of about will continue to launch new residential projects 分預計在2025年底前竣工，包括B座摩天辦公大樓、商場ITC For the year under review, profit generated from property 95%.",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2025q3/tc/PDF/SHKPQTY_2025q3_ENTC_18-19.pdf",
-          "page": 1
-        },
-        {
-          "date": "2025-09-30",
-          "quarter": "2025Q3",
-          "project": "—",
-          "asset_class": "retail",
-          "fact_type": "retail_store_count",
-          "value": 160,
-          "unit": "stores",
-          "confidence": "medium",
-          "fact_text": "We 500,000-square-foot mall to synergize believe the phased opening of Scramble Hill from the with APM second half of this year will build on the success of the Group’s flagship APM mall, creating synergy with both With over 160 shops set to open across 10 floors, the APM and the nearby office cluster.” 500,000-square-foot Scramble Hill is positioned as an innovative destination for young families, pet owners, Pet-friendly sky garden and the new generation.",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2025q3/tc/PDF/SHKPQTY_2025q3_ENTC_10-11.pdf",
-          "page": 1
-        },
-        {
-          "date": "2025-06-30",
-          "quarter": "2025Q2",
-          "project": "SIERRA SEA",
-          "asset_class": "residential",
-          "fact_type": "area_sqft",
-          "value": 79000,
-          "unit": "sqft",
-          "confidence": "high",
-          "fact_text": "The works, recreational facilities for residents' use) with an area of about 79,000 square feet and a communal 有 47 伙特色單位9。 段約1.5公里的西沙路由雙線行車擴闊至四線，令車流 buildings, facilities, district development, planning, user etc.",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2025q2/tc/PDF/SHKPQTY_2025q2_ENTC_2-9.pdf",
-          "page": 3
-        },
-        {
-          "date": "2025-06-30",
-          "quarter": "2025Q2",
-          "project": "SIERRA SEA",
-          "asset_class": "residential",
-          "fact_type": "area_sqft",
-          "value": 702,
-          "unit": "sqft",
-          "confidence": "high",
-          "fact_text": "saleable areas8 ranging from 301 to 702 square feet8 and Sai Sha Residences Transport Interchange16 one- to three-bedroom configurations.",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2025q2/tc/PDF/SHKPQTY_2025q2_ENTC_2-9.pdf",
-          "page": 1
-        },
-        {
-          "date": "2025-06-30",
-          "quarter": "2025Q2",
-          "project": "SIERRA SEA",
-          "asset_class": "residential",
-          "fact_type": "area_sqft",
-          "value": 46000,
-          "unit": "sqft",
-          "confidence": "high",
-          "fact_text": "Additionally, 47 spans over 46,000 square feet special units9 are available.",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2025q2/tc/PDF/SHKPQTY_2025q2_ENTC_2-9.pdf",
-          "page": 1
-        },
-        {
-          "date": "2025-06-30",
-          "quarter": "2025Q2",
-          "project": "SIERRA SEA",
-          "asset_class": "residential",
-          "fact_type": "area_sqft",
-          "value": 56000,
-          "unit": "sqft",
-          "confidence": "high",
-          "fact_text": "Together approximately 56,000 square feet, encompasses dining, with the two proposed routes17 linking to the commercial retail, education and healthcare services that address the districts in Hong Kong Island and Hong Kong International needs of both residents and visitors.",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2025q2/tc/PDF/SHKPQTY_2025q2_ENTC_2-9.pdf",
-          "page": 2
-        },
-        {
-          "date": "2025-06-30",
-          "quarter": "2025Q2",
-          "project": "SIERRA SEA",
-          "asset_class": "residential",
-          "fact_type": "area_sqft",
-          "value": 1400000,
-          "unit": "sqft",
-          "confidence": "high",
-          "fact_text": "referred to in this advertisement may garden or play area (covered and uncovered) with an area of about 1.4 million square feet, totalling not be completed or fully altered at the time or after the completion of the \"Sai Sha mega integrated 1.479 million square feet.",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2025q2/tc/PDF/SHKPQTY_2025q2_ENTC_2-9.pdf",
-          "page": 3
-        },
-        {
-          "date": "2025-06-30",
-          "quarter": "2025Q2",
-          "project": "SIERRA SEA",
-          "asset_class": "residential",
-          "fact_type": "area_sqft",
-          "value": 1480000,
-          "unit": "sqft",
-          "confidence": "high",
-          "fact_text": "Coupled with existing minibus routes 807K together with the communal gardens and recreational areas, and 807S17, the Development enjoys proximity to “two span approximately 1.48 million square feet12.",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2025q2/tc/PDF/SHKPQTY_2025q2_ENTC_2-9.pdf",
-          "page": 1
-        },
-        {
-          "date": "2025-06-30",
-          "quarter": "2025Q2",
-          "project": "SIERRA SEA",
-          "asset_class": "residential",
-          "fact_type": "area_sqft",
-          "value": 1479000,
-          "unit": "sqft",
-          "confidence": "high",
-          "fact_text": "referred to in this advertisement may garden or play area (covered and uncovered) with an area of about 1.4 million square feet, totalling not be completed or fully altered at the time or after the completion of the \"Sai Sha mega integrated 1.479 million square feet.",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2025q2/tc/PDF/SHKPQTY_2025q2_ENTC_2-9.pdf",
-          "page": 3
-        },
-        {
-          "date": "2025-06-30",
-          "quarter": "2025Q2",
-          "project": "SIERRA SEA",
-          "asset_class": "residential",
-          "fact_type": "unit_count",
-          "value": 3781,
-          "unit": "units",
-          "confidence": "high",
-          "fact_text": "development in Hong Kong to obtain three prestigious international and local certifications in sustainability, Diverse unit types to meet various buyer wellness and smart building standards, including Platinum preferences pre-certification under WiredScore certification for 2 Phase 1A(2) SIERRA SEA comprises four towers with Homes13 granted to a private developer project for the first 3 781 residential units.",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2025q2/tc/PDF/SHKPQTY_2025q2_ENTC_2-9.pdf",
-          "page": 1
-        },
-        {
-          "date": "2025-06-30",
-          "quarter": "2025Q2",
-          "project": "SIERRA SEA",
-          "asset_class": "residential",
-          "fact_type": "unit_count",
-          "value": 794,
-          "unit": "units",
-          "confidence": "high",
-          "fact_text": "The “Sai Sha mega integrated development”2 reflects the Phase 1B SIERRA SEA also consists of four towers, Group’s people-oriented philosophy through meticulous delivering 794 residential units in total.",
-          "source_url": "https://www.shkp.com/Content/Uploads/SHKPQuarterly/2025q2/tc/PDF/SHKPQTY_2025q2_ENTC_2-9.pdf",
-          "page": 1
         }
       ],
       "shkp_hk_commercial_asset_master": [
@@ -83499,7 +83317,7 @@
           "status": "健康",
           "latest_observation": "2026-11-15",
           "records": 1716,
-          "freshness": "8 天前",
+          "freshness": "9 天前",
           "notes": "最新观察值已发布，未标注为临时值。"
         },
         {
@@ -83509,7 +83327,7 @@
           "status": "健康",
           "latest_observation": "2026-11-09",
           "records": 557,
-          "freshness": "14 天前",
+          "freshness": "15 天前",
           "notes": "最新观察值已发布，未标注为临时值。"
         },
         {
@@ -83519,7 +83337,7 @@
           "status": "健康",
           "latest_observation": "2026-11-09",
           "records": 459,
-          "freshness": "14 天前",
+          "freshness": "15 天前",
           "notes": "最新观察值已发布，未标注为临时值。"
         },
         {
@@ -83529,7 +83347,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 405,
-          "freshness": "83 天前",
+          "freshness": "84 天前",
           "notes": "最新观察值为临时值。"
         },
         {
@@ -83539,7 +83357,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 405,
-          "freshness": "83 天前",
+          "freshness": "84 天前",
           "notes": "最新观察值为临时值。"
         },
         {
@@ -83549,7 +83367,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 118,
-          "freshness": "83 天前",
+          "freshness": "84 天前",
           "notes": "Official monthly residential mortgage survey; the source may revise the latest month."
         },
         {
@@ -83559,7 +83377,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 393,
-          "freshness": "83 天前",
+          "freshness": "84 天前",
           "notes": "标准化的月度住宅价格指数历史。"
         },
         {
@@ -83569,7 +83387,7 @@
           "status": "健康",
           "latest_observation": "2026-10-01",
           "records": 715,
-          "freshness": "53 天前",
+          "freshness": "54 天前",
           "notes": "标准化的月度住宅租金指数历史。"
         },
         {
@@ -83579,7 +83397,7 @@
           "status": "健康",
           "latest_observation": "2026-11-16",
           "records": 1148,
-          "freshness": "7 天前",
+          "freshness": "8 天前",
           "notes": "周度市场情绪历史，不是成交或价格指数。"
         },
         {
@@ -83589,7 +83407,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 1620,
-          "freshness": "83 天前",
+          "freshness": "84 天前",
           "notes": "按等级划分的官方写字楼月度租金指数。"
         },
         {
@@ -83599,7 +83417,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 810,
-          "freshness": "83 天前",
+          "freshness": "84 天前",
           "notes": "Official retail rental/price indices; provisional flags are retained."
         },
         {
@@ -83609,7 +83427,7 @@
           "status": "健康",
           "latest_observation": "2026-09-30",
           "records": 247,
-          "freshness": "54 天前",
+          "freshness": "55 天前",
           "notes": "Issuer headline events; property relevance and project aliases are heuristic."
         },
         {
@@ -83618,8 +83436,8 @@
           "type": "指标",
           "status": "健康",
           "latest_observation": "2026-09-30",
-          "records": 57,
-          "freshness": "54 天前",
+          "records": 43,
+          "freshness": "55 天前",
           "notes": "Bounded PDF text extraction of explicit units/areas/rates/milestones; not revenue or ownership."
         },
         {
@@ -83629,7 +83447,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 13200,
-          "freshness": "83 天前",
+          "freshness": "84 天前",
           "notes": "Economy-wide retail value/volume indices; not SHKP tenant sales."
         },
         {
@@ -83639,7 +83457,7 @@
           "status": "健康",
           "latest_observation": "2026-07-01",
           "records": 180,
-          "freshness": "145 天前",
+          "freshness": "146 天前",
           "notes": "Rolling five-year hotel-category occupancy; not SHKP hotel occupancy."
         },
         {
@@ -83649,7 +83467,7 @@
           "status": "健康",
           "latest_observation": "2026-07-01",
           "records": 180,
-          "freshness": "145 天前",
+          "freshness": "146 天前",
           "notes": "Rolling five-year industry average room rate; not SHKP ADR."
         },
         {
@@ -83659,7 +83477,7 @@
           "status": "Stale",
           "latest_observation": "2024-06-01",
           "records": 140,
-          "freshness": "905 天前",
+          "freshness": "906 天前",
           "notes": "The public file currently ends at 2024-06; retained as a stale catalog/control input until the publisher updates it."
         },
         {
@@ -83669,7 +83487,7 @@
           "status": "健康",
           "latest_observation": "2025-12-31",
           "records": 328,
-          "freshness": "327 天前",
+          "freshness": "328 天前",
           "notes": "Historical year-end grade-level office vacancy; market control only."
         },
         {
@@ -83679,7 +83497,7 @@
           "status": "健康",
           "latest_observation": "2024-12-31",
           "records": 118,
-          "freshness": "692 天前",
+          "freshness": "693 天前",
           "notes": "Latest annual district snapshot; source does not provide a monthly history here."
         },
         {
@@ -83689,7 +83507,7 @@
           "status": "Catalog",
           "latest_observation": "2026-12-31",
           "records": 45,
-          "freshness": "forecast +38d",
+          "freshness": "forecast +37d",
           "notes": "Latest annual district forecast snapshot; future-dated by design and not SHKP pipeline."
         },
         {
@@ -83711,7 +83529,7 @@
           "status": "健康",
           "latest_observation": "2026-11-15",
           "records": 1716,
-          "freshness": "8 天前",
+          "freshness": "9 天前",
           "notes": "最新观察值已发布，未标注为临时值。"
         },
         {
@@ -83721,7 +83539,7 @@
           "status": "健康",
           "latest_observation": "2026-11-09",
           "records": 557,
-          "freshness": "14 天前",
+          "freshness": "15 天前",
           "notes": "最新观察值已发布，未标注为临时值。"
         },
         {
@@ -83731,7 +83549,7 @@
           "status": "健康",
           "latest_observation": "2026-11-09",
           "records": 459,
-          "freshness": "14 天前",
+          "freshness": "15 天前",
           "notes": "最新观察值已发布，未标注为临时值。"
         },
         {
@@ -83741,7 +83559,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 405,
-          "freshness": "83 天前",
+          "freshness": "84 天前",
           "notes": "最新观察值为临时值。"
         },
         {
@@ -83751,7 +83569,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 405,
-          "freshness": "83 天前",
+          "freshness": "84 天前",
           "notes": "最新观察值为临时值。"
         },
         {
@@ -83761,7 +83579,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 118,
-          "freshness": "83 天前",
+          "freshness": "84 天前",
           "notes": "Official monthly residential mortgage survey; the source may revise the latest month."
         },
         {
@@ -83771,7 +83589,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 393,
-          "freshness": "83 天前",
+          "freshness": "84 天前",
           "notes": "标准化的月度住宅价格指数历史。"
         },
         {
@@ -83781,7 +83599,7 @@
           "status": "健康",
           "latest_observation": "2026-10-01",
           "records": 715,
-          "freshness": "53 天前",
+          "freshness": "54 天前",
           "notes": "标准化的月度住宅租金指数历史。"
         },
         {
@@ -83791,7 +83609,7 @@
           "status": "健康",
           "latest_observation": "2026-11-16",
           "records": 1148,
-          "freshness": "7 天前",
+          "freshness": "8 天前",
           "notes": "周度市场情绪历史，不是成交或价格指数。"
         },
         {
@@ -83801,7 +83619,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 1620,
-          "freshness": "83 天前",
+          "freshness": "84 天前",
           "notes": "按等级划分的官方写字楼月度租金指数。"
         },
         {
@@ -83811,7 +83629,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 810,
-          "freshness": "83 天前",
+          "freshness": "84 天前",
           "notes": "Official retail rental/price indices; provisional flags are retained."
         },
         {
@@ -83821,7 +83639,7 @@
           "status": "健康",
           "latest_observation": "2026-09-30",
           "records": 247,
-          "freshness": "54 天前",
+          "freshness": "55 天前",
           "notes": "Issuer headline events; property relevance and project aliases are heuristic."
         },
         {
@@ -83830,8 +83648,8 @@
           "type": "指标",
           "status": "健康",
           "latest_observation": "2026-09-30",
-          "records": 57,
-          "freshness": "54 天前",
+          "records": 43,
+          "freshness": "55 天前",
           "notes": "Bounded PDF text extraction of explicit units/areas/rates/milestones; not revenue or ownership."
         },
         {
@@ -83841,7 +83659,7 @@
           "status": "健康",
           "latest_observation": "2026-09-01",
           "records": 13200,
-          "freshness": "83 天前",
+          "freshness": "84 天前",
           "notes": "Economy-wide retail value/volume indices; not SHKP tenant sales."
         },
         {
@@ -83851,7 +83669,7 @@
           "status": "健康",
           "latest_observation": "2026-07-01",
           "records": 180,
-          "freshness": "145 天前",
+          "freshness": "146 天前",
           "notes": "Rolling five-year hotel-category occupancy; not SHKP hotel occupancy."
         },
         {
@@ -83861,7 +83679,7 @@
           "status": "健康",
           "latest_observation": "2026-07-01",
           "records": 180,
-          "freshness": "145 天前",
+          "freshness": "146 天前",
           "notes": "Rolling five-year industry average room rate; not SHKP ADR."
         },
         {
@@ -83871,7 +83689,7 @@
           "status": "Stale",
           "latest_observation": "2024-06-01",
           "records": 140,
-          "freshness": "905 天前",
+          "freshness": "906 天前",
           "notes": "The public file currently ends at 2024-06; retained as a stale catalog/control input until the publisher updates it."
         },
         {
@@ -83881,7 +83699,7 @@
           "status": "健康",
           "latest_observation": "2025-12-31",
           "records": 328,
-          "freshness": "327 天前",
+          "freshness": "328 天前",
           "notes": "Historical year-end grade-level office vacancy; market control only."
         },
         {
@@ -83891,7 +83709,7 @@
           "status": "健康",
           "latest_observation": "2024-12-31",
           "records": 118,
-          "freshness": "692 天前",
+          "freshness": "693 天前",
           "notes": "Latest annual district snapshot; source does not provide a monthly history here."
         },
         {
@@ -83901,7 +83719,7 @@
           "status": "Catalog",
           "latest_observation": "2026-12-31",
           "records": 45,
-          "freshness": "forecast +38d",
+          "freshness": "forecast +37d",
           "notes": "Latest annual district forecast snapshot; future-dated by design and not SHKP pipeline."
         },
         {
@@ -84027,7 +83845,7 @@
         "url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/banking/residential-mortgage-survey",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 香港金管局住宅按揭统计调查。",
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     },
     {
@@ -84039,7 +83857,7 @@
         "url": "https://www.censtatd.gov.hk/api/get.php?id=615-66001&lang=en&full_series=1",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 政府统计处建筑工程总值统计。",
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     },
     {
@@ -84051,7 +83869,7 @@
         "url": "https://www.censtatd.gov.hk/en/data/stat_report/product/D7000004/att/D7000004.xlsx",
         "language": "XLSX",
         "description": "构建时从公开来源读取并校验 政府统计处表 E704 — 政府卖地统计。",
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     },
     {
@@ -84067,7 +83885,7 @@
           "CCL latest is the most recent published weekly Centaline City Leading Index observation.",
           "Weekly and yearly movements are latest divided by the prior observation or latest observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     },
     {
@@ -84079,7 +83897,7 @@
         "url": "https://hk.centanet.com/CCI/api/Index/CCI",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 中原 CCI — 住宅价格指数。",
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     },
     {
@@ -84091,7 +83909,7 @@
         "url": "https://hk.centanet.com/CCI/api/Index/CRI",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 中原 CRI — 住宅租金指数。",
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     },
     {
@@ -84103,7 +83921,7 @@
         "url": "https://hk.centanet.com/CCI/api/Index/CSI",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 中原 CSI — 市场情绪。",
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     },
     {
@@ -84119,7 +83937,7 @@
           "MHPI latest is the most recent published overall weekly Midland Hong Kong Property Price Index observation.",
           "Weekly and yearly movements are latest divided by the prior observation or latest observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     },
     {
@@ -84134,7 +83952,7 @@
         "metric_definitions": [
           "The confidence series is a supporting market-sentiment measure published by Midland Realty."
         ],
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     },
     {
@@ -84150,7 +83968,7 @@
           "RVD price latest is the All Classes monthly private domestic price index.",
           "Monthly and yearly movements are latest divided by the prior month or observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     },
     {
@@ -84166,7 +83984,7 @@
           "RVD rent latest is the All Classes monthly private domestic rental index.",
           "Monthly and yearly movements are latest divided by the prior month or observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     },
     {
@@ -84178,7 +83996,7 @@
         "url": "https://www.rvd.gov.hk/datagovhk/2.3M.csv",
         "language": "CSV",
         "description": "构建时从公开来源读取并校验 差饷物业估价署 — 写字楼租金指数。",
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     },
     {
@@ -84190,7 +84008,7 @@
         "url": "https://www.rvd.gov.hk/datagovhk/3.2M.csv",
         "language": "CSV",
         "description": "构建时从公开来源读取并校验 差饷物业估价署 — 零售租金／价格指数。",
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     },
     {
@@ -84202,7 +84020,7 @@
         "url": "https://www.rvd.gov.hk/datagovhk/Com_Stock_Completions_and_Vacancy_by_District_Eng.csv",
         "language": "CSV",
         "description": "构建时从公开来源读取并校验 Rating and Valuation Department — Commercial stock / vacancy / completions。",
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     },
     {
@@ -84214,7 +84032,7 @@
         "url": "https://www.censtatd.gov.hk/data/MDT_75_620-67002_VAL_IDX_RS_Raw_1dp_idx_n.csv",
         "language": "CSV",
         "description": "构建时从公开来源读取并校验 C&SD — Monthly Retail Sales Control。",
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     },
     {
@@ -84226,7 +84044,7 @@
         "url": "https://www.tourism.gov.hk/datagovhk/hotelroomoccupancy/hotel_room_occupancy_rate_monthly_by_cat_en.csv",
         "language": "CSV",
         "description": "构建时从公开来源读取并校验 Culture, Sports and Tourism Bureau — Hotel occupancy / room-rate controls。",
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     },
     {
@@ -84238,7 +84056,7 @@
         "url": "https://www.shkp.com/en-US/investor-relations/shkp-quarterly",
         "language": "HTML/PDF",
         "description": "构建时从公开来源读取并校验 SHKP Quarterly — issuer project and commercial events。",
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     },
     {
@@ -84250,7 +84068,7 @@
         "url": "https://www.shkp.com/en-US/our-business/hong-kong-properties",
         "language": "Python",
         "description": "构建时从公开来源读取并校验 SHKP — Hong Kong commercial asset observation master。",
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     },
     {
@@ -84262,7 +84080,7 @@
         "url": "https://www.shkp.com/en-US/investor-relations/financial-results-reports",
         "language": "PDF/Parquet/DuckDB",
         "description": "构建时从公开来源读取并校验 新鸿基香港业务财务桥接。",
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     },
     {
@@ -84274,7 +84092,7 @@
         "url": "https://www.srpe.gov.hk/opip/all_development",
         "language": "Parquet/Python",
         "description": "构建时从公开来源读取并校验 新鸿基销售／交付／收入时序桥接。",
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     },
     {
@@ -84293,7 +84111,7 @@
           "RVD 1.4M.csv",
           "RVD 1.3M.csv"
         ],
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     },
     {
@@ -84305,7 +84123,7 @@
         "url": "https://www.28hse.com/epi/historical_data/doaction",
         "language": "HTML (embedded in a JSON envelope)",
         "description": "构建时从公开来源读取并校验 28Hse 屋苑价格及租金指数。",
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     },
     {
@@ -84317,7 +84135,7 @@
         "url": "https://www.28hse.com/new-properties",
         "language": "HTML",
         "description": "构建时从公开来源读取并校验 28Hse 新盘目录。",
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     },
     {
@@ -84332,7 +84150,7 @@
           "Midland data.midland.com.hk/info/v1/transactions/buildings",
           "Centaline hk.centanet.com/findproperty/api/Transaction/Search"
         ],
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     },
     {
@@ -84344,7 +84162,7 @@
         "url": "https://www.landreg.gov.hk/json/monthly_stat/monthly/t1.json",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 土地注册处月度统计。",
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     },
     {
@@ -84356,7 +84174,7 @@
         "url": "https://www.bd.gov.hk/doc/en/whats-new/monthly-digests/Md11.xls",
         "language": "XLS",
         "description": "构建时从公开来源读取并校验 屋宇署月报摘要。",
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     },
     {
@@ -84375,7 +84193,7 @@
           "Md55.xls",
           "Md56.xls"
         ],
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     },
     {
@@ -84395,7 +84213,7 @@
           "Table 1.6",
           "Table 1.7"
         ],
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     },
     {
@@ -84411,7 +84229,7 @@
           "Monthly attributable contract sales are gross transaction price multiplied by the listed-company ownership percentage in the phase registry.",
           "Sell-through uses unique active units from the transaction-register history divided by the phase's published total residential properties."
         ],
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     },
     {
@@ -84425,13 +84243,13 @@
           "Validated core measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-11-23T18:09:51.737787Z"
+        "executed_at": "2026-11-24T17:46:54.781913Z"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-real-estate/",
-    "snapshotId": "dbe92dfbee9ed37e",
+    "snapshotId": "6983d5547057d3e3",
     "dataAsOf": "2026-11-15"
   }
 }
