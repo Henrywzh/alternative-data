@@ -770,3 +770,73 @@ def test_weekly_chart_does_not_mix_overlapping_reporting_calendars():
     assert list(pivot.index.strftime('%Y-%m-%d')) == ['2026-10-09', '2026-10-16', '2026-10-23']
     assert pd.isna(pivot.iloc[1, 0])
     assert pivot.iloc[-1, 0] == 15
+
+
+def _published_price_rows(end: str, days: int) -> list[dict]:
+    rows = []
+    for row in _price_rows(end, days):
+        rows.append({"usage_date": row["usage_date"], "token_type": row["token_type"],
+                     "series_key": row["model_maker"], "price_per_million": 0.5})
+        if row["model_maker"] == "openai":
+            rows.append({**rows[-1], "series_key": "blend", "price_per_million": 0.4})
+    return rows
+
+
+def test_tokenomics_migrates_to_direct_prices_and_preserves_legacy_vintages(tmp_path, monkeypatch):
+    from datetime import date, timedelta
+    from ramp_data.prices import effective_token_prices
+
+    pipeline = RampPipeline(tmp_path)
+    start = date.fromisoformat(_recent_saturday())
+    activity = _token_rows((start - timedelta(weeks=39)).isoformat(), 40, models=40)
+    end = (start + timedelta(days=6)).isoformat()
+    prices = _price_rows(end, 30)
+    monkeypatch.setattr(pipeline.tokenomics_source, "fetch_snapshots", lambda: _token_snapshots(activity, prices))
+    pipeline.run_tokenomics()
+
+    prices = _published_price_rows(end, 30)
+    pipeline.run_tokenomics()
+    current = pipeline.storage.load_dataset("ramp_ai_token_prices")
+    assert set(current["model_maker"]) == {"openai", "anthropic", "blend"}
+    assert current[["token_cost_usd_7d", "token_count_7d"]].isna().all().all()
+    assert set(current["price_per_million"]) == {0.5, 0.4}
+    history = pipeline.storage.load_dataset("ramp_ai_token_prices_vintages")
+    assert history["token_count_7d"].notna().sum() == len(_price_rows(end, 30))
+    blend = effective_token_prices(current).query('model_maker == "blend"')
+    assert set(blend["price_per_million"]) == {0.4}
+
+
+@pytest.mark.parametrize("bad_dataset", ["ramp_ai_token_prices", "ramp_ai_token_activity"])
+def test_tokenomics_updates_healthy_sibling_when_other_feed_fails(tmp_path, monkeypatch, bad_dataset):
+    from datetime import date, timedelta
+
+    pipeline = RampPipeline(tmp_path)
+    start = date.fromisoformat(_recent_saturday()) - timedelta(weeks=1)
+    old_activity = _token_rows((start - timedelta(weeks=39)).isoformat(), 40, models=40)
+    old_prices = _price_rows((start + timedelta(days=6)).isoformat(), 30)
+    snapshots = _token_snapshots(old_activity, old_prices)
+    monkeypatch.setattr(pipeline.tokenomics_source, "fetch_snapshots", lambda: snapshots)
+    pipeline.run_tokenomics()
+    old_file = pipeline.storage.normalized_root / f"{bad_dataset}.parquet"
+    previous = old_file.read_bytes()
+
+    activity = _token_rows((start - timedelta(weeks=39)).isoformat(), 41, models=40)
+    prices = _published_price_rows((start + timedelta(days=7)).isoformat(), 30)
+    if bad_dataset == "ramp_ai_token_prices":
+        prices[0]["series_key"] = []  # malformed dimension must not block valid spend
+    else:
+        activity[0]["metric_value"] = -1
+    snapshots = _token_snapshots(activity, prices)
+    with pytest.raises(ValidationError, match=bad_dataset):
+        pipeline.run_tokenomics()
+    assert old_file.read_bytes() == previous
+
+    manifests = sorted(pipeline.storage.raw_root.glob("*/manifest.json"))
+    manifest = next(m for p in manifests if (m := json.loads(p.read_text()))["status"] == "partial")
+    assert {row["status"] for row in manifest["datasets"]} == {"ok", "rejected"}
+    if bad_dataset == "ramp_ai_token_prices":
+        current = pipeline.storage.load_dataset("ramp_ai_token_activity")
+        assert current["period_end"].max() == (start + timedelta(days=13)).isoformat()
+    else:
+        current = pipeline.storage.load_dataset("ramp_ai_token_prices")
+        assert current["usage_date"].max() == (start + timedelta(days=7)).isoformat()

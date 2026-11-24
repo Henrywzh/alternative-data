@@ -16,10 +16,10 @@ AI Index page loads them from, passing the page's `dataVersion` token when it
 is published. It does not need a browser or API key. (Until 2026-10-22 both
 arrays were embedded in the page's server-rendered payload; that change broke
 collection from 2026-10-22 to 2026-11-02, see below.) Its workflow step runs even if an
-earlier monthly-index or filter-mode step failed. All Tokenomics validation
-passes before any normalized Tokenomics table is written. A Tokenomics
-failure remains visible as a failed workflow, while other successful datasets
-can still be committed by the existing commit step.
+earlier monthly-index or filter-mode step failed. Activity and prices pass
+separate quality checks before writing. If either is rejected, the other can
+still publish, the manifest records the reason, and the workflow reports
+the failure.
 
 Normalized Parquet files live under `data/normalized/ramp/` on `main`.
 The Streamlit **Ramp → Tokenomics** tab uses the existing runtime GitHub data
@@ -30,10 +30,10 @@ loader and remote data SHA cache key. Code deployment continues through
 
 | Dataset | Observation grain | Values and units |
 | --- | --- | --- |
-| `ramp_ai_token_activity` | Saturday–Friday week × metric × maker × raw model series (Monday–Sunday before 2026-10-22) | `metric_key=token_volume`: tokens; `token_spend`: USD |
-| `ramp_ai_token_prices` | Daily window-end date × maker × token type | `token_cost_usd_7d`: rolling seven-day USD; `token_count_7d`: corresponding tokens |
+| `ramp_ai_token_activity` | Source-defined week × metric × maker × raw model series | `metric_key=token_volume`: tokens; `token_spend`: USD |
+| `ramp_ai_token_prices` | Daily window-end date × series × token type | `price_per_million`: Ramp's published effective price in USD per million tokens; legacy captures expose rolling seven-day cost and count |
 | `ramp_ai_token_activity_vintages` | Activity natural key × capture timestamp | Captured versions of activity values and labels |
-| `ramp_ai_token_prices_vintages` | Price natural key × capture timestamp | Captured numerator and denominator versions |
+| `ramp_ai_token_prices_vintages` | Price natural key × capture timestamp | Captured published price or legacy numerator and denominator versions |
 
 The exact fields and natural keys are defined in `src/ramp_data/schemas.py`.
 Each row carries source URL, run ID and capture time.
@@ -42,11 +42,13 @@ Each row carries source URL, run ID and capture time.
 observations absent from a later payload are retained, so it is accumulated
 history. `ramp_ai_token_activity` is replaced by each run's payload, because
 Ramp republishes the whole weekly history every time and on 2026-10-22 re-cut
-it from Monday–Sunday into Saturday–Friday weeks. Accumulating would have left
-two overlapping week conventions in one table. The current table is therefore
+it from Monday–Sunday into Saturday–Friday weeks. The November publication
+uses Monday–Sunday again. Accumulating would leave overlapping week conventions
+in one table. The current table is therefore
 the latest publication in a single convention; every earlier print, including
-all Monday–Sunday weeks, stays in `ramp_ai_token_activity_vintages`. The
-activity row floor (below) keeps a truncated payload from replacing history.
+the Friday-ending prints, stays in `ramp_ai_token_activity_vintages`. The
+activity gate checks the row floor and that the latest observation for each
+metric does not move backwards.
 
 Vintages start with our first capture on **2026-10-15**. Earlier observation
 dates are backfilled source history, not proof that those values were
@@ -76,7 +78,12 @@ be divided to invent model prices. The dedicated price table initially has
 Anthropic for `all_tokens`, `uncached_input` and `output`. It does not publish
 model-level prices.
 
-Effective USD per million tokens is:
+In the November payload, Ramp reports `price_per_million` and names the
+series with `series_key` (OpenAI, Anthropic, and Ramp's combined `blend`).
+The collector stores this value directly and leaves the unavailable cost and
+count null. Legacy observations remain readable from their cost/count pairs,
+with overlapping old captures retained in vintages. For those captures,
+effective USD per million tokens is:
 
 `sum(token_cost_usd_7d) / sum(token_count_7d) * 1_000_000`
 

@@ -128,8 +128,8 @@ class RampPipeline:
     ) -> PipelineResult:
         """Shared fetch → raw-capture → extract → gate → upsert flow.
 
-        The gate runs before any upsert, so a blocked/malformed source can never
-        overwrite committed history.
+        Each dataset passes its gate before any upsert. Tokenomics endpoints
+        publish independently and can have different validation outcomes.
         """
         context = self._create_context()
         snapshots = source.fetch_snapshots()
@@ -145,12 +145,25 @@ class RampPipeline:
 
         try:
             extracted = source.extract(snapshots, context)
-            quality = gate(snapshots, extracted)
+            rejected: dict[str, str] = {}
             if mode == "tokenomics":
+                quality = {}
+                for dataset_id in dataset_ids:
+                    try:
+                        report = gate(snapshots, extracted, dataset_ids=(dataset_id,))
+                        if dataset_id == "ramp_ai_token_activity":
+                            self._assert_activity_does_not_regress(report[dataset_id])
+                        quality.update(report)
+                    except ValidationError as exc:
+                        rejected[dataset_id] = str(exc)
                 manifest["quality"] = quality
+            else:
+                quality = gate(snapshots, extracted)
 
             datasets_written: dict[str, int] = {}
             for dataset_id in dataset_ids:
+                if dataset_id in rejected:
+                    continue
                 records = extracted.get(dataset_id, [])
                 if records:
                     current = self.storage.upsert_dataset(dataset_id, records)
@@ -165,19 +178,22 @@ class RampPipeline:
                 else:
                     datasets_written[dataset_id] = len(self.storage.load_dataset(dataset_id))
 
+            for dataset_id in dataset_ids:
+                reason = rejected.get(dataset_id) or quality.get(dataset_id, {}).get("retired")
+                if dataset_id in rejected:
+                    status = "rejected"
+                elif reason:
+                    status = "retired"
+                else:
+                    status = "ok" if extracted.get(dataset_id) else "no_new_rows"
+                entry = {"dataset_id": dataset_id, "status": status, "rows": len(extracted.get(dataset_id, []))}
+                if reason:
+                    entry["note"] = reason
+                manifest["datasets"].append(entry)
+            if rejected:
+                manifest["status"] = "partial" if datasets_written else "failed"
+                raise ValidationError("; ".join(rejected.values()))
             manifest["status"] = "success"
-            manifest["datasets"] = [
-                {
-                    "dataset_id": dataset_id,
-                    "status": (
-                        "retired" if (reason := quality.get(dataset_id, {}).get("retired"))
-                        else "ok" if extracted.get(dataset_id) else "no_new_rows"
-                    ),
-                    "rows": len(extracted.get(dataset_id, [])),
-                    **({"note": reason} if reason else {}),
-                }
-                for dataset_id in dataset_ids
-            ]
             self.storage.write_raw_run(context.run_id, snapshots, manifest)
 
             return PipelineResult(
@@ -186,7 +202,8 @@ class RampPipeline:
                 raw_run_dir=raw_run_dir,
             )
         except Exception as exc:
-            manifest["status"] = "failed"
+            if manifest["status"] != "partial":
+                manifest["status"] = "failed"
             manifest["error"] = str(exc)
             self.storage.write_raw_run(context.run_id, snapshots, manifest)
             raise
@@ -215,8 +232,19 @@ class RampPipeline:
             mode="tokenomics",
         )
 
+    def _assert_activity_does_not_regress(self, quality: dict[str, Any]) -> None:
+        previous = self.storage.load_dataset("ramp_ai_token_activity").dropna(subset=["period_end"])
+        for metric, latest in previous.groupby("metric_key")["period_end"].max().items():
+            observed = quality["latest_by_breakdown"].get(metric)
+            if observed is None or observed < latest:
+                raise ValidationError(
+                    f"ramp_ai_token_activity: {metric} regressed from {latest} to {observed}"
+                )
+
     @staticmethod
-    def _assert_tokenomics_quality(snapshots, extracted) -> dict[str, dict[str, Any]]:
+    def _assert_tokenomics_quality(
+        snapshots, extracted, *, dataset_ids: tuple[str, ...] = tuple(TOKENOMICS_DATASETS),
+    ) -> dict[str, dict[str, Any]]:
         """Fail before writes on schema drift, duplicate keys or invalid windows.
 
         A 21-day publication allowance covers a missed twice-weekly poll and
@@ -224,8 +252,9 @@ class RampPipeline:
         """
         report, failures = {}, []
         today = datetime.now(timezone.utc).date()
-        week_starts: set[int] = set()
-        for dataset_id, cfg in TOKENOMICS_DATASETS.items():
+        for dataset_id in dataset_ids:
+            cfg = TOKENOMICS_DATASETS[dataset_id]
+            week_starts: set[int] = set()
             records = extracted.get(dataset_id, [])
             rows = [r.payload for r in records]
             report[dataset_id] = {"rows": len(rows)}
@@ -233,11 +262,16 @@ class RampPipeline:
                 failures.append(f"{dataset_id}: only {len(rows)} rows (expected >= {cfg['min_rows']})")
                 continue
             seen, observations, group_latest = set(), [], {}
-            for row in rows:
+            failure_count = len(failures)
+            for row_number, row in enumerate(rows, start=1):
                 try:
-                    if any(not isinstance(row.get(k), str) or not row[k].strip()
-                           for k in cfg["fields"] if k not in cfg["numeric"]):
-                        raise ValueError("missing or invalid dimension")
+                    for field in cfg["natural_keys"]:
+                        if not isinstance(row.get(field), str) or not row[field].strip():
+                            raise ValueError(f"missing or invalid dimension {field}")
+                    if dataset_id == "ramp_ai_token_activity" and (
+                        not isinstance(row.get("series_label"), str) or not row["series_label"].strip()
+                    ):
+                        raise ValueError("missing or invalid dimension series_label")
                     key = tuple(row.get(k) for k in cfg["natural_keys"])
                     if key in seen:
                         raise ValueError("duplicate natural key")
@@ -248,6 +282,8 @@ class RampPipeline:
                     observations.append(observed)
                     for field in cfg["numeric"]:
                         value = row.get(field)
+                        if dataset_id == "ramp_ai_token_prices" and value is None:
+                            continue  # validated as a price or a legacy pair below
                         if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0:
                             raise ValueError(f"{field} must be finite and nonnegative")
                     if dataset_id == "ramp_ai_token_activity":
@@ -262,13 +298,21 @@ class RampPipeline:
                     else:
                         if row["token_type"] not in {"all_tokens", "uncached_input", "output"}:
                             raise ValueError("unexpected token type")
-                        if row["token_count_7d"] == 0 and row["token_cost_usd_7d"] != 0:
+                        price = row.get("price_per_million")
+                        cost, count = row.get("token_cost_usd_7d"), row.get("token_count_7d")
+                        if (cost is None) != (count is None):
+                            raise ValueError("incomplete legacy cost/count pair")
+                        if price is None and cost is None:
+                            raise ValueError("missing published price_per_million and legacy cost/count")
+                        if count == 0 and cost != 0:
                             raise ValueError("positive cost with zero token denominator")
                     group = (row["metric_key"],) if dataset_id == "ramp_ai_token_activity" else (row["model_maker"], row["token_type"])
                     group_latest[group] = max(group_latest.get(group, observed), observed)
                 except (ValueError, TypeError, KeyError) as exc:
-                    failures.append(f"{dataset_id}: {exc}")
+                    failures.append(f"{dataset_id}: {exc} (row {row_number})")
                     break
+            if len(failures) != failure_count:
+                continue
             if observations:
                 latest = max(observations)
                 report[dataset_id]["latest_observation"] = latest.isoformat()

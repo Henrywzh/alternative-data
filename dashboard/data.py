@@ -2137,8 +2137,9 @@ for _token_id, _token_cfg in TOKENOMICS_DATASETS.items():
             "domain": "ramp",
             "natural_keys": _cfg["natural_keys"],
             "primary_date_column": _token_cfg["date_column"],
-            "metric_column": _token_cfg["numeric"][0],
-            "required_columns": _cfg["fields"],
+            "metric_column": "metric_value" if _token_id == "ramp_ai_token_activity" else None,
+            # Older price snapshots lack the direct price but retain cost/count.
+            "required_columns": [field for field in _cfg["fields"] if field != "price_per_million"],
         }
         DOMAIN_ORDER["ramp"].append(_dataset_id)
         RAMP_LOAD_COLUMNS[_dataset_id] = [*CORE_COLUMNS, *_cfg["fields"]]
@@ -2403,6 +2404,7 @@ DATE_COLUMNS = [
 NUMERIC_COLUMNS = [
     "token_cost_usd_7d",
     "token_count_7d",
+    "price_per_million",
     "openrouter_total_tokens",
     "openrouter_named_tokens",
     "openrouter_other_tokens",
