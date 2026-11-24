@@ -44,15 +44,19 @@ class RampTokenomicsSource(RampFilterModeSource):
             except json.JSONDecodeError as exc:
                 print(f"Warning: bad JSON for {snapshot.name}: {exc}")
                 continue
-            if not isinstance(rows, list):
+            if not isinstance(rows, list) or any(not isinstance(row, dict) for row in rows):
                 continue
             for row in rows:
-                if isinstance(row, dict):
-                    extracted[snapshot.name].append(GenericRecord(
-                        dataset_id=snapshot.name,
-                        source_url=snapshot.source_url,
-                        source_run_id=context.run_id,
-                        scraped_at=context.scraped_at_iso,
-                        payload={field: row.get(field) for field in cfg["fields"]},
-                    ))
+                payload = {field: row.get(field) for field in cfg["fields"]}
+                if snapshot.name == "ramp_ai_token_prices" and "series_key" in row:
+                    # Ramp now returns published prices keyed by series, including
+                    # its own weighted blend. The old cost and count are absent.
+                    payload["model_maker"] = row["series_key"]
+                extracted[snapshot.name].append(GenericRecord(
+                    dataset_id=snapshot.name,
+                    source_url=snapshot.source_url,
+                    source_run_id=context.run_id,
+                    scraped_at=context.scraped_at_iso,
+                    payload=payload,
+                ))
         return extracted

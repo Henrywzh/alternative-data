@@ -32,6 +32,7 @@ from dashboard.sections import openrouter as orr  # noqa: E402
 from dashboard.sections import provider_adoption as pa  # noqa: E402
 from dashboard.sections import semiconductor as semi  # noqa: E402
 from openrouter_arr_nowcast import build_arr_nowcast_summary  # noqa: E402
+from ramp_data.prices import effective_token_prices  # noqa: E402
 
 import gpu  # noqa: E402
 
@@ -293,13 +294,10 @@ def tokenomics_payload() -> tuple[dict, pd.DataFrame]:
     model_share = spend_hist[top_models["series_key"]].rename(columns=dict(zip(top_models["series_key"], top_models["series_label"])))
     model_share["Other"] = spend_hist.drop(columns=top_models["series_key"]).sum(axis=1, min_count=1)
 
-    # Prices: $ per million tokens from the 7-day cost and count; "all_tokens" counts cached input.
-    px = pd.read_parquet(ROOT / "data/normalized/ramp/ramp_ai_token_prices.parquet")
-    both = px.groupby(["usage_date", "token_type"], as_index=False)[["token_cost_usd_7d", "token_count_7d"]].sum().assign(model_maker="combined")
-    px = pd.concat([px, both])
-    px["ppm"] = px["token_cost_usd_7d"] / px["token_count_7d"] * 1e6
-    px["maker"] = px["model_maker"].map(MAKER_NAMES).fillna("OpenAI & Anthropic")
-    prices = {tt: pivot_json(px.loc[px["token_type"] == tt].pivot_table(index="usage_date", columns="maker", values="ppm"))
+    # Use Ramp's published prices, with cost/count for older captures.
+    px = effective_token_prices(pd.read_parquet(ROOT / "data/normalized/ramp/ramp_ai_token_prices.parquet"))
+    px["maker"] = px["model_maker"].map({**MAKER_NAMES, "blend": "OpenAI & Anthropic"}).fillna(px["model_maker"])
+    prices = {tt: pivot_json(px.loc[px["token_type"] == tt].pivot_table(index="usage_date", columns="maker", values="price_per_million"))
               for tt in ("all_tokens", "uncached_input", "output")}
 
     payload = {"spend": pivot_json(weekly["token_spend"], order, other=True), "volume": pivot_json(weekly["token_volume"], order, other=True),

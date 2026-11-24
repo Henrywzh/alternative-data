@@ -10,13 +10,14 @@ import streamlit as st
 
 from dashboard.components import dataframe_for_display, make_line_chart
 from dashboard.data import DatasetLoadResult
+from ramp_data.prices import effective_token_prices
 
 ACTIVITY_ID = "ramp_ai_token_activity"
 PRICES_ID = "ramp_ai_token_prices"
 SOURCE_URL = "https://ramp.com/data/ai-index?metric=token-spend&detail=maker&mode=volume"
 COLORS = ["#2563EB", "#F97316", "#0D9488", "#8B5CF6", "#DB2777", "#65A30D", "#D97706", "#0891B2"]
 MAKERS = {"openai": "OpenAI", "anthropic": "Anthropic", "xai": "xAI",
-          "nvidia": "NVIDIA", "google": "Google", "meta": "Meta"}
+          "nvidia": "NVIDIA", "google": "Google", "meta": "Meta", "blend": "OpenAI & Anthropic"}
 TOKEN_TYPES = {"All tokens": "all_tokens", "Uncached input": "uncached_input", "Output": "output"}
 
 
@@ -49,13 +50,10 @@ def price_pivot(frame: pd.DataFrame, token_type: str) -> pd.DataFrame:
     if frame.empty:
         return pd.DataFrame()
     frame["usage_date"] = pd.to_datetime(frame["usage_date"], utc=True).dt.tz_localize(None)
-    columns = ["token_cost_usd_7d", "token_count_7d"]
-    for column in columns:
-        frame[column] = pd.to_numeric(frame[column], errors="coerce")
-    # Sum numerator and denominator, rather than taking an average of ratios.
-    grouped = frame.groupby(["usage_date", "model_maker"])[columns].sum(min_count=1)
-    denominator = grouped["token_count_7d"].where(grouped["token_count_7d"].gt(0))
-    prices = (grouped["token_cost_usd_7d"] / denominator * 1_000_000).unstack("model_maker")
+    values = effective_token_prices(frame)
+    if values.empty:
+        return pd.DataFrame()
+    prices = values.pivot(index="usage_date", columns="model_maker", values="price_per_million")
     prices = prices.rename(columns=lambda value: MAKERS.get(value, value)).sort_index()
     return prices.reindex(pd.date_range(prices.index.min(), prices.index.max(), freq="D", name="usage_date"))
 
@@ -87,7 +85,7 @@ def render_tokenomics(datasets: dict[str, DatasetLoadResult]) -> None:
         unit, scale = "Effective USD / million tokens", 1
         coverage = ", ".join(MAKERS.get(value, value) for value in sorted(source_rows["model_maker"].dropna().unique()))
         st.caption(
-            f"Daily anchors of rolling seven-day cost ÷ tokens × 1 million. Source coverage: {coverage}. "
+            f"Ramp’s effective prices for rolling seven-day windows. Source coverage: {coverage}. "
             "No model-level prices. These are observed effective prices, not list prices. "
             "All-token averages also change with the mix of input, output and cached tokens."
         )
@@ -105,8 +103,8 @@ def render_tokenomics(datasets: dict[str, DatasetLoadResult]) -> None:
         else:
             unit, scale = ("Tokens (billions)", 1e9) if metric == "token_volume" else ("Spend (USD millions)", 1e6)
         st.caption(
-            "Weekly totals use the latest reporting calendar; Ramp changed from Monday–Sunday to "
-            "Saturday–Friday, so older overlapping weeks are not combined. Model series retain Ramp's raw identifiers, including aliases; "
+            f"Weekly totals are from Ramp’s latest reporting calendar (week ending {pivot.index.max().strftime('%A') if not pivot.empty else 'unavailable'}). "
+            "Model series retain Ramp’s raw identifiers, including aliases; "
             "they are not a count of distinct models. Spend and volume have different coverage, "
             "so weekly spend ÷ volume is not used to estimate prices."
         )
@@ -131,7 +129,7 @@ def render_tokenomics(datasets: dict[str, DatasetLoadResult]) -> None:
         chart = chart.loc[chart.index >= latest - pd.DateOffset(months=6 if history == "6 months" else 3)]
     if selected:
         fig = make_line_chart(chart, colors=COLORS, y_title=unit,
-                              x_title="7-day window ending" if is_price else "Week ending (Sunday)",
+                              x_title="7-day window ending" if is_price else f"Week ending ({latest:%A})",
                               value_format=",.3f", mode="lines", connect_gaps=False, height=430)
         st.plotly_chart(fig, width="stretch", theme=None)
     else:
