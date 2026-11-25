@@ -1,7 +1,7 @@
 {
   "version": "asia-markets-freshness.v1",
-  "auditedAt": "2026-11-24T17:56:03.151823Z",
-  "asOf": "2026-11-24",
+  "auditedAt": "2026-11-25T17:17:32.108254Z",
+  "asOf": "2026-11-25",
   "status": "degraded",
   "requiredFailures": [
     "population.mpfa"
@@ -83,7 +83,7 @@
       "dataset": "kpi_northbound",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-11-22",
+      "expected_latest_period": "2026-11-23",
       "latest_observation": "2026-11-23",
       "notes": "Immigration passenger clearance is daily; allow a two-day publication/holiday lag."
     },
@@ -93,7 +93,7 @@
       "dataset": "consumer_council_oilprice",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-11-22",
+      "expected_latest_period": "2026-11-23",
       "latest_observation": "2026-11-24",
       "notes": "Consumer Council pump-price snapshot is fetched daily; allow a two-day publication lag."
     },
@@ -203,8 +203,8 @@
       "dataset": "artifact-en/zh",
       "required": true,
       "status": "healthy",
-      "expected_latest_period": "2026-11-24T17:46:03.565172Z",
-      "latest_observation": "2026-11-24T17:46:03.565172Z",
+      "expected_latest_period": "2026-11-25T17:15:41.064381Z",
+      "latest_observation": "2026-11-25T17:15:41.064381Z",
       "notes": "EN and ZH must describe the same generated snapshot, dataset IDs and per-dataset row counts."
     },
     {
