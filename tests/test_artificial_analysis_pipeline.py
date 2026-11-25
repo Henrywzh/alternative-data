@@ -487,3 +487,36 @@ def test_pyproject_exposes_artificial_analysis_cli_script() -> None:
     text = pyproject.read_text(encoding="utf-8")
 
     assert 'artificial-analysis-data = "artificial_analysis_data.cli:main"' in text
+
+
+def test_capex_source_finds_payload_in_referenced_immutable_chunks() -> None:
+    base = "https://artificialanalysis.ai"
+    prefix = "/_next/static/immutable/chunks/"
+    page_html = (
+        f'<script src="{prefix}capex-abc.js"></script>'
+        f'<script src="{prefix}unrelated-def.js"></script>'
+        f'<script src="{prefix}missing-ghi.js"></script>'
+        f'<script src="https://example.test{prefix}external.js"></script>'
+    )
+    responses = {
+        f"{base}/trends": FakeArtificialAnalysisApiResponse(status_code=200, text=page_html),
+        f"{base}{prefix}missing-ghi.js": FakeArtificialAnalysisApiResponse(status_code=404),
+        f"{base}{prefix}unrelated-def.js": FakeArtificialAnalysisApiResponse(
+            status_code=200, text='[{id:"2026-q1",label:"quarterly index",value:100}]'
+        ),
+        f"{base}{prefix}capex-abc.js": FakeArtificialAnalysisApiResponse(
+            status_code=200, text=_load_capex_bundle()
+        ),
+    }
+
+    class FakeSession:
+        def get(self, url: str, timeout: int) -> FakeArtificialAnalysisApiResponse:
+            return responses[url]
+
+    source = ArtificialAnalysisCapexSource(session=FakeSession())
+    snapshots = source.fetch_snapshots()
+    points = source.extract(snapshots, run_id="test", scraped_at="2026-11-25T18:00:00Z")
+
+    assert [s.name for s in snapshots] == ["trends_page", "capex_data_bundle"]
+    assert [p.quarter_id for p in points] == ["2025-q2", "2025-q1", "2024-q4"]
+    assert points[0].bundle_url == f"{base}{prefix}capex-abc.js"
