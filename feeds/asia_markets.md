@@ -1,8 +1,8 @@
 # asia_markets research feed
 
-Generated: 2026-11-24T18:54:39.875465Z · Status: **degraded**
+Generated: 2026-11-25T17:59:34.645506Z · Status: **degraded**
 
-Source commit: `f9a9f30471bd394bb3b4e30653df8e9ca8d819df`
+Source commit: `506dc1901de615bb12d64f272632838ac0e5a935`
 
 Observation dates differ by record. Generated time is not a market-data timestamp.
 
@@ -39,10 +39,6 @@ Observation dates differ by record. Generated time is not a market-data timestam
 
 ## Changes
 
-- quality_change: hk-reit/championreit_card
-- quality_change: hk-reit/linkreit_card
-- quality_change: hk-reit/regalreit_card
-- quality_change: hk-utilities/towngas_card
 
 ## Excluded coverage
 
