@@ -1,0 +1,22 @@
+{
+  "run_scope": "full",
+  "retrieved_at": "2026-11-25T04:58:38.589636Z",
+  "dataset_name": "treasury_curve_snapshots",
+  "run_id": "20261125T045838-0c3b06f5",
+  "created_at": "2026-11-25T04:58:56.435427Z",
+  "records": 44,
+  "columns": [
+    "snapshot_id",
+    "label_en",
+    "label_zh",
+    "as_of",
+    "indicator_id",
+    "maturity",
+    "tenor_months",
+    "maturity_en",
+    "maturity_zh",
+    "yield_pct",
+    "observation_date"
+  ],
+  "sha256": "034cd2a83cc2a4c4f2979ae0404a8f9dd0f4db2e0c8c6506361959c69614a1c2"
+}
