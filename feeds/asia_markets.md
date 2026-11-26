@@ -1,8 +1,8 @@
 # asia_markets research feed
 
-Generated: 2026-11-25T17:59:34.645506Z · Status: **degraded**
+Generated: 2026-11-26T17:45:01.042078Z · Status: **degraded**
 
-Source commit: `506dc1901de615bb12d64f272632838ac0e5a935`
+Source commit: `c5f27b4c33d37dfdc64661384c55c5783d29073f`
 
 Observation dates differ by record. Generated time is not a market-data timestamp.
 
@@ -13,8 +13,8 @@ Observation dates differ by record. Generated time is not a market-data timestam
 | Hong Kong Labour Market & Talent Policy | Wage | 2026-06-30 | current | nominal_wage_yoy: 0.034 fraction; real_wage_yoy: 0.016 fraction; nominal_payroll_yoy: 0.035 fraction |
 | Hong Kong Labour Market & Talent Policy | Income | 2026-09-30 | current | median_monthly_earnings: 21000.0 HKD_per_month |
 | Hong Kong Labour Market & Talent Policy | Talent Policy | 2025-12-31 | current | applications_received: 147454.0 applications; applications_approved: 124460.0 applications; qmas_quota: 7101.0 cases |
-| Hong Kong Real Estate Monitor | Rvd Price | 2026-09-01 | current (source_provisional) | latest: 320.8 index_points; period_change: 0.001874 fraction; year_change: 0.093388 fraction |
-| Hong Kong Real Estate Monitor | Rvd Rent | 2026-09-01 | current (source_provisional) | latest: 212.2 index_points; period_change: 0.004735 fraction; year_change: 0.061531 fraction |
+| Hong Kong Real Estate Monitor | Rvd Price | 2026-10-01 | current (source_provisional) | latest: 319.0 index_points; period_change: -0.005921 fraction; year_change: 0.081723 fraction |
+| Hong Kong Real Estate Monitor | Rvd Rent | 2026-10-01 | current (source_provisional) | latest: 213.2 index_points; period_change: 0.004713 fraction; year_change: 0.066533 fraction |
 | HK Transport & Aviation Sector Monitor | Mtr | 2026-10-01 | current | latest: 173819.0 thousand_journeys; domestic_thousands: 140519.0 thousand_journeys; cross_boundary_thousands: 9963.0 thousand_journeys; hsr_thousands: 2938.0 thousand_journeys; recovery_vs_2019_pct: 0.089597 fraction |
 | HK Transport & Aviation Sector Monitor | Cathay | 2026-10-01 | current | latest: 2720195.0 passengers; load_factor_pct: 85.7 percent; hkia_passengers: 5513000.0 passengers; period_change: 0.108639 fraction; recovery_vs_2019_pct: -0.068393 fraction |
 | HK Transport & Aviation Sector Monitor | Journeys | 2026-08-01 | stale | kmb_k: 76105.324 thousand_journeys; total_k: 361332.121 thousand_journeys; period_change: 0.036112 fraction |
@@ -39,6 +39,8 @@ Observation dates differ by record. Generated time is not a market-data timestam
 
 ## Changes
 
+- new_observation: hk-real-estate/rvd_price_card
+- new_observation: hk-real-estate/rvd_rent_card
 
 ## Excluded coverage
 
