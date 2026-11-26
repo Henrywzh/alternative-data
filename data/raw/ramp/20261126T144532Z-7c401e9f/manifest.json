@@ -1,0 +1,25 @@
+{
+  "run_id": "20261126T144532Z-7c401e9f",
+  "mode": "category-charts",
+  "scraped_at": "2026-11-26T14:45:32.583655Z",
+  "status": "success",
+  "datasets": [
+    {
+      "dataset_id": "ramp_category_adoption_monthly",
+      "status": "ok",
+      "rows": 6785
+    },
+    {
+      "dataset_id": "ramp_category_spend_share_quarterly",
+      "status": "retired",
+      "rows": 0,
+      "note": "2026-08-30: Ramp removed the secondary chart from every category page"
+    },
+    {
+      "dataset_id": "ramp_category_adoption_yoy_comparison",
+      "status": "retired",
+      "rows": 0,
+      "note": "2026-08-30: Ramp removed the secondary chart from every category page"
+    }
+  ]
+}
