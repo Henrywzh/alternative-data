@@ -1,28 +1,28 @@
 # alternative_signals research feed
 
-Generated: 2026-11-26T17:45:01.042078Z · Status: **degraded**
+Generated: 2026-11-27T17:28:48.136361Z · Status: **degraded**
 
-Source commit: `c5f27b4c33d37dfdc64661384c55c5783d29073f`
+Source commit: `91471d212aadf73403badaf50b12e46886bb7c79`
 
 Observation dates differ by record. Generated time is not a market-data timestamp.
 
 | Section | Record | Observation | Quality | Values |
 |---|---|---|---|---|
-| OpenRouter usage economics | completion_tokens_per_request/all_models (1d window) | 2026-11-24 | current | value: 630.6279876716094 tokens_per_request |
-| OpenRouter usage economics | completion_tokens_per_request/all_models (7d window) | 2026-11-24 | current | value: 634.9966949014452 tokens_per_request |
-| OpenRouter usage economics | prompt_tokens_per_request/all_models (1d window) | 2026-11-24 | current | value: 34414.89562666581 tokens_per_request |
-| OpenRouter usage economics | prompt_tokens_per_request/all_models (7d window) | 2026-11-24 | current | value: 37283.55223885713 tokens_per_request |
-| OpenRouter usage economics | realized_market_average/all_models (7d window) | 2026-11-24 | degraded (partial_pricing_coverage) | value: 0.3319509545634862 USD_per_million_tokens |
-| OpenRouter usage economics | realized_sota_price/sota (7d window) | 2026-11-24 | current | value: 3.222122735565836 USD_per_million_tokens |
-| OpenRouter usage economics | sota_median_list_price/sota (1d window) | 2026-11-24 | current | value: 1.638 USD_per_million_tokens |
-| OpenRouter usage economics | total_tokens_per_request/all_models (1d window) | 2026-11-24 | current | value: 35045.52361433743 tokens_per_request |
-| OpenRouter usage economics | total_tokens_per_request/all_models (7d window) | 2026-11-24 | current | value: 37918.548933758575 tokens_per_request |
-| PyPI core SDK downloads (without mirrors) | anthropic/anthropic | 2026-11-25 | current | downloads: 8631586 downloads |
-| PyPI core SDK downloads (without mirrors) | google/google-genai | 2026-11-25 | current | downloads: 6193334 downloads |
-| PyPI core SDK downloads (without mirrors) | google/google-generativeai | 2026-11-25 | current | downloads: 265021 downloads |
-| PyPI core SDK downloads (without mirrors) | mistral/mistralai | 2026-11-25 | current | downloads: 554755 downloads |
-| PyPI core SDK downloads (without mirrors) | openai/openai | 2026-11-25 | current | downloads: 14597363 downloads |
-| PyPI core SDK downloads (without mirrors) | qwen/dashscope | 2026-11-25 | current | downloads: 54270 downloads |
+| OpenRouter usage economics | completion_tokens_per_request/all_models (1d window) | 2026-11-25 | current | value: 664.3671230571485 tokens_per_request |
+| OpenRouter usage economics | completion_tokens_per_request/all_models (7d window) | 2026-11-25 | current | value: 628.5162616106428 tokens_per_request |
+| OpenRouter usage economics | prompt_tokens_per_request/all_models (1d window) | 2026-11-25 | current | value: 32951.05670708948 tokens_per_request |
+| OpenRouter usage economics | prompt_tokens_per_request/all_models (7d window) | 2026-11-25 | current | value: 35836.28578061947 tokens_per_request |
+| OpenRouter usage economics | realized_market_average/all_models (7d window) | 2026-11-25 | degraded (partial_pricing_coverage) | value: 0.3502477239058425 USD_per_million_tokens |
+| OpenRouter usage economics | realized_sota_price/sota (7d window) | 2026-11-25 | current | value: 3.1963975111024925 USD_per_million_tokens |
+| OpenRouter usage economics | sota_median_list_price/sota (1d window) | 2026-11-25 | current | value: 1.638 USD_per_million_tokens |
+| OpenRouter usage economics | total_tokens_per_request/all_models (1d window) | 2026-11-25 | current | value: 33615.42383014663 tokens_per_request |
+| OpenRouter usage economics | total_tokens_per_request/all_models (7d window) | 2026-11-25 | current | value: 36464.80204223012 tokens_per_request |
+| PyPI core SDK downloads (without mirrors) | anthropic/anthropic | 2026-11-26 | current | downloads: 7093499 downloads |
+| PyPI core SDK downloads (without mirrors) | google/google-genai | 2026-11-26 | current | downloads: 5465518 downloads |
+| PyPI core SDK downloads (without mirrors) | google/google-generativeai | 2026-11-26 | current | downloads: 224662 downloads |
+| PyPI core SDK downloads (without mirrors) | mistral/mistralai | 2026-11-26 | current | downloads: 496495 downloads |
+| PyPI core SDK downloads (without mirrors) | openai/openai | 2026-11-26 | current | downloads: 13075656 downloads |
+| PyPI core SDK downloads (without mirrors) | qwen/dashscope | 2026-11-26 | current | downloads: 49258 downloads |
 | Taiwan semiconductor / AI supply-chain monthly revenue | 聯電 | 2026-10 | stale | monthly_revenue_ntd: 25197532.0 TWD_thousand; yoy_pct: 18.33 percent; mom_pct: -0.6031416192 percent; ytd_revenue_ntd: 229207213.0 TWD_thousand |
 | Taiwan semiconductor / AI supply-chain monthly revenue | 鴻海 | 2026-10 | stale | monthly_revenue_ntd: 1305319612.0 TWD_thousand; yoy_pct: 45.73 percent; mom_pct: 12.6602942647 percent; ytd_revenue_ntd: 8975092122.0 TWD_thousand |
 | Taiwan semiconductor / AI supply-chain monthly revenue | 台積電 | 2026-10 | stale | monthly_revenue_ntd: 586890319.0 TWD_thousand; yoy_pct: 59.71 percent; mom_pct: 14.6589499627 percent; ytd_revenue_ntd: 4485617293.0 TWD_thousand |
@@ -65,17 +65,6 @@ Observation dates differ by record. Generated time is not a market-data timestam
 - new_observation: openrouter_economics/sota_median_list_price/sota/1
 - new_observation: openrouter_economics/total_tokens_per_request/all_models/1
 - new_observation: openrouter_economics/total_tokens_per_request/all_models/7
-- quality_change: taiwan_semiconductor/2303
-- quality_change: taiwan_semiconductor/2317
-- quality_change: taiwan_semiconductor/2330
-- quality_change: taiwan_semiconductor/2344
-- quality_change: taiwan_semiconductor/2382
-- quality_change: taiwan_semiconductor/2408
-- quality_change: taiwan_semiconductor/3231
-- quality_change: taiwan_semiconductor/5347
-- quality_change: taiwan_semiconductor/6239
-- quality_change: taiwan_semiconductor/6669
-- quality_change: taiwan_semiconductor/8299
 
 ## Excluded coverage
 
