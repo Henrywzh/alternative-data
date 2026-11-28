@@ -1,0 +1,21 @@
+{
+  "run_scope": "full",
+  "retrieved_at": "2026-11-28T04:03:02.264909Z",
+  "dataset_name": "macro_commodity_prices",
+  "run_id": "20261128T040302-7f3d2175",
+  "created_at": "2026-11-28T04:03:58.396288Z",
+  "records": 26942,
+  "columns": [
+    "date",
+    "asset_id",
+    "symbol",
+    "label_en",
+    "label_zh",
+    "group",
+    "unit",
+    "close",
+    "source",
+    "retrieved_at"
+  ],
+  "sha256": "ecbb71f13320a633af8907f953d4d7c85875e672aaf9e89208be86b78c557034"
+}
