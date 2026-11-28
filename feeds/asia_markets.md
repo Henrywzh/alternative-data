@@ -1,8 +1,8 @@
 # asia_markets research feed
 
-Generated: 2026-11-27T17:28:48.136361Z · Status: **degraded**
+Generated: 2026-11-28T16:12:23.746817Z · Status: **degraded**
 
-Source commit: `91471d212aadf73403badaf50b12e46886bb7c79`
+Source commit: `5dba461ec16231a633213e3b6e98d1c231b081a7`
 
 Observation dates differ by record. Generated time is not a market-data timestamp.
 
@@ -17,9 +17,9 @@ Observation dates differ by record. Generated time is not a market-data timestam
 | Hong Kong Real Estate Monitor | Rvd Rent | 2026-10-01 | current (source_provisional) | latest: 213.2 index_points; period_change: 0.004713 fraction; year_change: 0.066533 fraction |
 | HK Transport & Aviation Sector Monitor | Mtr | 2026-10-01 | current | latest: 173819.0 thousand_journeys; domestic_thousands: 140519.0 thousand_journeys; cross_boundary_thousands: 9963.0 thousand_journeys; hsr_thousands: 2938.0 thousand_journeys; recovery_vs_2019_pct: 0.089597 fraction |
 | HK Transport & Aviation Sector Monitor | Cathay | 2026-10-01 | current | latest: 2720195.0 passengers; load_factor_pct: 85.7 percent; hkia_passengers: 5513000.0 passengers; period_change: 0.108639 fraction; recovery_vs_2019_pct: -0.068393 fraction |
-| HK Transport & Aviation Sector Monitor | Journeys | 2026-08-01 | stale | kmb_k: 76105.324 thousand_journeys; total_k: 361332.121 thousand_journeys; period_change: 0.036112 fraction |
-| HK Transport & Aviation Sector Monitor | Fleet | 2026-09-01 | current | total_registered: 651157.0 vehicles; ev_share_pct: 27.6241 percent; ev_share_change_pp: 0.1607 percentage_points |
-| HK Transport & Aviation Sector Monitor | Private Car First Reg | 2026-08-01 | stale | total_first_reg: 2989.0 vehicles; electric_first_reg: 1810.0 vehicles; ev_share_pct: 60.5554 percent |
+| HK Transport & Aviation Sector Monitor | Journeys | 2026-09-01 | current | kmb_k: 80439.675 thousand_journeys; total_k: 371720.02599999995 thousand_journeys; period_change: 0.028545 fraction |
+| HK Transport & Aviation Sector Monitor | Fleet | 2026-10-01 | current | total_registered: 651368.0 vehicles; ev_share_pct: 27.8044 percent; ev_share_change_pp: 0.1803 percentage_points |
+| HK Transport & Aviation Sector Monitor | Private Car First Reg | 2026-09-01 | current | total_first_reg: 2698.0 vehicles; electric_first_reg: 1316.0 vehicles; ev_share_pct: 48.7769 percent |
 | HK Utilities & Infrastructure Sector Monitor | Clp | 2026-03-31 | stale | latest: 7319.0 GWh; commercial_gwh: 3032.0 GWh; ai_data_centre_yoy_pct: 11.1 percent |
 | HK Utilities & Infrastructure Sector Monitor | Towngas | 2026-09-01 | stale | latest: 1875.3 TJ; domestic_tj: 865.3 TJ; commercial_tj: 880.7 TJ |
 | Hong Kong Telecom Sector Monitor | Hkt | 2026-06-30 | current (partial_metric_coverage) | latest_arpu: None HKD; postpaid_subscribers_thousands: 3522.0 thousand_subscribers; ftth_connections_thousands: 1101.0 thousand_connections |
@@ -39,6 +39,9 @@ Observation dates differ by record. Generated time is not a market-data timestam
 
 ## Changes
 
+- new_observation: hk-transport/fleet_card
+- new_observation: hk-transport/journeys_card
+- new_observation: hk-transport/private_car_first_reg_card
 
 ## Excluded coverage
 
